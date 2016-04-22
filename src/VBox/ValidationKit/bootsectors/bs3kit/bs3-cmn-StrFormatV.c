@@ -435,28 +435,34 @@ BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
                 State.fFlags |= STR_F_LEFT;
             }
             State.fFlags |= STR_F_WIDTH;
+            ch = *pszFormat++;
         }
 
         /*
          * Precision
          */
         State.cchPrecision = 0;
-        if (RT_C_IS_DIGIT(ch))
+        if (ch == '.')
         {
-            do
+            ch = *pszFormat++;
+            if (RT_C_IS_DIGIT(ch))
             {
-                State.cchPrecision *= 10;
-                State.cchPrecision  = ch - '0';
+                do
+                {
+                    State.cchPrecision *= 10;
+                    State.cchPrecision  = ch - '0';
+                    ch = *pszFormat++;
+                } while (RT_C_IS_DIGIT(ch));
+                State.fFlags |= STR_F_PRECISION;
+            }
+            else if (ch == '*')
+            {
+                State.cchPrecision = va_arg(va, int);
+                if (State.cchPrecision < 0)
+                    State.cchPrecision = 0;
+                State.fFlags |= STR_F_PRECISION;
                 ch = *pszFormat++;
-            } while (RT_C_IS_DIGIT(ch));
-            State.fFlags |= STR_F_PRECISION;
-        }
-        else if (ch == '*')
-        {
-            State.cchPrecision = va_arg(va, int);
-            if (State.cchPrecision < 0)
-                State.cchPrecision = 0;
-            State.fFlags |= STR_F_PRECISION;
+            }
         }
 
         /*
@@ -650,6 +656,30 @@ BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
                     case 'X':
                         State.fFlags &= ~(STR_F_PLUS | STR_F_BLANK);
                         State.uBase   = 16;
+                        break;
+                    case 'h':
+                        ch = *pszFormat++;
+                        if (ch == 'x')
+                        {
+                            /* Hex dumping. */
+                            uint8_t const BS3_FAR *pbHex = va_arg(va, uint8_t const BS3_FAR *);
+                            if (State.cchPrecision < 0)
+                                State.cchPrecision = 16;
+                            ch = *pszFormat++;
+                            if (ch == 's' || ch == 'd')
+                            {
+                                /* %Rhxd is currently implemented as %Rhxs. */
+                                while (State.cchPrecision-- > 0)
+                                {
+                                    uint8_t b = *pbHex++;
+                                    State.pfnOutput(g_achBs3HexDigits[b >> 4], State.pvUser);
+                                    State.pfnOutput(g_achBs3HexDigits[b & 0x0f], State.pvUser);
+                                    if (State.cchPrecision)
+                                        State.pfnOutput(' ', State.pvUser);
+                                }
+                            }
+                        }
+                        State.uBase   = 0;
                         break;
                     default:
                         State.uBase   = 0;

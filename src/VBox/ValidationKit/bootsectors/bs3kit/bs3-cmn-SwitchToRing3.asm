@@ -54,7 +54,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchToRing3, BS3_PBC_HYBRID_0_ARGS
         pop     rcx
 %else
         push    3
-        TMPL_ONLY_16BIT_STMT push cs
+TONLY16 push    cs
         call    Bs3SwitchToRingX
         add     xSP, xCB
 %endif

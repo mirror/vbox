@@ -246,7 +246,8 @@ bs3-cpu-basic-2_SOURCES = \
 bs3-cpu-basic-2-template.o:: \
 	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
 	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64
+	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3-cpu-basic-2-asm.o16
 endif
 
 

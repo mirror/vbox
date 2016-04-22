@@ -35,7 +35,8 @@
 BS3_CMN_DEF(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExpectedCtx, uint16_t cbPcAdjust, int16_t cbSpAcjust,
                                         uint32_t fExtraEfl, const char *pszMode, uint16_t idTestStep))
 {
-    uint16_t cErrorsBefore = Bs3TestSubErrorCount();
+    uint16_t const cErrorsBefore = Bs3TestSubErrorCount();
+    uint8_t  const fbFlags       = pActualCtx->fbFlags | pExpectedCtx->fbFlags;
 
 #define CHECK_MEMBER(a_szName, a_szFmt, a_Actual, a_Expected) \
     do { \
@@ -51,8 +52,7 @@ BS3_CMN_DEF(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExp
     CHECK_MEMBER("rbp",     "%08RX64",  pActualCtx->rbp.u,    pExpectedCtx->rbp.u);
     CHECK_MEMBER("rsi",     "%08RX64",  pActualCtx->rsi.u,    pExpectedCtx->rsi.u);
     CHECK_MEMBER("rdi",     "%08RX64",  pActualCtx->rdi.u,    pExpectedCtx->rdi.u);
-    if (   !(pActualCtx->fbFlags & BS3REG_CTX_F_NO_AMD64)
-        && !(pExpectedCtx->fbFlags & BS3REG_CTX_F_NO_AMD64) )
+    if (!(fbFlags & BS3REG_CTX_F_NO_AMD64))
     {
         CHECK_MEMBER("r8",      "%08RX64",  pActualCtx->r8.u,     pExpectedCtx->r8.u);
         CHECK_MEMBER("r9",      "%08RX64",  pActualCtx->r9.u,     pExpectedCtx->r9.u);
@@ -70,17 +70,26 @@ BS3_CMN_DEF(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExp
     CHECK_MEMBER("es",      "%04RX16",  pActualCtx->es,       pExpectedCtx->es);
     CHECK_MEMBER("fs",      "%04RX16",  pActualCtx->fs,       pExpectedCtx->fs);
     CHECK_MEMBER("gs",      "%04RX16",  pActualCtx->gs,       pExpectedCtx->gs);
-    CHECK_MEMBER("tr",      "%04RX16",  pActualCtx->tr,       pExpectedCtx->tr);
-    CHECK_MEMBER("ldtr",    "%04RX16",  pActualCtx->ldtr,     pExpectedCtx->ldtr);
+
+    if (!(fbFlags & BS3REG_CTX_F_NO_TR_LDTR))
+    {
+        CHECK_MEMBER("tr",      "%04RX16",  pActualCtx->tr,       pExpectedCtx->tr);
+        CHECK_MEMBER("ldtr",    "%04RX16",  pActualCtx->ldtr,     pExpectedCtx->ldtr);
+    }
     CHECK_MEMBER("bMode",   "%#04x",    pActualCtx->bMode,    pExpectedCtx->bMode);
     CHECK_MEMBER("bCpl",    "%u",       pActualCtx->bCpl,     pExpectedCtx->bCpl);
-    if (!(pActualCtx->fbFlags & BS3REG_CTX_F_NO_CR))
-    {
+
+    if (!(fbFlags & BS3REG_CTX_F_NO_CR0_IS_MSW))
         CHECK_MEMBER("cr0", "%08RX64",  pActualCtx->cr0.u,    pExpectedCtx->cr0.u);
+    else
+        CHECK_MEMBER("msw", "%08RX16",  pActualCtx->cr0.u16,  pExpectedCtx->cr0.u16);
+    if (!(fbFlags & BS3REG_CTX_F_NO_CR2_CR3))
+    {
         CHECK_MEMBER("cr2", "%08RX64",  pActualCtx->cr2.u,    pExpectedCtx->cr2.u);
         CHECK_MEMBER("cr3", "%08RX64",  pActualCtx->cr3.u,    pExpectedCtx->cr3.u);
-        CHECK_MEMBER("cr4", "%08RX64",  pActualCtx->cr4.u,    pExpectedCtx->cr4.u);
     }
+    if (!(fbFlags & BS3REG_CTX_F_NO_CR4))
+        CHECK_MEMBER("cr4", "%08RX64",  pActualCtx->cr4.u,    pExpectedCtx->cr4.u);
 #undef CHECK_MEMBER
 
     return Bs3TestSubErrorCount() == cErrorsBefore;

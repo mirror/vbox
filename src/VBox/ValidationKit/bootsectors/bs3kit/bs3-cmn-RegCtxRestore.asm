@@ -68,9 +68,17 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         ; and less problematic if we're in a funny context right now with weird
         ; CS or SS values).
         ;
+%if TMPL_BITS == 16
+        cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
+        je      .in_ring0
+        test    byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_V86
+        jnz     .do_syscall_restore_ctx
+%endif
         mov     ax, ss
         test    al, 3
         jz      .in_ring0
+
+.do_syscall_restore_ctx:
 %if TMPL_BITS == 16
         mov     si, [bp + xCB + cbCurRetAddr]
         mov     cx, [bp + xCB + cbCurRetAddr + 2]
@@ -83,12 +91,12 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         mov     eax, BS3_SYSCALL_RESTORE_CTX
 %endif
         call    Bs3Syscall
-.in_ring0:
 
         ;
         ; Prologue.  Loads ES with BS3KIT_GRPNM_DATA16/FLAT (for g_bBs3CurrentMode
         ; and g_uBs3CpuDetected), DS:xBX with pRegCtx and fFlags into xCX.
         ;
+.in_ring0:
 %if TMPL_BITS == 16
         mov     ax, BS3_SEL_DATA16
         mov     es, ax
@@ -235,7 +243,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         ; Restore control registers if they've changed.
         test    cl, BS3TRAPRESUME_F_SKIP_CRX
         jnz     .skip_control_regs
-        test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
+        test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR0_IS_MSW | BS3REG_CTX_F_NO_CR2_CR3
         jnz     .skip_control_regs
 
         test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR4 ; (old 486s and 386s didn't have CR4)
@@ -354,7 +362,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         ;
         ; 32-bit/16-bit is more complicated as we have three different iret frames.
         ;
-        cmp     byte [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
+        mov     al, [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_bBs3CurrentMode)]
+        cmp     al, BS3_MODE_RM
         je      .iretd_same_cpl_rm
 
         test    dword [xBX + BS3REGCTX.rflags], X86_EFL_VM
@@ -386,11 +395,11 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         mov     edx, [xBX + BS3REGCTX.rdx]
         mov     ecx, [xBX + BS3REGCTX.rcx]
         mov     esi, [xBX + BS3REGCTX.rsi]
-%if TMPL_BITS == 16 ; if SS is 16-bit, we will not be able to restore the high word.
+ %if TMPL_BITS == 16 ; if SS is 16-bit, we will not be able to restore the high word.
         mov     edi, [xBX + BS3REGCTX.rsp]
         mov     di, sp
         mov     esp, edi
-%endif
+ %endif
         mov     edi, [xBX + BS3REGCTX.rdi]
         mov     ebx, [xBX + BS3REGCTX.rbx]
 
@@ -404,8 +413,10 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
 .iretd_same_cpl_rm:
         ; Use STOSD/ES:EDI to create the frame.
         mov     es,  [xBX + BS3REGCTX.ss]
-        movzx   esp, word [xBX + BS3REGCTX.rsp]
-        jmp     .using_16_bit_stack_pointer
+        mov     esi, [xBX + BS3REGCTX.rsp]
+        sub     esi, 5*4
+        movzx   edi, si
+        jmp     .es_edi_is_pointing_to_return_frame_location
 
 .iretd_same_cpl:
         ; Use STOSD/ES:EDI to create the frame.
@@ -419,9 +430,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         test    eax, X86LAR_F_D
         jnz     .using_32_bit_stack_pointer
 .using_16_bit_stack_pointer:
+        mov     esi, edi                ; save rsp for later.
         movzx   edi, di
-        mov     esi, [xBX + BS3REGCTX.rsp]
-        mov     si, di                  ; save rsp for later.
         jmp     .es_edi_is_pointing_to_return_frame_location
 .using_32_bit_stack_pointer:
         mov     esi, edi

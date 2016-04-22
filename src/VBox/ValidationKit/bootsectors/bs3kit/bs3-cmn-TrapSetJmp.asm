@@ -53,12 +53,12 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp, BS3_PBC_HYBRID
         push    xBP
         mov     xBP, xSP
         push    xBX
-        BS3_ONLY_64BIT_STMT sub     xSP, 20h
+BONLY64 sub     xSP, 20h
 
         ;
         ; Save the current register context.
         ;
-        BS3_ONLY_16BIT_STMT push    ds
+BONLY16 push    ds
         BS3_LEA_MOV_WRT_RIP(xAX, BS3_DATA16_WRT(g_Bs3TrapSetJmpCtx))
         push    xAX
         BS3_CALL Bs3RegCtxSave, 1
@@ -124,7 +124,7 @@ BS3_PROC_BEGIN_CMN Bs3TrapSetJmp, BS3_PBC_HYBRID
         ; Return 'true'.
         ;
         mov     xAX, 1
-        BS3_ONLY_64BIT_STMT add     xSP, 20h
+BONLY64 add     xSP, 20h
         pop     xBX
         pop     xBP
         BS3_CALL_CONV_EPILOG 1

@@ -102,11 +102,11 @@ int3 ; This is for later, just remove this int3 once needed.
         or      byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_16
 
         popfd
-        TMPL_ONLY_64BIT_STMT pop     ebx
+TONLY64 pop     ebx
         pop     ebx
-        TMPL_ONLY_64BIT_STMT pop     eax
+TONLY64 pop     eax
         pop     eax
-        TMPL_ONLY_64BIT_STMT add     sp, 4
+TONLY64 add     sp, 4
         ret     (TMPL_BITS - 16) / 8    ; Return and pop 2 or 6 bytes of "parameters" (unused return value)
 
 .stack_rpl_must_be_0_for_custom_stacks:

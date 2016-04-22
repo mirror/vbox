@@ -318,19 +318,19 @@ TMPL_BEGIN_TEXT
         push    xBX                     ; Save pointer for the final restore call.
 
         ; Convert the register context from whatever it is to ring-0.
-        BS3_ONLY_64BIT_STMT sub     rsp, 10h
+BONLY64 sub     rsp, 10h
         mov     ax, VAR_CALLER_AX
         sub     ax, BS3_SYSCALL_TO_RING0
         push    xAX
-        BS3_ONLY_16BIT_STMT push    ss
+BONLY16 push    ss
         push    xBX
         BS3_CALL Bs3RegCtxConvertToRingX, 2
         add     xSP, sCB + xCB BS3_ONLY_64BIT(+ 10h)
 
         ; Restore the register context (does not return).
         pop     xBX                     ; restore saved pointer.
-        BS3_ONLY_64BIT_STMT sub     rsp, 18h
-        BS3_ONLY_16BIT_STMT push    ss
+BONLY64 sub     rsp, 18h
+BONLY16 push    ss
         push    xBX
         BS3_CALL Bs3RegCtxRestore, 1
         jmp     Bs3Panic
@@ -341,10 +341,10 @@ TMPL_BEGIN_TEXT
         ;
 .restore_ctx:
         call    .convert_ptr_arg_to_cx_xSI
-        BS3_ONLY_64BIT_STMT sub     rsp, 10h
+BONLY64 sub     rsp, 10h
         mov     xDX, VAR_CALLER_DX
         push    xDX
-        BS3_ONLY_16BIT_STMT push    cx
+BONLY16 push    cx
         push    xSI
         BS3_CALL Bs3RegCtxRestore, 2
         jmp     Bs3Panic

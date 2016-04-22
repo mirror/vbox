@@ -271,7 +271,8 @@ BS3_SET_BITS_MACROS ARCH_BITS
 
 ;;
 ; For instruction that should only be emitted in 16-bit mode. Follows BS3_SET_BITS.
-%macro BS3_ONLY_16BIT_STMT 1+
+; BONLY16 normally goes in column 1.
+%macro BONLY16 1+
  %if __BITS__ == 16
         %1
  %endif
@@ -279,7 +280,8 @@ BS3_SET_BITS_MACROS ARCH_BITS
 
 ;;
 ; For instruction that should only be emitted in 32-bit mode. Follows BS3_SET_BITS.
-%macro BS3_ONLY_32BIT_STMT 1+
+; BONLY32 normally goes in column 1.
+%macro BONLY32 1+
  %if __BITS__ == 32
         %1
  %endif
@@ -287,7 +289,8 @@ BS3_SET_BITS_MACROS ARCH_BITS
 
 ;;
 ; For instruction that should only be emitted in 64-bit mode. Follows BS3_SET_BITS.
-%macro BS3_ONLY_64BIT_STMT 1+
+; BONLY64 normally goes in column 1.
+%macro BONLY64 1+
  %if __BITS__ == 64
         %1
  %endif
@@ -1404,13 +1407,16 @@ AssertCompileSize(BS3REGCTX, 0xd0)
 
 ;; @name BS3REG_CTX_F_XXX - BS3REGCTX::fbFlags masks.
 ; @{
-;; The context doesn't have valid values for the CRx fields.
-;  This is usually because it wasn't created with CPL=0.
-%define BS3REG_CTX_F_NO_CR              0x01
-;; The CPU is too old for CR4, so no CR4 in this context.
-%define BS3REG_CTX_F_NO_CR4             0x02
+;; The CR0 is MSW (only low 16-bit). */
+%define BS3REG_CTX_F_NO_CR0_IS_MSW      0x01
+;; No CR2 and CR3 values.  Not in CPL 0 or CPU too old for CR2 & CR3.
+%define BS3REG_CTX_F_NO_CR2_CR3         0x02
+;; No CR4 value. The CPU is too old for CR4.
+%define BS3REG_CTX_F_NO_CR4             0x04
+;; No TR and LDTR values.  Context gathered in real mode or v8086 mode.
+%define BS3REG_CTX_F_NO_TR_LDTR         0x08
 ;; The context doesn't have valid values for AMD64 GPR extensions.
-%define BS3REG_CTX_F_NO_AMD64           0x04
+%define BS3REG_CTX_F_NO_AMD64           0x10
 ;; @}
 
 ;;

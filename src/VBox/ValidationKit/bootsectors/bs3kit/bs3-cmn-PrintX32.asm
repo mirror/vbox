@@ -42,14 +42,14 @@ BS3_PROC_BEGIN_CMN Bs3PrintX32, BS3_PBC_HYBRID
         push    sDX
         push    sCX
         push    sBX
-        BS3_ONLY_16BIT_STMT push ds
+BONLY16 push    ds
 
         mov     eax, [xBP + xCB + cbCurRetAddr]
 
         ; Allocate a stack buffer and terminate it. ds:bx points ot the end.
         sub     xSP, 30h
-        BS3_ONLY_16BIT_STMT mov bx, ss
-        BS3_ONLY_16BIT_STMT mov ds, bx
+BONLY16 mov     bx, ss
+BONLY16 mov     ds, bx
         mov     xBX, xSP
         add     xBX, 2fh
         mov     byte [xBX], 0
@@ -69,13 +69,13 @@ BS3_PROC_BEGIN_CMN Bs3PrintX32, BS3_PBC_HYBRID
         jnz     .next
 
         ; Print the string.
-        BS3_ONLY_64BIT_STMT add     rsp, 18h
-        BS3_ONLY_16BIT_STMT push    ss
+BONLY64 add     rsp, 18h
+BONLY16 push    ss
         push    xBX
         BS3_CALL Bs3PrintStr, 1
 
         add     xSP, 30h + BS3_IF_16_32_64BIT(2, 0, 18h) + xCB
-        BS3_ONLY_16BIT_STMT pop ds
+BONLY16 pop     ds
         pop     sBX
         pop     sCX
         pop     sDX

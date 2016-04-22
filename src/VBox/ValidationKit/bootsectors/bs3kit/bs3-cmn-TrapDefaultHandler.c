@@ -28,6 +28,10 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "bs3kit-template-header.h"
+#if TMPL_BITS != 64
+# include <VBox/VMMDevTesting.h>
+# include <iprt/asm-amd64-x86.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -147,6 +151,32 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
             /* STI: Real mode behaviour. */
             else if (bOpCode == 0xfb)
                 pTrapFrame->Ctx.rflags.u16 |= X86_EFL_IF;
+            /* OUT: byte I/O to VMMDev. */
+            else if (   bOpCode == 0xee
+                     && ((unsigned)(pTrapFrame->Ctx.rdx.u16 - VMMDEV_TESTING_IOPORT_BASE) < (unsigned)VMMDEV_TESTING_IOPORT_COUNT))
+                ASMOutU8(pTrapFrame->Ctx.rdx.u16, pTrapFrame->Ctx.rax.u8);
+            /* OUT: [d]word I/O to VMMDev. */
+            else if (   bOpCode == 0xef
+                     && ((unsigned)(pTrapFrame->Ctx.rdx.u16 - VMMDEV_TESTING_IOPORT_BASE) < (unsigned)VMMDEV_TESTING_IOPORT_COUNT))
+            {
+                if (cBitsOpcode != 32)
+                    ASMOutU16(pTrapFrame->Ctx.rdx.u16, pTrapFrame->Ctx.rax.u16);
+                else
+                    ASMOutU32(pTrapFrame->Ctx.rdx.u16, pTrapFrame->Ctx.rax.u32);
+            }
+            /* IN: byte I/O to VMMDev. */
+            else if (   bOpCode == 0xec
+                     && ((unsigned)(pTrapFrame->Ctx.rdx.u16 - VMMDEV_TESTING_IOPORT_BASE) < (unsigned)VMMDEV_TESTING_IOPORT_COUNT))
+                pTrapFrame->Ctx.rax.u8 = ASMInU8(pTrapFrame->Ctx.rdx.u16);
+            /* IN: [d]word I/O to VMMDev. */
+            else if (   bOpCode == 0xed
+                     && ((unsigned)(pTrapFrame->Ctx.rdx.u16 - VMMDEV_TESTING_IOPORT_BASE) < (unsigned)VMMDEV_TESTING_IOPORT_COUNT))
+            {
+                if (cBitsOpcode != 32)
+                    pTrapFrame->Ctx.rax.u16 = ASMInU16(pTrapFrame->Ctx.rdx.u16);
+                else
+                    pTrapFrame->Ctx.rax.u32 = ASMInU32(pTrapFrame->Ctx.rdx.u32);
+            }
             /* Unexpected. */
             else
                 fHandled = false;

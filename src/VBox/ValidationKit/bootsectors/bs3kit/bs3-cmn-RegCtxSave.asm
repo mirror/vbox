@@ -43,7 +43,7 @@ TMPL_BEGIN_TEXT
 ; @uses         None.
 ;
 BS3_PROC_BEGIN_CMN Bs3RegCtxSave, BS3_PBC_HYBRID_SAFE
-        TMPL_ONLY_16BIT_STMT CPU 8086
+TONLY16 CPU 8086
         BS3_CALL_CONV_PROLOG 1
         push    xBP
         mov     xBP, xSP
@@ -51,8 +51,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave, BS3_PBC_HYBRID_SAFE
         push    xAX                     ; xBP - xCB*2: save incoming xAX
         push    xCX                     ; xBP - xCB*3: save incoming xCX
         push    xDI                     ; xBP - xCB*4: save incoming xDI
-        BS3_ONLY_16BIT_STMT push    es  ; xBP - xCB*5
-        BS3_ONLY_16BIT_STMT push    ds  ; xBP - xCB*6
+BONLY16 push    es                      ; xBP - xCB*5
+BONLY16 push    ds                      ; xBP - xCB*6
 
         ;
         ; Clear the whole structure first.
@@ -152,6 +152,14 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave, BS3_PBC_HYBRID_SAFE
         pushfd
         pop     dword [xDI + BS3REGCTX.rflags]
 %endif
+%if TMPL_BITS != 64
+        ; The VM flag is never on the stack, so derive it from the bMode we saved above.
+        test    byte [xDI + BS3REGCTX.bMode], BS3_MODE_CODE_V86
+        jz      .not_v8086
+        or      byte [xDI + BS3REGCTX.rflags + 2], X86_EFL_VM >> 16
+        mov     byte [xDI + BS3REGCTX.bCpl], 3
+.not_v8086:
+%endif
 
         ; 386 segment registers.
         mov     [xDI + BS3REGCTX.fs], fs
@@ -185,19 +193,27 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave, BS3_PBC_HYBRID_SAFE
         jmp     .common_80286
 
 .common_full_no_control_regs:
-        or      byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
+        or      byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR0_IS_MSW | BS3REG_CTX_F_NO_CR2_CR3 | BS3REG_CTX_F_NO_CR4
+        smsw    [xDI + BS3REGCTX.cr0]
 
         ; 80286 control registers.
 .common_80286:
-        TMPL_ONLY_16BIT_STMT CPU 286
+TONLY16 CPU 286
+%if TMPL_BITS != 64
         cmp     cl, BS3_MODE_RM
-        je      .common_ancient
+        je      .no_str_sldt
+        test    cl, BS3_MODE_CODE_V86
+        jnz     .no_str_sldt
+%endif
         str     [xDI + BS3REGCTX.tr]
         sldt    [xDI + BS3REGCTX.ldtr]
 
+.no_str_sldt:
+        or      byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_TR_LDTR
+
         ; Common stuff - stuff on the stack, 286 segment registers.
 .common_ancient:
-        TMPL_ONLY_16BIT_STMT CPU 8086
+TONLY16 CPU 8086
         mov     xAX, [xBP - xCB*1]
         mov     [xDI + BS3REGCTX.rflags], xAX
         mov     xAX, [xBP - xCB*2]
@@ -231,8 +247,8 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxSave, BS3_PBC_HYBRID_SAFE
         ; Return.
         ;
 .return:
-        BS3_ONLY_16BIT_STMT pop     ds
-        BS3_ONLY_16BIT_STMT pop     es
+BONLY16 pop     ds
+BONLY16 pop     es
         pop     xDI
         pop     xCX
         pop     xAX

@@ -40,7 +40,7 @@ BS3_EXTERN_CMN Bs3KbdWrite
 BS3_PROC_BEGIN_CMN Bs3A20Enable, BS3_PBC_HYBRID_0_ARGS
         push    xBP
         mov     xBP, xSP
-        BS3_ONLY_64BIT_STMT sub     rsp, 20h
+BONLY64 sub     rsp, 20h
 
         call    BS3_CMN_NM(Bs3A20EnableViaPortA)
 ;; @todo real 286 support
@@ -62,7 +62,7 @@ BS3_PROC_BEGIN_CMN Bs3A20EnableViaKbd, BS3_PBC_HYBRID_0_ARGS
         push    xAX
         pushf
         cli
-        BS3_ONLY_64BIT_STMT sub     rsp, 20h
+BONLY64 sub     rsp, 20h
 
         call    Bs3KbdWait
         push    0d0h                    ; KBD_CCMD_READ_OUTPORT
@@ -79,7 +79,7 @@ BS3_PROC_BEGIN_CMN Bs3A20EnableViaKbd, BS3_PBC_HYBRID_0_ARGS
         out     64h, al
         call    Bs3KbdWait
 
-        BS3_ONLY_64BIT_STMT add     rsp, 20h
+BONLY64 add     rsp, 20h
         popf
         pop     xAX
         pop     xBP

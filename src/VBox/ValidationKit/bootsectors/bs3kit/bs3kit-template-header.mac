@@ -437,36 +437,39 @@
  %define TMPL_WRT_SYSTEM16_OR_FLAT  wrt FLAT
 %endif
 
-;; @def TMPL_ONLY_16BIT_STMT
-; Version of BS3_ONLY_16BIT_STMT that follows the code template.
+;; @def TONLY16
+; Version of BONLY16 that follows the code template.
+; Like BONLY16 this normally goes in column 1.
 %if TMPL_BITS == 16
- %macro TMPL_ONLY_16BIT_STMT 1+
+ %macro TONLY16 1+
         %1
  %endmacro
 %else
- %macro TMPL_ONLY_16BIT_STMT 1+
+ %macro TONLY16 1+
  %endmacro
 %endif
 
-;; @def TMPL_ONLY_32BIT_STMT
-; Version of BS3_ONLY_32BIT_STMT that follows the code template.
+;; @def TONLY32
+; Version of BONLY32 that follows the code template.
+; Like BONLY32 this normally goes in column 1.
 %if TMPL_BITS == 32
- %macro TMPL_ONLY_32BIT_STMT 1+
+ %macro TONLY32 1+
         %1
  %endmacro
 %else
- %macro TMPL_ONLY_32BIT_STMT 1+
+ %macro TONLY32 1+
  %endmacro
 %endif
 
-;; @def TMPL_ONLY_64BIT_STMT
-; Version of BS3_ONLY_64BIT_STMT that follows the code template.
+;; @def TONLY64
+; Version of BONLY64 that follows the code template.
+; Like BONLY64 this normally goes in column 1.
 %if TMPL_BITS == 64
- %macro TMPL_ONLY_64BIT_STMT 1+
+ %macro TONLY64 1+
         %1
  %endmacro
 %else
- %macro TMPL_ONLY_64BIT_STMT 1+
+ %macro TONLY64 1+
  %endmacro
 %endif
 

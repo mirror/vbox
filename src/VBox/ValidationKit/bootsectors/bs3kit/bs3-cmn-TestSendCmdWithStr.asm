@@ -40,7 +40,7 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithStr, BS3_PBC_HYBRID
         push    xAX
         push    xDX
         push    xSI
-        BS3_ONLY_16BIT_STMT push ds
+BONLY16 push    ds
 
         cmp     byte [BS3_DATA16_WRT(g_fbBs3VMMDevTesting)], 0
         je      .no_vmmdev
@@ -69,7 +69,7 @@ BS3_PROC_BEGIN_CMN bs3TestSendCmdWithStr, BS3_PBC_HYBRID
         jnz     .next_char
 
 .no_vmmdev:
-        BS3_ONLY_16BIT_STMT pop ds
+BONLY16 pop     ds
         pop     xSI
         pop     xDX
         pop     xAX

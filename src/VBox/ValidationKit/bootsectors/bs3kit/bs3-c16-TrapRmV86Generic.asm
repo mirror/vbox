@@ -53,16 +53,18 @@ TMPL_BEGIN_TEXT
 BS3_PROC_BEGIN _Bs3TrapRmV86GenericEntries
 BS3_PROC_BEGIN Bs3TrapRmV86GenericEntries
 %macro Bs3TrapRmV86GenericEntryNoErr 1
-        push    byte 0                  ; 2 byte: fake error code
-        db      06ah, i                 ; 2 byte: push imm8 - note that this is a signextended value.
-        jmp     %1                      ; 3 byte
+        push    ax                      ; 1 byte:  Reserve space for fake error cd.     (BP(+2) + 4)
+        push    ax                      ; 1 byte:  Save AX                              (BP(+2) + 2)
+        mov     ax, i | 00000h          ; 2 bytes: AL = trap/interrupt number; AH=indicate no error code
+        jmp     %1                      ; 3 bytes: Jump to handler code
         ALIGNCODE(8)
 %assign i i+1
 %endmacro
 
 %macro Bs3TrapRmV86GenericEntryErrCd 1
-        db      06ah, i                 ; 2 byte: push imm8 - note that this is a signextended value.
-        jmp     %1                      ; 3 byte
+        push    ax                      ; 1 byte:  Save AX                              (BP(+2) + 2)
+        mov     ax, i | 0ff00h          ; 2 bytes: AL = trap/interrupt number; AH=indicate have error code.
+        jmp     %1                      ; 3 bytes: Jump to handler code
         ALIGNCODE(8)
 %assign i i+1
 %endmacro
@@ -110,8 +112,6 @@ AssertCompile(Bs3TrapRmV86GenericEntries_EndProc - Bs3TrapRmV86GenericEntries ==
 ;;
 ; Trap or interrupt with error code, faked if necessary.
 ;
-; Note! This code is going to "misbehave" if the high word of ESP is not cleared.
-;
 BS3_PROC_BEGIN _bs3TrapRmV86GenericTrapOrInt
 BS3_PROC_BEGIN bs3TrapRmV86GenericTrapOrInt
 CPU 386
@@ -136,12 +136,11 @@ CPU 386
         jnz     .more_zeroed_space
         movzx   ebx, sp
 
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], eax
-        mov     edx, [bp - 12h]         ; This isn't quite right for wrap arounds, but close enough for now
+
+        mov     edx, [bp - 12h]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], edx     ; high bits
         mov     [ss:bx + BS3TRAPFRAME.uHandlerRsp], edx             ; high bits
         mov     dx, [bp - 0eh]
-        ;mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], dx - share this here
         mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], dx
         mov     edx, [bp - 0ch]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], edx
@@ -152,13 +151,18 @@ CPU 386
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbx], edx
         mov     edx, [bp]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], edx
+        mov     edx, eax                                            ; high bits
+        mov     dx, [bp + 4]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], edx
 
-        mov     dl, [bp + 4]
-        mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
+        mov     [ss:bx + BS3TRAPFRAME.bXcpt], al
 
-        mov     dx, [bp + 6]
+        test    ah, 0ffh
+        jz      .no_error_code
 ;; @todo Do voodoo checks for 'int xx' or misguided hardware interrupts.
+        mov     dx, [bp + 6]
         mov     [ss:bx + BS3TRAPFRAME.uErrCd], dx
+.no_error_code:
 
         add     bp, 6                   ; adjust so it points to the word before the iret frame.
         xor     dx, dx
@@ -172,13 +176,13 @@ BS3_PROC_BEGIN bs3TrapRmV86GenericTrapErrCode8086
 CPU 8086
         push    bp
         mov     bp, sp
-        push    bx
-        pushf
-        push    ax
+        push    bx                      ; BP - 2
+        pushf                           ; BP - 4
         cld
 
         ; Reserve space for the the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
+        push    ax
         xor     ax, ax
 .more_zeroed_space:
         push    ax
@@ -188,9 +192,8 @@ CPU 8086
         dec     bx
         jnz     .more_zeroed_space
         mov     bx, sp
+        pop     ax
 
-        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], ax
-        ;mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ss], ss - share this here
         mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
         mov     dx, [bp - 4]
@@ -200,12 +203,17 @@ CPU 8086
         mov     dx, [bp]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rbp], dx
 
-        mov     dl, [bp + 2]
-        mov     [ss:bx + BS3TRAPFRAME.bXcpt], dl
+        mov     dx, [bp + 2]
+        mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], dx
 
-        mov     dx, [bp + 4]
+        mov     [ss:bx + BS3TRAPFRAME.bXcpt], al
+
+        test    ah, 0ffh
+        jz      .no_error_code
 ;; @todo Do voodoo checks for 'int xx' or misguided hardware interrupts.
+        mov     dx, [bp + 4]
         mov     [ss:bx + BS3TRAPFRAME.uErrCd], dx
+.no_error_code:
 
         add     bp, 4                   ; adjust so it points to the word before the iret frame.
         mov     dl, 1
@@ -216,7 +224,7 @@ BS3_PROC_END   bs3TrapRmV86GenericTrapErrCode8086
 ;;
 ; Common context saving code and dispatching.
 ;
-; @param    bx      Pointer to the trap frame, zero filled.  The following members
+; @param    ss:bx   Pointer to the trap frame, zero filled.  The following members
 ;                   have been filled in by the previous code:
 ;                       - bXcpt
 ;                       - uErrCd
@@ -294,16 +302,24 @@ CPU 8086
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rsp], cx
         mov     byte [ss:bx + BS3TRAPFRAME.cbIretFrame], 3*2
 
+        ; The VM flag and CPL.
+        test    al, BS3_MODE_CODE_V86
+        jz      .dont_set_vm
+        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rflags + 2], X86_EFL_VM >> 16
+        mov     byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.bCpl], 3
+.dont_set_vm:
+
+
         ;
         ; Control registers.
         ;
+        ; Since we're in real or v8086 here, we cannot save TR and LDTR.
+        ; But get MSW (CR0) first since that's always accessible and we
+        ; need it even on a 386 to check whether we're in v8086 mode or not.
+        ;
         cmp     byte [BS3_DATA16_WRT(g_uBs3CpuDetected)], BS3CPU_80286
-        jb      .skip_control_regsiters_because_80186_or_older
-
-        ; The 286 ones.
+        jb      .skip_control_registers_because_80186_or_older
 CPU 286
-        str     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.tr]
-        sldt    [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.ldtr]
         smsw    ax
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0], ax
 
@@ -332,11 +348,12 @@ CPU 386
         jmp     .set_flags
 
 CPU 8086
-.skip_control_regsiters_because_80186_or_older:
+.skip_control_registers_because_80186_or_older:
 .skip_crX_because_v8086:
-        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
+        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], \
+                BS3REG_CTX_F_NO_CR0_IS_MSW | BS3REG_CTX_F_NO_CR2_CR3 | BS3REG_CTX_F_NO_CR4
 .set_flags:                             ; The double fault code joins us here.
-        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64
+        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_AMD64 | BS3REG_CTX_F_NO_TR_LDTR
 
         ;
         ; Dispatch it to C code.

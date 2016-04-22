@@ -24,6 +24,14 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelFlatDataToProtFar16,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelFlatDataToRealMode,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelProtFar16DataToFlat,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelProtFar16DataToRealMode,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelRealModeDataToFlat,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelRealModeDataToProtFar16,4)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3SelFar32ToFlat32NoClobber,6)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,Bs3RegCtxSaveEx,8)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3TestCheckRegCtxEx)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3StrCpy)
 $(call BS3KIT_FN_GEN_CMN_NEARSTUB,bs3kit-common-16,Bs3PagingInitRootForLM)

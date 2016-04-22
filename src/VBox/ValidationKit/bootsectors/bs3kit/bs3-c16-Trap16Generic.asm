@@ -431,8 +431,8 @@ CPU 386
         jmp     .set_flags
 
 .skip_crX_because_cpl_not_0:
-        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
-        jmp     .set_flags
+        or      byte [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], \
+                BS3REG_CTX_F_NO_CR2_CR3 | BS3REG_CTX_F_NO_CR4 | BS3REG_CTX_F_NO_CR0_IS_MSW
 
 CPU 286
 .save_286_control_registers:

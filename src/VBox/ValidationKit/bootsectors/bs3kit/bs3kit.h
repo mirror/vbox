@@ -910,9 +910,10 @@ extern X86DESC BS3_FAR_DATA Bs3Gdte_SYSTEM16;
 extern X86DESC BS3_FAR_DATA Bs3GdteFreePart3[223];
 /** The BS3DATA16/BS3KIT_GRPNM_DATA16 GDT entry. */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_DATA16;
-/** Free GDTes, part \#4. */
 
+/** Free GDTes, part \#4. */
 extern X86DESC BS3_FAR_DATA Bs3GdteFreePart4[211];
+
 extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage08; /**< GDT entry 8 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_08 */
 extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage07; /**< GDT entry 7 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_07 */
 extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage06; /**< GDT entry 6 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_06 */
@@ -1622,6 +1623,24 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void B
  */
 BS3_CMN_PROTO_NOSB(void, Bs3MemZero,(void BS3_FAR *pvDst, size_t cbDst));
 
+/**
+ * CRT style memset.
+ *
+ * @param   pvDst           The buffer to be fill.
+ * @param   bFiller         The filler byte.
+ * @param   cbDst           The number of bytes to fill.
+ */
+BS3_CMN_PROTO_NOSB(void, Bs3MemSet,(void BS3_FAR *pvDst, uint8_t bFiller, size_t cbDst));
+
+/**
+ * CRT style memchr.
+ *
+ * @param   pvHaystack      The memory to scan for @a bNeedle.
+ * @param   bNeedle         The byte to search for.
+ * @param   cbHaystack      The amount of memory to search.
+ */
+BS3_CMN_PROTO_NOSB(void BS3_FAR *, Bs3MemChr,(void const BS3_FAR *pvHaystack, uint8_t bNeedle, size_t cbHaystack));
+
 
 BS3_CMN_PROTO_STUB(void, Bs3UInt64Div,(RTUINT64U uDividend, RTUINT64U uDivisor, RTUINT64U BS3_FAR *paQuotientReminder));
 BS3_CMN_PROTO_STUB(void, Bs3UInt32Div,(RTUINT32U uDividend, RTUINT32U uDivisor, RTUINT32U BS3_FAR *paQuotientReminder));
@@ -1646,10 +1665,23 @@ BS3_CMN_PROTO_STUB(uint32_t, Bs3SelProtFar32ToFlat32,(uint32_t off, uint16_t uSe
 BS3_CMN_PROTO_STUB(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel));
 
 /**
+ * Wrapper around Bs3SelFar32ToFlat32 that makes it easier to use in tight
+ * assembly spots.
+ *
+ * @returns 32-bit flat address.
+ * @param   off             The segment offset.
+ * @param   uSel            The current mode segment selector.
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(6, uint32_t, Bs3SelFar32ToFlat32NoClobber,(uint32_t off, uint16_t uSel));
+
+/**
  * Converts a real mode code segment to a protected mode code segment selector.
  *
  * @returns protected mode segment selector.
  * @param   uRealSeg        Real mode code segment.
+ * @remarks All register are preserved, except return and parameter.
  */
 BS3_CMN_PROTO_NOSB(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSeg));
 
@@ -1658,14 +1690,16 @@ BS3_CMN_PROTO_NOSB(uint16_t, Bs3SelRealModeCodeToProtMode,(uint16_t uRealSeg));
  *
  * @returns protected mode segment selector.
  * @param   uProtSel        Real mode code segment.
+ * @remarks All register are preserved, except return and parameter.
  */
 BS3_CMN_PROTO_NOSB(uint16_t, Bs3SelProtModeCodeToRealMode,(uint16_t uProtSel));
 
 /**
  * Converts a flat code address to a real mode segment and offset.
  *
- * @returns Far real mode address (high 16-bit is segment, low is offset)
+ * @returns Far real mode address (high 16-bit is segment, low is offset).
  * @param   uFlatAddr       Flat code address.
+ * @remarks All register are preserved, except return and parameter.
  */
 BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr));
 
@@ -1675,8 +1709,74 @@ BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr));
  * @returns Far 16-bit protected mode address (high 16-bit is segment selector,
  *          low is segment offset).
  * @param   uFlatAddr       Flat code address.
+ * @remarks All register are preserved, except return and parameter.
  */
 BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToProtFar16,(uint32_t uFlatAddr));
+
+/**
+ * Converts a flat data address to a real mode segment and offset.
+ *
+ * @returns Far real mode address (high 16-bit is segment, low is offset)
+ * @param   uFlatAddr       Flat code address.
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelFlatDataToRealMode,(uint32_t uFlatAddr));
+
+/**
+ * Converts a flat data address to a real mode segment and offset.
+ *
+ * @returns Far 16-bit protected mode address (high 16-bit is segment selector,
+ *          low is segment offset).
+ * @param   uFlatAddr       Flat code address.
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelFlatDataToProtFar16,(uint32_t uFlatAddr));
+
+/**
+ * Converts a far 16:16 data address to a real mode segment and offset.
+ *
+ * @returns Far real mode address (high 16-bit is segment, low is offset)
+ * @param   uFar1616        Far 16-bit protected mode address (high 16-bit is
+ *                          segment selector, low is segment offset).
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelProtFar16DataToRealMode,(uint32_t uFar1616));
+
+/**
+ * Converts a far 16:16 real mode address to a 16-bit protected mode address.
+ *
+ * @returns Far real mode address (high 16-bit is segment, low is offset)
+ * @param   uFar1616        Far real mode address (high 16-bit is segment, low
+ *                          is offset).
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeDataToProtFar16,(uint32_t uFar1616));
+
+/**
+ * Converts a far 16:16 data address to a flat 32-bit address.
+ *
+ * @returns 32-bit flat address.
+ * @param   uFar1616        Far 16-bit protected mode address (high 16-bit is
+ *                          segment selector, low is segment offset).
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelProtFar16DataToFlat,(uint32_t uFar1616));
+
+/**
+ * Converts a far 16:16 real mode address to a flat address.
+ *
+ * @returns 32-bit flat address.
+ * @param   uFar1616        Far real mode address (high 16-bit is segment, low
+ *                          is offset).
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeDataToFlat,(uint32_t uFar1616));
 
 /**
  * Gets a flat address from a working poitner.
@@ -2093,13 +2193,16 @@ typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
 
 /** @name BS3REG_CTX_F_XXX - BS3REGCTX::fbFlags masks.
  * @{ */
-/** The context doesn't have valid values for the CRx fields.
- * This is usually because it wasn't created with CPL=0. */
-#define BS3REG_CTX_F_NO_CR              UINT8_C(0x01)
-/** The CPU is too old for CR4, so no CR4 in this context. */
-#define BS3REG_CTX_F_NO_CR4             UINT8_C(0x02)
+/** The CR0 is MSW (only low 16-bit). */
+#define BS3REG_CTX_F_NO_CR0_IS_MSW      UINT8_C(0x01)
+/** No CR2 and CR3 values.  Not in CPL 0 or CPU too old for CR2 & CR3. */
+#define BS3REG_CTX_F_NO_CR2_CR3         UINT8_C(0x02)
+/** No CR4 value. The CPU is too old for CR4. */
+#define BS3REG_CTX_F_NO_CR4             UINT8_C(0x04)
+/** No TR and LDTR values.  Context gathered in real mode or v8086 mode. */
+#define BS3REG_CTX_F_NO_TR_LDTR         UINT8_C(0x08)
 /** The context doesn't have valid values for AMD64 GPR extensions. */
-#define BS3REG_CTX_F_NO_AMD64           UINT8_C(0x04)
+#define BS3REG_CTX_F_NO_AMD64           UINT8_C(0x10)
 /** @} */
 
 /**
@@ -2108,6 +2211,23 @@ typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
  * @param   pRegCtx     Where to store the register context.
  */
 BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx));
+
+/**
+ * Switch to the specified CPU bitcount, reserve additional stack and save the
+ * CPU context.
+ *
+ * This is for writing more flexible test drivers that can test more than the
+ * CPU bitcount (16-bit, 32-bit, 64-bit, and virtual 8086) of the driver itself.
+ * For instance a 32-bit driver can do V86 and 16-bit testing, thus saving more
+ * precious and problematic 16-bit code.
+ *
+ * @param   pRegCtx         Where to store the register context.
+ * @param   bBitMode        Bit mode to switch to, BS3_MODE_CODE_XXX.  Only
+ *                          BS3_MODE_CODE_MASK is used, other bits are ignored
+ *                          to make it possible to pass a full mode value.
+ * @param   cbExtraStack    Number of bytes of additional stack to allocate.
+ */
+BS3_CMN_PROTO_FARSTUB(8, void, Bs3RegCtxSaveEx,(PCBS3REGCTX pRegCtx, uint8_t bBitMode, uint16_t cbExtraStack));
 
 /**
  * Transforms a register context to a different ring.
@@ -2312,7 +2432,7 @@ typedef BS3_DECL_CALLBACK(void) FNBS3TRAPHANDLER(PBS3TRAPFRAME pTrapFrame);
 typedef FNBS3TRAPHANDLER *PFNBS3TRAPHANDLER;
 
 /**
- * Sets a trap handler (C/C++/assembly) for the current bitness.
+ * Sets a trap handler (C/C++/assembly) for the current bitcount.
  *
  * When using a 32-bit IDT, only #Bs3TrapSetHandler_c32 will have any effect.
  * Likewise, when using a 16-bit IDT, only Bs3TrapSetHandler_c16 will make any

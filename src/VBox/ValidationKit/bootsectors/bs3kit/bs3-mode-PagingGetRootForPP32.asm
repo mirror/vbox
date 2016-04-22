@@ -70,7 +70,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32, BS3_PBC_NEAR ; Internal function, n
 .init_root:
         push    xBP
         mov     xBP, xSP
-        BS3_ONLY_16BIT_STMT push    es
+BONLY16 push    es
         push    sDX
         push    sCX
         push    sBX
@@ -102,9 +102,9 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32, BS3_PBC_NEAR ; Internal function, n
         ;
         ; Not a problematic addressing mode.
         ;
-        BS3_ONLY_64BIT_STMT sub     rsp, 20h
+BONLY64 sub     rsp, 20h
         BS3_CALL Bs3PagingInitRootForPP, 0
-        BS3_ONLY_64BIT_STMT add     rsp, 20h
+BONLY64 add     rsp, 20h
 %endif
 
         ;
@@ -121,7 +121,7 @@ BS3_PROC_BEGIN_MODE Bs3PagingGetRootForPP32, BS3_PBC_NEAR ; Internal function, n
         pop     sBX
         pop     sCX
         pop     sDX
-        BS3_ONLY_16BIT_STMT pop     es
+BONLY16 pop     es
         leave
 %ifdef BS3_STRICT
         jmp     .return

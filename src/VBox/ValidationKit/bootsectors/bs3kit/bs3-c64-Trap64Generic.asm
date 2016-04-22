@@ -295,7 +295,9 @@ BS3_PROC_BEGIN Bs3Trap64GenericCommon
         jmp     .dispatch_to_handler
 
 .skip_crX_because_cpl_not_0:
-        or      byte [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR
+        or      byte [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.fbFlags], \
+                BS3REG_CTX_F_NO_CR0_IS_MSW | BS3REG_CTX_F_NO_CR2_CR3 | BS3REG_CTX_F_NO_CR4
+        smsw    [rdi + BS3TRAPFRAME.Ctx + BS3REGCTX.cr0]
 
         ;
         ; Dispatch it to C code.

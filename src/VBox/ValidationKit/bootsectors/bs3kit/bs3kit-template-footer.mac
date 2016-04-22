@@ -123,7 +123,7 @@
 %undef sDI
 %undef sSI
 
-%unmacro TMPL_ONLY_16BIT_STMT 1+
-%unmacro TMPL_ONLY_32BIT_STMT 1+
-%unmacro TMPL_ONLY_64BIT_STMT 1+
+%unmacro TONLY16 1+
+%unmacro TONLY32 1+
+%unmacro TONLY64 1+
 
