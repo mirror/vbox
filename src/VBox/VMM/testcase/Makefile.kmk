@@ -126,6 +126,7 @@ OTHER_CLEAN += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.h \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac.o \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac.lst \
@@ -572,6 +573,7 @@ else
 endif
 
 # 1b. make an elf/macho object containing the offsets.
+includedep $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm.asm \
 		$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
@@ -588,6 +590,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMSwitcher.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
+		$$(if $$(eq $$(tstAsmStructsAsmDep_DEFS),$$(MY_ASA_ASM_STUFF)),,FORCE) \
 		| $$(dir $$@)
 	$(call MSG_COMPILE,tstAsmStructsasm,$<,$@,AS)
 ifndef DONT_USE_YASM
@@ -595,6 +598,8 @@ ifndef DONT_USE_YASM
 else
 	$(QUIET)$(TOOL_NASM_AS) $(MY_ASA_ASM_STUFF) -DDO_GLOBALS -o $@ $<
 endif
+	%$(QUIET2)$(RM) -f -- $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep
+	%$(QUIET2)$(APPEND) '$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep' 'tstAsmStructsAsmDep_DEFS=$(MY_ASA_ASM_STUFF)'
 
 # 2. use nm and sed to transform this into the header we want.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o
