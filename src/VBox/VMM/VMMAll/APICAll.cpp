@@ -372,7 +372,7 @@ const char *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode)
  * @returns The APIC mode.
  * @param   uApicBaseMsr        The APIC Base MSR value.
  */
-static APICMODE apicGetMode(uint64_t uApicBaseMsr)
+APICMODE apicGetMode(uint64_t uApicBaseMsr)
 {
     uint32_t const uMode   = MSR_APICBASE_GET_MODE(uApicBaseMsr);
     APICMODE const enmMode = (APICMODE)uMode;
@@ -1969,18 +1969,17 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
 VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
 {
     Assert(pVCpu);
+    NOREF(pDevIns);
+
+#ifdef IN_RING3
     PAPICCPU pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     PAPIC    pApic      = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     APICMODE enmOldMode = apicGetMode(pApicCpu->uApicBaseMsr);
     APICMODE enmNewMode = apicGetMode(u64BaseMsr);
     uint64_t uBaseMsr   = pApicCpu->uApicBaseMsr;
 
-    /** @todo probably go back to ring-3 for all cases regardless of
-     *        fRZEnabled. Writing this MSR is not something guests
-     *        typically do often, and therefore is not performance
-     *        critical. We'll have better diagnostics in ring-3. */
-    if (!pApic->fRZEnabled)
-        return VINF_CPUM_R3_MSR_WRITE;
+    Log4(("APIC%u: ApicSetBaseMsr: u64BaseMsr=%#RX64 enmNewMode=%s enmOldMode=%s\n", pVCpu->idCpu, u64BaseMsr,
+          apicGetModeName(enmNewMode), apicGetModeName(enmOldMode)));
 
     /*
      * We do not support re-mapping the APIC base address because:
@@ -1992,13 +1991,9 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
     /** @todo Handle per-VCPU APIC base relocation. */
     if (MSR_APICBASE_GET_PHYSADDR(uBaseMsr) != XAPIC_APICBASE_PHYSADDR)
     {
-#ifdef IN_RING3
         LogRelMax(5, ("APIC%u: Attempt to relocate base to %#RGp, unsupported -> #GP(0)\n", pVCpu->idCpu,
                       MSR_APICBASE_GET_PHYSADDR(uBaseMsr)));
         return VERR_CPUM_RAISE_GP_0;
-#else
-        return VINF_CPUM_R3_MSR_WRITE;
-#endif
     }
 
     /*
@@ -2013,19 +2008,15 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
         {
             case APICMODE_DISABLED:
             {
-#ifdef IN_RING3
                 /*
                  * The APIC state needs to be reset (especially the APIC ID as x2APIC APIC ID bit layout
                  * is different). We can start with a clean slate identical to the state after a power-up/reset.
                  *
                  * See Intel spec. 10.4.3 "Enabling or Disabling the Local APIC".
                  */
-                APICR3Reset(pVCpu);
+                APICR3Reset(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT);
                 Log4(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
-#else
-                return VINF_CPUM_R3_MSR_WRITE;
-#endif
                 break;
             }
 
@@ -2043,7 +2034,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
 
             case APICMODE_X2APIC:
             {
-                uBaseMsr |= MSR_APICBASE_X2APIC_ENABLE_BIT;
+                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
 
                 /*
                  * The APIC ID needs updating when entering x2APIC mode.
@@ -2077,6 +2068,9 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
 
     ASMAtomicWriteU64(&pApicCpu->uApicBaseMsr, uBaseMsr);
     return VINF_SUCCESS;
+#else  /* !IN_RING3 */
+    return VINF_CPUM_R3_MSR_WRITE;
+#endif /* IN_RING3 */
 }
 
 
@@ -2194,6 +2188,12 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
 
             switch (enmDeliveryMode)
             {
+                case XAPICDELIVERYMODE_INIT:
+                {
+                    /** @todo won't work in R0/RC because callers don't care about rcRZ. */
+                    AssertMsgFailed(("INIT through LINT0/LINT1 is not yet supported\n"));
+                    /* fallthru */
+                }
                 case XAPICDELIVERYMODE_FIXED:
                 {
                     /* Level-sensitive interrupts are not supported for LINT1. See Intel spec. 10.5.1 "Local Vector Table". */
@@ -2207,7 +2207,6 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
                 }
                 case XAPICDELIVERYMODE_SMI:
                 case XAPICDELIVERYMODE_NMI:
-                case XAPICDELIVERYMODE_INIT:    /** @todo won't work in R0/RC because callers don't care about rcRZ. */
                 {
                     VMCPUSET DestCpuSet;
                     VMCPUSET_EMPTY(&DestCpuSet);
@@ -2220,7 +2219,8 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
 
                 case XAPICDELIVERYMODE_EXTINT:
                 {
-                    Log4(("APIC%u: APICLocalInterrupt: External interrupt. u8Pin=%u u8Level=%u\n", pVCpu->idCpu, u8Pin, u8Level));
+                    Log4(("APIC%u: APICLocalInterrupt: %s ExtINT through LINT%u\n", pVCpu->idCpu,
+                          u8Level ? "Raising" : "Lowering", u8Pin));
                     if (u8Level)
                         APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
                     else
@@ -2243,13 +2243,23 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     }
     else
     {
-        /* The APIC is disabled, pass it through the CPU. */
-        LogFlow(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, passing interrupt to CPU. u8Pin=%u u8Level=%u\n",
-                 pVCpu->idCpu, u8Pin, u8Level));
-        if (u8Level)
-            APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+        /* The APIC is hardware disabled. The CPU behaves as though there is no on-chip APIC. */
+        if (u8Pin == 0)
+        {
+            /* LINT0 behaves as an external interrupt pin. */
+            Log4(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, %s ExtINT through LINT0\n", pVCpu->idCpu,
+                  u8Level ? "raising" : "lowering"));
+            if (u8Level)
+                APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+            else
+                APICClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+        }
         else
-            APICClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+        {
+            /* LINT1 behaves as NMI. */
+            Log4(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, raising NMI through LINT1\n", pVCpu->idCpu));
+            APICSetInterruptFF(pVCpu, PDMAPICIRQ_NMI);
+        }
     }
 
     return rcStrict;

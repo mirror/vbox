@@ -925,7 +925,7 @@ RT_C_DECLS_BEGIN
  * @{
  */
 VMMR3_INT_DECL(void)        APICR3InitIpi(PVMCPU pVCpu);
-VMMR3_INT_DECL(void)        APICR3Reset(PVMCPU pVCpu);
+VMMR3_INT_DECL(void)        APICR3Reset(PVMCPU pVCpu, bool fResetApicBaseMsr);
 /** @} */
 #endif /* IN_RING3 */
 

@@ -252,9 +252,10 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
  * Initializes per-VCPU APIC to the state following a power-up or hardware
  * reset.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fResetApicBaseMsr   Whether to reset the APIC base MSR.
  */
-VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu, bool fResetApicBaseMsr)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
@@ -290,7 +291,8 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu)
 
     /** @todo It isn't clear in the spec. where exactly the default base address
      *        is (re)initialized, atm we do it here in Reset. */
-    apicR3ResetBaseMsr(pVCpu);
+    if (fResetApicBaseMsr)
+        apicR3ResetBaseMsr(pVCpu);
 
     /*
      * Initialize the APIC ID register to xAPIC format.
@@ -372,10 +374,15 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     PCAPICCPU    pApicCpu    = VMCPU_TO_APICCPU(pVCpu);
     PCXAPICPAGE  pXApicPage  = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
+
+    uint64_t const uBaseMsr  = pApicCpu->uApicBaseMsr;
+    APICMODE const enmMode   = apicGetMode(uBaseMsr);
     bool const   fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu);
 
-    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC at %#RGp\n", pVCpu->idCpu, MSR_APICBASE_GET_PHYSADDR(pApicCpu->uApicBaseMsr));
-    pHlp->pfnPrintf(pHlp, "  Mode                          = %s\n", fX2ApicMode ? "x2Apic" : "xApic");
+    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC:\n", pVCpu->idCpu);
+    pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64)\n", uBaseMsr,
+                    MSR_APICBASE_GET_PHYSADDR(uBaseMsr));
+    pHlp->pfnPrintf(pHlp, "  Mode                          = %#x (%s)\n", enmMode, apicGetModeName(enmMode));
     if (fX2ApicMode)
     {
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pX2ApicPage->id.u32ApicId,
@@ -385,7 +392,7 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pXApicPage->id.u8ApicId, pXApicPage->id.u8ApicId);
     pHlp->pfnPrintf(pHlp, "  Version                       = %#x\n",      pXApicPage->version.all.u32Version);
     pHlp->pfnPrintf(pHlp, "    APIC Version                = %#x\n",      pXApicPage->version.u.u8Version);
-    pHlp->pfnPrintf(pHlp, "    Max LVT entries             = %u\n",       pXApicPage->version.u.u8MaxLvtEntry);
+    pHlp->pfnPrintf(pHlp, "    Max LVT entry index (0..N)  = %u\n",       pXApicPage->version.u.u8MaxLvtEntry);
     pHlp->pfnPrintf(pHlp, "    EOI Broadcast supression    = %RTbool\n",  pXApicPage->version.u.fEoiBroadcastSupression);
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  APR                           = %u (%#x)\n", pXApicPage->apr.u8Apr, pXApicPage->apr.u8Apr);
@@ -928,7 +935,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         if (TMTimerIsActive(pApicCpu->pTimerR3))
             TMTimerStop(pApicCpu->pTimerR3);
 
-        APICR3Reset(pVCpuDest);
+        APICR3Reset(pVCpuDest, true /* fResetApicBaseMsr */);
 
         /* Clear the interrupt pending force flag. */
         APICClearInterruptFF(pVCpuDest, PDMAPICIRQ_HARDWARE);
@@ -1069,7 +1076,7 @@ static int apicR3InitState(PVM pVM)
         /* Map the PIB into GC.  */
         if (fNeedsGCMapping)
         {
-            pApic->pvApicPibRC == NIL_RTRCPTR;
+            pApic->pvApicPibRC = NIL_RTRCPTR;
             int rc = MMR3HyperMapHCPhys(pVM, (void *)pApic->pvApicPibR3, NIL_RTR0PTR, pApic->HCPhysApicPib, pApic->cbApicPib,
                                         "APIC PIB", (PRTGCPTR)&pApic->pvApicPibRC);
             if (RT_FAILURE(rc))
@@ -1126,7 +1133,7 @@ static int apicR3InitState(PVM pVM)
                 }
 
                 /* Associate the per-VCPU PIB pointers to the per-VM PIB mapping. */
-                size_t const offApicPib    = idCpu * sizeof(APICPIB);
+                uint32_t const offApicPib  = idCpu * sizeof(APICPIB);
                 pApicCpu->pvApicPibR0      = (RTR0PTR)((RTR0UINTPTR)pApic->pvApicPibR0 + offApicPib);
                 pApicCpu->pvApicPibR3      = (RTR3PTR)((RTR3UINTPTR)pApic->pvApicPibR3 + offApicPib);
                 if (fNeedsGCMapping)
@@ -1134,7 +1141,7 @@ static int apicR3InitState(PVM pVM)
 
                 /* Initialize the virtual-APIC state. */
                 memset((void *)pApicCpu->pvApicPageR3, 0, pApicCpu->cbApicPage);
-                APICR3Reset(pVCpu);
+                APICR3Reset(pVCpu, true /* fResetApicBaseMsr */);
 
 #ifdef DEBUG_ramshankar
                 Assert(pApicCpu->pvApicPibR3 != NIL_RTR3PTR);
