@@ -285,6 +285,7 @@ CPU 8086
         jcxz   .return16_all_same
         les     di, [bp + 04h]          ; pv (far)
         mov     al, [bp + 0ah]          ; u8
+        mov     ah, al
 
 .is_all_zero_joining:
         cld
