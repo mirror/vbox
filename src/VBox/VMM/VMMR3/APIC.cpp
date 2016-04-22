@@ -529,7 +529,7 @@ static void apicR3DbgInfoLvt(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "\n");
 
     uint32_t const uLvtError = pXApicPage->lvt_error.all.u32LvtError;
-    pHlp->pfnPrintf(pHlp, "LVT Perf           = %#RX32\n",   uLvtError);
+    pHlp->pfnPrintf(pHlp, "LVT Error          = %#RX32\n",   uLvtError);
     pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_error.u.u8Vector, pXApicPage->lvt_error.u.u8Vector);
     pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_error.u.u1DeliveryStatus);
     pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtError));
@@ -881,7 +881,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     if (!XAPIC_LVT_IS_MASKED(uLvtTimer))
     {
         uint8_t uVector = XAPIC_LVT_GET_VECTOR(uLvtTimer);
-        Log4(("APIC%u: apicR3TimerCallback: Raising timer interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
+        Log2(("APIC%u: apicR3TimerCallback: Raising timer interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
         APICPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
     }
 
@@ -895,7 +895,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
             pXApicPage->timer_ccr.u32CurrentCount = uInitialCount;
             if (uInitialCount)
             {
-                Log4(("APIC%u: apicR3TimerCallback: Re-arming timer. uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
+                Log2(("APIC%u: apicR3TimerCallback: Re-arming timer. uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
                 APICStartTimer(pApicCpu, uInitialCount);
             }
             break;
