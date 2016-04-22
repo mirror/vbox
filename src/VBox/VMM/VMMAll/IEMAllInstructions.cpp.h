@@ -1013,6 +1013,10 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
         IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEM_MC_FETCH_CR0_U16(u16Tmp);
+#if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
+        if (pIemCpu->uTargetCpu == IEMTARGETCPU_286)
+            IEM_MC_OR_LOCAL_U16(u16Tmp, 0xfff0); /* Reserved bits observed all set on real hw. */
+#endif
         IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Tmp);
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
