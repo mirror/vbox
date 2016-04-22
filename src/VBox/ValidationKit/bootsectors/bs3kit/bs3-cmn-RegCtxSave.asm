@@ -102,8 +102,9 @@ BONLY16 push    ds                      ; xBP - xCB*6
         cmp     cl, BS3CPU_80286
         jb      .common_ancient
         CPU 286
-
         smsw    [xDI + BS3REGCTX.cr0]
+
+        mov     cl, [xDI + BS3REGCTX.bMode] ; assumed by jump destination
         jmp     .common_80286
 
         CPU 386
@@ -207,6 +208,7 @@ TONLY16 CPU 286
 %endif
         str     [xDI + BS3REGCTX.tr]
         sldt    [xDI + BS3REGCTX.ldtr]
+        jmp     .common_ancient
 
 .no_str_sldt:
         or      byte [xDI + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_TR_LDTR

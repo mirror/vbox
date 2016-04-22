@@ -178,11 +178,11 @@ CPU 8086
         mov     bp, sp
         push    bx                      ; BP - 2
         pushf                           ; BP - 4
+        push    ax                      ; BP - 6
         cld
 
         ; Reserve space for the the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
-        push    ax
         xor     ax, ax
 .more_zeroed_space:
         push    ax
@@ -192,7 +192,6 @@ CPU 8086
         dec     bx
         jnz     .more_zeroed_space
         mov     bx, sp
-        pop     ax
 
         mov     [ss:bx + BS3TRAPFRAME.uHandlerSs], ss
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rdx], dx
@@ -206,6 +205,7 @@ CPU 8086
         mov     dx, [bp + 2]
         mov     [ss:bx + BS3TRAPFRAME.Ctx + BS3REGCTX.rax], dx
 
+        mov     ax, [bp - 6]
         mov     [ss:bx + BS3TRAPFRAME.bXcpt], al
 
         test    ah, 0ffh
