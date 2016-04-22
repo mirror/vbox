@@ -250,6 +250,7 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
 
     /* Update CPUID. */
     APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
+    LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
 
     /* Commit. */
     ASMAtomicWriteU64(&pApicCpu->uApicBaseMsr, uApicBaseMsr);
@@ -1349,12 +1350,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg, &pApicDev->pApicHlpR3);
     AssertLogRelRCReturn(rc, rc);
     pApicDev->pCritSectR3 = pApicDev->pApicHlpR3->pfnGetR3CritSect(pDevIns);
-
-    /*
-     * Update the CPUID bits.
-     */
-    APICUpdateCpuIdForMode(pVM, pApic->enmOriginalMode);
-    LogRel(("APIC: Switched mode to %s\n", apicGetModeName(pApic->enmOriginalMode)));
 
     /*
      * Register the MMIO range.

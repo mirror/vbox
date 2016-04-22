@@ -2024,7 +2024,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                 uBaseMsr &= ~(MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT);
 
                 APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_DISABLED);
-                Log2(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
+                LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
                 break;
             }
 
@@ -2032,13 +2032,13 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
             {
                 if (enmOldMode != APICMODE_DISABLED)
                 {
-                    Log(("APIC%u: Can only transition to xAPIC state from disabled state\n", pVCpu->idCpu));
+                    LogRel(("APIC%u: Can only transition to xAPIC state from disabled state\n", pVCpu->idCpu));
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
                 uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
                 APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
-                Log2(("APIC%u: Switched mode to xApic\n", pVCpu->idCpu));
+                LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
                 break;
             }
 
@@ -2046,7 +2046,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
             {
                 if (enmOldMode != APICMODE_XAPIC)
                 {
-                    Log(("APIC%u: Can only transition to x2APIC state from xAPIC state\n", pVCpu->idCpu));
+                    LogRel(("APIC%u: Can only transition to x2APIC state from xAPIC state\n", pVCpu->idCpu));
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
@@ -2070,7 +2070,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                 pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
                                                   | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
 
-                Log2(("APIC%u: Switched mode to x2Apic\n", pVCpu->idCpu));
+                LogRel(("APIC%u: Switched mode to x2APIC\n", pVCpu->idCpu));
                 break;
             }
 
