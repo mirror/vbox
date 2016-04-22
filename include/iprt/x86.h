@@ -738,6 +738,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
 
 /** @name CR0
+ * @remarks The 286 (MSW), 386 and 486 ignores attempts at setting
+ *          reserved flags.
  * @{ */
 /** Bit 0 - PE - Protection Enabled */
 #define X86_CR0_PE                          RT_BIT_32(0)
@@ -751,22 +753,22 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 3 - TS - Task Switch. */
 #define X86_CR0_TS                          RT_BIT_32(3)
 #define X86_CR0_TASK_SWITCH                 RT_BIT_32(3)
-/** Bit 4 - ET - Extension flag. ('hardcoded' to 1) */
+/** Bit 4 - ET - Extension flag. (386, 'hardcoded' to 1 on 486+) */
 #define X86_CR0_ET                          RT_BIT_32(4)
 #define X86_CR0_EXTENSION_TYPE              RT_BIT_32(4)
-/** Bit 5 - NE - Numeric error. */
+/** Bit 5 - NE - Numeric error (486+). */
 #define X86_CR0_NE                          RT_BIT_32(5)
 #define X86_CR0_NUMERIC_ERROR               RT_BIT_32(5)
-/** Bit 16 - WP - Write Protect. */
+/** Bit 16 - WP - Write Protect (486+). */
 #define X86_CR0_WP                          RT_BIT_32(16)
 #define X86_CR0_WRITE_PROTECT               RT_BIT_32(16)
-/** Bit 18 - AM - Alignment Mask. */
+/** Bit 18 - AM - Alignment Mask (486+). */
 #define X86_CR0_AM                          RT_BIT_32(18)
 #define X86_CR0_ALIGMENT_MASK               RT_BIT_32(18)
-/** Bit 29 - NW - Not Write-though. */
+/** Bit 29 - NW - Not Write-though (486+). */
 #define X86_CR0_NW                          RT_BIT_32(29)
 #define X86_CR0_NOT_WRITE_THROUGH           RT_BIT_32(29)
-/** Bit 30 - WP - Cache Disable. */
+/** Bit 30 - WP - Cache Disable (486+). */
 #define X86_CR0_CD                          RT_BIT_32(30)
 #define X86_CR0_CACHE_DISABLE               RT_BIT_32(30)
 /** Bit 31 - PG - Paging. */
