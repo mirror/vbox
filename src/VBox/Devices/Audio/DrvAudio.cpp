@@ -2155,10 +2155,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
                                 N_("Host audio backend missing or invalid"));
     }
 
-#ifndef VBOX_AUDIO_TESTCASE
-    CFGMR3Dump(pCfgHandle);
-#endif
-
     rc = drvAudioInit(pCfgHandle, pDrvIns);
     if (RT_SUCCESS(rc))
     {
