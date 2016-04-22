@@ -3451,8 +3451,8 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
         vrc = i_processCreateExInternal(procInfo, pProcess);
         if (RT_SUCCESS(vrc))
         {
-            /* Return guest session to the caller. */
-            hr = pProcess.queryInterfaceTo(aGuestProcess.asOutParam());
+            ComPtr<IGuestProcess> pIProcess;
+            hr = pProcess.queryInterfaceTo(pIProcess.asOutParam());
             if (SUCCEEDED(hr))
             {
                 /*
@@ -3461,13 +3461,13 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
                 vrc = pProcess->i_startProcessAsync();
                 if (RT_SUCCESS(vrc))
                 {
+                    aGuestProcess = pIProcess;
+
                     LogFlowFuncLeaveRC(vrc);
                     return S_OK;
                 }
 
                 hr = setErrorVrc(vrc, tr("Failed to start guest process: %Rrc"), vrc);
-                /** @todo r=bird: What happens to the interface that *aGuestProcess points to
-                 *        now?  Looks like a leak or an undocument hack of sorts... */
             }
         }
         else if (vrc == VERR_MAX_PROCS_REACHED)
