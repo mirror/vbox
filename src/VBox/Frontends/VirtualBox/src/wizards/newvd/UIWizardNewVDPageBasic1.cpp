@@ -103,21 +103,30 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
         {
             m_pFormatButtonGroup = new QButtonGroup(this);
             {
-                CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-                const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
-                for (int i = 0; i < medFormats.size(); ++i)
+                /* Enumerate medium formats in special order: */
+                CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+                QMap<QString, CMediumFormat> vdi, preferred;
+                foreach (const CMediumFormat &format, formats)
                 {
-                    const CMediumFormat &medFormat = medFormats[i];
-                    if (medFormat.GetName() == "VDI")
-                        addFormatButton(this, pFormatLayout, medFormat);
+                    /* VDI goes first: */
+                    if (format.GetName() == "VDI")
+                        vdi[format.GetId()] = format;
+                    else
+                    {
+                        const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
+                        /* Then preferred: */
+                        if (capabilities.contains(KMediumFormatCapabilities_Preferred))
+                            preferred[format.GetId()] = format;
+                    }
                 }
-                for (int i = 0; i < medFormats.size(); ++i)
-                {
-                    const CMediumFormat &medFormat = medFormats[i];
-                    const QVector<KMediumFormatCapabilities> &capabilities = medFormat.GetCapabilities();
-                    if (medFormat.GetName() != "VDI" && capabilities.contains(KMediumFormatCapabilities_Preferred))
-                        addFormatButton(this, pFormatLayout, medFormat);
-                }
+
+                /* Create buttons for VDI and preferred: */
+                foreach (const QString &strId, vdi.keys())
+                    addFormatButton(this, pFormatLayout, vdi.value(strId));
+                foreach (const QString &strId, preferred.keys())
+                    addFormatButton(this, pFormatLayout, preferred.value(strId));
+
                 if (!m_pFormatButtonGroup->buttons().isEmpty())
                 {
                     m_pFormatButtonGroup->button(0)->click();

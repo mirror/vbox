@@ -93,21 +93,35 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &sourceVirtua
             {
                 m_pFormatButtonGroup = new QButtonGroup(m_pFormatCnt);
                 {
-                    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-                    const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
-                    for (int i = 0; i < medFormats.size(); ++i)
+                    /* Enumerate medium formats in special order: */
+                    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                    const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+                    QMap<QString, CMediumFormat> vdi, preferred, others;
+                    foreach (const CMediumFormat &format, formats)
                     {
-                        const CMediumFormat &medFormat = medFormats[i];
-                        if (medFormat.GetName() == "VDI")
-                            addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat, true);
+                        /* VDI goes first: */
+                        if (format.GetName() == "VDI")
+                            vdi[format.GetId()] = format;
+                        else
+                        {
+                            const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
+                            /* Then goes preferred: */
+                            if (capabilities.contains(KMediumFormatCapabilities_Preferred))
+                                preferred[format.GetId()] = format;
+                            /* Then others: */
+                            else
+                                others[format.GetId()] = format;
+                        }
                     }
-                    for (int i = 0; i < medFormats.size(); ++i)
-                    {
-                        const CMediumFormat &medFormat = medFormats[i];
-                        const QVector<KMediumFormatCapabilities> &capabilities = medFormat.GetCapabilities();
-                        if (medFormat.GetName() != "VDI")
-                            addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat, capabilities.contains(KMediumFormatCapabilities_Preferred));
-                    }
+
+                    /* Create buttons for VDI, preferred and others: */
+                    foreach (const QString &strId, vdi.keys())
+                        addFormatButton(this, pFormatCntLayout, vdi.value(strId), true);
+                    foreach (const QString &strId, preferred.keys())
+                        addFormatButton(this, pFormatCntLayout, preferred.value(strId), true);
+                    foreach (const QString &strId, others.keys())
+                        addFormatButton(this, pFormatCntLayout, others.value(strId));
+
                     if (!m_pFormatButtonGroup->buttons().isEmpty())
                     {
                         m_pFormatButtonGroup->button(0)->click();
