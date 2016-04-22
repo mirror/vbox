@@ -101,7 +101,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void
     NTSTATUS Status;
     USHORT cbUrb = sizeof (struct _URB_CONTROL_DESCRIPTOR_REQUEST);
     PURB pUrb = VBoxUsbToolUrbAllocZ(URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE, cbUrb);
-    if(!pUrb)
+    if (!pUrb)
     {
         WARN(("allocating URB failed"));
         return STATUS_INSUFFICIENT_RESOURCES;

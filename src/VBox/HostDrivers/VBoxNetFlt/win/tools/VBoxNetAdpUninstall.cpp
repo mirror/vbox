@@ -40,13 +40,13 @@ static int VBoxNetAdpUninstall()
     printf("uninstalling all Host-Only interfaces..\n");
 
     HRESULT hr = CoInitialize(NULL);
-    if(hr == S_OK)
+    if (hr == S_OK)
     {
         hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(VBOX_NETADP_HWID);
-        if(hr == S_OK)
+        if (hr == S_OK)
         {
             hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
-            if(hr == S_OK)
+            if (hr == S_OK)
             {
                 printf("uninstalled successfully\n");
             }

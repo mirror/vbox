@@ -3499,13 +3499,13 @@ HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey)
     
     rc = vboxLoadIpHelpFunctions(hModule);
 
-    if(SUCCEEDED(rc))
+    if (SUCCEEDED(rc))
         rc = vboxNetCfgWinGetInterfaceLUID(hKey, &luid);
 
-    if(SUCCEEDED(rc))
+    if (SUCCEEDED(rc))
         rc = vboxNetCfgWinGetLoopbackMetric(&loopbackMetric);
 
-    if(SUCCEEDED(rc))
+    if (SUCCEEDED(rc))
         rc = vboxNetCfgWinSetInterfaceMetric(&luid, loopbackMetric - 1);
 
     g_pfnInitializeIpInterfaceEntry = NULL;

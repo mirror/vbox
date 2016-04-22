@@ -54,12 +54,12 @@ static int VBoxNetAdpInstall(void)
             INetCfg *pnc;
             LPWSTR lpszLockedBy = NULL;
             hr = VBoxNetCfgWinQueryINetCfg(&pnc, TRUE, VBOX_NETADP_APP_NAME, 10000, &lpszLockedBy);
-            if(hr == S_OK)
+            if (hr == S_OK)
             {
 
                 hr = VBoxNetCfgWinNetAdpInstall(pnc, MpInf);
 
-                if(hr == S_OK)
+                if (hr == S_OK)
                 {
                     wprintf(L"installed successfully\n");
                 }

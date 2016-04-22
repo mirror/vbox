@@ -1418,7 +1418,7 @@ void VBoxUsbFltProxyStopped(HVBOXUSBFLTDEV hDev)
     }
     else
     {
-        if(pDevice->enmState != VBOXUSBFLT_DEVSTATE_REPLUGGING)
+        if (pDevice->enmState != VBOXUSBFLT_DEVSTATE_REPLUGGING)
         {
             WARN(("invalid state, %d", pDevice->enmState));
         }

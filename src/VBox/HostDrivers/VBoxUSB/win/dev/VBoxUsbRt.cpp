@@ -238,7 +238,7 @@ static void vboxUsbRtFreeInterfaces(PVBOXUSBDEV_EXT pDevExt, BOOLEAN fAbortPipes
             {
                 if (fAbortPipes)
                 {
-                    for(j=0; j<pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo->NumberOfPipes; j++)
+                    for (j=0; j<pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo->NumberOfPipes; j++)
                     {
                         Log(("Aborting Pipe %d handle %x address %x\n", j,
                                  pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo->Pipes[j].PipeHandle,
@@ -562,7 +562,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
     if (!uConfiguration)
     {
         pUrb = VBoxUsbToolUrbAllocZ(URB_FUNCTION_SELECT_CONFIGURATION, sizeof (struct _URB_SELECT_CONFIGURATION));
-        if(!pUrb)
+        if (!pUrb)
         {
             AssertMsgFailed((__FUNCTION__": VBoxUsbToolUrbAlloc failed\n"));
             return STATUS_INSUFFICIENT_RESOURCES;
@@ -573,7 +573,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
         pUrb->UrbSelectConfiguration.ConfigurationDescriptor = NULL;
 
         Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb, RT_INDEFINITE_WAIT);
-        if(NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
+        if (NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
         {
             pDevExt->Rt.hConfiguration = pUrb->UrbSelectConfiguration.ConfigurationHandle;
             pDevExt->Rt.uConfigValue = uConfiguration;
@@ -775,7 +775,7 @@ static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t Interfac
     if (pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo)
     {
         /* Clear pipes associated with the interface, else Windows may hang. */
-        for(ULONG i = 0; i < pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo->NumberOfPipes; i++)
+        for (ULONG i = 0; i < pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo->NumberOfPipes; i++)
             VBoxUsbToolPipeClear(pDevExt->pLowerDO, pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo->Pipes[i].PipeHandle, FALSE);
     }
 
@@ -830,7 +830,7 @@ static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t Interfac
             memcpy(pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pInterfaceInfo, pIfInfo, GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints));
 
             Assert(pIfInfo->NumberOfPipes == pIfDr->bNumEndpoints);
-            for(ULONG i = 0; i < pIfInfo->NumberOfPipes; i++)
+            for (ULONG i = 0; i < pIfInfo->NumberOfPipes; i++)
             {
                 pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo[i].EndpointAddress = pIfInfo->Pipes[i].EndpointAddress;
                 pDevExt->Rt.pVBIfaceInfo[InterfaceNumber].pPipeInfo[i].NextScheduledFrame = 0;

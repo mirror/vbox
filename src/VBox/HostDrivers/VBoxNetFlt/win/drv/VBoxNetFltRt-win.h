@@ -80,7 +80,7 @@ DECLINLINE(void) vboxNetFltWinQuInterlockedEnqueueHead(PVBOXNETFLT_INTERLOCKED_P
 DECLINLINE(PVBOXNETFLT_PACKET_INFO) vboxNetFltWinQuDequeueHead(PVBOXNETFLT_PACKET_QUEUE pQueue)
 {
     PLIST_ENTRY pListEntry = RemoveHeadList(pQueue);
-    if(pListEntry != pQueue)
+    if (pListEntry != pQueue)
     {
         PVBOXNETFLT_PACKET_INFO pInfo = LIST_ENTRY_2_PACKET_INFO(pListEntry);
         Assert(pInfo->pPool);
@@ -92,7 +92,7 @@ DECLINLINE(PVBOXNETFLT_PACKET_INFO) vboxNetFltWinQuDequeueHead(PVBOXNETFLT_PACKE
 DECLINLINE(PVBOXNETFLT_PACKET_INFO) vboxNetFltWinQuDequeueTail(PVBOXNETFLT_PACKET_QUEUE pQueue)
 {
     PLIST_ENTRY pListEntry = RemoveTailList(pQueue);
-    if(pListEntry != pQueue)
+    if (pListEntry != pQueue)
     {
         PVBOXNETFLT_PACKET_INFO pInfo = LIST_ENTRY_2_PACKET_INFO(pListEntry);
         Assert(pInfo->pPool);
@@ -191,14 +191,14 @@ DECLINLINE(bool) vboxNetFltWinSearchListEntry(PVBOXNETFLT_SINGLE_LIST pList, PSI
     PSINGLE_LIST_ENTRY pHead = &pList->Head;
     PSINGLE_LIST_ENTRY pCur;
     PSINGLE_LIST_ENTRY pPrev;
-    for(pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
+    for (pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
     {
-        if(pEntry2Search == pCur)
+        if (pEntry2Search == pCur)
         {
-            if(bRemove)
+            if (bRemove)
             {
                 pPrev->Next = pCur->Next;
-                if(pCur == pList->pTail)
+                if (pCur == pList->pTail)
                 {
                     pList->pTail = pPrev;
                 }
@@ -217,15 +217,15 @@ DECLINLINE(PNDIS_PACKET) vboxNetFltWinSearchPacket(PVBOXNETFLT_SINGLE_LIST pList
     PSINGLE_LIST_ENTRY pCur;
     PSINGLE_LIST_ENTRY pPrev;
     PNDIS_PACKET pCurPacket;
-    for(pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
+    for (pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
     {
         pCurPacket = VBOX_SLE_2_SENDPACKET(pCur);
-        if(pCurPacket == pPacket2Search || vboxNetFltWinMatchPackets(pPacket2Search, pCurPacket, cbMatch))
+        if (pCurPacket == pPacket2Search || vboxNetFltWinMatchPackets(pPacket2Search, pCurPacket, cbMatch))
         {
-            if(bRemove)
+            if (bRemove)
             {
                 pPrev->Next = pCur->Next;
-                if(pCur == pList->pTail)
+                if (pCur == pList->pTail)
                 {
                     pList->pTail = pPrev;
                 }
@@ -242,15 +242,15 @@ DECLINLINE(PNDIS_PACKET) vboxNetFltWinSearchPacketBySG(PVBOXNETFLT_SINGLE_LIST p
     PSINGLE_LIST_ENTRY pCur;
     PSINGLE_LIST_ENTRY pPrev;
     PNDIS_PACKET pCurPacket;
-    for(pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
+    for (pCur = pHead->Next, pPrev = pHead; pCur; pPrev = pCur, pCur = pCur->Next)
     {
         pCurPacket = VBOX_SLE_2_SENDPACKET(pCur);
-        if(vboxNetFltWinMatchPacketAndSG(pCurPacket, pSG, cbMatch))
+        if (vboxNetFltWinMatchPacketAndSG(pCurPacket, pSG, cbMatch))
         {
-            if(bRemove)
+            if (bRemove)
             {
                 pPrev->Next = pCur->Next;
-                if(pCur == pList->pTail)
+                if (pCur == pList->pTail)
                 {
                     pList->pTail = pPrev;
                 }
@@ -279,14 +279,14 @@ DECLINLINE(void) vboxNetFltWinPutHead(PVBOXNETFLT_SINGLE_LIST pList, PSINGLE_LIS
 {
     pEntry->Next = pList->Head.Next;
     pList->Head.Next = pEntry;
-    if(!pEntry->Next)
+    if (!pEntry->Next)
         pList->pTail = pEntry;
 }
 
 DECLINLINE(PSINGLE_LIST_ENTRY) vboxNetFltWinGetHead(PVBOXNETFLT_SINGLE_LIST pList)
 {
     PSINGLE_LIST_ENTRY pEntry = pList->Head.Next;
-    if(pEntry && pEntry == pList->pTail)
+    if (pEntry && pEntry == pList->pTail)
     {
         pList->Head.Next = NULL;
         pList->pTail = &pList->Head;
@@ -588,9 +588,9 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool 
 {
     RTSpinlockAcquire((pNetFlt)->hSpinlock);
 #ifndef VBOXNETADP
-    if(!vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
+    if (!vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
 #else
-    if(!vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
+    if (!vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
 #endif
     {
         RTSpinlockRelease((pNetFlt)->hSpinlock);
@@ -598,7 +598,7 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool 
         return false;
     }
 
-    if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
+    if (pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
         vboxNetFltWinReferenceModePassThru(pNetFlt);
         RTSpinlockRelease((pNetFlt)->hSpinlock);
@@ -619,7 +619,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
     uint32_t i;
 
     Assert(v);
-    if(!v)
+    if (!v)
     {
         *pbNetFltActive = false;
         return false;
@@ -627,9 +627,9 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
 
     RTSpinlockAcquire((pNetFlt)->hSpinlock);
 #ifndef VBOXNETADP
-    if(!vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
+    if (!vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
 #else
-    if(!vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
+    if (!vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
 #endif
     {
         RTSpinlockRelease(pNetFlt->hSpinlock);
@@ -637,7 +637,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
         return false;
     }
 
-    if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
+    if (pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
         vboxNetFltWinIncReferenceModePassThru(pNetFlt, v);
 
@@ -653,7 +653,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
     RTSpinlockRelease(pNetFlt->hSpinlock);
 
     /* we have marked it as busy, so can do the res references outside the lock */
-    for(i = 0; i < v-1; i++)
+    for (i = 0; i < v-1; i++)
     {
         vboxNetFltRetain(pNetFlt, true /* fBusy */);
     }
@@ -666,7 +666,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
 DECLINLINE(void) vboxNetFltWinDecReferenceNetFlt(PVBOXNETFLTINS pNetFlt, uint32_t n)
 {
     uint32_t i;
-    for(i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         vboxNetFltRelease(pNetFlt, true);
     }
@@ -702,16 +702,16 @@ DECLINLINE(void) vboxNetFltWinDereferenceWinIf(PVBOXNETFLTINS pNetFlt)
 DECLINLINE(bool) vboxNetFltWinIncReferenceWinIf(PVBOXNETFLTINS pNetFlt, uint32_t v)
 {
     Assert(v);
-    if(!v)
+    if (!v)
     {
         return false;
     }
 
     RTSpinlockAcquire(pNetFlt->hSpinlock);
 #ifdef VBOXNETADP
-    if(vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
+    if (vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
 #else
-    if(vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
+    if (vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
 #endif
     {
         RTSpinlockRelease(pNetFlt->hSpinlock);
@@ -726,9 +726,9 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIf(PVBOXNETFLTINS pNetFlt)
 {
     RTSpinlockAcquire(pNetFlt->hSpinlock);
 #ifdef VBOXNETADP
-    if(vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
+    if (vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
 #else
-    if(vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
+    if (vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
 #endif
     {
         RTSpinlockRelease(pNetFlt->hSpinlock);
