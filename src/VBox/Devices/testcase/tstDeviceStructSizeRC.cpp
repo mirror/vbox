@@ -779,6 +779,7 @@ int main()
     GEN_CHECK_OFF(APICCPU, u64TimerInitial);
     GEN_CHECK_OFF(APICCPU, uHintedTimerInitialCount);
     GEN_CHECK_OFF(APICCPU, uHintedTimerShift);
+# ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(APICCPU, StatMmioReadR0);
     GEN_CHECK_OFF(APICCPU, StatMmioReadR3);
     GEN_CHECK_OFF(APICCPU, StatMmioReadRC);
@@ -794,6 +795,7 @@ int main()
     GEN_CHECK_OFF(APICCPU, StatUpdatePendingIntrs);
     GEN_CHECK_OFF(APICCPU, StatPostIntr);
     GEN_CHECK_OFF(APICCPU, StatPostIntrAlreadyPending);
+# endif /* VBOX_WITH_STATISTICS */
 #else
     /* PC/DevAPIC.cpp */
     GEN_CHECK_SIZE(APICState);
