@@ -250,7 +250,7 @@ static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
      *
      * Precedence from top to bottom.
      */
-    unsigned long ulBalloonReq;
+    unsigned long ulBalloonReq = 0;
     char szSource[64];
 
     Bstr strValue;
