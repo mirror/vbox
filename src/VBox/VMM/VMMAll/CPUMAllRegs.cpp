@@ -714,7 +714,12 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
     if (((cr0 ^ pVCpu->cpum.s.Guest.cr0) & X86_CR0_WP) && (cr0 & X86_CR0_WP))
         PGMCr0WpEnabled(pVCpu);
 
-    pVCpu->cpum.s.Guest.cr0 = cr0 | X86_CR0_ET;
+    /* The ET flag is settable on a 386 and hardwired on 486+. */
+    if (   !(cr0 & X86_CR0_ET)
+        && pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.enmMicroarch != kCpumMicroarch_Intel_80386)
+        cr0 |= X86_CR0_ET;
+
+    pVCpu->cpum.s.Guest.cr0 = cr0;
     return VINF_SUCCESS;
 }
 
