@@ -2015,9 +2015,15 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  * is different). We can start with a clean slate identical to the state after a power-up/reset.
                  *
                  * See Intel spec. 10.4.3 "Enabling or Disabling the Local APIC".
+                 *
+                 * We'll also manually manage the APIC base MSR here. We want a single-point of commit
+                 * at the end of this function rather than touching it in APICR3Reset. This means we also
+                 * need to update the CPUID leaf ourselves.
                  */
                 APICR3Reset(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT);
+
+                APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_DISABLED);
                 Log2(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
                 break;
             }
@@ -2029,13 +2035,21 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     Log(("APIC%u: Can only transition to xAPIC state from disabled state\n", pVCpu->idCpu));
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
+
                 uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+                APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
                 Log2(("APIC%u: Switched mode to xApic\n", pVCpu->idCpu));
                 break;
             }
 
             case APICMODE_X2APIC:
             {
+                if (enmOldMode != APICMODE_XAPIC)
+                {
+                    Log(("APIC%u: Can only transition to x2APIC state from xAPIC state\n", pVCpu->idCpu));
+                    return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
+                }
+
                 uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
 
                 /*
@@ -2055,6 +2069,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  */
                 pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
                                                   | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
+
                 Log2(("APIC%u: Switched mode to x2Apic\n", pVCpu->idCpu));
                 break;
             }
@@ -2543,6 +2558,8 @@ VMM_INT_DECL(void) APICStopTimer(PVMCPU pVCpu)
  */
 VMM_INT_DECL(void) APICUpdateCpuIdForMode(PVM pVM, APICMODE enmMode)
 {
+    LogFlow(("APIC: APICUpdateCpuIdForMode: enmMode=%d (%s)\n", enmMode, apicGetModeName(enmMode)));
+
     /* The CPUID bits being updated to reflect the current state is a bit vague. See @bugref{8245#c32}. */
     /** @todo This needs to be done on a per-VCPU basis! */
     switch (enmMode)
