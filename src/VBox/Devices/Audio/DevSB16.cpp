@@ -2050,6 +2050,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
+    pCfg->enmDir = PDMAUDIODIR_OUT;
     int rc = VINF_SUCCESS;
 
     PSB16DRIVER pDrv;
