@@ -259,7 +259,7 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu, bool fResetApicBaseMsr)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
-    LogFlow(("APIC%u: APICR3Reset\n", pVCpu->idCpu));
+    LogFlow(("APIC%u: APICR3Reset: fResetApicBaseMsr=%RTbool\n", pVCpu->idCpu, fResetApicBaseMsr));
 
 #ifdef VBOX_STRICT
     /* Verify that the initial APIC ID reported via CPUID matches our VMCPU ID assumption. */
@@ -717,6 +717,8 @@ static DECLCALLBACK(int) apicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
     PVM      pVM      = PDMDevHlpGetVM(pApicDev->pDevInsR3);
 
+    LogFlow(("APIC: apicR3LiveExec: uPass=%u\n", uPass));
+
     int rc = apicR3SaveVMData(pVM, pSSM);
     AssertRCReturn(rc, rc);
     return VINF_SSM_DONT_CALL_AGAIN;
@@ -732,6 +734,8 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PAPIC    pApic    = VM_TO_APIC(pVM);
     AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
+
+    LogFlow(("APIC: apicR3SaveExec\n"));
 
     /* Save per-VM data. */
     int rc = apicR3SaveVMData(pVM, pSSM);
@@ -780,6 +784,8 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PAPIC    pApic    = VM_TO_APIC(pVM);
     AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
+
+    LogFlow(("APIC: apicR3LoadExec: uVersion=%u uPass=%u\n", uVersion, uPass));
 
     /* Weed out invalid versions. */
     if (    uVersion != APIC_SAVED_STATE_VERSION
@@ -896,7 +902,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
             if (uInitialCount)
             {
                 Log2(("APIC%u: apicR3TimerCallback: Re-arming timer. uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
-                APICStartTimer(pApicCpu, uInitialCount);
+                APICStartTimer(pVCpu, uInitialCount);
             }
             break;
         }
@@ -926,6 +932,8 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     VM_ASSERT_EMT0(pVM);
     VM_ASSERT_IS_NOT_RUNNING(pVM);
+
+    LogFlow(("APIC: apicR3Reset\n"));
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {

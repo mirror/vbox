@@ -1142,6 +1142,8 @@ static VBOXSTRICTRC apicSetTpr(PVMCPU pVCpu, uint32_t uTpr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
+    Log2(("APIC%u: apicSetTpr: uTpr=%#RX32\n", pVCpu->idCpu, uTpr));
+
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uTpr & ~XAPIC_TPR))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TPR, APICMSRACCESS_WRITE_RSVD_BITS);
@@ -1361,9 +1363,9 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPU pVCpu, int rcBusy, uint32_t uInitialC
         pXApicPage->timer_icr.u32InitialCount = uInitialCount;
         pXApicPage->timer_ccr.u32CurrentCount = uInitialCount;
         if (uInitialCount)
-            APICStartTimer(pApicCpu, uInitialCount);
+            APICStartTimer(pVCpu, uInitialCount);
         else
-            APICStopTimer(pApicCpu);
+            APICStopTimer(pVCpu);
         TMTimerUnlock(pTimer);
     }
     return rc;
@@ -2161,7 +2163,6 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
     NOREF(pDevIns);
     AssertReturn(u8Pin <= 1, VERR_INVALID_PARAMETER);
     AssertReturn(u8Level <= 1, VERR_INVALID_PARAMETER);
-    LogFlow(("APIC%u: APICLocalInterrupt\n", pVCpu->idCpu));
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
@@ -2247,7 +2248,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
         if (u8Pin == 0)
         {
             /* LINT0 behaves as an external interrupt pin. */
-            Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, %s ExtINT through LINT0\n", pVCpu->idCpu,
+            Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, %s INTR\n", pVCpu->idCpu,
                   u8Level ? "raising" : "lowering"));
             if (u8Level)
                 APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
@@ -2257,7 +2258,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
         else
         {
             /* LINT1 behaves as NMI. */
-            Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, raising NMI through LINT1\n", pVCpu->idCpu));
+            Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, raising NMI\n", pVCpu->idCpu));
             APICSetInterruptFF(pVCpu, PDMAPICIRQ_NMI);
         }
     }
@@ -2482,20 +2483,24 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
 /**
  * Starts the APIC timer.
  *
- * @param   pApicCpu        The APIC CPU state.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uInitialCount   The timer's Initial-Count Register (ICR), must be >
  *                          0.
  * @thread  Any.
  */
-VMM_INT_DECL(void) APICStartTimer(PAPICCPU pApicCpu, uint32_t uInitialCount)
+VMM_INT_DECL(void) APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount)
 {
-    Assert(pApicCpu);
+    Assert(pVCpu);
+    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
     Assert(uInitialCount > 0);
 
     PCXAPICPAGE    pXApicPage   = APICCPU_TO_CXAPICPAGE(pApicCpu);
     uint8_t  const uTimerShift  = apicGetTimerShift(pXApicPage);
     uint64_t const cTicksToNext = (uint64_t)uInitialCount << uTimerShift;
+
+    Log2(("APIC%u: APICStartTimer: uInitialCount=%u uTimerShift=%u cTicksToNext=%RU64\n", pVCpu->idCpu, uInitialCount,
+          uTimerShift, cTicksToNext));
 
     /*
      * The assumption here is that the timer doesn't tick during this call
@@ -2512,13 +2517,16 @@ VMM_INT_DECL(void) APICStartTimer(PAPICCPU pApicCpu, uint32_t uInitialCount)
 /**
  * Stops the APIC timer.
  *
- * @param   pApicCpu        The APIC CPU state.
+ * @param   pVCpu               The cross context virtual CPU structure.
  * @thread  Any.
  */
-VMM_INT_DECL(void) APICStopTimer(PAPICCPU pApicCpu)
+VMM_INT_DECL(void) APICStopTimer(PVMCPU pVCpu)
 {
-    Assert(pApicCpu);
+    Assert(pVCpu);
+    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
+
+    Log2(("APIC%u: APICStopTimer\n", pVCpu->idCpu));
 
     PTMTIMER pTimer = pApicCpu->CTX_SUFF(pTimer);
     TMTimerStop(pTimer);    /* This will reset the hint, no need to explicitly call TMTimerSetFrequencyHint(). */

@@ -648,8 +648,8 @@ VMMDECL(int)            APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_
                                        uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
 
 VMM_INT_DECL(void)      APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode);
-VMM_INT_DECL(void)      APICStartTimer(PAPICCPU pApicCpu, uint32_t uInitialCount);
-VMM_INT_DECL(void)      APICStopTimer(PAPICCPU pApicCpu);
+VMM_INT_DECL(void)      APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount);
+VMM_INT_DECL(void)      APICStopTimer(PVMCPU pVCpu);
 VMM_INT_DECL(void)      APICUpdateCpuIdForMode(PVM pVM, APICMODE enmMode);
 
 RT_C_DECLS_END
