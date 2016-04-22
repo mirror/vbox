@@ -86,11 +86,14 @@ BS3_CMN_DEF(void, Bs3TrapRmV86InitEx,(bool f386Plus))
      * Since we want to play with V86 mode as well as 8086 and 186 CPUs, we
      * cannot move the IVT from its default location.  So, modify it in place.
      *
-     * Note! We must keep int 10h working, which is easy since the CPU does
+     * Note! We must keep INT 10h working, which is easy since the CPU does
      *       use it (well, it's been reserved for 30+ years).
+     *       Turns out we must not hook INT 6Dh either then, as some real VGA
+     *       BIOS installs their INT 10h handler there as well, and seemingly
+     *       must be using it internally or something.
      */
     for (iIvt = 0; iIvt < 256; iIvt++)
-        if (iIvt != 0x10 && iIvt != BS3_TRAP_SYSCALL)
+        if (iIvt != 0x10 && iIvt != 0x6d && iIvt != BS3_TRAP_SYSCALL)
         {
             paIvt[iIvt].off = (uint16_t)(uintptr_t)Bs3TrapRmV86GenericEntries + iIvt * 8;
             paIvt[iIvt].sel = BS3_SEL_TEXT16;
