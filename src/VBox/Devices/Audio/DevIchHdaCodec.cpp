@@ -1054,6 +1054,8 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
          */
         case STAC9220_NID_PIN_HEADPHONE0: /* Port A: Headphone in/out (front). */
         {
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(false /*fPresent*/, CODEC_F09_ANALOG_NA);
+
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
@@ -1077,6 +1079,8 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
         case STAC9220_NID_PIN_B: /* Port B: Rear CLFE (Center / Subwoofer). */
         {
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /*fPresent*/, CODEC_F09_ANALOG_NA);
+
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
                                                 | CODEC_F00_0C_CAP_OUTPUT
@@ -1099,7 +1103,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
         case STAC9220_NID_PIN_C: /* Rear Speaker. */
         {
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /*fPresent*/, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
@@ -1123,7 +1127,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
         case STAC9220_NID_PIN_HEADPHONE1: /* Also known as PIN_D. */
         {
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(false /*fPresent*/, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
@@ -1149,7 +1153,6 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
             pNode->port.u32F07_param = CODEC_F07_IN_ENABLE
                                      | CODEC_F07_OUT_ENABLE;
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /* fPresent */, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
                                                 | CODEC_F00_09_CAP_CONNECTION_LIST
