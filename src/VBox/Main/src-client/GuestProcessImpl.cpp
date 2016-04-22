@@ -2081,20 +2081,32 @@ int GuestProcessTool::i_runEx(      GuestSession              *pGuestSession,
 }
 
 /**
- * <Someone write documentation, pretty please!>
+ * Static helper function to start and wait for output of a certain toolbox tool.
  *
- * @param   pGuestRc        Optional.  Will be set to VINF_SUCCESS,
- *                          VERR_NOT_EQUAL or VERR_INVALID_STATE if the
- *                          process completed.  Should it fail earlier that,
- *                          you're feel free to enlighten the rest of us...
+ * This is the extended version, which addds the possibility of retrieving parsable so-called guest stream
+ * objects. Those objects are issued on the guest side as part of VBoxService's toolbox tools (think of a BusyBox-like approach)
+ * on stdout and can be used on the host side to retrieve more information about the actual command issued on the guest side.
+ *
+ * @return  IPRT status code.
+ * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
+ * @param   startupInfo             Startup information about the toolbox tool.
+ * @param   pStrmOutObjects         Pointer to stream objects array to use for retrieving the output of the toolbox tool.
+ *                                  Optional.
+ * @param   cStrmOutObjects         Number of stream objects passed in. Optional.
+ * @param   errorInfo               Error information returned for error handling.
  */
 /* static */
 int GuestProcessTool::i_runExErrorInfo(      GuestSession              *pGuestSession,
                                        const GuestProcessStartupInfo   &startupInfo,
-                                             GuestCtrlStreamObjects    *pStrmOutObjects,
+                                             GuestCtrlStreamObjects    *paStrmOutObjects,
                                              uint32_t                   cStrmOutObjects,
                                              GuestProcessToolErrorInfo &errorInfo)
 {
+    AssertPtrReturn(pGuestSession, VERR_INVALID_POINTER);
+    /* paStrmOutObjects is optional. */
+
+    /** @todo Check if this is a valid toolbox. */
+
     GuestProcessTool procTool;
     int vrc = procTool.Init(pGuestSession, startupInfo, false /* Async */, &errorInfo.guestRc);
     if (RT_SUCCESS(vrc))
@@ -2104,11 +2116,11 @@ int GuestProcessTool::i_runExErrorInfo(      GuestSession              *pGuestSe
             try
             {
                 GuestProcessStreamBlock strmBlk;
-                vrc = procTool.i_waitEx(  pStrmOutObjects
+                vrc = procTool.i_waitEx(  paStrmOutObjects
                                         ? GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK
                                         : GUESTPROCESSTOOL_FLAG_NONE, &strmBlk, &errorInfo.guestRc);
-                if (pStrmOutObjects)
-                    pStrmOutObjects->push_back(strmBlk);
+                if (paStrmOutObjects)
+                    paStrmOutObjects->push_back(strmBlk);
             }
             catch (std::bad_alloc)
             {
