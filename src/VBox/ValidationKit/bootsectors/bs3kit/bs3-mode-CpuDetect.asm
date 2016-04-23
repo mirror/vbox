@@ -141,23 +141,13 @@ CPU 286
         ;
         ; The 286 stores 0xff in the high byte of the SIDT and SGDT base
         ; address (since it only did 24-bit addressing and the top 8-bit was
-        ; reserved for the 386).  This test prays for no NMIs while we
-        ; potentially modify the SIDT base (not an issue for bs3kit).
+        ; reserved for the 386).  ASSUMES low IDT (which is the case for BS3Kit).
         ;
-        cli
-        mov     ax, 00ffh
         sidt    [xBP - xCB*4 - 20h]
-        xchg    ah, [xBP - xCB*4 - 20h + 2 + 3]
-        cmp     ah, al
+        cmp     [xBP - xCB*4 - 20h + 2 + 3], 0ffh
         jne     .386plus
-%if 1
-        lidt    [xBP - xCB*4 - 20h]
-        sidt    [xBP - xCB*4 - 20h]
-        xchg    ah, [xBP - xCB*4 - 20h + 2 + 3]
-        lidt    [xBP - xCB*4 - 20h]
-        cmp     ah, al
-        jne     .386plus
-%else
+
+ %if 0
         ;
         ; Detect 80286 by checking whether the IOPL and NT bits of EFLAGS can be
         ; modified or not.  There are different accounts of these bits.  Dr.Dobb's
@@ -191,7 +181,7 @@ CPU 286
         ; While we could in theory be in v8086 mode at this point and be fooled
         ; by a flaky POPF implementation, we assume this isn't the case in our
         ; execution environment.
-%endif
+ %endif
 .is_286:
         mov     ax, BS3CPU_80286
         jmp     .return
