@@ -55,10 +55,11 @@ BS3_PROC_BEGIN_MODE Bs3CpuDetect, BS3_PBC_HYBRID
 CPU 8086
         push    xBP
         mov     xBP, xSP
-        pushf
-        push    xCX
-        push    xDX
-        push    xBX
+        pushf                           ; xBP - xCB*1
+        push    xCX                     ; xBP - xCB*2
+        push    xDX                     ; xBP - xCB*3
+        push    xBX                     ; xBP - xCB*4
+        sub     xSP, 20h                ; xBP - xCB*4 - 20h
 
 %ifndef TMPL_CMN_PAGING
  %ifdef TMPL_RM
@@ -130,13 +131,33 @@ CPU 286
         ; because the 286 here has bits 4 thru 15 all set.  Unfortunately, it
         ; turned out the 386SX and AMD 486DX-40 also sets bits 4 thru 15 when
         ; using SMSW.  So, nothing conclusive to distinguish 386 from 286, but
-        ; we've probably got a save 486+ detection here.
+        ; we've probably got a safe 486+ detection here.
         ;
         ;; @todo check if LOADALL can set any of the reserved bits on a 286 or 386.
         smsw    ax
         test    ax, ~(X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE)
         jz      .486plus
 
+        ;
+        ; The 286 stores 0xff in the high byte of the SIDT and SGDT base
+        ; address (since it only did 24-bit addressing and the top 8-bit was
+        ; reserved for the 386).  This test prays for no NMIs while we
+        ; potentially modify the SIDT base (not an issue for bs3kit).
+        ;
+        cli
+        mov     ax, 00ffh
+        sidt    [xBP - xCB*4 - 20h]
+        xchg    ah, [xBP - xCB*4 - 20h + 2 + 3]
+        cmp     ah, al
+        jne     .386plus
+%if 1
+        lidt    [xBP - xCB*4 - 20h]
+        sidt    [xBP - xCB*4 - 20h]
+        xchg    ah, [xBP - xCB*4 - 20h + 2 + 3]
+        lidt    [xBP - xCB*4 - 20h]
+        cmp     ah, al
+        jne     .386plus
+%else
         ;
         ; Detect 80286 by checking whether the IOPL and NT bits of EFLAGS can be
         ; modified or not.  There are different accounts of these bits.  Dr.Dobb's
@@ -170,7 +191,7 @@ CPU 286
         ; While we could in theory be in v8086 mode at this point and be fooled
         ; by a flaky POPF implementation, we assume this isn't the case in our
         ; execution environment.
-
+%endif
 .is_286:
         mov     ax, BS3CPU_80286
         jmp     .return
@@ -300,6 +321,7 @@ CPU 8086
         ;
         ; Epilogue.
         ;
+        add     xSP, 20h
         pop     xBX
         pop     xDX
         pop     xCX
