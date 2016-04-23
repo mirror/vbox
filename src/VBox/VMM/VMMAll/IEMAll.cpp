@@ -7585,6 +7585,9 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t i
 IEM_STATIC VBOXSTRICTRC
 iemMemStoreDataXdtr(PIEMCPU pIemCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_t iSegReg, RTGCPTR GCPtrMem, IEMMODE enmOpSize)
 {
+    /** @todo Looks like SIDT and SGDT performce two separate writes here,
+     *        first the limit, then base. Should the base write hit a segment
+     *        limit, the first write isn't rolled back. */
     uint8_t *pu8Src;
     VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu,
                                       (void **)&pu8Src,
@@ -7604,7 +7607,7 @@ iemMemStoreDataXdtr(PIEMCPU pIemCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_
         pu8Src[3] = RT_BYTE2(GCPtrBase);
         pu8Src[4] = RT_BYTE3(GCPtrBase);
         if (enmOpSize == IEMMODE_16BIT)
-            pu8Src[5] = 0; /* Note! the 286 stored 0xff here. */
+            pu8Src[5] = IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_286 ? 0xff : 0x00;
         else
         {
             pu8Src[5] = RT_BYTE4(GCPtrBase);
