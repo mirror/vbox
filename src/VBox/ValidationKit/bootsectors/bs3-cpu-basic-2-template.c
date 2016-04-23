@@ -1313,12 +1313,11 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
     BS3REGCTX           TmpCtx;
     uint8_t const       cbBuf = 8*2;         /* test buffer area  */
     uint8_t             abBuf[8*2 + 8 + 8];  /* test buffer w/ misalignment test space and some extra guard. */
-    uint8_t BS3_FAR    *pbBuf = abBuf;
-    uint8_t const       cbIdtr = BS3_MODE_IS_64BIT_CODE(g_bTestMode) ? 2+8 : BS3_MODE_IS_32BIT_CODE(g_bTestMode) ? 2+4
-                        : (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) == BS3CPU_80286 ? 2+3 : 2+4;
+    uint8_t BS3_FAR    *pbBuf  = abBuf;
+    uint8_t const       cbIdtr = BS3_MODE_IS_64BIT_CODE(g_bTestMode) ? 2+8 : 2+4;
+    bool const          f286   = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) == BS3CPU_80286;
     uint8_t             bFiller;
     unsigned            off;
-    //unsigned            i, j;
 
     g_usBs3TestStep = 0;
 
@@ -1356,6 +1355,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
         Bs3TestFailedF("ASMMemIsZero or Bs3MemZero is busted: abBuf=%.*Rhxs\n", sizeof(abBuf), pbBuf);
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
     bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+    if (f286 && abBuf[cbIdtr - 1] != 0xff)
+        Bs3TestFailedF("286: Top base byte isn't 0xff (#1): %#x\n", abBuf[cbIdtr - 1]);
     if (!ASMMemIsZero(&abBuf[cbIdtr], cbBuf - cbIdtr))
         Bs3TestFailedF("Unexpected buffer bytes set (#1): cbIdtr=%u abBuf=%.*Rhxs\n", cbIdtr, cbBuf, pbBuf);
     g_usBs3TestStep++;
@@ -1370,6 +1371,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
 
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
     bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+    if (f286 && abBuf[cbIdtr - 1] != 0xff)
+        Bs3TestFailedF("286: Top base byte isn't 0xff (#2): %#x\n", abBuf[cbIdtr - 1]);
     if (!ASMMemIsAllU8(&abBuf[cbIdtr], cbBuf - cbIdtr, bFiller))
         Bs3TestFailedF("Unexpected buffer bytes set (#2): cbIdtr=%u bFiller=%#x abBuf=%.*Rhxs\n", cbIdtr, bFiller, cbBuf, pbBuf);
     if (Bs3MemChr(abBuf, bFiller, cbIdtr) != NULL)
@@ -1394,6 +1397,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
         if (!ASMMemIsZero(&abBuf[off + cbIdtr], sizeof(abBuf) - cbIdtr - off))
             Bs3TestFailedF("Unexpected buffer bytes set after (#3): cbIdtr=%u off=%u abBuf=%.*Rhxs\n",
                            cbIdtr, off, off + cbBuf, abBuf);
+        if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
+            Bs3TestFailedF("286: Top base byte isn't 0xff (#3): %#x\n", abBuf[off + cbIdtr - 1]);
         g_usBs3TestStep++;
 
         /* Again with buffer filled a byte not occuring in the previous result. */
@@ -1409,6 +1414,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
         if (Bs3MemChr(&abBuf[off], bFiller, cbIdtr) != NULL)
             Bs3TestFailedF("Not all bytes touched (#4): cbIdtr=%u off=%u bFiller=%#x abBuf=%.*Rhxs\n",
                            cbIdtr, off, bFiller, off + cbBuf, abBuf);
+        if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
+            Bs3TestFailedF("286: Top base byte isn't 0xff (#4): %#x\n", abBuf[off + cbIdtr - 1]);
         g_usBs3TestStep++;
 
     }
@@ -1431,6 +1438,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
         Bs3GdteTestPage00.Gen.u8BaseHigh2 = (uint8_t)(uFlatBuf >> 24);
 
         CtxUdExpected.ds = Ctx.ds = BS3_SEL_TEST_PAGE_00;
+
+        /* Expand up (normal). */
         for (off = 0; off < 8; off++)
         {
             CtxUdExpected.rbx.u = Ctx.rbx.u = off;
@@ -1445,6 +1454,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
                     if (Bs3MemChr(&abBuf[off], bFiller, cbIdtr) != NULL)
                         Bs3TestFailedF("Not all bytes touched (#5): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
                                        cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
+                    if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
+                        Bs3TestFailedF("286: Top base byte isn't 0xff (#5): %#x\n", abBuf[off + cbIdtr - 1]);
                 }
                 else
                 {
@@ -1459,6 +1470,50 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_Common(void)
                                            cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
                     }
                     else if (!ASMMemIsAllU8(abBuf, sizeof(abBuf), bFiller))
+                        Bs3TestFailedF("Bytes touched on #GP: cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
+                                       cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
+                }
+
+                if (off > 0 && !ASMMemIsAllU8(abBuf, off, bFiller))
+                    Bs3TestFailedF("Leading bytes touched (#7): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
+                                   cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
+                if (!ASMMemIsAllU8(&abBuf[off + cbIdtr], sizeof(abBuf) - off - cbIdtr, bFiller))
+                    Bs3TestFailedF("Trailing bytes touched (#7): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
+                                   cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
+
+                g_usBs3TestStep++;
+            }
+        }
+
+        /* Expand down (weird).  Inverted valid area compared to expand up,
+           so a limit of zero give us a valid range for 0001..0ffffh (instead of
+           a segment with one valid byte at 0000h).  Whereas a limit of 0fffeh
+           means one valid byte at 0ffffh, and a limit of 0ffffh means none
+           (because in a normal expand up the 0ffffh means all 64KB are
+           accessible). */
+        Bs3GdteTestPage00.Gen.u4Type = X86_SEL_TYPE_RW_DOWN_ACC;
+        for (off = 0; off < 8; off++)
+        {
+            CtxUdExpected.rbx.u = Ctx.rbx.u = off;
+            for (cbLimit = 0; cbLimit < cbIdtr*2; cbLimit++)
+            {
+                Bs3GdteTestPage00.Gen.u16LimitLow = cbLimit;
+                Bs3MemSet(abBuf, bFiller, sizeof(abBuf));
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+
+                if (off > cbLimit)
+                {
+                    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+                    if (Bs3MemChr(&abBuf[off], bFiller, cbIdtr) != NULL)
+                        Bs3TestFailedF("Not all bytes touched (#5): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
+                                       cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
+                    if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
+                        Bs3TestFailedF("286: Top base byte isn't 0xff (#5): %#x\n", abBuf[off + cbIdtr - 1]);
+                }
+                else
+                {
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                    if (!ASMMemIsAllU8(abBuf, sizeof(abBuf), bFiller))
                         Bs3TestFailedF("Bytes touched on #GP: cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
                                        cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
                 }
