@@ -101,37 +101,37 @@ RT_NOCRT_BEGINPROC memcmp
 ;
 %ifdef RT_ARCH_AMD64
 .not_equal_qword:
-    mov     ecx, 8
-    sub     rsi, 8
-    sub     rdi, 8
-    repe cmpsb
+        mov     ecx, 8
+        sub     rsi, 8
+        sub     rdi, 8
+        repe cmpsb
 .not_equal_byte:
-    mov     al, [xDI-1]
-    movzx   ecx, byte [xSI-1]
-    sub     eax, ecx
-    jmp     .done
+        mov     al, [xDI-1]
+        movzx   ecx, byte [xSI-1]
+        sub     eax, ecx
+        jmp     .done
 %endif
 
 .not_equal_dword:
-    mov     ecx, 4
-    sub     xSI, 4
-    sub     xDI, 4
-    repe cmpsb
+        mov     ecx, 4
+        sub     xSI, 4
+        sub     xDI, 4
+        repe cmpsb
 %ifdef RT_ARCH_AMD64
-    jmp     .not_equal_byte
+        jmp     .not_equal_byte
 %else
 .not_equal_byte:
-    mov     al, [xDI-1]
-    movzx   ecx, byte [xSI-1]
-    sub     eax, ecx
-    jmp     .done
+        mov     al, [xDI-1]
+        movzx   ecx, byte [xSI-1]
+        sub     eax, ecx
+        jmp     .done
 %endif
 
 .not_equal_word:
-    mov     ecx, 2
-    sub     xSI, 2
-    sub     xDI, 2
-    repe cmpsb
-    jmp     .not_equal_byte
+        mov     ecx, 2
+        sub     xSI, 2
+        sub     xDI, 2
+        repe cmpsb
+        jmp     .not_equal_byte
 ENDPROC RT_NOCRT(memcmp)
 
