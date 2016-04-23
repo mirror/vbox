@@ -126,14 +126,16 @@ CPU 286
         ; (need to test on 486SX).  The initial idea here then would be to
         ; assume 386+ if ET=1.
         ;
-        ; However, it turns out the 286 I've got here has bits 4 thru 15 all
-        ; set.  This is very nice though, because only bits 4 and 5 are defined
-        ; on later CPUs and the remainder MBZ.  So, check whether any of the MBZ
-        ; bits are set, if so, then it's 286.
+        ; The second idea was to check whether any reserved bits are set,
+        ; because the 286 here has bits 4 thru 15 all set.  Unfortunately, it
+        ; turned out the 386SX and AMD 486DX-40 also sets bits 4 thru 15 when
+        ; using SMSW.  So, nothing conclusive to distinguish 386 from 286, but
+        ; we've probably got a save 486+ detection here.
         ;
+        ;; @todo check if LOADALL can set any of the reserved bits on a 286 or 386.
         smsw    ax
         test    ax, ~(X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE)
-        jnz     .is_286
+        jz      .486plus
 
         ;
         ; Detect 80286 by checking whether the IOPL and NT bits of EFLAGS can be
@@ -176,6 +178,7 @@ CPU 286
 
 CPU 386
 .386plus:
+.486plus:
         ;
         ; Check for CPUID and AC.  The former flag indicates CPUID support, the
         ; latter was introduced with the 486.
