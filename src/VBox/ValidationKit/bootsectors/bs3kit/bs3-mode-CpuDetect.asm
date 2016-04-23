@@ -144,7 +144,7 @@ CPU 286
         ; reserved for the 386).  ASSUMES low IDT (which is the case for BS3Kit).
         ;
         sidt    [xBP - xCB*4 - 20h]
-        cmp     [xBP - xCB*4 - 20h + 2 + 3], 0ffh
+        cmp     byte [xBP - xCB*4 - 20h + 2 + 3], 0ffh
         jne     .386plus
 
  %if 0
