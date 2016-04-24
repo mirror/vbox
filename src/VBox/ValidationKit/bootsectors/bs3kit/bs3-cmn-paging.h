@@ -30,36 +30,27 @@
 #include "bs3kit.h"
 #include <iprt/asm.h>
 
-RT_C_DECLS_BEGIN;
+RT_C_DECLS_BEGIN
 
 /** Root directory for page protected mode.
  * UINT32_MAX if not initialized. */
-#ifndef DOXYGEN_RUNNING
-# define g_PhysPagingRootPP BS3_DATA_NM(g_PhysPagingRootPP)
-#endif
 extern uint32_t g_PhysPagingRootPP;
 /** Root directory pointer table for PAE mode.
  * UINT32_MAX if not initialized. */
-#ifndef DOXYGEN_RUNNING
-# define g_PhysPagingRootPAE BS3_DATA_NM(g_PhysPagingRootPAE)
-#endif
 extern uint32_t g_PhysPagingRootPAE;
 /** Root table (level 4) for long mode.
  * UINT32_MAX if not initialized. */
-#ifndef DOXYGEN_RUNNING
-# define g_PhysPagingRootLM BS3_DATA_NM(g_PhysPagingRootLM)
-#endif
 extern uint32_t g_PhysPagingRootLM;
 
-RT_C_DECLS_END;
+#undef bs3PagingGetLegacyPte
+BS3_CMN_PROTO_STUB(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t uFlat, bool fUseInvlPg, int *prc));
+#undef bs3PagingGetPte
+BS3_CMN_PROTO_STUB(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint8_t bMode, uint64_t uFlat,
+                                                         bool fUseInvlPg, int *prc));
 
+RT_C_DECLS_END
 
-#define bs3PagingGetLegacyPte BS3_CMN_NM(bs3PagingGetLegacyPte)
-BS3_DECL(X86PTE BS3_FAR *) bs3PagingGetLegacyPte(RTCCUINTXREG cr3, uint32_t uFlat, bool fUseInvlPg, int *prc);
-
-#define bs3PagingGetPte BS3_CMN_NM(bs3PagingGetPte)
-BS3_DECL(X86PTEPAE BS3_FAR *) bs3PagingGetPte(RTCCUINTXREG cr3, uint64_t uFlat, bool fUseInvlPg, int *prc);
-
+#include "bs3kit-mangling-code.h"
 
 #endif
 

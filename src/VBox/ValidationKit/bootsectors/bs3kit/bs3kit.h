@@ -2136,6 +2136,25 @@ BS3_CMN_PROTO_STUB(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t 
  */
 BS3_CMN_PROTO_STUB(int, Bs3PagingProtectPtr,(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear));
 
+/** The physical / flat address of the buffer backing the canonical traps.
+ * This buffer is spread equally on each side of the 64-bit non-canonical
+ * address divide.  Non-64-bit code can use this to setup trick shots and
+ * inspect their results. */
+extern uint32_t g_uBs3PagingCanonicalTrapsAddr;
+/** The size of the buffer at g_uPagingCanonicalTraps (both sides). */
+extern uint16_t g_cbBs3PagingCanonicalTraps;
+/** The size of one trap buffer (low or high).
+ * This is g_cbBs3PagingCanonicalTraps divided by two. */
+extern uint16_t g_cbBs3PagingOneCanonicalTrap;
+
+/**
+ * Sets up the 64-bit canonical address space trap buffers, if neceessary.
+ *
+ * @returns Pointer to the buffers (i.e. the first page of the low one) on
+ *          success.  NULL on failure.
+ */
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingSetupCanonicalTraps,(void));
+
 /**
  * Waits for the keyboard controller to become ready.
  */

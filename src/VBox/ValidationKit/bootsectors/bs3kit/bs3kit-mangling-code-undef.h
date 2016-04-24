@@ -46,11 +46,14 @@
 #undef Bs3MemPCpy
 #undef Bs3MemSet
 #undef Bs3MemZero
+#undef bs3PagingGetLegacyPte
+#undef bs3PagingGetPte
 #undef Bs3PagingInitRootForLM
 #undef Bs3PagingInitRootForPAE
 #undef Bs3PagingInitRootForPP
 #undef Bs3PagingProtect
 #undef Bs3PagingProtectPtr
+#undef Bs3PagingSetupCanonicalTraps
 #undef Bs3Panic
 #undef Bs3PicMaskAll
 #undef Bs3PrintChr

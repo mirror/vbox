@@ -92,10 +92,7 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
                 if (!pPD->a[iPde].b.u1Size)
                 {
                     if (pPD->a[iPde].u <= uMaxAddr)
-                    {
                         pPTE = &((X86PT BS3_FAR *)Bs3XptrFlatToCurrent(pPD->a[iPde].u & ~(uint32_t)PAGE_OFFSET_MASK))->a[iPte];
-                        *prc = VINF_SUCCESS;
-                    }
                     else
                         BS3PAGING_DPRINTF1(("bs3PagingGetLegacyPte: out of range! iPde=%#x: %#x\n", iPde, pPD->a[iPde].u));
                 }
@@ -121,7 +118,6 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
                         if (fUseInvlPg)
                             ASMInvalidatePage(uFlat);
                         pPTE = &pPT->a[iPte];
-                        *prc = VINF_SUCCESS;
                     }
                 }
             }
@@ -133,8 +129,19 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
 }
 
 
+/**
+ * Get the PTE for an address, given a PAE or long mode CR3.
+ *
+ * @returns Pointer to the PTE on success, NULL on failure.
+ * @param   cr3                 The CR3.
+ * @param   bMode               Indicates whether it's PAE or long mode.
+ * @param   uFlat               The address for which we want the PTE.
+ * @param   fUseInvlPg          Whether we can use invalidate page when
+ *                              replacing large pages.
+ * @param   prc                 Updated only on failure.
+ */
 #undef bs3PagingGetPte
-BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFlat, bool fUseInvlPg, int *prc))
+BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint8_t bMode, uint64_t uFlat, bool fUseInvlPg, int *prc))
 {
     X86PTEPAE BS3_FAR  *pPTE = NULL;
 #if TMPL_BITS == 16
@@ -147,7 +154,7 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
     if ((cr3 & X86_CR3_AMD64_PAGE_MASK) <= uMaxAddr)
     {
         X86PDPAE BS3_FAR *pPD;
-        if (BS3_MODE_IS_64BIT_SYS(g_bBs3CurrentMode))
+        if (BS3_MODE_IS_64BIT_SYS(bMode))
         {
             unsigned const   iPml4e = (uFlat >> X86_PML4_SHIFT) & X86_PML4_MASK;
             X86PML4 BS3_FAR *pPml4  = (X86PML4 BS3_FAR *)Bs3XptrFlatToCurrent(cr3 & X86_CR3_AMD64_PAGE_MASK);
@@ -205,10 +212,7 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
             if (!pPD->a[iPde].b.u1Size)
             {
                 if ((pPD->a[iPde].u & X86_PDE_PAE_PG_MASK) <= uMaxAddr)
-                {
                     pPTE = &((X86PTPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPD->a[iPde].u & ~(uint64_t)PAGE_OFFSET_MASK))->a[iPte];
-                    *prc = VINF_SUCCESS;
-                }
                 else
                     BS3PAGING_DPRINTF1(("bs3PagingGetPte: out of range! iPde=%#x: %RX64 max=%RX32\n",
                                         iPde, pPD->a[iPde].u, (uint32_t)uMaxAddr));
@@ -232,7 +236,6 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
                     if (fUseInvlPg)
                         ASMInvalidatePage(uFlat);
                     pPTE = &pPT->a[iPte];
-                    *prc = VINF_SUCCESS;
                 }
             }
         }
@@ -303,7 +306,7 @@ BS3_CMN_DEF(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet, u
              */
             while (cb > 0)
             {
-                PX86PTEPAE pPte = BS3_CMN_FAR_NM(bs3PagingGetPte)(cr3, uFlat, fUseInvlPg, &rc);
+                PX86PTEPAE pPte = BS3_CMN_FAR_NM(bs3PagingGetPte)(cr3, g_bBs3CurrentMode, uFlat, fUseInvlPg, &rc);
                 if (!pPte)
                     return rc;
 

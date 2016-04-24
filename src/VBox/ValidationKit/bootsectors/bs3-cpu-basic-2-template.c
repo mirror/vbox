@@ -1391,6 +1391,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
     bool const          f286   = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) == BS3CPU_80286;
     uint8_t             bFiller;
     int                 off;
+    int                 off2;
     unsigned            cb;
     uint8_t BS3_FAR    *pbTest;
 
@@ -1880,10 +1881,68 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
     /*
      * Check non-canonical 64-bit space.
      */
-    if (BS3_MODE_IS_64BIT_CODE(bTestMode))
+    if (   BS3_MODE_IS_64BIT_CODE(bTestMode)
+        && (pbTest = (uint8_t BS3_FAR *)Bs3PagingSetupCanonicalTraps()) != NULL)
     {
+        /* Make our references relative to the gap. */
+        pbTest += g_cbBs3PagingOneCanonicalTrap;
+
+        /* Hit it from below. */
+        for (off = -cbIdtr - 8; off < cbIdtr + 8; off++)
+        {
+            Ctx.rbx.u = CtxUdExpected.rbx.u = UINT64_C(0x0000800000000000) + off;
+            Bs3MemSet(&pbTest[-64], bFiller, 64*2);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            if (off + cbIdtr <= 0)
+            {
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+                if (Bs3MemCmp(&pbTest[off], pabExpected, cbIdtr) != 0)
+                    Bs3TestFailedF("Mismatch (#21): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pabExpected, cbIdtr, &pbTest[off]);
+            }
+            else
+            {
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                if (off <= -2 && Bs3MemCmp(&pbTest[off], pabExpected, 2) != 0)
+                    Bs3TestFailedF("Mismatch (#21): expected limit %.2Rhxs, got %.2Rhxs\n", pabExpected, &pbTest[off]);
+                off2 = off <= -2 ? 2 : 0;
+                cb   = cbIdtr - off2;
+                if (!ASMMemIsAllU8(&pbTest[off + off2], cb, bFiller))
+                    Bs3TestFailedF("Mismatch (#21): touched base %.*Rhxs, got %.*Rhxs\n",
+                                   cb, &pabExpected[off], cb, &pbTest[off + off2]);
+            }
+            if (!ASMMemIsAllU8(&pbTest[off - 16], 16, bFiller))
+                Bs3TestFailedF("Leading bytes touched (#21): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off]);
+            if (!ASMMemIsAllU8(&pbTest[off + cbIdtr], 16, bFiller))
+                Bs3TestFailedF("Trailing bytes touched (#21): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off + cbIdtr]);
+        }
+
+        /* Hit it from above. */
+        for (off = -cbIdtr - 8; off < cbIdtr + 8; off++)
+        {
+            Ctx.rbx.u = CtxUdExpected.rbx.u = UINT64_C(0xffff800000000000) + off;
+            Bs3MemSet(&pbTest[-64], bFiller, 64*2);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            if (off >= 0)
+            {
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+                if (Bs3MemCmp(&pbTest[off], pabExpected, cbIdtr) != 0)
+                    Bs3TestFailedF("Mismatch (#22): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pabExpected, cbIdtr, &pbTest[off]);
+            }
+            else
+            {
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                if (!ASMMemIsAllU8(&pbTest[off], cbIdtr, bFiller))
+                    Bs3TestFailedF("Mismatch (#22): touched base %.*Rhxs, got %.*Rhxs\n",
+                                   cbIdtr, &pabExpected[off], cbIdtr, &pbTest[off]);
+            }
+            if (!ASMMemIsAllU8(&pbTest[off - 16], 16, bFiller))
+                Bs3TestFailedF("Leading bytes touched (#22): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off]);
+            if (!ASMMemIsAllU8(&pbTest[off + cbIdtr], 16, bFiller))
+                Bs3TestFailedF("Trailing bytes touched (#22): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off + cbIdtr]);
+        }
 
     }
+
 }
 
 # define bs3CpuBasic2_sidt_sgdt_Common BS3_CMN_NM(bs3CpuBasic2_sidt_sgdt_Common)
@@ -2160,7 +2219,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 {
-if (bMode == BS3_MODE_LM64)
+//if (bMode == BS3_MODE_LM64)
 {
     union
     {
@@ -2193,7 +2252,7 @@ if (bMode == BS3_MODE_LM64)
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
 {
-if (bMode == BS3_MODE_LM64)
+//if (bMode == BS3_MODE_LM64)
 {
     union
     {

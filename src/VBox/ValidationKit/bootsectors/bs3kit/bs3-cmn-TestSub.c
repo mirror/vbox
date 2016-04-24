@@ -52,6 +52,7 @@ BS3_CMN_DEF(void, Bs3TestSubV,(const char *pszFormat, va_list va))
     cch = Bs3StrPrintfV(g_szBs3SubTest, sizeof(g_szBs3SubTest), pszFormat, va);
     g_cusBs3SubTestAtErrors = g_cusBs3TestErrors;
     BS3_ASSERT(!g_fbBs3SubTestSkipped);
+    g_cusBs3SubTests++;
 
     /*
      * Tell VMMDev and output to the console.
