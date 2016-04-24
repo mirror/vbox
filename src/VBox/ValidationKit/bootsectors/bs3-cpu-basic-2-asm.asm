@@ -36,7 +36,7 @@
 ;*********************************************************************************************************************************
 BS3_BEGIN_DATA16
 BS3_GLOBAL_DATA g_bs3CpuBasic2_ud2_FlatAddr, 4
-        dd  bs3CpuBasic2_ud2 wrt FLAT
+        dd  _bs3CpuBasic2_ud2 wrt FLAT
 
 
 
@@ -45,39 +45,39 @@ BS3_GLOBAL_DATA g_bs3CpuBasic2_ud2_FlatAddr, 4
 ;
 BS3_BEGIN_TEXT16
 
-BS3_PROC_BEGIN  bs3CpuBasic2_ud2, BS3_PB_WITH_US_ALIAS
+BS3_PROC_BEGIN _bs3CpuBasic2_ud2
 .again:
         ud2
         jmp     .again
-BS3_PROC_END    bs3CpuBasic2_ud2
+BS3_PROC_END   _bs3CpuBasic2_ud2
 
 
-BS3_PROC_BEGIN bs3CpuBasic2_Int80, BS3_PB_WITH_US_ALIAS
+BS3_PROC_BEGIN _bs3CpuBasic2_Int80
         int     80h
 .again: ud2
         jmp     .again
-BS3_PROC_END   bs3CpuBasic2_Int80
+BS3_PROC_END   _bs3CpuBasic2_Int80
 
 
-BS3_PROC_BEGIN bs3CpuBasic2_Int81, BS3_PB_WITH_US_ALIAS
+BS3_PROC_BEGIN _bs3CpuBasic2_Int81
         int     81h
 .again: ud2
         jmp     .again
-BS3_PROC_END   bs3CpuBasic2_Int81
+BS3_PROC_END   _bs3CpuBasic2_Int81
 
 
-BS3_PROC_BEGIN bs3CpuBasic2_Int82, BS3_PB_WITH_US_ALIAS
+BS3_PROC_BEGIN _bs3CpuBasic2_Int82
         int     82h
 .again: ud2
         jmp     .again
-BS3_PROC_END   bs3CpuBasic2_Int82
+BS3_PROC_END   _bs3CpuBasic2_Int82
 
 
-BS3_PROC_BEGIN bs3CpuBasic2_Int83, BS3_PB_WITH_US_ALIAS
+BS3_PROC_BEGIN _bs3CpuBasic2_Int83
         int     83h
 .again: ud2
         jmp     .again
-BS3_PROC_END   bs3CpuBasic2_Int83
+BS3_PROC_END   _bs3CpuBasic2_Int83
 
 
 ;

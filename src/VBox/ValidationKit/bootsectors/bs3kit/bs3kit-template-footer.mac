@@ -126,4 +126,5 @@
 %unmacro TONLY16 1+
 %unmacro TONLY32 1+
 %unmacro TONLY64 1+
+%unmacro TNOT64  1+
 

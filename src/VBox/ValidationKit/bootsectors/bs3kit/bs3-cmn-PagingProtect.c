@@ -36,10 +36,15 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if 0
-# define BS3PAGING_DPRINTF(a) Bs3TestPrintf a
+#if 1
+# define BS3PAGING_DPRINTF1(a) Bs3TestPrintf a
 #else
-# define BS3PAGING_DPRINTF(a) do { } while (0)
+# define BS3PAGING_DPRINTF1(a) do { } while (0)
+#endif
+#if 0
+# define BS3PAGING_DPRINTF2(a) Bs3TestPrintf a
+#else
+# define BS3PAGING_DPRINTF2(a) do { } while (0)
 #endif
 
 
@@ -67,7 +72,7 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
 #else
     uint32_t const  uMaxAddr = UINT32_MAX;
 #endif
-    BS3PAGING_DPRINTF(("bs3PagingGetLegacyPte: cr3=%RX32 uFlat=%RX32 uMaxAddr=%RX32\n", (uint32_t)cr3, uFlat, uMaxAddr));
+    BS3PAGING_DPRINTF2(("bs3PagingGetLegacyPte: cr3=%RX32 uFlat=%RX32 uMaxAddr=%RX32\n", (uint32_t)cr3, uFlat, uMaxAddr));
 
     *prc = VERR_OUT_OF_RANGE;
     if (cr3 <= uMaxAddr)
@@ -81,13 +86,18 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
             unsigned const iPte = (uFlat >> X86_PT_SHIFT) & X86_PT_MASK;
 
             BS3_ASSERT(pPD->a[iPde].b.u1Present);
-            BS3PAGING_DPRINTF(("bs3PagingGetLegacyPte: pPD=%p iPde=%#x: %#RX32\n", pPD, iPde, pPD->a[iPde]));
+            BS3PAGING_DPRINTF2(("bs3PagingGetLegacyPte: pPD=%p iPde=%#x: %#RX32\n", pPD, iPde, pPD->a[iPde]));
             if (pPD->a[iPde].b.u1Present)
             {
                 if (!pPD->a[iPde].b.u1Size)
                 {
                     if (pPD->a[iPde].u <= uMaxAddr)
+                    {
                         pPTE = &((X86PT BS3_FAR *)Bs3XptrFlatToCurrent(pPD->a[iPde].u & ~(uint32_t)PAGE_OFFSET_MASK))->a[iPte];
+                        *prc = VINF_SUCCESS;
+                    }
+                    else
+                        BS3PAGING_DPRINTF1(("bs3PagingGetLegacyPte: out of range! iPde=%#x: %#x\n", iPde, pPD->a[iPde].u));
                 }
                 else
                 {
@@ -98,24 +108,27 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
                     if (pPD->a[iPde].b.u1PAT)
                         uPte |= X86_PTE_PAT;
 
-                    pPT = (X86PT BS3_FAR *)bs3PagingBuildPaeTable(RT_MAKE_U64(uPte, uPte + PAGE_SIZE),
+                    pPT = (X86PT BS3_FAR *)bs3PagingBuildPaeTable(RT_MAKE_U64(uPte, uPte | PAGE_SIZE),
                                                                   RT_MAKE_U64(PAGE_SIZE*2, PAGE_SIZE*2),
                                                                   uMaxAddr > _1M ? BS3MEMKIND_TILED : BS3MEMKIND_REAL, prc);
 
-                    BS3PAGING_DPRINTF(("bs3PagingGetLegacyPte: Built pPT=%p uPte=%RX32\n", pPT, uPte));
+                    BS3PAGING_DPRINTF2(("bs3PagingGetLegacyPte: Built pPT=%p uPte=%RX32\n", pPT, uPte));
                     if (pPT)
                     {
                         pPD->a[iPde].u = Bs3SelPtrToFlat(pPT)
                                        | (pPD->a[iPde].u & ~(uint32_t)(X86_PTE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D));
-                        BS3PAGING_DPRINTF(("bs3PagingGetLegacyPte: iPde=%#x: %#RX32\n", iPde, pPD->a[iPde].u));
+                        BS3PAGING_DPRINTF2(("bs3PagingGetLegacyPte: iPde=%#x: %#RX32\n", iPde, pPD->a[iPde].u));
                         if (fUseInvlPg)
                             ASMInvalidatePage(uFlat);
                         pPTE = &pPT->a[iPte];
+                        *prc = VINF_SUCCESS;
                     }
                 }
             }
         }
     }
+    else
+        BS3PAGING_DPRINTF1(("bs3PagingGetLegacyPte: out of range! cr3=%#x\n", cr3));
     return pPTE;
 }
 
@@ -148,6 +161,9 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
                 {
                     if ((pPdpt->a[iPdpte].u & X86_PDPE_PG_MASK) <= uMaxAddr)
                         pPD = (X86PDPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPdpt->a[iPdpte].u & ~(uint64_t)PAGE_OFFSET_MASK);
+                    else
+                        BS3PAGING_DPRINTF1(("bs3PagingGetPte: out of range! iPdpte=%#x: %RX64 max=%RX32\n",
+                                            iPdpte, pPdpt->a[iPdpte].u, (uint32_t)uMaxAddr));
                 }
                 else
                 {
@@ -173,9 +189,15 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
             BS3_ASSERT(pPdpt->a[iPdpte].n.u1Present);
             if ((pPdpt->a[iPdpte].u & X86_PDPE_PG_MASK) <= uMaxAddr)
                 pPD = (X86PDPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPdpt->a[iPdpte].u & X86_PDPE_PG_MASK);
+            else
+                BS3PAGING_DPRINTF1(("bs3PagingGetPte: out of range! iPdpte=%#x: %RX64 max=%RX32\n",
+                                    iPdpte, pPdpt->a[iPdpte].u, (uint32_t)uMaxAddr));
         }
         else
+        {
             pPD = NULL;
+            BS3PAGING_DPRINTF1(("bs3PagingGetPte: out of range! uFlat=%#RX64 max=%RX32\n", uFlat, (uint32_t)uMaxAddr));
+        }
         if (pPD)
         {
             unsigned const iPte = (uFlat >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
@@ -183,7 +205,13 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
             if (!pPD->a[iPde].b.u1Size)
             {
                 if ((pPD->a[iPde].u & X86_PDE_PAE_PG_MASK) <= uMaxAddr)
+                {
                     pPTE = &((X86PTPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPD->a[iPde].u & ~(uint64_t)PAGE_OFFSET_MASK))->a[iPte];
+                    *prc = VINF_SUCCESS;
+                }
+                else
+                    BS3PAGING_DPRINTF1(("bs3PagingGetPte: out of range! iPde=%#x: %RX64 max=%RX32\n",
+                                        iPde, pPD->a[iPde].u, (uint32_t)uMaxAddr));
             }
             else
             {
@@ -204,11 +232,13 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
                     if (fUseInvlPg)
                         ASMInvalidatePage(uFlat);
                     pPTE = &pPT->a[iPte];
+                    *prc = VINF_SUCCESS;
                 }
             }
         }
     }
-
+    else
+        BS3PAGING_DPRINTF1(("bs3PagingGetPte: out of range! cr3=%#RX32 uMaxAddr=%#RX32\n", (uint32_t)cr3, (uint32_t)uMaxAddr));
     return pPTE;
 }
 
@@ -216,86 +246,97 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint64_t uFl
 #undef Bs3PagingProtect
 BS3_CMN_DEF(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t fSet, uint64_t fClear))
 {
-    RTCCUINTXREG const  cr3        = ASMGetCR3();
-    RTCCUINTXREG const  cr4        = g_uBs3CpuDetected & BS3CPU_F_CPUID ? ASMGetCR4() : 0;
-    bool const          fLegacyPTs = !(cr4 & X86_CR4_PAE);
-    bool const          fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486
-                                  && (   cb < UINT64_C(16)*PAGE_SIZE
-                                      || (cr4 & X86_CR4_PGE));
-    unsigned            cEntries;
-    int                 rc;
-
-    /*
-     * Adjust the range parameters.
-     */
-    cb += uFlat & PAGE_OFFSET_MASK;
-    cb = RT_ALIGN_64(cb, PAGE_SIZE);
-    uFlat &= ~(uint64_t)PAGE_OFFSET_MASK;
-
-    fSet   &= ~X86_PTE_PAE_PG_MASK;
-    fClear &= ~X86_PTE_PAE_PG_MASK;
-
-    BS3PAGING_DPRINTF(("Bs3PagingProtect: uFlat=%RX64 cb=%RX64 fSet=%RX64 fClear=%RX64 %s %s\n", uFlat, cb, fSet, fClear,
-                       fLegacyPTs ? "legacy" : "pae/amd64", fUseInvlPg ? "invlpg" : "reload-cr3"));
-    if (fLegacyPTs)
+#if ARCH_BITS == 16
+    if (!BS3_MODE_IS_V86(g_bBs3CurrentMode))
+#endif
     {
+        RTCCUINTXREG const  cr3        = ASMGetCR3();
+        RTCCUINTXREG const  cr4        = g_uBs3CpuDetected & BS3CPU_F_CPUID ? ASMGetCR4() : 0;
+        bool const          fLegacyPTs = !(cr4 & X86_CR4_PAE);
+        bool const          fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486
+                                      && (   cb < UINT64_C(16)*PAGE_SIZE
+                                          || (cr4 & X86_CR4_PGE));
+        unsigned            cEntries;
+        int                 rc;
+
         /*
-         * Legacy page tables.
+         * Adjust the range parameters.
          */
-        while ((uint32_t)cb > 0)
+        cb += uFlat & PAGE_OFFSET_MASK;
+        cb = RT_ALIGN_64(cb, PAGE_SIZE);
+        uFlat &= ~(uint64_t)PAGE_OFFSET_MASK;
+
+        fSet   &= ~X86_PTE_PAE_PG_MASK;
+        fClear &= ~X86_PTE_PAE_PG_MASK;
+
+        BS3PAGING_DPRINTF1(("Bs3PagingProtect: uFlat=%RX64 cb=%RX64 fSet=%RX64 fClear=%RX64 %s %s\n", uFlat, cb, fSet, fClear,
+                            fLegacyPTs ? "legacy" : "pae/amd64", fUseInvlPg ? "invlpg" : "reload-cr3"));
+        if (fLegacyPTs)
         {
-            PX86PTE pPte = BS3_CMN_NM(bs3PagingGetLegacyPte)(cr3, (uint32_t)uFlat, fUseInvlPg, &rc);
-            if (!pPte)
-                return rc;
-
-            cEntries = X86_PG_ENTRIES - ((uFlat >> X86_PT_SHIFT) & X86_PT_MASK);
-            while (cEntries-- > 0 && cb > 0)
+            /*
+             * Legacy page tables.
+             */
+            while ((uint32_t)cb > 0)
             {
-                pPte->u &= ~(uint32_t)fClear;
-                pPte->u |= (uint32_t)fSet;
-                if (fUseInvlPg)
-                    ASMInvalidatePage(uFlat);
+                PX86PTE pPte = BS3_CMN_FAR_NM(bs3PagingGetLegacyPte)(cr3, (uint32_t)uFlat, fUseInvlPg, &rc);
+                if (!pPte)
+                    return rc;
 
-                pPte++;
-                uFlat += PAGE_SIZE;
-                cb    -= PAGE_SIZE;
+                cEntries = X86_PG_ENTRIES - ((uFlat >> X86_PT_SHIFT) & X86_PT_MASK);
+                while (cEntries-- > 0 && cb > 0)
+                {
+                    pPte->u &= ~(uint32_t)fClear;
+                    pPte->u |= (uint32_t)fSet;
+                    if (fUseInvlPg)
+                        ASMInvalidatePage(uFlat);
+
+                    pPte++;
+                    uFlat += PAGE_SIZE;
+                    cb    -= PAGE_SIZE;
+                }
             }
         }
+        else
+        {
+            /*
+             * Long mode or PAE page tables (at this level they are the same).
+             */
+            while (cb > 0)
+            {
+                PX86PTEPAE pPte = BS3_CMN_FAR_NM(bs3PagingGetPte)(cr3, uFlat, fUseInvlPg, &rc);
+                if (!pPte)
+                    return rc;
+
+                cEntries = X86_PG_ENTRIES - ((uFlat >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
+                while (cEntries-- > 0 && cb > 0)
+                {
+                    pPte->u &= ~fClear;
+                    pPte->u |= fSet;
+                    if (fUseInvlPg)
+                        ASMInvalidatePage(uFlat);
+
+                    pPte++;
+                    uFlat += PAGE_SIZE;
+                    cb    -= PAGE_SIZE;
+                }
+            }
+        }
+
+        /*
+         * Flush the TLB if we didn't use INVLPG above.
+         */
+        BS3PAGING_DPRINTF2(("Bs3PagingProtect: reloading cr3=%RX32\n", (uint32_t)cr3));
+        //if (!fUseInvlPg)
+            ASMSetCR3(cr3);
+        BS3PAGING_DPRINTF2(("Bs3PagingProtect: reloaded cr3=%RX32\n", (uint32_t)cr3));
     }
+#if ARCH_BITS == 16
+    /*
+     * We can do this stuff in v8086 mode.
+     */
     else
-    {
-        /*
-         * Long mode or PAE page tables (at this level they are the same).
-         */
-        while (cb > 0)
-        {
-            PX86PTEPAE pPte = BS3_CMN_NM(bs3PagingGetPte)(cr3, uFlat, fUseInvlPg, &rc);
-            if (!pPte)
-                return rc;
-
-            cEntries = X86_PG_ENTRIES - ((uFlat >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
-            while (cEntries-- > 0 && cb > 0)
-            {
-                pPte->u &= ~fClear;
-                pPte->u |= fSet;
-                if (fUseInvlPg)
-                    ASMInvalidatePage(uFlat);
-
-                pPte++;
-                uFlat += PAGE_SIZE;
-                cb    -= PAGE_SIZE;
-            }
-        }
-    }
-
-    /*
-     * Flush the TLB if we didn't use INVLPG above.
-     */
-    BS3PAGING_DPRINTF(("Bs3PagingProtect: reloading cr3=%RX32\n", (uint32_t)cr3));
-    //if (!fUseInvlPg)
-        ASMSetCR3(cr3);
-    BS3PAGING_DPRINTF(("Bs3PagingProtect: reloaded cr3=%RX32\n", (uint32_t)cr3));
-
+        return Bs3SwitchFromV86To16BitAndCallC((FPFNBS3FAR)Bs3PagingProtect_f16, sizeof(uint64_t)*4, uFlat, cb, fSet, fClear);
+#endif
     return VINF_SUCCESS;
 }
 

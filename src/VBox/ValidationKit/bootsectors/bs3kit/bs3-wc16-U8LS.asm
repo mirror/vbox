@@ -30,7 +30,7 @@
 ;;
 ; 64-bit integer left shift.
 ;
-; @returns  AX:BX:CX:DX
+; @returns  AX:BX:CX:DX (AX is the most significant, DX the least)
 ; @param    AX:BX:CX:DX Value to shift.
 ; @param    SI          Shift count.
 ;
@@ -46,17 +46,17 @@ $_?I8LS:
         ; code, we do the same as the 32-bit one as we don't want to wast
         ; time in the below loop.
         ;
-        ; Using 8086 comatible approach here as it's less hazzle to write
+        ; Using 8086 compatible approach here as it's less hazzle to write
         ; and smaller.
         ;
         and     si, 3fh
-        jz      .return
 
+        jz      .return
 .next_shift:
-        shl     ax, 1
-        rcl     bx, 1
+        shl     dx, 1
         rcl     cx, 1
-        rcl     dx, 1
+        rcl     bx, 1
+        rcl     ax, 1
         dec     si
         jnz     .next_shift
 

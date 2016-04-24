@@ -71,6 +71,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-StrNLen.c \
        bs3-cmn-StrCpy.c \
        bs3-cmn-MemChr.asm \
+       bs3-cmn-MemCmp.asm \
        bs3-cmn-MemCpy.c \
        bs3-cmn-MemPCpy.c \
        bs3-cmn-MemMove.c \
@@ -79,6 +80,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemAlloc.c \
        bs3-cmn-MemAllocZ.c \
        bs3-cmn-MemFree.c \
+       bs3-cmn-MemGuardedTestPage.c \
        bs3-cmn-PagingData.c \
        bs3-cmn-PagingInitRootForPP.c \
        bs3-cmn-PagingInitRootForPAE.c \
@@ -90,6 +92,9 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxPrint.c \
        bs3-cmn-RegCtxSave.asm \
        bs3-cmn-RegCtxSaveEx.asm \
+       bs3-cmn-RegCtxSetGrpSegFromCurPtr.c \
+       bs3-cmn-RegCtxSetGrpSegFromFlat.c \
+       bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
        bs3-cmn-SelFar32ToFlat32.c \
        bs3-cmn-SelFar32ToFlat32NoClobber.asm \
        bs3-cmn-SelProtFar32ToFlat32.c \
@@ -192,6 +197,7 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-wc16-U8LS.asm \
 	bs3-wc16-U4D.asm \
 	bs3-wc16-I4D.asm \
+       bs3-c16-SwitchFromV86To16BitAndCallC.asm \
        bs3-c16-Trap16Generic.asm \
        bs3-c16-TrapRmV86Generic.asm \
        bs3-c16-Trap16RmV86Data.asm \

@@ -220,14 +220,14 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode, BS3_PBC_NEAR ; won't need this outside the s
 
 %elif BS3_MODE_IS_64BIT_SYS(TMPL_MODE)
         BS3_EXTERN_CMN Bs3Trap64SetGate
-        extern         Bs3TrapSystemCallHandler_lm64
+        extern         _Bs3TrapSystemCallHandler_lm64
         TMPL_BEGIN_TEXT
         push    0                       ; bIst
  %if BS3_MODE_IS_64BIT_CODE(TMPL_MODE)
-        push    Bs3TrapSystemCallHandler_lm64 wrt FLAT
+        push    _Bs3TrapSystemCallHandler_lm64 wrt FLAT
  %else
         push    dword 0                 ; upper offset
-        push    dword Bs3TrapSystemCallHandler_lm64 wrt FLAT
+        push    dword _Bs3TrapSystemCallHandler_lm64 wrt FLAT
  %endif
         push    BS3_SEL_R0_CS64
         push    3                       ; DPL

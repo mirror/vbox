@@ -308,9 +308,13 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_X1TEXT16_CS         0x00f0 /**< Conforming code selector for accessing the BS3X1TEXT16 segment. Runtime config. */
 #define BS3_SEL_VMMDEV_MMIO16       0x00f8 /**< Selector for accessing the VMMDev MMIO segment at 0100000h from 16-bit code. */
 
+/** Checks if @a uSel is in the BS3_SEL_RX_XXX range. */
+#define BS3_SEL_IS_IN_RING_RANGE(uSel) ( (unsigned)(uSel -  BS3_SEL_R0_FIRST) < (unsigned)(4 << BS3_SEL_RING_SHIFT) )
 #define BS3_SEL_RING_SHIFT          8      /**< For the formula: BS3_SEL_R0_XXX + ((cs & 3) << BS3_SEL_RING_SHIFT) */
 #define BS3_SEL_RING_SUB_MASK       0x00f8 /**< Mask for getting the sub-selector. For use with BS3_SEL_R*_FIRST. */
 
+/** Checks if @a uSel is in the BS3_SEL_R0_XXX range. */
+#define BS3_SEL_IS_IN_R0_RANGE(uSel) ( (unsigned)(uSel -  BS3_SEL_R0_FIRST) < (unsigned)(1 << BS3_SEL_RING_SHIFT) )
 #define BS3_SEL_R0_FIRST            0x0100 /**< The first selector in the ring-0 block. */
 #define BS3_SEL_R0_CS16             0x0100 /**< ring-0: 16-bit code selector,  base 0x10000. */
 #define BS3_SEL_R0_DS16             0x0108 /**< ring-0: 16-bit data selector,  base 0x23000. */
@@ -386,6 +390,8 @@ RT_C_DECLS_BEGIN
 #define BS3_SEL_R3_CS64_EO          0x0470 /**< ring-3: 64-bit execute-only code selector, not accessed, flat. */
 #define BS3_SEL_R3_CS64_CNF         0x0478 /**< ring-3: 64-bit conforming code selector, not accessed, flat. */
 #define BS3_SEL_R3_CS64_CNF_EO      0x0480 /**< ring-3: 64-bit execute-only conforming code selector, not accessed, flat. */
+
+#define BS3_SEL_R3_LAST             0x04f8 /**< ring-3: Last of the BS3_SEL_RX_XXX range. */
 
 #define BS3_SEL_SPARE_FIRST         0x0500 /**< The first selector in the spare block */
 #define BS3_SEL_SPARE_00            0x0500 /**< Spare selector number 00h. */
@@ -679,11 +685,11 @@ RT_C_DECLS_BEGIN
  * @param   a_Name      The name of the global variable.
  * @remarks Mainly used in bs3kit-mangling.h, internal headers and templates.
  */
-#if ARCH_BITS == 64
-# define BS3_DATA_NM(a_Name)  RT_CONCAT(_,a_Name)
-#else
+//converter does this now//#if ARCH_BITS == 64
+//converter does this now//# define BS3_DATA_NM(a_Name)  RT_CONCAT(_,a_Name)
+//converter does this now//#else
 # define BS3_DATA_NM(a_Name)  a_Name
-#endif
+//converter does this now//#endif
 
 /**
  * Template for createing a pointer union type.
@@ -735,6 +741,22 @@ BS3_PTR_UNION_TEMPLATE(BS3CPTRUNION, const);
 BS3_PTR_UNION_TEMPLATE(BS3VPTRUNION, volatile);
 BS3_PTR_UNION_TEMPLATE(BS3CVPTRUNION, const volatile);
 
+/** Generic far function type. */
+typedef BS3_DECL_FAR(void)  FNBS3FAR(void);
+/** Generic far function pointer type. */
+typedef FNBS3FAR           *FPFNBS3FAR;
+
+/** Generic near function type. */
+typedef BS3_DECL_NEAR(void) FNBS3NEAR(void);
+/** Generic near function pointer type. */
+typedef FNBS3NEAR          *PFNBS3NEAR;
+
+/** Generic far 16:16 function pointer type for address conversion functions. */
+#if ARCH_BITS == 16
+typedef FPFNBS3FAR          PFNBS3FARADDRCONV;
+#else
+typedef uint32_t            PFNBS3FARADDRCONV;
+#endif
 
 /** The system call vector. */
 #define BS3_TRAP_SYSCALL        UINT8_C(0x20)
@@ -1088,20 +1110,6 @@ uint16_t Bs3AsmSmsw(void);
 #endif
 
 
-/** @def BS3_IS_PROTECTED_MODE
- * @returns true if protected mode, false if not. */
-#if ARCH_BITS != 16
-# define BS3_IS_PROTECTED_MODE() (true)
-#else
-# if 1
-#  define BS3_IS_PROTECTED_MODE() (!BS3_MODE_IS_RM_SYS(g_bBs3CurrentMode))
-# else
-#  define BS3_IS_PROTECTED_MODE() (Bs3AsmSmsw() & 1 /*PE*/)
-# endif
-#endif
-
-
-
 /** @defgroup bs3kit_cross_ptr  Cross Context Pointer Type
  *
  * The cross context pointer type is
@@ -1239,12 +1247,12 @@ DECLINLINE(uint16_t) Bs3Sel16GetCurRing(void);
  */
 DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
 {
-    if (BS3_IS_PROTECTED_MODE())
+    if (!BS3_MODE_IS_RM_OR_V86(g_bBs3CurrentMode))
         return (__segment)(((uHigh << 3) + BS3_SEL_TILED) | Bs3Sel16GetCurRing());
     return (__segment)(uHigh << 12);
 }
 
-#endif /* ARCH_BITS == 16*/
+#endif /* ARCH_BITS == 16 */
 
 /** @def BS3_XPTR_GET
  * Gets the current context pointer value.
@@ -1276,13 +1284,13 @@ DECLINLINE(__segment) Bs3Sel16HighFlatPtrToSelector(uint16_t uHigh)
 # define BS3_XPTR_SET(a_Type, a_Name, a_pValue) \
     do { \
         a_Type BS3_FAR *pTypeCheck = (a_pValue); \
-        if (BS3_IS_PROTECTED_MODE()) \
+        if (BS3_MODE_IS_RM_OR_V86(g_bBs3CurrentMode)) \
+            (a_Name).XPtr.uFlat = BS3_FP_OFF(pTypeCheck) + ((uint32_t)BS3_FP_SEG(pTypeCheck) << 4); \
+        else \
         { \
             (a_Name).XPtr.u.uLow  = BS3_FP_OFF(pTypeCheck); \
             (a_Name).XPtr.u.uHigh = ((BS3_FP_SEG(pTypeCheck) & UINT16_C(0xfff8)) - BS3_SEL_TILED) >> 3; \
         } \
-        else \
-            (a_Name).XPtr.uFlat = BS3_FP_OFF(pTypeCheck) + ((uint32_t)BS3_FP_SEG(pTypeCheck) << 4); \
     } while (0)
 #elif ARCH_BITS == 32
 # define BS3_XPTR_SET(a_Type, a_Name, a_pValue) \
@@ -1641,6 +1649,16 @@ BS3_CMN_PROTO_NOSB(void, Bs3MemSet,(void BS3_FAR *pvDst, uint8_t bFiller, size_t
  */
 BS3_CMN_PROTO_NOSB(void BS3_FAR *, Bs3MemChr,(void const BS3_FAR *pvHaystack, uint8_t bNeedle, size_t cbHaystack));
 
+/**
+ * CRT style memcmp.
+ *
+ * @returns 0 if equal. Negative if the left side is 'smaller' than the right
+ *          side, and positive in the other case.
+ * @param   pv1             The left hand memory.
+ * @param   pv2             The right hand memory.
+ * @param   bNeedle         The number of bytes to compare.
+ */
+BS3_CMN_PROTO_NOSB(int, Bs3MemCmp,(void const BS3_FAR *pv1, void const BS3_FAR *pv2, size_t cb));
 
 BS3_CMN_PROTO_STUB(void, Bs3UInt64Div,(RTUINT64U uDividend, RTUINT64U uDivisor, RTUINT64U BS3_FAR *paQuotientReminder));
 BS3_CMN_PROTO_STUB(void, Bs3UInt32Div,(RTUINT32U uDividend, RTUINT32U uDivisor, RTUINT32U BS3_FAR *paQuotientReminder));
@@ -1712,6 +1730,18 @@ BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToRealMode,(uint32_t uFlatAddr));
  * @remarks All register are preserved, except return and parameter.
  */
 BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToProtFar16,(uint32_t uFlatAddr));
+
+/**
+ * Converts a far 16:16 real mode (code) address to a flat address.
+ *
+ * @returns 32-bit flat address.
+ * @param   uFar1616        Far real mode address (high 16-bit is segment, low
+ *                          is offset).
+ * @remarks All register are preserved, except return.
+ * @remarks No 20h scratch space required in 64-bit mode.
+ * @remarks Exactly the same as Bs3SelRealModeDataToFlat, except for param.
+ */
+BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeCodeToFlat,(PFNBS3FARADDRCONV uFar1616));
 
 /**
  * Converts a flat data address to a real mode segment and offset.
@@ -1982,6 +2012,36 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemAllocZ,(BS3MEMKIND enmKind, size_t cb))
  */
 BS3_CMN_PROTO_STUB(void, Bs3MemFree,(void BS3_FAR *pv, size_t cb));
 
+/**
+ * Allocates a page with non-present pages on each side.
+ *
+ * @returns Pointer to the usable page.  NULL on failure.  Use
+ *          Bs3MemGuardedTestPageFree to free the allocation.
+ * @param   enmKind     The kind of addressing constraints imposed on the
+ *                      allocation.
+ */
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemGuardedTestPageAlloc,(BS3MEMKIND enmKind));
+
+/**
+ * Allocates a page with pages on each side to the @a fPte specification.
+ *
+ * @returns Pointer to the usable page.  NULL on failure.  Use
+ *          Bs3MemGuardedTestPageFree to free the allocation.
+ * @param   enmKind     The kind of addressing constraints imposed on the
+ *                      allocation.
+ * @param   fPte        The page table entry specification for the guard pages.
+ */
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemGuardedTestPageAllocEx,(BS3MEMKIND enmKind, uint64_t fPte));
+
+/**
+ * Frees guarded page allocated by Bs3MemGuardedTestPageAlloc or
+ * Bs3MemGuardedTestPageAllocEx.
+ *
+ * @param   pvGuardedPage   Pointer returned by Bs3MemGuardedTestPageAlloc or
+ *                          Bs3MemGuardedTestPageAllocEx.  NULL is ignored.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3MemGuardedTestPageFree,(void BS3_FAR *pvGuardedPage));
+
 
 /**
  * Enables the A20 gate.
@@ -2109,6 +2169,20 @@ BS3_CMN_PROTO_NOSB(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData));
  */
 BS3_CMN_PROTO_STUB(void, Bs3PicMaskAll,(void));
 
+
+/**
+ * Call 16-bit prot mode function from v8086 mode.
+ *
+ * This switches from v8086 mode to 16-bit protected mode (code) and executed
+ * @a fpfnCall with @a cbParams bytes of parameters pushed on the stack.
+ * Afterwards it switches back to v8086 mode and returns a 16-bit status code.
+ *
+ * @returns     16-bit status code if the function returned anything.
+ * @param       fpfnCall        Far real mode pointer to the function to call.
+ * @param       cbParams        The size of the parameter list, in bytes.
+ * @param       ...             The parameters.
+ */
+BS3_CMN_PROTO_STUB(int, Bs3SwitchFromV86To16BitAndCallC,(FPFNBS3FAR fpfnCall, unsigned cbParams, ...));
 
 
 /**
@@ -2262,6 +2336,52 @@ BS3_CMN_PROTO_NOSB(DECL_NO_RETURN(void), Bs3RegCtxRestore,(PCBS3REGCTX pRegCtx, 
  * @param   pRegCtx     The register context to be printed.
  */
 BS3_CMN_PROTO_STUB(void, Bs3RegCtxPrint,(PCBS3REGCTX pRegCtx));
+
+/**
+ * Sets a GPR and segment register to point at the same location as @a uFlat.
+ *
+ * @param   pRegCtx     The register context.
+ * @param   pGpr        The general purpose register to set (points within
+ *                      @a pRegCtx).
+ * @param   pSel        The selector register (points within @a pRegCtx).
+ * @param   uFlat       Flat location address.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpSegFromFlat,(PBS3REGCTX pRegCtx, PBS3REG pGpr, PRTSEL pSel, RTCCUINTXREG uFlat));
+
+/**
+ * Sets a GPR and segment register to point at the same location as @a ovPtr.
+ *
+ * @param   pRegCtx     The register context.
+ * @param   pGpr        The general purpose register to set (points within
+ *                      @a pRegCtx).
+ * @param   pSel        The selector register (points within @a pRegCtx).
+ * @param   pvPtr       Current context pointer.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpSegFromCurPtr,(PBS3REGCTX pRegCtx, PBS3REG pGpr, PRTSEL pSel, void  BS3_FAR *pvPtr));
+
+/**
+ * Sets a GPR and DS to point at the same location as @a ovPtr.
+ *
+ * @param   pRegCtx     The register context.
+ * @param   pGpr        The general purpose register to set (points within
+ *                      @a pRegCtx).
+ * @param   pvPtr       Current context pointer.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetGrpDsFromCurPtr,(PBS3REGCTX pRegCtx, PBS3REG pGpr, void  BS3_FAR *pvPtr));
+
+/**
+ * Sets CS:RIP to point at the same piece of code as @a pfnCode.
+ *
+ * The 16-bit edition of this function expects a far 16:16 address as written by
+ * the linker (i.e. real mode).
+ *
+ * @param   pRegCtx     The register context.
+ * @param   pfnCode     Pointer to the code. In 32-bit and 64-bit mode this is a
+ *                      flat address, while in 16-bit it's a far 16:16 address
+ *                      as fixed up by the linker (real mode selector).  This
+ *                      address is converted to match the mode of the context.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetRipCsFromLnkPtr,(PBS3REGCTX pRegCtx, FPFNBS3FAR pfnCode));
 
 
 /**

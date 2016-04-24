@@ -30,7 +30,7 @@
 ;;
 ; 64-bit unsigned integer left shift.
 ;
-; @returns  AX:BX:CX:DX
+; @returns  AX:BX:CX:DX (AX is the most significant, DX the least)
 ; @param    AX:BX:CX:DX Value to shift.
 ; @param    SI          Shift count.
 ;

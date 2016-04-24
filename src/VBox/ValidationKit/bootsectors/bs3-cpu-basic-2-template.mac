@@ -91,6 +91,9 @@ BS3_PROC_END_MODE   bs3CpuBasic2_iret
 ;
 %ifdef BS3_INSTANTIATING_CMN
 
+;
+; SIDT
+;
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_bx_ud2, BS3_PBC_NEAR
         sidt    [xBX]
 .again: ud2
@@ -98,7 +101,91 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_bx_ud2, BS3_PBC_NEAR
 AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sidt_bx_ud2) == 3)
 BS3_PROC_END_CMN   bs3CpuBasic2_sidt_bx_ud2
 
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_opsize_bx_ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        sidt    [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sidt_opsize_bx_ud2) == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_sidt_opsize_bx_ud2
 
+%if TMPL_BITS == 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_rexw_bx_ud2, BS3_PBC_NEAR
+        db      X86_OP_REX_W
+        sidt    [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sidt_rexw_bx_ud2) == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_sidt_rexw_bx_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_opsize_rexw_bx_ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        db      X86_OP_REX_W
+        sidt    [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sidt_opsize_rexw_bx_ud2) == 5)
+BS3_PROC_END_CMN   bs3CpuBasic2_sidt_opsize_rexw_bx_ud2
+%endif
+
+%if TMPL_BITS != 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_ss_bx_ud2, BS3_PBC_NEAR
+        sidt    [ss:xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sidt_ss_bx_ud2) == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_sidt_ss_bx_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sidt_opsize_ss_bx_ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        sidt    [ss:xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sidt_opsize_ss_bx_ud2) == 5)
+BS3_PROC_END_CMN   bs3CpuBasic2_sidt_opsize_ss_bx_ud2
+%endif
+
+;
+; SGDT
+;
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sgdt_bx_ud2, BS3_PBC_NEAR
+        sgdt    [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sgdt_bx_ud2) == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_sgdt_bx_ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sgdt_opsize_bx_ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        sgdt    [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sgdt_opsize_bx_ud2) == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_sgdt_opsize_bx_ud2
+
+%if TMPL_BITS == 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sgdt_rexw_bx_ud2, BS3_PBC_NEAR
+        db      X86_OP_REX_W
+        sgdt    [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sgdt_rexw_bx_ud2) == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_sgdt_rexw_bx_ud2
+%endif
+
+%if TMPL_BITS != 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_sgdt_ss_bx_ud2, BS3_PBC_NEAR
+        sgdt    [ss:xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_sgdt_ss_bx_ud2) == 4)
+BS3_PROC_END_CMN   bs3CpuBasic2_sgdt_ss_bx_ud2
+%endif
+
+
+;
+;
+;
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_lidt_bx_ud2, BS3_PBC_NEAR
         lidt    [xBX]
 .again: ud2

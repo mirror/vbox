@@ -32,7 +32,7 @@ BS3_EXTERN_CMN Bs3Int64Div
 ;;
 ; 64-bit unsigned integer division, SS variant.
 ;
-; @returns  ax:bx:cx:dx quotient.
+; @returns  ax:bx:cx:dx quotient. (AX is the most significant, DX the least)
 ; @param    ax:bx:cx:dx     Dividend.
 ; @param    [ss:si]         Divisor
 ;
@@ -57,7 +57,7 @@ $_?I8DQ:
 ;;
 ; 64-bit unsigned integer division, ES variant.
 ;
-; @returns  ax:bx:cx:dx quotient.
+; @returns  ax:bx:cx:dx quotient. (AX is the most significant, DX the least)
 ; @param    ax:bx:cx:dx     Dividend.
 ; @param    [es:si]         Divisor
 ;
@@ -87,10 +87,10 @@ $_?I8DQE:
         push    dword [es:si]
 
         ; The dividend.
-        push    dx
-        push    cx
-        push    bx
         push    ax
+        push    bx
+        push    cx
+        push    dx
 
         call    Bs3Int64Div
 

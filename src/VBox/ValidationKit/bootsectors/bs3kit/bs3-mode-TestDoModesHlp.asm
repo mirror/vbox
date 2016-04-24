@@ -133,7 +133,7 @@ extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_pp32):wrt BS3FLAT
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_pae16_32):wrt BS3FLAT
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_pae32):wrt BS3FLAT
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_lm32):wrt BS3FLAT
-extern RT_CONCAT3(Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_lm64):wrt BS3FLAT
+extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_lm64):wrt BS3FLAT
 
 
 
@@ -1104,7 +1104,7 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64, BS3_PBC_NEAR
         BS3_CALL rax, 1
 
         STRICT_SAVE_REGS
-        call    RT_CONCAT3(Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_lm64)
+        call    RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_lm64)
         BS3_SET_BITS TMPL_BITS
         STRICT_CHECK_REGS
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
@@ -1132,3 +1132,4 @@ BS3_PROC_BEGIN_MODE Bs3TestDoModes, BS3_PBC_NEAR
 BS3_PROC_END_MODE   Bs3TestDoModes
 
 %endif
+

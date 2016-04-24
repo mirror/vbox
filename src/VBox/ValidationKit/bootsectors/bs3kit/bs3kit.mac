@@ -148,11 +148,7 @@
 
  ;; Mostly internal macro. Follows BS3_SET_BITS.
  %undef  BS3_NAME_UNDERSCORE
- %if %1 == 64
-  %define BS3_NAME_UNDERSCORE
- %else
-  %define BS3_NAME_UNDERSCORE _
- %endif
+ %define BS3_NAME_UNDERSCORE _
 
  ;; For segment overrides and stuff. Follows BS3_SET_BITS.
  %undef   BS3_ONLY_16BIT
@@ -301,7 +297,7 @@ BS3_SET_BITS_MACROS ARCH_BITS
 ;; @name Segment definitions.
 ;; @{
 
-%ifdef ASM_FORMAT_OMF
+%ifndef ASM_FORMAT_BIN
 ; !!HACK ALERT!!
 ;
 ;   To make FLAT actually be flat, i.e. have a base of 0 rather than the same as
@@ -516,9 +512,7 @@ GROUP FLAT BS3FLAT
 
 ;; When using watcom + OMF, we're using __cdecl by default, which
 ; get an underscore added in front.
-%ifdef ASM_FORMAT_OMF
- %define NAME(name) _ %+ NAME_OVERLOAD(name)
-%endif
+%define NAME(name) _ %+ NAME_OVERLOAD(name)
 
 
 ;
@@ -626,15 +620,7 @@ GROUP FLAT BS3FLAT
 ; @param    %3  The size expression.
 ;
 %macro BS3_GLOBAL_NAME_EX 3
-%ifdef ASM_FORMAT_ELF
- %ifdef __NASM__
-global %1:%2 %3
- %else
-global %1:%2
- %endif
-%else
 global %1
-%endif
 %1:
 %endmacro
 
@@ -655,18 +641,10 @@ BS3_GLOBAL_NAME_EX BS3_DATA_NM(%1), , %2
 ; does the NASM symbol size stuff.
 ;
 ; @param    %1      The mangled name.
-; @param    %2      Create an underscore prefixed alias if present and
-;                   BS3_PB_WITH_US_ALIAS (automatic in 64-bit code).
 ;
-%macro BS3_PROC_BEGIN 1-2 0
-%if __BITS__ == 64 || ((%2) & BS3_PB_WITH_US_ALIAS)
-BS3_GLOBAL_NAME_EX _ %+ %1, function, (%1 %+ _EndProc - %1)
-%endif
+%macro BS3_PROC_BEGIN 1
 BS3_GLOBAL_NAME_EX %1, function, (%1 %+ _EndProc - %1)
 %endmacro
-
-;; For use with BS3_PROC_BEGIN for making it produce an underscore prefixed alias.
-%define BS3_PB_WITH_US_ALIAS 1
 
 ;;
 ; Ends a procedure.
@@ -677,12 +655,6 @@ BS3_GLOBAL_NAME_EX %1, function, (%1 %+ _EndProc - %1)
 ;
 %macro BS3_PROC_END  1
 BS3_GLOBAL_NAME_EX %1 %+ _EndProc, function hidden, (%1 %+ _EndProc - %1)
- %ifdef ASM_FORMAT_ELF
-  %ifdef __YASM__
-size %1                 %1 %+ _EndProc - %1
-size %1 %+ _EndProc     0
-  %endif
- %endif
  int3                                   ; handy and avoids overlapping labels.
 %endmacro
 
@@ -1072,7 +1044,7 @@ BS3_BEGIN_TEXT16
 %define BS3_MODE_NM_068h(a_Name)        _ %+ a_Name %+ _paev86
 %define BS3_MODE_NM_071h(a_Name)        _ %+ a_Name %+ _lm16
 %define BS3_MODE_NM_072h(a_Name)        _ %+ a_Name %+ _lm32
-%define BS3_MODE_NM_074h(a_Name)             a_Name %+ _lm64
+%define BS3_MODE_NM_074h(a_Name)        _ %+ a_Name %+ _lm64
 
 %define BS3_MODE_LNAME_001h             rm
 %define BS3_MODE_LNAME_011h             pe16
@@ -1141,7 +1113,7 @@ BS3_BEGIN_TEXT16
 %define BS3_MODE_UNDERSCORE_068h        _
 %define BS3_MODE_UNDERSCORE_071h        _
 %define BS3_MODE_UNDERSCORE_072h        _
-%define BS3_MODE_UNDERSCORE_074h
+%define BS3_MODE_UNDERSCORE_074h        _
 
 %define BS3_MODE_CNAME_001h             c16
 %define BS3_MODE_CNAME_011h             c16
@@ -1190,7 +1162,7 @@ BS3_BEGIN_TEXT16
 %define BS3_MODE_R0_NM_068h(a_Name)     _ %+ a_Name %+ _pae32_16
 %define BS3_MODE_R0_NM_071h(a_Name)     _ %+ a_Name %+ _lm16
 %define BS3_MODE_R0_NM_072h(a_Name)     _ %+ a_Name %+ _lm32
-%define BS3_MODE_R0_NM_074h(a_Name)          a_Name %+ _lm64
+%define BS3_MODE_R0_NM_074h(a_Name)     _ %+ a_Name %+ _lm64
 ;; @}
 
 

@@ -256,6 +256,21 @@ typedef struct OMFSYMBOL
 /** Pointer to an source symbol table translation entry. */
 typedef OMFSYMBOL *POMFSYMBOL;
 
+/** OMF Writer LNAME lookup record. */
+typedef struct OMFWRLNAME
+{
+    /** Pointer to the next entry with the name hash. */
+    struct OMFWRLNAME      *pNext;
+    /** The LNAMES index number.   */
+    uint16_t                idxName;
+    /** The name length.   */
+    uint8_t                 cchName;
+    /** The name (variable size).   */
+    char                    szName[1];
+} OMFWRLNAME;
+/** Pointer to the a OMF writer LNAME lookup record. */
+typedef OMFWRLNAME *POMFWRLNAME;
+
 /**
  * OMF converter & writer instance.
  */
@@ -311,6 +326,9 @@ typedef struct OMFWRITER
     uint16_t        idxGrpFlat;
     /** The EXTDEF index of the __ImageBase symbol. */
     uint16_t        idxExtImageBase;
+
+    /** LNAME lookup hash table. To avoid too many duplicates. */
+    POMFWRLNAME     apNameLookup[63];
 } OMFWRITE;
 /** Pointer to an OMF writer. */
 typedef OMFWRITE *POMFWRITER;
@@ -352,10 +370,26 @@ static POMFWRITER omfWriter_Create(const char *pszSrc, uint32_t cSegments, uint3
 static void omfWriter_Destroy(POMFWRITER pThis)
 {
     free(pThis->paSymbols);
+
     for (uint32_t i = 0; i < pThis->cSegments; i++)
         if (pThis->paSegments[i].pszName)
             free(pThis->paSegments[i].pszName);
+
     free(pThis->paSegments);
+
+    uint32_t i = RT_ELEMENTS(pThis->apNameLookup);
+    while (i-- > 0)
+    {
+        POMFWRLNAME pNext = pThis->apNameLookup[i];
+        pThis->apNameLookup[i] = NULL;
+        while (pNext)
+        {
+            POMFWRLNAME pFree = pNext;
+            pNext = pNext->pNext;
+            free(pFree);
+        }
+    }
+
     free(pThis);
 }
 
@@ -423,20 +457,26 @@ static bool omfWriter_RecAddBytes(POMFWRITER pThis, const void *pvData, size_t c
                  pThis->bType, (unsigned)cbData, pThis->cbRec, OMF_MAX_RECORD_PAYLOAD);
 }
 
-static bool omfWriter_RecAddStringN(POMFWRITER pThis, const char *pchString, size_t cchString)
+static bool omfWriter_RecAddStringNEx(POMFWRITER pThis, const char *pchString, size_t cchString, bool fPrependUnderscore)
 {
     if (cchString < 256)
     {
-        return omfWriter_RecAddU8(pThis, (uint8_t)cchString)
+        return omfWriter_RecAddU8(pThis, (uint8_t)cchString + fPrependUnderscore)
+            && (!fPrependUnderscore || omfWriter_RecAddU8(pThis, '_'))
             && omfWriter_RecAddBytes(pThis, pchString, cchString);
     }
     return error(pThis->pszSrc, "String too long (%u bytes): '%*.*s'\n",
                  (unsigned)cchString, (int)cchString, (int)cchString, pchString);
 }
 
+static bool omfWriter_RecAddStringN(POMFWRITER pThis, const char *pchString, size_t cchString)
+{
+    return omfWriter_RecAddStringNEx(pThis, pchString, cchString, false /*fPrependUnderscore*/);
+}
+
 static bool omfWriter_RecAddString(POMFWRITER pThis, const char *pszString)
 {
-    return omfWriter_RecAddStringN(pThis, pszString, strlen(pszString));
+    return omfWriter_RecAddStringNEx(pThis, pszString, strlen(pszString), false /*fPrependUnderscore*/);
 }
 
 static bool omfWriter_RecEnd(POMFWRITER pThis, bool fAddCrc)
@@ -470,8 +510,88 @@ static bool omfWriter_BeginModule(POMFWRITER pThis, const char *pszFile)
         && omfWriter_RecEndWithCrc(pThis);
 }
 
+
+/**
+ * Simple stupid string hashing function (for LNAMES)
+ * @returns 8-bit hash.
+ * @param   pchName             The string.
+ * @param   cchName             The string length.
+ */
+DECLINLINE(uint8_t) omfWriter_HashStrU8(const char *pchName, size_t cchName)
+{
+    if (cchName)
+        return (uint8_t)(cchName + pchName[cchName >> 1]);
+    return 0;
+}
+
+/**
+ * Looks up a LNAME.
+ *
+ * @returns Index (0..32K) if found, UINT16_MAX if not found.
+ * @param   pThis               The OMF writer.
+ * @param   pchName             The name to look up.
+ * @param   cchName             The length of the name.
+ */
+static uint16_t omfWriter_LNamesLookupN(POMFWRITER pThis, const char *pchName, size_t cchName)
+{
+    uint8_t uHash = omfWriter_HashStrU8(pchName, cchName);
+    uHash %= RT_ELEMENTS(pThis->apNameLookup);
+
+    POMFWRLNAME pCur = pThis->apNameLookup[uHash];
+    while (pCur)
+    {
+        if (   pCur->cchName == cchName
+            && memcmp(pCur->szName, pchName, cchName) == 0)
+            return pCur->idxName;
+        pCur = pCur->pNext;
+    }
+
+    return UINT16_MAX;
+}
+
+/**
+ * Add a LNAME lookup record.
+ *
+ * @returns success indicator.
+ * @param   pThis               The OMF writer.
+ * @param   pchName             The name to look up.
+ * @param   cchName             The length of the name.
+ * @param   idxName             The name index.
+ */
+static bool omfWriter_LNamesAddLookup(POMFWRITER pThis, const char *pchName, size_t cchName, uint16_t idxName)
+{
+    POMFWRLNAME pCur = (POMFWRLNAME)malloc(sizeof(*pCur) + cchName);
+    if (!pCur)
+        return error("???", "Out of memory!\n");
+
+    pCur->idxName = idxName;
+    pCur->cchName = (uint8_t)cchName;
+    memcpy(pCur->szName, pchName, cchName);
+    pCur->szName[cchName] = '\0';
+
+    uint8_t uHash = omfWriter_HashStrU8(pchName, cchName);
+    uHash %= RT_ELEMENTS(pThis->apNameLookup);
+    pCur->pNext = pThis->apNameLookup[uHash];
+    pThis->apNameLookup[uHash] = pCur;
+
+    return true;
+}
+
+
 static bool omfWriter_LNamesAddN(POMFWRITER pThis, const char *pchName, size_t cchName, uint16_t *pidxName)
 {
+    /* See if we've already got that name in the list. */
+    uint16_t idxName;
+    if (pidxName) /* If pidxName is NULL, we assume the caller migth just be passing stuff thru. */
+    {
+        idxName = omfWriter_LNamesLookupN(pThis, pchName, cchName);
+        if (idxName != UINT16_MAX)
+        {
+            *pidxName = idxName;
+            return true;
+        }
+    }
+
     /* split? */
     if (pThis->cbRec + 1 /*len*/ + cchName + 1 /*crc*/ > OMF_MAX_RECORD_PAYLOAD)
     {
@@ -482,10 +602,11 @@ static bool omfWriter_LNamesAddN(POMFWRITER pThis, const char *pchName, size_t c
             return false;
     }
 
+    idxName = pThis->idxNextName++;
     if (pidxName)
-        *pidxName = pThis->idxNextName;
-    pThis->idxNextName++;
-    return omfWriter_RecAddStringN(pThis, pchName, cchName);
+        *pidxName = idxName;
+    return omfWriter_RecAddStringN(pThis, pchName, cchName)
+        && omfWriter_LNamesAddLookup(pThis, pchName, cchName, idxName);
 }
 
 static bool omfWriter_LNamesAdd(POMFWRITER pThis, const char *pszName, uint16_t *pidxName)
@@ -547,10 +668,11 @@ static bool omfWriter_PubDefBegin(POMFWRITER pThis, uint16_t idxGrpDef, uint16_t
 
 }
 
-static bool omfWriter_PubDefAddN(POMFWRITER pThis, uint32_t uValue, const char *pchString, size_t cchString)
+static bool omfWriter_PubDefAddN(POMFWRITER pThis, uint32_t uValue, const char *pchString, size_t cchString,
+                                 bool fPrependUnderscore)
 {
     /* Split? */
-    if (pThis->cbRec + 1 + cchString + 4 + 1 + 1 > OMF_MAX_RECORD_PAYLOAD)
+    if (pThis->cbRec + 1 + cchString + 4 + 1 + 1 + fPrependUnderscore > OMF_MAX_RECORD_PAYLOAD)
     {
         if (cchString >= 256)
             return error(pThis->pszSrc, "PUBDEF string too long %u ('%s')\n",
@@ -567,14 +689,14 @@ static bool omfWriter_PubDefAddN(POMFWRITER pThis, uint32_t uValue, const char *
         pThis->bType = OMF_PUBDEF32;
     }
 
-    return omfWriter_RecAddStringN(pThis, pchString, cchString)
+    return omfWriter_RecAddStringNEx(pThis, pchString, cchString, fPrependUnderscore)
         && omfWriter_RecAddU32(pThis, uValue)
         && omfWriter_RecAddIdx(pThis, 0); /* type */
 }
 
-static bool omfWriter_PubDefAdd(POMFWRITER pThis, uint32_t uValue, const char *pszString)
+static bool omfWriter_PubDefAdd(POMFWRITER pThis, uint32_t uValue, const char *pszString, bool fPrependUnderscore)
 {
-    return omfWriter_PubDefAddN(pThis, uValue, pszString, strlen(pszString));
+    return omfWriter_PubDefAddN(pThis, uValue, pszString, strlen(pszString), fPrependUnderscore);
 }
 
 static bool omfWriter_PubDefEnd(POMFWRITER pThis)
@@ -594,10 +716,11 @@ static bool omfWriter_ExtDefBegin(POMFWRITER pThis)
 /**
  * EXTDEF - Add an entry, split record if necessary.
  */
-static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t cchString, uint16_t idxType)
+static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t cchString, uint16_t idxType,
+                                 bool fPrependUnderscore)
 {
     /* Split? */
-    if (pThis->cbRec + 1 + cchString + 1 + 1 > OMF_MAX_RECORD_PAYLOAD)
+    if (pThis->cbRec + 1 + cchString + 1 + 1 + fPrependUnderscore > OMF_MAX_RECORD_PAYLOAD)
     {
         if (cchString >= 256)
             return error(pThis->pszSrc, "EXTDEF string too long %u ('%s')\n",
@@ -607,16 +730,16 @@ static bool omfWriter_ExtDefAddN(POMFWRITER pThis, const char *pchString, size_t
             return false;
     }
 
-    return omfWriter_RecAddStringN(pThis, pchString, cchString)
+    return omfWriter_RecAddStringNEx(pThis, pchString, cchString, fPrependUnderscore)
         && omfWriter_RecAddIdx(pThis, idxType); /* type */
 }
 
 /**
  * EXTDEF - Add an entry, split record if necessary.
  */
-static bool omfWriter_ExtDefAdd(POMFWRITER pThis, const char *pszString)
+static bool omfWriter_ExtDefAdd(POMFWRITER pThis, const char *pszString, bool fPrependUnderscore)
 {
-    return omfWriter_ExtDefAddN(pThis, pszString, strlen(pszString), 0);
+    return omfWriter_ExtDefAddN(pThis, pszString, strlen(pszString), 0, fPrependUnderscore);
 }
 
 /**
@@ -1505,27 +1628,10 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
                     if (   pThis->paSymbols[iSym].idxSegDef == idxSegDef
                         && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
                     {
+                        /* Underscore prefix all names not already underscored/mangled. */
                         const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
-                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName))
+                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName, pszName[0] != '_'))
                             return false;
-
-                        /* If the symbol doesn't start with an underscore and is a _c64 or _lm64 symbol,
-                           add an underscore prefixed alias to ease access from 16-bit and 32-bit code. */
-                        size_t cchName = strlen(pszName);
-                        if (   *pszName != '_'
-                            && (   (cchName > 4 && strcmp(&pszName[cchName - 4], "_c64")  == 0)
-                                || (cchName > 5 && strcmp(&pszName[cchName - 5], "_lm64") == 0) ) )
-                        {
-                            char   szCdeclName[512];
-                            if (cchName > sizeof(szCdeclName) - 2)
-                                cchName = sizeof(szCdeclName) - 2;
-                            szCdeclName[0] = '_';
-                            memcpy(&szCdeclName[1], pszName, cchName);
-                            szCdeclName[cchName + 1] = '\0';
-                            if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, szCdeclName))
-                                return false;
-                        }
-
                         pThis->paSymbols[iSym].idx = idxPubDef++;
                     }
                 if (!omfWriter_PubDefEnd(pThis))
@@ -1541,8 +1647,9 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
             if (   pThis->paSymbols[iSym].idxSegDef == 0
                 && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
             {
+                /* Underscore prefix all names not already underscored/mangled. */
                 const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
-                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName))
+                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName, pszName[0] != '_'))
                     return false;
                 pThis->paSymbols[iSym].idx = idxPubDef++;
             }
@@ -1559,8 +1666,9 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
     for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
         if (pThis->paSymbols[iSym].enmType == OMFSYMTYPE_EXTDEF)
         {
+            /* Underscore prefix all names not already underscored/mangled. */
             const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
-            if (!omfWriter_ExtDefAdd(pThis, pszName))
+            if (!omfWriter_ExtDefAdd(pThis, pszName, *pszName != '_'))
                 return false;
             pThis->paSymbols[iSym].idx = idxExtDef++;
         }
@@ -2336,27 +2444,10 @@ static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMB
                     if (   pThis->paSymbols[iSym].idxSegDef == idxSegDef
                         && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
                     {
+                        /* Underscore prefix all symbols not already underscored or mangled. */
                         const char *pszName = coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort);
-                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value, pszName))
+                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value, pszName, pszName[0] != '_' && pszName[0] != '?'))
                             return false;
-
-                        /* If the symbol doesn't start with an underscore and is a _c64 or _lm64 symbol,
-                           add an underscore prefixed alias to ease access from 16-bit and 32-bit code. */
-                        size_t cchName = strlen(pszName);
-                        if (   *pszName != '_'
-                            && (   (cchName > 4 && strcmp(&pszName[cchName - 4], "_c64")  == 0)
-                                || (cchName > 5 && strcmp(&pszName[cchName - 5], "_lm64") == 0) ) )
-                        {
-                            char   szCdeclName[512];
-                            if (cchName > sizeof(szCdeclName) - 2)
-                                cchName = sizeof(szCdeclName) - 2;
-                            szCdeclName[0] = '_';
-                            memcpy(&szCdeclName[1], pszName, cchName);
-                            szCdeclName[cchName + 1] = '\0';
-                            if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value, szCdeclName))
-                                return false;
-                        }
-
                         pThis->paSymbols[iSym].idx = idxPubDef++;
                     }
                 if (!omfWriter_PubDefEnd(pThis))
@@ -2372,8 +2463,9 @@ static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMB
             if (   pThis->paSymbols[iSym].idxSegDef == 0
                 && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
             {
-                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value,
-                                         coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort)) )
+                /* Underscore prefix all symbols not already underscored or mangled. */
+                const char *pszName = coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort);
+                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].Value, pszName, pszName[0] != '_' && pszName[0] != '?') )
                     return false;
                 pThis->paSymbols[iSym].idx = idxPubDef++;
             }
@@ -2390,7 +2482,9 @@ static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMB
     for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
         if (pThis->paSymbols[iSym].enmType == OMFSYMTYPE_EXTDEF)
         {
-            if (!omfWriter_ExtDefAdd(pThis, coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort)))
+            /* Underscore prefix all symbols not already underscored or mangled. */
+            const char *pszName = coffGetSymbolName(&paSymbols[iSym], pchStrTab, cbStrTab, szShort);
+            if (!omfWriter_ExtDefAdd(pThis, pszName, pszName[0] != '_' && pszName[0] != '?'))
                 return false;
             pThis->paSymbols[iSym].idx = idxExtDef++;
         }
@@ -2399,7 +2493,7 @@ static bool convertCoffSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCIMAGE_SYMB
     /** @todo maybe we don't actually need this and could use FLAT instead? */
     if (iSymImageBase != UINT32_MAX)
         pThis->idxExtImageBase = pThis->paSymbols[iSymImageBase].idx;
-    else if (omfWriter_ExtDefAdd(pThis, "__ImageBase"))
+    else if (omfWriter_ExtDefAdd(pThis, "__ImageBase", false /*fPrependUnderscore*/))
         pThis->idxExtImageBase = idxExtDef;
     else
         return false;
@@ -2723,11 +2817,11 @@ static uint8_t const g_acbMachOAmd64RelTypes[] =
     4, /* X86_64_RELOC_SIGNED_4 */
 };
 
-/** Macro for getting the size of a AMD64 ELF relocation. */
-#define ELF_AMD64_RELOC_SIZE(a_Type) ( (a_Type) < RT_ELEMENTS(g_acbElfAmd64RelTypes) ? g_acbElfAmd64RelTypes[(a_Type)] : 1)
+/** Macro for getting the size of a AMD64 Mach-O relocation. */
+#define MACHO_AMD64_RELOC_SIZE(a_Type) ( (a_Type) < RT_ELEMENTS(g_acbMachOAmd64RelTypes) ? g_acbMachOAmd64RelTypes[(a_Type)] : 1)
 
 
-typedef struct ELFDETAILS
+typedef struct MACHODETAILS
 {
     /** The ELF header. */
     Elf64_Ehdr const   *pEhdr;
@@ -2751,25 +2845,25 @@ typedef struct ELFDETAILS
     /** The string table size. */
     size_t              cbStrTab;
 
-} ELFDETAILS;
-typedef ELFDETAILS *PELFDETAILS;
-typedef ELFDETAILS const *PCELFDETAILS;
+} MACHODETAILS;
+typedef MACHODETAILS *PMACHODETAILS;
+typedef MACHODETAILS const *PCMACHODETAILS;
 
 
-static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFile, PELFDETAILS pElfStuff)
+static bool validateMacho(const char *pszFile, uint8_t const *pbFile, size_t cbFile, PMACHODETAILS pMachOStuff)
 {
     /*
-     * Initialize the ELF details structure.
+     * Initialize the Mach-O details structure.
      */
-    memset(pElfStuff, 0,  sizeof(*pElfStuff));
-    pElfStuff->iSymSh = UINT16_MAX;
-    pElfStuff->iStrSh = UINT16_MAX;
+    memset(pMachOStuff, 0,  sizeof(*pMachOStuff));
+    pMachOStuff->iSymSh = UINT16_MAX;
+    pMachOStuff->iStrSh = UINT16_MAX;
 
     /*
      * Validate the header and our other expectations.
      */
     Elf64_Ehdr const *pEhdr = (Elf64_Ehdr const *)pbFile;
-    pElfStuff->pEhdr = pEhdr;
+    pMachOStuff->pEhdr = pEhdr;
     if (   pEhdr->e_ident[EI_CLASS] != ELFCLASS64
         || pEhdr->e_ident[EI_DATA]  != ELFDATA2LSB
         || pEhdr->e_ehsize          != sizeof(Elf64_Ehdr)
@@ -2796,7 +2890,7 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
      * We assume it's okay as we only reference it in verbose mode.
      */
     Elf64_Shdr const *paShdrs = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
-    pElfStuff->paShdrs = paShdrs;
+    pMachOStuff->paShdrs = paShdrs;
 
     Elf64_Xword const cbShStrTab = paShdrs[pEhdr->e_shstrndx].sh_size;
     if (   paShdrs[pEhdr->e_shstrndx].sh_offset > cbFile
@@ -2806,7 +2900,7 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                      "Section string table is outside the file (sh_offset=%#" ELF_FMT_X64 " sh_size=%#" ELF_FMT_X64 " cbFile=%#" ELF_FMT_X64 ")\n",
                      paShdrs[pEhdr->e_shstrndx].sh_offset, paShdrs[pEhdr->e_shstrndx].sh_size, (Elf64_Xword)cbFile);
     const char *pchShStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
-    pElfStuff->pchShStrTab = pchShStrTab;
+    pMachOStuff->pchShStrTab = pchShStrTab;
 
     /*
      * Work the section table.
@@ -2910,19 +3004,19 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
                 fRet = error(pszFile, "Section #%u '%s': too many symbols: %" ELF_FMT_X64 "\n",
                              i, pszShNm, paShdrs[i].sh_size, cSymbols);
 
-            if (pElfStuff->iSymSh == UINT16_MAX)
+            if (pMachOStuff->iSymSh == UINT16_MAX)
             {
-                pElfStuff->iSymSh    = (uint16_t)i;
-                pElfStuff->paSymbols = (Elf64_Sym const *)&pbFile[paShdrs[i].sh_offset];
-                pElfStuff->cSymbols  = cSymbols;
+                pMachOStuff->iSymSh    = (uint16_t)i;
+                pMachOStuff->paSymbols = (Elf64_Sym const *)&pbFile[paShdrs[i].sh_offset];
+                pMachOStuff->cSymbols  = cSymbols;
 
                 if (paShdrs[i].sh_link != 0)
                 {
                     /* Note! The symbol string table section header may not have been validated yet! */
                     Elf64_Shdr const *pStrTabShdr = &paShdrs[paShdrs[i].sh_link];
-                    pElfStuff->iStrSh    = paShdrs[i].sh_link;
-                    pElfStuff->pchStrTab = (const char *)&pbFile[pStrTabShdr->sh_offset];
-                    pElfStuff->cbStrTab  = (size_t)pStrTabShdr->sh_size;
+                    pMachOStuff->iStrSh    = paShdrs[i].sh_link;
+                    pMachOStuff->pchStrTab = (const char *)&pbFile[pStrTabShdr->sh_offset];
+                    pMachOStuff->cbStrTab  = (size_t)pStrTabShdr->sh_size;
                 }
                 else
                     fRet = error(pszFile, "Section #%u '%s': String table link is out of bounds (%#x)\n",
@@ -2930,13 +3024,13 @@ static bool validateElf(const char *pszFile, uint8_t const *pbFile, size_t cbFil
             }
             else
                 fRet = error(pszFile, "Section #%u '%s': Found additonal symbol table, previous in #%u\n",
-                             i, pszShNm, pElfStuff->iSymSh);
+                             i, pszShNm, pMachOStuff->iSymSh);
         }
     }
     return fRet;
 }
 
-static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS pElfStuff)
+static bool convertMachoSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCMACHODETAILS pMachOStuff)
 {
     /*
      * Do the list of names pass.
@@ -2953,11 +3047,11 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
         return false;
 
     bool              fHaveData = false;
-    Elf64_Shdr const *pShdr     = &pElfStuff->paShdrs[1];
-    Elf64_Half const  cSections = pElfStuff->pEhdr->e_shnum;
+    Elf64_Shdr const *pShdr     = &pMachOStuff->paShdrs[1];
+    Elf64_Half const  cSections = pMachOStuff->pEhdr->e_shnum;
     for (Elf64_Half i = 1; i < cSections; i++, pShdr++)
     {
-        const char *pszName = &pElfStuff->pchShStrTab[pShdr->sh_name];
+        const char *pszName = &pMachOStuff->pchShStrTab[pShdr->sh_name];
         if (*pszName == '\0')
             return error(pThis->pszSrc, "Section #%u has an empty name!\n", i);
 
@@ -3047,7 +3141,7 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
      * Emit segment definitions.
      */
     uint16_t iSegDef = 1; /* Start counting at 1. */
-    pShdr = &pElfStuff->paShdrs[1];
+    pShdr = &pMachOStuff->paShdrs[1];
     for (Elf64_Half i = 1; i < cSections; i++, pShdr++)
     {
         if (pThis->paSegments[i].iSegNm == UINT16_MAX)
@@ -3139,9 +3233,9 @@ static bool convertElfSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCELFDETAILS
     return true;
 }
 
-static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS pElfStuff)
+static bool convertMachOSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCMACHODETAILS pMachOStuff)
 {
-    if (!pElfStuff->cSymbols)
+    if (!pMachOStuff->cSymbols)
         return true;
 
     /*
@@ -3153,18 +3247,18 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
     for (uint32_t iSeg = 0; iSeg < pThis->cSegments; iSeg++)
         pThis->paSegments[iSeg].cPubDefs = 0;
 
-    uint32_t const          cSections = pElfStuff->pEhdr->e_shnum;
-    uint32_t const          cSymbols  = pElfStuff->cSymbols;
-    Elf64_Sym const * const paSymbols = pElfStuff->paSymbols;
+    uint32_t const          cSections = pMachOStuff->pEhdr->e_shnum;
+    uint32_t const          cSymbols  = pMachOStuff->cSymbols;
+    Elf64_Sym const * const paSymbols = pMachOStuff->paSymbols;
     for (uint32_t iSym = 0; iSym < cSymbols; iSym++)
     {
         const uint8_t bBind      = ELF64_ST_BIND(paSymbols[iSym].st_info);
         const uint8_t bType      = ELF64_ST_TYPE(paSymbols[iSym].st_info);
-        const char   *pszSymName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
+        const char   *pszSymName = &pMachOStuff->pchStrTab[paSymbols[iSym].st_name];
         if (   *pszSymName == '\0'
             && bType == STT_SECTION
             && paSymbols[iSym].st_shndx < cSections)
-            pszSymName = &pElfStuff->pchShStrTab[pElfStuff->paShdrs[paSymbols[iSym].st_shndx].sh_name];
+            pszSymName = &pMachOStuff->pchShStrTab[pMachOStuff->paShdrs[paSymbols[iSym].st_shndx].sh_name];
 
         pThis->paSymbols[iSym].enmType   = OMFSYMTYPE_IGNORED;
         pThis->paSymbols[iSym].idx       = UINT16_MAX;
@@ -3229,6 +3323,8 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
 
     /*
      * Emit the PUBDEFs the first time around (see order of records in TIS spec).
+     * Note! We expect the os x compiler to always underscore symbols, so unlike the
+     *       other 64-bit converters we don't need to check for underscores and add them.
      */
     uint16_t idxPubDef = 1;
     if (cPubSyms)
@@ -3243,27 +3339,9 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
                     if (   pThis->paSymbols[iSym].idxSegDef == idxSegDef
                         && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
                     {
-                        const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
-                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName))
+                        const char *pszName = &pMachOStuff->pchStrTab[paSymbols[iSym].st_name];
+                        if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName, false /*fPrependUnderscore*/))
                             return false;
-
-                        /* If the symbol doesn't start with an underscore and is a _c64 or _lm64 symbol,
-                           add an underscore prefixed alias to ease access from 16-bit and 32-bit code. */
-                        size_t cchName = strlen(pszName);
-                        if (   *pszName != '_'
-                            && (   (cchName > 4 && strcmp(&pszName[cchName - 4], "_c64")  == 0)
-                                || (cchName > 5 && strcmp(&pszName[cchName - 5], "_lm64") == 0) ) )
-                        {
-                            char   szCdeclName[512];
-                            if (cchName > sizeof(szCdeclName) - 2)
-                                cchName = sizeof(szCdeclName) - 2;
-                            szCdeclName[0] = '_';
-                            memcpy(&szCdeclName[1], pszName, cchName);
-                            szCdeclName[cchName + 1] = '\0';
-                            if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, szCdeclName))
-                                return false;
-                        }
-
                         pThis->paSymbols[iSym].idx = idxPubDef++;
                     }
                 if (!omfWriter_PubDefEnd(pThis))
@@ -3279,8 +3357,8 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
             if (   pThis->paSymbols[iSym].idxSegDef == 0
                 && pThis->paSymbols[iSym].enmType   == OMFSYMTYPE_PUBDEF)
             {
-                const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
-                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName))
+                const char *pszName = &pMachOStuff->pchStrTab[paSymbols[iSym].st_name];
+                if (!omfWriter_PubDefAdd(pThis, paSymbols[iSym].st_value, pszName, false /*fPrependUnderscore*/))
                     return false;
                 pThis->paSymbols[iSym].idx = idxPubDef++;
             }
@@ -3297,8 +3375,8 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
     for (uint16_t iSym = 0; iSym < cSymbols; iSym++)
         if (pThis->paSymbols[iSym].enmType == OMFSYMTYPE_EXTDEF)
         {
-            const char *pszName = &pElfStuff->pchStrTab[paSymbols[iSym].st_name];
-            if (!omfWriter_ExtDefAdd(pThis, pszName))
+            const char *pszName = &pMachOStuff->pchStrTab[paSymbols[iSym].st_name];
+            if (!omfWriter_ExtDefAdd(pThis, pszName, false /*fPrependUnderscore*/))
                 return false;
             pThis->paSymbols[iSym].idx = idxExtDef++;
         }
@@ -3309,17 +3387,18 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
     return true;
 }
 
-static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS pElfStuff, uint8_t const *pbFile, size_t cbFile)
+static bool convertMachOSectionsToLeDataAndFixupps(POMFWRITER pThis, PCMACHODETAILS pMachOStuff,
+                                                   uint8_t const *pbFile, size_t cbFile)
 {
-    Elf64_Sym const    *paSymbols = pElfStuff->paSymbols;
-    Elf64_Shdr const   *paShdrs   = pElfStuff->paShdrs;
+    Elf64_Sym const    *paSymbols = pMachOStuff->paSymbols;
+    Elf64_Shdr const   *paShdrs   = pMachOStuff->paShdrs;
     bool                fRet      = true;
     for (uint32_t i = 1; i < pThis->cSegments; i++)
     {
         if (pThis->paSegments[i].iSegDef == UINT16_MAX)
             continue;
 
-        const char         *pszSegNm   = &pElfStuff->pchShStrTab[paShdrs[i].sh_name];
+        const char         *pszSegNm   = &pMachOStuff->pchShStrTab[paShdrs[i].sh_name];
         bool const          fRelocs    = i + 1 < pThis->cSegments && paShdrs[i + 1].sh_type == SHT_RELA;
         uint32_t            cRelocs    = fRelocs ? paShdrs[i + 1].sh_size / sizeof(Elf64_Rela) : 0;
         Elf64_Rela const   *paRelocs   = fRelocs ? (Elf64_Rela *)&pbFile[paShdrs[i + 1].sh_offset] : NULL;
@@ -3383,7 +3462,7 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
                 uint32_t const          iSymbol    = ELF64_R_SYM(paRelocs[iReloc].r_info);
                 Elf64_Sym const * const pElfSym    =        &paSymbols[iSymbol];
                 POMFSYMBOL const        pOmfSym    = &pThis->paSymbols[iSymbol];
-                const char * const      pszSymName = &pElfStuff->pchStrTab[pElfSym->st_name];
+                const char * const      pszSymName = &pMachOStuff->pchStrTab[pElfSym->st_name];
 
                 /* Calc fixup location in the pending chunk and setup a flexible pointer to it. */
                 uint16_t  offDataRec = (uint16_t)(paRelocs[iReloc].r_offset - off);
@@ -3523,14 +3602,14 @@ static bool convertMachoToOmf(const char *pszFile, uint8_t const *pbFile, size_t
     /*
      * Validate the source file a little.
      */
-    ELFDETAILS ElfStuff;
-    if (!validateElf(pszFile, pbFile, cbFile, &ElfStuff))
+    MACHODETAILS MachOStuff;
+    if (!validateMachO(pszFile, pbFile, cbFile, &MachOStuff))
         return false;
 
     /*
      * Instantiate the OMF writer.
      */
-    POMFWRITER pThis = omfWriter_Create(pszFile, ElfStuff.pEhdr->e_shnum, ElfStuff.cSymbols, pDst);
+    POMFWRITER pThis = omfWriter_Create(pszFile, MachOStuff.pEhdr->e_shnum, MachOStuff.cSymbols, pDst);
     if (!pThis)
         return false;
 
@@ -3543,10 +3622,10 @@ static bool convertMachoToOmf(const char *pszFile, uint8_t const *pbFile, size_t
         Elf64_Shdr const *paShdrs   = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
         const char       *pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
 
-        if (   convertElfSectionsToSegDefsAndGrpDefs(pThis, &ElfStuff)
-            && convertElfSymbolsToPubDefsAndExtDefs(pThis, &ElfStuff)
+        if (   convertMachOSectionsToSegDefsAndGrpDefs(pThis, &MachOStuff)
+            && convertMachOSymbolsToPubDefsAndExtDefs(pThis, &MachOStuff)
             && omfWriter_LinkPassSeparator(pThis)
-            && convertElfSectionsToLeDataAndFixupps(pThis, &ElfStuff, pbFile, cbFile)
+            && convertMachOSectionsToLeDataAndFixupps(pThis, &MachOStuff, pbFile, cbFile)
             && omfWriter_EndModule(pThis) )
         {
 
@@ -4681,10 +4760,10 @@ static bool convertOmfPassthru(POMFWRITER pThis, uint8_t const *pbFile, size_t c
                                     break;
                                 }
 
-                            if (!omfWriter_ExtDefAddN(pThis, szName, cchName, idxType))
+                            if (!omfWriter_ExtDefAddN(pThis, szName, cchName, idxType, false /*fPrependUnderscore*/))
                                 return false;
                         }
-                        else if (!omfWriter_ExtDefAddN(pThis, pchName, cchName, idxType))
+                        else if (!omfWriter_ExtDefAddN(pThis, pchName, cchName, idxType, false /*fPrependUnderscore*/))
                             return false;
                     }
                     if (!omfWriter_ExtDefEnd(pThis))

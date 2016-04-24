@@ -36,8 +36,12 @@
 #undef Bs3MemAlloc
 #undef Bs3MemAllocZ
 #undef Bs3MemChr
+#undef Bs3MemCmp
 #undef Bs3MemCpy
 #undef Bs3MemFree
+#undef Bs3MemGuardedTestPageAlloc
+#undef Bs3MemGuardedTestPageAllocEx
+#undef Bs3MemGuardedTestPageFree
 #undef Bs3MemMove
 #undef Bs3MemPCpy
 #undef Bs3MemSet
@@ -61,6 +65,10 @@
 #undef Bs3RegCtxRestore
 #undef Bs3RegCtxSave
 #undef Bs3RegCtxSaveEx
+#undef Bs3RegCtxSetGrpDsFromCurPtr
+#undef Bs3RegCtxSetGrpSegFromCurPtr
+#undef Bs3RegCtxSetGrpSegFromFlat
+#undef Bs3RegCtxSetRipCsFromLnkPtr
 #undef Bs3SelFar32ToFlat32
 #undef Bs3SelFar32ToFlat32NoClobber
 #undef Bs3SelFlatCodeToProtFar16
@@ -71,6 +79,7 @@
 #undef Bs3SelProtFar16DataToRealMode
 #undef Bs3SelProtFar32ToFlat32
 #undef Bs3SelProtModeCodeToRealMode
+#undef Bs3SelRealModeCodeToFlat
 #undef Bs3SelRealModeCodeToProtMode
 #undef Bs3SelRealModeDataToFlat
 #undef Bs3SelRealModeDataToProtFar16
@@ -90,6 +99,7 @@
 #undef Bs3StrNLen
 #undef Bs3StrPrintf
 #undef Bs3StrPrintfV
+#undef Bs3SwitchFromV86To16BitAndCallC
 #undef Bs3TestCheckRegCtxEx
 #undef Bs3TestFailed
 #undef Bs3TestFailedF

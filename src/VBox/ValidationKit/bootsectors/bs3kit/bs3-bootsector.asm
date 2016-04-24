@@ -224,10 +224,10 @@ CPU 386
         ; Load all the code.
 .do_load
         mov     [g_bBootDrv], dl
-        call    bs3InitLoadImage
+        call    NAME(bs3InitLoadImage)
 %if 0
         mov     al, '='
-        call bs3PrintChrInAl
+        call    NAME(bs3PrintChrInAl)
 %endif
 
         ;

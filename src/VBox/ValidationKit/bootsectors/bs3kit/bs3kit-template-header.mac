@@ -136,8 +136,8 @@
  %define TMPL_64BIT
  %define TMPL_BITS              64
  %define TMPL_PTR_DEF           dq
- %define TMPL_UNDERSCORE
- %define BS3_CMN_NM(Name)       Name %+ _c64
+ %define TMPL_UNDERSCORE        _
+ %define BS3_CMN_NM(Name)       _ %+ Name %+ _c64
 
 %else
  %error "Invalid TMPL_MODE value!"
@@ -360,7 +360,7 @@
 %elif TMPL_MODE == BS3_MODE_LM64
  %define TMPL_LM64
  %define TMPL_MODE_STR          "long, 64-bit"
- %define TMPL_NM(Name)          Name %+ _lm64
+ %define TMPL_NM(Name)          _ %+ Name %+ _lm64
  %define TMPL_MODE_LNAME        lm64
  %define TMPL_MODE_UNAME        LM64
 
@@ -381,11 +381,7 @@
 %endif
 
 ; TMPL_NM version with uppercased suffix and no underscore separating them.
-%ifnidn TMPL_UNDERSCORE,_
- %define TMPL_NM_U(Name)        Name %+ TMPL_MODE_UNAME
-%else
- %define TMPL_NM_U(Name)        TMPL_UNDERSCORE %+ Name %+ TMPL_MODE_UNAME
-%endif
+%define TMPL_NM_U(Name)         TMPL_UNDERSCORE %+ Name %+ TMPL_MODE_UNAME
 
 ; TMPL_FAR_NM
 %if TMPL_MODE & (BS3_MODE_CODE_16 | BS3_MODE_CODE_V86)
@@ -470,6 +466,18 @@
  %endmacro
 %else
  %macro TONLY64 1+
+ %endmacro
+%endif
+
+;; @def TNOT64
+; Version of BNOT64 that follows the code template.
+; Like BNOT64 this normally goes in column 1.
+%if TMPL_BITS == 64
+ %macro TNOT64 1+
+ %endmacro
+%else
+ %macro TNOT64 1+
+        %1
  %endmacro
 %endif
 
