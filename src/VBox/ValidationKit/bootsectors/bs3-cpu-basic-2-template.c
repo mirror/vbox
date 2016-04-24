@@ -1681,7 +1681,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
          */
         for (off = cbIdtr + 4; off >= -cbIdtr - 4; off--)
         {
-            Bs3MemSet(pbTest, bFiller, 32);
+            Bs3MemSet(pbTest, bFiller, 48);
             Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &pbTest[off]);
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
             if (off >= 0)
@@ -2160,8 +2160,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 {
-//if (bMode == BS3_MODE_PE16_V86)
-//if (bMode & BS3_MODE_CODE_V86)
+if (bMode == BS3_MODE_LM64)
 {
     union
     {
@@ -2194,6 +2193,8 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
 {
+if (bMode == BS3_MODE_LM64)
+{
     union
     {
         RTGDTR  Gdtr;
@@ -2217,6 +2218,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
      * Re-initialize the IDT.
      */
     Bs3TrapInit();
+}
     return 0;
 }
 

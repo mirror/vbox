@@ -1168,7 +1168,6 @@ AssertCompileSize(BS3XPTR, 4);
     a_Scope union \
     { \
         BS3XPTR         XPtr; \
-        a_Type         *pTyped; \
     } a_Name
 #else
 # error "ARCH_BITS"
@@ -1842,6 +1841,7 @@ typedef struct BS3SLABHEAD
     /** Number of free chunks. */
     uint32_t                        cFreeChunks;
 } BS3SLABHEAD;
+AssertCompileSize(BS3SLABHEAD, 16);
 /** Pointer to a slab list head. */
 typedef BS3SLABHEAD BS3_FAR *PBS3SLABHEAD;
 
