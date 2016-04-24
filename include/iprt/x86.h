@@ -1477,6 +1477,17 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
  * Just for complementing X86_PG_PAE_PDPE_ENTRIES, using X86_PG_AMD64_ENTRIES for this is fine too. */
 #define X86_PG_AMD64_PDPE_ENTRIES           X86_PG_AMD64_ENTRIES
 
+/** The size of a default page. */
+#define X86_PAGE_SIZE                       X86_PAGE_4K_SIZE
+/** The page shift of a default page. */
+#define X86_PAGE_SHIFT                      X86_PAGE_4K_SHIFT
+/** The default page offset mask. */
+#define X86_PAGE_OFFSET_MASK                X86_PAGE_4K_OFFSET_MASK
+/** The defaultpage base mask for virtual addresses. */
+#define X86_PAGE_BASE_MASK                  X86_PAGE_4K_BASE_MASK
+/** The default page base mask for virtual addresses - 32bit version. */
+#define X86_PAGE_BASE_MASK_32               X86_PAGE_4K_BASE_MASK_32
+
 /** The size of a 4KB page. */
 #define X86_PAGE_4K_SIZE                    _4K
 /** The page shift of a 4KB page. */
