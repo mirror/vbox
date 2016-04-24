@@ -55,8 +55,41 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatDataToProtFar16, BS3_PBC_NEAR      ; Far stub gener
         mov     xBP, xSP
 
         ;
+        ; Check if we can use the protected mode stack or data selector.
+        ; The latter ensures the usability of this function for setting SS.
+        ;
+%if TMPL_BITS == 16
+        mov     ax, [xBP + xCB + cbCurRetAddr]
+        mov     dx, [xBP + xCB + cbCurRetAddr + 2]
+        test    dx, dx
+        jnz     .not_stack
+        mov     dx, BS3_SEL_R0_SS16
+%else
+        mov     eax, [xBP + xCB + cbCurRetAddr]
+        test    eax, 0ffff0000h
+        jnz     .not_stack
+        or      eax, BS3_SEL_R0_SS16 << 16
+%endif
+        jmp     .return
+
+.not_stack:
+%if TMPL_BITS == 16
+        sub     ax, BS3_ADDR_BS3DATA16 & 0xffff
+        sbb     dx, BS3_ADDR_BS3DATA16 >> 16
+        jnz     .do_tiled
+        mov     dx, BS3_SEL_R0_DS16
+%else
+        sub     eax, BS3_ADDR_BS3DATA16
+        test    eax, 0ffff0000h
+        jnz     .do_tiled
+        or      eax, BS3_SEL_R0_DS16 << 16
+%endif
+        jmp     .return
+
+        ;
         ; Just translate the address to tiled.
         ;
+.do_tiled:
 %if TMPL_BITS == 16
         ; Convert upper 16-bit to a tiled selector.
         mov     ax, cx                  ; save cx
@@ -94,6 +127,7 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatDataToProtFar16, BS3_PBC_NEAR      ; Far stub gener
         rol     eax, 16
 %endif
 
+.return:
         pop     xBP
         BS3_HYBRID_RET
 BS3_PROC_END_CMN   Bs3SelFlatDataToProtFar16
