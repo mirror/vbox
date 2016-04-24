@@ -54,10 +54,10 @@ BS3_CMN_DEF(void, Bs3RegCtxSetGrpSegFromFlat,(PBS3REGCTX pRegCtx, PBS3REG pGpr, 
 
     /* Adjust CS to the right ring, if not ring-0 or V86 context. */
     if (   pRegCtx->bCpl != 0
-        && !BS3_MODE_IS_RM_OR_V86(pRegCtx->bMode)
-        && BS3_SEL_IS_IN_R0_RANGE(*pSel))
+        && !BS3_MODE_IS_RM_OR_V86(pRegCtx->bMode))
     {
-        *pSel += (uint16_t)pRegCtx->bCpl << BS3_SEL_RING_SHIFT;
+        if (BS3_SEL_IS_IN_R0_RANGE(*pSel))
+            *pSel += (uint16_t)pRegCtx->bCpl << BS3_SEL_RING_SHIFT;
         *pSel |= pRegCtx->bCpl;
     }
 }
