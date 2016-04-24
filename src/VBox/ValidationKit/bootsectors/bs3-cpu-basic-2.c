@@ -40,6 +40,7 @@ BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_RaiseXcpt1);
 //BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic2_iret);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_iret);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sidt);
+BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sgdt);
 
 
 /*********************************************************************************************************************************
@@ -52,6 +53,7 @@ static const BS3TESTMODEENTRY g_aModeTest[] =
     //BS3TESTMODEENTRY_CMN("iret", bs3CpuBasic2_iret),
 //    BS3TESTMODEENTRY_MODE("iret", bs3CpuBasic2_iret),
     BS3TESTMODEENTRY_MODE("sidt", bs3CpuBasic2_sidt),
+    BS3TESTMODEENTRY_MODE("sgdt", bs3CpuBasic2_sgdt),
 };
 
 

@@ -1393,7 +1393,6 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
     int                 off;
     unsigned            cb;
     uint8_t BS3_FAR    *pbTest;
-Bs3TestPrintf("bs3CpuBasic2_sidt_sgdt_One: %p bTestMode=%#x bRing=%d\n",  pWorker, bTestMode, bRing);
 
     /* make sure they're allocated  */
     Bs3MemZero(&Ctx, sizeof(Ctx));
@@ -1639,7 +1638,6 @@ Bs3TestPrintf("bs3CpuBasic2_sidt_sgdt_One: %p bTestMode=%#x bRing=%d\n",  pWorke
         && (pbTest = (uint8_t BS3_FAR *)Bs3MemGuardedTestPageAlloc(BS3MEMKIND_TILED)) != NULL)
     {
         RTCCUINTXREG uFlatTest = Bs3SelPtrToFlat(pbTest);
-Bs3TestPrintf("g_usBs3TestStep=%u line=%d\n", g_usBs3TestStep, __LINE__);
 
         /*
          * Slide the buffer towards the trailing guard page.  We'll observe the
@@ -1649,8 +1647,6 @@ Bs3TestPrintf("g_usBs3TestStep=%u line=%d\n", g_usBs3TestStep, __LINE__);
         {
             Bs3MemSet(&pbTest[X86_PAGE_SIZE - cbIdtr * 2], bFiller, cbIdtr * 2);
             Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &pbTest[off]);
-if (pWorker->fSs)
-    Bs3RegCtxPrint(&Ctx);
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
             if (off + cbIdtr <= X86_PAGE_SIZE)
             {
@@ -1678,7 +1674,6 @@ if (pWorker->fSs)
             }
             g_usBs3TestStep++;
         }
-Bs3TestPrintf("g_usBs3TestStep=%u line=%d\n", g_usBs3TestStep, __LINE__);
 
         /*
          * Now, do it the other way around. It should look normal now since writing
@@ -2197,7 +2192,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 }
 
 
-BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_gidt)(uint8_t bMode)
+BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
 {
     union
     {
