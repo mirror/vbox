@@ -267,14 +267,14 @@ $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
 	$(QUIET)chrpath --delete $@
       endif # !solaris
 
-     ## @todo For solaris dlopen fails to navigate executable rpath to dependent libraries, so add explicit rpath for libqxcb.so, find better solution later.
+      # @todo For solaris dlopen fails to navigate executable rpath to dependent libraries,
+      #       so add explicit rpath for libqxcb.so, find better solution later.
       ifeq ($(KBUILD_TARGET),solaris)
 $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
 	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(CP) $^ $@
-	@echo "HERE!"
 	$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
       endif # solaris
 
