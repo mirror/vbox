@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,13 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UINameAndSystemEditor_h__
-#define __UINameAndSystemEditor_h__
+#ifndef ___UINameAndSystemEditor_h___
+#define ___UINameAndSystemEditor_h___
 
-/* Global includes: */
+/* Qt includes: */
 #include <QWidget>
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "VBoxGlobal.h"
 
@@ -30,7 +30,7 @@ class QLabel;
 class QLineEdit;
 class QComboBox;
 
-/* QWidget reimplementation providing editor for basic VM parameters: */
+/** QWidget extension providing complex editor for basic VM parameters. */
 class UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -39,56 +39,69 @@ class UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /* Notifies listeners about VM name change: */
+    /** Notifies listeners about VM name change. */
     void sigNameChanged(const QString &strNewName);
 
-    /* Notifies listeners about VM operating system type change: */
+    /** Notifies listeners about VM OS type change. */
     void sigOsTypeChanged();
 
 public:
 
-    /* Constructor: */
+    /** Constructs VM parameters editor on the basis of passed @a pParent. */
     UINameAndSystemEditor(QWidget *pParent);
 
-    /* Name stuff: */
+    /** Returns the VM name editor. */
     QLineEdit* nameEditor() const;
+
+    /** Defines the VM @a strName. */
     void setName(const QString &strName);
+    /** Returns the VM name. */
     QString name() const;
 
-    /* Operating system type stuff: */
+    /** Defines the VM OS @a type. */
     void setType(const CGuestOSType &type);
+    /** Returns the VM OS type. */
     CGuestOSType type() const;
 
 protected:
 
-    /* Translation stuff: */
-    void retranslateUi();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
 private slots:
 
-    /* Handles OS family change: */
+    /** Handles VM OS family @a iIndex change. */
     void sltFamilyChanged(int iIndex);
 
-    /* Handles OS type change: */
+    /** Handles VM OS type @a iIndex change. */
     void sltTypeChanged(int iIndex);
 
 private:
 
-    /* Widgets: */
+    /** Holds the VM name label instance. */
     QLabel *m_pNameLabel;
+    /** Holds the VM OS family label instance. */
     QLabel *m_pFamilyLabel;
+    /** Holds the VM OS type label instance. */
     QLabel *m_pTypeLabel;
+    /** Holds the VM OS type icon instance. */
     QLabel *m_pTypeIcon;
+    /** Holds the VM name editor instance. */
     QLineEdit *m_pNameEditor;
+    /** Holds the VM OS family combo instance. */
     QComboBox *m_pFamilyCombo;
+    /** Holds the VM OS type combo instance. */
     QComboBox *m_pTypeCombo;
 
-    /* Variables: */
+    /** Holds the VM OS type. */
     CGuestOSType m_type;
+    /** Holds the currently chosen OS type IDs on per-family basis. */
     QMap<QString, QString> m_currentIds;
+    /** Holds whether host supports hardware virtualization. */
     bool m_fSupportsHWVirtEx;
+    /** Holds whether host supports long mode. */
     bool m_fSupportsLongMode;
 };
 
-#endif /* __UINameAndSystemEditor_h__ */
+#endif /* !___UINameAndSystemEditor_h___ */
 
