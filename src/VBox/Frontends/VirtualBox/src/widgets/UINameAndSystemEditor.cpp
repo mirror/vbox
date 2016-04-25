@@ -44,56 +44,88 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     /* Register CGuestOSType type: */
     qRegisterMetaType<CGuestOSType>();
 
-    /* Create widgets: */
+    /* Create main-layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
     {
+        /* Configure main-layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
-        m_pLabelName = new QLabel(this);
+
+        /* Create VM name label: */
+        m_pLabelName = new QLabel;
         {
+            /* Configure VM name label: */
             m_pLabelName->setAlignment(Qt::AlignRight);
             m_pLabelName->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            /* Add VM name label into main-layout: */
+            pMainLayout->addWidget(m_pLabelName, 0, 0);
         }
-        m_pEditorName = new QLineEdit(this);
+
+        /* Create VM name editor: */
+        m_pEditorName = new QLineEdit;
         {
+            /* Configure VM name editor: */
             m_pEditorName->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
             m_pLabelName->setBuddy(m_pEditorName);
+            /* Add VM name editor into main-layout: */
+            pMainLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
         }
-        m_pLabelFamily = new QLabel(this);
+
+        /* Create VM OS family label: */
+        m_pLabelFamily = new QLabel;
         {
+            /* Configure VM OS family label: */
             m_pLabelFamily->setAlignment(Qt::AlignRight);
             m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            /* Add VM OS family label into main-layout: */
+            pMainLayout->addWidget(m_pLabelFamily, 1, 0);
         }
-        m_pComboFamily = new QComboBox(this);
+
+        /* Create VM OS family combo: */
+        m_pComboFamily = new QComboBox;
         {
+            /* Configure VM OS family combo: */
             m_pComboFamily->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pLabelFamily->setBuddy(m_pComboFamily);
+            /* Add VM OS family combo into main-layout: */
+            pMainLayout->addWidget(m_pComboFamily, 1, 1);
         }
-        m_pLabelType = new QLabel(this);
+
+        /* Create VM OS type label: */
+        m_pLabelType = new QLabel;
         {
+            /* Configure VM OS type label: */
             m_pLabelType->setAlignment(Qt::AlignRight);
             m_pLabelType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            /* Add VM OS type label into main-layout: */
+            pMainLayout->addWidget(m_pLabelType, 2, 0);
         }
-        m_pComboType = new QComboBox(this);
+
+        /* Create VM OS type combo: */
+        m_pComboType = new QComboBox;
         {
+            /* Configure VM OS type combo: */
             m_pComboType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pLabelType->setBuddy(m_pComboType);
+            /* Add VM OS type combo into main-layout: */
+            pMainLayout->addWidget(m_pComboType, 2, 1);
         }
+
+        /* Create sub-layout: */
         QVBoxLayout *pLayoutIcon = new QVBoxLayout;
         {
-            m_pIconType = new QLabel(this);
+            /* Create VM OS type icon: */
+            m_pIconType = new QLabel;
             {
+                /* Configure VM OS type icon: */
                 m_pIconType->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                /* Add VM OS type icon into sub-layout: */
+                pLayoutIcon->addWidget(m_pIconType);
             }
-            pLayoutIcon->addWidget(m_pIconType);
+            /* Add stretch to sub-layout: */
             pLayoutIcon->addStretch();
+            /* Add sub-layout into main-layout: */
+            pMainLayout->addLayout(pLayoutIcon, 1, 2, 2, 1);
         }
-        pMainLayout->addWidget(m_pLabelName, 0, 0);
-        pMainLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
-        pMainLayout->addWidget(m_pLabelFamily, 1, 0);
-        pMainLayout->addWidget(m_pComboFamily, 1, 1);
-        pMainLayout->addWidget(m_pLabelType, 2, 0);
-        pMainLayout->addWidget(m_pComboType, 2, 1);
-        pMainLayout->addLayout(pLayoutIcon, 1, 2, 2, 1);
     }
 
     /* Check if host supports (AMD-V or VT-x) and long mode: */
@@ -102,12 +134,12 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
 
     /* Fill OS family selector: */
-    QList<CGuestOSType> families(vboxGlobal().vmGuestOSFamilyList());
+    const QList<CGuestOSType> families = vboxGlobal().vmGuestOSFamilyList();
     for (int i = 0; i < families.size(); ++i)
     {
-        QString strFamilyName(families[i].GetFamilyDescription());
+        const QString strFamilyName = families.at(i).GetFamilyDescription();
         m_pComboFamily->insertItem(i, strFamilyName);
-        m_pComboFamily->setItemData(i, families[i].GetFamilyId(), TypeID);
+        m_pComboFamily->setItemData(i, families.at(i).GetFamilyId(), TypeID);
     }
     m_pComboFamily->setCurrentIndex(0);
     sltFamilyChanged(m_pComboFamily->currentIndex());
@@ -139,17 +171,17 @@ CGuestOSType UINameAndSystemEditor::type() const
 void UINameAndSystemEditor::setType(const CGuestOSType &type)
 {
     /* Initialize variables: */
-    QString strFamilyId(type.GetFamilyId());
-    QString strTypeId(type.GetId());
+    const QString strFamilyId = type.GetFamilyId();
+    const QString strTypeId = type.GetId();
 
     /* Get/check family index: */
-    int iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
+    const int iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
     AssertMsg(iFamilyIndex != -1, ("Invalid family ID: '%s'", strFamilyId.toLatin1().constData()));
     if (iFamilyIndex != -1)
         m_pComboFamily->setCurrentIndex(iFamilyIndex);
 
     /* Get/check type index: */
-    int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
+    const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
     AssertMsg(iTypeIndex != -1, ("Invalid type ID: '%s'", strTypeId.toLatin1().constData()));
     if (iTypeIndex != -1)
         m_pComboType->setCurrentIndex(iTypeIndex);
@@ -175,13 +207,14 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     m_pComboType->clear();
 
     /* Populate combo-box with OS types related to currently selected family id: */
-    QString strFamilyId(m_pComboFamily->itemData(iIndex, TypeID).toString());
-    QList<CGuestOSType> types(vboxGlobal().vmGuestOSTypeList(strFamilyId));
+    const QString strFamilyId = m_pComboFamily->itemData(iIndex, TypeID).toString();
+    const QList<CGuestOSType> types = vboxGlobal().vmGuestOSTypeList(strFamilyId);
     for (int i = 0; i < types.size(); ++i)
     {
-        if (types[i].GetIs64Bit() && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
+        /* Skip 64bit OS types is hardware virtualization or long mode is not supported: */
+        if (types.at(i).GetIs64Bit() && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
             continue;
-        int iIndex = m_pComboType->count();
+        const int iIndex = m_pComboType->count();
         m_pComboType->insertItem(iIndex, types[i].GetDescription());
         m_pComboType->setItemData(iIndex, types[i].GetId(), TypeID);
     }
@@ -189,8 +222,8 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     /* Select the most recently chosen item: */
     if (m_currentIds.contains(strFamilyId))
     {
-        QString strTypeId(m_currentIds[strFamilyId]);
-        int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
+        const QString strTypeId = m_currentIds.value(strFamilyId);
+        const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
         if (iTypeIndex != -1)
             m_pComboType->setCurrentIndex(iTypeIndex);
     }
@@ -200,7 +233,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
         QString strDefaultID = "Windows7";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
-        int iIndexWin7 = m_pComboType->findData(strDefaultID, TypeID);
+        const int iIndexWin7 = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexWin7 != -1)
             m_pComboType->setCurrentIndex(iIndexWin7);
     }
@@ -210,12 +243,13 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
         QString strDefaultID = "Ubuntu";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
-        int iIndexUbuntu = m_pComboType->findData(strDefaultID, TypeID);
+        const int iIndexUbuntu = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexUbuntu != -1)
             m_pComboType->setCurrentIndex(iIndexUbuntu);
     }
     /* Else simply select the first one present: */
-    else m_pComboType->setCurrentIndex(0);
+    else
+        m_pComboType->setCurrentIndex(0);
 
     /* Update all the stuff: */
     sltTypeChanged(m_pComboType->currentIndex());
