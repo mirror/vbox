@@ -876,6 +876,9 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
             case VERR_REM_TOO_MANY_TRAPS: /** @todo Make a guru meditation event! */
                 rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_REM_TOO_MANY_TRAPS", 0, NULL, NULL);
                 break;
+            case VINF_EM_TRIPLE_FAULT:    /** @todo Make a guru meditation event! */
+                rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VINF_EM_TRIPLE_FAULT", 0, NULL, NULL);
+                break;
 
             default: /** @todo don't use default for guru, but make special errors code! */
             {
