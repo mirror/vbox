@@ -85,6 +85,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-PagingInitRootForPP.c \
        bs3-cmn-PagingInitRootForPAE.c \
        bs3-cmn-PagingInitRootForLM.c \
+       bs3-cmn-PagingAlias.c \
        bs3-cmn-PagingProtect.c \
        bs3-cmn-PagingSetupCanonicalTraps.c \
        bs3-cmn-PicMaskAll.c \
@@ -157,6 +158,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TrapSetJmp.asm \
 	bs3-cmn-TrapSetJmpAndRestore.c \
 	bs3-cmn-TrapUnsetJmp.c \
+       bs3-cmn-UtilSetFullGdtr.asm \
+       bs3-cmn-UtilSetFullIdtr.asm \
        ../../../Runtime/common/asm/ASMBitFirstClear.asm \
        ../../../Runtime/common/asm/ASMBitFirstSet.asm \
        ../../../Runtime/common/asm/ASMBitNextClear.asm \

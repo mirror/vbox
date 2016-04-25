@@ -116,11 +116,12 @@ BS3_BEGIN_TEXT16
         ;
         ; Load the GDT and enable PE32.
         ;
+BS3_EXTERN_SYSTEM16 Bs3LgdtDef_Gdt
 BS3_EXTERN_SYSTEM16 Bs3Lgdt_Gdt
 BS3_BEGIN_TEXT16
         mov     ax, BS3SYSTEM16
         mov     ds, ax
-        lgdt    [Bs3Lgdt_Gdt]
+        lgdt    [Bs3LgdtDef_Gdt]        ; Will only load 24-bit base!
 
         mov     eax, cr0
         or      eax, X86_CR0_PE | X86_CR0_PG
@@ -128,7 +129,6 @@ BS3_BEGIN_TEXT16
         jmp     BS3_SEL_R0_CS32:dword .thirty_two_bit wrt FLAT
 BS3_BEGIN_TEXT32
 .thirty_two_bit:
-
         ;
         ; Convert the (now) real mode stack pointer to 32-bit flat.
         ;
@@ -146,6 +146,9 @@ BS3_BEGIN_TEXT32
         ;
         extern  NAME(Bs3EnteredMode_pp32)
         call    NAME(Bs3EnteredMode_pp32)
+
+        ; Load full 32-bit GDT base address.
+        lgdt    [Bs3Lgdt_Gdt wrt FLAT]
 
         ;
         ; Restore ecx, eax and flags (IF).

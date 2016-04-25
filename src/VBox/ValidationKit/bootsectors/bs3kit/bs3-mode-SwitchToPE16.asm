@@ -93,10 +93,11 @@ BS3_BEGIN_TEXT16
         ; Load the GDT and enable PE16.
         ;
 BS3_EXTERN_SYSTEM16 Bs3Lgdt_Gdt
+BS3_EXTERN_SYSTEM16 Bs3LgdtDef_Gdt
 BS3_BEGIN_TEXT16
         mov     ax, BS3SYSTEM16
         mov     ds, ax
-        lgdt    [Bs3Lgdt_Gdt]
+        lgdt    [Bs3LgdtDef_Gdt]        ; Will only load 24-bit base!
 
         smsw    ax
         or      ax, X86_CR0_PE
@@ -115,6 +116,26 @@ BS3_BEGIN_TEXT16
         ;
         extern  NAME(Bs3EnteredMode_pe16)
         call    NAME(Bs3EnteredMode_pe16)
+
+        ;
+        ; Load full 32-bit GDT base address from 32-bit segment, if 386+ CPU.
+        ;
+        BS3_EXTERN_DATA16 g_uBs3CpuDetected
+        BS3_BEGIN_TEXT16
+        cmp     byte [g_uBs3CpuDetected], BS3CPU_80386
+        jb      .old_cpu_skip_32bit_lgdt
+        push    ds
+        mov     ax, BS3_SEL_SYSTEM16
+        mov     ds, ax
+        jmp     dword BS3_SEL_R0_CS32:.load_full_gdt_base wrt FLAT
+.load_full_gdt_base:
+        BS3_SET_BITS 32
+        lgdt    [Bs3Lgdt_Gdt wrt BS3SYSTEM16]
+        jmp     BS3_SEL_R0_CS16:.back_to_16bit
+.back_to_16bit:
+        BS3_SET_BITS 16
+        pop     ds
+.old_cpu_skip_32bit_lgdt:
 
         popf
         pop     cx

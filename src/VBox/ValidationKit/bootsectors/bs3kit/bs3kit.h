@@ -195,6 +195,9 @@ RT_C_DECLS_BEGIN
 
 /** Whether the mode has paging enabled. */
 #define BS3_MODE_IS_PAGED(a_fMode)              ((a_fMode) >= BS3_MODE_PP16)
+/** Whether the mode has legacy paging enabled (legacy as opposed to PAE or
+ * long mode). */
+#define BS3_MODE_IS_LEGACY_PAGING(a_fMode)      ((a_fMode) >= BS3_MODE_PP16 && (a_fMode) < BS3_MODE_PAE16)
 
 /** Whether the mode is running v8086 code. */
 #define BS3_MODE_IS_V86(a_fMode)                (((a_fMode) & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86)
@@ -997,10 +1000,12 @@ extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Idt64;
 /** Structure for the LIDT instruction for loading the real mode interrupt
  *  vector table.. */
 extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Ivt;
-/** Structure for the LGDT instruction for loading the GDT. */
+/** Structure for the LGDT instruction for loading the current GDT. */
 extern X86XDTR64 BS3_FAR_DATA Bs3Lgdt_Gdt;
+/** Structure for the LGDT instruction for loading the default GDT. */
+extern X86XDTR64 BS3_FAR_DATA Bs3LgdtDef_Gdt;
 /** The LDT (all entries are empty, fill in for testing). */
-extern X86DESC   BS3_FAR_DATA Bs3Ldt[118];
+extern X86DESC   BS3_FAR_DATA Bs3Ldt[116];
 /** The end of the LDT (exclusive).   */
 extern X86DESC   BS3_FAR_DATA Bs3LdtEnd;
 
@@ -2042,6 +2047,9 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemGuardedTestPageAllocEx,(BS3MEMKIND enmK
  */
 BS3_CMN_PROTO_STUB(void, Bs3MemGuardedTestPageFree,(void BS3_FAR *pvGuardedPage));
 
+/** Highes RAM byte below 4G. */
+extern uint32_t  g_uBs3EndOfRamBelow4G;
+
 
 /**
  * Enables the A20 gate.
@@ -2135,6 +2143,44 @@ BS3_CMN_PROTO_STUB(int, Bs3PagingProtect,(uint64_t uFlat, uint64_t cb, uint64_t 
  * @param   fClear      Mask of zero or more X86_PTE_XXX values to clear for the range.
  */
 BS3_CMN_PROTO_STUB(int, Bs3PagingProtectPtr,(void BS3_FAR *pv, size_t cb, uint64_t fSet, uint64_t fClear));
+
+/**
+ * Aliases (maps) one or more contiguous physical pages to a virtual range.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INVALID_PARAMETER if we're in legacy paging mode and @a uDst or
+ *          @a uPhysToAlias are not compatible with legacy paging.
+ * @retval  VERR_OUT_OF_RANGE if we cannot traverse the page tables in this mode
+ *          (typically real mode or v86, maybe 16-bit PE).
+ * @retval  VERR_NO_MEMORY if we cannot allocate page tables for splitting up
+ *          the necessary large pages.  No aliasing was performed.
+ *
+ * @param   uDst                The virtual address to map it at. Rounded down
+ *                              to the nearest page (@a cbHowMuch is adjusted
+ *                              up).
+ * @param   uPhysToAlias        The physical address of the first page in the
+ *                              (contiguous) range to map.  Chopped down to
+ *                              nearest page boundrary (@a cbHowMuch is not
+ *                              adjusted).
+ * @param   cbHowMuch           How much to map. Rounded up to nearest page.
+ * @param   fPte                The PTE flags.
+ */
+BS3_CMN_PROTO_STUB(int, Bs3PagingAlias,(uint64_t uDst, uint64_t uPhysToAlias, uint32_t cbHowMuch, uint64_t fPte));
+
+/**
+ * Unaliases memory, i.e. restores the 1:1 mapping.
+ *
+ * @returns VBox status code.  Cannot fail if @a uDst and @a cbHowMuch specify
+ *          the range of a successful Bs3PagingAlias call, however it may run
+ *          out of memory if it's breaking new ground.
+ *
+ * @param   uDst                The virtual address to restore to 1:1 mapping.
+ *                              Rounded down to the nearest page (@a cbHowMuch
+ *                              is adjusted up).
+ * @param   cbHowMuch           How much to restore. Rounded up to nearest page.
+ */
+BS3_CMN_PROTO_STUB(int, Bs3PagingUnalias,(uint64_t uDst, uint32_t cbHowMuch));
+
 
 /** The physical / flat address of the buffer backing the canonical traps.
  * This buffer is spread equally on each side of the 64-bit non-canonical
@@ -2897,6 +2943,26 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
     FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm16); \
     FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm32); \
     FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm64)
+
+
+/**
+ * Sets the full GDTR register.
+ *
+ * @param   cbLimit     The limit.
+ * @param   uBase       The base address - 24, 32 or 64 bit depending on the
+ *                      CPU mode.
+ */
+BS3_CMN_PROTO_NOSB(void, Bs3UtilSetFullGdtr,(uint16_t cbLimit, uint64_t uBase));
+
+/**
+ * Sets the full IDTR register.
+ *
+ * @param   cbLimit     The limit.
+ * @param   uBase       The base address - 24, 32 or 64 bit depending on the
+ *                      CPU mode.
+ */
+BS3_CMN_PROTO_NOSB(void, Bs3UtilSetFullIdtr,(uint16_t cbLimit, uint64_t uBase));
+
 
 /** @} */
 

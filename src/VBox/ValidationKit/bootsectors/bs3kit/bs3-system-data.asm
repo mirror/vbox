@@ -1004,8 +1004,17 @@ BS3_GLOBAL_DATA Bs3Lidt_Ivt, 2+8
         times 4 db 0                            ; padding the start of the next
 
 ;;
-; LGDT structure for the GDT (8-byte aligned on offset).
+; LGDT structure for the current GDT (8-byte aligned on offset).
 BS3_GLOBAL_DATA Bs3Lgdt_Gdt, 2+8
+        dw      BS3_DATA_NM(Bs3GdtEnd) - BS3_DATA_NM(Bs3Gdt) - 1 ; limit
+        dw      BS3_SYSTEM16_BASE_LOW(Bs3Gdt)                    ; low offset
+        dw      (BS3_ADDR_BS3SYSTEM16 >> 16)                     ; high offset
+        dd      0                                                ; top32 offset
+
+;;
+; LGDT structure for the default GDT (8-byte aligned on offset).
+; This must not be modified, whereas Bs3Lgdt_Gdt can be modified by the user.
+BS3_GLOBAL_DATA Bs3LgdtDef_Gdt, 2+8
         dw      BS3_DATA_NM(Bs3GdtEnd) - BS3_DATA_NM(Bs3Gdt) - 1 ; limit
         dw      BS3_SYSTEM16_BASE_LOW(Bs3Gdt)                    ; low offset
         dw      (BS3_ADDR_BS3SYSTEM16 >> 16)                     ; high offset
@@ -1017,11 +1026,11 @@ align   16
 ;;
 ; LDT filling up the rest of the segment.
 ;
-; Currently this starts at 0x84d0, which leaves us with 0xb30 bytes.  We'll use
+; Currently this starts at 0x84e0, which leaves us with 0xb20 bytes.  We'll use
 ; the last 32 of those for an eye catcher.
 ;
-BS3_GLOBAL_DATA Bs3Ldt, 0b30h - 32
-        times (0b30h - 32) db 0
+BS3_GLOBAL_DATA Bs3Ldt, 0b20h - 32
+        times (0b20h - 32) db 0
 BS3_GLOBAL_DATA Bs3LdtEnd, 0
         db  10, 13, 'eye-catcher: SYSTEM16 END', 10, 13, 0, 0, 0 ; 32 bytes long
 

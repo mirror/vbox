@@ -99,7 +99,8 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
                 else
                 {
                     X86PT BS3_FAR *pPT;
-                    uint32_t       uPte = (pPD->a[iPde].u & ~(uint32_t)(X86_PTE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G)) | X86_PTE_D;
+                    uint32_t       uPte = (pPD->a[iPde].u & ~(uint32_t)(X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_PG_HIGH_MASK)) \
+                                        | X86_PTE_D;
                     if (pPD->a[iPde].b.u1Global)
                         uPte |= X86_PTE_G;
                     if (pPD->a[iPde].b.u1PAT)

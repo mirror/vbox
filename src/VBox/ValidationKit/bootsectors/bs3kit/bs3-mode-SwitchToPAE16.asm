@@ -131,11 +131,12 @@ BS3_BEGIN_TEXT16
         ;
         ; Load the GDT and enable PP16.
         ;
+BS3_EXTERN_SYSTEM16 Bs3LgdtDef_Gdt
 BS3_EXTERN_SYSTEM16 Bs3Lgdt_Gdt
 BS3_BEGIN_TEXT16
         mov     ax, BS3SYSTEM16
         mov     ds, ax
-        lgdt    [Bs3Lgdt_Gdt]
+        lgdt    [Bs3LgdtDef_Gdt]        ; Will only load 24-bit base!
 
         mov     eax, cr0
         or      eax, X86_CR0_PE | X86_CR0_PG
@@ -155,6 +156,21 @@ BS3_BEGIN_TEXT16
         ; Call rountine for doing mode specific setups.
         ;
         call    NAME(Bs3EnteredMode_pae16)
+
+        ;
+        ; Load full 32-bit GDT base address from 32-bit segment.
+        ;
+        push    ds
+        mov     ax, BS3_SEL_SYSTEM16
+        mov     ds, ax
+        jmp     dword BS3_SEL_R0_CS32:.load_full_gdt_base wrt FLAT
+.load_full_gdt_base:
+        BS3_SET_BITS 32
+        lgdt    [Bs3Lgdt_Gdt wrt BS3SYSTEM16]
+        jmp     BS3_SEL_R0_CS16:.back_to_16bit
+.back_to_16bit:
+        BS3_SET_BITS 16
+        pop     ds
 
         popfd
         pop     ecx

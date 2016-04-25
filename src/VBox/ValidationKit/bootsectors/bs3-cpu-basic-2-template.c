@@ -1943,6 +1943,16 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
 
     }
 
+    /*
+     * Move the table by setting up alias pages.  Aim at areas above 2GB for 32-bit and in
+     * the 'negative' space of 64-bit addresses.
+     */
+    if (BS3_MODE_IS_PAGED(bTestMode))
+    {
+
+    }
+
+
 }
 
 # define bs3CpuBasic2_sidt_sgdt_Common BS3_CMN_NM(bs3CpuBasic2_sidt_sgdt_Common)
@@ -1959,7 +1969,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_Common(uint8_t bTestMode, BS3CB2SIDTS
     {
         for (idx = 0; idx < cWorkers; idx++)
             if (    (paWorkers[idx].bMode & (bTestMode & BS3_MODE_CODE_MASK))
-                && (!paWorkers[idx].fSs || bRing != 0))
+                && (!paWorkers[idx].fSs || bRing != 0 /** @todo || BS3_MODE_IS_64BIT_SYS(bTestMode)*/ ))
             {
                 g_usBs3TestStep = iStep;
                 bs3CpuBasic2_sidt_sgdt_One(&paWorkers[idx], bTestMode, bRing, pabExpected);
@@ -2252,8 +2262,10 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
 {
-//if (bMode == BS3_MODE_LM64)
+//if (bMode >= BS3_MODE_LM16)
 {
+    uint64_t const uOrgAddr = Bs3Lgdt_Gdt.uAddr;
+    uint64_t       uNew     = 0;
     union
     {
         RTGDTR  Gdtr;
@@ -2263,8 +2275,24 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
     g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
-
     BS3_ASSERT(bMode == TMPL_MODE);
+
+    /*
+     * If paged mode, try push the GDT way up.
+     */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+/** @todo loading non-canonical base addresses.   */
+        int rc;
+        uNew  = BS3_MODE_IS_64BIT_SYS(bMode) ? UINT64_C(0xffff80fedcb70000) : UINT64_C(0xc2d28000);
+        uNew |= uOrgAddr & X86_PAGE_OFFSET_MASK;
+        rc = Bs3PagingAlias(uNew, uOrgAddr, Bs3Lgdt_Gdt.cb, X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_D | X86_PTE_A);
+        if (RT_SUCCESS(rc))
+        {
+            Bs3Lgdt_Gdt.uAddr = uNew;
+            Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uNew);
+        }
+    }
 
     /*
      * Pass to common worker which is only compiled once per mode.
@@ -2272,6 +2300,16 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
     Bs3MemZero(&Expected, sizeof(Expected));
     ASMGetGDTR(&Expected.Gdtr);
     bs3CpuBasic2_sidt_sgdt_Common(bMode, g_aSgdtWorkers, RT_ELEMENTS(g_aSgdtWorkers), Expected.ab);
+
+    /*
+     * Unalias the GDT.
+     */
+    if (uNew != 0)
+    {
+        Bs3Lgdt_Gdt.uAddr = uOrgAddr;
+        Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uOrgAddr);
+        Bs3PagingUnalias(uNew, Bs3Lgdt_Gdt.cb);
+    }
 
     /*
      * Re-initialize the IDT.

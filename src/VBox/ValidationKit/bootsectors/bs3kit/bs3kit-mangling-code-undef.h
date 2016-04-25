@@ -46,6 +46,7 @@
 #undef Bs3MemPCpy
 #undef Bs3MemSet
 #undef Bs3MemZero
+#undef Bs3PagingAlias
 #undef bs3PagingGetLegacyPte
 #undef bs3PagingGetPte
 #undef Bs3PagingInitRootForLM
@@ -54,6 +55,7 @@
 #undef Bs3PagingProtect
 #undef Bs3PagingProtectPtr
 #undef Bs3PagingSetupCanonicalTraps
+#undef Bs3PagingUnalias
 #undef Bs3Panic
 #undef Bs3PicMaskAll
 #undef Bs3PrintChr
@@ -137,6 +139,8 @@
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div
+#undef Bs3UtilSetFullGdtr
+#undef Bs3UtilSetFullIdtr
 #ifndef BS3_CMN_ONLY
 # undef Bs3CpuDetect
 # undef Bs3TestDoModes
