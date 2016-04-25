@@ -2480,7 +2480,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                  * delivered asynchronously.
                  */
                 apicSetVectorInPib(&pApicCpu->ApicPibLevel, uVector);
-                uint32_t const fAlreadySet = apicSetNotificationBitInPib((PAPICPIB)&pApicCpu->ApicPibLevel);
+                uint32_t const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel);
                 if (!fAlreadySet)
                     APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }

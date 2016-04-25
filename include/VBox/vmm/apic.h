@@ -255,8 +255,8 @@ typedef struct XAPICPAGE
     {
         struct
         {
-            uint32_t            u24Reserved0    : 24;
-            uint32_t            u8LogicalApicId : 8;
+            uint8_t             u8Reserved0[3];
+            uint8_t             u8LogicalApicId;
             uint32_t            u32Reserved0[3];
         } u;
         struct
@@ -529,9 +529,9 @@ typedef struct XAPICPAGE
     uint8_t                     u8Reserved0[3088];
 } XAPICPAGE;
 /** Pointer to a XAPICPAGE struct. */
-typedef volatile XAPICPAGE *PXAPICPAGE;
+typedef XAPICPAGE *PXAPICPAGE;
 /** Pointer to a const XAPICPAGE struct. */
-typedef const volatile XAPICPAGE *PCXAPICPAGE;
+typedef const XAPICPAGE *PCXAPICPAGE;
 AssertCompileSize(XAPICPAGE, 4096);
 AssertCompileMemberOffset(XAPICPAGE, id,          XAPIC_OFF_ID);
 AssertCompileMemberOffset(XAPICPAGE, version,     XAPIC_OFF_VERSION);
@@ -870,9 +870,9 @@ typedef struct X2APICPAGE
     uint8_t                     u8Reserved0[3072];
 } X2APICPAGE;
 /** Pointer to a X2APICPAGE struct. */
-typedef volatile X2APICPAGE *PX2APICPAGE;
+typedef X2APICPAGE *PX2APICPAGE;
 /** Pointer to a const X2APICPAGE struct. */
-typedef const volatile X2APICPAGE *PCX2APICPAGE;
+typedef const X2APICPAGE *PCX2APICPAGE;
 AssertCompileSize(X2APICPAGE, 4096);
 AssertCompileSize(X2APICPAGE, sizeof(XAPICPAGE));
 AssertCompileMemberOffset(X2APICPAGE, id,          XAPIC_OFF_ID);

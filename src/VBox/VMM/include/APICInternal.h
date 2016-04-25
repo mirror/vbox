@@ -108,10 +108,12 @@
 #define XAPIC_TPR_TP                         UINT32_C(0xf0)
 /** TPR - Task-priority subclass. */
 #define XAPIC_TPR_TP_SUBCLASS                UINT32_C(0x0f)
-/** TPR - Get the task-priority class. */
+/** TPR - Gets the task-priority class. */
 #define XAPIC_TPR_GET_TP(a_Tpr)              ((a_Tpr) & XAPIC_TPR_TP)
-/** TPR - Get the task-priority subclass. */
+/** TPR - Gets the task-priority subclass. */
 #define XAPIC_TPR_GET_TP_SUBCLASS(a_Tpr)     ((a_Tpr) & XAPIC_TPR_TP_SUBCLASS)
+/** TPR - Gets the TPR from its 32-bit register. */
+#define XAPIC_TPR_GET_TPR_FROM_U32(a_32Tpr)  (((a_32Tpr) >> 24) & XAPIC_TPR)
 
 /** PPR - Valid bits. */
 #define XAPIC_PPR                            UINT32_C(0xff)
@@ -449,11 +451,11 @@ typedef struct APIC
     /** The ring-3 mapping of the memory object of the PIB. */
     RTR0MEMOBJ                  hMapObjApicPibR0;
     /** The APIC PIB virtual address - R0 ptr. */
-    R0PTRTYPE(volatile void *)  pvApicPibR0;
+    R0PTRTYPE(void *)           pvApicPibR0;
     /** The APIC PIB virtual address - R3 ptr. */
-    R3PTRTYPE(volatile void *)  pvApicPibR3;
+    R3PTRTYPE(void *)           pvApicPibR3;
     /** The APIC PIB virtual address - RC ptr. */
-    RCPTRTYPE(volatile void *)  pvApicPibRC;
+    RCPTRTYPE(void *)           pvApicPibRC;
     /** Alignment padding. */
     RTRCPTR                     RCPtrAlignment1;
     /** The size of the page in bytes. */
@@ -499,11 +501,11 @@ typedef struct APICCPU
     /** The ring-3 mapping of the memory object of the page. */
     RTR0MEMOBJ                  hMapObjApicPageR0;
     /** The APIC page virtual address - R0 ptr. */
-    R0PTRTYPE(volatile void *)  pvApicPageR0;
+    R0PTRTYPE(void *)           pvApicPageR0;
     /** The APIC page virtual address - R3 ptr. */
-    R3PTRTYPE(volatile void *)  pvApicPageR3;
+    R3PTRTYPE(void *)           pvApicPageR3;
     /** The APIC page virtual address - RC ptr. */
-    RCPTRTYPE(volatile void *)  pvApicPageRC;
+    RCPTRTYPE(void *)           pvApicPageRC;
     /** Alignment padding. */
     RTRCPTR                     RCPtrAlignment0;
     /** The size of the page in bytes. */
@@ -523,15 +525,15 @@ typedef struct APICCPU
     /** The host-context physical address of the page. */
     RTHCPHYS                    HCPhysApicPib;
     /** The APIC PIB virtual address - R0 ptr. */
-    R0PTRTYPE(volatile void *)  pvApicPibR0;
+    R0PTRTYPE(void *)           pvApicPibR0;
     /** The APIC PIB virtual address - R3 ptr. */
-    R3PTRTYPE(volatile void *)  pvApicPibR3;
+    R3PTRTYPE(void *)           pvApicPibR3;
     /** The APIC PIB virtual address - RC ptr. */
-    RCPTRTYPE(volatile void *)  pvApicPibRC;
+    RCPTRTYPE(void *)           pvApicPibRC;
     /** Alignment padding. */
     RTRCPTR                     RCPtrAlignment1;
     /** The APIC PIB for level-sensitive interrupts. */
-    volatile APICPIB            ApicPibLevel;
+    APICPIB                     ApicPibLevel;
     /** @} */
 
     /** @name The APIC timer.
