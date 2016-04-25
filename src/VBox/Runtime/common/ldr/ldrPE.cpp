@@ -3498,6 +3498,7 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
     union /* combine stuff we're reading to help reduce stack usage. */
     {
         IMAGE_LOAD_CONFIG_DIRECTORY64   Cfg64;
+        uint8_t                         abZeros[sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V5) * 4];
     } u;
 
     /*
@@ -3524,26 +3525,45 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                                 ? sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_V1)
                                 : sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V2) /*No V1*/;
 
+        bool fNewerStructureHack = false;
         if (   Dir.Size != cbExpectV5
             && Dir.Size != cbExpectV4
             && Dir.Size != cbExpectV3
             && Dir.Size != cbExpectV2
             && Dir.Size != cbExpectV1)
         {
-            Log(("rtldrPEOpen: %s: load cfg dir: unexpected dir size of %u bytes, expected %zu, %zu, %zu, %zu, or %zu.\n",
-                 pszLogName, Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1));
-            return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
-                                 "Unexpected load config dir size of %u bytes; supported sized: %zu, %zu, %zu, %zu, or %zu",
-                                 Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1);
+            fNewerStructureHack = Dir.Size > cbExpectV5  /* These structure changes are slowly getting to us! More futher down. */
+                               && Dir.Size <= sizeof(u);
+            Log(("rtldrPEOpen: %s: load cfg dir: unexpected dir size of %u bytes, expected %zu, %zu, %zu, %zu, or %zu.%s\n",
+                 pszLogName, Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1,
+                 fNewerStructureHack ? " Will try ignore extra bytes if all zero." : ""));
+            if (!fNewerStructureHack)
+                return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
+                                     "Unexpected load config dir size of %u bytes; supported sized: %zu, %zu, %zu, %zu, or %zu",
+                                     Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1);
         }
 
         /*
-         * Read and convert to 64-bit.
+         * Read, check new stuff and convert to 64-bit.
+         *
+         * If we accepted a newer structure, we check whether the new bits are
+         * all zero.  This PRAYING/ASSUMING that the nothing new weird stuff is
+         * activated by a zero value and that it'll mostly be unused in areas
+         * we care about (which has been the case till now).
          */
         RT_ZERO(u.Cfg64);
         int rc = rtldrPEReadRVA(pModPe, &u.Cfg64, Dir.Size, Dir.VirtualAddress);
         if (RT_FAILURE(rc))
             return rc;
+        if (   fNewerStructureHack
+            && !ASMMemIsZero(&u.abZeros[cbExpectV5], Dir.Size - cbExpectV5))
+        {
+            Log(("rtldrPEOpen: %s: load cfg dir: Unexpected bytes are non-zero (%u bytes of which %u expected to be zero): %.*Rhxs\n",
+                 pszLogName, Dir.Size, Dir.Size - cbExpectV5, Dir.Size - cbExpectV5, &u.abZeros[cbExpectV5]));
+            return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
+                                 "Grown load config (%u to %u bytes) includes non-zero bytes: %.*Rhxs",
+                                 cbExpectV5, Dir.Size, Dir.Size - cbExpectV5, &u.abZeros[cbExpectV5]);
+        }
         rtldrPEConvert32BitLoadConfigTo64Bit(&u.Cfg64);
 
         if (u.Cfg64.Size != Dir.Size)
