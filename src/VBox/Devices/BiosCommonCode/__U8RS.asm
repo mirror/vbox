@@ -30,7 +30,7 @@ _TEXT           segment public 'CODE' use16
 ;;
 ; 64-bit unsigned right shift.
 ;
-; @param    ax:bx:cx:dx Value.
+; @param    ax:bx:cx:dx Value. (AX is the most significant, DX the least)
 ; @param    si          Shift count.
 ; @returns  ax:bx:cx:dx Shifted value.
 ; si is zeroed
