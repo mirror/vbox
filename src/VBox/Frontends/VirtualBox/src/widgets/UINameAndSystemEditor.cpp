@@ -121,9 +121,9 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     retranslateUi();
 }
 
-QLineEdit* UINameAndSystemEditor::nameEditor() const
+QString UINameAndSystemEditor::name() const
 {
-    return m_pEditorName;
+    return m_pEditorName->text();
 }
 
 void UINameAndSystemEditor::setName(const QString &strName)
@@ -131,9 +131,9 @@ void UINameAndSystemEditor::setName(const QString &strName)
     m_pEditorName->setText(strName);
 }
 
-QString UINameAndSystemEditor::name() const
+CGuestOSType UINameAndSystemEditor::type() const
 {
-    return m_pEditorName->text();
+    return m_type;
 }
 
 void UINameAndSystemEditor::setType(const CGuestOSType &type)
@@ -155,19 +155,14 @@ void UINameAndSystemEditor::setType(const CGuestOSType &type)
         m_pComboType->setCurrentIndex(iTypeIndex);
 }
 
-CGuestOSType UINameAndSystemEditor::type() const
-{
-    return m_type;
-}
-
 void UINameAndSystemEditor::retranslateUi()
 {
     m_pLabelName->setText(tr("N&ame:"));
-    m_pEditorName->setWhatsThis(tr("Holds the name of the virtual machine."));
     m_pLabelFamily->setText(tr("&Type:"));
+    m_pLabelType->setText(tr("&Version:"));
+    m_pEditorName->setWhatsThis(tr("Holds the name of the virtual machine."));
     m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
                                     "you plan to install into this virtual machine."));
-    m_pLabelType->setText(tr("&Version:"));
     m_pComboType->setWhatsThis(tr("Selects the operating system type that "
                                   "you plan to install into this virtual machine "
                                   "(called a guest operating system)."));
