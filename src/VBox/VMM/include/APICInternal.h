@@ -112,8 +112,6 @@
 #define XAPIC_TPR_GET_TP(a_Tpr)              ((a_Tpr) & XAPIC_TPR_TP)
 /** TPR - Gets the task-priority subclass. */
 #define XAPIC_TPR_GET_TP_SUBCLASS(a_Tpr)     ((a_Tpr) & XAPIC_TPR_TP_SUBCLASS)
-/** TPR - Gets the TPR from its 32-bit register. */
-#define XAPIC_TPR_GET_TPR_FROM_U32(a_32Tpr)  (((a_32Tpr) >> 24) & XAPIC_TPR)
 
 /** PPR - Valid bits. */
 #define XAPIC_PPR                            UINT32_C(0xff)

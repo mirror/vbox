@@ -631,7 +631,25 @@ static PDMAPICMODE apicR3ConvertToLegacyApicMode(APICMODE enmMode)
 }
 
 
-#ifdef DEBUG_ramshankar
+#ifdef APIC_FUZZY_SSM_COMPAT_TEST
+/**
+ * Reads a 32-bit register at a specified offset.
+ *
+ * @returns The value at the specified offset.
+ * @param   pXApicPage      The xAPIC page.
+ * @param   offReg          The offset of the register being read.
+ *
+ * @remarks Duplicate of apicReadRaw32()!
+ */
+static uint32_t apicR3ReadRawR32(PCXAPICPAGE pXApicPage, uint16_t offReg)
+{
+    Assert(offReg < sizeof(*pXApicPage) - sizeof(uint32_t));
+    uint8_t  const *pbXApic =  (const uint8_t *)pXApicPage;
+    uint32_t const  uValue  = *(const uint32_t *)(pbXApic + offReg);
+    return uValue;
+}
+
+
 /**
  * Helper for dumping per-VCPU APIC state to the release logger.
  *
@@ -639,33 +657,86 @@ static PDMAPICMODE apicR3ConvertToLegacyApicMode(APICMODE enmMode)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszPrefix   A caller supplied prefix before dumping the state.
+ * @param   uVersion    Data layout version.
  */
-static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix)
+static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersion)
 {
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
-    /* The auxiliary state. */
-    LogRel(("APIC%u: %s\n", pVCpu->idCpu, pszPrefix));
-    LogRel(("APIC%u: uApicBaseMsr             = %#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
-    LogRel(("APIC%u: uEsrInternal             = %#RX64\n", pVCpu->idCpu, pApicCpu->uEsrInternal));
+    LogRel(("APIC%u: %s (version %u):\n", pVCpu->idCpu, pszPrefix, uVersion));
 
-    /* The timer. */
-    LogRel(("APIC%u: u64TimerInitial          = %#RU64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
-    LogRel(("APIC%u: uHintedTimerInitialCount = %#RU64\n", pVCpu->idCpu, pApicCpu->uHintedTimerInitialCount));
-    LogRel(("APIC%u: uHintedTimerShift        = %#RU64\n", pVCpu->idCpu, pApicCpu->uHintedTimerShift));
+    switch (uVersion)
+    {
+        case APIC_SAVED_STATE_VERSION:
+        {
+            /* The auxiliary state. */
+            LogRel(("APIC%u: uApicBaseMsr             = %#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
+            LogRel(("APIC%u: uEsrInternal             = %#RX64\n", pVCpu->idCpu, pApicCpu->uEsrInternal));
 
-    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    LogRel(("APIC%u: uTimerICR                = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_icr.u32InitialCount));
-    LogRel(("APIC%u: uTimerCCR                = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_ccr.u32CurrentCount));
+            /* The timer. */
+            LogRel(("APIC%u: u64TimerInitial          = %#RU64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
+            LogRel(("APIC%u: uHintedTimerInitialCount = %#RU64\n", pVCpu->idCpu, pApicCpu->uHintedTimerInitialCount));
+            LogRel(("APIC%u: uHintedTimerShift        = %#RU64\n", pVCpu->idCpu, pApicCpu->uHintedTimerShift));
 
-    /* The PIBs. */
-    LogRel(("APIC%u: Edge PIB : %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), pApicCpu->pvApicPibR3));
-    LogRel(("APIC%u: Level PIB: %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), &pApicCpu->ApicPibLevel));
+            PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+            LogRel(("APIC%u: uTimerICR                = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_icr.u32InitialCount));
+            LogRel(("APIC%u: uTimerCCR                = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_ccr.u32CurrentCount));
 
-    /* The APIC page. */
-    LogRel(("APIC%u: APIC page: %.*Rhxs\n", pVCpu->idCpu, sizeof(XAPICPAGE), pApicCpu->pvApicPageR3));
+            /* The PIBs. */
+            LogRel(("APIC%u: Edge PIB : %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), pApicCpu->pvApicPibR3));
+            LogRel(("APIC%u: Level PIB: %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), &pApicCpu->ApicPibLevel));
+
+            /* The APIC page. */
+            LogRel(("APIC%u: APIC page: %.*Rhxs\n", pVCpu->idCpu, sizeof(XAPICPAGE), pApicCpu->pvApicPageR3));
+            break;
+        }
+
+        case APIC_SAVED_STATE_VERSION_VBOX_50:
+        case APIC_SAVED_STATE_VERSION_VBOX_30:
+        case APIC_SAVED_STATE_VERSION_ANCIENT:
+        {
+            PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+            LogRel(("APIC%u: uApicBaseMsr             = %#RX32\n", pVCpu->idCpu, RT_LO_U32(pApicCpu->uApicBaseMsr)));
+            LogRel(("APIC%u: uId                      = %#RX32\n", pVCpu->idCpu, pXApicPage->id.u8ApicId));
+            LogRel(("APIC%u: uPhysId                  = N/A\n",    pVCpu->idCpu));
+            LogRel(("APIC%u: uArbId                   = N/A\n",    pVCpu->idCpu));
+            LogRel(("APIC%u: uTrp                     = %#RX32\n", pVCpu->idCpu, pXApicPage->tpr.u8Tpr));
+            LogRel(("APIC%u: uSvr                     = %#RX32\n", pVCpu->idCpu, pXApicPage->svr.all.u32Svr));
+            LogRel(("APIC%u: uLdr                     = %#x\n",    pVCpu->idCpu, pXApicPage->ldr.all.u32Ldr));
+            LogRel(("APIC%u: uDfr                     = %#x\n",    pVCpu->idCpu, pXApicPage->dfr.all.u32Dfr));
+
+            for (size_t i = 0; i < 8; i++)
+            {
+                LogRel(("APIC%u: Isr[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, pXApicPage->isr.u[i].u32Reg));
+                LogRel(("APIC%u: Tmr[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, pXApicPage->tmr.u[i].u32Reg));
+                LogRel(("APIC%u: Irr[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, pXApicPage->irr.u[i].u32Reg));
+            }
+
+            for (size_t i = 0; i < XAPIC_MAX_LVT_ENTRIES_P4; i++)
+            {
+                uint16_t const offReg = XAPIC_OFF_LVT_START + (i << 4);
+                LogRel(("APIC%u: Lvt[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, apicR3ReadRawR32(pXApicPage, offReg)));
+            }
+
+            LogRel(("APIC%u: uEsr                     = %#RX32\n", pVCpu->idCpu, pXApicPage->esr.all.u32Errors));
+            LogRel(("APIC%u: uIcr_Lo                  = %#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
+            LogRel(("APIC%u: uIcr_Hi                  = %#RX32\n", pVCpu->idCpu, pXApicPage->icr_hi.all.u32IcrHi));
+            LogRel(("APIC%u: uTimerDcr                = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_dcr.all.u32DivideValue));
+            LogRel(("APIC%u: uCountShift              = %#RX32\n", pVCpu->idCpu, apicGetTimerShift(pXApicPage)));
+            LogRel(("APIC%u: uInitialCount            = %#RX32\n", pVCpu->idCpu, pXApicPage->timer_icr.u32InitialCount));
+            LogRel(("APIC%u: u64InitialCountLoadTime  = %#RX64\n", pVCpu->idCpu, pApicCpu->u64TimerInitial));
+            LogRel(("APIC%u: u64NextTime / TimerCCR   = %#RX64\n", pVCpu->idCpu, pXApicPage->timer_ccr.u32CurrentCount));
+            break;
+        }
+
+        default:
+        {
+            LogRel(("APIC: apicR3DumpState: Invalid/unrecognized saved-state version %u (%#x)\n", uVersion, uVersion));
+            break;
+        }
+    }
 }
-#endif
+#endif  /* APIC_FUZZY_SSM_COMPAT_TEST */
 
 
 /**
@@ -770,7 +841,7 @@ static int apicR3LoadLegacyVCpuData(PVM pVM, PVMCPU pVCpu, PSSMHANDLE pSSM, uint
 
     uint32_t u32Tpr;
     SSMR3GetU32(pSSM, &u32Tpr);
-    pXApicPage->tpr.u8Tpr = XAPIC_TPR_GET_TPR_FROM_U32(u32Tpr);
+    pXApicPage->tpr.u8Tpr = u32Tpr & XAPIC_TPR;
 
     SSMR3GetU32(pSSM, &pXApicPage->svr.all.u32Svr);
     SSMR3GetU8(pSSM,  &pXApicPage->ldr.u.u8LogicalApicId);
@@ -885,12 +956,17 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
         TMR3TimerSave(pApicCpu->pTimerR3, pSSM);
 
-#ifdef DEBUG_ramshankar
-        apicR3DumpState(pVCpu, "Saved state:");
+#if defined(APIC_FUZZY_SSM_COMPAT_TEST) || defined(DEBUG_ramshankar)
+        apicR3DumpState(pVCpu, "Saved state", APIC_SAVED_STATE_VERSION);
 #endif
     }
 
+#ifdef APIC_FUZZY_SSM_COMPAT_TEST
+    /* The state is fuzzy, don't even bother trying to load the guest. */
+    return VERR_INVALID_STATE;
+#else
     return rc;
+#endif
 }
 
 
@@ -968,10 +1044,8 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             AssertRCReturn(rc, rc);
         }
 
-#ifdef DEBUG_ramshankar
-        char szLoadedState[128];
-        RTStrPrintf(szLoadedState, sizeof(szLoadedState), "Loaded state (version %u):", uVersion);
-        apicR3DumpState(pVCpu, &szLoadedState[0]);
+#if defined(APIC_FUZZY_SSM_COMPAT_TEST) || defined(DEBUG_ramshankar)
+        apicR3DumpState(pVCpu, "Loaded state", uVersion);
 #endif
     }
 

@@ -54,6 +54,9 @@
 #include <VBox/vmm/vm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#ifdef APIC_FUZZY_SSM_COMPAT_TEST
+# include <iprt/rand.h>
+#endif
 
 #include <VBox/msi.h>
 
@@ -1731,10 +1734,106 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     }
 }
 
+
+#ifdef APIC_FUZZY_SSM_COMPAT_TEST
+/**
+ * Helper for dumping per-VCPU APIC state to the release logger.
+ *
+ * This is primarily concerned about the APIC state relevant for saved-states.
+ *
+ * @param   pApic       The APIC state.
+ * @param   pszPrefix   A caller supplied prefix before dumping the state.
+ */
+static void apic_dump_state(APICState *pApic, const char *pszPrefix)
+{
+    LogRel(("APIC%u: %s\n", pApic->phys_id, pszPrefix));
+    LogRel(("APIC%u: uApicBaseMsr             = %#RX32\n", pApic->phys_id, pApic->apicbase));
+    LogRel(("APIC%u: uId                      = %#RX32\n", pApic->phys_id, pApic->id));
+    LogRel(("APIC%u: uPhysId                  = %#RX32\n", pApic->phys_id, pApic->phys_id));
+    LogRel(("APIC%u: uArbId                   = %#RX32\n", pApic->phys_id, pApic->arb_id));
+    LogRel(("APIC%u: uTrp                     = %#RX32\n", pApic->phys_id, pApic->tpr));
+    LogRel(("APIC%u: uSvr                     = %#RX32\n", pApic->phys_id, pApic->spurious_vec));
+    LogRel(("APIC%u: uLdr                     = %#x\n",    pApic->phys_id, pApic->log_dest));
+    LogRel(("APIC%u: uDfr                     = %#x\n",    pApic->phys_id, pApic->dest_mode));
+
+    for (size_t i = 0; i < 8; i++)
+    {
+        LogRel(("APIC%u: Isr[%u].u32Reg           = %#RX32\n", pApic->phys_id, i, pApic->isr.au32Bitmap[i]));
+        LogRel(("APIC%u: Tmr[%u].u32Reg           = %#RX32\n", pApic->phys_id, i, pApic->tmr.au32Bitmap[i]));
+        LogRel(("APIC%u: Irr[%u].u32Reg           = %#RX32\n", pApic->phys_id, i, pApic->irr.au32Bitmap[i]));
+    }
+
+    for (size_t i = 0; i < APIC_LVT_NB; i++)
+        LogRel(("APIC%u: Lvt[%u].u32Reg           = %#RX32\n", pApic->phys_id, i, pApic->lvt[i]));
+
+    LogRel(("APIC%u: uEsr                     = %#RX32\n", pApic->phys_id, pApic->esr));
+    LogRel(("APIC%u: uIcr_Lo                  = %#RX32\n", pApic->phys_id, pApic->icr[0]));
+    LogRel(("APIC%u: uIcr_Hi                  = %#RX32\n", pApic->phys_id, pApic->icr[1]));
+    LogRel(("APIC%u: uTimerDcr                = %#RX32\n", pApic->phys_id, pApic->divide_conf));
+    LogRel(("APIC%u: uCountShift              = %#RX32\n", pApic->phys_id, pApic->count_shift));
+    LogRel(("APIC%u: uInitialCount            = %#RX32\n", pApic->phys_id, pApic->initial_count));
+    LogRel(("APIC%u: u64InitialCountLoadTime  = %#RX64\n", pApic->phys_id, pApic->initial_count_load_time));
+    LogRel(("APIC%u: u64NextTime / TimerCCR   = %#RX64\n", pApic->phys_id, pApic->next_time));
+}
+
+
+/**
+ * Fuzzies up the APIC state with completely random bits for testing &
+ * validation purposes.
+ *
+ * @param   pApic       The APIC state.
+ * @remarks Warning! This should ONLY be used for diagnostics, otherwise will
+ *          corrupt saved-states and may result in loss of data!
+ */
+static void apic_fuzz_state(APICState *pApic)
+{
+    pApic->apicbase     = RTRandU32();
+    pApic->id           = RTRandU32();
+    pApic->phys_id      = RTRandU32();
+    pApic->arb_id       = RTRandU32();
+    pApic->tpr          = RTRandU32();
+    pApic->spurious_vec = RTRandU32();
+    pApic->log_dest     = RTRandU32();
+    pApic->dest_mode    = RTRandU32();
+
+    for (size_t i = 0; i < 8; i++)
+    {
+        pApic->isr.au32Bitmap[i] = RTRandU32();
+        pApic->tmr.au32Bitmap[i] = RTRandU32();
+        pApic->irr.au32Bitmap[i] = RTRandU32();
+    }
+
+    for (size_t i = 0; i < APIC_LVT_NB; i++)
+        pApic->lvt[i] = RTRandU32();
+
+    pApic->esr         = RTRandU32();
+    pApic->icr[0]      = RTRandU32();
+    pApic->icr[1]      = RTRandU32();
+    pApic->divide_conf = RTRandU32();
+
+    int v = (pApic->divide_conf & 3) | ((pApic->divide_conf >> 1) & 4);
+    pApic->count_shift = (v + 1) & 7;
+
+    pApic->initial_count           = RTRandU32();
+    pApic->initial_count_load_time = RTRandU64();
+    pApic->next_time = pApic->initial_count_load_time;
+}
+#endif  /* APIC_FUZZY_SSM_COMPAT_TEST */
+
+
 static void apic_save(SSMHANDLE* f, void *opaque)
 {
     APICState *pApic = (APICState*)opaque;
     int i;
+
+#ifdef APIC_FUZZY_SSM_COMPAT_TEST
+#error "Fuzzying state is purely for testing. Remove this manually and proceed at your own risk!"
+    APICState *pOriginal = pApic;
+    APICState FuzzedApic;
+    apic_fuzz_state(&FuzzedApic);
+    pApic = &FuzzedApic;
+    pApic->phys_id = pOriginal->phys_id;
+#endif
 
     SSMR3PutU32(f, pApic->apicbase);
     SSMR3PutU32(f, pApic->id);
@@ -1760,6 +1859,11 @@ static void apic_save(SSMHANDLE* f, void *opaque)
     SSMR3PutU32(f, pApic->initial_count);
     SSMR3PutU64(f, pApic->initial_count_load_time);
     SSMR3PutU64(f, pApic->next_time);
+
+#ifdef APIC_FUZZY_SSM_COMPAT_TEST
+    apic_dump_state(pApic, "Saved state:");
+    pApic = pOriginal;
+#endif
 
     TMR3TimerSave(pApic->CTX_SUFF(pTimer), f);
 }
