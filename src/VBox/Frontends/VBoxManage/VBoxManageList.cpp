@@ -178,6 +178,18 @@ static HRESULT listNetworkInterfaces(const ComPtr<IVirtualBox> pVirtualBox,
  */
 static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
 {
+    static struct
+    {
+        ProcessorFeature_T feature;
+        const char *pszName;
+    } features[]
+    =
+    {
+        { ProcessorFeature_HWVirtEx,     "HW virtualization" },
+        { ProcessorFeature_PAE,          "PAE" },
+        { ProcessorFeature_LongMode,     "long mode" },
+        { ProcessorFeature_NestedPaging, "nested paging" },
+    };
     HRESULT rc;
     ComPtr<IHost> Host;
     CHECK_ERROR(pVirtualBox, COMGETTER(Host)(Host.asOutParam()));
@@ -202,15 +214,21 @@ static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
     ULONG processorCoreCount = 0;
     CHECK_ERROR(Host, COMGETTER(ProcessorCoreCount)(&processorCoreCount));
     RTPrintf("Processor core count: %lu\n", processorCoreCount);
-    ULONG processorSpeed = 0;
-    Bstr processorDescription;
+    for (unsigned i = 0; i < RT_ELEMENTS(features); i++)
+    {
+        BOOL supported;
+        CHECK_ERROR(Host, COMGETTER(ProcessorFeature)(features[i].feature, &supported));
+        RTPrintf("Processor supports %s: %s\n", features[i].pszName, supported ? "yes" : "no");
+    }
     for (ULONG i = 0; i < processorCount; i++)
     {
+        ULONG processorSpeed = 0;
         CHECK_ERROR(Host, GetProcessorSpeed(i, &processorSpeed));
         if (processorSpeed)
             RTPrintf("Processor#%u speed: %lu MHz\n", i, processorSpeed);
         else
             RTPrintf("Processor#%u speed: unknown\n", i);
+        Bstr processorDescription;
         CHECK_ERROR(Host, GetProcessorDescription(i, processorDescription.asOutParam()));
         RTPrintf("Processor#%u description: %ls\n", i, processorDescription.raw());
     }
