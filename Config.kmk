@@ -5317,7 +5317,7 @@ ifdef VBOX_WITH_QTGUI
 
  # Hack LD_LIBRARY_PATH for stuff in tools.
  ifdef VBOX_WITH_ORACLE_QT
-  if1of ($(KBUILD_TARGET), linux)
+  if1of ($(KBUILD_TARGET), linux solaris)
    export LD_LIBRARY_PATH := $(VBOX_PATH_QT_LIB):$(LD_LIBRARY_PATH)
   endif
  endif
