@@ -460,7 +460,7 @@ DECLHIDDEN(void)    supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
                                                         PFNNTSETEVENT *ppfnNtSetEvent);
 # endif
 DECLHIDDEN(void)    supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr);
-DECLHIDDEN(void)    supR3HardenedWinInitSyscalls(bool fReportErrors);
+DECLHIDDEN(void)    supR3HardenedWinInitSyscalls(bool fReportErrors, PRTERRINFO pErrInfo);
 DECLHIDDEN(PFNRT)   supR3HardenedWinGetRealDllSymbol(const char *pszDll, const char *pszProcedure);
 DECLHIDDEN(void)    supR3HardenedWinEnableThreadCreation(void);
 DECLHIDDEN(void)    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(const char *pszProgName);

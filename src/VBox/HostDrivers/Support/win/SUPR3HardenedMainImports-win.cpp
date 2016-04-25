@@ -587,7 +587,7 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
     volatile uint8_t abCopy[16];
     memcpy((void *)&abCopy[0], pbFunction, sizeof(abCopy));
     SUPHNTIMP_ERROR(fReportErrors, 17, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
-                    "%ls: supHardNtLdrCacheOpen failed: '%s': %.16Rhxs",
+                    "%ls: failed to parse syscall: '%s': %.16Rhxs",
                     pDll->pwszName, pImport->pszName, &abCopy[0]);
 }
 
@@ -600,19 +600,22 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
  *
  * @param   fReportErrors       Whether we've got the machinery for reporting
  *                              errors going already.
+ * @param   pErrInfo            Buffer for gathering additional error info. This
+ *                              is mainly to avoid consuming lots of stacks with
+ *                              RTERRINFOSTATIC structures.
  */
-DECLHIDDEN(void) supR3HardenedWinInitSyscalls(bool fReportErrors)
+DECLHIDDEN(void) supR3HardenedWinInitSyscalls(bool fReportErrors, PRTERRINFO pErrInfo)
 {
     for (uint32_t iDll = 0; iDll < RT_ELEMENTS(g_aSupNtImpDlls); iDll++)
         if (g_aSupNtImpDlls[iDll].paSyscalls)
         {
             PSUPHNTLDRCACHEENTRY pLdrEntry;
-            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry);
+            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry, pErrInfo);
             if (RT_SUCCESS(rc))
             {
                 uint8_t *pbBits;
-                rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL,
-                                                   NULL /*pErrInfo*/);
+                rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase,
+                                                   NULL, NULL, pErrInfo);
                 if (RT_SUCCESS(rc))
                 {
                     for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
@@ -621,11 +624,13 @@ DECLHIDDEN(void) supR3HardenedWinInitSyscalls(bool fReportErrors)
                 }
                 else
                     SUPHNTIMP_ERROR(fReportErrors, 20, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
-                                    "%ls: supHardNtLdrCacheEntryGetBits failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+                                    "%ls: supHardNtLdrCacheEntryGetBits failed: %Rrc %s",
+                                    g_aSupNtImpDlls[iDll].pwszName, rc, pErrInfo ? pErrInfo->pszMsg : "");
             }
             else
                 SUPHNTIMP_ERROR(fReportErrors, 21, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
-                                "%ls: supHardNtLdrCacheOpen failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+                                "%ls: supHardNtLdrCacheOpen failed: %Rrc %s",
+                                g_aSupNtImpDlls[iDll].pwszName, rc, pErrInfo ? pErrInfo->pszMsg : "");
         }
 }
 
@@ -662,12 +667,12 @@ DECLHIDDEN(void) supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
     };
 
     for (uint32_t i = 0; i < RT_ELEMENTS(aImports); i++)
-        {
-            const char *pszForwarder = supR3HardenedResolveImport(&g_aSupNtImpDlls[0], &aImports[i], false);
-            if (pszForwarder)
-                SUPHNTIMP_ERROR(false, 31, "supR3HardenedWinGetVeryEarlyImports", kSupInitOp_Misc, VERR_MODULE_NOT_FOUND,
-                                "ntdll: Failed to resolve forwarder '%s'.", pszForwarder);
-        }
+    {
+        const char *pszForwarder = supR3HardenedResolveImport(&g_aSupNtImpDlls[0], &aImports[i], false);
+        if (pszForwarder)
+            SUPHNTIMP_ERROR(false, 31, "supR3HardenedWinGetVeryEarlyImports", kSupInitOp_Misc, VERR_MODULE_NOT_FOUND,
+                            "ntdll: Failed to resolve forwarder '%s'.", pszForwarder);
+    }
 
     /*
      * Restore the NtDll entry.
@@ -722,6 +727,8 @@ DECLHIDDEN(void) supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr)
  */
 DECLHIDDEN(void) supR3HardenedWinInitImports(void)
 {
+    RTERRINFOSTATIC ErrInfo;
+
     /*
      * Find the DLLs we will be needing first (forwarders).
      */
@@ -759,7 +766,7 @@ DECLHIDDEN(void) supR3HardenedWinInitImports(void)
     /*
      * Do system calls directly.
      */
-    supR3HardenedWinInitSyscalls(false);
+    supR3HardenedWinInitSyscalls(false, RTErrInfoInitStatic(&ErrInfo));
 
     /*
      * Use the on disk image to avoid export table patching.  Currently
@@ -769,12 +776,12 @@ DECLHIDDEN(void) supR3HardenedWinInitImports(void)
         if (g_aSupNtImpDlls[iDll].cPatchedExports > 0)
         {
             PSUPHNTLDRCACHEENTRY pLdrEntry;
-            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry);
+            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry, RTErrInfoInitStatic(&ErrInfo));
             if (RT_SUCCESS(rc))
             {
                 uint8_t *pbBits;
                 rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL,
-                                                   NULL /*pErrInfo*/);
+                                                   RTErrInfoInitStatic(&ErrInfo));
                 if (RT_SUCCESS(rc))
                     for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
                     {
@@ -806,6 +813,8 @@ DECLHIDDEN(void) supR3HardenedWinInitImports(void)
  */
 DECLHIDDEN(PFNRT) supR3HardenedWinGetRealDllSymbol(const char *pszDll, const char *pszProcedure)
 {
+    RTERRINFOSTATIC ErrInfo;
+
     /*
      * Look the DLL up in the import DLL table.
      */
@@ -814,12 +823,12 @@ DECLHIDDEN(PFNRT) supR3HardenedWinGetRealDllSymbol(const char *pszDll, const cha
         {
 
             PSUPHNTLDRCACHEENTRY pLdrEntry;
-            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry);
+            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry, RTErrInfoInitStatic(&ErrInfo));
             if (RT_SUCCESS(rc))
             {
                 uint8_t *pbBits;
                 rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL,
-                                                   NULL /*pErrInfo*/);
+                                                   RTErrInfoInitStatic(&ErrInfo));
                 if (RT_SUCCESS(rc))
                 {
                     RTLDRADDR uValue;
@@ -830,12 +839,12 @@ DECLHIDDEN(PFNRT) supR3HardenedWinGetRealDllSymbol(const char *pszDll, const cha
                     SUP_DPRINTF(("supR3HardenedWinGetRealDllSymbol: Error getting %s in %s -> %Rrc\n", pszProcedure, pszDll, rc));
                 }
                 else
-                    SUP_DPRINTF(("supR3HardenedWinGetRealDllSymbol: supHardNtLdrCacheEntryAllocBits failed on %s: %Rrc\n",
-                                 pszDll, rc));
+                    SUP_DPRINTF(("supR3HardenedWinGetRealDllSymbol: supHardNtLdrCacheEntryAllocBits failed on %s: %Rrc %s\n",
+                                 pszDll, rc, ErrInfo.Core.pszMsg));
             }
             else
-                SUP_DPRINTF(("supR3HardenedWinGetRealDllSymbol: supHardNtLdrCacheOpen failed on %s: %Rrc\n",
-                             pszDll, rc));
+                SUP_DPRINTF(("supR3HardenedWinGetRealDllSymbol: supHardNtLdrCacheOpen failed on %s: %Rrc %s\n",
+                             pszDll, rc, ErrInfo.Core.pszMsg));
 
             /* Complications, just call GetProcAddress. */
             if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)

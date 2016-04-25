@@ -3563,7 +3563,7 @@ static void supR3HardNtChildSetUpChildInit(PSUPR3HARDNTCHILD pThis)
      * code bits for it.
      */
     PSUPHNTLDRCACHEENTRY pLdrEntry;
-    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
+    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry, NULL /*pErrInfo*/);
     if (RT_FAILURE(rc))
         supR3HardenedWinKillChild(pThis, "supR3HardenedWinSetupChildInit", rc,
                                   "supHardNtLdrCacheOpen failed on NTDLL: %Rrc\n", rc);
@@ -5733,7 +5733,8 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     /*
      * Set up the direct system calls so we can more easily hook NtCreateSection.
      */
-    supR3HardenedWinInitSyscalls(true /*fReportErrors*/);
+    RTERRINFOSTATIC ErrInfo;
+    supR3HardenedWinInitSyscalls(true /*fReportErrors*/, RTErrInfoInitStatic(&ErrInfo));
 
     /*
      * Determine the executable path and name.  Will NOT determine the windows style
@@ -5792,14 +5793,16 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
      */
     SUP_DPRINTF(("supR3HardenedVmProcessInit: Restoring LdrInitializeThunk...\n"));
     PSUPHNTLDRCACHEENTRY pLdrEntry;
-    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
+    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
-        supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheOpen failed on NTDLL: %Rrc\n", rc);
+        supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheOpen failed on NTDLL: %Rrc %s\n",
+                           rc, ErrInfo.Core.pszMsg);
 
     uint8_t *pbBits;
-    rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, uNtDllAddr, NULL, NULL, NULL /*pErrInfo*/);
+    rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, uNtDllAddr, NULL, NULL, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
-        supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheEntryGetBits failed on NTDLL: %Rrc\n", rc);
+        supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheEntryGetBits failed on NTDLL: %Rrc %s\n",
+                           rc, ErrInfo.Core.pszMsg);
 
     RTLDRADDR uValue;
     rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbBits, uNtDllAddr, UINT32_MAX, "LdrInitializeThunk", &uValue);

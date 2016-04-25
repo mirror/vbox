@@ -278,6 +278,37 @@ static int supHardNtVpSetInfo1(PRTERRINFO pErrInfo, int rc, const char *pszMsg, 
 
 
 /**
+ * Adds error information.
+ *
+ * @returns @a rc.
+ * @param   pErrInfo            Pointer to the extended error info structure
+ *                              which may contain some details already.  Can be
+ *                              NULL.
+ * @param   rc                  The status to return.
+ * @param   pszMsg              The format string for the message.
+ * @param   ...                 The arguments for the format string.
+ */
+static int supHardNtVpAddInfo1(PRTERRINFO pErrInfo, int rc, const char *pszMsg, ...)
+{
+    va_list va;
+#ifdef IN_RING3
+    va_start(va, pszMsg);
+    if (pErrInfo && pErrInfo->pszMsg)
+        supR3HardenedError(rc, false /*fFatal*/, "%N - %s\n", pszMsg, &va, pErrInfo->pszMsg);
+    else
+        supR3HardenedError(rc, false /*fFatal*/, "%N\n", pszMsg, &va);
+    va_end(va);
+#endif
+
+    va_start(va, pszMsg);
+    RTErrInfoAddV(pErrInfo, rc, pszMsg, va);
+    va_end(va);
+
+    return rc;
+}
+
+
+/**
  * Fills in error information.
  *
  * @returns @a rc.
@@ -2029,7 +2060,7 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
         enmArch = RTLDRARCH_WHATEVER;
     rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION, enmArch, &hLdrMod, pErrInfo);
     if (RT_FAILURE(rc))
-        return supHardNtVpSetInfo1(pErrInfo, rc, "RTLdrOpenWithReader failed: %Rrc (Image='%ls').",
+        return supHardNtVpAddInfo1(pErrInfo, rc, "RTLdrOpenWithReader failed: %Rrc (Image='%ls').",
                                    rc, pUniStrPath->Buffer);
 
     /*
@@ -2066,8 +2097,10 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
  * @param   pszName             The DLL name.  Must be one from the
  *                              g_apszSupNtVpAllowedDlls array.
  * @param   ppEntry             Where to return the entry we've opened/found.
+ * @param   pErrInfo            Optional buffer where to return additional error
+ *                              information.
  */
-DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry)
+DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry, PRTERRINFO pErrInfo)
 {
     /*
      * Locate the dll.
@@ -2105,7 +2138,7 @@ DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY 
     UniStr.MaximumLength = UniStr.Length + sizeof(WCHAR);
 
     int rc = supHardNtLdrCacheNewEntry(&g_aSupNtVpLdrCacheEntries[g_cSupNtVpLdrCacheEntries], pszName, &UniStr,
-                                       true /*fDll*/, false /*f32bitResourceDll*/, NULL /*pErrInfo*/);
+                                       true /*fDll*/, false /*f32bitResourceDll*/, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         *ppEntry = &g_aSupNtVpLdrCacheEntries[g_cSupNtVpLdrCacheEntries];
