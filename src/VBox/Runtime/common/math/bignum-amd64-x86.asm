@@ -25,9 +25,25 @@
 ;
 
 
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
 %define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
 %include "internal/bignum.mac"
+
+
+;*********************************************************************************************************************************
+;*  Defined Constants And Macros                                                                                                 *
+;*********************************************************************************************************************************
+%ifdef RT_ARCH_AMD64
+ %macro sahf 0
+  %error "SAHF not supported on ancient AMD64"
+ %endmacro
+ %macro lahf 0
+  %error "LAHF not supported on ancient AMD64"
+ %endmacro
+%endif
 
 
 BEGINCODE
@@ -66,10 +82,10 @@ SEH64_END_PROLOGUE
  %endif
         xor     r11d, r11d              ; index register.
 
-%if RTBIGNUM_ELEMENT_SIZE == 4
+ %if RTBIGNUM_ELEMENT_SIZE == 4
         add     cUsed, 1                ; cUsed = RT_ALIGN(cUsed, 2) / 2
         shr     cUsed, 1
-%endif
+ %endif
         cmp     cUsed, 8                ; Skip the big loop if small number.
         jb      .small_job
 
@@ -105,12 +121,22 @@ SEH64_END_PROLOGUE
         dec     r10d                    ; Does not change CF.
         jnz     .big_loop
 
+ %if 0 ; Ancient AMD CPUs does have lahf/sahf, thus the mess in the %else.
         lahf                            ; Save CF
         and     cUsed, 7                ; Up to seven odd rounds.
         jz      .done
         sahf                            ; Restore CF.
         jmp     .small_loop             ; Skip CF=1 (clc).
-
+ %else
+        jnc     .no_carry
+        and     cUsed, 7                ; Up to seven odd rounds.
+        jz      .done
+        stc
+        jmp     .small_loop             ; Skip CF=1 (clc).
+.no_carry:
+        and     cUsed, 7                ; Up to seven odd rounds.
+        jz      .done
+ %endif
 .small_job:
         clc
 .small_loop:
@@ -246,10 +272,10 @@ SEH64_END_PROLOGUE
  %endif
         xor     r11d, r11d              ; index register.
 
-%if RTBIGNUM_ELEMENT_SIZE == 4
+ %if RTBIGNUM_ELEMENT_SIZE == 4
         add     cUsed, 1                ; cUsed = RT_ALIGN(cUsed, 2) / 2
         shr     cUsed, 1
-%endif
+ %endif
         cmp     cUsed, 8                ; Skip the big loop if small number.
         jb      .small_job
 
@@ -277,12 +303,22 @@ SEH64_END_PROLOGUE
         dec     r10d                    ; Does not change CF.
         jnz     .big_loop
 
+ %if 0 ; Ancient AMD CPUs does have lahf/sahf, thus the mess in the %else.
         lahf                            ; Save CF
         and     cUsed, 7                ; Up to seven odd rounds.
         jz      .done
         sahf                            ; Restore CF.
         jmp     .small_loop             ; Skip CF=1 (clc).
-
+ %else
+        jnc     .no_carry
+        and     cUsed, 7                ; Up to seven odd rounds.
+        jz      .done
+        stc
+        jmp     .small_loop             ; Skip CF=1 (clc).
+.no_carry:
+        and     cUsed, 7                ; Up to seven odd rounds.
+        jz      .done
+ %endif
 .small_job:
         clc
 .small_loop:
@@ -450,7 +486,7 @@ SEH64_END_PROLOGUE
         jnz     .big_loop
 
         ; More to do?
-        lahf                            ; save carry flag (uCarry no longer used on x86).
+        pushf                           ; save carry flag (uCarry no longer used on x86).
 %ifdef RT_ARCH_AMD64
         mov     cUsed, r11d
 %else
@@ -458,10 +494,10 @@ SEH64_END_PROLOGUE
 %endif
         and     cUsed, 7
         jz      .restore_cf_and_return  ; Jump if we're good and done.
-        sahf                            ; Restore CF.
+        popf                            ; Restore CF.
         jmp     .small_loop             ; Deal with the odd rounds.
 .restore_cf_and_return:
-        sahf
+        popf
         jmp     .carry_to_eax
 
         ; Small loop - One round at the time.
