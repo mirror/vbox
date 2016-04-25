@@ -79,19 +79,19 @@ private slots:
 private:
 
     /** Holds the VM name label instance. */
-    QLabel *m_pNameLabel;
+    QLabel *m_pLabelName;
     /** Holds the VM OS family label instance. */
-    QLabel *m_pFamilyLabel;
+    QLabel *m_pLabelFamily;
     /** Holds the VM OS type label instance. */
-    QLabel *m_pTypeLabel;
+    QLabel *m_pLabelType;
     /** Holds the VM OS type icon instance. */
-    QLabel *m_pTypeIcon;
+    QLabel *m_pIconType;
     /** Holds the VM name editor instance. */
-    QLineEdit *m_pNameEditor;
+    QLineEdit *m_pEditorName;
     /** Holds the VM OS family combo instance. */
-    QComboBox *m_pFamilyCombo;
+    QComboBox *m_pComboFamily;
     /** Holds the VM OS type combo instance. */
-    QComboBox *m_pTypeCombo;
+    QComboBox *m_pComboType;
 
     /** Holds the VM OS type. */
     CGuestOSType m_type;
