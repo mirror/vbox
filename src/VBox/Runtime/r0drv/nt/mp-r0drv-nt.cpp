@@ -415,7 +415,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
         KeSetTargetProcessorDpc(&paExecCpuDpcs[0], (int)idCpu);
         pArgs->idCpu = idCpu;
     }
-    else if (enmCpuid == RT_NT_CPUID_SPECIFIC)
+    else if (enmCpuid == RT_NT_CPUID_PAIR)
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
         KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
