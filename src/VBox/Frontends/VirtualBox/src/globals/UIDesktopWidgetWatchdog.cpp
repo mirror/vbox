@@ -187,6 +187,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int
     m_availableGeometryData[iHostScreenIndex] = availableGeometry;
     /* Forget finished worker: */
     AssertPtrReturnVoid(m_availableGeometryWorkers.value(iHostScreenIndex));
+    m_availableGeometryWorkers.value(iHostScreenIndex)->disconnect();
     m_availableGeometryWorkers.value(iHostScreenIndex)->deleteLater();
     m_availableGeometryWorkers[iHostScreenIndex] = 0;
 }
