@@ -520,10 +520,17 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
 
     /* Get the best size w/o scroll-bars: */
     QSize s = sizeHint();
-    if (machineView()->verticalScrollBar()->isVisible())
-        s -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
-    if (machineView()->horizontalScrollBar()->isVisible())
-        s -= QSize(0, machineView()->horizontalScrollBar()->sizeHint().height());
+
+    /* If guest-screen auto-resize is not enabled
+     * or the guest-additions doesn't support graphics
+     * we should take scroll-bars size-hints into account: */
+    if (!machineView()->isGuestAutoresizeEnabled() || !uisession()->isGuestSupportsGraphics())
+    {
+        if (machineView()->verticalScrollBar()->isVisible())
+            s -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
+        if (machineView()->horizontalScrollBar()->isVisible())
+            s -= QSize(0, machineView()->horizontalScrollBar()->sizeHint().height());
+    }
 
     /* Resize the frame to fit the contents: */
     s -= size();

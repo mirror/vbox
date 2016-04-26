@@ -103,8 +103,10 @@ public:
     /* Factory function to destroy required machine-view: */
     static void destroy(UIMachineView *pMachineView);
 
-    /* Public setters: */
-    virtual void setGuestAutoresizeEnabled(bool /* fEnabled */) {}
+    /** Returns whether the guest-screen auto-resize is enabled. */
+    virtual bool isGuestAutoresizeEnabled() const { return true; }
+    /** Defines whether the guest-screen auto-resize is @a fEnabled. */
+    virtual void setGuestAutoresizeEnabled(bool fEnabled) { Q_UNUSED(fEnabled); }
 
     /** Send saved guest-screen size-hint to the guest.
       * @note Reimplemented in sub-classes. Base implementation does nothing. */

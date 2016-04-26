@@ -57,8 +57,10 @@ private:
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 
-    /* Private setters: */
-    void setGuestAutoresizeEnabled(bool bEnabled);
+    /** Returns whether the guest-screen auto-resize is enabled. */
+    virtual bool isGuestAutoresizeEnabled() const /* override */ { return m_bIsGuestAutoresizeEnabled; }
+    /** Defines whether the guest-screen auto-resize is @a fEnabled. */
+    virtual void setGuestAutoresizeEnabled(bool bEnabled) /* override */;
 
     /** Adjusts guest-screen size to correspond current <i>working area</i> size. */
     void adjustGuestScreenSize();
