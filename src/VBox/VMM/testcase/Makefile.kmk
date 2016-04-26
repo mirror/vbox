@@ -590,7 +590,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMSwitcher.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
-		$$(if $$(eq $$(tstAsmStructsAsmDep_DEFS),$$(MY_ASA_ASM_STUFF)),,FORCE) \
+		$$(if $$(eq $$(tstAsmStructsAsmDep_STUFF),$$(MY_ASA_ASM_STUFF)),,FORCE) \
 		| $$(dir $$@)
 	$(call MSG_COMPILE,tstAsmStructsasm,$<,$@,AS)
 ifndef DONT_USE_YASM
@@ -599,7 +599,7 @@ else
 	$(QUIET)$(TOOL_NASM_AS) $(MY_ASA_ASM_STUFF) -DDO_GLOBALS -o $@ $<
 endif
 	%$(QUIET2)$(RM) -f -- $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep
-	%$(QUIET2)$(APPEND) '$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep' 'tstAsmStructsAsmDep_DEFS=$(MY_ASA_ASM_STUFF)'
+	%$(QUIET2)$(APPEND) '$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep' 'tstAsmStructsAsmDep_STUFF=$(MY_ASA_ASM_STUFF)'
 
 # 2. use nm and sed to transform this into the header we want.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o
