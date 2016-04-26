@@ -534,12 +534,16 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
             if (   !uPpr
                 ||  XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
             {
+                Log2(("APIC%u: apicSignalNextPendingIntr: Signaling pending interrupt\n", pVCpu->idCpu));
                 APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
         }
     }
     else
+    {
+        Log2(("APIC%u: apicSignalNextPendingIntr: APIC software-disabled, clearing pending interrupt\n", pVCpu->idCpu));
         APICClearInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+    }
 }
 
 
@@ -1177,27 +1181,21 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
     int isrv = apicGetLastSetBit(&pXApicPage->isr, -1 /* rcNotFound */);
     if (isrv >= 0)
     {
-        /*
-         * Dispensing the spurious-interrupt vector does not affect the ISR.
-         * See Intel spec. 10.9 "Spurious Interrupt".
-         */
+        Assert(isrv <= (int)UINT8_MAX);
         uint8_t const uVector = isrv;
-        if (uVector != pXApicPage->svr.u.u8SpuriousVector)
+        apicClearVectorInReg(&pXApicPage->isr, uVector);
+        apicUpdatePpr(pVCpu);
+        Log2(("APIC%u: apicSetEoi: Cleared interrupt from ISR. uVector=%#x\n", pVCpu->idCpu, uVector));
+
+        bool fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
+        if (fLevelTriggered)
         {
-            apicClearVectorInReg(&pXApicPage->isr, uVector);
-            apicUpdatePpr(pVCpu);
-            bool fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
-            if (fLevelTriggered)
-            {
-                /** @todo We need to broadcast EOI to IO APICs here. */
-                apicClearVectorInReg(&pXApicPage->tmr, uVector);
-            }
-
-            Log2(("APIC%u: apicSetEoi: Acknowledged %s triggered interrupt. uVector=%#x\n", pVCpu->idCpu,
-                  fLevelTriggered ? "level" : "edge", uVector));
-
-            apicSignalNextPendingIntr(pVCpu);
+            /** @todo We need to broadcast EOI to IO APICs here. */
+            apicClearVectorInReg(&pXApicPage->tmr, uVector);
+            Log2(("APIC%u: apicSetEoi: Cleared level triggered interrupt from TMR. uVector=%#x\n", pVCpu->idCpu, uVector));
         }
+
+        apicSignalNextPendingIntr(pVCpu);
     }
 
     return VINF_SUCCESS;
@@ -2312,13 +2310,15 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
             Assert(irrv <= (int)UINT8_MAX);
             uint8_t const uVector = irrv;
 
-            /** @todo this cannot possibly happen for anything other than ExtINT
-             *        interrupts right? */
+            /*
+             * This can happen if the APIC receives an interrupt when the CPU has interrupts
+             * disabled but the TPR is raised by the guest before re-enabling interrupts.
+             */
             uint8_t const uTpr = pXApicPage->tpr.u8Tpr;
             if (uTpr > 0 && uVector <= uTpr)
             {
-                Log2(("APIC%u: APICGetInterrupt: Spurious interrupt. uVector=%#x\n", pVCpu->idCpu,
-                      pXApicPage->svr.u.u8SpuriousVector));
+                Log2(("APIC%u: APICGetInterrupt: Spurious interrupt. uVector=%#x Tpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
+                      uVector, uTpr, pXApicPage->svr.u.u8SpuriousVector));
                 return pXApicPage->svr.u.u8SpuriousVector;
             }
 
@@ -2367,7 +2367,7 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
     int rc = apicReadRegister(pApicDev, pVCpu, offReg, &uValue);
     *(uint32_t *)pv = uValue;
 
-    Log2(("APIC%u: ApicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    Log2(("APIC%u: APICReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
     return rc;
 }
 
@@ -2514,7 +2514,7 @@ VMM_INT_DECL(void) APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount)
     uint8_t  const uTimerShift  = apicGetTimerShift(pXApicPage);
     uint64_t const cTicksToNext = (uint64_t)uInitialCount << uTimerShift;
 
-    Log2(("APIC%u: APICStartTimer: uInitialCount=%u uTimerShift=%u cTicksToNext=%RU64\n", pVCpu->idCpu, uInitialCount,
+    Log2(("APIC%u: APICStartTimer: uInitialCount=%#RX32 uTimerShift=%u cTicksToNext=%RU64\n", pVCpu->idCpu, uInitialCount,
           uTimerShift, cTicksToNext));
 
     /*
