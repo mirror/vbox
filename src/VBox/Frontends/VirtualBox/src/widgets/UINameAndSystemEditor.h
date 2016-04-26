@@ -65,6 +65,20 @@ public:
 
 protected:
 
+    /** @name Prepare cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares this. */
+        void prepareThis();
+        /** Prepares widgets. */
+        void prepareWidgets();
+        /** Prepares VM OS family combo. */
+        void prepareFamilyCombo();
+        /** Prepares connections. */
+        void prepareConnections();
+    /** @} */
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 

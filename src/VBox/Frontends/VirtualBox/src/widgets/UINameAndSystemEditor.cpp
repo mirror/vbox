@@ -41,17 +41,42 @@ enum
 UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
 {
-    /* Register CGuestOSType type: */
-    qRegisterMetaType<CGuestOSType>();
+    /* Prepare: */
+    prepare();
+}
 
+void UINameAndSystemEditor::prepare()
+{
+    /* Prepare this: */
+    prepareThis();
+    /* Prepare widgets: */
+    prepareWidgets();
+    /* Prepare connections: */
+    prepareConnections();
+    /* Retranslate: */
+    retranslateUi();
+}
+
+void UINameAndSystemEditor::prepareThis()
+{
+    /* Check if host supports (AMD-V or VT-x) and long mode: */
+    CHost host = vboxGlobal().host();
+    m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
+}
+
+void UINameAndSystemEditor::prepareWidgets()
+{
     /* Create main-layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
     {
         /* Configure main-layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create VM name label: */
         m_pLabelName = new QLabel;
+        AssertPtrReturnVoid(m_pLabelName);
         {
             /* Configure VM name label: */
             m_pLabelName->setAlignment(Qt::AlignRight);
@@ -62,6 +87,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
 
         /* Create VM name editor: */
         m_pEditorName = new QLineEdit;
+        AssertPtrReturnVoid(m_pEditorName);
         {
             /* Configure VM name editor: */
             m_pEditorName->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -72,6 +98,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
 
         /* Create VM OS family label: */
         m_pLabelFamily = new QLabel;
+        AssertPtrReturnVoid(m_pLabelFamily);
         {
             /* Configure VM OS family label: */
             m_pLabelFamily->setAlignment(Qt::AlignRight);
@@ -82,6 +109,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
 
         /* Create VM OS family combo: */
         m_pComboFamily = new QComboBox;
+        AssertPtrReturnVoid(m_pComboFamily);
         {
             /* Configure VM OS family combo: */
             m_pComboFamily->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -92,6 +120,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
 
         /* Create VM OS type label: */
         m_pLabelType = new QLabel;
+        AssertPtrReturnVoid(m_pLabelType);
         {
             /* Configure VM OS type label: */
             m_pLabelType->setAlignment(Qt::AlignRight);
@@ -102,6 +131,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
 
         /* Create VM OS type combo: */
         m_pComboType = new QComboBox;
+        AssertPtrReturnVoid(m_pComboType);
         {
             /* Configure VM OS type combo: */
             m_pComboType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -112,15 +142,18 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
 
         /* Create sub-layout: */
         QVBoxLayout *pLayoutIcon = new QVBoxLayout;
+        AssertPtrReturnVoid(pLayoutIcon);
         {
             /* Create VM OS type icon: */
             m_pIconType = new QLabel;
+            AssertPtrReturnVoid(m_pIconType);
             {
                 /* Configure VM OS type icon: */
                 m_pIconType->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
                 /* Add VM OS type icon into sub-layout: */
                 pLayoutIcon->addWidget(m_pIconType);
             }
+
             /* Add stretch to sub-layout: */
             pLayoutIcon->addStretch();
             /* Add sub-layout into main-layout: */
@@ -128,12 +161,14 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
         }
     }
 
-    /* Check if host supports (AMD-V or VT-x) and long mode: */
-    CHost host = vboxGlobal().host();
-    m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
-    m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
+    /* Initialize VM OS family combo
+     * after all widgets were created: */
+    prepareFamilyCombo();
+}
 
-    /* Fill OS family selector: */
+void UINameAndSystemEditor::prepareFamilyCombo()
+{
+    /* Populate VM OS family combo: */
     const QList<CGuestOSType> families = vboxGlobal().vmGuestOSFamilyList();
     for (int i = 0; i < families.size(); ++i)
     {
@@ -141,16 +176,19 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
         m_pComboFamily->insertItem(i, strFamilyName);
         m_pComboFamily->setItemData(i, families.at(i).GetFamilyId(), TypeID);
     }
-    m_pComboFamily->setCurrentIndex(0);
-    sltFamilyChanged(m_pComboFamily->currentIndex());
 
-    /* Setup connections: */
+    /* Choose the 1st item to be the current: */
+    m_pComboFamily->setCurrentIndex(0);
+    /* And update the linked widgets accordingly: */
+    sltFamilyChanged(m_pComboFamily->currentIndex());
+}
+
+void UINameAndSystemEditor::prepareConnections()
+{
+    /* Prepare connections: */
     connect(m_pEditorName, SIGNAL(textChanged(const QString &)), this, SIGNAL(sigNameChanged(const QString &)));
     connect(m_pComboFamily, SIGNAL(currentIndexChanged(int)), this, SLOT(sltFamilyChanged(int)));
     connect(m_pComboType, SIGNAL(currentIndexChanged(int)), this, SLOT(sltTypeChanged(int)));
-
-    /* Retranslate: */
-    retranslateUi();
 }
 
 QString UINameAndSystemEditor::name() const
@@ -260,7 +298,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 {
-    /* Save the new selected OS Type: */
+    /* Save the new selected OS type: */
     m_type = vboxGlobal().vmGuestOSType(m_pComboType->itemData(iIndex, TypeID).toString(),
                                         m_pComboFamily->itemData(m_pComboFamily->currentIndex(), TypeID).toString());
     m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_type.GetId()));
