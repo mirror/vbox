@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2015 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,14 +55,14 @@ NS_IMETHODIMP QueryInterface(REFNSIID aIID, void **aInstancePtr) \
 
 template <class T, class TParam = void *>
 class ListenerImpl :
-     public CComObjectRootEx<CComMultiThreadModel>,
+     public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>,
      VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
-    T*                mListener;
+    T* mListener;
 
 #ifdef RT_OS_WINDOWS
     /* FTM stuff */
-    CComPtr <IUnknown>   m_pUnkMarshaler;
+    ComPtr<IUnknown> m_pUnkMarshaler;
 #else
     nsAutoRefCnt mRefCnt;
     NS_DECL_OWNINGTHREAD
@@ -102,7 +102,7 @@ public:
     HRESULT   FinalConstruct()
     {
 #ifdef RT_OS_WINDOWS
-       return CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.p);
+       return CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.m_p);
 #else
        return S_OK;
 #endif
@@ -112,7 +112,7 @@ public:
     {
       uninit();
 #ifdef RT_OS_WINDOWS
-      m_pUnkMarshaler.Release();
+      m_pUnkMarshaler.setNull();
 #endif
     }
 
@@ -129,7 +129,7 @@ public:
     BEGIN_COM_MAP(ListenerImpl)
         COM_INTERFACE_ENTRY(IEventListener)
         COM_INTERFACE_ENTRY2(IDispatch, IEventListener)
-        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.m_p)
     END_COM_MAP()
 #else
     NS_IMETHOD_(nsrefcnt) AddRef(void)

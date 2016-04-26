@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1535,7 +1535,7 @@ protected:
     static SAFEARRAY *CreateSafeArray(VARTYPE aVarType, SAFEARRAYBOUND *aBound)
     {
         NOREF(aVarType);
-        return SafeArrayCreateEx(VT_DISPATCH, 1, aBound, (PVOID)&_ATL_IIDOF(I));
+        return SafeArrayCreateEx(VT_DISPATCH, 1, aBound, (PVOID)&COM_IIDOF(I));
     }
 };
 
@@ -1616,9 +1616,9 @@ public:
             GUID guid;
             rc = SafeArrayGetIID(arg, &guid);
             AssertComRCReturnVoid(rc);
-            AssertMsgReturnVoid(InlineIsEqualGUID(_ATL_IIDOF(I), guid),
+            AssertMsgReturnVoid(InlineIsEqualGUID(COM_IIDOF(I), guid),
                                 ("Expected IID {%RTuuid}, got {%RTuuid}.\n",
-                                 &_ATL_IIDOF(I), &guid));
+                                 &COM_IIDOF(I), &guid));
 
             rc = SafeArrayAccessData(arg, (void HUGEP **)&m.raw);
             AssertComRCReturnVoid(rc);
