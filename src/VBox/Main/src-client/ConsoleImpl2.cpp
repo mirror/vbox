@@ -988,12 +988,20 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * raw-mode or qemu for the 186 and 286, while we'll get undefined opcodes
          * dead wrong on 8086 (see http://www.os2museum.com/wp/undocumented-8086-opcodes/).
          */
+        bool fDisableApic = false;
         if (   bstr.equals("Intel 80386") /* just for now */
             || bstr.equals("Intel 80286")
             || bstr.equals("Intel 80186")
             || bstr.equals("Nec V20")
             || bstr.equals("Intel 8086") )
+        {
             InsertConfigInteger(pEM, "IemExecutesAll", true);
+            if (!bstr.equals("Intel 80386"))
+            {
+                fDisableApic = true;
+                fIOAPIC      = false;
+            }
+        }
 
         /*
          * Hardware virtualization extensions.
@@ -1540,23 +1548,26 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * SMP: Each CPU has a LAPIC, but we have a single device representing all LAPICs states,
          *      thus only single insert
          */
-        InsertConfigNode(pDevices, "apic", &pDev);
-        InsertConfigNode(pDev, "0", &pInst);
-        InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
-        InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
-
-        if (fIOAPIC)
+        if (fDisableApic)
         {
-            /*
-             * I/O Advanced Programmable Interrupt Controller.
-             */
-            InsertConfigNode(pDevices, "ioapic", &pDev);
-            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigNode(pDevices, "apic", &pDev);
+            InsertConfigNode(pDev, "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
             InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
+
+            if (fIOAPIC)
+            {
+                /*
+                 * I/O Advanced Programmable Interrupt Controller.
+                 */
+                InsertConfigNode(pDevices, "ioapic", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigInteger(pInst, "Trusted",      1); /* boolean */
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
+            }
         }
 
         /*
