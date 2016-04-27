@@ -3576,20 +3576,32 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                 u.Cfg64.Size = Dir.Size;
             }
             /* Kludge #2: This happens a lot. Structure changes, but the linker doesn't get
-               it updated and stores some old size in the directory.  Use the header size. */
+               updated and stores some old size in the directory.  Use the header size. */
             else if (   u.Cfg64.Size == cbExpectV5
                      || u.Cfg64.Size == cbExpectV4
                      || u.Cfg64.Size == cbExpectV3
                      || u.Cfg64.Size == cbExpectV2
-                     || u.Cfg64.Size == cbExpectV1)
+                     || u.Cfg64.Size == cbExpectV1
+                     || (fNewerStructureHack = (u.Cfg64.Size > cbExpectV5 && u.Cfg64.Size <= sizeof(u))) )
             {
                 Log(("rtldrPEOpen: %s: load cfg dir: Header (%d) and directory (%d) size mismatch, applying the old linker kludge.\n",
                      pszLogName, u.Cfg64.Size, Dir.Size));
+
                 Dir.Size = u.Cfg64.Size;
+                uint32_t const uOrgDir = Dir.Size;
                 RT_ZERO(u.Cfg64);
                 rc = rtldrPEReadRVA(pModPe, &u.Cfg64, Dir.Size, Dir.VirtualAddress);
                 if (RT_FAILURE(rc))
                     return rc;
+                if (   fNewerStructureHack
+                    && !ASMMemIsZero(&u.abZeros[cbExpectV5], Dir.Size - cbExpectV5))
+                {
+                    Log(("rtldrPEOpen: %s: load cfg dir: Unknown bytes are non-zero (%u bytes of which %u expected to be zero): %.*Rhxs\n",
+                         pszLogName, Dir.Size, Dir.Size - cbExpectV5, Dir.Size - cbExpectV5, &u.abZeros[cbExpectV5]));
+                    return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
+                                         "Grown load config (%u to %u bytes, dir %u) includes non-zero bytes: %.*Rhxs",
+                                         cbExpectV5, Dir.Size, uOrgDir, Dir.Size - cbExpectV5, &u.abZeros[cbExpectV5]);
+                }
                 rtldrPEConvert32BitLoadConfigTo64Bit(&u.Cfg64);
                 AssertReturn(u.Cfg64.Size == Dir.Size,
                              RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE, "Data changed while reading! (%d vs %d)\n",
@@ -3600,7 +3612,7 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                 Log(("rtldrPEOpen: %s: load cfg hdr: unexpected hdr size of %u bytes (dir %u), expected %zu, %zu, %zu, %zu, or %zu.\n",
                      pszLogName, u.Cfg64.Size, Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1));
                 return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
-                                     "Unexpected load config dir size of %u bytes (dir %u); supported sized: %zu, %zu, %zu, %zu, or %zu",
+                                     "Unexpected load config header size of %u bytes (dir %u); supported sized: %zu, %zu, %zu, %zu, or %zu",
                                      u.Cfg64.Size, Dir.Size, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1);
             }
         }
