@@ -230,23 +230,38 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
          * The first byte has the bit 7 set to indicate base-256, while bit 6
          * is the signed bit. Bits 5:0 are the most significant value bits.
          */
-        int64_t i64 = !(0x40 & *puchField) ? 0 : -1;
-        i64 = (i64 << 6) | (*puchField & 0x3f);
-        cchField--;
-        puchField++;
-
-        /*
-         * The remaining bytes are used in full.
-         */
-        while (cchField-- > 0)
+        uint64_t u64;
+        if (!(0x40 & *puchField))
         {
-            if (RT_UNLIKELY(i64 > INT64_MAX / 256))
-                return VERR_TAR_NUM_VALUE_TOO_LARGE;
-            if (RT_UNLIKELY(i64 < INT64_MIN / 256))
-                return VERR_TAR_NUM_VALUE_TOO_LARGE;
-            i64 = (i64 << 8) | *puchField++;
+            /* Positive or zero value. */
+            u64 = *puchField & 0x3f;
+            cchField--;
+            puchField++;
+
+            while (cchField-- > 0)
+            {
+                if (RT_LIKELY(u64 <= (uint64_t)INT64_MAX / 256))
+                    u64 = (u64 << 8) | *puchField++;
+                else
+                    return VERR_TAR_NUM_VALUE_TOO_LARGE;
+            }
         }
-        *pi64 = i64;
+        else
+        {
+            /* Negative value (could be used in timestamp). We do manual sign extending here. */
+            u64 = (UINT64_MAX << 6) | (*puchField & 0x3f);
+            cchField--;
+            puchField++;
+
+            while (cchField-- > 0)
+            {
+                if (RT_LIKELY(u64 >= (uint64_t)(INT64_MIN / 256)))
+                    u64 = (u64 << 8) | *puchField++;
+                else
+                    return VERR_TAR_NUM_VALUE_TOO_LARGE;
+            }
+        }
+        *pi64 = (int64_t)u64;
     }
 
     return VINF_SUCCESS;
