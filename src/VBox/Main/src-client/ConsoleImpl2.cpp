@@ -1548,7 +1548,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * SMP: Each CPU has a LAPIC, but we have a single device representing all LAPICs states,
          *      thus only single insert
          */
-        if (fDisableApic)
+        if (!fDisableApic)
         {
             InsertConfigNode(pDevices, "apic", &pDev);
             InsertConfigNode(pDev, "0", &pInst);
