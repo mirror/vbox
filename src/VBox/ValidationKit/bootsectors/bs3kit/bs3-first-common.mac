@@ -200,6 +200,19 @@ BS3_GLOBAL_DATA Bs3Text32_EndOfSegment, 0
 
 
 ;
+; This is a hack to separate the 32-bit and 64-bit text segments when linking,
+; such that they don't share the same base frame because they're both assigned
+; to the AUTO group by the linker.
+;
+section BS3SEPARATE32AND64BITCODE     align=16   CLASS=BS3CLASSSEPARATE32AND64BITCODE PUBLIC USE16
+BS3_GLOBAL_DATA Bs3Separate32And64BitCode_StartOfSegment, 0
+    db      10,13,'eye-catcher: 32-64 wedge',10,13
+section BS3SEPARATE32AND64BITCODE_END align=16   CLASS=BS3CLASSSEPARATE32AND64BITCODE PUBLIC USE16
+BS3_GLOBAL_DATA Bs3Separate32And64BitCode_EndOfSegment, 0
+GROUP BS3SEPARATE32AND64BITCODEGROUP BS3SEPARATE32AND64BITCODE BS3SEPARATE32AND64BITCODE_END
+
+
+;
 ; 64-bit text
 ;
 BS3_BEGIN_TEXT64

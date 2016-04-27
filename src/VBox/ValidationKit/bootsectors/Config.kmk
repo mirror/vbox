@@ -706,6 +706,9 @@ $(if-expr "$(BS3KIT_SEGNM_DATA16)" == "", \
  	  segment BS3TEXT32_START \
  	  segment BS3TEXT32 \
  	  segment BS3TEXT32_END \
+        clname BS3CLASSSEPARATE32AND64BITCODE \
+ 	  segment BS3SEPARATE32AND64BITCODE \
+ 	  segment BS3SEPARATE32AND64BITCODE_END \
         clname BS3CLASS64CODE \
  	  segment BS3TEXT64_START \
  	  segment BS3TEXT64 \
@@ -920,6 +923,9 @@ $(if-expr "$(BS3KIT_SEGNM_DATA16)" != "", \
         clname BS3CLASS32CODE \
  	  segment BS3TEXT32 \
  	  segment BS3TEXT32_END \
+        clname BS3CLASSSEPARATE32AND64BITCODE \
+ 	  segment BS3SEPARATE32AND64BITCODE \
+ 	  segment BS3SEPARATE32AND64BITCODE_END \
         clname BS3CLASS64CODE \
  	  segment BS3TEXT64 \
  	  segment BS3TEXT64_END

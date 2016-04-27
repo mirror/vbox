@@ -41,6 +41,8 @@ BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_RaiseXcpt1);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_iret);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sidt);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sgdt);
+BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_lidt);
+BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_lgdt);
 
 
 /*********************************************************************************************************************************
@@ -49,11 +51,14 @@ BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sgdt);
 static const BS3TESTMODEENTRY g_aModeTest[] =
 {
     //BS3TESTMODEENTRY_MODE("tss / gate / esp", bs3CpuBasic2_TssGateEsp),
-//    BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1),
     //BS3TESTMODEENTRY_CMN("iret", bs3CpuBasic2_iret),
 //    BS3TESTMODEENTRY_MODE("iret", bs3CpuBasic2_iret),
+#if 0
+    BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1),
     BS3TESTMODEENTRY_MODE("sidt", bs3CpuBasic2_sidt),
     BS3TESTMODEENTRY_MODE("sgdt", bs3CpuBasic2_sgdt),
+#endif
+    BS3TESTMODEENTRY_MODE("lidt", bs3CpuBasic2_lidt),
 };
 
 
