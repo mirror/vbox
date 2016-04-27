@@ -2669,7 +2669,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             uint8_t u8Interrupt;
             int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (RT_SUCCESS(rc))
+            if (rc == VINF_SUCCESS)
             {
                 Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
 
@@ -2679,12 +2679,18 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
                 hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
             }
+            else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+            {
+                /*
+                 * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
+                 * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
+                 * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
+                 */
+                Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC)));
+            }
             else
             {
-                /* This can happen with the new APIC code. */
-#ifndef VBOX_WITH_NEW_APIC
                 Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
-#endif
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
             }
         }

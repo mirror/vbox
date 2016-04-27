@@ -432,29 +432,6 @@ static int apicGetLastSetBit(volatile const XAPIC256BITREG *pReg, int rcNotFound
 
 
 /**
- * Gets the highest priority pending interrupt.
- *
- * @returns true if any interrupt is pending, false otherwise.
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   pu8PendingIntr      Where to store the interrupt vector if the
- *                              interrupt is pending, optional can be NULL.
- */
-static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
-{
-    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    int const irrv = apicGetLastSetBit(&pXApicPage->irr, -1);
-    if (irrv >= 0)
-    {
-        Assert(irrv <= (int)UINT8_MAX);
-        if (pu8PendingIntr)
-            *pu8PendingIntr = (uint8_t)irrv;
-        return true;
-    }
-    return false;
-}
-
-
-/**
  * Reads a 32-bit register at a specified offset.
  *
  * @returns The value at the specified offset.
@@ -2111,12 +2088,45 @@ VMMDECL(void) APICSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
 
 
 /**
+ * Gets the highest priority pending interrupt.
+ *
+ * @returns true if any interrupt is pending, false otherwise.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pu8PendingIntr      Where to store the interrupt vector if the
+ *                              interrupt is pending (optional, can be NULL).
+ */
+static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
+{
+    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+    int const irrv = apicGetLastSetBit(&pXApicPage->irr, -1);
+    if (irrv >= 0)
+    {
+        Assert(irrv <= (int)UINT8_MAX);
+        if (pu8PendingIntr)
+            *pu8PendingIntr = (uint8_t)irrv;
+        return true;
+    }
+    return false;
+}
+
+
+/**
  * @interface_method_impl{PDMAPICREG,pfnGetTprR3}
  */
-VMMDECL(uint8_t) APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
+VMMDECL(uint8_t) APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+
+    if (pfPending)
+    {
+        /*
+         * Just return whatever the highest pending interrupt is in the IRR.
+         * The caller is responsible for figuring out if it's masked by the TPR etc.
+         */
+        *pfPending = apicGetHighestPendingInterrupt(pVCpu, pu8PendingIntr);
+    }
+
     return pXApicPage->tpr.u8Tpr;
 }
 
@@ -2281,20 +2291,13 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnHasPendingIrqR3}
- */
-VMMDECL(bool) APICHasPendingIrq(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq)
-{
-    return apicGetHighestPendingInterrupt(pVCpu, pu8PendingIrq);
-}
-
-
-/**
  * @interface_method_impl{PDMAPICREG,pfnGetInterruptR3}
  */
-VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagSrc)
+VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    Assert(pu8Vector);
+    NOREF(pu32TagSrc);
 
     LogFlow(("APIC%u: APICGetInterrupt\n", pVCpu->idCpu));
 
@@ -2305,7 +2308,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
     {
         APICUpdatePendingInterrupts(pVCpu);
         int const irrv = apicGetLastSetBit(&pXApicPage->irr, -1);
-        if (irrv >= 0)
+        if (RT_LIKELY(irrv >= 0))
         {
             Assert(irrv <= (int)UINT8_MAX);
             uint8_t const uVector = irrv;
@@ -2315,16 +2318,21 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
              * disabled but the TPR is raised by the guest before re-enabling interrupts.
              */
             uint8_t const uTpr = pXApicPage->tpr.u8Tpr;
-            if (uTpr > 0 && uVector <= uTpr)
+            if (uTpr > 0 && XAPIC_TPR_GET_TP(uVector) <= XAPIC_TPR_GET_TP(uTpr))
             {
-                Log2(("APIC%u: APICGetInterrupt: Spurious interrupt. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
+                Log2(("APIC%u: APICGetInterrupt: Interrupt masked. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
                       uVector, uTpr, pXApicPage->svr.u.u8SpuriousVector));
-                return pXApicPage->svr.u.u8SpuriousVector;
+                *pu8Vector = uVector;
+                return VERR_APIC_INTR_MASKED_BY_TPR;
             }
 
+            /*
+             * The PPR should be up-to-date at this point and we're on EMT (so no parallel updates).
+             * Subject the pending vector to PPR prioritization.
+             */
             uint8_t const uPpr = pXApicPage->ppr.u8Ppr;
             if (   !uPpr
-                ||  XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
+                || XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
             {
                 apicClearVectorInReg(&pXApicPage->irr, uVector);
                 apicSetVectorInReg(&pXApicPage->isr, uVector);
@@ -2332,10 +2340,11 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
                 apicSignalNextPendingIntr(pVCpu);
 
                 Log2(("APIC%u: APICGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
-                return uVector;
+                *pu8Vector = uVector;
+                return VINF_SUCCESS;
             }
             else
-                Log2(("APIC%u: APICGetInterrupt: Interrupt's priority is not higher than the PPR uVector=%#x PPR=%#x\n",
+                Log2(("APIC%u: APICGetInterrupt: Interrupt's priority is not higher than the PPR. uVector=%#x PPR=%#x\n",
                       pVCpu->idCpu, uVector, uPpr));
         }
         else
@@ -2344,7 +2353,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagS
     else
         Log2(("APIC%u: APICGetInterrupt: APIC %s disabled\n", pVCpu->idCpu, !fApicHwEnabled ? "hardware" : "software"));
 
-    return -1;
+    return VERR_APIC_INTR_NOT_PENDING;
 }
 
 

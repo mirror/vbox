@@ -1153,27 +1153,15 @@ typedef struct PDMAPICREG
     /**
      * Get a pending interrupt.
      *
-     * @returns Pending interrupt number, -1 if no interrupt is
-     *          pending.
+     * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
      * @param   pVCpu           The cross context virtual CPU structure.
-     * @param   puTagSrc        Where to return the tag source (tracing purposes).
-     * @remarks Caller enters the PDM critical section
+     * @param   pu8Vector       Where to store the vector.
+     * @param   pu32TagSrc      Where to return the tag source (tracing
+     *                          purposes).
+     * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagSrc));
-
-    /**
-     * Check if the APIC has a pending interrupt/if a TPR change would activate one.
-     *
-     * @returns true if an interrupt is pending, false otherwise.
-     * @param   pDevIns         Device instance of the APIC.
-     * @param   pVCpu           The cross context virtual CPU structure.
-     * @param   pu8PendingIrq   Where to store the highest priority pending IRQ
-     *                          (optional, can be NULL).
-     * @remarks Unlike the other callbacks, the PDM lock may not always be entered
-     *          prior to calling this method.
-     */
-    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq));
+    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc));
 
     /**
      * Set the APIC base.
@@ -1212,9 +1200,13 @@ typedef struct PDMAPICREG
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the APIC.
      * @param   pVCpu           The cross context virtual CPU structure.
+     * @param   pfPending       Where to store if there is an interrupt pending
+     *                          (optional, can be NULL).
+     * @param   pu8PendingIntr  Where to store the pending interrupt vector
+     *                          (optional, can be NULL).
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTprR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTprR3,(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr));
 
     /**
      * Write to a MSR in APIC range.
@@ -1295,8 +1287,6 @@ typedef struct PDMAPICREG
 
     /** The name of the RC GetInterrupt entry point. */
     const char         *pszGetInterruptRC;
-    /** The name of the RC HasPendingIrq entry point. */
-    const char         *pszHasPendingIrqRC;
     /** The name of the RC SetBaseMsr entry point. */
     const char         *pszSetBaseMsrRC;
     /** The name of the RC GetBaseMsr entry point. */
@@ -1318,8 +1308,6 @@ typedef struct PDMAPICREG
 
     /** The name of the R0 GetInterrupt entry point. */
     const char         *pszGetInterruptR0;
-    /** The name of the R0 HasPendingIrq entry point. */
-    const char         *pszHasPendingIrqR0;
     /** The name of the R0 SetBaseMsr entry point. */
     const char         *pszSetBaseMsrR0;
     /** The name of the R0 GetBaseMsr entry point. */
@@ -1343,7 +1331,7 @@ typedef struct PDMAPICREG
 typedef PDMAPICREG *PPDMAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_APICREG_VERSION                     PDM_VERSION_MAKE(0xfff6, 3, 0)
+#define PDM_APICREG_VERSION                     PDM_VERSION_MAKE(0xfff6, 4, 0)
 
 
 /**

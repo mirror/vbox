@@ -632,15 +632,14 @@ APICMODE                apicGetMode(uint64_t uApicBaseMsr);
 
 VMMDECL(uint64_t)       APICGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t uBase);
-VMMDECL(uint8_t)        APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu);
+VMMDECL(uint8_t)        APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr);
 VMMDECL(void)           APICSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr);
 VMMDECL(uint64_t)       APICGetTimerFreq(PPDMDEVINS pDevIns);
 VMMDECL(int)            APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 VMMDECL(int)            APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
 VMMDECL(VBOXSTRICTRC)   APICReadMsr(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Val);
 VMMDECL(VBOXSTRICTRC)   APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Val);
-VMMDECL(bool)           APICHasPendingIrq(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq);
-VMMDECL(int)            APICGetInterrupt(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint32_t *puTagSrc);
+VMMDECL(int)            APICGetInterrupt(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint8_t *puVector, uint32_t *puTagSrc);
 VMMDECL(void)           APICSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
 VMMDECL(void)           APICClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
 VMMDECL(VBOXSTRICTRC)   APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);

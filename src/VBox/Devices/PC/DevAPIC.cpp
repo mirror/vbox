@@ -520,6 +520,47 @@ DECLINLINE(PDMAPICMODE) getApicMode(APICState *apic)
     }
 }
 
+
+static int apic_get_ppr_zero_tpr(APICState *pApic)
+{
+    return Apic256BitReg_FindLastSetBit(&pApic->isr, 0);
+}
+
+
+/* Check if the APIC has a pending interrupt/if a TPR change would active one. */
+static bool apicHasPendingIntr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq)
+{
+    APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    if (!pDev)
+        return false;
+
+    /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
+
+    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
+
+    /*
+     * All our callbacks now come from single IOAPIC, thus locking
+     * seems to be excessive now
+     */
+    /** @todo check excessive locking whatever... */
+    int irrv = Apic256BitReg_FindLastSetBit(&pApic->irr, -1);
+    if (irrv < 0)
+        return false;
+
+    int isrv = apic_get_ppr_zero_tpr(pApic);
+
+    if (isrv && (irrv & 0xf0) <= (isrv & 0xf0))
+        return false;
+
+    if (pu8PendingIrq)
+    {
+        Assert(irrv >= 0 && irrv <= (int)UINT8_MAX);
+        *pu8PendingIrq = (uint8_t)irrv;
+    }
+    return true;
+}
+
+
 static int apic_bus_deliver(APICDeviceInfo *pDev,
                             PCVMCPUSET pDstSet, uint8_t delivery_mode,
                             uint8_t vector_num, uint8_t polarity,
@@ -652,12 +693,15 @@ PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t val)
     apic_update_tpr(pDev, pApic, val);
 }
 
-PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu)
+PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
     Log2(("apicGetTPR: returns %#x\n", pApic->tpr));
+
+    if (pfPending)
+        *pfPending = apicHasPendingIntr(pDevIns, pVCpu, pu8PendingIntr);
     return pApic->tpr;
 }
 
@@ -1202,11 +1246,6 @@ static int apic_get_ppr(APICState const *pApic)
     return ppr;
 }
 
-static int apic_get_ppr_zero_tpr(APICState *pApic)
-{
-    return Apic256BitReg_FindLastSetBit(&pApic->isr, 0);
-}
-
 static int apic_get_arb_pri(APICState const *pApic)
 {
     /** @todo XXX: arbitration */
@@ -1230,39 +1269,6 @@ static bool apic_update_irq(APICDeviceInfo *pDev, APICState *pApic)
     if (ppr && (irrv & 0xf0) <= (ppr & 0xf0))
         return false;
     apicCpuSetInterrupt(pDev, pApic);
-    return true;
-}
-
-/* Check if the APIC has a pending interrupt/if a TPR change would active one. */
-PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8PendingIrq)
-{
-    APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    if (!pDev)
-        return false;
-
-    /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
-
-    APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
-
-    /*
-     * All our callbacks now come from single IOAPIC, thus locking
-     * seems to be excessive now
-     */
-    /** @todo check excessive locking whatever... */
-    int irrv = Apic256BitReg_FindLastSetBit(&pApic->irr, -1);
-    if (irrv < 0)
-        return false;
-
-    int ppr = apic_get_ppr_zero_tpr(pApic);
-
-    if (ppr && (irrv & 0xf0) <= (ppr & 0xf0))
-        return false;
-
-    if (pu8PendingIrq)
-    {
-        Assert(irrv >= 0 && irrv <= (int)UINT8_MAX);
-        *pu8PendingIrq = (uint8_t)irrv;
-    }
     return true;
 }
 
@@ -1449,14 +1455,14 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *pApic,
 }
 
 
-PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *puTagSrc)
+PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     /* if the APIC is not installed or enabled, we let the 8259 handle the IRQs */
     if (!pDev)
     {
         Log(("apic_get_interrupt: returns -1 (!pDev)\n"));
-        return -1;
+        return VERR_APIC_INTR_NOT_PENDING;
     }
 
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
@@ -1466,7 +1472,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *
     if (!(pApic->spurious_vec & APIC_SV_ENABLE))
     {
         Log(("CPU%d: apic_get_interrupt: returns -1 (APIC_SV_ENABLE)\n", pApic->phys_id));
-        return -1;
+        return VERR_APIC_INTR_NOT_PENDING;
     }
 
     /** @todo XXX: spurious IRQ handling */
@@ -1474,26 +1480,28 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t *
     if (intno < 0)
     {
         Log(("CPU%d: apic_get_interrupt: returns -1 (irr)\n", pApic->phys_id));
-        return -1;
+        return VERR_APIC_INTR_NOT_PENDING;
     }
 
     if (pApic->tpr && (uint32_t)intno <= pApic->tpr)
     {
-        *puTagSrc = 0;
-        Log(("apic_get_interrupt: returns %d (sp)\n", pApic->spurious_vec & 0xff));
-        return pApic->spurious_vec & 0xff;
+        *pu32TagSrc = 0;
+        *pu8Vector = pApic->spurious_vec & 0xff;
+        Log(("apic_get_interrupt: returns %d (sp)\n", *pu8Vector));
+        return VINF_SUCCESS;
     }
 
     Apic256BitReg_ClearBit(&pApic->irr, intno);
     Apic256BitReg_SetBit(&pApic->isr, intno);
 
-    *puTagSrc = pApic->auTags[intno];
+    *pu32TagSrc = pApic->auTags[intno];
     pApic->auTags[intno] = 0;
 
     apic_update_irq(pDev, pApic);
 
-    LogFlow(("CPU%d: apic_get_interrupt: returns %d / %#x\n", pApic->phys_id, intno, *puTagSrc));
-    return intno;
+    LogFlow(("CPU%d: apic_get_interrupt: returns %d / %#x\n", pApic->phys_id, intno, *pu32TagSrc));
+    *pu8Vector = (uint8_t)intno;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2408,7 +2416,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PDMAPICREG ApicReg;
     ApicReg.u32Version              = PDM_APICREG_VERSION;
     ApicReg.pfnGetInterruptR3       = apicGetInterrupt;
-    ApicReg.pfnHasPendingIrqR3      = apicHasPendingIrq;
     ApicReg.pfnSetBaseMsrR3         = apicSetBase;
     ApicReg.pfnGetBaseMsrR3         = apicGetBase;
     ApicReg.pfnSetTprR3             = apicSetTPR;
@@ -2421,7 +2428,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (fRZEnabled)
     {
         ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
-        ApicReg.pszHasPendingIrqRC  = "apicHasPendingIrq";
         ApicReg.pszSetBaseMsrRC     = "apicSetBase";
         ApicReg.pszGetBaseMsrRC     = "apicGetBase";
         ApicReg.pszSetTprRC         = "apicSetTPR";
@@ -2433,7 +2439,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszGetTimerFreqRC   = "apicGetTimerFreq";
 
         ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
-        ApicReg.pszHasPendingIrqR0  = "apicHasPendingIrq";
         ApicReg.pszSetBaseMsrR0     = "apicSetBase";
         ApicReg.pszGetBaseMsrR0     = "apicGetBase";
         ApicReg.pszSetTprR0         = "apicSetTPR";
@@ -2447,7 +2452,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else
     {
         ApicReg.pszGetInterruptRC   = NULL;
-        ApicReg.pszHasPendingIrqRC  = NULL;
         ApicReg.pszSetBaseMsrRC     = NULL;
         ApicReg.pszGetBaseMsrRC     = NULL;
         ApicReg.pszSetTprRC         = NULL;
@@ -2459,7 +2463,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszGetTimerFreqRC   = NULL;
 
         ApicReg.pszGetInterruptR0   = NULL;
-        ApicReg.pszHasPendingIrqR0  = NULL;
         ApicReg.pszSetBaseMsrR0     = NULL;
         ApicReg.pszGetBaseMsrR0     = NULL;
         ApicReg.pszSetTprR0         = NULL;

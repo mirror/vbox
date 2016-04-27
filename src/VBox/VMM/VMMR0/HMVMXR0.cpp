@@ -3342,6 +3342,21 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
+ * Sets the TPR threshold in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   u32TprThreshold     The TPR threshold (task-priority class only).
+ */
+DECLINLINE(int) hmR0VmxApicSetTprThreshold(PVMCPU pVCpu, uint32_t u32TprThreshold)
+{
+    Assert(!(u32TprThreshold & 0xfffffff0));         /* Bits 31:4 MBZ. */
+    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW);
+    return VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
+}
+
+
+/**
  * Loads the guest APIC and related state.
  *
  * @returns VBox status code.
@@ -3386,9 +3401,8 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 else
                     u32TprThreshold = u8TprPriority;             /* Required for Vista 64-bit guest, see @bugref{6398}. */
             }
-            Assert(!(u32TprThreshold & 0xfffffff0));             /* Bits 31:4 MBZ. */
 
-            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
+            rc = hmR0VmxApicSetTprThreshold(pVCpu, u32TprThreshold);
             AssertRCReturn(rc, rc);
         }
 
@@ -7433,7 +7447,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             uint8_t u8Interrupt;
             rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (RT_SUCCESS(rc))
+            if (rc == VINF_SUCCESS)
             {
                 Log4(("Pending interrupt vcpu[%RU32] u8Interrupt=%#x \n", pVCpu->idCpu, u8Interrupt));
                 uint32_t u32IntInfo = u8Interrupt | VMX_EXIT_INTERRUPTION_INFO_VALID;
@@ -7441,12 +7455,15 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
                 hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrfaultAddress */);
             }
+            else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+            {
+                Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC)));
+                if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
+                    hmR0VmxApicSetTprThreshold(pVCpu, u8Interrupt >> 4);
+            }
             else
             {
-                /* This can happen with the new APIC code. */
-#ifndef VBOX_WITH_NEW_APIC
                 Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
-#endif
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
             }
         }

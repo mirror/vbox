@@ -248,7 +248,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             rc = VINF_SELM_SYNC_GDT;
         else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
             rc = VINF_EM_RAW_TO_R3;
-        /* Pending interrupt: dispatch it. */
+        /* Possibly pending interrupt: dispatch it. */
         else if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                  && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                  &&  PATMAreInterruptsEnabledByCtx(pVM, CPUMCTX_FROM_CORE(pRegFrame))
@@ -257,20 +257,30 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             uint8_t u8Interrupt;
             rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             Log(("trpmGCExitTrap: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
-            AssertFatalMsgRC(rc, ("PDMGetInterrupt failed with %Rrc\n", rc));
-            rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_HARDWARE_INT, uOldActiveVector);
-            /* can't return if successful */
-            Assert(rc != VINF_SUCCESS);
+            if (RT_SUCCESS(rc))
+            {
+                rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_HARDWARE_INT, uOldActiveVector);
+                /* can't return if successful */
+                Assert(rc != VINF_SUCCESS);
 
-            /* Stop the profile counter that was started in TRPMGCHandlersA.asm */
-            Assert(uOldActiveVector <= 16);
-            STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
+                /* Stop the profile counter that was started in TRPMRCHandlersA.asm */
+                Assert(uOldActiveVector <= 16);
+                STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
 
-            /* Assert the trap and go to the recompiler to dispatch it. */
-            TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
+                /* Assert the trap and go to the recompiler to dispatch it. */
+                TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
 
-            STAM_PROFILE_ADV_START(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
-            rc = VINF_EM_RAW_INTERRUPT_PENDING;
+                STAM_PROFILE_ADV_START(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
+                rc = VINF_EM_RAW_INTERRUPT_PENDING;
+            }
+            else if (   rc == VERR_APIC_INTR_MASKED_BY_TPR  /* Can happen if TPR is too high for the newly arrived interrupt. */
+                     || rc == VERR_NO_DATA)                 /* Can happen if the APIC is disabled. */
+            {
+                STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[uOldActiveVector], a);
+                rc = VINF_SUCCESS;
+            }
+            else
+                AssertFatalMsgRC(rc, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
         }
         /*
          * Try sync CR3?

@@ -814,17 +814,10 @@ static int apicR3LoadLegacyVCpuData(PVM pVM, PVMCPU pVCpu, PSSMHANDLE pSSM, uint
     int rc = SSMR3GetU32(pSSM, &uApicBaseLo);
     AssertRCReturn(rc, rc);
     pApicCpu->uApicBaseMsr = uApicBaseLo;
+    Log2(("APIC%u: apicR3LoadLegacyVCpuData: uApicBaseMsr=%#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
 
     switch (uVersion)
     {
-        case APIC_SAVED_STATE_VERSION_ANCIENT:
-        {
-            uint8_t uPhysApicId;
-            SSMR3GetU8(pSSM, &pXApicPage->id.u8ApicId);
-            SSMR3GetU8(pSSM, &uPhysApicId);   NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
-            break;
-        }
-
         case APIC_SAVED_STATE_VERSION_VBOX_50:
         case APIC_SAVED_STATE_VERSION_VBOX_30:
         {
@@ -832,6 +825,14 @@ static int apicR3LoadLegacyVCpuData(PVM pVM, PVMCPU pVCpu, PSSMHANDLE pSSM, uint
             SSMR3GetU32(pSSM, &uApicId);      pXApicPage->id.u8ApicId = uApicId;
             SSMR3GetU32(pSSM, &uPhysApicId);  NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
             SSMR3GetU32(pSSM, &uArbId);       NOREF(uArbId);      /* ArbID is & was unused. */
+            break;
+        }
+
+        case APIC_SAVED_STATE_VERSION_ANCIENT:
+        {
+            uint8_t uPhysApicId;
+            SSMR3GetU8(pSSM, &pXApicPage->id.u8ApicId);
+            SSMR3GetU8(pSSM, &uPhysApicId);   NOREF(uPhysApicId); /* PhysId == pVCpu->idCpu */
             break;
         }
 
@@ -1159,9 +1160,8 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
     pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
     pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
 
-    pApic->pApicDevRC = PDMINS_2_DATA_RCPTR(pDevIns);
-    if (pApic->pvApicPibRC != NIL_RTRCPTR)
-        pApic->pvApicPibRC = MMHyperR3ToRC(pVM, (RTR3PTR)pApic->pvApicPibR3);
+    pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
+    pApic->pvApicPibRC += offDelta;
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -1169,10 +1169,9 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
         PAPICCPU pApicCpu      = VMCPU_TO_APICCPU(pVCpu);
         pApicCpu->pTimerRC     = TMTimerRCPtr(pApicCpu->pTimerR3);
 
-        if (pApicCpu->pvApicPageRC != NIL_RTRCPTR)
-            pApicCpu->pvApicPageRC = MMHyperR3ToRC(pVM, (RTR3PTR)pApicCpu->pvApicPageR3);
-        if (pApicCpu->pvApicPibRC != NIL_RTRCPTR)
-            pApicCpu->pvApicPibRC  = MMHyperR3ToRC(pVM, (RTR3PTR)pApicCpu->pvApicPibR3);
+        pApicCpu->pvApicPageRC += offDelta;
+        pApicCpu->pvApicPibRC  += offDelta;
+        Log2(("APIC%u: apicR3Relocate: APIC PIB at %RGv\n", pVCpu->idCpu, pApicCpu->pvApicPibRC));
     }
 }
 
@@ -1338,7 +1337,7 @@ static int apicR3InitState(PVM pVM)
                 pApicCpu->pvApicPibR0      = (RTR0PTR)((RTR0UINTPTR)pApic->pvApicPibR0 + offApicPib);
                 pApicCpu->pvApicPibR3      = (RTR3PTR)((RTR3UINTPTR)pApic->pvApicPibR3 + offApicPib);
                 if (fNeedsGCMapping)
-                    pApicCpu->pvApicPibRC += offApicPib;
+                    pApicCpu->pvApicPibRC  = (RTRCPTR)((RTRCUINTPTR)pApic->pvApicPibRC + offApicPib);
 
                 /* Initialize the virtual-APIC state. */
                 RT_BZERO(pApicCpu->pvApicPageR3, pApicCpu->cbApicPage);
@@ -1351,6 +1350,7 @@ static int apicR3InitState(PVM pVM)
                 Assert(pApicCpu->pvApicPageR3 != NIL_RTR3PTR);
                 Assert(pApicCpu->pvApicPageR0 != NIL_RTR0PTR);
                 Assert(!fNeedsGCMapping || pApicCpu->pvApicPageRC != NIL_RTRCPTR);
+                Assert(!fNeedsGCMapping || pApic->pvApicPibRC == pVM->aCpus[0].apic.s.pvApicPibRC);
 #endif
             }
             else
@@ -1489,7 +1489,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     RT_ZERO(ApicReg);
     ApicReg.u32Version              = PDM_APICREG_VERSION;
     ApicReg.pfnGetInterruptR3       = APICGetInterrupt;
-    ApicReg.pfnHasPendingIrqR3      = APICHasPendingIrq;
     ApicReg.pfnSetBaseMsrR3         = APICSetBaseMsr;
     ApicReg.pfnGetBaseMsrR3         = APICGetBaseMsr;
     ApicReg.pfnSetTprR3             = APICSetTpr;
@@ -1507,7 +1506,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     {
         ApicReg.pszGetInterruptRC   = "APICGetInterrupt";
-        ApicReg.pszHasPendingIrqRC  = "APICHasPendingIrq";
         ApicReg.pszSetBaseMsrRC     = "APICSetBaseMsr";
         ApicReg.pszGetBaseMsrRC     = "APICGetBaseMsr";
         ApicReg.pszSetTprRC         = "APICSetTpr";
@@ -1519,7 +1517,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszGetTimerFreqRC   = "APICGetTimerFreq";
 
         ApicReg.pszGetInterruptR0   = "APICGetInterrupt";
-        ApicReg.pszHasPendingIrqR0  = "APICHasPendingIrq";
         ApicReg.pszSetBaseMsrR0     = "APICSetBaseMsr";
         ApicReg.pszGetBaseMsrR0     = "APICGetBaseMsr";
         ApicReg.pszSetTprR0         = "APICSetTpr";

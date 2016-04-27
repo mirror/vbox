@@ -39,6 +39,13 @@
  * Gets the pending interrupt.
  *
  * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_APIC_INTR_MASKED_BY_TPR when an APIC interrupt is pending but
+ *          can't be delivered due to TPR priority.
+ * @retval  VERR_NO_DATA if there is no interrupt to be delivered (either APIC
+ *          has been software-disabled since it flagged something was pending,
+ *          or other reasons).
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pu8Interrupt    Where to store the interrupt on success.
  */
@@ -59,18 +66,18 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt));
         uint32_t uTagSrc;
-        int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, &uTagSrc);
-#ifndef VBOX_WITH_NEW_APIC
-        AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
-#endif
-        if (i >= 0)
+        uint8_t  uVector;
+        int rc = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, &uVector, &uTagSrc);
+        if (   rc == VINF_SUCCESS
+            || rc == VERR_APIC_INTR_MASKED_BY_TPR)
         {
 #ifndef VBOX_WITH_NEW_APIC
             pdmUnlock(pVM);
 #endif
-            *pu8Interrupt = (uint8_t)i;
-            VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), i);
-            return VINF_SUCCESS;
+            *pu8Interrupt = uVector;
+            if (rc == VINF_SUCCESS)
+                VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), uVector);
+            return rc;
         }
     }
 
@@ -98,7 +105,13 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         }
     }
 
-    /** @todo Figure out exactly why we can get here without anything being set. (REM) */
+    /*
+     * One scenario where we may possibly get here is if the APIC signalled a pending interrupt,
+     * got an APIC MMIO/MSR VM-exit which disabled the APIC. We could, in theory, clear the APIC
+     * force-flag from all the places which disables the APIC but letting PDMGetInterrupt() fail
+     * without returning a valid interrupt still needs to be handled for the TPR masked case,
+     * so we shall just handle it here regardless if we choose to update the APIC code in the future.
+     */
 
     pdmUnlock(pVM);
     return VERR_NO_DATA;
@@ -312,29 +325,7 @@ VMMDECL(VBOXSTRICTRC) PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base, bool f
 
 
 /**
- * Check if the APIC has a pending interrupt/if a TPR change would active one.
- *
- * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pfPending   Pending state (out).
- */
-VMM_INT_DECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
-    {
-        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq));
-        pdmLock(pVM);
-        *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, NULL /*pu8PendingIrq*/);
-        pdmUnlock(pVM);
-        return VINF_SUCCESS;
-    }
-    return VERR_PDM_NO_APIC_INSTANCE;
-}
-
-
-/**
- * Set the TPR (task priority register).
+ * Set the TPR (Task Priority Register).
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -346,9 +337,13 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTpr));
+#ifdef VBOX_WITH_NEW_APIC
+        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTpr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, u8TPR);
+#else
         pdmLock(pVM);
         pVM->pdm.s.Apic.CTX_SUFF(pfnSetTpr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, u8TPR);
         pdmUnlock(pVM);
+#endif
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_APIC_INSTANCE;
@@ -356,18 +351,19 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
 
 
 /**
- * Get the TPR (task priority register).
+ * Get the TPR (Task Priority Register).
  *
  * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pu8TPR          Where to store the TRP.
- * @param   pfPending       Pending interrupt state (out, optional).
- * @param   pu8PendingIrq   Where to store the highest-priority pending IRQ
+ * @param   pfPending       Where to store whether there is a pending interrupt
  *                          (out, optional).
+ * @param   pu8PendingIntr  Where to store the highest-priority pending
+ *                          interrupt (out, optional).
  *
  * @remarks No-long-jump zone!!!
  */
-VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIrq)
+VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     PVM        pVM      = pVCpu->CTX_SUFF(pVM);
     PPDMDEVINS pApicIns = pVM->pdm.s.Apic.CTX_SUFF(pDevIns);
@@ -379,9 +375,7 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8
          *       function is called very often by each and every VCPU.
          */
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTpr));
-        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTpr)(pApicIns, pVCpu);
-        if (pfPending)
-            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pApicIns, pVCpu, pu8PendingIrq);
+        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTpr)(pApicIns, pVCpu, pfPending, pu8PendingIntr);
         return VINF_SUCCESS;
     }
     *pu8TPR = 0;

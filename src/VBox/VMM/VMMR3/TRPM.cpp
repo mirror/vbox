@@ -1508,7 +1508,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "TRPMInject");
 # endif
 
-        uint8_t u8Interrupt;
+        uint8_t u8Interrupt = 0;
         int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
         Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
@@ -1554,13 +1554,12 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         }
         else
         {
-#ifndef VBOX_WITH_NEW_APIC
-            AssertRC(rc);
-#endif
+            /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
+            AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
             return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
         }
 #else /* !TRPM_FORWARD_TRAPS_IN_GC */
-        uint8_t u8Interrupt;
+        uint8_t u8Interrupt = 0;
         int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
         Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
@@ -1568,8 +1567,13 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
             AssertRC(rc);
             STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-            return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM;
         }
+        else
+        {
+            /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
+            AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
+        }
+        return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 #endif /* !TRPM_FORWARD_TRAPS_IN_GC */
     }
     /** @todo check if it's safe to translate the patch address to the original guest address.

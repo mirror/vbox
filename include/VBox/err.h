@@ -2735,6 +2735,15 @@
 /** @} */
 
 
+/** @name APIC Status Codes
+ * @{
+ */
+/** No pending interrupt. */
+#define VERR_APIC_INTR_NOT_PENDING                  (-6700)
+/** Pending interrupt is masked by TPR. */
+#define VERR_APIC_INTR_MASKED_BY_TPR                (-6701)
+/** @} */
+
 /* SED-END */
 
 /** @} */
