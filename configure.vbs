@@ -9,7 +9,7 @@
 '
 
 '
-' Copyright (C) 2006-2012 Oracle Corporation
+' Copyright (C) 2006-2016 Oracle Corporation
 '
 ' This file is part of VirtualBox Open Source Edition (OSE), as
 ' available from http://www.virtualbox.org. This file is free software;
@@ -2021,8 +2021,8 @@ end function
 
 
 ''
-' Checks for any Qt4 binaries.
-sub CheckForQt4(strOptQt4)
+' Checks for any Qt4/5 binaries.
+sub CheckForQt(strOptQt4, strOptQt5)
    dim strPathQt4
 
    PrintHdr "Qt4"
@@ -2046,19 +2046,60 @@ sub CheckForQt4(strOptQt4)
 
    ' Display the result.
    if strPathQt4 = "" then
-      CfgPrint "VBOX_WITH_QTGUI="
       PrintResultMsg "Qt4", "not found"
    else
+      PrintResult "Qt4", strPathQt4
+   end if
+
+   PrintHdr "Qt5"
+
+   '
+   ' Try to find the Qt5 installation (user specified path with --with-qt5)
+   '
+   strPathQt5 = ""
+
+   LogPrint "Checking for user specified path of Qt5 ... "
+   if (strPathQt5 = "") And (strOptQt5 <> "") then
+      strOptQt5 = UnixSlashes(strOptQt5)
+      if CheckForQt5Sub(strOptQt5) then strPathQt5 = strOptQt5
+   end if
+
+   ' Check the dev tools
+   if (strPathQt5 = "") Then
+      strPathQt5 = g_strPathDev & "/win." & g_strTargetArch & "/qt/v5.5.1-r138"
+      if CheckForQt5Sub(strPathQt5) = False then strPathQt5 = ""
+   end if
+
+   ' Display the result.
+   if strPathQt5 = "" then
+      PrintResultMsg "Qt5", "not found"
+   else
+      PrintResult "Qt5", strPathQt5
+   end if
+
+   if strPathQt5 <> "" then
+      CfgPrint "PATH_SDK_QT5          := " & strPathQt5
+      CfgPrint "PATH_TOOL_QT5         := $(PATH_SDK_QT5)"
+      CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT5)"
+      if strPathQt4 <> "" then
+         MsgWarning "Have working path to both Qt4 ad Qt5, ignoring Qt4."
+      end if
+   elseif strPathQt4 <> "" then
       CfgPrint "PATH_SDK_QT4          := " & strPathQt4
       CfgPrint "PATH_TOOL_QT4         := $(PATH_SDK_QT4)"
       CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT4)"
-      PrintResult "Qt4 ", strPathQt4
+   end if
+   if (strPathQt4 = "") And (strPathQt5 = "") then
+      CfgPrint "VBOX_WITH_QTGUI       :="
+   end if
+   if strPathQt5 = "" then
+      CfgPrint "VBOX_WITH_QTGUI_V5    :="
    end if
 end sub
 
 
 ''
-' Checks if the specified path points to an usable Qt library.
+' Checks if the specified path points to an usable Qt4 library.
 function CheckForQt4Sub(strPathQt4)
 
    CheckForQt4Sub = False
@@ -2077,6 +2118,30 @@ function CheckForQt4Sub(strPathQt4)
          Or LogFileExists(strPathQt4, "lib/QtNetworkVBox4.lib")) _
       then
          CheckForQt4Sub = True
+   end if
+
+end function
+
+
+''
+' Checks if the specified path points to an usable Qt5 library.
+function CheckForQt5Sub(strPathQt5)
+
+   CheckForQt5Sub = False
+   LogPrint "trying: strPathQt5=" & strPathQt5
+
+   if   LogFileExists(strPathQt5, "bin/moc.exe") _
+    And LogFileExists(strPathQt5, "bin/uic.exe") _
+    And LogFileExists(strPathQt5, "include/QtWidgets/qwidget.h") _
+    And LogFileExists(strPathQt5, "include/QtWidgets/QApplication") _
+    And LogFileExists(strPathQt5, "include/QtGui/QImage") _
+    And LogFileExists(strPathQt5, "include/QtNetwork/QHostAddress") _
+    And (   LogFileExists(strPathQt5, "lib/Qt5Core.lib") _
+         Or LogFileExists(strPathQt5, "lib/Qt5CoreVBox.lib")) _
+    And (   LogFileExists(strPathQt5, "lib/Qt5Network.lib") _
+         Or LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib")) _
+      then
+         CheckForQt5Sub = True
    end if
 
 end function
@@ -2136,12 +2201,12 @@ sub usage
    Print ""
    Print "Locations:"
    Print "  --with-DDK=PATH       "
-   Print "  --with-DXSDK=PATH     "
    Print "  --with-kBuild=PATH    "
    Print "  --with-libSDL=PATH    "
    Print "  --with-MinGW32=PATH   "
    Print "  --with-MinGW-w64=PATH "
    Print "  --with-Qt4=PATH       "
+   Print "  --with-Qt5=PATH       "
    Print "  --with-SDK=PATH       "
    Print "  --with-VC=PATH        "
    Print "  --with-VC-Common=PATH "
@@ -2178,6 +2243,7 @@ Sub Main
    strOptMinGW32 = ""
    strOptMinGWw64 = ""
    strOptQt4 = ""
+   strOptQt5 = ""
    strOptSDK = ""
    strOptVC = ""
    strOptVCCommon = ""
@@ -2210,7 +2276,7 @@ Sub Main
          case "--with-ddk"
             strOptDDK = strPath
          case "--with-dxsdk"
-            MsgWarning "Ignornig --with-dxsdk (the DirectX SDK is no longer required)."
+            MsgWarning "Ignoring --with-dxsdk (the DirectX SDK is no longer required)."
          case "--with-kbuild"
             strOptkBuild = strPath
          case "--with-libsdl"
@@ -2221,6 +2287,8 @@ Sub Main
             strOptMinGWw64 = strPath
          case "--with-qt4"
             strOptQt4 = strPath
+         case "--with-qt5"
+            strOptQt5 = strPath
          case "--with-sdk"
             strOptSDK = strPath
          case "--with-vc"
@@ -2314,7 +2382,7 @@ Sub Main
    end if
    CheckForSsl strOptSsl
    CheckForCurl strOptCurl
-   CheckForQt4 strOptQt4
+   CheckForQt strOptQt4, strOptQt5
    if (strOptPython <> "") then
      CheckForPython strOptPython
    end if

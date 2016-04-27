@@ -1,7 +1,7 @@
 <!--
     VirtualBox Windows Installation Script (WiX)
 
-    Copyright (C) 2006-2015 Oracle Corporation
+    Copyright (C) 2006-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,12 @@
 
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+
+<?ifdef env.VBOX_QT_INFIX ?>
+    <?define VBOX_QT_INFIX="$(env.VBOX_QT_INFIX)" ?>
+<?else?>
+    <?define VBOX_QT_INFIX="" ?>
+<?endif?>
 
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
     <Directory Id="dir_VBoxAppDocuments" Name="doc">
@@ -305,21 +311,21 @@
         </File>
     <?endif ?>
     <?if $(env.VBOX_WITH_QTGUI_V5) = "no" ?>
-        <File Id="file_QtCoreVBox4.dll" Name="QtCoreVBox4.dll"
-              Source="$(env.PATH_OUT)\bin\QtCoreVBox4.dll" />
-        <File Id="file_QtGuiVBox4.dll" Name="QtGuiVBox4.dll"
-              Source="$(env.PATH_OUT)\bin\QtGuiVBox4.dll" />
+        <File Id="file_QtCore$(var.VBOX_QT_INFIX)4.dll" Name="QtCore$(var.VBOX_QT_INFIX)4.dll"
+              Source="$(env.PATH_OUT)\bin\QtCore$(var.VBOX_QT_INFIX)4.dll" />
+        <File Id="file_QtGui$(var.VBOX_QT_INFIX)4.dll" Name="QtGui$(var.VBOX_QT_INFIX)4.dll"
+              Source="$(env.PATH_OUT)\bin\QtGui$(var.VBOX_QT_INFIX)4.dll" />
     <?else ?>
-        <File Id="file_Qt5CoreVBox.dll" Name="Qt5CoreVBox.dll"
-              Source="$(env.PATH_OUT)\bin\Qt5CoreVBox.dll" />
-        <File Id="file_Qt5GuiVBox.dll" Name="Qt5GuiVBox.dll"
-              Source="$(env.PATH_OUT)\bin\Qt5GuiVBox.dll" />
-        <File Id="file_Qt5WidgetsVBox.dll" Name="Qt5WidgetsVBox.dll"
-              Source="$(env.PATH_OUT)\bin\Qt5WidgetsVBox.dll" />
-        <File Id="file_Qt5PrintSupportVBox.dll" Name="Qt5PrintSupportVBox.dll"
-              Source="$(env.PATH_OUT)\bin\Qt5PrintSupportVBox.dll" />
-        <File Id="file_Qt5WinExtrasVBox.dll" Name="Qt5WinExtrasVBox.dll"
-              Source="$(env.PATH_OUT)\bin\Qt5WinExtrasVBox.dll" />
+        <File Id="file_Qt5Core$(var.VBOX_QT_INFIX).dll" Name="Qt5Core$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5Core$(var.VBOX_QT_INFIX).dll" />
+        <File Id="file_Qt5Gui$(var.VBOX_QT_INFIX).dll" Name="Qt5Gui$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5Gui$(var.VBOX_QT_INFIX).dll" />
+        <File Id="file_Qt5Widgets$(var.VBOX_QT_INFIX).dll" Name="Qt5Widgets$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5Widgets$(var.VBOX_QT_INFIX).dll" />
+        <File Id="file_Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" Name="Qt5PrintSupport$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" />
+        <File Id="file_Qt5WinExtras$(var.VBOX_QT_INFIX).dll" Name="Qt5WinExtras$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5WinExtras$(var.VBOX_QT_INFIX).dll" />
     <?endif ?>
 <?endif ?>
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
@@ -330,11 +336,11 @@
 <?endif ?>
 <?if $(env.VBOX_GUI_USE_QGL) = "yes" ?>
     <?if $(env.VBOX_WITH_QTGUI_V5) = "no" ?>
-        <File Id="file_QtOpenGLVBox4.dll" Name="QtOpenGLVBox4.dll"
-              Source="$(env.PATH_OUT)\bin\QtOpenGLVBox4.dll" />
+        <File Id="file_QtOpenGL$(var.VBOX_QT_INFIX)4.dll" Name="QtOpenGL$(var.VBOX_QT_INFIX)4.dll"
+              Source="$(env.PATH_OUT)\bin\QtOpenGL$(var.VBOX_QT_INFIX)4.dll" />
     <?else ?>
-        <File Id="file_Qt5OpenGLVBox.dll" Name="Qt5OpenGLVBox.dll"
-              Source="$(env.PATH_OUT)\bin\Qt5OpenGLVBox.dll" />
+        <File Id="file_Qt5OpenGL$(var.VBOX_QT_INFIX).dll" Name="Qt5OpenGL$(var.VBOX_QT_INFIX).dll"
+              Source="$(env.PATH_OUT)\bin\Qt5OpenGL$(var.VBOX_QT_INFIX).dll" />
     <?endif ?>
 <?endif?>
 
