@@ -2720,20 +2720,22 @@ Virtual system 0:
   </sect1>
 
   <sect1 id="vboxmanage-clonevdi">
-    <title>VBoxManage clonehd</title>
+    <title>VBoxManage clonemedium</title>
 
-    <para>This command duplicates a registered virtual hard disk image to a
-    new image file with a new unique identifier (UUID). The new image can be
-    transferred to another host system or imported into VirtualBox again using
-    the Virtual Media Manager; see <xref linkend="vdis" /> and <xref
-    linkend="cloningvdis" />. The syntax is as follows:</para>
+    <para>This command duplicates a virtual disk/DVD/floppy medium to a
+    new medium (usually an image file) with a new unique identifier (UUID).
+    The new image can be transferred to another host system or imported into
+    VirtualBox again using the Virtual Media Manager; see <xref linkend="vdis" />
+    and <xref linkend="cloningvdis" />. The syntax is as follows:</para>
 
-    <screen>VBoxManage clonehd         &lt;uuid|inutfile&gt; &lt;uuid|outputfile&gt;
-                           [--format VDI|VMDK|VHD|RAW|&lt;other&gt;]
-                           [--variant Standard,Fixed,Split2G,Stream,ESX]
-                           [--existing]</screen>
+    <screen>VBoxManage clonemedium      [disk|dvd|floppy] &lt;uuid|inputfile&gt; &lt;uuid|outputfile&gt;
 
-    <para>The disk image to clone as well as the target image must be described
+                            [--format VDI|VMDK|VHD|RAW|&lt;other&gt;]
+                            [--variant Standard,Fixed,Split2G,Stream,ESX]
+			    [--existing]</screen>
+
+
+    <para>The medium to clone as well as the target image must be described
        either by its UUIDs (if the mediums are registered) or by its filename.
        Registered images can be listed by <computeroutput>VBoxManage list hdds</computeroutput>
        (see <xref linkend="vboxmanage-list" /> for more information).
@@ -2774,8 +2776,8 @@ Virtual system 0:
         </glossentry>
       </glosslist> <note>
         <para>For compatibility with earlier versions of VirtualBox, the
-        "clonevdi" command is also supported and mapped internally to the
-        "clonehd" command.</para>
+ 	"clonevdi" and "clonehd" commands are still supported and mapped
+        internally to the "clonehd disk" command.</para>
       </note></para>
   </sect1>
 
