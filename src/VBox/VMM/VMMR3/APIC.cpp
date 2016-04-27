@@ -407,11 +407,11 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  APR                           = %u (%#x)\n", pXApicPage->apr.u8Apr, pXApicPage->apr.u8Apr);
     pHlp->pfnPrintf(pHlp, "  TPR                           = %u (%#x)\n", pXApicPage->tpr.u8Tpr, pXApicPage->tpr.u8Tpr);
-    pHlp->pfnPrintf(pHlp, "    Task-priority class         = %u\n",       XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr));
-    pHlp->pfnPrintf(pHlp, "    Task-priority subclass      = %u\n",       XAPIC_TPR_GET_TP_SUBCLASS(pXApicPage->tpr.u8Tpr));
+    pHlp->pfnPrintf(pHlp, "    Task-priority class         = %#x\n",      XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr));
+    pHlp->pfnPrintf(pHlp, "    Task-priority subclass      = %#x\n",      XAPIC_TPR_GET_TP_SUBCLASS(pXApicPage->tpr.u8Tpr));
     pHlp->pfnPrintf(pHlp, "  PPR                           = %u (%#x)\n", pXApicPage->ppr.u8Ppr, pXApicPage->ppr.u8Ppr);
-    pHlp->pfnPrintf(pHlp, "    Processor-priority class    = %u\n",       XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr));
-    pHlp->pfnPrintf(pHlp, "    Processor-priority subclass = %u\n",       XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
+    pHlp->pfnPrintf(pHlp, "    Processor-priority class    = %#x\n",      XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr));
+    pHlp->pfnPrintf(pHlp, "    Processor-priority subclass = %#x\n",      XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  RRD                           = %u (%#x)\n", pXApicPage->rrd.u32Rrd, pXApicPage->rrd.u32Rrd);
     pHlp->pfnPrintf(pHlp, "  LDR                           = %#x\n",      pXApicPage->ldr.all.u32Ldr);
@@ -495,7 +495,8 @@ static void apicR3DbgInfoLvt(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     uint32_t const uLvtThermal = pXApicPage->lvt_thermal.all.u32LvtThermal;
     pHlp->pfnPrintf(pHlp, "LVT Thermal        = %#RX32)\n",  uLvtThermal);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_thermal.u.u8Vector, pXApicPage->lvt_thermal.u.u8Vector);
+    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_thermal.u.u8Vector,
+                    pXApicPage->lvt_thermal.u.u8Vector);
     pHlp->pfnPrintf(pHlp, "  Delivery Mode    = %#x (%s)\n", pXApicPage->lvt_thermal.u.u3DeliveryMode,
                     apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->lvt_thermal.u.u3DeliveryMode));
     pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_thermal.u.u1DeliveryStatus);
