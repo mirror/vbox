@@ -1051,11 +1051,17 @@ int HostUSBDevice::i_compare(PCUSBDEVICE aDev1, PCUSBDEVICE aDev2, bool aIsAwait
 
     /* The hub/bus + port should help a lot in a re-attach situation. */
 #ifdef RT_OS_WINDOWS
-    iDiff = strcmp(aDev1->pszHubName, aDev2->pszHubName);
-    if (iDiff)
+    /* The hub name makes only sense for the host backend. */
+    if (   !strcmp(aDev1->pszBackend, "host")
+        && aDev1->pszHubName
+        && aDev2->pszHubName)
     {
-        //Log3(("compare: HubName: %s != %s\n", aDev1->pszHubName, aDev2->pszHubName));
-        return iDiff;
+        iDiff = strcmp(aDev1->pszHubName, aDev2->pszHubName);
+        if (iDiff)
+        {
+            //Log3(("compare: HubName: %s != %s\n", aDev1->pszHubName, aDev2->pszHubName));
+            return iDiff;
+        }
     }
 #else
     iDiff = aDev1->bBus - aDev2->bBus;
