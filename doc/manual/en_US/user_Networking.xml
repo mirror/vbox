@@ -700,8 +700,8 @@
 
     <para>Before you can attach a VM to a host-only network you have to
       create at least one host-only interface, either from the GUI:
-      "File" -&gt; "Preferences" -&gt; "Network" -&gt; "Host-only network"
-      -&gt; "(+)Add host-only network", or via command line with</para>
+      "File" &rarr; "Preferences" &rarr; "Network" &rarr; "Host-only network"
+      &rarr; "(+)Add host-only network", or via command line with</para>
       <screen>VBoxManage hostonlyif create</screen>
       <para>see <xref linkend="vboxmanage-hostonlyif" /> for details.</para>
 
@@ -712,8 +712,8 @@
     statically.<itemizedlist>
         <listitem>
           <para>In the VirtualBox graphical user interface, you can configure
-          all these items in the global settings via "File" -&gt; "Preferences"
-          -&gt; "Network", which lists all host-only networks which are
+          all these items in the global settings via "File" &rarr; "Preferences"
+          &rarr; "Network", which lists all host-only networks which are
           presently in use. Click on the network name and then on the "Edit"
           button to the right, and you can modify the adapter and DHCP
           settings.</para>

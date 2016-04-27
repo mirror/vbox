@@ -3260,7 +3260,7 @@ Value: 2006.01.01</screen>
 
                 <glossdef><para>
                   Converts output from DOS/Windows guests to UNIX-compatible
-                  line endings (CR + LF -> LF). Not implemented yet.</para>
+                  line endings (CR + LF &rarr; LF). Not implemented yet.</para>
                 </glossdef>
               </glossentry>
 
@@ -3305,7 +3305,7 @@ Value: 2006.01.01</screen>
 
                 <glossdef><para>
                   Converts output from a UNIX/Linux guests to DOS-/Windows-compatible
-                  line endings (LF -> CR + LF). Not implemented yet.</para></glossdef>
+                  line endings (LF &rarr; CR + LF). Not implemented yet.</para></glossdef>
               </glossentry>
 
               <glossentry>

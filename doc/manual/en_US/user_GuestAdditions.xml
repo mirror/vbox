@@ -1112,8 +1112,8 @@
             <para>In a Windows guest, shared folders are browseable and
             therefore visible in Windows Explorer. So, to attach the host's
             shared folder to your Windows guest, open Windows Explorer and
-            look for it under "My Networking Places" -&gt; "Entire Network"
-            -&gt; "VirtualBox Shared Folders". By right-clicking on a shared
+            look for it under "My Networking Places" &rarr; "Entire Network"
+            &rarr; "VirtualBox Shared Folders". By right-clicking on a shared
             folder and selecting "Map network drive" from the menu that pops
             up, you can assign a drive letter to that shared folder.</para>
 

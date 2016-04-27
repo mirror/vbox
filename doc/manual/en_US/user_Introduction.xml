@@ -1082,9 +1082,9 @@
 
           <itemizedlist>
             <listitem>
-              <para>Use the items in the "Machine" menu of the virtual machine
-              window. There you will find "Insert Ctrl+Alt+Delete" and
-              "Ctrl+Alt+Backspace"; the latter will only have an effect with
+              <para>Use the items in the "Input" &rarr; "Keyboard" menu of the
+              virtual machine window. There you will find "Insert Ctrl+Alt+Delete"
+              and "Ctrl+Alt+Backspace"; the latter will only have an effect with
               Linux or Solaris guests, however.</para>
             </listitem>
 
@@ -1121,7 +1121,7 @@
           VirtualBox allows you to configure whether these combinations will
           affect the host or the guest, if a virtual machine currently has the
           focus. This is a global setting for all virtual machines and can be
-          found under "File" -&gt; "Preferences" -&gt; "Input" -&gt;
+          found under "File" &rarr; "Preferences" &rarr; "Input" &rarr;
           "Auto-capture keyboard".</para>
         </listitem>
       </itemizedlist>
@@ -1693,7 +1693,7 @@
         <para>Starting with version 4.0, VirtualBox creates file type
         associations for OVF and OVA files on your host operating
         system.</para>
-      </footnote> Alternatively, select "File" -&gt; "Import appliance" from
+      </footnote> Alternatively, select "File" &rarr; "Import appliance" from
     the Manager window. In the file dialog that comes up, navigate to the file
     with either the <computeroutput>.ovf</computeroutput> or the
     <computeroutput>.ova</computeroutput> file extension.</para>
@@ -1723,7 +1723,7 @@
     linkend="vboxmanage-import" />.</para>
 
     <para>Conversely, to <emphasis role="bold">export</emphasis> virtual
-    machines that you already have in VirtualBox, select "File" -&gt; "Export
+    machines that you already have in VirtualBox, select "File" &rarr; "Export
     appliance". A different dialog window shows up that allows you to combine
     several virtual machines into an OVF appliance. Then, select the target
     location where the target files should be stored, and the conversion

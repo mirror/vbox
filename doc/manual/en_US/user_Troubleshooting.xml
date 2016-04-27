@@ -420,16 +420,16 @@
 
       <para><screen>[ ELF 64 Header]
 [ Program Header, type PT_NOTE ]
-  -&gt; offset to COREDESCRIPTOR
+  &rarr; offset to COREDESCRIPTOR
 [ Program Header, type PT_LOAD ] - one for each contiguous physical memory range
-  -&gt; Memory offset of range
-  -&gt; File offset
+  &rarr; Memory offset of range
+  &rarr; File offset
 [ Note Header, type NT_VBOXCORE ]
 [ COREDESCRIPTOR ]
-  -&gt; Magic
-  -&gt; VM core file version
-  -&gt; VBox version
-  -&gt; Number of vCPUs etc.
+  &rarr; Magic
+  &rarr; VM core file version
+  &rarr; VBox version
+  &rarr; Number of vCPUs etc.
 [ Note Header, type NT_VBOXCPU ] - one for each vCPU
 [ vCPU 1 Note Header ]
   [ DBGFCORECPU - vCPU 1 dump ]

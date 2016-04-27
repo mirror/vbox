@@ -83,8 +83,8 @@
             Connector (<computeroutput>mstsc.exe</computeroutput>) that ships
             with Windows. You can start it by bringing up the "Run" dialog
             (press the Windows key and "R") and typing "mstsc". You can also
-            find it under "Start" -&gt; "All Programs" -&gt; "Accessories"
-            -&gt; "Remote Desktop Connection". If you use the "Run" dialog,
+            find it under "Start" &rarr; "All Programs" &rarr; "Accessories"
+            &rarr; "Remote Desktop Connection". If you use the "Run" dialog,
             you can type in options directly:<screen>mstsc 1.2.3.4:3389</screen></para>
 
             <para>Replace <computeroutput>1.2.3.4</computeroutput> with the host IP address,
