@@ -411,7 +411,6 @@ int USBProxyBackendUsbIp::captureDevice(HostUSBDevice *aDevice)
      */
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_Capturing);
     devLock.release();
-    interruptWait();
 
     return VINF_SUCCESS;
 }
@@ -430,7 +429,6 @@ int USBProxyBackendUsbIp::releaseDevice(HostUSBDevice *aDevice)
      */
     Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_ReleasingToHost);
     devLock.release();
-    interruptWait();
 
     return VINF_SUCCESS;
 }
@@ -503,10 +501,11 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
             }
             else if (uIdReady == USBIP_POLL_ID_SOCKET)
             {
-                if (fEventsRecv & RTPOLL_EVT_ERROR)
-                    rc = VERR_NET_SHUTDOWN;
-                else
+                if (fEventsRecv & RTPOLL_EVT_READ)
                     rc = receiveData();
+                else if (fEventsRecv & RTPOLL_EVT_ERROR)
+                    rc = VERR_NET_SHUTDOWN;
+
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -787,16 +786,26 @@ void USBProxyBackendUsbIp::advanceState(USBIPRECVSTATE enmRecvState)
  */
 int USBProxyBackendUsbIp::receiveData()
 {
+    int rc = VINF_SUCCESS;
     size_t cbRecvd = 0;
-    int rc = RTTcpReadNB(m->hSocket, m->pbRecvBuf, m->cbResidualRecv, &cbRecvd);
-    if (RT_SUCCESS(rc))
+
+    do
     {
-        m->cbResidualRecv -= cbRecvd;
-        m->pbRecvBuf      += cbRecvd;
-        /* In case we received everything for the current state process the data. */
-        if (!m->cbResidualRecv)
-            rc = processData();
-    }
+        rc = RTTcpReadNB(m->hSocket, m->pbRecvBuf, m->cbResidualRecv, &cbRecvd);
+        if (RT_SUCCESS(rc))
+        {
+            m->cbResidualRecv -= cbRecvd;
+            m->pbRecvBuf      += cbRecvd;
+            /* In case we received everything for the current state process the data. */
+            if (!m->cbResidualRecv)
+            {
+                rc = processData();
+                if (   RT_SUCCESS(rc)
+                    && m->enmRecvState == kUsbIpRecvState_None)
+                    break;
+            }
+        }
+    } while (RT_SUCCESS(rc) && cbRecvd > 0);
 
     return rc;
 }
