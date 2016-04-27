@@ -243,15 +243,21 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
     /* Construct. */
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    uint64_t uApicBaseMsr = XAPIC_APICBASE_PHYSADDR
-                          | MSR_APICBASE_XAPIC_ENABLE_BIT;
+    PAPICCPU pApicCpu     = VMCPU_TO_APICCPU(pVCpu);
+    PAPIC    pApic        = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    uint64_t uApicBaseMsr = XAPIC_APICBASE_PHYSADDR;
     if (pVCpu->idCpu == 0)
         uApicBaseMsr |= MSR_APICBASE_BOOTSTRAP_CPU_BIT;
 
-    /* Update CPUID. */
-    APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
-    LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
+    /* If the VM was configured with disabled mode, don't enable xAPIC mode. */
+    if (pApic->enmOriginalMode != APICMODE_DISABLED)
+    {
+        uApicBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+
+        /** @todo CPUID bits needs to be done on a per-VCPU basis! */
+        CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
+        LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
+    }
 
     /* Commit. */
     ASMAtomicWriteU64(&pApicCpu->uApicBaseMsr, uApicBaseMsr);
@@ -1451,14 +1457,27 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     uint8_t uOriginalMode;
     rc = CFGMR3QueryU8Def(pCfg, "Mode", &uOriginalMode, APICMODE_XAPIC);
     AssertLogRelRCReturn(rc, rc);
+
     /* Validate APIC modes. */
-    switch (uOriginalMode)
+    APICMODE const enmOriginalMode = (APICMODE)uOriginalMode;
+    switch (enmOriginalMode)
     {
         case APICMODE_DISABLED:
-        case APICMODE_X2APIC:
-        case APICMODE_XAPIC:
-            pApic->enmOriginalMode = (APICMODE)uOriginalMode;
+            pApic->enmOriginalMode = enmOriginalMode;
+            CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
+            CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
             break;
+
+        case APICMODE_X2APIC:
+            pApic->enmOriginalMode = enmOriginalMode;
+            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
+            break;
+
+        case APICMODE_XAPIC:
+            pApic->enmOriginalMode = enmOriginalMode;
+            /* The CPUID bit will be updated in apicR3ResetBaseMsr(). */
+            break;
+
         default:
             return VMR3SetError(pVM->pUVM, VERR_INVALID_STATE, RT_SRC_POS, "APIC mode %#x unknown.", uOriginalMode);
     }

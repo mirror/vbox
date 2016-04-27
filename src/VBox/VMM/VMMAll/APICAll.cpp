@@ -1974,6 +1974,13 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
         return VERR_CPUM_RAISE_GP_0;
     }
 
+    /* Don't allow enabling xAPIC/x2APIC if the VM is configured with the APIC disabled. */
+    if (pApic->enmOriginalMode == APICMODE_DISABLED)
+    {
+        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM config is configured with APIC disabled!\n"));
+        return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
+    }
+
     /*
      * Act on state transition.
      */
@@ -1998,8 +2005,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  */
                 APICR3Reset(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT);
-
-                APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_DISABLED);
+                CPUMClearGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
                 LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
                 break;
             }
@@ -2012,15 +2018,9 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
-                /* Don't allow enabling xAPIC if the VM is configured with a APIC disabled. */
-                if (pApic->enmOriginalMode != APICMODE_DISABLED)
-                {
-                    uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
-                    APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
-                    LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
-                }
-                else
-                    return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
+                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+                CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
+                LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
                 break;
             }
 
@@ -2032,33 +2032,28 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
-                /* Don't allow enabling x2APIC if the VM is configured with a APIC disabled. */
-                if (pApic->enmOriginalMode != APICMODE_DISABLED)
-                {
-                    uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
+                /* Don't allow enabling x2APIC if the VM is configured with the APIC disabled. */
+                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
 
-                    /*
-                     * The APIC ID needs updating when entering x2APIC mode.
-                     * Software written APIC ID in xAPIC mode isn't preseved.
-                     * The APIC ID becomes read-only to software in x2APIC mode.
-                     *
-                     * See Intel spec. 10.12.5.1 "x2APIC States".
-                     */
-                    PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
-                    ASMMemZero32(&pX2ApicPage->id, sizeof(pX2ApicPage->id));
-                    pX2ApicPage->id.u32ApicId = pVCpu->idCpu;
+                /*
+                 * The APIC ID needs updating when entering x2APIC mode.
+                 * Software written APIC ID in xAPIC mode isn't preseved.
+                 * The APIC ID becomes read-only to software in x2APIC mode.
+                 *
+                 * See Intel spec. 10.12.5.1 "x2APIC States".
+                 */
+                PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
+                ASMMemZero32(&pX2ApicPage->id, sizeof(pX2ApicPage->id));
+                pX2ApicPage->id.u32ApicId = pVCpu->idCpu;
 
-                    /*
-                     * LDR initialization occurs when entering x2APIC mode.
-                     * See Intel spec. 10.12.10.2 "Deriving Logical x2APIC ID from the Local x2APIC ID".
-                     */
-                    pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
-                                                      | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
+                /*
+                 * LDR initialization occurs when entering x2APIC mode.
+                 * See Intel spec. 10.12.10.2 "Deriving Logical x2APIC ID from the Local x2APIC ID".
+                 */
+                pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
+                                                  | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
 
-                    LogRel(("APIC%u: Switched mode to x2APIC\n", pVCpu->idCpu));
-                }
-                else
-                    return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
+                LogRel(("APIC%u: Switched mode to x2APIC\n", pVCpu->idCpu));
                 break;
             }
 
@@ -2569,40 +2564,6 @@ VMM_INT_DECL(void) APICStopTimer(PVMCPU pVCpu)
     TMTimerStop(pTimer);    /* This will reset the hint, no need to explicitly call TMTimerSetFrequencyHint(). */
     pApicCpu->uHintedTimerInitialCount = 0;
     pApicCpu->uHintedTimerShift = 0;
-}
-
-
-/**
- * Updates the CPUID bits necessary for the given APIC mode.
- *
- * @param   pVM         The cross context VM structure.
- * @param   enmMode     The APIC mode.
- */
-VMM_INT_DECL(void) APICUpdateCpuIdForMode(PVM pVM, APICMODE enmMode)
-{
-    LogFlow(("APIC: APICUpdateCpuIdForMode: enmMode=%d (%s)\n", enmMode, apicGetModeName(enmMode)));
-
-    /* The CPUID bits being updated to reflect the current state is a bit vague. See @bugref{8245#c32}. */
-    /** @todo This needs to be done on a per-VCPU basis! */
-    switch (enmMode)
-    {
-        case APICMODE_DISABLED:
-            CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            break;
-
-        case APICMODE_XAPIC:
-            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            break;
-
-        case APICMODE_X2APIC:
-            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
-            break;
-
-        default:
-            AssertMsgFailed(("Invalid APIC mode: %d\n", (int)enmMode));
-            break;
-    }
 }
 
 
