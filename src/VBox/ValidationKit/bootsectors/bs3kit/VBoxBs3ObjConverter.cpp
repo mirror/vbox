@@ -439,7 +439,7 @@ static bool omfWriter_RecAddIdx(POMFWRITER pThis, uint16_t idx)
     if (idx < 128)
         return omfWriter_RecAddU8(pThis, (uint8_t)idx);
     if (idx < _32K)
-        return omfWriter_RecAddU8(pThis, (uint8_t)(idx >> 7) | 0x80)
+        return omfWriter_RecAddU8(pThis, (uint8_t)(idx >> 8) | 0x80)
             && omfWriter_RecAddU8(pThis, (uint8_t)idx);
     return error(pThis->pszSrc, "Index out of range %#x\n", idx);
 }
