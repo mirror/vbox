@@ -204,18 +204,19 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
     {
         const char *pszBefore;   /* The error message before printing the MSR index */
         const char *pszAfter;    /* The error message after printing the MSR index */
-        int         rcR0;        /* The ring-0 error code */
+        int         rcRZ;        /* The RZ error code */
     } const s_aAccess[] =
     {
-        { "read MSR",                      " while not in x2APIC mode", VINF_CPUM_R3_MSR_READ  },
-        { "write MSR",                     " while not in x2APIC mode", VINF_CPUM_R3_MSR_WRITE },
-        { "read reserved/unknown MSR",     "",                          VINF_CPUM_R3_MSR_READ  },
-        { "write reserved/unknown MSR",    "",                          VINF_CPUM_R3_MSR_WRITE },
-        { "read write-only MSR",           "",                          VINF_CPUM_R3_MSR_READ  },
-        { "write read-only MSR",           "",                          VINF_CPUM_R3_MSR_WRITE },
-        { "read reserved bits of MSR",     "",                          VINF_CPUM_R3_MSR_READ  },
-        { "write reserved bits of MSR",    "",                          VINF_CPUM_R3_MSR_WRITE },
-        { "write an invalid value to MSR", "",                          VINF_CPUM_R3_MSR_WRITE }
+        { "read MSR",                      " while not in x2APIC mode",   VINF_CPUM_R3_MSR_READ  },
+        { "write MSR",                     " while not in x2APIC mode",   VINF_CPUM_R3_MSR_WRITE },
+        { "read reserved/unknown MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
+        { "write reserved/unknown MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
+        { "read write-only MSR",           "",                            VINF_CPUM_R3_MSR_READ  },
+        { "write read-only MSR",           "",                            VINF_CPUM_R3_MSR_WRITE },
+        { "read reserved bits of MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
+        { "write reserved bits of MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
+        { "write an invalid value to MSR", "",                            VINF_CPUM_R3_MSR_WRITE },
+        { "write MSR",                     "disallowed by configuration", VINF_CPUM_R3_MSR_WRITE }
     };
     AssertCompile(RT_ELEMENTS(s_aAccess) == APICMSRACCESS_COUNT);
 
@@ -226,7 +227,7 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
                   s_aAccess[i].pszAfter));
     return VERR_CPUM_RAISE_GP_0;
 #else
-    return s_aAccess[i].rcR0;
+    return s_aAccess[i].rcRZ;
 #endif
 }
 
@@ -2011,9 +2012,15 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
-                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
-                APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
-                LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
+                /* Don't allow enabling xAPIC if the VM is configured with a APIC disabled. */
+                if (pApic->enmOriginalMode != APICMODE_DISABLED)
+                {
+                    uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+                    APICUpdateCpuIdForMode(pVCpu->CTX_SUFF(pVM), APICMODE_XAPIC);
+                    LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
+                }
+                else
+                    return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
                 break;
             }
 
@@ -2025,27 +2032,33 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
-                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
+                /* Don't allow enabling x2APIC if the VM is configured with a APIC disabled. */
+                if (pApic->enmOriginalMode != APICMODE_DISABLED)
+                {
+                    uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
 
-                /*
-                 * The APIC ID needs updating when entering x2APIC mode.
-                 * Software written APIC ID in xAPIC mode isn't preseved.
-                 * The APIC ID becomes read-only to software in x2APIC mode.
-                 *
-                 * See Intel spec. 10.12.5.1 "x2APIC States".
-                 */
-                PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
-                ASMMemZero32(&pX2ApicPage->id, sizeof(pX2ApicPage->id));
-                pX2ApicPage->id.u32ApicId = pVCpu->idCpu;
+                    /*
+                     * The APIC ID needs updating when entering x2APIC mode.
+                     * Software written APIC ID in xAPIC mode isn't preseved.
+                     * The APIC ID becomes read-only to software in x2APIC mode.
+                     *
+                     * See Intel spec. 10.12.5.1 "x2APIC States".
+                     */
+                    PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
+                    ASMMemZero32(&pX2ApicPage->id, sizeof(pX2ApicPage->id));
+                    pX2ApicPage->id.u32ApicId = pVCpu->idCpu;
 
-                /*
-                 * LDR initialization occurs when entering x2APIC mode.
-                 * See Intel spec. 10.12.10.2 "Deriving Logical x2APIC ID from the Local x2APIC ID".
-                 */
-                pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
-                                                  | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
+                    /*
+                     * LDR initialization occurs when entering x2APIC mode.
+                     * See Intel spec. 10.12.10.2 "Deriving Logical x2APIC ID from the Local x2APIC ID".
+                     */
+                    pX2ApicPage->ldr.u32LogicalApicId = ((pX2ApicPage->id.u32ApicId & UINT32_C(0xffff0)) << 16)
+                                                      | (UINT32_C(1) << pX2ApicPage->id.u32ApicId & UINT32_C(0xf));
 
-                LogRel(("APIC%u: Switched mode to x2APIC\n", pVCpu->idCpu));
+                    LogRel(("APIC%u: Switched mode to x2APIC\n", pVCpu->idCpu));
+                }
+                else
+                    return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
                 break;
             }
 

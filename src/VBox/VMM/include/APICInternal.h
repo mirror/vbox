@@ -293,6 +293,8 @@ typedef enum APICMSRACCESS
     APICMSRACCESS_WRITE_RSVD_BITS,
     /* MSR write with invalid value. */
     APICMSRACCESS_WRITE_INVALID,
+    /** MSR write disallowed due to incompatible config. */
+    APICMSRACCESS_WRITE_DISALLOWED_CONFIG,
     /* Count of enum members (don't use). */
     APICMSRACCESS_COUNT
 } APICMSRACCESS;
