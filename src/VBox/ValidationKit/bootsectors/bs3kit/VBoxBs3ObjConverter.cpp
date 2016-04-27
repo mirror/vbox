@@ -886,12 +886,12 @@ static bool omfWriter_LEDataAddFixup(POMFWRITER pThis, uint16_t offDataRec, bool
     if (bFrame <= OMF_FIX_F_FRAME_NO)
     {
         if (idxFrame >= 128)
-            abFixup[off++] = (uint8_t)(idxFrame >> 8);
+            abFixup[off++] = (uint8_t)(idxFrame >> 8) | 0x80;
         abFixup[off++] = (uint8_t)idxFrame;
     }
     /* Target Datum */
     if (idxTarget >= 128)
-        abFixup[off++] = (uint8_t)(idxTarget >> 8);
+        abFixup[off++] = (uint8_t)(idxTarget >> 8) | 0x80;
     abFixup[off++] = (uint8_t)idxTarget;
     /* Target Displacement */
     if (fTargetDisp)
