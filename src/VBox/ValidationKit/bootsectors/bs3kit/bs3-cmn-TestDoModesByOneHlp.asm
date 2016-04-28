@@ -140,7 +140,6 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo16_c64
         retf
 
 .return:
-hlt
         ; Switch back to 64-bit mode.
         extern  _Bs3SwitchTo64Bit_c16
         call    _Bs3SwitchTo64Bit_c16
