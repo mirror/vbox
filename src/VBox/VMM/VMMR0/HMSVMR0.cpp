@@ -29,6 +29,9 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "HMSVMR0.h"
@@ -2659,6 +2662,11 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     }
     else if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
     {
+
+#ifdef VBOX_WITH_NEW_APIC
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC))
+            APICUpdatePendingInterrupts(pVCpu);
+#endif
         /*
          * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
          * the interrupt ASAP. We must not execute any guest code until we inject the interrupt which is why it is

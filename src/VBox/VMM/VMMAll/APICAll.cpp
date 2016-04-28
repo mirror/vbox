@@ -2314,7 +2314,6 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
     if (   fApicHwEnabled
         && pXApicPage->svr.u.fApicSoftwareEnable)
     {
-        APICUpdatePendingInterrupts(pVCpu);
         int const irrv = apicGetLastSetBit(&pXApicPage->irr, -1);
         if (RT_LIKELY(irrv >= 0))
         {

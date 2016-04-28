@@ -49,6 +49,9 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
@@ -1933,6 +1936,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
             if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             {
+#ifdef VBOX_WITH_NEW_APIC
+                if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC))
+                    APICUpdatePendingInterrupts(pVCpu);
+#endif
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
                 rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);

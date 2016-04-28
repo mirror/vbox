@@ -34,6 +34,9 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "HMVMXR0.h"
@@ -7436,6 +7439,10 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
              && !pVCpu->hm.s.fSingleInstruction)
     {
+#ifdef VBOX_WITH_NEW_APIC
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC))
+            APICUpdatePendingInterrupts(pVCpu);
+#endif
         Assert(!DBGFIsStepping(pVCpu));
         int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
         AssertRC(rc);

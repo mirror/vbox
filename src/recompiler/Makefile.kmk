@@ -70,6 +70,9 @@ VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H NEED_CPU_H
 ifdef IEM_VERIFICATION_MODE
  VBoxRemPrimary_DEFS          += IEM_VERIFICATION_MODE
 endif
+ifdef VBOX_WITH_NEW_APIC
+ VBoxRemPrimary_DEFS          += VBOX_WITH_NEW_APIC
+endif
 ifdef VBOX_WITH_RAW_MODE
  VBoxRemPrimary_DEFS          += VBOX_WITH_RAW_MODE
 endif
