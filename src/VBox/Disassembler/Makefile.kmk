@@ -43,7 +43,7 @@ DisasmR3Static_EXTENDS  = DisasmR3
 ifndef VBOX_ONLY_VALIDATIONKIT
 
  LIBRARIES              += DisasmBldProg
- DisasmBldProg_TEMPLATE  = VBoxBldProg
+ DisasmBldProg_TEMPLATE  = VBoxAdvBldProg
  DisasmBldProg_EXTENDS   = DisasmR3
 
  LIBRARIES              += DisasmCoreR3
