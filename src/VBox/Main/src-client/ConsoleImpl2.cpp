@@ -1186,16 +1186,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     com::Utf8Str strKey;
                     com::Utf8Str strVal;
                     uPos = strDebugOptions.parseKeyValue(strKey, strVal, uPos);
-                    if (   strKey == "enabled"
-                        && strVal.toUInt32() == 1)
+                    if (strKey == "enabled")
                     {
-                        /* Apply defaults.
-                           The defaults are documented in the user manual,
-                           changes need to be reflected accordingly. */
-                        fGimHvDebug       = true;
-                        strGimHvVendor    = "Microsoft Hv";
-                        fGimHvVsIf        = true;
-                        fGimHvHypercallIf = false;
+                        if (strVal.toUInt32() == 1)
+                        {
+                            /* Apply defaults.
+                               The defaults are documented in the user manual,
+                               changes need to be reflected accordingly. */
+                            fGimHvDebug       = true;
+                            strGimHvVendor    = "Microsoft Hv";
+                            fGimHvVsIf        = true;
+                            fGimHvHypercallIf = false;
+                        }
+                        /* else: ignore, i.e. don't assert below with 'enabled=0'. */
                     }
                     else if (strKey == "address")
                         strGimDebugAddress = strVal;
@@ -3557,7 +3560,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             BOOL f3DEnabled;
             hrc = ptrMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);                  H();
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
-#else  
+#else
             LogRel(("VMSVGA3d not available in this build!\n"));
 #endif
         }
