@@ -7457,15 +7457,11 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
             else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
             {
-                Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC)));
                 if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
                     hmR0VmxApicSetTprThreshold(pVCpu, u8Interrupt >> 4);
             }
             else
-            {
-                Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
-            }
         }
         else
             hmR0VmxSetIntWindowExitVmcs(pVCpu);
