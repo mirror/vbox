@@ -82,11 +82,12 @@ public:
 
     typedef std::list< ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;
 
-    void i_updateDeviceList(USBProxyBackend *pUsbProxyBackend, PUSBDEVICE pDevices);
-    void i_getUSBFilters(USBDeviceFilterList *pGlobalFilters);
-
     HRESULT i_loadSettings(const settings::USBDeviceSourcesList &llUSBDeviceSources);
     HRESULT i_saveSettings(settings::USBDeviceSourcesList &llUSBDeviceSources);
+
+    void i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE aUSBDevice);
+    void i_deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice);
+    void i_updateDeviceState(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE aUSBDevice, bool fFakeUpdate);
 
 protected:
     ComObjPtr<HostUSBDevice> findDeviceById(IN_GUID aId);
@@ -100,6 +101,13 @@ protected:
                                   const std::vector<com::Utf8Str> &aPropertyValues);
 
 private:
+
+    HRESULT runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice,
+                                  SessionMachinesList &llOpenedMachines,
+                                  SessionMachine *aIgnoreMachine);
+    bool runMachineFilters(SessionMachine *aMachine, ComObjPtr<HostUSBDevice> &aDevice);
+
+    void deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, bool fRunFilters, SessionMachine *aIgnoreMachine);
 
     /** Pointer to the Host object. */
     Host *mHost;

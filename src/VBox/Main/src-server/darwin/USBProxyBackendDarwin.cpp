@@ -221,22 +221,6 @@ void USBProxyBackendDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool 
 }
 
 
-/** @todo unused */
-void USBProxyBackendDarwin::detachingDevice(HostUSBDevice *aDevice)
-{
-    NOREF(aDevice);
-}
-
-
-bool USBProxyBackendDarwin::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
-{
-    AssertReturn(aDevice, false);
-    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
-    /* Nothing special here so far, so fall back on parent. */
-    return USBProxyBackend::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-}
-
-
 int USBProxyBackendDarwin::wait(RTMSINTERVAL aMillies)
 {
     SInt32 rc = CFRunLoopRunInMode(CFSTR(VBOX_IOKIT_MODE_STRING),

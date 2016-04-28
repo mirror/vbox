@@ -434,21 +434,6 @@ int USBProxyBackendUsbIp::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyBackendUsbIp::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
-                                             SessionMachine **aIgnoreMachine)
-{
-    AssertReturn(aDevice, false);
-    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
-    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    if (    aUSBDevice->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
-        &&  aDevice->i_getUsbData()->enmState == USBDEVICESTATE_USED_BY_HOST)
-        LogRel(("USBProxy: Device %04x:%04x (%s) has become accessible.\n",
-                aUSBDevice->idVendor, aUSBDevice->idProduct, aUSBDevice->pszAddress));
-    devLock.release();
-    return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-}
-
-
 int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
 {
     int rc = VINF_SUCCESS;
@@ -503,7 +488,8 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
             {
                 if (fEventsRecv & RTPOLL_EVT_READ)
                     rc = receiveData();
-                else if (fEventsRecv & RTPOLL_EVT_ERROR)
+                if (   RT_SUCCESS(rc)
+                    && (fEventsRecv & RTPOLL_EVT_ERROR))
                     rc = VERR_NET_SHUTDOWN;
 
                 if (RT_SUCCESS(rc))

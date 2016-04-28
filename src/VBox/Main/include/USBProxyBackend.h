@@ -66,23 +66,11 @@ public:
      * @{ */
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-    /** @todo unused */
-    virtual void detachingDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
     virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
     /** @} */
 
     static void freeDevice(PUSBDEVICE pDevice);
-
-    HRESULT runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice,
-                                  SessionMachinesList &llOpenedMachines,
-                                  SessionMachine *aIgnoreMachine);
-    bool runMachineFilters(SessionMachine *aMachine, ComObjPtr<HostUSBDevice> &aDevice);
-
-    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
-    virtual void deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice);
-    virtual void deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList *pllOpenedMachines, SessionMachine *aIgnoreMachine);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 protected:
     int start(void);
@@ -93,7 +81,6 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
-    bool updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
     uint32_t incRef();
     uint32_t decRef();
 
@@ -102,6 +89,12 @@ protected:
     static void initFilterFromDevice(PUSBFILTER aFilter, HostUSBDevice *aDevice);
     static void freeDeviceMembers(PUSBDEVICE pDevice);
 
+    /**
+     * Backend specific callback when a device was added.
+     * (Currently only Linux uses it to adjust the udev polling).
+     */
+    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE pDev);
+
 private:
 
     // wrapped IUSBProxyBackend properties
@@ -109,6 +102,8 @@ private:
     HRESULT getType(com::Utf8Str &aType);
 
     static DECLCALLBACK(int) serviceThread(RTTHREAD Thread, void *pvUser);
+
+    void updateDeviceList(PUSBDEVICE pDevices);
 
 protected:
     /** Pointer to the owning USB Proxy Service object. */
@@ -125,6 +120,10 @@ protected:
     const com::Utf8Str m_strBackend;
     /** Reference counter which prevents the backend instance from being removed. */
     uint32_t           m_cRefs;
+    /** List of smart HostUSBDevice pointers. */
+    typedef std::list<ComObjPtr<HostUSBDevice> > HostUSBDeviceList;
+    /** List of the known USB devices for this backend. */
+    HostUSBDeviceList  m_llDevices;
 };
 
 
@@ -152,8 +151,6 @@ public:
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
-    /** @todo unused */
-    virtual void detachingDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
     virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
 
@@ -163,7 +160,6 @@ protected:
     virtual PUSBDEVICE getDevices (void);
     virtual void serviceThreadInit (void);
     virtual void serviceThreadTerm (void);
-    virtual bool updateDeviceState (HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 private:
     /** Reference to the runloop of the service thread.
@@ -207,8 +203,7 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
-    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
+    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE aUSBDevice);
 
 private:
     int waitUsbfs(RTMSINTERVAL aMillies);
@@ -254,7 +249,6 @@ protected:
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
     int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 private:
     /** The notification event semaphore */
@@ -301,7 +295,6 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 private:
     RTSEMEVENT mNotifyEventSem;
@@ -333,7 +326,6 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 private:
 
@@ -364,7 +356,6 @@ protected:
     virtual PUSBDEVICE getDevices(void);
     int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
     virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 private:
     RTSEMEVENT mNotifyEventSem;
@@ -412,7 +403,6 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
-    virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
 private:
     int  updateDeviceList(bool *pfDeviceListChanged);

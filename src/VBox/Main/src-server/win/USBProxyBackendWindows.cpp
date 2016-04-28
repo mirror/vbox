@@ -226,16 +226,6 @@ int USBProxyBackendWindows::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyBackendWindows::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
-                                               SessionMachine **aIgnoreMachine)
-{
-    AssertReturn(aDevice, false);
-    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
-    /* Nothing special here so far, so fall back on parent */
-    return USBProxyBackend::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-}
-
-
 int USBProxyBackendWindows::wait(unsigned aMillies)
 {
     return USBLibWaitChange(aMillies);

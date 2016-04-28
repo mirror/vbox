@@ -268,41 +268,22 @@ int USBProxyBackendLinux::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyBackendLinux::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
-                                             SessionMachine **aIgnoreMachine)
-{
-    AssertReturn(aDevice, false);
-    AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
-    AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    if (    aUSBDevice->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE
-        &&  aDevice->i_getUsbData()->enmState == USBDEVICESTATE_USED_BY_HOST)
-        LogRel(("USBProxy: Device %04x:%04x (%s) has become accessible.\n",
-                aUSBDevice->idVendor, aUSBDevice->idProduct, aUSBDevice->pszAddress));
-    devLock.release();
-    return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-}
-
-
 /**
  * A device was added, we need to adjust mUdevPolls.
- *
- * See USBProxyService::deviceAdded for details.
  */
-void USBProxyBackendLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines,
-                                       PUSBDEVICE aUSBDevice)
+void USBProxyBackendLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE pDev)
 {
     AssertReturnVoid(aDevice);
     AssertReturnVoid(!aDevice->isWriteLockOnCurrentThread());
     AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    if (aUSBDevice->enmState == USBDEVICESTATE_USED_BY_HOST)
+    if (pDev->enmState == USBDEVICESTATE_USED_BY_HOST)
     {
-        LogRel(("USBProxy: Device %04x:%04x (%s) isn't accessible. giving udev a few seconds to fix this...\n",
-                aUSBDevice->idVendor, aUSBDevice->idProduct, aUSBDevice->pszAddress));
+        LogRel(("USBProxyBackendLinux: Device %04x:%04x (%s) isn't accessible. giving udev a few seconds to fix this...\n",
+                pDev->idVendor, pDev->idProduct, pDev->pszAddress));
         mUdevPolls = 10; /* (10 * 500ms = 5s) */
     }
 
     devLock.release();
-    USBProxyBackend::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
 }
 
 
