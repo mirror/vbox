@@ -354,8 +354,7 @@ static void apicR3DbgInfo256BitReg(volatile const XAPIC256BITREG *pApicReg, PCDB
     pHlp->pfnPrintf(pHlp, "\n");
 
     uint32_t cPending = 0;
-    pHlp->pfnPrintf(pHlp, "    Pending:\n");
-    pHlp->pfnPrintf(pHlp, "     ");
+    pHlp->pfnPrintf(pHlp, "    Pending:");
     for (ssize_t i = cFragments - 1; i >= 0; i--)
     {
         uint32_t uFragment = ApicReg.u[i].u32Reg;
@@ -368,7 +367,7 @@ static void apicR3DbgInfo256BitReg(volatile const XAPIC256BITREG *pApicReg, PCDB
                 ASMBitClear(&uFragment, idxSetBit);
 
                 idxSetBit += (i * cBitsPerFragment);
-                pHlp->pfnPrintf(pHlp, " %02x", idxSetBit);
+                pHlp->pfnPrintf(pHlp, " %#02x", idxSetBit);
                 ++cPending;
             } while (uFragment);
         }
@@ -376,6 +375,34 @@ static void apicR3DbgInfo256BitReg(volatile const XAPIC256BITREG *pApicReg, PCDB
     if (!cPending)
         pHlp->pfnPrintf(pHlp, " None");
     pHlp->pfnPrintf(pHlp, "\n");
+}
+
+
+/**
+ * Helper for dumping an APIC pending-interrupt bitmap.
+ *
+ * @param   pApicPib        The pending-interrupt bitmap.
+ * @param   pHlp            The debug output helper.
+ */
+static void apicR3DbgInfoPib(PCAPICPIB pApicPib, PCDBGFINFOHLP pHlp)
+{
+    /* Copy the pending-interrupt bitmap as an APIC 256-bit sparse register. */
+    XAPIC256BITREG ApicReg;
+    RT_ZERO(ApicReg);
+    ssize_t const cFragmentsDst = RT_ELEMENTS(ApicReg.u);
+    ssize_t const cFragmentsSrc = RT_ELEMENTS(pApicPib->aVectorBitmap);
+    AssertCompile(RT_ELEMENTS(ApicReg.u) == 2 * RT_ELEMENTS(pApicPib->aVectorBitmap));
+    for (ssize_t idxPib = cFragmentsSrc - 1, idxReg = cFragmentsDst - 1; idxPib >= 0; idxPib--, idxReg -= 2)
+    {
+        uint64_t const uFragment   = pApicPib->aVectorBitmap[idxPib];
+        uint32_t const uFragmentLo = RT_LO_U32(uFragment);
+        uint32_t const uFragmentHi = RT_HI_U32(uFragment);
+        ApicReg.u[idxReg].u32Reg     = uFragmentHi;
+        ApicReg.u[idxReg - 1].u32Reg = uFragmentLo;
+    }
+
+    /* Dump it. */
+    apicR3DbgInfo256BitReg(&ApicReg, pHlp);
 }
 
 
@@ -440,6 +467,10 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     apicR3DbgInfo256BitReg(&pXApicPage->tmr, pHlp);
     pHlp->pfnPrintf(pHlp, "  IRR\n");
     apicR3DbgInfo256BitReg(&pXApicPage->irr, pHlp);
+    pHlp->pfnPrintf(pHlp, "  PIB\n");
+    apicR3DbgInfoPib((PCAPICPIB)pApicCpu->pvApicPibR3, pHlp);
+    pHlp->pfnPrintf(pHlp, "  Level PIB\n");
+    apicR3DbgInfoPib(&pApicCpu->ApicPibLevel, pHlp);
     pHlp->pfnPrintf(pHlp, "  ESR Internal                  = %#x\n",      pApicCpu->uEsrInternal);
     pHlp->pfnPrintf(pHlp, "  ESR                           = %#x\n",      pXApicPage->esr.all.u32Errors);
     pHlp->pfnPrintf(pHlp, "    Redirectable IPI            = %RTbool\n",  pXApicPage->esr.u.fRedirectableIpi);

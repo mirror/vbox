@@ -2326,7 +2326,8 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
              * disabled but the TPR is raised by the guest before re-enabling interrupts.
              */
             uint8_t const uTpr = pXApicPage->tpr.u8Tpr;
-            if (uTpr > 0 && XAPIC_TPR_GET_TP(uVector) <= XAPIC_TPR_GET_TP(uTpr))
+            if (   uTpr > 0
+                && XAPIC_TPR_GET_TP(uVector) <= XAPIC_TPR_GET_TP(uTpr))
             {
                 Log2(("APIC%u: APICGetInterrupt: Interrupt masked. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
                       uVector, uTpr, pXApicPage->svr.u.u8SpuriousVector));
@@ -2335,7 +2336,8 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
             }
 
             /*
-             * The PPR should be up-to-date at this point and we're on EMT (so no parallel updates).
+             * The PPR should be up-to-date at this point through apicSetEoi().
+             * We're on EMT so no parallel updates possible.
              * Subject the pending vector to PPR prioritization.
              */
             uint8_t const uPpr = pXApicPage->ppr.u8Ppr;
