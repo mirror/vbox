@@ -1315,6 +1315,7 @@ RuntimeBldProg_BLD_TRG_CPU     := $(KBUILD_HOST_CPU)
 RuntimeBldProg_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
 RuntimeBldProg_SOURCES          = $(filter-out \
 	r3/xml.cpp \
+       common/misc/buildconfig.cpp \
 	common/zip/xarvfs.cpp \
 	, $(RuntimeR3_SOURCES))
 if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" != "win"
