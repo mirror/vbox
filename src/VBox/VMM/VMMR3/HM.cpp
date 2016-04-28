@@ -826,6 +826,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMtf,                "/HM/CPU%d/Exit/MonitorTrapFlag", "Monitor Trap Flag.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccess,         "/HM/CPU%d/Exit/ApicAccess", "APIC access. Guest attempted to access memory at a physical address on the APIC-access page.");
 
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchTprMaskedIrq,     "/HM/CPU%d/Switch/TprMaskedIrq", "PDMGetInterrupt() signals TPR masks pending Irq.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending", "PDMGetInterrupt() cleared behind our back!?!.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatPendingHostIrq,         "/HM/CPU%d/Switch/PendingHostIrq", "Exit to ring-3 due to pending host interrupt before executing guest code.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHmToR3FF,         "/HM/CPU%d/Switch/HmToR3FF", "Exit to ring-3 due to pending timers, EMT rendezvous, critical section etc.");

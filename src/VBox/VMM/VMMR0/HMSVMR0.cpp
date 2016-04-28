@@ -2686,6 +2686,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
                  * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
                  * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
                  */
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
             }
             else
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);

@@ -7459,6 +7459,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
                     hmR0VmxApicSetTprThreshold(pVCpu, u8Interrupt >> 4);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
             }
             else
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
