@@ -522,7 +522,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                 }
                 else if (rc == VERR_NET_SHUTDOWN || rc == VERR_BROKEN_PIPE)
                 {
-                    LogRelMax(10, ("USB/IP: Lost connection to host \"%s\", trying to reconnect...\n", m->pszHost));
+                    Log(("USB/IP: Lost connection to host \"%s\", trying to reconnect...\n", m->pszHost));
                     disconnect();
                     rc = VINF_SUCCESS;
                 }
@@ -684,7 +684,7 @@ int USBProxyBackendUsbIp::reconnect()
     {
         rc = RTTcpSetSendCoalescing(m->hSocket, false);
         if (RT_FAILURE(rc))
-            LogRel(("USB/IP: Disabling send coalescing failed (rc=%Rrc), continuing nevertheless but expect increased latency\n", rc));
+            LogRelMax(5, ("USB/IP: Disabling send coalescing failed (rc=%Rrc), continuing nevertheless but expect increased latency\n", rc));
 
         rc = RTPollSetAddSocket(m->hPollSet, m->hSocket, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
                                 USBIP_POLL_ID_SOCKET);
@@ -694,7 +694,7 @@ int USBProxyBackendUsbIp::reconnect()
             m->hSocket = NIL_RTSOCKET;
         }
         else
-            LogRel(("USB/IP: Connected to host \"%s\"\n", m->pszHost));
+            LogFlowFunc(("Connected to host \"%s\"\n", m->pszHost));
     }
 
     return rc;
@@ -832,7 +832,10 @@ int USBProxyBackendUsbIp::processData()
                 LogRelMax(10, ("USB/IP: Host sent an invalid reply to the list exported device request (Version: %#x Cmd: %#x Status: %#x)\n",
                                RT_N2H_U16(m->Scratch.RetDevList.u16Version), RT_N2H_U16(m->Scratch.RetDevList.u16Cmd),
                                RT_N2H_U32(m->Scratch.RetDevList.u32Status)));
-                rc = VERR_INVALID_STATE;
+                /* Disconnect and start over. */
+                advanceState(kUsbIpRecvState_None);
+                disconnect();
+                rc = VERR_NET_SHUTDOWN;
             }
             break;
         }
