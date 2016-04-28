@@ -94,6 +94,7 @@ protected:
      * (Currently only Linux uses it to adjust the udev polling).
      */
     virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE pDev);
+    virtual bool isFakeUpdateRequired();
 
 private:
 
@@ -204,6 +205,7 @@ protected:
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
     virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDEVICE aUSBDevice);
+    virtual bool isFakeUpdateRequired();
 
 private:
     int waitUsbfs(RTMSINTERVAL aMillies);
@@ -403,6 +405,7 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
+    virtual bool isFakeUpdateRequired();
 
 private:
     int  updateDeviceList(bool *pfDeviceListChanged);

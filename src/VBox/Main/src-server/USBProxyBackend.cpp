@@ -232,6 +232,11 @@ void USBProxyBackend::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSucce
 }
 
 
+bool USBProxyBackend::isFakeUpdateRequired()
+{
+    return false;
+}
+
 // Internals
 /////////////////////////////////////////////////////////////////////////////
 
@@ -660,12 +665,7 @@ void USBProxyBackend::updateDeviceList(PUSBDEVICE pDevices)
 
             devLock.release();
             alock.release();
-            /** @todo: Add mthod for every backend indicating whether to use fake updating. */
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-            m_pUsbProxyService->i_updateDeviceState(pHostDevice, pCur, true /* fFakeUpdate */);
-#else
-            m_pUsbProxyService->i_updateDeviceState(pHostDevice, pCur, false /* fFakeUpdate */);
-#endif
+            m_pUsbProxyService->i_updateDeviceState(pHostDevice, pCur, isFakeUpdateRequired());
             alock.acquire();
             ++it;
         }

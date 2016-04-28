@@ -287,6 +287,11 @@ void USBProxyBackendLinux::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, PUSBDE
 }
 
 
+bool USBProxyBackendLinux::isFakeUpdateRequired()
+{
+    return true;
+}
+
 int USBProxyBackendLinux::wait(RTMSINTERVAL aMillies)
 {
     int rc;

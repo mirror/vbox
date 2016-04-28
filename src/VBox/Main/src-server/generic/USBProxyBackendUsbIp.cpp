@@ -434,6 +434,12 @@ int USBProxyBackendUsbIp::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
+bool USBProxyBackendUsbIp::isFakeUpdateRequired()
+{
+    return true;
+}
+
+
 int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
 {
     int rc = VINF_SUCCESS;
