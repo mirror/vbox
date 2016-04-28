@@ -368,9 +368,11 @@ int main(int argc, char **argv)
                          , RTProcShortName(), RTProcShortName());
                 return RTEXITCODE_SUCCESS;
 
+#ifndef IN_BLD_PROG  /* RTBldCfgVersion or RTBldCfgRevision in build time IPRT lib. */
             case 'V':
                 RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
                 return RTEXITCODE_SUCCESS;
+#endif
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);

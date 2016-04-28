@@ -829,8 +829,12 @@ static RTEXITCODE HelpVersion(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 
 static RTEXITCODE HandleVersion(int cArgs, char **papszArgs)
 {
+#ifndef IN_BLD_PROG  /* RTBldCfgVersion or RTBldCfgRevision in build time IPRT lib. */
     RTPrintf("%s\n", RTBldCfgVersion());
     return RTEXITCODE_SUCCESS;
+#else
+    return RTEXITCODE_FAILURE;
+#endif
 }
 
 
