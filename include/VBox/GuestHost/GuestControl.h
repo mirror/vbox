@@ -72,10 +72,10 @@ enum eProcessStatus
  */
 #define SESSIONCREATIONFLAG_NONE            0x0
 
-/**
- * Guest directory removement flags.
+/** @name DIRREMOVE_FLAG_XXX - Guest directory removement flags.
  * Essentially using what IPRT's RTDIRRMREC_F_
  * defines have to offer.
+ * @{
  */
 #define DIRREMOVE_FLAG_RECURSIVE            RT_BIT(0)
 /** Delete the content of the directory and the directory itself. */
@@ -84,33 +84,35 @@ enum eProcessStatus
 #define DIRREMOVE_FLAG_CONTENT_ONLY         RT_BIT(2)
 /** Mask of valid flags. */
 #define DIRREMOVE_FLAG_VALID_MASK           UINT32_C(0x00000003)
+/** @}   */
 
-/** @name EXECUTEPROCESSFLAG_XXX Guest process creation flags.
+/** @name EXECUTEPROCESSFLAG_XXX - Guest process creation flags.
  * @note Has to match Main's ProcessCreateFlag_* flags!
+ * @{
  */
 #define EXECUTEPROCESSFLAG_NONE             UINT32_C(0x0)
 #define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(0)
 #define EXECUTEPROCESSFLAG_IGNORE_ORPHANED  RT_BIT(1)
 #define EXECUTEPROCESSFLAG_HIDDEN           RT_BIT(2)
-#define EXECUTEPROCESSFLAG_NO_PROFILE       RT_BIT(3) /** @todo Rename to EXECUTEPROCESSFLAG_PROFILE in next API change. */
+#define EXECUTEPROCESSFLAG_NO_PROFILE       RT_BIT(3) /**< @todo Rename to EXECUTEPROCESSFLAG_PROFILE in next API change. */
 #define EXECUTEPROCESSFLAG_WAIT_STDOUT      RT_BIT(4)
 #define EXECUTEPROCESSFLAG_WAIT_STDERR      RT_BIT(5)
 #define EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS RT_BIT(6)
 #define EXECUTEPROCESSFLAG_UNQUOTED_ARGS    RT_BIT(7)
 /** @} */
 
-/**
- * Pipe handle IDs used internally for referencing to
- * a certain pipe buffer.
+/** @name OUTPUT_HANDLE_ID_XXX - Pipe handle IDs used internally for referencing
+ *        to a certain pipe buffer.
+ * @{
  */
-#define OUTPUT_HANDLE_ID_STDOUT_DEPRECATED  0 /* Needed for VBox hosts < 4.1.0. */
+#define OUTPUT_HANDLE_ID_STDOUT_DEPRECATED  0 /**< Needed for VBox hosts < 4.1.0. */
 #define OUTPUT_HANDLE_ID_STDOUT             1
 #define OUTPUT_HANDLE_ID_STDERR             2
+/** @} */
 
-/**
- * Guest path rename flags.
- * Essentially using what IPRT's RTPATHRENAME_FLAGS_
- * defines have to offer.
+/** @name PATHRENAME_FLAG_XXX - Guest path rename flags.
+ * Essentially using what IPRT's RTPATHRENAME_FLAGS_XXX have to offer.
+ * @{
  */
 /** Do not replace anything. */
 #define PATHRENAME_FLAG_NO_REPLACE          UINT32_C(0)
@@ -120,9 +122,10 @@ enum eProcessStatus
 #define PATHRENAME_FLAG_NO_SYMLINKS         RT_BIT(1)
 /** Mask of valid flags. */
 #define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000002)
+/** @} */
 
-/**
- * Defines for guest process array lengths.
+/** @name Defines for guest process array lengths.
+ * @{
  */
 #define GUESTPROCESS_MAX_CMD_LEN            _1K
 #define GUESTPROCESS_MAX_ARGS_LEN           _1K
@@ -130,9 +133,10 @@ enum eProcessStatus
 #define GUESTPROCESS_MAX_USER_LEN           128
 #define GUESTPROCESS_MAX_PASSWORD_LEN       128
 #define GUESTPROCESS_MAX_DOMAIN_LEN         256
+/** @} */
 
-/** @name Internal tools built into VBoxService which are used in order to
- *        accomplish tasks host<->guest.
+/** @name Internal tools built into VBoxService which are used in order
+ *        to accomplish tasks host<->guest.
  * @{
  */
 #define VBOXSERVICE_TOOL_CAT        "vbox_cat"
