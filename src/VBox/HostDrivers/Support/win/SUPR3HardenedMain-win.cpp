@@ -367,8 +367,10 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_ZONE_ALARM              RT_BIT_32(12)
 /** Digital guardian.  */
 #define SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN        RT_BIT_32(13)
-/** Cylance protect or something (from googling, no available sample copy ).  */
-#define SUPHARDNT_CYLANCE                           RT_BIT_32(14)
+/** Cylance protect or something (from googling, no available sample copy). */
+#define SUPHARDNT_ADVERSARY_CYLANCE                 RT_BIT_32(14)
+/** BeyondTrust / PowerBroker / something (googling, no available sample copy). */
+#define SUPHARDNT_ADVERSARY_BEYONDTRUST             RT_BIT_32(15)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -5221,7 +5223,9 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 
         { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN,     "dgmaster" }, /* Not verified. */
 
-        { SUPHARDNT_CYLANCE,                        "cyprotectdrv" }, /* Not verified. */
+        { SUPHARDNT_ADVERSARY_CYLANCE,              "cyprotectdrv" }, /* Not verified. */
+
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST,          "privman" }, /* Not verified. */
     };
 
     static const struct
@@ -5337,8 +5341,12 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 
         { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN, L"\\SystemRoot\\System32\\drivers\\dgmaster.sys" },
 
-        { SUPHARDNT_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv32.sys" },
-        { SUPHARDNT_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv64.sys" },
+        { SUPHARDNT_ADVERSARY_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv32.sys" },
+        { SUPHARDNT_ADVERSARY_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv64.sys" },
+
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\drivers\\privman.sys" },
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\privman64.dll" },
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\privman32.dll" },
     };
 
     uint32_t fFound = 0;
