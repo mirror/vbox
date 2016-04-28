@@ -360,7 +360,7 @@ static size_t bs3StrFormatS16(PBS3FMTSTATE pState, int16_t iValue)
 
 #undef Bs3StrFormatV
 BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
-                               PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser))
+                                   PFNBS3STRFORMATOUTPUT pfnOutput, void BS3_FAR *pvUser))
 {
     BS3FMTSTATE State;
     size_t      cchRet = 0;
