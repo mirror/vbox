@@ -177,6 +177,24 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2, BS3
 AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2) == BS3_IF_64BIT_OTHERWISE(10,12))
 BS3_PROC_END_CMN   bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2
 
+%if TMPL_BITS == 16
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lidt_opsize_bx__sidt32_es_di__lidt_es_si__ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        lidt    [xBX]
+        jmp     dword BS3_SEL_R0_CS32:.in_32bit wrt FLAT
+        BS3_SET_BITS 32
+.in_32bit:
+        sidt    [es:edi]
+        lidt    [es:esi]
+        jmp     dword BS3_SEL_R0_CS16:.again wrt CGROUP16
+        BS3_SET_BITS 16
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lidt_opsize_bx__sidt32_es_di__lidt_es_si__ud2) == 27)
+BS3_PROC_END_CMN   bs3CpuBasic2_lidt_opsize_bx__sidt32_es_di__lidt_es_si__ud2
+%endif
+
  %if TMPL_BITS == 64
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_lidt_rexw_bx__sidt_es_di__lidt_es_si__ud2, BS3_PBC_NEAR
         db      X86_OP_REX_W
@@ -223,6 +241,79 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2, 
         jmp     .again
 AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2) == 13)
 BS3_PROC_END_CMN   bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2
+ %endif
+
+
+;
+; LGDT
+;
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2, BS3_PBC_NEAR
+        lgdt    [xBX]
+        sgdt    [BS3_NOT_64BIT(es:) xDI]
+        lgdt    [BS3_NOT_64BIT(es:) xSI]
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2) == BS3_IF_64BIT_OTHERWISE(9,11))
+BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        lgdt    [xBX]
+        sgdt    [BS3_NOT_64BIT(es:) xDI]
+        lgdt    [BS3_NOT_64BIT(es:) xSI]
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2) == BS3_IF_64BIT_OTHERWISE(10,12))
+BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2
+
+ %if TMPL_BITS == 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_rexw_bx__sgdt_es_di__lgdt_es_si__ud2, BS3_PBC_NEAR
+        db      X86_OP_REX_W
+        lgdt    [xBX]
+        sgdt    [xDI]
+        lgdt    [xSI]
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_rexw_bx__sgdt_es_di__lgdt_es_si__ud2) == 10)
+BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_rexw_bx__sgdt_es_di__lgdt_es_si__ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_opsize_rexw_bx__sgdt_es_di__lgdt_es_si__ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        db      X86_OP_REX_W
+        lgdt    [xBX]
+        sgdt    [xDI]
+        lgdt    [xSI]
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_opsize_rexw_bx__sgdt_es_di__lgdt_es_si__ud2) == 11)
+BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_opsize_rexw_bx__sgdt_es_di__lgdt_es_si__ud2
+ %endif
+
+ %if TMPL_BITS != 64
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2, BS3_PBC_NEAR
+        lgdt    [ss:xBX]
+        sgdt    [BS3_NOT_64BIT(es:) xDI]
+        lgdt    [BS3_NOT_64BIT(es:) xSI]
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2) == 12)
+BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2
+
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2, BS3_PBC_NEAR
+        db      X86_OP_PRF_SIZE_OP
+        lgdt    [ss:xBX]
+        sgdt    [BS3_NOT_64BIT(es:) xDI]
+        lgdt    [BS3_NOT_64BIT(es:) xSI]
+.again:
+        ud2
+        jmp     .again
+AssertCompile(.again - BS3_CMN_NM(bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2) == 13)
+BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2
  %endif
 
 

@@ -59,6 +59,7 @@ static const BS3TESTMODEENTRY g_aModeTest[] =
     BS3TESTMODEENTRY_MODE("sgdt", bs3CpuBasic2_sgdt),
 #endif
     BS3TESTMODEENTRY_MODE("lidt", bs3CpuBasic2_lidt),
+    BS3TESTMODEENTRY_MODE("lgdt", bs3CpuBasic2_lgdt),
 };
 
 

@@ -47,6 +47,8 @@
 #ifdef BS3_INSTANTIATING_CMN
 /** Indicating that we've got operand size prefix and that it matters. */
 # define BS3CB2SIDTSGDT_F_OPSIZE    UINT8_C(0x01)
+/** Worker requires 386 or later. */
+# define BS3CB2SIDTSGDT_F_386PLUS   UINT8_C(0x02)
 #endif
 
 #ifdef BS3_INSTANTIATING_MODE
@@ -91,6 +93,7 @@ typedef struct BS3CB2INVLDESCTYPE
 
 typedef struct BS3CB2SIDTSGDT
 {
+    const char *pszDesc;
     FPFNBS3FAR  fpfnWorker;
     uint8_t     cbInstr;
     bool        fSs;
@@ -145,11 +148,25 @@ extern FNBS3FAR     bs3CpuBasic2_lidt_ss_bx__sidt_es_di__lidt_es_si__ud2_c16;
 extern FNBS3FAR     bs3CpuBasic2_lidt_ss_bx__sidt_es_di__lidt_es_si__ud2_c32;
 extern FNBS3FAR     bs3CpuBasic2_lidt_rexw_bx__sidt_es_di__lidt_es_si__ud2_c64;
 extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c16;
+extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_bx__sidt32_es_di__lidt_es_si__ud2_c16;
 extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c32;
 extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c64;
 extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2_c16;
 extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2_c32;
 extern FNBS3FAR     bs3CpuBasic2_lidt_opsize_rexw_bx__sidt_es_di__lidt_es_si__ud2_c64;
+
+extern FNBS3FAR     bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2_c16;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2_c32;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2_c64;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c16;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c32;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_rexw_bx__sgdt_es_di__lgdt_es_si__ud2_c64;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2_c16;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2_c32;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2_c64;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c16;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c32;
+extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_rexw_bx__sgdt_es_di__lgdt_es_si__ud2_c64;
 
 #endif
 
@@ -169,52 +186,70 @@ static bool                 g_f16BitSys = 1;
 /** SIDT test workers. */
 static BS3CB2SIDTSGDT const g_aSidtWorkers[] =
 {
-    { bs3CpuBasic2_sidt_bx_ud2_c16,             3, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sidt_ss_bx_ud2_c16,          4, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sidt_opsize_bx_ud2_c16,      4, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sidt_opsize_ss_bx_ud2_c16,   5, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sidt_bx_ud2_c32,             3, false,   BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sidt_ss_bx_ud2_c32,          4, true,    BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sidt_opsize_bx_ud2_c32,      4, false,   BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sidt_opsize_ss_bx_ud2_c32,   5, true,    BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sidt_bx_ud2_c64,             3, false,   BS3_MODE_CODE_64 },
-    { bs3CpuBasic2_sidt_rexw_bx_ud2_c64,        4, false,   BS3_MODE_CODE_64 },
-    { bs3CpuBasic2_sidt_opsize_bx_ud2_c64,      4, false,   BS3_MODE_CODE_64 },
-    { bs3CpuBasic2_sidt_opsize_rexw_bx_ud2_c64, 5, false,   BS3_MODE_CODE_64 },
+    { "", bs3CpuBasic2_sidt_bx_ud2_c16,             3, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "", bs3CpuBasic2_sidt_ss_bx_ud2_c16,          4, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "", bs3CpuBasic2_sidt_opsize_bx_ud2_c16,      4, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_386PLUS },
+    { "", bs3CpuBasic2_sidt_opsize_ss_bx_ud2_c16,   5, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_386PLUS },
+    { "", bs3CpuBasic2_sidt_bx_ud2_c32,             3, false,   BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sidt_ss_bx_ud2_c32,          4, true,    BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sidt_opsize_bx_ud2_c32,      4, false,   BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sidt_opsize_ss_bx_ud2_c32,   5, true,    BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sidt_bx_ud2_c64,             3, false,   BS3_MODE_CODE_64, 0 },
+    { "", bs3CpuBasic2_sidt_rexw_bx_ud2_c64,        4, false,   BS3_MODE_CODE_64, 0 },
+    { "", bs3CpuBasic2_sidt_opsize_bx_ud2_c64,      4, false,   BS3_MODE_CODE_64, 0 },
+    { "", bs3CpuBasic2_sidt_opsize_rexw_bx_ud2_c64, 5, false,   BS3_MODE_CODE_64, 0 },
 };
 
 /** SGDT test workers. */
 static BS3CB2SIDTSGDT const g_aSgdtWorkers[] =
 {
-    { bs3CpuBasic2_sgdt_bx_ud2_c16,             3, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sgdt_ss_bx_ud2_c16,          4, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sgdt_opsize_bx_ud2_c16,      4, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sgdt_opsize_ss_bx_ud2_c16,   5, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86 },
-    { bs3CpuBasic2_sgdt_bx_ud2_c32,             3, false,   BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sgdt_ss_bx_ud2_c32,          4, true,    BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sgdt_opsize_bx_ud2_c32,      4, false,   BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sgdt_opsize_ss_bx_ud2_c32,   5, true,    BS3_MODE_CODE_32 },
-    { bs3CpuBasic2_sgdt_bx_ud2_c64,             3, false,   BS3_MODE_CODE_64 },
-    { bs3CpuBasic2_sgdt_rexw_bx_ud2_c64,        4, false,   BS3_MODE_CODE_64 },
-    { bs3CpuBasic2_sgdt_opsize_bx_ud2_c64,      4, false,   BS3_MODE_CODE_64 },
-    { bs3CpuBasic2_sgdt_opsize_rexw_bx_ud2_c64, 5, false,   BS3_MODE_CODE_64 },
+    { "", bs3CpuBasic2_sgdt_bx_ud2_c16,             3, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "", bs3CpuBasic2_sgdt_ss_bx_ud2_c16,          4, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "", bs3CpuBasic2_sgdt_opsize_bx_ud2_c16,      4, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_386PLUS },
+    { "", bs3CpuBasic2_sgdt_opsize_ss_bx_ud2_c16,   5, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_386PLUS },
+    { "", bs3CpuBasic2_sgdt_bx_ud2_c32,             3, false,   BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sgdt_ss_bx_ud2_c32,          4, true,    BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sgdt_opsize_bx_ud2_c32,      4, false,   BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sgdt_opsize_ss_bx_ud2_c32,   5, true,    BS3_MODE_CODE_32, 0 },
+    { "", bs3CpuBasic2_sgdt_bx_ud2_c64,             3, false,   BS3_MODE_CODE_64, 0 },
+    { "", bs3CpuBasic2_sgdt_rexw_bx_ud2_c64,        4, false,   BS3_MODE_CODE_64, 0 },
+    { "", bs3CpuBasic2_sgdt_opsize_bx_ud2_c64,      4, false,   BS3_MODE_CODE_64, 0 },
+    { "", bs3CpuBasic2_sgdt_opsize_rexw_bx_ud2_c64, 5, false,   BS3_MODE_CODE_64, 0 },
 };
 
 /** LIDT test workers. */
 static BS3CB2SIDTSGDT const g_aLidtWorkers[] =
 {
-    { bs3CpuBasic2_lidt_bx__sidt_es_di__lidt_es_si__ud2_c16,             11, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
-    { bs3CpuBasic2_lidt_ss_bx__sidt_es_di__lidt_es_si__ud2_c16,          12, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
-    { bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c16,      12, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
-    { bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2_c16,   13, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
-    { bs3CpuBasic2_lidt_bx__sidt_es_di__lidt_es_si__ud2_c32,             11, false,   BS3_MODE_CODE_32, 0 },
-    { bs3CpuBasic2_lidt_ss_bx__sidt_es_di__lidt_es_si__ud2_c32,          12, true,    BS3_MODE_CODE_32, 0 },
-    { bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c32,      12, false,   BS3_MODE_CODE_32, BS3CB2SIDTSGDT_F_OPSIZE },
-    { bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2_c32,   13, true,    BS3_MODE_CODE_32, BS3CB2SIDTSGDT_F_OPSIZE },
-    { bs3CpuBasic2_lidt_bx__sidt_es_di__lidt_es_si__ud2_c64,              9, false,   BS3_MODE_CODE_64, 0 },
-    { bs3CpuBasic2_lidt_rexw_bx__sidt_es_di__lidt_es_si__ud2_c64,        10, false,   BS3_MODE_CODE_64, 0 },
-    { bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c64,      10, false,   BS3_MODE_CODE_64, 0 },
-    { bs3CpuBasic2_lidt_opsize_rexw_bx__sidt_es_di__lidt_es_si__ud2_c64, 11, false,   BS3_MODE_CODE_64, 0 },
+    { "lidt [bx]",              bs3CpuBasic2_lidt_bx__sidt_es_di__lidt_es_si__ud2_c16,             11, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "lidt [ss:bx]",           bs3CpuBasic2_lidt_ss_bx__sidt_es_di__lidt_es_si__ud2_c16,          12, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "o32 lidt [bx]",          bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c16,      12, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_OPSIZE | BS3CB2SIDTSGDT_F_386PLUS },
+    { "o32 lidt [bx]; sidt32",  bs3CpuBasic2_lidt_opsize_bx__sidt32_es_di__lidt_es_si__ud2_c16,    27, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_OPSIZE | BS3CB2SIDTSGDT_F_386PLUS },
+    { "o32 lidt [ss:bx]",       bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2_c16,   13, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_OPSIZE | BS3CB2SIDTSGDT_F_386PLUS },
+    { "lidt [ebx]",             bs3CpuBasic2_lidt_bx__sidt_es_di__lidt_es_si__ud2_c32,             11, false,   BS3_MODE_CODE_32, 0 },
+    { "lidt [ss:ebx]",          bs3CpuBasic2_lidt_ss_bx__sidt_es_di__lidt_es_si__ud2_c32,          12, true,    BS3_MODE_CODE_32, 0 },
+    { "o16 lidt [ebx]",         bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c32,      12, false,   BS3_MODE_CODE_32, BS3CB2SIDTSGDT_F_OPSIZE },
+    { "o16 lidt [ss:ebx]",      bs3CpuBasic2_lidt_opsize_ss_bx__sidt_es_di__lidt_es_si__ud2_c32,   13, true,    BS3_MODE_CODE_32, BS3CB2SIDTSGDT_F_OPSIZE },
+    { "lidt [rbx]",             bs3CpuBasic2_lidt_bx__sidt_es_di__lidt_es_si__ud2_c64,              9, false,   BS3_MODE_CODE_64, 0 },
+    { "o64 lidt [rbx]",         bs3CpuBasic2_lidt_rexw_bx__sidt_es_di__lidt_es_si__ud2_c64,        10, false,   BS3_MODE_CODE_64, 0 },
+    { "o32 lidt [rbx]",         bs3CpuBasic2_lidt_opsize_bx__sidt_es_di__lidt_es_si__ud2_c64,      10, false,   BS3_MODE_CODE_64, 0 },
+    { "o32 o64 lidt [rbx]",     bs3CpuBasic2_lidt_opsize_rexw_bx__sidt_es_di__lidt_es_si__ud2_c64, 11, false,   BS3_MODE_CODE_64, 0 },
+};
+
+/** LGDT test workers. */
+static BS3CB2SIDTSGDT const g_aLgdtWorkers[] =
+{
+    { "lgdt [bx]",              bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2_c16,             11, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "lgdt [ss:bx]",           bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c16,          12, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, 0 },
+    { "o32 lgdt [bx]",          bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2_c16,      12, false,   BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_OPSIZE | BS3CB2SIDTSGDT_F_386PLUS },
+    { "o32 lgdt [ss:bx]",       bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c16,   13, true,    BS3_MODE_CODE_16 | BS3_MODE_CODE_V86, BS3CB2SIDTSGDT_F_OPSIZE | BS3CB2SIDTSGDT_F_386PLUS },
+    { "lgdt [ebx]",             bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2_c32,             11, false,   BS3_MODE_CODE_32, 0 },
+    { "lgdt [ss:ebx]",          bs3CpuBasic2_lgdt_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c32,          12, true,    BS3_MODE_CODE_32, 0 },
+    { "o16 lgdt [ebx]",         bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2_c32,      12, false,   BS3_MODE_CODE_32, BS3CB2SIDTSGDT_F_OPSIZE },
+    { "o16 lgdt [ss:ebx]",      bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2_c32,   13, true,    BS3_MODE_CODE_32, BS3CB2SIDTSGDT_F_OPSIZE },
+    { "lgdt [rbx]",             bs3CpuBasic2_lgdt_bx__sgdt_es_di__lgdt_es_si__ud2_c64,              9, false,   BS3_MODE_CODE_64, 0 },
+    { "o64 lgdt [rbx]",         bs3CpuBasic2_lgdt_rexw_bx__sgdt_es_di__lgdt_es_si__ud2_c64,        10, false,   BS3_MODE_CODE_64, 0 },
+    { "o32 lgdt [rbx]",         bs3CpuBasic2_lgdt_opsize_bx__sgdt_es_di__lgdt_es_si__ud2_c64,      10, false,   BS3_MODE_CODE_64, 0 },
+    { "o32 o64 lgdt [rbx]",     bs3CpuBasic2_lgdt_opsize_rexw_bx__sgdt_es_di__lgdt_es_si__ud2_c64, 11, false,   BS3_MODE_CODE_64, 0 },
 };
 
 
@@ -2025,6 +2060,73 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_Common(uint8_t bTestMode, BS3CB2SIDTS
 BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWorker, uint8_t bTestMode, uint8_t bRing,
                                                uint8_t const *pbRestore, size_t cbRestore, uint8_t const *pbExpected)
 {
+    static const struct
+    {
+        bool        fGP;
+        uint16_t    cbLimit;
+        uint64_t    u64Base;
+    } s_aValues64[] =
+    {
+        { false, 0x0000, UINT64_C(0x0000000000000000) },
+        { false, 0x0001, UINT64_C(0x0000000000000001) },
+        { false, 0x0002, UINT64_C(0x0000000000000010) },
+        { false, 0x0003, UINT64_C(0x0000000000000123) },
+        { false, 0x0004, UINT64_C(0x0000000000001234) },
+        { false, 0x0005, UINT64_C(0x0000000000012345) },
+        { false, 0x0006, UINT64_C(0x0000000000123456) },
+        { false, 0x0007, UINT64_C(0x0000000001234567) },
+        { false, 0x0008, UINT64_C(0x0000000012345678) },
+        { false, 0x0009, UINT64_C(0x0000000123456789) },
+        { false, 0x000a, UINT64_C(0x000000123456789a) },
+        { false, 0x000b, UINT64_C(0x00000123456789ab) },
+        { false, 0x000c, UINT64_C(0x0000123456789abc) },
+        { false, 0x001c, UINT64_C(0x00007ffffeefefef) },
+        { false, 0xffff, UINT64_C(0x00007fffffffffff) },
+        {  true, 0xf3f1, UINT64_C(0x0000800000000000) },
+        {  true, 0x0000, UINT64_C(0x0000800000000000) },
+        {  true, 0x0000, UINT64_C(0x0000800000000333) },
+        {  true, 0x00f0, UINT64_C(0x0001000000000000) },
+        {  true, 0x0ff0, UINT64_C(0x0012000000000000) },
+        {  true, 0x0eff, UINT64_C(0x0123000000000000) },
+        {  true, 0xe0fe, UINT64_C(0x1234000000000000) },
+        {  true, 0x00ad, UINT64_C(0xffff300000000000) },
+        {  true, 0x0000, UINT64_C(0xffff7fffffffffff) },
+        {  true, 0x00f0, UINT64_C(0xffff7fffffffffff) },
+        { false, 0x5678, UINT64_C(0xffff800000000000) },
+        { false, 0x2969, UINT64_C(0xffffffffffeefefe) },
+        { false, 0x1221, UINT64_C(0xffffffffffffffff) },
+        { false, 0x1221, UINT64_C(0xffffffffffffffff) },
+    };
+    static const struct
+    {
+        uint16_t    cbLimit;
+        uint32_t    u32Base;
+    } s_aValues32[] =
+    {
+        { 0xdfdf, UINT32_C(0xefefefef) },
+        { 0x0000, UINT32_C(0x00000000) },
+        { 0x0001, UINT32_C(0x00000001) },
+        { 0x0002, UINT32_C(0x00000012) },
+        { 0x0003, UINT32_C(0x00000123) },
+        { 0x0004, UINT32_C(0x00001234) },
+        { 0x0005, UINT32_C(0x00012345) },
+        { 0x0006, UINT32_C(0x00123456) },
+        { 0x0007, UINT32_C(0x01234567) },
+        { 0x0008, UINT32_C(0x12345678) },
+        { 0x0009, UINT32_C(0x80204060) },
+        { 0x000a, UINT32_C(0xddeeffaa) },
+        { 0x000b, UINT32_C(0xfdecdbca) },
+        { 0x000c, UINT32_C(0x6098456b) },
+        { 0x000d, UINT32_C(0x98506099) },
+        { 0x000e, UINT32_C(0x206950bc) },
+        { 0x000f, UINT32_C(0x9740395d) },
+        { 0x0334, UINT32_C(0x64a9455e) },
+        { 0xb423, UINT32_C(0xd20b6eff) },
+        { 0x4955, UINT32_C(0x85296d46) },
+        { 0xffff, UINT32_C(0x07000039) },
+        { 0xefe1, UINT32_C(0x0007fe00) },
+    };
+
     BS3TRAPFRAME        TrapCtx;
     BS3REGCTX           Ctx;
     BS3REGCTX           CtxUdExpected;
@@ -2036,16 +2138,15 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
     uint8_t BS3_FAR    *pbBufSave;              /* Correctly aligned pointer into abBufSave. */
     uint8_t BS3_FAR    *pbBufRestore;           /* Correctly aligned pointer into abBufRestore. */
     uint8_t const       cbIdtr        = BS3_MODE_IS_64BIT_CODE(bTestMode) ? 2+8 : 2+4;
-    uint8_t const       cbBaseLoaded  = BS3_MODE_IS_16BIT_CODE(bTestMode) || (pWorker->fFlags & BS3CB2SIDTSGDT_F_OPSIZE)
-                                      ? 3 : cbIdtr - 2;
+    uint8_t const       cbBaseLoaded  = BS3_MODE_IS_64BIT_CODE(bTestMode) ? 8
+                                      : BS3_MODE_IS_16BIT_CODE(bTestMode) == !(pWorker->fFlags & BS3CB2SIDTSGDT_F_OPSIZE)
+                                      ? 3 : 4;
     bool const          f286          = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) == BS3CPU_80286;
     uint8_t const       bTop16BitBase = f286 ? 0xff : 0x00;
     uint8_t             bFiller1;               /* For filling abBufLoad.  */
     uint8_t             bFiller2;               /* For filling abBufSave and expectations. */
-//    int                 off;
-//    int                 off2;
-//    unsigned            cb;
-//    uint8_t BS3_FAR    *pbTest;
+    int                 off;
+    uint8_t BS3_FAR    *pbTest;
     unsigned            i;
 
     /* make sure they're allocated  */
@@ -2068,6 +2169,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
     Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, pWorker->fpfnWorker);
     if (BS3_MODE_IS_16BIT_SYS(bTestMode))
         g_uBs3TrapEipHint = Ctx.rip.u32;
+    Ctx.rflags.u16 &= ~X86_EFL_IF;
     Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, abBufLoad);
 
     pbBufSave = abBufSave;
@@ -2092,7 +2194,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
      * Check that it works at all.
      */
     Bs3MemZero(abBufLoad, sizeof(abBufLoad));
-    Bs3MemCpy(abBufLoad, pbBufRestore, cbRestore);
+    Bs3MemCpy(abBufLoad, pbBufRestore, cbIdtr);
     Bs3MemZero(abBufSave, sizeof(abBufSave));
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
     if (bRing != 0)
@@ -2122,7 +2224,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
 
     /* Again with a buffer filled with a byte not occuring in the previous result. */
     Bs3MemSet(abBufLoad, bFiller1, sizeof(abBufLoad));
-    Bs3MemCpy(abBufLoad, pbBufRestore, cbRestore);
+    Bs3MemCpy(abBufLoad, pbBufRestore, cbIdtr);
     Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
     if (bRing != 0)
@@ -2141,99 +2243,34 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
      */
     if (BS3_MODE_IS_64BIT_CODE(bTestMode))
     {
-        static const struct
+        for (i = 0; i < RT_ELEMENTS(s_aValues64); i++)
         {
-            bool        fGP;
-            uint16_t    cbLimit;
-            uint64_t    u64Base;
-        } s_aValues[] =
-        {
-            { false, 0x0000, UINT64_C(0x0000000000000000) },
-            { false, 0x0001, UINT64_C(0x0000000000000001) },
-            { false, 0x0002, UINT64_C(0x0000000000000010) },
-            { false, 0x0003, UINT64_C(0x0000000000000123) },
-            { false, 0x0004, UINT64_C(0x0000000000001234) },
-            { false, 0x0005, UINT64_C(0x0000000000012345) },
-            { false, 0x0006, UINT64_C(0x0000000000123456) },
-            { false, 0x0007, UINT64_C(0x0000000001234567) },
-            { false, 0x0008, UINT64_C(0x0000000012345678) },
-            { false, 0x0009, UINT64_C(0x0000000123456789) },
-            { false, 0x000a, UINT64_C(0x000000123456789a) },
-            { false, 0x000b, UINT64_C(0x00000123456789ab) },
-            { false, 0x000c, UINT64_C(0x0000123456789abc) },
-            { false, 0x001c, UINT64_C(0x00007ffffeefefef) },
-            { false, 0xffff, UINT64_C(0x00007fffffffffff) },
-            {  true, 0xf3f1, UINT64_C(0x0000800000000000) },
-            {  true, 0x0000, UINT64_C(0x0000800000000000) },
-            {  true, 0x0000, UINT64_C(0x0000800000000333) },
-            {  true, 0x00f0, UINT64_C(0x0001000000000000) },
-            {  true, 0x0ff0, UINT64_C(0x0012000000000000) },
-            {  true, 0x0eff, UINT64_C(0x0123000000000000) },
-            {  true, 0xe0fe, UINT64_C(0x1234000000000000) },
-            {  true, 0x00ad, UINT64_C(0xffff300000000000) },
-            {  true, 0x0000, UINT64_C(0xffff7fffffffffff) },
-            {  true, 0x00f0, UINT64_C(0xffff7fffffffffff) },
-            { false, 0x5678, UINT64_C(0xffff800000000000) },
-            { false, 0x2969, UINT64_C(0xffffffffffeefefe) },
-            { false, 0x1221, UINT64_C(0xffffffffffffffff) },
-            { false, 0x1221, UINT64_C(0xffffffffffffffff) },
-        };
-        for (i = 0; i < RT_ELEMENTS(s_aValues); i++)
-        {
-            Bs3MemSet(abBufSave, bFiller1, sizeof(abBufSave));
-            Bs3MemCpy(&abBufLoad[0], &s_aValues[i].cbLimit, 2);
-            Bs3MemCpy(&abBufLoad[2], &s_aValues[i].u64Base, 8);
+            Bs3MemSet(abBufLoad, bFiller1, sizeof(abBufLoad));
+            Bs3MemCpy(&abBufLoad[0], &s_aValues64[i].cbLimit, 2);
+            Bs3MemCpy(&abBufLoad[2], &s_aValues64[i].u64Base, 8);
             Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            if (bRing != 0 || s_aValues[i].fGP)
+            if (bRing != 0 || s_aValues64[i].fGP)
                 bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
             else
             {
                 bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                if (   Bs3MemCmp(&pbBufSave[0], &s_aValues[i].cbLimit, 2) != 0
-                    || Bs3MemCmp(&pbBufSave[2], &s_aValues[i].u64Base, 8) != 0
+                if (   Bs3MemCmp(&pbBufSave[0], &s_aValues64[i].cbLimit, 2) != 0
+                    || Bs3MemCmp(&pbBufSave[2], &s_aValues64[i].u64Base, 8) != 0
                     || !ASMMemIsAllU8(&pbBufSave[10], cbIdtr, bFiller2))
                     Bs3TestFailedF("Mismatch (#2): expected %04RX16:%016RX64, fillers %#x %#x, got %.*Rhxs\n",
-                                   s_aValues[i].cbLimit, s_aValues[i].u64Base, bFiller1, bFiller2, cbIdtr*2, pbBufSave);
+                                   s_aValues64[i].cbLimit, s_aValues64[i].u64Base, bFiller1, bFiller2, cbIdtr*2, pbBufSave);
             }
             g_usBs3TestStep++;
         }
     }
     else
     {
-        static const struct
+        for (i = 0; i < RT_ELEMENTS(s_aValues32); i++)
         {
-            uint16_t    cbLimit;
-            uint32_t    u32Base;
-        } s_aValues[] =
-        {
-            { 0x0000, UINT32_C(0x00000000) },
-            { 0x0001, UINT32_C(0x00000001) },
-            { 0x0002, UINT32_C(0x00000012) },
-            { 0x0003, UINT32_C(0x00000123) },
-            { 0x0004, UINT32_C(0x00001234) },
-            { 0x0005, UINT32_C(0x00012345) },
-            { 0x0006, UINT32_C(0x00123456) },
-            { 0x0007, UINT32_C(0x01234567) },
-            { 0x0008, UINT32_C(0x12345678) },
-            { 0x0009, UINT32_C(0x80204060) },
-            { 0x000a, UINT32_C(0xddeeffaa) },
-            { 0x000b, UINT32_C(0xfdecdbca) },
-            { 0x000c, UINT32_C(0x6098456b) },
-            { 0x000d, UINT32_C(0x98506099) },
-            { 0x000e, UINT32_C(0x206950bc) },
-            { 0x000f, UINT32_C(0x9740395d) },
-            { 0x0334, UINT32_C(0x64a9455e) },
-            { 0xb423, UINT32_C(0xd20b6eff) },
-            { 0x4955, UINT32_C(0x85296d46) },
-            { 0xffff, UINT32_C(0x07000039) },
-            { 0xefe1, UINT32_C(0x0007fe00) },
-        };
-        for (i = 0; i < RT_ELEMENTS(s_aValues); i++)
-        {
-            Bs3MemSet(abBufSave, bFiller1, sizeof(abBufSave));
-            Bs3MemCpy(&abBufLoad[0], &s_aValues[i].cbLimit, 2);
-            Bs3MemCpy(&abBufLoad[2], &s_aValues[i].u32Base, cbBaseLoaded);
+            Bs3MemSet(abBufLoad, bFiller1, sizeof(abBufLoad));
+            Bs3MemCpy(&abBufLoad[0], &s_aValues32[i].cbLimit, 2);
+            Bs3MemCpy(&abBufLoad[2], &s_aValues32[i].u32Base, cbBaseLoaded);
             Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
             if (bRing != 0)
@@ -2241,70 +2278,42 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
             else
             {
                 bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                if (   Bs3MemCmp(&pbBufSave[0], &s_aValues[i].cbLimit, 2) != 0
-                    || Bs3MemCmp(&pbBufSave[2], &s_aValues[i].u32Base, cbBaseLoaded) != 0
+                if (   Bs3MemCmp(&pbBufSave[0], &s_aValues32[i].cbLimit, 2) != 0
+                    || Bs3MemCmp(&pbBufSave[2], &s_aValues32[i].u32Base, cbBaseLoaded) != 0
                     || (   cbBaseLoaded != 4
                         && pbBufSave[2+3] != bTop16BitBase)
                     || !ASMMemIsAllU8(&pbBufSave[8], cbIdtr, bFiller2))
-                    Bs3TestFailedF("Mismatch (#3): loaded %04RX16:%08RX32, fillers %#x %#x%s%s (cbIns=%d), got %.*Rhxs\n",
-                                   s_aValues[i].cbLimit, s_aValues[i].u32Base, bFiller1, bFiller2, f286 ? ", 286" : "",
-                                   pWorker->fFlags ? ", opsize" : "", pWorker->cbInstr, cbIdtr*2, pbBufSave);
+                    Bs3TestFailedF("Mismatch (#3): loaded %04RX16:%08RX32, fillers %#x %#x%s, %s, got %.*Rhxs\n",
+                                   s_aValues32[i].cbLimit, s_aValues32[i].u32Base, bFiller1, bFiller2, f286 ? ", 286" : "",
+                                   pWorker->pszDesc, cbIdtr*2, pbBufSave);
             }
             g_usBs3TestStep++;
         }
-
     }
-
-
-
-#if 0
 
     /*
      * Slide the buffer along 8 bytes to cover misalignment.
      */
     for (off = 0; off < 8; off++)
     {
-        pbBuf = &abBuf[off];
-        Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &abBuf[off]);
+        Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &abBufLoad[off]);
         CtxUdExpected.rbx.u = Ctx.rbx.u;
 
-        /* First with zero buffer. */
-        Bs3MemZero(abBuf, sizeof(abBuf));
+        Bs3MemSet(abBufLoad, bFiller1, sizeof(abBufLoad));
+        Bs3MemCpy(&abBufLoad[off], pbBufRestore, cbIdtr);
+        Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
         Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-        if (off > 0 && !ASMMemIsZero(abBuf, off))
-            Bs3TestFailedF("Unexpected buffer bytes set before (#3): cbIdtr=%u off=%u abBuf=%.*Rhxs\n",
-                           cbIdtr, off, off + cbBuf, abBuf);
-        if (!ASMMemIsZero(&abBuf[off + cbIdtr], sizeof(abBuf) - cbIdtr - off))
-            Bs3TestFailedF("Unexpected buffer bytes set after (#3): cbIdtr=%u off=%u abBuf=%.*Rhxs\n",
-                           cbIdtr, off, off + cbBuf, abBuf);
-        if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
-            Bs3TestFailedF("286: Top base byte isn't 0xff (#3): %#x\n", abBuf[off + cbIdtr - 1]);
-        if (Bs3MemCmp(&abBuf[off], pbExpected, cbIdtr) != 0)
-            Bs3TestFailedF("Mismatch (#3): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &abBuf[off]);
-        g_usBs3TestStep++;
-
-        /* Again with a buffer filled with a byte not occuring in the previous result. */
-        Bs3MemSet(abBuf, bFiller, sizeof(abBuf));
-        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-        if (off > 0 && !ASMMemIsAllU8(abBuf, off, bFiller))
-            Bs3TestFailedF("Unexpected buffer bytes set before (#4): cbIdtr=%u off=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                           cbIdtr, off, bFiller, off + cbBuf, abBuf);
-        if (!ASMMemIsAllU8(&abBuf[off + cbIdtr], sizeof(abBuf) - cbIdtr - off, bFiller))
-            Bs3TestFailedF("Unexpected buffer bytes set after (#4): cbIdtr=%u off=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                           cbIdtr, off, bFiller, off + cbBuf, abBuf);
-        if (Bs3MemChr(&abBuf[off], bFiller, cbIdtr) != NULL)
-            Bs3TestFailedF("Not all bytes touched (#4): cbIdtr=%u off=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                           cbIdtr, off, bFiller, off + cbBuf, abBuf);
-        if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
-            Bs3TestFailedF("286: Top base byte isn't 0xff (#4): %#x\n", abBuf[off + cbIdtr - 1]);
-        if (Bs3MemCmp(&abBuf[off], pbExpected, cbIdtr) != 0)
-            Bs3TestFailedF("Mismatch (#4): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &abBuf[off]);
+        if (bRing != 0)
+            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+        else
+        {
+            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+            if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                Bs3TestFailedF("Mismatch (#4): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
+        }
         g_usBs3TestStep++;
     }
-    pbBuf = abBuf;
-    Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, abBuf);
+    Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, abBufLoad);
     CtxUdExpected.rbx.u = Ctx.rbx.u;
 
     /*
@@ -2315,7 +2324,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
         && !BS3_MODE_IS_64BIT_CODE(bTestMode))
     {
         uint16_t cbLimit;
-        uint32_t uFlatBuf = Bs3SelPtrToFlat(abBuf);
+        uint32_t uFlatBuf = Bs3SelPtrToFlat(abBufLoad);
         Bs3GdteTestPage00 = Bs3Gdte_DATA16;
         Bs3GdteTestPage00.Gen.u2Dpl       = bRing;
         Bs3GdteTestPage00.Gen.u16BaseLow  = (uint16_t)uFlatBuf;
@@ -2334,49 +2343,40 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
             for (cbLimit = 0; cbLimit < cbIdtr*2; cbLimit++)
             {
                 Bs3GdteTestPage00.Gen.u16LimitLow = cbLimit;
-                Bs3MemSet(abBuf, bFiller, sizeof(abBuf));
+
+                Bs3MemSet(abBufLoad, bFiller1, sizeof(abBufLoad));
+                Bs3MemCpy(&abBufLoad[off], pbBufRestore, cbIdtr);
+                Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
                 Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                if (off + cbIdtr <= cbLimit + 1)
+                if (bRing != 0)
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                else if (off + cbIdtr <= cbLimit + 1)
                 {
                     bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                    if (Bs3MemChr(&abBuf[off], bFiller, cbIdtr) != NULL)
-                        Bs3TestFailedF("Not all bytes touched (#5): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                       cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                    if (Bs3MemCmp(&abBuf[off], pbExpected, cbIdtr) != 0)
-                        Bs3TestFailedF("Mismatch (#5): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &abBuf[off]);
-                    if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
-                        Bs3TestFailedF("286: Top base byte isn't 0xff (#5): %#x\n", abBuf[off + cbIdtr - 1]);
+                    if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                        Bs3TestFailedF("Mismatch (#5): expected %.*Rhxs, got %.*Rhxs\n",
+                                       cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
                 }
+                else if (pWorker->fSs)
+                    bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
                 else
-                {
-                    if (pWorker->fSs)
-                        bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
-                    else
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                    if (off + 2 <= cbLimit + 1)
-                    {
-                        if (Bs3MemChr(&abBuf[off], bFiller, 2) != NULL)
-                            Bs3TestFailedF("Limit bytes not touched (#6): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                           cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                        if (Bs3MemCmp(&abBuf[off], pbExpected, 2) != 0)
-                            Bs3TestFailedF("Mismatch (#6): expected %.2Rhxs, got %.2Rhxs\n", pbExpected, &abBuf[off]);
-                        if (!ASMMemIsAllU8(&abBuf[off + 2], cbIdtr - 2, bFiller))
-                            Bs3TestFailedF("Base bytes touched on #GP (#6): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                           cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                    }
-                    else if (!ASMMemIsAllU8(abBuf, sizeof(abBuf), bFiller))
-                        Bs3TestFailedF("Bytes touched on #GP: cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                       cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                }
-
-                if (off > 0 && !ASMMemIsAllU8(abBuf, off, bFiller))
-                    Bs3TestFailedF("Leading bytes touched (#7): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                   cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                if (!ASMMemIsAllU8(&abBuf[off + cbIdtr], sizeof(abBuf) - off - cbIdtr, bFiller))
-                    Bs3TestFailedF("Trailing bytes touched (#7): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                   cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
                 g_usBs3TestStep++;
+
+                /* Again with zero limit and messed up base (should trigger tripple fault if partially loaded). */
+                abBufLoad[off] = abBufLoad[off + 1] = 0;
+                abBufLoad[off + 2] |= 1;
+                abBufLoad[off + cbIdtr - 2] ^= 0x5a;
+                abBufLoad[off + cbIdtr - 1] ^= 0xa5;
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                if (bRing != 0)
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                else if (off + cbIdtr <= cbLimit + 1)
+                    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+                else if (pWorker->fSs)
+                    bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
+                else
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
             }
         }
 
@@ -2393,43 +2393,44 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
             for (cbLimit = 0; cbLimit < cbIdtr*2; cbLimit++)
             {
                 Bs3GdteTestPage00.Gen.u16LimitLow = cbLimit;
-                Bs3MemSet(abBuf, bFiller, sizeof(abBuf));
-                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
 
-                if (off > cbLimit)
+                Bs3MemSet(abBufLoad, bFiller1, sizeof(abBufLoad));
+                Bs3MemCpy(&abBufLoad[off], pbBufRestore, cbIdtr);
+                Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                if (bRing != 0)
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                else if (off > cbLimit)
                 {
                     bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                    if (Bs3MemChr(&abBuf[off], bFiller, cbIdtr) != NULL)
-                        Bs3TestFailedF("Not all bytes touched (#8): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                       cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                    if (Bs3MemCmp(&abBuf[off], pbExpected, cbIdtr) != 0)
-                        Bs3TestFailedF("Mismatch (#8): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &abBuf[off]);
-                    if (f286 && abBuf[off + cbIdtr - 1] != 0xff)
-                        Bs3TestFailedF("286: Top base byte isn't 0xff (#8): %#x\n", abBuf[off + cbIdtr - 1]);
+                    if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                        Bs3TestFailedF("Mismatch (#6): expected %.*Rhxs, got %.*Rhxs\n",
+                                       cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
                 }
+                else if (pWorker->fSs)
+                    bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
                 else
-                {
-                    if (pWorker->fSs)
-                        bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
-                    else
-                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                    if (!ASMMemIsAllU8(abBuf, sizeof(abBuf), bFiller))
-                        Bs3TestFailedF("Bytes touched on #GP: cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                       cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                }
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+               g_usBs3TestStep++;
 
-                if (off > 0 && !ASMMemIsAllU8(abBuf, off, bFiller))
-                    Bs3TestFailedF("Leading bytes touched (#9): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                   cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-                if (!ASMMemIsAllU8(&abBuf[off + cbIdtr], sizeof(abBuf) - off - cbIdtr, bFiller))
-                    Bs3TestFailedF("Trailing bytes touched (#9): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x abBuf=%.*Rhxs\n",
-                                   cbIdtr, off, cbLimit, bFiller, off + cbBuf, abBuf);
-
-                g_usBs3TestStep++;
+               /* Again with zero limit and messed up base (should trigger triple fault if partially loaded). */
+               abBufLoad[off] = abBufLoad[off + 1] = 0;
+               abBufLoad[off + 2] |= 3;
+               abBufLoad[off + cbIdtr - 2] ^= 0x55;
+               abBufLoad[off + cbIdtr - 1] ^= 0xaa;
+               Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+               if (bRing != 0)
+                   bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+               else if (off > cbLimit)
+                   bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+               else if (pWorker->fSs)
+                   bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
+               else
+                   bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
             }
         }
 
-        Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, abBuf);
+        Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, abBufLoad);
         CtxUdExpected.rbx.u = Ctx.rbx.u;
         CtxUdExpected.ss = Ctx.ss;
         CtxUdExpected.ds = Ctx.ds;
@@ -2445,39 +2446,52 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
         RTCCUINTXREG uFlatTest = Bs3SelPtrToFlat(pbTest);
 
         /*
-         * Slide the buffer towards the trailing guard page.  We'll observe the
-         * first word being written entirely separately from the 2nd dword/qword.
+         * Slide the load buffer towards the trailing guard page.
          */
+        Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &pbTest[X86_PAGE_SIZE]);
+        CtxUdExpected.ss = Ctx.ss;
+        CtxUdExpected.ds = Ctx.ds;
         for (off = X86_PAGE_SIZE - cbIdtr - 4; off < X86_PAGE_SIZE + 4; off++)
         {
-            Bs3MemSet(&pbTest[X86_PAGE_SIZE - cbIdtr * 2], bFiller, cbIdtr * 2);
+            Bs3MemSet(&pbTest[X86_PAGE_SIZE - cbIdtr * 2], bFiller1, cbIdtr*2);
+            if (off < X86_PAGE_SIZE)
+                Bs3MemCpy(&pbTest[off], pbBufRestore, RT_MIN(X86_PAGE_SIZE - off, cbIdtr));
             Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &pbTest[off]);
+            Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            if (off + cbIdtr <= X86_PAGE_SIZE)
+            if (bRing != 0)
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+            else if (off + cbIdtr <= X86_PAGE_SIZE)
             {
                 CtxUdExpected.rbx = Ctx.rbx;
-                CtxUdExpected.ss  = Ctx.ss;
-                CtxUdExpected.ds  = Ctx.ds;
                 bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                if (Bs3MemCmp(&pbTest[off], pbExpected, cbIdtr) != 0)
-                    Bs3TestFailedF("Mismatch (#9): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &pbTest[off]);
+                if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr*2) != 0)
+                    Bs3TestFailedF("Mismatch (#7): expected %.*Rhxs, got %.*Rhxs\n",
+                                   cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
             }
             else
-            {
-                bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, X86_TRAP_PF_RW | (Ctx.bCpl == 3 ? X86_TRAP_PF_US : 0),
-                                          uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
-                if (   off <= X86_PAGE_SIZE - 2
-                    && Bs3MemCmp(&pbTest[off], pbExpected, 2) != 0)
-                    Bs3TestPrintf("Mismatch (#10): Expected limit %.2Rhxs, got %.2Rhxs; off=%#x\n",
-                                  pbExpected, &pbTest[off], off);
-                if (   off < X86_PAGE_SIZE - 2
-                    && !ASMMemIsAllU8(&pbTest[off + 2], X86_PAGE_SIZE - off - 2, bFiller))
-                    Bs3TestPrintf("Wrote partial base on #PF (#10): bFiller=%#x, got %.*Rhxs; off=%#x\n",
-                                  bFiller, X86_PAGE_SIZE - off - 2, &pbTest[off + 2], off);
-                if (off == X86_PAGE_SIZE - 1 && pbTest[off] != bFiller)
-                    Bs3TestPrintf("Wrote partial limit on #PF (#10): Expected %02x, got %02x\n", bFiller, pbTest[off]);
-            }
+                bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
             g_usBs3TestStep++;
+
+            /* Again with zero limit and maybe messed up base as well (triple fault if buggy).
+               The 386DX-40 here triple faults (or something) with off == 0xffe, nothing else. */
+            if (   off < X86_PAGE_SIZE && off + cbIdtr > X86_PAGE_SIZE
+                && (   off != X86_PAGE_SIZE - 2
+                    || (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) != BS3CPU_80386)
+                )
+            {
+                pbTest[off] = 0;
+                if (off + 1 < X86_PAGE_SIZE)
+                    pbTest[off + 1] = 0;
+                if (off + 2 < X86_PAGE_SIZE)
+                    pbTest[off + 2] |= 7;
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                if (bRing != 0)
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                else
+                    bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
+                g_usBs3TestStep++;
+            }
         }
 
         /*
@@ -2486,36 +2500,47 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
          */
         for (off = cbIdtr + 4; off >= -cbIdtr - 4; off--)
         {
-            Bs3MemSet(pbTest, bFiller, 48);
-            Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &pbTest[off]);
-            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            Bs3MemSet(pbTest, bFiller1, 48);
             if (off >= 0)
+                Bs3MemCpy(&pbTest[off], pbBufRestore, cbIdtr);
+            else if (off + cbIdtr > 0)
+                Bs3MemCpy(pbTest, &pbBufRestore[-off], cbIdtr + off);
+            Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rbx, pWorker->fSs ? &Ctx.ss : &Ctx.ds, &pbTest[off]);
+            Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            if (bRing != 0)
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+            else if (off >= 0)
             {
                 CtxUdExpected.rbx = Ctx.rbx;
-                CtxUdExpected.ss  = Ctx.ss;
-                CtxUdExpected.ds  = Ctx.ds;
                 bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                if (Bs3MemCmp(&pbTest[off], pbExpected, cbIdtr) != 0)
-                    Bs3TestFailedF("Mismatch (#11): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &pbTest[off]);
+                if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr*2) != 0)
+                    Bs3TestFailedF("Mismatch (#8): expected %.*Rhxs, got %.*Rhxs\n",
+                                   cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
             }
             else
-            {
-                bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, X86_TRAP_PF_RW | (Ctx.bCpl == 3 ? X86_TRAP_PF_US : 0), uFlatTest + off);
-                if (   -off < cbIdtr
-                    && !ASMMemIsAllU8(pbTest, cbIdtr + off, bFiller))
-                    Bs3TestPrintf("Wrote partial content on #PF (#12): bFiller=%#x, found %.*Rhxs; off=%d\n",
-                                  bFiller, cbIdtr + off, pbTest, off);
-            }
-            if (!ASMMemIsAllU8(&pbTest[RT_MAX(cbIdtr + off, 0)], 16, bFiller))
-                Bs3TestPrintf("Wrote beyond expected area (#13): bFiller=%#x, found %.16Rhxs; off=%d\n",
-                              bFiller, &pbTest[RT_MAX(cbIdtr + off, 0)], off);
+                bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + off);
             g_usBs3TestStep++;
+
+            /* Again with messed up base as well (triple fault if buggy). */
+            if (off < 0 && off > -cbIdtr)
+            {
+                if (off + 2 >= 0)
+                    pbTest[off + 2] |= 15;
+                pbTest[off + cbIdtr - 1] ^= 0xaa;
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+                if (bRing != 0)
+                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                else
+                    bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + off);
+                g_usBs3TestStep++;
+            }
         }
 
         /*
          * Combine paging and segment limit and check ordering.
          * This is kind of interesting here since it the instruction seems to
-         * be doing two separate writes.
+         * actually be doing two separate read, just like it's S[IG]DT counterpart.
          */
         if (   !BS3_MODE_IS_RM_OR_V86(bTestMode)
             && !BS3_MODE_IS_64BIT_CODE(bTestMode))
@@ -2540,80 +2565,34 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
                 for (cbLimit = X86_PAGE_SIZE - cbIdtr*2; cbLimit < X86_PAGE_SIZE + cbIdtr*2; cbLimit++)
                 {
                     Bs3GdteTestPage00.Gen.u16LimitLow = cbLimit;
-                    Bs3MemSet(&pbTest[X86_PAGE_SIZE - cbIdtr * 2], bFiller, cbIdtr * 2);
+                    Bs3MemSet(&pbTest[X86_PAGE_SIZE - cbIdtr * 2], bFiller1, cbIdtr * 2);
+                    if (off < X86_PAGE_SIZE)
+                        Bs3MemCpy(&pbTest[off], pbBufRestore, RT_MIN(cbIdtr, X86_PAGE_SIZE - off));
+                    Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                    if (off + cbIdtr <= cbLimit + 1)
+                    if (bRing != 0)
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                    else if (off + cbIdtr <= cbLimit + 1)
                     {
                         /* No #GP, but maybe #PF. */
                         if (off + cbIdtr <= X86_PAGE_SIZE)
                         {
                             bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                            if (Bs3MemCmp(&pbTest[off], pbExpected, cbIdtr) != 0)
-                                Bs3TestFailedF("Mismatch (#14): expected %.*Rhxs, got %.*Rhxs\n",
-                                               cbIdtr, pbExpected, cbIdtr, &pbTest[off]);
+                            if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                                Bs3TestFailedF("Mismatch (#9): expected %.*Rhxs, got %.*Rhxs\n",
+                                               cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
                         }
                         else
-                        {
-                            bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, X86_TRAP_PF_RW | (Ctx.bCpl == 3 ? X86_TRAP_PF_US : 0),
-                                                      uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
-                            if (   off <= X86_PAGE_SIZE - 2
-                                && Bs3MemCmp(&pbTest[off], pbExpected, 2) != 0)
-                                Bs3TestPrintf("Mismatch (#15): Expected limit %.2Rhxs, got %.2Rhxs; off=%#x\n",
-                                              pbExpected, &pbTest[off], off);
-                            cb = X86_PAGE_SIZE - off - 2;
-                            if (   off < X86_PAGE_SIZE - 2
-                                && !ASMMemIsAllU8(&pbTest[off + 2], cb, bFiller))
-                                Bs3TestPrintf("Wrote partial base on #PF (#15): bFiller=%#x, got %.*Rhxs; off=%#x\n",
-                                              bFiller, cb, &pbTest[off + 2], off);
-                            if (off == X86_PAGE_SIZE - 1 && pbTest[off] != bFiller)
-                                Bs3TestPrintf("Wrote partial limit on #PF (#15): Expected %02x, got %02x\n", bFiller, pbTest[off]);
-                        }
+                            bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
                     }
-                    else if (off + 2 <= cbLimit + 1)
-                    {
-                        /* [ig]tr.limit writing does not cause #GP, but may cause #PG, if not writing the base causes #GP. */
-                        if (off <= X86_PAGE_SIZE - 2)
-                        {
-                            if (pWorker->fSs)
-                                bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
-                            else
-                                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                            if (Bs3MemCmp(&pbTest[off], pbExpected, 2) != 0)
-                                Bs3TestPrintf("Mismatch (#16): Expected limit %.2Rhxs, got %.2Rhxs; off=%#x\n",
-                                              pbExpected, &pbTest[off], off);
-                            cb = X86_PAGE_SIZE - off - 2;
-                            if (   off < X86_PAGE_SIZE - 2
-                                && !ASMMemIsAllU8(&pbTest[off + 2], cb, bFiller))
-                                Bs3TestPrintf("Wrote partial base with limit (#16): bFiller=%#x, got %.*Rhxs; off=%#x\n",
-                                              bFiller, cb, &pbTest[off + 2], off);
-                        }
-                        else
-                        {
-                            bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, X86_TRAP_PF_RW | (Ctx.bCpl == 3 ? X86_TRAP_PF_US : 0),
-                                                      uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
-                            if (   off < X86_PAGE_SIZE
-                                && !ASMMemIsAllU8(&pbTest[off], X86_PAGE_SIZE - off, bFiller))
-                                Bs3TestPrintf("Mismatch (#16): Partial limit write on #PF: bFiller=%#x, got %.*Rhxs\n",
-                                              bFiller, X86_PAGE_SIZE - off, &pbTest[off]);
-                        }
-                    }
+                    /* No #GP/#SS on limit, but instead #PF? */
+                    else if (off < cbLimit && off >= 0xfff)
+                        bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + RT_MAX(off, X86_PAGE_SIZE));
+                    /* #GP/#SS on limit or base. */
+                    else if (pWorker->fSs)
+                        bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
                     else
-                    {
-                        /* #GP/#SS on limit. */
-                        if (pWorker->fSs)
-                            bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
-                        else
-                            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                        if (   off < X86_PAGE_SIZE
-                            && !ASMMemIsAllU8(&pbTest[off], X86_PAGE_SIZE - off, bFiller))
-                            Bs3TestPrintf("Mismatch (#17): Partial write on #GP: bFiller=%#x, got %.*Rhxs\n",
-                                          bFiller, X86_PAGE_SIZE - off, &pbTest[off]);
-                    }
-
-                    cb = RT_MIN(cbIdtr * 2, off - (X86_PAGE_SIZE - cbIdtr*2));
-                    if (!ASMMemIsAllU8(&pbTest[X86_PAGE_SIZE - cbIdtr * 2], cb, bFiller))
-                        Bs3TestFailedF("Leading bytes touched (#18): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x pbTest=%.*Rhxs\n",
-                                       cbIdtr, off, cbLimit, bFiller, cb, pbTest[X86_PAGE_SIZE - cbIdtr * 2]);
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
 
                     g_usBs3TestStep++;
 
@@ -2644,33 +2623,28 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
                 for (cbLimit = X86_PAGE_SIZE - cbIdtr*2; cbLimit < X86_PAGE_SIZE + cbIdtr*2; cbLimit++)
                 {
                     Bs3GdteTestPage00.Gen.u16LimitLow = cbLimit;
-                    Bs3MemSet(&pbTest[X86_PAGE_SIZE], bFiller, cbIdtr * 2);
+                    Bs3MemSet(&pbTest[X86_PAGE_SIZE], bFiller1, cbIdtr * 2);
+                    if (off >= X86_PAGE_SIZE)
+                        Bs3MemCpy(&pbTest[off], pbBufRestore, cbIdtr);
+                    else if (off > X86_PAGE_SIZE - cbIdtr)
+                        Bs3MemCpy(&pbTest[X86_PAGE_SIZE], &pbBufRestore[X86_PAGE_SIZE - off], cbIdtr - (X86_PAGE_SIZE - off));
+                    Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-                    if (cbLimit < off && off >= X86_PAGE_SIZE)
+                    if (bRing != 0)
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+                    else if (cbLimit < off && off >= X86_PAGE_SIZE)
                     {
                         bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                        if (Bs3MemCmp(&pbTest[off], pbExpected, cbIdtr) != 0)
-                            Bs3TestFailedF("Mismatch (#19): expected %.*Rhxs, got %.*Rhxs\n",
-                                           cbIdtr, pbExpected, cbIdtr, &pbTest[off]);
-                        cb = X86_PAGE_SIZE + cbIdtr*2 - off;
-                        if (!ASMMemIsAllU8(&pbTest[off + cbIdtr], cb, bFiller))
-                            Bs3TestFailedF("Trailing bytes touched (#20): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x pbTest=%.*Rhxs\n",
-                                           cbIdtr, off, cbLimit, bFiller, cb, pbTest[off + cbIdtr]);
+                        if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                            Bs3TestFailedF("Mismatch (#10): expected %.*Rhxs, got %.*Rhxs\n",
+                                           cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
                     }
+                    else if (cbLimit < off && off < X86_PAGE_SIZE)
+                        bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, 0, uFlatTest + off);
+                    else if (pWorker->fSs)
+                        bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
                     else
-                    {
-                        if (cbLimit < off && off < X86_PAGE_SIZE)
-                            bs3CpuBasic2_ComparePfCtx(&TrapCtx, &Ctx, X86_TRAP_PF_RW | (Ctx.bCpl == 3 ? X86_TRAP_PF_US : 0),
-                                                      uFlatTest + off);
-                        else if (pWorker->fSs)
-                            bs3CpuBasic2_CompareSsCtx(&TrapCtx, &Ctx, 0, false /*f486ResumeFlagHint*/);
-                        else
-                            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                        cb = cbIdtr*2;
-                        if (!ASMMemIsAllU8(&pbTest[X86_PAGE_SIZE], cb, bFiller))
-                            Bs3TestFailedF("Trailing bytes touched (#20): cbIdtr=%u off=%u cbLimit=%u bFiller=%#x pbTest=%.*Rhxs\n",
-                                           cbIdtr, off, cbLimit, bFiller, cb, pbTest[X86_PAGE_SIZE]);
-                    }
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
                     g_usBs3TestStep++;
                 }
             }
@@ -2695,58 +2669,41 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_One(BS3CB2SIDTSGDT const BS3_FAR *pWo
         for (off = -cbIdtr - 8; off < cbIdtr + 8; off++)
         {
             Ctx.rbx.u = CtxUdExpected.rbx.u = UINT64_C(0x0000800000000000) + off;
-            Bs3MemSet(&pbTest[-64], bFiller, 64*2);
+            Bs3MemSet(&pbTest[-64], bFiller1, 64*2);
+            Bs3MemCpy(&pbTest[off], pbBufRestore, cbIdtr);
+            Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            if (off + cbIdtr <= 0)
-            {
-                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                if (Bs3MemCmp(&pbTest[off], pbExpected, cbIdtr) != 0)
-                    Bs3TestFailedF("Mismatch (#21): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &pbTest[off]);
-            }
+            if (off + cbIdtr > 0 || bRing != 0)
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
             else
             {
-                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                if (off <= -2 && Bs3MemCmp(&pbTest[off], pbExpected, 2) != 0)
-                    Bs3TestFailedF("Mismatch (#21): expected limit %.2Rhxs, got %.2Rhxs\n", pbExpected, &pbTest[off]);
-                off2 = off <= -2 ? 2 : 0;
-                cb   = cbIdtr - off2;
-                if (!ASMMemIsAllU8(&pbTest[off + off2], cb, bFiller))
-                    Bs3TestFailedF("Mismatch (#21): touched base %.*Rhxs, got %.*Rhxs\n",
-                                   cb, &pbExpected[off], cb, &pbTest[off + off2]);
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+                if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                    Bs3TestFailedF("Mismatch (#18): expected %.*Rhxs, got %.*Rhxs\n",
+                                   cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
             }
-            if (!ASMMemIsAllU8(&pbTest[off - 16], 16, bFiller))
-                Bs3TestFailedF("Leading bytes touched (#21): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off]);
-            if (!ASMMemIsAllU8(&pbTest[off + cbIdtr], 16, bFiller))
-                Bs3TestFailedF("Trailing bytes touched (#21): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off + cbIdtr]);
         }
 
         /* Hit it from above. */
         for (off = -cbIdtr - 8; off < cbIdtr + 8; off++)
         {
             Ctx.rbx.u = CtxUdExpected.rbx.u = UINT64_C(0xffff800000000000) + off;
-            Bs3MemSet(&pbTest[-64], bFiller, 64*2);
+            Bs3MemSet(&pbTest[-64], bFiller1, 64*2);
+            Bs3MemCpy(&pbTest[off], pbBufRestore, cbIdtr);
+            Bs3MemSet(abBufSave, bFiller2, sizeof(abBufSave));
             Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
-            if (off >= 0)
-            {
-                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
-                if (Bs3MemCmp(&pbTest[off], pbExpected, cbIdtr) != 0)
-                    Bs3TestFailedF("Mismatch (#22): expected %.*Rhxs, got %.*Rhxs\n", cbIdtr, pbExpected, cbIdtr, &pbTest[off]);
-            }
+            if (off < 0 || bRing != 0)
+                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
             else
             {
-                bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
-                if (!ASMMemIsAllU8(&pbTest[off], cbIdtr, bFiller))
-                    Bs3TestFailedF("Mismatch (#22): touched base %.*Rhxs, got %.*Rhxs\n",
-                                   cbIdtr, &pbExpected[off], cbIdtr, &pbTest[off]);
+                bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+                if (Bs3MemCmp(pbBufSave, abExpectedFilled, cbIdtr * 2) != 0)
+                    Bs3TestFailedF("Mismatch (#19): expected %.*Rhxs, got %.*Rhxs\n",
+                                   cbIdtr*2, abExpectedFilled, cbIdtr*2, pbBufSave);
             }
-            if (!ASMMemIsAllU8(&pbTest[off - 16], 16, bFiller))
-                Bs3TestFailedF("Leading bytes touched (#22): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off]);
-            if (!ASMMemIsAllU8(&pbTest[off + cbIdtr], 16, bFiller))
-                Bs3TestFailedF("Trailing bytes touched (#22): bFiller=%#x, got %.16Rhxs\n", bFiller, &pbTest[off + cbIdtr]);
         }
 
     }
-#endif
 }
 
 
@@ -2764,7 +2721,11 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_Common(uint8_t bTestMode, BS3CB2SIDTS
     {
         for (idx = 0; idx < cWorkers; idx++)
             if (    (paWorkers[idx].bMode & (bTestMode & BS3_MODE_CODE_MASK))
-                && (!paWorkers[idx].fSs || bRing != 0 /** @todo || BS3_MODE_IS_64BIT_SYS(bTestMode)*/ ))
+                && (!paWorkers[idx].fSs || bRing != 0 /** @todo || BS3_MODE_IS_64BIT_SYS(bTestMode)*/ )
+                && (   !(paWorkers[idx].fFlags & BS3CB2SIDTSGDT_F_386PLUS)
+                    || (   bTestMode > BS3_MODE_PE16
+                        || (   bTestMode == BS3_MODE_PE16
+                            && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)) ) )
             {
                 //Bs3TestPrintf("idx=%-2d fpfnWorker=%p fSs=%d cbInstr=%d\n",
                 //              idx, paWorkers[idx].fpfnWorker, paWorkers[idx].fSs, paWorkers[idx].cbInstr);
@@ -3150,38 +3111,30 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_lidt)(uint8_t bMode)
     return 0;
 }
 
-#if 0
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
 {
-    uint64_t const uOrgAddr = Bs3Lgdt_Gdt.uAddr;
-    uint64_t       uNew     = 0;
     union
     {
         RTGDTR  Gdtr;
-        uint8_t ab[16];
+        uint8_t ab[32]; /* At least cbIdtr*2! */
     } Expected;
 
     g_pszTestMode = TMPL_NM(g_szBs3ModeName);
     g_bTestMode   = bMode;
     g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
+
     BS3_ASSERT(bMode == TMPL_MODE);
 
     /*
      * Pass to common worker which is only compiled once per mode.
      */
+    if (BS3_MODE_IS_RM_SYS(bMode))
+        ASMSetGDTR((PRTGDTR)&Bs3LgdtDef_Gdt);
     Bs3MemZero(&Expected, sizeof(Expected));
     ASMGetGDTR(&Expected.Gdtr);
-    bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aSgdtWorkers, RT_ELEMENTS(g_aSgdtWorkers), Expected.ab);
 
-    /*
-     * Unalias the GDT.
-     */
-    if (uNew != 0)
-    {
-        Bs3Lgdt_Gdt.uAddr = uOrgAddr;
-        Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uOrgAddr);
-        Bs3PagingUnalias(uNew, Bs3Lgdt_Gdt.cb);
-    }
+    bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLgdtWorkers, RT_ELEMENTS(g_aLgdtWorkers),
+                                  &Bs3LgdtDef_Gdt, sizeof(Bs3LgdtDef_Gdt), Expected.ab);
 
     /*
      * Re-initialize the IDT.
@@ -3189,7 +3142,6 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
     Bs3TrapInit();
     return 0;
 }
-#endif
 
 #endif /* BS3_INSTANTIATING_MODE */
 

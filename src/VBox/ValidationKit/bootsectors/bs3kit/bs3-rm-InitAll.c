@@ -33,13 +33,27 @@
 #include "bs3-cmn-test.h"
 #include <iprt/asm-amd64-x86.h>
 
+BS3_MODE_PROTO_NOSB(void, Bs3EnteredMode,(void));
+
 
 BS3_DECL(void) Bs3InitAll_rm(void)
 {
+    uint32_t volatile BS3_FAR *pcTicks = (uint32_t volatile BS3_FAR *)BS3_FP_MAKE(0x40, 0x6c);
+    uint32_t                   cInitialTicks = *pcTicks;
+    int                        i = 3;
+
     Bs3CpuDetect_rm_far();
     Bs3InitMemory_rm_far();
     Bs3InitGdt_rm_far();
 
+    /* For for floppy to stop (a couple of ticks), then disable interrupts. */
+    ASMIntEnable();
+    while (i-- > 0)
+    {
+        while (*pcTicks == cInitialTicks)
+            ASMHalt();
+        *pcTicks = cInitialTicks;
+    }
     ASMIntDisable();
     Bs3PicMaskAll();
 
@@ -50,5 +64,6 @@ BS3_DECL(void) Bs3InitAll_rm(void)
     if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
         Bs3Trap16Init();
     Bs3TrapRmV86Init();
+    Bs3EnteredMode_rm();
 }
 
