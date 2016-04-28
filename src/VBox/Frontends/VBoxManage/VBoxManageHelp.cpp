@@ -525,7 +525,7 @@ RTEXITCODE errorGetOpt(int rcGetOpt, union RTGETOPTUNION const *pValueUnion)
     return RTEXITCODE_SYNTAX;
 }
 
-#endif /* VBOX_ONLY_DOCS */
+#endif /* !VBOX_ONLY_DOCS */
 
 
 
@@ -1463,11 +1463,13 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY fCategory, uint32_t fSubCategory, int rc,
     /*
      * Check if it is an unhandled standard option.
      */
+#ifndef VBOX_ONLY_DOCS
     if (rc == 'V')
     {
         RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
         return RTEXITCODE_SUCCESS;
     }
+#endif
 
     if (rc == 'h')
     {

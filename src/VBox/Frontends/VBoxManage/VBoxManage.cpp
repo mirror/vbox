@@ -495,6 +495,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
+#ifndef VBOX_ONLY_DOCS
         if (   !strcmp(argv[i], "-V")
             || !strcmp(argv[i], "--version")
             || !strcmp(argv[i], "-v")       /* deprecated */
@@ -505,6 +506,7 @@ int main(int argc, char *argv[])
             RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
             return 0;
         }
+#endif
 
         if (   !strcmp(argv[i], "--dumpopts")
             || !strcmp(argv[i], "-dumpopts") /* deprecated */)
