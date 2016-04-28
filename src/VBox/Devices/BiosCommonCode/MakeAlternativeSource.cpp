@@ -2020,7 +2020,15 @@ int main(int argc, char **argv)
             case 'V':
             {
                 /* The following is assuming that svn does it's job here. */
-                RTPrintf("r%u\n", RTBldCfgRevision());
+                char szRev[] = "$Revision$";
+                char *psz = szRev;
+                while (*psz && !RT_C_IS_DIGIT(*psz))
+                    psz++;
+                size_t i = strlen(psz);
+                while (i > 0 && !RT_C_IS_DIGIT(psz[i - 1]))
+                    psz[--i] = '\0';
+
+                RTPrintf("r%s\n", psz);
                 return RTEXITCODE_SUCCESS;
             }
 
