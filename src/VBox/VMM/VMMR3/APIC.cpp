@@ -707,22 +707,22 @@ static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersi
             LogRel(("APIC%u: uId                      = %#RX32\n", pVCpu->idCpu, pXApicPage->id.u8ApicId));
             LogRel(("APIC%u: uPhysId                  = N/A\n",    pVCpu->idCpu));
             LogRel(("APIC%u: uArbId                   = N/A\n",    pVCpu->idCpu));
-            LogRel(("APIC%u: uTrp                     = %#RX32\n", pVCpu->idCpu, pXApicPage->tpr.u8Tpr));
+            LogRel(("APIC%u: uTpr                     = %#RX32\n", pVCpu->idCpu, pXApicPage->tpr.u8Tpr));
             LogRel(("APIC%u: uSvr                     = %#RX32\n", pVCpu->idCpu, pXApicPage->svr.all.u32Svr));
             LogRel(("APIC%u: uLdr                     = %#x\n",    pVCpu->idCpu, pXApicPage->ldr.all.u32Ldr));
             LogRel(("APIC%u: uDfr                     = %#x\n",    pVCpu->idCpu, pXApicPage->dfr.all.u32Dfr));
 
             for (size_t i = 0; i < 8; i++)
             {
-                LogRel(("APIC%u: Isr[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, pXApicPage->isr.u[i].u32Reg));
-                LogRel(("APIC%u: Tmr[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, pXApicPage->tmr.u[i].u32Reg));
-                LogRel(("APIC%u: Irr[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, pXApicPage->irr.u[i].u32Reg));
+                LogRel(("APIC%u: Isr[%u].u32Reg            = %#RX32\n", pVCpu->idCpu, i, pXApicPage->isr.u[i].u32Reg));
+                LogRel(("APIC%u: Tmr[%u].u32Reg            = %#RX32\n", pVCpu->idCpu, i, pXApicPage->tmr.u[i].u32Reg));
+                LogRel(("APIC%u: Irr[%u].u32Reg            = %#RX32\n", pVCpu->idCpu, i, pXApicPage->irr.u[i].u32Reg));
             }
 
             for (size_t i = 0; i < XAPIC_MAX_LVT_ENTRIES_P4; i++)
             {
                 uint16_t const offReg = XAPIC_OFF_LVT_START + (i << 4);
-                LogRel(("APIC%u: Lvt[%u].u32Reg           = %#RX32\n", pVCpu->idCpu, i, apicR3ReadRawR32(pXApicPage, offReg)));
+                LogRel(("APIC%u: Lvt[%u].u32Reg            = %#RX32\n", pVCpu->idCpu, i, apicR3ReadRawR32(pXApicPage, offReg)));
             }
 
             LogRel(("APIC%u: uEsr                     = %#RX32\n", pVCpu->idCpu, pXApicPage->esr.all.u32Errors));
@@ -794,7 +794,7 @@ static int apicR3LoadVMData(PVM pVM, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
     APICMODE const enmApicMode = apicR3ConvertFromLegacyApicMode((PDMAPICMODE)uLegacyApicMode);
     if (enmApicMode != pApic->enmOriginalMode)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%#x(%#x) config=%#x(%#x)"),
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%u (%u) config=%u (%u)"),
                                 uLegacyApicMode, enmApicMode, apicR3ConvertToLegacyApicMode(pApic->enmOriginalMode),
                                 pApic->enmOriginalMode);
     return VINF_SUCCESS;
