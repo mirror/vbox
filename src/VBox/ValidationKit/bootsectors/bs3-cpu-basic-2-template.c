@@ -1444,6 +1444,7 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_RaiseXcpt1Common(uint16_t const uSysR0Cs, uint1
 # endif
 }
 
+#if TMPL_BITS == 16
 
 /**
  * Executes one round of SIDT and SGDT tests using one assembly worker.
@@ -2044,6 +2045,90 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_sidt_sgdt_Common(uint8_t bTestMode, BS3CB2SIDTS
             break;
     }
 }
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
+{
+    union
+    {
+        RTIDTR  Idtr;
+        uint8_t ab[16];
+    } Expected;
+
+    g_pszTestMode = Bs3GetModeName(bMode);
+    g_bTestMode   = bMode;
+    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+
+
+    /*
+     * Pass to common worker which is only compiled once per mode.
+     */
+    Bs3MemZero(&Expected, sizeof(Expected));
+    ASMGetIDTR(&Expected.Idtr);
+    bs3CpuBasic2_sidt_sgdt_Common(bMode, g_aSidtWorkers, RT_ELEMENTS(g_aSidtWorkers), Expected.ab);
+
+    /*
+     * Re-initialize the IDT.
+     */
+    Bs3TrapReInit();
+    return 0;
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
+{
+    uint64_t const uOrgAddr = Bs3Lgdt_Gdt.uAddr;
+    uint64_t       uNew     = 0;
+    union
+    {
+        RTGDTR  Gdtr;
+        uint8_t ab[16];
+    } Expected;
+
+    g_pszTestMode = Bs3GetModeName(bMode);
+    g_bTestMode   = bMode;
+    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+
+    /*
+     * If paged mode, try push the GDT way up.
+     */
+    if (BS3_MODE_IS_PAGED(bMode))
+    {
+/** @todo loading non-canonical base addresses.   */
+        int rc;
+        uNew  = BS3_MODE_IS_64BIT_SYS(bMode) ? UINT64_C(0xffff80fedcb70000) : UINT64_C(0xc2d28000);
+        uNew |= uOrgAddr & X86_PAGE_OFFSET_MASK;
+        rc = Bs3PagingAlias(uNew, uOrgAddr, Bs3Lgdt_Gdt.cb, X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_D | X86_PTE_A);
+        if (RT_SUCCESS(rc))
+        {
+            Bs3Lgdt_Gdt.uAddr = uNew;
+            Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uNew);
+        }
+    }
+
+    /*
+     * Pass to common worker which is only compiled once per mode.
+     */
+    Bs3MemZero(&Expected, sizeof(Expected));
+    ASMGetGDTR(&Expected.Gdtr);
+    bs3CpuBasic2_sidt_sgdt_Common(bMode, g_aSgdtWorkers, RT_ELEMENTS(g_aSgdtWorkers), Expected.ab);
+
+    /*
+     * Unalias the GDT.
+     */
+    if (uNew != 0)
+    {
+        Bs3Lgdt_Gdt.uAddr = uOrgAddr;
+        Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uOrgAddr);
+        Bs3PagingUnalias(uNew, Bs3Lgdt_Gdt.cb);
+    }
+
+    /*
+     * Re-initialize the IDT.
+     */
+    Bs3TrapReInit();
+    return 0;
+}
+
 
 
 /*
@@ -2750,6 +2835,77 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_lidt_lgdt_Common(uint8_t bTestMode, BS3CB2SIDTS
 }
 
 
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lidt)(uint8_t bMode)
+{
+    union
+    {
+        RTIDTR  Idtr;
+        uint8_t ab[32]; /* At least cbIdtr*2! */
+    } Expected;
+
+    g_pszTestMode = Bs3GetModeName(bMode);
+    g_bTestMode   = bMode;
+    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+
+    /*
+     * Pass to common worker which is only compiled once per mode.
+     */
+    Bs3MemZero(&Expected, sizeof(Expected));
+    ASMGetIDTR(&Expected.Idtr);
+
+    if (BS3_MODE_IS_RM_SYS(bMode))
+        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
+                                      &Bs3Lidt_Ivt, sizeof(Bs3Lidt_Ivt), Expected.ab);
+    else if (BS3_MODE_IS_16BIT_SYS(bMode))
+        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
+                                      &Bs3Lidt_Idt16, sizeof(Bs3Lidt_Idt16), Expected.ab);
+    else if (BS3_MODE_IS_32BIT_SYS(bMode))
+        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
+                                      &Bs3Lidt_Idt32, sizeof(Bs3Lidt_Idt32), Expected.ab);
+    else
+        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
+                                      &Bs3Lidt_Idt64, sizeof(Bs3Lidt_Idt64), Expected.ab);
+
+    /*
+     * Re-initialize the IDT.
+     */
+    Bs3TrapReInit();
+    return 0;
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
+{
+    union
+    {
+        RTGDTR  Gdtr;
+        uint8_t ab[32]; /* At least cbIdtr*2! */
+    } Expected;
+
+    g_pszTestMode = Bs3GetModeName(bMode);
+    g_bTestMode   = bMode;
+    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+
+    /*
+     * Pass to common worker which is only compiled once per mode.
+     */
+    if (BS3_MODE_IS_RM_SYS(bMode))
+        ASMSetGDTR((PRTGDTR)&Bs3LgdtDef_Gdt);
+    Bs3MemZero(&Expected, sizeof(Expected));
+    ASMGetGDTR(&Expected.Gdtr);
+
+    bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLgdtWorkers, RT_ELEMENTS(g_aLgdtWorkers),
+                                  &Bs3LgdtDef_Gdt, sizeof(Bs3LgdtDef_Gdt), Expected.ab);
+
+    /*
+     * Re-initialize the IDT.
+     */
+    Bs3TrapReInit();
+    return 0;
+}
+#endif /* TMPL_BITS == 16 */
+
+
 # if ARCH_BITS != 64
 
 /**
@@ -2996,163 +3152,31 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
 }
 
 
+# if 0
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
 {
-    union
-    {
-        RTIDTR  Idtr;
-        uint8_t ab[16];
-    } Expected;
-
-    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
-
     BS3_ASSERT(bMode == TMPL_MODE);
-
-    /*
-     * Pass to common worker which is only compiled once per mode.
-     */
-    Bs3MemZero(&Expected, sizeof(Expected));
-    ASMGetIDTR(&Expected.Idtr);
-    bs3CpuBasic2_sidt_sgdt_Common(bMode, g_aSidtWorkers, RT_ELEMENTS(g_aSidtWorkers), Expected.ab);
-
-    /*
-     * Re-initialize the IDT.
-     */
-    Bs3TrapInit();
-    return 0;
+    return BS3_CMN_FAR_NM(bs3CpuBasic2_sidt)(bMode);
 }
-
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
 {
-    uint64_t const uOrgAddr = Bs3Lgdt_Gdt.uAddr;
-    uint64_t       uNew     = 0;
-    union
-    {
-        RTGDTR  Gdtr;
-        uint8_t ab[16];
-    } Expected;
-
-    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
     BS3_ASSERT(bMode == TMPL_MODE);
-
-    /*
-     * If paged mode, try push the GDT way up.
-     */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-/** @todo loading non-canonical base addresses.   */
-        int rc;
-        uNew  = BS3_MODE_IS_64BIT_SYS(bMode) ? UINT64_C(0xffff80fedcb70000) : UINT64_C(0xc2d28000);
-        uNew |= uOrgAddr & X86_PAGE_OFFSET_MASK;
-        rc = Bs3PagingAlias(uNew, uOrgAddr, Bs3Lgdt_Gdt.cb, X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_D | X86_PTE_A);
-        if (RT_SUCCESS(rc))
-        {
-            Bs3Lgdt_Gdt.uAddr = uNew;
-            Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uNew);
-        }
-    }
-
-    /*
-     * Pass to common worker which is only compiled once per mode.
-     */
-    Bs3MemZero(&Expected, sizeof(Expected));
-    ASMGetGDTR(&Expected.Gdtr);
-    bs3CpuBasic2_sidt_sgdt_Common(bMode, g_aSgdtWorkers, RT_ELEMENTS(g_aSgdtWorkers), Expected.ab);
-
-    /*
-     * Unalias the GDT.
-     */
-    if (uNew != 0)
-    {
-        Bs3Lgdt_Gdt.uAddr = uOrgAddr;
-        Bs3UtilSetFullGdtr(Bs3Lgdt_Gdt.cb, uOrgAddr);
-        Bs3PagingUnalias(uNew, Bs3Lgdt_Gdt.cb);
-    }
-
-    /*
-     * Re-initialize the IDT.
-     */
-    Bs3TrapInit();
-    return 0;
+    return BS3_CMN_FAR_NM(bs3CpuBasic2_sgdt)(bMode);
 }
-
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_lidt)(uint8_t bMode)
 {
-    union
-    {
-        RTIDTR  Idtr;
-        uint8_t ab[32]; /* At least cbIdtr*2! */
-    } Expected;
-
-    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
-
     BS3_ASSERT(bMode == TMPL_MODE);
-
-    /*
-     * Pass to common worker which is only compiled once per mode.
-     */
-    Bs3MemZero(&Expected, sizeof(Expected));
-    ASMGetIDTR(&Expected.Idtr);
-
-    if (BS3_MODE_IS_RM_SYS(bMode))
-        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
-                                      &Bs3Lidt_Ivt, sizeof(Bs3Lidt_Ivt), Expected.ab);
-    else if (BS3_MODE_IS_16BIT_SYS(bMode))
-        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
-                                      &Bs3Lidt_Idt16, sizeof(Bs3Lidt_Idt16), Expected.ab);
-    else if (BS3_MODE_IS_32BIT_SYS(bMode))
-        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
-                                      &Bs3Lidt_Idt32, sizeof(Bs3Lidt_Idt32), Expected.ab);
-    else
-        bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLidtWorkers, RT_ELEMENTS(g_aLidtWorkers),
-                                      &Bs3Lidt_Idt64, sizeof(Bs3Lidt_Idt64), Expected.ab);
-
-    /*
-     * Re-initialize the IDT.
-     */
-    Bs3TrapInit();
-    return 0;
+    return BS3_CMN_FAR_NM(bs3CpuBasic2_lidt)(bMode);
 }
 
 BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
 {
-    union
-    {
-        RTGDTR  Gdtr;
-        uint8_t ab[32]; /* At least cbIdtr*2! */
-    } Expected;
-
-    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
-
     BS3_ASSERT(bMode == TMPL_MODE);
-
-    /*
-     * Pass to common worker which is only compiled once per mode.
-     */
-    if (BS3_MODE_IS_RM_SYS(bMode))
-        ASMSetGDTR((PRTGDTR)&Bs3LgdtDef_Gdt);
-    Bs3MemZero(&Expected, sizeof(Expected));
-    ASMGetGDTR(&Expected.Gdtr);
-
-    bs3CpuBasic2_lidt_lgdt_Common(bMode, g_aLgdtWorkers, RT_ELEMENTS(g_aLgdtWorkers),
-                                  &Bs3LgdtDef_Gdt, sizeof(Bs3LgdtDef_Gdt), Expected.ab);
-
-    /*
-     * Re-initialize the IDT.
-     */
-    Bs3TrapInit();
-    return 0;
+    return BS3_CMN_FAR_NM(bs3CpuBasic2_lgdt)(bMode);
 }
+# endif
 
 #endif /* BS3_INSTANTIATING_MODE */
 

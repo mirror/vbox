@@ -73,7 +73,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo64Bit, BS3_PBC_NEAR
         ; setup far return.
         push    sAX
  %if TMPL_BITS == 16
-        push    dword .sixty_four_bit
+        push    dword .sixty_four_bit wrt FLAT
         o32 retf
  %else
         push    .sixty_four_bit

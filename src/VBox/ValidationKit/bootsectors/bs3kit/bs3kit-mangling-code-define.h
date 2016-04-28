@@ -30,6 +30,7 @@
 #define Bs3A20Enable BS3_CMN_MANGLER(Bs3A20Enable)
 #define Bs3A20EnableViaKbd BS3_CMN_MANGLER(Bs3A20EnableViaKbd)
 #define Bs3A20EnableViaPortA BS3_CMN_MANGLER(Bs3A20EnableViaPortA)
+#define Bs3GetModeName BS3_CMN_MANGLER(Bs3GetModeName)
 #define Bs3KbdRead BS3_CMN_MANGLER(Bs3KbdRead)
 #define Bs3KbdWait BS3_CMN_MANGLER(Bs3KbdWait)
 #define Bs3KbdWrite BS3_CMN_MANGLER(Bs3KbdWrite)
@@ -130,6 +131,7 @@
 #define Bs3Trap64SetGate BS3_CMN_MANGLER(Bs3Trap64SetGate)
 #define Bs3TrapDefaultHandler BS3_CMN_MANGLER(Bs3TrapDefaultHandler)
 #define Bs3TrapPrintFrame BS3_CMN_MANGLER(Bs3TrapPrintFrame)
+#define Bs3TrapReInit BS3_CMN_MANGLER(Bs3TrapReInit)
 #define Bs3TrapRmV86Init BS3_CMN_MANGLER(Bs3TrapRmV86Init)
 #define Bs3TrapRmV86InitEx BS3_CMN_MANGLER(Bs3TrapRmV86InitEx)
 #define Bs3TrapRmV86SetGate BS3_CMN_MANGLER(Bs3TrapRmV86SetGate)
@@ -144,5 +146,6 @@
 #ifndef BS3_CMN_ONLY
 # define Bs3CpuDetect BS3_MODE_MANGLER(Bs3CpuDetect)
 # define Bs3TestDoModes BS3_MODE_MANGLER(Bs3TestDoModes)
+# define Bs3TestDoModesByOne BS3_MODE_MANGLER(Bs3TestDoModesByOne)
 # define Bs3TrapInit BS3_MODE_MANGLER(Bs3TrapInit)
 #endif /* !BS3_CMN_ONLY */

@@ -30,6 +30,7 @@
 #undef Bs3A20Enable
 #undef Bs3A20EnableViaKbd
 #undef Bs3A20EnableViaPortA
+#undef Bs3GetModeName
 #undef Bs3KbdRead
 #undef Bs3KbdWait
 #undef Bs3KbdWrite
@@ -130,6 +131,7 @@
 #undef Bs3Trap64SetGate
 #undef Bs3TrapDefaultHandler
 #undef Bs3TrapPrintFrame
+#undef Bs3TrapReInit
 #undef Bs3TrapRmV86Init
 #undef Bs3TrapRmV86InitEx
 #undef Bs3TrapRmV86SetGate
@@ -144,5 +146,6 @@
 #ifndef BS3_CMN_ONLY
 # undef Bs3CpuDetect
 # undef Bs3TestDoModes
+# undef Bs3TestDoModesByOne
 # undef Bs3TrapInit
 #endif /* !BS3_CMN_ONLY */

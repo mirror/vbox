@@ -1441,6 +1441,15 @@ BS3_CMN_PROTO_NOSB(DECL_NO_RETURN(void), Bs3Panic,(void));
 # pragma aux Bs3Panic_c32 __aborts
 #endif
 
+
+/**
+ * Translate a mode into a string.
+ *
+ * @returns Pointer to read-only mode name string.
+ * @param   bMode       The mode value (BS3_MODE_XXX).
+ */
+BS3_CMN_PROTO_STUB(const char BS3_FAR *, Bs3GetModeName,(uint8_t bMode));
+
 /**
  * Shutdown the system, never returns.
  *
@@ -2481,6 +2490,15 @@ typedef BS3TRAPFRAME const BS3_FAR *PCBS3TRAPFRAME;
 
 
 /**
+ * Re-initializes the trap handling for the current mode.
+ *
+ * Useful after a test that messes with the IDT/IVT.
+ *
+ * @sa      Bs3TrapInit
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapReInit,(void));
+
+/**
  * Initializes real mode and v8086 trap handling.
  *
  * @remarks Does not install RM/V86 trap handling, just initializes the
@@ -2946,6 +2964,23 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
 
 /**
+ * One worker drives all modes.
+ *
+ * This is an alternative to BS3TESTMODEENTRY where one worker, typically
+ * 16-bit, does all the test driver work.  It's called repeatedly from all
+ * the modes being tested.
+ */
+typedef struct BS3TESTMODEBYONEENTRY
+{
+    const char * BS3_FAR    pszSubTest;
+    PFNBS3TESTDOMODE        pfnWorker;
+    uint32_t                u32Reserved;
+} BS3TESTMODEBYONEENTRY;
+/** Pointer to a mode-by-one sub-test entry. */
+typedef BS3TESTMODEBYONEENTRY const *PCBS3TESTMODEBYONEENTRY;
+
+
+/**
  * Sets the full GDTR register.
  *
  * @param   cbLimit     The limit.
@@ -3158,6 +3193,19 @@ BS3_MODE_PROTO_STUB(void, Bs3TrapInit,(void));
  * @param   cEntries        The number of sub-test entries.
  */
 BS3_MODE_PROTO_NOSB(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t cEntries));
+
+/**
+ * Executes the array of tests in every possibly mode, unitifed driver.
+ *
+ * This requires much less code space than Bs3TestDoModes as there is only one
+ * instace of each sub-test driver code, instead of 3 (cmn) or 22 (per-mode)
+ * copies.
+ *
+ * @param   paEntries       The mode sub-test-by-one entries.
+ * @param   cEntries        The number of sub-test-by-one entries.
+ * @param   fFlags          Reserved for the future, MBZ.
+ */
+BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_t cEntries, uint32_t fFlags));
 
 
 /** @} */

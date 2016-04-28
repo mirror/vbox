@@ -37,29 +37,41 @@
 *********************************************************************************************************************************/
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_TssGateEsp);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_RaiseXcpt1);
-//BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic2_iret);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_iret);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sidt);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_sgdt);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_lidt);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_lgdt);
 
+FNBS3TESTDOMODE             bs3CpuBasic2_sidt_f16;
+FNBS3TESTDOMODE             bs3CpuBasic2_sgdt_f16;
+FNBS3TESTDOMODE             bs3CpuBasic2_lidt_f16;
+FNBS3TESTDOMODE             bs3CpuBasic2_lgdt_f16;
+FNBS3TESTDOMODE             bs3CpuBasic2_iret_f16;
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#if 0
 static const BS3TESTMODEENTRY g_aModeTest[] =
 {
-    //BS3TESTMODEENTRY_MODE("tss / gate / esp", bs3CpuBasic2_TssGateEsp),
-    //BS3TESTMODEENTRY_CMN("iret", bs3CpuBasic2_iret),
-//    BS3TESTMODEENTRY_MODE("iret", bs3CpuBasic2_iret),
-#if 1
+#if 0
+    BS3TESTMODEENTRY_MODE("tss / gate / esp", bs3CpuBasic2_TssGateEsp),
     BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1),
-    BS3TESTMODEENTRY_MODE("sidt", bs3CpuBasic2_sidt),
-    BS3TESTMODEENTRY_MODE("sgdt", bs3CpuBasic2_sgdt),
+//    BS3TESTMODEENTRY_MODE("sidt", bs3CpuBasic2_sidt),
+//    BS3TESTMODEENTRY_MODE("sgdt", bs3CpuBasic2_sgdt),
+//    BS3TESTMODEENTRY_MODE("lidt", bs3CpuBasic2_lidt),
+//    BS3TESTMODEENTRY_MODE("lgdt", bs3CpuBasic2_lgdt),
 #endif
-    BS3TESTMODEENTRY_MODE("lidt", bs3CpuBasic2_lidt),
-    BS3TESTMODEENTRY_MODE("lgdt", bs3CpuBasic2_lgdt),
+//    BS3TESTMODEENTRY_MODE("iret", bs3CpuBasic2_iret),
+};
+#endif
+
+static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
+{
+    //{ "iret", bs3CpuBasic2_iret_f16, 0 },
+    { "lgdt", bs3CpuBasic2_lgdt_f16, 0 },
 };
 
 
@@ -69,9 +81,10 @@ BS3_DECL(void) Main_rm()
     Bs3TestInit("bs3-cpu-basic-2");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
-    Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
+    //Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
+    Bs3TestDoModesByOne_rm(g_aModeByOneTests, RT_ELEMENTS(g_aModeByOneTests), 0);
 
     Bs3TestTerm();
-for (;;) { }
+for (;;) { ASMHalt(); }
 }
 

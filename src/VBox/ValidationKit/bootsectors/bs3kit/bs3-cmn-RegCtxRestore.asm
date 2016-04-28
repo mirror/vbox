@@ -34,6 +34,7 @@ BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3Syscall
+BS3_EXTERN_CMN Bs3Panic
 TMPL_BEGIN_TEXT
 
 
@@ -79,18 +80,27 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         jz      .in_ring0
 
 .do_syscall_restore_ctx:
-%if TMPL_BITS == 16
-        mov     si, [bp + xCB + cbCurRetAddr]
-        mov     cx, [bp + xCB + cbCurRetAddr + 2]
-        mov     dx, [bp + xCB + cbCurRetAddr + sCB]
-        mov     ax, BS3_SYSCALL_RESTORE_CTX
-%else
+%if TMPL_BITS != 16
+.do_syscall_restore_ctx_restore_ds:
         mov     cx, ds
         mov     xSI, [xBP + xCB*2]
         movzx   edx, word [xBP + xCB*3]
         mov     eax, BS3_SYSCALL_RESTORE_CTX
+%else
+        mov     si, [bp + xCB + cbCurRetAddr]
+        mov     cx, [bp + xCB + cbCurRetAddr + 2]
+        mov     dx, [bp + xCB + cbCurRetAddr + sCB]
+        mov     ax, BS3_SYSCALL_RESTORE_CTX
 %endif
         call    Bs3Syscall
+        call    Bs3Panic
+
+%if TMPL_BITS == 16
+.do_syscall_restore_ctx_restore_ds:
+        push    es
+        pop     ds
+        jmp     .do_syscall_restore_ctx
+%endif
 
         ;
         ; Prologue.  Loads ES with BS3KIT_GRPNM_DATA16/FLAT (for g_bBs3CurrentMode
@@ -114,13 +124,23 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         movzx   xCX, word [xBP + xCB*3]
 %endif
 
+
+%if TMPL_BITS != 64
+        ; Restoring a 64-bit context is best done from 64-bit code.
+        mov     al, [xBX + BS3REGCTX.bMode]
+        test    al, BS3_MODE_CODE_64
+        jnz     .do_syscall_restore_ctx_restore_ds
+%endif
+
         ; The remainder must be done with interrupts disabled.
         cli
 
         ;
         ; Update g_bs3CurrentMode.
         ;
+%if TMPL_BITS == 64
         mov     al, [xBX + BS3REGCTX.bMode]
+%endif
         and     al, BS3_MODE_CODE_MASK
         mov     ah, [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     ah, ~BS3_MODE_CODE_MASK

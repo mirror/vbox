@@ -76,6 +76,7 @@ extern              _Bs3SwitchTo16BitV86_c32
 BS3_BEGIN_TEXT64
 %if TMPL_BITS != 64
 extern              _Bs3RegCtxSave_c64
+extern              _Bs3SwitchTo%[TMPL_BITS]Bit_c64
 %endif
 
 TMPL_BEGIN_TEXT
@@ -102,7 +103,7 @@ TONLY16 CPU 8086
         mov     dl, [BS3_DATA16_WRT(g_bBs3CurrentMode)]
         and     dl, BS3_MODE_CODE_MASK
 %if TMPL_BITS == 16
-        push    dx                          ; xBP - xCB*1: save space for previous CPU mode (16-bit)
+        push    dx                          ; bp - 2: previous CPU mode (16-bit)
 %endif
 
         ;
@@ -285,8 +286,8 @@ TMPL_BEGIN_TEXT
         call    _Bs3RegCtxSave_c32
 
  %if TMPL_BITS == 16
-        cmp     byte [xBP - xCB*1], BS3_MODE_CODE_16
-        jne     .code_32_back_to_v86
+        cmp     byte [bp - 2], BS3_MODE_CODE_V86
+        je      .code_32_back_to_v86
         call    _Bs3SwitchTo16Bit_c32
         BS3_SET_BITS TMPL_BITS
         jmp     .return
@@ -327,8 +328,8 @@ TMPL_BEGIN_TEXT
 
         call    _Bs3RegCtxSave_c64          ; No BS3_CALL as rcx is already ready.
 
-        call    _Bs3SwitchTo16Bit_c32
-        BS3_SET_BITS 16
+        call    _Bs3SwitchTo%[TMPL_BITS]Bit_c64
+        BS3_SET_BITS TMPL_BITS
         jmp     .return
 %endif
 BS3_PROC_END_CMN   Bs3RegCtxSaveEx
