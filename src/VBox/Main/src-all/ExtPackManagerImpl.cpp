@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -705,7 +705,7 @@ DEFINE_EMPTY_CTOR_DTOR(ExtPack)
 HRESULT ExtPack::FinalConstruct()
 {
     m = NULL;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 /**
@@ -789,6 +789,7 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
 void ExtPack::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 /**
@@ -1864,7 +1865,7 @@ DEFINE_EMPTY_CTOR_DTOR(ExtPackManager)
 HRESULT ExtPackManager::FinalConstruct()
 {
     m = NULL;
-    return S_OK;
+    return BaseFinalConstruct();
 }
 
 /**
@@ -1989,6 +1990,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
 void ExtPackManager::FinalRelease()
 {
     uninit();
+    BaseFinalRelease();
 }
 
 /**
