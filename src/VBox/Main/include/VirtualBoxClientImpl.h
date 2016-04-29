@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,13 +29,14 @@
 class ATL_NO_VTABLE VirtualBoxClient :
     public VirtualBoxClientWrap
 #ifdef RT_OS_WINDOWS
-    , public CComCoClass<VirtualBoxClient, &CLSID_VirtualBoxClient>
+    , public ATL::CComCoClass<VirtualBoxClient, &CLSID_VirtualBoxClient>
 #endif
 {
 public:
     DECLARE_CLASSFACTORY()
 
-    DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
+    // Do not use any ATL registry support.
+    //DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
 
     DECLARE_NOT_AGGREGATABLE(VirtualBoxClient)
 

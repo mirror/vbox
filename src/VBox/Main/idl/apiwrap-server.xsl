@@ -5,7 +5,7 @@
         XSLT stylesheet that generates C++ API wrappers (server side) from
         VirtualBox.xidl.
 
-    Copyright (C) 2010-2015 Oracle Corporation
+    Copyright (C) 2010-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -169,8 +169,8 @@ public:
             </xsl:for-each>
         </xsl:for-each>
     </xsl:if>
-    <xsl:text>        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
-    END_COM_MAP()
+    <xsl:value-of select="concat('        VBOX_TWEAK_INTERFACE_ENTRY(', @name, ')', $G_sNewLine)"/>
+    <xsl:text>    END_COM_MAP()
 
 </xsl:text>
     <xsl:value-of select="concat('    DECLARE_EMPTY_CTOR_DTOR(', substring(@name, 2), 'Wrap)', $G_sNewLine)"/>

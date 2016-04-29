@@ -2,7 +2,7 @@
 # tstVBoxAPILinux makefile
 #
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,6 @@
 # Several possible examples of paths:
 # VS_INSTALL_PATH = "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\"
 # VS_INCLUDE_PATH = "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include"
-# VS_ATLMFC_INCLUDE_PATH = "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\atlmfc\include"
 # WIN_SDK_INCLUDE_PATH = "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Include"
 # WIN_SDK_LIB_PATH = "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Lib\x64\"
 # VB_INSTALL_PATH = "C:\Program Files\Oracle\VirtualBox"

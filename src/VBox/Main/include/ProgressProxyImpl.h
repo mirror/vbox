@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IProgress implementation for Machine::openRemoteSession in VBoxSVC.
+ * IProgress implementation for Machine::LaunchVMProcess in VBoxSVC.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,20 +36,23 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(ProgressProxy)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (IProgress)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IProgress)
+        COM_INTERFACE_ENTRY2(IDispatch, IProgress)
+        VBOX_TWEAK_INTERFACE_ENTRY(IProgress)
     END_COM_MAP()
 
     HRESULT FinalConstruct();
     void    FinalRelease();
     HRESULT init(
-#if !defined (VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
                  VirtualBox *pParent,
 #endif
                  IUnknown *pInitiator,
                  CBSTR bstrDescription,
                  BOOL fCancelable);
     HRESULT init(
-#if !defined (VBOX_COM_INPROC)
+#ifndef VBOX_COM_INPROC
                  VirtualBox *pParent,
 #endif
                  IUnknown *pInitiator,

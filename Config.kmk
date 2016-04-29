@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -4861,13 +4861,11 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
 	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
 	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
+	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/oldnames.lib
  TEMPLATE_VBOXMAINEXE_LIBS.amd64         = \
 	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
 	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
+	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
  TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the GCC guys:
@@ -5357,8 +5355,6 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -W3 -MD -Zi -EHsc -Zc:wchar_t-
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)
-  TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
@@ -5374,8 +5370,7 @@ ifdef VBOX_WITH_QTGUI
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
  else # the gcc guys:

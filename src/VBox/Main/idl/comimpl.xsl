@@ -13,7 +13,7 @@
         rather trivial container classes for their read-only attributes.
         Further extension to other interfaces is possible and anticipated.
 
-    Copyright (C) 2010-2015 Oracle Corporation
+    Copyright (C) 2010-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -57,7 +57,7 @@
  */
 
 /*
- * Copyright (C) 2010-2015 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -487,7 +487,10 @@
   <xsl:value-of select="concat('    DECLARE_NOT_AGGREGATABLE(', $implName, ')&#10;')" />
   <xsl:value-of select="       '    DECLARE_PROTECT_FINAL_CONSTRUCT()&#10;'" />
   <xsl:value-of select="concat('    BEGIN_COM_MAP(', $implName, ')&#10;')" />
-  <xsl:value-of select="concat('        VBOX_DEFAULT_INTERFACE_ENTRIES(', @name, ')&#10;')" />
+  <xsl:value-of select="       '        COM_INTERFACE_ENTRY(ISupportErrorInfo)&#10;'" />
+  <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', @name, ')&#10;')" />
+  <xsl:value-of select="concat('        COM_INTERFACE_ENTRY2(IDispatch, ', @name, ')&#10;')" />
+  <xsl:value-of select="concat('        VBOX_TWEAK_INTERFACE_ENTRY(', @name, ')&#10;')" />
 
   <xsl:call-template name="genComEntry">
     <xsl:with-param name="name" select="@name" />

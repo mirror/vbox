@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -81,11 +81,10 @@
 
 #include <objbase.h>
 #ifndef VBOX_COM_NO_ATL
-# define _ATL_FREE_THREADED
 
-# include <atlbase.h>
-#include <atlcom.h>
-#endif
+/* Do not use actual ATL, just provide a superficial lookalike ourselves. */
+# include <VBox/com/microatl.h>
+#endif /* VBOX_COM_NO_ATL */
 
 #define NS_DECL_ISUPPORTS
 #define NS_IMPL_ISUPPORTS1_CI(a, b)
@@ -125,7 +124,7 @@ typedef const OLECHAR *CBSTR;
 /** Input GUID argument of interface method declaration. */
 #define IN_GUID GUID
 /** Output GUID argument of interface method declaration. */
-#define OUT_GUID GUID*
+#define OUT_GUID GUID *
 
 /** Makes the name of the getter interface function (n must be capitalized). */
 #define COMGETTER(n)    get_##n
@@ -249,7 +248,7 @@ typedef const OLECHAR *CBSTR;
  *
  *  @param I    interface class
  */
-#define COM_IIDOF(I) _ATL_IIDOF(I)
+#define COM_IIDOF(I) __uuidof(I)
 
 /**
  * For using interfaces before including the interface definitions. This will
@@ -280,6 +279,11 @@ typedef const OLECHAR *CBSTR;
 
 #include <nsID.h>
 
+#ifndef VBOX_COM_NO_ATL
+
+namespace ATL
+{
+
 #define ATL_NO_VTABLE
 #define DECLARE_CLASSFACTORY(a)
 #define DECLARE_CLASSFACTORY_SINGLETON(a)
@@ -291,6 +295,35 @@ typedef const OLECHAR *CBSTR;
 #define COM_INTERFACE_ENTRY2(a,b)
 #define END_COM_MAP() NS_DECL_ISUPPORTS
 #define COM_INTERFACE_ENTRY_AGGREGATE(a,b)
+
+/* A few very simple ATL emulator classes to provide
+ * FinalConstruct()/FinalRelease() functionality with XPCOM. */
+
+class CComMultiThreadModel
+{
+};
+
+template <class DummyThreadModel> class CComObjectRootEx
+{
+public:
+    HRESULT FinalConstruct()
+    {
+        return S_OK;
+    }
+    void FinalRelease()
+    {
+    }
+};
+
+template <class DummyThreadModel> class CComObject
+{
+public:
+    virtual ~CComObject() { this->FinalRelease(); }
+};
+
+} /* namespace ATL */
+
+#endif /* !VBOX_COM_NO_ATL */
 
 #define HRESULT     nsresult
 #define SUCCEEDED   NS_SUCCEEDED
@@ -393,37 +426,10 @@ typedef nsIID   IID;
 
 #define COM_STRUCT_OR_CLASS(I) class I
 
-namespace ATL
-{
-
-/* A few very simple ATL emulator classes to provide
- * FinalConstruct()/FinalRelease() functionality on Linux. */
-
-class CComMultiThreadModel
-{
-};
-
-template <class Base> class CComObjectRootEx : public Base
-{
-public:
-    HRESULT FinalConstruct() { return S_OK; }
-    void FinalRelease() {}
-};
-
-template <class Base> class CComObject : public Base
-{
-public:
-    virtual ~CComObject() { this->FinalRelease(); }
-};
-
-} /* namespace ATL */
-
-using namespace ATL;
-
 /* helper functions */
 extern "C"
 {
-BSTR SysAllocString(const OLECHAR* sz);
+BSTR SysAllocString(const OLECHAR *sz);
 BSTR SysAllocStringByteLen(char *psz, unsigned int len);
 BSTR SysAllocStringLen(const OLECHAR *pch, unsigned int cch);
 void SysFreeString(BSTR bstr);
@@ -432,6 +438,8 @@ int SysReAllocStringLen(BSTR *pbstr, const OLECHAR *psz, unsigned int cch);
 unsigned int SysStringByteLen(BSTR bstr);
 unsigned int SysStringLen(BSTR bstr);
 }
+
+#ifndef VBOX_COM_NO_ATL
 
 /**
  *  'Constructor' for the component class.
@@ -454,7 +462,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
         return rv;                                                            \
     }                                                                         \
                                                                               \
-    CComObject <_InstanceClass> *inst = new CComObject <_InstanceClass>();    \
+    CComObject<_InstanceClass> *inst = new CComObject<_InstanceClass>();      \
     if (NULL == inst) {                                                       \
         rv = NS_ERROR_OUT_OF_MEMORY;                                          \
         return rv;                                                            \
@@ -485,7 +493,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 {                                                                             \
     nsresult rv;                                                              \
                                                                               \
-    _InstanceClass * inst = NULL;       /* initialized to shut up gcc */      \
+    _InstanceClass *inst = NULL;       /* initialized to shut up gcc */       \
                                                                               \
     *aResult = NULL;                                                          \
     if (NULL != aOuter) {                                                     \
@@ -510,6 +518,8 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return rv;                                                                \
 }
 
+#endif /* !VBOX_COM_NO_ATL */
+
 #endif /* !defined(VBOX_WITH_XPCOM) */
 
 /**
@@ -528,50 +538,45 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 namespace com
 {
 
+#ifndef VBOX_COM_NO_ATL
+
 // use this macro to implement scriptable interfaces
 #ifdef RT_OS_WINDOWS
 #define VBOX_SCRIPTABLE_IMPL(iface)                                          \
-    public IDispatchImpl<iface, &IID_##iface, &LIBID_VirtualBox,             \
-                         kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>
+    public ATL::IDispatchImpl<iface, &IID_##iface, &LIBID_VirtualBox,        \
+                              kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>
 
 #define VBOX_SCRIPTABLE_DISPATCH_IMPL(iface)                                 \
-    STDMETHOD(QueryInterface)(REFIID riid , void **ppObj)                    \
+    STDMETHOD(QueryInterface)(REFIID riid, void **ppObj)                     \
     {                                                                        \
         if (riid == IID_##iface)                                             \
         {                                                                    \
-            *ppObj = (iface*)this;                                           \
+            *ppObj = (iface *)this;                                          \
             AddRef();                                                        \
             return S_OK;                                                     \
         }                                                                    \
         if (riid == IID_IUnknown)                                            \
         {                                                                    \
-            *ppObj = (IUnknown*)this;                                        \
+            *ppObj = (IUnknown *)this;                                       \
             AddRef();                                                        \
             return S_OK;                                                     \
         }                                                                    \
         if (riid == IID_IDispatch)                                           \
         {                                                                    \
-            *ppObj = (IDispatch*)this;                                       \
+            *ppObj = (IDispatch *)this;                                      \
             AddRef();                                                        \
             return S_OK;                                                     \
         }                                                                    \
         *ppObj = NULL;                                                       \
         return E_NOINTERFACE;                                                \
     }
-
-
-#define VBOX_DEFAULT_INTERFACE_ENTRIES(iface)                                \
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)                               \
-        COM_INTERFACE_ENTRY(iface)                                           \
-        COM_INTERFACE_ENTRY2(IDispatch,iface)                                \
-        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
 #else
 #define VBOX_SCRIPTABLE_IMPL(iface)                     \
     public iface
 #define VBOX_SCRIPTABLE_DISPATCH_IMPL(iface)
-#define VBOX_DEFAULT_INTERFACE_ENTRIES(iface)
 #endif
 
+#endif /* !VBOX_COM_NO_ATL */
 
 } /* namespace com */
 

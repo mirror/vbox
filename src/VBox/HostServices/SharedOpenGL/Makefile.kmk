@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008-2015 Oracle Corporation
+# Copyright (C) 2008-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -59,7 +59,6 @@ endif
 VBoxSharedCrOpenGL_INTERMEDIATES = \
 	$(TEMPLATE_VBOXMAINEXE_INTERMEDIATES)
 VBoxSharedCrOpenGL_INCS.win = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
 ifdef VBOX_WITH_XPCOM
 VBoxSharedCrOpenGL_INCS += \
@@ -84,8 +83,7 @@ VBoxSharedCrOpenGL_LIBS.darwin = \
 	$(LIB_REM)
 ifeq ($(KBUILD_TARGET),win)
  VBoxSharedCrOpenGL_LIBS += \
-	$(PATH_OBJ)/VBoxOGLrenderspu/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_SUFF_LIB)
+	$(PATH_OBJ)/VBoxOGLrenderspu/VBoxOGLrenderspu$(VBOX_SUFF_LIB)
 else
  VBoxSharedCrOpenGL_LIBS += \
 	$(PATH_STAGE_BIN)/VBoxOGLrenderspu$(VBOX_SUFF_DLL)

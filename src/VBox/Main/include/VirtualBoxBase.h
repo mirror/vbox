@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,8 +61,6 @@ typedef std::list<Utf8Str> StringsList;
 
 #if !defined(VBOX_WITH_XPCOM)
 
-#include <atlcom.h>
-
 /* use a special version of the singleton class factory,
  * see KB811591 in msdn for more info. */
 
@@ -70,11 +68,18 @@ typedef std::list<Utf8Str> StringsList;
 #define DECLARE_CLASSFACTORY_SINGLETON(obj) DECLARE_CLASSFACTORY_EX(CMyComClassFactorySingleton<obj>)
 
 template <class T>
-class CMyComClassFactorySingleton : public CComClassFactory
+class CMyComClassFactorySingleton : public ATL::CComClassFactory
 {
 public:
-    CMyComClassFactorySingleton() : m_hrCreate(S_OK){}
-    virtual ~CMyComClassFactorySingleton(){}
+    CMyComClassFactorySingleton() :
+        m_hrCreate(S_OK), m_spObj(NULL)
+    {
+    }
+    virtual ~CMyComClassFactorySingleton()
+    {
+        if (m_spObj)
+            m_spObj->Release();
+    }
     // IClassFactory
     STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void** ppvObj)
     {
@@ -82,57 +87,52 @@ public:
         if (ppvObj != NULL)
         {
             *ppvObj = NULL;
-            // Aggregation is not supported in singleton objects.
-            ATLASSERT(pUnkOuter == NULL);
-            if (pUnkOuter != NULL)
-                hRes = CLASS_E_NOAGGREGATION;
+            // no aggregation for singletons
+            AssertReturn(pUnkOuter == NULL, CLASS_E_NOAGGREGATION);
+            if (m_hrCreate == S_OK && m_spObj == NULL)
+            {
+                Lock();
+                __try
+                {
+                    // Fix:  The following If statement was moved inside the __try statement.
+                    // Did another thread arrive here first?
+                    if (m_hrCreate == S_OK && m_spObj == NULL)
+                    {
+                        // lock the module to indicate activity
+                        // (necessary for the monitor shutdown thread to correctly
+                        // terminate the module in case when CreateInstance() fails)
+                        ATL::_pAtlModule->Lock();
+                        ATL::CComObjectCached<T> *p;
+                        m_hrCreate = ATL::CComObjectCached<T>::CreateInstance(&p);
+                        if (SUCCEEDED(m_hrCreate))
+                        {
+                            m_hrCreate = p->QueryInterface(IID_IUnknown, (void **)&m_spObj);
+                            if (FAILED(m_hrCreate))
+                            {
+                                delete p;
+                            }
+                        }
+                        ATL::_pAtlModule->Unlock();
+                    }
+                }
+                __finally
+                {
+                    Unlock();
+                }
+            }
+            if (m_hrCreate == S_OK)
+            {
+                hRes = m_spObj->QueryInterface(riid, ppvObj);
+            }
             else
             {
-                if (m_hrCreate == S_OK && m_spObj == NULL)
-                {
-                    Lock();
-                    __try
-                    {
-                        // Fix:  The following If statement was moved inside the __try statement.
-                        // Did another thread arrive here first?
-                        if (m_hrCreate == S_OK && m_spObj == NULL)
-                        {
-                            // lock the module to indicate activity
-                            // (necessary for the monitor shutdown thread to correctly
-                            // terminate the module in case when CreateInstance() fails)
-                            _pAtlModule->Lock();
-                            CComObjectCached<T> *p;
-                            m_hrCreate = CComObjectCached<T>::CreateInstance(&p);
-                            if (SUCCEEDED(m_hrCreate))
-                            {
-                                m_hrCreate = p->QueryInterface(IID_IUnknown, (void**)&m_spObj);
-                                if (FAILED(m_hrCreate))
-                                {
-                                    delete p;
-                                }
-                            }
-                            _pAtlModule->Unlock();
-                        }
-                    }
-                    __finally
-                    {
-                        Unlock();
-                    }
-                }
-                if (m_hrCreate == S_OK)
-                {
-                    hRes = m_spObj->QueryInterface(riid, ppvObj);
-                }
-                else
-                {
-                    hRes = m_hrCreate;
-                }
+                hRes = m_hrCreate;
             }
         }
         return hRes;
     }
     HRESULT m_hrCreate;
-    CComPtr<IUnknown> m_spObj;
+    IUnknown *m_spObj;
 };
 
 #endif /* !defined(VBOX_WITH_XPCOM) */
@@ -641,12 +641,12 @@ public:
 #ifdef VBOX_WITH_XPCOM
   #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls, iface) \
     VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface)
-#else // #ifdef VBOX_WITH_XPCOM
+#else // !VBOX_WITH_XPCOM
   #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls, iface) \
     VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface) \
     STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid) \
     { \
-        const _ATL_INTMAP_ENTRY* pEntries = cls::_GetEntries(); \
+        const ATL::_ATL_INTMAP_ENTRY* pEntries = cls::_GetEntries(); \
         Assert(pEntries); \
         if (!pEntries) \
             return S_FALSE; \
@@ -663,7 +663,20 @@ public:
         Assert(bISupportErrorInfoFound); \
         return bSupports ? S_OK : S_FALSE; \
     }
-#endif // #ifdef VBOX_WITH_XPCOM
+#endif // !VBOX_WITH_XPCOM
+
+/**
+ * VBOX_TWEAK_INTERFACE_ENTRY:
+ * Macro for defining magic interface entries needed for all interfaces
+ * implemented by any subclass of VirtualBoxBase.
+ */
+#ifdef VBOX_WITH_XPCOM
+#define VBOX_TWEAK_INTERFACE_ENTRY(iface)
+#else // !VBOX_WITH_XPCOM
+#define VBOX_TWEAK_INTERFACE_ENTRY(iface)                                   \
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.m_p)
+#endif // !VBOX_WITH_XPCOM
+
 
 /**
  * Abstract base class for all component classes implementing COM
@@ -675,30 +688,30 @@ public:
  */
 class ATL_NO_VTABLE VirtualBoxBase
     : public VirtualBoxTranslatable,
-      public CComObjectRootEx<CComMultiThreadModel>
+      public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>
 #if !defined (VBOX_WITH_XPCOM)
     , public ISupportErrorInfo
 #endif
 {
 protected:
 #ifdef RT_OS_WINDOWS
-     CComPtr <IUnknown>   m_pUnkMarshaler;
+     ComPtr<IUnknown> m_pUnkMarshaler;
 #endif
 
-     HRESULT   BaseFinalConstruct()
+     HRESULT BaseFinalConstruct()
      {
 #ifdef RT_OS_WINDOWS
         return CoCreateFreeThreadedMarshaler(this, //GetControllingUnknown(),
-                                             &m_pUnkMarshaler.p);
+                                             m_pUnkMarshaler.asOutParam());
 #else
         return S_OK;
 #endif
      }
 
-     void   BaseFinalRelease()
+     void BaseFinalRelease()
      {
 #ifdef RT_OS_WINDOWS
-         m_pUnkMarshaler.Release();
+         m_pUnkMarshaler.setNull();
 #endif
      }
 

@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,6 @@ VBoxSharedFolders_TEMPLATE  = VBOXR3
 VBoxSharedFolders_NAME.os2  = VBoxSFld
 VBoxSharedFolders_DEFS      = VBOX_WITH_HGCM RTSHFL
 VBoxSharedFolders_INCS.win  = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)
 
 VBoxSharedFolders_LDFLAGS.darwin = \

@@ -24,16 +24,13 @@
 #include <SessionImpl.h>
 #include <VirtualBoxClientImpl.h>
 
-#include <atlbase.h>
-#include <atlcom.h>
-
 #include <iprt/initterm.h>
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-CComModule _Module;
+static ATL::CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_Session, Session)
@@ -49,11 +46,11 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
     if (dwReason == DLL_PROCESS_ATTACH)
     {
-        _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
-        DisableThreadLibraryCalls(hInstance);
-
         // idempotent, so doesn't harm, and needed for COM embedding scenario
         RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
+
+        _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
+        DisableThreadLibraryCalls(hInstance);
     }
     else if (dwReason == DLL_PROCESS_DETACH)
     {
@@ -67,13 +64,13 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 
 STDAPI DllCanUnloadNow(void)
 {
-    return (_Module.GetLockCount()==0) ? S_OK : S_FALSE;
+    return (_Module.GetLockCount() == 0) ? S_OK : S_FALSE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // Returns a class factory to create an object of the requested type
 
-STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
+STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
     return _Module.GetClassObject(rclsid, riid, ppv);
 }

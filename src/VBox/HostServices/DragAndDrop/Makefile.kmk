@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2011-2015 Oracle Corporation
+# Copyright (C) 2011-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,6 @@ VBoxDragAndDropSvc_DEFS      = \
 	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
 VBoxDragAndDropSvc_INCS      = $(PATH_ROOT)/src/VBox/Main/include ./
 VBoxDragAndDropSvc_INCS.win  = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)
 
 VBoxDragAndDropSvc_SOURCES = \

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2015 Oracle Corporation
+ * Copyright (C) 2005-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -257,7 +257,10 @@ public:
     DECLARE_NOT_AGGREGATABLE(USBDeviceFilter)
     DECLARE_PROTECT_FINAL_CONSTRUCT()
     BEGIN_COM_MAP(USBDeviceFilter)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IUSBDeviceFilter)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IUSBDeviceFilter)
+        COM_INTERFACE_ENTRY2(IDispatch, IUSBDeviceFilter)
+        VBOX_TWEAK_INTERFACE_ENTRY(IUSBDeviceFilter)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(USBDeviceFilter)

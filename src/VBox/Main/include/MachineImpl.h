@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1293,8 +1293,11 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SessionMachine)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IMachine)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IMachine)
+        COM_INTERFACE_ENTRY2(IDispatch, IMachine)
         COM_INTERFACE_ENTRY(IInternalMachineControl)
+        VBOX_TWEAK_INTERFACE_ENTRY(IMachine)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(SessionMachine)
@@ -1547,7 +1550,10 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SnapshotMachine)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IMachine)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IMachine)
+        COM_INTERFACE_ENTRY2(IDispatch, IMachine)
+        VBOX_TWEAK_INTERFACE_ENTRY(IMachine)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR(SnapshotMachine)

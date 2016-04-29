@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,6 @@ VBoxGuestPropSvc_NAME.os2  = VBoxSIS
 VBoxGuestPropSvc_DEFS      = VBOX_WITH_HGCM
 VBoxGuestPropSvc_INCS      = $(PATH_ROOT)/src/VBox/Main/include
 VBoxGuestPropSvc_INCS.win  = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)
 
 VBoxGuestPropSvc_SOURCES = \

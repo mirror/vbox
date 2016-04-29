@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2004-2013 Oracle Corporation
+ * Copyright (C) 2004-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <tchar.h>
 
 #include "VBox/com/defs.h"
 
@@ -40,12 +41,7 @@
 #include <iprt/getopt.h>
 #include <iprt/message.h>
 
-#include <atlbase.h>
-#include <atlcom.h>
-
-#define _ATL_FREE_THREADED
-
-class CExeModule : public CComModule
+class CExeModule : public ATL::CComModule
 {
 public:
     LONG Unlock();
@@ -69,7 +65,7 @@ static DWORD WINAPI MonitorProc(void* pv)
 
 LONG CExeModule::Unlock()
 {
-    LONG l = CComModule::Unlock();
+    LONG l = ATL::CComModule::Unlock();
     if (l == 0)
     {
         bActivity = true;
@@ -91,7 +87,7 @@ void CExeModule::MonitorShutdown()
             dwWait = WaitForSingleObject(hEventShutdown, dwTimeOut);
         } while (dwWait == WAIT_OBJECT_0);
         /* timed out */
-        if (!bActivity && m_nLockCnt == 0) /* if no activity let's really bail */
+        if (!bActivity && GetLockCount() == 0) /* if no activity let's really bail */
         {
             /* Disable log rotation at this point, worst case a log file
              * becomes slightly bigger than it should. Avoids quirks with
@@ -113,9 +109,9 @@ void CExeModule::MonitorShutdown()
                     }
                 }
             }
-#if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
+#if _WIN32_WINNT >= 0x0400
             CoSuspendClassObjects();
-            if (!bActivity && m_nLockCnt == 0)
+            if (!bActivity && GetLockCount() == 0)
 #endif
                 break;
         }
@@ -134,7 +130,7 @@ bool CExeModule::StartMonitor()
     return (h != NULL);
 }
 
-CExeModule _Module;
+static CExeModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_VirtualBox, VirtualBox)
@@ -383,7 +379,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     else
     {
         _Module.StartMonitor();
-#if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
+#if _WIN32_WINNT >= 0x0400
         hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
         _ASSERTE(SUCCEEDED(hRes));
         hRes = CoResumeClassObjects();

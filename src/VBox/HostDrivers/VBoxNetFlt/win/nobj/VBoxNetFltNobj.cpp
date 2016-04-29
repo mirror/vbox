@@ -4,7 +4,7 @@
  * Used to filter Bridged Networking Driver bindings
  */
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -541,7 +541,7 @@ STDMETHODIMP VBoxNetFltNobj::QueryBindingPath(IN DWORD dwChangeFlag, IN INetCfgB
 }
 
 
-CComModule _Module;
+static ATL::CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_VBoxNetFltNobj, VBoxNetFltNobj)
@@ -574,10 +574,20 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 
 STDAPI DllRegisterServer()
 {
+// this is a "just in case" conditional, which is not defined
+#ifdef VBOX_FORCE_REGISTER_SERVER
     return _Module.RegisterServer(TRUE);
+#else
+    return S_OK;
+#endif
 }
 
 STDAPI DllUnregisterServer()
 {
+// this is a "just in case" conditional, which is not defined
+#ifdef VBOX_FORCE_REGISTER_SERVER
     return _Module.UnregisterServer(TRUE);
+#else
+    return S_OK;
+#endif
 }
