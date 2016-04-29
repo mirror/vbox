@@ -425,15 +425,29 @@ DECLHIDDEN(int) rtR0InitNative(void)
 
     g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
 #ifndef IPRT_TARGET_NT4
-    if (g_pfnrtNtHalSendSoftwareInterrupt)
+# if 0 /* Currently disabled as we're checking whether it's responsible for @bugref{8343} (smp windows performance issue). */
+    if (g_pfnrtNtHalSendSoftwareInterrupt && true /* don't do this, SMP performance regression. */)
+    {
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalSendSoftwareInterrupt\n");
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalSendSoftwareInterrupt;
-    else if (   g_pfnrtHalRequestIpiW7Plus
+    }
+    else
+#endif
+         if (   g_pfnrtHalRequestIpiW7Plus
              && g_pfnrtKeInitializeAffinityEx
              && g_pfnrtKeAddProcessorAffinityEx
              && g_pfnrtKeGetProcessorIndexFromNumber)
+    {
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalReqestIpiW7Plus\n");
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalReqestIpiW7Plus;
+    }
     else if (OsVerInfo.uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
+    {
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingBroadcastIpi\n");
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingBroadcastIpi;
+    }
+    else
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingDpc\n");
     /* else: Windows XP should send always send an IPI -> VERIFY */
 #endif
 
