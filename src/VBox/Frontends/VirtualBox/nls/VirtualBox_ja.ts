@@ -14019,7 +14019,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxEmptyFileSelector</name>
+    <name>UIEmptyFilePathSelector</name>
     <message>
         <source>&amp;Choose...</source>
         <translation type="obsolete">選択(&amp;C)...</translation>

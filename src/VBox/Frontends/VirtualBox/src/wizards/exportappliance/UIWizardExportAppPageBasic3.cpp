@@ -33,7 +33,7 @@
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
 # include "VBoxGlobal.h"
-# include "UIFilePathSelector.h"
+# include "UIEmptyFilePathSelector.h"
 # include "QIRichTextLabel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -225,11 +225,11 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pBucketLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pBucketLabel->setBuddy(m_pBucketEditor);
             }
-            m_pFileSelector = new VBoxEmptyFileSelector(this);
+            m_pFileSelector = new UIEmptyFilePathSelector(this);
             {
-                m_pFileSelector->setMode(UIFilePathSelector::Mode_File_Save);
+                m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
                 m_pFileSelector->setEditable(true);
-                m_pFileSelector->setButtonPosition(VBoxEmptyFileSelector::RightPosition);
+                m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                 m_pFileSelector->setDefaultSaveExt("ova");
             }
             m_pFileSelectorLabel = new QLabel(this);

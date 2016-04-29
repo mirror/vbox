@@ -28,7 +28,7 @@
 # include "UIWizardImportAppPageBasic2.h"
 # include "UIWizardImportApp.h"
 # include "VBoxGlobal.h"
-# include "UIFilePathSelector.h"
+# include "UIEmptyFilePathSelector.h"
 # include "QIRichTextLabel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -44,11 +44,11 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pFileSelector = new VBoxEmptyFileSelector(this);
+        m_pFileSelector = new UIEmptyFilePathSelector(this);
         {
             m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
-            m_pFileSelector->setMode(UIFilePathSelector::Mode_File_Open);
-            m_pFileSelector->setButtonPosition(VBoxEmptyFileSelector::RightPosition);
+            m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
+            m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
             m_pFileSelector->setEditable(true);
         }
         pMainLayout->addWidget(m_pLabel);

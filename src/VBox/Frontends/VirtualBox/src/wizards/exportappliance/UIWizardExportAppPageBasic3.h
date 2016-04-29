@@ -27,7 +27,7 @@
 /* Forward declarations: */
 class QLabel;
 class QLineEdit;
-class VBoxEmptyFileSelector;
+class UIEmptyFilePathSelector;
 class QComboBox;
 class QCheckBox;
 class QIRichTextLabel;
@@ -80,7 +80,7 @@ protected:
     QLabel *m_pBucketLabel;
     QLineEdit *m_pBucketEditor;
     QLabel *m_pFileSelectorLabel;
-    VBoxEmptyFileSelector *m_pFileSelector;
+    UIEmptyFilePathSelector *m_pFileSelector;
     QLabel *m_pFormatComboBoxLabel;
     QComboBox *m_pFormatComboBox;
     QCheckBox *m_pManifestCheckbox;

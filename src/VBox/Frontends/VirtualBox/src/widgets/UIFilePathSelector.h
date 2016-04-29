@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxFilePathSelectorWidget_h__
-#define __VBoxFilePathSelectorWidget_h__
+#ifndef ___UIFilePathSelector_h___
+#define ___UIFilePathSelector_h___
 
 /* VBox includes */
 #include "QIWithRetranslateUI.h"
@@ -33,8 +33,6 @@ class QHBoxLayout;
 class QAction;
 class QIToolButton;
 
-////////////////////////////////////////////////////////////////////////////////
-// UIFilePathSelector
 
 class UIFilePathSelector: public QIWithRetranslateUI<QComboBox>
 {
@@ -124,83 +122,5 @@ private:
     bool mModified;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// VBoxEmptyFileSelector
-
-class VBoxEmptyFileSelector: public QIWithRetranslateUI<QWidget>
-{
-    Q_OBJECT;
-
-public:
-    enum ButtonPosition
-    {
-        LeftPosition,
-        RightPosition
-    };
-
-    VBoxEmptyFileSelector (QWidget *aParent = NULL);
-
-    void setMode (UIFilePathSelector::Mode aMode);
-    UIFilePathSelector::Mode mode() const;
-
-    void setButtonPosition (ButtonPosition aPos);
-    ButtonPosition buttonPosition() const;
-
-    void setEditable (bool aOn);
-    bool isEditable() const;
-
-    void setChooserVisible (bool aOn);
-    bool isChooserVisible() const;
-
-    QString path() const;
-
-    void setDefaultSaveExt (const QString &aExt);
-    QString defaultSaveExt() const;
-
-    bool isModified () const { return mIsModified; }
-    void resetModified () { mIsModified = false; }
-
-    void setChooseButtonToolTip(const QString &strToolTip);
-    QString chooseButtonToolTip() const;
-
-    void setFileDialogTitle (const QString& aTitle);
-    QString fileDialogTitle() const;
-
-    void setFileFilters (const QString& aFilters);
-    QString fileFilters() const;
-
-    void setHomeDir (const QString& aDir);
-    QString homeDir() const;
-
-signals:
-    void pathChanged (QString);
-
-public slots:
-    void setPath (const QString& aPath);
-
-protected:
-    void retranslateUi();
-
-private slots:
-    void choose();
-    void textChanged (const QString& aPath);
-
-private:
-    /* Private member vars */
-    QHBoxLayout *mMainLayout;
-    QWidget *mPathWgt;
-    QILabel *mLabel;
-    UIFilePathSelector::Mode mMode;
-    QILineEdit *mLineEdit;
-    QIToolButton *mSelectButton;
-    bool m_fButtonToolTipSet;
-    QString mFileDialogTitle;
-    QString mFileFilters;
-    QString mDefaultSaveExt;
-    QString mHomeDir;
-    bool mIsModified;
-    QString mPath;
-};
-
-#endif /* __VBoxFilePathSelectorWidget_h__ */
+#endif /* !___UIFilePathSelector_h___ */
 
