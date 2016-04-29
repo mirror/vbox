@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -151,8 +151,7 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     Assert(mScreen);
     mfInitialized = true;
 #ifdef RT_OS_WINDOWS
-    HRESULT hr = CoCreateFreeThreadedMarshaler(this, //GetControllingUnknown(),
-                                             &m_pUnkMarshaler.p);
+    HRESULT hr = CoCreateFreeThreadedMarshaler(this, m_pUnkMarshaler.asOutParam());
     Log(("CoCreateFreeThreadedMarshaler hr %08X\n", hr));
 #endif
 
@@ -1425,21 +1424,6 @@ STDMETHODIMP VBoxSDLFBOverlay::COMSETTER(Alpha)(ULONG alpha)
 {
     LogFlow(("VBoxSDLFBOverlay::SetAlpha\n"));
     return E_NOTIMPL;
-}
-
-/**
- * Returns the address of the framebuffer bits for writing to.
- *
- * @returns COM status code
- * @param   alpha Address of result buffer.
- */
-STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Address)(ULONG *address)
-{
-    LogFlow(("VBoxSDLFBOverlay::GetAddress\n"));
-    if (!address)
-        return E_INVALIDARG;
-    *address = (uintptr_t) mOverlayBits->pixels;
-    return S_OK;
 }
 
 /**

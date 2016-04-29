@@ -145,7 +145,7 @@ static void watchdogShutdown();
 
 #ifdef RT_OS_WINDOWS
 /* Required for ATL. */
-static CComModule _Module;
+static ATL::CComModule _Module;
 #endif
 
 /**

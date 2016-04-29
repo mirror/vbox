@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -92,7 +92,7 @@ static volatile bool    g_fCanceled = false;
 
 # ifdef RT_OS_WINDOWS
 // Required for ATL
-static CComModule       _Module;
+static ATL::CComModule  _Module;
 # endif
 
 /**
