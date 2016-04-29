@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,8 +26,6 @@
 
 #include <VBox/err.h>
 
-#include <atlcom.h>
-
 
 class ComEventDesc
 {
@@ -41,19 +39,19 @@ public:
       delete [] mArgs;
  }
 
- void init(const char* name, int argc)
+ void init(const char *name, int argc)
  {
    // copies content
    mName = name;
    mArgc = argc;
    if (mArgs)
      delete [] mArgs;
-   mArgs = new CComVariant[mArgc];
+   mArgs = new tagVARIANT[mArgc];
    mPos = argc - 1;
  }
 
  template <class T>
- ComEventDesc& add(T v)
+ ComEventDesc &add(T v)
  {
    Assert(mPos>= 0);
    mArgs[mPos] = v;
@@ -64,7 +62,7 @@ public:
 private:
  com::Utf8Str mName;
  int          mArgc;
- CComVariant* mArgs;
+ tagVARIANT  *mArgs;
  int          mPos;
 
  friend class ComEventsHelper;
@@ -78,7 +76,7 @@ public:
 
     HRESULT init(const com::Guid &aGuid);
     HRESULT lookup(com::Utf8Str &aName, DISPID *did);
-    HRESULT fire(IDispatch* aObj, ComEventDesc& desc, CComVariant *pResult);
+    HRESULT fire(IDispatch *aObj, ComEventDesc &desc, tagVARIANT *pResult);
 
 private:
     typedef std::map<com::Utf8Str, DISPID> ComEventsMap;

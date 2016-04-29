@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,39 +31,42 @@ ComEventsHelper::~ComEventsHelper()
 HRESULT ComEventsHelper::init(const com::Guid &aGuid)
 {
     HRESULT            hr = 0;
-    CComPtr<ITypeLib>  ptlib;
-    CComPtr<ITypeInfo> ptinfo;
+    ComPtr<ITypeLib>   ptlib;
+    ComPtr<ITypeInfo>  ptinfo;
     int i;
 
 
-    hr = ::LoadRegTypeLib(LIBID_VirtualBox, kTypeLibraryMajorVersion, kTypeLibraryMinorVersion, LOCALE_SYSTEM_DEFAULT, &ptlib);
+    hr = ::LoadRegTypeLib(LIBID_VirtualBox, kTypeLibraryMajorVersion, kTypeLibraryMinorVersion, LOCALE_SYSTEM_DEFAULT, ptlib.asOutParam());
     if (FAILED(hr))
         return hr;
 
-    hr = ptlib->GetTypeInfoOfGuid(aGuid.ref(), &ptinfo);
+    hr = ptlib->GetTypeInfoOfGuid(aGuid.ref(), ptinfo.asOutParam());
     if (FAILED(hr))
         return hr;
 
-    CComTypeAttr       ptypeattr(ptinfo);
-    hr = ptinfo->GetTypeAttr(&ptypeattr);
+    TYPEATTR *pta;
+    hr = ptinfo->GetTypeAttr(&pta);
     if (FAILED(hr))
         return hr;
 
-    int cFuncs = ptypeattr->cFuncs;
+    int cFuncs = pta->cFuncs;
 
-    for (i=0; i<cFuncs; i++)
+    for (i = 0; i < cFuncs; i++)
     {
-        CComFuncDesc  pfuncdesc(ptinfo);
-        DWORD         hContext; // help context
-        BSTR          fName;
+        FUNCDESC *pfd;
+        DWORD hContext; // help context
+        BSTR fName;
 
-        hr = ptinfo->GetFuncDesc(i, &pfuncdesc);
+        hr = ptinfo->GetFuncDesc(i, &pfd);
         if (FAILED(hr))
-           break;
+            break;
 
-        hr = ptinfo->GetDocumentation(pfuncdesc->memid, &fName, NULL, &hContext, NULL);
+        hr = ptinfo->GetDocumentation(pfd->memid, &fName, NULL, &hContext, NULL);
         if (FAILED(hr))
-           break;
+	{
+            ptinfo->ReleaseFuncDesc(pfd);
+            break;
+	}
 
         /* We only allow firing event callbacks */
         if (_wcsnicmp(fName, L"On", 2) == 0)
@@ -76,10 +79,11 @@ HRESULT ComEventsHelper::init(const com::Guid &aGuid)
         }
         SysFreeString(fName);
 
-        pfuncdesc.Release();
+        ptinfo->ReleaseFuncDesc(pfd);
     }
+    ptinfo->ReleaseTypeAttr(pta);
 
-   return hr;
+    return hr;
 }
 
 HRESULT ComEventsHelper::lookup(com::Utf8Str &aName, DISPID *did)
@@ -99,10 +103,10 @@ HRESULT ComEventsHelper::lookup(com::Utf8Str &aName, DISPID *did)
 }
 
 
-HRESULT ComEventsHelper::fire(IDispatch* aObj, ComEventDesc& event, CComVariant* result)
+HRESULT ComEventsHelper::fire(IDispatch *aObj, ComEventDesc &event, tagVARIANT *result)
 {
      int argc = event.mArgc;
-     CComVariant* args = event.mArgs;
+     tagVARIANT *args = event.mArgs;
      DISPPARAMS disp = { args, NULL, argc, 0};
      DISPID           dispid;
 
