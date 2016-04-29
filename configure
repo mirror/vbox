@@ -3,7 +3,7 @@
 # libraries VBox OSE depends on.
 
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@ export LC_ALL
 
 # append some extra paths
 PATH="$PATH:/opt/gnome/bin"
-# Solaris (order of paths important for tr, echo, grep, sed to work)
-PATH="/usr/xpg4/bin:/usr/ucb:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
+# Solaris (order of paths important for tr, grep, sed to work)
+PATH="/usr/xpg4/bin:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
 ORGPATH=$PATH
 
 # Wrapper for ancient /usr/bin/which on darwin that always returns 0
@@ -187,6 +187,11 @@ fi
 # darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
 if [ "$OS" = "darwin" ]; then
   ECHO_N="/bin/echo -n"
+elif [ "$OS" = "solaris" ]; then
+  # Solaris 11 /bin/sh has a builtin echo that could grok -n if there is
+  # /usr/ucb/echo the first echo executable in the path, but the /usr/ucb
+  # tools are no longer installed by default.
+  ECHO_N="/usr/gnu/bin/echo -n"
 else
   ECHO_N="echo -n"
 fi
