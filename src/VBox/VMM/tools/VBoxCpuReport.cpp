@@ -632,7 +632,9 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x0000002f: return "P6_UNK_0000_002f"; /* P6_M_Dothan. */
         case 0x00000032: return "P6_UNK_0000_0032"; /* P6_M_Dothan. */
         case 0x00000033: return "TEST_CTL";
-        case 0x00000034: return "P6_UNK_0000_0034"; /* P6_M_Dothan. */
+        case 0x00000034: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch)
+                             || CPUMMICROARCH_IS_INTEL_SILVERMONT_PLUS(g_enmMicroarch)
+                              ? "MSR_SMI_COUNT" : "P6_UNK_0000_0034"; /* P6_M_Dothan. */
         case 0x00000035: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch) ? "MSR_CORE_THREAD_COUNT" : "P6_UNK_0000_0035"; /* P6_M_Dothan. */
         case 0x00000036: return "I7_UNK_0000_0036"; /* SandyBridge, IvyBridge. */
         case 0x00000039: return "C2_UNK_0000_0039"; /* Core2_Penryn */
@@ -726,6 +728,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x0000011b: return "P6_UNK_0000_011b"; /* P6_M_Dothan. */
         case 0x0000011c: return "C2_UNK_0000_011c"; /* Core2_Penryn. */
         case 0x0000011e: return "BBL_CR_CTL3";
+        case 0x00000120: return "SILV_UNK_0000_0120"; /* Silvermont */
         case 0x00000130: return g_enmMicroarch == kCpumMicroarch_Intel_Core7_Westmere
                              || g_enmMicroarch == kCpumMicroarch_Intel_Core7_Nehalem
                               ? "CPUID1_FEATURE_MASK" : NULL;
@@ -1038,6 +1041,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x0000048e: return "IA32_VMX_TRUE_PROCBASED_CTLS";
         case 0x0000048f: return "IA32_VMX_TRUE_EXIT_CTLS";
         case 0x00000490: return "IA32_VMX_TRUE_ENTRY_CTLS";
+        case 0x00000491: return "IA32_VMX_VMFUNC";
         case 0x000004c1: return "IA32_A_PMC0";
         case 0x000004c2: return "IA32_A_PMC1";
         case 0x000004c3: return "IA32_A_PMC2";
@@ -1090,6 +1094,31 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x0000064a: return "I7_IB_MSR_CONFIG_TDP_LEVEL2";
         case 0x0000064b: return "I7_IB_MSR_CONFIG_TDP_CONTROL";
         case 0x0000064c: return "I7_IB_MSR_TURBO_ACTIVATION_RATIO";
+        case 0x00000660: return "SILV_CORE_C1_RESIDENCY";
+        case 0x00000661: return "SILV_UNK_0000_0661";
+        case 0x00000662: return "SILV_UNK_0000_0662";
+        case 0x00000663: return "SILV_UNK_0000_0663";
+        case 0x00000664: return "SILV_UNK_0000_0664";
+        case 0x00000665: return "SILV_UNK_0000_0665";
+        case 0x00000666: return "SILV_UNK_0000_0666";
+        case 0x00000667: return "SILV_UNK_0000_0667";
+        case 0x00000668: return "SILV_UNK_0000_0668";
+        case 0x00000669: return "SILV_UNK_0000_0669";
+        case 0x0000066a: return "SILV_UNK_0000_066a";
+        case 0x0000066b: return "SILV_UNK_0000_066b";
+        case 0x0000066c: return "SILV_UNK_0000_066c";
+        case 0x0000066d: return "SILV_UNK_0000_066d";
+        case 0x0000066e: return "SILV_UNK_0000_066e";
+        case 0x0000066f: return "SILV_UNK_0000_066f";
+        case 0x00000670: return "SILV_UNK_0000_0670";
+        case 0x00000671: return "SILV_UNK_0000_0671";
+        case 0x00000672: return "SILV_UNK_0000_0672";
+        case 0x00000673: return "SILV_UNK_0000_0673";
+        case 0x00000674: return "SILV_UNK_0000_0674";
+        case 0x00000675: return "SILV_UNK_0000_0675";
+        case 0x00000676: return "SILV_UNK_0000_0676";
+        case 0x00000677: return "SILV_UNK_0000_0677";
+
         case 0x00000680: return "MSR_LASTBRANCH_0_FROM_IP";
         case 0x00000681: return "MSR_LASTBRANCH_1_FROM_IP";
         case 0x00000682: return "MSR_LASTBRANCH_2_FROM_IP";
@@ -1123,6 +1152,14 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x000006ce: return "MSR_LASTBRANCH_14_TO_IP";
         case 0x000006cf: return "MSR_LASTBRANCH_15_TO_IP";
         case 0x000006e0: return "IA32_TSC_DEADLINE";
+
+        case 0x00000768: return "SILV_UNK_0000_0768";
+        case 0x00000769: return "SILV_UNK_0000_0769";
+        case 0x0000076a: return "SILV_UNK_0000_076a";
+        case 0x0000076b: return "SILV_UNK_0000_076b";
+        case 0x0000076c: return "SILV_UNK_0000_076c";
+        case 0x0000076d: return "SILV_UNK_0000_076d";
+        case 0x0000076e: return "SILV_UNK_0000_076e";
 
         case 0x00000c80: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_IvyBridge ? "IA32_DEBUG_INTERFACE" : NULL; /* Mentioned in an intel dataskit called 4th-gen-core-family-desktop-vol-1-datasheet.pdf. */
         case 0x00000c81: return g_enmMicroarch >= kCpumMicroarch_Intel_Core7_IvyBridge ? "I7_IB_UNK_0000_0c81"  : NULL; /* Probably related to IA32_DEBUG_INTERFACE... */
@@ -1877,6 +1914,9 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x0000002b: *pfTakesValue = true; return g_fIntelNetBurst ? "IntelP4EbcSoftPowerOn" : NULL;
         case 0x0000002c: *pfTakesValue = true; return g_fIntelNetBurst ? "IntelP4EbcFrequencyId" : NULL;
         //case 0x00000033: return "IntelTestCtl";
+        case 0x00000034: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch)
+                             || CPUMMICROARCH_IS_INTEL_SILVERMONT_PLUS(g_enmMicroarch)
+                              ? "IntelI7SmiCount" : NULL;
         case 0x00000035: return CPUMMICROARCH_IS_INTEL_CORE7(g_enmMicroarch) ? "IntelI7CoreThreadCount" : NULL;
         case 0x0000003a: return "Ia32FeatureControl";
 
@@ -2066,6 +2106,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x0000048e: *pfTakesValue = true; return "Ia32VmxTrueProcbasedCtls";
         case 0x0000048f: *pfTakesValue = true; return "Ia32VmxTrueExitCtls";
         case 0x00000490: *pfTakesValue = true; return "Ia32VmxTrueEntryCtls";
+        case 0x00000491: *pfTakesValue = true; return "Ia32VmxVmFunc";
 
         case 0x000004c1:
         case 0x000004c2:
@@ -2080,34 +2121,36 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x000005a0: return "IntelCore2PeciControl"; /* Core2_Penryn. */
 
         case 0x00000600: return "Ia32DsArea";
-        case 0x00000601: return "IntelI7SandyVrCurrentConfig";
-        case 0x00000603: return "IntelI7SandyVrMiscConfig";
-        case 0x00000606: return "IntelI7SandyRaplPowerUnit";
-        case 0x0000060a: return "IntelI7SandyPkgCnIrtlN";
-        case 0x0000060b: return "IntelI7SandyPkgCnIrtlN";
-        case 0x0000060c: return "IntelI7SandyPkgCnIrtlN";
-        case 0x0000060d: return "IntelI7SandyPkgC2Residency";
+        case 0x00000601: *pfTakesValue = true; return "IntelI7SandyVrCurrentConfig";
+        case 0x00000603: *pfTakesValue = true; return "IntelI7SandyVrMiscConfig";
+        case 0x00000606: *pfTakesValue = true; return "IntelI7SandyRaplPowerUnit";
+        case 0x0000060a: *pfTakesValue = true; return "IntelI7SandyPkgCnIrtlN";
+        case 0x0000060b: *pfTakesValue = true; return "IntelI7SandyPkgCnIrtlN";
+        case 0x0000060c: *pfTakesValue = true; return "IntelI7SandyPkgCnIrtlN";
+        case 0x0000060d: *pfTakesValue = true; return "IntelI7SandyPkgC2Residency";
 
-        case 0x00000610: return "IntelI7RaplPkgPowerLimit";
-        case 0x00000611: return "IntelI7RaplPkgEnergyStatus";
-        case 0x00000613: return "IntelI7RaplPkgPerfStatus";
-        case 0x00000614: return "IntelI7RaplPkgPowerInfo";
-        case 0x00000618: return "IntelI7RaplDramPowerLimit";
-        case 0x00000619: return "IntelI7RaplDramEnergyStatus";
-        case 0x0000061b: return "IntelI7RaplDramPerfStatus";
-        case 0x0000061c: return "IntelI7RaplDramPowerInfo";
-        case 0x00000638: return "IntelI7RaplPp0PowerLimit";
-        case 0x00000639: return "IntelI7RaplPp0EnergyStatus";
-        case 0x0000063a: return "IntelI7RaplPp0Policy";
-        case 0x0000063b: return "IntelI7RaplPp0PerfStatus";
-        case 0x00000640: return "IntelI7RaplPp1PowerLimit";
-        case 0x00000641: return "IntelI7RaplPp1EnergyStatus";
-        case 0x00000642: return "IntelI7RaplPp1Policy";
-        case 0x00000648: return "IntelI7IvyConfigTdpNominal";
-        case 0x00000649: return "IntelI7IvyConfigTdpLevel1";
-        case 0x0000064a: return "IntelI7IvyConfigTdpLevel2";
+        case 0x00000610: *pfTakesValue = true; return "IntelI7RaplPkgPowerLimit";
+        case 0x00000611: *pfTakesValue = true; return "IntelI7RaplPkgEnergyStatus";
+        case 0x00000613: *pfTakesValue = true; return "IntelI7RaplPkgPerfStatus";
+        case 0x00000614: *pfTakesValue = true; return "IntelI7RaplPkgPowerInfo";
+        case 0x00000618: *pfTakesValue = true; return "IntelI7RaplDramPowerLimit";
+        case 0x00000619: *pfTakesValue = true; return "IntelI7RaplDramEnergyStatus";
+        case 0x0000061b: *pfTakesValue = true; return "IntelI7RaplDramPerfStatus";
+        case 0x0000061c: *pfTakesValue = true; return "IntelI7RaplDramPowerInfo";
+        case 0x00000638: *pfTakesValue = true; return "IntelI7RaplPp0PowerLimit";
+        case 0x00000639: *pfTakesValue = true; return "IntelI7RaplPp0EnergyStatus";
+        case 0x0000063a: *pfTakesValue = true; return "IntelI7RaplPp0Policy";
+        case 0x0000063b: *pfTakesValue = true; return "IntelI7RaplPp0PerfStatus";
+        case 0x00000640: *pfTakesValue = true; return "IntelI7RaplPp1PowerLimit";
+        case 0x00000641: *pfTakesValue = true; return "IntelI7RaplPp1EnergyStatus";
+        case 0x00000642: *pfTakesValue = true; return "IntelI7RaplPp1Policy";
+        case 0x00000648: *pfTakesValue = true; return "IntelI7IvyConfigTdpNominal";
+        case 0x00000649: *pfTakesValue = true; return "IntelI7IvyConfigTdpLevel1";
+        case 0x0000064a: *pfTakesValue = true; return "IntelI7IvyConfigTdpLevel2";
         case 0x0000064b: return "IntelI7IvyConfigTdpControl";
         case 0x0000064c: return "IntelI7IvyTurboActivationRatio";
+
+        case 0x00000660: return "IntelAtSilvCoreC1Recidency";
 
         case 0x00000680: case 0x00000681: case 0x00000682: case 0x00000683:
         case 0x00000684: case 0x00000685: case 0x00000686: case 0x00000687:

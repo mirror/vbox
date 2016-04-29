@@ -251,6 +251,10 @@ typedef enum CPUMMICROARCH
 #define CPUMMICROARCH_IS_INTEL_CORE7(a_enmMicroarch) \
     ((a_enmMicroarch) >= kCpumMicroarch_Intel_Core7_First && (a_enmMicroarch) <= kCpumMicroarch_Intel_Core7_End)
 
+/** Predicate macro for catching Atom CPUs, Silvermont and upwards. */
+#define CPUMMICROARCH_IS_INTEL_SILVERMONT_PLUS(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_Intel_Atom_Silvermont && (a_enmMicroarch) <= kCpumMicroarch_Intel_Atom_End)
+
 /** Predicate macro for catching AMD Family OFh CPUs (aka K8).    */
 #define CPUMMICROARCH_IS_AMD_FAM_0FH(a_enmMicroarch) \
     ((a_enmMicroarch) >= kCpumMicroarch_AMD_K8_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_K8_End)
@@ -437,6 +441,7 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Ia32VmxTrueProcbasedCtls,  /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxTrueExitCtls,       /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxTrueEntryCtls,      /**< Takes real value as reference. */
+    kCpumMsrRdFn_Ia32VmxVmFunc,             /**< Takes real value as reference. */
 
     kCpumMsrRdFn_Amd64Efer,
     kCpumMsrRdFn_Amd64SyscallTarget,
@@ -514,11 +519,13 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_IntelI7UncCBoxConfig,
     kCpumMsrRdFn_IntelI7UncArbPerfCtrN,
     kCpumMsrRdFn_IntelI7UncArbPerfEvtSelN,
+    kCpumMsrRdFn_IntelI7SmiCount,
     kCpumMsrRdFn_IntelCore2EmttmCrTablesN,  /**< Range value returned. */
     kCpumMsrRdFn_IntelCore2SmmCStMiscInfo,
     kCpumMsrRdFn_IntelCore1ExtConfig,
     kCpumMsrRdFn_IntelCore1DtsCalControl,
     kCpumMsrRdFn_IntelCore2PeciControl,
+    kCpumMsrRdFn_IntelAtSilvCoreC1Recidency,
 
     kCpumMsrRdFn_P6LastBranchFromIp,
     kCpumMsrRdFn_P6LastBranchToIp,
@@ -726,7 +733,9 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_IntelI7PebsLdLat,
     kCpumMsrWrFn_IntelI7SandyVrCurrentConfig,
     kCpumMsrWrFn_IntelI7SandyVrMiscConfig,
+    kCpumMsrWrFn_IntelI7SandyRaplPowerUnit,  /**< R/O but found writable bits on a Silvermont CPU here. */
     kCpumMsrWrFn_IntelI7SandyPkgCnIrtlN,
+    kCpumMsrWrFn_IntelI7SandyPkgC2Residency, /**< R/O but found writable bits on a Silvermont CPU here. */
     kCpumMsrWrFn_IntelI7RaplPkgPowerLimit,
     kCpumMsrWrFn_IntelI7RaplDramPowerLimit,
     kCpumMsrWrFn_IntelI7RaplPp0PowerLimit,

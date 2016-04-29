@@ -258,7 +258,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_6700K[] =
     MFX(0x0000048e, "IA32_VMX_TRUE_PROCBASED_CTLS", Ia32VmxTrueProcbasedCtls, ReadOnly, UINT64_C(0xfff9fffe04006172), 0, 0), /* value=0xfff9fffe`04006172 */
     MFX(0x0000048f, "IA32_VMX_TRUE_EXIT_CTLS", Ia32VmxTrueExitCtls, ReadOnly, UINT64_C(0x1ffffff00036dfb), 0, 0), /* value=0x1ffffff`00036dfb */
     MFX(0x00000490, "IA32_VMX_TRUE_ENTRY_CTLS", Ia32VmxTrueEntryCtls, ReadOnly, UINT64_C(0x3ffff000011fb), 0, 0), /* value=0x3ffff`000011fb */
-    MVO(0x00000491, "TODO_0000_0491", 0x1),
+    MFX(0x00000491, "IA32_VMX_VMFUNC", Ia32VmxVmFunc, ReadOnly, 0x1, 0, 0), /* value=0x1 */
     RSN(0x000004c1, 0x000004c4, "IA32_A_PMCn", Ia32PmcN, Ia32PmcN, 0x0, 0, UINT64_C(0xffff000000000000)),
     MVO(0x000004e0, "TODO_0000_04e0", 0x5),
     MVO(0x000004e2, "TODO_0000_04e2", 0x2),

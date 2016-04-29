@@ -191,6 +191,7 @@ typedef struct CPUMDBENTRY
 #include "cpus/Intel_Xeon_X5482_3_20GHz.h"
 #include "cpus/Intel_Pentium_M_processor_2_00GHz.h"
 #include "cpus/Intel_Pentium_4_3_00GHz.h"
+#include "cpus/Intel_Pentium_N3530_2_16GHz.h"
 #include "cpus/Intel_Atom_330_1_60GHz.h"
 #include "cpus/Intel_80386.h"
 #include "cpus/Intel_80286.h"
@@ -235,6 +236,9 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #endif
 #ifdef VBOX_CPUDB_Intel_Core_i7_2635QM
     &g_Entry_Intel_Core_i7_2635QM,
+#endif
+#ifdef VBOX_CPUDB_Intel_Pentium_N3530_2_16GHz
+    &g_Entry_Intel_Pentium_N3530_2_16GHz,
 #endif
 #ifdef VBOX_CPUDB_Intel_Atom_330_1_60GHz
     &g_Entry_Intel_Atom_330_1_60GHz,
