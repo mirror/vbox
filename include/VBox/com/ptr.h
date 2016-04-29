@@ -489,7 +489,7 @@ public:
         rc = ATL::CComObject<T>::CreateInstance(&obj);
 # endif
 #else /* VBOX_WITH_XPCOM */
-        CComObject<T> *obj = new CComObject<T>();
+        ATL::CComObject<T> *obj = new ATL::CComObject<T>();
         if (obj)
             rc = obj->FinalConstruct();
         else

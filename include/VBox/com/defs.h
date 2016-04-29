@@ -279,52 +279,6 @@ typedef const OLECHAR *CBSTR;
 
 #include <nsID.h>
 
-#ifndef VBOX_COM_NO_ATL
-
-namespace ATL
-{
-
-#define ATL_NO_VTABLE
-#define DECLARE_CLASSFACTORY(a)
-#define DECLARE_CLASSFACTORY_SINGLETON(a)
-#define DECLARE_REGISTRY_RESOURCEID(a)
-#define DECLARE_NOT_AGGREGATABLE(a)
-#define DECLARE_PROTECT_FINAL_CONSTRUCT()
-#define BEGIN_COM_MAP(a)
-#define COM_INTERFACE_ENTRY(a)
-#define COM_INTERFACE_ENTRY2(a,b)
-#define END_COM_MAP() NS_DECL_ISUPPORTS
-#define COM_INTERFACE_ENTRY_AGGREGATE(a,b)
-
-/* A few very simple ATL emulator classes to provide
- * FinalConstruct()/FinalRelease() functionality with XPCOM. */
-
-class CComMultiThreadModel
-{
-};
-
-template <class DummyThreadModel> class CComObjectRootEx
-{
-public:
-    HRESULT FinalConstruct()
-    {
-        return S_OK;
-    }
-    void FinalRelease()
-    {
-    }
-};
-
-template <class DummyThreadModel> class CComObject
-{
-public:
-    virtual ~CComObject() { this->FinalRelease(); }
-};
-
-} /* namespace ATL */
-
-#endif /* !VBOX_COM_NO_ATL */
-
 #define HRESULT     nsresult
 #define SUCCEEDED   NS_SUCCEEDED
 #define FAILED      NS_FAILED
@@ -441,6 +395,49 @@ unsigned int SysStringLen(BSTR bstr);
 
 #ifndef VBOX_COM_NO_ATL
 
+namespace ATL
+{
+
+#define ATL_NO_VTABLE
+#define DECLARE_CLASSFACTORY(a)
+#define DECLARE_CLASSFACTORY_SINGLETON(a)
+#define DECLARE_REGISTRY_RESOURCEID(a)
+#define DECLARE_NOT_AGGREGATABLE(a)
+#define DECLARE_PROTECT_FINAL_CONSTRUCT()
+#define BEGIN_COM_MAP(a)
+#define COM_INTERFACE_ENTRY(a)
+#define COM_INTERFACE_ENTRY2(a,b)
+#define END_COM_MAP() NS_DECL_ISUPPORTS
+#define COM_INTERFACE_ENTRY_AGGREGATE(a,b)
+
+/* A few very simple ATL emulator classes to provide
+ * FinalConstruct()/FinalRelease() functionality with XPCOM. */
+
+class CComMultiThreadModel
+{
+};
+
+template <class DummyThreadModel> class CComObjectRootEx
+{
+public:
+    HRESULT FinalConstruct()
+    {
+        return S_OK;
+    }
+    void FinalRelease()
+    {
+    }
+};
+
+template <class Base> class CComObject : public Base
+{
+public:
+    virtual ~CComObject() { this->FinalRelease(); }
+};
+
+} /* namespace ATL */
+
+
 /**
  *  'Constructor' for the component class.
  *  This constructor, as opposed to NS_GENERIC_FACTORY_CONSTRUCTOR,
@@ -462,7 +459,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
         return rv;                                                            \
     }                                                                         \
                                                                               \
-    CComObject<_InstanceClass> *inst = new CComObject<_InstanceClass>();      \
+    ATL::CComObject<_InstanceClass> *inst = new ATL::CComObject<_InstanceClass>(); \
     if (NULL == inst) {                                                       \
         rv = NS_ERROR_OUT_OF_MEMORY;                                          \
         return rv;                                                            \
