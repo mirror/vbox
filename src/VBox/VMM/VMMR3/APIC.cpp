@@ -1494,10 +1494,19 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     switch (enmOriginalMode)
     {
         case APICMODE_DISABLED:
+        {
+            /** @todo permanently disabling the APIC won't really work (needs
+             *        fixing in HM, CPUM, PDM and possibly other places). See
+             *        @bugref{8353}. */
+#if 0
             pApic->enmOriginalMode = enmOriginalMode;
             CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
             CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
             break;
+#else
+            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SCR_POS, "APIC mode 'disabled' is not supported yet.");
+#endif
+        }
 
         case APICMODE_X2APIC:
             pApic->enmOriginalMode = enmOriginalMode;
@@ -1510,7 +1519,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             break;
 
         default:
-            return VMR3SetError(pVM->pUVM, VERR_INVALID_STATE, RT_SRC_POS, "APIC mode %#x unknown.", uOriginalMode);
+            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode %#x unknown.", uOriginalMode);
     }
 
     /*
