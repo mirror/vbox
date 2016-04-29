@@ -56,6 +56,8 @@ public:
     virtual const com::Utf8Str &i_getBackend();
     uint32_t i_getRefCount();
 
+    virtual bool i_isDevReEnumerationRequired();
+
     /** @name Interface for the USBController and the Host object.
      * @{ */
     virtual void *insertFilter(PCUSBFILTER aFilter);
@@ -154,6 +156,8 @@ public:
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
     virtual int releaseDevice(HostUSBDevice *aDevice);
     virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
+
+    virtual bool i_isDevReEnumerationRequired();
 
 protected:
     virtual int wait(RTMSINTERVAL aMillies);
@@ -293,6 +297,8 @@ public:
     virtual void captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
     virtual void releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess);
 
+    virtual bool i_isDevReEnumerationRequired();
+
 protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
@@ -323,6 +329,8 @@ public:
 
     virtual int captureDevice (HostUSBDevice *aDevice);
     virtual int releaseDevice (HostUSBDevice *aDevice);
+
+    virtual bool i_isDevReEnumerationRequired();
 
 protected:
     virtual int wait(RTMSINTERVAL aMillies);

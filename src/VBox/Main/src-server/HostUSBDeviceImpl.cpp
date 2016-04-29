@@ -468,11 +468,11 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
      * when the request succeeds (i.e. asynchronously).
      */
     LogFlowThisFunc(("{%s} capturing the device.\n", mName));
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) /* PORTME */
-    i_setState(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_UsedByVM, kHostUSBDeviceSubState_AwaitingDetach);
-#else
-    i_setState(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_UsedByVM);
-#endif
+    if (mUSBProxyBackend->i_isDevReEnumerationRequired())
+        i_setState(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_UsedByVM, kHostUSBDeviceSubState_AwaitingDetach);
+    else
+        i_setState(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_UsedByVM);
+
     mMachine = aMachine;
     mMaskedIfs = aMaskedIfs;
     mCaptureFilename = aCaptureFilename;
@@ -730,11 +730,11 @@ HRESULT HostUSBDevice::i_requestReleaseToHost()
     /*
      * Try release it.
      */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) /* PORTME */
-    i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused, kHostUSBDeviceSubState_AwaitingDetach);
-#else
-    i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused);
-#endif
+    if (mUSBProxyBackend->i_isDevReEnumerationRequired())
+        i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused, kHostUSBDeviceSubState_AwaitingDetach);
+    else
+        i_startTransition(kHostUSBDeviceState_ReleasingToHost, kHostUSBDeviceState_Unused);
+
     alock.release();
     int rc = mUSBProxyBackend->releaseDevice(this);
     if (RT_FAILURE(rc))
@@ -783,11 +783,11 @@ HRESULT HostUSBDevice::i_requestHold()
     /*
      * Do the job.
      */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) /* PORTME */
-    i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy, kHostUSBDeviceSubState_AwaitingDetach);
-#else
-    i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy);
-#endif
+    if (mUSBProxyBackend->i_isDevReEnumerationRequired())
+        i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy, kHostUSBDeviceSubState_AwaitingDetach);
+    else
+        i_startTransition(kHostUSBDeviceState_Capturing, kHostUSBDeviceState_HeldByProxy);
+
     alock.release();
     int rc = mUSBProxyBackend->captureDevice(this);
     if (RT_FAILURE(rc))

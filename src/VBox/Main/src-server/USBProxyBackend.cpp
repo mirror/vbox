@@ -237,6 +237,15 @@ bool USBProxyBackend::isFakeUpdateRequired()
     return false;
 }
 
+/**
+ * Returns whether devices reported by this backend go through a de/re-attach
+ * and device re-enumeration cycle when they are captured or released.
+ */
+bool USBProxyBackend::i_isDevReEnumerationRequired()
+{
+    return false;
+}
+
 // Internals
 /////////////////////////////////////////////////////////////////////////////
 

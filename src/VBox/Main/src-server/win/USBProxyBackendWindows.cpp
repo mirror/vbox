@@ -226,6 +226,16 @@ int USBProxyBackendWindows::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
+/**
+ * Returns whether devices reported by this backend go through a de/re-attach
+ * and device re-enumeration cycle when they are captured or released.
+ */
+bool USBProxyBackendWindows::i_isDevReEnumerationRequired()
+{
+    return true;
+}
+
+
 int USBProxyBackendWindows::wait(unsigned aMillies)
 {
     return USBLibWaitChange(aMillies);

@@ -460,6 +460,16 @@ void USBProxyBackendSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
 
 
 /**
+ * Returns whether devices reported by this backend go through a de/re-attach
+ * and device re-enumeration cycle when they are captured or released.
+ */
+bool USBProxyBackendSolaris::i_isDevReEnumerationRequired()
+{
+    return true;
+}
+
+
+/**
  * Wrapper called by walkDeviceNode.
  *
  * @param   pDevice    The USB device to free.

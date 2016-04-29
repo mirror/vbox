@@ -221,6 +221,16 @@ void USBProxyBackendDarwin::releaseDeviceCompleted(HostUSBDevice *aDevice, bool 
 }
 
 
+/**
+ * Returns whether devices reported by this backend go through a de/re-attach
+ * and device re-enumeration cycle when they are captured or released.
+ */
+bool USBProxyBackendDarwin::i_isDevReEnumerationRequired()
+{
+    return true;
+}
+
+
 int USBProxyBackendDarwin::wait(RTMSINTERVAL aMillies)
 {
     SInt32 rc = CFRunLoopRunInMode(CFSTR(VBOX_IOKIT_MODE_STRING),
