@@ -60,8 +60,6 @@ PFNMYKEFLUSHQUEUEDDPCS              g_pfnrtNtKeFlushQueuedDpcs;
 PFNHALREQUESTIPI_W7PLUS             g_pfnrtHalRequestIpiW7Plus;
 /** HalRequestIpi, version valid up to windows vista?? */
 PFNHALREQUESTIPI_PRE_W7             g_pfnrtHalRequestIpiPreW7;
-/** HalSendSoftwareInterrupt, introduced in AMD64 version of W2K3. */
-PFNHALSENDSOFTWAREINTERRUPT         g_pfnrtNtHalSendSoftwareInterrupt;
 /** Worker for RTMpPokeCpu. */
 PFNRTSENDIPI                        g_pfnrtMpPokeCpuWorker;
 /** KeIpiGenericCall - Introduced in Windows Server 2003. */
@@ -226,7 +224,6 @@ DECLHIDDEN(int) rtR0InitNative(void)
     g_pfnrtNtKeFlushQueuedDpcs = NULL;
     g_pfnrtHalRequestIpiW7Plus = NULL;
     g_pfnrtHalRequestIpiPreW7 = NULL;
-    g_pfnrtNtHalSendSoftwareInterrupt = NULL;
     g_pfnrtKeIpiGenericCall = NULL;
     g_pfnrtKeInitializeAffinityEx = NULL;
     g_pfnrtKeAddProcessorAffinityEx = NULL;
@@ -247,9 +244,6 @@ DECLHIDDEN(int) rtR0InitNative(void)
     RtlInitUnicodeString(&RoutineName, L"HalRequestIpi");
     g_pfnrtHalRequestIpiW7Plus = (PFNHALREQUESTIPI_W7PLUS)MmGetSystemRoutineAddress(&RoutineName);
     g_pfnrtHalRequestIpiPreW7 = (PFNHALREQUESTIPI_PRE_W7)g_pfnrtHalRequestIpiW7Plus;
-
-    RtlInitUnicodeString(&RoutineName, L"HalSendSoftwareInterrupt");
-    g_pfnrtNtHalSendSoftwareInterrupt = (PFNHALSENDSOFTWAREINTERRUPT)MmGetSystemRoutineAddress(&RoutineName);
 
     RtlInitUnicodeString(&RoutineName, L"KeIpiGenericCall");
     g_pfnrtKeIpiGenericCall = (PFNRTKEIPIGENERICCALL)MmGetSystemRoutineAddress(&RoutineName);
@@ -411,11 +405,18 @@ DECLHIDDEN(int) rtR0InitNative(void)
      * Special IPI fun for RTMpPokeCpu.
      *
      * On Vista and later the DPC method doesn't seem to reliably send IPIs,
-     * so we have to use alternative methods.  The NtHalSendSoftwareInterrupt
-     * is preferrable, but it's AMD64 only.  The NalRequestIpip method changed
-     * in Windows 7 with the lots-of-processors-support, but it's the only
-     * targeted IPI game in town if we cannot use KeInsertQueueDpc.  Worst case
-     * we use broadcast IPIs.
+     * so we have to use alternative methods.
+     *
+     * On AMD64 We used to use the HalSendSoftwareInterrupt API (also x86 on
+     * W10+), it looks faster and more convenient to use, however we're either
+     * using it wrong or it doesn't reliably do what we want (see @bugref{8343}).
+     *
+     * The HalRequestIpip API is thus far the only alternative to KeInsertQueueDpc
+     * for doing targetted IPIs.  Trouble with this API is that it changed
+     * fundamentally in Window 7 when they added support for lots of processors.
+     *
+     * If we really think we cannot use KeInsertQueueDpc, we use the broadcast IPI
+     * API KeIpiGenericCall.
      */
     if (   OsVerInfo.uMajorVer > 6
         || (OsVerInfo.uMajorVer == 6 && OsVerInfo.uMinorVer > 0))
@@ -425,18 +426,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
 
     g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
 #ifndef IPRT_TARGET_NT4
-# if 0 /* Currently disabled as we're checking whether it's responsible for @bugref{8343} (smp windows performance issue). */
-    if (g_pfnrtNtHalSendSoftwareInterrupt && true /* don't do this, SMP performance regression. */)
-    {
-        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalSendSoftwareInterrupt\n");
-        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalSendSoftwareInterrupt;
-    }
-    else
-#endif
-         if (   g_pfnrtHalRequestIpiW7Plus
-             && g_pfnrtKeInitializeAffinityEx
-             && g_pfnrtKeAddProcessorAffinityEx
-             && g_pfnrtKeGetProcessorIndexFromNumber)
+    if (   g_pfnrtHalRequestIpiW7Plus
+        && g_pfnrtKeInitializeAffinityEx
+        && g_pfnrtKeAddProcessorAffinityEx
+        && g_pfnrtKeGetProcessorIndexFromNumber)
     {
         DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalReqestIpiW7Plus\n");
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalReqestIpiW7Plus;

@@ -737,8 +737,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
         {
 #ifndef IPRT_TARGET_NT4
             if (   !pArgs->fExecuting
-                && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalSendSoftwareInterrupt
-                    || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiW7Plus
+                && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiW7Plus
                     || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiPreW7))
                 RTMpPokeCpu(idCpu);
 #endif
@@ -814,21 +813,6 @@ static ULONG_PTR rtMpIpiGenericCall(ULONG_PTR Argument)
 int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
 {
     g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * RTMpPokeCpu worker that uses HalSendSoftwareInterrupt to get the job done.
- *
- * This is only really available on AMD64, at least at the time of writing.
- *
- * @returns VINF_SUCCESS
- * @param   idCpu           The CPU identifier.
- */
-int rtMpPokeCpuUsingHalSendSoftwareInterrupt(RTCPUID idCpu)
-{
-    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
     return VINF_SUCCESS;
 }
 

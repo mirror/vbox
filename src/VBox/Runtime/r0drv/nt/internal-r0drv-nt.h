@@ -78,7 +78,6 @@ extern uint32_t                         g_offrtNtPbDpcQueueDepth;
 
 int __stdcall rtMpPokeCpuUsingDpc(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu);
-int __stdcall rtMpPokeCpuUsingHalSendSoftwareInterrupt(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu);
 
