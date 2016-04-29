@@ -593,6 +593,11 @@ static int cpumR3MsrApplyFudgeTable(PVM pVM, PCCPUMMSRRANGE paRanges, size_t cRa
  * A typical example is a VM that has been moved between different hosts where
  * for instance the cpu vendor differs.
  *
+ * Another example is older CPU profiles (e.g. Atom Bonnet) for newer CPUs (e.g.
+ * Atom Silvermont), where features reported thru CPUID aren't present in the
+ * MSRs (e.g. AMD64_TSC_AUX).
+ *
+ *
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
  */
@@ -634,6 +639,16 @@ int cpumR3MsrApplyFudge(PVM pVM)
             MFX(0x0000002c, "P4_EBC_FREQUENCY_ID", IntelP4EbcFrequencyId, IntelP4EbcFrequencyId, 0xf12010f, UINT64_MAX, 0),
         };
         rc = cpumR3MsrApplyFudgeTable(pVM, &s_aP4FudgeMsrs[0], RT_ELEMENTS(s_aP4FudgeMsrs));
+        AssertLogRelRCReturn(rc, rc);
+    }
+
+    if (pVM->cpum.s.GuestFeatures.fRdTscP)
+    {
+        static CPUMMSRRANGE const s_aRdTscPFudgeMsrs[] =
+        {
+            MFX(0xc0000103, "AMD64_TSC_AUX", Amd64TscAux, Amd64TscAux, 0, 0, ~(uint64_t)UINT32_MAX),
+        };
+        rc = cpumR3MsrApplyFudgeTable(pVM, &s_aRdTscPFudgeMsrs[0], RT_ELEMENTS(s_aRdTscPFudgeMsrs));
         AssertLogRelRCReturn(rc, rc);
     }
 
