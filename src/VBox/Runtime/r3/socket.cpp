@@ -416,6 +416,7 @@ DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE h
     pThis->hEvent           = WSA_INVALID_EVENT;
     pThis->fPollEvts        = 0;
     pThis->fSubscribedEvts  = 0;
+    pThis->fEventsSaved     = 0;
 #endif
     *ppSocket = pThis;
     return VINF_SUCCESS;
