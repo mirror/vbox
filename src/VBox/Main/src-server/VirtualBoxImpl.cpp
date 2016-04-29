@@ -81,7 +81,8 @@
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
 # include "win/VBoxComEvents.h"
-#include "ThreadTask.h"
+# include "ThreadTask.h"
+# include "tchar.h"
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1053,10 +1054,7 @@ HRESULT VirtualBox::getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOS
 
 HRESULT VirtualBox::getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aSharedFolders)
 {
- #ifndef RT_OS_WINDOWS
-     NOREF(aSharedFolders);
- #endif /* RT_OS_WINDOWS */
-     NOREF(aSharedFolders);
+    NOREF(aSharedFolders);
 
     return setError(E_NOTIMPL, "Not yet implemented");
 }
@@ -1097,10 +1095,6 @@ HRESULT VirtualBox::getNATNetworks(std::vector<ComPtr<INATNetwork> > &aNATNetwor
          (*it).queryInterfaceTo(aNATNetworks[i].asOutParam());
     return S_OK;
 #else
-    NOREF(aNATNetworks);
-# ifndef RT_OS_WINDOWS
-    NOREF(aNATNetworks);
-# endif
     NOREF(aNATNetworks);
     return E_NOTIMPL;
 #endif
