@@ -520,7 +520,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                         resetRecvState();
                     }
                 }
-                else if (rc == VERR_NET_SHUTDOWN || rc == VERR_BROKEN_PIPE)
+                else if (rc == VERR_NET_SHUTDOWN || rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_RESET_BY_PEER)
                 {
                     Log(("USB/IP: Lost connection to host \"%s\", trying to reconnect...\n", m->pszHost));
                     disconnect();
@@ -549,6 +549,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
         }
     }
 
+    LogFlowFunc(("return rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -991,6 +992,7 @@ int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
 bool USBProxyBackendUsbIp::hasDevListChanged(PUSBDEVICE pDevices)
 {
     /** @todo */
+    NOREF(pDevices);
     return true;
 }
 

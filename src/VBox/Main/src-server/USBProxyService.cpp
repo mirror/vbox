@@ -344,7 +344,6 @@ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aI
     if (    SUCCEEDED(hrc)
         &&  fRunFilters)
     {
-        USBProxyBackend *pUsbProxyBackend = pHostDevice->i_getUsbProxyBackend();
         Assert(aDone && pHostDevice->i_getUnistate() == kHostUSBDeviceState_HeldByProxy && pHostDevice->i_getMachine().isNull());
         devLock.release();
         alock.release();
@@ -399,7 +398,6 @@ HRESULT USBProxyService::autoCaptureDevicesForVM(SessionMachine *aMachine)
             || pHostDevice->i_getUnistate() == kHostUSBDeviceState_Unused
             || pHostDevice->i_getUnistate() == kHostUSBDeviceState_Capturable)
         {
-            USBProxyBackend *pUsbProxyBackend = pHostDevice->i_getUsbProxyBackend();
             devLock.release();
             runMachineFilters(aMachine, pHostDevice);
         }
@@ -462,7 +460,6 @@ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool a
             if (    SUCCEEDED(hrc)
                 &&  fRunFilters)
             {
-                USBProxyBackend *pUsbProxyBackend = pHostDevice->i_getUsbProxyBackend();
                 Assert(   aDone
                        && pHostDevice->i_getUnistate() == kHostUSBDeviceState_HeldByProxy
                        && pHostDevice->i_getMachine().isNull());
@@ -545,7 +542,7 @@ HRESULT USBProxyService::i_saveSettings(settings::USBDeviceSourcesList &llUSBDev
  * @param   aUSBDevice  The USB device structure.
  */
 void USBProxyService::i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
-                                    PUSBDEVICE aUSBDevice)
+                                    PUSBDEVICE pDev)
 {
     /*
      * Validate preconditions.
@@ -561,7 +558,6 @@ void USBProxyService::i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
                      aDevice->i_getId().raw()));
 
     /* Add to our list. */
-    PCUSBDEVICE pDev = aDevice->i_getUsbData();
     HostUSBDeviceList::iterator it = mDevices.begin();
     while (it != mDevices.end())
     {
@@ -899,6 +895,10 @@ HRESULT USBProxyService::createUSBDeviceSource(const com::Utf8Str &aBackend, con
     HRESULT hrc = S_OK;
 
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+
+    /** @todo */
+    NOREF(aPropertyNames);
+    NOREF(aPropertyValues);
 
     /* Check whether the ID is used first. */
     for (USBProxyBackendList::iterator it = mBackends.begin();
