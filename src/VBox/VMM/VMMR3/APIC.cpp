@@ -1695,6 +1695,10 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                          "/Devices/APIC/%u/PostInterruptAlreadyPending");
         APIC_REG_COUNTER(&pApicCpu->StatTimerCallback,  "Number of times the timer callback is invoked.",
                          "/Devices/APIC/%u/TimerCallback");
+
+        APIC_REG_COUNTER(&pApicCpu->StatTprWrite,  "Number of TPR writes.", "/Devices/APIC/%u/TprWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatTprRead,   "Number of TPR reads.",  "/Devices/APIC/%u/TprRead");
+        APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,  "Number of EOI writes.", "/Devices/APIC/%u/EoiWrite");
     }
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER

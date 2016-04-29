@@ -598,6 +598,12 @@ typedef struct APICCPU
     STAMCOUNTER                 StatPostIntrAlreadyPending;
     /** Number of times the timer callback is invoked. */
     STAMCOUNTER                 StatTimerCallback;
+    /** Number of times the TPR is written. */
+    STAMCOUNTER                 StatTprWrite;
+    /** Number of times the TPR is read. */
+    STAMCOUNTER                 StatTprRead;
+    /** Number of times the EOI is written. */
+    STAMCOUNTER                 StatEoiWrite;
     /** @} */
 #endif
 } APICCPU;

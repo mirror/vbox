@@ -1100,6 +1100,7 @@ static void apicUpdatePpr(PVMCPU pVCpu)
 static uint8_t apicGetPpr(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatTprRead);
 
     /*
      * With virtualized APIC registers or with TPR virtualization, the hardware may
@@ -1126,7 +1127,7 @@ static VBOXSTRICTRC apicSetTpr(PVMCPU pVCpu, uint32_t uTpr)
     VMCPU_ASSERT_EMT(pVCpu);
 
     Log2(("APIC%u: apicSetTpr: uTpr=%#RX32\n", pVCpu->idCpu, uTpr));
-
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatTprWrite);
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uTpr & ~XAPIC_TPR))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TPR, APICMSRACCESS_WRITE_RSVD_BITS);
@@ -1151,6 +1152,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
     VMCPU_ASSERT_EMT(pVCpu);
 
     Log2(("APIC%u: apicSetEoi: uEoi=%#RX32\n", pVCpu->idCpu, uEoi));
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatEoiWrite);
 
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uEoi & ~XAPIC_EOI_WO))
