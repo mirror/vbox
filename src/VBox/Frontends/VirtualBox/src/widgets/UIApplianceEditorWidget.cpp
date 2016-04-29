@@ -478,8 +478,8 @@ QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem
             case KVirtualSystemDescriptionType_HardDiskImage:
             {
                 /* disabled for now
-                   VBoxFilePathSelectorWidget *e = new VBoxFilePathSelectorWidget(pParent);
-                   e->setMode(VBoxFilePathSelectorWidget::Mode_File);
+                   UIFilePathSelector *e = new UIFilePathSelector(pParent);
+                   e->setMode(UIFilePathSelector::Mode_File);
                    e->setResetEnabled(false);
                    */
                 QLineEdit *e = new QLineEdit(pParent);
@@ -566,7 +566,7 @@ bool HardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & /* idx */
         case KVirtualSystemDescriptionType_HardDiskImage:
         {
             /* disabled for now
-               if (VBoxFilePathSelectorWidget *e = qobject_cast<VBoxFilePathSelectorWidget*>(pEditor))
+               if (UIFilePathSelector *e = qobject_cast<UIFilePathSelector*>(pEditor))
                {
                e->setPath(m_strConfigValue);
                }
@@ -699,7 +699,7 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
         case KVirtualSystemDescriptionType_HardDiskImage:
         {
             /* disabled for now
-               if (VBoxFilePathSelectorWidget *e = qobject_cast<VBoxFilePathSelectorWidget*>(pEditor))
+               if (UIFilePathSelector *e = qobject_cast<UIFilePathSelector*>(pEditor))
                {
                m_strConfigValue = e->path();
                }

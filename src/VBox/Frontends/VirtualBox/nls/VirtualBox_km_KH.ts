@@ -10529,7 +10529,7 @@ Virtualization Stuff LED</comment>
     </message>
 </context>
 <context>
-    <name>VBoxFilePathSelectorWidget</name>
+    <name>UIFilePathSelector</name>
     <message>
         <source>&lt;reset to default&gt;</source>
         <translation>&lt;កំណត់​ទៅ​លំនាំដើម​ឡើងវិញ&gt;</translation>

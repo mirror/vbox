@@ -158,7 +158,7 @@ void UIMachineSettingsSFDetails::sltSelectPath()
 #if defined (VBOX_WS_WIN) || defined (Q_OS_OS2)
     if (strFolderName[0].isLetter() && strFolderName[1] == ':' && strFolderName[2] == 0)
     {
-        /* VBoxFilePathSelectorWidget returns root path as 'X:', which is invalid path.
+        /* UIFilePathSelector returns root path as 'X:', which is invalid path.
          * Append the trailing backslash to get a valid root path 'X:\': */
         strFolderName += "\\";
         mPsPath->setPath(strFolderName);

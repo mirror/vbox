@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: VBoxFilePathSelectorWidget class implementation.
+ * VBox Qt GUI - VirtualBox Qt extensions: UIFilePathSelector class implementation.
  */
 
 /*
@@ -25,7 +25,7 @@
 # include "QILabel.h"
 # include "QILineEdit.h"
 # include "UIIconPool.h"
-# include "VBoxFilePathSelectorWidget.h"
+# include "UIFilePathSelector.h"
 # include "VBoxGlobal.h"
 
 /* Global includes */
@@ -43,7 +43,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxFilePathSelectorWidget
+// UIFilePathSelector
 
 enum
 {
@@ -68,7 +68,7 @@ static int differFrom (const QString &aS1, const QString &aS2)
     return index;
 }
 
-VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
+UIFilePathSelector::UIFilePathSelector (QWidget *aParent)
     : QIWithRetranslateUI<QComboBox> (aParent)
     , mCopyAction (new QAction (this))
     , mMode (Mode_Folder)
@@ -108,21 +108,21 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     retranslateUi();
 }
 
-VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
+UIFilePathSelector::~UIFilePathSelector()
 {
 }
 
-void VBoxFilePathSelectorWidget::setMode (Mode aMode)
+void UIFilePathSelector::setMode (Mode aMode)
 {
     mMode = aMode;
 }
 
-VBoxFilePathSelectorWidget::Mode VBoxFilePathSelectorWidget::mode() const
+UIFilePathSelector::Mode UIFilePathSelector::mode() const
 {
     return mMode;
 }
 
-void VBoxFilePathSelectorWidget::setEditable (bool aOn)
+void UIFilePathSelector::setEditable (bool aOn)
 {
     mIsEditable = aOn;
 
@@ -149,12 +149,12 @@ void VBoxFilePathSelectorWidget::setEditable (bool aOn)
     }
 }
 
-bool VBoxFilePathSelectorWidget::isEditable() const
+bool UIFilePathSelector::isEditable() const
 {
     return mIsEditable;
 }
 
-void VBoxFilePathSelectorWidget::setResetEnabled (bool aEnabled)
+void UIFilePathSelector::setResetEnabled (bool aEnabled)
 {
     if (!aEnabled && count() - 1 == ResetId)
         removeItem (ResetId);
@@ -166,47 +166,47 @@ void VBoxFilePathSelectorWidget::setResetEnabled (bool aEnabled)
     retranslateUi();
 }
 
-bool VBoxFilePathSelectorWidget::isResetEnabled() const
+bool UIFilePathSelector::isResetEnabled() const
 {
     return (count() - 1  == ResetId);
 }
 
-void VBoxFilePathSelectorWidget::resetModified()
+void UIFilePathSelector::resetModified()
 {
     mModified = false;
 }
 
-bool VBoxFilePathSelectorWidget::isModified() const
+bool UIFilePathSelector::isModified() const
 {
     return mModified;
 }
 
-void VBoxFilePathSelectorWidget::setFileDialogTitle (const QString& aTitle)
+void UIFilePathSelector::setFileDialogTitle (const QString& aTitle)
 {
     mFileDialogTitle = aTitle;
 }
 
-QString VBoxFilePathSelectorWidget::fileDialogTitle() const
+QString UIFilePathSelector::fileDialogTitle() const
 {
     return mFileDialogTitle;
 }
 
-void VBoxFilePathSelectorWidget::setFileFilters (const QString& aFilters)
+void UIFilePathSelector::setFileFilters (const QString& aFilters)
 {
     mFileFilters = aFilters;
 }
 
-QString VBoxFilePathSelectorWidget::fileFilters() const
+QString UIFilePathSelector::fileFilters() const
 {
     return mFileFilters;
 }
 
-void VBoxFilePathSelectorWidget::setDefaultSaveExt (const QString &aExt)
+void UIFilePathSelector::setDefaultSaveExt (const QString &aExt)
 {
     mDefaultSaveExt = aExt;
 }
 
-QString VBoxFilePathSelectorWidget::defaultSaveExt() const
+QString UIFilePathSelector::defaultSaveExt() const
 {
     return mDefaultSaveExt;
 }
@@ -219,17 +219,17 @@ QString VBoxFilePathSelectorWidget::defaultSaveExt() const
  * when performing the corresponding action and the item that contains a
  * real selected file/folder path.
  */
-bool VBoxFilePathSelectorWidget::isPathSelected() const
+bool UIFilePathSelector::isPathSelected() const
 {
     return (currentIndex() == PathId);
 }
 
-QString VBoxFilePathSelectorWidget::path() const
+QString UIFilePathSelector::path() const
 {
     return mPath;
 }
 
-void VBoxFilePathSelectorWidget::setPath (const QString &aPath, bool aRefreshText /* = true */)
+void UIFilePathSelector::setPath (const QString &aPath, bool aRefreshText /* = true */)
 {
     mPath = aPath.isEmpty() ? QString::null :
             QDir::toNativeSeparators (aPath);
@@ -237,18 +237,18 @@ void VBoxFilePathSelectorWidget::setPath (const QString &aPath, bool aRefreshTex
         refreshText();
 }
 
-void VBoxFilePathSelectorWidget::setHomeDir (const QString &aHomeDir)
+void UIFilePathSelector::setHomeDir (const QString &aHomeDir)
 {
     mHomeDir = aHomeDir;
 }
 
-void VBoxFilePathSelectorWidget::resizeEvent (QResizeEvent *aEvent)
+void UIFilePathSelector::resizeEvent (QResizeEvent *aEvent)
 {
     QIWithRetranslateUI<QComboBox>::resizeEvent (aEvent);
     refreshText();
 }
 
-void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
+void UIFilePathSelector::focusInEvent (QFocusEvent *aEvent)
 {
     if (isPathSelected())
     {
@@ -262,7 +262,7 @@ void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
     QIWithRetranslateUI<QComboBox>::focusInEvent (aEvent);
 }
 
-void VBoxFilePathSelectorWidget::focusOutEvent (QFocusEvent *aEvent)
+void UIFilePathSelector::focusOutEvent (QFocusEvent *aEvent)
 {
     if (isPathSelected())
     {
@@ -272,7 +272,7 @@ void VBoxFilePathSelectorWidget::focusOutEvent (QFocusEvent *aEvent)
     QIWithRetranslateUI<QComboBox>::focusOutEvent (aEvent);
 }
 
-bool VBoxFilePathSelectorWidget::eventFilter (QObject *aObj, QEvent *aEv)
+bool UIFilePathSelector::eventFilter (QObject *aObj, QEvent *aEv)
 {
     if (mIsMouseAwaited && (aEv->type() == QEvent::MouseButtonPress))
         QTimer::singleShot (0, this, SLOT (refreshText()));
@@ -280,7 +280,7 @@ bool VBoxFilePathSelectorWidget::eventFilter (QObject *aObj, QEvent *aEv)
     return QIWithRetranslateUI<QComboBox>::eventFilter (aObj, aEv);
 }
 
-void VBoxFilePathSelectorWidget::retranslateUi()
+void UIFilePathSelector::retranslateUi()
 {
     /* How do we interpret the "nothing selected" item? */
     if (isResetEnabled())
@@ -339,7 +339,7 @@ void VBoxFilePathSelectorWidget::retranslateUi()
     mCopyAction->setText (tr ("&Copy"));
 }
 
-void VBoxFilePathSelectorWidget::onActivated (int aIndex)
+void UIFilePathSelector::onActivated (int aIndex)
 {
     switch (aIndex)
     {
@@ -360,12 +360,12 @@ void VBoxFilePathSelectorWidget::onActivated (int aIndex)
     setFocus();
 }
 
-void VBoxFilePathSelectorWidget::onTextEdited (const QString &aPath)
+void UIFilePathSelector::onTextEdited (const QString &aPath)
 {
     changePath (aPath, false /* refresh text? */);
 }
 
-void VBoxFilePathSelectorWidget::copyToClipboard()
+void UIFilePathSelector::copyToClipboard()
 {
     QString text (fullPath());
     /* Copy the current text to the selection and global clipboard. */
@@ -374,7 +374,7 @@ void VBoxFilePathSelectorWidget::copyToClipboard()
     QApplication::clipboard()->setText (text, QClipboard::Clipboard);
 }
 
-void VBoxFilePathSelectorWidget::changePath (const QString &aPath,
+void UIFilePathSelector::changePath (const QString &aPath,
                                              bool aRefreshText /* = true */)
 {
     QString oldPath = mPath;
@@ -384,7 +384,7 @@ void VBoxFilePathSelectorWidget::changePath (const QString &aPath,
     emit pathChanged (aPath);
 }
 
-void VBoxFilePathSelectorWidget::selectPath()
+void UIFilePathSelector::selectPath()
 {
     /* Preparing initial directory. */
     QString initDir = mPath.isNull() ? mHomeDir :
@@ -415,7 +415,7 @@ void VBoxFilePathSelectorWidget::selectPath()
     changePath (selPath);
 }
 
-QIcon VBoxFilePathSelectorWidget::defaultIcon() const
+QIcon UIFilePathSelector::defaultIcon() const
 {
     if (mMode == Mode_Folder)
         return vboxGlobal().icon(QFileIconProvider::Folder);
@@ -423,7 +423,7 @@ QIcon VBoxFilePathSelectorWidget::defaultIcon() const
         return vboxGlobal().icon(QFileIconProvider::File);
 }
 
-QString VBoxFilePathSelectorWidget::fullPath (bool aAbsolute /* = true */) const
+QString UIFilePathSelector::fullPath (bool aAbsolute /* = true */) const
 {
     if (mPath.isNull())
         return mPath;
@@ -446,7 +446,7 @@ QString VBoxFilePathSelectorWidget::fullPath (bool aAbsolute /* = true */) const
     return QDir::toNativeSeparators (result);
 }
 
-QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
+QString UIFilePathSelector::shrinkText (int aWidth) const
 {
     QString fullText (fullPath (false));
     if (fullText.isEmpty())
@@ -487,7 +487,7 @@ QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
     return newSize < oldSize ? fullText : fullPath (false);
 }
 
-void VBoxFilePathSelectorWidget::refreshText()
+void UIFilePathSelector::refreshText()
 {
     if (mIsEditable && mIsEditableMode)
     {
@@ -569,7 +569,7 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QWidget> (aParent)
     , mPathWgt (NULL)
     , mLabel (NULL)
-    , mMode (VBoxFilePathSelectorWidget::Mode_File_Open)
+    , mMode (UIFilePathSelector::Mode_File_Open)
     , mLineEdit (NULL)
     , m_fButtonToolTipSet(false)
     , mHomeDir (QDir::current().absolutePath())
@@ -588,12 +588,12 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     retranslateUi();
 }
 
-void VBoxEmptyFileSelector::setMode (VBoxFilePathSelectorWidget::Mode aMode)
+void VBoxEmptyFileSelector::setMode (UIFilePathSelector::Mode aMode)
 {
     mMode = aMode;
 }
 
-VBoxFilePathSelectorWidget::Mode VBoxEmptyFileSelector::mode() const
+UIFilePathSelector::Mode VBoxEmptyFileSelector::mode() const
 {
     return mMode;
 }
@@ -742,16 +742,16 @@ void VBoxEmptyFileSelector::choose()
 
     switch (mMode)
     {
-        case VBoxFilePathSelectorWidget::Mode_File_Open:
+        case UIFilePathSelector::Mode_File_Open:
             path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
-        case VBoxFilePathSelectorWidget::Mode_File_Save:
+        case UIFilePathSelector::Mode_File_Save:
         {
             path = QIFileDialog::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
             if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
                 path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
             break;
         }
-        case VBoxFilePathSelectorWidget::Mode_Folder:
+        case UIFilePathSelector::Mode_Folder:
             path = QIFileDialog::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
     }
     if (path.isEmpty())

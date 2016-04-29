@@ -645,7 +645,7 @@
 //#include "VBoxCocoaSpecialControls.h"
 #include "VBoxFBOverlay.h"
 #include "VBoxFBOverlayCommon.h"
-#include "VBoxFilePathSelectorWidget.h"
+#include "UIFilePathSelector.h"
 #include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
 #include "VBoxGuestRAMSlider.h"

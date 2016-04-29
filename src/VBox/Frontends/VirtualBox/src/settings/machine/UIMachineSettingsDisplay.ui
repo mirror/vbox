@@ -491,7 +491,7 @@
               </widget>
              </item>
              <item row="0" column="1" colspan="3">
-              <widget class="VBoxFilePathSelectorWidget" name="m_pEditorVideoCapturePath">
+              <widget class="UIFilePathSelector" name="m_pEditorVideoCapturePath">
                <property name="whatsThis">
                 <string>Holds the filename VirtualBox uses to save the recorded content.</string>
                </property>
@@ -729,9 +729,9 @@
    <header>QITabWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxFilePathSelectorWidget</class>
+   <class>UIFilePathSelector</class>
    <extends>QComboBox</extends>
-   <header>VBoxFilePathSelectorWidget.h</header>
+   <header>UIFilePathSelector.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

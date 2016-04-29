@@ -82,7 +82,7 @@
            </widget>
           </item>
           <item row="0" column="1" colspan="2" >
-           <widget class="VBoxFilePathSelectorWidget" name="mPsSnapshot" >
+           <widget class="UIFilePathSelector" name="mPsSnapshot" >
             <property name="sizePolicy" >
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
               <horstretch>0</horstretch>
@@ -351,9 +351,9 @@
    <header>UINameAndSystemEditor.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxFilePathSelectorWidget</class>
+   <class>UIFilePathSelector</class>
    <extends>QComboBox</extends>
-   <header>VBoxFilePathSelectorWidget.h</header>
+   <header>UIFilePathSelector.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

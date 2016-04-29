@@ -32,7 +32,7 @@
     </widget>
    </item>
    <item row="0" column="1" colspan="2">
-    <widget class="VBoxFilePathSelectorWidget" name="m_pSelectorMachineFolder">
+    <widget class="UIFilePathSelector" name="m_pSelectorMachineFolder">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -58,7 +58,7 @@
     </widget>
    </item>
    <item row="1" column="1" colspan="2">
-    <widget class="VBoxFilePathSelectorWidget" name="m_pSelectorVRDPLibName">
+    <widget class="UIFilePathSelector" name="m_pSelectorVRDPLibName">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -110,9 +110,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>VBoxFilePathSelectorWidget</class>
+   <class>UIFilePathSelector</class>
    <extends>QComboBox</extends>
-   <header>VBoxFilePathSelectorWidget.h</header>
+   <header>UIFilePathSelector.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

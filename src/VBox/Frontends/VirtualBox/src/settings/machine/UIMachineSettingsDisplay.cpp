@@ -837,7 +837,7 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
 
     /* Prepare filepath selector: */
     m_pEditorVideoCapturePath->setEditable(false);
-    m_pEditorVideoCapturePath->setMode(VBoxFilePathSelectorWidget::Mode_File_Save);
+    m_pEditorVideoCapturePath->setMode(UIFilePathSelector::Mode_File_Save);
 
     /* Prepare frame-size combo-box: */
     m_pComboVideoCaptureSize->addItem(""); /* User Defined */

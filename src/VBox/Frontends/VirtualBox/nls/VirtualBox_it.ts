@@ -14839,7 +14839,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxFilePathSelectorWidget</name>
+    <name>UIFilePathSelector</name>
     <message>
         <source>&lt;reset to default&gt;</source>
         <translation>&lt;ripristina valori predefiniti&gt;</translation>

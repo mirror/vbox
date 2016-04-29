@@ -10528,13 +10528,13 @@
         <translation type="obsolete">&amp;Hautatu...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="+730"/>
+        <location filename="../src/widgets/UIFilePathSelector.cpp" line="+730"/>
         <source>Choose...</source>
         <translation>Hautatu...</translation>
     </message>
 </context>
 <context>
-    <name>VBoxFilePathSelectorWidget</name>
+    <name>UIFilePathSelector</name>
     <message>
         <location line="-442"/>
         <source>&lt;reset to default&gt;</source>

@@ -28,7 +28,7 @@
 # include "UIWizardImportAppPageExpert.h"
 # include "UIWizardImportApp.h"
 # include "VBoxGlobal.h"
-# include "VBoxFilePathSelectorWidget.h"
+# include "UIFilePathSelector.h"
 # include "UIApplianceImportEditorWidget.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -48,7 +48,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
                 m_pFileSelector = new VBoxEmptyFileSelector(m_pApplianceCnt);
                 {
                     m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
-                    m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
+                    m_pFileSelector->setMode(UIFilePathSelector::Mode_File_Open);
                     m_pFileSelector->setButtonPosition(VBoxEmptyFileSelector::RightPosition);
                     m_pFileSelector->setEditable(true);
                 }

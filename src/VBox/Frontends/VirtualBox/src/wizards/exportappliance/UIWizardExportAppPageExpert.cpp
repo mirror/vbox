@@ -35,7 +35,7 @@
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
 # include "VBoxGlobal.h"
-# include "VBoxFilePathSelectorWidget.h"
+# include "UIFilePathSelector.h"
 # include "UIApplianceExportEditorWidget.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -118,7 +118,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                 }
                 m_pFileSelector = new VBoxEmptyFileSelector(m_pSettingsCnt);
                 {
-                    m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Save);
+                    m_pFileSelector->setMode(UIFilePathSelector::Mode_File_Save);
                     m_pFileSelector->setEditable(true);
                     m_pFileSelector->setButtonPosition(VBoxEmptyFileSelector::RightPosition);
                     m_pFileSelector->setDefaultSaveExt("ova");
