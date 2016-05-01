@@ -429,24 +429,27 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
     rc = rtThreadInit();
     AssertMsgRCReturn(rc, ("Failed to initialize threads, rc=%Rrc!\n", rc), rc);
 
+    /*
+     * The executable path before SUPLib (windows requirement).
+     */
+    rc = rtR3InitProgramPath(pszProgramPath);
+    AssertLogRelMsgRCReturn(rc, ("Failed to get executable directory path, rc=%Rrc!\n", rc), rc);
+
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
+    /*
+     * Initialize SUPLib here so the GIP can get going as early as possible
+     * (improves accuracy for the first client).
+     */
     if (fFlags & RTR3INIT_FLAGS_SUPLIB)
     {
-        /*
-         * Init GIP first.
-         * (The more time for updates before real use, the better.)
-         */
         rc = SUPR3Init(NULL);
         AssertMsgRCReturn(rc, ("Failed to initializable the support library, rc=%Rrc!\n", rc), rc);
     }
 #endif
 
     /*
-     * The executable path, name and directory.  Convert arguments.
+     * Convert arguments.
      */
-    rc = rtR3InitProgramPath(pszProgramPath);
-    AssertLogRelMsgRCReturn(rc, ("Failed to get executable directory path, rc=%Rrc!\n", rc), rc);
-
     rc = rtR3InitArgv(fFlags, cArgs, ppapszArgs);
     AssertLogRelMsgRCReturn(rc, ("Failed to convert the arguments, rc=%Rrc!\n", rc), rc);
 
