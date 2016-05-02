@@ -6726,10 +6726,9 @@ iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap, void **ppvMem, size
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-/** @todo Testcase & AMD-V/VT-x verification: Check if CR2 should really be the
- *        last byte. */
     RTGCPHYS GCPhysSecond;
-    rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, GCPtrFirst + (cbMem - 1), fAccess, &GCPhysSecond);
+    rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, (GCPtrFirst + (cbMem - 1)) & ~(RTGCPTR)PAGE_OFFSET_MASK,
+                                                 fAccess, &GCPhysSecond);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     GCPhysSecond &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
