@@ -4431,16 +4431,25 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
-            rcStrict = CPUMSetGuestGDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
+        if (   pIemCpu->enmCpuMode != IEMMODE_64BIT
+            || X86_IS_CANONICAL(GCPtrBase))
+        {
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
+                rcStrict = CPUMSetGuestGDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
+            else
+            {
+                PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+                pCtx->gdtr.cbGdt = cbLimit;
+                pCtx->gdtr.pGdt  = GCPtrBase;
+            }
+            if (rcStrict == VINF_SUCCESS)
+                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+        }
         else
         {
-            PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-            pCtx->gdtr.cbGdt = cbLimit;
-            pCtx->gdtr.pGdt  = GCPtrBase;
+            Log(("iemCImpl_lgdt: Non-canonical base %04x:%RGv\n", cbLimit, GCPtrBase));
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
         }
-        if (rcStrict == VINF_SUCCESS)
-            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     }
     return rcStrict;
 }
@@ -4488,15 +4497,24 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     VBOXSTRICTRC rcStrict = iemMemFetchDataXdtr(pIemCpu, &cbLimit, &GCPtrBase, iEffSeg, GCPtrEffSrc, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
-            CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
+        if (   pIemCpu->enmCpuMode != IEMMODE_64BIT
+            || X86_IS_CANONICAL(GCPtrBase))
+        {
+            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
+                CPUMSetGuestIDTR(IEMCPU_TO_VMCPU(pIemCpu), GCPtrBase, cbLimit);
+            else
+            {
+                PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+                pCtx->idtr.cbIdt = cbLimit;
+                pCtx->idtr.pIdt  = GCPtrBase;
+            }
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+        }
         else
         {
-            PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-            pCtx->idtr.cbIdt = cbLimit;
-            pCtx->idtr.pIdt  = GCPtrBase;
+            Log(("iemCImpl_lidt: Non-canonical base %04x:%RGv\n", cbLimit, GCPtrBase));
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
         }
-        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     }
     return rcStrict;
 }
