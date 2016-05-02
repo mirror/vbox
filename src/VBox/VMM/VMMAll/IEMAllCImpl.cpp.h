@@ -3000,6 +3000,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     NOREF(cbInstr);
+    Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
 
     /*
      * Nested task return.
@@ -3359,7 +3360,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
  *
  * @param   enmEffOpSize    The effective operand size.
  */
-IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     NOREF(cbInstr);
@@ -3663,8 +3664,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
      */
     if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         return IEM_CIMPL_CALL_1(iemCImpl_iret_real_v8086, enmEffOpSize);
-    if (IEM_IS_LONG_MODE(pIemCpu))
-        return IEM_CIMPL_CALL_1(iemCImpl_iret_long, enmEffOpSize);
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+        return IEM_CIMPL_CALL_1(iemCImpl_iret_64bit, enmEffOpSize);
     return     IEM_CIMPL_CALL_1(iemCImpl_iret_prot, enmEffOpSize);
 }
 
