@@ -4103,7 +4103,8 @@ void VBoxGlobal::prepare()
     while (i < argc)
     {
 #if QT_VERSION >= 0x050000
-        const char *arg = arguments.at(i).toLocal8Bit().constData();
+        QByteArray  argBytes = arguments.at(i).toUtf8();
+        const char *arg = argBytes.constData();
 #else /* QT_VERSION < 0x050000 */
         const char *arg = qApp->argv() [i];
 #endif /* QT_VERSION < 0x050000 */
