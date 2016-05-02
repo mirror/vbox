@@ -57,7 +57,7 @@ static const BS3TESTMODEENTRY g_aModeTest[] =
 static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 {
     { "iret", bs3CpuBasic2_iret_f16, 0 },
-#if 0
+#if 1
     { "sidt", bs3CpuBasic2_sidt_f16, 0 },
     { "sgdt", bs3CpuBasic2_sgdt_f16, 0 },
     { "lidt", bs3CpuBasic2_lidt_f16, 0 },
