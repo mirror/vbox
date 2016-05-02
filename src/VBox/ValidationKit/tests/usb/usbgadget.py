@@ -63,6 +63,20 @@ g_kiGadgetTypeTest             = 1;
 g_kiGadgetAccessUsbIp          = 1;
 ## @}
 
+## @name USB gadget config types.
+## @{
+g_kiGadgetCfgTypeBool          = 1;
+g_kiGadgetCfgTypeString        = 2;
+g_kiGadgetCfgTypeUInt8         = 3;
+g_kiGadgetCfgTypeUInt16        = 4;
+g_kiGadgetCfgTypeUInt32        = 5;
+g_kiGadgetCfgTypeUInt64        = 6;
+g_kiGadgetCfgTypeInt8          = 7;
+g_kiGadgetCfgTypeInt16         = 8;
+g_kiGadgetCfgTypeInt32         = 9;
+g_kiGadgetCfgTypeInt64         = 10;
+## @}
+
 #
 # Helpers for decoding data received from the UTS.
 # These are used both the Session and Transport classes.
@@ -175,6 +189,31 @@ def zeroByteArray(cb):
     cb = cb - 1;
     for i in range(cb): # pylint: disable=W0612
         abArray.append(0);
+    return abArray;
+
+def strToByteArry(sStr):
+    """Encodes the string as a little endian byte (B) array including the terminator."""
+    abArray = array.array('B');
+    sUtf8 = sStr.encode('utf_8');
+    for i in range(0, len(sUtf8)):
+        abArray.append(ord(sUtf8[i]))
+    abArray.append(0);
+    return abArray;
+
+def cfgListToByteArray(lst):
+    """Encodes the given config list as a little endian byte (B) array."""
+    abArray = array.array('B');
+    if lst is not None:
+        for t3Item in lst:
+            # Encode they key size
+            abArray.extend(u32ToByteArray(len(t3Item[0]) + 1)); # Include terminator
+            abArray.extend(u32ToByteArray(t3Item[1]))           # Config type
+            abArray.extend(u32ToByteArray(len(t3Item[2]) + 1)); # Value size including temrinator.
+            abArray.extend(u32ToByteArray(0));                  # Reserved field.
+
+            abArray.extend(strToByteArry(t3Item[0]));
+            abArray.extend(strToByteArry(t3Item[2]));
+
     return abArray;
 
 class TransportBase(object):
@@ -749,9 +788,12 @@ class Session(TdTaskBase):
     # Gadget tasks.
     #
 
-    def taskGadgetCreate(self, iGadgetType, iGadgetAccess):
+    def taskGadgetCreate(self, iGadgetType, iGadgetAccess, lstCfg = None):
         """Creates a new gadget on UTS"""
-        fRc = self.sendMsg("GDGTCRT", (iGadgetType, iGadgetAccess, 0, 0));
+        cCfgItems = 0;
+        if lstCfg is not None:
+            cCfgItems = len(lstCfg);
+        fRc = self.sendMsg("GDGTCRT", (iGadgetType, iGadgetAccess, cCfgItems, 0, cfgListToByteArray(lstCfg)));
         if fRc is True:
             fRc = self.recvAckLogged("GDGTCRT");
         return fRc;
@@ -838,7 +880,7 @@ class Session(TdTaskBase):
     # Public methods - gadget API
     #
 
-    def asyncGadgetCreate(self, iGadgetType, iGadgetAccess, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncGadgetCreate(self, iGadgetType, iGadgetAccess, lstCfg = None, cMsTimeout = 30000, fIgnoreErrors = False):
         """
         Initiates a gadget create task.
 
@@ -847,11 +889,11 @@ class Session(TdTaskBase):
         The task returns True on success and False on failure.
         """
         return self.startTask(cMsTimeout, fIgnoreErrors, "GadgetCreate", self.taskGadgetCreate, \
-                              (iGadgetType, iGadgetAccess));
+                              (iGadgetType, iGadgetAccess, lstCfg));
 
-    def syncGadgetCreate(self, iGadgetType, iGadgetAccess, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncGadgetCreate(self, iGadgetType, iGadgetAccess, lstCfg = None, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
-        return self.asyncToSync(self.asyncGadgetCreate, iGadgetType, iGadgetAccess, cMsTimeout, fIgnoreErrors);
+        return self.asyncToSync(self.asyncGadgetCreate, iGadgetType, iGadgetAccess, lstCfg, cMsTimeout, fIgnoreErrors);
 
     def asyncGadgetDestroy(self, iGadgetId, cMsTimeout = 30000, fIgnoreErrors = False):
         """
@@ -1326,7 +1368,7 @@ class UsbGadget(object):
         """
         return self.oUtsSession.syncGadgetConnect(self.idGadget);
 
-    def impersonate(self, sImpersonation):
+    def impersonate(self, sImpersonation, fSuperSpeed = False):
         """
         Impersonate a given device.
         """
@@ -1337,7 +1379,10 @@ class UsbGadget(object):
 
         fRc = False;
         if sImpersonation == g_ksGadgetImpersonationTest:
-            fDone = self.oUtsSession.syncGadgetCreate(g_kiGadgetTypeTest, g_kiGadgetAccessUsbIp);
+            lstCfg = [];
+            if fSuperSpeed is True:
+                lstCfg.append( ('Gadget/SuperSpeed', g_kiGadgetCfgTypeBool, 'true') );
+            fDone = self.oUtsSession.syncGadgetCreate(g_kiGadgetTypeTest, g_kiGadgetAccessUsbIp, lstCfg);
             if fDone is True and self.oUtsSession.isSuccess():
                 # Get the gadget ID.
                 _, _, abPayload = self.oUtsSession.getLastReply();
