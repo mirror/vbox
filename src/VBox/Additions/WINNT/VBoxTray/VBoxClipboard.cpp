@@ -98,28 +98,41 @@ static bool vboxClipboardIsNewAPI(VBOXCLIPBOARDCONTEXT *pCtx)
 static int vboxOpenClipboard(HWND hwnd)
 {
     /* "OpenClipboard fails if another window has the clipboard open."
-    * So try a few times and wait up to 1 second.
-    */
-    int rc;
+     * So try a few times and wait up to 1 second.
+     */
+    BOOL fOpened = FALSE;
 
-    uint32_t u32SleepMS = 1;
-    int i;
-    for (i = 0; i <= 9; ++i) /* u32SleepMS = [1..512] */
+    int i = 0;
+    for (;;)
     {
         if (OpenClipboard(hwnd))
         {
-            rc = 0;
+            fOpened = TRUE;
             break;
         }
-        rc = RTErrConvertFromWin32(GetLastError());
-        
-        RTThreadSleep(u32SleepMS);
-        u32SleepMS <<= 1;
+
+        if (i >= 10) /* sleep interval = [1..512] ms */
+            break;
+
+        RTThreadSleep(1 << i);
+        ++i;
     }
+
 #ifdef LOG_ENABLED
     if (i > 0)
-        LogFlow(("vboxOpenClipboard: %d times tried to open clipboard. \n", ++i));
+        LogFlowFunc(("%d times tried to open clipboard.\n", i + 1));
 #endif
+
+    int rc;
+    if (fOpened)
+        rc = VINF_SUCCESS;
+    else
+    {
+        const DWORD err = GetLastError();
+        LogFlowFunc(("error %d\n", err));
+        rc = RTErrConvertFromWin32(err);
+    }
+
     return rc;
 }
 
@@ -130,7 +143,7 @@ static int vboxClipboardChanged(PVBOXCLIPBOARDCONTEXT pCtx)
 
     /* Query list of available formats and report to host. */
     int rc = vboxOpenClipboard(pCtx->hwnd);
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         uint32_t u32Formats = 0;
         UINT format = 0;
@@ -501,15 +514,15 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             /* Do nothing. The clipboard formats will be unavailable now, because the
              * windows is to be destroyed and therefore the guest side becomes inactive.
              */
-            int res = vboxOpenClipboard(hwnd);
-            if (RT_SUCCESS(res))
+            int vboxrc = vboxOpenClipboard(hwnd);
+            if (RT_SUCCESS(vboxrc))
             {
                 EmptyClipboard();
                 CloseClipboard();
             }
             else
             {
-                LogFlowFunc(("WM_RENDERALLFORMATS: Failed to open clipboard! rc: %Rrc\n", res));
+                LogFlowFunc(("WM_RENDERALLFORMATS: Failed to open clipboard! rc: %Rrc\n", vboxrc));
             }
         } break;
 
@@ -518,8 +531,8 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
             uint32_t u32Formats = (uint32_t)lParam;
             
-            int res = vboxOpenClipboard(hwnd);
-            if(RT_SUCCESS(res))
+            int vboxrc = vboxOpenClipboard(hwnd);
+            if (RT_SUCCESS(vboxrc))
             {
                 EmptyClipboard();
 
@@ -552,7 +565,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             }
             else
             {
-                LogFlowFunc(("WM_USER: Failed to open clipboard! error = %Rrc\n", res));
+                LogFlowFunc(("WM_USER: Failed to open clipboard! error = %Rrc\n", vboxrc));
             }
         } break;
 
@@ -562,10 +575,9 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             uint32_t u32Formats = (uint32_t)lParam;
             HANDLE hClip = NULL;
 
-            int res = vboxOpenClipboard(hwnd);
-            if (RT_SUCCESS(res))
+            int vboxrc = vboxOpenClipboard(hwnd);
+            if (RT_SUCCESS(vboxrc))
             {
-                int vboxrc;
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                 {
                     hClip = GetClipboardData(CF_DIB);
@@ -636,7 +648,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             }
             else
             {
-                LogFlowFunc(("WM_USER: Failed to open clipboard! rc: %Rrc\n", res));
+                LogFlowFunc(("WM_USER: Failed to open clipboard! rc: %Rrc\n", vboxrc));
             }
 
             if (hClip == NULL)
