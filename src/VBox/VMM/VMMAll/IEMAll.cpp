@@ -7404,36 +7404,57 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PIEMCPU pIemCpu, uint128_t
 IEM_STATIC VBOXSTRICTRC iemMemFetchDataXdtr(PIEMCPU pIemCpu, uint16_t *pcbLimit, PRTGCPTR pGCPtrBase, uint8_t iSegReg,
                                             RTGCPTR GCPtrMem, IEMMODE enmOpSize)
 {
-    uint8_t const *pu8Src;
-    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu,
-                                      (void **)&pu8Src,
-                                      enmOpSize == IEMMODE_64BIT
-                                      ? 2 + 8
-                                      : enmOpSize == IEMMODE_32BIT
-                                      ? 2 + 4
-                                      : 2 + 3,
-                                      iSegReg,
-                                      GCPtrMem,
-                                      IEM_ACCESS_DATA_R);
-    if (rcStrict == VINF_SUCCESS)
+    /*
+     * Just like SIDT and SGDT, the LIDT and LGDT instructions are a
+     * little special:
+     *      - The two reads are done separately.
+     *      - Operand size override works in 16-bit and 32-bit code, but 64-bit.
+     *      - We suspect the 386 to actually commit the limit before the base in
+     *        some cases (search for 386 in  bs3CpuBasic2_lidt_lgdt_One).  We
+     *        don't try emulate this eccentric behavior, because it's not well
+     *        enough understood and rather hard to trigger.
+     *      - The 486 seems to do a dword limit read when the operand size is 32-bit.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
     {
-        *pcbLimit = RT_MAKE_U16(pu8Src[0], pu8Src[1]);
-        switch (enmOpSize)
+        rcStrict = iemMemFetchDataU16(pIemCpu, pcbLimit, iSegReg, GCPtrMem);
+        if (rcStrict == VINF_SUCCESS)
+            rcStrict = iemMemFetchDataU64(pIemCpu, pGCPtrBase, iSegReg, GCPtrMem + 2);
+    }
+    else
+    {
+        uint32_t uTmp;
+        if (enmOpSize == IEMMODE_32BIT)
         {
-            case IEMMODE_16BIT:
-                *pGCPtrBase = RT_MAKE_U32_FROM_U8(pu8Src[2], pu8Src[3], pu8Src[4], 0);
-                break;
-            case IEMMODE_32BIT:
-                *pGCPtrBase = RT_MAKE_U32_FROM_U8(pu8Src[2], pu8Src[3], pu8Src[4], pu8Src[5]);
-                break;
-            case IEMMODE_64BIT:
-                *pGCPtrBase = RT_MAKE_U64_FROM_U8(pu8Src[2], pu8Src[3], pu8Src[4], pu8Src[5],
-                                                  pu8Src[6], pu8Src[7], pu8Src[8], pu8Src[9]);
-                break;
-
-                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            if (IEM_GET_TARGET_CPU(pIemCpu) != IEMTARGETCPU_486)
+            {
+                rcStrict = iemMemFetchDataU16(pIemCpu, pcbLimit, iSegReg, GCPtrMem);
+                if (rcStrict == VINF_SUCCESS)
+                    rcStrict = iemMemFetchDataU32(pIemCpu, &uTmp, iSegReg, GCPtrMem + 2);
+            }
+            else
+            {
+                rcStrict = iemMemFetchDataU32(pIemCpu, &uTmp, iSegReg, GCPtrMem);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    *pcbLimit = (uint16_t)uTmp;
+                    rcStrict = iemMemFetchDataU32(pIemCpu, &uTmp, iSegReg, GCPtrMem + 2);
+                }
+            }
+            if (rcStrict == VINF_SUCCESS)
+                *pGCPtrBase = uTmp;
         }
-        rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pu8Src, IEM_ACCESS_DATA_R);
+        else
+        {
+            rcStrict = iemMemFetchDataU16(pIemCpu, pcbLimit, iSegReg, GCPtrMem);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                rcStrict = iemMemFetchDataU32(pIemCpu, &uTmp, iSegReg, GCPtrMem + 2);
+                if (rcStrict == VINF_SUCCESS)
+                    *pGCPtrBase = uTmp & UINT32_C(0x00ffffff);
+            }
+        }
     }
     return rcStrict;
 }
