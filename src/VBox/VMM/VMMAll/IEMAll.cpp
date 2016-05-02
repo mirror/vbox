@@ -7580,46 +7580,26 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t i
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
- * @param   enmOpSize           The effective operand size.
  */
 IEM_STATIC VBOXSTRICTRC
-iemMemStoreDataXdtr(PIEMCPU pIemCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_t iSegReg, RTGCPTR GCPtrMem, IEMMODE enmOpSize)
+iemMemStoreDataXdtr(PIEMCPU pIemCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
-    /** @todo Looks like SIDT and SGDT perform two separate writes here,
-     *        first the limit, then base. Should the base write hit a segment
-     *        limit, the first write isn't rolled back. */
-    uint8_t *pu8Src;
-    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu,
-                                      (void **)&pu8Src,
-                                      enmOpSize == IEMMODE_64BIT
-                                      ? 2 + 8
-                                      : enmOpSize == IEMMODE_32BIT
-                                      ? 2 + 4
-                                      : 2 + 3,
-                                      iSegReg,
-                                      GCPtrMem,
-                                      IEM_ACCESS_DATA_W);
+    /*
+     * The SIDT and SGDT instructions actually stores the data using two
+     * independent writes.  The instructions does not respond to opsize prefixes.
+     */
+    VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pIemCpu, iSegReg, GCPtrMem, cbLimit);
     if (rcStrict == VINF_SUCCESS)
     {
-        pu8Src[0] = RT_BYTE1(cbLimit);
-        pu8Src[1] = RT_BYTE2(cbLimit);
-        pu8Src[2] = RT_BYTE1(GCPtrBase);
-        pu8Src[3] = RT_BYTE2(GCPtrBase);
-        pu8Src[4] = RT_BYTE3(GCPtrBase);
-        if (enmOpSize == IEMMODE_16BIT)
-            pu8Src[5] = IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_286 ? 0xff : 0x00;
+        if (pIemCpu->enmCpuMode == IEMMODE_16BIT)
+            rcStrict = iemMemStoreDataU32(pIemCpu, iSegReg, GCPtrMem + 2,
+                                          IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_286
+                                          ? (uint32_t)GCPtrBase | UINT32_C(0xff000000)
+                                          : (uint32_t)GCPtrBase & UINT32_C(0x00ffffff));
+        else if (pIemCpu->enmCpuMode == IEMMODE_32BIT)
+            rcStrict = iemMemStoreDataU32(pIemCpu, iSegReg, GCPtrMem + 2, (uint32_t)GCPtrBase);
         else
-        {
-            pu8Src[5] = RT_BYTE4(GCPtrBase);
-            if (enmOpSize == IEMMODE_64BIT)
-            {
-                pu8Src[6] = RT_BYTE5(GCPtrBase);
-                pu8Src[7] = RT_BYTE6(GCPtrBase);
-                pu8Src[8] = RT_BYTE7(GCPtrBase);
-                pu8Src[9] = RT_BYTE8(GCPtrBase);
-            }
-        }
-        rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pu8Src, IEM_ACCESS_DATA_W);
+            rcStrict = iemMemStoreDataU64(pIemCpu, iSegReg, GCPtrMem + 2, (uint32_t)GCPtrBase);
     }
     return rcStrict;
 }

@@ -4455,9 +4455,8 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
  *
  * @param   iEffSeg         The segment where to store the gdtr content.
  * @param   GCPtrEffDst     The address where to store the gdtr content.
- * @param   enmEffOpSize    The effective operand size.
  */
-IEM_CIMPL_DEF_3(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_2(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
     /*
      * Join paths with sidt.
@@ -4465,7 +4464,7 @@ IEM_CIMPL_DEF_3(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, 
      *       you really must know.
      */
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->gdtr.cbGdt, pCtx->gdtr.pGdt, iEffSeg, GCPtrEffDst, enmEffOpSize);
+    VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->gdtr.cbGdt, pCtx->gdtr.pGdt, iEffSeg, GCPtrEffDst);
     if (rcStrict == VINF_SUCCESS)
         iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return rcStrict;
@@ -4512,9 +4511,8 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
  *
  * @param   iEffSeg         The segment where to store the idtr content.
  * @param   GCPtrEffDst     The address where to store the idtr content.
- * @param   enmEffOpSize    The effective operand size.
  */
-IEM_CIMPL_DEF_3(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_2(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
     /*
      * Join paths with sgdt.
@@ -4522,7 +4520,7 @@ IEM_CIMPL_DEF_3(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, 
      *       you really must know.
      */
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->idtr.cbIdt, pCtx->idtr.pIdt, iEffSeg, GCPtrEffDst, enmEffOpSize);
+    VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->idtr.cbIdt, pCtx->idtr.pIdt, iEffSeg, GCPtrEffDst);
     if (rcStrict == VINF_SUCCESS)
         iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return rcStrict;
