@@ -7598,8 +7598,7 @@ iemMemStoreDataXdtr(PIEMCPU pIemCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_
         if (pIemCpu->enmCpuMode == IEMMODE_16BIT)
             rcStrict = iemMemStoreDataU32(pIemCpu, iSegReg, GCPtrMem + 2,
                                           IEM_GET_TARGET_CPU(pIemCpu) <= IEMTARGETCPU_286
-                                          ? (uint32_t)GCPtrBase | UINT32_C(0xff000000)
-                                          : (uint32_t)GCPtrBase & UINT32_C(0x00ffffff));
+                                          ? (uint32_t)GCPtrBase | UINT32_C(0xff000000) : (uint32_t)GCPtrBase);
         else if (pIemCpu->enmCpuMode == IEMMODE_32BIT)
             rcStrict = iemMemStoreDataU32(pIemCpu, iSegReg, GCPtrMem + 2, (uint32_t)GCPtrBase);
         else
