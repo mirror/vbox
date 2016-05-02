@@ -31,7 +31,7 @@
 #include "bs3-cmn-paging.h"
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/param.h>
-
+                  bs3kit.h
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -113,8 +113,10 @@ BS3_CMN_DEF(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t 
                     BS3PAGING_DPRINTF2(("bs3PagingGetLegacyPte: Built pPT=%p uPte=%RX32\n", pPT, uPte));
                     if (pPT)
                     {
-                        pPD->a[iPde].u = Bs3SelPtrToFlat(pPT)
-                                       | (pPD->a[iPde].u & ~(uint32_t)(X86_PTE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D));
+                        ASMAtomicUoWriteU32(&pPD->a[iPde].u,
+                                              Bs3SelPtrToFlat(pPT)
+                                            | (  pPD->a[iPde].u
+                                               & ~(uint32_t)(X86_PTE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D)));
                         BS3PAGING_DPRINTF2(("bs3PagingGetLegacyPte: iPde=%#x: %#RX32\n", iPde, pPD->a[iPde].u));
                         if (fUseInvlPg)
                             ASMInvalidatePage(uFlat);
@@ -180,9 +182,10 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint8_t bMod
                                                                      uMaxAddr > _1M ? BS3MEMKIND_TILED : BS3MEMKIND_REAL, prc);
                     if (pPD)
                     {
-                        pPdpt->a[iPdpte].u = Bs3SelPtrToFlat(pPD)
-                                           | (  pPdpt->a[iPdpte].u
-                                              & ~(uint64_t)(X86_PDPE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D));
+                        ASMAtomicUoWriteU64(&pPdpt->a[iPdpte].u,
+                                              Bs3SelPtrToFlat(pPD)
+                                            | (  pPdpt->a[iPdpte].u
+                                               & ~(uint64_t)(X86_PDPE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D)));
                         if (fUseInvlPg)
                             ASMInvalidatePage(uFlat);
                     }
@@ -232,8 +235,10 @@ BS3_CMN_DEF(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint8_t bMod
                                                                  uMaxAddr > _1M ? BS3MEMKIND_TILED : BS3MEMKIND_REAL, prc);
                 if (pPT)
                 {
-                    pPD->a[iPde].u = Bs3SelPtrToFlat(pPT)
-                                   | (pPD->a[iPde].u & ~(uint64_t)(X86_PTE_PAE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D));
+                    ASMAtomicUoWriteU64(&pPD->a[iPde].u,
+                                          Bs3SelPtrToFlat(pPT)
+                                        | (  pPD->a[iPde].u
+                                           & ~(uint64_t)(X86_PTE_PAE_PG_MASK | X86_PDE4M_PS | X86_PDE4M_G | X86_PDE4M_D)));
                     if (fUseInvlPg)
                         ASMInvalidatePage(uFlat);
                     pPTE = &pPT->a[iPte];

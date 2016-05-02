@@ -30,6 +30,7 @@
 #ifndef DOXYGEN_RUNNING
 # define IN_RING0
 #endif
+#define RT_NO_STRICT            /* Don't drag in IPRT assertion code in inline code we may use (asm.h). */
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #ifndef DOXYGEN_RUNNING
