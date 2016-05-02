@@ -68,6 +68,8 @@
  *      - Level 5 (Log5): Decoding details.
  *      - Level 6 (Log6): Enables/disables the lockstep comparison with REM.
  *      - Level 7 (Log7): iret++ execution logging.
+ *      - Level 8 (Log8): Memory writes.
+ *      - Level 9 (Log9): Memory reads.
  *
  */
 
@@ -6301,9 +6303,16 @@ iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_t iSegReg, size_t cb
         }
 
         case IEMMODE_64BIT:
+        {
+            RTGCPTR GCPtrMem = *pGCPtrMem;
             if (iSegReg == X86_SREG_GS || iSegReg == X86_SREG_FS)
-                *pGCPtrMem += pSel->u64Base;
-            return VINF_SUCCESS;
+                *pGCPtrMem = GCPtrMem + pSel->u64Base;
+
+            Assert(cbMem >= 1);
+            if (RT_LIKELY(X86_IS_CANONICAL(GCPtrMem) && X86_IS_CANONICAL(GCPtrMem + cbMem - 1)))
+                return VINF_SUCCESS;
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
+        }
 
         default:
             AssertFailedReturn(VERR_IEM_IPE_7);
@@ -7059,6 +7068,11 @@ iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR
     rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, GCPtrMem, fAccess, &GCPhysFirst);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+
+    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        Log8(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
+    if (fAccess & IEM_ACCESS_TYPE_READ)
+        Log9(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
 
     void *pvMem;
     rcStrict = iemMemPageMap(pIemCpu, GCPhysFirst, fAccess, &pvMem, &pIemCpu->aMemMappingLocks[iMemMap].Lock);
@@ -10866,6 +10880,10 @@ IEM_STATIC void iemLogCurInstr(PVMCPU pVCpu, PCPUMCTX pCtx, bool fSameCtx)
 # endif
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
                  pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u));
+
+    uint8_t abTmp[16]; RT_ZERO(abTmp);
+    VBOXSTRICTRC rc2 = PGMPhysRead(pVCpu->CTX_SUFF(pVM), 0x2c370, abTmp, sizeof(abTmp), PGMACCESSORIGIN_IEM);
+    Log(("0x2c370: %.16Rhxs %Rrc\n", &abTmp[0], VBOXSTRICTRC_VAL(rc2)));
 }
 #endif
 
