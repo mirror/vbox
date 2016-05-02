@@ -489,8 +489,8 @@ static const char *rtDbgModCvAddSanitizedStringToCache(const char *pch, size_t c
         }
 
         /* Force valid UTF-8 encoding. */
-        size_t cchTmp = RTStrPurgeEncoding(pszCopy);
-        NOREF(cchTmp); Assert(cchTmp == cch);
+        RTStrPurgeEncoding(pszCopy);
+        Assert(strlen(pszCopy) == cch);
 
         /* Enter it into the cache and free the temp copy. */
         pszRet = RTStrCacheEnterN(g_hDbgModStrCache, pszCopy, cch);
