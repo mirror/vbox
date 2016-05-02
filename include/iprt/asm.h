@@ -1655,6 +1655,9 @@ DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t *pu32)
 {
     ASMMemoryFence();
     Assert(!((uintptr_t)pu32 & 3));
+#if ARCH_BITS == 16
+    AssertFailed();  /** @todo 16-bit */
+#endif
     return *pu32;
 }
 
@@ -1668,6 +1671,9 @@ DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t *pu32)
 DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t *pu32)
 {
     Assert(!((uintptr_t)pu32 & 3));
+#if ARCH_BITS == 16
+    AssertFailed();  /** @todo 16-bit */
+#endif
     return *pu32;
 }
 
@@ -1682,6 +1688,9 @@ DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t *pi32)
 {
     ASMMemoryFence();
     Assert(!((uintptr_t)pi32 & 3));
+#if ARCH_BITS == 16
+    AssertFailed();  /** @todo 16-bit */
+#endif
     return *pi32;
 }
 
@@ -1695,6 +1704,9 @@ DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t *pi32)
 DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t *pi32)
 {
     Assert(!((uintptr_t)pi32 & 3));
+#if ARCH_BITS == 16
+    AssertFailed();  /** @todo 16-bit */
+#endif
     return *pi32;
 }
 
@@ -2256,7 +2268,11 @@ DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t *pu32, uint32_t u32)
 DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t *pu32, uint32_t u32)
 {
     Assert(!((uintptr_t)pu32 & 3));
+#if ARCH_BITS >= 32
     *pu32 = u32;
+#else
+    ASMAtomicXchgU32(pu32, u32);
+#endif
 }
 
 
@@ -2281,7 +2297,11 @@ DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t *pi32, int32_t i32)
 DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t *pi32, int32_t i32)
 {
     Assert(!((uintptr_t)pi32 & 3));
+#if ARCH_BITS >= 32
     *pi32 = i32;
+#else
+    ASMAtomicXchgS32(pi32, i32);
+#endif
 }
 
 
