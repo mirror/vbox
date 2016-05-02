@@ -6235,63 +6235,68 @@ iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_t iSegReg, size_t cb
             RTGCPTR32 GCPtrFirst32 = (RTGCPTR32)*pGCPtrMem;
             RTGCPTR32 GCPtrLast32  = GCPtrFirst32 + (uint32_t)cbMem - 1;
 
-            Assert(pSel->Attr.n.u1Present);
-            Assert(pSel->Attr.n.u1DescType);
-            if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_CODE))
+            if (   pSel->Attr.n.u1Present
+                && !pSel->Attr.n.u1Unusable)
             {
-                if (   (fAccess & IEM_ACCESS_TYPE_WRITE)
-                    && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_WRITE) )
-                    return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, fAccess);
-
-                if (!IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+                Assert(pSel->Attr.n.u1DescType);
+                if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_CODE))
                 {
-                    /** @todo CPL check. */
-                }
+                    if (   (fAccess & IEM_ACCESS_TYPE_WRITE)
+                        && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_WRITE) )
+                        return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, fAccess);
 
-                /*
-                 * There are two kinds of data selectors, normal and expand down.
-                 */
-                if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_DOWN))
-                {
-                    if (   GCPtrFirst32 > pSel->u32Limit
-                        || GCPtrLast32  > pSel->u32Limit) /* yes, in real mode too (since 80286). */
-                        return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
+                    if (!IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+                    {
+                        /** @todo CPL check. */
+                    }
+
+                    /*
+                     * There are two kinds of data selectors, normal and expand down.
+                     */
+                    if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_DOWN))
+                    {
+                        if (   GCPtrFirst32 > pSel->u32Limit
+                            || GCPtrLast32  > pSel->u32Limit) /* yes, in real mode too (since 80286). */
+                            return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
+                    }
+                    else
+                    {
+                       /*
+                        * The upper boundary is defined by the B bit, not the G bit!
+                        */
+                       if (   GCPtrFirst32 < pSel->u32Limit + UINT32_C(1)
+                           || GCPtrLast32  > (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff)))
+                          return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
+                    }
+                    *pGCPtrMem = GCPtrFirst32 += (uint32_t)pSel->u64Base;
                 }
                 else
                 {
-                   /*
-                    * The upper boundary is defined by the B bit, not the G bit!
-                    */
-                   if (   GCPtrFirst32 < pSel->u32Limit + UINT32_C(1)
-                       || GCPtrLast32  > (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff)))
-                      return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
+
+                    /*
+                     * Code selector and usually be used to read thru, writing is
+                     * only permitted in real and V8086 mode.
+                     */
+                    if (   (   (fAccess & IEM_ACCESS_TYPE_WRITE)
+                            || (   (fAccess & IEM_ACCESS_TYPE_READ)
+                               && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_READ)) )
+                        && !IEM_IS_REAL_OR_V86_MODE(pIemCpu) )
+                        return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, fAccess);
+
+                    if (   GCPtrFirst32 > pSel->u32Limit
+                        || GCPtrLast32  > pSel->u32Limit) /* yes, in real mode too (since 80286). */
+                        return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
+
+                    if (!IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+                    {
+                        /** @todo CPL check. */
+                    }
+
+                    *pGCPtrMem  = GCPtrFirst32 += (uint32_t)pSel->u64Base;
                 }
-                *pGCPtrMem = GCPtrFirst32 += (uint32_t)pSel->u64Base;
             }
             else
-            {
-
-                /*
-                 * Code selector and usually be used to read thru, writing is
-                 * only permitted in real and V8086 mode.
-                 */
-                if (   (   (fAccess & IEM_ACCESS_TYPE_WRITE)
-                        || (   (fAccess & IEM_ACCESS_TYPE_READ)
-                           && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_READ)) )
-                    && !IEM_IS_REAL_OR_V86_MODE(pIemCpu) )
-                    return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, fAccess);
-
-                if (   GCPtrFirst32 > pSel->u32Limit
-                    || GCPtrLast32  > pSel->u32Limit) /* yes, in real mode too (since 80286). */
-                    return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
-
-                if (!IEM_IS_REAL_OR_V86_MODE(pIemCpu))
-                {
-                    /** @todo CPL check. */
-                }
-
-                *pGCPtrMem  = GCPtrFirst32 += (uint32_t)pSel->u64Base;
-            }
+                return iemRaiseGeneralProtectionFault0(pIemCpu);
             return VINF_SUCCESS;
         }
 
