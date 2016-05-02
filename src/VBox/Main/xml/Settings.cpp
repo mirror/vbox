@@ -54,7 +54,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -867,7 +867,7 @@ void ConfigFileBase::readMediaRegistry(const xml::ElementNode &elmMediaRegistry,
  * Note: this function doesn't in fill given list from xml::ElementNodesList, because there is conflicting
  * declaration in ovmfreader.h.
  */
-void ConfigFileBase::readNATForwardRuleList(const xml::ElementNode &elmParent, NATRuleList &llRules)
+void ConfigFileBase::readNATForwardRulesMap(const xml::ElementNode &elmParent, NATRulesMap &mapRules)
 {
     xml::ElementNodesList plstRules;
     elmParent.getChildElements(plstRules, "Forwarding");
@@ -883,7 +883,7 @@ void ConfigFileBase::readNATForwardRuleList(const xml::ElementNode &elmParent, N
         (*pf)->getAttributeValue("guestip", rule.strGuestIP);
         (*pf)->getAttributeValue("guestport", port);
         rule.u16GuestPort = port;
-        llRules.push_back(rule);
+        mapRules.insert(std::make_pair(rule.strName, rule));
     }
 }
 
@@ -1262,24 +1262,25 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
  * Note: it's responsibility of caller to create parent of the list tag.
  * because this method used for serializing per-_mahine's_adapter_ and per-network approaches.
  */
-void ConfigFileBase::buildNATForwardRuleList(xml::ElementNode &elmParent, const NATRuleList &natRuleList)
+void ConfigFileBase::buildNATForwardRulesMap(xml::ElementNode &elmParent, const NATRulesMap &mapRules)
 {
-    for (NATRuleList::const_iterator r = natRuleList.begin();
-         r != natRuleList.end(); ++r)
+    for (NATRulesMap::const_iterator r = mapRules.begin();
+         r != mapRules.end(); ++r)
     {
         xml::ElementNode *pelmPF;
         pelmPF = elmParent.createChild("Forwarding");
-        if ((*r).strName.length())
-            pelmPF->setAttribute("name", (*r).strName);
-        pelmPF->setAttribute("proto", (*r).proto);
-        if ((*r).strHostIP.length())
-            pelmPF->setAttribute("hostip", (*r).strHostIP);
-        if ((*r).u16HostPort)
-            pelmPF->setAttribute("hostport", (*r).u16HostPort);
-        if ((*r).strGuestIP.length())
-            pelmPF->setAttribute("guestip", (*r).strGuestIP);
-        if ((*r).u16GuestPort)
-            pelmPF->setAttribute("guestport", (*r).u16GuestPort);
+        const NATRule &nr = r->second;
+        if (nr.strName.length())
+            pelmPF->setAttribute("name", nr.strName);
+        pelmPF->setAttribute("proto", nr.proto);
+        if (nr.strHostIP.length())
+            pelmPF->setAttribute("hostip", nr.strHostIP);
+        if (nr.u16HostPort)
+            pelmPF->setAttribute("hostport", nr.u16HostPort);
+        if (nr.strGuestIP.length())
+            pelmPF->setAttribute("guestip", nr.strGuestIP);
+        if (nr.u16GuestPort)
+            pelmPF->setAttribute("guestport", nr.u16GuestPort);
     }
 }
 
@@ -1475,8 +1476,8 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
             NATNetwork net;
             if (   pelmNet->getAttributeValue("networkName", net.strNetworkName)
                 && pelmNet->getAttributeValue("enabled", net.fEnabled)
-                && pelmNet->getAttributeValue("network", net.strNetwork)
-                && pelmNet->getAttributeValue("ipv6", net.fIPv6)
+                && pelmNet->getAttributeValue("network", net.strIPv4NetworkCidr)
+                && pelmNet->getAttributeValue("ipv6", net.fIPv6Enabled)
                 && pelmNet->getAttributeValue("ipv6prefix", net.strIPv6Prefix)
                 && pelmNet->getAttributeValue("advertiseDefaultIPv6Route", net.fAdvertiseDefaultIPv6Route)
                 && pelmNet->getAttributeValue("needDhcp", net.fNeedDhcpServer) )
@@ -1488,13 +1489,13 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
 
                 const xml::ElementNode *pelmPortForwardRules4;
                 if ((pelmPortForwardRules4 = pelmNet->findChildElement("PortForwarding4")))
-                    readNATForwardRuleList(*pelmPortForwardRules4,
-                                           net.llPortForwardRules4);
+                    readNATForwardRulesMap(*pelmPortForwardRules4,
+                                           net.mapPortForwardRules4);
 
                 const xml::ElementNode *pelmPortForwardRules6;
                 if ((pelmPortForwardRules6 = pelmNet->findChildElement("PortForwarding6")))
-                    readNATForwardRuleList(*pelmPortForwardRules6,
-                                           net.llPortForwardRules6);
+                    readNATForwardRulesMap(*pelmPortForwardRules6,
+                                           net.mapPortForwardRules6);
 
                 llNATNetworks.push_back(net);
             }
@@ -1809,21 +1810,21 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
             const NATNetwork &n = *it;
             xml::ElementNode *pelmThis = pelmNATNetworks->createChild("NATNetwork");
             pelmThis->setAttribute("networkName", n.strNetworkName);
-            pelmThis->setAttribute("network", n.strNetwork);
-            pelmThis->setAttribute("ipv6", n.fIPv6 ? 1 : 0);
+            pelmThis->setAttribute("network", n.strIPv4NetworkCidr);
+            pelmThis->setAttribute("ipv6", n.fIPv6Enabled ? 1 : 0);
             pelmThis->setAttribute("ipv6prefix", n.strIPv6Prefix);
             pelmThis->setAttribute("advertiseDefaultIPv6Route", (n.fAdvertiseDefaultIPv6Route)? 1 : 0);
             pelmThis->setAttribute("needDhcp", (n.fNeedDhcpServer) ? 1 : 0);
             pelmThis->setAttribute("enabled", (n.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
-            if (n.llPortForwardRules4.size())
+            if (n.mapPortForwardRules4.size())
             {
                 xml::ElementNode *pelmPf4 = pelmThis->createChild("PortForwarding4");
-                buildNATForwardRuleList(*pelmPf4, n.llPortForwardRules4);
+                buildNATForwardRulesMap(*pelmPf4, n.mapPortForwardRules4);
             }
-            if (n.llPortForwardRules6.size())
+            if (n.mapPortForwardRules6.size())
             {
                 xml::ElementNode *pelmPf6 = pelmThis->createChild("PortForwarding6");
-                buildNATForwardRuleList(*pelmPf6, n.llPortForwardRules6);
+                buildNATForwardRulesMap(*pelmPf6, n.mapPortForwardRules6);
             }
 
             if (n.llHostLoopbackOffsetList.size())
@@ -2546,7 +2547,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             pelmTFTP->getAttributeValue("next-server", nic.nat.strTFTPNextServer);
         }
 
-        readNATForwardRuleList(elmMode, nic.nat.llRules);
+        readNATForwardRulesMap(elmMode, nic.nat.mapRules);
     }
     else if (   elmMode.nameEquals("HostInterface")
              || elmMode.nameEquals("BridgedInterface"))
@@ -5102,7 +5103,7 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                 if (nic.nat.strTFTPNextServer.length())
                     pelmTFTP->setAttribute("next-server", nic.nat.strTFTPNextServer);
             }
-            buildNATForwardRuleList(*pelmNAT, nic.nat.llRules);
+            buildNATForwardRulesMap(*pelmNAT, nic.nat.mapRules);
             break;
 
         case NetworkAttachmentType_Bridged:
@@ -6162,7 +6163,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                           || netit->nat.strTFTPPrefix.length()
                           || netit->nat.strTFTPBootFile.length()
                           || netit->nat.strTFTPNextServer.length()
-                          || netit->nat.llRules.size()
+                          || netit->nat.mapRules.size()
                          )
                      )
             {

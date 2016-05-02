@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2007-2015 Oracle Corporation
+ * Copyright (C) 2007-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -201,7 +201,7 @@ struct NATRule
     uint16_t                u16GuestPort;
     com::Utf8Str            strGuestIP;
 };
-typedef std::list<NATRule> NATRuleList;
+typedef std::map<com::Utf8Str, NATRule> NATRulesMap;
 
 
 struct NATHostLoopbackOffset
@@ -209,14 +209,20 @@ struct NATHostLoopbackOffset
     /** Note: 128/8 is only acceptable */
     com::Utf8Str strLoopbackHostAddress;
     uint32_t u32Offset;
-    bool operator == (const com::Utf8Str& strAddr)
+    bool operator==(const com::Utf8Str& strAddr)
     {
-        return (strLoopbackHostAddress == strAddr);
+        return strLoopbackHostAddress == strAddr;
     }
 
-    bool operator == (uint32_t off)
+    bool operator==(uint32_t off)
     {
-        return (this->u32Offset == off);
+        return u32Offset == off;
+    }
+
+    bool operator==(const NATHostLoopbackOffset &o) const
+    {
+        return strLoopbackHostAddress == o.strLoopbackHostAddress
+            && u32Offset == o.u32Offset;
     }
 };
 typedef std::list<NATHostLoopbackOffset> NATLoopbackOffsetList;
@@ -256,7 +262,7 @@ protected:
     void readMediumOne(MediaType t, const xml::ElementNode &elmMedium, Medium &med);
     void readMedium(MediaType t, uint32_t depth, const xml::ElementNode &elmMedium, Medium &med);
     void readMediaRegistry(const xml::ElementNode &elmMediaRegistry, MediaRegistry &mr);
-    void readNATForwardRuleList(const xml::ElementNode  &elmParent, NATRuleList &llRules);
+    void readNATForwardRulesMap(const xml::ElementNode  &elmParent, NATRulesMap &mapRules);
     void readNATLoopbacks(const xml::ElementNode &elmParent, NATLoopbackOffsetList &llLoopBacks);
 
     void setVersionAttribute(xml::ElementNode &elm);
@@ -272,7 +278,7 @@ protected:
                      const Medium &mdm);
     void buildMediaRegistry(xml::ElementNode &elmParent,
                             const MediaRegistry &mr);
-    void buildNATForwardRuleList(xml::ElementNode &elmParent, const NATRuleList &natRuleList);
+    void buildNATForwardRulesMap(xml::ElementNode &elmParent, const NATRulesMap &mapRules);
     void buildNATLoopbacks(xml::ElementNode &elmParent, const NATLoopbackOffsetList &natLoopbackList);
     void clearDocument();
 
@@ -387,7 +393,7 @@ struct DHCPServer
                     strIPLower,
                     strIPUpper;
     bool            fEnabled;
-    DhcpOptionMap     GlobalDhcpOptions;
+    DhcpOptionMap   GlobalDhcpOptions;
     VmSlot2OptionsMap VmSlot2OptionsM;
 };
 typedef std::list<DHCPServer> DHCPServersList;
@@ -399,24 +405,36 @@ typedef std::list<DHCPServer> DHCPServersList;
 struct NATNetwork
 {
     com::Utf8Str strNetworkName;
-    bool         fEnabled;
-    com::Utf8Str strNetwork;
-    bool         fIPv6;
+    com::Utf8Str strIPv4NetworkCidr;
     com::Utf8Str strIPv6Prefix;
-    uint32_t     u32HostLoopback6Offset;
-    NATLoopbackOffsetList llHostLoopbackOffsetList;
+    bool         fEnabled;
+    bool         fIPv6Enabled;
     bool         fAdvertiseDefaultIPv6Route;
     bool         fNeedDhcpServer;
-    NATRuleList  llPortForwardRules4;
-    NATRuleList  llPortForwardRules6;
-    NATNetwork():fEnabled(true),
+    uint32_t     u32HostLoopback6Offset;
+    NATLoopbackOffsetList llHostLoopbackOffsetList;
+    NATRulesMap  mapPortForwardRules4;
+    NATRulesMap  mapPortForwardRules6;
+    NATNetwork() :
+      fEnabled(true),
+      fIPv6Enabled(false),
       fAdvertiseDefaultIPv6Route(false),
-      fNeedDhcpServer(true)
+      fNeedDhcpServer(true),
+      u32HostLoopback6Offset(0)
       {}
     bool operator==(const NATNetwork &n) const
     {
-        return    strNetworkName == n.strNetworkName
-               && strNetwork == n.strNetwork;
+        return strNetworkName               == n.strNetworkName
+            && strIPv4NetworkCidr           == n.strIPv4NetworkCidr
+            && strIPv6Prefix                == n.strIPv6Prefix
+            && fEnabled                     == n.fEnabled
+            && fIPv6Enabled                 == n.fIPv6Enabled
+            && fAdvertiseDefaultIPv6Route   == n.fAdvertiseDefaultIPv6Route
+            && fNeedDhcpServer              == n.fNeedDhcpServer
+            && u32HostLoopback6Offset       == n.u32HostLoopback6Offset
+            && llHostLoopbackOffsetList     == n.llHostLoopbackOffsetList
+            && mapPortForwardRules4         == n.mapPortForwardRules4
+            && mapPortForwardRules6         == n.mapPortForwardRules6;
     }
 
 };
@@ -543,61 +561,61 @@ struct USB
     USBDeviceFiltersList    llDeviceFilters;
 };
 
- struct NAT
- {
-     NAT()
-         : u32Mtu(0),
-           u32SockRcv(0),
-           u32SockSnd(0),
-           u32TcpRcv(0),
-           u32TcpSnd(0),
-           fDNSPassDomain(true), /* historically this value is true */
-           fDNSProxy(false),
-           fDNSUseHostResolver(false),
-           fAliasLog(false),
-           fAliasProxyOnly(false),
-           fAliasUseSamePorts(false)
-     {}
+struct NAT
+{
+    NAT()
+        : u32Mtu(0),
+          u32SockRcv(0),
+          u32SockSnd(0),
+          u32TcpRcv(0),
+          u32TcpSnd(0),
+          fDNSPassDomain(true), /* historically this value is true */
+          fDNSProxy(false),
+          fDNSUseHostResolver(false),
+          fAliasLog(false),
+          fAliasProxyOnly(false),
+          fAliasUseSamePorts(false)
+    {}
 
-     bool operator==(const NAT &n) const
-     {
-        return strNetwork           == n.strNetwork
-             && strBindIP           == n.strBindIP
-             && u32Mtu              == n.u32Mtu
-             && u32SockRcv          == n.u32SockRcv
-             && u32SockSnd          == n.u32SockSnd
-             && u32TcpSnd           == n.u32TcpSnd
-             && u32TcpRcv           == n.u32TcpRcv
-             && strTFTPPrefix       == n.strTFTPPrefix
-             && strTFTPBootFile     == n.strTFTPBootFile
-             && strTFTPNextServer   == n.strTFTPNextServer
-             && fDNSPassDomain      == n.fDNSPassDomain
-             && fDNSProxy           == n.fDNSProxy
-             && fDNSUseHostResolver == n.fDNSUseHostResolver
-             && fAliasLog           == n.fAliasLog
-             && fAliasProxyOnly     == n.fAliasProxyOnly
-             && fAliasUseSamePorts  == n.fAliasUseSamePorts
-             && llRules             == n.llRules;
-     }
+    bool operator==(const NAT &n) const
+    {
+       return strNetwork           == n.strNetwork
+            && strBindIP           == n.strBindIP
+            && u32Mtu              == n.u32Mtu
+            && u32SockRcv          == n.u32SockRcv
+            && u32SockSnd          == n.u32SockSnd
+            && u32TcpSnd           == n.u32TcpSnd
+            && u32TcpRcv           == n.u32TcpRcv
+            && strTFTPPrefix       == n.strTFTPPrefix
+            && strTFTPBootFile     == n.strTFTPBootFile
+            && strTFTPNextServer   == n.strTFTPNextServer
+            && fDNSPassDomain      == n.fDNSPassDomain
+            && fDNSProxy           == n.fDNSProxy
+            && fDNSUseHostResolver == n.fDNSUseHostResolver
+            && fAliasLog           == n.fAliasLog
+            && fAliasProxyOnly     == n.fAliasProxyOnly
+            && fAliasUseSamePorts  == n.fAliasUseSamePorts
+            && mapRules            == n.mapRules;
+    }
 
-     com::Utf8Str            strNetwork;
-     com::Utf8Str            strBindIP;
-     uint32_t                u32Mtu;
-     uint32_t                u32SockRcv;
-     uint32_t                u32SockSnd;
-     uint32_t                u32TcpRcv;
-     uint32_t                u32TcpSnd;
-     com::Utf8Str            strTFTPPrefix;
-     com::Utf8Str            strTFTPBootFile;
-     com::Utf8Str            strTFTPNextServer;
-     bool                    fDNSPassDomain;
-     bool                    fDNSProxy;
-     bool                    fDNSUseHostResolver;
-     bool                    fAliasLog;
-     bool                    fAliasProxyOnly;
-     bool                    fAliasUseSamePorts;
-     NATRuleList             llRules;
- };
+    com::Utf8Str            strNetwork;
+    com::Utf8Str            strBindIP;
+    uint32_t                u32Mtu;
+    uint32_t                u32SockRcv;
+    uint32_t                u32SockSnd;
+    uint32_t                u32TcpRcv;
+    uint32_t                u32TcpSnd;
+    com::Utf8Str            strTFTPPrefix;
+    com::Utf8Str            strTFTPBootFile;
+    com::Utf8Str            strTFTPNextServer;
+    bool                    fDNSPassDomain;
+    bool                    fDNSProxy;
+    bool                    fDNSUseHostResolver;
+    bool                    fAliasLog;
+    bool                    fAliasProxyOnly;
+    bool                    fAliasUseSamePorts;
+    NATRulesMap             mapRules;
+};
 
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)

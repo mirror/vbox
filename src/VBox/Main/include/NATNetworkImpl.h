@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,12 +61,8 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    HRESULT init(VirtualBox *aVirtualBox,
-                 com::Utf8Str aName);
-
-
-    HRESULT init(VirtualBox *aVirtualBox,
-                 const settings::NATNetwork &data);
+    HRESULT init(VirtualBox *aVirtualBox, com::Utf8Str aName);
+    HRESULT i_loadSettings(const settings::NATNetwork &data);
     void uninit();
     HRESULT i_saveSettings(settings::NATNetwork &data);
 
@@ -97,7 +93,7 @@ private:
 
     // wrapped INATNetwork methods
     HRESULT addLocalMapping(const com::Utf8Str &aHostid,
-                                  LONG aOffset);
+                            LONG aOffset);
     HRESULT addPortForwardRule(BOOL aIsIpv6,
                                const com::Utf8Str &aRuleName,
                                NATProtocol_T aProto,
@@ -115,19 +111,10 @@ private:
     int i_findFirstAvailableOffset(ADDRESSLOOKUPTYPE, uint32_t *);
     int i_recalculateIPv6Prefix();
 
-    typedef std::map<Utf8Str, settings::NATRule> NATRuleMap;
-    typedef NATRuleMap::const_iterator constNATRuleMapIterator;
-
-    void i_getPortForwardRulesFromMap(std::vector<Utf8Str> &aPortForwardRules, NATRuleMap& aRules);
-
-    /** weak VirtualBox parent */
-    VirtualBox * const mVirtualBox;
-
-    const  com::Utf8Str mName;
+    void i_getPortForwardRulesFromMap(std::vector<Utf8Str> &aPortForwardRules, settings::NATRulesMap &aRules);
 
     struct Data;
-    struct Data *m;
-
+    Data *m;
 };
 
 #endif // !____H_H_NATNETWORKIMPL

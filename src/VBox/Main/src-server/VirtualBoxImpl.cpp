@@ -521,7 +521,9 @@ HRESULT VirtualBox::init()
             ComObjPtr<NATNetwork> pNATNetwork;
             rc = pNATNetwork.createObject();
             AssertComRCThrowRC(rc);
-            rc = pNATNetwork->init(this, net);
+            rc = pNATNetwork->init(this, "");
+            AssertComRCThrowRC(rc);
+            rc = pNATNetwork->i_loadSettings(net);
             AssertComRCThrowRC(rc);
             rc = i_registerNATNetwork(pNATNetwork, false /* aSaveRegistry */);
             AssertComRCThrowRC(rc);
