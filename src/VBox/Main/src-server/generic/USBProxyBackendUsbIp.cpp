@@ -255,7 +255,7 @@ DECLINLINE(void) usbProxyBackendUsbIpExportedDeviceN2H(PUsbIpExportedDevice pDev
 {
     pDevice->u32BusNum    = RT_N2H_U32(pDevice->u32BusNum);
     pDevice->u32DevNum    = RT_N2H_U32(pDevice->u32DevNum);
-    pDevice->u32Speed     = RT_N2H_U16(pDevice->u32Speed);
+    pDevice->u32Speed     = RT_N2H_U32(pDevice->u32Speed);
     pDevice->u16VendorId  = RT_N2H_U16(pDevice->u16VendorId);
     pDevice->u16ProductId = RT_N2H_U16(pDevice->u16ProductId);
     pDevice->u16BcdDevice = RT_N2H_U16(pDevice->u16BcdDevice);
