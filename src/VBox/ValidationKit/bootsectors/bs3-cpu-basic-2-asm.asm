@@ -80,6 +80,26 @@ BS3_PROC_BEGIN _bs3CpuBasic2_Int83
 BS3_PROC_END   _bs3CpuBasic2_Int83
 
 
+BS3_PROC_BEGIN _bs3CpuBasic2_iret
+        iret
+BS3_PROC_END   _bs3CpuBasic2_iret
+AssertCompile(_bs3CpuBasic2_iret_EndProc - _bs3CpuBasic2_iret == 1)
+
+
+BS3_PROC_BEGIN _bs3CpuBasic2_iret_opsize
+        iretd
+BS3_PROC_END   _bs3CpuBasic2_iret_opsize
+AssertCompile(_bs3CpuBasic2_iret_opsize_EndProc - _bs3CpuBasic2_iret_opsize == 2)
+
+
+BS3_PROC_BEGIN _bs3CpuBasic2_iret_rexw
+        BS3_SET_BITS 64
+        iretq
+        BS3_SET_BITS 16
+BS3_PROC_END   _bs3CpuBasic2_iret_rexw
+AssertCompile(_bs3CpuBasic2_iret_rexw_EndProc - _bs3CpuBasic2_iret_rexw == 2)
+
+
 ;
 ; Instantiate code templates.
 ;

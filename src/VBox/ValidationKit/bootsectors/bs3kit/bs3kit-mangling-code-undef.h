@@ -74,6 +74,8 @@
 #undef Bs3RegCtxSetGrpDsFromCurPtr
 #undef Bs3RegCtxSetGrpSegFromCurPtr
 #undef Bs3RegCtxSetGrpSegFromFlat
+#undef Bs3RegCtxSetRipCsFromCurPtr
+#undef Bs3RegCtxSetRipCsFromFlat
 #undef Bs3RegCtxSetRipCsFromLnkPtr
 #undef Bs3SelFar32ToFlat32
 #undef Bs3SelFar32ToFlat32NoClobber

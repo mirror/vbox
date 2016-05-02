@@ -74,6 +74,8 @@
 #define Bs3RegCtxSetGrpDsFromCurPtr BS3_CMN_MANGLER(Bs3RegCtxSetGrpDsFromCurPtr)
 #define Bs3RegCtxSetGrpSegFromCurPtr BS3_CMN_MANGLER(Bs3RegCtxSetGrpSegFromCurPtr)
 #define Bs3RegCtxSetGrpSegFromFlat BS3_CMN_MANGLER(Bs3RegCtxSetGrpSegFromFlat)
+#define Bs3RegCtxSetRipCsFromCurPtr BS3_CMN_MANGLER(Bs3RegCtxSetRipCsFromCurPtr)
+#define Bs3RegCtxSetRipCsFromFlat BS3_CMN_MANGLER(Bs3RegCtxSetRipCsFromFlat)
 #define Bs3RegCtxSetRipCsFromLnkPtr BS3_CMN_MANGLER(Bs3RegCtxSetRipCsFromLnkPtr)
 #define Bs3SelFar32ToFlat32 BS3_CMN_MANGLER(Bs3SelFar32ToFlat32)
 #define Bs3SelFar32ToFlat32NoClobber BS3_CMN_MANGLER(Bs3SelFar32ToFlat32NoClobber)

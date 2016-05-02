@@ -1375,7 +1375,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_TssGateEspCommon(bool const g_f16BitSys, PX86DE
 
     Bs3RegCtxSave(&Ctx);
     Ctx.rsp.u -= 0x80;
-    Ctx.rip.u  = (uintptr_t)BS3_FP_OFF(&bs3CpuBasic2_Int80);
+
+    Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, bs3CpuBasic2_Int80);
 #  if TMPL_BITS == 32
     g_uBs3TrapEipHint = Ctx.rip.u32;
 #  endif
@@ -1531,20 +1532,6 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_RaiseXcpt1)(uint8_t bMode)
 # else
     return BS3TESTDOMODE_SKIPPED;
 # endif
-}
-
-
-BS3_DECL_FAR(uint8_t) TMPL_NM(bs3CpuBasic2_iret)(uint8_t bMode)
-{
-    g_pszTestMode = TMPL_NM(g_szBs3ModeName);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(TMPL_MODE);
-
-    Bs3PrintStrN(RT_STR_TUPLE("Hello world!\n"));
-# if !BS3_MODE_IS_V86(TMPL_MODE)
-    Bs3TestPrintf(RT_STR_TUPLE("Hi there!\n"));
-# endif
-    return BS3TESTDOMODE_SKIPPED;
 }
 
 #endif /* BS3_INSTANTIATING_MODE */

@@ -97,6 +97,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxSaveEx.asm \
        bs3-cmn-RegCtxSetGrpSegFromCurPtr.c \
        bs3-cmn-RegCtxSetGrpSegFromFlat.c \
+       bs3-cmn-RegCtxSetRipCsFromCurPtr.c \
+       bs3-cmn-RegCtxSetRipCsFromFlat.c \
        bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
        bs3-cmn-SelFar32ToFlat32.c \
        bs3-cmn-SelFar32ToFlat32NoClobber.asm \

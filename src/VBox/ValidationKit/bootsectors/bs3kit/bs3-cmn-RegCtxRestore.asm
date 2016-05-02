@@ -349,6 +349,18 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         ;
         ; 64-bit returns are simple because ss:rsp are always restored.
         ;
+        ; A small complication here when returning to a 16-bit stack (only
+        ; applicable to 16-bit and 32-bit code), iret doesn't touch the high
+        ; ESP bits and we can easily later end up with trap handlers
+        ; accessing memory never intended as stack.
+        ;
+        mov     rcx, qword [xBX + BS3REGCTX.rsp] ; (also 1st param for conv call below)
+        cmp     rcx, 0ffffh
+        ja      .iretq_maybe_annoying_16bit_stack
+        cmp     rsp, 0ffffh
+        ja      .iretq_maybe_annoying_16bit_stack
+.iretq_ok:
+
         movzx   eax, word [xBX + BS3REGCTX.ss]
         push    rax
         push    qword [xBX + BS3REGCTX.rsp]
@@ -357,6 +369,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         push    rax
         push    qword [xBX + BS3REGCTX.rip]
 
+.iretq_restore_regs_and_iret:
         mov     es,  [xBX + BS3REGCTX.es]
         mov     fs,  [xBX + BS3REGCTX.fs]
         mov     gs,  [xBX + BS3REGCTX.gs]
@@ -377,6 +390,56 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         mov     ds,  [xBX + BS3REGCTX.ds]
         mov     rbx, [xBX + BS3REGCTX.rbx]
         iretq
+
+.iretq_maybe_annoying_16bit_stack:
+        movzx   edx, word [xBX + BS3REGCTX.ss] ; (also 2nd param for conv call below)
+        lar     eax, dx
+        jnz     .iretq_ok
+        test    eax, X86LAR_F_D | X86LAR_F_L
+        jnz     .iretq_ok               ; Returning to a big of long SS needs not extra work.
+
+        lar     eax, word [xBX + BS3REGCTX.cs]
+        jnz     .iretq_ok
+        test    eax, X86LAR_F_L
+        jnz     .iretq_ok               ; It doesn't matter when returning to 64-bit code.
+
+        ; Convert ss:sp to a flat address.
+        BS3_EXTERN_CMN Bs3SelFar32ToFlat32NoClobber
+        call    Bs3SelFar32ToFlat32NoClobber
+        mov     rdi, rax
+
+        ; 2nd return frame (32-bit, same CPL).
+        mov     eax, [xBX + BS3REGCTX.rflags]
+        mov     [rdi -  4], eax
+        movzx   eax, word [xBX + BS3REGCTX.cs]
+        mov     [rdi -  8], eax
+        mov     eax, [xBX + BS3REGCTX.rip]
+        mov     [rdi - 12], eax
+        mov     ecx, [xBX + BS3REGCTX.rsp]
+        sub     cx, 12
+        mov     [rdi - 16], ecx
+
+        ; 1st return frame.
+        movzx   eax, word [xBX + BS3REGCTX.ss]
+        push    rax                     ; new 16-bit SS
+        sub     cx, 4
+        push    rcx                     ; new esp
+        mov     rax, [xBX + BS3REGCTX.rflags]
+        and     rax, ~(X86_EFL_NT | X86_EFL_TF)
+        push    rax                     ; rflags
+        AssertCompile(BS3_SEL_RING_SHIFT == 8)
+        mov     eax, BS3_SEL_R0_CS32
+        add     ah, [xBX + BS3REGCTX.bCpl]
+        or      al, [xBX + BS3REGCTX.bCpl]
+        push    rax                     ; 32-bit CS
+        push    .iretq_pop_real_esp_and_iret_again wrt FLAT
+        jmp     .iretq_restore_regs_and_iret
+
+        BS3_SET_BITS 32
+.iretq_pop_real_esp_and_iret_again:
+        pop     esp
+        iretd
+        BS3_SET_BITS 64
 
 %else
         ;
@@ -416,6 +479,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         mov     ecx, [xBX + BS3REGCTX.rcx]
         mov     esi, [xBX + BS3REGCTX.rsi]
  %if TMPL_BITS == 16 ; if SS is 16-bit, we will not be able to restore the high word.
+;; @todo 16-bit stack will also mess us up in 32-bit code, so this needs fixing (see 64-bit above).
         mov     edi, [xBX + BS3REGCTX.rsp]
         mov     di, sp
         mov     esp, edi

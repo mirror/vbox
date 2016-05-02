@@ -79,9 +79,14 @@ extern FNBS3FAR     bs3CpuBasic2_Int80;
 extern FNBS3FAR     bs3CpuBasic2_Int81;
 extern FNBS3FAR     bs3CpuBasic2_Int82;
 extern FNBS3FAR     bs3CpuBasic2_Int83;
+
 extern FNBS3FAR     bs3CpuBasic2_ud2;
 #define             g_bs3CpuBasic2_ud2_FlatAddr BS3_DATA_NM(g_bs3CpuBasic2_ud2_FlatAddr)
 extern uint32_t     g_bs3CpuBasic2_ud2_FlatAddr;
+
+extern FNBS3FAR     bs3CpuBasic2_iret;
+extern FNBS3FAR     bs3CpuBasic2_iret_opsize;
+extern FNBS3FAR     bs3CpuBasic2_iret_rexw;
 
 extern FNBS3FAR     bs3CpuBasic2_sidt_bx_ud2_c16;
 extern FNBS3FAR     bs3CpuBasic2_sidt_bx_ud2_c32;
@@ -141,11 +146,8 @@ extern FNBS3FAR     bs3CpuBasic2_lgdt_opsize_rexw_bx__sgdt_es_di__lgdt_es_si__ud
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#define                     g_pszTestMode   BS3_CMN_NM(g_pszTestMode)
 static const char BS3_FAR  *g_pszTestMode = (const char *)1;
-#define                     g_bTestMode     BS3_CMN_NM(g_bTestMode)
 static uint8_t              g_bTestMode = 1;
-#define                     g_f16BitSys     BS3_CMN_NM(g_f16BitSys)
 static bool                 g_f16BitSys = 1;
 
 
@@ -280,6 +282,19 @@ static const BS3CB2INVLDESCTYPE g_aInvalidSsTypes[] =
 };
 #endif
 
+
+/**
+ * Sets globals according to the mode.
+ *
+ * @param   bTestMode   The test mode.
+ */
+static void bs3CpuBasic2_SetGlobals(uint8_t bTestMode)
+{
+    g_bTestMode     = bTestMode;
+    g_pszTestMode   = Bs3GetModeName(bTestMode);
+    g_f16BitSys     = BS3_MODE_IS_16BIT_SYS(bTestMode);
+    g_usBs3TestStep = 0;
+}
 
 
 /**
@@ -2017,10 +2032,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_sidt)(uint8_t bMode)
         uint8_t ab[16];
     } Expected;
 
-    g_pszTestMode = Bs3GetModeName(bMode);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
-
+    bs3CpuBasic2_SetGlobals(bMode);
 
     /*
      * Pass to common worker which is only compiled once per mode.
@@ -2047,9 +2059,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_sgdt)(uint8_t bMode)
         uint8_t ab[16];
     } Expected;
 
-    g_pszTestMode = Bs3GetModeName(bMode);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+    bs3CpuBasic2_SetGlobals(bMode);
 
     /*
      * If paged mode, try push the GDT way up.
@@ -2807,9 +2817,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lidt)(uint8_t bMode)
         uint8_t ab[32]; /* At least cbIdtr*2! */
     } Expected;
 
-    g_pszTestMode = Bs3GetModeName(bMode);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+    bs3CpuBasic2_SetGlobals(bMode);
 
     /*
      * Pass to common worker which is only compiled once per mode.
@@ -2846,9 +2854,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
         uint8_t ab[32]; /* At least cbIdtr*2! */
     } Expected;
 
-    g_pszTestMode = Bs3GetModeName(bMode);
-    g_bTestMode   = bMode;
-    g_f16BitSys   = BS3_MODE_IS_16BIT_SYS(bMode);
+    bs3CpuBasic2_SetGlobals(bMode);
 
     /*
      * Pass to common worker which is only compiled once per mode.
@@ -2865,6 +2871,351 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
      * Re-initialize the IDT.
      */
     Bs3TrapReInit();
+    return 0;
+}
+
+typedef union IRETBUF
+{
+    uint64_t        au64[6];  /* max req is 5 */
+    uint32_t        au32[12]; /* max req is 9 */
+    uint16_t        au16[24]; /* max req is 5 */
+    uint8_t         ab[48];
+} IRETBUF;
+typedef IRETBUF BS3_FAR *PIRETBUF;
+
+
+static void iretbuf_SetupFrame(PIRETBUF pIretBuf, unsigned const cbPop,
+                               uint16_t uCS, uint64_t uPC, uint32_t fEfl, uint16_t uSS, uint64_t uSP)
+{
+     if (cbPop == 2)
+     {
+         pIretBuf->au16[0] = (uint16_t)uPC;
+         pIretBuf->au16[1] = uCS;
+         pIretBuf->au16[2] = (uint16_t)fEfl;
+         pIretBuf->au16[3] = (uint16_t)uSP;
+         pIretBuf->au16[4] = uSS;
+     }
+     else if (cbPop != 8)
+     {
+         pIretBuf->au32[0]   = (uint32_t)uPC;
+         pIretBuf->au16[1*2] = uCS;
+         pIretBuf->au32[2]   = (uint32_t)fEfl;
+         pIretBuf->au32[3]   = (uint32_t)uSP;
+         pIretBuf->au16[4*2] = uSS;
+     }
+     else
+     {
+         pIretBuf->au64[0]   = uPC;
+         pIretBuf->au16[1*4] = uCS;
+         pIretBuf->au64[2]   = fEfl;
+         pIretBuf->au64[3]   = uSP;
+         pIretBuf->au16[4*4] = uSS;
+     }
+}
+
+uint32_t ASMGetESP(void);
+#pragma aux ASMGetESP = \
+    ".386" \
+    "mov ax, sp" \
+    "mov edx, esp" \
+    "shr edx, 16" \
+    value [ax dx] \
+    modify exact [ax dx];
+
+
+static void bs3CpuBasic2_iret_Worker(uint8_t bTestMode, FPFNBS3FAR pfnIret, unsigned const cbPop,
+                                     PIRETBUF pIretBuf, const char BS3_FAR *pszDesc)
+{
+    BS3TRAPFRAME        TrapCtx;
+    BS3REGCTX           Ctx;
+    BS3REGCTX           CtxUdExpected;
+    BS3REGCTX           TmpCtx;
+    BS3REGCTX           TmpCtxExpected;
+    uint8_t             abLowUd[8];
+    uint8_t             abLowIret[8];
+    FPFNBS3FAR          pfnUdLow = (FPFNBS3FAR)abLowUd;
+    FPFNBS3FAR          pfnIretLow = (FPFNBS3FAR)abLowIret;
+    unsigned const      cbSameCplFrame = BS3_MODE_IS_64BIT_CODE(bTestMode) ? 5*cbPop : 3*cbPop;
+    bool const          fUseLowCode = cbPop == 2 && !BS3_MODE_IS_16BIT_CODE(bTestMode);
+    int                 iRingDst;
+    int                 iRingSrc;
+    uint16_t            uDplSs;
+    uint16_t            uRplCs;
+    uint16_t            uRplSs;
+//    int                 i;
+    uint8_t BS3_FAR    *pbTest;
+
+    NOREF(abLowUd);
+#define IRETBUF_SET_SEL(a_idx, a_uValue) \
+        do { *(uint16_t)&pIretBuf->ab[a_idx * cbPop] = (a_uValue); } while (0)
+#define IRETBUF_SET_REG(a_idx, a_uValue) \
+        do { uint8_t const BS3_FAR *pbTmp = &pIretBuf->ab[a_idx * cbPop]; \
+            if (cbPop == 2)       *(uint16_t)pbTmp = (uint16_t)(a_uValue); \
+             else if (cbPop != 8) *(uint32_t)pbTmp = (uint32_t)(a_uValue); \
+             else                 *(uint64_t)pbTmp = (a_uValue); \
+         } while (0)
+
+    /* make sure they're allocated  */
+    Bs3MemZero(&Ctx, sizeof(Ctx));
+    Bs3MemZero(&CtxUdExpected, sizeof(CtxUdExpected));
+    Bs3MemZero(&TmpCtx, sizeof(TmpCtx));
+    Bs3MemZero(&TmpCtxExpected, sizeof(TmpCtxExpected));
+    Bs3MemZero(&TrapCtx, sizeof(TrapCtx));
+
+    /*
+     * When dealing with 16-bit irets in 32-bit or 64-bit mode, we must have
+     * copies of both iret and ud in the first 64KB of memory.  The stack is
+     * below 64KB, so we'll just copy the instructions onto the stack.
+     */
+    Bs3MemCpy(abLowUd, bs3CpuBasic2_ud2, 4);
+    Bs3MemCpy(abLowIret, pfnIret, 4);
+
+    /*
+     * Create a context (stack is irrelevant, we'll mainly be using pIretBuf).
+     *  - Point the context at our iret instruction.
+     *  - Point SS:xSP at pIretBuf.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bTestMode, 0);
+    if (!fUseLowCode)
+        Bs3RegCtxSetRipCsFromLnkPtr(&Ctx, pfnIret);
+    else
+        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, pfnIretLow);
+    if (BS3_MODE_IS_16BIT_SYS(bTestMode))
+        g_uBs3TrapEipHint = Ctx.rip.u32;
+    Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rsp, &Ctx.ss, pIretBuf);
+
+    /*
+     * The first success (UD) context keeps the same code bit-count as the iret.
+     */
+    Bs3MemCpy(&CtxUdExpected, &Ctx, sizeof(Ctx));
+    if (!fUseLowCode)
+        Bs3RegCtxSetRipCsFromLnkPtr(&CtxUdExpected, bs3CpuBasic2_ud2);
+    else
+        Bs3RegCtxSetRipCsFromCurPtr(&CtxUdExpected, pfnUdLow);
+    CtxUdExpected.rsp.u += cbSameCplFrame;
+
+    /*
+     * Check that it works at all.
+     */
+    iretbuf_SetupFrame(pIretBuf, cbPop, CtxUdExpected.cs, CtxUdExpected.rip.u,
+                       CtxUdExpected.rflags.u32, CtxUdExpected.ss, CtxUdExpected.rsp.u);
+
+    Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+    g_usBs3TestStep++;
+
+    if (!BS3_MODE_IS_RM_OR_V86(bTestMode))
+    {
+        /* Selectors are modified when switching rings, so we need to know
+           what we're dealing with there. */
+        if (   !BS3_SEL_IS_IN_R0_RANGE(Ctx.cs) || !BS3_SEL_IS_IN_R0_RANGE(Ctx.ss)
+            || !BS3_SEL_IS_IN_R0_RANGE(Ctx.ds) || !BS3_SEL_IS_IN_R0_RANGE(Ctx.es))
+            Bs3TestFailedF("Expected R0 CS, SS, DS and ES; not %#x, %#x, %#x and %#x\n", Ctx.cs, Ctx.ss, Ctx.ds, Ctx.es);
+        if (Ctx.fs || Ctx.gs)
+            Bs3TestFailed("Expected R0 FS and GS to be 0!\n");
+
+        /*
+         * Test returning to outer rings if protected mode.
+         */
+        Bs3MemCpy(&TmpCtx, &Ctx, sizeof(TmpCtx));
+        Bs3MemCpy(&TmpCtxExpected, &CtxUdExpected, sizeof(TmpCtxExpected));
+        for (iRingDst = 3; iRingDst >= 0; iRingDst--)
+        {
+            Bs3RegCtxConvertToRingX(&TmpCtxExpected, iRingDst);
+            TmpCtxExpected.ds = iRingDst ? 0 : TmpCtx.ds;
+            TmpCtx.es = TmpCtxExpected.es;
+            iretbuf_SetupFrame(pIretBuf, cbPop, TmpCtxExpected.cs, TmpCtxExpected.rip.u,
+                               TmpCtxExpected.rflags.u32, TmpCtxExpected.ss, TmpCtxExpected.rsp.u);
+            Bs3TrapSetJmpAndRestore(&TmpCtx, &TrapCtx);
+            bs3CpuBasic2_CompareUdCtx(&TrapCtx, &TmpCtxExpected);
+            g_usBs3TestStep++;
+        }
+
+        /*
+         * Check CS.RPL and SS.RPL.
+         */
+        for (iRingDst = 3; iRingDst >= 0; iRingDst--)
+        {
+            uint16_t const uDstSsR0 = (CtxUdExpected.ss & BS3_SEL_RING_SUB_MASK) + BS3_SEL_R0_FIRST;
+            Bs3MemCpy(&TmpCtxExpected, &CtxUdExpected, sizeof(TmpCtxExpected));
+            Bs3RegCtxConvertToRingX(&TmpCtxExpected, iRingDst);
+            for (iRingSrc = 3; iRingSrc >= 0; iRingSrc--)
+            {
+                Bs3MemCpy(&TmpCtx, &Ctx, sizeof(TmpCtx));
+                Bs3RegCtxConvertToRingX(&TmpCtx, iRingSrc);
+                TmpCtx.es         = TmpCtxExpected.es;
+                TmpCtxExpected.ds = iRingDst != iRingSrc ? 0 : TmpCtx.ds;
+                for (uRplCs = 0; uRplCs <= 3; uRplCs++)
+                {
+                    uint16_t const uSrcEs = TmpCtx.es;
+                    uint16_t const uDstCs = (TmpCtxExpected.cs & X86_SEL_MASK_OFF_RPL) | uRplCs;
+                    //Bs3TestPrintf("dst=%d src=%d rpl=%d\n", iRingDst, iRingSrc, uRplCs);
+
+                    /* CS.RPL */
+                    iretbuf_SetupFrame(pIretBuf, cbPop, uDstCs, TmpCtxExpected.rip.u, TmpCtxExpected.rflags.u32,
+                                       TmpCtxExpected.ss, TmpCtxExpected.rsp.u);
+                    Bs3TrapSetJmpAndRestore(&TmpCtx, &TrapCtx);
+                    if (uRplCs == iRingDst && iRingDst >= iRingSrc)
+                        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &TmpCtxExpected);
+                    else
+                    {
+                        if (iRingDst < iRingSrc)
+                            TmpCtx.es = 0;
+                        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &TmpCtx, uDstCs & X86_SEL_MASK_OFF_RPL);
+                        TmpCtx.es = uSrcEs;
+                    }
+                    g_usBs3TestStep++;
+
+                    /* SS.RPL */
+                    if (iRingDst != iRingSrc || BS3_MODE_IS_64BIT_CODE(bTestMode))
+                    {
+                        uint16_t uSavedDstSs = TmpCtxExpected.ss;
+                        for (uRplSs = 0; uRplSs <= 3; uRplSs++)
+                        {
+                            /* SS.DPL (iRingDst == CS.DPL) */
+                            for (uDplSs = 0; uDplSs <= 3; uDplSs++)
+                            {
+                                uint16_t const uDstSs = ((uDplSs << BS3_SEL_RING_SHIFT) | uRplSs) + uDstSsR0;
+                                //Bs3TestPrintf("dst=%d src=%d rplCS=%d rplSS=%d dplSS=%d dst %04x:%08RX64 %08RX32 %04x:%08RX64\n",
+                                //              iRingDst, iRingSrc, uRplCs, uRplSs, uDplSs, uDstCs, TmpCtxExpected.rip.u,
+                                //              TmpCtxExpected.rflags.u32, uDstSs, TmpCtxExpected.rsp.u);
+
+                                iretbuf_SetupFrame(pIretBuf, cbPop, uDstCs, TmpCtxExpected.rip.u,
+                                                   TmpCtxExpected.rflags.u32, uDstSs, TmpCtxExpected.rsp.u);
+                                Bs3TrapSetJmpAndRestore(&TmpCtx, &TrapCtx);
+                                if (uRplCs != iRingDst || iRingDst < iRingSrc)
+                                {
+                                    if (iRingDst < iRingSrc)
+                                        TmpCtx.es = 0;
+                                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &TmpCtx, uDstCs & X86_SEL_MASK_OFF_RPL);
+                                }
+                                else if (uRplSs != iRingDst || uDplSs != iRingDst)
+                                    bs3CpuBasic2_CompareGpCtx(&TrapCtx, &TmpCtx, uDstSs & X86_SEL_MASK_OFF_RPL);
+                                else
+                                    bs3CpuBasic2_CompareUdCtx(&TrapCtx, &TmpCtxExpected);
+                                TmpCtx.es = uSrcEs;
+                                g_usBs3TestStep++;
+                            }
+                        }
+
+                        TmpCtxExpected.ss = uSavedDstSs;
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Special 64-bit checks.
+     */
+    if (BS3_MODE_IS_64BIT_CODE(bTestMode))
+    {
+        /* The VM flag is completely ignored. */
+        iretbuf_SetupFrame(pIretBuf, cbPop, CtxUdExpected.cs, CtxUdExpected.rip.u,
+                           CtxUdExpected.rflags.u32 | X86_EFL_VM, CtxUdExpected.ss, CtxUdExpected.rsp.u);
+        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+        g_usBs3TestStep++;
+
+        /* The NT flag can be loaded just fine. */
+        CtxUdExpected.rflags.u32 |= X86_EFL_NT;
+        iretbuf_SetupFrame(pIretBuf, cbPop, CtxUdExpected.cs, CtxUdExpected.rip.u,
+                           CtxUdExpected.rflags.u32, CtxUdExpected.ss, CtxUdExpected.rsp.u);
+        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+        bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+        CtxUdExpected.rflags.u32 &= ~X86_EFL_NT;
+        g_usBs3TestStep++;
+
+        /* However, we'll #GP(0) if it's already set (in RFLAGS) when executing IRET. */
+        Ctx.rflags.u32 |= X86_EFL_NT;
+        iretbuf_SetupFrame(pIretBuf, cbPop, CtxUdExpected.cs, CtxUdExpected.rip.u,
+                           CtxUdExpected.rflags.u32, CtxUdExpected.ss, CtxUdExpected.rsp.u);
+        Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+        bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+        g_usBs3TestStep++;
+
+        /* The NT flag #GP(0) should trump all other exceptions - pit it against #PF. */
+        pbTest = (uint8_t BS3_FAR *)Bs3MemGuardedTestPageAlloc(BS3MEMKIND_TILED);
+        if (pbTest != NULL)
+        {
+            Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rsp, &Ctx.ss, &pbTest[X86_PAGE_SIZE]);
+            iretbuf_SetupFrame(pIretBuf, cbPop, CtxUdExpected.cs, CtxUdExpected.rip.u,
+                               CtxUdExpected.rflags.u32, CtxUdExpected.ss, CtxUdExpected.rsp.u);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapCtx);
+            bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx, 0);
+            g_usBs3TestStep++;
+
+            Bs3RegCtxSetGrpSegFromCurPtr(&Ctx, &Ctx.rsp, &Ctx.ss, pIretBuf);
+            Bs3MemGuardedTestPageFree(pbTest);
+        }
+        Ctx.rflags.u32 &= ~X86_EFL_NT;
+    }
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_iret)(uint8_t bMode)
+{
+    struct
+    {
+        uint8_t abExtraStack[4096]; /**< we've got ~30KB of stack, so 4KB for the trap handlers++ is not a problem. */
+        IRETBUF IRetBuf;
+        uint8_t abGuard[32];
+    } uBuf;
+    size_t cbUnused;
+//if (bMode != BS3_MODE_LM64) return BS3TESTDOMODE_SKIPPED;
+
+    bs3CpuBasic2_SetGlobals(bMode);
+
+    /*
+     * Primary instruction form.
+     */
+    Bs3MemSet(&uBuf, 0xaa, sizeof(uBuf));
+    Bs3MemSet(uBuf.abGuard, 0x88, sizeof(uBuf.abGuard));
+    if (BS3_MODE_IS_16BIT_CODE(bMode))
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret,              2, &uBuf.IRetBuf, "iret");
+    else if (BS3_MODE_IS_32BIT_CODE(bMode))
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret,              4, &uBuf.IRetBuf, "iretd");
+    else
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret_rexw,         8, &uBuf.IRetBuf, "o64 iret");
+
+    BS3_ASSERT(ASMMemIsAllU8(uBuf.abGuard, sizeof(uBuf.abGuard), 0x88));
+    cbUnused = (uintptr_t)ASMMemFirstMismatchingU8(uBuf.abExtraStack, sizeof(uBuf.abExtraStack) + sizeof(uBuf.IRetBuf), 0xaa)
+             - (uintptr_t)uBuf.abExtraStack;
+    if (cbUnused < 2048)
+        Bs3TestFailedF("cbUnused=%u #%u\n", cbUnused, 1);
+
+    /*
+     * Secondary variation: opsize prefixed.
+     */
+    Bs3MemSet(&uBuf, 0xaa, sizeof(uBuf));
+    Bs3MemSet(uBuf.abGuard, 0x88, sizeof(uBuf.abGuard));
+    if (BS3_MODE_IS_16BIT_CODE(bMode) && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret_opsize,       4, &uBuf.IRetBuf, "o32 iret");
+    else if (BS3_MODE_IS_32BIT_CODE(bMode))
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret_opsize,       2, &uBuf.IRetBuf, "o16 iret");
+    else if (BS3_MODE_IS_64BIT_CODE(bMode))
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret,              4, &uBuf.IRetBuf, "iretd");
+    BS3_ASSERT(ASMMemIsAllU8(uBuf.abGuard, sizeof(uBuf.abGuard), 0x88));
+    cbUnused = (uintptr_t)ASMMemFirstMismatchingU8(uBuf.abExtraStack, sizeof(uBuf.abExtraStack) + sizeof(uBuf.IRetBuf), 0xaa)
+             - (uintptr_t)uBuf.abExtraStack;
+    if (cbUnused < 2048)
+        Bs3TestFailedF("cbUnused=%u #%u\n", cbUnused, 2);
+
+    /*
+     * Third variation: 16-bit in 64-bit mode (truely unlikely)
+     */
+    if (BS3_MODE_IS_64BIT_CODE(bMode))
+    {
+        Bs3MemSet(&uBuf, 0xaa, sizeof(uBuf));
+        Bs3MemSet(uBuf.abGuard, 0x88, sizeof(uBuf.abGuard));
+        bs3CpuBasic2_iret_Worker(bMode, bs3CpuBasic2_iret_opsize,       2, &uBuf.IRetBuf, "o16 iret");
+        BS3_ASSERT(ASMMemIsAllU8(uBuf.abGuard, sizeof(uBuf.abGuard), 0x88));
+        cbUnused = (uintptr_t)ASMMemFirstMismatchingU8(uBuf.abExtraStack, sizeof(uBuf.abExtraStack) + sizeof(uBuf.IRetBuf), 0xaa)
+                 - (uintptr_t)uBuf.abExtraStack;
+        if (cbUnused < 2048)
+            Bs3TestFailedF("cbUnused=%u #%u\n", cbUnused, 3);
+    }
+
     return 0;
 }
 

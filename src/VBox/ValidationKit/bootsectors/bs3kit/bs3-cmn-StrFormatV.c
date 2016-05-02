@@ -421,7 +421,7 @@ BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
             do
             {
                 State.cchWidth *= 10;
-                State.cchWidth  = ch - '0';
+                State.cchWidth += ch - '0';
                 ch = *pszFormat++;
             } while (RT_C_IS_DIGIT(ch));
             State.fFlags |= STR_F_WIDTH;
@@ -450,7 +450,7 @@ BS3_CMN_DEF(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list va,
                 do
                 {
                     State.cchPrecision *= 10;
-                    State.cchPrecision  = ch - '0';
+                    State.cchPrecision += ch - '0';
                     ch = *pszFormat++;
                 } while (RT_C_IS_DIGIT(ch));
                 State.fFlags |= STR_F_PRECISION;
