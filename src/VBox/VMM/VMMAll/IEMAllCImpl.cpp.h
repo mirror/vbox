@@ -3115,15 +3115,22 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
 
 
     /* Privilege checks. */
+    if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF))
+    {
+        if ((uNewCs & X86_SEL_RPL) != DescCS.Legacy.Gen.u2Dpl)
+        {
+            Log(("iret %04x:%08x - RPL != DPL (%d) -> #GP\n", uNewCs, uNewEip, DescCS.Legacy.Gen.u2Dpl));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
+        }
+    }
+    else if ((uNewCs & X86_SEL_RPL) < DescCS.Legacy.Gen.u2Dpl)
+    {
+        Log(("iret %04x:%08x - RPL < DPL (%d) -> #GP\n", uNewCs, uNewEip, DescCS.Legacy.Gen.u2Dpl));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
+    }
     if ((uNewCs & X86_SEL_RPL) < pIemCpu->uCpl)
     {
         Log(("iret %04x:%08x - RPL < CPL (%d) -> #GP\n", uNewCs, uNewEip, pIemCpu->uCpl));
-        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
-    }
-    if (   (DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF)
-        && (uNewCs & X86_SEL_RPL) < DescCS.Legacy.Gen.u2Dpl)
-    {
-        Log(("iret %04x:%08x - RPL < DPL (%d) -> #GP\n", uNewCs, uNewEip, DescCS.Legacy.Gen.u2Dpl));
         return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
     }
 
