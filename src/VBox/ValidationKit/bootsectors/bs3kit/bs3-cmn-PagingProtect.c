@@ -31,7 +31,7 @@
 #include "bs3-cmn-paging.h"
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/param.h>
-                  bs3kit.h
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
