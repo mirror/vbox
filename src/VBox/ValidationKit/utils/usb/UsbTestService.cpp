@@ -541,15 +541,217 @@ static int utsReplyInvalidState(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 }
 
 /**
+ * Parses an unsigned integer from the given value string.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_OUT_OF_RANGE if the parsed value exceeds the given maximum.
+ * @param   uMax                The maximum value.
+ * @param   pu64                Where to store the parsed number on success.
+ */
+static int utsDoGadgetCreateCfgParseUInt(const char *pszVal, uint64_t uMax, uint64_t *pu64)
+{
+    int rc = RTStrToUInt64Ex(pszVal, NULL, 0, pu64);
+    if (RT_SUCCESS(rc))
+    {
+        if (*pu64 > uMax)
+            rc = VERR_OUT_OF_RANGE;
+    }
+
+    return rc;
+}
+
+/**
+ * Parses a signed integer from the given value string.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_OUT_OF_RANGE if the parsed value exceeds the given range.
+ * @param   iMin                The minimum value.
+ * @param   iMax                The maximum value.
+ * @param   pi64                Where to store the parsed number on success.
+ */
+static int utsDoGadgetCreateCfgParseInt(const char *pszVal, int64_t iMin, int64_t iMax, int64_t *pi64)
+{
+    int rc = RTStrToInt64Ex(pszVal, NULL, 0, pi64);
+    if (RT_SUCCESS(rc))
+    {
+        if (   *pi64 < iMin
+            || *pi64 > iMax)
+            rc = VERR_OUT_OF_RANGE;
+    }
+
+    return rc;
+}
+
+/**
+ * Parses the given config item and fills in the value according to the given type.
+ *
+ * @returns IPRT status code.
+ * @param   pCfgItem            The config item to parse.
+ * @param   u32Type             The config type.
+ * @param   pszVal              The value encoded as a string.
+ */
+static int utsDoGadgetCreateCfgParseItem(PUTSGADGETCFGITEM pCfgItem, uint32_t u32Type,
+                                         const char *pszVal)
+{
+    int rc = VINF_SUCCESS;
+
+    switch (u32Type)
+    {
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_BOOLEAN:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_BOOLEAN;
+            if (   RTStrICmp(pszVal, "enabled")
+                || RTStrICmp(pszVal, "1")
+                || RTStrICmp(pszVal, "true"))
+                pCfgItem->Val.u.f = true;
+            else if (   RTStrICmp(pszVal, "disabled")
+                     || RTStrICmp(pszVal, "0")
+                     || RTStrICmp(pszVal, "false"))
+                pCfgItem->Val.u.f = false;
+            else 
+                rc = VERR_INVALID_PARAMETER;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_STRING:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_STRING;
+            pCfgItem->Val.u.psz = RTStrDup(pszVal);
+            if (!pCfgItem->Val.u.psz)
+                rc = VERR_NO_STR_MEMORY;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_UINT8:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_UINT8;
+
+            uint64_t u64;
+            rc = utsDoGadgetCreateCfgParseUInt(pszVal, UINT8_MAX, &u64);
+            if (RT_SUCCESS(rc))
+                pCfgItem->Val.u.u8 = (uint8_t)u64;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_UINT16:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_UINT16;
+
+            uint64_t u64;
+            rc = utsDoGadgetCreateCfgParseUInt(pszVal, UINT16_MAX, &u64);
+            if (RT_SUCCESS(rc))
+                pCfgItem->Val.u.u16 = (uint16_t)u64;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_UINT32:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_UINT32;
+
+            uint64_t u64;
+            rc = utsDoGadgetCreateCfgParseUInt(pszVal, UINT32_MAX, &u64);
+            if (RT_SUCCESS(rc))
+                pCfgItem->Val.u.u32 = (uint32_t)u64;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_UINT64:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_UINT64;
+            rc = utsDoGadgetCreateCfgParseUInt(pszVal, UINT64_MAX, &pCfgItem->Val.u.u64);
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_INT8:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_INT8;
+
+            int64_t i64;
+            rc = utsDoGadgetCreateCfgParseInt(pszVal, INT8_MIN, INT8_MAX, &i64);
+            if (RT_SUCCESS(rc))
+                pCfgItem->Val.u.i8 = (int8_t)i64;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_INT16:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_INT16;
+
+            int64_t i64;
+            rc = utsDoGadgetCreateCfgParseInt(pszVal, INT16_MIN, INT16_MAX, &i64);
+            if (RT_SUCCESS(rc))
+                pCfgItem->Val.u.i16 = (int16_t)i64;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_INT32:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_INT32;
+
+            int64_t i64;
+            rc = utsDoGadgetCreateCfgParseInt(pszVal, INT32_MIN, INT32_MAX, &i64);
+            if (RT_SUCCESS(rc))
+                pCfgItem->Val.u.i32 = (int32_t)i64;
+            break;
+        }
+        case UTSPKT_GDGT_CFG_ITEM_TYPE_INT64:
+        {
+            pCfgItem->Val.enmType = UTSGADGETCFGTYPE_INT64;
+            rc = utsDoGadgetCreateCfgParseInt(pszVal, INT64_MIN, INT64_MAX, &pCfgItem->Val.u.i64);
+            break;
+        }
+        default:
+            rc = VERR_INVALID_PARAMETER;
+    }
+
+    return rc;
+}
+
+/**
  * Creates the configuration from the given GADGET CREATE packet.
  *
  * @returns IPRT status code.
- * @param   pReq                The gadget create request.
- * @param   paCfg               The array of configuration items.
+ * @param   pCfgItem            The first config item header in the request packet.
+ * @param   cCfgItems           Number of config items in the packet to parse.
+ * @param   cbPkt               Number of bytes left in the packet for the config data.
+ * @param   paCfg               The array of configuration items to fill.
  */
-static int utsDoGadgetCreateFillCfg(PUTSPKTREQGDGTCTOR pReq, PUTSGADGETCFGITEM paCfg)
+static int utsDoGadgetCreateFillCfg(PUTSPKTREQGDGTCTORCFGITEM pCfgItem, unsigned cCfgItems,
+                                    size_t cbPkt, PUTSGADGETCFGITEM paCfg)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    unsigned idxCfg = 0;
+
+    while (   RT_SUCCESS(rc)
+           && cCfgItems
+           && cbPkt)
+    {
+        if (cbPkt >= sizeof(UTSPKTREQGDGTCTORCFGITEM))
+        {
+            cbPkt -= sizeof(UTSPKTREQGDGTCTORCFGITEM);
+            if (pCfgItem->u32KeySize + pCfgItem->u32ValSize >= cbPkt)
+            {
+                const char *pszKey = (const char *)(pCfgItem + 1);
+                const char *pszVal = pszKey + pCfgItem->u32KeySize;
+
+                /* Validate termination. */
+                if (   *(pszKey + pCfgItem->u32KeySize - 1) != '\0'
+                    || *(pszVal + pCfgItem->u32ValSize - 1) != '\0')
+                    rc = VERR_INVALID_PARAMETER;
+                else
+                {
+                    paCfg[idxCfg].pszKey = RTStrDup(pszKey);
+
+                    rc = utsDoGadgetCreateCfgParseItem(&paCfg[idxCfg], pCfgItem->u32Type, pszVal);
+                    if (RT_SUCCESS(rc))
+                    {
+                        cbPkt -= pCfgItem->u32KeySize + pCfgItem->u32ValSize;
+                        cCfgItems--;
+                        idxCfg++;
+                        pCfgItem = (PUTSPKTREQGDGTCTORCFGITEM)(pszVal + pCfgItem->u32ValSize);
+                    }
+                }
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+    }
+
+    return rc;
 }
 
 /**
@@ -687,7 +889,8 @@ static int utsDoGadgetCreate(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
         if (RT_UNLIKELY(!paCfg))
             return utsReplyRC(pClient, pPktHdr, VERR_NO_MEMORY, "Failed to allocate memory for configration items");
 
-        rc = utsDoGadgetCreateFillCfg(pReq, paCfg);
+        rc = utsDoGadgetCreateFillCfg((PUTSPKTREQGDGTCTORCFGITEM)(pReq + 1), pReq->u32CfgItems,
+                                      pPktHdr->cb - sizeof(UTSPKTREQGDGTCTOR), paCfg);
         if (RT_FAILURE(rc))
         {
             RTMemFree(paCfg);
@@ -1078,17 +1281,18 @@ static int utsInit(void)
             utsConfigAstDestroy(g_pCfgAst);
         }
         else
+            RTMsgError("Initializing the platform failed with %Rrc\n", rc);
+    }
+    else
+    {
+        if (RTErrInfoIsSet(pErrInfo))
         {
-            if (RTErrInfoIsSet(pErrInfo))
-            {
-                RTMsgError("Failed to parse config with detailed error: %s (%Rrc)\n",
-                           pErrInfo->pszMsg, pErrInfo->rc);
-                RTErrInfoFree(pErrInfo);
-            }
-            else
-                RTMsgError("Faield to parse config with unknown error (%Rrc)\n", rc);
-            return rc;
+            RTMsgError("Failed to parse config with detailed error: %s (%Rrc)\n",
+                       pErrInfo->pszMsg, pErrInfo->rc);
+            RTErrInfoFree(pErrInfo);
         }
+        else
+            RTMsgError("Failed to parse config with unknown error (%Rrc)\n", rc);
     }
 
     return rc;

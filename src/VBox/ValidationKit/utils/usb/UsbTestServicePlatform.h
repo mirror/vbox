@@ -69,11 +69,12 @@ DECLHIDDEN(int) utsPlatformModuleUnload(const char *pszModule);
  * Acquires a free UDC to attach a gadget to.
  *
  * @returns IPRT status code.
+ * @param   fSuperSpeed       Flag whether a super speed bus is required.
  * @param   ppszUdc           Where to store the pointer to the name of the UDC on success.
  *                            Free with RTStrFree().
  * @param   puBusId           Where to store the bus ID the UDC is attached to on the host side.
  */
-DECLHIDDEN(int) utsPlatformLnxAcquireUDC(char **ppszUdc, uint32_t *puBusId);
+DECLHIDDEN(int) utsPlatformLnxAcquireUDC(bool fSuperSpeed, char **ppszUdc, uint32_t *puBusId);
 
 /**
  * Releases the given UDC for other use.

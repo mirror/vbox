@@ -88,8 +88,11 @@ DECLHIDDEN(int) utsGadgetCfgQueryBoolDef(PCUTSGADGETCFGITEM paCfg, const char *p
     PCUTSGADGETCFGITEM pCfgItem = utsGadgetCfgGetItemFromKey(paCfg, pszKey);
 
     if (   !pCfgItem
-        || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_STRING)
+        || pCfgItem->Val.enmType == UTSGADGETCFGTYPE_BOOLEAN)
+    {
         *pf = pCfgItem ? pCfgItem->Val.u.f : fDef;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }

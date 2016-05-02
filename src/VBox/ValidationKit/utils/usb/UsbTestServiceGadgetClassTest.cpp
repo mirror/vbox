@@ -290,6 +290,7 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
             char *pszSerial = NULL;
             char *pszManufacturer = NULL;
             char *pszProduct = NULL;
+            bool fSuperSpeed = false;
 
             /* Get basic device config. */
             rc = utsGadgetCfgQueryU16Def(paCfg,        "Gadget/idVendor",     &idVendor,        UTS_GADGET_TEST_VENDOR_ID_DEF);
@@ -303,6 +304,8 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
                 rc = utsGadgetCfgQueryStringDef(paCfg, "Gadget/Manufacturer", &pszManufacturer, UTS_GADGET_TEST_MANUFACTURER_DEF);
             if (RT_SUCCESS(rc))
                 rc = utsGadgetCfgQueryStringDef(paCfg, "Gadget/Product",      &pszProduct,      UTS_GADGET_TEST_PRODUCT_DEF);
+            if (RT_SUCCESS(rc))
+                rc = utsGadgetCfgQueryBoolDef(paCfg,   "Gadget/SuperSpeed",   &fSuperSpeed,     false);
 
             if (RT_SUCCESS(rc))
             {
@@ -356,7 +359,7 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
                 {
                     pClass->pszUdc = NULL;
 
-                    rc = utsPlatformLnxAcquireUDC(&pClass->pszUdc, &pClass->uBusId);
+                    rc = utsPlatformLnxAcquireUDC(fSuperSpeed, &pClass->pszUdc, &pClass->uBusId);
                     if (RT_SUCCESS(rc))
                         rc = RTLinuxSysFsWriteStrFile(pClass->pszUdc, 0, NULL, "%s/UDC", pClass->pszGadgetPath);
                     if (RT_SUCCESS(rc))
