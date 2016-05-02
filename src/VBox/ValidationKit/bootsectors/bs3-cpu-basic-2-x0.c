@@ -2819,6 +2819,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lidt)(uint8_t bMode)
         uint8_t ab[32]; /* At least cbIdtr*2! */
     } Expected;
 
+    //if (bMode != BS3_MODE_LM64) return 0;
     bs3CpuBasic2_SetGlobals(bMode);
 
     /*
@@ -2856,6 +2857,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuBasic2_lgdt)(uint8_t bMode)
         uint8_t ab[32]; /* At least cbIdtr*2! */
     } Expected;
 
+    //if (!BS3_MODE_IS_64BIT_SYS(bMode)) return 0;
     bs3CpuBasic2_SetGlobals(bMode);
 
     /*
@@ -3051,7 +3053,7 @@ static void bs3CpuBasic2_iret_Worker(uint8_t bTestMode, FPFNBS3FAR pfnIret, unsi
                 {
                     uint16_t const uSrcEs = TmpCtx.es;
                     uint16_t const uDstCs = (TmpCtxExpected.cs & X86_SEL_MASK_OFF_RPL) | uRplCs;
-                    //Bs3TestPrintf("dst=%d src=%d rpl=%d\n", iRingDst, iRingSrc, uRplCs);
+                    //Bs3TestPrintf("dst=%d src=%d rplCS=%d\n", iRingDst, iRingSrc, uRplCs);
 
                     /* CS.RPL */
                     iretbuf_SetupFrame(pIretBuf, cbPop, uDstCs, TmpCtxExpected.rip.u, TmpCtxExpected.rflags.u32,
