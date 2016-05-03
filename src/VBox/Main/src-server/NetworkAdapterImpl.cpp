@@ -1244,13 +1244,13 @@ void NetworkAdapter::i_applyDefaults(GuestOSType *aOsType)
     }
     else mData->mAdapterType = defaultType;
 
-    /* Enable and connect the first one adapter to the NAT */
+    /* Enable the first one adapter to the NAT */
     if (mData->mSlot == 0)
     {
         mData->mEnabled = true;
         mData->mAttachmentType = NetworkAttachmentType_NAT;
-        mData->mCableConnected = true;
     }
+    mData->mCableConnected = true;
 }
 
 ComObjPtr<NetworkAdapter> NetworkAdapter::i_getPeer()
