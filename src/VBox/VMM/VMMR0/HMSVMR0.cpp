@@ -2676,7 +2676,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             uint8_t u8Interrupt;
             int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (rc == VINF_SUCCESS)
+            if (RT_SUCCESS(rc))
             {
                 Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
 
