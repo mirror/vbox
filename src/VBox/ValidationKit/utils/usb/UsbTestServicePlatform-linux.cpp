@@ -63,8 +63,14 @@ typedef struct UTSPLATFORMLNXDUMMYHCD
 {
     /** Index of the dummy hcd entry. */
     uint32_t                   idxDummyHcd;
+    /** Name for the dummy HCD. */
+    const char                 *pszHcdName;
+    /** Name for the accompanying dummy HCD. */
+    const char                 *pszUdcName;
     /** Flag whether this HCD is free for use. */
     bool                       fAvailable;
+    /** Flag whether this HCD contains a super speed capable bus. */
+    bool                       fSuperSpeed;
     /** Number of busses this HCD instance serves. */
     unsigned                   cBusses;
     /** Bus structures the HCD serves.*/
@@ -93,15 +99,17 @@ static unsigned                g_cDummyHcd = 0;
  *
  * @returns IPRT status code.
  * @param   pHcd              The dummy HCD bus instance.
+ * @param   pszHcdName        The base HCD name.
  */
-static int utsPlatformLnxDummyHcdQueryBusses(PUTSPLATFORMLNXDUMMYHCD pHcd)
+static int utsPlatformLnxDummyHcdQueryBusses(PUTSPLATFORMLNXDUMMYHCD pHcd, const char *pszHcdName)
 {
     int rc = VINF_SUCCESS;
     char aszPath[RTPATH_MAX + 1];
     unsigned idxBusCur = 0;
     unsigned idxBusMax = 0;
 
-    size_t cchPath = RTStrPrintf(&aszPath[0], RT_ELEMENTS(aszPath), UTS_PLATFORM_LNX_DUMMY_HCD_PATH "/dummy_hcd.%u/usb*", pHcd->idxDummyHcd);
+    size_t cchPath = RTStrPrintf(&aszPath[0], RT_ELEMENTS(aszPath), UTS_PLATFORM_LNX_DUMMY_HCD_PATH "/%s.%u/usb*",
+                                 pszHcdName, pHcd->idxDummyHcd);
     if (cchPath == RT_ELEMENTS(aszPath))
         return VERR_BUFFER_OVERFLOW;
 
@@ -124,11 +132,14 @@ static int utsPlatformLnxDummyHcdQueryBusses(PUTSPLATFORMLNXDUMMYHCD pHcd)
                     /* Check whether this is a super speed bus. */
                     int64_t iSpeed = 0;
                     bool fSuperSpeed = false;
-                    rc = RTLinuxSysFsReadIntFile(10, &iSpeed, UTS_PLATFORM_LNX_DUMMY_HCD_PATH "/dummy_hcd.%u/%s/speed",
-                                                 pHcd->idxDummyHcd, DirFolderContent.szName);
+                    rc = RTLinuxSysFsReadIntFile(10, &iSpeed, UTS_PLATFORM_LNX_DUMMY_HCD_PATH "/%s.%u/%s/speed",
+                                                 pszHcdName, pHcd->idxDummyHcd, DirFolderContent.szName);
                     if (   RT_SUCCESS(rc)
                         && (iSpeed == 5000 || iSpeed == 10000))
+                    {
                         fSuperSpeed = true;
+                        pHcd->fSuperSpeed = true;
+                    }
 
                     /* Add to array of available busses for this HCD. */
                     if (idxBusCur == idxBusMax)
@@ -166,82 +177,107 @@ static int utsPlatformLnxDummyHcdQueryBusses(PUTSPLATFORMLNXDUMMYHCD pHcd)
 }
 
 
+/**
+ * Scans all available HCDs with the given name.
+ *
+ * @returns IPRT status code.
+ * @param   pszHcdName        The base HCD name.
+ * @param   pszUdcName        The base UDC name.
+ */
+static int utsPlatformLnxHcdScanByName(const char *pszHcdName, const char *pszUdcName)
+{
+    char aszPath[RTPATH_MAX + 1];
+    size_t cchPath = RTStrPrintf(&aszPath[0], RT_ELEMENTS(aszPath),
+                                 UTS_PLATFORM_LNX_DUMMY_HCD_PATH "/%s.*", pszHcdName);
+    if (cchPath == RT_ELEMENTS(aszPath))
+        return VERR_BUFFER_OVERFLOW;
+
+    /* Enumerate the available HCD and their bus numbers. */
+    PRTDIR pDir = NULL;
+    int rc = RTDirOpenFiltered(&pDir, aszPath, RTDIRFILTER_WINNT, 0);
+    if (RT_SUCCESS(rc))
+    {
+        unsigned idxHcdCur = g_cDummyHcd;
+        unsigned idxHcdMax = g_cDummyHcd;
+
+        do
+        {
+            RTDIRENTRY DirFolderContent;
+            rc = RTDirRead(pDir, &DirFolderContent, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Get the HCD index and assigned bus number form the sysfs entries,
+                 * Any error here is silently ignored and results in the HCD not being
+                 * added to the list of available controllers.
+                 */
+                const char *pszIdx = RTStrStr(DirFolderContent.szName, ".");
+                if (pszIdx)
+                {
+                    /* Skip the separator and convert number to index. */
+                    pszIdx++;
+
+                    uint32_t idxHcd = 0;
+                    rc = RTStrToUInt32Ex(pszIdx, NULL, 10, &idxHcd);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Add to array of available HCDs. */
+                        if (idxHcdCur == idxHcdMax)
+                        {
+                            size_t cbNew = (idxHcdMax + 10) * sizeof(UTSPLATFORMLNXDUMMYHCD);
+                            PUTSPLATFORMLNXDUMMYHCD pNew = (PUTSPLATFORMLNXDUMMYHCD)RTMemRealloc(g_paDummyHcd, cbNew);
+                            if (pNew)
+                            {
+                                idxHcdMax += 10;
+                                g_paDummyHcd = pNew;
+                            }
+                        }
+
+                        if (idxHcdCur < idxHcdMax)
+                        {
+                            g_paDummyHcd[idxHcdCur].idxDummyHcd = idxHcd;
+                            g_paDummyHcd[idxHcdCur].pszHcdName  = pszHcdName;
+                            g_paDummyHcd[idxHcdCur].pszUdcName  = pszUdcName;
+                            g_paDummyHcd[idxHcdCur].fAvailable  = true;
+                            g_paDummyHcd[idxHcdCur].fSuperSpeed = false;
+                            g_paDummyHcd[idxHcdCur].cBusses     = 0;
+                            g_paDummyHcd[idxHcdCur].paBusses    = NULL;
+                            rc = utsPlatformLnxDummyHcdQueryBusses(&g_paDummyHcd[idxHcdCur], pszHcdName);
+                            if (RT_SUCCESS(rc))
+                                idxHcdCur++;
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+                }
+            }
+        } while (RT_SUCCESS(rc));
+
+        g_cDummyHcd = idxHcdCur;
+
+        if (rc == VERR_NO_MORE_FILES)
+            rc = VINF_SUCCESS;
+
+        RTDirClose(pDir);
+    }
+
+    return rc;
+}
+
 DECLHIDDEN(int) utsPlatformInit(void)
 {
     /* Load the modules required for setting up USB/IP testing. */
     int rc = utsPlatformModuleLoad("libcomposite", NULL, 0);
     if (RT_SUCCESS(rc))
     {
-        const char *apszArg[] = { "num=2", "is_super_speed=1" }; /** @todo: Make configurable from config. */
+        const char *apszArg[] = { "num=20" }; /** @todo: Make configurable from config. */
         rc = utsPlatformModuleLoad("dummy_hcd", &apszArg[0], RT_ELEMENTS(apszArg));
         if (RT_SUCCESS(rc))
-        {
-            /* Enumerate the available HCD and their bus numbers. */
-            PRTDIR pDir = NULL;
-            rc = RTDirOpenFiltered(&pDir, UTS_PLATFORM_LNX_DUMMY_HCD_PATH "/dummy_hcd.*", RTDIRFILTER_WINNT, 0);
-            if (RT_SUCCESS(rc))
-            {
-                unsigned idxHcdCur = 0;
-                unsigned idxHcdMax = 0;
-
-                do
-                {
-                    RTDIRENTRY DirFolderContent;
-                    rc = RTDirRead(pDir, &DirFolderContent, NULL);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * Get the HCD index and assigned bus number form the sysfs entries,
-                         * Any error here is silently ignored and results in the HCD not being
-                         * added to the list of available controllers.
-                         */
-                        const char *pszIdx = RTStrStr(DirFolderContent.szName, ".");
-                        if (pszIdx)
-                        {
-                            /* Skip the separator and convert number to index. */
-                            pszIdx++;
-
-                            uint32_t idxHcd = 0;
-                            rc = RTStrToUInt32Ex(pszIdx, NULL, 10, &idxHcd);
-                            if (RT_SUCCESS(rc))
-                            {
-                                /* Add to array of available HCDs. */
-                                if (idxHcdCur == idxHcdMax)
-                                {
-                                    size_t cbNew = (idxHcdMax + 10) * sizeof(UTSPLATFORMLNXDUMMYHCD);
-                                    PUTSPLATFORMLNXDUMMYHCD pNew = (PUTSPLATFORMLNXDUMMYHCD)RTMemRealloc(g_paDummyHcd, cbNew);
-                                    if (pNew)
-                                    {
-                                        idxHcdMax += 10;
-                                        g_paDummyHcd = pNew;
-                                    }
-                                }
-
-                                if (idxHcdCur < idxHcdMax)
-                                {
-                                    g_paDummyHcd[idxHcdCur].idxDummyHcd = idxHcd;
-                                    g_paDummyHcd[idxHcdCur].fAvailable  = true;
-                                    g_paDummyHcd[idxHcdCur].cBusses     = 0;
-                                    g_paDummyHcd[idxHcdCur].paBusses    = NULL;
-                                    rc = utsPlatformLnxDummyHcdQueryBusses(&g_paDummyHcd[idxHcdCur]);
-                                    if (RT_SUCCESS(rc))
-                                        idxHcdCur++;
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-                            }
-                        }
-                    }
-                } while (RT_SUCCESS(rc));
-
-                g_cDummyHcd = idxHcdCur;
-
-                if (rc == VERR_NO_MORE_FILES)
-                    rc = VINF_SUCCESS;
-
-                RTDirClose(pDir);
-            }
-        }
+            rc = utsPlatformModuleLoad("dummy_hcd_ss", &apszArg[0], RT_ELEMENTS(apszArg));
+        if (RT_SUCCESS(rc))
+            rc = utsPlatformLnxHcdScanByName("dummy_hcd", "dummy_udc");
+        if (RT_SUCCESS(rc))
+            rc = utsPlatformLnxHcdScanByName("dummy_hcd_ss", "dummy_udc_ss");
     }
 
     return rc;
@@ -252,6 +288,7 @@ DECLHIDDEN(void) utsPlatformTerm(void)
 {
     /* Unload dummy HCD. */
     utsPlatformModuleUnload("dummy_hcd");
+    utsPlatformModuleUnload("dummy_hcd_ss");
 
     RTMemFree(g_paDummyHcd);
 }
@@ -327,7 +364,13 @@ DECLHIDDEN(int) utsPlatformLnxAcquireUDC(bool fSuperSpeed, char **ppszUdc, uint3
     {
         PUTSPLATFORMLNXDUMMYHCD pHcd = &g_paDummyHcd[i];
 
-        if (pHcd->fAvailable)
+        /*
+         * We can't use a super speed capable UDC for gadgets with lower speeds
+         * because they hardcode the maximum speed to SuperSpeed most of the time
+         * which will make it unusable for lower speeds.
+         */
+        if (   pHcd->fAvailable
+            && pHcd->fSuperSpeed == fSuperSpeed)
         {
             /* Check all assigned busses for a speed match. */
             for (unsigned idxBus = 0; idxBus < pHcd->cBusses; idxBus++)
@@ -335,7 +378,7 @@ DECLHIDDEN(int) utsPlatformLnxAcquireUDC(bool fSuperSpeed, char **ppszUdc, uint3
                 if (pHcd->paBusses[idxBus].fSuperSpeed == fSuperSpeed)
                 {
                     rc = VINF_SUCCESS;
-                    int cbRet = RTStrAPrintf(ppszUdc, "dummy_udc.%u", pHcd->idxDummyHcd);
+                    int cbRet = RTStrAPrintf(ppszUdc, "%s.%u", pHcd->pszUdcName, pHcd->idxDummyHcd);
                     if (cbRet == -1)
                         rc = VERR_NO_STR_MEMORY;
                     *puBusId = pHcd->paBusses[idxBus].uBusId;
@@ -359,6 +402,7 @@ DECLHIDDEN(int) utsPlatformLnxReleaseUDC(const char *pszUdc)
     const char *pszIdx = RTStrStr(pszUdc, ".");
     if (pszIdx)
     {
+        size_t cchUdcName = pszIdx - pszUdc;
         pszIdx++;
         uint32_t idxHcd = 0;
         rc = RTStrToUInt32Ex(pszIdx, NULL, 10, &idxHcd);
@@ -368,7 +412,8 @@ DECLHIDDEN(int) utsPlatformLnxReleaseUDC(const char *pszUdc)
 
             for (unsigned i = 0; i < g_cDummyHcd; i++)
             {
-                if (g_paDummyHcd[i].idxDummyHcd == idxHcd)
+                if (   g_paDummyHcd[i].idxDummyHcd == idxHcd
+                    && !RTStrNCmp(g_paDummyHcd[i].pszUdcName, pszUdc, cchUdcName))
                 {
                     AssertReturn(!g_paDummyHcd[i].fAvailable, VERR_INVALID_PARAMETER);
                     g_paDummyHcd[i].fAvailable = true;
