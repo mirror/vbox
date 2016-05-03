@@ -551,6 +551,7 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
         && (uSvr & ~uValidMask))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_SVR, APICMSRACCESS_WRITE_RSVD_BITS);
 
+    Log2(("APIC%u: apicSetSvr: uSvr=%#RX32\n", pVCpu->idCpu, uSvr));
     apicWriteRaw32(pXApicPage, XAPIC_OFF_SVR, uSvr);
     if (!pXApicPage->svr.u.fApicSoftwareEnable)
     {
@@ -704,8 +705,19 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
     if (   rcStrict != rcRZ
         && pVCpu)
     {
-        if (RT_UNLIKELY(uVector <= XAPIC_ILLEGAL_VECTOR_END))
-            apicSetError(pVCpu, XAPIC_ESR_SEND_ILLEGAL_VECTOR);
+        /*
+         * Flag only errors when the delivery mode is fixed and not others.
+         *
+         * Ubuntu 10.04-3 amd64 live CD with 2 VCPUs gets upset as it sends an SIPI to the
+         * 2nd VCPU with vector 6 and checks the ESR for no errors, see @bugref{8245#c86}.
+         */
+        /** @todo The spec says this for LVT, but not explcitly for ICR-lo
+         *        but it probably is true. */
+        if (enmDeliveryMode == XAPICDELIVERYMODE_FIXED)
+        {
+            if (RT_UNLIKELY(uVector <= XAPIC_ILLEGAL_VECTOR_END))
+                apicSetError(pVCpu, XAPIC_ESR_SEND_ILLEGAL_VECTOR);
+        }
     }
     return rcStrict;
 }
@@ -1061,7 +1073,7 @@ static VBOXSTRICTRC apicSetEsr(PVMCPU pVCpu, uint32_t uEsr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    Log2(("APIC%u: apicSetEr: uEsr=%#RX32\n", pVCpu->idCpu, uEsr));
+    Log2(("APIC%u: apicSetEsr: uEsr=%#RX32\n", pVCpu->idCpu, uEsr));
 
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uEsr & ~XAPIC_ESR_WO))
@@ -1429,7 +1441,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
      */
     if (RT_UNLIKELY(   XAPIC_LVT_GET_VECTOR(uLvt) <= XAPIC_ILLEGAL_VECTOR_END
                     && XAPIC_LVT_GET_DELIVERY_MODE(uLvt) == XAPICDELIVERYMODE_FIXED))
-        apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
+        apicSetError(pVCpu, XAPIC_ESR_SEND_ILLEGAL_VECTOR);
 
     Log2(("APIC%u: apicSetLvtEntry: offLvt=%#RX16 uLvt=%#RX32\n", pVCpu->idCpu, offLvt, uLvt));
 
@@ -2507,7 +2519,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                     uint32_t const fAlreadySet = apicSetNotificationBitInPib((PAPICPIB)pApicCpu->CTX_SUFF(pvApicPib));
                     if (!fAlreadySet)
                     {
-                        Log2(("APIC: APICPostInterrupt: Setting UPDATE_APIC FF for edge-triggered intr. uVector %#x\n", uVector));
+                        Log2(("APIC: APICPostInterrupt: Setting UPDATE_APIC FF for edge-triggered intr. uVector=%#x\n", uVector));
                         APICSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
                     }
                 }
