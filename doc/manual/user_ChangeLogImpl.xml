@@ -19,6 +19,1115 @@
   </sect1>
 
   <sect1>
+    <title>Version 5.0.20 (2016-04-28)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Storage: fixed a regression causing write requests from the BIOS
+          to cause a Guru Meditation with the LsiLogic SCSI controller
+          (5.0.18 regression; bug #15317)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: several emulation fixes in the BusLogic SCSI
+          controller emulation</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT Network: support TCP in DNS proxy (same problem as
+          in bug #14736 for NAT)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: rework handling of port-forwarding rules (bug #13570)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: rewrite host resolver to handle more query types
+          and make it asynchronous so that a stalled lookup doesn't block all
+          NAT traffic</para>
+      </listitem>
+
+      <listitem>
+        <para>Snapshots: don't crash when restoring a snapshot which has more
+          network adapters than the current state (ie when the snapshot uses
+          ICH9 and the current state uses PIIX3)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: various bugfixes for the <emphasis>copyfrom</emphasis>
+          and <emphasis>copyto</emphasis> commands / API (bug #14336)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: list processor features on <emphasis>list
+            hostinfo</emphasis> (bug #15334)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fix for Linux 4.5 if
+          <emphasis>CONFIG_NET_CLS_ACT</emphasis> is enabled (bug #15327)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: another fix for recent Windows 10 insider builds
+          (bug #15337)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: make it work on Windows XP again (5.0.18
+          regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed performance issues with PowerPoint
+          2010 and the WDDM graphics drivers if Aero is disabled</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.18 (2016-04-18)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: position off-screen windows to be fully visible again on relaunch
+          in consistence with default-behavior (bug #15226)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed the <emphasis>View</emphasis> menu /
+          <emphasis>Full-screen Mode</emphasis> behavior on Mac OS X El Capitan</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed a test which allowed to encrypt a hard disk with an
+          empty password</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed a crash under certain conditions during VM shutdown</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed the size of the VM list scrollbar in the VM selector
+          when entering a group</para>
+      </listitem>
+
+      <listitem>
+        <para>PC speaker passthrough: fixes (Linux hosts only; bug #627)</para>
+      </listitem>
+
+      <listitem>
+        <para>Drag and drop: several fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>SATA: fixed hotplug flag handling when EFI is used</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed handling of encrypted disk images with SCSI
+          controllers (bug #14812)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed possible crash with Solaris 7 if the BusLogic
+          SCSI controller is used</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: properly purge non-ASCII characters from USB strings
+          (bugs #8801, #15222)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT Network: fixed 100% CPU load in VBoxNetNAT on Mac OS X
+          under certain circumstances (bug #15223)</para>
+      </listitem>
+
+      <listitem>
+        <para>ACPI: fixed ACPI tables to make the display color management
+          settings available again for older Windows versions (4.3.22
+          regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: fixed <emphasis>VBoxManage copyfrom</emphasis>
+          command (bug #14336)</para>
+      </listitem>
+
+      <listitem>
+        <para>Snapshots: fixed several problems when removing older snapshots
+          (bug #15206)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed <emphasis>--verbose</emphasis> output of the
+          <emphasis>guestcontrol</emphasis> command</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: hardening fixes required for recent Windows 10
+          insider builds (bugs #15245, #15296)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed support of jumbo frames in with bridged
+          networking (5.0.16 regression; bug #15209)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: don't prevent receiving multicast traffic if
+          host-only adapters are installed (bug #8698)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: added support for the new naming scheme of NVME disks when
+          creating raw disks</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts / guests: properly sign the kernel modules (bug #12608)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: Linux 4.5 fixes (bug #15251)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: Linux 4.6 fixes (bug #15298)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: added a kernel graphics driver to support graphics
+          when X.Org does not have root rights (bug #14732)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux/Solaris Additions: fixed several issues causing Linux/Solatis
+          guests using software rendering when 3D acceleration is available</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed a hang with PowerPoint 2010 and the WDDM
+           drivers if Aero is disabled</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.16 (2016-03-04)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: fixed a problem which could lead to a wrong guest behavior on
+          AMD CPUs (bugs #14831 and #15186)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: don't try to synchronize the HID LEDs if the VM window is not
+          active or if it's minimized (Windows / Mac OS X hosts only; bug #14302)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: prevent a crash during startup under rare conditions</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: sub-menu option to disable the guest-OS type overlay in the
+          application dock icon on Mac OS X</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: position off-screen windows to be fully visible again on relaunch</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: hide the VT-x/AMD-V checkbox if raw-mode is not supported
+          (usually Mac OS X hosts; bug #15178)</para>
+      </listitem>
+
+      <listitem>
+        <para>PC speaker passthrough: new experimental feature, available on
+          Linux host only</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: several fixes for Mac OS X hosts + guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: properly handle default audio device changes (Windows hosts)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: serveral fixes for the xHCI controller (e.g. for webcam
+          passthrough)</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: fixed int15/AH=83/AL=00 function (4.2.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>iPXE: enable the HTTP download protocol on non-Linux hosts (bug #13628)</para>
+      </listitem>
+
+      <listitem>
+        <para>Shared folders: fixed a failure to load the saved state under
+          certain circumstances (bug #6314)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: added support for (cached) Active Directory authentication
+          in case the domain controller is not reachable (anymore)</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial ports: raised the number of serial ports per VM from 2 to 4
+          (bug #9109)</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial ports: fix for the TCP/IP backend (Windows hosts only; bug #15188)</para>
+      </listitem>
+
+      <listitem>
+        <para>SDK: make the Python webservice API binding work again (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>Seamless mode: fixed a crash under certain circumstances
+          (bug #15106)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed the /sbin/rcvboxdrv script as well as the missing
+          shebang in two scripts (bugs #15055 and #15057)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: properly uninstall Python files installed by the
+          .run installer</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: hardening fix required for recent Windows insider
+          builds (bug #14052)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed Python installation path (bug #13131)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: support MTU larger than 2 KB with bridged
+          networking (bug #15140)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts / guests: properly sign binaries using a sha-256
+          certificate (bug #15054)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed guest property enumeration of logged-in
+          users</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed sporadical failure of the graphics driver
+          in Windows 10 guests (bug #14409)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: under rare circumstances no mouse movement
+          events were delivered to the guest</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.14 (2016-01-19)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: properly limit the number of VCPUs to the number of physical
+          cores on Mac OS X (bug #15018)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed a bug which prevented loading a saved state
+          of a saved guests with HDA emulation (5.0.12 regression; bug #14981)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: don't crash if the backend is unable to initialize
+          (bug #14960)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed audio capture on Mac OS X (bug #14386)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed a possible crash when attaching the same ISO image
+          multiple times to the same VM (bug #14951)</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: properly report if two floppy drives are attached</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: fixed a problem with filters which would not capture the
+          device under certain circumstances (5.0.10 regression; bug #15042)</para>
+      </listitem>
+
+      <listitem>
+        <para>ExtPack: black-list Extension Packs older than 4.3.30 due to
+          incompatible changes not being properly handled in the past</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed a regression which caused robocopy
+          to fail (bug #14958)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: properly create the <emphasis>/sbin/rcvboxdrv</emphasis>
+          symbolic link (5.0.12 regression; bug #14989)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: several fixes for USB on El Capitan (bug #14677)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fixes for Linux 4.5 (bug #15032)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.12 (2015-12-18)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: fixed wrong scrolling behaviour in the VM selector window
+          when a VM item is dragged out of the chooser-pane area</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed the validation of IPv6 port-forwarding rules</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: suppress the first-run wizard if a CD/DVD medium is
+          inserted using the selector UI</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed the Ctrl+Break key sequence scan codes
+          (bug #14927)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: improved handling of text selection mouse pointer (bug #750)</para>
+      </listitem>
+
+      <listitem>
+        <para>Host services: fixed a crash during VM shutdown under rare
+          conditions (5.0.6 regression; bug #14841)</para>
+      </listitem>
+
+      <listitem>
+        <para>Shared folders: fixed a sharing violation if a file is opened
+          to check the attributes (Windows hosts only; bug #14450)</para>
+      </listitem>
+
+      <listitem>
+        <para>Webcam: passthrough fix for certain devices (Mac OS X hosts only)</para>
+      </listitem>
+
+      <listitem>
+        <para>XHCI: fixed broken emulation if software virtualization is used</para>
+      </listitem>
+
+      <listitem>
+        <para>XHCI: several fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>3D: fixed state handling under certain conditions (bug #13487)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: several fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: added LBA64 support for being able to boot from huge hard
+          disks(bug #7415)</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: fix for Windows 10 guests</para>
+      </listitem>
+
+      <listitem>
+        <para>ExtPack: before installing an Extension Pack check if there are
+          VMs running to prevent file system locking issues</para>
+      </listitem>
+
+      <listitem>
+        <para>rdesktop-vrdp: source code tarball fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed hang when using VBoxAuthSimple library for
+          VRDP external authentication (bug #14931)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed a regression which prevented it to attach to
+          a physical network adapter having TCP/IP disabled (bug #14578)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed a regression which caused multi-port adapters
+          to be shown as a single adapter (bugs #14558, #14622)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed a regression which caused created host-only
+          adapters to not appear in the list (bug #14437)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed host-only adapter creation issues related
+          to Windows 10 (bugs #14040, #14545)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: .desktop file compatibility issue (bug #14808)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: fixes for RHEL 7.2 (bug #14866)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: the command for recompiling the host kernel modules
+          was changed again, to <emphasis>/sbin/rcvboxdrv setup</emphasis> (bug
+           #14723)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: some fixes for PCI passthrough (still highly
+          experimental)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux/Mac OS X hosts: fixed a VM hang during startup under certain
+          circumstances (bug #14933)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: added Python 2.7 bindings</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed a possible crash when the default input or
+          output audio device changes</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed a panic under certain conditions</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: prevent the compiler from doing dead-code
+          elemination on vital code in guest / host communication (bug #14497)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: when mounting a shared folder, explicitly pass
+          the share name so that /proc/mounts contains this name instead of 'none'</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: workaround for a systemd problem in conjunction
+          with SELinux which prevented to properly enable the 'vboxadd' service
+          during while upgrading the Additions</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.10 (2015-11-10)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: improved support for certain Intel Atom CPUs (bug #14773)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: system register emulation fix (5.0 regression; bug #14515)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed immediate screenshot issue (bug #14108)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed another 3D overlay window reparenting issue when the
+          VM is switched to fullscreen mode on X11 hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed help index (bug #14722)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed state synchronization issue in the VM manager window
+          when VM was paused from its runtime window</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed suspending/resuming audio streams on VM
+          pause/unpause (bug #14784)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: properly reset AC97 audio streams, otherwise there is
+          silence until a non-48 kHz stream is played</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed a small emulation quirk of the AD1980 codec of the
+          HDA device to make recent linux guests work (bug #14653)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: serveral fixes for the xHCI controller</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: fixed a crash under certain conditions on hosts with Linux
+          kernels older than version 3.3</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: better identification of certain USB devices</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: support TCP in DNS proxy (bug #14736)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT Network: fixed sporadic crashes on Windows hosts (bug #13899)</para>
+      </listitem>
+
+      <listitem>
+        <para>API: when creating differencing images (e.g. as part of a snapshot
+          or cloning a VM) use the same disk image variant as the parent image
+          if possible, which means that e.g. a diff image for a VMDK image
+          split into 2 GB files will also be split (bug #14764)</para>
+      </listitem>
+
+      <listitem>
+        <para>API: event queue handling fixes preventing loss of certain events
+          at runtime (e.g. new webcam attached), particularly important on Mac
+          OS X hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>Webcam: passthrough fix for certain devices (Windows hosts only)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: don't crash on <emphasis>snapshot restorecurrent /
+            edit</emphasis> if the VM has no snapshots</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: don't crash on <emphasis>controlvm
+            addencpassword</emphasis> (bug #14729)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: use the correct kernel on certain hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed VRDP external authentication</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: allow to use a shared folder path with extended-length
+          path prefix (5.0 regression; bug #14651)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fix a crash in the netfilter host driver under
+          certain conditions (bug #14799)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows host installer: documented and fixed public properties which
+         can be used to control the installation to some extent</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows host installer: fixed not starting the actual installation
+        when showing the version information or help dialogs</para>
+      </listitem>
+
+      <listitem>
+        <para>X11 Additions: added basic support for X.Org Server 1.18 (3D
+          requires additional fixes)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.8 (2015-10-20)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: Mac OS X: Restore green zoom button for VM windows
+          (it was hidden in previous release to avoid native full-screen issues).
+          For Yosemite and El Capitan this button should work accordingly to the
+          Apple HIG: Full-screen by default, maximize if the user holds the
+          Option key.</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial ports: fixed wrong IRQ number for the first serial port in
+          the ACPI tables (5.0.6 regression; bug #14659)</para>
+      </listitem>
+
+      <listitem>
+        <para>API: fixed a 5.0 regression in <emphasis>VBoxManage setproperty
+          defaultfrontend</emphasis> (bug #14696)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage/vbox-img: conversion to RAW images could result in
+          a disk image containing all zeroes</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: several fixes for systemd integration in .deb / .rpm
+          packages (e.g. bug #14665). The command for recompiling the host kernel
+          modules was changed to <emphasis>/sbin/vboxconfig</emphasis></para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: make host-only interfaces report operstate UP
+          only when they have VMs attached (bug #14526)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fix bpf capture and accounting of traffic
+          on bridged and host-only interfaces (bug #14553)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guests: fixed 3D rendering issues on high resolution
+          displays</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed problems with 3D acceleration on Windows
+          hosts with Intel HD graphics (bug #14670)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fix service starting on Debian systems with
+          systemd installed but not in use (bug #14683)</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.6 (2015-10-02)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: the update check now uses the HTTP system proxy settings by
+          default</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: About dialog improvements. Copyable version text, do not close
+          dialog on mouse-clicks and focus losing, explicit close button at the
+          bottom of dialog and disabled close button fix on OS X. (bugs #9912,
+          #12749)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed bug when re-assigning shortcuts (bug #14565)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed default focus button in message-box dialogs (bug #14486)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed settings dialog which is opened if the network settings
+          need to be changed at VM startup (5.0 regression; bug #14601)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed crash during VM start if an early error message needs
+          to be shown, for example Linux kernel modules not present (bug #14646)</para>
+      </listitem>
+
+      <listitem>
+        <para>Bridged Networking: fixed handling of guest DHCP requests without UDP
+          checksum when bridging to a wireless interface (bug #14615).</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: latency fixes (Windows hosts only; bug #4088)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: correctly set <emphasis>USERNAME</emphasis> and
+          <emphasis>USERPROFILE</emphasis> environment variables (Windows
+          guests only)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: several fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>API: properly restore NAT port forwarding rules when reverting to
+          a snapshot</para>
+      </listitem>
+
+      <listitem>
+        <para>Parallel ports: Several fixes allowing to enable two parallel ports
+          for a VM</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed wrong output of <emphasis>debugvm show</emphasis>
+          command</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed hang when specifying logging groups with
+          <emphasis>debugvm log</emphasis> starting with
+          <emphasis>h</emphasis>, for example <emphasis>hex</emphasis></para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: renamed <emphasis>VBoxStartup.log</emphasis> to
+          <emphasis>VBoxHardening.log</emphasis> and provide this log file in
+          the GUI log viewer</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed a small memory leak in the Windows host interface
+          driver (VBoxNetAdp) which caused a BSOD if the driver verifier is enabled
+          (bug #14562)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed a failure to start VMs on hosts where dsound.dll
+          is not available (bug #14574)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: another fix for <emphasis>VERR_LDR_MISMATCH_NATIVE</emphasis>
+          errors (bug #14579)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed host-to-guest communication with bridged networking
+          (bugs #14326, #14457)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed broken data receiving from the serial device with
+          the named pipe backend if Kaspersky AV is installed</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: Linux 4.3 compile fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: installer fix for certain systems (bug #14627)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: native systemd support for the host/guest
+          installer scripts. The scripts for re-compiling the kernel modules
+          are now located at /sbin/rcvboxdrv (host) and /sbin/rcvboxadd
+          (Guest Additions)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: GUI-related fixes for El Capitan</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed a problem with capturing USB devices under
+          El Capitan</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: allow colon character on shared folders (bug #14554)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: properly set the VBoxService process ID in the PID
+          file (bug #14571)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: Guest Control fixes (bug #14573)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed shutting down VBoxTray when running with
+          older VirtualBox host versions</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed video playback with VLC and Windows Media
+          Player when the WDDM driver is used and 3D is not used</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: prevent a possible VLC crash when the WDDM driver
+          is used and 3D is enabled by implementing YV12 surfaces</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.0.4 (2015-09-08)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: fixed an issue with Windows 10 guest kernel debugging over the
+          network for Hyper-V paravirtualized VMs</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed a bug which prevented reading the saved state of the
+          'PATM' unit from VirtualBox 4.3.x (bug #14512)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: changed default OS type for Windows from Windows XP to Windows 7</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: added another pre-defined guest screen resolution (bug #14384)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed update check which was broken due to changing the
+          location of the root certificates (bug #13096)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed issues with synchronization of Caps lock / Num  lock / Scroll
+          lock on Windows hosts (bug #14302)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: don't crash during VM shutdown if 2D video acceleration and 3D support
+          are enabled (Mac OS X hosts only)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: several seamless fixes for certain X11 window managers, also when
+          used in multi-screen setups</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Log window size, position and cursor-position fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed playing leftover/deprecated audio samples</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed playing audio after suspending the host (5.0 regression;
+          Linux hosts using the ALSA backend)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed playing short audio samples which were chopped off
+        formerly</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed distortions on OS X when the sample rate of the guest stream
+          and host device don't match</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed raw disk access and flat VMDK image access which would
+          be always opened readonly (5.0.2 regression; bugs #14425, #14461)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed initial encryption of VDI images after they were
+          compacted (bug #14496)</para>
+      </listitem>
+
+      <listitem>
+        <para>VGA: fix for certain graphics modes (bug #14516)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: don't freeze while the VM is paused if the network attachment
+          mode is changed from/to NAT with activated port forwarding</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF: fixed duplicate USB controller entries in exported OVA/OVF
+          (bug #14462)</para>
+      </listitem>
+
+      <listitem>
+        <para>Shared Folders: fixed a path separator issue (bug #14434)</para>
+      </listitem>
+
+      <listitem>
+        <para>Drag and drop: fixed crashes on OS X hosts when doing host-to-guest
+          transfers</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: another attempt to not deny changing the network adapter
+          type at VM runtime (5.0 regression; bug #14308)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed broken <emphasis>guestcontrol &lt;VM-Name&gt; list</emphasis>
+          command (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed broken Guest Control stdout/stderr output (5.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed remaining problems with activated SMAP (Broadwell
+          and later; bug #14412)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed broken 3D support (5.0.2 regression;
+          bug #14476)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: Linux 4.2 fix</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: don't crash on older Linux distributions if the DBus
+          service isn't running (bug #14543)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed the <emphasis>VERR_LDR_MISMATCH_NATIVE</emphasis>
+          error message (bug #14420)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fix for Windows 10 build 10525 and later (bug #14502)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed network adapter enumeration on Windows 10 (bug #14437)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: prevent intermittent host network disconnects during
+          VM start/shutdown with bridged networking (bug #14500)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed the call to the memory allocation function
+          (bug #14415)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: be more forgiving if the compilation of the
+          vboxvideo module fails (bug #14547)</para>
+      </listitem>
+
+      <listitem>
+        <para>X11 Additions: fixed a number of small issues with dynamic
+           resizing and full-screen and seamless modes.</para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+  <sect1>
     <title>Version 5.0.2 (2015-08-13)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
