@@ -505,6 +505,9 @@ static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
              pDevIns, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
     switch (enmType)
     {
+        case PDMAPICIRQ_UPDATE_PENDING:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_UPDATE_APIC);
+            break;
         case PDMAPICIRQ_HARDWARE:
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
             break;
@@ -541,6 +544,10 @@ static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
     {
         case PDMAPICIRQ_HARDWARE:
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+            break;
+        case PDMAPICIRQ_UPDATE_PENDING:
+            VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC);
             break;
         case PDMAPICIRQ_EXTINT:
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);

@@ -393,6 +393,22 @@ typedef enum APICMODE
 } APICMODE;
 
 /**
+ * APIC Pending-Interrupt Bitmap (PIB).
+ */
+typedef struct APICPIB
+{
+    uint64_t volatile aVectorBitmap[4];
+    uint32_t volatile fOutstandingNotification;
+    uint8_t           au8Reserved[28];
+} APICPIB;
+AssertCompileMemberOffset(APICPIB, fOutstandingNotification, 256 / 8);
+AssertCompileSize(APICPIB, 64);
+/** Pointer to a pending-interrupt bitmap. */
+typedef APICPIB *PAPICPIB;
+/** Pointer to a const pending-interrupt bitmap. */
+typedef const APICPIB *PCAPICPIB;
+
+/**
  * APIC PDM instance data (per-VM).
  */
 typedef struct APICDEV
@@ -604,6 +620,10 @@ typedef struct APICCPU
     STAMCOUNTER                 StatTprRead;
     /** Number of times the EOI is written. */
     STAMCOUNTER                 StatEoiWrite;
+    /** Number of times TPR masks an interrupt in APICGetInterrupt(). */
+    STAMCOUNTER                 StatMaskedByTpr;
+    /** Number of times PPR masks an interrupt in APICGetInterrupt(). */
+    STAMCOUNTER                 StatMaskedByPpr;
     /** @} */
 #endif
 } APICCPU;

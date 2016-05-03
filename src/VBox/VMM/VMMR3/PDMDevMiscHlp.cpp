@@ -197,7 +197,13 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 
     switch (enmType)
     {
+        case PDMAPICIRQ_UPDATE_PENDING:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_UPDATE_APIC);
+            break;
         case PDMAPICIRQ_HARDWARE:
+#ifdef VBOX_WITH_NEW_APIC
+            VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+#endif
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
             break;
         case PDMAPICIRQ_NMI:
@@ -216,7 +222,13 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 #ifdef VBOX_WITH_REM
     REMR3NotifyInterruptSet(pVM, pVCpu);
 #endif
+
+#ifdef VBOX_WITH_NEW_APIC
+    if (enmType != PDMAPICIRQ_HARDWARE)
+        VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
+#else
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
+#endif
 }
 
 
@@ -235,6 +247,10 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
     /* Note: NMI/SMI can't be cleared. */
     switch (enmType)
     {
+        case PDMAPICIRQ_UPDATE_PENDING:
+            VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC);
+            break;
         case PDMAPICIRQ_HARDWARE:
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
             break;

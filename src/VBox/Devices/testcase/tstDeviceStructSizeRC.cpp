@@ -795,6 +795,12 @@ int main()
     GEN_CHECK_OFF(APICCPU, StatUpdatePendingIntrs);
     GEN_CHECK_OFF(APICCPU, StatPostIntr);
     GEN_CHECK_OFF(APICCPU, StatPostIntrAlreadyPending);
+    GEN_CHECK_OFF(APICCPU, StatTimerCallback);
+    GEN_CHECK_OFF(APICCPU, StatTprWrite);
+    GEN_CHECK_OFF(APICCPU, StatTprRead);
+    GEN_CHECK_OFF(APICCPU, StatEoiWrite);
+    GEN_CHECK_OFF(APICCPU, StatMaskedByTpr);
+    GEN_CHECK_OFF(APICCPU, StatMaskedByPpr);
 # endif /* VBOX_WITH_STATISTICS */
 #else
     /* PC/DevAPIC.cpp */

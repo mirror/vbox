@@ -1368,6 +1368,8 @@ typedef enum PDMAPICIRQ
     PDMAPICIRQ_SMI,
     /** ExtINT (HW interrupt via PIC). */
     PDMAPICIRQ_EXTINT,
+    /** Interrupt arrived, needs to be updated to the IRR. */
+    PDMAPICIRQ_UPDATE_PENDING,
     /** The usual 32-bit paranoia. */
     PDMAPICIRQ_32BIT_HACK = 0x7fffffff
 } PDMAPICIRQ;

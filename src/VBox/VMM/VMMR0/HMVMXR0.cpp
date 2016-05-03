@@ -3444,7 +3444,14 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             else
                 uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS;
         }
-        /* else: Although we can clear the force-flag here, let's keep this side-effects free. */
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        {
+            /*
+             * We can clear the inhibit force flag as even if we go back to the recompiler without executing guest code in
+             * VT-x, the flag's condition to be cleared is met and thus the cleared state is correct.
+             */
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        }
     }
 
     /*
@@ -7391,12 +7398,13 @@ DECLINLINE(void) hmR0VmxClearNmiWindowExitVmcs(PVMCPU pVCpu)
  * Evaluates the event to be delivered to the guest and sets it as the pending
  * event.
  *
+ * @returns The VT-x guest-interruptibility state.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
  */
-static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
     uint32_t const uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
@@ -7408,6 +7416,11 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));    /* We don't support block-by-SMI yet.*/
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
+
+#ifdef VBOX_WITH_NEW_APIC
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+        APICUpdatePendingInterrupts(pVCpu);
+#endif
 
     /*
      * Toggling of interrupt force-flags here is safe since we update TRPM on premature exits
@@ -7439,10 +7452,6 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
              && !pVCpu->hm.s.fSingleInstruction)
     {
-#ifdef VBOX_WITH_NEW_APIC
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC))
-            APICUpdatePendingInterrupts(pVCpu);
-#endif
         Assert(!DBGFIsStepping(pVCpu));
         int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
         AssertRC(rc);
@@ -7474,6 +7483,8 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
             hmR0VmxSetIntWindowExitVmcs(pVCpu);
     }
+
+    return uIntrState;
 }
 
 
@@ -7500,17 +7511,16 @@ DECLINLINE(void) hmR0VmxSetPendingDebugXcptVmcs(PVMCPU pVCpu)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ * @param   uIntrState      The VT-x guest-interruptibility state.
  * @param   fStepping       Running in hmR0VmxRunGuestCodeStep() and we should
  *                          return VINF_EM_DBG_STEPPED if the event was
  *                          dispatched directly.
  */
-static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping)
+static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t uIntrState, bool fStepping)
 {
     HMVMX_ASSERT_PREEMPT_SAFE();
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
-    uint32_t uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
     bool fBlockMovSS    = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
     bool fBlockSti      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
@@ -8486,13 +8496,13 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
 
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
-    hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
+    uint32_t uIntrState = hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
     /*
      * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus needs to be done with
      * longjmps or interrupts + preemption enabled. Event injection might also result in triple-faulting the VM.
      */
-    rcStrict = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx, fStepping);
+    rcStrict = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx, uIntrState, fStepping);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     { /* likely */ }
     else
@@ -8584,8 +8594,11 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+    /*
+     * Indicate start of guest execution and where poking EMT out of guest-context is recognized.
+     */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
 #ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
     if (!CPUMIsGuestFPUStateActive(pVCpu))
@@ -10389,6 +10402,30 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 
 
 /**
+ * Advances the guest RIP by the specified number of bytes.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data maybe
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ * @param   cbInstr         Number of bytes to advance the RIP by.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+DECLINLINE(void) hmR0VmxAdvanceGuestRipBy(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t cbInstr)
+{
+    /* Advance the RIP. */
+    pMixedCtx->rip += cbInstr;
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
+
+    /* Update interrupt inhibition. */
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && pMixedCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+}
+
+
+/**
  * Advances the guest RIP after reading it from the VMCS.
  *
  * @returns VBox status code, no informational status codes.
@@ -10400,15 +10437,14 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
     rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
-    pMixedCtx->rip += pVmxTransient->cbInstr;
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
+    hmR0VmxAdvanceGuestRipBy(pVCpu, pMixedCtx, pVmxTransient->cbInstr);
 
     /*
      * Deliver a debug exception to the guest if it is single-stepping. Don't directly inject a #DB but use the
@@ -11590,12 +11626,10 @@ HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT);
-    int rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+
+    int rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    pMixedCtx->rip++;
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
     if (EMShouldContinueAfterHalt(pVCpu, pMixedCtx))    /* Requires eflags. */
         rc = VINF_SUCCESS;
     else
@@ -12275,7 +12309,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     {
         if (!fUpdateRipAlready)
         {
-            pMixedCtx->rip += cbInstr;
+            hmR0VmxAdvanceGuestRipBy(pVCpu, pMixedCtx, cbInstr);
             HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
         }
 

@@ -147,16 +147,6 @@ static const SSMFIELD g_aX2ApicPageFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-/** Saved state field descriptors for APICPIB. */
-static const SSMFIELD g_aApicPibFields[] =
-{
-    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[0]),
-    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[1]),
-    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[2]),
-    SSMFIELD_ENTRY(APICPIB,    aVectorBitmap[3]),
-    SSMFIELD_ENTRY(APICPIB,    fOutstandingNotification),
-    SSMFIELD_ENTRY_TERM()
-};
 
 /**
  * Initializes per-VCPU APIC to the state following an INIT reset
@@ -976,6 +966,9 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
+        /* Update interrupts from the pending-interrupts bitmaps to the IRR. */
+        APICUpdatePendingInterrupts(pVCpu);
+
         /* Save the auxiliary data. */
         SSMR3PutU64(pSSM, pApicCpu->uApicBaseMsr);
         SSMR3PutU32(pSSM, pApicCpu->uEsrInternal);
@@ -985,11 +978,6 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
         else
             SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
-
-        /* Save the PIBs: In theory, we could push them to vIRR and avoid saving them here, but
-           with posted-interrupts we can't at this point as HM is paralyzed, so just save PIBs always. */
-        SSMR3PutStruct(pSSM, (const void *)pApicCpu->pvApicPibR3,   &g_aApicPibFields[0]);
-        SSMR3PutStruct(pSSM, (const void *)&pApicCpu->ApicPibLevel, &g_aApicPibFields[0]);
 
         /* Save the timer. */
         SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
@@ -1059,10 +1047,6 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 SSMR3GetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aX2ApicPageFields[0]);
             else
                 SSMR3GetStruct(pSSM, pApicCpu->pvApicPageR3, &g_aXApicPageFields[0]);
-
-            /* Load the PIBs. */
-            SSMR3GetStruct(pSSM, pApicCpu->pvApicPibR3,   &g_aApicPibFields[0]);
-            SSMR3GetStruct(pSSM, &pApicCpu->ApicPibLevel, &g_aApicPibFields[0]);
 
             /* Load the timer. */
             rc = SSMR3GetU64(pSSM, &pApicCpu->u64TimerInitial);     AssertRCReturn(rc, rc);
@@ -1504,7 +1488,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
             break;
 #else
-            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SCR_POS, "APIC mode 'disabled' is not supported yet.");
+            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode 'disabled' is not supported yet.");
 #endif
         }
 
@@ -1705,9 +1689,13 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         APIC_REG_COUNTER(&pApicCpu->StatTimerCallback,  "Number of times the timer callback is invoked.",
                          "/Devices/APIC/%u/TimerCallback");
 
-        APIC_REG_COUNTER(&pApicCpu->StatTprWrite,  "Number of TPR writes.", "/Devices/APIC/%u/TprWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatTprRead,   "Number of TPR reads.",  "/Devices/APIC/%u/TprRead");
-        APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,  "Number of EOI writes.", "/Devices/APIC/%u/EoiWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatTprWrite,      "Number of TPR writes.", "/Devices/APIC/%u/TprWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatTprRead,       "Number of TPR reads.",  "/Devices/APIC/%u/TprRead");
+        APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,      "Number of EOI writes.", "/Devices/APIC/%u/EoiWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByTpr,   "Number of times TPR masks an interrupt in APICGetInterrupt.",
+                         "/Devices/APIC/%u/MaskedByTpr");
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "Number of time PPR masks an interrupt in APICGetInterrupt.",
+                         "/Devices/APIC/%u/MaskedByPpr");
     }
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER

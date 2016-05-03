@@ -131,7 +131,7 @@ typedef struct VMCPU
      *          64-byte for cache line reasons. structs containing small amounts of
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
-     *   */
+     */
     uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 56 : 12+64];
     /** State data for use by ad hoc profiling. */
     uint32_t                uAdHoc;
@@ -371,7 +371,7 @@ typedef struct VMCPU
 #define VM_FF_DEBUG_SUSPEND                 RT_BIT_32(31)
 
 
-/** This action forces the VM to check any pending interrups on the APIC. */
+/** This action forces the VM to check any pending interrupts on the APIC. */
 #define VMCPU_FF_INTERRUPT_APIC             RT_BIT_32(0)
 /** This action forces the VM to check any pending interrups on the PIC. */
 #define VMCPU_FF_INTERRUPT_PIC              RT_BIT_32(1)
@@ -392,6 +392,12 @@ typedef struct VMCPU
 #define VMCPU_FF_IEM_BIT                    7
 /** Pending IEM action (mask). */
 #define VMCPU_FF_IEM                        RT_BIT_32(VMCPU_FF_IEM_BIT)
+/** Pending APIC action (bit number). */
+#define VMCPU_FF_UPDATE_APIC_BIT            8
+/** This action forces the VM to update APIC's asynchronously arrived
+ *  interrupts as pending interrupts. */
+#define VMCPU_FF_UPDATE_APIC                RT_BIT_32(VMCPU_FF_UPDATE_APIC_BIT)
+
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VMCPU_FF_REQUEST                    RT_BIT_32(9)
@@ -449,9 +455,9 @@ typedef struct VMCPU
 #define VM_FF_EXTERNAL_HALTED_MASK              (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST \
                                                  | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
 /** Externally forced VMCPU actions. Used to quit the idle/wait loop. */
-#define VMCPU_FF_EXTERNAL_HALTED_MASK           (  VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST \
-                                                 | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT \
-                                                 | VMCPU_FF_TIMER)
+#define VMCPU_FF_EXTERNAL_HALTED_MASK           (  VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
+                                                 | VMCPU_FF_REQUEST     | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI \
+                                                 | VMCPU_FF_UNHALT      | VMCPU_FF_TIMER)
 
 /** High priority VM pre-execution actions. */
 #define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_TM_VIRTUAL_SYNC \
@@ -459,6 +465,7 @@ typedef struct VMCPU
                                                  | VM_FF_EMT_RENDEZVOUS)
 /** High priority VMCPU pre-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
+                                                 | VMCPU_FF_UPDATE_APIC \
                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
                                                  | VMCPU_FF_INHIBIT_INTERRUPTS \
                                                  | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \

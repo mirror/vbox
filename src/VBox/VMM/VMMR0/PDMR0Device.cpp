@@ -524,7 +524,13 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 
     switch (enmType)
     {
+        case PDMAPICIRQ_UPDATE_PENDING:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_UPDATE_APIC);
+            break;
         case PDMAPICIRQ_HARDWARE:
+#ifdef VBOX_WITH_NEW_APIC
+            VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+#endif
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
             break;
         case PDMAPICIRQ_NMI:
@@ -542,7 +548,12 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
     }
 
     /* We need to wake up the target CPU. */
-    if (VMMGetCpuId(pVM) != idCpu)
+    if (
+#ifdef VBOX_WITH_NEW_APIC
+        /* We are already on EMT if enmType is PDMAPICIRQ_HARDWARE. Don't bother with poking! */
+        enmType != PDMAPICIRQ_HARDWARE &&
+#endif
+        VMMGetCpuId(pVM) != idCpu)
     {
         switch (VMCPU_GET_STATE(pVCpu))
         {
@@ -576,6 +587,10 @@ static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
     /* Note: NMI/SMI can't be cleared. */
     switch (enmType)
     {
+        case PDMAPICIRQ_UPDATE_PENDING:
+            VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+            VMCPU_FF_CLEAR(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
+            break;
         case PDMAPICIRQ_HARDWARE:
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
             break;

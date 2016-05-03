@@ -900,24 +900,6 @@ AssertCompileMemberOffset(X2APICPAGE, timer_ccr,   XAPIC_OFF_TIMER_CCR);
 AssertCompileMemberOffset(X2APICPAGE, timer_dcr,   XAPIC_OFF_TIMER_DCR);
 AssertCompileMemberOffset(X2APICPAGE, self_ipi,    X2APIC_OFF_SELF_IPI);
 
-/**
- * APIC Pending Interrupt Bitmap (PIB).
- * @note This structure is used in saved-state, careful with changing layout or
- *       size!
- */
-typedef struct APICPIB
-{
-    uint64_t volatile aVectorBitmap[4];
-    uint32_t volatile fOutstandingNotification;
-    uint8_t           au8Reserved[28];
-} APICPIB;
-AssertCompileMemberOffset(APICPIB, fOutstandingNotification, 256 / 8);
-AssertCompileSize(APICPIB, 64);
-/** Pointer to a pending interrupt bitmap. */
-typedef APICPIB *PAPICPIB;
-/** Pointer to a const pending interrupt bitmap. */
-typedef const APICPIB *PCAPICPIB;
-
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3

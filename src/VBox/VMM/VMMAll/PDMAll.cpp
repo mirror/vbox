@@ -25,6 +25,9 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
+#ifdef VBOX_WITH_NEW_APIC
+# include <VBox/vmm/apic.h>
+#endif
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -68,17 +71,18 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         uint32_t uTagSrc;
         uint8_t  uVector;
         int rc = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, &uVector, &uTagSrc);
-        if (   rc == VINF_SUCCESS
-            || rc == VERR_APIC_INTR_MASKED_BY_TPR)
+        if (RT_SUCCESS(rc))
         {
-#ifndef VBOX_WITH_NEW_APIC
-            pdmUnlock(pVM);
-#endif
             *pu8Interrupt = uVector;
             if (rc == VINF_SUCCESS)
                 VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), uVector);
+#ifndef VBOX_WITH_NEW_APIC
+            pdmUnlock(pVM);
+#endif
             return rc;
         }
+        /* else if it's masked by TPR/PPR/whatever, go ahead checking the PIC. Such masked
+           interrupts shouldn't prevent ExtINT from being delivered. */
     }
 
 #ifdef VBOX_WITH_NEW_APIC
@@ -106,7 +110,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
     }
 
     /*
-     * One scenario where we may possibly get here is if the APIC signalled a pending interrupt,
+     * One scenario where we may possibly get here is if the APIC signaled a pending interrupt,
      * got an APIC MMIO/MSR VM-exit which disabled the APIC. We could, in theory, clear the APIC
      * force-flag from all the places which disables the APIC but letting PDMGetInterrupt() fail
      * without returning a valid interrupt still needs to be handled for the TPR masked case,

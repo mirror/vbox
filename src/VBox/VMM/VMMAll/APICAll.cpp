@@ -513,8 +513,13 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
             if (   !uPpr
                 ||  XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
             {
-                Log2(("APIC%u: apicSignalNextPendingIntr: Signaling pending interrupt\n", pVCpu->idCpu));
+                Log2(("APIC%u: apicSignalNextPendingIntr: Signaling pending interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+            }
+            else
+            {
+                Log2(("APIC%u: apicSignalNextPendingIntr: Nothing to signal. uVector=%#x uPpr=%#x uTpr=%#x\n", pVCpu->idCpu, uVector,
+                      uPpr, pXApicPage->tpr.u8Tpr));
             }
         }
     }
@@ -558,6 +563,7 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
         pXApicPage->lvt_lint0.u.u1Mask   = 1;
         pXApicPage->lvt_lint1.u.u1Mask   = 1;
         pXApicPage->lvt_error.u.u1Mask   = 1;
+        apicSignalNextPendingIntr(pVCpu);
     }
     return VINF_SUCCESS;
 }
@@ -1128,6 +1134,7 @@ static VBOXSTRICTRC apicSetTpr(PVMCPU pVCpu, uint32_t uTpr)
 
     Log2(("APIC%u: apicSetTpr: uTpr=%#RX32\n", pVCpu->idCpu, uTpr));
     STAM_COUNTER_INC(&pVCpu->apic.s.StatTprWrite);
+
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
         && (uTpr & ~XAPIC_TPR))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TPR, APICMSRACCESS_WRITE_RSVD_BITS);
@@ -2177,8 +2184,9 @@ VMMDECL(int) APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode
     uint32_t          fDestMask       = uDest;
     uint32_t          fBroadcastMask  = UINT32_C(0xff);
 
-    Log2(("APIC: apicBusDeliver: fDestMask=%#x enmDestMode=%s enmTriggerMode=%s enmDeliveryMode=%s\n", fDestMask,
-          apicGetDestModeName(enmDestMode), apicGetTriggerModeName(enmTriggerMode), apicGetDeliveryModeName(enmDeliveryMode)));
+    Log2(("APIC: apicBusDeliver: fDestMask=%#x enmDestMode=%s enmTriggerMode=%s enmDeliveryMode=%s uVector=%#x\n", fDestMask,
+          apicGetDestModeName(enmDestMode), apicGetTriggerModeName(enmTriggerMode), apicGetDeliveryModeName(enmDeliveryMode),
+          uVector));
 
     VMCPUSET DestCpuSet;
     apicGetDestCpuSet(pVM, fDestMask, fBroadcastMask, enmDestMode, enmDeliveryMode, &DestCpuSet);
@@ -2310,7 +2318,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
     Assert(pu8Vector);
     NOREF(pu32TagSrc);
 
-    LogFlow(("APIC%u: APICGetInterrupt\n", pVCpu->idCpu));
+    LogFlow(("APIC%u: APICGetInterrupt:\n", pVCpu->idCpu));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     bool const fApicHwEnabled = apicIsEnabled(pVCpu);
@@ -2334,6 +2342,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
                 Log2(("APIC%u: APICGetInterrupt: Interrupt masked. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
                       uVector, uTpr, pXApicPage->svr.u.u8SpuriousVector));
                 *pu8Vector = uVector;
+                STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByTpr);
                 return VERR_APIC_INTR_MASKED_BY_TPR;
             }
 
@@ -2356,8 +2365,11 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
                 return VINF_SUCCESS;
             }
             else
+            {
+                STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByPpr);
                 Log2(("APIC%u: APICGetInterrupt: Interrupt's priority is not higher than the PPR. uVector=%#x PPR=%#x\n",
                       pVCpu->idCpu, uVector, uPpr));
+            }
         }
         else
             Log2(("APIC%u: APICGetInterrupt: No pending bits in IRR\n", pVCpu->idCpu));
@@ -2463,7 +2475,8 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
     Assert(pVCpu);
     Assert(uVector > XAPIC_ILLEGAL_VECTOR_END);
 
-    PCAPIC   pApic    = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
+    PCAPIC   pApic    = VM_TO_APIC(pVM);
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
     STAM_PROFILE_START(&pApicCpu->StatPostIntr, a);
@@ -2475,13 +2488,13 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
     if (RT_LIKELY(uVector > XAPIC_ILLEGAL_VECTOR_END))
     {
         /*
-         * If the interrupt is already pending in the vIRR we can skip the
+         * If the interrupt is already pending in the IRR we can skip the
          * potential expensive operation of poking the guest EMT out of execution.
          */
         PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
         if (!apicTestVectorInReg(&pXApicPage->irr, uVector))     /* PAV */
         {
-            Log2(("APIC%u: APICPostInterrupt: uVector=%#x\n", pVCpu->idCpu, uVector));
+            Log2(("APIC: APICPostInterrupt: SrcCpu=%u TargetCpu=%u uVector=%#x\n", VMMGetCpuId(pVM), pVCpu->idCpu, uVector));
             if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
             {
                 if (pApic->fPostedIntrsEnabled)
@@ -2491,7 +2504,10 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                     apicSetVectorInPib(pApicCpu->CTX_SUFF(pvApicPib), uVector);
                     uint32_t const fAlreadySet = apicSetNotificationBitInPib((PAPICPIB)pApicCpu->CTX_SUFF(pvApicPib));
                     if (!fAlreadySet)
-                        APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+                    {
+                        Log2(("APIC: APICPostInterrupt: Setting UPDATE_APIC FF for edge-triggered intr. uVector %#x\n", uVector));
+                        APICSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
+                    }
                 }
             }
             else
@@ -2503,11 +2519,18 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                 apicSetVectorInPib(&pApicCpu->ApicPibLevel, uVector);
                 uint32_t const fAlreadySet = apicSetNotificationBitInPib(&pApicCpu->ApicPibLevel);
                 if (!fAlreadySet)
-                    APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+                {
+                    Log2(("APIC: APICPostInterrupt: Setting UPDATE_APIC FF for level-triggered intr. uVector=%#x\n", uVector));
+                    APICSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
+                }
             }
         }
         else
+        {
+            Log2(("APIC: APICPostInterrupt: SrcCpu=%u TargetCpu=%u. Vector %#x Already in IRR, skipping\n", VMMGetCpuId(pVM),
+                  pVCpu->idCpu, uVector));
             STAM_COUNTER_INC(&pApicCpu->StatPostIntrAlreadyPending);
+        }
     }
     else
         apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
@@ -2648,11 +2671,13 @@ VMMDECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingInt
  */
 VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 {
-    VMCPU_ASSERT_EMT(pVCpu);
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
-    PAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
-    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+    PAPICCPU   pApicCpu         = VMCPU_TO_APICCPU(pVCpu);
+    PXAPICPAGE pXApicPage       = VMCPU_TO_XAPICPAGE(pVCpu);
+    bool       fHasPendingIntrs = false;
 
+    Log3(("APIC%u: APICUpdatePendingInterrupts:\n", pVCpu->idCpu));
     STAM_PROFILE_START(&pApicCpu->StatUpdatePendingIntrs, a);
 
     /* Update edge-triggered pending interrupts. */
@@ -2678,6 +2703,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 
                 pXApicPage->tmr.u[idxReg].u32Reg     &= ~u32FragmentLo;
                 pXApicPage->tmr.u[idxReg + 1].u32Reg &= ~u32FragmentHi;
+                fHasPendingIntrs = true;
             }
         }
     }
@@ -2705,11 +2731,17 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 
                 pXApicPage->tmr.u[idxReg].u32Reg     |= u32FragmentLo;
                 pXApicPage->tmr.u[idxReg + 1].u32Reg |= u32FragmentHi;
+                fHasPendingIntrs = true;
             }
         }
     }
 
     STAM_PROFILE_STOP(&pApicCpu->StatUpdatePendingIntrs, a);
+    Log3(("APIC%u: APICUpdatePendingInterrupts: fHasPendingIntrs=%RTbool\n", pVCpu->idCpu, fHasPendingIntrs));
+
+    if (   fHasPendingIntrs
+        && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC))
+        apicSignalNextPendingIntr(pVCpu);
 }
 
 
