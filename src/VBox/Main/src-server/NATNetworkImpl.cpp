@@ -114,8 +114,6 @@ void NATNetwork::uninit()
 
 HRESULT NATNetwork::init(VirtualBox *aVirtualBox, com::Utf8Str aName)
 {
-    AssertReturn(!aName.isEmpty(), E_INVALIDARG);
-
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
@@ -169,8 +167,8 @@ HRESULT NATNetwork::i_saveSettings(settings::NATNetwork &data)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);
     data = m->s;
-    alock.release();
 
     m->pVirtualBox->i_onNATNetworkSetting(Bstr(m->s.strNetworkName).raw(),
                                           m->s.fEnabled,
@@ -200,12 +198,16 @@ HRESULT NATNetwork::getEventSource(ComPtr<IEventSource> &aEventSource)
 
 HRESULT NATNetwork::getNetworkName(com::Utf8Str &aNetworkName)
 {
+    AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);
     aNetworkName = m->s.strNetworkName;
     return S_OK;
 }
 
 HRESULT NATNetwork::setNetworkName(const com::Utf8Str &aNetworkName)
 {
+    if (m->s.strNetworkName.isEmpty())
+        return setError(E_INVALIDARG,
+                        tr("Network name cannot be empty"));
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (aNetworkName == m->s.strNetworkName)
@@ -644,6 +646,7 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
 {
 #ifdef VBOX_WITH_NAT_SERVICE
     if (!m->s.fEnabled) return S_OK;
+    AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);
 
     m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyNetwork, Utf8Str(m->s.strNetworkName).c_str());
     m->NATRunner.setOption(NetworkServiceRunner::kNsrKeyTrunkType, Utf8Str(aTrunkType).c_str());
