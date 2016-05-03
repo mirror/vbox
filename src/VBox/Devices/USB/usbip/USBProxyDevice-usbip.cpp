@@ -81,6 +81,8 @@
 #define USBIP_STATUS_SUCCESS                 INT32_C(0)
 /** Pipe stalled. */
 #define USBIP_STATUS_PIPE_STALLED            INT32_C(-32)
+/** URB was unlinked by a call to usb_unlink_urb(). */
+#define USBIP_STATUS_URB_UNLINKED            INT32_C(-104)
 /** Short read. */
 #define USBIP_STATUS_SHORT_READ              INT32_C(-121)
 /** @} */
@@ -581,10 +583,14 @@ DECLINLINE(int) usbProxyUsbIpStatusConvertFromStatus(int32_t i32Status)
     {
         case USBIP_STATUS_PIPE_STALLED:
             return VINF_SUCCESS;
+        case USBIP_STATUS_URB_UNLINKED:
+            return VERR_TRY_AGAIN;
         default:
+            LogFlowFunc(("i32Status=%d\n", i32Status));
             return VERR_INVALID_STATE;
     }
 
+    LogFlowFunc(("i32Status=%d\n", i32Status));
     return VERR_INVALID_STATE;
 }
 
@@ -854,6 +860,7 @@ static int usbProxyUsbIpDisconnect(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
 static int usbProxyUsbIpCtrlUrbExchangeSync(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PVUSBSETUP pSetup)
 {
     int rc = VINF_SUCCESS;
+    unsigned iTry = 0;
 
     UsbIpReqSubmit ReqSubmit;
 
@@ -873,20 +880,24 @@ static int usbProxyUsbIpCtrlUrbExchangeSync(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PV
     memcpy(&ReqSubmit.Setup, pSetup, sizeof(ReqSubmit.Setup));
     usbProxyUsbIpReqSubmitH2N(&ReqSubmit);
 
-    /* Send the command. */
-    rc = RTTcpWrite(pProxyDevUsbIp->hSocket, &ReqSubmit, sizeof(ReqSubmit));
-    if (RT_SUCCESS(rc))
+    do
     {
-        /* Wait for the response. */
-        /** @todo: Don't wait indefinitely long. */
-        UsbIpRetSubmit RetSubmit;
-        rc = RTTcpRead(pProxyDevUsbIp->hSocket, &RetSubmit, sizeof(RetSubmit), NULL);
+        /* Send the command. */
+        rc = RTTcpWrite(pProxyDevUsbIp->hSocket, &ReqSubmit, sizeof(ReqSubmit));
         if (RT_SUCCESS(rc))
         {
-            usbProxyUsbIpRetSubmitN2H(&RetSubmit);
-            rc = usbProxyUsbIpStatusConvertFromStatus(RetSubmit.u32Status);
+            /* Wait for the response. */
+            /** @todo: Don't wait indefinitely long. */
+            UsbIpRetSubmit RetSubmit;
+            rc = RTTcpRead(pProxyDevUsbIp->hSocket, &RetSubmit, sizeof(RetSubmit), NULL);
+            if (RT_SUCCESS(rc))
+            {
+                usbProxyUsbIpRetSubmitN2H(&RetSubmit);
+                rc = usbProxyUsbIpStatusConvertFromStatus(RetSubmit.u32Status);
+            }
         }
-    }
+    } while (   rc == VERR_TRY_AGAIN
+             && iTry++ < 10);
     return rc;
 }
 
@@ -1031,9 +1042,9 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
                             {
                                 usbProxyUsbIpRetSubmitN2H(&pProxyDevUsbIp->BufRet.RetSubmit);
 
+                                /* We still have to receive the transfer buffer, even in case of an error. */
                                 pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmStatus = usbProxyUsbIpVUsbStatusConvertFromStatus(pProxyDevUsbIp->BufRet.RetSubmit.u32Status);
-                                if (   pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmDir == VUSBDIRECTION_IN
-                                    && pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmStatus == VUSBSTATUS_OK)
+                                if (pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmDir == VUSBDIRECTION_IN)
                                 {
                                     uint8_t *pbData = NULL;
 
@@ -1049,13 +1060,18 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
                                         pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->cbData = pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength;
                                     }
 
-                                    usbProxyUsbIpRecvStateAdvance(pProxyDevUsbIp, USBPROXYUSBIPRECVSTATE_URB_BUFFER,
-                                                                  pbData, pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength);
+                                    if (pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength)
+                                        usbProxyUsbIpRecvStateAdvance(pProxyDevUsbIp, USBPROXYUSBIPRECVSTATE_URB_BUFFER,
+                                                                      pbData, pProxyDevUsbIp->BufRet.RetSubmit.u32ActualLength);
+                                    else
+                                    {
+                                        pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
+                                        usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
+                                    }
                                 }
                                 else
                                 {
-                                    Assert(   pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmDir == VUSBDIRECTION_OUT
-                                           || pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmStatus != VUSBSTATUS_OK);
+                                    Assert(pProxyDevUsbIp->pUrbUsbIp->pVUsbUrb->enmDir == VUSBDIRECTION_OUT);
                                     pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
                                     usbProxyUsbIpResetRecvState(pProxyDevUsbIp);
                                 }
