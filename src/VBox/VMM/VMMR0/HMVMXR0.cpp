@@ -7446,8 +7446,8 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             hmR0VmxSetNmiWindowExitVmcs(pVCpu);
     }
     /*
-     * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
-     * the interrupt ASAP. We must not execute any guest code until we inject the interrupt.
+     * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
+     * a valid interrupt we must- deliver the interrupt. We can no longer re-request it from the APIC.
      */
     else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
              && !pVCpu->hm.s.fSingleInstruction)

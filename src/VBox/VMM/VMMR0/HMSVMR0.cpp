@@ -2668,9 +2668,8 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     else if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
     {
         /*
-         * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
-         * the interrupt ASAP. We must not execute any guest code until we inject the interrupt which is why it is
-         * evaluated here and not set as pending, solely based on the force-flags.
+         * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
+         * a valid interrupt we must- deliver the interrupt. We can no longer re-request it from the APIC.
          */
         if (   !fBlockInt
             && !fIntShadow)
