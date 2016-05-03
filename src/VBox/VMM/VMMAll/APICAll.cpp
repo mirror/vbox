@@ -518,8 +518,8 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
             }
             else
             {
-                Log2(("APIC%u: apicSignalNextPendingIntr: Nothing to signal. uVector=%#x uPpr=%#x uTpr=%#x\n", pVCpu->idCpu, uVector,
-                      uPpr, pXApicPage->tpr.u8Tpr));
+                Log2(("APIC%u: apicSignalNextPendingIntr: Nothing to signal. uVector=%#x uPpr=%#x uTpr=%#x\n", pVCpu->idCpu,
+                      uVector, uPpr, pXApicPage->tpr.u8Tpr));
             }
         }
     }
@@ -563,8 +563,9 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
         pXApicPage->lvt_lint0.u.u1Mask   = 1;
         pXApicPage->lvt_lint1.u.u1Mask   = 1;
         pXApicPage->lvt_error.u.u1Mask   = 1;
-        apicSignalNextPendingIntr(pVCpu);
     }
+
+    apicSignalNextPendingIntr(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -1428,7 +1429,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
      */
     if (RT_UNLIKELY(   XAPIC_LVT_GET_VECTOR(uLvt) <= XAPIC_ILLEGAL_VECTOR_END
                     && XAPIC_LVT_GET_DELIVERY_MODE(uLvt) == XAPICDELIVERYMODE_FIXED))
-        apicSetError(pVCpu, XAPIC_ESR_SEND_ILLEGAL_VECTOR);
+        apicSetError(pVCpu, XAPIC_ESR_RECV_ILLEGAL_VECTOR);
 
     Log2(("APIC%u: apicSetLvtEntry: offLvt=%#RX16 uLvt=%#RX32\n", pVCpu->idCpu, offLvt, uLvt));
 
@@ -1543,6 +1544,7 @@ static int apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, ui
                        && offReg != XAPIC_OFF_ICR_HI
                        && offReg != XAPIC_OFF_EOI));
             uValue = apicReadRaw32(pXApicPage, offReg);
+            Log2(("APIC%u: apicReadRegister: offReg=%#x uValue=%#x\n", pVCpu->idCpu, offReg, uValue));
             break;
         }
 
