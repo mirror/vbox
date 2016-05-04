@@ -62,8 +62,6 @@ if VBOX_BIOS_CPU ge 80386
                 .8086
 
 else
-                push    bp
-                mov     bp, sp
                 push    si              ; high result
                 push    di              ; low result
 
