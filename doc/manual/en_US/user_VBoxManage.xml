@@ -869,7 +869,8 @@ IOAPIC:          on
           <listitem>
             <para><computeroutput>--hostonlyadapter&lt;1-N&gt;
             none|&lt;devicename&gt;</computeroutput>: If host-only networking
-            has been enabled for a virtual network card (see the --nic option
+            has been enabled for a virtual network card (see the
+            <computeroutput>--nic</computeroutput> option
             above; otherwise this setting has no effect), use this option to
             specify which host-only networking interface the given virtual
             network interface will use. For details, please see <xref
@@ -4537,7 +4538,8 @@ Value: 2006.01.01</screen>
           --hostonlyadapter&lt;X&gt;
           &lt;hostonly_if_name&gt;</computeroutput>.</para>
 
-          <para>Alternatively, you can also use the --netname option as with
+          <para>Alternatively, you can also use the
+          <computeroutput>--netname</computeroutput> option as with
           internal networks if you know the host-only network's name; you can
           see the names with <computeroutput>VBoxManage list
           hostonlyifs</computeroutput> (see <xref linkend="vboxmanage-list" />

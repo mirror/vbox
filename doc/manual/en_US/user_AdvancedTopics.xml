@@ -710,16 +710,18 @@ EndSection</screen>
     command-line interface. First, hot-plugging needs to be enabled for a
     virtual machine:<screen>VBoxManage modifyvm "VM name" --cpuhotplug on</screen></para>
 
-    <para>After that, the --cpus option specifies the maximum number of CPUs
+    <para>After that, the <computeroutput>--cpus</computeroutput> option specifies the maximum number of CPUs
     that the virtual machine can have:<screen>VBoxManage modifyvm "VM name" --cpus 8</screen>When
-    the VM is off, you can then add and remove virtual CPUs with the modifyvm
-    --plugcpu and --unplugcpu subcommands, which take the number of the
+    the VM is off, you can then add and remove virtual CPUs with the
+    <computeroutput>modifyvm --plugcpu</computeroutput> and
+    <computeroutput>--unplugcpu</computeroutput> subcommands, which take the number of the
     virtual CPU as a parameter, like this:<screen>VBoxManage modifyvm "VM name" --plugcpu 3
 VBoxManage modifyvm "VM name" --unplugcpu 3</screen>Note that CPU 0 can never
     be removed.</para>
 
-    <para>While the VM is running, CPUs can be added with the
-    <computeroutput>controlvm plugcpu/unplugcpu</computeroutput> commands
+    <para>While the VM is running, CPUs can be added and removed with the
+    <computeroutput>controlvm plugcpu</computeroutput> and
+    <computeroutput>unplugcpu</computeroutput> commands
     instead:<screen>VBoxManage controlvm "VM name" plugcpu 3
 VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
 

@@ -456,7 +456,9 @@
     <para><screen>VBoxManage natnetwork remove --netname natnet1</screen></para>
     <para>This command does not remove the DHCP server if one is enabled on the
     internal network.</para>
-    <para>Port-forwarding is supported (using the "--port-forward-4" switch for IPv4 and "--port-forward-6"
+    <para>Port-forwarding is supported (using the
+    <computeroutput>--port-forward-4</computeroutput> switch for IPv4 and
+    <computeroutput>--port-forward-6</computeroutput>
     for IPv6):</para>
     <para><screen>VBoxManage natnetwork modify --netname natnet1 --port-forward-4 "ssh:tcp:[]:1022:[192.168.15.5]:22"</screen></para>
     <para>This adds a port-forwarding rule from the host's TCP 1022 port to
