@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes */
+/* GUI includes: */
 # include "QIFileDialog.h"
 # include "QIToolButton.h"
 # include "QILabel.h"
@@ -28,8 +28,10 @@
 # include "UIFilePathSelector.h"
 # include "VBoxGlobal.h"
 
-/* Global includes */
+/* Other VBox includes: */
 # include <iprt/assert.h>
+
+/* Qt includes: */
 # include <QAction>
 # include <QApplication>
 # include <QClipboard>
@@ -49,9 +51,7 @@ enum
 };
 
 
-/**
- * Returns first position of difference between passed strings.
- */
+/** Returns first position of difference between passed strings. */
 static int differFrom (const QString &aS1, const QString &aS2)
 {
     if (aS1 == aS2)
@@ -208,14 +208,6 @@ QString UIFilePathSelector::defaultSaveExt() const
     return mDefaultSaveExt;
 }
 
-/**
- * Returns @c true if the selected (active) combobox item is a path item.
- *
- * May be used in @c activated() signal handlers to distinguish between
- * non-path items like "Other..." or "Reset" that get temporarily activated
- * when performing the corresponding action and the item that contains a
- * real selected file/folder path.
- */
 bool UIFilePathSelector::isPathSelected() const
 {
     return (currentIndex() == PathId);
