@@ -835,16 +835,14 @@ static int pgmPoolAccessPfHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PP
     VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (rc2 == VINF_SUCCESS)
     { /* do nothing */ }
-#ifdef VBOX_WITH_IEM
     else if (rc2 == VINF_EM_RESCHEDULE)
     {
         if (rc == VINF_SUCCESS)
             rc = VBOXSTRICTRC_VAL(rc2);
-# ifndef IN_RING3
+#ifndef IN_RING3
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-# endif
-    }
 #endif
+    }
     else if (rc2 == VERR_EM_INTERPRETER)
     {
 #ifdef IN_RC
