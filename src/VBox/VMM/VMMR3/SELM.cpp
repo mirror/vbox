@@ -832,6 +832,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  */
 static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
 {
+    LogFlow(("selmR3UpdateShadowGdt\n"));
     Assert(!HMIsEnabled(pVM));
 
     /*
@@ -1091,6 +1092,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
  */
 static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
 {
+    LogFlow(("selmR3UpdateShadowLdt\n"));
     int rc = VINF_SUCCESS;
     Assert(!HMIsEnabled(pVM));
 
@@ -1249,6 +1251,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
      * Set Hyper LDTR and notify TRPM.
      */
     CPUMSetHyperLDTR(pVCpu, SelLdt);
+    LogFlow(("selmR3UpdateShadowLdt: Hyper LDTR %#x\n", SelLdt));
 
     /*
      * Loop synchronising the LDT page by page.
@@ -1491,6 +1494,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 {
+    LogFlow(("SELMR3SyncTSS\n"));
     int rc;
     AssertReturnStmt(!HMIsEnabled(pVM), VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS), VINF_SUCCESS);
 
