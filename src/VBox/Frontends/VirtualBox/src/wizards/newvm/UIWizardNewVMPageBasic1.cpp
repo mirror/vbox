@@ -221,11 +221,16 @@ bool UIWizardNewVMPage1::createMachineFolder()
     CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Get default machine folder: */
     const QString strDefaultMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    /* Fetch user's machine location: */
+    const QString strUserMachineLocation = m_pNameAndSystemEditor->name();
+    const QString strUserMachineFolder = QFileInfo(strUserMachineLocation).absolutePath();
+    const QString strUserMachineBaseName = QFileInfo(strUserMachineLocation).fileName();
+    const bool fUseDefaultPath = strUserMachineLocation == strUserMachineBaseName;
     /* Compose machine filename: */
-    const QString strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
-                                                                   m_strGroup,
+    const QString strMachineFilePath = vbox.ComposeMachineFilename(strUserMachineBaseName,
+                                                                   fUseDefaultPath ? m_strGroup : QString() /* no group in that case */,
                                                                    QString(),
-                                                                   strDefaultMachineFolder);
+                                                                   fUseDefaultPath ? strDefaultMachineFolder : strUserMachineFolder);
     /* Compose machine folder/basename: */
     const QFileInfo fileInfo(strMachineFilePath);
     const QString strMachineFolder = fileInfo.absolutePath();
@@ -249,6 +254,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Initialize fields: */
     m_strMachineFolder = strMachineFolder;
     m_strMachineBaseName = strMachineBaseName;
+    m_strMachineFilePath = strMachineFilePath;
     return true;
 }
 
@@ -273,7 +279,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pNameAndSystemEditor = new UINameAndSystemEditor(this);
+        m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true);
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addWidget(m_pNameAndSystemEditor);
         pMainLayout->addStretch();
@@ -288,6 +294,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
+    registerField("machineFilePath", this, "machineFilePath");
 }
 
 void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)

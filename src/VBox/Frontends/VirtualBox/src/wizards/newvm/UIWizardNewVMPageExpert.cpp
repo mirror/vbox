@@ -56,7 +56,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QHBoxLayout *pNameAndSystemCntLayout = new QHBoxLayout(m_pNameAndSystemCnt);
             {
-                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt);
+                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt, true);
                 pNameAndSystemCntLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
@@ -154,6 +154,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
+    registerField("machineFilePath", this, "machineFilePath");
     registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
     registerField("virtualDisk", this, "virtualDisk");
     registerField("virtualDiskId", this, "virtualDiskId");

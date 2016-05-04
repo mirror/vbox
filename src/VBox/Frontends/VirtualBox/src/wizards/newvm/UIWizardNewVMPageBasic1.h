@@ -52,10 +52,17 @@ protected:
     /** Defines the @a strMachineBaseName value. */
     void setMachineBaseName(const QString &strMachineBaseName) { m_strMachineBaseName = strMachineBaseName; }
 
+    /** Returns the machine file-path value. */
+    QString machineFilePath() const { return m_strMachineFilePath; }
+    /** Defines the @a strMachineFilePath value. */
+    void setMachineFilePath(const QString &strMachineFilePath) { m_strMachineFilePath = strMachineFilePath; }
+
     /** Holds the machine folder value. */
     QString m_strMachineFolder;
     /** Holds the machine base-name value. */
     QString m_strMachineBaseName;
+    /** Holds the machine file-path value. */
+    QString m_strMachineFilePath;
 
     /* Widgets: */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
@@ -72,6 +79,7 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
     Q_OBJECT;
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
+    Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
 
 public:
 
