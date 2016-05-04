@@ -689,7 +689,7 @@ PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t val)
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
     APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
-    LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, pApic->tpr, val));
+    Log4(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, pApic->tpr, val));
     apic_update_tpr(pDev, pApic, val);
 }
 
@@ -698,7 +698,7 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPend
     /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *pApic = apicGetStateById(pDev, pVCpu->idCpu);
-    Log2(("apicGetTPR: returns %#x\n", pApic->tpr));
+    Log4(("apicGetTPR: returns %#x\n", pApic->tpr));
 
     if (pfPending)
         *pfPending = apicHasPendingIntr(pDevIns, pVCpu, pu8PendingIntr);
@@ -1945,7 +1945,6 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *pApic = apicGetStateByCurEmt(pDev);
 
-    Log(("CPU%d: apicMMIORead at %RGp\n", pApic->phys_id, GCPhysAddr));
     Assert(cb == 4);
 
     /** @todo add LAPIC range validity checks (different LAPICs can
@@ -1974,6 +1973,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     uint64_t u64Value = 0;
     int rc = apicReadRegister(pDev, pApic, (GCPhysAddr >> 4) & 0xff, &u64Value, VINF_IOM_R3_MMIO_READ, false /*fMsr*/);
     *(uint32_t *)pv = (uint32_t)u64Value;
+    Log(("CPU%d: apicMMIORead at %RGp returns %#RX32\n", pApic->phys_id, GCPhysAddr, (uint32_t)u64Value));
     return rc;
 }
 
@@ -1982,7 +1982,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *pApic = apicGetStateByCurEmt(pDev);
 
-    Log(("CPU%d: apicMMIOWrite at %RGp\n", pApic->phys_id, GCPhysAddr));
+    Log(("CPU%d: apicMMIOWrite at %RGp uValue=%#RX32\n", pApic->phys_id, GCPhysAddr, *(uint32_t const *)pv));
     Assert(cb == 4);
 
     /** @todo add LAPIC range validity checks (multiple LAPICs can theoretically
