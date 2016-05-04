@@ -4254,6 +4254,11 @@ DECLINLINE(void) hmR0SvmUpdateRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
     }
     else
         pCtx->rip += cb;
+
+    /* Update interrupt shadow. */
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 }
 
 
