@@ -835,23 +835,60 @@ int VBoxNetLwipNAT::init()
     m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
 
 
-    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
+    /*
+     * Bind outgoing connections to the specified IP.
+     */
     com::Bstr bstrSourceIpX;
+
+    /* IPv4 */
+    com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4", networkName.c_str());
     hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
-    if (SUCCEEDED(hrc))
+    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
     {
         RTNETADDRIPV4 addr;
         rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
         if (RT_SUCCESS(rc))
         {
-            RT_ZERO(m_src4);
-
             m_src4.sin_addr.s_addr = addr.u;
             m_ProxyOptions.src4 = &m_src4;
 
-            bstrSourceIpX.setNull();
+            LogRel(("Will use %RTnaipv4 as IPv4 source address\n",
+                    m_src4.sin_addr.s_addr));
         }
+        else
+        {
+            LogRel(("Failed to parse \"%s\" IPv4 source address specification\n",
+                    com::Utf8Str(bstrSourceIpX).c_str()));
+        }
+
+        bstrSourceIpX.setNull();
     }
+
+    /* IPv6 */
+    com::Bstr bstrSourceIp6Key = com::BstrFmt("NAT/%s/SourceIp6", networkName.c_str());
+    hrc = virtualbox->GetExtraData(bstrSourceIp6Key.raw(), bstrSourceIpX.asOutParam());
+    if (SUCCEEDED(hrc) && bstrSourceIpX.isNotEmpty())
+    {
+        RTNETADDRIPV6 addr;
+        char *pszZone = NULL;
+        rc = RTNetStrToIPv6Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr, &pszZone);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(&m_src6.sin6_addr, &addr, sizeof(addr));
+            m_ProxyOptions.src6 = &m_src6;
+
+            LogRel(("Will use %RTnaipv6 as IPv6 source address\n",
+                    &m_src6.sin6_addr));
+        }
+        else
+        {
+            LogRel(("Failed to parse \"%s\" IPv6 source address specification\n",
+                    com::Utf8Str(bstrSourceIpX).c_str()));
+        }
+
+        bstrSourceIpX.setNull();
+    }
+
 
     if (!fDontLoadRulesOnStartup)
     {
