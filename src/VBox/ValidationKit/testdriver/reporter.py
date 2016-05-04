@@ -458,9 +458,9 @@ class LocalReporter(ReporterBase):
             oDstFile.close();
 
             # Leave a mark in the XML log.
-            self._xmlWrite('<LogFile timestamp="%s" filename="%s" source="%s" kind="%s" ok="%s">%s</LogFile>\n'
+            self._xmlWrite(['<LogFile timestamp="%s" filename="%s" source="%s" kind="%s" ok="%s">%s</LogFile>\n'
                 % (utils.getIsoTimestamp(), self._xmlEscAttr(os.path.basename(sDstFilename)), self._xmlEscAttr(sSrcFilename), \
-                   self._xmlEscAttr(sKind), fRc, self._xmlEscAttr(sDescription)) );
+                   self._xmlEscAttr(sKind), fRc, self._xmlEscAttr(sDescription))] );
         _ = sAltName;
         return fRc;
 
