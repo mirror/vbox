@@ -982,6 +982,7 @@ static int dbgcReadConfig(PDBGC pDbgc, PUVM pUVM)
      */
     PCFGMNODE pNode = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "DBGC");
     int rc = CFGMR3ValidateConfig(pNode, "/DBGC/",
+                                  "Enabled|"
                                   "HistoryFile|"
                                   "LocalInitScript|"
                                   "GlobalInitScript",
