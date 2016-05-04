@@ -321,12 +321,32 @@ void UIFilePathSelector::changePath(const QString &strPath,
 
 void UIFilePathSelector::selectPath()
 {
-    /* Preparing initial directory. */
-    QString strInitDir = m_strPath.isNull() ? m_strHomeDir :
-                         QIFileDialog::getFirstExistingDir(m_strPath);
+    /* Prepare initial directory: */
+    QString strInitDir;
+    /* If something already chosen: */
+    if (!m_strPath.isEmpty())
+    {
+        /* If that is just a single file/folder (object) name: */
+        const QString strObjectName = QFileInfo(m_strPath).fileName();
+        if (strObjectName == m_strPath)
+        {
+            /* Use the home directory: */
+            strInitDir = m_strHomeDir;
+        }
+        /* If that is full file/folder (object) path: */
+        else
+        {
+            /* Use the first existing dir of m_strPath: */
+            strInitDir = QIFileDialog::getFirstExistingDir(m_strPath);
+        }
+        /* Finally, append object name itself: */
+        strInitDir = QDir(strInitDir).absoluteFilePath(strObjectName);
+    }
+    /* Use the home directory by default: */
     if (strInitDir.isNull())
         strInitDir = m_strHomeDir;
 
+    /* Open the choose-file/folder dialog: */
     QString strSelPath;
     switch (m_enmMode)
     {
@@ -343,10 +363,14 @@ void UIFilePathSelector::selectPath()
             strSelPath = QIFileDialog::getExistingDirectory(strInitDir, parentWidget(), m_strFileDialogTitle); break;
     }
 
+    /* Do nothing if nothing chosen: */
     if (strSelPath.isNull())
         return;
 
+    /* Wipe out excessive slashes: */
     strSelPath.remove(QRegExp("[\\\\/]$"));
+
+    /* Apply chosen path: */
     changePath(strSelPath);
 }
 
