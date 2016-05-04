@@ -419,6 +419,8 @@ typedef struct APICDEV
     PCPDMAPICHLPR3              pApicHlpR3;
     /** The PDM critical section - R3 Ptr. */
     R3PTRTYPE(PPDMCRITSECT)     pCritSectR3;
+    /** Alignment. */
+    R3PTRTYPE(void *)           pvAlignment0;
 
     /** The device instance - R0 Ptr. */
     PPDMDEVINSR0                pDevInsR0;
@@ -426,6 +428,8 @@ typedef struct APICDEV
     PCPDMAPICHLPR0              pApicHlpR0;
     /** The PDM critical section - R0 Ptr. */
     R0PTRTYPE(PPDMCRITSECT)     pCritSectR0;
+    /** Alignment. */
+    R0PTRTYPE(void *)           pvAlignment1;
 
     /** The device instance - RC Ptr. */
     PPDMDEVINSRC                pDevInsRC;
@@ -434,7 +438,7 @@ typedef struct APICDEV
     /** The PDM critical section - RC Ptr. */
     RCPTRTYPE(PPDMCRITSECT) pCritSectRC;
     /** Alignment padding. */
-    RCPTRTYPE(void *)           pvAlignment0;
+    RCPTRTYPE(void *)           pvAlignment2;
 } APICDEV;
 /** Pointer to an APIC device. */
 typedef APICDEV *PAPICDEV;
