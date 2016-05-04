@@ -219,14 +219,17 @@ bool UIWizardNewVMPage1::createMachineFolder()
 
     /* Get VBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Get default machines directory: */
-    QString strDefaultMachinesFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    /* Get default machine folder: */
+    const QString strDefaultMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
     /* Compose machine filename: */
-    QString strMachineFilename = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(), m_strGroup, QString::null, strDefaultMachinesFolder);
+    const QString strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
+                                                                   m_strGroup,
+                                                                   QString(),
+                                                                   strDefaultMachineFolder);
     /* Compose machine folder/basename: */
-    QFileInfo fileInfo(strMachineFilename);
-    QString strMachineFolder = fileInfo.absolutePath();
-    QString strMachineBaseName = fileInfo.completeBaseName();
+    const QFileInfo fileInfo(strMachineFilePath);
+    const QString strMachineFolder = fileInfo.absolutePath();
+    const QString strMachineBaseName = fileInfo.completeBaseName();
 
     /* Make sure that folder doesn't exists: */
     if (QDir(strMachineFolder).exists())
