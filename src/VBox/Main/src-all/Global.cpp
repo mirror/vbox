@@ -360,19 +360,19 @@ const Global::OSType Global::sOSTypes[] =
     { "MacOS",   "Mac OS X",          "MacOS109_64",        "Mac OS X 10.9 Mavericks (64-bit)", /* Not to be confused with McCain. */
       VBOXOSTYPE_MacOS109_x64,    VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
-      2048,   4, 20 * _1G64, NetworkAdapterType_I82545EM, 0,
+      2048,   4, 25 * _1G64, NetworkAdapterType_I82545EM, 0,
       StorageControllerType_IntelAhci, StorageBus_SATA, StorageControllerType_IntelAhci, StorageBus_SATA,
       ChipsetType_ICH9, AudioControllerType_HDA, AudioCodecType_STAC9221  },
     { "MacOS",   "Mac OS X",          "MacOS1010_64",       "Mac OS X 10.10 Yosemite (64-bit)",
       VBOXOSTYPE_MacOS1010_x64,   VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
-      2048,   4, 20 * _1G64, NetworkAdapterType_I82545EM, 0,
+      2048,   4, 25 * _1G64, NetworkAdapterType_I82545EM, 0,
       StorageControllerType_IntelAhci, StorageBus_SATA, StorageControllerType_IntelAhci, StorageBus_SATA,
       ChipsetType_ICH9, AudioControllerType_HDA, AudioCodecType_STAC9221  },
     { "MacOS",   "Mac OS X",          "MacOS1011_64",       "Mac OS X 10.11 El Capitan (64-bit)",
       VBOXOSTYPE_MacOS1011_x64,   VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
-      2048,   4, 20 * _1G64, NetworkAdapterType_I82545EM, 0,
+      2048,   4, 30 * _1G64, NetworkAdapterType_I82545EM, 0,
       StorageControllerType_IntelAhci, StorageBus_SATA, StorageControllerType_IntelAhci, StorageBus_SATA,
       ChipsetType_ICH9, AudioControllerType_HDA, AudioCodecType_STAC9221  },
     { "Other",   "Other",             "DOS",                "DOS",
