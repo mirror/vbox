@@ -18,17 +18,17 @@
 #ifndef ___UIFilePathSelector_h___
 #define ___UIFilePathSelector_h___
 
-/* GUI includes: */
-#include "QIWithRetranslateUI.h"
-
 /* Qt includes: */
 #include <QComboBox>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Forward declarations: */
+class QAction;
+class QHBoxLayout;
 class QILabel;
 class QILineEdit;
-class QHBoxLayout;
-class QAction;
 class QIToolButton;
 
 
@@ -37,6 +37,11 @@ class QIToolButton;
 class UIFilePathSelector: public QIWithRetranslateUI<QComboBox>
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notify listeners about @a strPath changed. */
+    void pathChanged(const QString &strPath);
 
 public:
 
@@ -50,13 +55,11 @@ public:
 
     /** Constructs file-path selector passing @a pParent to QComboBox base-class. */
     UIFilePathSelector(QWidget *pParent = 0);
-    /** Destructs file-path selector. */
-    ~UIFilePathSelector();
 
     /** Defines the @a enmMode to operate in. */
-    void setMode(Mode enmMode);
+    void setMode(Mode enmMode) { m_enmMode = enmMode; }
     /** Returns the mode to operate in. */
-    Mode mode() const;
+    Mode mode() const { return m_enmMode; }
 
     /** Defines whether the path is @a fEditable. */
     void setEditable(bool fEditable);
@@ -69,34 +72,29 @@ public:
     bool isResetEnabled() const;
 
     /** Defines the file-dialog @a strTitle. */
-    void setFileDialogTitle(const QString &strTitle);
+    void setFileDialogTitle(const QString &strTitle) { m_strFileDialogTitle = strTitle; }
     /** Returns the file-dialog title. */
-    QString fileDialogTitle() const;
+    QString fileDialogTitle() const { return m_strFileDialogTitle; }
 
     /** Defines the file-dialog @a strFilters. */
-    void setFileDialogFilters(const QString &strFilters);
+    void setFileDialogFilters(const QString &strFilters) { m_strFileDialogFilters = strFilters; }
     /** Returns the file-dialog filters. */
-    QString fileDialogFilters() const;
+    QString fileDialogFilters() const { return m_strFileDialogFilters; }
 
     /** Defines the file-dialog @a strDefaultSaveExtension. */
-    void setFileDialogDefaultSaveExtension(const QString &strDefaultSaveExtension);
+    void setFileDialogDefaultSaveExtension(const QString &strDefaultSaveExtension) { m_strFileDialogDefaultSaveExtension = strDefaultSaveExtension; }
     /** Returns the file-dialog default save extension. */
-    QString fileDialogDefaultSaveExtension() const;
+    QString fileDialogDefaultSaveExtension() const { return m_strFileDialogDefaultSaveExtension; }
 
     /** Resets path modified state to false. */
-    void resetModified();
+    void resetModified() { m_fModified = false; }
     /** Returns whether the path is modified. */
-    bool isModified() const;
+    bool isModified() const { return m_fModified; }
     /** Returns whether the path is selected. */
     bool isPathSelected() const;
 
     /** Returns the path. */
     QString path() const;
-
-signals:
-
-    /** Notify listeners about @a strPath changed. */
-    void pathChanged(const QString &strPath);
 
 public slots:
 
@@ -108,6 +106,9 @@ public slots:
 
 protected:
 
+    /** Preprocesses every @a pEvent sent to @a pObject. */
+    bool eventFilter(QObject *pObject, QEvent *pEvent);
+
     /** Handles resize @a pEvent. */
     void resizeEvent(QResizeEvent *pEvent);
 
@@ -115,9 +116,6 @@ protected:
     void focusInEvent(QFocusEvent *pEvent);
     /** Handles focus-out @a pEvent. */
     void focusOutEvent(QFocusEvent *pEvent);
-
-    /** Preprocesses every @a pEvent sent to @a pObject. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
 
     /** Handles translation event. */
     void retranslateUi();
@@ -153,9 +151,6 @@ private:
     /** Shrinks the reflected text to @a iWidth pixels. */
     QString shrinkText(int iWidth) const;
 
-    /** Holds the copy action instance. */
-    QAction *m_pCopyAction;
-
     /** Holds the mode to operate in. */
     Mode     m_enmMode;
 
@@ -164,12 +159,12 @@ private:
     /** Holds the home dir. */
     QString  m_strHomeDir;
 
+    /** Holds the file-dialog title. */
+    QString  m_strFileDialogTitle;
     /** Holds the file-dialog filters. */
     QString  m_strFileDialogFilters;
     /** Holds the file-dialog default save extension. */
     QString  m_strFileDialogDefaultSaveExtension;
-    /** Holds the file-dialog title. */
-    QString  m_strFileDialogTitle;
 
     /** Holds the cached text for empty path. */
     QString  m_strNoneText;
@@ -178,14 +173,16 @@ private:
 
     /** Holds whether the path is editable. */
     bool     m_fEditable;
+    /** Holds whether the path is modified. */
+    bool     m_fModified;
 
     /** Holds whether we are in editable mode. */
     bool     m_fEditableMode;
     /** Holds whether we are expecting mouse events. */
     bool     m_fMouseAwaited;
 
-    /** Holds whether the path is modified. */
-    bool     m_fModified;
+    /** Holds the copy action instance. */
+    QAction *m_pCopyAction;
 };
 
 #endif /* !___UIFilePathSelector_h___ */

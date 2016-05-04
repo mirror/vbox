@@ -19,18 +19,6 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* GUI includes: */
-# include "QIFileDialog.h"
-# include "QIToolButton.h"
-# include "QILabel.h"
-# include "QILineEdit.h"
-# include "UIIconPool.h"
-# include "UIFilePathSelector.h"
-# include "VBoxGlobal.h"
-
-/* Other VBox includes: */
-# include <iprt/assert.h>
-
 /* Qt includes: */
 # include <QAction>
 # include <QApplication>
@@ -40,6 +28,18 @@
 # include <QHBoxLayout>
 # include <QLineEdit>
 # include <QTimer>
+
+/* GUI includes: */
+# include "QIFileDialog.h"
+# include "QILabel.h"
+# include "QILineEdit.h"
+# include "QIToolButton.h"
+# include "UIIconPool.h"
+# include "UIFilePathSelector.h"
+# include "VBoxGlobal.h"
+
+/* Other VBox includes: */
+# include <iprt/assert.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -67,13 +67,13 @@ static int differFrom(const QString &str1, const QString &str2)
 
 UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QComboBox>(pParent)
-    , m_pCopyAction(new QAction(this))
     , m_enmMode(Mode_Folder)
     , m_strHomeDir(QDir::current().absolutePath())
     , m_fEditable(true)
+    , m_fModified(false)
     , m_fEditableMode(false)
     , m_fMouseAwaited(false)
-    , m_fModified(false)
+    , m_pCopyAction(new QAction(this))
 {
     /* Populate items: */
     insertItem(PathId, "");
@@ -103,20 +103,6 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
 
     /* Applying language settings: */
     retranslateUi();
-}
-
-UIFilePathSelector::~UIFilePathSelector()
-{
-}
-
-void UIFilePathSelector::setMode(Mode enmMode)
-{
-    m_enmMode = enmMode;
-}
-
-UIFilePathSelector::Mode UIFilePathSelector::mode() const
-{
-    return m_enmMode;
 }
 
 void UIFilePathSelector::setEditable(bool fEditable)
@@ -168,46 +154,6 @@ bool UIFilePathSelector::isResetEnabled() const
     return (count() - 1  == ResetId);
 }
 
-void UIFilePathSelector::resetModified()
-{
-    m_fModified = false;
-}
-
-bool UIFilePathSelector::isModified() const
-{
-    return m_fModified;
-}
-
-void UIFilePathSelector::setFileDialogTitle(const QString& strTitle)
-{
-    m_strFileDialogTitle = strTitle;
-}
-
-QString UIFilePathSelector::fileDialogTitle() const
-{
-    return m_strFileDialogTitle;
-}
-
-void UIFilePathSelector::setFileDialogFilters(const QString& strFilters)
-{
-    m_strFileDialogFilters = strFilters;
-}
-
-QString UIFilePathSelector::fileDialogFilters() const
-{
-    return m_strFileDialogFilters;
-}
-
-void UIFilePathSelector::setFileDialogDefaultSaveExtension(const QString &strDefaultSaveExtension)
-{
-    m_strFileDialogDefaultSaveExtension = strDefaultSaveExtension;
-}
-
-QString UIFilePathSelector::fileDialogDefaultSaveExtension() const
-{
-    return m_strFileDialogDefaultSaveExtension;
-}
-
 bool UIFilePathSelector::isPathSelected() const
 {
     return (currentIndex() == PathId);
@@ -229,6 +175,14 @@ void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = 
 void UIFilePathSelector::setHomeDir(const QString &strHomeDir)
 {
     m_strHomeDir = strHomeDir;
+}
+
+bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
+        QTimer::singleShot(0, this, SLOT(refreshText()));
+
+    return QIWithRetranslateUI<QComboBox>::eventFilter(pObject, pEvent);
 }
 
 void UIFilePathSelector::resizeEvent(QResizeEvent *pEvent)
@@ -259,14 +213,6 @@ void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
         refreshText();
     }
     QIWithRetranslateUI<QComboBox>::focusOutEvent(pEvent);
-}
-
-bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
-        QTimer::singleShot(0, this, SLOT(refreshText()));
-
-    return QIWithRetranslateUI<QComboBox>::eventFilter(pObject, pEvent);
 }
 
 void UIFilePathSelector::retranslateUi()
