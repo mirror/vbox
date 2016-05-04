@@ -670,6 +670,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
 #else
             /* We need to return to ring-3 to deliver the SIPI. */
             rcStrict = rcRZ;
+            Log2(("APIC: apicSendIntr: SIPI issued, returning to RZ. rc=%Rrc\n", rcRZ));
 #endif
             break;
         }
@@ -923,7 +924,7 @@ static void apicGetDestCpuSet(PVM pVM, uint32_t fDestMask, uint32_t fBroadcastMa
  * @param   rcRZ            The return code if the operation cannot be
  *                          performed in the current context.
  */
-static VBOXSTRICTRC apicSendIpi(PVMCPU pVCpu, int rcRZ)
+DECLINLINE(VBOXSTRICTRC) apicSendIpi(PVMCPU pVCpu, int rcRZ)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
