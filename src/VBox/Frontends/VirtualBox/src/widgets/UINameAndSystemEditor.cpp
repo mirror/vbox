@@ -40,6 +40,15 @@ enum
 
 UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_fSupportsHWVirtEx(false)
+    , m_fSupportsLongMode(false)
+    , m_pLabelName(0)
+    , m_pLabelFamily(0)
+    , m_pLabelType(0)
+    , m_pIconType(0)
+    , m_pEditorName(0)
+    , m_pComboFamily(0)
+    , m_pComboType(0)
 {
     /* Prepare: */
     prepare();
