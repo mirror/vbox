@@ -90,7 +90,7 @@ HRESULT VRDEServer::init(Machine *aParent)
     mData.allocate();
 
     mData->mAuthType             = AuthType_Null;
-    mData->mAuthTimeout          = 0;
+    mData->mAuthTimeout          = 5000;
     mData->mAuthLibrary.setNull();
     mData->mEnabled              = FALSE;
     mData->mAllowMultiConnection = FALSE;
