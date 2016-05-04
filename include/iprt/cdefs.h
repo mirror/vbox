@@ -155,13 +155,68 @@
 
 /** @def RT_GNUC_PREREQ
  * Shorter than fiddling with __GNUC__ and __GNUC_MINOR__.
+ *
+ * @param   a_MinMajor      Minimum major version
+ * @param   a_MinMinor      The minor version number part.
+ */
+#define RT_GNUC_PREREQ(a_MinMajor, a_MinMinor)      RT_GNUC_PREREQ_EX(a_MinMajor, a_MinMinor, 0)
+/** @def RT_GNUC_PREREQ_EX
+ * Simplified way of checking __GNUC__ and __GNUC_MINOR__ regardless of actual
+ * compiler used, returns @a a_OtherRet for other compilers.
+ *
+ * @param   a_MinMajor      Minimum major version
+ * @param   a_MinMinor      The minor version number part.
+ * @param   a_OtherRet      What to return for non-GCC compilers.
  */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
-# define RT_GNUC_PREREQ(major, minor) \
-    ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((major) << 16) + (minor))
+# define RT_GNUC_PREREQ_EX(a_MinMajor, a_MinMinor, a_OtherRet) \
+    ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((a_MinMajor) << 16) + (a_MinMinor))
 #else
-# define RT_GNUC_PREREQ(major, minor) 0
+# define RT_GNUC_PREREQ_EX(a_MinMajor, a_MinMinor, a_OtherRet) (a_OtherRet)
 #endif
+
+/** @def RT_MSC_PREREQ
+ * Convenient way of checking _MSC_VER regardless of actual compiler used
+ * (returns false if not MSC).
+ *
+ * @param   a_MinVer        Preferably a RT_MSC_VER_XXX value.
+ */
+#define RT_MSC_PREREQ(a_MinVer)                     RT_MSC_PREREQ_EX(a_MinVer, 0)
+/** @def RT_MSC_PREREQ_EX
+ * Convenient way of checking _MSC_VER regardless of actual compiler used,
+ * returns @a a_OtherRet for other compilers.
+ *
+ * @param   a_MinVer        Preferably a RT_MSC_VER_XXX value.
+ * @param   a_OtherRet      What to return for non-MSC compilers.
+ */
+#if defined(_MSC_VER)
+# define RT_MSC_PREREQ_EX(a_MinVer, a_OtherRet)     ( (_MSC_VER) >= (a_MinVer) )
+#else
+# define RT_MSC_PREREQ_EX(a_MinVer, a_OtherRet)     (a_OtherRet)
+#endif
+/** @name RT_MSC_VER_XXX - _MSC_VER values to use with RT_MSC_PREREQ.
+ * @remarks The VCxxx values are derived from the CRT DLLs shipping with the
+ *          compilers.
+ * @{ */
+#define RT_MSC_VER_VC50     (1100)              /**< Visual C++ 5.0. */
+#define RT_MSC_VER_VC60     (1200)              /**< Visual C++ 6.0. */
+#define RT_MSC_VER_VC70     (1300)              /**< Visual C++ 7.0. */
+#define RT_MSC_VER_VC70     (1300)              /**< Visual C++ 7.0. */
+#define RT_MSC_VER_VS2003   (1310)              /**< Visual Studio 2003, aka Visual C++ 7.1. */
+#define RT_MSC_VER_VC71     RT_MSC_VER_VS2003   /**< Visual C++ 7.1, aka Visual Studio 2003. */
+#define RT_MSC_VER_VS2005   (1400)              /**< Visual Studio 2005. */
+#define RT_MSC_VER_VC80     RT_MSC_VER_VS2005   /**< Visual C++ 8.0, aka Visual Studio 2008. */
+#define RT_MSC_VER_VS2008   (1500)              /**< Visual Studio 2008. */
+#define RT_MSC_VER_VC90     RT_MSC_VER_VS2008   /**< Visual C++ 9.0, aka Visual Studio 2008. */
+#define RT_MSC_VER_VS2010   (1600)              /**< Visual Studio 2010. */
+#define RT_MSC_VER_VC100    RT_MSC_VER_VS2010   /**< Visual C++ 10.0, aka Visual Studio 2010. */
+#define RT_MSC_VER_VS2012   (1700)              /**< Visual Studio 2012. */
+#define RT_MSC_VER_VC110    RT_MSC_VER_VS2012   /**< Visual C++ 11.0, aka Visual Studio 2012. */
+#define RT_MSC_VER_VS2013   (1800)              /**< Visual Studio 2013. */
+#define RT_MSC_VER_VC120    RT_MSC_VER_VS2013   /**< Visual C++ 12.0, aka Visual Studio 2013. */
+#define RT_MSC_VER_VS2015   (1900)              /**< Visual Studio 2015. */
+#define RT_MSC_VER_VC140    RT_MSC_VER_VS2015   /**< Visual C++ 14.0, aka Visual Studio 2015. */
+/** @} */
 
 /** @def __X86__
  * Indicates that we're compiling for the X86 architecture.
