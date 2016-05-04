@@ -417,7 +417,7 @@
   </sect1>
 
   <sect1 id="network_nat_service">
-    <title>Network Address Translation Service (experimental)</title>
+    <title>Network Address Translation Service</title>
 
     <para>The Network Address Translation (NAT) service works in a similar way
     to a home router, grouping the systems using it into a network and
