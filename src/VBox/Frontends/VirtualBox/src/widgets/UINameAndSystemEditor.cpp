@@ -28,6 +28,10 @@
 
 /* GUI includes: */
 # include "UINameAndSystemEditor.h"
+# include "UIFilePathSelector.h"
+
+/* COM includes: */
+# include "CSystemProperties.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -38,8 +42,9 @@ enum
 };
 
 
-UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
+UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_fChooseLocation(fChooseLocation)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
     , m_pLabelName(0)
@@ -47,6 +52,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent)
     , m_pLabelType(0)
     , m_pIconType(0)
     , m_pEditorName(0)
+    , m_pEditorLocation(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
@@ -94,15 +100,34 @@ void UINameAndSystemEditor::prepareWidgets()
             pMainLayout->addWidget(m_pLabelName, 0, 0);
         }
 
-        /* Create VM name editor: */
-        m_pEditorName = new QLineEdit;
-        AssertPtrReturnVoid(m_pEditorName);
+        if (!m_fChooseLocation)
         {
-            /* Configure VM name editor: */
-            m_pEditorName->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            m_pLabelName->setBuddy(m_pEditorName);
-            /* Add VM name editor into main-layout: */
-            pMainLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
+            /* Create VM name editor: */
+            m_pEditorName = new QLineEdit;
+            AssertPtrReturnVoid(m_pEditorName);
+            {
+                /* Configure VM name editor: */
+                m_pEditorName->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pLabelName->setBuddy(m_pEditorName);
+                /* Add VM name editor into main-layout: */
+                pMainLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
+            }
+        }
+        else
+        {
+            /* Create VM location editor: */
+            m_pEditorLocation = new UIFilePathSelector;
+            AssertPtrReturnVoid(m_pEditorLocation);
+            {
+                /* Configure advanced VM name editor: */
+                m_pEditorLocation->setResetEnabled(false);
+                m_pEditorLocation->setMode(UIFilePathSelector::Mode_File_Save);
+                m_pEditorLocation->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                m_pEditorLocation->setHomeDir(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                m_pLabelName->setBuddy(m_pEditorLocation);
+                /* Add advanced VM name editor into main-layout: */
+                pMainLayout->addWidget(m_pEditorLocation, 0, 1, 1, 2);
+            }
         }
 
         /* Create VM OS family label: */
@@ -195,19 +220,28 @@ void UINameAndSystemEditor::prepareFamilyCombo()
 void UINameAndSystemEditor::prepareConnections()
 {
     /* Prepare connections: */
-    connect(m_pEditorName, SIGNAL(textChanged(const QString &)), this, SIGNAL(sigNameChanged(const QString &)));
+    if (!m_fChooseLocation)
+        connect(m_pEditorName, SIGNAL(textChanged(const QString &)), this, SIGNAL(sigNameChanged(const QString &)));
+    else
+        connect(m_pEditorLocation, SIGNAL(pathChanged(const QString &)), this, SIGNAL(sigNameChanged(const QString &)));
     connect(m_pComboFamily, SIGNAL(currentIndexChanged(int)), this, SLOT(sltFamilyChanged(int)));
     connect(m_pComboType, SIGNAL(currentIndexChanged(int)), this, SLOT(sltTypeChanged(int)));
 }
 
 QString UINameAndSystemEditor::name() const
 {
-    return m_pEditorName->text();
+    if (!m_fChooseLocation)
+        return m_pEditorName->text();
+    else
+        return m_pEditorLocation->path();
 }
 
 void UINameAndSystemEditor::setName(const QString &strName)
 {
-    m_pEditorName->setText(strName);
+    if (!m_fChooseLocation)
+        m_pEditorName->setText(strName);
+    else
+        m_pEditorLocation->setPath(strName);
 }
 
 CGuestOSType UINameAndSystemEditor::type() const
@@ -239,7 +273,10 @@ void UINameAndSystemEditor::retranslateUi()
     m_pLabelName->setText(tr("N&ame:"));
     m_pLabelFamily->setText(tr("&Type:"));
     m_pLabelType->setText(tr("&Version:"));
-    m_pEditorName->setWhatsThis(tr("Holds the name of the virtual machine."));
+    if (!m_fChooseLocation)
+        m_pEditorName->setWhatsThis(tr("Holds the name of the virtual machine."));
+    else
+        m_pEditorLocation->setWhatsThis(tr("Holds the location of the virtual machine."));
     m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
                                     "you plan to install into this virtual machine."));
     m_pComboType->setWhatsThis(tr("Selects the operating system type that "

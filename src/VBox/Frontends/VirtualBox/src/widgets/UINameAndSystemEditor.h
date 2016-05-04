@@ -29,6 +29,7 @@
 class QLabel;
 class QLineEdit;
 class QComboBox;
+class UIFilePathSelector;
 
 /** QWidget extension providing complex editor for basic VM parameters. */
 class UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
@@ -47,8 +48,9 @@ signals:
 
 public:
 
-    /** Constructs VM parameters editor on the basis of passed @a pParent. */
-    UINameAndSystemEditor(QWidget *pParent);
+    /** Constructs VM parameters editor on the basis of passed @a pParent.
+      * @param fChooseFullPath determine whether we should propose to choose location. */
+    UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false);
 
     /** Returns the VM name editor. */
     QLineEdit* nameEditor() const { return m_pEditorName; }
@@ -96,6 +98,8 @@ private:
     CGuestOSType            m_type;
     /** Holds the currently chosen OS type IDs on per-family basis. */
     QMap<QString, QString>  m_currentIds;
+    /** Holds whether we should propose to choose a full path. */
+    bool                    m_fChooseLocation;
     /** Holds whether host supports hardware virtualization. */
     bool                    m_fSupportsHWVirtEx;
     /** Holds whether host supports long mode. */
@@ -111,6 +115,8 @@ private:
     QLabel                 *m_pIconType;
     /** Holds the VM name editor instance. */
     QLineEdit              *m_pEditorName;
+    /** Holds the VM location editor instance. */
+    UIFilePathSelector     *m_pEditorLocation;
     /** Holds the VM OS family combo instance. */
     QComboBox              *m_pComboFamily;
     /** Holds the VM OS type combo instance. */
