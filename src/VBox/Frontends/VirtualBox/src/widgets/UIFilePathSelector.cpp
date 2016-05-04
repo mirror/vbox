@@ -52,56 +52,56 @@ enum
 
 
 /** Returns first position of difference between passed strings. */
-static int differFrom (const QString &aS1, const QString &aS2)
+static int differFrom(const QString &str1, const QString &str2)
 {
-    if (aS1 == aS2)
+    if (str1 == str2)
         return -1;
 
-    int minLength = qMin (aS1.size(), aS2.size());
-    int index = 0;
-    for (index = 0; index < minLength ; ++ index)
-        if (aS1 [index] != aS2 [index])
+    int iMinLength = qMin(str1.size(), str2.size());
+    int iIndex = 0;
+    for (iIndex = 0; iIndex < iMinLength; ++iIndex)
+        if (str1[iIndex] != str2[iIndex])
             break;
-    return index;
+    return iIndex;
 }
 
-UIFilePathSelector::UIFilePathSelector (QWidget *aParent)
-    : QIWithRetranslateUI<QComboBox> (aParent)
-    , mCopyAction (new QAction (this))
-    , mMode (Mode_Folder)
-    , mHomeDir (QDir::current().absolutePath())
-    , mIsEditable (true)
-    , mIsEditableMode (false)
-    , mIsMouseAwaited (false)
-    , mModified (false)
+UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QComboBox>(pParent)
+    , m_pCopyAction(new QAction(this))
+    , m_enmMode(Mode_Folder)
+    , m_strHomeDir(QDir::current().absolutePath())
+    , m_fEditable(true)
+    , m_fEditableMode(false)
+    , m_fMouseAwaited(false)
+    , m_fModified(false)
 {
-    /* Populate items */
-    insertItem (PathId, "");
-    insertItem (SelectId, "");
-    insertItem (ResetId, "");
+    /* Populate items: */
+    insertItem(PathId, "");
+    insertItem(SelectId, "");
+    insertItem(ResetId, "");
 
-    /* Attaching known icons */
+    /* Attaching known icons: */
     setItemIcon(SelectId, UIIconPool::iconSet(":/select_file_16px.png"));
     setItemIcon(ResetId, UIIconPool::iconSet(":/eraser_16px.png"));
 
-    /* Setup context menu */
-    addAction (mCopyAction);
-    mCopyAction->setShortcut (QKeySequence (QKeySequence::Copy));
-    mCopyAction->setShortcutContext (Qt::WidgetShortcut);
+    /* Setup context menu: */
+    addAction(m_pCopyAction);
+    m_pCopyAction->setShortcut(QKeySequence(QKeySequence::Copy));
+    m_pCopyAction->setShortcutContext(Qt::WidgetShortcut);
 
-    /* Initial Setup */
-    setInsertPolicy (QComboBox::NoInsert);
-    setContextMenuPolicy (Qt::ActionsContextMenu);
-    setMinimumWidth (200);
+    /* Initial setup: */
+    setInsertPolicy(QComboBox::NoInsert);
+    setContextMenuPolicy(Qt::ActionsContextMenu);
+    setMinimumWidth(200);
 
-    /* Setup connections */
-    connect (this, SIGNAL (activated (int)), this, SLOT (onActivated (int)));
-    connect (mCopyAction, SIGNAL (triggered (bool)), this, SLOT (copyToClipboard()));
+    /* Setup connections: */
+    connect(this, SIGNAL(activated(int)), this, SLOT(onActivated(int)));
+    connect(m_pCopyAction, SIGNAL(triggered(bool)), this, SLOT(copyToClipboard()));
 
-    /* Editable by default */
-    setEditable (true);
+    /* Editable by default: */
+    setEditable(true);
 
-    /* Applying language settings */
+    /* Applying language settings: */
     retranslateUi();
 }
 
@@ -109,55 +109,55 @@ UIFilePathSelector::~UIFilePathSelector()
 {
 }
 
-void UIFilePathSelector::setMode (Mode aMode)
+void UIFilePathSelector::setMode(Mode enmMode)
 {
-    mMode = aMode;
+    m_enmMode = enmMode;
 }
 
 UIFilePathSelector::Mode UIFilePathSelector::mode() const
 {
-    return mMode;
+    return m_enmMode;
 }
 
-void UIFilePathSelector::setEditable (bool aOn)
+void UIFilePathSelector::setEditable(bool fEditable)
 {
-    mIsEditable = aOn;
+    m_fEditable = fEditable;
 
-    if (mIsEditable)
+    if (m_fEditable)
     {
-        QComboBox::setEditable (true);
-        Assert (lineEdit());
-        connect (lineEdit(), SIGNAL (textEdited (const QString &)),
-                 this, SLOT (onTextEdited (const QString &)));
+        QComboBox::setEditable(true);
+        Assert(lineEdit());
+        connect(lineEdit(), SIGNAL(textEdited(const QString &)),
+                this, SLOT(onTextEdited(const QString &)));
 
-        /* Installing necessary event filters */
-        lineEdit()->installEventFilter (this);
+        /* Installing necessary event filters: */
+        lineEdit()->installEventFilter(this);
     }
     else
     {
         if (lineEdit())
         {
-            /* Installing necessary event filters */
-            lineEdit()->installEventFilter (this);
-            disconnect (lineEdit(), SIGNAL (textEdited (const QString &)),
-                        this, SLOT (onTextEdited (const QString &)));
+            /* Installing necessary event filters: */
+            lineEdit()->installEventFilter(this);
+            disconnect(lineEdit(), SIGNAL(textEdited(const QString &)),
+                       this, SLOT(onTextEdited(const QString &)));
         }
-        QComboBox::setEditable (false);
+        QComboBox::setEditable(false);
     }
 }
 
 bool UIFilePathSelector::isEditable() const
 {
-    return mIsEditable;
+    return m_fEditable;
 }
 
-void UIFilePathSelector::setResetEnabled (bool aEnabled)
+void UIFilePathSelector::setResetEnabled(bool fEnabled)
 {
-    if (!aEnabled && count() - 1 == ResetId)
-        removeItem (ResetId);
-    else if (aEnabled && count() - 1 == ResetId - 1)
+    if (!fEnabled && count() - 1 == ResetId)
+        removeItem(ResetId);
+    else if (fEnabled && count() - 1 == ResetId - 1)
     {
-        insertItem (ResetId, "");
+        insertItem(ResetId, "");
         setItemIcon(ResetId, UIIconPool::iconSet(":/eraser_16px.png"));
     }
     retranslateUi();
@@ -170,42 +170,42 @@ bool UIFilePathSelector::isResetEnabled() const
 
 void UIFilePathSelector::resetModified()
 {
-    mModified = false;
+    m_fModified = false;
 }
 
 bool UIFilePathSelector::isModified() const
 {
-    return mModified;
+    return m_fModified;
 }
 
-void UIFilePathSelector::setFileDialogTitle (const QString& aTitle)
+void UIFilePathSelector::setFileDialogTitle(const QString& strTitle)
 {
-    mFileDialogTitle = aTitle;
+    m_strFileDialogTitle = strTitle;
 }
 
 QString UIFilePathSelector::fileDialogTitle() const
 {
-    return mFileDialogTitle;
+    return m_strFileDialogTitle;
 }
 
-void UIFilePathSelector::setFileFilters (const QString& aFilters)
+void UIFilePathSelector::setFileDialogFilters(const QString& strFilters)
 {
-    mFileFilters = aFilters;
+    m_strFileDialogFilters = strFilters;
 }
 
-QString UIFilePathSelector::fileFilters() const
+QString UIFilePathSelector::fileDialogFilters() const
 {
-    return mFileFilters;
+    return m_strFileDialogFilters;
 }
 
-void UIFilePathSelector::setDefaultSaveExt (const QString &aExt)
+void UIFilePathSelector::setFileDialogDefaultSaveExtension(const QString &strDefaultSaveExtension)
 {
-    mDefaultSaveExt = aExt;
+    m_strFileDialogDefaultSaveExtension = strDefaultSaveExtension;
 }
 
-QString UIFilePathSelector::defaultSaveExt() const
+QString UIFilePathSelector::fileDialogDefaultSaveExtension() const
 {
-    return mDefaultSaveExt;
+    return m_strFileDialogDefaultSaveExtension;
 }
 
 bool UIFilePathSelector::isPathSelected() const
@@ -215,58 +215,58 @@ bool UIFilePathSelector::isPathSelected() const
 
 QString UIFilePathSelector::path() const
 {
-    return mPath;
+    return m_strPath;
 }
 
-void UIFilePathSelector::setPath (const QString &aPath, bool aRefreshText /* = true */)
+void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = true */)
 {
-    mPath = aPath.isEmpty() ? QString::null :
-            QDir::toNativeSeparators (aPath);
-    if (aRefreshText)
+    m_strPath = strPath.isEmpty() ? QString::null :
+            QDir::toNativeSeparators(strPath);
+    if (fRefreshText)
         refreshText();
 }
 
-void UIFilePathSelector::setHomeDir (const QString &aHomeDir)
+void UIFilePathSelector::setHomeDir(const QString &strHomeDir)
 {
-    mHomeDir = aHomeDir;
+    m_strHomeDir = strHomeDir;
 }
 
-void UIFilePathSelector::resizeEvent (QResizeEvent *aEvent)
+void UIFilePathSelector::resizeEvent(QResizeEvent *pEvent)
 {
-    QIWithRetranslateUI<QComboBox>::resizeEvent (aEvent);
+    QIWithRetranslateUI<QComboBox>::resizeEvent(pEvent);
     refreshText();
 }
 
-void UIFilePathSelector::focusInEvent (QFocusEvent *aEvent)
+void UIFilePathSelector::focusInEvent(QFocusEvent *pEvent)
 {
     if (isPathSelected())
     {
-        if (mIsEditable)
-            mIsEditableMode = true;
-        if (aEvent->reason() == Qt::MouseFocusReason)
-            mIsMouseAwaited = true;
+        if (m_fEditable)
+            m_fEditableMode = true;
+        if (pEvent->reason() == Qt::MouseFocusReason)
+            m_fMouseAwaited = true;
         else
             refreshText();
     }
-    QIWithRetranslateUI<QComboBox>::focusInEvent (aEvent);
+    QIWithRetranslateUI<QComboBox>::focusInEvent(pEvent);
 }
 
-void UIFilePathSelector::focusOutEvent (QFocusEvent *aEvent)
+void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
 {
     if (isPathSelected())
     {
-        mIsEditableMode = false;
+        m_fEditableMode = false;
         refreshText();
     }
-    QIWithRetranslateUI<QComboBox>::focusOutEvent (aEvent);
+    QIWithRetranslateUI<QComboBox>::focusOutEvent(pEvent);
 }
 
-bool UIFilePathSelector::eventFilter (QObject *aObj, QEvent *aEv)
+bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    if (mIsMouseAwaited && (aEv->type() == QEvent::MouseButtonPress))
-        QTimer::singleShot (0, this, SLOT (refreshText()));
+    if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
+        QTimer::singleShot(0, this, SLOT(refreshText()));
 
-    return QIWithRetranslateUI<QComboBox>::eventFilter (aObj, aEv);
+    return QIWithRetranslateUI<QComboBox>::eventFilter(pObject, pEvent);
 }
 
 void UIFilePathSelector::retranslateUi()
@@ -274,63 +274,63 @@ void UIFilePathSelector::retranslateUi()
     /* How do we interpret the "nothing selected" item? */
     if (isResetEnabled())
     {
-        mNoneStr = tr ("<reset to default>");
-        mNoneTip = tr ("The actual default path value will be displayed after "
-                       "accepting the changes and opening this window again.");
+        m_strNoneText = tr("<reset to default>");
+        m_strNoneToolTip = tr("The actual default path value will be displayed after "
+                              "accepting the changes and opening this window again.");
     }
     else
     {
-        mNoneStr = tr ("<not selected>");
-        mNoneTip = tr ("Please use the <b>Other...</b> item from the drop-down "
-                       "list to select a path.");
+        m_strNoneText = tr("<not selected>");
+        m_strNoneToolTip = tr("Please use the <b>Other...</b> item from the drop-down "
+                              "list to select a path.");
     }
 
-    /* Retranslate 'path' item */
-    if (mPath.isNull())
+    /* Retranslate 'path' item: */
+    if (m_strPath.isNull())
     {
-        setItemText (PathId, mNoneStr);
-        setItemData (PathId, mNoneTip, Qt::ToolTipRole);
-        setToolTip (mNoneTip);
+        setItemText(PathId, m_strNoneText);
+        setItemData(PathId, m_strNoneToolTip, Qt::ToolTipRole);
+        setToolTip(m_strNoneToolTip);
     }
 
-    /* Retranslate 'select' item */
-    setItemText (SelectId, tr ("Other..."));
+    /* Retranslate 'select' item: */
+    setItemText(SelectId, tr("Other..."));
 
-    /* Retranslate 'reset' item */
+    /* Retranslate 'reset' item: */
     if (count() - 1 == ResetId)
-        setItemText (ResetId, tr ("Reset"));
+        setItemText(ResetId, tr("Reset"));
 
-    /* Set tooltips of the above two items based on the mode */
-    switch (mMode)
+    /* Set tooltips of the above two items based on the mode: */
+    switch (m_enmMode)
     {
         case Mode_Folder:
-            setItemData (SelectId,
-                         tr ("Displays a window to select a different folder."),
-                         Qt::ToolTipRole);
-            setItemData (ResetId,
-                         tr ("Resets the folder path to the default value."),
-                         Qt::ToolTipRole);
+            setItemData(SelectId,
+                        tr("Displays a window to select a different folder."),
+                        Qt::ToolTipRole);
+            setItemData(ResetId,
+                        tr("Resets the folder path to the default value."),
+                        Qt::ToolTipRole);
             break;
         case Mode_File_Open:
         case Mode_File_Save:
-            setItemData (SelectId,
-                         tr ("Displays a window to select a different file."),
-                         Qt::ToolTipRole);
-            setItemData (ResetId,
-                         tr ("Resets the file path to the default value."),
-                         Qt::ToolTipRole);
+            setItemData(SelectId,
+                        tr("Displays a window to select a different file."),
+                        Qt::ToolTipRole);
+            setItemData(ResetId,
+                        tr("Resets the file path to the default value."),
+                        Qt::ToolTipRole);
             break;
         default:
             AssertFailedBreak();
     }
 
-    /* Retranslate copy action */
-    mCopyAction->setText (tr ("&Copy"));
+    /* Retranslate copy action: */
+    m_pCopyAction->setText(tr("&Copy"));
 }
 
-void UIFilePathSelector::onActivated (int aIndex)
+void UIFilePathSelector::onActivated(int iIndex)
 {
-    switch (aIndex)
+    switch (iIndex)
     {
         case SelectId:
         {
@@ -339,215 +339,215 @@ void UIFilePathSelector::onActivated (int aIndex)
         }
         case ResetId:
         {
-            changePath (QString::null);
+            changePath(QString::null);
             break;
         }
         default:
             break;
     }
-    setCurrentIndex (PathId);
+    setCurrentIndex(PathId);
     setFocus();
 }
 
-void UIFilePathSelector::onTextEdited (const QString &aPath)
+void UIFilePathSelector::onTextEdited(const QString &strPath)
 {
-    changePath (aPath, false /* refresh text? */);
+    changePath(strPath, false /* refresh text? */);
 }
 
 void UIFilePathSelector::copyToClipboard()
 {
-    QString text (fullPath());
+    QString text(fullPath());
     /* Copy the current text to the selection and global clipboard. */
     if (QApplication::clipboard()->supportsSelection())
-        QApplication::clipboard()->setText (text, QClipboard::Selection);
-    QApplication::clipboard()->setText (text, QClipboard::Clipboard);
+        QApplication::clipboard()->setText(text, QClipboard::Selection);
+    QApplication::clipboard()->setText(text, QClipboard::Clipboard);
 }
 
-void UIFilePathSelector::changePath (const QString &aPath,
-                                             bool aRefreshText /* = true */)
+void UIFilePathSelector::changePath(const QString &strPath,
+                                    bool fRefreshText /* = true */)
 {
-    QString oldPath = mPath;
-    setPath (aPath, aRefreshText);
-    if (!mModified && mPath != oldPath)
-        mModified = true;
-    emit pathChanged (aPath);
+    const QString strOldPath = m_strPath;
+    setPath(strPath, fRefreshText);
+    if (!m_fModified && m_strPath != strOldPath)
+        m_fModified = true;
+    emit pathChanged(strPath);
 }
 
 void UIFilePathSelector::selectPath()
 {
     /* Preparing initial directory. */
-    QString initDir = mPath.isNull() ? mHomeDir :
-        QIFileDialog::getFirstExistingDir (mPath);
-    if (initDir.isNull())
-        initDir = mHomeDir;
+    QString strInitDir = m_strPath.isNull() ? m_strHomeDir :
+                         QIFileDialog::getFirstExistingDir(m_strPath);
+    if (strInitDir.isNull())
+        strInitDir = m_strHomeDir;
 
-    QString selPath;
-    switch (mMode)
+    QString strSelPath;
+    switch (m_enmMode)
     {
         case Mode_File_Open:
-            selPath = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+            strSelPath = QIFileDialog::getOpenFileName(strInitDir, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle); break;
         case Mode_File_Save:
-            {
-                selPath = QIFileDialog::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
-                if (!selPath.isEmpty() && QFileInfo (selPath).suffix().isEmpty())
-                    selPath = QString ("%1.%2").arg (selPath).arg (mDefaultSaveExt);
-                break;
-            }
+        {
+            strSelPath = QIFileDialog::getSaveFileName(strInitDir, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle);
+            if (!strSelPath.isEmpty() && QFileInfo(strSelPath).suffix().isEmpty())
+                strSelPath = QString("%1.%2").arg(strSelPath).arg(m_strFileDialogDefaultSaveExtension);
+            break;
+        }
         case Mode_Folder:
-            selPath = QIFileDialog::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
+            strSelPath = QIFileDialog::getExistingDirectory(strInitDir, parentWidget(), m_strFileDialogTitle); break;
     }
 
-    if (selPath.isNull())
+    if (strSelPath.isNull())
         return;
 
-    selPath.remove (QRegExp ("[\\\\/]$"));
-    changePath (selPath);
+    strSelPath.remove(QRegExp("[\\\\/]$"));
+    changePath(strSelPath);
 }
 
 QIcon UIFilePathSelector::defaultIcon() const
 {
-    if (mMode == Mode_Folder)
+    if (m_enmMode == Mode_Folder)
         return vboxGlobal().icon(QFileIconProvider::Folder);
     else
         return vboxGlobal().icon(QFileIconProvider::File);
 }
 
-QString UIFilePathSelector::fullPath (bool aAbsolute /* = true */) const
+QString UIFilePathSelector::fullPath(bool fAbsolute /* = true */) const
 {
-    if (mPath.isNull())
-        return mPath;
+    if (m_strPath.isNull())
+        return m_strPath;
 
-    QString result;
-    switch (mMode)
+    QString strResult;
+    switch (m_enmMode)
     {
         case Mode_Folder:
-            result = aAbsolute ? QDir (mPath).absolutePath() :
-                                 QDir (mPath).path();
+            strResult = fAbsolute ? QDir(m_strPath).absolutePath() :
+                                    QDir(m_strPath).path();
             break;
         case Mode_File_Open:
         case Mode_File_Save:
-            result = aAbsolute ? QFileInfo (mPath).absoluteFilePath() :
-                                 QFileInfo (mPath).filePath();
+            strResult = fAbsolute ? QFileInfo(m_strPath).absoluteFilePath() :
+                                    QFileInfo(m_strPath).filePath();
             break;
         default:
             AssertFailedBreak();
     }
-    return QDir::toNativeSeparators (result);
+    return QDir::toNativeSeparators(strResult);
 }
 
-QString UIFilePathSelector::shrinkText (int aWidth) const
+QString UIFilePathSelector::shrinkText(int iWidth) const
 {
-    QString fullText (fullPath (false));
-    if (fullText.isEmpty())
-        return fullText;
+    QString strFullText(fullPath(false));
+    if (strFullText.isEmpty())
+        return strFullText;
 
-    int oldSize = fontMetrics().width (fullText);
-    int indentSize = fontMetrics().width ("x...x");
+    int iOldSize = fontMetrics().width(strFullText);
+    int iIndentSize = fontMetrics().width("x...x");
 
-    /* Compress text */
-    int start = 0;
-    int finish = 0;
-    int position = 0;
-    int textWidth = 0;
+    /* Compress text: */
+    int iStart = 0;
+    int iFinish = 0;
+    int iPosition = 0;
+    int iTextWidth = 0;
     do {
-        textWidth = fontMetrics().width (fullText);
-        if (textWidth + indentSize > aWidth)
+        iTextWidth = fontMetrics().width(strFullText);
+        if (iTextWidth + iIndentSize > iWidth)
         {
-            start = 0;
-            finish = fullText.length();
+            iStart = 0;
+            iFinish = strFullText.length();
 
-            /* Selecting remove position */
-            QRegExp regExp ("([\\\\/][^\\\\^/]+[\\\\/]?$)");
-            int newFinish = regExp.indexIn (fullText);
-            if (newFinish != -1)
-                finish = newFinish;
-            position = (finish - start) / 2;
+            /* Selecting remove position: */
+            QRegExp regExp("([\\\\/][^\\\\^/]+[\\\\/]?$)");
+            int iNewFinish = regExp.indexIn(strFullText);
+            if (iNewFinish != -1)
+                iFinish = iNewFinish;
+            iPosition = (iFinish - iStart) / 2;
 
-            if (position == finish)
+            if (iPosition == iFinish)
                break;
 
-            fullText.remove (position, 1);
+            strFullText.remove(iPosition, 1);
         }
-    } while (textWidth + indentSize > aWidth);
+    } while (iTextWidth + iIndentSize > iWidth);
 
-    fullText.insert (position, "...");
-    int newSize = fontMetrics().width (fullText);
+    strFullText.insert(iPosition, "...");
+    int newSize = fontMetrics().width(strFullText);
 
-    return newSize < oldSize ? fullText : fullPath (false);
+    return newSize < iOldSize ? strFullText : fullPath(false);
 }
 
 void UIFilePathSelector::refreshText()
 {
-    if (mIsEditable && mIsEditableMode)
+    if (m_fEditable && m_fEditableMode)
     {
-        /* Cursor positioning variables */
-        int curPos = -1;
-        int diffPos = -1;
-        int fromRight = -1;
+        /* Cursor positioning variables: */
+        int iCurPos = -1;
+        int iDiffPos = -1;
+        int iFromRight = -1;
 
-        if (mIsMouseAwaited)
+        if (m_fMouseAwaited)
         {
-            /* Store the cursor position */
-            curPos = lineEdit()->cursorPosition();
-            diffPos = differFrom (lineEdit()->text(), mPath);
-            fromRight = lineEdit()->text().size() - curPos;
+            /* Store the cursor position: */
+            iCurPos = lineEdit()->cursorPosition();
+            iDiffPos = differFrom(lineEdit()->text(), m_strPath);
+            iFromRight = lineEdit()->text().size() - iCurPos;
         }
 
         /* In editable mode there should be no any icon
          * and text have be corresponding real stored path
          * which can be absolute or relative. */
-        if (lineEdit()->text() != mPath)
-            setItemText (PathId, mPath);
-        setItemIcon (PathId, QIcon());
-        setToolTip (mMode == Mode_Folder ?
-            tr ("Holds the folder path.") :
-            tr ("Holds the file path."));
+        if (lineEdit()->text() != m_strPath)
+            setItemText(PathId, m_strPath);
+        setItemIcon(PathId, QIcon());
+        setToolTip(m_enmMode == Mode_Folder ?
+                   tr("Holds the folder path.") :
+                   tr("Holds the file path."));
 
-        if (mIsMouseAwaited)
+        if (m_fMouseAwaited)
         {
-            mIsMouseAwaited = false;
+            m_fMouseAwaited = false;
 
-            /* Restore the position to the right of dots */
-            if (diffPos != -1 && curPos >= diffPos + 3)
-                lineEdit()->setCursorPosition (lineEdit()->text().size() -
-                                               fromRight);
-            /* Restore the position to the center of text */
-            else if (diffPos != -1 && curPos > diffPos)
-                lineEdit()->setCursorPosition (lineEdit()->text().size() / 2);
-            /* Restore the position to the left of dots */
+            /* Restore the position to the right of dots: */
+            if (iDiffPos != -1 && iCurPos >= iDiffPos + 3)
+                lineEdit()->setCursorPosition(lineEdit()->text().size() -
+                                              iFromRight);
+            /* Restore the position to the center of text: */
+            else if (iDiffPos != -1 && iCurPos > iDiffPos)
+                lineEdit()->setCursorPosition(lineEdit()->text().size() / 2);
+            /* Restore the position to the left of dots: */
             else
-                lineEdit()->setCursorPosition (curPos);
+                lineEdit()->setCursorPosition(iCurPos);
         }
     }
-    else if (mPath.isNull())
+    else if (m_strPath.isNull())
     {
         /* If we are not in editable mode and no path is
          * stored here - show the translated 'none' string. */
-        if (itemText (PathId) != mNoneStr)
+        if (itemText(PathId) != m_strNoneText)
         {
-            setItemText (PathId, mNoneStr);
-            setItemIcon (PathId, QIcon());
-            setItemData (PathId, mNoneTip, Qt::ToolTipRole);
-            setToolTip (mNoneTip);
+            setItemText(PathId, m_strNoneText);
+            setItemIcon(PathId, QIcon());
+            setItemData(PathId, m_strNoneToolTip, Qt::ToolTipRole);
+            setToolTip(m_strNoneToolTip);
         }
     }
     else
     {
-        /* Compress text in combobox */
+        /* Compress text in combobox: */
         QStyleOptionComboBox options;
-        options.initFrom (this);
-        QRect rect = QApplication::style()->subControlRect (
+        options.initFrom(this);
+        QRect rect = QApplication::style()->subControlRect(
             QStyle::CC_ComboBox, &options, QStyle::SC_ComboBoxEditField);
-        setItemText (PathId, shrinkText (rect.width() - iconSize().width()));
+        setItemText(PathId, shrinkText(rect.width() - iconSize().width()));
 
-        /* Attach corresponding icon */
-        setItemIcon (PathId, QFileInfo (mPath).exists() ?
-                             vboxGlobal().icon(QFileInfo (mPath)) :
-                             defaultIcon());
+        /* Attach corresponding icon: */
+        setItemIcon(PathId, QFileInfo(m_strPath).exists() ?
+                            vboxGlobal().icon(QFileInfo(m_strPath)) :
+                            defaultIcon());
 
-        /* Set the tooltip */
-        setToolTip (fullPath());
-        setItemData (PathId, toolTip(), Qt::ToolTipRole);
+        /* Set the tooltip: */
+        setToolTip(fullPath());
+        setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
 }
 
