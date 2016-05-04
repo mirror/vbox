@@ -19,6 +19,8 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+# include <QGLWidget>
+
 # include <iprt/assert.h>
 # include <iprt/log.h>
 # include <iprt/env.h>
@@ -28,8 +30,6 @@
 # include <iprt/string.h>
 # include <iprt/time.h>
 # include <iprt/thread.h>
-
-# include <QGLWidget>
 
 # include <VBox/VBoxGL2D.h>
 # include "VBoxFBOverlayCommon.h"
