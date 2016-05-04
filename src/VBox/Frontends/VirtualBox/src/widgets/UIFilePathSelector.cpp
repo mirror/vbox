@@ -356,7 +356,12 @@ void UIFilePathSelector::selectPath()
         {
             strSelPath = QIFileDialog::getSaveFileName(strInitDir, m_strFileDialogFilters, parentWidget(), m_strFileDialogTitle);
             if (!strSelPath.isEmpty() && QFileInfo(strSelPath).suffix().isEmpty())
-                strSelPath = QString("%1.%2").arg(strSelPath).arg(m_strFileDialogDefaultSaveExtension);
+            {
+                if (m_strFileDialogDefaultSaveExtension.isEmpty())
+                    strSelPath = QString("%1").arg(strSelPath);
+                else
+                    strSelPath = QString("%1.%2").arg(strSelPath).arg(m_strFileDialogDefaultSaveExtension);
+            }
             break;
         }
         case Mode_Folder:
