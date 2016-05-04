@@ -774,7 +774,7 @@ DECLINLINE(void) intnetR0BusyIncTrunk(PINTNETTRUNKIF pTrunk)
  */
 DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
-    Assert(((PINTNETIF)pIf->pvObj)->hDestructorThread == NIL_RTNATIVETHREAD);
+    Assert(pIf->hDestructorThread == NIL_RTNATIVETHREAD);
 
     int rc = SUPR0ObjAddRefEx(pIf->pvObj, pSession, true /* fNoBlocking */);
     AssertRCReturn(rc, rc);
@@ -793,7 +793,7 @@ DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
  */
 DECLINLINE(bool) intnetR0IfRelease(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
-    Assert(((PINTNETIF)pIf->pvObj)->hDestructorThread == NIL_RTNATIVETHREAD);
+    Assert(pIf->hDestructorThread == NIL_RTNATIVETHREAD);
 
     int rc = SUPR0ObjRelease(pIf->pvObj, pSession);
     AssertRC(rc);
