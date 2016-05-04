@@ -34,7 +34,7 @@
  */
 #if !(defined(RT_OS_LINUX) && defined(__KERNEL__))  \
   && !(defined(RT_OS_FREEBSD) && defined(_KERNEL)) \
-  && !defined(_MSC_VER) \
+  && RT_MSC_PREREQ_EX(RT_MSC_VER_VS2010, 1 /*non-msc*/) \
   && !defined(__IBMC__) \
   && !defined(__IBMCPP__) \
   && !defined(IPRT_NO_CRT) \
