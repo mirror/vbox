@@ -318,6 +318,15 @@ typedef struct VMCPU
  * Use the VM_FF_SET() and VM_FF_CLEAR() macros to change the force
  * action mask of a VM.
  *
+ * Available VM bits:
+ *      0, 1, 5, 6, 7, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 30
+ *
+ *
+ * Available VMCPU bits:
+ *      10, 11, 14, 15, 30, 31
+ *
+ * @todo If we run low on VMCPU, we may consider merging the SELM bits
+ *
  * @{
  */
 /** The virtual sync clock has been stopped, go to TM until it has been
