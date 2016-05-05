@@ -248,7 +248,7 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
  */
 static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void const *pvBuf, size_t cbBuf, PIOMMMIORANGE pRange)
 {
-    Log3(("iomMmioRing3WritePending: %RGp LB %#x\n", GCPhys, cbBuf));
+    Log5(("iomMmioRing3WritePending: %RGp LB %#x\n", GCPhys, cbBuf));
     AssertReturn(pVCpu->iom.s.PendingMmioWrite.cbValue == 0, VERR_IOM_MMIO_IPE_1);
     pVCpu->iom.s.PendingMmioWrite.GCPhys  = GCPhys;
     AssertReturn(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue), VERR_IOM_MMIO_IPE_2);
@@ -270,13 +270,15 @@ static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void
  *          VINF_IOM_R3_MMIO_WRITE, VINF_IOM_R3_MMIO_READ_WRITE or
  *          VINF_IOM_R3_MMIO_READ may be returned.
  *
- * @param   pVM                 The cross context VM structure.
- * @param   pRange              The range to write to.
- * @param   GCPhys              The physical address to start writing.
- * @param   pvValue             Where to store the value.
- * @param   cbValue             The size of the value to write.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pRange      The range to write to.
+ * @param   GCPhys      The physical address to start writing.
+ * @param   pvValue     Where to store the value.
+ * @param   cbValue     The size of the value to write.
  */
-static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void const *pvValue, unsigned cbValue)
+static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRange, RTGCPHYS GCPhys,
+                                              void const *pvValue, unsigned cbValue)
 {
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
                  && (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
@@ -348,16 +350,16 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                 case VINF_IOM_MMIO_UNUSED_00:
                     u32MissingValue = 0;
                     break;
+#ifndef IN_RING3
                 case VINF_IOM_R3_MMIO_READ:
                 case VINF_IOM_R3_MMIO_READ_WRITE:
                 case VINF_IOM_R3_MMIO_WRITE:
-                    /** @todo What if we've split a transfer and already read
-                     * something?  Since writes generally have sideeffects we
-                     * could be kind of screwed here...
-                     *
-                     * Fix: VINF_IOM_R3_IOPORT_COMMIT_WRITE (part 2) */
                     LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
-                    return rc2;
+                    rc2 = VBOXSTRICTRC_TODO(iomMmioRing3WritePending(pVCpu, GCPhys, pvValue, cbValue, pRange));
+                    if (rc == VINF_SUCCESS || rc2 < rc)
+                        rc = rc2;
+                    return rc;
+#endif
                 default:
                     if (RT_FAILURE(rc2))
                     {
@@ -416,16 +418,24 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
         {
             case VINF_SUCCESS:
                 break;
+#ifndef IN_RING3
             case VINF_IOM_R3_MMIO_READ:
             case VINF_IOM_R3_MMIO_READ_WRITE:
             case VINF_IOM_R3_MMIO_WRITE:
-                /** @todo What if we've split a transfer and already read
-                 * something?  Since reads can have sideeffects we could be
-                 * kind of screwed here...
-                 *
-                 * Fix: VINF_IOM_R3_IOPORT_COMMIT_WRITE (part 2) */
-                LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                Log3(("iomMMIODoComplicatedWrite: deferring GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                AssertReturn(pVCpu->iom.s.PendingMmioWrite.cbValue == 0, VERR_IOM_MMIO_IPE_1);
+                AssertReturn(cbValue + (GCPhys & 3) <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue), VERR_IOM_MMIO_IPE_2);
+                pVCpu->iom.s.PendingMmioWrite.GCPhys  = GCPhys & ~(RTGCPHYS)3;
+                pVCpu->iom.s.PendingMmioWrite.cbValue = cbValue + (GCPhys & 3);
+                *(uint32_t *)pVCpu->iom.s.PendingMmioWrite.abValue = u32Value;
+                if (cbValue > cbThisPart)
+                    memcpy(&pVCpu->iom.s.PendingMmioWrite.abValue[4],
+                           (uint8_t const *)pvValue + cbThisPart, cbValue - cbThisPart);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_IOM);
+                if (rc == VINF_SUCCESS)
+                    rc = VINF_IOM_R3_MMIO_COMMIT_WRITE;
                 return rc2;
+#endif
             default:
                 if (RT_FAILURE(rc2))
                 {
@@ -486,7 +496,7 @@ static VBOXSTRICTRC iomMMIODoWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRange, 
             rcStrict = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
                                                           GCPhysFault, (void *)pvData, cb); /** @todo fix const!! */
         else
-            rcStrict = iomMMIODoComplicatedWrite(pVM, pRange, GCPhysFault, pvData, cb);
+            rcStrict = iomMMIODoComplicatedWrite(pVM, pVCpu, pRange, GCPhysFault, pvData, cb);
     }
     else
         rcStrict = VINF_SUCCESS;
@@ -2310,7 +2320,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint3
             rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
                                                     GCPhys, &u32Value, (unsigned)cbValue);
         else
-            rc = iomMMIODoComplicatedWrite(pVM, pRange, GCPhys, &u32Value, (unsigned)cbValue);
+            rc = iomMMIODoComplicatedWrite(pVM, pVCpu, pRange, GCPhys, &u32Value, (unsigned)cbValue);
         STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
 #ifndef IN_RING3
         if (    rc == VINF_IOM_R3_MMIO_WRITE
