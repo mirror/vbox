@@ -4928,9 +4928,6 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
         {
             rcStrict = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, cbValue);
-            if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
-                HMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, cbValue);
-
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
         }
         else

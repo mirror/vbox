@@ -180,8 +180,6 @@ VMMR0_INT_DECL(int)             HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitch
 VMMR0_INT_DECL(void)            HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
 # endif
 
-VMMR0_INT_DECL(void)            HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
-                                                           unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
                                                           unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);

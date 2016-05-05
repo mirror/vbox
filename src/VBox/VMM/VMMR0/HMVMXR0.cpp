@@ -12286,8 +12286,6 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         if (fIOWrite)
         {
             rcStrict = IOMIOPortWrite(pVM, pVCpu, uIOPort, pMixedCtx->eax & uAndVal, cbValue);
-            if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
-                HMR0SavePendingIOPortWrite(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbValue);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
         }
         else

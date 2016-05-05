@@ -3082,14 +3082,19 @@ VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
  */
 VMMR3_INT_DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    /*
+     * Check if we've got relevant data pending.
+     */
     HMPENDINGIO enmType = pVCpu->hm.s.PendingIO.enmType;
-
+    if (enmType == HMPENDINGIO_INVALID)
+        return VERR_NOT_FOUND;
     pVCpu->hm.s.PendingIO.enmType = HMPENDINGIO_INVALID;
-
-    if (    pVCpu->hm.s.PendingIO.GCPtrRip != pCtx->rip
-        ||  enmType  == HMPENDINGIO_INVALID)
+    if (pVCpu->hm.s.PendingIO.GCPtrRip != pCtx->rip)
         return VERR_NOT_FOUND;
 
+    /*
+     * Execute pending I/O.
+     */
     VBOXSTRICTRC rcStrict;
     switch (enmType)
     {
@@ -3108,14 +3113,6 @@ VMMR3_INT_DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PC
             }
             break;
         }
-
-        case HMPENDINGIO_PORT_WRITE:
-            rcStrict = IOMIOPortWrite(pVM, pVCpu, pVCpu->hm.s.PendingIO.s.Port.uPort,
-                                      pCtx->eax & pVCpu->hm.s.PendingIO.s.Port.uAndVal,
-                                      pVCpu->hm.s.PendingIO.s.Port.cbSize);
-            if (IOM_SUCCESS(rcStrict))
-                pCtx->rip = pVCpu->hm.s.PendingIO.GCPtrRipNext;
-            break;
 
         default:
             AssertLogRelFailedReturn(VERR_HM_UNKNOWN_IO_INSTRUCTION);
