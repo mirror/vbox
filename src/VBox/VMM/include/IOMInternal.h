@@ -420,6 +420,8 @@ typedef struct IOMCPU
         uint8_t                         abValue[16];
         /** The number of bytes to write (0 if nothing pending). */
         uint32_t                        cbValue;
+        /** Alignment padding. */
+        uint32_t                        uAlignmentPadding;
     } PendingMmioWrite;
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.
