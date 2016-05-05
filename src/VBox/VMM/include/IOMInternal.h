@@ -395,12 +395,12 @@ typedef struct IOMCPU
      */
     struct
     {
+        /** The value size (0 if not pending). */
+        uint16_t                        cbValue;
         /** The I/O port. */
         RTIOPORT                        IOPort;
         /** The value. */
         uint32_t                        u32Value;
-        /** The value size (0 if not pending). */
-        uint32_t                        cbValue;
     } PendingIOPortWrite;
 
     /**
