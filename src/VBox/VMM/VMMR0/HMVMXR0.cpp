@@ -12363,10 +12363,12 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 
                 hmR0VmxSetPendingXcptDB(pVCpu, pMixedCtx);
             }
-            /* rcStrict is VINF_SUCCESS or in [VINF_EM_FIRST..VINF_EM_LAST]. */
+            /* rcStrict is VINF_SUCCESS, VINF_IOM_R3_IOPORT_COMMIT_WRITE, or in [VINF_EM_FIRST..VINF_EM_LAST],
+               however we can ditch VINF_IOM_R3_IOPORT_COMMIT_WRITE as it has VMCPU_FF_IOM as backup. */
             else if (   rcStrict2 != VINF_SUCCESS
                      && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
                 rcStrict = rcStrict2;
+            AssertCompile(VINF_EM_LAST < VINF_IOM_R3_IOPORT_COMMIT_WRITE);
 
             HM_RESTORE_PREEMPT();
             VMMRZCallRing3Enable(pVCpu);
@@ -12376,7 +12378,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 #ifdef VBOX_STRICT
     if (rcStrict == VINF_IOM_R3_IOPORT_READ)
         Assert(!fIOWrite);
-    else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+    else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE)
         Assert(fIOWrite);
     else
     {

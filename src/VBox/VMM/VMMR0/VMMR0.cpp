@@ -760,11 +760,17 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_IOM_R3_IOPORT_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIOWrite);
             break;
+        case VINF_IOM_R3_IOPORT_COMMIT_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIOCommitWrite);
+            break;
         case VINF_IOM_R3_MMIO_READ:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIORead);
             break;
         case VINF_IOM_R3_MMIO_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOWrite);
+            break;
+        case VINF_IOM_R3_MMIO_COMMIT_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOCommitWrite);
             break;
         case VINF_IOM_R3_MMIO_READ_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOReadWrite);
@@ -824,6 +830,7 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetRescheduleREM);
             break;
         case VINF_EM_RAW_TO_R3:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Total);
             if (VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3TMVirt);
             else if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
@@ -839,7 +846,11 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
             else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3CritSect);
             else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TO_R3))
-                STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3);
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3FF);
+            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IEM))
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Iem);
+            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IOM))
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Iom);
             else
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Unknown);
             break;

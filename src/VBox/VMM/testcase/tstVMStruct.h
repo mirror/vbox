@@ -289,6 +289,14 @@
 
     GEN_CHECK_SIZE(IOMCPU);
     GEN_CHECK_OFF(IOMCPU, DisState);
+    GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite);
+    GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite.IOPort);
+    GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite.u32Value);
+    GEN_CHECK_OFF(IOMCPU, PendingIOPortWrite.cbValue);
+    GEN_CHECK_OFF(IOMCPU, PendingMmioWrite);
+    GEN_CHECK_OFF(IOMCPU, PendingMmioWrite.GCPhys);
+    GEN_CHECK_OFF(IOMCPU, PendingMmioWrite.abValue);
+    GEN_CHECK_OFF(IOMCPU, PendingMmioWrite.cbValue);
     GEN_CHECK_OFF(IOMCPU, pMMIORangeLastR3);
     GEN_CHECK_OFF(IOMCPU, pMMIOStatsLastR3);
     GEN_CHECK_OFF(IOMCPU, pMMIORangeLastR0);

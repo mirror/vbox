@@ -58,7 +58,7 @@ RT_C_DECLS_BEGIN
  * @param   rc          The status code.  This may be evaluated
  *                      more than once!
  *
- * @remark  To avoid making assumptions about the layout of the
+ * @remarks To avoid making assumptions about the layout of the
  *          VINF_EM_FIRST...VINF_EM_LAST range we're checking explicitly for
  *          each exact exception. However, for efficiency we ASSUME that the
  *          VINF_EM_LAST is smaller than most of the relevant status codes. We
@@ -70,7 +70,8 @@ RT_C_DECLS_BEGIN
  *          the I/O is done.  Currently, we don't implement these
  *          kind of breakpoints.
  */
-#define IOM_SUCCESS(rc)     (   (rc) == VINF_SUCCESS \
+#if IN_RING3
+# define IOM_SUCCESS(rc)   (   (rc) == VINF_SUCCESS \
                              || (   (rc) <= VINF_EM_LAST \
                                  && (rc) != VINF_EM_RESCHEDULE_REM \
                                  && (rc) >= VINF_EM_FIRST \
@@ -78,6 +79,18 @@ RT_C_DECLS_BEGIN
                                  && (rc) != VINF_EM_RESCHEDULE_HM \
                                 ) \
                             )
+#else
+# define IOM_SUCCESS(rc)   (   (rc) == VINF_SUCCESS \
+                             || (   (rc) <= VINF_EM_LAST \
+                                 && (rc) != VINF_EM_RESCHEDULE_REM \
+                                 && (rc) >= VINF_EM_FIRST \
+                                 && (rc) != VINF_EM_RESCHEDULE_RAW \
+                                 && (rc) != VINF_EM_RESCHEDULE_HM \
+                                ) \
+                             || (rc) == VINF_IOM_R3_IOPORT_COMMIT_WRITE \
+                             || (rc) == VINF_IOM_R3_MMIO_COMMIT_WRITE \
+                            )
+#endif
 
 /** @name IOMMMIO_FLAGS_XXX
  * @{ */
@@ -337,6 +350,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
                                          RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange);
+VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rcStrict);
 
 VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, bool fPortIo, bool fMmio);
 VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bool fEnabled);

@@ -358,8 +358,10 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPatchEmulate;
     STAMCOUNTER                 StatRZRetIORead;
     STAMCOUNTER                 StatRZRetIOWrite;
+    STAMCOUNTER                 StatRZRetIOCommitWrite;
     STAMCOUNTER                 StatRZRetMMIORead;
     STAMCOUNTER                 StatRZRetMMIOWrite;
+    STAMCOUNTER                 StatRZRetMMIOCommitWrite;
     STAMCOUNTER                 StatRZRetMMIOPatchRead;
     STAMCOUNTER                 StatRZRetMMIOPatchWrite;
     STAMCOUNTER                 StatRZRetMMIOReadWrite;
@@ -377,7 +379,8 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPatchGP;
     STAMCOUNTER                 StatRZRetPatchIretIRQ;
     STAMCOUNTER                 StatRZRetRescheduleREM;
-    STAMCOUNTER                 StatRZRetToR3;
+    STAMCOUNTER                 StatRZRetToR3Total;
+    STAMCOUNTER                 StatRZRetToR3FF;
     STAMCOUNTER                 StatRZRetToR3Unknown;
     STAMCOUNTER                 StatRZRetToR3TMVirt;
     STAMCOUNTER                 StatRZRetToR3HandyPages;
@@ -386,6 +389,8 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetToR3Timer;
     STAMCOUNTER                 StatRZRetToR3DMA;
     STAMCOUNTER                 StatRZRetToR3CritSect;
+    STAMCOUNTER                 StatRZRetToR3Iem;
+    STAMCOUNTER                 StatRZRetToR3Iom;
     STAMCOUNTER                 StatRZRetTimerPending;
     STAMCOUNTER                 StatRZRetInterruptPending;
     STAMCOUNTER                 StatRZRetCallRing3;

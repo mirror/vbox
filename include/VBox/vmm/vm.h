@@ -454,6 +454,11 @@ typedef struct VMCPU
 #endif /* VBOX_WITH_RAW_MODE */
 /** Force return to Ring-3. */
 #define VMCPU_FF_TO_R3                      RT_BIT_32(28)
+/** Force return to ring-3 to service pending I/O or MMIO write.
+ * This is a backup for mechanism VINF_IOM_R3_IOPORT_COMMIT_WRITE and
+ * VINF_IOM_R3_MMIO_COMMIT_WRITE, allowing VINF_EM_DBG_BREAKPOINT and similar
+ * status codes to be propagated at the same time without loss. */
+#define VMCPU_FF_IOM                        RT_BIT_32(29)
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
 #define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS)
@@ -492,7 +497,8 @@ typedef struct VMCPU
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PGM_NO_MEMORY)
 /** High priority post-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
-                                                 | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES | VMCPU_FF_IEM)
+                                                 | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES \
+                                                 | VMCPU_FF_IEM | VMCPU_FF_IOM )
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
@@ -513,7 +519,8 @@ typedef struct VMCPU
 #define VM_FF_HM_TO_R3_MASK                     (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
                                                  | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
 /** VMCPU Flags that cause the HM loops to go back to ring-3. */
-#define VMCPU_FF_HM_TO_R3_MASK                  (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_IEM)
+#define VMCPU_FF_HM_TO_R3_MASK                  (  VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT \
+                                                 | VMCPU_FF_IEM   | VMCPU_FF_IOM)
 
 /** High priority ring-0 VM pre HM-mode execution mask. */
 #define VM_FF_HP_R0_PRE_HM_MASK                 (VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)

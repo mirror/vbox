@@ -218,6 +218,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
                                           | VMCPU_FF_REQUEST       | VMCPU_FF_PGM_SYNC_CR3   | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                           | VMCPU_FF_PDM_CRITSECT  | VMCPU_FF_IEM            | VMCPU_FF_SELM_SYNC_GDT
                                           | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS  | VMCPU_FF_TRPM_SYNC_IDT
+                                          | VMCPU_FF_IOM
                                    )
             )
        )
@@ -233,7 +234,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
                 APICUpdatePendingInterrupts(pVCpu);
 #endif
             /* Pending Ring-3 action. */
-            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_IEM))
+            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_IEM | VMCPU_FF_IOM))
             {
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
                 rc = VINF_EM_RAW_TO_R3;
@@ -1236,7 +1237,9 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         case VINF_EM_RAW_EMULATE_INSTR:
         case VINF_IOM_R3_IOPORT_READ:
         case VINF_IOM_R3_IOPORT_WRITE:
+        case VINF_IOM_R3_IOPORT_COMMIT_WRITE:
         case VINF_IOM_R3_MMIO_WRITE:
+        case VINF_IOM_R3_MMIO_COMMIT_WRITE:
         case VINF_IOM_R3_MMIO_READ:
         case VINF_IOM_R3_MMIO_READ_WRITE:
         case VINF_CPUM_R3_MSR_READ:
@@ -1315,6 +1318,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             /* no break; */
         case VINF_IOM_R3_MMIO_READ:
         case VINF_IOM_R3_MMIO_WRITE:
+        case VINF_IOM_R3_MMIO_COMMIT_WRITE:
         case VINF_IOM_R3_MMIO_READ_WRITE:
         case VINF_PATM_HC_MMIO_PATCH_READ:
         case VINF_PATM_HC_MMIO_PATCH_WRITE:

@@ -1625,6 +1625,7 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
     pVCpu->hm.s.PendingIO.s.Port.uPort    = uPort;
     pVCpu->hm.s.PendingIO.s.Port.uAndVal  = uAndVal;
     pVCpu->hm.s.PendingIO.s.Port.cbSize   = cbSize;
+/** @todo IOM will do this stuff, retire the HM feature.   */
     return;
 }
 
@@ -1648,6 +1649,7 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, 
     pVCpu->hm.s.PendingIO.s.Port.uPort    = uPort;
     pVCpu->hm.s.PendingIO.s.Port.uAndVal  = uAndVal;
     pVCpu->hm.s.PendingIO.s.Port.cbSize   = cbSize;
+/** @todo IOM will do this stuff, retire the HM feature.   */
     return;
 }
 

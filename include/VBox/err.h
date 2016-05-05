@@ -1108,12 +1108,20 @@
 #define VINF_IOM_R3_IOPORT_READ             2620
 /** Reason for leaving RZ: I/O port write. */
 #define VINF_IOM_R3_IOPORT_WRITE            2621
+/** Reason for leaving RZ: Pending I/O port write.  Since there is also
+ * VMCPU_FF_IOM for this condition, it's ok to drop this status code for
+ * some other VINF_EM_XXX statuses. */
+#define VINF_IOM_R3_IOPORT_COMMIT_WRITE     2622
 /** Reason for leaving RZ: MMIO read. */
 #define VINF_IOM_R3_MMIO_READ               2623
 /** Reason for leaving RZ: MMIO write. */
 #define VINF_IOM_R3_MMIO_WRITE              2624
 /** Reason for leaving RZ: MMIO read/write. */
 #define VINF_IOM_R3_MMIO_READ_WRITE         2625
+/** Reason for leaving RZ: Pending MMIO write.   Since there is also
+ * VMCPU_FF_IOM for this condition, it's ok to drop this status code for
+ * some other VINF_EM_XXX statuses. */
+#define VINF_IOM_R3_MMIO_COMMIT_WRITE       2626
 
 /** IOMGCIOPortHandler was given an unexpected opcode. */
 #define VERR_IOM_IOPORT_UNKNOWN_OPCODE      (-2630)
@@ -1131,6 +1139,8 @@
 #define VERR_IOM_MMIO_IPE_3                 (-2636)
 /** Got into a part of IOM that is not used when HM (VT-x/AMD-V) is enabled. */
 #define VERR_IOM_HM_IPE                     (-2637)
+/** Internal processing error while merging status codes. */
+#define VERR_IOM_FF_STATUS_IPE              (-2638)
 /** @} */
 
 

@@ -78,6 +78,8 @@ VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
  */
 VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
 {
+    Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
+
 /** @todo should initialize *pu32Value here because it can happen that some
  *        handle is buggy and doesn't handle all cases. */
     /* Take the IOM lock before performing any device I/O. */
@@ -247,6 +249,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32
 VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT uPort,
                                                void *pvDst, uint32_t *pcTransfers, unsigned cb)
 {
+    Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
+
     /* Take the IOM lock before performing any device I/O. */
     int rc2 = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
@@ -422,6 +426,28 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT u
 }
 
 
+#ifndef IN_RING3
+/**
+ * Defers a pending I/O port write to ring-3.
+ *
+ * @returns VINF_IOM_R3_IOPORT_COMMIT_WRITE
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   Port        The port to write to.
+ * @param   u32Value    The value to write.
+ * @param   cbValue     The size of the value (1, 2, 4).
+ */
+static VBOXSTRICTRC iomIOPortRing3WritePending(PVMCPU pVCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
+{
+    AssertReturn(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0, VERR_IOM_IOPORT_IPE_1);
+    pVCpu->iom.s.PendingIOPortWrite.IOPort   = Port;
+    pVCpu->iom.s.PendingIOPortWrite.u32Value = u32Value;
+    pVCpu->iom.s.PendingIOPortWrite.cbValue  = (uint32_t)cbValue;
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_IOM);
+    return VINF_IOM_R3_IOPORT_COMMIT_WRITE;
+}
+#endif
+
+
 /**
  * Writes to an I/O port register.
  *
@@ -440,11 +466,15 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT u
  */
 VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
 {
+#ifndef IN_RING3
+    Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
+#endif
+
     /* Take the IOM lock before performing any device I/O. */
     int rc2 = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
     if (rc2 == VERR_SEM_BUSY)
-        return VINF_IOM_R3_IOPORT_WRITE;
+        return iomIOPortRing3WritePending(pVCpu, Port, u32Value, cbValue);
 #endif
     AssertRC(rc2);
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
@@ -491,7 +521,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
         {
             STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
             IOM_UNLOCK_SHARED(pVM);
-            return VINF_IOM_R3_IOPORT_WRITE;
+            return iomIOPortRing3WritePending(pVCpu, Port, u32Value, cbValue);
         }
 #endif
         void           *pvUser    = pRange->pvUser;
@@ -507,6 +537,10 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
         else
         {
             STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
+#ifndef IN_RING3
+            if (RT_LIKELY(rcStrict == VINF_IOM_R3_IOPORT_WRITE))
+                return iomIOPortRing3WritePending(pVCpu, Port, u32Value, cbValue);
+#endif
             return rcStrict;
         }
 #ifdef VBOX_WITH_STATISTICS
@@ -530,6 +564,10 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
 # endif
 #endif
         Log3(("IOMIOPortWrite: Port=%RTiop u32=%08RX32 cb=%d rc=%Rrc\n", Port, u32Value, cbValue, VBOXSTRICTRC_VAL(rcStrict)));
+#ifndef IN_RING3
+        if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+            return iomIOPortRing3WritePending(pVCpu, Port, u32Value, cbValue);
+#endif
         return rcStrict;
     }
 
@@ -545,7 +583,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
             STAM_COUNTER_INC(&pStats->OutRZToR3);
 # endif
         IOM_UNLOCK_SHARED(pVM);
-        return VINF_IOM_R3_IOPORT_WRITE;
+        return iomIOPortRing3WritePending(pVCpu, Port, u32Value, cbValue);
     }
 #endif
 
@@ -585,6 +623,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
 VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT uPort, void const *pvSrc,
                                                 uint32_t *pcTransfers, unsigned cb)
 {
+    Assert(pVCpu->iom.s.PendingIOPortWrite.cbValue == 0);
     Assert(cb == 1 || cb == 2 || cb == 4);
 
     /* Take the IOM lock before performing any device I/O. */

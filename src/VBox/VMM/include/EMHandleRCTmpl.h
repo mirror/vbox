@@ -384,6 +384,16 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #endif
 
         /*
+         * These two should be handled via the force flag already, but just in
+         * case they end up here deal with it.
+         */
+        case VINF_IOM_R3_IOPORT_COMMIT_WRITE:
+        case VINF_IOM_R3_MMIO_COMMIT_WRITE:
+            AssertFailed();
+            rc = VBOXSTRICTRC_TODO(IOMR3ProcessForceFlag(pVM, pVCpu, rc));
+            break;
+
+        /*
          * Anything which is not known to us means an internal error
          * and the termination of the VM!
          */

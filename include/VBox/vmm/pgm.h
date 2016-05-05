@@ -531,6 +531,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
 #elif defined(IN_RING0)
 # define PGM_PHYS_RW_IS_SUCCESS(a_rcStrict) \
     (   (a_rcStrict) == VINF_SUCCESS \
+     || (a_rcStrict) == VINF_IOM_R3_MMIO_COMMIT_WRITE \
      || (a_rcStrict) == VINF_EM_OFF \
      || (a_rcStrict) == VINF_EM_SUSPEND \
      || (a_rcStrict) == VINF_EM_RESET \
@@ -542,6 +543,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
 #elif defined(IN_RC)
 # define PGM_PHYS_RW_IS_SUCCESS(a_rcStrict) \
     (   (a_rcStrict) == VINF_SUCCESS \
+     || (a_rcStrict) == VINF_IOM_R3_MMIO_COMMIT_WRITE \
      || (a_rcStrict) == VINF_EM_OFF \
      || (a_rcStrict) == VINF_EM_SUSPEND \
      || (a_rcStrict) == VINF_EM_RESET \
@@ -572,6 +574,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
     do { \
         Assert(PGM_PHYS_RW_IS_SUCCESS(rcStrict)); \
         Assert(PGM_PHYS_RW_IS_SUCCESS(rcStrict2)); \
+        AssertCompile(VINF_IOM_R3_MMIO_COMMIT_WRITE > VINF_EM_LAST); \
         if ((a_rcStrict2) == VINF_SUCCESS || (a_rcStrict) == (a_rcStrict2)) \
         { /* likely */ } \
         else if (   (a_rcStrict) == VINF_SUCCESS \
@@ -586,10 +589,14 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
         AssertCompile(VINF_SELM_SYNC_GDT > VINF_EM_LAST); \
         AssertCompile(VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT > VINF_EM_LAST); \
         AssertCompile(VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT < VINF_SELM_SYNC_GDT); \
+        AssertCompile(VINF_IOM_R3_MMIO_COMMIT_WRITE > VINF_EM_LAST); \
+        AssertCompile(VINF_IOM_R3_MMIO_COMMIT_WRITE > VINF_SELM_SYNC_GDT); \
+        AssertCompile(VINF_IOM_R3_MMIO_COMMIT_WRITE > VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT); \
         if ((a_rcStrict2) == VINF_SUCCESS || (a_rcStrict) == (a_rcStrict2)) \
         { /* likely */ } \
-        else if (   (a_rcStrict) == VINF_SUCCESS \
-                 || (   (a_rcStrict) > (a_rcStrict2) \
+        else if ((a_rcStrict) == VINF_SUCCESS) \
+            (a_rcStrict) = (a_rcStrict2); \
+        else if (   (   (a_rcStrict) > (a_rcStrict2) \
                      && (   (a_rcStrict2) <= VINF_EM_RESET  \
                          || (a_rcStrict) != VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT) ) \
                  || (   (a_rcStrict2) == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT \

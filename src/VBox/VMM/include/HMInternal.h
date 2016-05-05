@@ -870,6 +870,7 @@ typedef struct HMCPU
         uint64_t                cr0;
     } EmulateIoBlock;
 
+    /** @todo IOM does this now, can be retired. */
     struct
     {
         /** Pending IO operation type. */
