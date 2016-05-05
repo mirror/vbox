@@ -904,6 +904,14 @@ class FileWrapper(object):
     def __init__(self, sPrefix):
         self.sPrefix = sPrefix;
 
+    def __del__(self):
+        self.close();
+
+    def close(self):
+        """ file.close """
+        # Nothing to be done.
+        return;
+
     def read(self, cb):
         """file.read"""
         _ = cb;
