@@ -235,6 +235,31 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegF
 }
 
 
+#ifndef IN_RING3
+/**
+ * Defers a pending MMIO write to ring-3.
+ *
+ * @returns VINF_IOM_R3_MMIO_COMMIT_WRITE
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPhys      The write address.
+ * @param   pvBuf       The bytes being written.
+ * @param   cbBuf       How many bytes.
+ * @param   pRange      The range, if resolved.
+ */
+static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void const *pvBuf, size_t cbBuf, PIOMMMIORANGE pRange)
+{
+    Log3(("iomMmioRing3WritePending: %RGp LB %#x\n", GCPhys, cbBuf));
+    AssertReturn(pVCpu->iom.s.PendingMmioWrite.cbValue == 0, VERR_IOM_MMIO_IPE_1);
+    pVCpu->iom.s.PendingMmioWrite.GCPhys  = GCPhys;
+    AssertReturn(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue), VERR_IOM_MMIO_IPE_2);
+    pVCpu->iom.s.PendingMmioWrite.cbValue = (uint32_t)cbBuf;
+    memcpy(pVCpu->iom.s.PendingMmioWrite.abValue, pvBuf, cbBuf);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_IOM);
+    return VINF_IOM_R3_MMIO_COMMIT_WRITE;
+}
+#endif
+
+
 /**
  * Deals with complicated MMIO writes.
  *
@@ -330,9 +355,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                      * something?  Since writes generally have sideeffects we
                      * could be kind of screwed here...
                      *
-                     * Fix: Save the current state and resume it in ring-3. Requires EM to not go
-                     *      to REM for MMIO accesses (like may currently do). */
-
+                     * Fix: VINF_IOM_R3_IOPORT_COMMIT_WRITE (part 2) */
                     LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
                     return rc2;
                 default:
@@ -400,8 +423,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                  * something?  Since reads can have sideeffects we could be
                  * kind of screwed here...
                  *
-                 * Fix: Save the current state and resume it in ring-3. Requires EM to not go
-                 *      to REM for MMIO accesses (like may currently do). */
+                 * Fix: VINF_IOM_R3_IOPORT_COMMIT_WRITE (part 2) */
                 LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
                 return rc2;
             default:
@@ -1998,7 +2020,12 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
     int rc = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
-        return VINF_IOM_R3_MMIO_READ_WRITE;
+    {
+        if (enmAccessType == PGMACCESSTYPE_READ)
+            return VINF_IOM_R3_MMIO_READ;
+        Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+        return iomMmioRing3WritePending(pVCpu, GCPhysFault, pvBuf, cbBuf, NULL /*pRange*/);
+    }
 #endif
     AssertRC(rc);
     Assert(pRange == iomMmioGetRange(pVM, pVCpu, GCPhysFault));
@@ -2018,7 +2045,13 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
         if (enmAccessType == PGMACCESSTYPE_READ)
             rcStrict = iomMMIODoRead(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
         else
+        {
             rcStrict = iomMMIODoWrite(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
+#ifndef IN_RING3
+            if (rcStrict == VINF_IOM_R3_MMIO_WRITE)
+                rcStrict = iomMmioRing3WritePending(pVCpu, GCPhysFault, pvBuf, cbBuf, pRange);
+#endif
+        }
 
         /* Check the return code. */
 #ifdef IN_RING3
@@ -2026,6 +2059,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
 #else
         AssertMsg(   rcStrict == VINF_SUCCESS
                   || rcStrict == (enmAccessType == PGMACCESSTYPE_READ ? VINF_IOM_R3_MMIO_READ :  VINF_IOM_R3_MMIO_WRITE)
+                  || (rcStrict == VINF_IOM_R3_MMIO_COMMIT_WRITE && enmAccessType == PGMACCESSTYPE_WRITE)
                   || rcStrict == VINF_IOM_R3_MMIO_READ_WRITE
                   || rcStrict == VINF_EM_DBG_STOP
                   || rcStrict == VINF_EM_DBG_EVENT
@@ -2042,8 +2076,25 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
         iomMmioReleaseRange(pVM, pRange);
         PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     }
+#ifdef IN_RING3
     else
         iomMmioReleaseRange(pVM, pRange);
+#else
+    else
+    {
+        if (rcStrict == VINF_IOM_R3_MMIO_READ_WRITE)
+        {
+            if (enmAccessType == PGMACCESSTYPE_READ)
+                rcStrict = VINF_IOM_R3_MMIO_READ;
+            else
+            {
+                Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+                rcStrict = iomMmioRing3WritePending(pVCpu, GCPhysFault, pvBuf, cbBuf, pRange);
+            }
+        }
+        iomMmioReleaseRange(pVM, pRange);
+    }
+#endif
     return rcStrict;
 }
 
@@ -2063,6 +2114,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
  */
 VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue)
 {
+    Assert(pVCpu->iom.s.PendingMmioWrite.cbValue == 0);
     /* Take the IOM lock before performing any MMIO. */
     VBOXSTRICTRC rc = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
@@ -2195,6 +2247,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint32
  */
 VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
 {
+    Assert(pVCpu->iom.s.PendingMmioWrite.cbValue == 0);
     /* Take the IOM lock before performing any MMIO. */
     VBOXSTRICTRC rc = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
@@ -2320,6 +2373,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                                         DISCPUMODE enmAddrMode, uint32_t cbTransfer)
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIns);
+    Assert(pVCpu->iom.s.PendingMmioWrite.cbValue == 0);
 
     /*
      * We do not support REPNE or decrementing destination
@@ -2486,6 +2540,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
                                          DISCPUMODE enmAddrMode, uint32_t cbTransfer)
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOuts);
+    Assert(pVCpu->iom.s.PendingMmioWrite.cbValue == 0);
 
     /*
      * We do not support segment prefixes, REPNE or
