@@ -902,7 +902,8 @@ class Session(TdTaskBase):
         for o in (oStdIn, oStdOut, oStdErr, oTestPipe):
             if o is not None and not isinstance(o, basestring):
                 del o.uTxsClientCrc32;      # pylint: disable=E1103
-                o.close();                  # Make sure the files are closed
+                # Make sure all files are closed
+                o.close();                  # pylint: disable=E1103
         reporter.log('taskExecEx: returns %s' % (rc));
         return rc;
 
