@@ -388,7 +388,7 @@ VBOX_WITH_DEBUGGER_GUI = 1
 # Enables the second step using IEM (the interpreter).
 VBOX_WITH_2ND_IEM_STEP = 1
 # Enables the third step using IEM (the interpreter).
-#VBOX_WITH_3RD_IEM_STEP = 1
+VBOX_WITH_3RD_IEM_STEP = 1
 # Enables the new APIC code.
 VBOX_WITH_NEW_APIC = 1
 ## @}
