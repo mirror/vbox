@@ -319,7 +319,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 fSuperSpeed = True;
 
             # Create test device gadget and a filter to attach the device automatically.
-            fRc = self.oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
+            fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
@@ -370,7 +370,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 fSuperSpeed = True;
 
             # Create test device gadget and a filter to attach the device automatically.
-            fRc = self.oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
+            fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
