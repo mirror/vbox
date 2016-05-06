@@ -1226,6 +1226,23 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
 
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3ResolveConflict, a);
 #ifdef DEBUG_bird
+    /*
+     * Ended up here frequently recently with an NT4.0 VM (using SMP kernel).
+     *
+     * The problem is when enabling large pages (i.e. updating CR4) using the
+     * _Ki386EnableCurrentLargePage@8 assembly routine (address 0x801c97ad-9).
+     * The routine loads a sparsely popuplated page tables with identiy mappings
+     * of its own code, most entries are whatever ExAllocatePool returned, which
+     * is documented as undefined but all 0xffffffff in this case.  Once loaded,
+     * it jumps to the physical code address, disables paging, set CR4.PSE=1,
+     * re-enables paging, restore the original page table and returns successfully.
+     *
+     * Theory: if CSAM/PATM patches the pushf;cli;mov eax,cr3; sequence, at the
+     * start of that function we're apparently in trouble, if CSAM/PATM doesn't
+     * we're switching back to REM and doing disabling of paging there instead.
+     *
+     * Normal PD: CR3=00030000; Problematic identity mapped PD: CR3=0x5fa000.
+     */
     DBGFSTOP(pVM);
 #endif
     AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, GCPtrOldMapping, cPTs));
