@@ -314,8 +314,12 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             reporter.log('Connect succeeded');
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
+            fSuperSpeed = False;
+            if sSpeed == 'Super':
+                fSuperSpeed = True;
+
             # Create test device gadget and a filter to attach the device automatically.
-            fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
+            fRc = self.oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
@@ -361,8 +365,12 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         if fRc is True:
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
+            fSuperSpeed = False;
+            if sSpeed == 'Super':
+                fSuperSpeed = True;
+
             # Create test device gadget and a filter to attach the device automatically.
-            fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
+            fRc = self.oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
                 fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
