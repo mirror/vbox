@@ -1042,7 +1042,8 @@ class FileWrapperTestPipe(object):
                 g_oLock.release();
         else:
             error('_processXmlElement(%s)' % sElement);
-            sys.exit('error');
+
+
 #
 # The public APIs.
 #
