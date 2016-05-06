@@ -903,6 +903,11 @@ static int apicR3LoadLegacyVCpuData(PVM pVM, PVMCPU pVCpu, PSSMHANDLE pSSM, uint
     uint32_t u32TimerShift;
     SSMR3GetU32(pSSM, &pXApicPage->timer_dcr.all.u32DivideValue);
     SSMR3GetU32(pSSM, &u32TimerShift);
+    /* Old implementation may have left the timer shift uninitialized until
+     * the timer configuration register was written. Fix that up.
+     */
+    if (!u32TimerShift)
+        u32TimerShift = 1;
     uint8_t const uTimerShift = apicGetTimerShift(pXApicPage);
     AssertMsgReturn(u32TimerShift == uTimerShift, ("Timer shift invalid! Saved-state contains %u, expected %u\n", u32TimerShift,
                                                    uTimerShift), VERR_INVALID_STATE);
