@@ -939,9 +939,10 @@ class FileWrapper(object):
 class FileWrapperTestPipe(object):
     """ File like class for the test pipe (TXS EXEC and similar). """
     def __init__(self):
-        self.sPrefix  = '';
-        self.fStarted = False;
-        self.fClosed  = False;
+        self.sPrefix    = '';
+        self.fStarted   = False;
+        self.fClosed    = False;
+        self.sTagBuffer = None;
 
     def __del__(self):
         self.close();
@@ -978,11 +979,70 @@ class FileWrapperTestPipe(object):
                 pass;
         try:
             g_oReporter.subXmlWrite(self, sText, utils.getCallerName());
+            # Parse the supplied text and look for <Failed.../> tags to keep track of the
+            # error counter. This is only a very lazy aproach.
+            sText.strip();
+            idxText = 0;
+            while len(sText) > 0:
+                if self.sTagBuffer is None:
+                    # Look for the start of a tag.
+                    idxStart = sText[idxText:].find('<');
+                    if idxStart != -1:
+                        # Look for the end of the tag.
+                        idxEnd = sText[idxStart:].find('>');
+
+                        # If the end was found inside the current buffer, parse the line,
+                        # else we have to save it for later.
+                        if idxEnd != -1:
+                            idxEnd += idxStart + 1;
+                            self._processXmlElement(sText[idxStart:idxEnd]);
+                            idxText = idxEnd;
+                        else:
+                            self.sTagBuffer = sText[idxStart:];
+                            idxText = len(sText);
+                    else:
+                        idxText = len(sText);
+                else:
+                    # Search for the end of the tag and parse the whole tag.
+                    idxEnd = sText[idxText:].find('>');
+                    if idxEnd != -1:
+                        idxEnd += idxStart + 1;
+                        self._processXmlElement(self.sTagBuffer + sText[idxText:idxEnd]);
+                        self.sTagBuffer = None;
+                        idxText = idxEnd;
+                    else:
+                        self.sTagBuffer = self.sTagBuffer + sText[idxText:];
+                        idxText = len(sText);
+
+                sText = sText[idxText:];
+                sText = sText.lstrip();
         except:
             traceback.print_exc();
         return None;
 
+    def _processXmlElement(self, sElement):
+        """
+        Processes a complete XML tag (so far we only search for the Failed to tag
+        to keep track of the error counter.
+        """
+        # Make sure we don't parse any space between < and the element name.
+        sElement = sElement.strip();
 
+        # Find the end of the name
+        idxEndName = sElement.find(' ');
+        if idxEndName == -1:
+            idxEndName = sElement.find('/');
+        if idxEndName == -1:
+            idxEndName = sElement.find('>');
+
+        if idxEndName != -1:
+            if sElement[1:idxEndName] == 'Failed':
+                g_oLock.acquire();
+                g_oReporter.testIncErrors();
+                g_oLock.release();
+        else:
+            error('_processXmlElement(%s)' % sElement);
+            sys.exit('error');
 #
 # The public APIs.
 #
