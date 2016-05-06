@@ -2092,7 +2092,9 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
  * VM_FF_PGM_SYNC_CR3_NONGLOBAL. Those two force action flags are set
  * in several places, most importantly whenever the CR3 is loaded.
  *
- * @returns VBox status code.
+ * @returns VBox status code. May return VINF_PGM_SYNC_CR3 in RC/R0.
+ * @retval  VERR_PGM_NO_HYPERVISOR_ADDRESS in raw-mode when we're unable to map
+ *          the VMM into guest context.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cr0         Guest context CR0 register
  * @param   cr3         Guest context CR3 register

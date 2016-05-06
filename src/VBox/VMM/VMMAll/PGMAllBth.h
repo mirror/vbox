@@ -3668,7 +3668,10 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
 /**
  * Syncs the paging hierarchy starting at CR3.
  *
- * @returns VBox status code, no specials.
+ * @returns VBox status code, R0/RC may return VINF_PGM_SYNC_CR3, no other
+ *          informational status codes.
+ * @retval  VERR_PGM_NO_HYPERVISOR_ADDRESS in raw-mode when we're unable to map
+ *          the VMM into guest context.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cr0         Guest context CR0 register.
  * @param   cr3         Guest context CR3 register. Not subjected to the A20
@@ -3734,11 +3737,17 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     {
         int rc = pgmMapResolveConflicts(pVM);
         Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
-        if (rc == VINF_PGM_SYNC_CR3)
+        if (rc == VINF_SUCCESS)
+        { /* likely */ }
+        else if (rc == VINF_PGM_SYNC_CR3)
         {
             LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
             return VINF_PGM_SYNC_CR3;
         }
+        else if (RT_FAILURE(rc))
+            return rc;
+        else
+            AssertMsgFailed(("%Rrc\n", rc));
     }
 #  else
     Assert(!pgmMapAreMappingsEnabled(pVM));
