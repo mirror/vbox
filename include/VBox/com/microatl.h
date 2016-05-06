@@ -485,6 +485,14 @@ public:
     }
 };
 
+/**
+ *
+ * This class not _not_ be statically instantiated as a global variable!  It may
+ * use VBoxRT before it's initialized otherwise, messing up logging and whatnot.
+ *
+ * When possible create the instance inside the TrustedMain() or main() as a
+ * stack variable.  In DLLs use 'new' to instantiate it in the DllMain function.
+ */
 class CComModule : public CAtlModuleT<CComModule>
 {
 public:

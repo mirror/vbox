@@ -130,7 +130,6 @@ bool CExeModule::StartMonitor()
     return (h != NULL);
 }
 
-static CExeModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_VirtualBox, VirtualBox)
@@ -172,6 +171,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
      * the support driver.
      */
     RTR3InitExe(argc, &argv, 0);
+    CExeModule _Module;
 
     /* Note that all options are given lowercase/camel case/uppercase to
      * approximate case insensitive matching, which RTGetOpt doesn't offer. */

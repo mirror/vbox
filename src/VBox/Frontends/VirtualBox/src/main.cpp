@@ -361,6 +361,10 @@ static void ShowHelp()
 
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 {
+#ifdef RT_OS_WINDOWS
+    ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
+#endif
+
     /* Failed result initially: */
     int iResultCode = 1;
 

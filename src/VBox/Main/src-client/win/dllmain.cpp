@@ -30,7 +30,7 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static ATL::CComModule _Module;
+static ATL::CComModule *g_pAtlComModule;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_Session, Session)
@@ -49,12 +49,21 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
         // idempotent, so doesn't harm, and needed for COM embedding scenario
         RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 
-        _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
+        g_pAtlComModule = new(ATL::CComModule);
+        if (!g_pAtlComModule)
+            return FALSE;
+
+        g_pAtlComModule->Init(ObjectMap, hInstance, &LIBID_VirtualBox);
         DisableThreadLibraryCalls(hInstance);
     }
     else if (dwReason == DLL_PROCESS_DETACH)
     {
-        _Module.Term();
+        if (g_pAtlComModule)
+        {
+            g_pAtlComModule->Term();
+            delete g_pAtlComModule;
+            g_pAtlComModule = NULL;
+        }
     }
     return TRUE;
 }
@@ -64,7 +73,8 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 
 STDAPI DllCanUnloadNow(void)
 {
-    return (_Module.GetLockCount() == 0) ? S_OK : S_FALSE;
+    AssertReturn(g_pAtlComModule, S_OK);
+    return g_pAtlComModule->GetLockCount() == 0 ? S_OK : S_FALSE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -72,7 +82,8 @@ STDAPI DllCanUnloadNow(void)
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-    return _Module.GetClassObject(rclsid, riid, ppv);
+    AssertReturn(g_pAtlComModule, E_UNEXPECTED);
+    return g_pAtlComModule->GetClassObject(rclsid, riid, ppv);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -82,7 +93,8 @@ STDAPI DllRegisterServer(void)
 {
 #ifndef VBOX_WITH_MIDL_PROXY_STUB
     // registers object, typelib and all interfaces in typelib
-    return _Module.RegisterServer(TRUE);
+    AssertReturn(g_pAtlComModule, E_UNEXPECTED);
+    return g_pAtlComModule->RegisterServer(TRUE);
 #else
     return S_OK; /* VBoxProxyStub does all the work, no need to duplicate it here. */
 #endif
@@ -94,7 +106,8 @@ STDAPI DllRegisterServer(void)
 STDAPI DllUnregisterServer(void)
 {
 #ifndef VBOX_WITH_MIDL_PROXY_STUB
-    HRESULT hrc = _Module.UnregisterServer(TRUE);
+    AssertReturn(g_pAtlComModule, E_UNEXPECTED);
+    HRESULT hrc = g_pAtlComModule->UnregisterServer(TRUE);
     return hrc;
 #else
     return S_OK; /* VBoxProxyStub does all the work, no need to duplicate it here. */

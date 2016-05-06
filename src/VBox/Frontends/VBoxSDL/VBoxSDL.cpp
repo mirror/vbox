@@ -736,15 +736,14 @@ void signal_handler_SIGINT(int sig)
 #endif /* VBOXSDL_WITH_X11 */
 
 
-#ifdef RT_OS_WINDOWS
-// Required for ATL
-static ATL::CComModule _Module;
-#endif
-
 /** entry point */
 extern "C"
 DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+#ifdef RT_OS_WINDOWS
+    ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
+#endif
+
 #ifdef Q_WS_X11
     if (!XInitThreads())
         return 1;

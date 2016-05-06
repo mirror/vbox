@@ -988,9 +988,6 @@ static DECLCALLBACK(int) fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 #ifdef RT_OS_WINDOWS
-// Required for ATL
-static ATL::CComModule _Module;
-
 /**
  * "Signal" handler for cleanly terminating the event loop.
  */
@@ -1048,6 +1045,9 @@ int main(int argc, char *argv[])
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
+#ifdef RT_OS_WINDOWS
+    ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
+#endif
 
     // store a log prefix for this thread
     g_mapThreads[RTThreadSelf()] = "[M  ]";

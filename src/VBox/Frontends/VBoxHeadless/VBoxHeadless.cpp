@@ -587,10 +587,6 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
     return rcExit;
 }
 
-#ifdef RT_OS_WINDOWS
-// Required for ATL
-static ATL::CComModule _Module;
-#endif
 
 #ifdef RT_OS_DARWIN
 /**
@@ -635,6 +631,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char szMpegFile[RTPATH_MAX];
     const char *pszFileNameParam = "VBox-%d.vob";
 #endif /* VBOX_WITH_VPX */
+#ifdef RT_OS_WINDOWS
+    ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
+#endif
 
     LogFlow(("VBoxHeadless STARTED.\n"));
     RTPrintf(VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
