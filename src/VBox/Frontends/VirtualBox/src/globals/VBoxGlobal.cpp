@@ -180,9 +180,10 @@ using namespace UIExtraDataDefs;
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef VBOX_WS_WIN
-/* Make sure that ATL is usable in this linking namespace. */
-static ATL::CComModule _Module;
-#endif /* VBOX_WS_WIN */
+/** ATL requires a module to be instantiated (set internal global variable).
+ * @note Do NOT do this statically as it starts using IPRT before it's ready! */
+static ATL::CComModule *_Module;
+#endif
 
 /* static */
 bool VBoxGlobal::m_sfCleanupInProgress = false;
@@ -201,6 +202,9 @@ void VBoxGlobal::create()
 
     /* Create instance: */
     new VBoxGlobal;
+#ifdef VBOX_WS_WIN
+    _Module = new ATL::CComModule;
+#endif
     /* Prepare instance: */
     m_spInstance->prepare();
 }
