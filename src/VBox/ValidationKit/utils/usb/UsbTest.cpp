@@ -40,6 +40,8 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
+#include <iprt/linux/sysfs.h>
+
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
@@ -137,6 +139,19 @@ typedef struct USBTESTDESC
 /** Pointer a USB test descriptor. */
 typedef USBTESTDESC *PUSBTESTDESC;
 
+/**
+ * USB speed values.
+ */
+typedef enum USBTESTSPEED
+{
+    USBTESTSPEED_ANY = 0,
+    USBTESTSPEED_UNKNOWN,
+    USBTESTSPEED_LOW,
+    USBTESTSPEED_FULL,
+    USBTESTSPEED_HIGH,
+    USBTESTSPEED_SUPER
+} USBTESTSPEED;
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -150,7 +165,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 {
     {"--device",           'd', RTGETOPT_REQ_STRING },
     {"--help",             'h', RTGETOPT_REQ_NOTHING},
-    {"--exclude",          'e', RTGETOPT_REQ_UINT32}
+    {"--exclude",          'e', RTGETOPT_REQ_UINT32},
+    {"--expected-speed",   's', RTGETOPT_REQ_STRING }
 };
 
 static USBTESTDESC g_aTests[] =
@@ -185,6 +201,8 @@ static USBTESTDESC g_aTests[] =
 
 /** The test handle. */
 static RTTEST g_hTest;
+/** The expected device speed. */
+static USBTESTSPEED g_enmSpeed = USBTESTSPEED_ANY;
 
 /**
  * Setup callback for basic read/write (bulk, isochronous) tests.
@@ -252,14 +270,100 @@ static void usbTestUsage(PRTSTREAM pStrm)
             case 'e':
                 pszHelp = "Exclude the given test id from the list";
                 break;
+            case 's':
+                pszHelp = "The device speed to expect";
+                break;
             default:
                 pszHelp = "Option undocumented";
                 break;
         }
         char szOpt[256];
         RTStrPrintf(szOpt, sizeof(szOpt), "%s, -%c", g_aCmdOptions[i].pszLong, g_aCmdOptions[i].iShort);
-        RTStrmPrintf(pStrm, "  %-20s%s\n", szOpt, pszHelp);
+        RTStrmPrintf(pStrm, "  %-30s%s\n", szOpt, pszHelp);
     }
+}
+
+/**
+ * Searches for a USB test device and returns the bus and device ID and the device speed.
+ */
+static int usbTestDeviceQueryBusAndDevId(uint16_t *pu16BusId, uint16_t *pu16DevId, USBTESTSPEED *penmSpeed)
+{
+    bool fFound = false;
+
+#define USBTEST_USB_DEV_SYSFS "/sys/bus/usb/devices/"
+
+    PRTDIR pDirUsb = NULL;
+    int rc = RTDirOpen(&pDirUsb, USBTEST_USB_DEV_SYSFS);
+    if (RT_SUCCESS(rc))
+    {
+        do
+        {
+            RTDIRENTRY DirUsbBus;
+            rc = RTDirRead(pDirUsb, &DirUsbBus, NULL);
+            if (   RT_SUCCESS(rc)
+                && RTStrNCmp(DirUsbBus.szName, "usb", 3)
+                && RTLinuxSysFsExists(USBTEST_USB_DEV_SYSFS "%s/idVendor", DirUsbBus.szName))
+            {
+                int64_t idVendor  = 0;
+                int64_t idProduct = 0;
+                int64_t iBusId    = 0;
+                int64_t iDevId    = 0;
+                char    aszSpeed[20];
+
+                rc = RTLinuxSysFsReadIntFile(16, &idVendor, USBTEST_USB_DEV_SYSFS "%s/idVendor", DirUsbBus.szName);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsReadIntFile(16, &idProduct, USBTEST_USB_DEV_SYSFS "%s/idProduct", DirUsbBus.szName);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsReadIntFile(16, &iBusId, USBTEST_USB_DEV_SYSFS "%s/busnum", DirUsbBus.szName);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsReadIntFile(16, &iDevId, USBTEST_USB_DEV_SYSFS "%s/devnum", DirUsbBus.szName);
+                if (RT_SUCCESS(rc))
+                    rc = RTLinuxSysFsReadStrFile(&aszSpeed[0], sizeof(aszSpeed), NULL, USBTEST_USB_DEV_SYSFS "%s/speed", DirUsbBus.szName);
+
+                if (   RT_SUCCESS(rc)
+                    && idVendor == 0x0525
+                    && idProduct == 0xa4a0)
+                {
+                    if (penmSpeed)
+                    {
+                        /* Parse the speed. */
+                        if (!RTStrCmp(&aszSpeed[0], "1.5"))
+                            *penmSpeed = USBTESTSPEED_LOW;
+                        else if (!RTStrCmp(&aszSpeed[0], "12"))
+                            *penmSpeed = USBTESTSPEED_FULL;
+                        else if (!RTStrCmp(&aszSpeed[0], "480"))
+                            *penmSpeed = USBTESTSPEED_HIGH;
+                        else if (   !RTStrCmp(&aszSpeed[0], "5000")
+                                 || !RTStrCmp(&aszSpeed[0], "10000"))
+                            *penmSpeed = USBTESTSPEED_SUPER;
+                        else
+                            *penmSpeed = USBTESTSPEED_UNKNOWN;
+                    }
+
+                    if (pu16BusId)
+                        *pu16BusId = (uint16_t)iBusId;
+                    if (pu16DevId)
+                        *pu16DevId = (uint16_t)iDevId;
+                    fFound = true;
+                    break;
+                }
+            }
+            else if (rc != VERR_NO_MORE_FILES)
+                rc = VINF_SUCCESS;
+
+        } while (   RT_SUCCESS(rc)
+                 && !fFound);
+
+        if (rc == VERR_NO_MORE_FILES)
+            rc = VINF_SUCCESS;
+
+        RTDirClose(pDirUsb);
+    }
+
+    if (RT_SUCCESS(rc) && !fFound)
+        rc = VERR_NOT_FOUND;
+
+    return rc;
 }
 
 /**
@@ -438,6 +542,22 @@ int main(int argc, char *argv[])
             case 'd':
                 pszDevice = ValueUnion.psz;
                 break;
+            case 's':
+                if (!RTStrICmp(ValueUnion.psz, "Low"))
+                    g_enmSpeed = USBTESTSPEED_LOW;
+                else if (!RTStrICmp(ValueUnion.psz, "Full"))
+                    g_enmSpeed = USBTESTSPEED_FULL;
+                else if (!RTStrICmp(ValueUnion.psz, "High"))
+                    g_enmSpeed = USBTESTSPEED_HIGH;
+                else if (!RTStrICmp(ValueUnion.psz, "Super"))
+                    g_enmSpeed = USBTESTSPEED_SUPER;
+                else
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid speed passed to --expected-speed\n");
+                    RTTestErrorInc(g_hTest);
+                    return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
+                }
+                break;
             case 'e':
                 if (ValueUnion.u32 < RT_ELEMENTS(g_aTests))
                     g_aTests[ValueUnion.u32].fExcluded = true;
@@ -470,7 +590,29 @@ int main(int argc, char *argv[])
     }
 
     if (pszDevice)
+    {
+        /* First check that the requested speed matches. */
+        if (g_enmSpeed != USBTESTSPEED_ANY)
+        {
+            RTTestSub(g_hTest, "Checking correct device speed");
+
+            USBTESTSPEED enmSpeed = USBTESTSPEED_UNKNOWN;
+            rc = usbTestDeviceQueryBusAndDevId(NULL, NULL, &enmSpeed);
+            if (RT_SUCCESS(rc))
+            {
+                if (enmSpeed == g_enmSpeed)
+                    RTTestPassed(g_hTest, "Reported device speed matches requested speed\n");
+                else
+                    RTTestFailed(g_hTest, "Reported device speed doesn'match requested speed (%u vs %u)\n",
+                                 enmSpeed, g_enmSpeed);
+            }
+            else
+                RTTestFailed(g_hTest, "Failed to query device speed with rc=%Rrc\n", rc);
+
+            RTTestSubDone(g_hTest);
+        }
         usbTestExec(pszDevice);
+    }
 
     RTEXITCODE rcExit = RTTestSummaryAndDestroy(g_hTest);
     return rcExit;
