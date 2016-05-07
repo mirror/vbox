@@ -423,7 +423,8 @@ static int rtDirNtFetchMore(PRTDIR pThis)
     }
     if (!NT_SUCCESS(rcNt))
     {
-        if (rcNt == STATUS_NO_MORE_FILES || rcNt == STATUS_NO_MORE_ENTRIES)
+        /* Note! VBoxSVR and CIFS file systems both ends up with STATUS_NO_SUCH_FILE here instead of STATUS_NO_MORE_FILES. */
+        if (rcNt == STATUS_NO_MORE_FILES || rcNt == STATUS_NO_MORE_ENTRIES || rcNt == STATUS_NO_SUCH_FILE)
             return VERR_NO_MORE_FILES;
         return RTErrConvertFromNtStatus(rcNt);
     }
