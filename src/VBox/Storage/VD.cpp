@@ -3750,7 +3750,8 @@ static int vdPluginLoadFromPath(const char *pszPath)
         goto out;
     }
 
-    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
+    while (   (rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK))
+           != VERR_NO_MORE_FILES)
     {
         char *pszPluginPath = NULL;
 
