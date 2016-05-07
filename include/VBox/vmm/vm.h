@@ -515,6 +515,31 @@ typedef struct VMCPU
 /** Flags to clear before resuming guest execution. */
 #define VMCPU_FF_RESUME_GUEST_MASK              (VMCPU_FF_TO_R3)
 
+
+/** VM flags that cause the REP[|NE|E] STRINS loops to yield immediately. */
+#define VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK    (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
+                                                 | VM_FF_EMT_RENDEZVOUS | VM_FF_RESET | VM_FF_PGM_POOL_FLUSH_PENDING )
+/** VM flags that cause the REP[|NE|E] STRINS loops to yield. */
+#define VM_FF_YIELD_REPSTR_MASK                 (  VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK \
+                                                 | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_DBGF | VM_FF_DEBUG_SUSPEND )
+/** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield immediately. */
+#ifdef IN_RING3
+# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK ( VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL )
+#else
+# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (  VMCPU_FF_TO_R3 | VMCPU_FF_IEM | VMCPU_FF_IOM | VMCPU_FF_PGM_SYNC_CR3 \
+                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL )
+#endif
+/** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield, interrupts
+ *  enabled. */
+#define VMCPU_FF_YIELD_REPSTR_MASK              (  VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK \
+                                                 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_PIC \
+                                                 | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_PDM_CRITSECT \
+                                                 | VMCPU_FF_TIMER          | VMCPU_FF_REQUEST )
+/** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield, interrupts
+ *  disabled. */
+#define VMCPU_FF_YIELD_REPSTR_NOINT_MASK        (  VMCPU_FF_YIELD_REPSTR_MASK \
+                                                 & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_PIC) )
+
 /** VM Flags that cause the HM loops to go back to ring-3. */
 #define VM_FF_HM_TO_R3_MASK                     (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
                                                  | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
