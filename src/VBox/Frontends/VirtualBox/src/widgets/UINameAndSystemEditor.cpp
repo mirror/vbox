@@ -251,21 +251,27 @@ CGuestOSType UINameAndSystemEditor::type() const
 
 void UINameAndSystemEditor::setType(const CGuestOSType &type)
 {
-    /* Initialize variables: */
-    const QString strFamilyId = type.GetFamilyId();
-    const QString strTypeId = type.GetId();
+    /** @todo We're getting here with a NULL type when creating new VMs.  Very
+     *        annoying, so I've just shut it up for now.  Sergey and Santosh can try
+     *        figure out why this happens now with Qt5. */
+    if (type.isNotNull())
+    {
+        /* Initialize variables: */
+        const QString strFamilyId = type.GetFamilyId();
+        const QString strTypeId = type.GetId();
 
-    /* Get/check family index: */
-    const int iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
-    AssertMsg(iFamilyIndex != -1, ("Invalid family ID: '%s'", strFamilyId.toLatin1().constData()));
-    if (iFamilyIndex != -1)
-        m_pComboFamily->setCurrentIndex(iFamilyIndex);
+        /* Get/check family index: */
+        const int iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
+        AssertMsg(iFamilyIndex != -1, ("Invalid family ID: '%s'", strFamilyId.toLatin1().constData()));
+        if (iFamilyIndex != -1)
+            m_pComboFamily->setCurrentIndex(iFamilyIndex);
 
-    /* Get/check type index: */
-    const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
-    AssertMsg(iTypeIndex != -1, ("Invalid type ID: '%s'", strTypeId.toLatin1().constData()));
-    if (iTypeIndex != -1)
-        m_pComboType->setCurrentIndex(iTypeIndex);
+        /* Get/check type index: */
+        const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
+        AssertMsg(iTypeIndex != -1, ("Invalid type ID: '%s'", strTypeId.toLatin1().constData()));
+        if (iTypeIndex != -1)
+            m_pComboType->setCurrentIndex(iTypeIndex);
+    }
 }
 
 void UINameAndSystemEditor::retranslateUi()
