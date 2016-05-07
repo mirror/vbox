@@ -326,9 +326,12 @@ VMMR3_INT_DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * @returns True is a debugger have attached.
  * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context per CPU structure.
  * @param   enmEvent    Event.
+ *
+ * @thread  EMT(pVCpu)
  */
-bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
+bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
 {
     /*
      * First a message.
@@ -356,6 +359,20 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
             RTStrmPrintf(g_pStdErr, "Attached!\n");
             RTStrmFlush(g_pStdErr);
             return true;
+        }
+
+        /* Process priority stuff. */
+        if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
+        {
+            int rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
+            if (rc == VINF_SUCCESS)
+                rc = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu, true /*fPriorityOnly*/);
+            if (rc != VINF_SUCCESS)
+            {
+                RTStrmPrintf(g_pStdErr, "[rcReq=%Rrc, ignored!]", rc);
+                RTStrmFlush(g_pStdErr);
+            }
         }
 
         /* next */
@@ -480,7 +497,7 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
      * Check if a debugger is attached.
      */
     if (    !pVM->dbgf.s.fAttached
-        &&  !dbgfR3WaitForAttach(pVM, enmEvent))
+        &&  !dbgfR3WaitForAttach(pVM, pVCpu, enmEvent))
     {
         Log(("DBGFR3VMMEventSrc: enmEvent=%d - debugger not attached\n", enmEvent));
         return VERR_DBGF_NOT_ATTACHED;
@@ -988,9 +1005,12 @@ VMMR3DECL(int) DBGFR3Attach(PUVM pUVM)
 
     /*
      * Call the VM, use EMT for serialization.
+     *
+     * Using a priority call here so we can actually attach a debugger during
+     * the countdown in dbgfR3WaitForAttach.
      */
     /** @todo SMP */
-    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3Attach, 1, pVM);
+    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3Attach, 1, pVM);
 }
 
 
