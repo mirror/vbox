@@ -737,6 +737,15 @@ public:
        return mIface == NULL;
     }
 
+    /** Returns @c true if attached to an interface pointer. */
+    bool isNotNull() const
+    {
+#ifdef DEBUG
+       Assert(!mDead);
+#endif
+       return mIface != NULL;
+    }
+
     /**
      * Returns @c true if the result code represents success (with or without
      * warnings).
