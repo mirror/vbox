@@ -855,6 +855,7 @@ DECLINLINE(void) iemInitExec(PIEMCPU pIemCpu, bool fBypassHandlers)
  */
 DECLINLINE(void) iemUninitExec(PIEMCPU pIemCpu)
 {
+    /* Note! do not touch fInPatchCode here! (see iemUninitExecAndFiddleStatusAndMaybeReenter) */
 #ifdef IEM_VERIFICATION_MODE_FULL
     pIemCpu->fNoRem = pIemCpu->fNoRemSavedByExec;
 #endif
@@ -11425,6 +11426,27 @@ VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 
 
 /**
+ * Calls iemUninitExec, iemExecStatusCodeFiddling and iemRCRawMaybeReenter.
+ *
+ * Only calling iemRCRawMaybeReenter in raw-mode, obviously.
+ *
+ * @returns Fiddled strict vbox status code, ready to return to non-IEM caller.
+ * @param   pIemCpu             The IEM per-CPU structure.
+ * @param   rcStrict            The status code to fiddle.
+ */
+DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PIEMCPU pIemCpu, VBOXSTRICTRC rcStrict)
+{
+    iemUninitExec(pIemCpu);
+#ifdef IN_RC
+    return iemRCRawMaybeReenter(pIemCpu, IEMCPU_TO_VMCPU(pIemCpu), pIemCpu->CTX_SUFF(pCtx),
+                                iemExecStatusCodeFiddling(pIemCpu, rcStrict));
+#else
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+#endif
+}
+
+
+/**
  * Interface for HM and EM for executing string I/O OUT (write) instructions.
  *
  * This API ASSUMES that the caller has already verified that the guest code is
@@ -11439,9 +11461,12 @@ VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
  *                              (doesn't matter which for this instruction).
  * @param   cbInstr             The instruction length in bytes.
  * @param   iEffSeg             The effective segment address.
+ * @param   fIoChecked          Whether the access to the I/O port has been
+ *                              checked or not.  It's typically checked in the
+ *                              HM scenario.
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
-                                                bool fRepPrefix, uint8_t cbInstr, uint8_t iEffSeg)
+                                                bool fRepPrefix, uint8_t cbInstr, uint8_t iEffSeg, bool fIoChecked)
 {
     AssertMsgReturn(iEffSeg < X86_SREG_COUNT, ("%#x\n", iEffSeg), VERR_IEM_INVALID_EFF_SEG);
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
@@ -11463,9 +11488,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
             case IEMMODE_16BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr16(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr16(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr16(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11474,9 +11499,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
             case IEMMODE_32BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr32(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr32(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr32(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11485,9 +11510,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
             case IEMMODE_64BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr64(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr64(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr64(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11504,9 +11529,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
             case IEMMODE_16BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_outs_op8_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_outs_op16_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_outs_op32_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_outs_op8_addr16(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_outs_op16_addr16(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_outs_op32_addr16(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11515,9 +11540,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
             case IEMMODE_32BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_outs_op8_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_outs_op16_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_outs_op32_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_outs_op8_addr32(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_outs_op16_addr32(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_outs_op32_addr32(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11526,9 +11551,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
             case IEMMODE_64BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_outs_op8_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_outs_op16_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_outs_op32_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_outs_op8_addr64(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_outs_op16_addr64(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_outs_op32_addr64(pIemCpu, cbInstr, iEffSeg, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11539,8 +11564,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
         }
     }
 
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
 
@@ -11558,9 +11582,12 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
  * @param   fRepPrefix          Indicates whether a repeat prefix is used
  *                              (doesn't matter which for this instruction).
  * @param   cbInstr             The instruction length in bytes.
+ * @param   fIoChecked          Whether the access to the I/O port has been
+ *                              checked or not.  It's typically checked in the
+ *                              HM scenario.
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
-                                               bool fRepPrefix, uint8_t cbInstr)
+                                               bool fRepPrefix, uint8_t cbInstr, bool fIoChecked)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
 
@@ -11581,9 +11608,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
             case IEMMODE_16BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr16(pIemCpu, cbInstr, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr16(pIemCpu, cbInstr, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr16(pIemCpu, cbInstr, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11592,9 +11619,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
             case IEMMODE_32BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr32(pIemCpu, cbInstr, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr32(pIemCpu, cbInstr, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr32(pIemCpu, cbInstr, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11603,9 +11630,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
             case IEMMODE_64BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr64(pIemCpu, cbInstr, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr64(pIemCpu, cbInstr, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr64(pIemCpu, cbInstr, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11622,9 +11649,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
             case IEMMODE_16BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_ins_op8_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_ins_op16_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_ins_op32_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_ins_op8_addr16(pIemCpu, cbInstr, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_ins_op16_addr16(pIemCpu, cbInstr, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_ins_op32_addr16(pIemCpu, cbInstr, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11633,9 +11660,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
             case IEMMODE_32BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_ins_op8_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_ins_op16_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_ins_op32_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_ins_op8_addr32(pIemCpu, cbInstr, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_ins_op16_addr32(pIemCpu, cbInstr, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_ins_op32_addr32(pIemCpu, cbInstr, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11644,9 +11671,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
             case IEMMODE_64BIT:
                 switch (cbValue)
                 {
-                    case 1: rcStrict = iemCImpl_ins_op8_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 2: rcStrict = iemCImpl_ins_op16_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
-                    case 4: rcStrict = iemCImpl_ins_op32_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 1: rcStrict = iemCImpl_ins_op8_addr64(pIemCpu, cbInstr, fIoChecked); break;
+                    case 2: rcStrict = iemCImpl_ins_op16_addr64(pIemCpu, cbInstr, fIoChecked); break;
+                    case 4: rcStrict = iemCImpl_ins_op32_addr64(pIemCpu, cbInstr, fIoChecked); break;
                     default:
                         AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
                 }
@@ -11657,10 +11684,52 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
         }
     }
 
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
+
+/**
+ * Interface for rawmode to write execute an OUT instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   u16Port     The port to read.
+ * @param   cbReg       The register size.
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedOut(PVMCPU pVCpu, uint8_t cbInstr, uint16_t u16Port, uint8_t cbReg)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
+    Assert(cbReg <= 4 && cbReg != 3);
+
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_out, u16Port, cbReg);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
+}
+
+
+/**
+ * Interface for rawmode to write execute an IN instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   u16Port     The port to read.
+ * @param   cbReg       The register size.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedIn(PVMCPU pVCpu, uint8_t cbInstr, uint16_t u16Port, uint8_t cbReg)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
+    Assert(cbReg <= 4 && cbReg != 3);
+
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_in, u16Port, cbReg);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
+}
 
 
 /**
@@ -11683,8 +11752,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbIns
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_mov_Cd_Rd, iCrReg, iGReg);
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
 
@@ -11708,8 +11776,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInst
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_mov_Rd_Cd, iGReg, iCrReg);
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
 
@@ -11729,8 +11796,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clts);
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
 
@@ -11751,8 +11817,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uin
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_1(iemCImpl_lmsw, uValue);
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
 
@@ -11774,8 +11839,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_xsetbv);
-    iemUninitExec(pIemCpu);
-    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pIemCpu, rcStrict);
 }
 
 #ifdef IN_RING3

@@ -1113,55 +1113,8 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
         &&  (Cpu.pCurInstr->fOpType & DISOPTYPE_PORTIO))
     {
         VBOXSTRICTRC rcStrict = IOMRCIOPortHandler(pVM, pVCpu, pRegFrame, &Cpu);
-        if (IOM_SUCCESS(rcStrict))
-        {
-            pRegFrame->rip += cbOp;
-
-            /*
-             * Check for I/O breakpoints.  A bit clumsy, but should be short lived (moved to IEM).
-             */
-            uint32_t const uDr7 = CPUMGetGuestDR7(pVCpu);
-            if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
-                                && X86_DR7_ANY_RW_IO(uDr7)
-                                && (CPUMGetGuestCR4(pVCpu) & X86_CR4_DE))
-                            || DBGFBpIsHwIoArmed(pVM)))
-            {
-                uint64_t    uPort = pRegFrame->dx;
-                unsigned    cbValue;
-                if (   Cpu.pCurInstr->uOpcode == OP_IN
-                    || Cpu.pCurInstr->uOpcode == OP_INSB
-                    || Cpu.pCurInstr->uOpcode == OP_INSWD)
-                {
-                    cbValue = DISGetParamSize(&Cpu, &Cpu.Param1);
-                    if (Cpu.Param2.fUse & DISUSE_IMMEDIATE)
-                        uPort = Cpu.Param2.uValue;
-                }
-                else
-                {
-                    cbValue = DISGetParamSize(&Cpu, &Cpu.Param2);
-                    if (Cpu.Param1.fUse & DISUSE_IMMEDIATE)
-                        uPort = Cpu.Param1.uValue;
-                }
-
-                VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, CPUMCTX_FROM_CORE(pRegFrame), uPort, cbValue);
-                if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
-                {
-                    /* Raise #DB. */
-                    TRPMResetTrap(pVCpu);
-                    TRPMAssertTrap(pVCpu, X86_XCPT_DE, TRPM_TRAP);
-                    if (rcStrict != VINF_SUCCESS)
-                        LogRel(("trpmGCTrap0dHandler: Overriding %Rrc with #DB on I/O port access.\n", VBOXSTRICTRC_VAL(rcStrict)));
-                    rcStrict = VINF_EM_RAW_GUEST_TRAP;
-                }
-                /* rcStrict is VINF_SUCCESS or in [VINF_EM_FIRST..VINF_EM_LAST]. */
-                else if (   rcStrict2 != VINF_SUCCESS
-                         && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
-                    rcStrict = rcStrict2;
-            }
-        }
-        rc = VBOXSTRICTRC_TODO(rcStrict);
         TRPM_EXIT_DBG_HOOK(0xd);
-        return trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
+        return trpmGCExitTrap(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict), pRegFrame);
     }
 
     /*

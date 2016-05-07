@@ -42,7 +42,6 @@
 #include <iprt/string.h>
 
 
-#ifdef VBOX_WITH_3RD_IEM_STEP
 /**
  * Converts disassembler mode to IEM mode.
  * @return IEM CPU mode.
@@ -60,8 +59,6 @@ DECLINLINE(IEMMODE) iomDisModeToIemMode(DISCPUMODE enmDisMode)
             return IEMMODE_32BIT;
     }
 }
-#endif
-
 
 
 /**
@@ -84,44 +81,14 @@ DECLINLINE(IEMMODE) iomDisModeToIemMode(DISCPUMODE enmDisMode)
  */
 static VBOXSTRICTRC iomRCInterpretIN(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef IN_RC
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIn);
-#endif
+    Assert(pCpu->Param2.fUse & (DISUSE_IMMEDIATE8 | DISUSE_REG_GEN16));
+    uint16_t u16Port = pCpu->Param2.fUse & DISUSE_REG_GEN16 ? pRegFrame->dx : (uint16_t)pCpu->Param2.uValue;
 
-    /*
-     * Get port number from second parameter.
-     * And get the register size from the first parameter.
-     */
-    uint64_t    uPort = 0;
-    unsigned    cbSize = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &uPort, &cbSize);
-    AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
+    Assert(pCpu->Param1.fUse & (DISUSE_REG_GEN32 | DISUSE_REG_GEN16 | DISUSE_REG_GEN8));
+    uint8_t cbValue = pCpu->Param1.fUse & DISUSE_REG_GEN32 ? 4 : pCpu->Param1.fUse & DISUSE_REG_GEN16 ? 2 : 1;
 
-    cbSize = DISGetParamSize(pCpu, &pCpu->Param1);
-    Assert(cbSize > 0);
-    VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        /*
-         * Attempt to read the port.
-         */
-        uint32_t u32Data = UINT32_C(0xffffffff);
-        rcStrict = IOMIOPortRead(pVM, pVCpu, uPort, &u32Data, cbSize);
-        if (IOM_SUCCESS(rcStrict))
-        {
-            /*
-             * Store the result in the AL|AX|EAX register.
-             */
-            fRc = iomSaveDataToReg(pCpu, &pCpu->Param1, pRegFrame, u32Data);
-            AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
-        }
-        else
-            AssertMsg(rcStrict == VINF_IOM_R3_IOPORT_READ || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    }
-    else
-        AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-
-    return rcStrict;
+    return IEMExecDecodedIn(pVCpu, pCpu->cbInstr, u16Port, cbValue);
 }
 
 
@@ -146,37 +113,14 @@ static VBOXSTRICTRC iomRCInterpretIN(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
  */
 static VBOXSTRICTRC iomRCInterpretOUT(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef IN_RC
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOut);
-#endif
+    Assert(pCpu->Param1.fUse & (DISUSE_IMMEDIATE8 | DISUSE_REG_GEN16));
+    uint16_t const u16Port = pCpu->Param1.fUse & DISUSE_REG_GEN16 ? pRegFrame->dx : (uint16_t)pCpu->Param1.uValue;
 
-    /*
-     * Get port number from first parameter.
-     * And get the register size and value from the second parameter.
-     */
-    uint64_t    uPort = 0;
-    unsigned    cbSize = 0;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &uPort, &cbSize);
-    AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
+    Assert(pCpu->Param2.fUse & (DISUSE_REG_GEN32 | DISUSE_REG_GEN16 | DISUSE_REG_GEN8));
+    uint8_t const cbValue = pCpu->Param2.fUse & DISUSE_REG_GEN32 ? 4 : pCpu->Param2.fUse & DISUSE_REG_GEN16 ? 2 : 1;
 
-    VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        uint64_t u64Data = 0;
-        fRc = iomGetRegImmData(pCpu, &pCpu->Param2, pRegFrame, &u64Data, &cbSize);
-        AssertMsg(fRc, ("Failed to get reg value!\n")); NOREF(fRc);
-
-        /*
-         * Attempt to write to the port.
-         */
-        rcStrict = IOMIOPortWrite(pVM, pVCpu, uPort, u64Data, cbSize);
-        AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IOM_R3_IOPORT_WRITE || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
-                  || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST) || RT_FAILURE(rcStrict),
-                  ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    }
-    else
-        AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    return rcStrict;
+    return IEMExecDecodedOut(pVCpu, pCpu->cbInstr, u16Port, cbValue);
 }
 
 
@@ -202,35 +146,14 @@ static VBOXSTRICTRC iomRCInterpretOUT(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  */
 static VBOXSTRICTRC iomRCInterpretINS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef VBOX_WITH_3RD_IEM_STEP
     uint8_t cbValue = pCpu->pCurInstr->uOpcode == OP_INSB ? 1
                     : pCpu->uOpMode == DISCPUMODE_16BIT ? 2 : 4;       /* dword in both 32 & 64 bits mode */
     return IEMExecStringIoRead(pVCpu,
                                cbValue,
                                iomDisModeToIemMode((DISCPUMODE)pCpu->uCpuMode),
                                RT_BOOL(pCpu->fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP)),
-                               pCpu->cbInstr);
-#else
-    /*
-     * Get port number directly from the register (no need to bother the
-     * disassembler). And get the I/O register size from the opcode / prefix.
-     */
-    RTIOPORT    Port = pRegFrame->edx & 0xffff;
-    unsigned    cb;
-    if (pCpu->pCurInstr->uOpcode == OP_INSB)
-        cb = 1;
-    else
-        cb = (pCpu->uOpMode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
-
-    VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
-    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-    {
-        AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-        return rcStrict;
-    }
-
-    return IOMInterpretINSEx(pVM, pVCpu, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->uAddrMode, cb);
-#endif
+                               pCpu->cbInstr,
+                               false /*fIoChecked*/);
 }
 
 
@@ -257,7 +180,6 @@ static VBOXSTRICTRC iomRCInterpretINS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  */
 static VBOXSTRICTRC iomRCInterpretOUTS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef VBOX_WITH_3RD_IEM_STEP
     uint8_t cbValue = pCpu->pCurInstr->uOpcode == OP_OUTSB ? 1
                     : pCpu->uOpMode == DISCPUMODE_16BIT ? 2 : 4;       /* dword in both 32 & 64 bits mode */
     return IEMExecStringIoWrite(pVCpu,
@@ -265,30 +187,8 @@ static VBOXSTRICTRC iomRCInterpretOUTS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
                                 iomDisModeToIemMode((DISCPUMODE)pCpu->uCpuMode),
                                 RT_BOOL(pCpu->fPrefix & (DISPREFIX_REPNE | DISPREFIX_REP)),
                                 pCpu->cbInstr,
-                                pCpu->fPrefix & DISPREFIX_SEG ? pCpu->idxSegPrefix : X86_SREG_DS);
-#else
-    /*
-     * Get port number from the first parameter.
-     * And get the I/O register size from the opcode / prefix.
-     */
-    uint64_t    Port = 0;
-    unsigned    cb;
-    bool fRc = iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &Port, &cb);
-    AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
-    if (pCpu->pCurInstr->uOpcode == OP_OUTSB)
-        cb = 1;
-    else
-        cb = (pCpu->uOpMode == DISCPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
-
-    VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
-    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-    {
-        AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-        return rcStrict;
-    }
-
-    return IOMInterpretOUTSEx(pVM, pVCpu, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->uAddrMode, cb);
-#endif
+                                pCpu->fPrefix & DISPREFIX_SEG ? pCpu->idxSegPrefix : X86_SREG_DS,
+                                false /*fIoChecked*/);
 }
 
 

@@ -490,10 +490,6 @@ PGM_ALL_CB2_DECL(FNPGMPHYSHANDLER)  iomMmioHandler;
 #define IOM_LOCK_SHARED(a_pVM)                  IOM_LOCK_SHARED_EX(a_pVM, VERR_SEM_BUSY)
 
 
-/* Disassembly helpers used in IOMAll.cpp & IOMAllMMIO.cpp */
-bool    iomGetRegImmData(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize);
-bool    iomSaveDataToReg(PDISCPUSTATE pCpu, PCDISOPPARAM pParam, PCPUMCTXCORE pRegFrame, uint64_t u64Data);
-
 RT_C_DECLS_END
 
 
