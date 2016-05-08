@@ -11055,7 +11055,8 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
  */
 DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PIEMCPU pIemCpu, PVMCPU pVCpu, PCPUMCTX pCtx, VBOXSTRICTRC rcStrict)
 {
-    if (!pIemCpu->fInPatchCode)
+    if (   !pIemCpu->fInPatchCode
+        && rcStrict == VINF_SUCCESS)
         CPUMRawEnter(pVCpu);
     return rcStrict;
 }
