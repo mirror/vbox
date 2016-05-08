@@ -2220,7 +2220,8 @@ static size_t rtLogDestFindValueLength(const char *pszValue)
             off++;
         else
         {
-            size_t cchThusFar = off;
+            unsigned i;
+            size_t   cchThusFar = off;
             do
                 off++;
             while ((ch = pszValue[off]) != '\0' && RT_C_IS_SPACE(ch));
@@ -2229,7 +2230,7 @@ static size_t rtLogDestFindValueLength(const char *pszValue)
 
             if (ch == 'n' && pszValue[off + 1] == 'o')
                 off += 2;
-            for (unsigned i = 0; i < RT_ELEMENTS(g_aLogDst); i++)
+            for (i = 0; i < RT_ELEMENTS(g_aLogDst); i++)
                 if (!strncmp(&pszValue[off], g_aLogDst[i].pszInstr, g_aLogDst[i].cchInstr))
                 {
                     ch = pszValue[off + g_aLogDst[i].cchInstr];
