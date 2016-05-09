@@ -68,11 +68,12 @@
  * hog the CPU, especially not in raw-mode.
  */
 #ifdef IN_RC
-# define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fEflags) \
+# define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_pIemCpu, a_fEflags) \
     do { \
-        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
-                                                                                : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
-                      && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK))) \
+        if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
+                                                                                   : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
+                          && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) ) \
+                      || IEM_VERIFICATION_ENABLED(a_pIemCpu) )) \
         { \
             RTCCUINTREG fSavedFlags = ASMGetFlags(); \
             if (!(fSavedFlags & X86_EFL_IF)) \
@@ -82,32 +83,48 @@
                 ASMSetFlags(fSavedFlags); \
             } \
         } \
-        else return VINF_SUCCESS; \
+        else \
+        { \
+            LogFlow(("%s: Leaving early (outer)! ffcpu=%#x ffvm=%#x\n", \
+                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            return VINF_SUCCESS; \
+        } \
     } while (0)
 #else
-# define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fEflags) \
+# define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_pIemCpu, a_fEflags) \
     do { \
-        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
-                                                                                : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
-                      && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK))) \
+        if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
+                                                                                   : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
+                          && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) ) \
+                      || IEM_VERIFICATION_ENABLED(a_pIemCpu) )) \
         { /* probable */ } \
-        else return VINF_SUCCESS; \
+        else  \
+        { \
+            LogFlow(("%s: Leaving early (outer)! ffcpu=%#x ffvm=%#x\n", \
+                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            return VINF_SUCCESS; \
+        } \
     } while (0)
 #endif
-
 
 /** @def IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN
  * This is used in some of the inner loops to make sure we're responding quickly
  * to outside requests.  For I/O instructions this also make absolutely sure we
  * don't miss out on important stuff that happened while processing a word.
  */
-#define IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fExitExpr) \
+#define IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_pIemCpu, a_fExitExpr) \
     do { \
         if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
                           && !VM_FF_IS_PENDING(a_pVM,         VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK)) \
-                      || (a_fExitExpr))) \
+                      || (a_fExitExpr) \
+                      || IEM_VERIFICATION_ENABLED(a_pIemCpu) )) \
         { /* very likely */ } \
-        else return VINF_SUCCESS; \
+        else \
+        { \
+            LogFlow(("%s: Leaving early (inner)! ffcpu=%#x ffvm=%#x\n", \
+                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            return VINF_SUCCESS; \
+        } \
     } while (0)
 
 
@@ -137,7 +154,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
         return rcStrict;
 
     uint64_t        uSrc2Base;
-    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uSrc2Base);
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uSrc2Base);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -231,7 +248,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
                     if (   uCounterReg == 0
                         || !(uEFlags & X86_EFL_ZF))
                         break;
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
                     continue;
                 }
                 iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem, &PgLockSrc2Mem);
@@ -270,7 +287,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
         if (   uCounterReg == 0
             || !(uEFlags & X86_EFL_ZF))
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
     }
 
     /*
@@ -307,7 +324,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
         return rcStrict;
 
     uint64_t        uSrc2Base;
-    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uSrc2Base);
+    rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uSrc2Base);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -401,7 +418,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
                     if (   uCounterReg == 0
                         || (uEFlags & X86_EFL_ZF))
                         break;
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
                     continue;
                 }
                 iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem, &PgLockSrc2Mem);
@@ -440,7 +457,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
         if (   uCounterReg == 0
             || (uEFlags & X86_EFL_ZF))
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
     }
 
     /*
@@ -471,7 +488,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
     }
 
     uint64_t        uBaseAddr;
-    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uBaseAddr);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -539,7 +556,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
                    below. Otherwise, do the next page. */
                 if (!(uVirtAddr & (OP_SIZE - 1)))
                 {
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
                     continue;
                 }
                 cLeftPage = 0;
@@ -573,7 +590,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
         if (   uCounterReg == 0
             || !(uEFlags & X86_EFL_ZF))
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
     }
 
     /*
@@ -604,7 +621,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
     }
 
     uint64_t        uBaseAddr;
-    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uBaseAddr);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -672,7 +689,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
                    below. Otherwise, do the next page. */
                 if (!(uVirtAddr & (OP_SIZE - 1)))
                 {
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
                     continue;
                 }
                 cLeftPage = 0;
@@ -705,7 +722,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
         if (   uCounterReg == 0
             || (uEFlags & X86_EFL_ZF))
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uEFlags);
     }
 
     /*
@@ -744,7 +761,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
         return rcStrict;
 
     uint64_t        uDstBase;
-    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uDstBase);
+    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uDstBase);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -848,7 +865,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 
                     if (uCounterReg == 0)
                         break;
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
                     continue;
                 }
                 iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem, &PgLockDstMem);
@@ -874,7 +891,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             pCtx->ADDR_rDI = uDstAddrReg += cbIncr;
             pCtx->ADDR_rCX = --uCounterReg;
             cLeftPage--;
-            IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, uCounterReg == 0);
+            IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uCounterReg == 0);
         } while ((int32_t)cLeftPage > 0);
 
         /*
@@ -882,7 +899,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
          */
         if (uCounterReg == 0)
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
     }
 
     /*
@@ -913,7 +930,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
     }
 
     uint64_t        uBaseAddr;
-    VBOXSTRICTRC rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uBaseAddr);
+    VBOXSTRICTRC rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -988,7 +1005,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
                    below. Otherwise, do the next page. */
                 if (!(uVirtAddr & (OP_SIZE - 1)))
                 {
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
                     continue;
                 }
                 cLeftPage = 0;
@@ -1016,7 +1033,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
          */
         if (uCounterReg == 0)
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
     }
 
     /*
@@ -1106,7 +1123,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
                    below. Otherwise, do the next page. */
                 if (!(uVirtAddr & (OP_SIZE - 1)))
                 {
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
                     continue;
                 }
                 cLeftPage = 0;
@@ -1143,7 +1160,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
          */
         if (uCounterReg == 0)
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
     }
 
     /*
@@ -1336,7 +1353,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
     }
 
     uint64_t        uBaseAddr;
-    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, &pCtx->es, X86_SREG_ES, &uBaseAddr);
+    rcStrict = iemMemSegCheckWriteAccessEx(pIemCpu, iemSRegUpdateHid(pIemCpu, &pCtx->es), X86_SREG_ES, &uBaseAddr);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1415,7 +1432,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                     break;
                 if (!(uVirtAddr & (OP_SIZE - 1)))
                 {
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
                     continue;
                 }
                 cLeftPage = 0;
@@ -1482,7 +1499,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                 rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 return rcStrict;
             }
-            IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, uCounterReg == 0);
+            IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uCounterReg == 0);
         } while ((int32_t)cLeftPage > 0);
 
 
@@ -1491,7 +1508,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
          */
         if (uCounterReg == 0)
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
     }
 
     /*
@@ -1670,7 +1687,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                    below. Otherwise, do the next page. */
                 if (!(uVirtAddr & (OP_SIZE - 1)))
                 {
-                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
                     continue;
                 }
                 cLeftPage = 0;
@@ -1714,7 +1731,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 }
                 return rcStrict;
             }
-            IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, uCounterReg == 0);
+            IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uCounterReg == 0);
         } while ((int32_t)cLeftPage > 0);
 
 
@@ -1723,7 +1740,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
          */
         if (uCounterReg == 0)
             break;
-        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pCtx->eflags.u);
+        IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, pCtx->eflags.u);
     }
 
     /*

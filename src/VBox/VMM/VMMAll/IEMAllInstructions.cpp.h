@@ -1694,9 +1694,9 @@ FNIEMOP_DEF(iemOp_mov_Td_Rd)
 
 
 /** Opcode 0x0f 0x28. */
-FNIEMOP_STUB(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd);
+FNIEMOP_STUB(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd); // NEXT - win2k
 /** Opcode 0x0f 0x29. */
-FNIEMOP_STUB(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd);
+FNIEMOP_STUB(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd); // NEXT - win2k
 /** Opcode 0x0f 0x2a. */
 FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd_Vsd_Ey); //NEXT
 /** Opcode 0x0f 0x2b. */

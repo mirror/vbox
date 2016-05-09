@@ -4572,6 +4572,26 @@ IEM_STATIC PCPUMSELREG iemSRegGetHid(PIEMCPU pIemCpu, uint8_t iSegReg)
 
 
 /**
+ * Ensures that the given hidden segment register is up to date.
+ *
+ * @returns Hidden register reference.
+ * @param   pIemCpu             The per CPU data.
+ * @param   pSReg               The segment register.
+ */
+IEM_STATIC PCPUMSELREG iemSRegUpdateHid(PIEMCPU pIemCpu, PCPUMSELREG pSReg)
+{
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg))
+        CPUMGuestLazyLoadHiddenSelectorReg(IEMCPU_TO_VMCPU(pIemCpu), pSReg);
+#else
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg));
+    NOREF(pIemCpu);
+#endif
+    return pSReg;
+}
+
+
+/**
  * Gets a reference (pointer) to the specified segment register (the selector
  * value).
  *
@@ -10442,10 +10462,10 @@ IEM_STATIC void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec, 
 /**
  * Performs the post-execution verfication checks.
  */
-IEM_STATIC void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
+IEM_STATIC VBOXSTRICTRC iemExecVerificationModeCheck(PIEMCPU pIemCpu, VBOXSTRICTRC rcStrictIem)
 {
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        return;
+        return rcStrictIem;
 
     /*
      * Switch back the state.
@@ -10502,6 +10522,16 @@ IEM_STATIC void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         EMRemUnlock(pVM);
         fRem = true;
     }
+
+#  if 1 /* Skip unimplemented instructions for now. */
+    if (rcStrictIem == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+    {
+        pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
+        if (rc == VINF_EM_DBG_STEPPED)
+            return VINF_SUCCESS;
+        return rc;
+    }
+#  endif
 
     /*
      * Compare the register states.
@@ -10724,8 +10754,15 @@ IEM_STATIC void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         {
             DBGFR3Info(pVM->pUVM, "cpumguest", "verbose", NULL);
             RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__);
-            iemVerifyAssertMsg2(pIemCpu);
             RTAssertPanic();
+            static bool volatile s_fEnterDebugger = true;
+            if (s_fEnterDebugger)
+                DBGFSTOP(pVM);
+
+#  if 1 /* Ignore unimplemented instructions for now. */
+            if (rcStrictIem == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+                rcStrictIem = VINF_SUCCESS;
+#  endif
         }
 #  undef CHECK_FIELD
 #  undef CHECK_BIT_FIELD
@@ -10821,6 +10858,8 @@ IEM_STATIC void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             iemVerifyAssertRecord(pIemCpu, pOtherRec, "Extra Other record!");
     }
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
+
+    return rcStrictIem;
 }
 
 #else  /* !IEM_VERIFICATION_MODE_FULL || !IN_RING3 */
@@ -11074,7 +11113,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
 
 #if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
-    iemExecVerificationModeSetup(pIemCpu);
+    if (++pIemCpu->cVerifyDepth == 1)
+        iemExecVerificationModeSetup(pIemCpu);
 #endif
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -11092,7 +11132,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     /*
      * Assert some sanity.
      */
-    iemExecVerificationModeCheck(pIemCpu);
+    if (pIemCpu->cVerifyDepth == 1)
+        rcStrict = iemExecVerificationModeCheck(pIemCpu, rcStrict);
+    pIemCpu->cVerifyDepth--;
 #endif
 #ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pIemCpu->CTX_SUFF(pCtx), rcStrict);
@@ -11254,7 +11296,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
     /*
      * Assert some sanity.
      */
-    iemExecVerificationModeCheck(pIemCpu);
+    rcStrict = iemExecVerificationModeCheck(pIemCpu, rcStrict);
 #endif
 
     /*

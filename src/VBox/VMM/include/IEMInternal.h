@@ -347,7 +347,10 @@ typedef struct IEMCPU
     /** This is used to communicate a CPL changed caused by IEMInjectTrap that
      * CPUM doesn't yet reflect. */
     uint8_t                 uInjectCpl;
-    bool                    afAlignment2[3];
+    /** To prevent EMR3HmSingleInstruction from triggering endless recursion via
+     *  emR3ExecuteInstruction and iemExecVerificationModeCheck. */
+    uint8_t                 cVerifyDepth;
+    bool                    afAlignment2[2];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
