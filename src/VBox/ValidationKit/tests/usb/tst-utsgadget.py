@@ -114,6 +114,13 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
         rc = oGadget.clearImpersonation();
         print '%s: clearImpersonation()' % (boolRes(rc));
 
+        # Test super speed (and therefore passing configuration items)
+        rc = oGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, True);
+        print '%s: impersonate(, True)' % (boolRes(rc));
+
+        rc = oGadget.clearImpersonation();
+        print '%s: clearImpersonation()' % (boolRes(rc));
+
         # Done
         rc = oGadget.disconnectFrom();
         print '%s: disconnectFrom() -> %s' % (boolRes(rc), rc);
