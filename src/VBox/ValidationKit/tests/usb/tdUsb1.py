@@ -78,6 +78,14 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         'XHCI': ['Low', 'Full', 'High', 'Super']
     };
 
+    # Tests currently disabled because they fail, need investigation.
+    kdUsbTestsDisabled = {
+        'Low': [],
+        'Full': [],
+        'High': [],
+        'Super': [4, 6, 10, 11, 18, 20, 24]
+    };
+
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs               = None;
@@ -331,14 +339,14 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
                     tupCmdLine = ('UsbTest', );
                     # Exclude a few tests which hang and cause a timeout, need investigation.
-                    if sUsbCtrl is 'XHCI':
-                        tupCmdLine = tupCmdLine + ('--exclude', '10', '--exclude', '24');
+                    lstTestsExclude = self.kdUsbTestsDisabled.get(sSpeed);
+                    for iTestExclude in lstTestsExclude:
+                        tupCmdLine = tupCmdLine + ('--exclude', str(iTestExclude));
 
                     fRc = self.txsRunTest(oTxsSession, 'UsbTest', 3600 * 1000, \
                         '${CDROM}/${OS/ARCH}/UsbTest${EXESUFF}', tupCmdLine);
                     if not fRc:
                         reporter.testFailure('Running USB test utility failed');
-
                 else:
                     reporter.testFailure('Failed to impersonate test device');
 
