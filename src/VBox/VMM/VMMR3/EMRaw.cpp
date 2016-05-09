@@ -375,10 +375,6 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
     {
         if (rc == VINF_SUCCESS || rc == VINF_EM_RESCHEDULE)
             rc = VINF_EM_RESCHEDULE;
-# ifdef DEBUG_bird
-        else
-            AssertMsgFailed(("%Rrc\n", rc));
-# endif
     }
     else if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
              || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
