@@ -3920,7 +3920,7 @@ static void logVBVAResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScre
 #endif /* DEBUG_sunlover */
 
 DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView,
-                                               const PVBVAINFOSCREEN pScreen, void *pvVRAM)
+                                               const PVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping)
 {
     LogRelFlowFunc(("pScreen %p, pvVRAM %p\n", pScreen, pvVRAM));
 
@@ -4011,10 +4011,13 @@ DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface,
 
     pFBInfo->flags = pScreen->u16Flags;
 
-    pThis->xInputMappingOrigin = 0;
-    pThis->yInputMappingOrigin = 0;
-    pThis->cxInputMapping = 0;
-    pThis->cyInputMapping = 0;
+    if (fResetInputMapping)
+    {
+        pThis->xInputMappingOrigin = 0;
+        pThis->yInputMappingOrigin = 0;
+        pThis->cxInputMapping = 0;
+        pThis->cyInputMapping = 0;
+    }
 
     if (fNewOrigin)
     {

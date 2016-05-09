@@ -948,10 +948,14 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pView               The description of VRAM block for this screen.
      * @param   pScreen             The data of screen being resized.
      * @param   pvVRAM              Address of the guest VRAM.
+     * @param   fResetInputMapping  Whether to reset the absolute pointing device to screen position co-ordinate
+     *                              mapping.  Needed for real resizes, as the caller on the guest may not know how
+     *                              to set the mapping.  Not wanted when we restore a saved state and are resetting
+     *                              the mode.
      * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
      *          otherwise - the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM));
+    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping));
 
     /**
      * Update the pointer shape.

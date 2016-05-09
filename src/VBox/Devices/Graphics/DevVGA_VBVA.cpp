@@ -546,7 +546,7 @@ static int vbvaFlush(PVGASTATE pVGAState, VBVACONTEXT *pCtx)
     return rc;
 }
 
-static int vbvaResize(PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREEN *pNewScreen)
+static int vbvaResize(PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREEN *pNewScreen, bool fResetInputMapping)
 {
     /* Callers ensure that pNewScreen contains valid data. */
 
@@ -554,7 +554,7 @@ static int vbvaResize(PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREEN
     pView->screen = *pNewScreen;
 
     uint8_t *pu8VRAM = pVGAState->vram_ptrR3 + pView->view.u32ViewOffset;
-    return pVGAState->pDrv->pfnVBVAResize (pVGAState->pDrv, &pView->view, &pView->screen, pu8VRAM);
+    return pVGAState->pDrv->pfnVBVAResize (pVGAState->pDrv, &pView->view, &pView->screen, pu8VRAM, fResetInputMapping);
 }
 
 static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx, VBVABUFFER *pVBVA, uint32_t u32Offset, bool fRestored)
@@ -2059,7 +2059,7 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                 int rc = vbvaEnable(iView, pVGAState, pCtx, pView->vbva.guest.pVBVA, pView->vbva.u32VBVAOffset, true /* fRestored */);
                 if (RT_SUCCESS(rc))
                 {
-                    vbvaResize(pVGAState, pView, &pView->screen);
+                    vbvaResize(pVGAState, pView, &pView->screen, false);
                 }
                 else
                 {
@@ -2265,7 +2265,7 @@ int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen)
                 && u64ScreenSize <= pView->u32MaxScreenSize
                 && screen.u32StartOffset <= pView->u32ViewSize - (uint32_t)u64ScreenSize)
             {
-                vbvaResize(pVGAState, &pCtx->aViews[screen.u32ViewIndex], &screen);
+                vbvaResize(pVGAState, &pCtx->aViews[screen.u32ViewIndex], &screen, true);
                 return VINF_SUCCESS;
             }
 

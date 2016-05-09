@@ -342,7 +342,8 @@ private:
     static DECLCALLBACK(void)  i_displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y,
                                                       uint32_t cx, uint32_t cy);
     static DECLCALLBACK(int)   i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView,
-                                                   const PVBVAINFOSCREEN pScreen, void *pvVRAM);
+                                                   const PVBVAINFOSCREEN pScreen, void *pvVRAM,
+                                                   bool fResetInputMapping);
     static DECLCALLBACK(int)   i_displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha,
                                                               uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy,
                                                               const void *pvShape);
