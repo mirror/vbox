@@ -59,6 +59,8 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QStr
     /* Assign background image: */
     assignBackground(":/vmw_new_welcome_bg.png");
 #endif /* VBOX_WS_MAC */
+    /* Register classes: */
+    qRegisterMetaType<CGuestOSType>();
 }
 
 void UIWizardNewVM::prepare()
