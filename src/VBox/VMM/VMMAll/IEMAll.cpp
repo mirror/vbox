@@ -796,7 +796,6 @@ DECLINLINE(void) iemInitExec(PIEMCPU pIemCpu, bool fBypassHandlers)
     PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
 
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
-    Assert(pIemCpu->PendingCommit.enmFn == IEMCOMMIT_INVALID);
 
 #if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
@@ -879,7 +878,6 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
 
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
-    Assert(pIemCpu->PendingCommit.enmFn == IEMCOMMIT_INVALID);
 
 #if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
@@ -6555,11 +6553,16 @@ IEM_STATIC unsigned iemMemMapFindFree(PIEMCPU pIemCpu)
  * @returns Strict VBox status code.
  * @param   pIemCpu         The IEM per CPU data.
  * @param   iMemMap         The index of the buffer to commit.
+ * @param   fPostponeFail   Whether we can postpone writer failures to ring-3.
+ *                          Always false in ring-3, obviously.
  */
-IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned iMemMap)
+IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned iMemMap, bool fPostponeFail)
 {
     Assert(pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_BOUNCE_BUFFERED);
     Assert(pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE);
+#ifdef IN_RING3
+    Assert(!fPostponeFail);
+#endif
 
     /*
      * Do the writing.
@@ -6601,6 +6604,17 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
                              pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                         rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                     }
+# ifndef IN_RING3
+                    else if (fPostponeFail)
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        pIemCpu->aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_2ND;
+                        VMCPU_FF_SET(IEMCPU_TO_VMCPU(pIemCpu), VMCPU_FF_IEM);
+                        return iemSetPassUpStatus(pIemCpu, rcStrict);
+                    }
+# endif
                     else
                     {
                         Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
@@ -6640,6 +6654,17 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
                         PGM_PHYS_RW_DO_UPDATE_STRICT_RC(rcStrict, rcStrict2);
                         rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                     }
+# ifndef IN_RING3
+                    else if (fPostponeFail)
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        pIemCpu->aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_2ND;
+                        VMCPU_FF_SET(IEMCPU_TO_VMCPU(pIemCpu), VMCPU_FF_IEM);
+                        return iemSetPassUpStatus(pIemCpu, rcStrict);
+                    }
+# endif
                     else
                     {
                         Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
@@ -6649,6 +6674,20 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
                     }
                 }
             }
+# ifndef IN_RING3
+            else if (fPostponeFail)
+            {
+                Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
+                     pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                     pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                if (!cbSecond)
+                    pIemCpu->aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_1ST;
+                else
+                    pIemCpu->aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_1ST | IEM_ACCESS_PENDING_R3_WRITE_2ND;
+                VMCPU_FF_SET(IEMCPU_TO_VMCPU(pIemCpu), VMCPU_FF_IEM);
+                return iemSetPassUpStatus(pIemCpu, rcStrict);
+            }
+# endif
             else
             {
                 Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
@@ -7131,7 +7170,7 @@ IEM_STATIC VBOXSTRICTRC iemMemCommitAndUnmap(PIEMCPU pIemCpu, void *pvMem, uint3
     if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_BOUNCE_BUFFERED)
     {
         if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE)
-            return iemMemBounceBufferCommitAndUnmap(pIemCpu, iMemMap);
+            return iemMemBounceBufferCommitAndUnmap(pIemCpu, iMemMap, false /*fPostponeFail*/);
     }
     /* Otherwise unlock it. */
     else
@@ -7143,6 +7182,44 @@ IEM_STATIC VBOXSTRICTRC iemMemCommitAndUnmap(PIEMCPU pIemCpu, void *pvMem, uint3
     pIemCpu->cActiveMappings--;
     return VINF_SUCCESS;
 }
+
+
+#ifndef IN_RING3
+/**
+ * Commits the guest memory if bounce buffered and unmaps it, if any bounce
+ * buffer part shows trouble it will be postponed to ring-3 (sets FF and stuff).
+ *
+ * Allows the instruction to be completed and retired, while the IEM user will
+ * return to ring-3 immediately afterwards and do the postponed writes there.
+ *
+ * @returns VBox status code (no strict statuses).  Caller must check
+ *          VMCPU_FF_IEM before repeating string instructions and similar stuff.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pvMem               The mapping.
+ * @param   fAccess             The kind of access.
+ */
+IEM_STATIC VBOXSTRICTRC iemMemCommitAndUnmapPostponeTroubleToR3(PIEMCPU pIemCpu, void *pvMem, uint32_t fAccess)
+{
+    int iMemMap = iemMapLookup(pIemCpu, pvMem, fAccess);
+    AssertReturn(iMemMap >= 0, iMemMap);
+
+    /* If it's bounce buffered, we may need to write back the buffer. */
+    if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_BOUNCE_BUFFERED)
+    {
+        if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE)
+            return iemMemBounceBufferCommitAndUnmap(pIemCpu, iMemMap, true /*fPostponeFail*/);
+    }
+    /* Otherwise unlock it. */
+    else
+        PGMPhysReleasePageMappingLock(IEMCPU_TO_VM(pIemCpu), &pIemCpu->aMemMappingLocks[iMemMap].Lock);
+
+    /* Free the entry. */
+    pIemCpu->aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
+    Assert(pIemCpu->cActiveMappings != 0);
+    pIemCpu->cActiveMappings--;
+    return VINF_SUCCESS;
+}
+#endif
 
 
 /**
@@ -11888,84 +11965,142 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 #ifdef IN_RING3
 
 /**
- * Called by force-flag handling code when VMCPU_FF_IEM is set.
+ * Handles the unlikely and probably fatal merge cases.
  *
- * @returns Merge between @a rcStrict and what the commit operation returned.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   rcStrict    The status code returned by ring-0 or raw-mode.
+ * @returns Merged status code.
+ * @param   rcStrict        Current EM status code.
+ * @param   rcStrictCommit  The IOM I/O or MMIO write commit status to merge
+ *                          with @a rcStrict.
+ * @param   iMemMap         The memory mapping index. For error reporting only.
+ * @param   pIemCpu         The IEMCPU structure of the calling EMT, for error
+ *                          reporting only.
  */
-VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3DoPendingAction(PVMCPU pVCpu, VBOXSTRICTRC rcStrict)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemR3MergeStatusSlow(VBOXSTRICTRC rcStrict, VBOXSTRICTRC rcStrictCommit,
+                                                          unsigned iMemMap, PIEMCPU pIemCpu)
 {
-    PIEMCPU      pIemCpu = &pVCpu->iem.s;
-
-    /*
-     * Retrieve and reset the pending commit.
-     */
-    IEMCOMMIT const enmFn = pIemCpu->PendingCommit.enmFn;
-    pIemCpu->PendingCommit.enmFn = IEMCOMMIT_INVALID;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_IEM);
-
-    /*
-     * Must reset pass-up status code.
-     */
-    pIemCpu->rcPassUp = VINF_SUCCESS;
-
-    /*
-     * Call the function.  Currently using switch here instead of function
-     * pointer table as a switch won't get skewed.
-     */
-    VBOXSTRICTRC rcStrictCommit;
-    switch (enmFn)
-    {
-        case IEMCOMMIT_INS_OP8_ADDR16:          rcStrictCommit = iemR3CImpl_commit_ins_op8_addr16(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP8_ADDR32:          rcStrictCommit = iemR3CImpl_commit_ins_op8_addr32(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP8_ADDR64:          rcStrictCommit = iemR3CImpl_commit_ins_op8_addr64(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP16_ADDR16:         rcStrictCommit = iemR3CImpl_commit_ins_op16_addr16(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP16_ADDR32:         rcStrictCommit = iemR3CImpl_commit_ins_op16_addr32(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP16_ADDR64:         rcStrictCommit = iemR3CImpl_commit_ins_op16_addr64(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP32_ADDR16:         rcStrictCommit = iemR3CImpl_commit_ins_op32_addr16(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP32_ADDR32:         rcStrictCommit = iemR3CImpl_commit_ins_op32_addr32(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_INS_OP32_ADDR64:         rcStrictCommit = iemR3CImpl_commit_ins_op32_addr64(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP8_ADDR16:      rcStrictCommit = iemR3CImpl_commit_rep_ins_op8_addr16(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP8_ADDR32:      rcStrictCommit = iemR3CImpl_commit_rep_ins_op8_addr32(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP8_ADDR64:      rcStrictCommit = iemR3CImpl_commit_rep_ins_op8_addr64(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP16_ADDR16:     rcStrictCommit = iemR3CImpl_commit_rep_ins_op16_addr16(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP16_ADDR32:     rcStrictCommit = iemR3CImpl_commit_rep_ins_op16_addr32(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP16_ADDR64:     rcStrictCommit = iemR3CImpl_commit_rep_ins_op16_addr64(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP32_ADDR16:     rcStrictCommit = iemR3CImpl_commit_rep_ins_op32_addr16(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP32_ADDR32:     rcStrictCommit = iemR3CImpl_commit_rep_ins_op32_addr32(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        case IEMCOMMIT_REP_INS_OP32_ADDR64:     rcStrictCommit = iemR3CImpl_commit_rep_ins_op32_addr64(pIemCpu, pIemCpu->PendingCommit.cbInstr); break;
-        default:
-            AssertLogRelMsgFailedReturn(("enmFn=%#x (%d)\n", pIemCpu->PendingCommit.enmFn, pIemCpu->PendingCommit.enmFn), VERR_IEM_IPE_2);
-    }
-
-    /*
-     * Merge status code (if any) with the incomming one.
-     */
-    rcStrictCommit = iemExecStatusCodeFiddling(pIemCpu, rcStrictCommit);
-    if (RT_LIKELY(rcStrictCommit == VINF_SUCCESS))
+    if (RT_FAILURE_NP(rcStrict))
         return rcStrict;
+
+    if (RT_FAILURE_NP(rcStrictCommit))
+        return rcStrictCommit;
+
+    if (rcStrict == rcStrictCommit)
+        return rcStrictCommit;
+
+    AssertLogRelMsgFailed(("rcStrictCommit=%Rrc rcStrict=%Rrc iMemMap=%u fAccess=%#x FirstPg=%RGp LB %u SecondPg=%RGp LB %u\n",
+                           VBOXSTRICTRC_VAL(rcStrictCommit), VBOXSTRICTRC_VAL(rcStrict), iMemMap,
+                           pIemCpu->aMemMappings[iMemMap].fAccess,
+                           pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, pIemCpu->aMemBbMappings[iMemMap].cbFirst,
+                           pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, pIemCpu->aMemBbMappings[iMemMap].cbSecond));
+    return VERR_IOM_FF_STATUS_IPE;
+}
+
+
+/**
+ * Helper for IOMR3ProcessForceFlag.
+ *
+ * @returns Merged status code.
+ * @param   rcStrict        Current EM status code.
+ * @param   rcStrictCommit  The IOM I/O or MMIO write commit status to merge
+ *                          with @a rcStrict.
+ * @param   iMemMap         The memory mapping index. For error reporting only.
+ * @param   pIemCpu         The IEMCPU structure of the calling EMT, for error
+ *                          reporting only.
+ */
+DECLINLINE(VBOXSTRICTRC) iemR3MergeStatus(VBOXSTRICTRC rcStrict, VBOXSTRICTRC rcStrictCommit, unsigned iMemMap, PIEMCPU pIemCpu)
+{
+    /* Simple. */
     if (RT_LIKELY(rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_RAW_TO_R3))
         return rcStrictCommit;
 
-    /* Complicated. */
-    if (RT_FAILURE(rcStrict))
+    if (RT_LIKELY(rcStrictCommit == VINF_SUCCESS))
         return rcStrict;
-    if (RT_FAILURE(rcStrictCommit))
-        return rcStrictCommit;
-    if (   rcStrict >= VINF_EM_FIRST
-        && rcStrict <= VINF_EM_LAST)
-    {
-        if (   rcStrictCommit >= VINF_EM_FIRST
-            && rcStrictCommit <= VINF_EM_LAST)
-            return rcStrict < rcStrictCommit ? rcStrict : rcStrictCommit;
 
-        /* This really shouldn't happen. Check PGM + handler code! */
-        AssertLogRelMsgFailedReturn(("rcStrictCommit=%Rrc rcStrict=%Rrc enmFn=%d\n", VBOXSTRICTRC_VAL(rcStrictCommit), VBOXSTRICTRC_VAL(rcStrict), enmFn), VERR_IEM_IPE_1);
+    /* EM scheduling status codes. */
+    if (RT_LIKELY(   rcStrict >= VINF_EM_FIRST
+                  && rcStrict <= VINF_EM_LAST))
+    {
+        if (RT_LIKELY(   rcStrictCommit >= VINF_EM_FIRST
+                      && rcStrictCommit <= VINF_EM_LAST))
+            return rcStrict < rcStrictCommit ? rcStrict : rcStrictCommit;
     }
-    /* This shouldn't really happen either, see IOM_SUCCESS. */
-    AssertLogRelMsgFailedReturn(("rcStrictCommit=%Rrc rcStrict=%Rrc enmFn=%d\n", VBOXSTRICTRC_VAL(rcStrictCommit), VBOXSTRICTRC_VAL(rcStrict), enmFn), VERR_IEM_IPE_2);
+
+    /* Unlikely */
+    return iemR3MergeStatusSlow(rcStrict, rcStrictCommit, iMemMap, pIemCpu);
 }
 
-#endif /* IN_RING */
+
+/**
+ * Called by force-flag handling code when VMCPU_FF_IEM is set.
+ *
+ * @returns Merge between @a rcStrict and what the commit operation returned.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   rcStrict    The status code returned by ring-0 or raw-mode.
+ */
+VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rcStrict)
+{
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+
+    /*
+     * Reset the pending commit.
+     */
+    AssertMsg(  (pIemCpu->aMemMappings[0].fAccess | pIemCpu->aMemMappings[1].fAccess | pIemCpu->aMemMappings[2].fAccess)
+              & (IEM_ACCESS_PENDING_R3_WRITE_1ST | IEM_ACCESS_PENDING_R3_WRITE_2ND),
+              ("%#x %#x %#x\n",
+               pIemCpu->aMemMappings[0].fAccess, pIemCpu->aMemMappings[1].fAccess, pIemCpu->aMemMappings[2].fAccess));
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_IEM);
+
+    /*
+     * Commit the pending bounce buffers (usually just one).
+     */
+#ifdef VBOX_STRICT
+    unsigned cBufs = 0;
+#endif
+    unsigned iMemMap = RT_ELEMENTS(pIemCpu->aMemMappings);
+    while (iMemMap-- > 0)
+        if (pIemCpu->aMemMappings[iMemMap].fAccess & (IEM_ACCESS_PENDING_R3_WRITE_1ST | IEM_ACCESS_PENDING_R3_WRITE_2ND))
+        {
+            Assert(pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE);
+            Assert(pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_BOUNCE_BUFFERED);
+            Assert(!pIemCpu->aMemBbMappings[iMemMap].fUnassigned);
+
+            uint16_t const  cbFirst  = pIemCpu->aMemBbMappings[iMemMap].cbFirst;
+            uint16_t const  cbSecond = pIemCpu->aMemBbMappings[iMemMap].cbSecond;
+            uint8_t const  *pbBuf    = &pIemCpu->aBounceBuffers[iMemMap].ab[0];
+
+            if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_PENDING_R3_WRITE_1ST)
+            {
+                VBOXSTRICTRC rcStrictCommit1 = PGMPhysWrite(pVM,
+                                                            pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
+                                                            pbBuf,
+                                                            cbFirst,
+                                                            PGMACCESSORIGIN_IEM);
+                rcStrict = iemR3MergeStatus(rcStrict, rcStrictCommit1, iMemMap, pIemCpu);
+                Log(("IEMR3ProcessForceFlag: iMemMap=%u GCPhysFirst=%RGp LB %#x %Rrc => %Rrc\n",
+                     iMemMap, pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                     VBOXSTRICTRC_VAL(rcStrictCommit1), VBOXSTRICTRC_VAL(rcStrict)));
+            }
+
+            if (pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_PENDING_R3_WRITE_2ND)
+            {
+                VBOXSTRICTRC rcStrictCommit2 = PGMPhysWrite(pVM,
+                                                            pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
+                                                            pbBuf + cbFirst,
+                                                            cbSecond,
+                                                            PGMACCESSORIGIN_IEM);
+                rcStrict = iemR3MergeStatus(rcStrict, rcStrictCommit2, iMemMap, pIemCpu);
+                Log(("IEMR3ProcessForceFlag: iMemMap=%u GCPhysSecond=%RGp LB %#x %Rrc => %Rrc\n",
+                     iMemMap, pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond,
+                     VBOXSTRICTRC_VAL(rcStrictCommit2), VBOXSTRICTRC_VAL(rcStrict)));
+            }
+            cBufs++;
+        }
+
+    AssertMsg(cBufs > 0, ("%#x %#x %#x\n", pIemCpu->aMemMappings[0].fAccess, pIemCpu->aMemMappings[1].fAccess,
+                          pIemCpu->aMemMappings[2].fAccess));
+    return rcStrict;
+}
+
+#endif /* IN_RING3 */
 

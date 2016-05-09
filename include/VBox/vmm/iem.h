@@ -144,7 +144,7 @@ VMM_INT_DECL(void)   IEMNotifyIOPortWriteString(PVM pVM, RTIOPORT Port, void con
 VMMR3DECL(int)      IEMR3Init(PVM pVM);
 VMMR3DECL(int)      IEMR3Term(PVM pVM);
 VMMR3DECL(void)     IEMR3Relocate(PVM pVM);
-VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3DoPendingAction(PVMCPU pVCpu, VBOXSTRICTRC rcStrict);
+VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rcStrict);
 /** @} */
 
 /** @} */
