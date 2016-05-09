@@ -500,10 +500,10 @@ class EventHandlerBase(object):
         """
         Unregister the event handler.
         """
+        fRc = False;
         if not self.fShutdown:
             self.fShutdown = True;
 
-            fRc = False;
             if self.oEventSrc is not None:
                 if self.fpApiVer < 3.3:
                     try:
