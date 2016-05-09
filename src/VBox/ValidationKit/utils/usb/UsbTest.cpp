@@ -166,6 +166,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     {"--device",           'd', RTGETOPT_REQ_STRING },
     {"--help",             'h', RTGETOPT_REQ_NOTHING},
     {"--exclude",          'e', RTGETOPT_REQ_UINT32},
+    {"--exclude-all",      'a', RTGETOPT_REQ_NOTHING},
+    {"--include",          'i', RTGETOPT_REQ_UINT32},
     {"--expected-speed",   's', RTGETOPT_REQ_STRING }
 };
 
@@ -269,6 +271,12 @@ static void usbTestUsage(PRTSTREAM pStrm)
                 break;
             case 'e':
                 pszHelp = "Exclude the given test id from the list";
+                break;
+            case 'a':
+                pszHelp = "Exclude all tests from the list (useful to enable single tests later with --include)";
+                break;
+            case 'i':
+                pszHelp = "Include the given test id in the list";
                 break;
             case 's':
                 pszHelp = "The device speed to expect";
@@ -564,6 +572,20 @@ int main(int argc, char *argv[])
                 else
                 {
                     RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid test number passed to --exclude\n");
+                    RTTestErrorInc(g_hTest);
+                    return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
+                }
+                break;
+            case 'a':
+                for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
+                    g_aTests[i].fExcluded = true;
+                break;
+            case 'i':
+                if (ValueUnion.u32 < RT_ELEMENTS(g_aTests))
+                    g_aTests[ValueUnion.u32].fExcluded = false;
+                else
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid test number passed to --include\n");
                     RTTestErrorInc(g_hTest);
                     return RTGetOptPrintError(VERR_INVALID_PARAMETER, &ValueUnion);
                 }
