@@ -108,10 +108,10 @@
 #endif
 
 /** @def IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN
- * This is used in some of the inner loops to make sure we're responding quickly
- * to outside requests.  For I/O instructions this also make absolutely sure we
- * don't miss out on important stuff that happened while processing a word.
- */
+ * This is used in some of the inner loops to make sure we respond immediately
+ * to VMCPU_FF_IOM as well as outside requests.  Use this for expensive
+ * instructions. Use IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN for
+ * ones that are typically cheap. */
 #define IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_pIemCpu, a_fExitExpr) \
     do { \
         if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
@@ -122,6 +122,27 @@
         else \
         { \
             LogFlow(("%s: Leaving early (inner)! ffcpu=%#x ffvm=%#x\n", \
+                     __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
+            return VINF_SUCCESS; \
+        } \
+    } while (0)
+
+
+/** @def IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN
+ * This is used in the inner loops where
+ * IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN isn't used.  It only
+ * checks the CPU FFs so that we respond immediately to the pending IOM FF
+ * (status code is hidden in IEMCPU::rcPassUp by IEM memory commit code).
+ */
+#define IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_pIemCpu, a_fExitExpr) \
+    do { \
+        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
+                      || (a_fExitExpr) \
+                      || IEM_VERIFICATION_ENABLED(a_pIemCpu) )) \
+        { /* very likely */ } \
+        else \
+        { \
+            LogFlow(("%s: Leaving early (inner)! ffcpu=%#x (ffvm=%#x)\n", \
                      __FUNCTION__, (a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
             return VINF_SUCCESS; \
         } \
@@ -277,7 +298,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
             pCtx->ADDR_rCX = --uCounterReg;
             pCtx->eflags.u = uEFlags;
             cLeftPage--;
-            /* Skipping IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN here, assuming rcStrict does the job. */
+            IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu,
+                                                                    uCounterReg == 0 || !(uEFlags & X86_EFL_ZF));
         } while (   (int32_t)cLeftPage > 0
                  && (uEFlags & X86_EFL_ZF));
 
@@ -447,7 +469,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
             pCtx->ADDR_rCX = --uCounterReg;
             pCtx->eflags.u = uEFlags;
             cLeftPage--;
-            /* Skipping IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN here, assuming rcStrict does the job. */
+            IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu,
+                                                                    uCounterReg == 0 || (uEFlags & X86_EFL_ZF));
         } while (   (int32_t)cLeftPage > 0
                  && !(uEFlags & X86_EFL_ZF));
 
@@ -580,7 +603,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
             pCtx->ADDR_rCX = --uCounterReg;
             pCtx->eflags.u = uEFlags;
             cLeftPage--;
-            /* Skipping IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN here, assuming rcStrict does the job. */
+            IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu,
+                                                                    uCounterReg == 0 || !(uEFlags & X86_EFL_ZF));
         } while (   (int32_t)cLeftPage > 0
                  && (uEFlags & X86_EFL_ZF));
 
@@ -712,7 +736,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
             pCtx->ADDR_rCX = --uCounterReg;
             pCtx->eflags.u = uEFlags;
             cLeftPage--;
-            /* Skipping IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN here, assuming rcStrict does the job. */
+            IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu,
+                                                                    uCounterReg == 0 || (uEFlags & X86_EFL_ZF));
         } while (   (int32_t)cLeftPage > 0
                  && !(uEFlags & X86_EFL_ZF));
 
@@ -1025,7 +1050,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
             pCtx->ADDR_rDI = uAddrReg += cbIncr;
             pCtx->ADDR_rCX = --uCounterReg;
             cLeftPage--;
-            /* Skipping IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN here, assuming rcStrict does the job. */
+            IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uCounterReg == 0);
         } while ((int32_t)cLeftPage > 0);
 
         /*
@@ -1149,7 +1174,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
             pCtx->ADDR_rSI = uAddrReg += cbIncr;
             pCtx->ADDR_rCX = --uCounterReg;
             cLeftPage--;
-            /* Skipping IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN here, assuming rcStrict does the job. */
+            IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(pVM, pVCpu, pIemCpu, uCounterReg == 0);
         } while ((int32_t)cLeftPage > 0);
 
         if (rcStrict != VINF_SUCCESS)
@@ -1766,4 +1791,5 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 #undef IS_64_BIT_CODE
 #undef IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN
 #undef IEM_CHECK_FF_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN
+#undef IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN
 
