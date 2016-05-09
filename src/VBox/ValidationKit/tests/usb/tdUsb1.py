@@ -83,7 +83,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         'Low': [],
         'Full': [],
         'High': [],
-        'Super': [4, 6, 10, 11, 18, 20, 24]
+        'Super': []
     };
 
     def __init__(self):
