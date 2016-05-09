@@ -252,6 +252,11 @@ struc CPUMCTX
 endstruc
 
 
+%define CPUMSELREG_FLAGS_VALID      0x0001
+%define CPUMSELREG_FLAGS_STALE      0x0002
+%define CPUMSELREG_FLAGS_VALID_MASK 0x0003
+
+
 ;;
 ; Guest MSR state.
 struc CPUMCTXMSRS

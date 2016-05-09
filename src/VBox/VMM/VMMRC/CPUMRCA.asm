@@ -263,18 +263,29 @@ ENDPROC CPUMGCCallGuestTrapHandler
 ;VMMRCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 align 16
 BEGINPROC CPUMGCCallV86Code
-        mov     ebp, [esp + 4]          ; pRegFrame
+        push    ebp
+        mov     ebp, esp
+        mov     ebx, [ebp + 8]          ; pRegFrame
 
-        ; construct iret stack frame
-        push    dword [ebp + CPUMCTXCORE.gs.Sel]
-        push    dword [ebp + CPUMCTXCORE.fs.Sel]
-        push    dword [ebp + CPUMCTXCORE.ds.Sel]
-        push    dword [ebp + CPUMCTXCORE.es.Sel]
-        push    dword [ebp + CPUMCTXCORE.ss.Sel]
-        push    dword [ebp + CPUMCTXCORE.esp]
-        push    dword [ebp + CPUMCTXCORE.eflags]
-        push    dword [ebp + CPUMCTXCORE.cs.Sel]
-        push    dword [ebp + CPUMCTXCORE.eip]
+        ; Construct iret stack frame.
+        push    dword [ebx + CPUMCTXCORE.gs.Sel]
+        push    dword [ebx + CPUMCTXCORE.fs.Sel]
+        push    dword [ebx + CPUMCTXCORE.ds.Sel]
+        push    dword [ebx + CPUMCTXCORE.es.Sel]
+        push    dword [ebx + CPUMCTXCORE.ss.Sel]
+        push    dword [ebx + CPUMCTXCORE.esp]
+        push    dword [ebx + CPUMCTXCORE.eflags]
+        push    dword [ebx + CPUMCTXCORE.cs.Sel]
+        push    dword [ebx + CPUMCTXCORE.eip]
+
+        ; Invalidate all segment registers.
+        mov     al, ~CPUMSELREG_FLAGS_VALID
+        and     [ebx + CPUMCTXCORE.fs.fFlags], al
+        and     [ebx + CPUMCTXCORE.ds.fFlags], al
+        and     [ebx + CPUMCTXCORE.es.fFlags], al
+        and     [ebx + CPUMCTXCORE.ss.fFlags], al
+        and     [ebx + CPUMCTXCORE.gs.fFlags], al
+        and     [ebx + CPUMCTXCORE.cs.fFlags], al
 
         ;
         ; enable WP
@@ -286,13 +297,13 @@ BEGINPROC CPUMGCCallV86Code
 %endif
 
         ; restore CPU context (all except cs, eip, ss, esp, eflags, ds, es, fs & gs; which are restored or overwritten by iret)
-        mov     eax, [ebp + CPUMCTXCORE.eax]
-        mov     ebx, [ebp + CPUMCTXCORE.ebx]
-        mov     ecx, [ebp + CPUMCTXCORE.ecx]
-        mov     edx, [ebp + CPUMCTXCORE.edx]
-        mov     esi, [ebp + CPUMCTXCORE.esi]
-        mov     edi, [ebp + CPUMCTXCORE.edi]
-        mov     ebp, [ebp + CPUMCTXCORE.ebp]
+        mov     eax, [ebx + CPUMCTXCORE.eax]
+        mov     ecx, [ebx + CPUMCTXCORE.ecx]
+        mov     edx, [ebx + CPUMCTXCORE.edx]
+        mov     esi, [ebx + CPUMCTXCORE.esi]
+        mov     edi, [ebx + CPUMCTXCORE.edi]
+        mov     ebp, [ebx + CPUMCTXCORE.ebp]
+        mov     ebx, [ebx + CPUMCTXCORE.ebx]
 
         TRPM_NP_GP_HANDLER NAME(cpumRCHandleNPAndGP), CPUM_HANDLER_IRET
         iret

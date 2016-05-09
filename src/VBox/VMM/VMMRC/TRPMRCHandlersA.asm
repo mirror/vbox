@@ -950,6 +950,9 @@ ti_GenericInterrupt:
     add     esp, 4
 %endif
 
+    test    dword [ebx + CPUMCTXCORE.eflags], X86_EFL_VM
+    jnz     .gc_V86_return
+
     ; enable WP
     mov     eax, cr0                    ;; @todo try elimiate this read.
     or      eax, X86_CR0_WRITE_PROTECT
@@ -977,9 +980,6 @@ ti_GenericInterrupt:
     mov     eax, [ebx + CPUMCTXCORE.eip]
     mov     [%$STK_EIP], eax
 
-    test    dword [ebx + CPUMCTXCORE.eflags], X86_EFL_VM
-    jnz     .gc_V86_return
-
     mov     ax, [ebx + CPUMCTXCORE.gs.Sel]
     TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_MOV_GS
     mov     gs, ax
@@ -1006,22 +1006,16 @@ ti_GenericInterrupt:
 
 ALIGNCODE(16)
 .gc_V86_return:
-    mov     eax, dword [ebx + CPUMCTXCORE.es.Sel]
-    mov     [%$STK_V86_ES], eax
-    mov     eax, dword [ebx + CPUMCTXCORE.ds.Sel]
-    mov     [%$STK_V86_DS], eax
-    mov     eax, dword [ebx + CPUMCTXCORE.fs.Sel]
-    mov     [%$STK_V86_FS], eax
-    mov     eax, dword [ebx + CPUMCTXCORE.gs.Sel]
-    mov     [%$STK_V86_GS], eax
+    ;
+    ; We may be returning to V8086 while having entered from protected mode!
+    ; So, we have to push the whole stack frame.  There's code in CPUMRC that
+    ; does exactly that, so call it instead of duplicating it.
+    ;
+    push    ebx
+    extern  NAME(CPUMGCCallV86Code)
+    call    NAME(CPUMGCCallV86Code)
+    int3                                ; doesn't return...
 
-    ; finally restore our scratch register eax and ebx.
-    pop     ebx
-    pop     eax
-    add     esp, 16 + 4                 ; skip segregs, and vector number.
-
-    TRPM_NP_GP_HANDLER NAME(trpmRCTrapInGeneric), TRPM_TRAP_IN_IRET | TRPM_TRAP_IN_V86
-    iret
 
     ; -+- Entry point -+-
     ;
