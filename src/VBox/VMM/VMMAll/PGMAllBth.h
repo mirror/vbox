@@ -1069,8 +1069,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 PGM_INVL_PG(pVCpu, pvFault);
 #   endif
 #   ifdef VBOX_STRICT
-                RTGCPHYS GCPhys2;
-                uint64_t fPageGst;
+                RTGCPHYS GCPhys2 = RTGCPHYS_MAX;
+                uint64_t fPageGst = UINT64_MAX;
                 if (!pVM->pgm.s.fNestedPaging)
                 {
                     rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, &GCPhys2);
@@ -1080,7 +1080,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 uint64_t fPageShw;
                 rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
                 AssertMsg((RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)) || pVM->cCpus > 1 /* new monitor can be installed/page table flushed between the trap exit and PGMTrap0eHandler */,
-                          ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
+                          ("rc=%Rrc fPageShw=%RX64 GCPhys2=%RGp fPageGst=%RX64\n", rc, fPageShw, GCPhys2, fPageGst)); /* Bogus? Can we end up mapping MMIO here for instance, or is that handled above already?  */
 #   endif /* VBOX_STRICT */
                 STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2OutOfSyncHndObs; });
                 return VINF_SUCCESS;
