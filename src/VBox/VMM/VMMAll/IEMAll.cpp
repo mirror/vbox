@@ -12054,9 +12054,9 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
     /*
      * Commit the pending bounce buffers (usually just one).
      */
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     unsigned cBufs = 0;
-#endif
+# endif
     unsigned iMemMap = RT_ELEMENTS(pIemCpu->aMemMappings);
     while (iMemMap-- > 0)
         if (pIemCpu->aMemMappings[iMemMap].fAccess & (IEM_ACCESS_PENDING_R3_WRITE_1ST | IEM_ACCESS_PENDING_R3_WRITE_2ND))
@@ -12094,7 +12094,9 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
                      iMemMap, pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond,
                      VBOXSTRICTRC_VAL(rcStrictCommit2), VBOXSTRICTRC_VAL(rcStrict)));
             }
+# ifdef VBOX_STRICT
             cBufs++;
+# endif
         }
 
     AssertMsg(cBufs > 0, ("%#x %#x %#x\n", pIemCpu->aMemMappings[0].fAccess, pIemCpu->aMemMappings[1].fAccess,
