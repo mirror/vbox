@@ -509,7 +509,7 @@ typedef struct BUSLOGIC
 # define BL_INTR_IMBL   RT_BIT(0)   /* Incoming Mailbox Loaded. */
 # define BL_INTR_OMBR   RT_BIT(1)   /* Outgoing Mailbox Available. */
 # define BL_INTR_CMDC   RT_BIT(2)   /* Command Complete. */
-# define BL_INTR_RSTS   RT_BIT(3)   /* SCSO Bus Reset State. */
+# define BL_INTR_RSTS   RT_BIT(3)   /* SCSI Bus Reset State. */
 # define BL_INTR_INTV   RT_BIT(7)   /* Interrupt Valid. */
 
 #define BUSLOGIC_REGISTER_GEOMETRY  3 /* Readonly */
