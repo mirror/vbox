@@ -358,6 +358,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         else:
             reporter.testFailure('Failed to connect to USB gadget');
 
+        _ = sUsbCtrl;
         return fRc;
 
     def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed): # pylint: disable=W0613
