@@ -12057,7 +12057,6 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
     unsigned cBufs = 0;
     unsigned iMemMap = RT_ELEMENTS(pIemCpu->aMemMappings);
     while (iMemMap-- > 0)
-    {
         if (pIemCpu->aMemMappings[iMemMap].fAccess & (IEM_ACCESS_PENDING_R3_WRITE_1ST | IEM_ACCESS_PENDING_R3_WRITE_2ND))
         {
             Assert(pIemCpu->aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE);
@@ -12094,12 +12093,8 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IEMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
                      VBOXSTRICTRC_VAL(rcStrictCommit2), VBOXSTRICTRC_VAL(rcStrict)));
             }
             cBufs++;
+            pIemCpu->aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
         }
-        else
-            AssertMsg(pIemCpu->aMemMappings[iMemMap].fAccess == IEM_ACCESS_INVALID,
-                      ("iMemMap=%u: %#x\n", iMemMap, pIemCpu->aMemMappings[iMemMap].fAccess));
-        pIemCpu->aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
-    }
 
     AssertMsg(cBufs > 0 && cBufs == pIemCpu->cActiveMappings,
               ("cBufs=%u cActiveMappings=%u - %#x %#x %#x\n", cBufs, pIemCpu->cActiveMappings,
