@@ -1701,6 +1701,9 @@ DECLINLINE(VBOXSTRICTRC) iomR3MergeStatus(VBOXSTRICTRC rcStrict, VBOXSTRICTRC rc
     if (RT_LIKELY(rcStrict == rcIom || rcStrict == VINF_EM_RAW_TO_R3 || rcStrict == VINF_SUCCESS))
         return rcStrictCommit;
 
+    if (RT_LIKELY(rcStrictCommit == VINF_SUCCESS))
+        return rcStrict;
+
     /* EM scheduling status codes. */
     if (RT_LIKELY(   rcStrict >= VINF_EM_FIRST
                   && rcStrict <= VINF_EM_LAST))
