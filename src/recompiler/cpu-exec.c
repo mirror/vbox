@@ -344,12 +344,13 @@ int cpu_exec(CPUState *env1)
                     Log(("do_interrupt: vec=%#x int=%d pc=%04x:%RGv\n", env->exception_index, env->exception_is_int,
                          env->segs[R_CS].selector, (RTGCPTR)env->exception_next_eip));
 #  endif /* VBOX */
-#  ifdef IEM_VERIFICATION_MODE /* Ugly hack*/
+#  ifdef IEM_VERIFICATION_MODE /* Ugly hacks */
                     do_interrupt(env->exception_index,
                                  env->exception_is_int && env->exception_is_int != 0x42,
                                  env->error_code,
                                  env->exception_next_eip,
                                  env->exception_is_int == 0x42);
+                    cpu_loop_exit();
 #  else
                     do_interrupt(env->exception_index,
                                  env->exception_is_int,
