@@ -267,31 +267,24 @@ void pm_unwind(uint16_t args);
 
 // @todo: This method is silly. The RTC should be programmed to fire an interrupt
 // instead of hogging the CPU with inaccurate code.
-void timer_wait(uint16_t lo, uint16_t hi);
-#pragma aux timer_wait =    \
-    ".386"                  \
-    "shl    eax, 16"        \
-    "mov    ax, dx"         \
-    "mov    ebx, 15"        \
-    "xor    edx, edx"       \
-    "div    ebx"            \
-    "mov    ecx, eax"       \
-    "in     al, 61h"        \
-    "and    al, 10h"        \
-    "mov    ah, al"         \
-    "or     ecx, ecx"       \
-    "je int1586_tick_end"   \
-    "int1586_tick:"         \
-    "in     al, 61h"        \
-    "and    al, 10h"        \
-    "cmp    al, ah"         \
-    "je     int1586_tick"   \
-    "mov    ah, al"         \
-    "dec    ecx"            \
-    "jnz    int1586_tick"   \
-    "int1586_tick_end:"     \
-    parm [dx] [ax] modify [bx cx] nomemory;
+void timer_wait(uint32_t usec_wait)
+{
+    uint32_t    cycles;
+    uint8_t     old_val;
+    uint8_t     cur_val;
 
+    /* We wait in 15 usec increments. */
+    cycles = usec_wait / 15;
+
+    old_val = inp(0x61) & 0x10;
+    while (cycles--) {
+        /* Wait 15us. */
+        do {
+            cur_val = inp(0x61) & 0x10;
+        } while (cur_val != old_val);
+        old_val = cur_val;
+    }
+}
 
 bx_bool set_enable_a20(bx_bool val)
 {
@@ -584,7 +577,7 @@ void BIOSCALL int15_function32(sys32_regs_t r)
         // Wait for CX:DX microseconds. currently using the
         // refresh request port 0x61 bit4, toggling every 15usec
         int_enable();
-        timer_wait(DX, CX);
+        timer_wait(((uint32_t)CX << 16) | DX);
         break;
 
     case 0xd0:
