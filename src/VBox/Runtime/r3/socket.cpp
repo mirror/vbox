@@ -1269,7 +1269,10 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
         rc = rtSocketError();
 
     if (rc == VERR_TRY_AGAIN)
+    {
+        *pcbRead = 0;
         rc = VINF_TRY_AGAIN;
+    }
 #else
     ssize_t cbRead = recv(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
     if (cbRead >= 0)
