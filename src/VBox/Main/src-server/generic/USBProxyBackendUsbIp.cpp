@@ -807,8 +807,9 @@ int USBProxyBackendUsbIp::receiveData()
         LogFlowFunc(("RTTcpReadNB(%#p, %#p, %zu, %zu) -> %Rrc\n",
                      m->hSocket, m->pbRecvBuf, m->cbResidualRecv, cbRecvd));
 
-        if (RT_SUCCESS(rc))
+        if (rc == VINF_SUCCESS)
         {
+            Assert(cbRecvd > 0);
             m->cbResidualRecv -= cbRecvd;
             m->pbRecvBuf      += cbRecvd;
             /* In case we received everything for the current state process the data. */
@@ -821,7 +822,13 @@ int USBProxyBackendUsbIp::receiveData()
                     break;
             }
         }
-    } while (RT_SUCCESS(rc) && cbRecvd > 0);
+        else if (rc == VINF_TRY_AGAIN)
+            Assert(!cbRecvd);
+
+    } while (rc == VINF_SUCCESS && cbRecvd > 0);
+
+    if (rc == VINF_TRY_AGAIN)
+        rc = VINF_SUCCESS;
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
