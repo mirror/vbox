@@ -226,27 +226,25 @@ void UIFilePathSelector::retranslateUi()
             AssertFailedBreak();
     }
 
-    /* How do we interpret the "nothing selected" item? */
+    /* If selector is NOT focused => we interpret the "nothing selected"
+     * item depending on "reset to default" feature state: */
     if (isResetEnabled())
     {
+        /* If "reset to default" is enabled: */
         m_strNoneText = tr("<reset to default>");
         m_strNoneToolTip = tr("The actual default path value will be displayed after "
                               "accepting the changes and opening this window again.");
     }
     else
     {
+        /* If "reset to default" is NOT enabled: */
         m_strNoneText = tr("<not selected>");
         m_strNoneToolTip = tr("Please use the <b>Other...</b> item from the drop-down "
                               "list to select a path.");
     }
 
-    /* Retranslate 'path' item: */
-    if (m_strPath.isNull())
-    {
-        setItemText(PathId, m_strNoneText);
-        setItemData(PathId, m_strNoneToolTip, Qt::ToolTipRole);
-        setToolTip(m_strNoneToolTip);
-    }
+    /* Finally, retranslate current item: */
+    refreshText();
 }
 
 void UIFilePathSelector::onActivated(int iIndex)
@@ -449,9 +447,12 @@ void UIFilePathSelector::refreshText()
         if (lineEdit()->text() != m_strPath)
             setItemText(PathId, m_strPath);
         setItemIcon(PathId, QIcon());
+
+        /* Set the tool-tip: */
         setToolTip(m_enmMode == Mode_Folder ?
                    tr("Holds the folder path.") :
                    tr("Holds the file path."));
+        setItemData(PathId, toolTip(), Qt::ToolTipRole);
 
         if (m_fMouseAwaited)
         {
@@ -477,8 +478,10 @@ void UIFilePathSelector::refreshText()
         {
             setItemText(PathId, m_strNoneText);
             setItemIcon(PathId, QIcon());
-            setItemData(PathId, m_strNoneToolTip, Qt::ToolTipRole);
+
+            /* Set the tool-tip: */
             setToolTip(m_strNoneToolTip);
+            setItemData(PathId, toolTip(), Qt::ToolTipRole);
         }
     }
     else
@@ -495,7 +498,7 @@ void UIFilePathSelector::refreshText()
                             vboxGlobal().icon(QFileInfo(m_strPath)) :
                             defaultIcon());
 
-        /* Set the tooltip: */
+        /* Set the tool-tip: */
         setToolTip(fullPath());
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
