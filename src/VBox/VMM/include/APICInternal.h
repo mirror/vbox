@@ -164,19 +164,16 @@
 /** LVT CMCI - Valid bits. */
 #define XAPIC_LVT_CMCI_VALID                 (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
 /** LVT Timer - Valid bits. */
-#define XAPIC_LVT_TIMER                      (XAPIC_LVT_COMMON | XAPIC_LVT_TIMER_MODE | XAPIC_LVT_TIMER_TSCDEADLINE)
+#define XAPIC_LVT_TIMER_VALID                (XAPIC_LVT_COMMON | XAPIC_LVT_TIMER_MODE | XAPIC_LVT_TIMER_TSCDEADLINE)
 /** LVT Thermal - Valid bits. */
-#define XAPIC_LVT_THERMAL                    (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
+#define XAPIC_LVT_THERMAL_VALID              (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
 /** LVT Perf - Valid bits. */
-#define XAPIC_LVT_PERF                       (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
-/** LVT LINT0 - Valid bits. */
-#define XAPIC_LVT_LINT0                      (  XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE | XAPIC_LVT_DELIVERY_STATUS \
-                                              | XAPIC_LVT_INTR_INPUT_PIN_POLARITY | XAPIC_LVT_REMOTE_IRR)
-/** LVT LINT1 - Valid bits. */
-#define XAPIC_LVT_LINT1                      (  XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE | XAPIC_LVT_DELIVERY_STATUS \
-                                              | XAPIC_LVT_INTR_INPUT_PIN_POLARITY | XAPIC_LVT_REMOTE_IRR)
+#define XAPIC_LVT_PERF_VALID                 (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
+/** LVT LINTx - Valid bits. */
+#define XAPIC_LVT_LINT_VALID                 (  XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE | XAPIC_LVT_DELIVERY_STATUS \
+                                              | XAPIC_LVT_INTR_INPUT_PIN_POLARITY | XAPIC_LVT_REMOTE_IRR | XAPIC_LVT_TRIGGER_MODE)
 /** LVT Error - Valid bits. */
-#define XAPIC_LVT_ERROR                      (XAPIC_LVT_COMMON)
+#define XAPIC_LVT_ERROR_VALID                (XAPIC_LVT_COMMON)
 
 /** SVR - The vector. */
 #define XAPIC_SVR_VECTOR                     UINT32_C(0xff)

@@ -32,12 +32,12 @@
 /** An ordered array of valid LVT masks. */
 static const uint32_t g_au32LvtValidMasks[] =
 {
-    XAPIC_LVT_TIMER,
-    XAPIC_LVT_THERMAL,
-    XAPIC_LVT_PERF,
-    XAPIC_LVT_LINT0,
-    XAPIC_LVT_LINT1,
-    XAPIC_LVT_ERROR
+    XAPIC_LVT_TIMER_VALID,
+    XAPIC_LVT_THERMAL_VALID,
+    XAPIC_LVT_PERF_VALID,
+    XAPIC_LVT_LINT_VALID,   /* LINT0 */
+    XAPIC_LVT_LINT_VALID,   /* LINT1 */
+    XAPIC_LVT_ERROR_VALID
 };
 #endif
 
