@@ -98,6 +98,13 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     retranslateUi();
 }
 
+void UIFilePathSelector::setMode(Mode enmMode)
+{
+    m_enmMode = enmMode;
+
+    retranslateUi();
+}
+
 void UIFilePathSelector::setEditable(bool fEditable)
 {
     m_fEditable = fEditable;

@@ -65,7 +65,7 @@ public:
     UIFilePathSelector(QWidget *pParent = 0);
 
     /** Defines the @a enmMode to operate in. */
-    void setMode(Mode enmMode) { m_enmMode = enmMode; }
+    void setMode(Mode enmMode);
     /** Returns the mode to operate in. */
     Mode mode() const { return m_enmMode; }
 
