@@ -1597,39 +1597,6 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
 }
 
 
-/**
- * Interpret CRx write.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- * @param   DestRegCrx  CRx register index (DISUSE_REG_CR*)
- * @param   SrcRegGen   General purpose register index (USE_REG_E**))
- *
- */
-static int emInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
-{
-    uint64_t val;
-    int      rc;
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-
-    if (CPUMIsGuestIn64BitCode(pVCpu))
-        rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
-    else
-    {
-        uint32_t val32;
-        rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
-        val = val32;
-    }
-
-    if (RT_SUCCESS(rc))
-        return emUpdateCRx(pVM, pVCpu, pRegFrame, DestRegCrx, val);
-
-    return VERR_EM_INTERPRETER;
-}
-
-
 #ifdef LOG_ENABLED
 static const char *emMSRtoString(uint32_t uMsr)
 {
@@ -1748,39 +1715,6 @@ VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
              RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx)));
     NOREF(pVM);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Interpret CRx read.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- * @param   DestRegGen  General purpose register index (USE_REG_E**))
- * @param   SrcRegCrx   CRx register index (DISUSE_REG_CR*)
- *
- */
-static int emInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
-{
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    uint64_t val64;
-    int rc = CPUMGetGuestCRx(pVCpu, SrcRegCrx, &val64);
-    AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
-    NOREF(pVM);
-
-    if (CPUMIsGuestIn64BitCode(pVCpu))
-        rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
-    else
-        rc = DISWriteReg32(pRegFrame, DestRegGen, val64);
-
-    if (RT_SUCCESS(rc))
-    {
-        LogFlow(("MOV_CR: gen32=%d CR=%d val=%RX64\n", DestRegGen, SrcRegCrx, val64));
-        return VINF_SUCCESS;
-    }
-    return VERR_EM_INTERPRETER;
 }
 
 
@@ -3407,6 +3341,73 @@ static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
     return rc;
 }
 #endif
+
+
+/**
+ * Interpret CRx read.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pRegFrame   The register frame.
+ * @param   DestRegGen  General purpose register index (USE_REG_E**))
+ * @param   SrcRegCrx   CRx register index (DISUSE_REG_CR*)
+ *
+ */
+static int emInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
+{
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
+    uint64_t val64;
+    int rc = CPUMGetGuestCRx(pVCpu, SrcRegCrx, &val64);
+    AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
+    NOREF(pVM);
+
+    if (CPUMIsGuestIn64BitCode(pVCpu))
+        rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
+    else
+        rc = DISWriteReg32(pRegFrame, DestRegGen, val64);
+
+    if (RT_SUCCESS(rc))
+    {
+        LogFlow(("MOV_CR: gen32=%d CR=%d val=%RX64\n", DestRegGen, SrcRegCrx, val64));
+        return VINF_SUCCESS;
+    }
+    return VERR_EM_INTERPRETER;
+}
+
+
+/**
+ * Interpret CRx write.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pRegFrame   The register frame.
+ * @param   DestRegCrx  CRx register index (DISUSE_REG_CR*)
+ * @param   SrcRegGen   General purpose register index (USE_REG_E**))
+ *
+ */
+static int emInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
+{
+    uint64_t val;
+    int      rc;
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
+
+    if (CPUMIsGuestIn64BitCode(pVCpu))
+        rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
+    else
+    {
+        uint32_t val32;
+        rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
+        val = val32;
+    }
+
+    if (RT_SUCCESS(rc))
+        return emUpdateCRx(pVM, pVCpu, pRegFrame, DestRegCrx, val);
+
+    return VERR_EM_INTERPRETER;
+}
+
 
 /**
  * MOV CRx
