@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_WITH_IEM
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/mm.h>
@@ -47,9 +48,6 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 
-#ifndef IN_RC
-#undef VBOX_WITH_IEM
-#endif
 #ifdef VBOX_WITH_IEM
 //# define VBOX_COMPARE_IEM_AND_EM /* debugging... */
 //# define VBOX_SAME_AS_EM
