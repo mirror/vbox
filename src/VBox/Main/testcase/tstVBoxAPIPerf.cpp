@@ -237,6 +237,7 @@ int main(int argc, char **argv)
         }
 
         ptrVBox.setNull();
+        ptrVBoxClient.setNull();
         com::Shutdown();
     }
     else

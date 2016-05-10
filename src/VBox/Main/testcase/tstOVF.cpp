@@ -386,6 +386,7 @@ int main(int argc, char *argv[])
     }
 
     pVirtualBox.setNull();
+    pVirtualBoxClient.setNull();
 
     RTPrintf("Shutting down COM...\n");
     com::Shutdown();
