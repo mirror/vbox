@@ -597,7 +597,7 @@ static void pgmR3DbgSelectMemScanFunction(PFNPGMR3DBGFIXEDMEMSCAN *ppfnMemScan, 
             if (cbNeedle >= 8)
                 *ppfnMemScan = pgmR3DbgFixedMemScan8Wide1Step;
             else if (cbNeedle >= 4)
-                *ppfnMemScan = pgmR3DbgFixedMemScan8Wide1Step;
+                *ppfnMemScan = pgmR3DbgFixedMemScan4Wide1Step;
             else
                 *ppfnMemScan = pgmR3DbgFixedMemScan1Wide1Step;
             break;
