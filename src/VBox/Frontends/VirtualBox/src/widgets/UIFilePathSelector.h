@@ -104,6 +104,10 @@ public:
     /** Returns the path. */
     QString path() const { return m_strPath; }
 
+    /** Sets overriden widget's @a strToolTip.
+      * @note If nothing set it's generated automatically. */
+    void setToolTip(const QString &strToolTip);
+
 public slots:
 
     /** Defines the @a strPath and @a fRefreshText after that. */
@@ -190,6 +194,9 @@ private:
     bool     m_fEditableMode;
     /** Holds whether we are expecting mouse events. */
     bool     m_fMouseAwaited;
+
+    /** Holds whether the tool-tip overriden. */
+    bool     m_fToolTipOverriden;
 
     /** Holds the copy action instance. */
     QAction *m_pCopyAction;

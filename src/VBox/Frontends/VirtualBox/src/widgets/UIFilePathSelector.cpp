@@ -27,7 +27,6 @@
 # include <QFocusEvent>
 # include <QHBoxLayout>
 # include <QLineEdit>
-# include <QTimer>
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -66,6 +65,7 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     , m_fModified(false)
     , m_fEditableMode(false)
     , m_fMouseAwaited(false)
+    , m_fToolTipOverriden(false)
     , m_pCopyAction(new QAction(this))
 {
     /* Populate items: */
@@ -144,6 +144,15 @@ void UIFilePathSelector::setResetEnabled(bool fEnabled)
     retranslateUi();
 }
 
+void UIFilePathSelector::setToolTip(const QString &strToolTip)
+{
+    /* Call to base-class: */
+    QComboBox::setToolTip(strToolTip);
+
+    /* Remember if the tool-tip overriden: */
+    m_fToolTipOverriden = !toolTip().isEmpty();
+}
+
 void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = true */)
 {
     m_strPath = strPath.isEmpty() ? QString::null :
@@ -155,7 +164,7 @@ void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = 
 bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
-        QTimer::singleShot(0, this, SLOT(refreshText()));
+        QMetaObject::invokeMethod(this, "refreshText", Qt::QueuedConnection);
 
     return QIWithRetranslateUI<QComboBox>::eventFilter(pObject, pEvent);
 }
@@ -463,7 +472,8 @@ void UIFilePathSelector::refreshText()
         setItemIcon(PathId, QIcon());
 
         /* Set the tool-tip: */
-        setToolTip(m_strNoneToolTipFocused);
+        if (!m_fToolTipOverriden)
+            QComboBox::setToolTip(m_strNoneToolTipFocused);
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
 
         if (m_fMouseAwaited)
@@ -492,7 +502,8 @@ void UIFilePathSelector::refreshText()
             setItemIcon(PathId, QIcon());
 
             /* Set the tool-tip: */
-            setToolTip(m_strNoneToolTip);
+            if (!m_fToolTipOverriden)
+                QComboBox::setToolTip(m_strNoneToolTip);
             setItemData(PathId, toolTip(), Qt::ToolTipRole);
         }
     }
@@ -511,7 +522,8 @@ void UIFilePathSelector::refreshText()
                             defaultIcon());
 
         /* Set the tool-tip: */
-        setToolTip(fullPath());
+        if (!m_fToolTipOverriden)
+            QComboBox::setToolTip(fullPath());
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
 }
