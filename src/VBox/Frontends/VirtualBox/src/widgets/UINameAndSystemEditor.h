@@ -54,6 +54,8 @@ public:
 
     /** Returns the VM name editor. */
     QLineEdit* nameEditor() const { return m_pEditorName; }
+    /** Returns the VM location editor. */
+    UIFilePathSelector* locationEditor() const { return m_pEditorLocation; }
 
     /** Returns the VM name. */
     QString name() const;
