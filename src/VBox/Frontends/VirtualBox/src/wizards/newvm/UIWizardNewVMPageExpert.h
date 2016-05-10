@@ -64,6 +64,9 @@ private slots:
     void sltVirtualDiskSourceChanged();
     void sltGetWithFileOpenDialog();
 
+    /** Adjusts tool-tip according to @a strNewName. */
+    void sltAdjustToolTip(const QString &strNewName);
+
 private:
 
     /* Translation stuff: */

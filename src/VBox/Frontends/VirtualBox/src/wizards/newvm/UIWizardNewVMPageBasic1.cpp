@@ -30,6 +30,7 @@
 # include "UIWizardNewVM.h"
 # include "UIMessageCenter.h"
 # include "UINameAndSystemEditor.h"
+# include "UIFilePathSelector.h"
 # include "QIRichTextLabel.h"
 
 /* COM includes: */
@@ -203,6 +204,32 @@ void UIWizardNewVMPage1::onOsTypeChanged()
     m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
+void UIWizardNewVMPage1::adjustToolTip(const QString &strNewName /* = QString() */)
+{
+    /* Compose tool-tip: */
+    QString strToolTip;
+    /* If name is empty: */
+    if (strNewName.isEmpty())
+    {
+        /* We are just reseting the tool-tip to default: */
+        strToolTip = UIWizardNewVM::tr("<p><nobr>Holds the name or full path to the virtual "
+                                       "machine folder you are about to create.</nobr></p>");
+    }
+    /* If name is NOT empty: */
+    else
+    {
+        /* Compose the machine file-path, acquire the machine folder from it: */
+        const QString strMachineFilePath = composeMachineFilePath(strNewName);
+        const QString strMachineFolder = QDir::toNativeSeparators(QFileInfo(strMachineFilePath).absolutePath());
+        /* And compose the location-editor tool-tip accordingly: */
+        strToolTip = UIWizardNewVM::tr("<p><nobr>You are about to create the virtual machine in the "
+                                       "following folder:</nobr><br><nobr><b>%1</b></nobr></p>")
+                                       .arg(strMachineFolder);
+    }
+    /* Assign tool-tip: */
+    m_pNameAndSystemEditor->locationEditor()->setToolTip(strToolTip);
+}
+
 bool UIWizardNewVMPage1::machineFolderCreated()
 {
     return !m_strMachineFolder.isEmpty();
@@ -290,6 +317,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 
     /* Setup connections: */
     connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltAdjustToolTip(const QString &)));
     connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
 
     /* Register fields: */
@@ -298,12 +326,21 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
     registerField("machineFilePath", this, "machineFilePath");
+
+    /* Initialize tool-tip: */
+    adjustToolTip();
 }
 
 void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)
 {
     /* Call to base-class: */
     onNameChanged(strNewName);
+}
+
+void UIWizardNewVMPageBasic1::sltAdjustToolTip(const QString &strNewName)
+{
+    /* Call to base-class: */
+    adjustToolTip(strNewName);
 }
 
 void UIWizardNewVMPageBasic1::sltOsTypeChanged()

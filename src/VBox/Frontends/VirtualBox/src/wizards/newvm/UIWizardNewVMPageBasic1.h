@@ -37,6 +37,9 @@ protected:
     void onNameChanged(QString strNewName);
     void onOsTypeChanged();
 
+    /** Adjusts tool-tip according to @a strNewName. */
+    void adjustToolTip(const QString &strNewName = QString());
+
     /* Helping stuff: */
     bool machineFolderCreated();
     bool createMachineFolder();
@@ -99,6 +102,9 @@ private slots:
     /* Handlers: */
     void sltNameChanged(const QString &strNewText);
     void sltOsTypeChanged();
+
+    /** Adjusts tool-tip according to @a strNewName. */
+    void sltAdjustToolTip(const QString &strNewName);
 
 private:
 

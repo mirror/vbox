@@ -138,6 +138,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
 
     /* Setup connections: */
     connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltAdjustToolTip(const QString &)));
     connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
     connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged()));
     connect(m_pRamEditor, SIGNAL(valueChanged(int)), this, SLOT(sltRamEditorValueChanged()));
@@ -159,6 +160,9 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("virtualDisk", this, "virtualDisk");
     registerField("virtualDiskId", this, "virtualDiskId");
     registerField("virtualDiskLocation", this, "virtualDiskLocation");
+
+    /* Initialize tool-tip: */
+    adjustToolTip();
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
@@ -173,6 +177,12 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
 
     /* Broadcast complete-change: */
     emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltAdjustToolTip(const QString &strNewName)
+{
+    /* Call to base-class: */
+    adjustToolTip(strNewName);
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
