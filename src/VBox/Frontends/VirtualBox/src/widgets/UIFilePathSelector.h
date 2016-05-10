@@ -53,6 +53,14 @@ public:
         Mode_File_Save
     };
 
+    /** Combo-box field IDs file-path selector uses. */
+    enum
+    {
+        PathId = 0,
+        SelectId,
+        ResetId
+    };
+
     /** Constructs file-path selector passing @a pParent to QComboBox base-class. */
     UIFilePathSelector(QWidget *pParent = 0);
 
@@ -64,12 +72,12 @@ public:
     /** Defines whether the path is @a fEditable. */
     void setEditable(bool fEditable);
     /** Returns whether the path is editable. */
-    bool isEditable() const;
+    bool isEditable() const { return m_fEditable; }
 
     /** Defines whether the reseting to defauilt path is @a fEnabled. */
     void setResetEnabled(bool fEnabled);
     /** Returns whether the reseting to defauilt path is enabled. */
-    bool isResetEnabled() const;
+    bool isResetEnabled() const { return count() - 1  == ResetId; }
 
     /** Defines the file-dialog @a strTitle. */
     void setFileDialogTitle(const QString &strTitle) { m_strFileDialogTitle = strTitle; }
@@ -91,10 +99,10 @@ public:
     /** Returns whether the path is modified. */
     bool isModified() const { return m_fModified; }
     /** Returns whether the path is selected. */
-    bool isPathSelected() const;
+    bool isPathSelected() const { return currentIndex() == PathId; }
 
     /** Returns the path. */
-    QString path() const;
+    QString path() const { return m_strPath; }
 
 public slots:
 
@@ -102,7 +110,7 @@ public slots:
     void setPath(const QString &strPath, bool fRefreshText = true);
 
     /** Defines the @a strHomeDir. */
-    void setHomeDir(const QString &strHomeDir);
+    void setHomeDir(const QString &strHomeDir) { m_strHomeDir = strHomeDir; }
 
 protected:
 
