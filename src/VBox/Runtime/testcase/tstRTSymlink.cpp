@@ -66,7 +66,13 @@ static void test1Worker(RTTEST hTest, const char *pszBaseDir,
     /* Create it.*/
     RTTESTI_CHECK_RC_OK_RETV(RTPathJoin(szPath1, sizeof(szPath1), pszBaseDir, "tstRTSymlink-link-1"));
     RTSymlinkDelete(szPath1, 0); /* clean up previous run */
-    RTTESTI_CHECK_RC_RETV(RTSymlinkCreate(szPath1, pszTarget, RTSYMLINKTYPE_FILE, 0), VINF_SUCCESS);
+    int rc = RTSymlinkCreate(szPath1, pszTarget, RTSYMLINKTYPE_FILE, 0);
+    if (rc == VERR_NOT_SUPPORTED)
+    {
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "VERR_NOT_SUPPORTED - skipping\n");
+        return;
+    }
+    RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
 
     /* Check the predicate functions. */
     RTTESTI_CHECK(RTSymlinkExists(szPath1));
@@ -91,7 +97,6 @@ static void test1Worker(RTTEST hTest, const char *pszBaseDir,
                       ("got=\"%s\" expected=\"%.*s\"", szPath2, cchTarget - 1, szPath3));
 
     /* Other APIs that have to handle symlinks carefully. */
-    int rc;
     RTFSOBJINFO ObjInfo;
     RTTESTI_CHECK_RC(rc = RTPathQueryInfo(szPath1, &ObjInfo, RTFSOBJATTRADD_NOTHING), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
