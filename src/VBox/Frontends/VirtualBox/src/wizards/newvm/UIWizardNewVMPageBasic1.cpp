@@ -217,24 +217,10 @@ bool UIWizardNewVMPage1::createMachineFolder()
         return false;
     }
 
-    /* Get VBox: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Get default machine folder: */
-    const QString strDefaultMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
-    /* Fetch user's machine location: */
-    const QString strUserMachineLocation = m_pNameAndSystemEditor->name();
-    const QString strUserMachineFolder = QFileInfo(strUserMachineLocation).absolutePath();
-    const QString strUserMachineBaseName = QFileInfo(strUserMachineLocation).fileName();
-    const bool fUseDefaultPath = strUserMachineLocation == strUserMachineBaseName;
-    /* Compose machine filename: */
-    const QString strMachineFilePath = vbox.ComposeMachineFilename(strUserMachineBaseName,
-                                                                   fUseDefaultPath ? m_strGroup : QString() /* no group in that case */,
-                                                                   QString(),
-                                                                   fUseDefaultPath ? strDefaultMachineFolder : strUserMachineFolder);
-    /* Compose machine folder/basename: */
-    const QFileInfo fileInfo(strMachineFilePath);
-    const QString strMachineFolder = fileInfo.absolutePath();
-    const QString strMachineBaseName = fileInfo.completeBaseName();
+    /* Compose machine file-path, parse it to folder and base-name: */
+    const QString strMachineFilePath = composeMachineFilePath(m_pNameAndSystemEditor->name());
+    const QString strMachineFolder = QDir::toNativeSeparators(QFileInfo(strMachineFilePath).absolutePath());
+    const QString strMachineBaseName = QFileInfo(strMachineFilePath).completeBaseName();
 
     /* Make sure that folder doesn't exists: */
     if (QDir(strMachineFolder).exists())
@@ -270,6 +256,23 @@ bool UIWizardNewVMPage1::cleanupMachineFolder()
         m_strMachineFolder = QString();
     /* Return cleanup result: */
     return fMachineFolderRemoved;
+}
+
+QString UIWizardNewVMPage1::composeMachineFilePath(const QString &strUserMachineLocation)
+{
+    /* Get VBox: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* Get default machine folder: */
+    const QString strDefaultMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    /* Fetch user's machine location: */
+    const QString strUserMachineFolder = QFileInfo(strUserMachineLocation).absolutePath();
+    const QString strUserMachineBaseName = QFileInfo(strUserMachineLocation).fileName();
+    const bool fUseDefaultPath = strUserMachineLocation == strUserMachineBaseName;
+    /* Compose machine filename: */
+    return vbox.ComposeMachineFilename(strUserMachineBaseName,
+                                       fUseDefaultPath ? m_strGroup : QString() /* no group in that case */,
+                                       QString(),
+                                       fUseDefaultPath ? strDefaultMachineFolder : strUserMachineFolder);
 }
 
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)

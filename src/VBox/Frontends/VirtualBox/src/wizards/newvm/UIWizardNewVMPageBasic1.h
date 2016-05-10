@@ -42,6 +42,9 @@ protected:
     bool createMachineFolder();
     bool cleanupMachineFolder();
 
+    /** Composes and returns machine file-path on the basis of passed @a strUserMachineLocation. */
+    QString composeMachineFilePath(const QString &strUserMachineLocation);
+
     /** Returns the machine folder value. */
     QString machineFolder() const { return m_strMachineFolder; }
     /** Defines the @a strMachineFolder value. */
