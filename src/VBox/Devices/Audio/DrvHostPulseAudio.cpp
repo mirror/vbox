@@ -181,14 +181,14 @@ static pa_sample_format_t paFmtToPulse(PDMAUDIOFMT fmt)
 {
     switch (fmt)
     {
-        case AUD_FMT_U8:
+        case PDMAUDIOFMT_U8:
             return PA_SAMPLE_U8;
 
-        case AUD_FMT_S16:
+        case PDMAUDIOFMT_S16:
             return PA_SAMPLE_S16LE;
 
 #ifdef PA_SAMPLE_S32LE
-        case AUD_FMT_S32:
+        case PDMAUDIOFMT_S32:
             return PA_SAMPLE_S32LE;
 #endif
         default:
@@ -205,30 +205,30 @@ static int paPulseToFmt(pa_sample_format_t pulsefmt,
     switch (pulsefmt)
     {
         case PA_SAMPLE_U8:
-            *pFmt = AUD_FMT_U8;
+            *pFmt = PDMAUDIOFMT_U8;
             *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case PA_SAMPLE_S16LE:
-            *pFmt = AUD_FMT_S16;
+            *pFmt = PDMAUDIOFMT_S16;
             *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case PA_SAMPLE_S16BE:
-            *pFmt = AUD_FMT_S16;
+            *pFmt = PDMAUDIOFMT_S16;
             *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
 #ifdef PA_SAMPLE_S32LE
         case PA_SAMPLE_S32LE:
-            *pFmt = AUD_FMT_S32;
+            *pFmt = PDMAUDIOFMT_S32;
             *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 #endif
 
 #ifdef PA_SAMPLE_S32BE
         case PA_SAMPLE_S32BE:
-            *pFmt = AUD_FMT_S32;
+            *pFmt = PDMAUDIOFMT_S32;
             *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 #endif
@@ -898,8 +898,9 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
     uint32_t cLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
     if (!cLive)
     {
-        LogFlowFunc(("%p: No live samples, skipping\n", pHstStrmOut));
-
+#if 0
+        LogFlowFunc(("No live samples, skipping\n"));
+#endif
         if (pcSamplesPlayed)
             *pcSamplesPlayed = 0;
         return VINF_SUCCESS;

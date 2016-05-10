@@ -539,6 +539,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  # --- Audio bits. ---
 
+ if 0
+  VBoxDD_DEFS += VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
+  VBoxDD_DEFS += VBOX_WITH_HDA_51_SURROUND
+ endif
+
  VBoxDD_SOURCES         += \
    Audio/AudioMixBuffer.cpp \
    Audio/AudioMixer.cpp \

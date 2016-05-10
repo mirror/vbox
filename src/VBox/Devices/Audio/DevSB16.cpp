@@ -78,7 +78,7 @@ typedef struct SB16OUTPUTSTREAM
     /** PCM output stream. */
     R3PTRTYPE(PPDMAUDIOGSTSTRMOUT)     pStrmOut;
     /** Mixer handle for output stream. */
-    R3PTRTYPE(PAUDMIXSTREAM)           phStrmOut;
+    R3PTRTYPE(PAUDMIXSTREAM)           pMixStrm;
 } SB16OUTPUTSTREAM, *PSB16OUTPUTSTREAM;
 
 /**
@@ -472,7 +472,7 @@ static void continue_dma8(PSB16STATE pThis)
 
 static void dma_cmd8(PSB16STATE pThis, int mask, int dma_len)
 {
-    pThis->fmt        = AUD_FMT_U8;
+    pThis->fmt        = PDMAUDIOFMT_U8;
     pThis->use_hdma   = 0;
     pThis->fmt_bits   = 8;
     pThis->fmt_signed = 0;
@@ -575,9 +575,9 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
                  pThis->block_size, pThis->dma_auto, pThis->fifo, pThis->highspeed));
 
     if (16 == pThis->fmt_bits)
-        pThis->fmt = pThis->fmt_signed ? AUD_FMT_S16 : AUD_FMT_U16;
+        pThis->fmt = pThis->fmt_signed ? PDMAUDIOFMT_S16 : PDMAUDIOFMT_U16;
     else
-        pThis->fmt = pThis->fmt_signed ? AUD_FMT_S8 : AUD_FMT_U8;
+        pThis->fmt = pThis->fmt_signed ? PDMAUDIOFMT_S8 : PDMAUDIOFMT_U8;
 
     pThis->left_till_irq = pThis->block_size;
 
@@ -1094,7 +1094,7 @@ static void sb16SetPcmOutVolume(PSB16STATE pThis)
     uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
     PDMAUDIOVOLUME vol = { false, lvol, rvol };
-    AudioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
+    AudioMixerSinkSetVolume(pThis->pSinkOutput, &vol);
 }
 
 static void sb16ResetLegacy(PSB16STATE pThis)
@@ -1107,7 +1107,7 @@ static void sb16ResetLegacy(PSB16STATE pThis)
     PDMAUDIOSTREAMCFG streamCfg;
     streamCfg.uHz           = pThis->freq;
     streamCfg.cChannels     = 1; /* Mono */
-    streamCfg.enmFormat     = AUD_FMT_U8;
+    streamCfg.enmFormat     = PDMAUDIOFMT_U8;
     streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
     int rc2 = sb16OpenOut(pThis, &streamCfg);
@@ -1317,7 +1317,7 @@ static void sb16MixerReset(PSB16STATE pThis)
     PSB16DRIVER pDrv;
 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-        pDrv->Out.phStrmOut = NULL;
+        pDrv->Out.pMixStrm = NULL;
 
     pThis->pSinkOutput = NULL;
 
@@ -1363,15 +1363,14 @@ static void sb16MixerReset(PSB16STATE pThis)
         PDMAUDIOSTREAMCFG streamCfg;
         streamCfg.uHz           = 44100;
         streamCfg.cChannels     = 2;
-        streamCfg.enmFormat     = AUD_FMT_S16;
+        streamCfg.enmFormat     = PDMAUDIOFMT_S16;
         streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
         rc2 = AudioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
         AssertRC(rc2);
 
         /* Add all required audio sinks. */
-        rc2 = AudioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
-                                AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
+        rc2 = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
         AssertRC(rc2);
     }
 
@@ -2065,15 +2064,16 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             break;
         }
 
-        int rc2 = pDrv->pConnector->pfnCreateOut(pDrv->pConnector, pszDesc, pCfg, &pDrv->Out.pStrmOut);
-        LogFlowFunc(("LUN#%RU8: Created output with rc=%Rrc\n", uLUN, rc));
-        if (rc2 == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
+        AudioMixerSinkRemoveStream(pThis->pSinkOutput, pDrv->Out.pMixStrm);
+
+        AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
+        pDrv->Out.pMixStrm = NULL;
+
+        int rc2 = AudioMixerStreamCreate(pDrv->pConnector, pCfg, 0 /* fFlags */, &pDrv->Out.pMixStrm);
+        if (RT_SUCCESS(rc2))
         {
-            AudioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
-            rc = AudioMixerAddStreamOut(pThis->pSinkOutput,
-                                        pDrv->pConnector, pDrv->Out.pStrmOut,
-                                        0 /* uFlags */,
-                                        &pDrv->Out.phStrmOut);
+            rc2 = AudioMixerSinkAddStream(pThis->pSinkOutput, pDrv->Out.pMixStrm);
+            LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pszDesc, rc2));
         }
 
         RTStrFree(pszDesc);
@@ -2149,7 +2149,7 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
     PSB16DRIVER pDrv;
 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-        pDrv->Out.phStrmOut = NULL;
+        pDrv->Out.pMixStrm = NULL;
 
     pThis->pSinkOutput = NULL;
 

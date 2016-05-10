@@ -220,20 +220,20 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 
     switch (pCfg->enmFormat)
     {
-        case AUD_FMT_S8:
-        case AUD_FMT_U8:
+        case PDMAUDIOFMT_S8:
+        case PDMAUDIOFMT_U8:
             pFmt->wBitsPerSample = 8;
             break;
 
-        case AUD_FMT_S16:
-        case AUD_FMT_U16:
+        case PDMAUDIOFMT_S16:
+        case PDMAUDIOFMT_U16:
             pFmt->wBitsPerSample = 16;
             pFmt->nAvgBytesPerSec <<= 1;
             pFmt->nBlockAlign <<= 1;
             break;
 
-        case AUD_FMT_S32:
-        case AUD_FMT_U32:
+        case PDMAUDIOFMT_S32:
+        case PDMAUDIOFMT_U32:
             pFmt->wBitsPerSample = 32;
             pFmt->nAvgBytesPerSec <<= 2;
             pFmt->nBlockAlign <<= 2;
@@ -915,7 +915,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
         if (pDev)
         {
             DSLOG(("DSound: Guest \"%s\" is using host \"%s\"\n",
-                   drvAudioRecSourceToString(pDSoundStrmIn->enmRecSource), pDev->pszName));
+                   DrvAudRecSrcToStr(pDSoundStrmIn->enmRecSource), pDev->pszName));
 
             pGUID = &pDev->Guid;
         }
@@ -924,7 +924,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
     char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
     /* This always has to be in the release log. */
     LogRel(("DSound: Guest \"%s\" is using host device with GUID: %s\n",
-            drvAudioRecSourceToString(pDSoundStrmIn->enmRecSource), pszGUID? pszGUID: "{?}"));
+            DrvAudRecSrcToStr(pDSoundStrmIn->enmRecSource), pszGUID? pszGUID: "{?}"));
     RTStrFree(pszGUID);
 
     return pGUID;

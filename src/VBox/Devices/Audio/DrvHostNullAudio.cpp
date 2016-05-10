@@ -103,6 +103,7 @@ static DECLCALLBACK(int) drvHostNullAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     NOREF(pInterface);
 
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -122,7 +123,8 @@ static DECLCALLBACK(int) drvHostNullAudioInitIn(PPDMIHOSTAUDIO pInterface,
             *pcSamples = _1K;
     }
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 static DECLCALLBACK(int) drvHostNullAudioInitOut(PPDMIHOSTAUDIO pInterface,
@@ -145,11 +147,10 @@ static DECLCALLBACK(int) drvHostNullAudioInitOut(PPDMIHOSTAUDIO pInterface,
                 *pcSamples = pNullStrmOut->csPlayBuffer;
         }
         else
-        {
             rc = VERR_NO_MEMORY;
-        }
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -230,17 +231,23 @@ static DECLCALLBACK(int) drvHostNullAudioControlOut(PPDMIHOSTAUDIO pInterface, P
 
 static DECLCALLBACK(int) drvHostNullAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn)
 {
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) drvHostNullAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
 {
+    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+
     PNULLAUDIOSTREAMOUT pNullStrmOut = (PNULLAUDIOSTREAMOUT)pHstStrmOut;
     if (   pNullStrmOut
         && pNullStrmOut->pu8PlayBuffer)
     {
         RTMemFree(pNullStrmOut->pu8PlayBuffer);
+        pNullStrmOut->pu8PlayBuffer = NULL;
     }
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 

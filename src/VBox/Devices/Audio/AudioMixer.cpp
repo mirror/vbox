@@ -3,6 +3,22 @@
  * VBox audio: Mixing routines, mainly used by the various audio device
  *             emulations to achieve proper multiplexing from/to attached
  *             devices LUNs.
+ *
+ * This mixer acts as a layer between the audio connector interface and
+ * the actual device emulation, providing mechanisms for audio sources (input) and
+ * audio sinks (output).
+ *
+ * As audio driver instances are handled as LUNs on the device level, this
+ * audio mixer then can take care of e.g. mixing various inputs/outputs to/from
+ * a specific source/sink.
+ *
+ * How and which audio streams are connected to sinks/sources depends on how
+ * the audio mixer has been set up.
+ *
+ * A sink can connect multiple output streams together, whereas a source
+ * does this with input streams. Each sink / source consists of one or more
+ * so-called mixer streams, which then in turn have pointers to the actual
+ * PDM audio input/output streams.
  */
 
 /*
@@ -31,14 +47,18 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-static int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
+static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink);
+static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
+static void audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 
+static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
+static void audioMixerStreamFree(PAUDMIXSTREAM pStream);
 
-int AudioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink)
+int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink)
 {
     AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    /** ppSink is optional. */
+    /* ppSink is optional. */
 
     int rc = VINF_SUCCESS;
 
@@ -79,95 +99,6 @@ int AudioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enm
     return rc;
 }
 
-int AudioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMIN pStream,
-                          uint32_t uFlags, PAUDMIXSTREAM *ppStream)
-{
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /** @todo Add flag validation. */
-    /* ppStream is optional. */
-
-    int rc;
-
-    if (pSink->cStreams == UINT8_MAX) /* 255 streams per sink max. */
-        return VERR_TOO_MUCH_DATA;
-
-    PAUDMIXSTREAM pMixStream
-        = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
-    if (pMixStream)
-    {
-        pMixStream->pConn = pConnector;
-        pMixStream->pIn   = pStream;
-        /** @todo Process flags. */
-
-        RTListAppend(&pSink->lstStreams, &pMixStream->Node);
-        pSink->cStreams++;
-
-        LogFlowFunc(("%s: pStream=%p, cStreams=%RU8\n",
-                     pSink->pszName, pMixStream, pSink->cStreams));
-
-        /* Increase the stream's reference count to let others know
-         * we're reyling on it to be around now. */
-        pStream->State.cRefs++;
-
-        if (ppStream)
-            *ppStream = pMixStream;
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-int AudioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMOUT pStream,
-                           uint32_t uFlags, PAUDMIXSTREAM *ppStream)
-{
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /** @todo Add flag validation. */
-    /* ppStream is optional. */
-
-    int rc;
-
-    if (pSink->cStreams == UINT8_MAX) /* 255 streams per sink max. */
-        return VERR_TOO_MUCH_DATA;
-
-    PAUDMIXSTREAM pMixStream
-        = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
-    if (pMixStream)
-    {
-        pMixStream->pConn = pConnector;
-        pMixStream->pOut  = pStream;
-        /** @todo Process flags. */
-
-        RTListAppend(&pSink->lstStreams, &pMixStream->Node);
-        pSink->cStreams++;
-
-        LogFlowFunc(("%s: pStream=%p, cStreams=%RU8\n",
-                     pSink->pszName, pMixStream, pSink->cStreams));
-
-        /* Increase the stream's reference count to let others know
-         * we're reyling on it to be around now. */
-        pStream->State.cRefs++;
-
-        if (ppStream)
-            *ppStream = pMixStream;
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-int AudioMixerControlStream(PAUDIOMIXER pMixer, PAUDMIXSTREAM pHandle)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
 int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -206,6 +137,22 @@ int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer)
     return rc;
 }
 
+void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PAUDMIXSINK pSink;
+    unsigned    iSink = 0;
+
+    pHlp->pfnPrintf(pHlp, "[Master] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", pMixer->pszName,
+                    pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight, pMixer->VolMaster.fMuted);
+
+    RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
+    {
+        pHlp->pfnPrintf(pHlp, "[Sink %u] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", iSink, pSink->pszName,
+                        pSink->Volume.uLeft, pSink->Volume.uRight, pSink->Volume.fMuted);
+        ++iSink;
+    }
+}
+
 void AudioMixerDestroy(PAUDIOMIXER pMixer)
 {
     if (!pMixer)
@@ -215,9 +162,7 @@ void AudioMixerDestroy(PAUDIOMIXER pMixer)
 
     PAUDMIXSINK pSink, pSinkNext;
     RTListForEachSafe(&pMixer->lstSinks, pSink, pSinkNext, AUDMIXSINK, Node)
-        AudioMixerRemoveSink(pMixer, pSink);
-
-    Assert(pMixer->cSinks == 0);
+        audioMixerSinkDestroyInternal(pSink);
 
     if (pMixer->pszName)
     {
@@ -226,51 +171,18 @@ void AudioMixerDestroy(PAUDIOMIXER pMixer)
     }
 
     RTMemFree(pMixer);
-}
-
-static void audioMixerDestroySink(PAUDMIXSINK pSink)
-{
-    AssertPtrReturnVoid(pSink);
-    if (!pSink)
-        return;
-
-    if (pSink->pszName)
-        RTStrFree(pSink->pszName);
-
-    RTMemFree(pSink);
-}
-
-static void audioMixerDestroyStream(PAUDMIXSTREAM pStream)
-{
-    AssertPtrReturnVoid(pStream);
-    if (!pStream)
-        return;
-
-    RTMemFree(pStream);
+    pMixer = NULL;
 }
 
 int AudioMixerGetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
 
     /** @todo Perform a deep copy, if needed. */
     *pCfg = pMixer->devFmt;
 
     return VINF_SUCCESS;
-}
-
-uint32_t AudioMixerGetStreamCount(PAUDIOMIXER pMixer)
-{
-    AssertPtrReturn(pMixer, 0);
-
-    uint32_t cStreams = 0;
-
-    PAUDMIXSINK pSink;
-    RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
-        cStreams += pSink->cStreams;
-
-    return cStreams;
 }
 
 void AudioMixerInvalidate(PAUDIOMIXER pMixer)
@@ -283,78 +195,9 @@ void AudioMixerInvalidate(PAUDIOMIXER pMixer)
     PAUDMIXSINK pSink;
     RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
     {
-        int rc2 = audioMixerUpdateSinkVolume(pSink, &pMixer->VolMaster);
+        int rc2 = audioMixerSinkUpdateVolume(pSink, &pMixer->VolMaster);
         AssertRC(rc2);
     }
-}
-
-int AudioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed)
-{
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-    /* pcbProcessed is optional. */
-
-    /** @todo Handle mixing operation enmOp! */
-
-    uint8_t *pvMixBuf = (uint8_t *)RTMemAlloc(cbBuf);
-    if (!pvMixBuf)
-        return VERR_NO_MEMORY;
-
-    int rc = VERR_NOT_FOUND;
-    uint32_t cbProcessed = 0;
-
-    LogFlowFunc(("%s: pvBuf=%p, cbBuf=%zu\n", pSink->pszName, pvBuf, cbBuf));
-
-    PAUDMIXSTREAM pStream;
-    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
-    {
-        if (!pStream->pConn->pfnIsActiveIn(pStream->pConn, pStream->pIn))
-            continue;
-
-        uint32_t cbTotalRead = 0;
-        uint32_t cbToRead = cbBuf;
-
-        while (cbToRead)
-        {
-            uint32_t cbRead;
-            AssertPtr(pStream->pConn);
-            rc = pStream->pConn->pfnRead(pStream->pConn, pStream->pIn,
-                                         (uint8_t *)pvMixBuf + cbTotalRead, cbToRead, &cbRead);
-            if (   RT_FAILURE(rc)
-                || !cbRead)
-                break;
-
-            /** @todo Right now we only handle one stream (the last one added in fact). */
-
-            AssertBreakStmt(cbRead <= cbToRead, rc = VERR_BUFFER_OVERFLOW);
-            cbToRead -= cbRead;
-            cbTotalRead += cbRead;
-        }
-
-        if (RT_FAILURE(rc))
-            continue;
-
-        cbProcessed = RT_MAX(cbProcessed, cbTotalRead);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        memcpy(pvBuf, pvMixBuf, cbProcessed); /* @todo Use an intermediate mixing buffer per sink! */
-
-        if (pcbProcessed)
-            *pcbProcessed = cbProcessed;
-    }
-
-    RTMemFree(pvMixBuf);
-
-    LogFlowFunc(("cbProcessed=%RU32, rc=%Rrc\n", cbProcessed, rc));
-    return rc;
-}
-
-int AudioMixerProcessSinkOut(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed)
-{
-    return VERR_NOT_IMPLEMENTED;
 }
 
 void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
@@ -363,63 +206,19 @@ void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
     if (!pSink)
         return;
 
-    PAUDMIXSTREAM pStream, pStreamNext;
-    RTListForEachSafe(&pSink->lstStreams, pStream, pStreamNext, AUDMIXSTREAM, Node)
-        AudioMixerRemoveStream(pSink, pStream);
+    /** @todo Check if pSink is part of pMixer. */
+
+    AudioMixerSinkRemoveAllStreams(pSink);
 
     Assert(pSink->cStreams == 0);
 
     RTListNodeRemove(&pSink->Node);
+
     Assert(pMixer->cSinks);
     pMixer->cSinks--;
 
     LogFlowFunc(("%s: pSink=%s, cSinks=%RU8\n",
                  pMixer->pszName, pSink->pszName, pMixer->cSinks));
-
-    audioMixerDestroySink(pSink);
-}
-
-void AudioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
-{
-    AssertPtrReturnVoid(pSink);
-    if (!pStream)
-        return;
-
-    Assert(pSink->cStreams);
-    RTListNodeRemove(&pStream->Node);
-    pSink->cStreams--;
-
-#ifdef DEBUG
-    const char *pszStream = pSink->enmDir == AUDMIXSINKDIR_INPUT
-                          ? pStream->pIn->MixBuf.pszName : pStream->pOut->MixBuf.pszName;
-
-    LogFlowFunc(("%s: pStream=%s, cStreams=%RU8\n",
-                 pSink->pszName, pszStream ? pszStream : "<Unnamed>", pSink->cStreams));
-#endif
-
-    /* Decrease the reference count again. */
-    switch (pSink->enmDir)
-    {
-        case AUDMIXSINKDIR_INPUT:
-        {
-            Assert(pStream->pIn->State.cRefs);
-            pStream->pIn->State.cRefs--;
-            break;
-        }
-
-        case AUDMIXSINKDIR_OUTPUT:
-        {
-            Assert(pStream->pOut->State.cRefs);
-            pStream->pOut->State.cRefs--;
-            break;
-        }
-
-        default:
-            AssertMsgFailed(("Not implemented\n"));
-            break;
-    }
-
-    audioMixerDestroyStream(pStream);
 }
 
 int AudioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg)
@@ -433,7 +232,327 @@ int AudioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg)
     return VINF_SUCCESS;
 }
 
-static int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster)
+/**
+ * Sets the mixer's master volume.
+ *
+ * @returns IPRT status code.
+ * @param   pMixer          Mixer to set master volume for.
+ * @param   pVol            Volume to set.
+ */
+int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
+{
+    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVol,   VERR_INVALID_POINTER);
+
+    pMixer->VolMaster = *pVol;
+
+    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                 pMixer->pszName, pVol->uLeft, pVol->uRight,
+                 pMixer->VolMaster.fMuted, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
+
+    AudioMixerInvalidate(pMixer);
+    return VINF_SUCCESS;
+}
+
+/*****************************************************************************
+ * Mixer Sink implementation.
+ *****************************************************************************/
+
+int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
+{
+    AssertPtrReturn(pSink,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    if (pSink->cStreams == UINT8_MAX) /* 255 streams per sink max. */
+        return VERR_NO_MORE_HANDLES;
+
+    /** @todo Check if stream already is assigned to (another) sink. */
+
+    RTListAppend(&pSink->lstStreams, &pStream->Node);
+    pSink->cStreams++;
+
+    LogFlowFunc(("%s: cStreams=%RU8\n", pSink->pszName, pSink->cStreams));
+
+    return VINF_SUCCESS;
+}
+
+static PDMAUDIOSTREAMCMD audioMixerSinkToStreamCmd(AUDMIXSINKCMD enmCmd)
+{
+    switch (enmCmd)
+    {
+        case AUDMIXSINKCMD_ENABLE:   return PDMAUDIOSTREAMCMD_ENABLE;
+        case AUDMIXSINKCMD_DISABLE:  return PDMAUDIOSTREAMCMD_DISABLE;
+        case AUDMIXSINKCMD_PAUSE:    return PDMAUDIOSTREAMCMD_PAUSE;
+        case AUDMIXSINKCMD_RESUME:   return PDMAUDIOSTREAMCMD_RESUME;
+        default:                     break;
+    }
+
+    AssertMsgFailed(("Unsupported sink command %ld\n", enmCmd));
+    return PDMAUDIOSTREAMCMD_UNKNOWN;
+}
+
+int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmCmd)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+
+    PDMAUDIOSTREAMCMD enmCmdStream = audioMixerSinkToStreamCmd(enmCmd);
+    if (enmCmdStream == PDMAUDIOSTREAMCMD_UNKNOWN)
+        return VERR_NOT_SUPPORTED;
+
+    int rc = VINF_SUCCESS;
+
+    PAUDMIXSTREAM pStream;
+    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    {
+        int rc2 = AudioMixerStreamCtl(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+        /* Keep going. Flag? */
+    }
+
+    LogFlowFunc(("Sink=%s, Cmd=%ld, rc=%Rrc\n", pSink->pszName, enmCmd, rc));
+    return rc;
+}
+
+void AudioMixerSinkDestroy(PAUDMIXSINK pSink)
+{
+    audioMixerSinkDestroyInternal(pSink);
+}
+
+static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
+{
+    AssertPtrReturnVoid(pSink);
+    if (!pSink)
+        return;
+
+    LogFunc(("%s\n", pSink->pszName));
+
+    PAUDMIXSTREAM pStream, pStreamNext;
+    RTListForEachSafe(&pSink->lstStreams, pStream, pStreamNext, AUDMIXSTREAM, Node)
+    {
+        audioMixerSinkRemoveStreamInternal(pSink, pStream);
+        audioMixerStreamDestroyInternal(pStream);
+    }
+
+    Assert(pSink->cStreams == 0);
+
+    if (pSink->pszName)
+        RTStrFree(pSink->pszName);
+
+    RTMemFree(pSink);
+}
+
+PAUDMIXSTREAM AudioMixerSinkGetStream(PAUDMIXSINK pSink, uint8_t uIndex)
+{
+    AssertPtrReturn(pSink, NULL);
+    AssertMsgReturn(uIndex < pSink->cStreams,
+                    ("Index %RU8 exceeds stream count (%RU8)", uIndex, pSink->cStreams), NULL);
+
+    /* Slow lookup, d'oh. */
+    PAUDMIXSTREAM pStream = RTListGetFirst(&pSink->lstStreams, AUDMIXSTREAM, Node);
+    while (uIndex)
+    {
+        pStream = RTListGetNext(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node);
+        uIndex--;
+    }
+
+    AssertPtr(pStream);
+    return pStream;
+}
+
+uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink)
+{
+    if (!pSink)
+        return 0;
+
+    return pSink->cStreams;
+}
+
+int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf,    VERR_INVALID_PARAMETER);
+    /* pcbRead is optional. */
+
+    /** @todo Handle mixing operation enmOp! */
+
+    uint8_t *pvMixBuf = (uint8_t *)RTMemAlloc(cbBuf);
+    if (!pvMixBuf)
+        return VERR_NO_MEMORY;
+
+    int rc = VERR_NOT_FOUND;
+    uint32_t cbRead = 0;
+
+    PAUDMIXSTREAM pStream;
+    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    {
+        if (!pStream->pConn->pfnIsActiveIn(pStream->pConn, pStream->InOut.pIn))
+            continue;
+
+        uint32_t cbTotalRead = 0;
+        uint32_t cbToRead = cbBuf;
+
+        while (cbToRead)
+        {
+            uint32_t cbReadStrm;
+            AssertPtr(pStream->pConn);
+            rc = pStream->pConn->pfnRead(pStream->pConn, pStream->InOut.pIn,
+                                         (uint8_t *)pvMixBuf + cbTotalRead, cbToRead, &cbReadStrm);
+            if (   RT_FAILURE(rc)
+                || !cbReadStrm)
+                break;
+
+            /** @todo Right now we only handle one stream (the last one added in fact). */
+
+            AssertBreakStmt(cbReadStrm <= cbToRead, rc = VERR_BUFFER_OVERFLOW);
+            cbToRead    -= cbReadStrm;
+            cbTotalRead += cbReadStrm;
+        }
+
+        if (RT_FAILURE(rc))
+            continue;
+
+        cbRead = RT_MAX(cbRead, cbTotalRead);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(pvBuf, pvMixBuf, cbRead); /* @todo Use an intermediate mixing buffer per sink! */
+
+        if (pcbRead)
+            *pcbRead = cbRead;
+    }
+
+    RTMemFree(pvMixBuf);
+
+    Log3Func(("%s: cbRead=%RU32, rc=%Rrc\n", pSink->pszName, cbRead, rc));
+    return rc;
+}
+
+static void audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
+{
+    AssertPtrReturnVoid(pSink);
+    if (!pStream)
+        return;
+
+    /** @todo Check if pStream is part of pSink. */
+
+    Assert(pSink->cStreams);
+
+#ifdef DEBUG
+    const char *pszStream = pSink->enmDir == AUDMIXSINKDIR_INPUT
+                          ? pStream->InOut.pIn->MixBuf.pszName : pStream->InOut.pOut->MixBuf.pszName;
+
+    LogFlowFunc(("%s: (Stream = %s), cStreams=%RU8\n",
+                 pSink->pszName, pszStream ? pszStream : "<Unnamed>", pSink->cStreams));
+#endif
+
+    /* Remove stream from sink. */
+    RTListNodeRemove(&pStream->Node);
+
+    Assert(pSink->cStreams);
+    pSink->cStreams--;
+}
+
+void AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
+{
+    audioMixerSinkRemoveStreamInternal(pSink, pStream);
+}
+
+/**
+ * Removes all attached streams from a given sink.
+ *
+ * @param pSink         Sink to remove attached streams from.
+ */
+void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink)
+{
+    if (!pSink)
+        return;
+
+    LogFunc(("%s\n", pSink->pszName));
+
+    PAUDMIXSTREAM pStream, pStreamNext;
+    RTListForEachSafe(&pSink->lstStreams, pStream, pStreamNext, AUDMIXSTREAM, Node)
+        audioMixerSinkRemoveStreamInternal(pSink, pStream);
+
+    Assert(pSink->cStreams == 0);
+}
+
+int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMPCMPROPS pPCMProps)
+{
+    AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
+
+    memcpy(&pSink->PCMProps, pPCMProps, sizeof(PDMPCMPROPS));
+
+    PAUDMIXSTREAM pStream;
+    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    {
+        /** @todo Invalidate mix buffers! */
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Set the volume of an individual sink.
+ *
+ * @returns IPRT status code.
+ * @param   pSink           Sink to set volume for.
+ * @param   pVol            Volume to set.
+ */
+int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVol,  VERR_INVALID_POINTER);
+    AssertPtr(pSink->pParent);
+
+    LogFlowFunc(("%s: fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n", pSink->pszName, pVol->fMuted, pVol->uLeft, pVol->uRight));
+
+    pSink->Volume = *pVol;
+
+    return audioMixerSinkUpdateVolume(pSink, &pSink->pParent->VolMaster);
+}
+
+int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+
+    PAUDMIXSTREAM pStream;
+    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    {
+        uint32_t cbIn, cbOut;
+        uint32_t cSamplesLive;
+        int rc2 = pStream->pConn->pfnQueryStatus(pStream->pConn,
+                                                 &cbIn, &cbOut, &cSamplesLive);
+#ifdef DEBUG
+        if (   cbIn
+            || cbOut
+            || cSamplesLive)
+        {
+            Log3Func(("cbIn=%RU32, cbOut=%RU32, cSamplesLive=%RU32, rc2=%Rrc\n", cbIn, cbOut, cSamplesLive, rc2));
+        }
+#endif
+        if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+        {
+            rc2 = pStream->pConn->pfnPlayOut(pStream->pConn, NULL /* pcSamplesPlayed */);
+            if (RT_FAILURE(rc2))
+                Log3Func(("rc2=%Rrc\n", rc2));
+        }
+        else if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+        {
+            //int rc2 = pStream->pConn->pfnCaptureIn(pStream->pConn, NULL /* pcSamplesCaptured */);
+            //Log3Func(("rc2=%Rrc\n", rc2));
+        }
+        else
+            AssertMsgFailed(("Direction not implemented\n"));
+    }
+
+    return VINF_SUCCESS;
+}
+
+static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster)
 {
     AssertPtrReturn(pSink,      VERR_INVALID_POINTER);
     AssertPtrReturn(pVolMaster, VERR_INVALID_POINTER);
@@ -460,56 +579,271 @@ static int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
     RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
     {
         if (fOut)
-            AudioMixBufSetVolume(&pStream->pOut->MixBuf, &volSink);
+            AudioMixBufSetVolume(&pStream->InOut.pOut->MixBuf, &volSink);
         else
-            AudioMixBufSetVolume(&pStream->pIn->MixBuf,  &volSink);
+            AudioMixBufSetVolume(&pStream->InOut.pIn->MixBuf,  &volSink);
     }
 
     return VINF_SUCCESS;
 }
 
-/** Set the master volume of the mixer. */
-int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
-{
-    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pVol,   VERR_INVALID_POINTER);
-
-    pMixer->VolMaster = *pVol;
-
-    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
-                 pMixer->pszName, pVol->uLeft, pVol->uRight,
-                 pMixer->VolMaster.fMuted, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
-
-    AudioMixerInvalidate(pMixer);
-    return VINF_SUCCESS;
-}
-
-/** Set the volume of an individual sink. */
-int AudioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
+int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pVol,  VERR_INVALID_POINTER);
-    AssertPtr(pSink->pParent);
+    /* pcbWritten is optional. */
 
-    LogFlowFunc(("%s: fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n", pSink->pszName, pVol->fMuted, pVol->uLeft, pVol->uRight));
+    if (!pvBuf || !cbBuf)
+    {
+        if (pcbWritten)
+            *pcbWritten = 0;
+        return VINF_SUCCESS;
+    }
 
-    pSink->Volume = *pVol;
+    uint32_t cbProcessed = 0;
 
-    return audioMixerUpdateSinkVolume(pSink, &pSink->pParent->VolMaster);
+    PAUDMIXSTREAM pStream;
+    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    {
+        int rc2 = pStream->pConn->pfnWrite(pStream->pConn, pStream->InOut.pOut, pvBuf, cbBuf, &cbProcessed);
+        if (   RT_FAILURE(rc2)
+            || cbProcessed < cbBuf)
+        {
+            LogFlowFunc(("rc=%Rrc, cbBuf=%RU32, cbProcessed=%RU32\n", rc2, cbBuf, cbProcessed));
+        }
+    }
+
+    if (pcbWritten)
+        *pcbWritten = cbBuf; /* Always report back a complete write for now. */
+
+    return VINF_SUCCESS;
 }
 
-void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs)
+/*****************************************************************************
+ * Mixer Stream implementation.
+ *****************************************************************************/
+
+int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl)
 {
-    PAUDMIXSINK pSink;
-    unsigned    iSink = 0;
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    /** @todo Validate fCtl. */
 
-    pHlp->pfnPrintf(pHlp, "[Master] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", pMixer->pszName,
-                    pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight, pMixer->VolMaster.fMuted);
-
-    RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
+    int rc;
+    switch (pStream->enmDir)
     {
-        pHlp->pfnPrintf(pHlp, "[Sink %u] %s: lVol=%u, rVol=%u, fMuted=%RTbool\n", iSink, pSink->pszName,
-                        pSink->Volume.uLeft, pSink->Volume.uRight, pSink->Volume.fMuted);
-        ++iSink;
+        case PDMAUDIODIR_IN:
+        {
+            if (   enmCmd == PDMAUDIOSTREAMCMD_ENABLE
+                || enmCmd == PDMAUDIOSTREAMCMD_DISABLE)
+            {
+                rc = pStream->pConn->pfnEnableIn(pStream->pConn, pStream->InOut.pIn,
+                                                 enmCmd == PDMAUDIOSTREAMCMD_ENABLE);
+            }
+            else
+                AssertFailed();
+            break;
+        }
+
+        case PDMAUDIODIR_OUT:
+        {
+            if (   enmCmd == PDMAUDIOSTREAMCMD_ENABLE
+                || enmCmd == PDMAUDIOSTREAMCMD_DISABLE)
+            {
+                rc = pStream->pConn->pfnEnableOut(pStream->pConn, pStream->InOut.pOut,
+                                                  enmCmd == PDMAUDIOSTREAMCMD_ENABLE);
+            }
+            else
+                AssertFailed();
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Not implemented\n"));
+            break;
+    }
+
+    return rc;
+}
+
+int AudioMixerStreamCreate(PPDMIAUDIOCONNECTOR pConn, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream)
+{
+    AssertPtrReturn(pConn, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+    /** @todo Validate fFlags. */
+    /* ppStream is optional. */
+
+    PAUDMIXSTREAM pMixStream = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
+    if (!pMixStream)
+        return VERR_NO_MEMORY;
+
+    pMixStream->pszName = RTStrDup(pCfg->szName);
+    if (!pMixStream->pszName)
+    {
+        RTMemFree(pMixStream);
+        return VERR_NO_MEMORY;
+    }
+
+    int rc;
+    if (pCfg->enmDir == PDMAUDIODIR_IN)
+    {
+        PPDMAUDIOGSTSTRMIN pGstStrm;
+        rc = pConn->pfnCreateIn(pConn, pCfg, &pGstStrm);
+        if (RT_SUCCESS(rc))
+        {
+            pMixStream->InOut.pIn = pGstStrm;
+
+            /* Increase the stream's reference count to let others know
+             * we're reyling on it to be around now. */
+            pConn->pfnAddRefIn(pConn, pGstStrm);
+        }
+    }
+    else if (pCfg->enmDir == PDMAUDIODIR_OUT)
+    {
+        PPDMAUDIOGSTSTRMOUT pGstStrm;
+        rc = pConn->pfnCreateOut(pConn, pCfg, &pGstStrm);
+        if (RT_SUCCESS(rc))
+        {
+            pMixStream->InOut.pOut = pGstStrm;
+
+            /* Increase the stream's reference count to let others know
+             * we're reyling on it to be around now. */
+            pConn->pfnAddRefOut(pConn, pGstStrm);
+        }
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    if (RT_SUCCESS(rc))
+    {
+        pMixStream->fFlags = fFlags;
+        pMixStream->enmDir = pCfg->enmDir;
+        pMixStream->pConn  = pConn;
+
+        if (ppStream)
+            *ppStream = pMixStream;
+    }
+    else if (pMixStream)
+    {
+        RTStrFree(pMixStream->pszName);
+        pMixStream->pszName = NULL;
+
+        RTMemFree(pMixStream);
+        pMixStream = NULL;
+    }
+
+    return rc;
+}
+
+static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream)
+{
+    if (!pStream)
+        return;
+
+    LogFunc(("%s\n", pStream->pszName));
+
+    if (pStream->pConn) /* Stream has a connector interface present? */
+    {
+        if (   pStream->enmDir == PDMAUDIODIR_IN
+            && pStream->pConn->pfnDestroyIn)
+        {
+            if (pStream->InOut.pIn)
+            {
+                pStream->pConn->pfnReleaseIn(pStream->pConn, pStream->InOut.pIn);
+                pStream->pConn->pfnDestroyIn(pStream->pConn, pStream->InOut.pIn);
+            }
+        }
+        else if (   pStream->enmDir == PDMAUDIODIR_OUT
+                 && pStream->pConn->pfnDestroyOut)
+        {
+            if (pStream->InOut.pOut)
+            {
+                pStream->pConn->pfnReleaseOut(pStream->pConn, pStream->InOut.pOut);
+                pStream->pConn->pfnDestroyOut(pStream->pConn, pStream->InOut.pOut);
+            }
+        }
+        else
+            AssertFailed();
+    }
+
+    audioMixerStreamFree(pStream);
+}
+
+void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream)
+{
+    audioMixerStreamDestroyInternal(pStream);
+}
+
+static void audioMixerStreamFree(PAUDMIXSTREAM pStream)
+{
+    if (pStream)
+    {
+        LogFunc(("%s\n", pStream->pszName));
+
+        if (pStream->pszName)
+        {
+            RTStrFree(pStream->pszName);
+            pStream->pszName = NULL;
+        }
+
+        RTMemFree(pStream);
+        pStream = NULL;
     }
 }
+
+bool AudioMixerStreamIsActive(PAUDMIXSTREAM pStream)
+{
+    if (!pStream)
+        return false;
+
+    bool fIsValid;
+    switch (pStream->enmDir)
+    {
+        case PDMAUDIODIR_IN:
+        {
+            fIsValid = pStream->pConn->pfnIsActiveIn(pStream->pConn, pStream->InOut.pIn);
+            break;
+        }
+
+        case PDMAUDIODIR_OUT:
+        {
+            fIsValid = pStream->pConn->pfnIsActiveOut(pStream->pConn, pStream->InOut.pOut);
+            break;
+        }
+
+        default:
+            fIsValid = false;
+            AssertMsgFailed(("Not implemented\n"));
+            break;
+    }
+
+    return fIsValid;
+}
+
+bool AudioMixerStreamIsValid(PAUDMIXSTREAM pStream)
+{
+    if (!pStream)
+        return false;
+
+    bool fIsValid;
+    switch (pStream->enmDir)
+    {
+        case PDMAUDIODIR_IN:
+        {
+            fIsValid = pStream->pConn->pfnIsValidIn(pStream->pConn, pStream->InOut.pIn);
+            break;
+        }
+
+        case PDMAUDIODIR_OUT:
+        {
+            fIsValid = pStream->pConn->pfnIsValidOut(pStream->pConn, pStream->InOut.pOut);
+            break;
+        }
+
+        default:
+            fIsValid = false;
+            AssertMsgFailed(("Not implemented\n"));
+            break;
+    }
+
+    return fIsValid;
+}
+

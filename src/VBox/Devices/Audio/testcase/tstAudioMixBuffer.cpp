@@ -47,7 +47,7 @@ static int tstSingle(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         44100,                    /* Hz */
         2                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
     PDMPCMPROPS props;
@@ -149,7 +149,7 @@ static int tstParentChild(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         44100,                    /* Hz */
         2                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
     PDMPCMPROPS props;
@@ -167,7 +167,7 @@ static int tstParentChild(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         22050,                    /* Hz */
         2                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -185,7 +185,7 @@ static int tstParentChild(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         48000,                    /* Hz */
         2                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -270,7 +270,7 @@ static int tstConversion8(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         44100,                    /* Hz */
         1                         /* Channels */,
-        AUD_FMT_U8                /* Format */,
+        PDMAUDIOFMT_U8                /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -294,7 +294,7 @@ static int tstConversion8(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         22050,                    /* Hz */
         1                         /* Channels */,
-        AUD_FMT_U8                /* Format */,
+        PDMAUDIOFMT_U8                /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -380,7 +380,7 @@ static int tstConversion16(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         44100,                    /* Hz */
         1                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -397,7 +397,7 @@ static int tstConversion16(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         22050,                    /* Hz */
         1                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 
@@ -484,7 +484,7 @@ static int tstVolume(RTTEST hTest)
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
         44100,                    /* Hz */
         2                         /* Channels */,
-        AUD_FMT_S16               /* Format */,
+        PDMAUDIOFMT_S16               /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
 

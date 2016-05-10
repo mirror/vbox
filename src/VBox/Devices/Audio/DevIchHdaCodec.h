@@ -40,10 +40,14 @@ typedef FNHDACODECVERBPROCESSOR **PPFNHDACODECVERBPROCESSOR;
 
 typedef struct CODECVERB
 {
-    uint32_t verb;
-    /** operation bitness mask */
-    uint32_t mask;
+    /** Verb. */
+    uint32_t                 verb;
+    /** Verb mask. */
+    uint32_t                 mask;
+    /** Function pointer for implementation callback. */
     PFNHDACODECVERBPROCESSOR pfn;
+    /** Friendly name, for debugging. */
+    const char              *pszName;
 } CODECVERB;
 
 union CODECNODE;
@@ -64,7 +68,7 @@ typedef struct HDACODEC
     RTLISTANCHOR            lstDrv;
 
     CODECVERB const        *paVerbs;
-    int                     cVerbs;
+    size_t                  cVerbs;
 
     PCODECNODE              paNodes;
     /** Pointer to HDA state (controller) this
@@ -94,7 +98,7 @@ typedef struct HDACODEC
     DECLR3CALLBACKMEMBER(int, pfnMixerRemoveStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl));
     DECLR3CALLBACKMEMBER(int, pfnMixerSetVolume, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
     /** Callbacks by codec implementation. */
-    DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t verb, PPFNHDACODECVERBPROCESSOR));
+    DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t uVerb, uint64_t *puResp));
     DECLR3CALLBACKMEMBER(int, pfnReset, (PHDACODEC pThis));
     DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (PHDACODEC pThis, uint8_t, PCODECNODE));
     /** These callbacks are set by codec implementation to answer debugger requests. */
@@ -103,7 +107,8 @@ typedef struct HDACODEC
 } HDACODEC;
 
 int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMNODE pCfg);
-int hdaCodecDestruct(PHDACODEC pThis);
+void hdaCodecDestruct(PHDACODEC pThis);
+void hdaCodecPowerOff(PHDACODEC pThis);
 int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM);
 int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);

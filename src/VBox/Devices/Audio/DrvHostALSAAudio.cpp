@@ -180,22 +180,22 @@ static snd_pcm_format_t alsaAudioFmtToALSA(PDMAUDIOFMT fmt)
 {
     switch (fmt)
     {
-        case AUD_FMT_S8:
+        case PDMAUDIOFMT_S8:
             return SND_PCM_FORMAT_S8;
 
-        case AUD_FMT_U8:
+        case PDMAUDIOFMT_U8:
             return SND_PCM_FORMAT_U8;
 
-        case AUD_FMT_S16:
+        case PDMAUDIOFMT_S16:
             return SND_PCM_FORMAT_S16_LE;
 
-        case AUD_FMT_U16:
+        case PDMAUDIOFMT_U16:
             return SND_PCM_FORMAT_U16_LE;
 
-        case AUD_FMT_S32:
+        case PDMAUDIOFMT_S32:
             return SND_PCM_FORMAT_S32_LE;
 
-        case AUD_FMT_U32:
+        case PDMAUDIOFMT_U32:
             return SND_PCM_FORMAT_U32_LE;
 
         default:
@@ -215,61 +215,61 @@ static int alsaALSAToAudioFmt(snd_pcm_format_t fmt,
     switch (fmt)
     {
         case SND_PCM_FORMAT_S8:
-            *pFmt = AUD_FMT_S8;
+            *pFmt = PDMAUDIOFMT_S8;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_U8:
-            *pFmt = AUD_FMT_U8;
+            *pFmt = PDMAUDIOFMT_U8;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_S16_LE:
-            *pFmt = AUD_FMT_S16;
+            *pFmt = PDMAUDIOFMT_S16;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_U16_LE:
-            *pFmt = AUD_FMT_U16;
+            *pFmt = PDMAUDIOFMT_U16;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_S16_BE:
-            *pFmt = AUD_FMT_S16;
+            *pFmt = PDMAUDIOFMT_S16;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case SND_PCM_FORMAT_U16_BE:
-            *pFmt = AUD_FMT_U16;
+            *pFmt = PDMAUDIOFMT_U16;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case SND_PCM_FORMAT_S32_LE:
-            *pFmt = AUD_FMT_S32;
+            *pFmt = PDMAUDIOFMT_S32;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_U32_LE:
-            *pFmt = AUD_FMT_U32;
+            *pFmt = PDMAUDIOFMT_U32;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_S32_BE:
-            *pFmt = AUD_FMT_S32;
+            *pFmt = PDMAUDIOFMT_S32;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case SND_PCM_FORMAT_U32_BE:
-            *pFmt = AUD_FMT_U32;
+            *pFmt = PDMAUDIOFMT_U32;
             if (pEndianness)
                 *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
@@ -1108,7 +1108,7 @@ static DECLCALLBACK(int) drvHostALSAAudioInitOut(PPDMIHOSTAUDIO pInterface,
         req.buffer_size = s_ALSAConf.buffer_size_out;
 
         ALSAAUDIOSTREAMCFG obt;
-        rc = alsaStreamOpen(false /* false */, &req, &obt, &phPCM);
+        rc = alsaStreamOpen(false /* fIn */, &req, &obt, &phPCM);
         if (RT_FAILURE(rc))
             break;
 
@@ -1364,10 +1364,9 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     else
         LogRel2(("ALSA: Error enumerating PCM devices: %Rrc (%d)\n", RTErrConvertFromErrno(err), err));
 
-    /* ALSA only allows one input and one output used at a time for
-     * the selected device(s). */
-    pCfg->cMaxStreamsIn   = 1;
-    pCfg->cMaxStreamsOut  = 1;
+    /* ALSA allows exactly one input and one output used at a time for the selected device(s). */
+    pCfg->cMaxStreamsIn  = 1;
+    pCfg->cMaxStreamsOut = 1;
 
     return VINF_SUCCESS;
 }

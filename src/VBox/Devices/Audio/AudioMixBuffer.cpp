@@ -18,7 +18,7 @@
 #define LOG_GROUP LOG_GROUP_AUDIO_MIXER_BUFFER
 #include <VBox/log.h>
 
-#if 0
+#if 1
 /*
  * DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
  * to a file on the host. Be sure to adjust DEBUG_DUMP_PCM_DATA_PATH
@@ -229,10 +229,10 @@ int AudioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
  */
 uint32_t AudioMixBufAvail(PPDMAUDIOMIXBUF pMixBuf)
 {
-    AssertPtrReturn(pMixBuf, true);
+    AssertPtrReturn(pMixBuf, 0);
 
     uint32_t cAvail;
-    if (pMixBuf->pParent) /* Child */
+    if (pMixBuf->pParent) /* Is this a child buffer? */
         cAvail = pMixBuf->cMixed;
     else
         cAvail = pMixBuf->cProcessed;
@@ -974,8 +974,8 @@ uint32_t AudioMixBufMixed(PPDMAUDIOMIXBUF pMixBuf)
  */
 static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t cSamples, uint32_t *pcProcessed)
 {
-    AssertPtrReturn(pDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDst,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrc,  VERR_INVALID_POINTER);
     AssertReturn(cSamples, VERR_INVALID_PARAMETER);
     /* pcProcessed is optional. */
 
@@ -1020,7 +1020,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
         }
 
         Assert(offWrite + cToWrite <= pDst->cSamples);
-        Assert(offRead + cToRead <= pSrc->cSamples);
+        Assert(offRead  + cToRead  <= pSrc->cSamples);
 
         AUDMIXBUF_LOG(("\t%RU32Hz -> %RU32Hz\n", AUDMIXBUF_FMT_SAMPLE_FREQ(pSrc->AudioFmt), AUDMIXBUF_FMT_SAMPLE_FREQ(pDst->AudioFmt)));
         AUDMIXBUF_LOG(("\tcDead=%RU32, offWrite=%RU32, cToWrite=%RU32, offRead=%RU32, cToRead=%RU32\n",
@@ -1045,7 +1045,26 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     }
 
     pSrc->cMixed     += cWrittenTotal;
+
     pDst->cProcessed += cWrittenTotal;
+
+#if 0
+    /**
+     * Note: pDst->cProcessed can be bigger than pDst->cSamples if there
+     *       was a wrap-around. In that case samples were lost,
+     *       e.g. not consumed (yet).
+     *
+     *       So adjust the current read/write offset to match the current
+     *       position, minus the dropped samples. */
+    if (pDst->cProcessed > pDst->cSamples)
+    {
+        LogFlowFunc(("%s: %RU32 / %RU32\n", pDst->pszName, pDst->cProcessed, pDst->cSamples));
+        pSrc->cMixed       = pDst->cSamples;
+        pDst->offReadWrite = 0;
+        pDst->cProcessed   = pDst->cSamples;
+    }
+#endif
+
 #ifdef DEBUG
     s_cSamplesMixedTotal += cWrittenTotal;
     audioMixBufPrint(pDst);
@@ -1134,20 +1153,23 @@ static inline void audioMixBufPrint(PPDMAUDIOMIXBUF pMixBuf)
         pParent = pMixBuf->pParent;
 
     AUDMIXBUF_LOG(("********************************************\n"));
-    AUDMIXBUF_LOG(("[PARENT] %s: offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
-                   pParent->pszName,
+    AUDMIXBUF_LOG(("[PARENT] %s (%RU32): offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
+                   pParent->pszName, pParent->cSamples,
                    pParent->offReadWrite, pParent->cProcessed, pParent->cMixed,
                    AUDIOMIXBUF_S2B(pParent, 1)));
+
+    size_t cChildren = 0;
 
     PPDMAUDIOMIXBUF pIter;
     RTListForEach(&pParent->lstBuffers, pIter, PDMAUDIOMIXBUF, Node)
     {
-        AUDMIXBUF_LOG(("\t[CHILD] %s: offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
-                       pIter->pszName,
+        AUDMIXBUF_LOG(("\t[CHILD] %s (%RU32): offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
+                       pIter->pszName, pIter->cSamples,
                        pIter->offReadWrite, pIter->cProcessed, pIter->cMixed,
                        AUDIOMIXBUF_S2B(pIter, 1)));
+        cChildren++;
     }
-    AUDMIXBUF_LOG(("Total samples mixed: %RU64\n", s_cSamplesMixedTotal));
+    AUDMIXBUF_LOG(("Children: %zu - Total samples mixed: %RU64\n", cChildren, s_cSamplesMixedTotal));
     AUDMIXBUF_LOG(("********************************************\n"));
 }
 #endif

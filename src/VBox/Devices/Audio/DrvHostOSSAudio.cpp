@@ -154,16 +154,16 @@ static int ossAudioFmtToOSS(PDMAUDIOFMT fmt)
 {
     switch (fmt)
     {
-        case AUD_FMT_S8:
+        case PDMAUDIOFMT_S8:
             return AFMT_S8;
 
-        case AUD_FMT_U8:
+        case PDMAUDIOFMT_U8:
             return AFMT_U8;
 
-        case AUD_FMT_S16:
+        case PDMAUDIOFMT_S16:
             return AFMT_S16_LE;
 
-        case AUD_FMT_U16:
+        case PDMAUDIOFMT_U16:
             return AFMT_U16_LE;
 
         default:
@@ -179,37 +179,37 @@ static int ossOSSToAudioFmt(int fmt, PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pEND
     switch (fmt)
     {
         case AFMT_S8:
-            *pFmt = AUD_FMT_S8;
+            *pFmt = PDMAUDIOFMT_S8;
             if (pENDIANNESS)
                 *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_U8:
-            *pFmt = AUD_FMT_U8;
+            *pFmt = PDMAUDIOFMT_U8;
             if (pENDIANNESS)
                 *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_S16_LE:
-            *pFmt = AUD_FMT_S16;
+            *pFmt = PDMAUDIOFMT_S16;
             if (pENDIANNESS)
                 *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_U16_LE:
-            *pFmt = AUD_FMT_U16;
+            *pFmt = PDMAUDIOFMT_U16;
             if (pENDIANNESS)
                 *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_S16_BE:
-            *pFmt = AUD_FMT_S16;
+            *pFmt = PDMAUDIOFMT_S16;
             if (pENDIANNESS)
                 *pENDIANNESS = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case AFMT_U16_BE:
-            *pFmt = AUD_FMT_U16;
+            *pFmt = PDMAUDIOFMT_U16;
             if (pENDIANNESS)
                 *pENDIANNESS = PDMAUDIOENDIANNESS_BIG;
             break;
