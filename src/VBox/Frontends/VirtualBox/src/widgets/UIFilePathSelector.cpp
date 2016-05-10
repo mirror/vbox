@@ -192,27 +192,8 @@ void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
 
 void UIFilePathSelector::retranslateUi()
 {
-    /* How do we interpret the "nothing selected" item? */
-    if (isResetEnabled())
-    {
-        m_strNoneText = tr("<reset to default>");
-        m_strNoneToolTip = tr("The actual default path value will be displayed after "
-                              "accepting the changes and opening this window again.");
-    }
-    else
-    {
-        m_strNoneText = tr("<not selected>");
-        m_strNoneToolTip = tr("Please use the <b>Other...</b> item from the drop-down "
-                              "list to select a path.");
-    }
-
-    /* Retranslate 'path' item: */
-    if (m_strPath.isNull())
-    {
-        setItemText(PathId, m_strNoneText);
-        setItemData(PathId, m_strNoneToolTip, Qt::ToolTipRole);
-        setToolTip(m_strNoneToolTip);
-    }
+    /* Retranslate copy action: */
+    m_pCopyAction->setText(tr("&Copy"));
 
     /* Retranslate 'select' item: */
     setItemText(SelectId, tr("Other..."));
@@ -221,7 +202,7 @@ void UIFilePathSelector::retranslateUi()
     if (count() - 1 == ResetId)
         setItemText(ResetId, tr("Reset"));
 
-    /* Set tooltips of the above two items based on the mode: */
+    /* Set tool-tips of the above two items based on the mode: */
     switch (m_enmMode)
     {
         case Mode_Folder:
@@ -245,8 +226,27 @@ void UIFilePathSelector::retranslateUi()
             AssertFailedBreak();
     }
 
-    /* Retranslate copy action: */
-    m_pCopyAction->setText(tr("&Copy"));
+    /* How do we interpret the "nothing selected" item? */
+    if (isResetEnabled())
+    {
+        m_strNoneText = tr("<reset to default>");
+        m_strNoneToolTip = tr("The actual default path value will be displayed after "
+                              "accepting the changes and opening this window again.");
+    }
+    else
+    {
+        m_strNoneText = tr("<not selected>");
+        m_strNoneToolTip = tr("Please use the <b>Other...</b> item from the drop-down "
+                              "list to select a path.");
+    }
+
+    /* Retranslate 'path' item: */
+    if (m_strPath.isNull())
+    {
+        setItemText(PathId, m_strNoneText);
+        setItemData(PathId, m_strNoneToolTip, Qt::ToolTipRole);
+        setToolTip(m_strNoneToolTip);
+    }
 }
 
 void UIFilePathSelector::onActivated(int iIndex)
