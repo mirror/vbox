@@ -536,15 +536,15 @@
           <para>On <emphasis role="bold">Macintosh</emphasis> hosts,
           functionality is limited when using AirPort (the Mac's wireless
           networking) for bridged networking. Currently, VirtualBox supports
-          only IPv4 over AirPort. For other protocols such as IPv6 and IPX,
+          only IPv4 and IPv6 over AirPort. For other protocols (such as IPX),
           you must choose a wired interface.</para>
         </listitem>
 
         <listitem>
           <para>On <emphasis role="bold">Linux</emphasis> hosts, functionality
           is limited when using wireless interfaces for bridged networking.
-          Currently, VirtualBox supports only IPv4 over wireless. For other
-          protocols such as IPv6 and IPX, you must choose a wired
+          Currently, VirtualBox supports only IPv4 and IPv6 over wireless.
+          For other protocols (such as IPX), you must choose a wired
           interface.</para>
 
           <para>Also, setting the MTU to less than 1500 bytes on wired
