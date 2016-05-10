@@ -178,6 +178,8 @@ private:
     QString  m_strNoneText;
     /** Holds the cached tool-tip for empty path. */
     QString  m_strNoneToolTip;
+    /** Holds the cached tool-tip for empty path in focused case. */
+    QString  m_strNoneToolTipFocused;
 
     /** Holds whether the path is editable. */
     bool     m_fEditable;

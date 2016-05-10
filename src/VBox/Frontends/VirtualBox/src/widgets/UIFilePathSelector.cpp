@@ -243,6 +243,20 @@ void UIFilePathSelector::retranslateUi()
                               "list to select a path.");
     }
 
+    /* But if selector is focused => tool-tip depends on the mode only: */
+    switch (m_enmMode)
+    {
+        case Mode_Folder:
+            m_strNoneToolTipFocused = tr("Holds the folder path.");
+            break;
+        case Mode_File_Open:
+        case Mode_File_Save:
+            m_strNoneToolTipFocused = tr("Holds the file path.");
+            break;
+        default:
+            AssertFailedBreak();
+    }
+
     /* Finally, retranslate current item: */
     refreshText();
 }
@@ -449,9 +463,7 @@ void UIFilePathSelector::refreshText()
         setItemIcon(PathId, QIcon());
 
         /* Set the tool-tip: */
-        setToolTip(m_enmMode == Mode_Folder ?
-                   tr("Holds the folder path.") :
-                   tr("Holds the file path."));
+        setToolTip(m_strNoneToolTipFocused);
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
 
         if (m_fMouseAwaited)
