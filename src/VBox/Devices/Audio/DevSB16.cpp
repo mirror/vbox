@@ -172,6 +172,8 @@ typedef struct SB16STATE
     R3PTRTYPE(PAUDIOMIXER)         pMixer;
     /** Audio sink for PCM output. */
     R3PTRTYPE(PAUDMIXSINK)         pSinkOutput;
+    /** Number of active (running) SDn streams. */
+    uint8_t                        cStreamsActive;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                     pTimerIO;
@@ -191,6 +193,10 @@ typedef struct SB16STATE
 } SB16STATE, *PSB16STATE;
 
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+static void sb16TimerMaybeStart(PSB16STATE pThis);
+static void sb16TimerMaybeStop(PSB16STATE pThis);
+#endif
 
 /**
  * Attach command, internal version.
@@ -425,22 +431,27 @@ static void sb16Control(PSB16STATE pThis, int hold)
 
     LogFlowFunc(("hold %d high %d dma %d\n", hold, pThis->use_hdma, dma));
 
-    PSB16DRIVER pDrv;
+    PDMDevHlpDMASetDREQ(pThis->pDevInsR3, dma, hold);
+
     if (hold)
     {
-        PDMDevHlpDMASetDREQ (pThis->pDevInsR3, dma, 1);
-        PDMDevHlpDMASchedule (pThis->pDevInsR3);
-        RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-            pDrv->pConnector->pfnEnableOut(pDrv->pConnector,
-                                           pDrv->Out.pStrmOut, true /* fEnable */);
+        pThis->cStreamsActive++;
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+        sb16TimerMaybeStart(pThis);
+#endif
+        PDMDevHlpDMASchedule(pThis->pDevInsR3);
     }
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
     else
     {
-        PDMDevHlpDMASetDREQ (pThis->pDevInsR3, dma, 0);
-        RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-            pDrv->pConnector->pfnEnableOut(pDrv->pConnector,
-                                           pDrv->Out.pStrmOut, false /* fEnable */);
+        if (pThis->cStreamsActive)
+            pThis->cStreamsActive--;
+        sb16TimerMaybeStop(pThis);
     }
+#endif
+
+    AudioMixerSinkCtl(pThis->pSinkOutput,
+                      hold == 1 ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
 }
 
 static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvThis)
@@ -458,6 +469,8 @@ static void continue_dma8(PSB16STATE pThis)
     if (pThis->freq > 0)
     {
         PDMAUDIOSTREAMCFG streamCfg;
+        RT_ZERO(streamCfg);
+        streamCfg.enmDir        = PDMAUDIODIR_OUT;
         streamCfg.uHz           = pThis->freq;
         streamCfg.cChannels     = 1 << pThis->fmt_stereo;
         streamCfg.enmFormat     = pThis->fmt;
@@ -593,6 +606,8 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
     if (pThis->freq)
     {
         PDMAUDIOSTREAMCFG streamCfg;
+        RT_ZERO(streamCfg);
+        streamCfg.enmDir        = PDMAUDIODIR_OUT;
         streamCfg.uHz           = pThis->freq;
         streamCfg.cChannels     = 1 << pThis->fmt_stereo;
         streamCfg.enmFormat     = pThis->fmt;
@@ -1105,6 +1120,8 @@ static void sb16ResetLegacy(PSB16STATE pThis)
     pThis->fmt_stereo = 0;
 
     PDMAUDIOSTREAMCFG streamCfg;
+    RT_ZERO(streamCfg);
+    streamCfg.enmDir        = PDMAUDIODIR_OUT;
     streamCfg.uHz           = pThis->freq;
     streamCfg.cChannels     = 1; /* Mono */
     streamCfg.enmFormat     = PDMAUDIOFMT_U8;
@@ -1623,17 +1640,16 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
         int rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
         AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
 
+        /*
+         * Write data to the mixer sink.
+         */
         uint32_t cbWritten;
+        rc = AudioMixerSinkWrite(pThis->pSinkOutput, AUDMIXOP_COPY, tmpbuf, cbToRead, &cbWritten);
+        if (RT_FAILURE(rc))
+            break;
 
-        /* Just multiplex the output to the connected backends.
-         * No need to utilize the virtual mixer here (yet). */
-        PSB16DRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-        {
-            int rc2 = pDrv->pConnector->pfnWrite(pDrv->pConnector, pDrv->Out.pStrmOut,
-                                                 tmpbuf, cbToRead, &cbWritten);
-            LogFlowFunc(("\tLUN#%RU8: rc=%Rrc, cbWritten=%RU32, cWrittenMin=%RU32\n", pDrv->uLUN, rc2, cbWritten));
-        }
+        LogFlowFunc(("\tcbToRead=%RU32, cbToWrite=%RU32, cbWritten=%RU32, cbLeft=%RU32, rc=%Rrc\n",
+                     cbToRead, cbToWrite, cbWritten, cbToWrite - cbWrittenTotal, rc));
 
         Assert(cbToWrite >= cbToRead);
         cbToWrite      -= cbToRead;
@@ -1733,107 +1749,63 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     return dma_pos;
 }
 
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+
+static void sb16TimerMaybeStart(PSB16STATE pThis)
+{
+    LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
+
+    if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
+        return;
+
+    if (!pThis->pTimerIO)
+        return;
+
+    /* Fire off timer. */
+    TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->cTimerTicksIO);
+}
+
+static void sb16TimerMaybeStop(PSB16STATE pThis)
+{
+    LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
+
+    if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
+        return;
+
+    if (!pThis->pTimerIO)
+        return;
+
+    int rc2 = TMTimerStop(pThis->pTimerIO);
+    AssertRC(rc2);
+}
+
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PSB16STATE pThis = (PSB16STATE)pvUser;
     Assert(pThis == PDMINS_2_DATA(pDevIns, PSB16STATE));
     AssertPtr(pThis);
 
-    uint32_t cbInMax  = 0;
-    uint32_t cbOutMin = UINT32_MAX;
-
-    PSB16DRIVER pDrv;
-
     uint64_t cTicksNow     = TMTimerGet(pTimer);
-    uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTSIO;
+    uint64_t cTicksElapsed = cTicksNow - pThis->uTimerTSIO;
     uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
     pThis->uTimerTSIO = cTicksNow;
 
-    /*
-     * Calculate the mixer's (fixed) sampling rate.
-     */
-    AssertPtr(pThis->pMixer);
-
-    PDMAUDIOSTREAMCFG mixerStrmCfg;
-    int rc = AudioMixerGetDeviceFormat(pThis->pMixer, &mixerStrmCfg);
-    AssertRC(rc);
-
-    PDMPCMPROPS mixerStrmProps;
-    rc = DrvAudioStreamCfgToProps(&mixerStrmCfg, &mixerStrmProps);
-    AssertRC(rc);
-
-    uint32_t cMixerSamplesMin  = (int)((2 * cTicksElapsed * mixerStrmCfg.uHz + cTicksPerSec) / cTicksPerSec / 2);
-    uint32_t cbMixerSamplesMin = cMixerSamplesMin << mixerStrmProps.cShift;
-
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    uint32_t cbOut;
+    AudioMixerSinkTimerUpdate(pThis->pSinkOutput, cTicksPerSec, cTicksElapsed, &cbOut);
+    if (cbOut)
     {
-        uint32_t cbIn = 0;
-        uint32_t cbOut = 0;
-
-        rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                              &cbIn, &cbOut, NULL /* cSamplesLive */);
-        if (RT_SUCCESS(rc))
-            rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* cSamplesPlayed */);
-
-#ifdef DEBUG_TIMER
-        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
-#endif
-        /* If we there was an error handling (available) output or there simply is no output available,
-         * then calculate the minimum data rate which must be processed by the device emulation in order
-         * to function correctly.
-         *
-         * This is not the optimal solution, but as we have to deal with this on a timer-based approach
-         * (until we have the audio callbacks) we need to have device' DMA engines running. */
-        if (!pDrv->pConnector->pfnIsValidOut(pDrv->pConnector, pDrv->Out.pStrmOut))
-        {
-            /* Use the mixer's (fixed) sampling rate. */
-            cbOut = RT_MAX(cbOut, cbMixerSamplesMin);
-            continue;
-        }
-
-        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut);
-        if (   RT_FAILURE(rc)
-            || !fIsActiveOut)
-        {
-            uint32_t cSamplesMin  = (int)((2 * cTicksElapsed * pDrv->Out.pStrmOut->Props.uHz + cTicksPerSec) / cTicksPerSec / 2);
-            uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Out.pStrmOut->MixBuf, cSamplesMin);
-
-            Log2Func(("\trc=%Rrc, cSamplesMin=%RU32, cbSamplesMin=%RU32\n", rc, cSamplesMin, cbSamplesMin));
-
-            cbOut = RT_MAX(cbOut, cbSamplesMin);
-        }
-
-        cbOutMin = RT_MIN(cbOutMin, cbOut);
-        cbInMax  = RT_MAX(cbInMax, cbIn);
-    }
-
-    Log2Func(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
-
-    if (cbOutMin == UINT32_MAX)
-        cbOutMin = 0;
-
-    /*
-     * Playback.
-     */
-    if (cbOutMin)
-    {
-        Assert(cbOutMin != UINT32_MAX);
-
         /* New space available, see if we can transfer more. */
         PDMDevHlpDMASchedule(pThis->pDevInsR3);
     }
-
-    /*
-     * Recording.
-     */
-    /** @todo Implement recording. */
 
     /* Kick the timer again. */
     uint64_t cTicks = pThis->cTimerTicksIO;
     /** @todo adjust cTicks down by now much cbOutMin represents. */
     TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
 }
+
+#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
 static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
 {
@@ -1958,6 +1930,8 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
         if (pThis->freq)
         {
             PDMAUDIOSTREAMCFG streamCfg;
+            RT_ZERO(streamCfg);
+            streamCfg.enmDir        = PDMAUDIODIR_OUT;
             streamCfg.uHz           = pThis->freq;
             streamCfg.cChannels     = 1 << pThis->fmt_stereo;
             streamCfg.enmFormat     = pThis->fmt;
@@ -2047,20 +2021,28 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
-    pCfg->enmDir = PDMAUDIODIR_OUT;
-    int rc = VINF_SUCCESS;
+    AssertReturn(pCfg->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
+
+    /* Update the sink's format. */
+    PDMPCMPROPS PCMProps;
+    int rc = DrvAudioStreamCfgToProps(pCfg, &PCMProps);
+    if (RT_SUCCESS(rc))
+        rc = AudioMixerSinkSetFormat(pThis->pSinkOutput, &PCMProps);
+
+    if (RT_FAILURE(rc))
+        return rc;
 
     PSB16DRIVER pDrv;
     uint8_t uLUN = 0;
 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        char *pszDesc;
-        if (RTStrAPrintf(&pszDesc, "[LUN#%RU8] sb16.po", uLUN) <= 0)
+        if (!RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "[LUN#%RU8] sb16.po (%RU32Hz, %RU8 %s)",
+                         pDrv->uLUN, pCfg->uHz, pCfg->cChannels, pCfg->cChannels > 1 ? "Channels" : "Channel"))
         {
-            rc = VERR_NO_MEMORY;
+            rc = VERR_BUFFER_OVERFLOW;
             break;
         }
 
@@ -2073,10 +2055,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         if (RT_SUCCESS(rc2))
         {
             rc2 = AudioMixerSinkAddStream(pThis->pSinkOutput, pDrv->Out.pMixStrm);
-            LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pszDesc, rc2));
+            LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc2));
         }
-
-        RTStrFree(pszDesc);
 
         if (RT_FAILURE(rc2))
         {
@@ -2092,6 +2072,21 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     AudioMixerInvalidate(pThis->pMixer);
 
     return rc;
+}
+
+static void sb16CloseOut(PSB16STATE pThis)
+{
+    AssertPtrReturnVoid(pThis);
+
+    LogFlowFuncEnter();
+
+    PSB16DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
+        AudioMixerSinkRemoveStream(pThis->pSinkOutput, pDrv->Out.pMixStrm);
+        AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
+        pDrv->Out.pMixStrm = NULL;
+    }
 }
 
 /**
@@ -2140,24 +2135,47 @@ static DECLCALLBACK(void *) sb16QueryInterface(struct PDMIBASE *pInterface, cons
 }
 
 /**
+ * Powers off the device.
+ *
+ * @param   pDevIns             Device instance to power off.
+ */
+static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
+{
+    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+
+    LogRel2(("SB16: Powering off ...\n"));
+
+    /**
+     * Note: Destroy the mixer while powering off and *not* in sb16Destruct,
+     *       giving the mixer the chance to release any references held to
+     *       PDM audio streams it maintains.
+     */
+    if (pThis->pMixer)
+    {
+        AudioMixerDestroy(pThis->pMixer);
+        pThis->pMixer = NULL;
+    }
+}
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
+    LogFlowFuncEnter();
+
     PSB16DRIVER pDrv;
-
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-        pDrv->Out.pMixStrm = NULL;
-
-    pThis->pSinkOutput = NULL;
-
-    if (pThis->pMixer)
+    while (!RTListIsEmpty(&pThis->lstDrv))
     {
-        AudioMixerDestroy(pThis->pMixer);
-        pThis->pMixer = NULL;
+        pDrv = RTListGetFirst(&pThis->lstDrv, SB16DRIVER, Node);
+
+        RTListNodeRemove(&pDrv->Node);
+        RTMemFree(pDrv);
     }
+
+    sb16CloseOut(pThis);
 
     return VINF_SUCCESS;
 }
@@ -2317,8 +2335,8 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
         AssertPtr(pCon);
 
-        /* Note: No input streams available for SB16 yet. */
-        bool fValidOut = pCon->pfnIsValidOut(pCon, pDrv->Out.pStrmOut);
+        /** @todo No input streams available for SB16 yet. */
+        bool fValidOut = AudioMixerStreamIsValid(pDrv->Out.pMixStrm);
         if (!fValidOut)
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
@@ -2337,17 +2355,16 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     {
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
                                     TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 IO timer", &pThis->pTimerIO);
-        if (RT_FAILURE(rc))
-            AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
-        else
+        if (RT_SUCCESS(rc))
         {
             pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / uTimerHz;
             pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
             LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicksIO, uTimerHz));
 
-            /* Fire off timer. */
-            TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->cTimerTicksIO);
+            sb16TimerMaybeStart(pThis);
         }
+        else
+            AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
     }
 #else
     if (RT_SUCCESS(rc))
@@ -2431,7 +2448,7 @@ const PDMDEVREG g_DeviceSB16 =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    sb16PowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32VersionEnd */
