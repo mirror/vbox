@@ -50,6 +50,7 @@
 static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink);
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
 static void audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
+static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink);
 
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
 static void audioMixerStreamFree(PAUDMIXSTREAM pStream);
@@ -515,7 +516,20 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
     return audioMixerSinkUpdateVolume(pSink, &pSink->pParent->VolMaster);
 }
 
-int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
+void AudioMixerSinkTimerUpdate(PAUDMIXSINK pSink, uint64_t cTicksPerSec, uint64_t cTicksElapsed, uint32_t *pcbData)
+{
+    uint32_t cSamplesMin  = (uint32_t)((2 * cTicksElapsed * pSink->PCMProps.uHz + cTicksPerSec) / cTicksPerSec / 2);
+    uint32_t cbSamplesMin = cSamplesMin << pSink->PCMProps.cShift;
+
+    LogFlowFunc(("%s: cbSamplesMin=%RU32\n", pSink->pszName, cbSamplesMin));
+
+    audioMixerSinkUpdateInternal(pSink);
+
+    if (pcbData)
+        *pcbData = cbSamplesMin;
+}
+
+static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
 
@@ -531,7 +545,8 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
             || cbOut
             || cSamplesLive)
         {
-            Log3Func(("cbIn=%RU32, cbOut=%RU32, cSamplesLive=%RU32, rc2=%Rrc\n", cbIn, cbOut, cSamplesLive, rc2));
+            Log3Func(("%s: cbIn=%RU32, cbOut=%RU32, cSamplesLive=%RU32, rc2=%Rrc\n",
+                      pSink->pszName, cbIn, cbOut, cSamplesLive, rc2));
         }
 #endif
         if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
@@ -550,6 +565,11 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
     }
 
     return VINF_SUCCESS;
+}
+
+int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
+{
+    return audioMixerSinkUpdateInternal(pSink);
 }
 
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster)
