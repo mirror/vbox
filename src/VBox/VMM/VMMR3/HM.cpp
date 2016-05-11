@@ -1315,6 +1315,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid;
 
 #ifdef VBOX_WITH_NEW_APIC
+#if 0
     /*
      * Enable APIC register virtualization and virtual-interrupt delivery if supported.
      */
@@ -1330,6 +1331,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (   (pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR)
         && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT))
         pVM->hm.s.fPostedIntrs = true;
+#endif
 #endif
 
     /*
