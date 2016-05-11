@@ -1696,6 +1696,37 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     }
 
     /*
+     * Reject PGHook.dll as it creates a thread from its DllMain that breaks
+     * our preconditions respawning the 2nd process, resulting in
+     * VERR_SUP_VP_THREAD_NOT_ALONE.   The DLL is being loaded by a user APC
+     * scheduled during kernel32.dll load notification from a kernel driver,
+     * so failing the load attempt should not upset anyone.
+     */
+    if (g_enmSupR3HardenedMainState == SUPR3HARDENEDMAINSTATE_WIN_EARLY_STUB_DEVICE_OPENED)
+    {
+        static const struct { const char *psz; size_t cch; } s_aUnwantedEarlyDlls[] =
+        {
+            { RT_STR_TUPLE("PGHook.dll") },
+        };
+
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aUnwantedEarlyDlls); i++)
+        {
+            if (pName->Length < s_aUnwantedEarlyDlls[i].cch * 2)
+                continue;
+            PCRTUTF16 pwszTmp = &pName->Buffer[pName->Length / sizeof(RTUTF16) - s_aUnwantedEarlyDlls[i].cch];
+            if (   pName->Length != s_aUnwantedEarlyDlls[i].cch * 2
+                && pwszTmp[-1] != '\\'
+                && pwszTmp[-1] != '/')
+                continue;
+            if (RTUtf16ICmpAscii(pwszTmp, s_aUnwantedEarlyDlls[i].psz) != 0)
+                continue;
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: Refusing to load '%.*ls' as it is expected to create undesirable threads that will upset our respawn checks (returning STATUS_TOO_MANY_THREADS)\n",
+                         pName->Length / sizeof(RTUTF16), pName->Buffer));
+            return STATUS_TOO_MANY_THREADS;
+        }
+    }
+
+    /*
      * Absolute path?
      */
     NTSTATUS        rcNtResolve     = STATUS_SUCCESS;
@@ -5229,7 +5260,7 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 
         { SUPHARDNT_ADVERSARY_BEYONDTRUST,          "privman" }, /* Not verified. */
 
-        { SUPHARDNT_ADVERSARY_AVECTO,               "pgdriver" }, /* Not verified. */
+        { SUPHARDNT_ADVERSARY_AVECTO,               "PGDriver" },
     };
 
     static const struct
@@ -5785,15 +5816,16 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     {
         SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv stub...\n"));
         supR3HardenedWinOpenStubDevice();
+        g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_STUB_DEVICE_OPENED;
     }
     else if (cArgs >= 1 && suplibHardenedStrCmp(papszArgs[0], SUPR3_RESPAWN_2_ARG0) == 0)
     {
         SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv...\n"));
         supR3HardenedMainOpenDevice();
+        g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_REAL_DEVICE_OPENED;
     }
     else
         supR3HardenedFatal("Unexpected first argument '%s'!\n", papszArgs[0]);
-    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_DEVICE_OPENED;
 
     /*
      * Reinstall the NtDll patches since there is a slight possibility that
