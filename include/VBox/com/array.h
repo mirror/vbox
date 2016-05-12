@@ -1455,8 +1455,8 @@ public:
      */
     const nsID &operator[] (size_t aIdx) const
     {
-        AssertReturn(m.arr != NULL,  **((const nsID * *)NULL));
-        AssertReturn(aIdx < size(), **((const nsID * *)NULL));
+        AssertReturn(m.arr != NULL,  **((const nsID * *)1));
+        AssertReturn(aIdx < size(), **((const nsID * *)1));
         return *m.arr[aIdx];
     }
 
