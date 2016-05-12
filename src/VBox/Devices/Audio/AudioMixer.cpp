@@ -311,7 +311,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmCmd)
         /* Keep going. Flag? */
     }
 
-    LogFlowFunc(("Sink=%s, Cmd=%ld, rc=%Rrc\n", pSink->pszName, enmCmd, rc));
+    LogFlowFunc(("%s: enmCmd=%ld, rc=%Rrc\n", pSink->pszName, enmCmd, rc));
     return rc;
 }
 
@@ -341,6 +341,20 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
         RTStrFree(pSink->pszName);
 
     RTMemFree(pSink);
+}
+
+/**
+ * Returns the sink's mixing direction.
+ *
+ * @returns Mixing direction.
+ * @param   pSink           Sink to return direction for.
+ *
+ * @remark
+ */
+AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, AUDMIXSINKDIR_UNKNOWN);
+    return pSink->enmDir;
 }
 
 PAUDMIXSTREAM AudioMixerSinkGetStream(PAUDMIXSINK pSink, uint8_t uIndex)
@@ -518,6 +532,9 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
 
 void AudioMixerSinkTimerUpdate(PAUDMIXSINK pSink, uint64_t cTicksPerSec, uint64_t cTicksElapsed, uint32_t *pcbData)
 {
+    AssertPtrReturnVoid(pSink);
+    /* pcbData is optional. */
+
     uint32_t cSamplesMin  = (uint32_t)((2 * cTicksElapsed * pSink->PCMProps.uHz + cTicksPerSec) / cTicksPerSec / 2);
     uint32_t cbSamplesMin = cSamplesMin << pSink->PCMProps.cShift;
 

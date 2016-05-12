@@ -549,10 +549,16 @@
  */
 typedef struct CODECCOMMONNODE
 {
-    /** Node id - 7 bit format */
-    uint8_t         id;
-    /** The node name. */
+    /** The node's ID. */
+    uint8_t         uID;
+    /** The node's name. */
     char const     *pszName;
+    /** The SDn ID this node is assigned to.
+     *  0 means not assigned, 1 is SDn0. */
+    uint8_t         uSD;
+    /** The SDn's channel to use.
+     *  Only valid if a valid SDn ID is set. */
+    uint8_t         uChannel;
     /* PRM 5.3.6 */
     uint32_t au32F00_param[CODECNODE_F00_PARAM_LENGTH];
     uint32_t au32F02_param[CODECNODE_F02_PARAM_LENGTH];
@@ -838,7 +844,7 @@ static uint8_t const g_abStac9220Reserveds[]  = { STAC9220_NID_SPDIF_IN, STAC922
 /** SSM description of a CODECNODE. */
 static SSMFIELD const g_aCodecNodeFields[] =
 {
-    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.id),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.uID),
     SSMFIELD_ENTRY_PAD_HC_AUTO(3, 3),
     SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F00_param),
     SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F02_param),
@@ -849,7 +855,7 @@ static SSMFIELD const g_aCodecNodeFields[] =
 /** Backward compatibility with v1 of the CODECNODE. */
 static SSMFIELD const g_aCodecNodeFieldsV1[] =
 {
-    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.id),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.uID),
     SSMFIELD_ENTRY_PAD_HC_AUTO(3, 7),
     SSMFIELD_ENTRY_OLD_HCPTR(Core.name),
     SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F00_param),
@@ -889,7 +895,8 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
     }
 
     /* Set common parameters across all nodes. */
-    pNode->node.id = uNID;
+    pNode->node.uID = uNID;
+    pNode->node.uSD = 0;
 
     switch (uNID)
     {
@@ -2050,15 +2057,14 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, uint32_t cmd, uint64_t *p
     if (   CODEC_NID(cmd) == STAC9220_NID_AFG
         && pThis->pfnCodecNodeReset)
     {
-        uint8_t i;
         LogFunc(("Entering reset ...\n"));
 
-        //pThis->fInReset = true;
+        pThis->fInReset = true;
 
-        for (i = 0; i < pThis->cTotalNodes; ++i)
+        for (uint8_t i = 0; i < pThis->cTotalNodes; ++i)
             pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
 
-        //pThis->fInReset = false;
+        pThis->fInReset = false;
 
         LogFunc(("Exited reset\n"));
     }
@@ -2273,6 +2279,8 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
 {
     *pResp = 0;
 
+    bool fIsOut;
+
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
@@ -2286,8 +2294,8 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     else
         LogRel2(("HDA: Warning: Unhandled get stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
 
-    /*LogFlowFunc(("[NID0x%02x] Stream ID is 0x%x\n",
-                 CODEC_NID(cmd), CODEC_F00_06_GET_STREAM_ID(*pResp)));*/
+    LogFlowFunc(("[NID0x%02x] Stream ID=%RU8, channel=%RU8\n",
+                 CODEC_NID(cmd), CODEC_F00_06_GET_STREAM_ID(cmd), CODEC_F00_06_GET_CHANNEL_ID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -2297,22 +2305,66 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
 {
     *pResp = 0;
 
+    PDMAUDIODIR enmDir;
+
     uint32_t *pu32Addr = NULL;
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
+    {
         pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
+        enmDir = PDMAUDIODIR_OUT;
+    }
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
+    {
         pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].adc.u32F06_param;
+        enmDir = PDMAUDIODIR_IN;
+    }
     else if (hdaCodecIsSpdifOutNode(pThis, CODEC_NID(cmd)))
+    {
         pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
+        enmDir = PDMAUDIODIR_OUT;
+    }
     else if (hdaCodecIsSpdifInNode(pThis, CODEC_NID(cmd)))
+    {
         pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
-    else if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        pu32Addr = &pThis->paNodes[CODEC_NID(cmd)].reserved.u32F06_param;
+        enmDir = PDMAUDIODIR_IN;
+    }
     else
+    {
+        enmDir = PDMAUDIODIR_UNKNOWN;
         LogRel2(("HDA: Warning: Unhandled set stream ID command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+    }
 
-/*    LogFlowFunc(("[NID0x%02x] Setting new stream ID to 0x%x\n",
-                 CODEC_NID(cmd), CODEC_F00_06_GET_STREAM_ID(cmd)));*/
+    /* Do we (re-)assign our input/output SDn (SDI/SDO) IDs? */
+    if (enmDir != PDMAUDIODIR_UNKNOWN)
+    {
+        uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(cmd);
+        uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(cmd);
+
+        LogFlowFunc(("[NID0x%02x] Setting to stream ID=%RU8, channel=%RU8, enmDir=%RU32\n",
+                     CODEC_NID(cmd), uSD, uChannel, enmDir));
+
+        pThis->paNodes[CODEC_NID(cmd)].node.uSD      = uSD;
+        pThis->paNodes[CODEC_NID(cmd)].node.uChannel = uChannel;
+
+        if (enmDir == PDMAUDIODIR_OUT)
+        {
+            /** @todo Check if non-interleaved streams need a different channel / SDn? */
+
+            /* Propagate to the controller. */
+            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+#ifdef VBOX_WITH_HDA_51_SURROUND
+            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+#endif
+        }
+        else if (enmDir == PDMAUDIODIR_IN)
+        {
+            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+#ifdef VBOX_WITH_HDA_MIC_IN
+            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+#endif
+        }
+    }
 
     if (pu32Addr)
         hdaCodecSetRegisterU8(pu32Addr, cmd, 0);
@@ -2755,13 +2807,13 @@ static void codecDbgPrintNodeConnections(PCODECDBGINFO pInfo, PCODECNODE pNode)
 
 static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecursive)
 {
-    codecDbgPrintf(pInfo, "Node 0x%02x (%02RU8): ", pNode->node.id, pNode->node.id);
+    codecDbgPrintf(pInfo, "Node 0x%02x (%02RU8): ", pNode->node.uID, pNode->node.uID);
 
-    if (pNode->node.id == STAC9220_NID_ROOT)
+    if (pNode->node.uID == STAC9220_NID_ROOT)
     {
         CODECDBG_PRINT("ROOT\n");
     }
-    else if (pNode->node.id == STAC9220_NID_AFG)
+    else if (pNode->node.uID == STAC9220_NID_AFG)
     {
         CODECDBG_PRINT("AFG\n");
         CODECDBG_INDENT
@@ -2769,11 +2821,11 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
             codecDbgPrintNodeRegF05(pInfo, pNode->afg.u32F05_param);
         CODECDBG_UNINDENT
     }
-    else if (hdaCodecIsPortNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsPortNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("PORT\n");
     }
-    else if (hdaCodecIsDacNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsDacNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("DAC\n");
         CODECDBG_INDENT
@@ -2783,7 +2835,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
             codecDbgPrintNodeAmp   (pInfo, pNode->dac.B_params, 0, AMPLIFIER_OUT);
         CODECDBG_UNINDENT
     }
-    else if (hdaCodecIsAdcVolNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsAdcVolNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("ADC VOLUME\n");
         CODECDBG_INDENT
@@ -2792,7 +2844,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
             codecDbgPrintNodeAmp   (pInfo, pNode->adcvol.B_params, 0, AMPLIFIER_IN);
         CODECDBG_UNINDENT
     }
-    else if (hdaCodecIsAdcNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsAdcNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("ADC\n");
         CODECDBG_INDENT
@@ -2802,7 +2854,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
             codecDbgPrintNodeAmp   (pInfo, pNode->adc.B_params, 0, AMPLIFIER_IN);
         CODECDBG_UNINDENT
     }
-    else if (hdaCodecIsAdcMuxNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsAdcMuxNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("ADC MUX\n");
         CODECDBG_INDENT
@@ -2811,40 +2863,40 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
             codecDbgPrintNodeAmp   (pInfo, pNode->adcmux.B_params, 0, AMPLIFIER_IN);
         CODECDBG_UNINDENT
     }
-    else if (hdaCodecIsPcbeepNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsPcbeepNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("PC BEEP\n");
     }
-    else if (hdaCodecIsSpdifOutNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsSpdifOutNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("SPDIF OUT\n");
     }
-    else if (hdaCodecIsSpdifInNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsSpdifInNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("SPDIF IN\n");
     }
-    else if (hdaCodecIsDigInPinNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsDigInPinNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("DIGITAL IN PIN\n");
     }
-    else if (hdaCodecIsDigOutPinNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsDigOutPinNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("DIGITAL OUT PIN\n");
     }
-    else if (hdaCodecIsCdNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsCdNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("CD\n");
     }
-    else if (hdaCodecIsVolKnobNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsVolKnobNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("VOLUME KNOB\n");
     }
-    else if (hdaCodecIsReservedNode(pInfo->pThis, pNode->node.id))
+    else if (hdaCodecIsReservedNode(pInfo->pThis, pNode->node.uID))
     {
         CODECDBG_PRINT("RESERVED\n");
     }
     else
-        CODECDBG_PRINT("UNKNOWN TYPE 0x%x\n", pNode->node.id);
+        CODECDBG_PRINT("UNKNOWN TYPE 0x%x\n", pNode->node.uID);
 
     if (fRecursive)
     {
@@ -2852,7 +2904,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
         if (cCnt >= _aEntry)                                                       \
         {                                                                          \
             const uint8_t uID = RT_BYTE##_aEntry(_aNode->node.au32F02_param[0x0]); \
-            if (pNode->node.id == uID)                                             \
+            if (pNode->node.uID == uID)                                             \
                 codecDbgPrintNode(pInfo, _aNode, false /* fRecursive */);          \
         }
 
@@ -2860,7 +2912,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
         for (uint8_t i = 0; i < pInfo->pThis->cTotalNodes; i++)
         {
             const PCODECNODE pSubNode = &pInfo->pThis->paNodes[i];
-            if (pSubNode->node.id == pNode->node.id)
+            if (pSubNode->node.uID == pNode->node.uID)
                 continue;
 
             const uint8_t cCnt = CODEC_F00_0E_COUNT(pSubNode->node.au32F00_param[0xE]);
@@ -3051,14 +3103,14 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 
     for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
     {
-        uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.id;
+        uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.uID;
         int rc = SSMR3GetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState,
                                   sizeof(pThis->paNodes[idxNode].SavedState),
                                   fFlags, pFields, NULL);
         if (RT_FAILURE(rc))
             return rc;
-        AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.id,
-                              ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.id, idOld),
+        AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.uID,
+                              ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.uID, idOld),
                               VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 

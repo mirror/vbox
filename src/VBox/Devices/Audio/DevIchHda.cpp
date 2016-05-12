@@ -628,6 +628,28 @@ typedef struct HDASTREAMSTATE
 } HDASTREAMSTATE, *PHDASTREAMSTATE;
 
 /**
+ * Structure defining an HDA mixer sink.
+ * Its purpose is to know which audio mixer sink is bound to
+ * which SDn (SDI/SDO) device stream.
+ *
+ * This is needed in order to handle interleaved streams
+ * (that is, multiple channels in one stream) or non-interleaved
+ * streams (each channel has a dedicated stream).
+ *
+ * This is only known to the actual device emulation level.
+ */
+typedef struct HDAMIXERSINK
+{
+    /** SDn ID this sink is assigned to. 0 if not assigned. */
+    uint8_t                uSD;
+    /** Channel ID of SDn ID. Only valid if SDn ID is valid. */
+    uint8_t                uChannel;
+    uint8_t                Padding[3];
+    /** Pointer to the actual audio mixer sink. */
+    R3PTRTYPE(PAUDMIXSINK) pMixSink;
+} HDAMIXERSINK, *PHDAMIXERSINK;
+
+/**
  * Structure for keeping a HDA stream state.
  *
  * Contains only register values which do *not* change until a
@@ -636,37 +658,36 @@ typedef struct HDASTREAMSTATE
 typedef struct HDASTREAM
 {
     /** Stream descriptor number (SDn). */
-    uint8_t                 u8SD;
-    uint8_t                 Padding0[7];
+    uint8_t                  u8SD;
+    uint8_t                  Padding0[7];
     /** DMA base address (SDnBDPU - SDnBDPL). */
-    uint64_t                u64BDLBase;
+    uint64_t                 u64BDLBase;
     /** Cyclic Buffer Length (SDnCBL).
      *  Represents the size of the ring buffer. */
-    uint32_t                u32CBL;
+    uint32_t                 u32CBL;
     /** Format (SDnFMT). */
-    uint16_t                u16FMT;
+    uint16_t                 u16FMT;
     /** FIFO Size (FIFOS).
      *  Maximum number of bytes that may have been DMA'd into
      *  memory but not yet transmitted on the link.
      *
      *  Must be a power of two. */
-    uint16_t                u16FIFOS;
+    uint16_t                 u16FIFOS;
     /** Last Valid Index (SDnLVI). */
-    uint16_t                u16LVI;
-    uint16_t                Padding1[3];
-    /** Pointer to mixer sink this stream is attached to. */
-    R3PTRTYPE(PAUDMIXSINK)  pSink;
+    uint16_t                 u16LVI;
+    uint16_t                 Padding1[3];
+    /** Pointer to HDA sink this stream is attached to. */
+    R3PTRTYPE(PHDAMIXERSINK) pMixSink;
     /** Internal state of this stream. */
-    HDASTREAMSTATE          State;
+    HDASTREAMSTATE           State;
 } HDASTREAM, *PHDASTREAM;
 
 /**
- * Structure for mapping a stream tag to
- * an internal stream state.
+ * Structure for mapping a stream tag to an HDA stream.
  */
 typedef struct HDATAG
 {
-    /** Own Tag. */
+    /** Own stream tag. */
     uint8_t               uTag;
     uint8_t               Padding[7];
     /** Pointer to associated stream. */
@@ -784,6 +805,8 @@ typedef struct HDASTATE
     bool                               fR0Enabled;
     /** Flag whether the RC part is enabled. */
     bool                               fRCEnabled;
+    /** Number of active (running) SDn streams. */
+    uint8_t                            cStreamsActive;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                         pTimer;
@@ -806,17 +829,19 @@ typedef struct HDASTATE
     RTLISTANCHORR3                     lstDrv;
     /** The device' software mixer. */
     R3PTRTYPE(PAUDIOMIXER)             pMixer;
-    /** Audio sink for PCM output. */
-    R3PTRTYPE(PAUDMIXSINK)             pSinkFront;
+    /** HDA sink for (front) output. */
+    HDAMIXERSINK                       SinkFront;
 #ifdef VBOX_WITH_HDA_51_SURROUND
-    R3PTRTYPE(PAUDMIXSINK)             pSinkCenterLFE;
-    R3PTRTYPE(PAUDMIXSINK)             pSinkRear;
+    /** HDA sink for center / LFE output. */
+    HDAMIXERSINK                       SinkCenterLFE;
+    /** HDA sink for rear output. */
+    HDAMIXERSINK                       SinkRear;
 #endif
-    /** Audio mixer sink for line input. */
-    R3PTRTYPE(PAUDMIXSINK)             pSinkLineIn;
+    /** HDA mixer sink for line input. */
+    HDAMIXERSINK                       SinkLineIn;
 #ifdef VBOX_WITH_HDA_MIC_IN
     /** Audio mixer sink for microphone input. */
-    R3PTRTYPE(PAUDMIXSINK)             pSinkMicIn;
+    HDAMIXERSINK                       SinkMicIn;
 #endif
     uint64_t                           u64BaseTS;
     /** Response Interrupt Count (RINTCNT). */
@@ -897,6 +922,7 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 
 #ifdef IN_RING3
 static void hdaStreamDestroy(PHDASTREAM pStrmSt);
+static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive);
 static int hdaStreamStart(PHDASTREAM pStrmSt);
 static int hdaStreamStop(PHDASTREAM pStrmSt);
 static int hdaStreamWaitForStateChange(PHDASTREAM pStrmSt, RTMSINTERVAL msTimeout);
@@ -918,6 +944,14 @@ static void          hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BaseDMA, uint16
 #endif
 static int           hdaProcessInterrupt(PHDASTATE pThis);
 
+/*
+ * Timer routines.
+ */
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+static void hdaTimerMaybeStart(PHDASTATE pThis);
+static void hdaTimerMaybeStop(PHDASTATE pThis);
+static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
+#endif
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -1250,11 +1284,34 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
     return PDMAUDIODIR_OUT;
 }
 
+/**
+ * Returns the HDA stream of specified stream descriptor number.
+ *
+ * @return  Pointer to HDA stream, or NULL if none found.
+ */
 DECLINLINE(PHDASTREAM) hdaStreamFromSD(PHDASTATE pThis, uint8_t uSD)
 {
     AssertPtrReturn(pThis, NULL);
     AssertReturn(uSD <= HDA_MAX_STREAMS, NULL);
+
+    if (uSD >= HDA_MAX_STREAMS)
+        return NULL;
+
     return &pThis->aStreams[uSD];
+}
+
+/**
+ * Returns the HDA stream of specified HDA sink.
+ *
+ * @return  Pointer to HDA stream, or NULL if none found.
+ */
+DECLINLINE(PHDASTREAM) hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink)
+{
+    AssertPtrReturn(pThis, NULL);
+    AssertPtrReturn(pSink, NULL);
+
+    /** @todo Do something with the channel mapping here? */
+    return hdaStreamFromSD(pThis, pSink->uSD);
 }
 
 /**
@@ -1555,7 +1612,7 @@ static int hdaStreamCreate(PHDASTREAM pStrmSt, uint8_t uSD)
     if (RT_SUCCESS(rc))
     {
         pStrmSt->u8SD           = uSD;
-        pStrmSt->pSink          = NULL;
+        pStrmSt->pMixSink       = NULL;
 
         pStrmSt->State.fActive  = false;
         pStrmSt->State.fInReset = false;
@@ -1682,6 +1739,56 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStrmSt)
 
     /* Exit reset state. */
     ASMAtomicXchgBool(&pStrmSt->State.fInReset, false);
+}
+
+static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
+{
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    AUDMIXSINKCMD enmCmd = fActive
+                         ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
+
+    /* First, enable or disable the stream's sink, if any. */
+    AssertPtr(pStream->pMixSink);
+    if (pStream->pMixSink->pMixSink)
+        AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
+
+    /* Second, see if we need to start or stop the timer. */
+    if (!fActive)
+    {
+        if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
+            pThis->cStreamsActive--;
+
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+        hdaTimerMaybeStop(pThis);
+#endif
+    }
+    else
+    {
+        pThis->cStreamsActive++;
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
+        hdaTimerMaybeStart(pThis);
+#endif
+    }
+
+    LogFlowFunc(("u8Strm=%RU8, fActive=%RTbool, cStreamsActive=%RU8\n", pStream->u8SD, fActive, pThis->cStreamsActive));
+
+    return VINF_SUCCESS;
+}
+
+static void hdaStreamAssignToSink(PHDASTREAM pStrmSt, PHDAMIXERSINK pMixSink)
+{
+    AssertPtrReturnVoid(pStrmSt);
+
+    int rc2 = RTSemMutexRequest(pStrmSt->State.hMtx, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc2))
+    {
+        pStrmSt->pMixSink = pMixSink;
+
+        rc2 = RTSemMutexRelease(pStrmSt->State.hMtx);
+        AssertRC(rc2);
+    }
 }
 
 static int hdaStreamStart(PHDASTREAM pStrmSt)
@@ -2149,10 +2256,7 @@ uint32_t uVal = HDA_REG_IND(pThis, iReg);
      * So depending on the guest OS, SD3 can use stream tag 4, for example.
      */
     uint8_t uTag = (u32Value >> HDA_SDCTL_NUM_SHIFT) & HDA_SDCTL_NUM_MASK;
-
-    /* Tag 0 is reserved for software / invalid, just skip. */
-    if (   !uTag
-        || (uTag > HDA_MAX_TAGS))
+    if (uTag > HDA_MAX_TAGS)
     {
         LogFunc(("[SD%RU8]: Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
         return hdaRegWriteU24(pThis, iReg, u32Value);
@@ -2162,14 +2266,11 @@ uint32_t uVal = HDA_REG_IND(pThis, iReg);
     PHDATAG pTag = &pThis->aTags[uTag];
     AssertPtr(pTag);
 
-    if (pTag->uTag)
-        LogFunc(("[SD%RU8]: Warning: Tag %RU8 already assigned to %RU8 (pStrm=%p)\n", uSD, uTag, pTag->uTag, pTag->pStrm));
+    LogFunc(("[SD%RU8]: Using stream tag=%RU8\n", uSD, uTag));
 
     /* Assign new values. */
     pTag->uTag  = uTag;
     pTag->pStrm = hdaStreamFromSD(pThis, uSD);
-
-    LogFunc(("[SD%RU8]: Using stream tag=%RU8\n", uSD, uTag));
 
     PHDASTREAM pStrmSt = pTag->pStrm;
     AssertPtr(pStrmSt);
@@ -2213,24 +2314,7 @@ uint32_t uVal = HDA_REG_IND(pThis, iReg);
             Assert(!fReset && !fInReset);
             LogFunc(("[SD%RU8]: fRun=%RTbool\n", pStrmSt->u8SD, fRun));
 
-            AUDMIXSINKCMD enmCmd = fRun
-                                 ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
-
-            if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
-            {
-# ifdef VBOX_WITH_HDA_MIC_IN
-                AudioMixerSinkCtl(pThis->pSinkMicIn,  enmCmd);
-# endif
-                AudioMixerSinkCtl(pThis->pSinkLineIn, enmCmd);
-            }
-            else
-            {
-                AudioMixerSinkCtl(pThis->pSinkFront,     enmCmd);
-# ifdef VBOX_WITH_HDA_51_SURROUND
-                AudioMixerSinkCtl(pThis->pSinkCenterLFE, enmCmd);
-                AudioMixerSinkCtl(pThis->pSinkRear,      enmCmd);
-# endif
-            }
+            hdaStreamSetActive(pThis, pStrmSt, fRun);
 
             if (fRun)
             {
@@ -2629,9 +2713,6 @@ static int hdaAddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    if (HDA_REG_IND(pThis, iReg) == u32Value) /* Value already set? */
-        return VINF_SUCCESS;
-
     PDMAUDIOSTREAMCFG strmCfg;
     RT_ZERO(strmCfg);
 
@@ -3332,7 +3413,9 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t cbMax, uin
             break;
         }
 
-        rc = AudioMixerSinkRead(pStrmSt->pSink, AUDMIXOP_BLEND, pBDLE->State.au8FIFO, cbBuf, &cbRead);
+        AssertPtr(pStrmSt->pMixSink);
+        AssertPtr(pStrmSt->pMixSink->pMixSink);
+        rc = AudioMixerSinkRead(pStrmSt->pMixSink->pMixSink, AUDMIXOP_BLEND, pBDLE->State.au8FIFO, cbBuf, &cbRead);
         if (RT_FAILURE(rc))
             break;
 
@@ -3480,14 +3563,14 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStrmSt, uint32_t cbMax, ui
             /*
              * Write data to according mixer sinks.
              */
-            rc2 = AudioMixerSinkWrite(pThis->pSinkFront,     AUDMIXOP_COPY, pvDataFront,     cbDataFront,
+            rc2 = AudioMixerSinkWrite(pThis->SinkFront.pMixSink, AUDMIXOP_COPY, pvDataFront,     cbDataFront,
                                       NULL /* pcbWritten */);
             AssertRC(rc2);
 #ifdef VBOX_WITH_HDA_51_SURROUND
-            rc2 = AudioMixerSinkWrite(pThis->pSinkCenterLFE, AUDMIXOP_COPY, pvDataCenterLFE, cbDataCenterLFE,
+            rc2 = AudioMixerSinkWrite(pThis->SinkCenterLFE,      AUDMIXOP_COPY, pvDataCenterLFE, cbDataCenterLFE,
                                       NULL /* pcbWritten */);
             AssertRC(rc2);
-            rc2 = AudioMixerSinkWrite(pThis->pSinkRear,      AUDMIXOP_COPY, pvDataRear,      cbDataRear,
+            rc2 = AudioMixerSinkWrite(pThis->SinkRear,           AUDMIXOP_COPY, pvDataRear,      cbDataRear,
                                       NULL /* pcbWritten */);
             AssertRC(rc2);
 #endif
@@ -3544,35 +3627,35 @@ static DECLCALLBACK(int) hdaCodecReset(PHDACODEC pCodec)
  * Retrieves a corresponding sink for a given mixer control.
  * Returns NULL if no sink is found.
  *
- * @return  PAUDMIXSINK
+ * @return  PHDAMIXERSINK
  * @param   pThis               HDA state.
  * @param   enmMixerCtl         Mixer control to get the corresponding sink for.
  */
-static PAUDMIXSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl)
+static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl)
 {
-    PAUDMIXSINK pSink;
+    PHDAMIXERSINK pSink;
 
     switch (enmMixerCtl)
     {
         case PDMAUDIOMIXERCTL_VOLUME:
             /* Fall through is intentional. */
         case PDMAUDIOMIXERCTL_FRONT:
-            pSink = pThis->pSinkFront;
+            pSink = &pThis->SinkFront;
             break;
 #ifdef VBOX_WITH_HDA_51_SURROUND
         case PDMAUDIOMIXERCTL_CENTER_LFE:
-            pSink = pThis->pSinkCenterLFE;
+            pSink = &pThis->SinkCenterLFE;
             break;
         case PDMAUDIOMIXERCTL_REAR:
-            pSink = pThis->pSinkRear;
+            pSink = &pThis->SinkRear;
             break;
 #endif
         case PDMAUDIOMIXERCTL_LINE_IN:
-            pSink = pThis->pSinkLineIn;
+            pSink = &pThis->SinkLineIn;
             break;
 #ifdef VBOX_WITH_HDA_MIC_IN
         case PDMAUDIOMIXERCTL_MIC_IN:
-            pSink = pThis->pSinkMicIn;
+            pSink = &pThis->SinkMicIn;
             break;
 #endif
         default:
@@ -3584,15 +3667,19 @@ static PAUDMIXSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMi
     return pSink;
 }
 
-static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PAUDMIXSINK pSink, PPDMAUDIOSTREAMCFG pCfg)
+static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
-    LogFunc(("Sink=%s, Stream=%s\n", pSink->pszName, pCfg->szName));
+    LogFunc(("Sink=%s, Stream=%s\n", pSink->pMixSink->pszName, pCfg->szName));
 
-    int rc = VINF_SUCCESS;
+    /* Update the sink's format. */
+    PDMPCMPROPS PCMProps;
+    int rc = DrvAudioStreamCfgToProps(pCfg, &PCMProps);
+    if (RT_SUCCESS(rc))
+        rc = AudioMixerSinkSetFormat(pSink->pMixSink, &PCMProps);
 
     PHDADRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
@@ -3642,11 +3729,16 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PAUDMIXSINK pSink, P
 
         if (RT_SUCCESS(rc2))
         {
+            AudioMixerSinkRemoveStream(pSink->pMixSink, pStream->pMixStrm);
+
+            AudioMixerStreamDestroy(pStream->pMixStrm);
+            pStream->pMixStrm = NULL;
+
             PAUDMIXSTREAM pMixStrm;
             rc2 = AudioMixerStreamCreate(pDrv->pConnector, pCfg, 0 /* fFlags */, &pMixStrm);
             if (RT_SUCCESS(rc2))
             {
-                rc2 = AudioMixerSinkAddStream(pSink, pMixStrm);
+                rc2 = AudioMixerSinkAddStream(pSink->pMixSink, pMixStrm);
                 LogFlowFunc(("LUN#%RU8: Added \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pCfg->szName , rc2));
             }
 
@@ -3679,7 +3771,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
 
     int rc;
 
-    PAUDMIXSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
+    PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
     if (pSink)
     {
         rc = hdaMixerAddStream(pThis, pSink, pCfg);
@@ -3687,7 +3779,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
     else
         rc = VERR_NOT_FOUND;
 
-    LogFlowFunc(("Sink=%s, enmMixerCtl=%ld, rc=%Rrc\n", pSink->pszName, enmMixerCtl, rc));
+    LogFlowFunc(("Sink=%s, enmMixerCtl=%ld, rc=%Rrc\n", pSink->pMixSink->pszName, enmMixerCtl, rc));
     return rc;
 }
 
@@ -3704,16 +3796,127 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
 
     int rc;
 
-    PAUDMIXSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
+    PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
     if (pSink)
     {
-        AudioMixerSinkRemoveAllStreams(pSink);
+        PHDADRIVER pDrv;
+        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
+        {
+            PAUDMIXSTREAM pMixStream;
+            switch (enmMixerCtl)
+            {
+                /*
+                 * Input.
+                 */
+                case PDMAUDIOMIXERCTL_LINE_IN:
+                    pMixStream = pDrv->LineIn.pMixStrm;
+                    pDrv->LineIn.pMixStrm = NULL;
+                    break;
+#ifdef VBOX_WITH_HDA_MIC_IN
+                case PDMAUDIOMIXERCTL_MIC_IN:
+                    pMixStream = pDrv->MicIn.pMixStrm;
+                    pDrv->MicIn.pMixStrm = NULL;
+                    break;
+#endif
+                /*
+                 * Output.
+                 */
+                case PDMAUDIOMIXERCTL_FRONT:
+                    pMixStream = pDrv->Front.pMixStrm;
+                    pDrv->Front.pMixStrm = NULL;
+                    break;
+#ifdef VBOX_WITH_HDA_51_SURROUND
+                case PDMAUDIOMIXERCTL_CENTER_LFE:
+                    pMixStream = pDrv->CenterLFE.pMixStrm;
+                    pDrv->CenterLFE.pMixStrm = NULL;
+                    break;
+                case PDMAUDIOMIXERCTL_REAR:
+                    pMixStream = pDrv->Rear.pMixStrm;
+                    pDrv->Rear.pMixStrm = NULL;
+                    break;
+#endif
+                default:
+                    AssertMsgFailed(("Mixer control %ld not implemented\n", enmMixerCtl));
+                    break;
+            }
+
+            AudioMixerSinkRemoveStream(pSink->pMixSink, pMixStream);
+            AudioMixerStreamDestroy(pMixStream);
+        }
+
+        AudioMixerSinkRemoveAllStreams(pSink->pMixSink);
         rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_FOUND;
 
     LogFlowFunc(("enmMixerCtl=%ld, rc=%Rrc\n", enmMixerCtl, rc));
+    return rc;
+}
+
+/**
+ * Sets a SDn stream number and channel to a particular mixer control.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA State.
+ * @param   enmMixerCtl         Mixer control to set SD stream number and channel for.
+ * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
+ * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
+ */
+static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis,
+                                           PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
+{
+    LogFlowFunc(("enmMixerCtl=%RU32, uSD=%RU8, uChannel=%RU8\n", enmMixerCtl, uSD, uChannel));
+
+    if (uSD == 0) /* Stream number 0 is reserved. */
+    {
+        LogFlowFunc(("Invalid SDn (%RU8) number for mixer control %ld, ignoring\n", uSD, enmMixerCtl));
+        return VINF_SUCCESS;
+    }
+    /* uChannel is optional. */
+
+    /* SDn0 starts as 1. */
+    Assert(uSD);
+    uSD--;
+
+    int rc;
+
+    PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
+    if (pSink)
+    {
+        if (   (uSD < HDA_MAX_SDI)
+            && AudioMixerSinkGetDir(pSink->pMixSink) == AUDMIXSINKDIR_OUTPUT)
+        {
+            uSD += HDA_MAX_SDI;
+        }
+
+        LogFlowFunc(("%s: Setting to stream ID=%RU8, channel=%RU8, enmMixerCtl=%RU32\n",
+                     pSink->pMixSink->pszName, uSD, uChannel, enmMixerCtl));
+
+        Assert(uSD < HDA_MAX_STREAMS);
+
+        PHDASTREAM pStream = hdaStreamFromSD(pThis, pSink->uSD);
+        if (pStream)
+        {
+            pSink->uSD      = uSD;
+            pSink->uChannel = uChannel;
+
+            /* Make sure that the stream also has this sink set. */
+            hdaStreamAssignToSink(pStream, pSink);
+
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            LogRel(("HDA: Guest wanted to assign invalid stream ID=%RU8 (channel %RU8) to mixer control %RU32, skipping\n",
+                    uSD, uChannel, enmMixerCtl));
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -3730,12 +3933,12 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
 {
     int rc;
 
-    PAUDMIXSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
+    PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
     if (pSink)
     {
         /* Set the volume.
          * We assume that the codec already converted it to the correct range. */
-        rc = AudioMixerSinkSetVolume(pSink, pVol);
+        rc = AudioMixerSinkSetVolume(pSink->pMixSink, pVol);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -3745,6 +3948,34 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
 }
 
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
+
+static void hdaTimerMaybeStart(PHDASTATE pThis)
+{
+    if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
+        return;
+
+    if (!pThis->pTimer)
+        return;
+
+    LogFlowFuncEnter();
+
+    /* Fire off timer. */
+    TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
+}
+
+static void hdaTimerMaybeStop(PHDASTATE pThis)
+{
+    if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
+        return;
+
+    if (!pThis->pTimer)
+        return;
+
+    LogFlowFuncEnter();
+
+    int rc2 = TMTimerStop(pThis->pTimer);
+    AssertRC(rc2);
+}
 
 static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -3763,88 +3994,26 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
     pThis->uTimerTS = cTicksNow;
 
-    /*
-     * Calculate the codec's (fixed) sampling rate.
-     */
-    AssertPtr(pThis->pCodec);
-
-    /* Since the codec always runs at a fixed delivery rate (48 kHz), calculate the sample processing rate based
-     * on the clock ticks elapsed (the clock itself runs at 24 Mhz).
-     * A stream itself can have a higher or lower delivery rate, which in turn then results in more or less
-     * stream samples per frame. */
-    uint32_t cCodecSamplesMin  = (int)((2 * cTicksElapsed * 48000 /* Hz */ + cTicksPerSec) / cTicksPerSec / 2);
-    /* We always use 32-bit as containers to make sure all data is being pumped if we need to. */
-    uint32_t cbCodecSamplesMin = cCodecSamplesMin << 1;
-
-#if 0
-    /*
-     * Process all driver nodes.
-     */
-    PHDADRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-    {
-        uint32_t cbIn = 0;
-        uint32_t cbOut = 0;
-
-        rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector, &cbIn, &cbOut, NULL /* pcSamplesLive */);
-        if (RT_SUCCESS(rc))
-            rc = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, NULL /* pcSamplesPlayed */);
-
-#ifdef DEBUG_TIMER
-        LogFlowFunc(("LUN#%RU8: rc=%Rrc, cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, rc, cbIn, cbOut));
-#endif
-        /* If we there was an error handling (available) output or there simply is no output available,
-         * then calculate the minimum data rate which must be processed by the device emulation in order
-         * to function correctly.
-         *
-         * This is not the optimal solution, but as we have to deal with this on a timer-based approach
-         * (until we have the audio callbacks) we need to have device' DMA engines running. */
-        if (!AudioMixerStreamIsValid(pDrv->Front.pMixStrm))
-        {
-            /* Use the codec's (fixed) sampling rate. */
-            cbOut = RT_MAX(cbOut, cbCodecSamplesMin);
-            continue;
-        }
-
-        const bool fIsActiveOut = pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Front.pMixStrm->InOut.pOut);
-        if (   RT_FAILURE(rc)
-            || !fIsActiveOut)
-        {
-            uint32_t cSamplesMin  = (int)((2 * cTicksElapsed * pDrv->Front.pMixStrm->InOut.pOut->Props.uHz + cTicksPerSec) / cTicksPerSec / 2);
-            uint32_t cbSamplesMin = AUDIOMIXBUF_S2B(&pDrv->Front.pMixStrm->InOut.pOut->MixBuf, cSamplesMin);
-
-#ifdef DEBUG_TIMER
-            LogFlowFunc(("\trc=%Rrc, cSamplesMin=%RU32, cbSamplesMin=%RU32\n", rc, cSamplesMin, cbSamplesMin));
-#endif
-            cbOut = RT_MAX(cbOut, cbSamplesMin);
-        }
-
-        cbOutMin = RT_MIN(cbOutMin, cbOut);
-        cbInMax  = RT_MAX(cbInMax, cbIn);
-    }
-#else
-    AudioMixerSinkUpdate(pThis->pSinkFront);
-    cbOutMin = _4K; //cbCodecSamplesMin;
-    cbInMax  = _4K;
-#endif
-
-#ifdef DEBUG_TIMER
-    LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
-#endif
-
-    if (cbOutMin == UINT32_MAX)
-        cbOutMin = 0;
-
-    /** @todo Determine the streams to be handled. */
-    PHDASTREAM pStreamLineIn  = &pThis->aStreams[0];
+    PHDASTREAM pStreamLineIn  = hdaGetStreamFromSink(pThis, &pThis->SinkLineIn);
 #ifdef VBOX_WITH_HDA_MIC_IN
-    /** @todo Anything to do for mic-in? */
+    PHDASTREAM pStreamMicIn   = hdaGetStreamFromSink(pThis, &pThis->SinkMicIn);
 #endif
-    PHDASTREAM pStreamOut     = &pThis->aStreams[4];
+    PHDASTREAM pStreamFront   = hdaGetStreamFromSink(pThis, &pThis->SinkFront);
 
-    /* Do the actual device transfers. */
-    hdaTransfer(pThis, pStreamOut,     cbOutMin /* cbToProcess */, NULL /* pcbProcessed */);
-    hdaTransfer(pThis, pStreamLineIn,  cbInMax  /* cbToProcess */, NULL /* pcbProcessed */);
+    uint32_t cbLineIn;
+    AudioMixerSinkTimerUpdate(pThis->SinkLineIn.pMixSink, cTicksPerSec, cTicksElapsed, &cbLineIn);
+    if (cbLineIn)
+        hdaTransfer(pThis, pStreamLineIn, cbLineIn, NULL); /** @todo Add rc! */
+
+#ifdef VBOX_WITH_HDA_MIC_IN
+    uint32_t cbMicIn;
+    AudioMixerSinkTimerUpdate(pThis->SinkMicIn.pMixSink , cTicksPerSec, cTicksElapsed, &cbMicIn);
+#endif
+
+    uint32_t cbOut;
+    AudioMixerSinkTimerUpdate(pThis->SinkFront.pMixSink, cTicksPerSec, cTicksElapsed, &cbOut);
+    if (cbOut)
+        hdaTransfer(pThis, pStreamFront, cbOut, NULL);  /** @todo Add rc! */
 
     /* Kick the timer again. */
     uint64_t cTicks = pThis->cTimerTicks;
@@ -3910,9 +4079,6 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     /* pcbProcessed is optional. */
 
-    // 44100 / 200 Hz Timer = cbToProcess = 220,8
-    cbToProcess = 440; // FIFO SIZE
-
     if (ASMAtomicReadBool(&pThis->fInReset)) /* HDA controller in reset mode? Bail out. */
     {
         LogFlowFunc(("In reset mode, skipping\n"));
@@ -3974,7 +4140,6 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
     /* State sanity checks. */
     Assert(pStream->State.fInReset == false);
 
-//    uint32_t cbLeft  = cbToProcess;
     uint32_t u32LPIB = HDA_STREAM_REG(pThis, LPIB, pStream->u8SD);
     Assert(u32LPIB <= pStream->u32CBL);
 
@@ -4038,7 +4203,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
     #endif
 
         /* Set the FIFORDY bit on the stream while doing the transfer. */
-    //    HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
+        HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
 
         uint32_t cbProcessed;
         if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
@@ -4047,7 +4212,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
             rc = hdaWriteAudio(pThis, pStream, cbLeft, &cbProcessed);
 
         /* Remove the FIFORDY bit again. */
-    //    HDA_STREAM_REG(pThis, STS, pStream->u8SD) &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
+        HDA_STREAM_REG(pThis, STS, pStream->u8SD) &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
 
         if (RT_FAILURE(rc))
             break;
@@ -4853,13 +5018,13 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                                    ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
 
 # ifdef VBOX_WITH_HDA_MIC_IN
-        AudioMixerSinkCtl(pThis->pSinkMicIn,     enmCmdMicIn);
+        AudioMixerSinkCtl(pThis->SinkMicIn.pMixSink,     enmCmdMicIn);
 # endif
-        AudioMixerSinkCtl(pThis->pSinkLineIn,    enmCmdLineIn);
-        AudioMixerSinkCtl(pThis->pSinkFront,     enmCmdOut);
+        AudioMixerSinkCtl(pThis->SinkLineIn.pMixSink,    enmCmdLineIn);
+        AudioMixerSinkCtl(pThis->SinkFront.pMixSink,     enmCmdOut);
 # ifdef VBOX_WITH_HDA_51_SURROUND
-        AudioMixerSinkCtl(pThis->pSinkCenterLFE, enmCmdOut);
-        AudioMixerSinkCtl(pThis->pSinkRear,      enmCmdOut);
+        AudioMixerSinkCtl(pThis->SinkCenterLFE.pMixSink, enmCmdOut);
+        AudioMixerSinkCtl(pThis->SinkRear.pMixSink,      enmCmdOut);
 # endif
     }
 
@@ -5176,12 +5341,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     /*
      * Stop the timer, if any.
      */
-    int rc2;
-    if (pThis->pTimer)
-    {
-        rc2 = TMTimerStop(pThis->pTimer);
-        AssertRC(rc2);
-    }
+    hdaTimerMaybeStop(pThis);
 # endif
 
     /* See 6.2.1. */
@@ -5204,15 +5364,33 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     /*
      * Stop any audio currently playing and/or recording.
      */
-    AudioMixerSinkCtl(pThis->pSinkFront,     AUDMIXSINKCMD_DISABLE);
+    AudioMixerSinkCtl(pThis->SinkFront.pMixSink,     AUDMIXSINKCMD_DISABLE);
 # ifdef VBOX_WITH_HDA_MIC_IN
-    AudioMixerSinkCtl(pThis->pSinkMicIn,     AUDMIXSINKCMD_DISABLE);
+    AudioMixerSinkCtl(pThis->SinkMicIn.pMixSink,     AUDMIXSINKCMD_DISABLE);
 # endif
-    AudioMixerSinkCtl(pThis->pSinkLineIn,    AUDMIXSINKCMD_DISABLE);
+    AudioMixerSinkCtl(pThis->SinkLineIn.pMixSink,    AUDMIXSINKCMD_DISABLE);
 # ifdef VBOX_WITH_HDA_51_SURROUND
-    AudioMixerSinkCtl(pThis->pSinkCenterLFE, AUDMIXSINKCMD_DISABLE);
-    AudioMixerSinkCtl(pThis->pSinkRear,      AUDMIXSINKCMD_DISABLE);
+    AudioMixerSinkCtl(pThis->SinkCenterLFE.pMixSink, AUDMIXSINKCMD_DISABLE);
+    AudioMixerSinkCtl(pThis->SinkRear.pMixSink,      AUDMIXSINKCMD_DISABLE);
 # endif
+
+    /*
+     * Set some sensible defaults for which HDA sinks
+     * are connected to which stream number.
+     *
+     * We use SD0 for input and SD4 for output by default.
+     * These stream numbers can be changed by the guest dynamically lateron.
+     */
+#ifdef VBOX_WITH_HDA_MIC_IN
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
+#endif
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
+
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
+#ifdef VBOX_WITH_HDA_51_SURROUND
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
+#endif
 
     pThis->cbCorbBuf = 256 * sizeof(uint32_t); /** @todo Use a define here. */
 
@@ -5243,15 +5421,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     HDA_REG(pThis, STATESTS) = 0x1;
 
 # ifndef VBOX_WITH_AUDIO_CALLBACKS
-    /*
-     * Start timer again, if any.
-     */
-    if (pThis->pTimer)
-    {
-        LogFunc(("Restarting timer\n"));
-        rc2 = TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
-        AssertRC(rc2);
-    }
+    hdaTimerMaybeStart(pThis);
 # endif
 
     LogFlowFuncLeave();
@@ -5404,6 +5574,9 @@ static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
 
     LogRel2(("HDA: Powering off ...\n"));
 
+    /* Ditto goes for the codec, which in turn uses the mixer. */
+    hdaCodecPowerOff(pThis->pCodec);
+
     /**
      * Note: Destroy the mixer while powering off and *not* in hdaDestruct,
      *       giving the mixer the chance to release any references held to
@@ -5414,9 +5587,6 @@ static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
         AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
-
-    /* Ditto goes for the codec, which in turn uses the mixer. */
-    hdaCodecPowerOff(pThis->pCodec);
 }
 
 /**
@@ -5507,7 +5677,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                                 N_("HDA configuration error: failed to read R0Enabled as boolean"));
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
     uint16_t uTimerHz;
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 200 /* Hz */);
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 100 /* Hz */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
@@ -5674,28 +5844,28 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
              */
 #ifdef VBOX_WITH_HDA_51_SURROUND
             rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Front",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->pSinkFront);
+                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
             AssertRC(rc);
             rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Center / Subwoofer",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->pSinkCenterLFE);
+                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkCenterLFE.pMixSink);
             AssertRC(rc);
             rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Rear",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->pSinkRear);
+                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkRear.pMixSink);
             AssertRC(rc);
 #else
             rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->pSinkFront);
+                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
             AssertRC(rc);
 #endif
             /*
              * Add mixer input sinks.
              */
             rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In",
-                                      AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
+                                      AUDMIXSINKDIR_INPUT, &pThis->SinkLineIn.pMixSink);
             AssertRC(rc);
 #ifdef VBOX_WITH_HDA_MIC_IN
             rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In",
-                                      AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
+                                      AUDMIXSINKDIR_INPUT, &pThis->SinkMicIn.pMixSink);
             AssertRC(rc);
 #endif
             /* There is no master volume control. Set the master to max. */
@@ -5715,6 +5885,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         /* Set codec callbacks. */
         pThis->pCodec->pfnMixerAddStream    = hdaMixerAddStream;
         pThis->pCodec->pfnMixerRemoveStream = hdaMixerRemoveStream;
+        pThis->pCodec->pfnMixerSetStream    = hdaMixerSetStream;
         pThis->pCodec->pfnMixerSetVolume    = hdaMixerSetVolume;
         pThis->pCodec->pfnReset             = hdaCodecReset;
 
@@ -5743,24 +5914,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             rc = hdaStreamCreate(&pThis->aStreams[i], i /* uSD */);
             AssertRC(rc);
         }
-
-        /*
-         * As we don't have any dynamic stream <-> mixer sink mapping (yet),
-         * hard-wire the associations here.
-         */
-#ifdef VBOX_WITH_HDA_51_SURROUND
-# error "Implement me!" /** @todo */
-#else
-        /* Same goes for the input sink. */
-        for (uint8_t i = 0; i < HDA_MAX_SDI; i++)
-            pThis->aStreams[i].pSink = pThis->pSinkLineIn;
-# ifdef VBOX_WITH_HDA_MIC_IN
-#  error "Implement me!" /** @todo */
-# endif
-        /* Assign all output streams to the one-and-only output sink. */
-        for (uint8_t i = HDA_MAX_SDI; i < HDA_MAX_SDO; i++)
-            pThis->aStreams[i].pSink = pThis->pSinkFront;
-#endif /* VBOX_WITH_HDA_51_SURROUND */
 
         /*
          * Initialize the driver chain.
@@ -5968,8 +6121,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
             LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
 
-            /* Fire off timer. */
-            TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
+            hdaTimerMaybeStart(pThis);
         }
     }
 # else

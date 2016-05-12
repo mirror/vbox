@@ -155,6 +155,7 @@ void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs
 int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmCmd);
 void AudioMixerSinkDestroy(PAUDMIXSINK pSink);
+AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink);
 PAUDMIXSTREAM AudioMixerSinkGetStream(PAUDMIXSINK pSink, uint8_t uIndex);
 uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink);
 int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
