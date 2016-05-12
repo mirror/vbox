@@ -1349,7 +1349,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     {
         rc = Info.result;
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
-            rc = VINF_PERMISSION_DENIED;
+            return VINF_PERMISSION_DENIED; /* HGCM service not available - bail out early. */
 
         if (RT_SUCCESS(rc))
         {

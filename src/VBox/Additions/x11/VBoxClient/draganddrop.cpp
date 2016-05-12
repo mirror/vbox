@@ -718,14 +718,13 @@ void DragInstance::reset(void)
  */
 int DragInstance::init(uint32_t u32ScreenID)
 {
-    int rc;
+    int rc = VbglR3DnDConnect(&m_dndCtx);
+    /* Note: Can return VINF_PERMISSION_DENIED if HGCM host service is not available. */
+    if (rc != VINF_SUCCESS)
+        return rc;
 
     do
     {
-        rc = VbglR3DnDConnect(&m_dndCtx);
-        if (RT_FAILURE(rc))
-            break;
-
         rc = RTSemEventCreate(&m_eventQueueEvent);
         if (RT_FAILURE(rc))
             break;
@@ -2963,9 +2962,16 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
         /* Note: For multiple screen support in VBox it is not necessary to use
          * another screen number than zero. Maybe in the future it will become
          * necessary if VBox supports multiple X11 screens. */
-        rc = m_pCurDnD->init(0);
-        if (RT_FAILURE(rc))
+        rc = m_pCurDnD->init(0 /* uScreenID */);
+        /* Note: Can return VINF_PERMISSION_DENIED if HGCM host service is not available. */
+        if (rc != VINF_SUCCESS)
+        {
+            if (RT_FAILURE(rc))
+                LogRel(("DnD: Unable to connect to drag and drop service, rc=%Rrc\n", rc));
+            else if (rc == VINF_PERMISSION_DENIED)
+                LogRel(("DnD: Not available on host, terminating\n"));
             break;
+        }
 
         LogRel(("DnD: Started\n"));
         LogRel2(("DnD: %sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
@@ -3101,9 +3107,10 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
 
         } while (!ASMAtomicReadBool(&m_fSrvStopping));
 
+        LogRel(("DnD: Stopped with rc=%Rrc\n", rc));
+
     } while (0);
 
-    LogRel(("DnD: Stopped with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -3182,9 +3189,7 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
     VBGLR3GUESTDNDCMDCTX dndCtx;
 
     int rc = VbglR3DnDConnect(&dndCtx);
-    if (RT_FAILURE(rc))
-        LogRel(("DnD: Unable to connect to drag and drop service, rc=%Rrc\n", rc));
-    /* Not RT_FAILURE: VINF_PERMISSION_DENIED is host service not present. */
+    /* Note: Can return VINF_PERMISSION_DENIED if HGCM host service is not available. */
     if (rc != VINF_SUCCESS)
         return rc;
 
