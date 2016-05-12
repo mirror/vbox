@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2015 Oracle Corporation
+ * Copyright (C) 2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,12 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef RCP_STANDALONE
+#define IN_RING3
+#endif
+
+#ifndef LOG_GROUP
+# define LOG_GROUP LOG_GROUP_DRV_NAT
+#endif
+
 #include <iprt/assert.h>
-#include <iprt/initterm.h>
 #include <iprt/net.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/thread.h>
+
+#include <VBox/log.h>
 
 #ifdef RT_OS_FREEBSD
 # include <sys/socket.h>
@@ -28,540 +37,460 @@
 
 #include <arpa/inet.h>
 
-#include <ctype.h>
-
 #include "resolv_conf_parser.h"
 
-/* XXX: it's required to add the aliases for keywords and
- * types to handle conditions more clearly */
-enum RCP_TOKEN
-{
-  tok_eof = -1, /* EOF */
-  tok_string = -2, /* string */
-  tok_number = -3, /* number */
-  tok_ipv4 = -4, /* ipv4 */
-  tok_ipv4_port = -5, /* ipv4 port */
-  tok_ipv6 = -6, /* ipv6 */
-  tok_ipv6_port = -7, /* ipv6 port */
-  /* keywords */
-  tok_nameserver = -8, /* nameserver */
-  tok_port = -9, /* port, Mac OSX specific */
-  tok_domain = -10, /* domain */
-  tok_search = -11, /* search */
-  tok_search_order = -12, /* search order */
-  tok_sortlist = -13, /* sortlist */
-  tok_timeout = -14, /* timeout */
-  tok_options = -15, /* options */
-  tok_option = -16, /* option */
-  tok_comment = -17, /* comment */
-  tok_error = -20
-};
-
-#define RCP_BUFFER_SIZE 256
-
-
-struct rcp_parser
-{
-    enum RCP_TOKEN rcpp_token;
-    char rcpp_str_buffer[RCP_BUFFER_SIZE];
-    struct rcp_state *rcpp_state;
-    PRTSTREAM rcpp_stream;
-};
-
-
-#define GETCHAR(parser) (RTStrmGetCh((parser)->rcpp_stream))
-#define EOF (-1)
-
-
-#define PARSER_STOP(tok, parser, ptr) (   (tok) != EOF \
-                                       && (((ptr) - (parser)->rcpp_str_buffer) != (RCP_BUFFER_SIZE - 1)))
-#define PARSER_BUFFER_EXCEEDED(parser, ptr)                             \
-  do {                                                                  \
-      if (((ptr) - (parser)->rcpp_str_buffer) == (RCP_BUFFER_SIZE - 1)) { \
-          return tok_error;                                             \
-      }                                                                 \
-  }while(0);
-
-static int rcp_get_token(struct rcp_parser *parser)
-{
-    char tok = ' ';
-    char *ptr;
-    size_t ptr_len;
-
-    while (isspace(tok))
-        tok = GETCHAR(parser);
-
-    ptr = parser->rcpp_str_buffer;
-
-    /* tok can't be ipv4 */
-    if (isalnum(tok)) {
-        int xdigit, digit, dot_number;
-        RT_ZERO(parser->rcpp_str_buffer);
-
-        dot_number = 0;
-        xdigit = 1;
-        digit = 1;
-        do {
-            *ptr++ = tok;
-            tok = GETCHAR(parser);
-
-            if (!isalnum(tok) && tok != ':' && tok != '.' && tok != '-' && tok != '_')
-                break;
-
-            /**
-             * if before ':' there were only [0-9][a-f][A-F],
-             * then it can't be option.
-             */
-            xdigit &= (isxdigit(tok) || (tok == ':'));
-            /**
-             * We want hint to differ ipv4 and network name.
-             */
-            digit &= (isdigit(tok) || (tok == '.'));
-
-            if (tok == ':')
-            {
-                if (xdigit == 1)
-                {
-                    int port = 0;
-                    do
-                    {
-                        *ptr++ = tok;
-                        tok = GETCHAR(parser);
-
-                        if (tok == '.')
-                            port++;
-
-                    } while(PARSER_STOP(tok, parser, ptr) && (tok == ':' || tok == '.' || isxdigit(tok)));
-
-                    PARSER_BUFFER_EXCEEDED(parser, ptr);
-
-                    if (port == 0)
-                        return tok_ipv6;
-                    else if (port == 1)
-                        return tok_ipv6_port;
-                    else
-                    {
-                        /* eats rest of the token */
-                        do
-                        {
-                            *ptr++ = tok;
-                            tok = GETCHAR(parser);
-                        } while(   PARSER_STOP(tok, parser, ptr)
-                                && (isalnum(tok) || tok == '.'  || tok == '_' || tok == '-'));
-
-                        PARSER_BUFFER_EXCEEDED(parser, ptr);
-
-                        return tok_string;
-                    }
-                }
-                else {
-                    /* XXX: need further experiments */
-                    return tok_option; /* option with value */
-                }
-            }
-
-            if (tok == '.')
-            {
-                do {
-                    if (tok == '.') dot_number++;
-
-                    *ptr++ = tok;
-                    digit &= (isdigit(tok) || (tok == '.'));
-                    tok = GETCHAR(parser);
-                } while(   PARSER_STOP(tok, parser, ptr)
-                        && (isalnum(tok) || tok == '.' || tok == '_' || tok == '-'));
-
-                PARSER_BUFFER_EXCEEDED(parser, ptr);
-
-                if (dot_number == 3 && digit)
-                    return tok_ipv4;
-                else if (dot_number == 4 && digit)
-                    return tok_ipv4_port;
-                else
-                    return tok_string;
-            }
-        } while(   PARSER_STOP(tok, parser, ptr)
-                && (isalnum(tok) || tok == ':' || tok == '.' || tok == '-' || tok == '_'));
-
-        PARSER_BUFFER_EXCEEDED(parser, ptr);
-
-        if (digit || xdigit)
-            return tok_number;
-        if (RTStrCmp(parser->rcpp_str_buffer, "nameserver") == 0)
-            return tok_nameserver;
-        if (RTStrCmp(parser->rcpp_str_buffer, "port") == 0)
-            return tok_port;
-        if (RTStrCmp(parser->rcpp_str_buffer, "domain") == 0)
-            return tok_domain;
-        if (RTStrCmp(parser->rcpp_str_buffer, "search") == 0)
-            return tok_search;
-        if (RTStrCmp(parser->rcpp_str_buffer, "search_order") == 0)
-            return tok_search_order;
-        if (RTStrCmp(parser->rcpp_str_buffer, "sortlist") == 0)
-            return tok_sortlist;
-        if (RTStrCmp(parser->rcpp_str_buffer, "timeout") == 0)
-            return tok_timeout;
-        if (RTStrCmp(parser->rcpp_str_buffer, "options") == 0)
-            return tok_options;
-
-        return tok_string;
-    }
-
-    if (tok == EOF) return tok_eof;
-
-    if (tok == '#')
-    {
-        do{
-            tok = GETCHAR(parser);
-        } while (tok != EOF && tok != '\r' && tok != '\n');
-
-        if (tok == EOF) return tok_eof;
-
-        return tok_comment;
-    }
-    return tok;
-}
-
-#undef PARSER_STOP
-#undef PARSER_BUFFER_EXCEEDED
-
-/**
- * nameserverexpr ::= 'nameserver' ip+
- * @note: resolver(5) ip ::= (ipv4|ipv6)(.number)?
- */
-static enum RCP_TOKEN rcp_parse_nameserver(struct rcp_parser *parser)
-{
-    enum RCP_TOKEN tok = rcp_get_token(parser); /* eats 'nameserver' */
-
-    if (  (   tok != tok_ipv4
-           && tok != tok_ipv4_port
-           && tok != tok_ipv6
-           && tok != tok_ipv6_port)
-        || tok == EOF)
-        return tok_error;
-
-    while (   tok == tok_ipv4
-           || tok == tok_ipv4_port
-           || tok == tok_ipv6
-           || tok == tok_ipv6_port)
-    {
-        struct rcp_state *st;
-        RTNETADDR *address;
-        char *str_address;
-
-        Assert(parser->rcpp_state);
-
-        st = parser->rcpp_state;
-
-        /* It's still valid resolv.conf file, just rest of the nameservers should be ignored */
-        if (st->rcps_num_nameserver >= RCPS_MAX_NAMESERVERS)
-            return rcp_get_token(parser);
-
-        address = &st->rcps_nameserver[st->rcps_num_nameserver];
-        str_address = &st->rcps_nameserver_str_buffer[st->rcps_num_nameserver * RCPS_IPVX_SIZE];
-#ifdef RT_OS_DARWIN
-        if (   tok == tok_ipv4_port
-            || (   tok == tok_ipv6_port
-                && (st->rcps_flags & RCPSF_IGNORE_IPV6) == 0))
-        {
-            char *ptr = &parser->rcpp_str_buffer[strlen(parser->rcpp_str_buffer)];
-            while (*(--ptr) != '.');
-            *ptr = '\0';
-            address->uPort = RTStrToUInt16(ptr + 1);
-
-            if (address->uPort == 0) return tok_error;
-        }
+#if !defined(RCP_ACCEPT_PORT)
+# if defined(RT_OS_DARWIN)
+#  define RCP_ACCEPT_PORT
+# endif
 #endif
-        /**
-         * if we on Darwin upper code will cut off port if it's.
-         */
-        if ((st->rcps_flags & RCPSF_NO_STR2IPCONV) != 0)
-        {
-            if (strlen(parser->rcpp_str_buffer) > RCPS_IPVX_SIZE)
-                return tok_error;
 
-            strcpy(str_address, parser->rcpp_str_buffer);
+static int rcp_address_trailer(char **ppszNext, PRTNETADDR pNetAddr, RTNETADDRTYPE enmType);
+static char *getToken(char *psz, char **ppszSavePtr);
 
-            st->rcps_str_nameserver[st->rcps_num_nameserver] = str_address;
+#if 0
+#undef  Log2
+#define Log2 LogRel
+#endif
 
-            goto loop_prolog;
-        }
+#ifdef RCP_STANDALONE
+#undef  LogRel
+#define LogRel(a) RTPrintf a
+#endif
 
-        switch (tok)
-        {
-            case tok_ipv4:
-            case tok_ipv4_port:
-                {
-                    int rc = RTNetStrToIPv4Addr(parser->rcpp_str_buffer, &address->uAddr.IPv4);
-                    if (RT_FAILURE(rc)) return tok_error;
 
-                    address->enmType = RTNETADDRTYPE_IPV4;
-                }
-
-                break;
-            case tok_ipv6:
-            case tok_ipv6_port:
-                {
-                    int rc;
-
-                    if ((st->rcps_flags & RCPSF_IGNORE_IPV6) != 0)
-                        return rcp_get_token(parser);
-
-                    rc = inet_pton(AF_INET6, parser->rcpp_str_buffer,
-                                       &address->uAddr.IPv6);
-                    if (rc == -1)
-                        return tok_error;
-
-                    address->enmType = RTNETADDRTYPE_IPV6;
-                }
-
-                break;
-            default: /* loop condition doesn't let enter enything */
-                AssertMsgFailed(("shouldn't ever happen tok:%d, %s", tok,
-                                 isprint(tok) ? parser->rcpp_str_buffer : "#"));
-                break;
-        }
-
-    loop_prolog:
-        st->rcps_num_nameserver++;
-        tok = rcp_get_token(parser);
-    }
-    return tok;
-}
-
-/**
- * portexpr ::= 'port' [0-9]+
- */
-static enum RCP_TOKEN rcp_parse_port(struct rcp_parser *parser)
+#ifdef RCP_STANDALONE
+int main(int argc, char **argv)
 {
-    struct rcp_state *st;
-    enum RCP_TOKEN tok = rcp_get_token(parser); /* eats 'port' */
+    struct rcp_state state;
+    int i;
+    int rc;
 
-    Assert(parser->rcpp_state);
-    st = parser->rcpp_state;
-
-    if (   tok != tok_number
-        || tok == tok_eof)
-        return tok_error;
-
-    st->rcps_port = RTStrToUInt16(parser->rcpp_str_buffer);
-
-    if (st->rcps_port == 0)
-        return tok_error;
-
-    return rcp_get_token(parser);
-}
-
-/**
- * domainexpr ::= 'domain' string
- */
-static enum RCP_TOKEN rcp_parse_domain(struct rcp_parser *parser)
-{
-    struct rcp_state *st;
-    enum RCP_TOKEN tok = rcp_get_token(parser); /* eats 'domain' */
-
-    Assert(parser->rcpp_state);
-    st = parser->rcpp_state;
-
-    /**
-     * It's nowhere specified how resolver should react on dublicats
-     * of 'domain' declarations, let's assume that resolv.conf is broken.
-     */
-    if (   tok == tok_eof
-        || tok == tok_error
-        || st->rcps_domain != NULL)
-        return tok_error;
-
-    strcpy(st->rcps_domain_buffer, parser->rcpp_str_buffer);
-    /**
-     * We initialize this pointer in place, just make single pointer check
-     * in 'domain'-less resolv.conf.
-     */
-    st->rcps_domain = st->rcps_domain_buffer;
-
-    return rcp_get_token(parser);
-}
-
-/**
- * searchexpr ::= 'search' (string)+
- * @note: resolver (5) Mac OSX:
- * "The search list is currently limited to six domains with a total of 256 characters."
- * @note: resolv.conf (5) Linux:
- * "The search list is currently limited to six domains with a total of 256 characters."
- * @note: 'search' parameter could contains numbers only hex or decimal, 1c1e or 111
- */
-static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
-{
-    unsigned i, len, trailing;
-    char *ptr;
-    struct rcp_state *st;
-    enum RCP_TOKEN tok = rcp_get_token(parser); /* eats 'search' */
-
-    Assert(parser->rcpp_state);
-    st = parser->rcpp_state;
-
-    if (   tok == tok_eof
-        || tok == tok_error)
-        return tok_error;
-
-    /* just ignore "too many search list" */
-    if (st->rcps_num_searchlist >= RCPS_MAX_SEARCHLIST)
-        return rcp_get_token(parser);
-
-    /* we don't want accept keywords */
-    if (tok <= tok_nameserver)
-        return tok;
-
-    /* if there're several entries of "search" we compose them together */
-    i = st->rcps_num_searchlist;
-    if ( i == 0)
-        trailing = RCPS_BUFFER_SIZE;
-    else
+    rc = rcp_parse(&state, NULL);
+    if (RT_FAILURE(rc))
     {
-        ptr = st->rcps_searchlist[i - 1];
-        trailing = RCPS_BUFFER_SIZE - (ptr -
-                                       st->rcps_searchlist_buffer + strlen(ptr) + 1);
+        RTPrintf(">>> Failed: %Rrc\n", rc);
+        return 1;
     }
 
-    while (1)
+    RTPrintf(">>> Success:\n");
+
+    RTPrintf("rcps_num_nameserver = %u\n", state.rcps_num_nameserver);
+    for (i = 0; i < state.rcps_num_nameserver; ++i)
     {
-        len = strlen(parser->rcpp_str_buffer);
-
-        if (len + 1 > trailing)
-            break; /* not enough room for new entry */
-
-        if (i >= RCPS_MAX_SEARCHLIST)
-            break; /* not enought free entries for 'search' items */
-
-        ptr = st->rcps_searchlist_buffer + RCPS_BUFFER_SIZE - trailing;
-        strcpy(ptr, parser->rcpp_str_buffer);
-
-        trailing -= len + 1; /* 1 reserved for '\0' */
-
-        st->rcps_searchlist[i++] = ptr;
-        tok = rcp_get_token(parser);
-
-        /* token filter */
-        if (   tok == tok_eof
-            || tok == tok_error
-            || tok <= tok_nameserver)
-            break;
+        if (state.rcps_str_nameserver[i] == NULL)
+            LogRel(("  nameserver %RTnaddr\n",
+                    &state.rcps_nameserver[i]));
+        else
+            LogRel(("  nameserver %RTnaddr (from \"%s\")\n",
+                    &state.rcps_nameserver[i], state.rcps_str_nameserver[i]));
     }
 
-    st->rcps_num_searchlist = i;
+    if (state.rcps_domain != NULL)
+        RTPrintf("domain %s\n", state.rcps_domain);
 
-    return tok;
-}
-
-/**
- * expr ::= nameserverexpr | expr
- *      ::= portexpr | expr
- *      ::= domainexpr | expr
- *      ::= searchexpr | expr
- *      ::= searchlistexpr | expr
- *      ::= search_orderexpr | expr
- *      ::= timeoutexpr | expr
- *      ::= optionsexpr | expr
- */
-static int rcp_parse_primary(struct rcp_parser *parser)
-{
-    enum RCP_TOKEN tok;
-    tok = rcp_get_token(parser);
-
-    while(   tok != tok_eof
-          && tok != tok_error)
+    RTPrintf("rcps_num_searchlist = %u\n", state.rcps_num_searchlist);
+    for (i = 0; i < state.rcps_num_searchlist; ++i)
     {
-        switch (tok)
-        {
-            case tok_nameserver:
-                tok = rcp_parse_nameserver(parser);
-                break;
-            case tok_port:
-                tok = rcp_parse_port(parser);
-                break;
-            case tok_domain:
-                tok = rcp_parse_domain(parser);
-                break;
-            case tok_search:
-                tok = rcp_parse_search(parser);
-                break;
-            default:
-                tok = rcp_get_token(parser);
-        }
+        RTPrintf("... %s\n", state.rcps_searchlist[i] ? state.rcps_searchlist[i] : "(null)");
     }
-
-    if (tok == tok_error)
-        return -1;
 
     return 0;
 }
+#endif
 
 
-int rcp_parse(struct rcp_state* state, const char *filename)
+int rcp_parse(struct rcp_state *state, const char *filename)
 {
-    unsigned i;
+    PRTSTREAM stream;
+#   define RCP_BUFFER_SIZE 256
+    char buf[RCP_BUFFER_SIZE];
+    char *pszAddrBuf;
+    size_t cbAddrBuf;
+    char *pszSearchBuf;
+    size_t cbSearchBuf;
     uint32_t flags;
+    uint32_t default_port = RTNETADDR_PORT_NA;
+    unsigned i;
     int rc;
-    struct rcp_parser parser;
+
+    AssertPtrReturn(state, VERR_INVALID_PARAMETER);
     flags = state->rcps_flags;
 
-    RT_ZERO(parser);
     RT_ZERO(*state);
-
     state->rcps_flags = flags;
 
-    parser.rcpp_state = state;
-
-    /**
-     * for debugging need: with RCP_STANDALONE it's possible
-     * to run simplefied scenarious like
-     *
-     * # cat /etc/resolv.conf | rcp-test-0
-     * or in lldb
-     * # process launch -i /etc/resolv.conf
-     */
+    if (RT_UNLIKELY(filename == NULL))
+    {
 #ifdef RCP_STANDALONE
-    if (filename == NULL)
-        parser.rcpp_stream = g_pStdIn;
+        stream = g_pStdIn;      /* for testing/debugging */
 #else
-    if (filename == NULL)
-        return -1;
+        return VERR_INVALID_PARAMETER;
 #endif
+    }
     else
     {
-        rc = RTStrmOpen(filename, "r", &parser.rcpp_stream);
-        if (RT_FAILURE(rc)) return -1;
+        rc = RTStrmOpen(filename, "r", &stream);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
-    rc = rcp_parse_primary(&parser);
+
+    pszAddrBuf = state->rcps_nameserver_str_buffer;
+    cbAddrBuf = sizeof(state->rcps_nameserver_str_buffer);
+
+    pszSearchBuf = state->rcps_searchlist_buffer;
+    cbSearchBuf = sizeof(state->rcps_searchlist_buffer);
+
+    for (;;)
+    {
+        char *s, *tok;
+
+        rc = RTStrmGetLine(stream, buf, sizeof(buf));
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_EOF)
+                rc = VINF_SUCCESS;
+            break;
+        }
+
+
+        tok = getToken(buf, &s);
+
+        /* no more tokens or a comment */
+#       define NO_VALUE(tok)  (tok == NULL || tok[0] == '#' || tok[0] == ';')
+
+        if (NO_VALUE(tok))
+            continue;
+
+
+        /*
+         * NAMESERVER
+         */
+        if (RTStrCmp(tok, "nameserver") == 0)
+        {
+            RTNETADDR NetAddr;
+            const char *pszAddr;
+            char *pszNext;
+
+            if (RT_UNLIKELY(state->rcps_num_nameserver >= RCPS_MAX_NAMESERVERS))
+            {
+                LogRel(("NAT: resolv.conf: too many nameserver lines, ignoring %s\n", s));
+                continue;
+            }
+
+            /* XXX: TODO: don't save strings unless asked to */
+            if (RT_UNLIKELY(cbAddrBuf == 0))
+            {
+                LogRel(("NAT: resolv.conf: no buffer space, ignoring %s\n", s));
+                continue;
+            }
+
+
+            /*
+             * parse next token as an IP address
+             */
+            tok = getToken(NULL, &s);
+            if (NO_VALUE(tok))
+            {
+                LogRel(("NAT: resolv.conf: nameserver line without value\n"));
+                continue;
+            }
+
+            pszAddr = tok;
+            RT_ZERO(NetAddr);
+            NetAddr.uPort = RTNETADDR_PORT_NA;
+
+            /* if (NetAddr.enmType == RTNETADDRTYPE_INVALID) */
+            {
+                rc = RTNetStrToIPv4AddrEx(tok, &NetAddr.uAddr.IPv4, &pszNext);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = rcp_address_trailer(&pszNext, &NetAddr, RTNETADDRTYPE_IPV4);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel(("NAT: resolv.conf: garbage at the end of IPv4 address %s\n", tok));
+                        continue;
+                    }
+
+                    LogRel(("NAT: resolv.conf: nameserver %RTnaddr\n", &NetAddr));
+                }
+            } /* IPv4 */
+
+            if (NetAddr.enmType == RTNETADDRTYPE_INVALID)
+            {
+                rc = RTNetStrToIPv6AddrEx(tok, &NetAddr.uAddr.IPv6, &pszNext);
+                if (RT_SUCCESS(rc))
+                {
+                    if (*pszNext == '%') /* XXX: TODO: IPv6 zones */
+                    {
+                        size_t zlen = RTStrOffCharOrTerm(pszNext, '.');
+                        LogRel(("NAT: resolv.conf: FIXME: ignoring IPv6 zone %*.*s\n",
+                                zlen, zlen, pszNext));
+                        pszNext += zlen;
+                    }
+
+                    rc = rcp_address_trailer(&pszNext, &NetAddr, RTNETADDRTYPE_IPV6);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel(("NAT: resolv.conf: garbage at the end of IPv6 address %s\n", tok));
+                        continue;
+                    }
+
+                    LogRel(("NAT: resolv.conf: nameserver %RTnaddr\n", &NetAddr));
+                }
+            } /* IPv6 */
+
+            if (NetAddr.enmType == RTNETADDRTYPE_INVALID)
+            {
+                LogRel(("NAT: resolv.conf: bad nameserver address %s\n", tok));
+                continue;                
+            }
+
+
+            tok = getToken(NULL, &s);
+            if (!NO_VALUE(tok))
+                LogRel(("NAT: resolv.conf: ignoring unexpected trailer on the nameserver line\n"));
+
+            if ((flags & RCPSF_IGNORE_IPV6) && NetAddr.enmType == RTNETADDRTYPE_IPV6)
+            {
+                Log2(("NAT: resolv.conf: IPv6 address ignored\n"));
+                continue;
+            }
+
+            /* seems ok, save it */
+            {
+                i = state->rcps_num_nameserver;
+
+                state->rcps_nameserver[i] = NetAddr;
+
+                /* XXX: TODO: don't save strings unless asked to */
+                Log2(("NAT: resolv.conf: saving address @%td,+%zu\n",
+                      pszAddrBuf - state->rcps_nameserver_str_buffer, cbAddrBuf));
+                state->rcps_str_nameserver[i] = pszAddrBuf;
+                rc = RTStrCopyP(&pszAddrBuf, &cbAddrBuf, pszAddr);
+                if (RT_SUCCESS(rc))
+                {
+                    ++pszAddrBuf; /* skip '\0' */
+                    if (cbAddrBuf > 0) /* on overflow we get 1 (for the '\0'), but be defensive */
+                        --cbAddrBuf;
+                    ++state->rcps_num_nameserver;
+                }
+                else
+                {
+                    Log2(("NAT: resolv.conf: ... truncated\n"));
+                }
+            }
+
+            continue;
+        }
+
+
+#ifdef RCP_ACCEPT_PORT /* OS X extention */
+        /*
+         * PORT
+         */
+        if (RTStrCmp(tok, "port") == 0)
+        {
+            uint16_t port;
+
+            if (default_port != RTNETADDR_PORT_NA)
+            {
+                LogRel(("NAT: resolv.conf: ignoring multiple port lines\n"));
+                continue;
+            }
+
+            tok = getToken(NULL, &s);
+            if (NO_VALUE(tok))
+            {
+                LogRel(("NAT: resolv.conf: port line without value\n"));
+                continue;
+            }
+
+            rc = RTStrToUInt16Full(tok, 10, &port);
+            if (RT_SUCCESS(rc))
+            {
+                if (port != 0)
+                    default_port = port;
+                else
+                    LogRel(("NAT: resolv.conf: port 0 is invalid\n"));
+            }
+
+            continue;
+        }
+#endif
+
+
+        /*
+         * DOMAIN
+         */
+        if (RTStrCmp(tok, "domain") == 0)
+        {
+            if (state->rcps_domain != NULL)
+            {
+                LogRel(("NAT: resolv.conf: ignoring multiple domain lines\n"));
+                continue;
+            }
+
+            tok = getToken(NULL, &s);
+            if (NO_VALUE(tok))
+            {
+                LogRel(("NAT: resolv.conf: domain line without value\n"));
+                continue;
+            }
+
+            rc = RTStrCopy(state->rcps_domain_buffer, sizeof(state->rcps_domain_buffer), tok);
+            if (RT_SUCCESS(rc))
+            {
+                state->rcps_domain = state->rcps_domain_buffer;
+            }
+            else
+            {
+                LogRel(("NAT: resolv.conf: domain name too long\n"));
+                RT_ZERO(state->rcps_domain_buffer);
+            }
+
+            continue;
+        }
+
+
+        /*
+         * SEARCH
+         */
+        if (RTStrCmp(tok, "search") == 0)
+        {
+            if (cbSearchBuf == 0)
+            {
+                LogRel(("NAT: resolv.conf: no buffer space, ignoring search list %s\n", s));
+                break;
+            }
+
+            while ((tok = getToken(NULL, &s)) && !NO_VALUE(tok))
+            {
+                i = state->rcps_num_searchlist;
+
+                Log2(("NAT: resolv.conf: saving search @%td,+%zu\n",
+                      pszSearchBuf - state->rcps_searchlist_buffer, cbSearchBuf));
+                state->rcps_searchlist[i] = pszSearchBuf;
+                rc = RTStrCopyP(&pszSearchBuf, &cbSearchBuf, tok);
+                if (RT_SUCCESS(rc))
+                {
+                    ++pszSearchBuf; /* skip '\0' */
+                    if (cbSearchBuf > 0) /* on overflow we get 1 (for the '\0'), but be defensive */
+                        --cbSearchBuf;
+                    ++state->rcps_num_searchlist;
+                }
+                else
+                {
+                    Log2(("NAT: resolv.conf: truncated: %s\n", tok));
+                    pszSearchBuf = state->rcps_searchlist[i];
+                    cbSearchBuf = sizeof(state->rcps_searchlist_buffer)
+                        - (pszSearchBuf - state->rcps_searchlist_buffer);
+                    Log2(("NAT: resolv.conf: backtracking to @%td,+%zu\n",
+                          pszSearchBuf - state->rcps_searchlist_buffer, cbSearchBuf));
+                }
+            }
+
+            continue;
+        }
+
+
+        LogRel(("NAT: resolv.conf: ignoring \"%s %s\"\n", tok, s));
+    }
 
     if (filename != NULL)
-        RTStrmClose(parser.rcpp_stream);
+        RTStrmClose(stream);
 
-    if (rc == -1)
-        return -1;
+    if (RT_FAILURE(rc))
+        return rc;
 
-#ifdef RT_OS_DARWIN
-    /**
-     * port recolv.conf's option and IP.port are Mac OSX extentions, there're no need to care on
-     * other hosts.
-     */
-    if (state->rcps_port == 0)
-        state->rcps_port = 53;
 
-    for(i = 0;  (state->rcps_flags & RCPSF_NO_STR2IPCONV) == 0
-             && i != RCPS_MAX_NAMESERVERS; ++i)
+    /* XXX: I don't like that OS X would return a different result here */
+#ifdef RCP_ACCEPT_PORT /* OS X extention */
+    if (default_port == RTNETADDR_PORT_NA)
+        default_port = 53;
+
+    for (i = 0; i < state->rcps_num_nameserver; ++i)
     {
         RTNETADDR *addr = &state->rcps_nameserver[i];
-
-        if (addr->uPort == 0)
-            addr->uPort = state->rcps_port;
+        if (addr->uPort == RTNETADDR_PORT_NA || addr->uPort == 0)
+            addr->uPort = (uint16_t)default_port;
     }
 #endif
 
     if (   state->rcps_domain == NULL
-        && state->rcps_searchlist[0] != NULL)
+        && state->rcps_num_searchlist > 0)
+    {
         state->rcps_domain = state->rcps_searchlist[0];
+    }
 
-    return 0;
+    return VINF_SUCCESS;
+}
+
+
+static int
+rcp_address_trailer(char **ppszNext, PRTNETADDR pNetAddr, RTNETADDRTYPE enmType)
+{
+    char *pszNext = *ppszNext;
+    uint16_t port;
+    int rc = VINF_SUCCESS;
+
+    if (*pszNext == '\0')
+    {
+        pNetAddr->enmType = enmType;
+        rc = VINF_SUCCESS;
+    }
+#ifdef RCP_ACCEPT_PORT /* OS X extention */
+    else if (*pszNext == '.')
+    {
+        rc = RTStrToUInt16Ex(++pszNext, NULL, 10, &port);
+        if (RT_SUCCESS(rc))
+        {
+            pNetAddr->enmType = enmType;
+            pNetAddr->uPort = port;
+        }
+    }
+#endif
+    else
+    {
+        rc = VERR_TRAILING_CHARS;
+    }
+
+    return rc;
+}
+
+
+static char *getToken(char *psz, char **ppszSavePtr)
+{
+    char *pszToken;
+
+    AssertPtrReturn(ppszSavePtr, NULL);
+
+    if (psz == NULL)
+    {
+        psz = *ppszSavePtr;
+        if (psz == NULL)
+            return NULL;
+    }
+
+    while (*psz && *psz == ' ' && *psz == '\t')
+        ++psz;
+
+    if (*psz == '\0')
+    {
+        *ppszSavePtr = NULL;
+        return NULL;
+    }
+
+    pszToken = psz;
+    while (*psz && *psz != ' ' && *psz != '\t')
+        ++psz;
+
+    if (*psz == '\0')
+        psz = NULL;
+    else
+        *psz++ = '\0';
+
+    *ppszSavePtr = psz;
+    return pszToken;
 }

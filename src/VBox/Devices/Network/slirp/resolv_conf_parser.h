@@ -44,11 +44,15 @@ RT_C_DECLS_BEGIN
  * it's potentially acceptable)
  */
 #define RCPSF_IGNORE_IPV6 RT_BIT(0)
+
 /**
- * In Main, we perhaps don't need parsed IPv6 and IPv4, because parsed values are
- * used in Network services.
+ * This flag used to request just the strings in rcps_str_nameserver,
+ * but no addresses in rcps_nameserver.  This is not very useful,
+ * since we need to validate addresses anyway.  This flag is ignored
+ * now.
  */
 #define RCPSF_NO_STR2IPCONV RT_BIT(1)
+
 
 struct rcp_state
 {
@@ -75,7 +79,7 @@ struct rcp_state
     uint32_t rcps_flags;
 
     char rcps_domain_buffer[RCPS_BUFFER_SIZE];
-    char rcps_searchlist_buffer[RCPS_BUFFER_SIZE];
+    char rcps_searchlist_buffer[20 /*RCPS_BUFFER_SIZE*/];
     char rcps_nameserver_str_buffer[RCPS_MAX_NAMESERVERS * RCPS_IPVX_SIZE];
 };
 
