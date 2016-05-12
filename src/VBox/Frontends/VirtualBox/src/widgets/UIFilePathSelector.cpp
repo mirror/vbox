@@ -27,6 +27,9 @@
 # include <QFocusEvent>
 # include <QHBoxLayout>
 # include <QLineEdit>
+# ifdef VBOX_WS_WIN
+#  include <QListView>
+# endif /* VBOX_WS_WIN */
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -68,6 +71,16 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     , m_fToolTipOverriden(false)
     , m_pCopyAction(new QAction(this))
 {
+#ifdef VBOX_WS_WIN
+    // WORKAROUND:
+    // On at least Windows host there is a bug with
+    // the QListView which doesn't take into account
+    // the item size change caused by assigning item's
+    // icon of another size or unassigning icon at all.
+    if (view()->inherits("QListView"))
+        qobject_cast<QListView*>(view())->setUniformItemSizes(true);
+#endif /* VBOX_WS_WIN */
+
     /* Populate items: */
     insertItem(PathId, "");
     insertItem(SelectId, "");
