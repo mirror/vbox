@@ -357,11 +357,11 @@ typedef struct AC97STATE
     uint32_t                last_samp;
     uint8_t                 mixer_data[256];
     /** Stream state for line-in. */
-    AC97STREAM              StrmStLineIn;
+    AC97STREAM              StreamLineIn;
     /** Stream state for microphone-in. */
-    AC97STREAM              StrmStMicIn;
+    AC97STREAM              StreamMicIn;
     /** Stream state for output. */
-    AC97STREAM              StrmStOut;
+    AC97STREAM              StreamOut;
     /** Number of active (running) SDn streams. */
     uint8_t                 cStreamsActive;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
@@ -599,18 +599,18 @@ static void ichac97StreamsDestroy(PAC97STATE pThis)
     ichac97CloseIn(pThis, PDMAUDIORECSOURCE_MIC);
     ichac97CloseOut(pThis);
 
-    ichac97StreamDestroy(&pThis->StrmStLineIn);
-    ichac97StreamDestroy(&pThis->StrmStMicIn);
-    ichac97StreamDestroy(&pThis->StrmStOut);
+    ichac97StreamDestroy(&pThis->StreamLineIn);
+    ichac97StreamDestroy(&pThis->StreamMicIn);
+    ichac97StreamDestroy(&pThis->StreamOut);
 }
 
 static int ichac97StreamsInit(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
 
-    ichac97StreamInit(pThis, &pThis->StrmStLineIn, PI_INDEX);
-    ichac97StreamInit(pThis, &pThis->StrmStMicIn,  MC_INDEX);
-    ichac97StreamInit(pThis, &pThis->StrmStOut,    PO_INDEX);
+    ichac97StreamInit(pThis, &pThis->StreamLineIn, PI_INDEX);
+    ichac97StreamInit(pThis, &pThis->StreamMicIn,  MC_INDEX);
+    ichac97StreamInit(pThis, &pThis->StreamOut,    PO_INDEX);
 
     return VINF_SUCCESS;
 }
@@ -1347,7 +1347,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     uint32_t cbLineIn;
     AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, cTicksPerSec, cTicksElapsed, &cbLineIn);
     if (cbLineIn)
-        ichac97TransferAudio(pThis, &pThis->StrmStLineIn, cbLineIn); /** @todo Add rc! */
+        ichac97TransferAudio(pThis, &pThis->StreamLineIn, cbLineIn); /** @todo Add rc! */
 
     uint32_t cbMicIn;
     AudioMixerSinkTimerUpdate(pThis->pSinkMicIn , cTicksPerSec, cTicksElapsed, &cbMicIn);
@@ -1355,7 +1355,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     uint32_t cbOut;
     AudioMixerSinkTimerUpdate(pThis->pSinkOutput, cTicksPerSec, cTicksElapsed, &cbOut);
     if (cbOut)
-        ichac97TransferAudio(pThis, &pThis->StrmStOut, cbOut);  /** @todo Add rc! */
+        ichac97TransferAudio(pThis, &pThis->StreamOut, cbOut);  /** @todo Add rc! */
 
     /* Kick the timer again. */
     uint64_t cTicks = pThis->cTimerTicks;
@@ -1909,15 +1909,15 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     if (!(u32Val & EACS_VRA))
                     {
                         ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 48000);
-                        ichac97StreamReInit(pThis, &pThis->StrmStOut);
+                        ichac97StreamReInit(pThis, &pThis->StreamOut);
 
                         ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate,    48000);
-                        ichac97StreamReInit(pThis, &pThis->StrmStLineIn);
+                        ichac97StreamReInit(pThis, &pThis->StreamLineIn);
                     }
                     if (!(u32Val & EACS_VRM))
                     {
                         ichac97MixerSet(pThis, AC97_MIC_ADC_Rate,       48000);
-                        ichac97StreamReInit(pThis, &pThis->StrmStMicIn);
+                        ichac97StreamReInit(pThis, &pThis->StreamMicIn);
                     }
                     LogFlowFunc(("Setting extended audio control to %#x\n", u32Val));
                     ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, u32Val);
@@ -1927,7 +1927,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     {
                         ichac97MixerSet(pThis, index, u32Val);
                         LogFlowFunc(("Set front DAC rate to %RU32\n", u32Val));
-                        ichac97StreamReInit(pThis, &pThis->StrmStOut);
+                        ichac97StreamReInit(pThis, &pThis->StreamOut);
                     }
                     else
                         AssertMsgFailed(("Attempt to set front DAC rate to %RU32, but VRA is not set\n", u32Val));
@@ -1937,7 +1937,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     {
                         ichac97MixerSet(pThis, index, u32Val);
                         LogFlowFunc(("Set MIC ADC rate to %RU32\n", u32Val));
-                        ichac97StreamReInit(pThis, &pThis->StrmStMicIn);
+                        ichac97StreamReInit(pThis, &pThis->StreamMicIn);
                     }
                     else
                         AssertMsgFailed(("Attempt to set MIC ADC rate to %RU32, but VRM is not set\n", u32Val));
@@ -1947,7 +1947,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     {
                         ichac97MixerSet(pThis, index, u32Val);
                         LogFlowFunc(("Set front LR ADC rate to %RU32\n", u32Val));
-                        ichac97StreamReInit(pThis, &pThis->StrmStLineIn);
+                        ichac97StreamReInit(pThis, &pThis->StreamLineIn);
                     }
                     else
                         AssertMsgFailed(("Attempt to set LR ADC rate to %RU32, but VRA is not set\n", u32Val));
@@ -2012,9 +2012,9 @@ DECLINLINE(PAC97STREAM) ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID)
 {
     switch (uID)
     {
-        case PI_INDEX: return &pThis->StrmStLineIn;
-        case MC_INDEX: return &pThis->StrmStMicIn;
-        case PO_INDEX: return &pThis->StrmStOut;
+        case PI_INDEX: return &pThis->StreamLineIn;
+        case MC_INDEX: return &pThis->StreamMicIn;
+        case PO_INDEX: return &pThis->StreamOut;
         default:       break;
     }
 
@@ -2053,11 +2053,11 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     /** @todo r=andy For the next saved state version, add unique stream identifiers and a stream count. */
     /* Note: The order the streams are saved here is critical, so don't touch. */
-    int rc2 = ichac97SaveStream(pDevIns, pSSM, &pThis->StrmStLineIn);
+    int rc2 = ichac97SaveStream(pDevIns, pSSM, &pThis->StreamLineIn);
     AssertRC(rc2);
-    rc2 = ichac97SaveStream(pDevIns, pSSM, &pThis->StrmStOut);
+    rc2 = ichac97SaveStream(pDevIns, pSSM, &pThis->StreamOut);
     AssertRC(rc2);
-    rc2 = ichac97SaveStream(pDevIns, pSSM, &pThis->StrmStMicIn);
+    rc2 = ichac97SaveStream(pDevIns, pSSM, &pThis->StreamMicIn);
     AssertRC(rc2);
 
     SSMR3PutMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
@@ -2113,11 +2113,11 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
 
     /** @todo r=andy For the next saved state version, add unique stream identifiers and a stream count. */
     /* Note: The order the streams are loaded here is critical, so don't touch. */
-    int rc2 = ichac97LoadStream(pDevIns, pSSM, &pThis->StrmStLineIn);
+    int rc2 = ichac97LoadStream(pDevIns, pSSM, &pThis->StreamLineIn);
     AssertRC(rc2);
-    rc2 = ichac97LoadStream(pDevIns, pSSM, &pThis->StrmStOut);
+    rc2 = ichac97LoadStream(pDevIns, pSSM, &pThis->StreamOut);
     AssertRC(rc2);
-    rc2 = ichac97LoadStream(pDevIns, pSSM, &pThis->StrmStMicIn);
+    rc2 = ichac97LoadStream(pDevIns, pSSM, &pThis->StreamMicIn);
     AssertRC(rc2);
 
     SSMR3GetMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
@@ -2141,11 +2141,11 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     AssertRC(rc);
 
     /** @todo r=andy Stream IDs are hardcoded to certain streams. */
-    rc = ichac97StreamSetActive(pThis, &pThis->StrmStLineIn, RT_BOOL(uaStrmsActive[PI_INDEX]));
+    rc = ichac97StreamSetActive(pThis, &pThis->StreamLineIn, RT_BOOL(uaStrmsActive[PI_INDEX]));
     AssertRC(rc);
-    rc = ichac97StreamSetActive(pThis, &pThis->StrmStMicIn,  RT_BOOL(uaStrmsActive[MC_INDEX]));
+    rc = ichac97StreamSetActive(pThis, &pThis->StreamMicIn,  RT_BOOL(uaStrmsActive[MC_INDEX]));
     AssertRC(rc);
-    rc = ichac97StreamSetActive(pThis, &pThis->StrmStOut,    RT_BOOL(uaStrmsActive[PO_INDEX]));
+    rc = ichac97StreamSetActive(pThis, &pThis->StreamOut,    RT_BOOL(uaStrmsActive[PO_INDEX]));
     AssertRC(rc);
 
     pThis->bup_flag = 0;
@@ -2207,9 +2207,9 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     /*
      * Reset the device state (will need pDrv later).
      */
-    ichac97StreamResetBMRegs(pThis, &pThis->StrmStLineIn);
-    ichac97StreamResetBMRegs(pThis, &pThis->StrmStMicIn);
-    ichac97StreamResetBMRegs(pThis, &pThis->StrmStOut);
+    ichac97StreamResetBMRegs(pThis, &pThis->StreamLineIn);
+    ichac97StreamResetBMRegs(pThis, &pThis->StreamMicIn);
+    ichac97StreamResetBMRegs(pThis, &pThis->StreamOut);
 
     /*
      * Reset the mixer too. The Windows XP driver seems to rely on
@@ -2228,9 +2228,9 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     /*
      * Reset all streams.
      */
-    ichac97StreamReset(pThis, &pThis->StrmStLineIn);
-    ichac97StreamReset(pThis, &pThis->StrmStMicIn);
-    ichac97StreamReset(pThis, &pThis->StrmStOut);
+    ichac97StreamReset(pThis, &pThis->StreamLineIn);
+    ichac97StreamReset(pThis, &pThis->StreamMicIn);
+    ichac97StreamReset(pThis, &pThis->StreamOut);
 
     LogRel(("AC97: Reset\n"));
 }
