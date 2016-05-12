@@ -283,6 +283,11 @@ RT_C_DECLS_END
 #if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
 # define RTASSERT_HAVE_STATIC_ASSERT
 #endif
+#if RT_CLANG_PREREQ(6, 0)
+# if __has_feature(cxx_static_assert) || __has_feature(c_static_assert)
+#  define RTASSERT_HAVE_STATIC_ASSERT
+# endif
+#endif
 #ifdef DOXYGEN_RUNNING
 # define RTASSERT_HAVE_STATIC_ASSERT
 #endif
