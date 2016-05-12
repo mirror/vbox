@@ -1395,6 +1395,8 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
         /* standard VGA latched access */
         VERIFY_VRAM_WRITE_OFF_RETURN(pThis, addr * 4 + 3);
 
+#if 0
+/* This code does not work reliably and no longer helps performance either. */
 #ifdef IN_RING0
         if (((++pThis->cLatchAccesses) & pThis->uMaskLatchAccess) == pThis->uMaskLatchAccess)
         {
@@ -1432,6 +1434,7 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
                 pThis->cLatchAccesses       = 0;
             }
         }
+#endif
 #endif
 
         write_mode = pThis->gr[5] & 3;
