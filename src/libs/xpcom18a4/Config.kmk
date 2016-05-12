@@ -122,7 +122,15 @@ TEMPLATE_XPCOM_INCS                = $(VBOX_PATH_XPCOM_SRC)/xpcom/build \
                                      $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
                                      $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
                                      .
-TEMPLATE_XPCOM_INCS.darwin         = $(VBOX_PATH_MACOSX_SDK)/Developer/Headers/FlatCarbon
+ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4 10.5 10.6 10.7) # FlatCarbon is gone starting 10.8 (or Xcode 5.0).
+ TEMPLATE_XPCOM_DEFS.darwin       += VBOX_WITH_NEWER_OSX_SDK
+ TEMPLATE_XPCOM_INCS.darwin        = \
+ 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreFoundation.framework/Versions/A/Headers/ \
+ 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers/ \
+ 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/Headers/
+else
+ TEMPLATE_XPCOM_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK)/Developer/Headers/FlatCarbon
+endif
 TEMPLATE_XPCOM_LIBS.solaris        = sendfile
 TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET)) \
                                      $(PATH_TARGET)/VBox-xpcom-idl-timestamp

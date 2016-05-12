@@ -45,7 +45,9 @@
 #include "nsILocalFile.h"
 
 #if defined(XP_MAC) || defined(XP_MACOSX)
-#include <Types.h>
+# ifndef VBOX_WITH_NEWER_OSX_SDK
+#  include <Types.h>
+# endif
 #include "nsILocalFileMac.h"
 #include "prenv.h"
 #endif

@@ -92,6 +92,9 @@
 #include <stdlib.h>
 #include <sys/param.h>
 #include "prenv.h"
+# if defined(XP_MACOSX) && defined(VBOX_WITH_NEWER_OSX_SDK)
+# include <Folders.h>
+# endif
 
 #elif defined(XP_BEOS)
 

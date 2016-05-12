@@ -64,7 +64,9 @@
 #include <CoreServices/CoreServices.h>
 #include <Folders.h>
 #include <Files.h>
-#include <Memory.h>
+# ifndef VBOX_WITH_NEWER_OSX_SDK
+#  include <Memory.h>
+# endif
 #include <Processes.h>
 #include <Gestalt.h>
 #include <CFURL.h>
