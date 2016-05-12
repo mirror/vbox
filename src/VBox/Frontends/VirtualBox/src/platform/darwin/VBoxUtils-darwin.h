@@ -19,9 +19,10 @@
 #define ___VBoxUtils_darwin_h
 
 #include <VBox/VBoxCocoa.h>
+#include <ApplicationServices/ApplicationServices.h>
+#undef PVM                              /* Stupid, stupid apple headers (sys/param.h)!!  */
 #include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
 
-#include <ApplicationServices/ApplicationServices.h>
 #include <QRect>
 
 ADD_COCOA_NATIVE_REF(NSEvent);
