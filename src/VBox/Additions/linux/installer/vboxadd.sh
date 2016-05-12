@@ -201,12 +201,12 @@ start()
 
     running_vboxsf || {
         $MODPROBE vboxsf > /dev/null 2>&1 || {
-            if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
+            if dmesg | grep "VbglR0SfConnect failed" > /dev/null 2>&1; then
                 show_error "Unable to start shared folders support.  Make sure that your VirtualBox build"
                 show_error "supports this feature."
-                exit 1
+            else
+                show_error "modprobe vboxsf failed"
             fi
-            fail "modprobe vboxsf failed"
         }
     }
 
