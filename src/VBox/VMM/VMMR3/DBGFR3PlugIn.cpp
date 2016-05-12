@@ -543,6 +543,7 @@ VMMR3DECL(int) DBGFR3PlugInUnload(PUVM pUVM, const char *pszName)
         pPlugIn->pfnEntry = NULL;
         pPlugIn->hLdrMod  = NIL_RTLDRMOD;
         MMR3HeapFree(pPlugIn->pNext);
+        rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_FOUND;
