@@ -2148,7 +2148,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   endif
  endif
  ifdef VBOX_WITH_NEW_XCODE
-   override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
+   override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
    export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
  else
   if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
