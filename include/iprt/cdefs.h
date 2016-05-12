@@ -218,6 +218,29 @@
 #define RT_MSC_VER_VC140    RT_MSC_VER_VS2015   /**< Visual C++ 14.0, aka Visual Studio 2015. */
 /** @} */
 
+/** @def RT_CLANG_PREREQ
+ * Shorter than fiddling with __clang_major__ and __clang_minor__.
+ *
+ * @param   a_MinMajor      Minimum major version
+ * @param   a_MinMinor      The minor version number part.
+ */
+#define RT_CLANG_PREREQ(a_MinMajor, a_MinMinor)      RT_CLANG_PREREQ_EX(a_MinMajor, a_MinMinor, 0)
+/** @def RT_CLANG_PREREQ_EX
+ * Simplified way of checking __clang_major__ and __clang_minor__ regardless of
+ * actual compiler used, returns @a a_OtherRet for other compilers.
+ *
+ * @param   a_MinMajor      Minimum major version
+ * @param   a_MinMinor      The minor version number part.
+ * @param   a_OtherRet      What to return for non-GCC compilers.
+ */
+#if defined(__clang_major__) && defined(__clang_minor__)
+# define RT_CLANG_PREREQ_EX(a_MinMajor, a_MinMinor, a_OtherRet) \
+    ((__clang_major__ << 16) + __clang_minor__ >= ((a_MinMajor) << 16) + (a_MinMinor))
+#else
+# define RT_CLANG_PREREQ_EX(a_MinMajor, a_MinMinor, a_OtherRet) (a_OtherRet)
+#endif
+
+
 /** @def __X86__
  * Indicates that we're compiling for the X86 architecture.
  * @deprecated
@@ -2705,9 +2728,21 @@
 #define NIL_OFFSET   (~0U)
 
 /** @def NOREF
- * Keeps the compiler from bitching about an unused parameter.
+ * Keeps the compiler from bitching about an unused parameter, local variable,
+ * or other stuff, will never use _Pragma are is thus more flexible.
  */
 #define NOREF(var)               (void)(var)
+
+/** @def RT_NOREF_PV
+ * Keeps the compiler from bitching about an unused parameter or local variable.
+ * This one cannot be used with structure members and such, like for instance
+ * AssertRC may end up doing due to its generic nature.
+ */
+#if defined(__cplusplus) && RT_CLANG_PREREQ(6, 0)
+# define RT_NOREF_PV(var)       _Pragma(RT_STR(unused(var)))
+#else
+# define RT_NOREF_PV(var)       (void)(var)
+#endif
 
 /** @def RT_BREAKPOINT
  * Emit a debug breakpoint instruction.
