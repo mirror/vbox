@@ -561,7 +561,9 @@ endif
 # Whether to generate a database of USB vendor IDs and device IDs into VBoxSVC.
 VBOX_WITH_MAIN_USB_ID_DATABASE = 1
 # The recompiler.
-VBOX_WITH_REM = 1
+if !defined(VBOX_WITH_NEW_XCODE) || "$(KBUILD_TARGET)" != "darwin"
+ VBOX_WITH_REM = 1
+endif
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 if1of ($(KBUILD_TARGET), linux solaris)
@@ -1540,12 +1542,15 @@ USES += dtrace
 #
 # Compiler optimization flags.
 #
-VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wlogical-op)
+VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
+	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
+	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wlogical-op) \
+	$(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_GCC_WARN_PEDANTIC += -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
-VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long $(VBOX_GCC_Wno-delete-non-virtual-dtor)
+VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long $(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_Wno-return-type-c-linkage)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = #-Wdxxxx
@@ -2027,20 +2032,57 @@ VBOX_GOOD_COMSPEC_BS ?= $(subst /,\,$(VBOX_GOOD_COMSPEC))
 # version is assumed to be the
 #
 ifeq ($(KBUILD_TARGET),darwin)
- VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+ ifdef VBOX_WITH_NEW_XCODE
+  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.9
+ else
+  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+ endif
 
- # Check for the Xcode 4.1 bits in tools/darwin.x86.
- if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
-   && !defined(VBOX_XCODE_VERSION) \
-   && exists "$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1"
-  VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
-  VBOX_PATH_MACOSX_DEVEL_ROOT := $(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1
-  VBOX_XCODE_VERSION := 4.1
+ ifdef VBOX_WITH_NEW_XCODE
+  # Check for the Xcode 6.2 bits in tools/darwin.amd64.
+  if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
+    && !defined(VBOX_XCODE_VERSION) \
+    && exists "$(KBUILD_DEVTOOLS)/darwin.amd64/xcode/v6.2"
+   VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
+   VBOX_PATH_MACOSX_DEVEL_ROOT := $(KBUILD_DEVTOOLS)/darwin.amd64/xcode/v6.2/x.app/Contents/Developer
+   VBOX_XCODE_VERSION := 6.2
+  endif
+ else
+  # Check for the Xcode 4.1 bits in tools/darwin.x86.
+  if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
+    && !defined(VBOX_XCODE_VERSION) \
+    && exists "$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1"
+   VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
+   VBOX_PATH_MACOSX_DEVEL_ROOT := $(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1
+   VBOX_XCODE_VERSION := 4.1
+  endif
  endif
 
  # Fallback - system / LocalConfig.kmk.
- VBOX_PATH_MACOSX_DEVEL_ROOT ?= /Developer
- VBOX_PATH_MACOSX_SDK_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs
+ ifdef VBOX_WITH_NEW_XCODE
+  ifndef VBOX_PATH_MACOSX_DEVEL_ROOT
+   VBOX_PATH_MACOSX_DEVEL_ROOT := $(firstword $(wildcard /Applications/Xcode.app/Contents/Developer /Developer))
+  endif
+  ifndef VBOX_PATH_MACOSX_SDK_ROOT
+   VBOX_PATH_MACOSX_SDK_ROOT := $(firstword $(wildcard \
+   		 $(VBOX_PATH_MACOSX_DEVEL_ROOT)/Platforms/MacOSX.platform/Developer/SDKs/. \
+   		 $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs/. \
+   		 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/. \
+   		 /Developer/SDKs/. ))
+  endif
+  ifndef VBOX_PATH_MACOSX_TOOLCHAIN_ROOT
+   VBOX_PATH_MACOSX_TOOLCHAIN_ROOT := $(firstword $(wildcard \
+   		$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Library/Developer/CommandLineTools/. \
+   		$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Toolchains/XcodeDefault.xctoolchain/. \
+   		/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/. \
+               /Library/Developer/CommandLineTools/. \
+   		) /. )
+  endif
+ else
+  VBOX_PATH_MACOSX_DEVEL_ROOT     ?= /Developer
+  VBOX_PATH_MACOSX_SDK_ROOT       ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs
+  VBOX_PATH_MACOSX_TOOLCHAIN_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)
+ endif
 
  # Figure the default SDK location and obsolete linker tricks.
  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
@@ -2065,11 +2107,24 @@ ifeq ($(KBUILD_TARGET),darwin)
    else
     VBOX_XCODE_VERSION := $(word 2, $(shell xcodebuild -version))
    endif
-   VBOX_XCODE_VERSION ?= 4.1
+   ifdef VBOX_WITH_NEW_XCODE
+    VBOX_XCODE_VERSION ?= 6.2
+   else
+    VBOX_XCODE_VERSION ?= 4.1
+   endif
   endif
-  ifeq ($(VBOX_XCODE_VERSION),4.2)
-   $(warning Xcode 4.2 is not able to correctly build the recompiler!)
-   $(warning Please downgrade to Xcode 4.1 if you want a working VMM!)
+  ifdef VBOX_WITH_NEW_XCODE
+   if defined(VBOX_WITH_REM) && "$(VBOX_XCODE_VERSION)" >= "4.2"
+    $(warning Xcode $(VBOX_XCODE_VERSION) is not able to correctly build the recompiler! Please disabled it: 'VBOX_WITH_REM=')
+   endif
+   ifdef KBUILD_USE_KOBJCACHE
+    $(warning KBUILD_USE_KOBJCACHE does _not_ currently work with this version of Xcode)
+   endif
+  else
+   ifeq ($(VBOX_XCODE_VERSION),4.2)
+    $(warning Xcode 4.2 is not able to correctly build the recompiler!)
+    $(warning Please downgrade to Xcode 4.1 if you want a working VMM!)
+   endif
   endif
  else
   VBOX_XCODE_VERSION ?= 4.1
@@ -2092,31 +2147,57 @@ ifeq ($(KBUILD_TARGET),darwin)
    endif
   endif
  endif
- if $(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2
-  TOOL_GXX4MACHO_PREFIX ?= llvm-
+ if  $(VBOX_XCODE_VERSION_MAJOR) >= 5
+  # temp hack.
+  TOOL_GXX4MACHO_CC        = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_CXX       = $(TOOL_GXX4MACHO_PREFIX)clang++$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_OBJC      = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_OBJCXX    = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_AS        = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_LD        = $(TOOL_GXX4MACHO_PREFIX)clang++$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_LD_SYSMOD = $(TOOL_GXX4MACHO_PREFIX)clang++$(TOOL_GXX4MACHO_SUFFIX)
+  TOOL_GXX4MACHO_PREFIX   :=
+  TOOL_GXX4MACHO_SUFFIX   :=
+ else
+  if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
+   TOOL_GXX4MACHO_PREFIX ?= llvm-
+  endif
+  if  $(VBOX_XCODE_VERSION_MAJOR) < 5
+   TOOL_GXX4MACHO_SUFFIX ?= -4.2
+  endif
  endif
- TOOL_GXX4MACHO_SUFFIX ?= -4.2
  VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
 
  TOOL_GCC4MACHO_SUFFIX ?= $(TOOL_GXX4MACHO_SUFFIX)$(HOSTSUFF_EXE)
  TOOL_GCC4MACHO_PREFIX ?= $(TOOL_GXX4MACHO_PREFIX)
  ifdef VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL
-  TOOL_GCC4MACHO_PREFIX := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/$(TOOL_GCC4MACHO_PREFIX)
-  TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
+  TOOL_GCC4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GCC4MACHO_PREFIX)
+  TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
   TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
   TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
   ifndef SVN  # must expand first so we won't be using old svn.
    SVN := $(firstword $(which svn) svn)
   endif
-  export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(PATH)
+  if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
+   export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin:$(PATH)
+   export DEVELOPER_DIR:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)
+  else
+   export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(PATH)
+  endif
   TOOL_GXX32_CC  = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) -m32
   TOOL_GXX32_CXX = $(TOOL_GCC4MACHO_PREFIX)g++$(TOOL_GCC4MACHO_SUFFIX) -m32
   TOOL_GXX32_LD  = $(TOOL_GXX32_CXX)
-  override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(TOOL_GCC4MACHO_PREFIX)cpp-4.2"
+  if  $(VBOX_XCODE_VERSION_MAJOR) >= 5
+   # override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(TOOL_GCC4MACHO_PREFIX)cpp" - busted, pray the default /usr/bin/ stuff works!
+  else
+   override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(TOOL_GCC4MACHO_PREFIX)cpp-4.2"
+  endif
  endif
- ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
- TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
- TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
+ if  $(VBOX_XCODE_VERSION_MAJOR) < 5
+  ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
+  TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
+  TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
+ endif
 
  VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0 \
                                     MAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0
@@ -2513,12 +2594,15 @@ ifn1of ($(KBUILD_TARGET),haiku)
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
 endif
-# Prevent warnings about unused parameters as of gcc-4.8 as this warning is now very verbose
-	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
-	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40800),)'
-	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wno-unused-parameter ?= -Wno-unused-parameter'
-	$(QUIET)$(APPEND) '$@' ' endif'
-	$(QUIET)$(APPEND) '$@' 'endif'
+# Prevent warnings about unused parameters as of gcc-4.8 / clang 6 as this warning is now very verbose
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-unused-parameter ?= $(call VBOX_GCC_CHECK_CC,-Wno-unused-parameter,)'
+# Clang 6.
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-language-extension-token ?= $(call VBOX_GCC_CHECK_CC,-Wno-language-extension-token,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-extended-offsetof ?= $(call VBOX_GCC_CHECK_CC,-Wno-extended-offsetof,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-gnu-folding-constant ?= $(call VBOX_GCC_CHECK_CC,-Wno-gnu-folding-constant,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-return-type-c-linkage ?= $(call VBOX_GCC_CHECK_CXX,-Wno-return-type-c-linkage,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-string-plus-int ?= $(call VBOX_GCC_CHECK_CC,-Wno-string-plus-int,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-nested-anon-types ?= $(call VBOX_GCC_CHECK_CC,-Wno-nested-anon-types,)'
 # C++ Std settings
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
 	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40800),)'
@@ -3835,7 +3919,48 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
 TEMPLATE_VBOXR0DRV_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
-TEMPLATE_VBOXR0DRV_INCS               += $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
+ ifdef VBOX_WITH_NEW_XCODE # Note xcode uses -fstrict-aliasing, we currently don't dare... We also add -mno-red-zone.
+TEMPLATE_VBOXR0DRV_INCS               += \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
+## @todo try use VBOX_GCC_PEDANTIC_CXX
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkernel \
+	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
+	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
+	-fno-exceptions -msoft-float -fapple-kext -fno-rtti -mkernel \
+	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
+	-Werror=non-modular-include-in-framework-module \
+	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing -stdlib=libc++
+# also used by xcode 6.2: \
+# -Werror=return-type \
+# -Werror=deprecated-objc-isa-usage \
+# -Werror=objc-root-class \
+# -Wno-missing-field-initializers -Wno-missing-prototypes -Wunreachable-code \
+# -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wunused-function \
+# -Wno-unused-label -Wno-unused-parameter -Wunused-variable -Wunused-value -Wempty-body \
+# -Wconditional-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants \
+# -Wno-conversion -Wconstant-conversion -Wint-conversion -Wbool-conversion -Wenum-conversion \
+# -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mno-red-zone
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32
+TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -mkernel \
+	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
+	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
+	-fno-exceptions -msoft-float -fapple-kext -fno-rtti  \
+	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
+	-Werror=non-modular-include-in-framework-module \
+	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32
+TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
+	-nostdlib -stdlib=libc++ -Wl,-kext -Wl,-keep_private_externs
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
+TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext
+ else
+TEMPLATE_VBOXR0DRV_INCS               += \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 ## @todo try use VBOX_GCC_PEDANTIC_CXX
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
@@ -3858,6 +3983,7 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
@@ -5384,7 +5510,7 @@ ifdef VBOX_WITH_QTGUI
 	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions -Wno-non-virtual-dtor \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) \
-	$(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
+	$(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
