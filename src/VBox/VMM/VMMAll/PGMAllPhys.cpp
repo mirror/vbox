@@ -2845,7 +2845,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
          */
         VBOXSTRICTRC rcStrict2 = VINF_PGM_HANDLER_DO_DEFAULT;
         uint32_t cbRange = (uint32_t)cbWrite;
-        if (offPhys && offVirt)
+        if (offPhys != 0 && offVirt != 0)
         {
             if (cbRange > offPhys)
                 cbRange = offPhys;
