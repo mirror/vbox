@@ -223,11 +223,11 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
         Log(("getDefaultIfaceIndex: Failed to get estimate for list size (errno=%d).\n", errno));
         return RTErrConvertFromErrno(errno);
     }
-    if ((pBuf = (char*)malloc(cbNeeded)) == NULL)
+    if ((pBuf = (char *)RTMemAlloc(cbNeeded)) == NULL)
         return VERR_NO_MEMORY;
     if (sysctl(aiMib, 6, pBuf, &cbNeeded, NULL, 0) < 0)
     {
-        free(pBuf);
+        RTMemFree(pBuf);
         Log(("getDefaultIfaceIndex: Failed to retrieve interface table (errno=%d).\n", errno));
         return RTErrConvertFromErrno(errno);
     }
@@ -263,13 +263,13 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
                      mask->sin_len == 0))
                 {
                     *pu16Index = pRtMsg->rtm_index;
-                    free(pBuf);
+                    RTMemFree(pBuf);
                     return VINF_SUCCESS;
                 }
             }
         }
     }
-    free(pBuf);
+    RTMemFree(pBuf);
     return 0; /* Failed to find default interface, take the first one in the list. */
 }
 
@@ -298,11 +298,11 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         Log(("NetIfList: Failed to get estimate for list size (errno=%d).\n", errno));
         return RTErrConvertFromErrno(errno);
     }
-    if ((pBuf = (char*)malloc(cbNeeded)) == NULL)
+    if ((pBuf = (char*)RTMemAlloc(cbNeeded)) == NULL)
         return VERR_NO_MEMORY;
     if (sysctl(aiMib, 6, pBuf, &cbNeeded, NULL, 0) < 0)
     {
-        free(pBuf);
+        RTMemFree(pBuf);
         Log(("NetIfList: Failed to retrieve interface table (errno=%d).\n", errno));
         return RTErrConvertFromErrno(errno);
     }
@@ -310,7 +310,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (sock < 0)
     {
-        free(pBuf);
+        RTMemFree(pBuf);
         Log(("NetIfList: socket() -> %d\n", errno));
         return RTErrConvertFromErrno(errno);
     }
@@ -426,7 +426,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         RTMemFree(pvFree);
     }
     close(sock);
-    free(pBuf);
+    RTMemFree(pBuf);
     return rc;
 }
 
@@ -449,11 +449,11 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
         Log(("NetIfList: Failed to get estimate for list size (errno=%d).\n", errno));
         return RTErrConvertFromErrno(errno);
     }
-    if ((pBuf = (char*)malloc(cbNeeded)) == NULL)
+    if ((pBuf = (char*)RTMemAlloc(cbNeeded)) == NULL)
         return VERR_NO_MEMORY;
     if (sysctl(aiMib, 6, pBuf, &cbNeeded, NULL, 0) < 0)
     {
-        free(pBuf);
+        RTMemFree(pBuf);
         Log(("NetIfList: Failed to retrieve interface table (errno=%d).\n", errno));
         return RTErrConvertFromErrno(errno);
     }
@@ -461,7 +461,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
     int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (sock < 0)
     {
-        free(pBuf);
+        RTMemFree(pBuf);
         Log(("NetIfList: socket() -> %d\n", errno));
         return RTErrConvertFromErrno(errno);
     }
@@ -526,7 +526,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
         }
     }
     close(sock);
-    free(pBuf);
+    RTMemFree(pBuf);
     return rc;
 }
 
