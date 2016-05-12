@@ -43,6 +43,7 @@
 # include <Carbon/Carbon.h>
 # include <IOKit/ps/IOPowerSources.h>
 # include <IOKit/ps/IOPSKeys.h>
+# undef PVM                             /* This still messed up in the 10.9 SDK. Sigh. */
 #endif
 
 #ifdef RT_OS_FREEBSD
