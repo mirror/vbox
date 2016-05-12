@@ -1409,15 +1409,15 @@ endif # VBOX_WITH_EXTPACK_PUEL
 
 if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  #
- # Template used for VBoxSVGA3D.  (Stips away compiler options.)
+ # Template used for VBoxSVGA3D.  (Strips away compiler options.)
  #
  TEMPLATE_VBoxSVGA3D         := VBoxSVGA3D
- TEMPLATE_VBoxSVGA3D_EXTENDS := $(if-expr "$(KBUILD_TARGET)" == "darwin",VBoxR3DllOsX107,VBOXR3)
+ TEMPLATE_VBoxSVGA3D_EXTENDS := $(if-expr "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_WITH_NEW_XCODE),VBoxR3DllOsX107,VBOXR3)
  TEMPLATE_VBoxSVGA3D_CFLAGS      = $(filter-out -pedantic -Wstrict-prototypes,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CFLAGS))
  TEMPLATE_VBoxSVGA3D_CXXFLAGS    = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CXXFLAGS))
  TEMPLATE_VBoxSVGA3D_OBJCFLAGS   = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCFLAGS))
  TEMPLATE_VBoxSVGA3D_OBJCXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCXXFLAGS))
- TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin  = $(TEMPLATE_VBoxR3DllOsX107_LDFLAGS.darwin) \
+ TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin  = $(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_LDFLAGS.darwin) \
   	-framework AppKit -framework OpenGL -framework IOKit
 
  #
