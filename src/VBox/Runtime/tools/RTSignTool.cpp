@@ -895,7 +895,7 @@ static RTEXITCODE HandleHelp(int cArgs, char **papszArgs)
     {
         if (g_aCommands[iCmd].pfnHelp)
         {
-            bool fShow;
+            bool fShow = false;
             if (cArgs <= 1)
                 fShow = true;
             else
