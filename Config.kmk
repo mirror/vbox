@@ -1409,7 +1409,11 @@ ifndef VBOX_GCC_TOOL
  else ifeq ($(KBUILD_TARGET),os2)
   VBOX_GCC_TOOL := GXX3OMF
  else ifeq ($(KBUILD_TARGET),darwin)
-  VBOX_GCC_TOOL := GXX4MACHO
+  ifdef VBOX_WITH_NEW_XCODE
+   VBOX_GCC_TOOL := VBoxXcode62
+  else
+   VBOX_GCC_TOOL := GXX4MACHO
+  endif
  else ifeq ($(KBUILD_TARGET),haiku)
   # Haiku shouldn't pass '-r' to the linker by default
   VBOX_GCC_TOOL := GXX3PLAIN
@@ -2039,14 +2043,9 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif
 
  ifdef VBOX_WITH_NEW_XCODE
-  # Check for the Xcode 6.2 bits in tools/darwin.amd64.
-  if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
-    && !defined(VBOX_XCODE_VERSION) \
-    && exists "$(KBUILD_DEVTOOLS)/darwin.amd64/xcode/v6.2"
-   VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
-   VBOX_PATH_MACOSX_DEVEL_ROOT := $(KBUILD_DEVTOOLS)/darwin.amd64/xcode/v6.2/x.app/Contents/Developer
-   VBOX_XCODE_VERSION := 6.2
-  endif
+  # Use the tool path of the compiler (it's clang, not gcc in this instance).
+  include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC_TOOL).kmk
+  VBOX_PATH_MACOSX_DEVEL_ROOT := $(PATH_TOOL_$(VBOX_GCC_TOOL))
  else
   # Check for the Xcode 4.1 bits in tools/darwin.x86.
   if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
@@ -2065,13 +2064,14 @@ ifeq ($(KBUILD_TARGET),darwin)
   endif
   ifndef VBOX_PATH_MACOSX_SDK_ROOT
    VBOX_PATH_MACOSX_SDK_ROOT := $(firstword $(wildcard \
-   		 $(VBOX_PATH_MACOSX_DEVEL_ROOT)/Platforms/MacOSX.platform/Developer/SDKs/. \
-   		 $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs/. \
-   		 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/. \
-   		 /Developer/SDKs/. ))
+   		$(PATH_TOOL_$(VBOX_GCC_TOOL)_SDKS) \
+   		$(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs/. \
+   		/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/. \
+   		/Developer/SDKs/. ))
   endif
   ifndef VBOX_PATH_MACOSX_TOOLCHAIN_ROOT
    VBOX_PATH_MACOSX_TOOLCHAIN_ROOT := $(firstword $(wildcard \
+   		$(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN) \
    		$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Library/Developer/CommandLineTools/. \
    		$(VBOX_PATH_MACOSX_DEVEL_ROOT)/Toolchains/XcodeDefault.xctoolchain/. \
    		/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/. \
@@ -2147,17 +2147,9 @@ ifeq ($(KBUILD_TARGET),darwin)
    endif
   endif
  endif
- if  $(VBOX_XCODE_VERSION_MAJOR) >= 5
-  # temp hack.
-  TOOL_GXX4MACHO_CC        = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_CXX       = $(TOOL_GXX4MACHO_PREFIX)clang++$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_OBJC      = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_OBJCXX    = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_AS        = $(TOOL_GXX4MACHO_PREFIX)clang$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_LD        = $(TOOL_GXX4MACHO_PREFIX)clang++$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_LD_SYSMOD = $(TOOL_GXX4MACHO_PREFIX)clang++$(TOOL_GXX4MACHO_SUFFIX)
-  TOOL_GXX4MACHO_PREFIX   :=
-  TOOL_GXX4MACHO_SUFFIX   :=
+ ifdef VBOX_WITH_NEW_XCODE
+   override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
+   export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
  else
   if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
    TOOL_GXX4MACHO_PREFIX ?= llvm-
@@ -2165,38 +2157,34 @@ ifeq ($(KBUILD_TARGET),darwin)
   if  $(VBOX_XCODE_VERSION_MAJOR) < 5
    TOOL_GXX4MACHO_SUFFIX ?= -4.2
   endif
- endif
- VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
+  VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
 
- TOOL_GCC4MACHO_SUFFIX ?= $(TOOL_GXX4MACHO_SUFFIX)$(HOSTSUFF_EXE)
- TOOL_GCC4MACHO_PREFIX ?= $(TOOL_GXX4MACHO_PREFIX)
- ifdef VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL
-  TOOL_GCC4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GCC4MACHO_PREFIX)
-  TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
-  TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
-  TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
-  ifndef SVN  # must expand first so we won't be using old svn.
-   SVN := $(firstword $(which svn) svn)
-  endif
-  if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
-   export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin:$(PATH)
-   export DEVELOPER_DIR:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)
-  else
-   export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(PATH)
-  endif
-  TOOL_GXX32_CC  = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) -m32
-  TOOL_GXX32_CXX = $(TOOL_GCC4MACHO_PREFIX)g++$(TOOL_GCC4MACHO_SUFFIX) -m32
-  TOOL_GXX32_LD  = $(TOOL_GXX32_CXX)
-  if  $(VBOX_XCODE_VERSION_MAJOR) >= 5
-   # override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(TOOL_GCC4MACHO_PREFIX)cpp" - busted, pray the default /usr/bin/ stuff works!
-  else
+  TOOL_GCC4MACHO_SUFFIX ?= $(TOOL_GXX4MACHO_SUFFIX)$(HOSTSUFF_EXE)
+  TOOL_GCC4MACHO_PREFIX ?= $(TOOL_GXX4MACHO_PREFIX)
+  if defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL)
+   TOOL_GCC4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GCC4MACHO_PREFIX)
+   TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
+   TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
+   TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
+   ifndef SVN  # must expand first so we won't be using old svn.
+    SVN := $(firstword $(which svn) svn)
+   endif
+   if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
+    export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin:$(PATH)
+    export DEVELOPER_DIR:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)
+   else
+    export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(PATH)
+   endif
+   TOOL_GXX32_CC  = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) -m32
+   TOOL_GXX32_CXX = $(TOOL_GCC4MACHO_PREFIX)g++$(TOOL_GCC4MACHO_SUFFIX) -m32
+   TOOL_GXX32_LD  = $(TOOL_GXX32_CXX)
    override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(TOOL_GCC4MACHO_PREFIX)cpp-4.2"
   endif
- endif
- if  $(VBOX_XCODE_VERSION_MAJOR) < 5
-  ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
-  TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
-  TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
+  if  $(VBOX_XCODE_VERSION_MAJOR) < 5
+   ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
+   TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
+   TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
+  endif
  endif
 
  VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0 \
@@ -2426,9 +2414,17 @@ ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
 # Note! That a harmless warning is printed if the file doesn't exist.
 # Note! Changes in GCC are not detected automatically (yet).
 #
-include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
+if $(pos VBox,$(VBOX_GCC_TOOL)) > 0
+ include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC_TOOL).kmk
+else
+ include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
+endif
 ifneq ($(VBOX_GCC_TOOL),$(VBOX_GCC32_TOOL))
- include $(KBUILD_PATH)/tools/$(VBOX_GCC32_TOOL).kmk
+ if $(pos VBox,$(VBOX_GCC32_TOOL)) > 0
+  include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC32_TOOL).kmk
+ else
+  include $(KBUILD_PATH)/tools/$(VBOX_GCC32_TOOL).kmk
+ endif
 endif
 
 # These tests never worked on Windows because of /dev/null, so, there
@@ -3661,7 +3657,7 @@ ifdef VBOX_WITH_RAW_MODE
  endif
 
  ifeq ($(VBOX_LDR_FMT32),macho)
- TEMPLATE_VBoxRc_TOOL                = GXX4MACHO
+ TEMPLATE_VBoxRc_TOOL                = $(VBOX_GCC_TOOL)
  TEMPLATE_VBoxRc_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
  TEMPLATE_VBoxRc_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -m32 -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-rtti
  TEMPLATE_VBoxRc_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -m32 -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
@@ -3812,7 +3808,7 @@ endif
 endif
 
 ifeq ($(VBOX_LDR_FMT),macho)
-TEMPLATE_VBoxR0_TOOL                = GXX4MACHO
+TEMPLATE_VBoxR0_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBoxR0_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBoxR0_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) \
 	-fno-common -msoft-float -static -fno-rtti -fno-exceptions $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing \
@@ -3917,7 +3913,7 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             = -Zlinker Option -Zlinker internalrelocs
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
-TEMPLATE_VBOXR0DRV_TOOL                = GXX4MACHO
+TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
  ifdef VBOX_WITH_NEW_XCODE # Note xcode uses -fstrict-aliasing, we currently don't dare... We also add -mno-red-zone.
 TEMPLATE_VBOXR0DRV_INCS               += \
@@ -4281,7 +4277,7 @@ TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3OMF
 TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
  else ifeq ($(KBUILD_TARGET),darwin)
-TEMPLATE_VBOXR3EXE_TOOL                = GXX4MACHO
+TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_DEFS.darwin         = $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXR3EXE_CFLAGS.darwin       = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -fno-common
@@ -5029,7 +5025,7 @@ TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3OMF
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(KBUILD_TARGET),darwin)
-TEMPLATE_VBOXMAINEXE_TOOL                = GXX4MACHO
+TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXMAINEXE_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXMAINEXE_CFLAGS             += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS           += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
@@ -5750,7 +5746,7 @@ TEMPLATE_VBoxBldProg_LIBS                = pthread m rt dl
 TEMPLATE_VBoxBldProg_TOOL                = GXX3OMF
 TEMPLATE_VBoxBldProg_LIBS                = socket iconv
  else ifeq ($(KBUILD_HOST),darwin)
-TEMPLATE_VBoxBldProg_TOOL                = GXX4MACHO
+TEMPLATE_VBoxBldProg_TOOL                = $(VBOX_GCC_TOOL)
   if "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.7" || "$(VBOX_DARWIN_HOST_VERSION_MAJOR)" == "7"
 TEMPLATE_VBoxBldProg_DEFS.darwin         = $(VBOX_DARWIN_DEF_SDK_10_7_DEFS)
 TEMPLATE_VBoxBldProg_CFLAGS.darwin       = $(VBOX_DARWIN_DEF_SDK_10_7_CFLAGS) -fno-common
