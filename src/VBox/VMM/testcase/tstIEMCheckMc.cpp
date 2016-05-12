@@ -437,17 +437,10 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Value)         do { CHK_CONST(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         do { CHK_CONST(uint64_t, a_u64Value); } while (0)
 
-#ifdef _MSC_VER
-#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   do { (a_u8Value)  += 1; /*CHK_CONST(uint8_t,  a_u8Value); */ } while (0)
-#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += 1; /*CHK_CONST(uint16_t, a_u16Value);*/ } while (0)
-#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  do { (a_u32Value) += 1; /*CHK_CONST(uint32_t, a_u32Value);*/ } while (0)
-#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  do { (a_u64Value) += 1; /*CHK_CONST(uint64_t, a_u64Value);*/ } while (0)
-#else
-#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   do { (a_u8Value)  += 1; CHK_CONST(uint8_t,  a_u8Value);  } while (0)
-#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += 1; CHK_CONST(uint16_t, a_u16Value); } while (0)
-#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  do { (a_u32Value) += 1; CHK_CONST(uint32_t, a_u32Value); } while (0)
-#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  do { (a_u64Value) += 1; CHK_CONST(uint64_t, a_u64Value); } while (0)
-#endif
+#define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   do { (a_u8Value)  += 1; CHK_TYPE(uint8_t,  a_u8Value);  } while (0)
+#define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += 1; CHK_TYPE(uint16_t, a_u16Value); } while (0)
+#define IEM_MC_ADD_GREG_U32_TO_LOCAL(a_u32Value, a_iGReg)  do { (a_u32Value) += 1; CHK_TYPE(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_ADD_GREG_U64_TO_LOCAL(a_u64Value, a_iGReg)  do { (a_u64Value) += 1; CHK_TYPE(uint64_t, a_u64Value); } while (0)
 #define IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(a_EffAddr, a_i16) do { (a_EffAddr) += (a_i16); CHK_GCPTR(a_EffAddr); } while (0)
 #define IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(a_EffAddr, a_i32) do { (a_EffAddr) += (a_i32); CHK_GCPTR(a_EffAddr); } while (0)
 #define IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(a_EffAddr, a_i64) do { (a_EffAddr) += (a_i64); CHK_GCPTR(a_EffAddr); } while (0)
@@ -557,7 +550,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_POP_U16(a_pu16Value)                                     do {} while (0)
 #define IEM_MC_POP_U32(a_pu32Value)                                     do {} while (0)
 #define IEM_MC_POP_U64(a_pu64Value)                                     do {} while (0)
-#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do { NOREF(a_fAccess); } while (0)
+#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do {} while (0)
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_iArg)  do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                             do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do {} while (0)
