@@ -1146,8 +1146,8 @@ void __attribute__ ((constructor)) checkServerGLX(void)
 
     if (!pszDisplay || !*pszDisplay)
     {
-        dlopen("/tmp/VBoxOGL/system/libGL.so.1", RTLD_LAZY | RTLD_GLOBAL | RTLD_DEEPBIND);
-        dlopen("/tmp/VBoxOGL/system/libEGL.so.1", RTLD_LAZY | RTLD_GLOBAL | RTLD_DEEPBIND);
+        dlopen("/var/lib/VBoxGuestAdditions/lib/system/libGL.so.1", RTLD_LAZY | RTLD_GLOBAL | RTLD_DEEPBIND);
+        dlopen("/var/lib/VBoxGuestAdditions/lib/system/libEGL.so.1", RTLD_LAZY | RTLD_GLOBAL | RTLD_DEEPBIND);
     }
 }
 #endif

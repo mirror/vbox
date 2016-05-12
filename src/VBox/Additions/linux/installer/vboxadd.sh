@@ -214,29 +214,30 @@ start()
     /sbin/rcvboxadd-x11 setup
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
-    rm -rf /etc/ld.so.conf.d/00vboxvideo.conf
-    ldconfig
     if /usr/bin/VBoxClient --check3d; then
-        rm -r /tmp/VBoxOGL
-        mkdir -m 0755 /tmp/VBoxOGL
-        mkdir -m 0755 /tmp/VBoxOGL/system
+        rm -f /var/lib/VBoxGuestAdditions/lib/system/tmp.so
+        mkdir -m 0755 -p /var/lib/VBoxGuestAdditions/lib/system
         ldconfig -p | while read -r line; do
             case "${line}" in "libGL.so.1 ${ldconfig_arch} => "*)
-                ln -s "${line#libGL.so.1 ${ldconfig_arch} => }" /tmp/VBoxOGL/system/libGL.so.1
+                ln -s "${line#libGL.so.1 ${ldconfig_arch} => }" /var/lib/VBoxGuestAdditions/lib/system/tmp.so
+                mv /var/lib/VBoxGuestAdditions/lib/system/tmp.so /var/lib/VBoxGuestAdditions/lib/system/libGL.so.1
                 break
             esac
         done
         ldconfig -p | while read -r line; do
             case "${line}" in "libEGL.so.1 ${ldconfig_arch} => "*)
-                ln -s "${line#libEGL.so.1 ${ldconfig_arch} => }" /tmp/VBoxOGL/system/libEGL.so.1
+                ln -s "${line#libEGL.so.1 ${ldconfig_arch} => }" /var/lib/VBoxGuestAdditions/lib/system/tmp.so
+                mv /var/lib/VBoxGuestAdditions/lib/system/tmp.so /var/lib/VBoxGuestAdditions/lib/system/libEGL.so.1
                 break
             esac
         done
-        echo "/tmp/VBoxOGL" > /etc/ld.so.conf.d/00vboxvideo.conf
-        ln -s "${INSTALL_DIR}/lib/VBoxOGL.so" /tmp/VBoxOGL/libGL.so.1
-        ln -s "${INSTALL_DIR}/lib/VBoxEGL.so" /tmp/VBoxOGL/libEGL.so.1
-        ldconfig
+        ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
+        ln -sf "${INSTALL_DIR}/lib/VBoxEGL.so" /var/lib/VBoxGuestAdditions/lib/libEGL.so.1
+        echo "/var/lib/VBoxGuestAdditions/lib" > /etc/ld.so.conf.d/00vboxvideo.conf
+    else
+        rm -f /etc/ld.so.conf.d/00vboxvideo.conf
     fi
+    ldconfig
 
     # Mount all shared folders from /etc/fstab. Normally this is done by some
     # other startup script but this requires the vboxdrv kernel module loaded.
