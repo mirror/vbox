@@ -2209,6 +2209,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_4) \
 	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_CLASSIC_LINKER)
  else
+  VBOX_PATH_MACOSX_SDK_10_4          = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
   VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
   VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
  endif
@@ -2223,6 +2224,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5) \
 	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  else
+  VBOX_PATH_MACOSX_SDK_10_5          = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
   VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
   VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
  endif
@@ -2237,6 +2239,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6) \
          -Wl,-headerpad_max_install_names
  else
+  VBOX_PATH_MACOSX_SDK_10_6          = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
   VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
   VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
  endif
@@ -2257,6 +2260,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7) \
          -Wl,-headerpad_max_install_names
  else
+  VBOX_PATH_MACOSX_SDK_10_7          = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
   VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
   VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
  endif

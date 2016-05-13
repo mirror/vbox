@@ -30,19 +30,35 @@ endif
 # which get picked up below.
 #
 ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
- if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) \
-  && (   !defined(VBOX_OSE) \
-      || "$(wildcard $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib)" != "")
-  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
-  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib
-  VBOX_PYTHON26_LIB_X86 = $(VBOX_PYTHON26_LIB)
+ ifndef VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6
+  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.5 10.4)
+   VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
+   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib
+  else
+   VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/usr/include/python2.6
+   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.6.dylib
+  endif
+  if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON26_LIB))" != ""
+   VBOX_PYTHON26_LIB_X86 = $(VBOX_PYTHON26_LIB)
+  else
+   VBOX_PYTHON26_INC =
+   VBOX_PYTHON26_LIB =
+  endif
  endif
- if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7) \
-  && (   defined(VBOX_NOT_OSE_LATER_SOMETIME) \
-      || "$(wildcard $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib)" != "")
-  VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/include/python2.7
-  VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib
-  VBOX_PYTHON27_LIB_X86 = $(VBOX_PYTHON27_LIB)
+ ifndef VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7
+  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.6 10.5 10.4)
+   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/include/python2.7
+   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib
+  else
+   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/usr/include/python2.7
+   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.7.dylib
+  endif
+  if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON27_LIB))" != ""
+   VBOX_PYTHON27_LIB_X86 = $(VBOX_PYTHON27_LIB)
+  else
+   VBOX_PYTHON27_INC =
+   VBOX_PYTHON27_LIB =
+  endif
  endif
  # No Python 3.x yet as part of OSX versions including El Capitan, 10.11.
 

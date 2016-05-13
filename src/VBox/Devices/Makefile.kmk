@@ -287,11 +287,13 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
     VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE=2.1 VBOX_VMSVGA3D_OTHER_OGL_PROFILE=3.2
    endif
   endif
-  Graphics/DevVGA-SVGA3d.cpp_CXXFLAGS.darwin            = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
-  Graphics/DevVGA-SVGA3d-info.cpp_CXXFLAGS.darwin       = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
-  Graphics/DevVGA-SVGA3d-shared.cpp_CXXFLAGS.darwin     = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
-  Graphics/DevVGA-SVGA3d-savedstate.cpp_CXXFLAGS.darwin = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
-  Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin        = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.6 10.5 10.4)
+   Graphics/DevVGA-SVGA3d.cpp_CXXFLAGS.darwin            = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+   Graphics/DevVGA-SVGA3d-info.cpp_CXXFLAGS.darwin       = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+   Graphics/DevVGA-SVGA3d-shared.cpp_CXXFLAGS.darwin     = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+   Graphics/DevVGA-SVGA3d-savedstate.cpp_CXXFLAGS.darwin = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+   Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin        = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+  endif
  endif
 
  ifdef VBOX_WITH_VDMA
