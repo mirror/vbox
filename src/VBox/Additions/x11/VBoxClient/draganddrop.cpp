@@ -228,6 +228,15 @@ public:
         return m_pInstance;
     }
 
+    static void destroyInstance(void)
+    {
+        if (m_pInstance)
+        {
+            delete m_pInstance;
+            m_pInstance = NULL;
+        }
+    }
+
     inline Display *display()    const { return m_pDisplay; }
     inline Atom xAtom(XA_Type e) const { return m_xAtoms[e]; }
 
@@ -585,19 +594,20 @@ class DragAndDropService
 {
 public:
     DragAndDropService(void)
-      : m_pDisplay(0)
+      : m_pDisplay(NULL)
       , m_hHGCMThread(NIL_RTTHREAD)
       , m_hX11Thread(NIL_RTTHREAD)
       , m_hEventSem(NIL_RTSEMEVENT)
-      , m_pCurDnD(0)
+      , m_pCurDnD(NULL)
       , m_fSrvStopping(false)
     {}
 
+    int init(void);
     int run(bool fDaemonised = false);
+    void cleanup(void);
 
 private:
 
-    int dragAndDropInit(void);
     static DECLCALLBACK(int) hgcmEventThread(RTTHREAD hThread, void *pvUser);
     static DECLCALLBACK(int) x11EventThread(RTTHREAD hThread, void *pvUser);
 
@@ -2933,6 +2943,83 @@ int VBoxDnDProxyWnd::sendFinished(Window hWndSource, uint32_t uAction)
  ******************************************************************************/
 
 /**
+ * Initializes the drag and drop service.
+ *
+ * @returns IPRT status code.
+ */
+int DragAndDropService::init(void)
+{
+    LogFlowFuncEnter();
+
+    /* Initialise the guest library. */
+    int rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+    {
+        VBClFatalError(("DnD: Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
+        return rc;
+    }
+
+    /* Connect to the x11 server. */
+    m_pDisplay = XOpenDisplay(NULL);
+    if (!m_pDisplay)
+    {
+        VBClFatalError(("DnD: Unable to connect to X server -- running in a terminal session?\n"));
+        return VERR_NOT_FOUND;
+    }
+
+    xHelpers *pHelpers = xHelpers::getInstance(m_pDisplay);
+    if (!pHelpers)
+        return VERR_NO_MEMORY;
+
+    do
+    {
+        rc = RTSemEventCreate(&m_hEventSem);
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTCritSectInit(&m_eventQueueCS);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Event thread for events coming from the HGCM device. */
+        rc = RTThreadCreate(&m_hHGCMThread, hgcmEventThread, this,
+                            0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "dndHGCM");
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTThreadUserWait(m_hHGCMThread, 10 * 1000 /* 10s timeout */);
+        if (RT_FAILURE(rc))
+            break;
+
+        if (ASMAtomicReadBool(&m_fSrvStopping))
+            break;
+
+        /* Event thread for events coming from the x11 system. */
+        rc = RTThreadCreate(&m_hX11Thread, x11EventThread, this,
+                            0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "dndX11");
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTThreadUserWait(m_hX11Thread, 10 * 1000 /* 10s timeout */);
+        if (RT_FAILURE(rc))
+            break;
+
+        if (ASMAtomicReadBool(&m_fSrvStopping))
+            break;
+
+    } while (0);
+
+    if (m_fSrvStopping)
+        rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Failed to initialize, rc=%Rrc\n", rc));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Main loop for the drag and drop service which does the HGCM message
  * processing and routing to the according drag and drop instance(s).
  *
@@ -2947,11 +3034,6 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
     int rc;
     do
     {
-        /* Initialize drag and drop. */
-        rc = dragAndDropInit();
-        if (RT_FAILURE(rc))
-            break;
-
         m_pCurDnD = new DragInstance(m_pDisplay, this);
         if (!m_pCurDnD)
         {
@@ -3111,62 +3193,51 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
 
     } while (0);
 
+    if (m_pCurDnD)
+    {
+        delete m_pCurDnD;
+        m_pCurDnD = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-/**
- * Initializes the drag and drop instance.
- *
- * @returns IPRT status code.
- */
-int DragAndDropService::dragAndDropInit(void)
+void DragAndDropService::cleanup(void)
 {
-    /* Initialise the guest library. */
-    int rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClFatalError(("DnD: Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
+    LogFlowFuncEnter();
 
-    /* Connect to the x11 server. */
-    m_pDisplay = XOpenDisplay(NULL);
-    if (!m_pDisplay)
+    LogRel2(("DnD: Terminating threads ...\n"));
+
+    /*
+     * Wait for threads to terminate.
+     */
+    int rcThread, rc2;
+    if (m_hHGCMThread != NIL_RTTHREAD)
     {
-        VBClFatalError(("DnD: Unable to connect to X server -- running in a terminal session?\n"));
-        return VERR_NOT_FOUND;
+        rc2 = RTThreadWait(m_hHGCMThread, 30 * 1000 /* 30s timeout */, &rcThread);
+        if (RT_SUCCESS(rc2))
+            rc2 = rcThread;
+
+        if (RT_FAILURE(rc2))
+            LogRel(("DnD: Error waiting for HGCM thread to terminate: %Rrc\n", rc2));
     }
 
-    xHelpers *pHelpers = xHelpers::getInstance(m_pDisplay);
-    if (!pHelpers)
-        return VERR_NO_MEMORY;
-
-    do
+    if (m_hX11Thread != NIL_RTTHREAD)
     {
-        rc = RTSemEventCreate(&m_hEventSem);
-        if (RT_FAILURE(rc))
-            break;
+        rc2 = RTThreadWait(m_hX11Thread, 30 * 1000 /* 30s timeout */, &rcThread);
+        if (RT_SUCCESS(rc2))
+            rc2 = rcThread;
 
-        rc = RTCritSectInit(&m_eventQueueCS);
-        if (RT_FAILURE(rc))
-            break;
+        if (RT_FAILURE(rc2))
+            LogRel(("DnD: Error waiting for X11 thread to terminate: %Rrc\n", rc2));
+    }
 
-        /* Event thread for events coming from the HGCM device. */
-        rc = RTThreadCreate(&m_hHGCMThread, hgcmEventThread, this,
-                            0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                            "dndHGCM");
-        if (RT_FAILURE(rc))
-            break;
+    LogRel2(("DnD: Terminating threads done\n"));
 
-        /* Event thread for events coming from the x11 system. */
-        rc = RTThreadCreate(&m_hX11Thread, x11EventThread, this,
-                            0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                            "dndX11");
-    } while (0);
+    xHelpers::destroyInstance();
 
-    /* No clean-up code for now, as we have no good way of testing it and things
-     * should get cleaned up when the user process/X11 client exits. */
-    if (RT_FAILURE(rc))
-        LogRel(("DnD: Failed to start, rc=%Rrc\n", rc));
-
-    return rc;
+    VbglR3Term();
 }
 
 /**
@@ -3188,9 +3259,20 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
     /* This thread has an own DnD context, e.g. an own client ID. */
     VBGLR3GUESTDNDCMDCTX dndCtx;
 
+    /*
+     * Initialize thread.
+     */
     int rc = VbglR3DnDConnect(&dndCtx);
-    /* Note: Can return VINF_PERMISSION_DENIED if HGCM host service is not available. */
-    if (rc != VINF_SUCCESS)
+
+    /* Set stop indicator on failure. */
+    if (RT_FAILURE(rc))
+        ASMAtomicXchgBool(&pThis->m_fSrvStopping, true);
+
+    /* Let the service instance know in any case. */
+    int rc2 = RTThreadUserSignal(hThread);
+    AssertRC(rc2);
+
+    if (RT_FAILURE(rc))
         return rc;
 
     /* Number of invalid messages skipped in a row. */
@@ -3254,6 +3336,16 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
     AssertPtr(pThis);
 
     int rc = VINF_SUCCESS;
+
+    /* Note: Nothing to initialize here (yet). */
+
+    /* Set stop indicator on failure. */
+    if (RT_FAILURE(rc))
+        ASMAtomicXchgBool(&pThis->m_fSrvStopping, true);
+
+    /* Let the service instance know in any case. */
+    int rc2 = RTThreadUserSignal(hThread);
+    AssertRC(rc2);
 
     DnDEvent e;
     do
@@ -3328,25 +3420,37 @@ static const char *getPidFilePath()
     return ".vboxclient-draganddrop.pid";
 }
 
+static int init(struct VBCLSERVICE **ppInterface)
+{
+    struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
+
+    if (pSelf->uMagic != DRAGANDDROPSERVICE_MAGIC)
+        VBClFatalError(("Bad DnD service object!\n"));
+    return pSelf->mDragAndDrop.init();
+}
+
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
     struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
 
     if (pSelf->uMagic != DRAGANDDROPSERVICE_MAGIC)
-        VBClFatalError(("Bad display service object!\n"));
+        VBClFatalError(("Bad DnD service object!\n"));
     return pSelf->mDragAndDrop.run(fDaemonised);
 }
 
 static void cleanup(struct VBCLSERVICE **ppInterface)
 {
-    NOREF(ppInterface);
-    VbglR3Term();
+   struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
+
+    if (pSelf->uMagic != DRAGANDDROPSERVICE_MAGIC)
+        VBClFatalError(("Bad DnD service object!\n"));
+    return pSelf->mDragAndDrop.cleanup();
 }
 
 struct VBCLSERVICE vbclDragAndDropInterface =
 {
     getPidFilePath,
-    VBClServiceDefaultHandler, /* init */
+    init,
     run,
     cleanup
 };
