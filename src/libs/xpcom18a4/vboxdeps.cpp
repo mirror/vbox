@@ -7,6 +7,7 @@
 #include <nsHashSets.h>
 #include <nsIPipe.h>
 #include <xptcall.h>
+#include <nsProxyRelease.h>
 #include "xpcom/proxy/src/nsProxyEventPrivate.h"
 
 uintptr_t deps[] =
@@ -17,6 +18,7 @@ uintptr_t deps[] =
     (uintptr_t)PL_HashString,
     (uintptr_t)PR_DestroyPollableEvent,
     (uintptr_t)NS_NewPipe2,
+    (uintptr_t)NS_ProxyRelease,
     0
 };
 
