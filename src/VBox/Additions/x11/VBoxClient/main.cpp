@@ -269,49 +269,49 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pcszFileName);
-            return 0;
+            return RTEXITCODE_SUCCESS;
         }
         else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--version"))
         {
             RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-            return 0;
+            return RTEXITCODE_SUCCESS;
         }
         else
         {
             RTPrintf("%s: unrecognized option `%s'\n", pcszFileName, argv[i]);
             RTPrintf("Try `%s --help' for more information\n", pcszFileName);
-            return 1;
+            return RTEXITCODE_SYNTAX;
         }
         rc = VINF_SUCCESS;
     }
     if (RT_FAILURE(rc) || !g_pService)
     {
         vboxClientUsage(pcszFileName);
-        return 1;
+        return RTEXITCODE_SYNTAX;
     }
 
     rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
-        VBClFatalError(("Initialising critical section: %Rrc\n", rc));
+        VBClFatalError(("Initialising critical section failed: %Rrc\n", rc));
     if ((*g_pService)->getPidFilePath)
     {
         rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
         if (RT_FAILURE(rc))
-            VBClFatalError(("Getting home directory for pid-file: %Rrc\n", rc));
+            VBClFatalError(("Getting home directory for PID file failed: %Rrc\n", rc));
         rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
                           (*g_pService)->getPidFilePath());
         if (RT_FAILURE(rc))
-            VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
+            VBClFatalError(("Creating PID file path failed: %Rrc\n", rc));
         if (fDaemonise)
             rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &cRespawn);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Daemonizing: %Rrc\n", rc));
+            VBClFatalError(("Daemonizing failed: %Rrc\n", rc));
         if (g_szPidFile[0])
             rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
         if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
-            return 0;
+            return RTEXITCODE_SUCCESS;
         if (RT_FAILURE(rc))
-            VBClFatalError(("Creating pid-file: %Rrc\n", rc));
+            VBClFatalError(("Creating PID file failed: %Rrc\n", rc));
     }
     /* Set signal handlers to clean up on exit. */
     vboxClientSetSignalHandlers();
@@ -324,11 +324,19 @@ int main(int argc, char *argv[])
     XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
 #endif
     rc = (*g_pService)->init(g_pService);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Initialising service: %Rrc\n", rc));
-    rc = (*g_pService)->run(g_pService, fDaemonise);
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Service main loop failed: %Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+    {
+        rc = (*g_pService)->run(g_pService, fDaemonise);
+        if (RT_FAILURE(rc))
+            LogRel2(("Running service failed: %Rrc\n", rc));
+    }
+    else
+    {
+        /** @todo r=andy Should we return an appropriate exit code if the service failed to init?
+         *               Must be tested carefully with our init scripts first. */
+        LogRel2(("Initializing service failed: %Rrc\n", rc));
+    }
     VBClCleanUp();
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
+
