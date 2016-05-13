@@ -30,6 +30,14 @@ endif
 # which get picked up below.
 #
 ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
+$(warning %%%)
+$(warning %%%)
+$(warning %%%)
+$(warning VBOX_DEF_MACOSX_VERSION_MIN=$(VBOX_DEF_MACOSX_VERSION_MIN))
+$(warning VBOX_XCODE_VERSION=$(VBOX_XCODE_VERSION))
+$(warning %%%)
+$(warning %%%)
+$(warning %%%)
  ifndef VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6
   if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.5 10.4)
    VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
