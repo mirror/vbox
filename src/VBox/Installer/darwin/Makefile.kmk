@@ -350,7 +350,7 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/VBoxDD.dylib \
 	MacOS/VBoxDD2.dylib \
 	MacOS/VBoxDDU.dylib \
-	MacOS/VBoxREM.dylib \
+	$(if $(VBOX_WITH_REM),MacOS/VBoxREM.dylib,) \
 	MacOS/VBoxRT.dylib \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),MacOS/VBoxSharedFolders.dylib,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),MacOS/VBoxSharedClipboard.dylib,) \
@@ -416,9 +416,11 @@ ifdef VBOX_WITH_VMSVGA3D
  	MacOS/VBoxSVGA3DObjC.dylib
 endif
 
-VBOX_DI_VBAPP_DYLIBS.x86 := \
-	MacOS/VBoxREM32.dylib \
-	MacOS/VBoxREM64.dylib
+ifdef VBOX_WITH_REM
+ VBOX_DI_VBAPP_DYLIBS.x86 := \
+ 	MacOS/VBoxREM32.dylib \
+ 	MacOS/VBoxREM64.dylib
+endif
 ifdef VBOX_WITH_PYTHON
  VBOX_DI_VBAPP_DYLIBS.x86 += \
  	MacOS/VBoxPython2_5.so \
