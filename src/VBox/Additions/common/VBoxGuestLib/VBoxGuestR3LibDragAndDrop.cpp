@@ -1348,9 +1348,6 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     if (RT_SUCCESS(rc))
     {
         rc = Info.result;
-        if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
-            return VINF_PERMISSION_DENIED; /* HGCM service not available - bail out early. */
-
         if (RT_SUCCESS(rc))
         {
             /* Set the default protocol version to use. */
@@ -1360,6 +1357,9 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
             pCtx->uClientID = Info.u32ClientID;
         }
     }
+
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Get the VM's session ID.
