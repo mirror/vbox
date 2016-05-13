@@ -506,7 +506,7 @@
     }
     void FinalRelease()
     {
-        mEvent->FinalRelease();
+        uninit();
         BaseFinalRelease();
     }
     STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType)

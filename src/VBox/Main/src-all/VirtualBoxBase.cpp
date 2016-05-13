@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,15 +47,119 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-VirtualBoxBase::VirtualBoxBase() : mState(this)
+CLASSFACTORY_STAT g_aClassFactoryStats[CLASSFACTORYSTATS_MAX] =
+{
+    { "--- totals ---", 0 },
+    { NULL, 0 }
+};
+
+RWLockHandle *g_pClassFactoryStatsLock = NULL;
+
+
+VirtualBoxBase::VirtualBoxBase() :
+    mState(this),
+    iFactoryStat(~0U)
 {
     mObjectLock = NULL;
+
+    if (!g_pClassFactoryStatsLock)
+    {
+        RWLockHandle *lock = new RWLockHandle(LOCKCLASS_OBJECTSTATE);
+        if (!ASMAtomicCmpXchgPtr(&g_pClassFactoryStatsLock, lock, NULL))
+            delete lock;
+    }
+    Assert(g_pClassFactoryStatsLock);
 }
 
 VirtualBoxBase::~VirtualBoxBase()
 {
+    Assert(iFactoryStat == ~0U);
     if (mObjectLock)
         delete mObjectLock;
+}
+
+HRESULT VirtualBoxBase::BaseFinalConstruct()
+{
+    Assert(iFactoryStat == ~0U);
+    if (g_pClassFactoryStatsLock)
+    {
+        AutoWriteLock alock(g_pClassFactoryStatsLock COMMA_LOCKVAL_SRC_POS);
+        g_aClassFactoryStats[0].current++;
+        g_aClassFactoryStats[0].overall++;
+        const char *pszName = getComponentName();
+        uint32_t i = 1;
+        while (i < CLASSFACTORYSTATS_MAX && g_aClassFactoryStats[i].psz)
+        {
+            if (g_aClassFactoryStats[i].psz == pszName)
+                break;
+            i++;
+        }
+        if (i < CLASSFACTORYSTATS_MAX)
+        {
+            if (!g_aClassFactoryStats[i].psz)
+            {
+                g_aClassFactoryStats[i].psz = pszName;
+                g_aClassFactoryStats[i].current = 0;
+                g_aClassFactoryStats[i].overall = 0;
+            }
+            iFactoryStat = i;
+            g_aClassFactoryStats[i].current++;
+            g_aClassFactoryStats[i].overall++;
+        }
+        else
+            AssertMsg(i < CLASSFACTORYSTATS_MAX, ("%u exhausts size of factory housekeeping array\n", i));
+    }
+    else
+        Assert(g_pClassFactoryStatsLock);
+
+#ifdef RT_OS_WINDOWS
+    return CoCreateFreeThreadedMarshaler(this, //GetControllingUnknown(),
+                                         m_pUnkMarshaler.asOutParam());
+#else
+    return S_OK;
+#endif
+}
+
+void VirtualBoxBase::BaseFinalRelease()
+{
+    if (g_pClassFactoryStatsLock)
+    {
+        AutoWriteLock alock(g_pClassFactoryStatsLock COMMA_LOCKVAL_SRC_POS);
+        g_aClassFactoryStats[0].current--;
+        const char *pszName = getComponentName();
+        if (iFactoryStat < CLASSFACTORYSTATS_MAX)
+        {
+            if (g_aClassFactoryStats[iFactoryStat].psz == pszName)
+            {
+                g_aClassFactoryStats[iFactoryStat].current--;
+                iFactoryStat = ~0U;
+            }
+            else
+                AssertMsgFailed(("could not find factory housekeeping array entry for %s (index %u contains %s)\n", pszName, iFactoryStat, g_aClassFactoryStats[iFactoryStat].psz));
+        }
+        else
+            AssertMsgFailed(("factory housekeeping array corruption, index %u is too large\n", iFactoryStat));
+    }
+    else
+        Assert(g_pClassFactoryStatsLock);
+
+#ifdef RT_OS_WINDOWS
+     m_pUnkMarshaler.setNull();
+#endif
+}
+
+void APIDumpComponentFactoryStats()
+{
+    if (g_pClassFactoryStatsLock)
+    {
+        AutoReadLock alock(g_pClassFactoryStatsLock COMMA_LOCKVAL_SRC_POS);
+        for (uint32_t i = 0; i < CLASSFACTORYSTATS_MAX && g_aClassFactoryStats[i].psz; i++)
+            LogRel(("CFS: component %-30s current %-10u total %-10u\n",
+                    g_aClassFactoryStats[i].psz, g_aClassFactoryStats[i].current,
+                    g_aClassFactoryStats[i].overall));
+    }
+    else
+        Assert(g_pClassFactoryStatsLock);
 }
 
 /**
