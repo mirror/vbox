@@ -236,6 +236,7 @@ RuntimeWin32ASM_SOURCES = \
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 RuntimeNoCrt_SOURCES = \
 	common/misc/setjmp.asm \
+	common/string/bzero.asm \
 	common/string/memchr.asm \
 	common/string/memcmp.asm \
 	common/string/memcpy.asm \
