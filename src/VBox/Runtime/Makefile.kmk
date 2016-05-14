@@ -2912,6 +2912,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e 's/^[[:digit:]]\+ \+//' \
 			\
 			-e '/^nocrt_/d' \
+			-e '/^bzero/d' \
 			-e '/^memchr/d' \
 			-e '/^memcmp/d' \
 			-e '/^memcpy/d' \
