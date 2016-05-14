@@ -41,8 +41,6 @@ GLOBALNAME _bzero
  %ifdef ASM_CALL64_MSC
         mov     r9, rdi                 ; save rdi in r9
         mov     rdi, rcx
-        cmp     rdx, 32
-        jb      .dobytes
 
         ; todo: alignment?
         mov     rcx, rdx
@@ -50,23 +48,18 @@ GLOBALNAME _bzero
         rep stosq
 
         and     rdx, 7
-.dobytes:
         mov     rcx, rdx
         rep stosb
 
         mov     rdi, r9                 ; restore rdi
 
  %else ; GCC
-        cmp     rsi, 32
-        jb      .dobytes
-
         ; todo: alignment?
         mov     rcx, rsi
         shr     rcx, 3
         rep stosq
 
         and     rsi, 7
-.dobytes:
         mov     rcx, rsi
         rep stosb
 
@@ -77,11 +70,9 @@ GLOBALNAME _bzero
         mov     ebp, esp
         push    edi
 
-        xor     eax, eax
         mov     ecx, [ebp + 0ch]
         mov     edi, [ebp + 08h]
-        cmp     ecx, 12
-        jb      .dobytes
+        xor     eax, eax
 
         mov     edx, ecx
         shr     ecx, 2
@@ -89,7 +80,6 @@ GLOBALNAME _bzero
 
         and     edx, 3
         mov     ecx, edx
-.dobytes:
         rep stosb
 
         pop     edi
