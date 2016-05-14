@@ -295,6 +295,13 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 # exist and which value they should have (usually 1, but anyway).
 #
 
+# Select new Xcode based on host OS X version.
+ifeq ($(KBUILD_HOST),darwin)
+ if !defined(VBOX_WITH_NEW_XCODE) && !defined(VBOX_WITHOUT_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
+  VBOX_WITH_NEW_XCODE = 1
+ endif
+endif
+
 ## @name Additions
 ## @{
 # This indicates that additions (of some kind or another) is being _built_.
