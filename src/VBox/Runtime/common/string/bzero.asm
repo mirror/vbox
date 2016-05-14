@@ -33,7 +33,7 @@ BEGINCODE
 ; @param    cb      gcc: rsi  msc: rdx  x86:[esp+8]
 RT_NOCRT_BEGINPROC bzero
 %ifdef RT_OS_DARWIN
-GLOBALNAME _bzero
+GLOBALNAME __bzero
 %endif
         cld
 %ifdef RT_ARCH_AMD64
