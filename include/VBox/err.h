@@ -2742,6 +2742,8 @@
  *  reachable, audio hardware is not available or similar.  We should use the
  *  NULL audio driver. */
 #define VERR_AUDIO_BACKEND_INIT_FAILED              (-6600)
+/** No free input streams.  */
+#define VERR_AUDIO_NO_FREE_INPUT_STREAMS            (-6601)
 /** @} */
 
 
