@@ -206,9 +206,9 @@ else # VBOX_WITH_QTGUI_V5
    $(PATH_SDK_QT5_LIB)/$(qtmod).framework/Versions/5/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/5/$(qtmod) \
    $(PATH_SDK_QT5_LIB)/$(qtmod).framework/Versions/5/Resources/Info.plist=>Frameworks/$(qtmod).framework/Versions/5/Resources/Info.plist)
   qt5-bin_SOURCES += \
-   $(PATH_SDK_QT5)/plugins/platforms/libqcocoa$(SUFF_DLL)=>PlugIns/platforms/libqcocoa$(SUFF_DLL) \
-   $(PATH_SDK_QT5)/plugins/platforms/libqminimal$(SUFF_DLL)=>PlugIns/platforms/libqminimal$(SUFF_DLL) \
-   $(PATH_SDK_QT5)/plugins/platforms/libqoffscreen$(SUFF_DLL)=>PlugIns/platforms/libqoffscreen$(SUFF_DLL)
+   $(PATH_SDK_QT5)/plugins/platforms/libqcocoa$(SUFF_DLL)=>plugins/platforms/libqcocoa$(SUFF_DLL) \
+   $(PATH_SDK_QT5)/plugins/platforms/libqminimal$(SUFF_DLL)=>plugins/platforms/libqminimal$(SUFF_DLL) \
+   $(PATH_SDK_QT5)/plugins/platforms/libqoffscreen$(SUFF_DLL)=>plugins/platforms/libqoffscreen$(SUFF_DLL)
   qt5-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
    Frameworks/$(qtmod).framework/Versions/Current=>5 \
    Frameworks/$(qtmod).framework/$(qtmod)=>Versions/5/$(qtmod) \

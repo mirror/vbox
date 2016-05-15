@@ -523,11 +523,11 @@ ifndef VBOX_WITH_QTGUI_V5
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/classes.nib \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/info.nib \
 	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/keyedobjects.nib
-else # VBOX_WITH_QTGUI_V5
+else
  VBOX_DI_VBAPP_MISC_FILES += \
-	PlugIns/platforms/libqcocoa$(SUFF_DLL) \
-	PlugIns/platforms/libqminimal$(SUFF_DLL) \
-	PlugIns/platforms/libqoffscreen$(SUFF_DLL)
+	plugins/platforms/libqcocoa$(SUFF_DLL) \
+	plugins/platforms/libqminimal$(SUFF_DLL) \
+	plugins/platforms/libqoffscreen$(SUFF_DLL)
 endif # VBOX_WITH_QTGUI_V5
 VBOX_DI_VBAPP_MISC_FILES += \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
