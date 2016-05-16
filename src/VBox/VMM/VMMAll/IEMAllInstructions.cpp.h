@@ -1694,13 +1694,137 @@ FNIEMOP_DEF(iemOp_mov_Td_Rd)
 
 
 /** Opcode 0x0f 0x28. */
-FNIEMOP_STUB(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd); // NEXT - win2k
+FNIEMOP_DEF(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd)
+{
+    IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movaps r,mr" : "movapd r,mr");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
+        IEM_MC_BEGIN(0, 0);
+        if (!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP))
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        else
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_COPY_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg,
+                              (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ */
+        if (!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP))
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        else
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
+        IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x29. */
-FNIEMOP_STUB(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd); // NEXT - win2k
+FNIEMOP_DEF(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd)
+{
+    IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movaps mr,r" : "movapd mr,r");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
+        IEM_MC_BEGIN(0, 0);
+        if (!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP))
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        else
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB,
+                              ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Memory, register.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ */
+        if (!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP))
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        else
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+
+        IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+        IEM_MC_STORE_MEM_U128_ALIGN_SSE(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x2a. */
 FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd_Vsd_Ey); //NEXT
+
+
 /** Opcode 0x0f 0x2b. */
-FNIEMOP_STUB(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd); //NEXT:XP
+FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
+{
+    IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntps mr,r" : "movntpd mr,r");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ */
+        if (!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP))
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        else
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
+        IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    /* The register, register encoding is invalid. */
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x2c. */
 FNIEMOP_STUB(iemOp_cvttps2pi_Ppi_Wps__cvttpd2pi_Ppi_Wpd__cvttss2si_Gy_Wss__cvttsd2si_Yu_Wsd); //NEXT
 /** Opcode 0x0f 0x2d. */
