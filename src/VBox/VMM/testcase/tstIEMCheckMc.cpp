@@ -327,6 +327,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do {} while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT()           do {} while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() do {} while (0)
+#define IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT()           do {} while (0)
 #define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT()          do {} while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO()              do {} while (0)
 
@@ -485,6 +486,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)           do { (a_pu128Dst) = (uint128_t *)((uintptr_t)0);        CHK_PTYPE(uint128_t *, a_pu128Dst); } while (0)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg)     do { (a_pu128Dst) = (uint128_t const *)((uintptr_t)0);  CHK_PTYPE(uint128_t const *, a_pu128Dst); } while (0)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg)       do { (a_pu64Dst)  = (uint64_t const *)((uintptr_t)0);   CHK_PTYPE(uint64_t const *, a_pu64Dst); } while (0)
+#define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc)       do {  } while (0)
 
 #define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem)                do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM16_U8(a_u8Dst, a_iSeg, a_GCPtrMem16)            do { CHK_TYPE(uint16_t, a_GCPtrMem16); } while (0)
