@@ -18,7 +18,7 @@
 #define LOG_GROUP LOG_GROUP_AUDIO_MIXER_BUFFER
 #include <VBox/log.h>
 
-#if 1
+#ifdef DEBUG_andy
 /*
  * DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
  * to a file on the host. Be sure to adjust DEBUG_DUMP_PCM_DATA_PATH
