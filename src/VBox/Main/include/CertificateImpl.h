@@ -19,7 +19,6 @@
 #define ____H_CERTIFICATEIMPL
 
 /* VBox includes */
-#include <VBox/settings.h>
 #include <iprt/crypto/x509.h>
 #include "CertificateWrap.h"
 
