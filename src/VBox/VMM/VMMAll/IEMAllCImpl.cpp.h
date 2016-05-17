@@ -2524,11 +2524,13 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
     }
 
+    /* Apply cbPop */
+    if (cbPop)
+        iemRegAddToRspEx(pIemCpu, pCtx, &NewRsp, cbPop);
+
     /* Commit it. */
     pCtx->rip = NewRip.u;
     pCtx->rsp = NewRsp.u;
-    if (cbPop)
-        iemRegAddToRsp(pIemCpu, pCtx, cbPop);
     pCtx->eflags.Bits.u1RF = 0;
 
     return VINF_SUCCESS;
