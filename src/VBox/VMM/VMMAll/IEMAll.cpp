@@ -11184,8 +11184,18 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
 DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PIEMCPU pIemCpu, PVMCPU pVCpu, PCPUMCTX pCtx, VBOXSTRICTRC rcStrict)
 {
     if (   !pIemCpu->fInPatchCode
-        && rcStrict == VINF_SUCCESS)
-        CPUMRawEnter(pVCpu);
+        && (   rcStrict == VINF_SUCCESS
+            || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED  /* pgmPoolAccessPfHandlerFlush */
+            || rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED /* ditto */ ) )
+    {
+        if (pCtx->eflags.Bits.u1IF || rcStrict != VINF_SUCCESS)
+            CPUMRawEnter(pVCpu);
+        else
+        {
+            Log(("iemRCRawMaybeReenter: VINF_EM_RESCHEDULE\n"));
+            rcStrict = VINF_EM_RESCHEDULE;
+        }
+    }
     return rcStrict;
 }
 #endif
