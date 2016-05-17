@@ -1878,8 +1878,7 @@ FNIEMOP_STUB(iemOp_getsec);
 FNIEMOP_UD_STUB(iemOp_3byte_Esc_A4); /* Here there be dragons... */
 /** Opcode 0x0f 0x3a. */
 FNIEMOP_UD_STUB(iemOp_3byte_Esc_A5); /* Here there be dragons... */
-/** Opcode 0x0f 0x3c (?). */
-FNIEMOP_STUB(iemOp_movnti_Gv_Ev);
+
 
 /**
  * Implements a conditional move.
@@ -6437,7 +6436,7 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
 FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib__cmppd_Vpd_Wpd_Ib__cmpss_Vss_Wss_Ib__cmpsd_Vsd_Wsd_Ib);
 
 /** Opcode 0x0f 0xc3. */
-FNIEMOP_STUB(iemOp_movnti_My_Gy);
+FNIEMOP_STUB(iemOp_movnti_My_Gy); // solaris 10 uses this in hat_pte_zero().
 
 /** Opcode 0x0f 0xc4. */
 FNIEMOP_STUB(iemOp_pinsrw_Pq_Ry_Mw_Ib__pinsrw_Vdq_Ry_Mw_Ib);
@@ -6891,7 +6890,7 @@ const PFNIEMOP g_apfnTwoByteMap[256] =
     /* 0x39 */  iemOp_Invalid,
     /* 0x3a */  iemOp_3byte_Esc_A5,
     /* 0x3b */  iemOp_Invalid,
-    /* 0x3c */  iemOp_movnti_Gv_Ev/*??*/,
+    /* 0x3c */  iemOp_Invalid,
     /* 0x3d */  iemOp_Invalid,
     /* 0x3e */  iemOp_Invalid,
     /* 0x3f */  iemOp_Invalid,
