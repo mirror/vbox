@@ -855,10 +855,14 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
             SSMR3GetU64(pSSM, &pHvCpu->uSimpMsr);
             SSMR3GetU64(pSSM, &pHvCpu->uSint2Msr);
         }
-    }
 
-    uint8_t bDelim;
-    return SSMR3GetU8(pSSM, &bDelim);
+        uint8_t bDelim;
+        rc = SSMR3GetU8(pSSM, &bDelim);
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
 }
 
 
