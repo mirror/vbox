@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2015 Oracle Corporation
+ * Copyright (C) 2015-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,6 @@ public:
     HRESULT createThread(PRTTHREAD pThread = NULL, RTTHREADTYPE enmType = RTTHREADTYPE_MAIN_WORKER);
     virtual void handler() = 0;
     static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
-    static HRESULT setErrorStatic(HRESULT aResultCode, const Utf8Str &aText);
 
     inline Utf8Str getTaskName() const {return m_strTaskName;};
 

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2015 Oracle Corporation
+ * Copyright (C) 2015-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,10 +25,10 @@
  *  And the function is responsible for deletion of "this"
  *  pointer in all cases.
  *  Possible way of usage:
- * 
+ *
  *  int vrc = VINF_SUCCESS;
  *  HRESULT hr = S_OK;
- * 
+ *
  *  SomeTaskInheritedFromThreadTask* pTask = NULL;
  *  try
  *  {
@@ -40,7 +40,7 @@
  *      }
  *      //this function delete pTask in case of exceptions, so
  *      there is no need the call of delete operator
- * 
+ *
  *      hr = pTask->createThread();
  *  }
  *  catch(...)
@@ -63,7 +63,7 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
 
     if (RT_FAILURE(vrc))
     {
-        delete this; 
+        delete this;
         return E_FAIL;
     }
 
@@ -76,7 +76,6 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
  */
 /* static */ DECLCALLBACK(int) ThreadTask::taskHandler(RTTHREAD /* thread */, void *pvUser)
 {
-    HRESULT rc = S_OK;
     if (pvUser == NULL)
         return VERR_INVALID_POINTER;
 
@@ -89,13 +88,5 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
 
     delete pTask;
 
-    return 0;
+    return VINF_SUCCESS;
 }
-
-/*static*/ HRESULT ThreadTask::setErrorStatic(HRESULT aResultCode,
-                                    const Utf8Str &aText)
-{
-    NOREF(aText);
-    return aResultCode;
-}
-
