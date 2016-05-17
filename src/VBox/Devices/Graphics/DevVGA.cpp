@@ -1396,7 +1396,7 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
         VERIFY_VRAM_WRITE_OFF_RETURN(pThis, addr * 4 + 3);
 
 #if 0
-/* This code does not work reliably and no longer helps performance either. */
+/* This code does not work reliably (@bugref{8123}) and no longer helps performance either. */
 #ifdef IN_RING0
         if (((++pThis->cLatchAccesses) & pThis->uMaskLatchAccess) == pThis->uMaskLatchAccess)
         {
