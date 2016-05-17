@@ -531,14 +531,17 @@ VMMRC_INT_DECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pCtxCore)
             VBOXSTRICTRC rcStrict;
             rcStrict = IEMExecOneBypassWithPrefetchedByPC(pVCpu, pCtxCore, pCtxCore->rip,
                                                           pRec->patch.aPrivInstr, pRec->patch.cbPrivInstr);
-            if (RT_FAILURE(rcStrict))
+            if (RT_SUCCESS(rcStrict))
             {
-                Log(("EMInterpretInstructionCPU failed with %Rrc\n", VBOXSTRICTRC_TODO(rcStrict)));
-                PATM_STAT_FAULT_INC(&pRec->patch);
-                pRec->patch.cTraps++;
-                return VINF_EM_RAW_EMULATE_INSTR;
+                if (rcStrict != VINF_SUCCESS)
+                    Log(("PATMRCHandleInt3PatchTrap: returns %Rrc\n", VBOXSTRICTRC_TODO(rcStrict)));
+                return VBOXSTRICTRC_TODO(rcStrict);
             }
-            return VBOXSTRICTRC_TODO(rcStrict);
+
+            Log(("IEMExecOneBypassWithPrefetchedByPC failed with %Rrc\n", VBOXSTRICTRC_TODO(rcStrict)));
+            PATM_STAT_FAULT_INC(&pRec->patch);
+            pRec->patch.cTraps++;
+            return VINF_EM_RAW_EMULATE_INSTR;
         }
     }
     return VERR_PATCH_NOT_FOUND;
