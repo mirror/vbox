@@ -2279,8 +2279,6 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
 {
     *pResp = 0;
 
-    bool fIsOut;
-
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
         *pResp = pThis->paNodes[CODEC_NID(cmd)].dac.u32F06_param;
     else if (hdaCodecIsAdcNode(pThis, CODEC_NID(cmd)))
