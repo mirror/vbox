@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -948,12 +948,12 @@ HRESULT Appliance::i_searchUniqueDiskImageFilePath(Utf8Str& aName) const
  * progress object with the proper weights and maximum progress values.
  *
  * @param pProgress
- * @param bstrDescription
+ * @param strDescription
  * @param mode
  * @return
  */
 HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
-                                   const Bstr &bstrDescription,
+                                   const Utf8Str &strDescription,
                                    SetUpProgressMode mode)
 {
     HRESULT rc;
@@ -1048,11 +1048,11 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
          m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         bstrDescription.raw(),
+                         Bstr(strDescription).raw(),
                          TRUE /* aCancelable */,
                          cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         bstrDescription.raw(), // CBSTR bstrFirstOperationDescription,
+                         Bstr(strDescription).raw(), // CBSTR bstrFirstOperationDescription,
                          m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
     return rc;
 }

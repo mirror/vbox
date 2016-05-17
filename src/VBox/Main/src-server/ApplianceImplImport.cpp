@@ -468,7 +468,7 @@ HRESULT Appliance::interpret()
             bool fDVD = false;
             if (vsysThis.pelmVBoxMachine)
             {
-                settings::StorageControllersList &llControllers = pNewDesc->m->pConfig->storageMachine.llStorageControllers;
+                settings::StorageControllersList &llControllers = pNewDesc->m->pConfig->hardwareMachine.storage.llStorageControllers;
                 settings::StorageControllersList::iterator it3;
                 for (it3 = llControllers.begin();
                      it3 != llControllers.end();
@@ -2011,7 +2011,7 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
     catch(...)
     {
         delete task;
-        throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+        throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                             tr("Could not create TaskOVF object for importing OVF data into VirtualBox"));
     }
 
@@ -2280,15 +2280,15 @@ HRESULT Appliance::i_verifyManifestFile(ImportStack &stack)
  *
  * @param hdc in: the HardDiskController structure to attach to.
  * @param ulAddressOnParent in: the AddressOnParent parameter from OVF.
- * @param controllerType out: the name of the hard disk controller to attach to (e.g. "IDE Controller").
+ * @param controllerName out: the name of the hard disk controller to attach to (e.g. "IDE Controller").
  * @param lControllerPort out: the channel (controller port) of the controller to attach to.
  * @param lDevice out: the device number to attach to.
  */
 void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
-                                            uint32_t ulAddressOnParent,
-                                            Bstr &controllerType,
-                                            int32_t &lControllerPort,
-                                            int32_t &lDevice)
+                                              uint32_t ulAddressOnParent,
+                                              Utf8Str &controllerName,
+                                              int32_t &lControllerPort,
+                                              int32_t &lDevice)
 {
     Log(("Appliance::i_convertDiskAttachmentValues: hdc.system=%d, hdc.fPrimary=%d, ulAddressOnParent=%d\n",
          hdc.system,
@@ -2303,7 +2303,7 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
             // the device number can be either 0 or 1, to specify the master or the slave device,
             // respectively. For the secondary IDE controller, the device number is always 1 because
             // the master device is reserved for the CD-ROM drive.
-            controllerType = Bstr("IDE Controller");
+            controllerName = "IDE";
             switch (ulAddressOnParent)
             {
                 case 0: // master
@@ -2355,7 +2355,7 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
         break;
 
         case ovf::HardDiskController::SATA:
-            controllerType = Bstr("SATA Controller");
+            controllerName = "SATA";
             lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
         break;
@@ -2363,9 +2363,9 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
         case ovf::HardDiskController::SCSI:
         {
             if(hdc.strControllerType.compare("lsilogicsas")==0)
-                controllerType = Bstr("SAS Controller");
+                controllerName = "SAS";
             else
-                controllerType = Bstr("SCSI Controller");
+                controllerName = "SCSI";
             lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
         }
@@ -2993,7 +2993,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (!vsdeHDCSCSI.empty())
     {
         ComPtr<IStorageController> pController;
-        Bstr bstrName(L"SCSI Controller");
+        Utf8Str strName("SCSI Controller");
         StorageBus_T busType = StorageBus_SCSI;
         StorageControllerType_T controllerType;
         const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVBoxCurrent;
@@ -3002,7 +3002,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         else if (hdcVBox == "LsiLogicSas")
         {
             // OVF treats LsiLogicSas as a SCSI controller but VBox considers it a class of its own
-            bstrName = L"SAS Controller";
+            strName = "SAS Controller";
             busType = StorageBus_SAS;
             controllerType = StorageControllerType_LsiLogicSas;
         }
@@ -3013,7 +3013,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                            tr("Invalid SCSI controller type \"%s\""),
                            hdcVBox.c_str());
 
-        rc = pNewMachine->AddStorageController(bstrName.raw(), busType, pController.asOutParam());
+        rc = pNewMachine->AddStorageController(Bstr(strName).raw(), busType, pController.asOutParam());
         if (FAILED(rc)) throw rc;
         rc = pController->COMSETTER(ControllerType)(controllerType);
         if (FAILED(rc)) throw rc;
@@ -3087,13 +3087,13 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
                 mhda.pMachine = pNewMachine;
-                mhda.controllerType = bstrName;
+                mhda.controllerName = bstrName;
                 mhda.lControllerPort = 0;
                 mhda.lDevice = 0;
 
                 Log(("Attaching floppy\n"));
 
-                rc = sMachine->AttachDevice(mhda.controllerType.raw(),
+                rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),
                                             mhda.lControllerPort,
                                             mhda.lDevice,
                                             DeviceType_Floppy,
@@ -3322,7 +3322,7 @@ l_skipped:
 
                 i_convertDiskAttachmentValues(hdc,
                                               ovfVdisk.ulAddressOnParent,
-                                              mhda.controllerType,        // Bstr
+                                              mhda.controllerName,
                                               mhda.lControllerPort,
                                               mhda.lDevice);
 
@@ -3354,7 +3354,7 @@ l_skipped:
                     if (FAILED(rc))
                         throw rc;
 
-                    rc = sMachine->AttachDevice(mhda.controllerType.raw(),// wstring name
+                    rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
                                                 mhda.lControllerPort,     // long controllerPort
                                                 mhda.lDevice,             // long device
                                                 DeviceType_DVD,           // DeviceType_T type
@@ -3364,7 +3364,7 @@ l_skipped:
                 }
                 else
                 {
-                    rc = sMachine->AttachDevice(mhda.controllerType.raw(),// wstring name
+                    rc = sMachine->AttachDevice(Bstr(mhda.controllerName).raw(),// name
                                                 mhda.lControllerPort,     // long controllerPort
                                                 mhda.lDevice,             // long device
                                                 DeviceType_HardDisk,      // DeviceType_T type
@@ -3578,7 +3578,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
      * attachment. Old VirtualBox versions (prior to 3.2.10) had all disk
      * attachments pointing to the last hard disk image, which causes import
      * failures. A long fixed bug, however the OVF files are long lived. */
-    settings::StorageControllersList &llControllers = config.storageMachine.llStorageControllers;
+    settings::StorageControllersList &llControllers = config.hardwareMachine.storage.llStorageControllers;
     Guid hdUuid;
     uint32_t cDisks = 0;
     bool fInconsistent = false;
@@ -3791,8 +3791,8 @@ l_skipped:
         Utf8Str strUuid;
 
         // for each storage controller...
-        for (settings::StorageControllersList::iterator sit = config.storageMachine.llStorageControllers.begin();
-             sit != config.storageMachine.llStorageControllers.end();
+        for (settings::StorageControllersList::iterator sit = config.hardwareMachine.storage.llStorageControllers.begin();
+             sit != config.hardwareMachine.storage.llStorageControllers.end();
              ++sit)
         {
             settings::StorageController &sc = *sit;
@@ -3909,7 +3909,7 @@ l_skipped:
                 fFound = true;
                 break;
             } // for (settings::AttachedDevicesList::const_iterator dit = sc.llAttachedDevices.begin();
-        } // for (settings::StorageControllersList::const_iterator sit = config.storageMachine.llStorageControllers.begin();
+        } // for (settings::StorageControllersList::const_iterator sit = config.hardwareMachine.storage.llStorageControllers.begin();
 
             // no disk with such a UUID found:
         if (!fFound)
@@ -4092,7 +4092,7 @@ HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::Ma
 {
     HRESULT rc = S_OK;
 
-    settings::StorageControllersList &llControllers = config->storageMachine.llStorageControllers;
+    settings::StorageControllersList &llControllers = config->hardwareMachine.storage.llStorageControllers;
     settings::StorageControllersList::iterator itscl;
     for (itscl = llControllers.begin();
          itscl != llControllers.end();

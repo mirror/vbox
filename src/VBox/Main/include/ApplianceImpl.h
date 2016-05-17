@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,6 @@
 #define ____H_APPLIANCEIMPL
 
 /* VBox includes */
-#include <VBox/settings.h>
 #include "VirtualSystemDescriptionWrap.h"
 #include "ApplianceWrap.h"
 #include "MediumFormatImpl.h"
@@ -128,7 +127,7 @@ private:
     HRESULT i_searchUniqueVMName(Utf8Str& aName) const;
     HRESULT i_searchUniqueDiskImageFilePath(Utf8Str& aName) const;
     HRESULT i_setUpProgress(ComObjPtr<Progress> &pProgress,
-                            const Bstr &bstrDescription,
+                            const Utf8Str &strDescription,
                             SetUpProgressMode mode);
     void i_waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void i_addWarning(const char* aWarning, ...);
@@ -178,7 +177,7 @@ private:
 
     void i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                        uint32_t ulAddressOnParent,
-                                       Bstr &controllerType,
+                                       Utf8Str &controllerType,
                                        int32_t &lControllerPort,
                                        int32_t &lDevice);
 
