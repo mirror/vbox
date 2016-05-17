@@ -757,9 +757,6 @@ HRESULT Snapshot::i_saveSnapshotImplOne(settings::Snapshot &data) const
     HRESULT rc = m->pMachine->i_saveHardware(data.hardware, &data.debugging, &data.autostart);
     if (FAILED(rc)) return rc;
 
-    rc = m->pMachine->i_saveStorageControllers(data.storage);
-    if (FAILED(rc)) return rc;
-
     return S_OK;
 }
 
@@ -785,7 +782,7 @@ HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data) const
         // stack footprint, avoiding local settings objects on the stack which
         // need a lot of stack space. There can be VMs with deeply nested
         // snapshots. The stack can be quite small, especially with XPCOM.
-        llSettingsChildren.push_back(settings::g_SnapshotEmpty);
+        llSettingsChildren.push_back(settings::Snapshot::Empty);
         Snapshot *pSnap = *it;
         rc = pSnap->i_saveSnapshotImpl(llSettingsChildren.back());
         if (FAILED(rc))
@@ -1125,7 +1122,6 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
                                           const settings::Hardware &hardware,
                                           const settings::Debugging *pDbg,
                                           const settings::Autostart *pAutostart,
-                                          const settings::Storage &storage,
                                           IN_GUID aSnapshotId,
                                           const Utf8Str &aStateFilePath)
 {
@@ -1202,13 +1198,8 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this);
 
-    /* load hardware and harddisk settings */
-
-    HRESULT rc = i_loadHardware(hardware, pDbg, pAutostart);
-    if (SUCCEEDED(rc))
-        rc = i_loadStorageControllers(storage,
-                                      NULL, /* puuidRegistry */
-                                      &mSnapshotId);
+    /* load hardware and storage settings */
+    HRESULT rc = i_loadHardware(NULL, &mSnapshotId, hardware, pDbg, pAutostart);
 
     if (SUCCEEDED(rc))
         /* commit all changes made during the initialization */

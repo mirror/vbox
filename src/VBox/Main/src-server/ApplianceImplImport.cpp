@@ -468,7 +468,7 @@ HRESULT Appliance::interpret()
             bool fDVD = false;
             if (vsysThis.pelmVBoxMachine)
             {
-                settings::StorageControllersList &llControllers = pNewDesc->m->pConfig->storageMachine.llStorageControllers;
+                settings::StorageControllersList &llControllers = pNewDesc->m->pConfig->hardwareMachine.storage.llStorageControllers;
                 settings::StorageControllersList::iterator it3;
                 for (it3 = llControllers.begin();
                      it3 != llControllers.end();
@@ -3578,7 +3578,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
      * attachment. Old VirtualBox versions (prior to 3.2.10) had all disk
      * attachments pointing to the last hard disk image, which causes import
      * failures. A long fixed bug, however the OVF files are long lived. */
-    settings::StorageControllersList &llControllers = config.storageMachine.llStorageControllers;
+    settings::StorageControllersList &llControllers = config.hardwareMachine.storage.llStorageControllers;
     Guid hdUuid;
     uint32_t cDisks = 0;
     bool fInconsistent = false;
@@ -3791,8 +3791,8 @@ l_skipped:
         Utf8Str strUuid;
 
         // for each storage controller...
-        for (settings::StorageControllersList::iterator sit = config.storageMachine.llStorageControllers.begin();
-             sit != config.storageMachine.llStorageControllers.end();
+        for (settings::StorageControllersList::iterator sit = config.hardwareMachine.storage.llStorageControllers.begin();
+             sit != config.hardwareMachine.storage.llStorageControllers.end();
              ++sit)
         {
             settings::StorageController &sc = *sit;
@@ -3909,7 +3909,7 @@ l_skipped:
                 fFound = true;
                 break;
             } // for (settings::AttachedDevicesList::const_iterator dit = sc.llAttachedDevices.begin();
-        } // for (settings::StorageControllersList::const_iterator sit = config.storageMachine.llStorageControllers.begin();
+        } // for (settings::StorageControllersList::const_iterator sit = config.hardwareMachine.storage.llStorageControllers.begin();
 
             // no disk with such a UUID found:
         if (!fFound)
@@ -4092,7 +4092,7 @@ HRESULT Appliance::ImportStack::restoreOriginalUUIDOfAttachedDevice(settings::Ma
 {
     HRESULT rc = S_OK;
 
-    settings::StorageControllersList &llControllers = config->storageMachine.llStorageControllers;
+    settings::StorageControllersList &llControllers = config->hardwareMachine.storage.llStorageControllers;
     settings::StorageControllersList::iterator itscl;
     for (itscl = llControllers.begin();
          itscl != llControllers.end();

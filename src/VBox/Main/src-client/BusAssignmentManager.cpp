@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,9 +23,6 @@
 
 #include <VBox/vmm/cfgm.h>
 #include <VBox/com/array.h>
-
-
-#include "PCIDeviceAttachmentImpl.h"
 
 #include <map>
 #include <vector>
@@ -252,10 +249,10 @@ struct BusAssignmentManager::State
         }
     };
 
-    typedef std::map <PCIBusAddress,PCIDeviceRecord > PCIMap;
+    typedef std::map<PCIBusAddress,PCIDeviceRecord>   PCIMap;
     typedef std::vector<PCIBusAddress>                PCIAddrList;
-    typedef std::vector<const DeviceAssignmentRule*>  PCIRulesList;
-    typedef std::map <PCIDeviceRecord,PCIAddrList >   ReversePCIMap;
+    typedef std::vector<const DeviceAssignmentRule *> PCIRulesList;
+    typedef std::map<PCIDeviceRecord,PCIAddrList>     ReversePCIMap;
 
     volatile int32_t cRefCnt;
     ChipsetType_T    mChipsetType;
@@ -277,7 +274,7 @@ struct BusAssignmentManager::State
 
     const char* findAlias(const char* pszName);
     void addMatchingRules(const char* pszName, PCIRulesList& aList);
-    void listAttachedPCIDevices(std::vector<ComPtr<IPCIDeviceAttachment> > &aAttached);
+    void listAttachedPCIDevices(std::vector<PCIDeviceInfo> &aAttached);
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
@@ -403,20 +400,18 @@ bool BusAssignmentManager::State::checkAvailable(PCIBusAddress& Address)
     return (it == mPCIMap.end());
 }
 
-void BusAssignmentManager::State::listAttachedPCIDevices(std::vector<ComPtr<IPCIDeviceAttachment> > &aAttached)
+void BusAssignmentManager::State::listAttachedPCIDevices(std::vector<PCIDeviceInfo> &aAttached)
 {
     aAttached.resize(mPCIMap.size());
 
     size_t i = 0;
-    ComObjPtr<PCIDeviceAttachment> dev;
+    PCIDeviceInfo dev;
     for (PCIMap::const_iterator it = mPCIMap.begin(); it !=  mPCIMap.end(); ++it, ++i)
     {
-        dev.createObject();
-        com::Bstr devname(it->second.szDevName);
-        dev->init(NULL, devname,
-                  it->second.HostAddress.valid() ? it->second.HostAddress.asLong() : -1,
-                  it->first.asLong(), it->second.HostAddress.valid());
-        dev.queryInterfaceTo(aAttached[i].asOutParam());
+        dev.strDeviceName = it->second.szDevName;
+        dev.guestAddress = it->first;
+        dev.hostAddress = it->second.HostAddress;
+        aAttached[i] = dev;
     }
 }
 
@@ -513,7 +508,7 @@ bool BusAssignmentManager::findPCIAddress(const char* pszDevName, int iInstance,
 {
     return pState->findPCIAddress(pszDevName, iInstance, Address);
 }
-void BusAssignmentManager::listAttachedPCIDevices(std::vector<ComPtr<IPCIDeviceAttachment> > &aAttached)
+void BusAssignmentManager::listAttachedPCIDevices(std::vector<PCIDeviceInfo> &aAttached)
 {
     pState->listAttachedPCIDevices(aAttached);
 }

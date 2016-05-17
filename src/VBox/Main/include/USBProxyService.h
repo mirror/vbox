@@ -21,13 +21,20 @@
 
 #include <VBox/usb.h>
 #include <VBox/usbfilter.h>
-#include <VBox/settings.h>
 
 #include "VirtualBoxBase.h"
 #include "VirtualBoxImpl.h"
 #include "HostUSBDeviceImpl.h"
 #include "USBProxyBackend.h"
+
 class Host;
+
+namespace settings
+{
+    struct USBDeviceSource;
+    typedef std::list<USBDeviceSource> USBDeviceSourcesList;
+}
+
 
 /**
  * Base class for the USB Proxy service.

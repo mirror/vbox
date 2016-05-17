@@ -66,7 +66,6 @@
 #include <iprt/cpp/xml.h>               /* xml::XmlFileWriter::s_psz*Suff. */
 #include <iprt/sha.h>
 #include <iprt/string.h>
-#include <iprt/base64.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/list.h>
@@ -2035,8 +2034,7 @@ HRESULT Machine::getVRAMSize(ULONG *aVRAMSize)
 HRESULT Machine::setVRAMSize(ULONG aVRAMSize)
 {
     /* check VRAM limits */
-    if (aVRAMSize < SchemaDefs::MinGuestVRAM ||
-        aVRAMSize > SchemaDefs::MaxGuestVRAM)
+    if (aVRAMSize > SchemaDefs::MaxGuestVRAM)
         return setError(E_INVALIDARG,
                         tr("Invalid VRAM size: %lu MB (must be in range [%lu, %lu] MB)"),
                         aVRAMSize, SchemaDefs::MinGuestVRAM, SchemaDefs::MaxGuestVRAM);
@@ -7049,10 +7047,10 @@ HRESULT Machine::setDefaultFrontend(const com::Utf8Str &aDefaultFrontend)
 HRESULT Machine::getIcon(std::vector<BYTE> &aIcon)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    size_t cbIcon = mUserData->mIcon.size();
+    size_t cbIcon = mUserData->s.ovIcon.size();
     aIcon.resize(cbIcon);
     if (cbIcon)
-        memcpy(&aIcon.front(), &mUserData->mIcon[0], cbIcon);
+        memcpy(&aIcon.front(), &mUserData->s.ovIcon[0], cbIcon);
     return S_OK;
 }
 
@@ -7065,9 +7063,9 @@ HRESULT Machine::setIcon(const std::vector<BYTE> &aIcon)
         i_setModified(IsModified_MachineData);
         mUserData.backup();
         size_t cbIcon = aIcon.size();
-        mUserData->mIcon.resize(cbIcon);
+        mUserData->s.ovIcon.resize(cbIcon);
         if (cbIcon)
-            memcpy(&mUserData->mIcon[0], &aIcon.front(), cbIcon);
+            memcpy(&mUserData->s.ovIcon[0], &aIcon.front(), cbIcon);
     }
     return hrc;
 }
@@ -8630,28 +8628,6 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     // copy name, description, OS type, teleporter, UTC etc.
     mUserData->s = config.machineUserData;
 
-    // Decode the Icon overide data from config userdata and set onto Machine.
-    #define DECODE_STR_MAX _1M
-    const char* pszStr = config.machineUserData.ovIcon.c_str();
-    ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
-    if (cbOut > DECODE_STR_MAX)
-        return setError(E_FAIL,
-                        tr("Icon Data too long.'%d' > '%d'"),
-                        cbOut,
-                        DECODE_STR_MAX);
-    mUserData->mIcon.resize(cbOut);
-    int vrc = VINF_SUCCESS;
-    if (cbOut)
-        vrc = RTBase64Decode(pszStr, &mUserData->mIcon.front(), cbOut, NULL, NULL);
-    if (RT_FAILURE(vrc))
-    {
-        mUserData->mIcon.resize(0);
-        return setError(E_FAIL,
-                        tr("Failure to Decode Icon Data. '%s' (%Rrc)"),
-                        pszStr,
-                        vrc);
-    }
-
     // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
     HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
@@ -8664,7 +8640,7 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     else
     {
         Utf8Str stateFilePathFull(config.strStateFile);
-        vrc = i_calculateFullPath(stateFilePathFull, stateFilePathFull);
+        int vrc = i_calculateFullPath(stateFilePathFull, stateFilePathFull);
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
                             tr("Invalid saved state file path '%s' (%Rrc)"),
@@ -8722,13 +8698,7 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     }
 
     // hardware data
-    rc = i_loadHardware(config.hardwareMachine, &config.debugging, &config.autostart);
-    if (FAILED(rc)) return rc;
-
-    // load storage controllers
-    rc = i_loadStorageControllers(config.storageMachine,
-                                  puuidRegistry,
-                                  NULL /* puuidSnapshot */);
+    rc = i_loadHardware(puuidRegistry, NULL, config.hardwareMachine, &config.debugging, &config.autostart);
     if (FAILED(rc)) return rc;
 
     /*
@@ -8794,7 +8764,6 @@ HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
                                             data.hardware,
                                             &data.debugging,
                                             &data.autostart,
-                                            data.storage,
                                             data.uuid.ref(),
                                             strStateFile);
     if (FAILED(rc)) return rc;
@@ -8845,7 +8814,10 @@ HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
  *  @param pDbg           Pointer to the debugging settings.
  *  @param pAutostart     Pointer to the autostart settings.
  */
-HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg,
+HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
+                                const Guid *puuidSnapshot,
+                                const settings::Hardware &data,
+                                const settings::Debugging *pDbg,
                                 const settings::Autostart *pAutostart)
 {
     AssertReturn(!i_isSessionMachine(), E_FAIL);
@@ -9049,6 +9021,12 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
 
         /* AudioAdapter */
         rc = mAudioAdapter->i_loadSettings(data.audioAdapter);
+        if (FAILED(rc)) return rc;
+
+        /* storage controllers */
+        rc = i_loadStorageControllers(data.storage,
+                                      puuidRegistry,
+                                      puuidSnapshot);
         if (FAILED(rc)) return rc;
 
         /* Shared folders */
@@ -10048,26 +10026,6 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
     // copy name, description, OS type, teleport, UTC etc.
     config.machineUserData = mUserData->s;
 
-    // Encode the Icon Override data from Machine and store on config userdata.
-    std::vector<BYTE> iconByte;
-    getIcon(iconByte);
-    ssize_t cbData = iconByte.size();
-    if (cbData > 0)
-    {
-        ssize_t cchOut = RTBase64EncodedLength(cbData);
-        Utf8Str strIconData;
-        strIconData.reserve(cchOut+1);
-        int vrc = RTBase64Encode(&iconByte.front(), cbData,
-                                 strIconData.mutableRaw(), strIconData.capacity(),
-                                 NULL);
-        if (RT_FAILURE(vrc))
-            throw setError(E_FAIL, tr("Failure to Encode Icon Data. '%s' (%Rrc)"), strIconData.mutableRaw(), vrc);
-        strIconData.jolt();
-        config.machineUserData.ovIcon = strIconData;
-    }
-    else
-        config.machineUserData.ovIcon.setNull();
-
     if (    mData->mMachineState == MachineState_Saved
          || mData->mMachineState == MachineState_Restoring
             // when doing certain snapshot operations we may or may not have
@@ -10099,9 +10057,6 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
     HRESULT rc = i_saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
-    if (FAILED(rc)) throw rc;
-
-    rc = i_saveStorageControllers(config.storageMachine);
     if (FAILED(rc)) throw rc;
 
     // save machine's media registry if this is VirtualBox 4.0 or later
@@ -10140,7 +10095,7 @@ HRESULT Machine::i_saveAllSnapshots(settings::MachineConfigFile &config)
         if (mData->mFirstSnapshot)
         {
             // the settings use a list for "the first snapshot"
-            config.llFirstSnapshot.push_back(settings::g_SnapshotEmpty);
+            config.llFirstSnapshot.push_back(settings::Snapshot::Empty);
 
             // get reference to the snapshot on the list and work on that
             // element straight in the list to avoid excessive copying later
@@ -10359,6 +10314,9 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         /* Audio adapter */
         rc = mAudioAdapter->i_saveSettings(data.audioAdapter);
+        if (FAILED(rc)) return rc;
+
+        rc = i_saveStorageControllers(data.storage);
         if (FAILED(rc)) return rc;
 
         /* Shared folders */

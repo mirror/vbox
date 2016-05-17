@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,15 +20,17 @@
 #ifndef ____H_VRDPSERVER
 #define ____H_VRDPSERVER
 
-#include <VBox/settings.h>
 #include "VRDEServerWrap.h"
+
+namespace settings
+{
+    struct VRDESettings;
+}
 
 class ATL_NO_VTABLE VRDEServer :
     public VRDEServerWrap
 {
 public:
-
-    typedef std::map<com::Utf8Str, com::Utf8Str> StringsMap;
 
     DECLARE_EMPTY_CTOR_DTOR(VRDEServer)
 
@@ -73,22 +75,10 @@ private:
     HRESULT getVRDEProperty(const com::Utf8Str &aKey,
                             com::Utf8Str &aValue);
 
-    struct Data
-    {
-        BOOL         mEnabled;
-        com::Utf8Str mAuthLibrary;
-        AuthType_T   mAuthType;
-        ULONG        mAuthTimeout;
-        BOOL         mAllowMultiConnection;
-        BOOL         mReuseSingleConnection;
-        Utf8Str      mVrdeExtPack;
-        StringsMap   mProperties;
-    };
-
     Machine * const     mParent;
     const ComObjPtr<VRDEServer> mPeer;
 
-    Backupable<Data>    mData;
+    Backupable<settings::VRDESettings> mData;
 };
 
 #endif // ____H_VRDPSERVER

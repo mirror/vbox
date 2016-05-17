@@ -672,7 +672,7 @@ void MachineCloneVMPrivate::updateSnapshotStorageLists(settings::SnapshotsList &
            it != sl.end();
          ++it)
     {
-        updateStorageLists(it->storage.llStorageControllers, bstrOldId, bstrNewId);
+        updateStorageLists(it->hardware.storage.llStorageControllers, bstrOldId, bstrNewId);
         if (!it->llChildSnapshots.empty())
             updateSnapshotStorageLists(it->llChildSnapshots, bstrOldId, bstrNewId);
     }
@@ -1020,10 +1020,7 @@ HRESULT MachineCloneVM::run()
         if (d->mode == CloneMode_MachineState)
         {
             if (sn.uuid.isValid() && !sn.uuid.isZero())
-            {
                 trgMCF.hardwareMachine = sn.hardware;
-                trgMCF.storageMachine  = sn.storage;
-            }
 
             /* Remove any hint on snapshots. */
             trgMCF.llFirstSnapshot.clear();
@@ -1037,7 +1034,6 @@ HRESULT MachineCloneVM::run()
             {
                 /* Copy the snapshot data to the current machine. */
                 trgMCF.hardwareMachine = sn.hardware;
-                trgMCF.storageMachine  = sn.storage;
 
                 /* Current state is under root snapshot. */
                 trgMCF.uuidCurrentSnapshot = sn.uuid;
@@ -1349,7 +1345,7 @@ HRESULT MachineCloneVM::run()
                 if (FAILED(rc)) throw rc;
             }
             /* update 'Current State' configuration */
-            d->updateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
+            d->updateStorageLists(trgMCF.hardwareMachine.storage.llStorageControllers, bstrSrcId, bstrTrgId);
         }
         /* Make sure all disks know of the new machine uuid. We do this last to
          * be able to change the medium type above. */

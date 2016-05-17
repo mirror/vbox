@@ -28,6 +28,7 @@ namespace settings
 {
     struct NATNetwork;
     struct NATRule;
+    typedef std::map<com::Utf8Str, NATRule> NATRulesMap;
 }
 
 #ifdef RT_OS_WINDOWS

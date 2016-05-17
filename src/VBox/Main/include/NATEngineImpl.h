@@ -20,8 +20,6 @@
 #ifndef ____H_NATENGINE
 #define ____H_NATENGINE
 
-
-#include <VBox/settings.h>
 #include "NATEngineWrap.h"
 
 namespace settings

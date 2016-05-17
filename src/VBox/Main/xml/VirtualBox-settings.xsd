@@ -19,16 +19,16 @@
 
 <xsd:schema
   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns="http://www.innotek.de/VirtualBox-settings"
-  xmlns:vb="http://www.innotek.de/VirtualBox-settings"
-  targetNamespace="http://www.innotek.de/VirtualBox-settings"
+  xmlns="http://www.virtualbox.org/"
+  xmlns:vb="http://www.virtualbox.org/"
+  targetNamespace="http://www.virtualbox.org/"
   elementFormDefault="qualified"
 >
 
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
     Oracle VM VirtualBox Settings Schema (common definitions).
-    Copyright (c) 2004-2013 Oracle Corporation
+    Copyright (c) 2004-2016 Oracle Corporation
   </xsd:documentation>
 </xsd:annotation>
 
@@ -250,12 +250,75 @@
 /////////////////////////////////////////////////////////////////////////
 -->
 <xsd:complexType name="TDHCPServer">
+  <xsd:sequence>
+    <xsd:element name="Options" minOccurs="0">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element name="Option" type="TDHCPOption" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:sequence>
   <xsd:attribute name="networkName" type="xsd:string"  use="required"/>
   <xsd:attribute name="lowerIP"     type="xsd:string"  use="required"/>
   <xsd:attribute name="upperIP"     type="xsd:string"  use="required"/>
   <xsd:attribute name="IPAddress"   type="xsd:string"  use="required"/>
   <xsd:attribute name="networkMask" type="xsd:string"  use="required"/>
   <xsd:attribute name="enabled"     type="xsd:boolean" use="required"/>
+</xsd:complexType>
+
+<xsd:complexType name="TDHCPOption">
+  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="value" type="xsd:string" use="required"/>
+  <xsd:attribute name="encoding" type="xsd:integer" default="0"/>
+</xsd:complexType>
+
+<xsd:complexType name="TNATNetwork">
+  <xsd:sequence>
+    <xsd:element name="PortForwarding4" minOccurs="0">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element name="Forwarding" type="TNATPortForwarding" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="PortForwarding6" minOccurs="0">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element name="Forwarding" type="TNATPortForwarding" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="Mappings" minOccurs="0">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element name="Loopback4" type="TNATLoopback4" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:sequence>
+  <xsd:attribute name="networkName" type="xsd:string"  use="required"/>
+  <xsd:attribute name="enabled"     type="xsd:boolean" use="required"/>
+  <xsd:attribute name="network"     type="xsd:string"  use="required"/>
+  <xsd:attribute name="ipv6"        type="xsd:boolean" use="required"/>
+  <xsd:attribute name="ipv6prefix"  type="xsd:string"  use="required"/>
+  <xsd:attribute name="advertiseDefaultIPv6Route" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="needDhcp"    type="xsd:boolean" use="required"/>
+  <xsd:attribute name="loopback6"   type="xsd:integer" default="0"/>
+</xsd:complexType>
+
+<xsd:complexType name="TNATLoopback4">
+  <xsd:attribute name="address" type="xsd:string" use="required"/>
+  <xsd:attribute name="offset" type="xsd:integer" use="required"/>
+</xsd:complexType>
+
+<xsd:complexType name="TNATPortForwarding">
+  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="proto" type="xsd:integer" use="required"/>
+  <xsd:attribute name="hostip" type="xsd:string" default=""/>
+  <xsd:attribute name="hostport" type="xsd:integer" use="required"/>
+  <xsd:attribute name="guestip" type="xsd:string" use="required"/>
+  <xsd:attribute name="guestport" type="xsd:integer" use="required"/>
 </xsd:complexType>
 
 <xsd:complexType name="TProperty">
@@ -399,14 +462,21 @@
         </xsd:sequence>
       </xsd:complexType>
     </xsd:element>
-    <xsd:element name="MediaRegistry" type="TMediaRegistry"/>
-    <xsd:element name="NetserviceRegistry" minOccurs="0" maxOccurs="1">
+    <xsd:element name="MediaRegistry" type="TMediaRegistry" minOccurs="0"/>
+    <xsd:element name="NetserviceRegistry" minOccurs="0">
       <xsd:complexType>
         <xsd:all>
           <xsd:element name="DHCPServers" minOccurs="0">
             <xsd:complexType>
               <xsd:sequence>
                 <xsd:element name="DHCPServer" type="TDHCPServer" minOccurs="0" maxOccurs="unbounded"/>
+              </xsd:sequence>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="NATNetworks" minOccurs="0">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="NATNetwork" type="TNATNetwork" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>
@@ -526,10 +596,10 @@
 </xsd:complexType>
 
 <xsd:complexType name="TDisplay">
-  <xsd:attribute name="VRAMSize" use="required">
+  <xsd:attribute name="VRAMSize" default="8">
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
-        <xsd:minInclusive value="1"/>
+        <xsd:minInclusive value="0"/>
         <xsd:maxInclusive value="256"/>
       </xsd:restriction>
     </xsd:simpleType>
@@ -601,7 +671,7 @@
 
 <xsd:complexType name="TBIOS">
   <xsd:all>
-    <xsd:element name="ACPI">
+    <xsd:element name="ACPI" minOccurs="0">
       <xsd:complexType>
         <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
       </xsd:complexType>
@@ -794,7 +864,7 @@
 
 
 <xsd:complexType name="TAudioAdapter">
-  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
   <xsd:attribute name="controller" default="AC97">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
@@ -918,9 +988,9 @@
 <xsd:complexType name="TNetworkAdapter">
   <xsd:complexContent>
     <xsd:extension base="TNetworkConfig">
-      <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C970A"/>
+      <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C973"/>
       <xsd:attribute name="slot" type="xsd:unsignedInt" use="required"/>
-      <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+      <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
       <xsd:attribute name="MACAddress">
         <xsd:simpleType>
           <xsd:restriction base="xsd:hexBinary">
@@ -928,7 +998,7 @@
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>
-      <xsd:attribute name="cable" type="xsd:boolean" use="required"/>
+      <xsd:attribute name="cable" type="xsd:boolean" default="true"/>
       <xsd:attribute name="speed" type="xsd:unsignedInt" default="1000000"/>
       <xsd:attribute name="bootPriority" type="xsd:unsignedInt"/>
       <xsd:attribute name="trace" type="xsd:boolean" default="false"/>
@@ -1252,23 +1322,23 @@
     <xsd:element name="HPET" type="THPET" minOccurs="0"/>
     <xsd:element name="Chipset" type="TChipset" minOccurs="0"/>
     <xsd:element name="Paravirt" type="TParavirt" minOccurs="0"/>
-    <xsd:element name="Boot" type="TBoot">
+    <xsd:element name="Boot" type="TBoot" minOccurs="0">
       <xsd:unique name="THardware-Boot-Order">
         <xsd:selector xpath="vb:Order"/>
         <xsd:field xpath="@position"/>
       </xsd:unique>
     </xsd:element>
-    <xsd:element name="Display" type="TDisplay"/>
+    <xsd:element name="Display" type="TDisplay" minOccurs="0"/>
     <xsd:element name="VideoRecording" type="TVideoRecording" minOccurs="0"/>
     <xsd:element name="VideoCapture" type="TVideoCapture" minOccurs="0"/>
     <xsd:element name="RemoteDisplay" type="TRemoteDisplay" minOccurs="0"/>
-    <xsd:element name="BIOS" type="TBIOS"/>
+    <xsd:element name="BIOS" type="TBIOS" minOccurs="0"/>
     <xsd:element name="DVDDrive" type="TDVDDrive" minOccurs="0"/>
     <xsd:element name="FloppyDrive" type="TFloppyDrive" minOccurs="0"/>
     <xsd:element name="USBController" type="TUSBController" minOccurs="0"/>
     <xsd:element name="USB" type="TUSB" minOccurs="0"/>
     <xsd:element name="SATAController" type="TSATAController" minOccurs="0"/> <!-- deprecated -->
-    <xsd:element name="Network" type="TNetwork">
+    <xsd:element name="Network" type="TNetwork" minOccurs="0">
       <xsd:unique name="THardware-Network-Adapter">
         <xsd:selector xpath="vb:Adapter"/>
         <xsd:field xpath="@slot"/>
@@ -1298,26 +1368,27 @@
         <xsd:field xpath="@slot"/>
       </xsd:unique>
     </xsd:element>
-    <xsd:element name="AudioAdapter" type="TAudioAdapter"/>
+    <xsd:element name="AudioAdapter" type="TAudioAdapter" minOccurs="0"/>
     <xsd:element name="RTC" type="TRTC" minOccurs="0"/>
-    <xsd:element name="SharedFolders" type="TSharedFolders">
+    <xsd:element name="SharedFolders" type="TSharedFolders" minOccurs="0">
       <xsd:unique name="THardware-SharedFolders-SharedFolder">
         <xsd:selector xpath="vb:SharedFolder"/>
         <xsd:field xpath="@name"/>
       </xsd:unique>
     </xsd:element>
-    <xsd:element name="Clipboard" type="TClipboard"/>
+    <xsd:element name="Clipboard" type="TClipboard" minOccurs="0"/>
     <xsd:element name="DragAndDrop" type="TDragAndDrop" minOccurs="0"/>
     <xsd:element name="IO" type="TIO" minOccurs="0"/>
     <xsd:element name="HostPci" type="THostPci" minOccurs="0"/>
     <xsd:element name="EmulatedUSB" type="TEmulatedUSB" minOccurs="0"/>
-    <xsd:element name="Guest" type="TGuest"/>
+    <xsd:element name="Guest" type="TGuest" minOccurs="0"/>
     <xsd:element name="GuestProperties" type="TGuestProperties" minOccurs="0">
       <xsd:unique name="THardware-GuestProperties-GuestProperty">
         <xsd:selector xpath="vb:GuestProperty"/>
         <xsd:field xpath="@name"/>
       </xsd:unique>
     </xsd:element>
+    <xsd:element name="StorageControllers" type="TStorageControllers" minOccurs="0"/>
   </xsd:all>
   <xsd:attribute name="version" type="xsd:string" default="2"/>
 </xsd:complexType>
@@ -1362,7 +1433,7 @@
   <xsd:all>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
-    <xsd:element name="StorageControllers" type="TStorageControllers"/>
+    <xsd:element name="StorageControllers" type="TStorageControllers" minOccurs="0"/>
     <xsd:element name="Snapshots" minOccurs="0">
       <xsd:complexType>
         <xsd:sequence>

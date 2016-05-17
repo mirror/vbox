@@ -4130,7 +4130,7 @@ void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
 
             if (pMedium->i_isInRegistry(uuidRegistry))
             {
-                llTarget.push_back(settings::g_MediumEmpty);
+                llTarget.push_back(settings::Medium::Empty);
                 rc = pMedium->i_saveSettings(llTarget.back(), strMachineFolder);     // this recurses into child hard disks
                 if (FAILED(rc))
                 {

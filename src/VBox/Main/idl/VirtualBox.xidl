@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2015 Oracle Corporation
+    Copyright (C) 2006-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -7424,10 +7424,10 @@ and "VAR" for unsetting. -->
           to="IVirtualBox::createMachine"/>, and all the settings will be
         transferred except the VM name and the hardware UUID. You can set the
         VM name and the new hardware UUID when creating the target machine. The
-        network MAC addresses are newly created for all network adapters. You
-        can change that behaviour with the options parameter. The operation is
-        performed asynchronously, so the machine object will be not be usable
-        until the @a progress object signals completion.
+        network MAC addresses are newly created for all enabled network
+        adapters. You can change that behaviour with the options parameter.
+        The operation is performed asynchronously, so the machine object will
+        be not be usable until the @a progress object signals completion.
 
         <result name="E_INVALIDARG">
           @a target is @c null.
@@ -17133,8 +17133,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="MACAddress" type="wstring">
       <desc>
-        Ethernet MAC address of the adapter, 12 hexadecimal characters. When setting
-        it to @c null or an empty string, VirtualBox will generate a unique MAC address.
+        Ethernet MAC address of the adapter, 12 hexadecimal characters. When
+        setting it to @c null or an empty string for an enabled adapter,
+        VirtualBox will generate a unique MAC address. Disabled adapters can
+        have an empty MAC address.
       </desc>
     </attribute>
 

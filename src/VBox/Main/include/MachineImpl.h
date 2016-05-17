@@ -35,7 +35,6 @@
 #include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
 #include "BandwidthGroupImpl.h"
-#include "VBox/settings.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "Performance.h"
 #include "PerformanceImpl.h"
@@ -54,6 +53,10 @@
 #include <vector>
 
 #include "MachineWrap.h"
+
+/** @todo r=klaus after moving the various Machine settings structs to
+ * MachineImpl.cpp it should be possible to eliminate this include. */
+#include <VBox/settings.h>
 
 // defines
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,16 +77,6 @@ class SharedFolder;
 class HostUSBDevice;
 class StorageController;
 class SessionMachine;
-
-namespace settings
-{
-    class MachineConfigFile;
-    struct Snapshot;
-    struct Hardware;
-    struct Storage;
-    struct StorageController;
-    struct MachineRegistryEntry;
-}
 
 // Machine class
 ////////////////////////////////////////////////////////////////////////////////
@@ -228,8 +221,6 @@ public:
     struct UserData
     {
         settings::MachineUserData s;
-        typedef  std::vector<uint8_t> IconBlob;
-        IconBlob mIcon;
     };
 
     /**
@@ -642,7 +633,10 @@ protected:
     HRESULT i_loadSnapshot(const settings::Snapshot &data,
                            const Guid &aCurSnapshotId,
                            Snapshot *aParentSnapshot);
-    HRESULT i_loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg,
+    HRESULT i_loadHardware(const Guid *puuidRegistry,
+                           const Guid *puuidSnapshot,
+                           const settings::Hardware &data,
+                           const settings::Debugging *pDbg,
                            const settings::Autostart *pAutostart);
     HRESULT i_loadDebugging(const settings::Debugging *pDbg);
     HRESULT i_loadAutostart(const settings::Autostart *pAutostart);
@@ -1569,7 +1563,6 @@ public:
                              const settings::Hardware &hardware,
                              const settings::Debugging *pDbg,
                              const settings::Autostart *pAutostart,
-                             const settings::Storage &storage,
                              IN_GUID aSnapshotId,
                              const Utf8Str &aStateFilePath);
     void uninit();

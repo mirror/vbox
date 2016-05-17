@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,8 +52,8 @@ struct DHCPServer::Data
     bool router;
     DHCPServerRunner dhcp;
 
-    DhcpOptionMap GlobalDhcpOptions;
-    VmSlot2OptionsMap VmSlot2Options;
+    settings::DhcpOptionMap GlobalDhcpOptions;
+    settings::VmSlot2OptionsMap VmSlot2Options;
 };
 
 
@@ -112,7 +112,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 
     unconst(mName) = aName;
     m->IPAddress = "0.0.0.0";
-    m->GlobalDhcpOptions[DhcpOpt_SubnetMask] = DhcpOptValue("0.0.0.0");
+    m->GlobalDhcpOptions[DhcpOpt_SubnetMask] = settings::DhcpOptValue("0.0.0.0");
     m->enabled = FALSE;
 
     m->lowerIP = "0.0.0.0";
@@ -274,11 +274,12 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
 
 
 HRESULT DHCPServer::encodeOption(com::Utf8Str &aEncoded,
-                                 uint32_t aOptCode, const DhcpOptValue &aOptValue)
+                                 uint32_t aOptCode,
+                                 const settings::DhcpOptValue &aOptValue)
 {
     switch (aOptValue.encoding)
     {
-        case DhcpOptValue::LEGACY:
+        case DhcpOptEncoding_Legacy:
         {
             /*
              * This is original encoding which assumed that for each
@@ -292,7 +293,7 @@ HRESULT DHCPServer::encodeOption(com::Utf8Str &aEncoded,
             break;
         }
 
-        case DhcpOptValue::HEX:
+        case DhcpOptEncoding_Hex:
         {
             /*
              * This is a bypass for any option - preformatted value as
@@ -322,14 +323,14 @@ HRESULT DHCPServer::encodeOption(com::Utf8Str &aEncoded,
 }
 
 
-int DHCPServer::addOption(DhcpOptionMap &aMap,
+int DHCPServer::addOption(settings::DhcpOptionMap &aMap,
                           DhcpOpt_T aOption, const com::Utf8Str &aValue)
 {
-    DhcpOptValue OptValue;
+    settings::DhcpOptValue OptValue;
 
     if (aOption != 0)
     {
-        OptValue = DhcpOptValue(aValue, DhcpOptValue::LEGACY);
+        OptValue = settings::DhcpOptValue(aValue, DhcpOptEncoding_Legacy);
     }
     /*
      * This is a kludge to sneak in option encoding information
@@ -352,13 +353,13 @@ int DHCPServer::addOption(DhcpOptionMap &aMap,
         {
             case ':':           /* support legacy format too */
             {
-                u32Enc = DhcpOptValue::LEGACY;
+                u32Enc = DhcpOptEncoding_Legacy;
                 break;
             }
 
             case '=':
             {
-                u32Enc = DhcpOptValue::HEX;
+                u32Enc = DhcpOptEncoding_Hex;
                 break;
             }
 
@@ -377,7 +378,7 @@ int DHCPServer::addOption(DhcpOptionMap &aMap,
         }
 
         aOption = (DhcpOpt_T)u8Code;
-        OptValue = DhcpOptValue(pszNext + 1, (DhcpOptValue::Encoding)u32Enc);
+        OptValue = settings::DhcpOptValue(pszNext + 1, (DhcpOptEncoding_T)u32Enc);
     }
 
     aMap[aOption] = OptValue;
@@ -411,12 +412,12 @@ HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValues)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aValues.resize(m->GlobalDhcpOptions.size());
-    DhcpOptionMap::const_iterator it;
+    settings::DhcpOptionMap::const_iterator it;
     size_t i = 0;
     for (it = m->GlobalDhcpOptions.begin(); it != m->GlobalDhcpOptions.end(); ++it, ++i)
     {
         uint32_t OptCode = (*it).first;
-        const DhcpOptValue &OptValue = (*it).second;
+        const settings::DhcpOptValue &OptValue = (*it).second;
 
         encodeOption(aValues[i], OptCode, OptValue);
     }
@@ -428,7 +429,7 @@ HRESULT DHCPServer::getVmConfigs(std::vector<com::Utf8Str> &aValues)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aValues.resize(m->VmSlot2Options.size());
-    VmSlot2OptionsMap::const_iterator it;
+    settings::VmSlot2OptionsMap::const_iterator it;
     size_t i = 0;
     for (it = m->VmSlot2Options.begin(); it != m->VmSlot2Options.end(); ++it, ++i)
     {
@@ -446,7 +447,7 @@ HRESULT DHCPServer::addVmSlotOption(const com::Utf8Str &aVmName,
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    DhcpOptionMap &map = m->VmSlot2Options[VmNameSlotKey(aVmName, aSlot)];
+    settings::DhcpOptionMap &map = m->VmSlot2Options[settings::VmNameSlotKey(aVmName, aSlot)];
     int rc = addOption(map, aOption, aValue);
     if (!RT_SUCCESS(rc))
         return E_INVALIDARG;
@@ -461,7 +462,7 @@ HRESULT DHCPServer::addVmSlotOption(const com::Utf8Str &aVmName,
 HRESULT DHCPServer::removeVmSlotOptions(const com::Utf8Str &aVmName, LONG aSlot)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    DhcpOptionMap& map = i_findOptMapByVmNameSlot(aVmName, aSlot);
+    settings::DhcpOptionMap &map = i_findOptMapByVmNameSlot(aVmName, aSlot);
     map.clear();
 
     alock.release();
@@ -479,14 +480,14 @@ HRESULT DHCPServer::getVmSlotOptions(const com::Utf8Str &aVmName,
 {
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    DhcpOptionMap& map = i_findOptMapByVmNameSlot(aVmName, aSlot);
+    settings::DhcpOptionMap &map = i_findOptMapByVmNameSlot(aVmName, aSlot);
     aValues.resize(map.size());
     size_t i = 0;
-    DhcpOptionMap::const_iterator it;
+    settings::DhcpOptionMap::const_iterator it;
     for (it = map.begin(); it != map.end(); ++it, ++i)
     {
         uint32_t OptCode = (*it).first;
-        const DhcpOptValue &OptValue = (*it).second;
+        const settings::DhcpOptValue &OptValue = (*it).second;
 
         encodeOption(aValues[i], OptCode, OptValue);
     }
@@ -501,7 +502,7 @@ HRESULT DHCPServer::getMacOptions(const com::Utf8Str &aMAC, std::vector<com::Utf
     HRESULT hrc = S_OK;
     ComPtr<IMachine> machine;
     ComPtr<INetworkAdapter> nic;
-    VmSlot2OptionsIterator it;
+    settings::VmSlot2OptionsIterator it;
     for(it = m->VmSlot2Options.begin(); it != m->VmSlot2Options.end(); ++it)
     {
         alock.release();
@@ -584,8 +585,8 @@ HRESULT DHCPServer::stop (void)
 }
 
 
-DhcpOptionMap& DHCPServer::i_findOptMapByVmNameSlot(const com::Utf8Str& aVmName,
-                                                  LONG aSlot)
+settings::DhcpOptionMap &DHCPServer::i_findOptMapByVmNameSlot(const com::Utf8Str &aVmName,
+                                                              LONG aSlot)
 {
     return m->VmSlot2Options[settings::VmNameSlotKey(aVmName, aSlot)];
 }

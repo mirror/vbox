@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -88,11 +88,6 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
 
     /* default to Am79C973 */
     mData->mAdapterType = NetworkAdapterType_Am79C973;
-
-    /* generate the MAC address early to guarantee it is the same both after
-     * changing some other property (i.e. after mData.backup()) and after the
-     * subsequent mData.rollback(). */
-    i_generateMACAddress();
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -302,6 +297,8 @@ HRESULT NetworkAdapter::setEnabled(BOOL aEnabled)
     {
         mData.backup();
         mData->mEnabled = aEnabled;
+        if (aEnabled && mData->mMACAddress.isEmpty())
+            i_generateMACAddress();
 
         // leave the lock before informing callbacks
         alock.release();
@@ -322,7 +319,7 @@ HRESULT NetworkAdapter::getMACAddress(com::Utf8Str &aMACAddress)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ComAssertRet(!mData->mMACAddress.isEmpty(), E_FAIL);
+    ComAssertRet(!mData->mEnabled || !mData->mMACAddress.isEmpty(), E_FAIL);
 
     aMACAddress = mData->mMACAddress;
 
@@ -336,41 +333,44 @@ HRESULT NetworkAdapter::i_updateMacAddress(Utf8Str aMACAddress)
     /*
      * Are we supposed to generate a MAC?
      */
-    if (aMACAddress.isEmpty())
+    if (mData->mEnabled && aMACAddress.isEmpty())
         i_generateMACAddress();
     else
     {
         if (mData->mMACAddress != aMACAddress)
         {
-            /*
-             * Verify given MAC address
-             */
-            char *macAddressStr = aMACAddress.mutableRaw();
-            int i = 0;
-            while ((i < 13) && macAddressStr && *macAddressStr && (rc == S_OK))
+            if (mData->mEnabled || !aMACAddress.isEmpty())
             {
-                char c = *macAddressStr;
-                /* canonicalize hex digits to capital letters */
-                if (c >= 'a' && c <= 'f')
+                /*
+                 * Verify given MAC address
+                 */
+                char *macAddressStr = aMACAddress.mutableRaw();
+                int i = 0;
+                while ((i < 13) && macAddressStr && *macAddressStr && (rc == S_OK))
                 {
-                    /** @todo the runtime lacks an ascii lower/upper conv */
-                    c &= 0xdf;
-                    *macAddressStr = c;
-                }
-                /* we only accept capital letters */
-                if (((c < '0') || (c > '9')) &&
-                    ((c < 'A') || (c > 'F')))
-                    rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
-                /* the second digit must have even value for unicast addresses */
-                if ((i == 1) && (!!(c & 1) == (c >= '0' && c <= '9')))
-                    rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                    char c = *macAddressStr;
+                    /* canonicalize hex digits to capital letters */
+                    if (c >= 'a' && c <= 'f')
+                    {
+                        /** @todo the runtime lacks an ascii lower/upper conv */
+                        c &= 0xdf;
+                        *macAddressStr = c;
+                    }
+                    /* we only accept capital letters */
+                    if (((c < '0') || (c > '9')) &&
+                        ((c < 'A') || (c > 'F')))
+                        rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
+                    /* the second digit must have even value for unicast addresses */
+                    if ((i == 1) && (!!(c & 1) == (c >= '0' && c <= '9')))
+                        rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
 
-                macAddressStr++;
-                i++;
+                    macAddressStr++;
+                    i++;
+                }
+                /* we must have parsed exactly 12 characters */
+                if (i != 12)
+                    rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
             }
-            /* we must have parsed exactly 12 characters */
-            if (i != 12)
-                rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
 
             if (SUCCEEDED(rc))
                 mData->mMACAddress = aMACAddress;
