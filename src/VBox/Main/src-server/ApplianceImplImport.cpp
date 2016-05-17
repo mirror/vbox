@@ -2280,7 +2280,7 @@ HRESULT Appliance::i_verifyManifestFile(ImportStack &stack)
  *
  * @param hdc in: the HardDiskController structure to attach to.
  * @param ulAddressOnParent in: the AddressOnParent parameter from OVF.
- * @param controllerName out: the name of the hard disk controller to attach to (e.g. "IDE Controller").
+ * @param controllerName out: the name of the hard disk controller to attach to (e.g. "IDE").
  * @param lControllerPort out: the channel (controller port) of the controller to attach to.
  * @param lDevice out: the device number to attach to.
  */
@@ -2944,7 +2944,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     {
         // one or two IDE controllers present in OVF: add one VirtualBox controller
         ComPtr<IStorageController> pController;
-        rc = pNewMachine->AddStorageController(Bstr("IDE Controller").raw(), StorageBus_IDE, pController.asOutParam());
+        rc = pNewMachine->AddStorageController(Bstr("IDE").raw(), StorageBus_IDE, pController.asOutParam());
         if (FAILED(rc)) throw rc;
 
         const char *pcszIDEType = vsdeHDCIDE.front()->strVBoxCurrent.c_str();
@@ -2973,7 +2973,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVBoxCurrent;
         if (hdcVBox == "AHCI")
         {
-            rc = pNewMachine->AddStorageController(Bstr("SATA Controller").raw(),
+            rc = pNewMachine->AddStorageController(Bstr("SATA").raw(),
                                                    StorageBus_SATA,
                                                    pController.asOutParam());
             if (FAILED(rc)) throw rc;
@@ -2993,7 +2993,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (!vsdeHDCSCSI.empty())
     {
         ComPtr<IStorageController> pController;
-        Utf8Str strName("SCSI Controller");
+        Utf8Str strName("SCSI");
         StorageBus_T busType = StorageBus_SCSI;
         StorageControllerType_T controllerType;
         const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVBoxCurrent;
@@ -3002,7 +3002,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         else if (hdcVBox == "LsiLogicSas")
         {
             // OVF treats LsiLogicSas as a SCSI controller but VBox considers it a class of its own
-            strName = "SAS Controller";
+            strName = "SAS";
             busType = StorageBus_SAS;
             controllerType = StorageControllerType_LsiLogicSas;
         }
@@ -3028,7 +3028,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (!vsdeHDCSAS.empty())
     {
         ComPtr<IStorageController> pController;
-        rc = pNewMachine->AddStorageController(Bstr(L"SAS Controller").raw(),
+        rc = pNewMachine->AddStorageController(Bstr(L"SAS").raw(),
                                                StorageBus_SAS,
                                                pController.asOutParam());
         if (FAILED(rc)) throw rc;
@@ -3075,7 +3075,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (vsdeFloppy.size() == 1)
             {
                 ComPtr<IStorageController> pController;
-                rc = sMachine->AddStorageController(Bstr("Floppy Controller").raw(),
+                rc = sMachine->AddStorageController(Bstr("Floppy").raw(),
                                                     StorageBus_Floppy,
                                                     pController.asOutParam());
                 if (FAILED(rc)) throw rc;
