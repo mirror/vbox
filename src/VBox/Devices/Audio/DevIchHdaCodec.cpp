@@ -3212,6 +3212,9 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
         strmCfg.enmFormat     = PDMAUDIOFMT_S16;
         strmCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
+        /* Note: Adding the default input/output streams is *not* critical for the overall
+         *       codec construction result. */
+
         /*
          * Output streams.
          */
@@ -3220,22 +3223,25 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
         /* Front. */
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Front");
         strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-        rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_FRONT, &strmCfg);
-        AssertRCBreak(rc);
+        int rc2 = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_FRONT, &strmCfg);
+        if (RT_FAILURE(rc2))
+            LogRel2(("HDA: Failed to add front output stream: %Rrc\n", rc2));
 
 #ifdef VBOX_WITH_HDA_51_SURROUND
         /* Center / LFE. */
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Center / LFE");
         strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
         /** @todo Handle mono channel if only center *or* LFE is available? */
-        rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, &strmCfg);
-        AssertRCBreak(rc);
+        rc2 = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, &strmCfg);
+        if (RT_FAILURE(rc2))
+            LogRel2(("HDA: Failed to add center/LFE output stream: %Rrc\n", rc2));
 
         /* Rear. */
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Rear");
         strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_REAR;
-        rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_REAR, &strmCfg);
-        AssertRCBreak(rc);
+        rc2 = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_REAR, &strmCfg);
+        if (RT_FAILURE(rc2))
+            LogRel2(("HDA: Failed to add rear output stream: %Rrc\n", rc2));
 #endif
 
         /*
@@ -3246,17 +3252,17 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
 #ifdef VBOX_WITH_HDA_MIC_IN
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Microphone In");
         strmCfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
-        rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_MIC_IN, &strmCfg);
-        AssertRCBreak(rc);
+        rc2 = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_MIC_IN, &strmCfg);
+        if (RT_FAILURE(rc2))
+            LogRel2(("HDA: Failed to add microphone input stream: %Rrc\n", rc2));
 #endif
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Line In");
         strmCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
-        rc = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_LINE_IN, &strmCfg);
-        AssertRCBreak(rc);
+        rc2 = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_LINE_IN, &strmCfg);
+        if (RT_FAILURE(rc2))
+            LogRel2(("HDA: Failed to add line input stream: %Rrc\n", rc2));
 
     } while (0);
-
-    /** @todo Handle rc here? */
 
     /*
      * Reset nodes.
@@ -3276,6 +3282,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     #error "Implement mic-in support!"
 #endif
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
