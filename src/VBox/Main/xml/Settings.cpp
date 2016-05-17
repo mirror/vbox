@@ -478,7 +478,9 @@ void ConfigFileBase::parseBase64(IconBlob &binary,
     const char* psz = str.c_str();
     ssize_t cbOut = RTBase64DecodedSize(psz, NULL);
     if (cbOut > DECODE_STR_MAX)
-        throw ConfigFileError(this, NULL, N_("Base64 encoded data too long. %d > %d"), cbOut, DECODE_STR_MAX);
+        throw ConfigFileError(this, NULL, N_("Base64 encoded data too long (%d > %d)"), cbOut, DECODE_STR_MAX);
+    else if (cbOut < 0)
+        throw ConfigFileError(this, NULL, N_("Base64 encoded data '%s' invalid"), psz);
     binary.resize(cbOut);
     int vrc = VINF_SUCCESS;
     if (cbOut)
@@ -4972,6 +4974,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 
         elmMachine.getAttributeValue("processPriority", machineUserData.strVMPriority);
 
+        str.setNull();
         elmMachine.getAttributeValue("icon", str);
         parseBase64(machineUserData.ovIcon, str);
 
