@@ -374,6 +374,15 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     alias_addr.s_addr = pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS);
     /* @todo: add ability to configure this staff */
 
+    /*
+     * Some guests won't reacquire DHCP lease on link flap when VM is
+     * restored.  Instead of forcing users to explicitly set CTL_GUEST
+     * in port-forwarding rules, provide it as initial guess here.
+     */
+    slirp_update_guest_addr_guess(pData,
+                                  pData->special_addr.s_addr | RT_H2N_U32_C(CTL_GUEST),
+                                  "initialization");
+
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
 
