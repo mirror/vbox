@@ -546,12 +546,16 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE          RT_BIT_32(0)
 /** EBX Bit 1 - TSCADJUST - Supports MSR_IA32_TSC_ADJUST. */
 #define X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT_32(1)
+/** EBX Bit 2 - SGX - Supports Software Guard Extensions . */
+#define X86_CPUID_STEXT_FEATURE_EBX_SGX               RT_BIT_32(2)
 /** EBX Bit 3 - BMI1 - Advanced Bit Manipulation extension 1. */
 #define X86_CPUID_STEXT_FEATURE_EBX_BMI1              RT_BIT_32(3)
 /** EBX Bit 4 - HLE - Hardware Lock Elision. */
 #define X86_CPUID_STEXT_FEATURE_EBX_HLE               RT_BIT_32(4)
 /** EBX Bit 5 - AVX2 - Advanced Vector Extensions 2. */
 #define X86_CPUID_STEXT_FEATURE_EBX_AVX2              RT_BIT_32(5)
+/** EBX Bit 6 - FDP_EXCPTN_ONLY - FPU data pointer only updated on exceptions if set. */
+#define X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY   RT_BIT_32(6)
 /** EBX Bit 7 - SMEP - Supervisor Mode Execution Prevention. */
 #define X86_CPUID_STEXT_FEATURE_EBX_SMEP              RT_BIT_32(7)
 /** EBX Bit 8 - BMI2 - Advanced Bit Manipulation extension 2. */
