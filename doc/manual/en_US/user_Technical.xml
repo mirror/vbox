@@ -599,11 +599,11 @@
     to recognize their presence and make use of them in order to leverage
     the benefits of communicating with the VirtualBox hypervisor.</para>
 
-    <para>Most mainstream, modern guest operating systems, including Windows
-    and Linux, ship with support for one or more paravirtualization interfaces.
-    Hence, there is typically no need to install additional software in the
-    guest (including VirtualBox Guest Additions) to make use of this
-    feature.</para>
+    <para>Most modern mainstream guest operating systems, including 
+    Windows and Linux, ship with support for one or more paravirtualization 
+    interfaces. Hence, there is typically no need to install additional software 
+    in the guest to take advantage of this feature.
+    </para>
 
     <para>Exposing a paravirtualization provider to the guest operating
     system does not rely on the choice of host platforms. For example, the
