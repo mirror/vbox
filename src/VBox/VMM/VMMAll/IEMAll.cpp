@@ -5028,7 +5028,7 @@ IEM_STATIC void iemRegUpdateRipAndClearRF(PIEMCPU pIemCpu)
  * @param   pIemCpu             The per CPU data.
  * @param   pCtx                The CPU context which SP/ESP/RSP should be
  *                              updated.
- * @param   cbToAdd             The number of bytes to add.
+ * @param   cbToAdd             The number of bytes to add (8-bit!).
  */
 DECLINLINE(void) iemRegAddToRsp(PCIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t cbToAdd)
 {
@@ -5047,7 +5047,7 @@ DECLINLINE(void) iemRegAddToRsp(PCIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t cbToAdd
  * @param   pIemCpu             The per CPU data.
  * @param   pCtx                The CPU context which SP/ESP/RSP should be
  *                              updated.
- * @param   cbToSub             The number of bytes to subtract.
+ * @param   cbToSub             The number of bytes to subtract (8-bit!).
  */
 DECLINLINE(void) iemRegSubFromRsp(PCIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t cbToSub)
 {
@@ -5065,7 +5065,7 @@ DECLINLINE(void) iemRegSubFromRsp(PCIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t cbToS
  *
  * @param   pIemCpu             The per CPU data.
  * @param   pTmpRsp             The temporary SP/ESP/RSP to update.
- * @param   cbToAdd             The number of bytes to add.
+ * @param   cbToAdd             The number of bytes to add (16-bit).
  * @param   pCtx                Where to get the current stack mode.
  */
 DECLINLINE(void) iemRegAddToRspEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint16_t cbToAdd)
