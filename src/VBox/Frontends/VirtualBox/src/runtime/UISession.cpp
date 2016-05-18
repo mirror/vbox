@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QBitmap>
 # include <QDesktopWidget>
 # include <QWidget>
 # ifdef VBOX_WS_MAC
@@ -1577,6 +1578,31 @@ static void renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AND,
         pu8ANDSrcLine += cbANDLine;
     }
 }
+
+static bool isPointer1bpp(const uint8_t *pu8XorMask,
+                          uint uWidth,
+                          uint uHeight)
+{
+    /* Check if the pointer has only 0 and 0xFFFFFF pixels, ignoring the alpha channel. */
+    const uint32_t *pu32Src = (uint32_t *)pu8XorMask;
+
+    uint y;
+    for (y = 0; y < uHeight ; ++y)
+    {
+        uint x;
+        for (x = 0; x < uWidth; ++x)
+        {
+            const uint32_t u32Pixel = pu32Src[x] & UINT32_C(0xFFFFFF);
+            if (u32Pixel != 0 && u32Pixel != UINT32_C(0xFFFFFF))
+                return false;
+        }
+
+        pu32Src += uWidth;
+    }
+
+    return true;
+}
+
 void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
                                 uint uXHot, uint uYHot, uint uWidth, uint uHeight)
 {
@@ -1590,6 +1616,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
 #if defined (VBOX_WS_WIN)
 
+# if QT_VERSION < 0x050000
     BITMAPV5HEADER bi;
     HBITMAP hBitmap;
     void *lpBits;
@@ -1701,11 +1728,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
         if (hAlphaCursor)
         {
             /* Set the new cursor: */
-# if QT_VERSION < 0x050000
             m_cursor = QCursor(hAlphaCursor);
-# else /* QT_VERSION >= 0x050000 */
-            m_cursor = QCursor(QtWin::fromHBITMAP(hBitmap, QtWin::HBitmapAlpha), uXHot, uYHot);
-# endif /* QT_VERSION >= 0x050000 */
             if (m_alphaCursor)
                 DestroyIcon(m_alphaCursor);
             m_alphaCursor = hAlphaCursor;
@@ -1717,6 +1740,88 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
         DeleteObject(hMonoBitmap);
     if (hBitmap)
         DeleteObject(hBitmap);
+# else /* QT_VERSION >= 0x050000 */
+    /* Create a ARGB image out of the shape data: */
+    QImage image(uWidth, uHeight, QImage::Format_ARGB32);
+    memcpy(image.bits(), srcShapePtr, uHeight * uWidth * 4);
+
+    if (fHasAlpha)
+        m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
+    else
+    {
+        if (isPointer1bpp(srcShapePtr, uWidth, uHeight))
+        {
+            /* Incoming data consist of 32 bit BGR XOR mask and 1 bit AND mask.
+             * XOR pixels contain either 0x00000000 or 0x00FFFFFF.
+             * image.convertToFormat(QImage::Format_Mono) converts them:
+             * 0x00000000 -> 1, 0x00FFFFFF -> 0.
+             *
+             * XOR AND originally intended result (F denotes 0x00FFFFFF):
+             *   0   0 black
+             *   F   0 white
+             *   0   1 transparent
+             *   F   1 xor'd
+             *
+             * XOR AND converted bitmap intended result:
+             *   1   0 black
+             *   0   0 white
+             *   1   1 transparent
+             *   0   1 xor'd
+             *
+             * Bitmap Mask actual Qt5 result (tested on Windows 7 64 bit host):
+             *   1   0 black
+             *   0   0 white
+             *   0   1 transparent
+             *   1   1 xor'd
+             *
+             * Converted bitmap to the Qt5 mask and bitmap:
+             * Mask = AND;
+             * Bitmap = ConvBitmap ^ Mask;
+             */
+            QImage bitmap = image.convertToFormat(QImage::Format_Mono);
+            QImage mask(uWidth, uHeight, QImage::Format_Mono);
+            memcpy(mask.bits(), srcAndMaskPtr, uHeight * ((uWidth + 7) / 8));
+
+            const uint8_t *pu8Mask = mask.bits();
+            uint8_t *pu8Bitmap = bitmap.bits();
+            uint i;
+            for (i = 0; i < uHeight * ((uWidth + 7) / 8); ++i)
+                pu8Bitmap[i] ^= pu8Mask[i];
+
+            m_cursor = QCursor(QBitmap::fromImage(bitmap), QBitmap::fromImage(mask), uXHot, uYHot);
+        }
+        else
+        {
+            /* Assign alpha channel values according to the AND mask: 1 -> 0x00, 0 -> 0xFF: */
+            const uint8_t *pu8And = srcAndMaskPtr;
+            uint32_t *pu32Pixel = (uint32_t *)image.bits();
+            uint y;
+            for (y = 0; y < uHeight; ++y)
+            {
+                uint x;
+                for (x = 0; x < (uWidth + 7) / 8; ++x)
+                {
+                    const uint8_t b = *pu8And;
+                    uint k;
+                    for (k = 0; k < 8; ++k)
+                    {
+                        if (b & (1 << (7 - k)))
+                            *pu32Pixel &= UINT32_C(0x00FFFFFF);
+                        else
+                            *pu32Pixel |= UINT32_C(0xFF000000);
+                        ++pu32Pixel;
+                    }
+
+                    ++pu8And;
+                }
+            }
+
+            m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
+        }
+    }
+
+    m_fIsValidPointerShapePresent = true;
+# endif /* QT_VERSION >= 0x050000 */
 
 #elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
 
