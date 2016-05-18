@@ -1091,6 +1091,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     *pfFFDone = false;
 #ifdef VBOX_WITH_REM
     bool    fInREMState = false;
+#else
+    uint32_t cLoops     = 0;
 #endif
     int     rc          = VINF_SUCCESS;
     for (;;)
@@ -1221,6 +1223,19 @@ l_REMDoForcedActions:
                 break;
             }
         }
+
+#ifndef VBOX_WITH_REM
+        /*
+         * Have to check if we can get back to fast execution mode every so often.
+         */
+        if (!(++cLoops & 7))
+        {
+            EMSTATE enmCheck = emR3Reschedule(pVM, pVCpu, pCtx);
+            if (   enmCheck != EMSTATE_REM
+                && enmCheck != EMSTATE_IEM_THEN_REM)
+                return VINF_EM_RESCHEDULE;
+        }
+#endif
 
     } /* The Inner Loop, recompiled execution mode version. */
 
