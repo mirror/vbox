@@ -3770,6 +3770,11 @@ static int iscsiFreeImage(PISCSIIMAGE pImage, bool fDelete)
             RTMemFree(pImage->pszTargetName);
             pImage->pszTargetName = NULL;
         }
+        if (pImage->pszTargetAddress)
+        {
+            RTMemFree(pImage->pszTargetAddress);
+            pImage->pszTargetAddress = NULL;
+        }
         if (pImage->pszInitiatorName)
         {
             if (pImage->fAutomaticInitiatorName)
@@ -3802,6 +3807,11 @@ static int iscsiFreeImage(PISCSIIMAGE pImage, bool fDelete)
         {
             RTMemFree(pImage->pvRecvPDUBuf);
             pImage->pvRecvPDUBuf = NULL;
+        }
+        if (pImage->pszHostname)
+        {
+            RTMemFree(pImage->pszHostname);
+            pImage->pszHostname = NULL;
         }
 
         pImage->cbRecvPDUResidual = 0;
@@ -4178,7 +4188,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     if (RT_FAILURE(rc))
     {
         LogRel(("iSCSI: Could not get LUN info for target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
-        return rc;
+        goto out;
     }
 
     /*
@@ -4543,6 +4553,8 @@ return the status of target and will clear any unit attention condition that it 
     }
 
 out:
+    if (pszLUNInitial)
+        RTMemFree(pszLUNInitial);
     if (RT_FAILURE(rc))
         iscsiFreeImage(pImage, false);
     return rc;
