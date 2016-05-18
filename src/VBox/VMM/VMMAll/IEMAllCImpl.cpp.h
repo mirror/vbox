@@ -1020,7 +1020,6 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-#define IEM_IMPLEMENTS_CALLGATE
 #ifndef IEM_IMPLEMENTS_CALLGATE
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 #else
