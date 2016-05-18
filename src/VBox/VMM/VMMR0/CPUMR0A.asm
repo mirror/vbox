@@ -200,26 +200,35 @@ BEGINCODE
 
 
 
-;; Macro for FXSAVE for the guest FPU but tries to figure out whether to
+;; Macro for FXSAVE/XSAVE for the guest FPU but tries to figure out whether to
 ;  save the 32-bit FPU state or 64-bit FPU state.
 ;
 ; @param    %1      Pointer to CPUMCPU.
 ; @param    %2      Pointer to XState.
 ; @param    %3      Force AMD64
+; @param    %4      Use XSAVE
 ; @uses     xAX, xDX, EFLAGS, 20h of stack.
 ;
-%macro SAVE_32_OR_64_FPU 3
+%macro SAVE_32_OR_64_FPU 4
 %if CPUMR0_IS_AMD64 || %3
         ; Save the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
         test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
         jnz     short %%save_long_mode_guest
 %endif
+%if %4
+        xsave   [pXState]
+%else
         fxsave  [pXState]
+%endif
 %if CPUMR0_IS_AMD64 || %3
         jmp     %%save_done_32bit_cs_ds
 
 %%save_long_mode_guest:
+%if %4
+        o64 xsave  [pXState]
+%else
         o64 fxsave [pXState]
+%endif
 
         xor     edx, edx
         cmp     dword [pXState + CS_OFF_IN_X86FXSTATE], 0
@@ -265,30 +274,27 @@ BEGINCODE
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         and     eax, ~CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS ; Already saved in HMR0A.asm.
 %endif
-%ifdef RT_ARCH_AMD64
-        o64 xsave [pXState]
-%else
-        xsave   [pXState]
-%endif
+        SAVE_32_OR_64_FPU pCpumCpu, pXState, 0, 1
         jmp     %%guest_done
 
         ; FXSAVE
 %%guest_fxsave:
-        SAVE_32_OR_64_FPU pCpumCpu, pXState, 0
+        SAVE_32_OR_64_FPU pCpumCpu, pXState, 0, 0
 
 %%guest_done:
 %endmacro ; CPUMR0_SAVE_GUEST
 
 
 ;;
-; Wrapper for selecting 32-bit or 64-bit FXRSTOR according to what SAVE_32_OR_64_FPU did.
+; Wrapper for selecting 32-bit or 64-bit FXRSTOR/XRSTOR according to what SAVE_32_OR_64_FPU did.
 ;
 ; @param    %1      Pointer to CPUMCPU.
 ; @param    %2      Pointer to XState.
 ; @param    %3      Force AMD64.
+; @param    %4      Use XRSTOR
 ; @uses     xAX, xDX, EFLAGS
 ;
-%macro RESTORE_32_OR_64_FPU 3
+%macro RESTORE_32_OR_64_FPU 4
 %if CPUMR0_IS_AMD64 || %3
         ; Restore the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
         test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
@@ -297,12 +303,20 @@ BEGINCODE
         jne     short %%restore_64bit_fpu
 %%restore_32bit_fpu:
 %endif
+%if %4
+        xrstor  [pXState]
+%else
         fxrstor [pXState]
+%endif
 %if CPUMR0_IS_AMD64 || %3
         ; TODO: Restore XMM8-XMM15!
         jmp     short %%restore_fpu_done
 %%restore_64bit_fpu:
+%if %4
+        o64 xrstor  [pXState]
+%else
         o64 fxrstor [pXState]
+%endif
 %%restore_fpu_done:
 %endif
 %endmacro ; RESTORE_32_OR_64_FPU
@@ -333,16 +347,12 @@ BEGINCODE
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         and     eax, ~CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS ; Will be loaded by HMR0A.asm.
 %endif
-%ifdef RT_ARCH_AMD64
-        o64 xrstor [pXState]
-%else
-        xrstor  [pXState]
-%endif
+        RESTORE_32_OR_64_FPU pCpumCpu, pXState, 0, 1
         jmp     %%guest_done
 
         ; FXRSTOR
 %%guest_fxrstor:
-        RESTORE_32_OR_64_FPU pCpumCpu, pXState, 0
+        RESTORE_32_OR_64_FPU pCpumCpu, pXState, 0, 0
 
 %%guest_done:
 %endmacro ; CPUMR0_LOAD_GUEST
