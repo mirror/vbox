@@ -1230,7 +1230,7 @@ l_REMDoForcedActions:
          */
         if (!(++cLoops & 7))
         {
-            EMSTATE enmCheck = emR3Reschedule(pVM, pVCpu, pCtx);
+            EMSTATE enmCheck = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
             if (   enmCheck != EMSTATE_REM
                 && enmCheck != EMSTATE_IEM_THEN_REM)
                 return VINF_EM_RESCHEDULE;
