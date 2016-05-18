@@ -622,7 +622,7 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
  */
 static int dbgDiggerLinuxFoundMarkers(PDBGDIGGERLINUX pThis, PCDBGFADDRESS pAddrMarkers, uint32_t cbMarkerEntry)
 {
-    pThis->cbKernelNames         = pAddrMarkers->FlatPtr - pThis->AddrKernelNames.FlatPtr - 1;
+    pThis->cbKernelNames         = pAddrMarkers->FlatPtr - pThis->AddrKernelNames.FlatPtr;
     pThis->AddrKernelNameMarkers = *pAddrMarkers;
     pThis->cKernelNameMarkers    = RT_ALIGN_32(pThis->cKernelSymbols, 256) / 256;
     pThis->AddrKernelTokenTable  = *pAddrMarkers;
