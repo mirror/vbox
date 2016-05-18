@@ -2752,11 +2752,13 @@ Hardware::Hardware() :
 /**
  * Check if all Paravirt settings have default values.
  */
-bool Hardware::areParavirtDefaultSettings() const
+bool Hardware::areParavirtDefaultSettings(SettingsVersion_T sv) const
 {
-    // Remember, this is the default for VMs created with 5.0, and older
+    // 5.0 didn't save the paravirt settings if it is ParavirtProvider_Legacy,
+    // so this default must be kept. Later versions don't savethis release. Newer versionsRemember, this is the default for VMs created with 5.0, and older
     // VMs will keep ParavirtProvider_Legacy which must be saved.
-    return paravirtProvider == ParavirtProvider_Default
+    return (   sv >= SettingsVersion_v1_16 && paravirtProvider == ParavirtProvider_Default
+            || sv == SettingsVersion_v1_15 && paravirtProvider == ParavirtProvider_Legacy)
         && strParavirtDebug.isEmpty();
 }
 
@@ -3566,8 +3568,11 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
         }
     }
 
-    // Special default handling: tag presence hints it should be enabled
-    aa.fEnabled = true;
+    if (m->sv <= SettingsVersion_v1_14)
+    {
+        // Special default handling: tag presence hints it should be enabled
+        aa.fEnabled = true;
+    }
     elmAudioAdapter.getAttributeValue("enabled", aa.fEnabled);
 
     Utf8Str strTemp;
@@ -3697,8 +3702,13 @@ void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &
 void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                      Hardware &hw)
 {
-    if (m->sv >= SettingsVersion_v1_15)
+    if (m->sv >= SettingsVersion_v1_16)
+    {
+        /* Starting with VirtualBox 5.1 the default is Default, before it was
+         * Legacy. This needs to matched by areParavirtDefaultSettings(). */
         hw.paravirtProvider = ParavirtProvider_Default;
+    }
+
     if (!elmHardware.getAttributeValue("version", hw.strVersion))
     {
         /* KLUDGE ALERT!  For a while during the 3.1 development this was not
@@ -5242,7 +5252,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
 
     if (    (m->sv >= SettingsVersion_v1_15)
-        && !hw.areParavirtDefaultSettings()
+        && !hw.areParavirtDefaultSettings(m->sv)
        )
     {
         const char *pcszParavirtProvider;
@@ -5705,19 +5715,19 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     {
                         xml::ElementNode *pelmDisabledNode = pelmAdapter->createChild("DisabledModes");
                         if (nic.mode != NetworkAttachmentType_NAT)
-                            buildNetworkXML(NetworkAttachmentType_NAT, *pelmDisabledNode, nic);
+                            buildNetworkXML(NetworkAttachmentType_NAT, false, *pelmDisabledNode, nic);
                         if (nic.mode != NetworkAttachmentType_Bridged)
-                            buildNetworkXML(NetworkAttachmentType_Bridged, *pelmDisabledNode, nic);
+                            buildNetworkXML(NetworkAttachmentType_Bridged, false, *pelmDisabledNode, nic);
                         if (nic.mode != NetworkAttachmentType_Internal)
-                            buildNetworkXML(NetworkAttachmentType_Internal, *pelmDisabledNode, nic);
+                            buildNetworkXML(NetworkAttachmentType_Internal, false, *pelmDisabledNode, nic);
                         if (nic.mode != NetworkAttachmentType_HostOnly)
-                            buildNetworkXML(NetworkAttachmentType_HostOnly, *pelmDisabledNode, nic);
+                            buildNetworkXML(NetworkAttachmentType_HostOnly, false, *pelmDisabledNode, nic);
                         if (nic.mode != NetworkAttachmentType_Generic)
-                            buildNetworkXML(NetworkAttachmentType_Generic, *pelmDisabledNode, nic);
+                            buildNetworkXML(NetworkAttachmentType_Generic, false, *pelmDisabledNode, nic);
                         if (nic.mode != NetworkAttachmentType_NATNetwork)
-                            buildNetworkXML(NetworkAttachmentType_NATNetwork, *pelmDisabledNode, nic);
+                            buildNetworkXML(NetworkAttachmentType_NATNetwork, false, *pelmDisabledNode, nic);
                     }
-                    buildNetworkXML(nic.mode, *pelmAdapter, nic);
+                    buildNetworkXML(nic.mode, true, *pelmAdapter, nic);
                 }
             }
         }
@@ -6030,106 +6040,141 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 /**
  * Fill a \<Network\> node. Only relevant for XML version >= v1_10.
  * @param mode
- * @param elmParent
  * @param fEnabled
+ * @param elmParent
  * @param nic
  */
 void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
+                                        bool fEnabled,
                                         xml::ElementNode &elmParent,
                                         const NetworkAdapter &nic)
 {
     switch (mode)
     {
         case NetworkAttachmentType_NAT:
-            if (!nic.nat.areDefaultSettings())
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.nat.areDefaultSettings())
             {
                 xml::ElementNode *pelmNAT = elmParent.createChild("NAT");
 
-                if (nic.nat.strNetwork.length())
-                    pelmNAT->setAttribute("network", nic.nat.strNetwork);
-                if (nic.nat.strBindIP.length())
-                    pelmNAT->setAttribute("hostip", nic.nat.strBindIP);
-                if (nic.nat.u32Mtu)
-                    pelmNAT->setAttribute("mtu", nic.nat.u32Mtu);
-                if (nic.nat.u32SockRcv)
-                    pelmNAT->setAttribute("sockrcv", nic.nat.u32SockRcv);
-                if (nic.nat.u32SockSnd)
-                    pelmNAT->setAttribute("socksnd", nic.nat.u32SockSnd);
-                if (nic.nat.u32TcpRcv)
-                    pelmNAT->setAttribute("tcprcv", nic.nat.u32TcpRcv);
-                if (nic.nat.u32TcpSnd)
-                    pelmNAT->setAttribute("tcpsnd", nic.nat.u32TcpSnd);
-                if (!nic.nat.areDNSDefaultSettings())
+                if (!nic.nat.areDefaultSettings())
                 {
-                    xml::ElementNode *pelmDNS = pelmNAT->createChild("DNS");
-                    if (!nic.nat.fDNSPassDomain)
-                        pelmDNS->setAttribute("pass-domain", nic.nat.fDNSPassDomain);
-                    if (nic.nat.fDNSProxy)
-                        pelmDNS->setAttribute("use-proxy", nic.nat.fDNSProxy);
-                    if (nic.nat.fDNSUseHostResolver)
-                        pelmDNS->setAttribute("use-host-resolver", nic.nat.fDNSUseHostResolver);
-                }
+                    if (nic.nat.strNetwork.length())
+                        pelmNAT->setAttribute("network", nic.nat.strNetwork);
+                    if (nic.nat.strBindIP.length())
+                        pelmNAT->setAttribute("hostip", nic.nat.strBindIP);
+                    if (nic.nat.u32Mtu)
+                        pelmNAT->setAttribute("mtu", nic.nat.u32Mtu);
+                    if (nic.nat.u32SockRcv)
+                        pelmNAT->setAttribute("sockrcv", nic.nat.u32SockRcv);
+                    if (nic.nat.u32SockSnd)
+                        pelmNAT->setAttribute("socksnd", nic.nat.u32SockSnd);
+                    if (nic.nat.u32TcpRcv)
+                        pelmNAT->setAttribute("tcprcv", nic.nat.u32TcpRcv);
+                    if (nic.nat.u32TcpSnd)
+                        pelmNAT->setAttribute("tcpsnd", nic.nat.u32TcpSnd);
+                    if (!nic.nat.areDNSDefaultSettings())
+                    {
+                        xml::ElementNode *pelmDNS = pelmNAT->createChild("DNS");
+                        if (!nic.nat.fDNSPassDomain)
+                            pelmDNS->setAttribute("pass-domain", nic.nat.fDNSPassDomain);
+                        if (nic.nat.fDNSProxy)
+                            pelmDNS->setAttribute("use-proxy", nic.nat.fDNSProxy);
+                        if (nic.nat.fDNSUseHostResolver)
+                            pelmDNS->setAttribute("use-host-resolver", nic.nat.fDNSUseHostResolver);
+                    }
 
-                if (!nic.nat.areAliasDefaultSettings())
-                {
-                    xml::ElementNode *pelmAlias = pelmNAT->createChild("Alias");
-                    if (nic.nat.fAliasLog)
-                        pelmAlias->setAttribute("logging", nic.nat.fAliasLog);
-                    if (nic.nat.fAliasProxyOnly)
-                        pelmAlias->setAttribute("proxy-only", nic.nat.fAliasProxyOnly);
-                    if (nic.nat.fAliasUseSamePorts)
-                        pelmAlias->setAttribute("use-same-ports", nic.nat.fAliasUseSamePorts);
-                }
+                    if (!nic.nat.areAliasDefaultSettings())
+                    {
+                        xml::ElementNode *pelmAlias = pelmNAT->createChild("Alias");
+                        if (nic.nat.fAliasLog)
+                            pelmAlias->setAttribute("logging", nic.nat.fAliasLog);
+                        if (nic.nat.fAliasProxyOnly)
+                            pelmAlias->setAttribute("proxy-only", nic.nat.fAliasProxyOnly);
+                        if (nic.nat.fAliasUseSamePorts)
+                            pelmAlias->setAttribute("use-same-ports", nic.nat.fAliasUseSamePorts);
+                    }
 
-                if (!nic.nat.areTFTPDefaultSettings())
-                {
-                    xml::ElementNode *pelmTFTP;
-                    pelmTFTP = pelmNAT->createChild("TFTP");
-                    if (nic.nat.strTFTPPrefix.length())
-                        pelmTFTP->setAttribute("prefix", nic.nat.strTFTPPrefix);
-                    if (nic.nat.strTFTPBootFile.length())
-                        pelmTFTP->setAttribute("boot-file", nic.nat.strTFTPBootFile);
-                    if (nic.nat.strTFTPNextServer.length())
-                        pelmTFTP->setAttribute("next-server", nic.nat.strTFTPNextServer);
+                    if (!nic.nat.areTFTPDefaultSettings())
+                    {
+                        xml::ElementNode *pelmTFTP;
+                        pelmTFTP = pelmNAT->createChild("TFTP");
+                        if (nic.nat.strTFTPPrefix.length())
+                            pelmTFTP->setAttribute("prefix", nic.nat.strTFTPPrefix);
+                        if (nic.nat.strTFTPBootFile.length())
+                            pelmTFTP->setAttribute("boot-file", nic.nat.strTFTPBootFile);
+                        if (nic.nat.strTFTPNextServer.length())
+                            pelmTFTP->setAttribute("next-server", nic.nat.strTFTPNextServer);
+                    }
+                    buildNATForwardRulesMap(*pelmNAT, nic.nat.mapRules);
                 }
-                buildNATForwardRulesMap(*pelmNAT, nic.nat.mapRules);
             }
             break;
 
         case NetworkAttachmentType_Bridged:
-            if (!nic.strBridgedName.isEmpty())
-                elmParent.createChild("BridgedInterface")->setAttribute("name", nic.strBridgedName);
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.strBridgedName.isEmpty())
+            {
+                xml::ElementNode *pelmMode = elmParent.createChild("BridgedInterface");
+                if (!nic.strBridgedName.isEmpty())
+                    pelmMode->setAttribute("name", nic.strBridgedName);
+            }
             break;
 
         case NetworkAttachmentType_Internal:
-            if (!nic.strInternalNetworkName.isEmpty())
-                elmParent.createChild("InternalNetwork")->setAttribute("name", nic.strInternalNetworkName);
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.strInternalNetworkName.isEmpty())
+            {
+                xml::ElementNode *pelmMode = elmParent.createChild("InternalNetwork");
+                if (!nic.strInternalNetworkName.isEmpty())
+                    pelmMode->setAttribute("name", nic.strInternalNetworkName);
+            }
             break;
 
         case NetworkAttachmentType_HostOnly:
-            if (!nic.strHostOnlyName.isEmpty())
-                elmParent.createChild("HostOnlyInterface")->setAttribute("name", nic.strHostOnlyName);
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.strHostOnlyName.isEmpty())
+            {
+                xml::ElementNode *pelmMode = elmParent.createChild("HostOnlyInterface");
+                if (!nic.strHostOnlyName.isEmpty())
+                    pelmMode->setAttribute("name", nic.strHostOnlyName);
+            }
             break;
 
         case NetworkAttachmentType_Generic:
-            if (!nic.areGenericDriverDefaultSettings())
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.areGenericDriverDefaultSettings())
             {
                 xml::ElementNode *pelmMode = elmParent.createChild("GenericInterface");
-                pelmMode->setAttribute("driver", nic.strGenericDriver);
-                for (StringsMap::const_iterator it = nic.genericProperties.begin();
-                     it != nic.genericProperties.end();
-                     ++it)
+                if (!nic.areGenericDriverDefaultSettings())
                 {
-                    xml::ElementNode *pelmProp = pelmMode->createChild("Property");
-                    pelmProp->setAttribute("name", it->first);
-                    pelmProp->setAttribute("value", it->second);
+                    pelmMode->setAttribute("driver", nic.strGenericDriver);
+                    for (StringsMap::const_iterator it = nic.genericProperties.begin();
+                         it != nic.genericProperties.end();
+                         ++it)
+                    {
+                        xml::ElementNode *pelmProp = pelmMode->createChild("Property");
+                        pelmProp->setAttribute("name", it->first);
+                        pelmProp->setAttribute("value", it->second);
+                    }
                 }
             }
             break;
 
         case NetworkAttachmentType_NATNetwork:
-            if (!nic.strNATNetworkName.isEmpty())
-                elmParent.createChild("NATNetwork")->setAttribute("name", nic.strNATNetworkName);
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.strNATNetworkName.isEmpty())
+            {
+                xml::ElementNode *pelmMode = elmParent.createChild("NATNetwork");
+                if (!nic.strNATNetworkName.isEmpty())
+                    pelmMode->setAttribute("name", nic.strNATNetworkName);
+            }
             break;
 
         default: /*case NetworkAttachmentType_Null:*/

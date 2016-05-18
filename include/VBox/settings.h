@@ -872,7 +872,7 @@ struct Hardware
 {
     Hardware();
 
-    bool areParavirtDefaultSettings() const;
+    bool areParavirtDefaultSettings(SettingsVersion_T sv) const;
     bool areBootOrderDefaultSettings() const;
     bool areDisplayDefaultSettings() const;
     bool areVideoCaptureDefaultSettings() const;
@@ -1137,7 +1137,7 @@ private:
     void readMachine(const xml::ElementNode &elmMachine);
 
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, uint32_t fl, std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
-    void buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, const NetworkAdapter &nic);
+    void buildNetworkXML(NetworkAttachmentType_T mode, bool fEnabled, xml::ElementNode &elmParent, const NetworkAdapter &nic);
     void buildStorageControllersXML(xml::ElementNode &elmParent,
                                     const Storage &st,
                                     bool fSkipRemovableMedia,
