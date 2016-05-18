@@ -1792,7 +1792,7 @@ FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd
 
 
 /** Opcode 0x0f 0x2b. */
-#if 0
+#ifndef VBOX_WITH_REM /** @todo figure out why this causes moderate regressions when enabled... Enabled for non-REM to hopefully make some headway there... */
 FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntps mr,r" : "movntpd mr,r");
