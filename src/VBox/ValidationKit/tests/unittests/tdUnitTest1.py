@@ -138,7 +138,7 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstVBoxControl': '',      # works only inside a guest
         'testcase/tstVDCopy': '',           # parameters required
         'tstAnimate': '',                   # parameters required
-        'tstAPI': '',                       # user interaction required
+        'testcase/tstAPI': '',              # user interaction required
         'tstCollector': '',                 # takes forever
         'testcase/tstHeadless': '',         # parameters required
         'tstHeadless': '',                  # parameters required
