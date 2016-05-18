@@ -47,6 +47,9 @@ UIInformationModel::UIInformationModel(QObject *pParent, const CMachine &machine
 
 UIInformationModel::~UIInformationModel()
 {
+    /* Destroy all data-items: */
+    qDeleteAll(m_list);
+    m_list.clear();
 }
 
 int UIInformationModel::rowCount(const QModelIndex& /*parent */) const
