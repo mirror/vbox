@@ -989,29 +989,29 @@ static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PDBGDIGGERLINUX pThis)
                             RTDbgAsRelease(hAs);
                         }
                         else
-                            Log(("dbgDiggerLinuxFindTokenIndex: Failed: %Rrc\n", rc));
+                            Log(("dbgDiggerLinuxLoadKernelSymbols: Failed: %Rrc\n", rc));
                         RTDbgModRelease(hMod);
                     }
                     else
-                        Log(("dbgDiggerLinuxFindTokenIndex: RTDbgModCreate failed: %Rrc\n", rc));
+                        Log(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModCreate failed: %Rrc\n", rc));
                 }
                 else
-                    Log(("dbgDiggerLinuxFindTokenIndex: Reading token index at %RGv failed: %Rrc\n",
+                    Log(("dbgDiggerLinuxLoadKernelSymbols: Reading token index at %RGv failed: %Rrc\n",
                          pThis->AddrKernelTokenIndex.FlatPtr, rc));
                 RTMemFree(paoffTokens);
             }
             else
-                Log(("dbgDiggerLinuxFindTokenIndex: Reading token table at %RGv failed: %Rrc\n",
+                Log(("dbgDiggerLinuxLoadKernelSymbols: Reading token table at %RGv failed: %Rrc\n",
                      pThis->AddrKernelTokenTable.FlatPtr, rc));
             RTMemFree(pszzTokens);
         }
         else
-            Log(("dbgDiggerLinuxFindTokenIndex: Reading encoded names at %RGv failed: %Rrc\n",
+            Log(("dbgDiggerLinuxLoadKernelSymbols: Reading encoded names at %RGv failed: %Rrc\n",
                  pThis->AddrKernelNames.FlatPtr, rc));
         RTMemFree(pbNames);
     }
     else
-        Log(("dbgDiggerLinuxFindTokenIndex: Reading symbol addresses at %RGv failed: %Rrc\n",
+        Log(("dbgDiggerLinuxLoadKernelSymbols: Reading symbol addresses at %RGv failed: %Rrc\n",
              pThis->AddrKernelAddresses.FlatPtr, rc));
     RTMemFree(pvAddresses);
     return rc;
