@@ -491,7 +491,14 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
+	src/runtime/information/UIInformation.h \
+	src/runtime/information/UIInformationDataItem.h \
+	src/runtime/information/UIInformationItem.h \
+	src/runtime/information/UIInformationModel.h \
+	src/runtime/information/UIInformationRuntime.h \
+	src/runtime/information/UIInformationView.h \
+	src/runtime/information/UIVMInformationDialog.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VirtualBox_QT_MOCHDRS += \
@@ -782,7 +789,14 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
+	src/runtime/information/UIInformation.cpp \
+	src/runtime/information/UIInformationDataItem.cpp \
+	src/runtime/information/UIInformationItem.cpp \
+	src/runtime/information/UIInformationModel.cpp \
+	src/runtime/information/UIInformationRuntime.cpp \
+	src/runtime/information/UIInformationView.cpp \
+	src/runtime/information/UIVMInformationDialog.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VirtualBox_SOURCES += \

@@ -64,6 +64,7 @@
 # include "UIMedium.h"
 # include "UIExtraDataManager.h"
 # include "UIAddDiskEncryptionPasswordDialog.h"
+# include "UIVMInformationDialog.h"
 # ifdef VBOX_WS_MAC
 #  include "DockIconPreview.h"
 #  include "UIExtraDataManager.h"
@@ -114,6 +115,7 @@
 # include <XKeyboard.h>
 #endif /* VBOX_WS_X11 */
 
+#define VBOX_WITH_REWORKED_SESSION_INFORMATION /* Define for reworked session-information window: */
 
 struct USBTarget
 {
@@ -1542,7 +1544,11 @@ void UIMachineLogic::sltShowInformationDialog()
         return;
 
     /* Invoke VM information dialog: */
+#ifdef VBOX_WITH_REWORKED_SESSION_INFORMATION
+    UIVMInformationDialog::invoke(mainMachineWindow());
+#else /* !VBOX_WITH_REWORKED_SESSION_INFORMATION */
     UIVMInfoDialog::invoke(mainMachineWindow());
+#endif /* !VBOX_WITH_REWORKED_SESSION_INFORMATION */
 }
 
 void UIMachineLogic::sltReset()
