@@ -1248,6 +1248,8 @@ void NetworkAdapter::i_applyDefaults(GuestOSType *aOsType)
     if (mData->mSlot == 0)
     {
         mData->mEnabled = true;
+        if (mData->mMACAddress.isEmpty())
+            i_generateMACAddress();
         mData->mAttachmentType = NetworkAttachmentType_NAT;
     }
     mData->mCableConnected = true;
