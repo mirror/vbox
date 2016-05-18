@@ -1713,7 +1713,10 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         && IEM_IS_REAL_OR_V86_MODE(pIemCpu))
     {
         if (offSeg > pCtx->cs.u32Limit)
+        {
+            Log(("iemCImpl_FarJmp: 16-bit limit\n"));
             return iemRaiseGeneralProtectionFault0(pIemCpu);
+        }
 
         if (enmEffOpSize == IEMMODE_16BIT) /** @todo WRONG, must pass this. */
             pCtx->rip       = offSeg;
@@ -1804,7 +1807,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
        here, but that is ruled out by offSeg being 32-bit, right?) */
     uint64_t u64Base;
     uint32_t cbLimit = X86DESC_LIMIT_G(&Desc.Legacy);
-    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+    if (Desc.Legacy.Gen.u1Long)
         u64Base = 0;
     else
     {
