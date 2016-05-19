@@ -238,8 +238,11 @@ else # VBOX_WITH_QTGUI_V5
      # The wildcards are necessary to install the libs instead of the symlinks
      qt5-bin_SOURCES = \
       $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(wildcard $(VBOX_PATH_QT_LIB)/lib$(qtmod).so.*.*.*)=>lib$(qtmod).so.5) \
-      $(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib)) \
-      $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$(wildcard $(VBOX_PATH_QT_LIB)/legacy/$(lib).*.*)=>legacy/$(lib))
+      $(foreach lib,$(VBOX_QT_PLUGINS),$(VBOX_PATH_QT)/$(lib)=>$(lib))
+      ifneq ($(KBUILD_TARGET),solaris)
+       qt5-bin_SOURCES += \
+        $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$(wildcard $(VBOX_PATH_QT_LIB)/legacy/$(lib).*.*)=>legacy/$(lib))
+      endif # solaris
     else # !VBOX_WITH_HARDENING
      # For non-hardened builds we need to remove the RUNPATH. This stuff is
      # ugly but we need to prevent kBuild from hard-linking otherwise we
