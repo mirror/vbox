@@ -383,7 +383,7 @@ htg_no_syscall:
 
     ;; handle use flags.
     mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
-    and     esi, ~CPUM_USED_FPU         ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
+    and     esi, ~(CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST) ; Clear CPUM_USED_* flags.
     mov     [edx + CPUMCPU.fUseFlags], esi
 
     ; debug registers.
@@ -983,13 +983,16 @@ gth_syscall_no:
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
-    test    esi, CPUM_USED_FPU
+    test    esi, (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)
     jz near gth_fpu_no
     mov     ecx, cr0
     and     ecx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, ecx
 
     mov     ebx, edx                    ; save edx
+
+    test    esi, CPUM_USED_FPU_GUEST
+    jz      gth_fpu_host
 
     mov     eax, [ebx + CPUMCPU.Guest.fXStateMask]
     mov     ecx, [ebx + CPUMCPU.Guest.pXStateR0]

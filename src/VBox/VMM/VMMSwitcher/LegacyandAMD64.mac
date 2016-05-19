@@ -676,7 +676,9 @@ htg_fpu_fxrstor:
 htg_fpu_done:
     mov     cr0, rcx                    ; and restore old CR0 again
 
-    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_FPU_STATE
+    and     esi, ~CPUM_SYNC_FPU_STATE
+    or      esi, CPUM_USED_FPU_GUEST
+    mov     [rdx + CPUMCPU.fUseFlags], esi
 
 htg_fpu_no:
     ; Check if we need to restore the guest debug state
@@ -701,8 +703,9 @@ htg_fpu_no:
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 6*8]
     mov     dr6, rax    ; not required for AMD-V
 
-    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_REGS_GUEST
-    or      dword [rdx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_GUEST
+    and     esi, ~CPUM_SYNC_DEBUG_REGS_GUEST
+    or      esi, CPUM_USED_DEBUG_REGS_GUEST
+    mov     [rdx + CPUMCPU.fUseFlags], esi
     jmp     htg_debug_done
 
 htg_debug_hyper:
@@ -718,8 +721,9 @@ htg_debug_hyper:
     mov     rax, qword [rdx + CPUMCPU.Hyper.dr + 6*8]
     mov     dr6, rax    ; not required for AMD-V
 
-    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_REGS_HYPER
-    or      dword [rdx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
+    and     esi, ~CPUM_SYNC_DEBUG_REGS_HYPER
+    or      esi, CPUM_USED_DEBUG_REGS_HYPER
+    mov     [rdx + CPUMCPU.fUseFlags], esi
 
 htg_debug_done:
 
@@ -731,7 +735,7 @@ htg_debug_done:
     ; "Call" the specified helper function.
     ;
 
-    ; parameter for all helper functions (pCtx)
+    ; parameter for all helper functions (pCtx) (in addition to rdx = pCPUM ofc)
     DEBUG64_CHAR('9')
     lea     rsi, [rdx + CPUMCPU.Guest]
     lea     rax, [htg_return wrt rip]
@@ -1352,6 +1356,7 @@ ENDPROC SVMRCVMRun64
 ; *
 ; * @returns VBox status code
 ; * @param   pCtx       Guest context [rsi]
+; * @param   pCPUM      Pointer to CPUMCPU [rdx]
 ; */
 BEGINPROC HMRCSaveGuestFPU64
     DEBUG_CMOS_STACK64 40h
@@ -1366,13 +1371,15 @@ BEGINPROC HMRCSaveGuestFPU64
     jz      .use_fxsave
     mov     edx, [rsi + CPUMCTX.fXStateMask + 4]
     o64 xsave [rbx]
-    jmp     .done
+    jmp     .done                   .
 
 .use_fxsave:
     o64 fxsave  [rbx]                   ; (use explicit REX prefix, see @bugref{6398})
 
 .done:
     mov     cr0, rcx                    ; and restore old CR0 again
+
+    and     [rdx + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_GUEST
 
     mov     eax, VINF_SUCCESS
     ret

@@ -7014,16 +7014,14 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
     }
 
     /* Restore host FPU state if necessary and resync on next R0 reentry .*/
-    if (CPUMIsGuestFPUStateActive(pVCpu))
+    if (CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu))
     {
-        /* We shouldn't reload CR0 without saving it first. */
-        if (!fSaveGuestState)
+        if (fSaveGuestState)
         {
+            /* We shouldn't reload CR0 without saving it first. */
             int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
         }
-        CPUMR0SaveGuestFPU(pVM, pVCpu, pMixedCtx);
-        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
 
@@ -7280,10 +7278,7 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
         RTThreadPreemptDisable(&PreemptState);
 
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        if (CPUMIsGuestFPUStateActive(pVCpu))
-            CPUMR0SaveGuestFPU(pVM, pVCpu, (PCPUMCTX)pvUser);
-
+        CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
 
 #if HC_ARCH_BITS == 64
@@ -7294,8 +7289,8 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 
         /* Restore the lazy host MSRs as we're leaving VT-x context. */
-        if (   pVM->hm.s.fAllow64BitGuests
-            && pVCpu->hm.s.vmx.fLazyMsrs)
+        if (   pVCpu->hm.s.vmx.fLazyMsrs
+            && pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
 #endif
         /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
@@ -8630,14 +8625,14 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 
 #ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
     if (!CPUMIsGuestFPUStateActive(pVCpu))
-        CPUMR0LoadGuestFPU(pVM, pVCpu, pMixedCtx);
+        CPUMR0LoadGuestFPU(pVM, pVCpu);
     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
 #endif
 
     if (   pVCpu->hm.s.fPreloadGuestFpu
         && !CPUMIsGuestFPUStateActive(pVCpu))
     {
-        CPUMR0LoadGuestFPU(pVM, pVCpu, pMixedCtx);
+        CPUMR0LoadGuestFPU(pVM, pVCpu);
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0));
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
@@ -8792,10 +8787,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
 #ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
-    if (CPUMIsGuestFPUStateActive(pVCpu))
+    if (CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVM, pVCpu))
     {
         hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
-        CPUMR0SaveGuestFPU(pVM, pVCpu, pMixedCtx);
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
 #endif
@@ -12992,7 +12986,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         Assert(!pVmxTransient->fWasGuestFPUStateActive || pVCpu->hm.s.fUsingDebugLoop);
 #endif
-        rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
+        rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
     }
 

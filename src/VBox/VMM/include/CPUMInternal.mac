@@ -38,7 +38,8 @@ struc CPUMINFO
 endstruc
 
 
-%define CPUM_USED_FPU                   RT_BIT(0)
+%define CPUM_USED_FPU_HOST              RT_BIT(0)
+%define CPUM_USED_FPU_GUEST             RT_BIT(10)
 %define CPUM_USED_FPU_SINCE_REM         RT_BIT(1)
 %define CPUM_USED_MANUAL_XMM_RESTORE    RT_BIT(2)
 %define CPUM_USE_SYSENTER               RT_BIT(3)

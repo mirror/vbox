@@ -62,10 +62,15 @@ typedef uint64_t STAMCOUNTER;
 
 /** Use flags (CPUM::fUseFlags).
  * (Don't forget to sync this with CPUMInternal.mac !)
+ * @note Part of saved state.
  * @{ */
-/** Used the FPU, SSE or such stuff. */
-#define CPUM_USED_FPU                   RT_BIT(0)
-/** Used the FPU, SSE or such stuff since last we were in REM.
+/** Indicates that we've saved the host FPU, SSE, whatever state and that it
+ * needs to be restored. */
+#define CPUM_USED_FPU_HOST              RT_BIT(0)
+/** Indicates that we've loaded the guest FPU, SSE, whatever state and that it
+ * needs to be saved. */
+#define CPUM_USED_FPU_GUEST             RT_BIT(10)
+/** Used the guest FPU, SSE or such stuff since last we were in REM.
  * REM syncing is clearing this, lazy FPU is setting it. */
 #define CPUM_USED_FPU_SINCE_REM         RT_BIT(1)
 /** The XMM state was manually restored. (AMD only) */
@@ -93,7 +98,6 @@ typedef uint64_t STAMCOUNTER;
  * registers (DR0-3 and maybe DR6) for direct use by the guest.
  * DR7 (and AMD-V DR6) are handled via the VMCB. */
 #define CPUM_USED_DEBUG_REGS_GUEST      RT_BIT(9)
-
 
 /** Sync the FPU state on next entry (32->64 switcher only). */
 #define CPUM_SYNC_FPU_STATE             RT_BIT(16)
@@ -510,7 +514,7 @@ RT_C_DECLS_BEGIN
 PCPUMCPUIDLEAF      cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf);
 PCPUMCPUIDLEAF      cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bool *pfExactSubLeafHit);
 
-#ifdef IN_RING3
+# ifdef IN_RING3
 int                 cpumR3DbgInit(PVM pVM);
 int                 cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUMFEATURES pFeatures);
 int                 cpumR3InitCpuIdAndMsrs(PVM pVM);
@@ -525,26 +529,20 @@ int                 cpumR3MsrApplyFudge(PVM pVM);
 int                 cpumR3MsrRegStats(PVM pVM);
 int                 cpumR3MsrStrictInitChecks(void);
 PCPUMMSRRANGE       cpumLookupMsrRange(PVM pVM, uint32_t idMsr);
-#endif
+# endif
 
-#ifdef IN_RC
+# ifdef IN_RC
 DECLASM(int)        cpumHandleLazyFPUAsm(PCPUMCPU pCPUM);
-#endif
+# endif
 
-#ifdef IN_RING0
-DECLASM(int)        cpumR0SaveHostRestoreGuestFPUState(PCPUMCPU pCPUM);
-DECLASM(int)        cpumR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
-DECLASM(int)        cpumR0SaveHostFPUState(PCPUMCPU pCPUM);
-DECLASM(int)        cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
-DECLASM(void)       cpumR0LoadFPU(PCPUMCTX pCtx);
-DECLASM(void)       cpumR0SaveFPU(PCPUMCTX pCtx);
-DECLASM(void)       cpumR0LoadXMM(PCPUMCTX pCtx);
-DECLASM(void)       cpumR0SaveXMM(PCPUMCTX pCtx);
-DECLASM(void)       cpumR0SetFCW(uint16_t u16FCW);
-DECLASM(uint16_t)   cpumR0GetFCW(void);
-DECLASM(void)       cpumR0SetMXCSR(uint32_t u32MXCSR);
-DECLASM(uint32_t)   cpumR0GetMXCSR(void);
-#endif
+# ifdef IN_RING0
+DECLASM(void)       cpumR0SaveHostRestoreGuestFPUState(PCPUMCPU pCPUM);
+DECLASM(void)       cpumR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
+DECLASM(void)       cpumR0SaveHostFPUState(PCPUMCPU pCPUM);
+#  if ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+DECLASM(void)       cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
+#  endif
+# endif
 
 RT_C_DECLS_END
 #endif /* !VBOX_FOR_DTRACE_LIB */

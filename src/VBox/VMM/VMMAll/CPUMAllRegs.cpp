@@ -648,10 +648,10 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
     if (    (cr0                     & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
         !=  (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)))
     {
-        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU))
+        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST))
         {
             /*
-             * We haven't saved the host FPU state yet, so TS and MT are both set
+             * We haven't loaded the guest FPU state yet, so TS and MT are both set
              * and EM should be reflecting the guest EM (it always does this).
              */
             if ((cr0 & X86_CR0_EM) != (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM))
@@ -676,7 +676,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
         else
         {
             /*
-             * Already saved the state, so we're just mirroring
+             * Already loaded the guest FPU state, so we're just mirroring
              * the guest flags.
              */
             uint32_t HyperCR0 = ASMGetCR0();
@@ -2162,7 +2162,7 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
         if (fNewComponents)
         {
 #if defined(IN_RING0) || defined(IN_RC)
-            if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU)
+            if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
             {
                 if (pVCpu->cpum.s.Guest.fXStateMask != 0)
                     /* Adding more components. */
@@ -2630,13 +2630,26 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 
 /**
  * Checks if we activated the FPU/XMM state of the guest OS.
+ *
  * @returns true if we did.
  * @returns false if not.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 {
-    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU);
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST);
+}
+
+
+/**
+ * Checks if we saved the FPU/XMM state of the host OS.
+ *
+ * @returns true / false.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMMDECL(bool) CPUMIsHostFPUStateSaved(PVMCPU pVCpu)
+{
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_HOST);
 }
 
 

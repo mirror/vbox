@@ -2093,12 +2093,8 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
 
     /* Restore host FPU state if necessary and resync on next R0 reentry .*/
-    if (CPUMIsGuestFPUStateActive(pVCpu))
-    {
-        CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
-        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+    if (CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu))
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
-    }
 
     /*
      * Restore host debug registers if necessary and resync on next R0 reentry.
@@ -2205,9 +2201,8 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT();
 
-        /* Restore host FPU state if necessary and resync on next R0 reentry .*/
-        if (CPUMIsGuestFPUStateActive(pVCpu))
-            CPUMR0SaveGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+        /* Restore host FPU state if necessary and resync on next R0 reentry. */
+        CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
 
         /* Restore host debug registers if necessary and resync on next R0 reentry. */
         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
@@ -3124,7 +3119,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     if (   pVCpu->hm.s.fPreloadGuestFpu
         && !CPUMIsGuestFPUStateActive(pVCpu))
     {
-        CPUMR0LoadGuestFPU(pVM, pVCpu, pCtx);
+        CPUMR0LoadGuestFPU(pVM, pVCpu);
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
 
@@ -5392,7 +5387,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
         Assert(!pSvmTransient->fWasGuestFPUStateActive);
 #endif
-        rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
+        rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
     }
 

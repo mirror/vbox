@@ -99,7 +99,7 @@ BEGINPROC   cpumHandleLazyFPUAsm
         ; Before taking any of these actions we're checking if we have already
         ; loaded the GC FPU. Because if we have, this is an trap for the guest - raw ring-3.
         ;
-        test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USED_FPU
+        test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USED_FPU_GUEST
         jz      hlfpua_not_loaded
         jmp     hlfpua_guest_trap
 
@@ -144,6 +144,9 @@ hlfpua_switch_fpu_ctx:
         and     edx, ~(X86_CR0_TS | X86_CR0_EM)
         mov     cr0, edx                ; Clear flags so we don't trap here.
 
+        test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USED_FPU_HOST
+        jnz     hlfpua_host_done
+
         mov     eax, [pCpumCpu + CPUMCPU.Host.fXStateMask]
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
         or      eax, eax
@@ -167,7 +170,7 @@ hlfpua_guest_fxrstor:
 hlfpua_guest_done:
 
 hlfpua_finished_switch:
-        or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
+        or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_HOST | CPUM_USED_FPU_GUEST | CPUM_USED_FPU_SINCE_REM)
 
         ; Load new CR0 value.
         mov     cr0, ecx                ; load the new cr0 flags.

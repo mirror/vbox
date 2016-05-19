@@ -453,7 +453,7 @@ htg_no_sysenter:
 
     ;; handle use flags.
     mov     esi, [rdx + r8 + CPUMCPU.fUseFlags] ; esi == use flags.
-    and     esi, ~CPUM_USED_FPU   ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
+    and     esi, ~(CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST) ; Clear CPUM_USED_* flags.
     mov     [rdx + r8 + CPUMCPU.fUseFlags], esi
 
     ; debug registers.
@@ -1063,7 +1063,7 @@ gth_sysenter_no:
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     mov     esi, [rdx + r8 + CPUMCPU.fUseFlags] ; esi == use flags.
-    test    esi, CPUM_USED_FPU
+    test    esi, (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)
     jz      gth_fpu_no
     mov     rcx, cr0
     and     rcx, ~(X86_CR0_TS | X86_CR0_EM)
@@ -1071,8 +1071,11 @@ gth_sysenter_no:
 
     mov     r10, rdx                    ; Save rdx.
 
+    test    esi, CPUM_USED_FPU_GUEST
+    jz      gth_fpu_host
+
     mov     eax, [r10 + r8 + CPUMCPU.Guest.fXStateMask]
-    mov     r9, [r10 + r8 + CPUMCPU.Guest.pXStateR0]
+    mov     r9,  [r10 + r8 + CPUMCPU.Guest.pXStateR0]
     or      eax, eax
     jz      gth_fpu_guest_fxsave
     mov     edx, [r10 + r8 + CPUMCPU.Guest.fXStateMask + 4]
@@ -1083,7 +1086,7 @@ gth_fpu_guest_fxsave:
 
 gth_fpu_host:
     mov     eax, [r10 + r8 + CPUMCPU.Host.fXStateMask]
-    mov     r9, [r10 + r8 + CPUMCPU.Host.pXStateR0]
+    mov     r9,  [r10 + r8 + CPUMCPU.Host.pXStateR0]
     or      eax, eax
     jz      gth_fpu_host_fxrstor
     mov     edx, [r10 + r8 + CPUMCPU.Host.fXStateMask + 4]
