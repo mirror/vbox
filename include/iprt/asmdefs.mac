@@ -121,7 +121,7 @@
 %endmacro
 
 ;;
-; Sets xBP as frame pointer that's pointing to a stack position %1 relative to xSP.
+; Sets xBP as frame pointer that's pointing to a stack position %1 relative to xBP.
 %macro SEH64_SET_FRAME_xBP 1
  %ifdef RT_ASM_WITH_SEH64
   [setframe rbp, %1]
