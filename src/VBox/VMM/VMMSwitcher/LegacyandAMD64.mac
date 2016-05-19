@@ -1371,7 +1371,7 @@ BEGINPROC HMRCSaveGuestFPU64
     jz      .use_fxsave
     mov     edx, [rsi + CPUMCTX.fXStateMask + 4]
     o64 xsave [rbx]
-    jmp     .done                   .
+    jmp     .done
 
 .use_fxsave:
     o64 fxsave  [rbx]                   ; (use explicit REX prefix, see @bugref{6398})
@@ -1379,7 +1379,7 @@ BEGINPROC HMRCSaveGuestFPU64
 .done:
     mov     cr0, rcx                    ; and restore old CR0 again
 
-    and     [rdx + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_GUEST
+    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_GUEST
 
     mov     eax, VINF_SUCCESS
     ret
