@@ -224,7 +224,7 @@ VirtualBox_INCS = \
 # Necessary for the hdd backend enumeration
 VirtualBox_LIBS = $(LIB_DDU)
 
-if1of ($(KBUILD_TARGET), linux netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), linux netbsd openbsd)
  VirtualBox_LIBS += dl
 endif
 
