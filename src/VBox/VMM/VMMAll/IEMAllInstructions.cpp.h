@@ -6435,8 +6435,65 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
 /** Opcode 0x0f 0xc2. */
 FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib__cmppd_Vpd_Wpd_Ib__cmpss_Vss_Wss_Ib__cmpsd_Vsd_Wsd_Ib);
 
+
 /** Opcode 0x0f 0xc3. */
+#if 0 //ndef VBOX_WITH_REM
+FNIEMOP_DEF(iemOp_movnti_My_Gy)
+{
+    IEMOP_MNEMONIC("mov Ev,Gv");
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
+    /* Only the register -> memory form makes sense, assuming #UD for the other form. */
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint32_t, u32Value);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse2)
+                    return IEMOP_RAISE_INVALID_OPCODE();
+
+                IEM_MC_FETCH_GREG_U32(u32Value, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+                IEM_MC_STORE_MEM_U32(pIemCpu->iEffSeg, GCPtrEffDst, u32Value);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint64_t, u64Value);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse2)
+                    return IEMOP_RAISE_INVALID_OPCODE();
+
+                IEM_MC_FETCH_GREG_U64(u64Value, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+                IEM_MC_STORE_MEM_U64(pIemCpu->iEffSeg, GCPtrEffDst, u64Value);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case IEMMODE_16BIT:
+                /** @todo check this form.   */
+                return IEMOP_RAISE_INVALID_OPCODE();
+        }
+    }
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
+    return VINF_SUCCESS;
+}
+#else
 FNIEMOP_STUB(iemOp_movnti_My_Gy); // solaris 10 uses this in hat_pte_zero().
+#endif
+
 
 /** Opcode 0x0f 0xc4. */
 FNIEMOP_STUB(iemOp_pinsrw_Pq_Ry_Mw_Ib__pinsrw_Vdq_Ry_Mw_Ib);
@@ -6770,8 +6827,69 @@ FNIEMOP_STUB(iemOp_pmulhuw_Pq_Qq__pmulhuw_Vdq_Wdq);
 FNIEMOP_STUB(iemOp_pmulhw_Pq_Qq__pmulhw_Vdq_Wdq);
 /** Opcode 0x0f 0xe6. */
 FNIEMOP_STUB(iemOp_cvttpd2dq_Vdq_Wdp__cvtdq2pd_Vdq_Wpd__cvtpd2dq_Vdq_Wpd);
+
+
 /** Opcode 0x0f 0xe7. */
+#if 0 //ndef VBOX_WITH_REM
+FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
+{
+    IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntq mr,r" : "movntdq mr,r");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, memory.
+         */
+/** @todo check when the REPNZ/Z bits kick in. Same as lock, probably... */
+        switch (pIemCpu->fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
+        {
+
+            case IEM_OP_PRF_SIZE_OP: /* SSE */
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint128_t,                 uSrc);
+                IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+
+                IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+                IEM_MC_STORE_MEM_U128_ALIGN_SSE(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            case 0: /* MMX */
+                IEM_MC_BEGIN(0, 2);
+                IEM_MC_LOCAL(uint64_t,                  uSrc);
+                IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+
+                IEM_MC_FETCH_MREG_U64(uSrc, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+                IEM_MC_STORE_MEM_U64(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                break;
+
+            default:
+                return IEMOP_RAISE_INVALID_OPCODE();
+        }
+    }
+    /* The register, register encoding is invalid. */
+    else
+        return IEMOP_RAISE_INVALID_OPCODE();
+    return VINF_SUCCESS;
+}
+#else
 FNIEMOP_STUB(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq);
+#endif
+
+
 /** Opcode 0x0f 0xe8. */
 FNIEMOP_STUB(iemOp_psubsb_Pq_Qq__psubsb_Vdq_Wdq);
 /** Opcode 0x0f 0xe9. */
