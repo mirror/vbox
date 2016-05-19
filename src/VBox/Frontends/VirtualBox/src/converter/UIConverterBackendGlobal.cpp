@@ -539,6 +539,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:             strResult = "Pause"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:             strResult = "Reset"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach:            strResult = "Detach"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:         strResult = "SaveState"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown:          strResult = "Shutdown"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff:          strResult = "PowerOff"; break;
@@ -564,6 +565,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
     keys << "InformationDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
     keys << "Pause";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
     keys << "Reset";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
+    keys << "Detach";            values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach;
     keys << "SaveState";         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
     keys << "Shutdown";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
     keys << "PowerOff";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;

@@ -242,6 +242,36 @@ protected:
     }
 };
 
+class UIActionSimplePerformDetach : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformDetach(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("DetachUI");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Detach GUI"));
+        setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
+    }
+};
+
 class UIActionSimplePerformSaveState : public UIActionSimple
 {
     Q_OBJECT;
@@ -2073,6 +2103,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleShowInformationDialog(this);
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionTogglePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimplePerformReset(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Detach] = new UIActionSimplePerformDetach(this);
     m_pool[UIActionIndexRT_M_Machine_S_SaveState] = new UIActionSimplePerformSaveState(this);
     m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimplePerformShutdown(this);
     m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimplePerformPowerOff(this);
@@ -2371,6 +2402,8 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_T_Pause)) || fSeparator;
     /* 'Reset' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Reset)) || fSeparator;
+    /* 'Detach' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Detach)) || fSeparator;
     /* 'SaveState' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_SaveState)) || fSeparator;
     /* 'Shutdown' action: */

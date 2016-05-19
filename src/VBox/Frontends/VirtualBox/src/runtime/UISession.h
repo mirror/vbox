@@ -93,6 +93,7 @@ public:
     /* API: Runtime UI stuff: */
     bool initialize();
     bool powerUp();
+    bool detach();
     bool saveState();
     bool shutdown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);

@@ -380,10 +380,11 @@ public:
         RuntimeMenuMachineActionType_InformationDialog = RT_BIT(2),
         RuntimeMenuMachineActionType_Pause             = RT_BIT(3),
         RuntimeMenuMachineActionType_Reset             = RT_BIT(4),
-        RuntimeMenuMachineActionType_SaveState         = RT_BIT(5),
-        RuntimeMenuMachineActionType_Shutdown          = RT_BIT(6),
-        RuntimeMenuMachineActionType_PowerOff          = RT_BIT(7),
-        RuntimeMenuMachineActionType_Nothing           = RT_BIT(8),
+        RuntimeMenuMachineActionType_Detach            = RT_BIT(5),
+        RuntimeMenuMachineActionType_SaveState         = RT_BIT(6),
+        RuntimeMenuMachineActionType_Shutdown          = RT_BIT(7),
+        RuntimeMenuMachineActionType_PowerOff          = RT_BIT(8),
+        RuntimeMenuMachineActionType_Nothing           = RT_BIT(9),
         RuntimeMenuMachineActionType_All               = 0xFFFF
     };
 

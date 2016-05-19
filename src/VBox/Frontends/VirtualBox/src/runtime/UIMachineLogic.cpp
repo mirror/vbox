@@ -387,6 +387,22 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 }
 #endif /* VBOX_WS_MAC */
 
+void UIMachineLogic::detach()
+{
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    setManualOverrideMode(true);
+
+    /* Was the step successful? */
+    bool fSuccess = true;
+    LogRel(("GUI: Passing request to detach UI from machine-logic to UI session.\n"));
+    fSuccess = uisession()->detach();
+
+    /* Manually close Runtime UI: */
+    if (fSuccess)
+        closeRuntimeUI();
+}
+
 void UIMachineLogic::saveState()
 {
     /* Enable 'manual-override',
@@ -1002,6 +1018,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert));
 
     /* Move actions into running-n-paused actions group: */
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Detach));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_SaveState));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
@@ -1071,6 +1088,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPause(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
             this, SLOT(sltReset()));
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Detach), SIGNAL(triggered()),
+            this, SLOT(sltDetach()), Qt::QueuedConnection);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_SaveState), SIGNAL(triggered()),
             this, SLOT(sltSaveState()), Qt::QueuedConnection);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Shutdown), SIGNAL(triggered()),
@@ -1567,6 +1586,18 @@ void UIMachineLogic::sltReset()
 void UIMachineLogic::sltPause(bool fOn)
 {
     uisession()->setPause(fOn);
+}
+
+void UIMachineLogic::sltDetach()
+{
+    /* Make sure machine is in one of the allowed states: */
+    if (!uisession()->isRunning() && !uisession()->isPaused())
+    {
+        AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
+        return;
+    }
+
+    detach();
 }
 
 void UIMachineLogic::sltSaveState()

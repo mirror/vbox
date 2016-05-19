@@ -139,6 +139,8 @@ public:
     UIMachineView* dockPreviewView() const;
 #endif /* VBOX_WS_MAC */
 
+    /** Detach and close Runtime UI. */
+    void detach();
     /** Save VM state, then close Runtime UI. */
     void saveState();
     /** Call for guest shutdown to close Runtime UI. */
@@ -266,6 +268,7 @@ private slots:
     void sltShowInformationDialog();
     void sltReset();
     void sltPause(bool fOn);
+    void sltDetach();
     void sltSaveState();
     void sltShutdown();
     void sltPowerOff();

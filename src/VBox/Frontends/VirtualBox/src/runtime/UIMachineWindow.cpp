@@ -420,7 +420,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         {
             /* Just close Runtime UI: */
             LogRel(("GUI: Request for close-action to detach GUI.\n"));
-            machineLogic()->closeRuntimeUI();
+            machineLogic()->detach();
             break;
         }
         case MachineCloseAction_SaveState:
