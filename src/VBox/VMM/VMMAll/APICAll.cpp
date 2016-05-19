@@ -45,7 +45,7 @@ static const uint32_t g_au32LvtValidMasks[] =
 /** @todo CMCI */
 static const uint32_t g_au32LvtExtValidMask[] =
 {
-    XAPIC_LVT_CMCI
+    XAPIC_LVT_CMCI_VALID
 };
 #endif
 

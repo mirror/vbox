@@ -903,10 +903,12 @@ static int apicR3LoadLegacyVCpuData(PVM pVM, PVMCPU pVCpu, PSSMHANDLE pSSM, uint
     uint32_t u32TimerShift;
     SSMR3GetU32(pSSM, &pXApicPage->timer_dcr.all.u32DivideValue);
     SSMR3GetU32(pSSM, &u32TimerShift);
-    /* Old implementation may have left the timer shift uninitialized until
-     * the timer configuration register was written. Unfortunately zero is 
-     * also a valid timer shift value, so we're just going to ignore it 
-     * completely. The shift count can always be derived from the DCR. 
+    /*
+     * Old implementation may have left the timer shift uninitialized until
+     * the timer configuration register was written. Unfortunately zero is
+     * also a valid timer shift value, so we're just going to ignore it
+     * completely. The shift count can always be derived from the DCR.
+     * See @bugref{8245#c98}.
      */
     uint8_t const uTimerShift = apicGetTimerShift(pXApicPage);
 
