@@ -3806,6 +3806,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fAPIC);
             if ((pelmCPUChild = pelmHwChild->findChildElement("X2APIC")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fX2APIC);
+            if (hw.fX2APIC)
+                hw.fAPIC = true;
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
                 readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
