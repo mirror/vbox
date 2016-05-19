@@ -303,7 +303,6 @@ endif
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    $(if $(NOVBOXIMG),,usr/lib/virtualbox/vbox-img usr/bin/vbox-img) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
-	dh_desktop
 	$(if $(NOMODS),,dh_installmodules)
 	sed -e 's|%VER%|$(debver)|g' \
 	    -e 's|%DATE%|$(shell date -R)|g' \

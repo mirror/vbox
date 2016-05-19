@@ -219,7 +219,6 @@ endif
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	ln -s ../VBoxVMM.so $(prefix)/usr/lib/$(package)/components/VBoxVMM.so
 	rmdir $(prefix)/opt
-	dh_desktop
 	$(if $(NOMODS),,dh_installmodules)
 	sed \
 	    -e 's|%NOLSB%||g' \
