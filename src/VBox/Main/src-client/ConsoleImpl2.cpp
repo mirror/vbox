@@ -1031,16 +1031,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             fEnableX2APIC = false;
         }
 
-        /* /APIC/xzy */
-        PCFGMNODE pAPIC;
-        InsertConfigNode(pRoot, "APIC", &pAPIC);
-        uint32_t uAPICMode = 1;
-        if (fEnableX2APIC)
-            uAPICMode = 2;
-        else if (!fEnableAPIC)
-            uAPICMode = 0;
-        InsertConfigInteger(pAPIC, "Mode", uAPICMode);
-
         /*
          * Hardware virtualization extensions.
          */
@@ -1596,6 +1586,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
             InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
+            uint32_t uAPICMode = 2;
+            if (fEnableX2APIC)
+                uAPICMode = 3;
+            else if (!fEnableAPIC)
+                uAPICMode = 0;
+            InsertConfigInteger(pCfg,  "Mode", uAPICMode);
             InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
 
             if (fIOAPIC)
