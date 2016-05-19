@@ -82,6 +82,7 @@ typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
     VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE =    0x2
 } VBOXSERVICETOOLBOXOUTPUTFLAG;
 
+
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
@@ -91,6 +92,7 @@ static RTEXITCODE vgsvcToolboxRm(int argc, char **argv);
 static RTEXITCODE vgsvcToolboxMkTemp(int argc, char **argv);
 static RTEXITCODE vgsvcToolboxMkDir(int argc, char **argv);
 static RTEXITCODE vgsvcToolboxStat(int argc, char **argv);
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -105,19 +107,17 @@ typedef struct VBOXSERVICETOOLBOXTOOL
     const char *pszName;
     /** Main handler to be invoked to use the tool. */
     RTEXITCODE (*pfnHandler)(int argc, char **argv);
-    /** Conversion routine to convert the tool's exit code back to an IPRT rc. Optional. */
+    /** Conversion routine to convert the tool's exit code back to an IPRT rc. Optional.
+     *
+     * @todo r=bird: You better revert this, i.e. having pfnHandler return a VBox
+     *       status code and have a routine for converting it to RTEXITCODE.
+     *       Unless, what you really want to do here is to get a cached status, in
+     *       which case you better call it what it is.
+     */
     int        (*pfnExitCodeConvertToRc)(RTEXITCODE rcExit);
-} VBOXSERVICETOOLBOXTOOL, *PVBOXSERVICETOOLBOXTOOL;
-
-static VBOXSERVICETOOLBOXTOOL s_aTools[] =
-{
-    { VBOXSERVICE_TOOL_CAT,    vgsvcToolboxCat   , NULL },
-    { VBOXSERVICE_TOOL_LS,     vgsvcToolboxLs    , NULL },
-    { VBOXSERVICE_TOOL_RM,     vgsvcToolboxRm    , NULL },
-    { VBOXSERVICE_TOOL_MKTEMP, vgsvcToolboxMkTemp, NULL },
-    { VBOXSERVICE_TOOL_MKDIR,  vgsvcToolboxMkDir , NULL },
-    { VBOXSERVICE_TOOL_STAT,   vgsvcToolboxStat  , NULL }
-};
+} VBOXSERVICETOOLBOXTOOL;
+/** Pointer to a const tool definition. */
+typedef VBOXSERVICETOOLBOXTOOL const *PCVBOXSERVICETOOLBOXTOOL;
 
 /**
  * An file/directory entry. Used to cache
@@ -140,6 +140,19 @@ typedef struct VBOXSERVICETOOLBOXDIRENTRY
 } VBOXSERVICETOOLBOXDIRENTRY, *PVBOXSERVICETOOLBOXDIRENTRY;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Tool definitions. */
+static VBOXSERVICETOOLBOXTOOL const g_aTools[] =
+{
+    { VBOXSERVICE_TOOL_CAT,    vgsvcToolboxCat   , NULL },
+    { VBOXSERVICE_TOOL_LS,     vgsvcToolboxLs    , NULL },
+    { VBOXSERVICE_TOOL_RM,     vgsvcToolboxRm    , NULL },
+    { VBOXSERVICE_TOOL_MKTEMP, vgsvcToolboxMkTemp, NULL },
+    { VBOXSERVICE_TOOL_MKDIR,  vgsvcToolboxMkDir , NULL },
+    { VBOXSERVICE_TOOL_STAT,   vgsvcToolboxStat  , NULL }
+};
 
 
 /**
@@ -1526,14 +1539,14 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
  * @returns Pointer to the tool definition.  NULL if not found.
  * @param   pszTool     The name of the tool.
  */
-static PVBOXSERVICETOOLBOXTOOL vgsvcToolboxLookUp(const char *pszTool)
+static PCVBOXSERVICETOOLBOXTOOL const vgsvcToolboxLookUp(const char *pszTool)
 {
     AssertPtrReturn(pszTool, NULL);
 
     /* Do a linear search, since we don't have that much stuff in the table. */
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aTools); i++)
-        if (!strcmp(s_aTools[i].pszName, pszTool))
-            return &s_aTools[i];
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aTools); i++)
+        if (!strcmp(g_aTools[i].pszName, pszTool))
+            return &g_aTools[i];
 
     return NULL;
 }
@@ -1550,7 +1563,7 @@ int VGSvcToolboxExitCodeConvertToRc(const char *pszTool, RTEXITCODE rcExit)
 {
     AssertPtrReturn(pszTool, VERR_INVALID_POINTER);
 
-    PVBOXSERVICETOOLBOXTOOL pTool = vgsvcToolboxLookUp(pszTool);
+    PCVBOXSERVICETOOLBOXTOOL pTool = vgsvcToolboxLookUp(pszTool);
     if (pTool)
         return pTool->pfnExitCodeConvertToRc(rcExit);
 
@@ -1576,7 +1589,7 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
      */
     AssertReturn(argc > 0, false);
     const char              *pszTool = RTPathFilename(argv[0]);
-    PVBOXSERVICETOOLBOXTOOL  pTool   = vgsvcToolboxLookUp(pszTool);
+    PCVBOXSERVICETOOLBOXTOOL pTool   = vgsvcToolboxLookUp(pszTool);
     if (!pTool)
     {
         /*
@@ -1597,8 +1610,9 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
                vgsvcToolboxShowVersion();
                return true;
            }
-           if (   (strcmp(pszTool, "help")) && (strcmp(pszTool, "--help"))
-               && (strcmp(pszTool, "-h")))
+           if (   strcmp(pszTool, "help")
+               && strcmp(pszTool, "--help")
+               && strcmp(pszTool, "-h"))
                *prcExit = RTEXITCODE_SYNTAX;
            vgsvcToolboxShowUsage();
            return true;
