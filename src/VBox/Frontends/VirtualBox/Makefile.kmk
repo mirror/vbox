@@ -224,7 +224,7 @@ VirtualBox_INCS = \
 # Necessary for the hdd backend enumeration
 VirtualBox_LIBS = $(LIB_DDU)
 
-if1of ($(KBUILD_TARGET), linux netbsd openbsd)
+if1of ($(KBUILD_TARGET), linux netbsd openbsd solaris)
  VirtualBox_LIBS += dl
 endif
 
@@ -837,6 +837,7 @@ VirtualBox_SOURCES.win += \
 
 if defined(VBOX_WITH_QTGUI_V5) && (defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD))
  INSTALLS.linux += VirtualBox.qt.conf
+ INSTALLS.solaris += VirtualBox.qt.conf
  VirtualBox.qt.conf_INST = $(INST_BIN)
  VirtualBox.qt.conf_MODE = 644
  VirtualBox.qt.conf_SOURCES = $(VirtualBox_0_OUTDIR)/qt.conf=>qt.conf
