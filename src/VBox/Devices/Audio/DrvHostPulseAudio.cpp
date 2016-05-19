@@ -635,7 +635,9 @@ static DECLCALLBACK(int) drvHostPulseAudioInitOut(PPDMIHOSTAUDIO pInterface,
                                         * s_pulseCfg.buffer_msecs_out) / 1000;
     pStrm->BufAttr.maxlength   = (pStrm->BufAttr.tlength * 3) / 2;
     pStrm->BufAttr.prebuf      = -1; /* Same as tlength */
-    pStrm->BufAttr.minreq      = -1; /* Pulse should set something sensible for minreq on it's own */
+
+    /* Set minreq to 0, as we want to control ourselves when to start/stop the stream. */
+    pStrm->BufAttr.minreq      = 0;
 
     /* Note that the struct BufAttr is updated to the obtained values after this call! */
     char achName[64];

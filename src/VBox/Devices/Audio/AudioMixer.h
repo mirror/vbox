@@ -68,6 +68,11 @@ typedef struct AUDMIXSTREAM
     } InOut;
 } AUDMIXSTREAM, *PAUDMIXSTREAM;
 
+/** No flags specified. */
+#define AUDMIXSINK_FLAG_NONE                  0
+/** Dirty flag. */
+#define AUDMIXSINK_FLAG_DIRTY                 RT_BIT(0)
+
 /**
  * Audio mixer sink direction.
  */
@@ -112,6 +117,8 @@ typedef struct AUDMIXSINK
     /** The sink direction, that is,
      *  if this sink handles input or output. */
     AUDMIXSINKDIR           enmDir;
+    /** Sink flags of type AUDMIXSINK_FLAG_. */
+    uint32_t                fFlags;
     /** The sink's PCM format. */
     PDMPCMPROPS             PCMProps;
     /** Number of streams assigned. */
@@ -144,6 +151,7 @@ typedef enum AUDMIXOP
 
 int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer);
 int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink);
+int AudioMixerCreateStream(PAUDIOMIXER pMixer, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream);
 void AudioMixerDestroy(PAUDIOMIXER pMixer);
 int AudioMixerGetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
@@ -158,16 +166,16 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink);
 AUDMIXSINKDIR AudioMixerSinkGetDir(PAUDMIXSINK pSink);
 PAUDMIXSTREAM AudioMixerSinkGetStream(PAUDMIXSINK pSink, uint8_t uIndex);
 uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink);
+bool AudioMixerSinkHasData(PAUDMIXSINK pSink);
 int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
 void AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
 int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMPCMPROPS pPCMProps);
 int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
-void AudioMixerSinkTimerUpdate(PAUDMIXSINK pSink, uint64_t cTicksPerSec, uint64_t cTicksElapsed, uint32_t *pcbData);
+void AudioMixerSinkTimerUpdate(PAUDMIXSINK pSink, uint64_t cTimerTicks, uint64_t cTicksElapsed, uint32_t *pcbData);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);
 
-int AudioMixerStreamCreate(PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream);
 int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 void AudioMixerStreamDestroy(PAUDMIXSTREAM pStream);
 bool AudioMixerStreamIsActive(PAUDMIXSTREAM pStream);

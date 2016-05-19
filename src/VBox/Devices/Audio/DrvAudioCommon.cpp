@@ -204,6 +204,9 @@ PDMAUDIOFMT DrvAudioStrToAudFmt(const char *pszFmt)
 
 bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
+
     int cBits = 8;
     bool fSigned = false;
 
@@ -237,6 +240,18 @@ bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
                   && pProps->cBits       == cBits
                   && pProps->fSwapEndian == !(pCfg->enmEndianness == PDMAUDIOHOSTENDIANNESS);
     return fEqual;
+}
+
+bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
+{
+    AssertPtrReturn(pProps1, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps2, VERR_INVALID_POINTER);
+
+    return    pProps1->uHz         == pProps2->uHz
+           && pProps1->cChannels   == pProps2->cChannels
+           && pProps1->fSigned     == pProps2->fSigned
+           && pProps1->cBits       == pProps2->cBits
+           && pProps1->fSwapEndian == pProps2->fSwapEndian;
 }
 
 /**

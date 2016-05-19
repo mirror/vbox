@@ -114,6 +114,7 @@ typedef struct DRVAUDIO
 
 const char *DrvAudioAudFmtToStr(PDMAUDIOFMT enmFmt);
 void DrvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
+bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2);
 bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pPCMInfo, PPDMAUDIOSTREAMCFG pCfg);
 const char *DrvAudRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
 void DrvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);

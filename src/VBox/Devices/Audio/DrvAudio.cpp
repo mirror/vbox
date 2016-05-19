@@ -1160,12 +1160,65 @@ static DECLCALLBACK(uint32_t) drvAudioReleaseOut(PPDMIAUDIOCONNECTOR pInterface,
    return pGstStrm->State.cRefs;
 }
 
-static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
-                                             uint32_t *pcbAvailIn, uint32_t *pcbFreeOut,
-                                             uint32_t *pcSamplesLive)
+static DECLCALLBACK(int) drvAudioGetDataIn(PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcbAvailIn)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     /* pcbAvailIn is optional. */
+
+    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t cbAvailIn = 0;
+
+    PPDMAUDIOHSTSTRMIN pHstStrmIn = NULL;
+    while ((pHstStrmIn = drvAudioFindAnyHstIn(pThis, pHstStrmIn)))
+    {
+        /* Disabled? Skip it! */
+        if (!(pHstStrmIn->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+            continue;
+
+        /* Call the host backend to capture the audio input data. */
+        uint32_t cSamplesCaptured;
+        int rc2 = pThis->pHostDrvAudio->pfnCaptureIn(pThis->pHostDrvAudio, pHstStrmIn,
+                                                     &cSamplesCaptured);
+        if (RT_FAILURE(rc2))
+            continue;
+
+        PPDMAUDIOGSTSTRMIN pGstStrmIn = pHstStrmIn->pGstStrmIn;
+        AssertPtrBreak(pGstStrmIn);
+
+        if (pGstStrmIn->State.fActive)
+        {
+            cbAvailIn = RT_MAX(cbAvailIn, AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf,
+                                                          AudioMixBufMixed(&pHstStrmIn->MixBuf)));
+#ifdef DEBUG_andy
+            LogFlowFunc(("\t[%s] cbAvailIn=%RU32\n", pHstStrmIn->MixBuf.pszName, cbAvailIn));
+#endif
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbAvailIn)
+            *pcbAvailIn = cbAvailIn;
+    }
+
+    int rc2 = RTCritSectLeave(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    if (RT_FAILURE(rc))
+        LogFlowFuncLeaveRC(rc);
+
+    return rc;
+}
+
+static DECLCALLBACK(int) drvAudioGetDataOut(PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcbFreeOut, uint32_t *pcSamplesLive)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     /* pcbFreeOut is optional. */
     /* pcSamplesLive is optional. */
 
@@ -1233,45 +1286,10 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
         cbFreeOut = RT_MIN(cbFreeOut, cbFree2);
     }
 
-    /*
-     * Recording.
-     */
-    uint32_t cbAvailIn = 0;
-
-    PPDMAUDIOHSTSTRMIN pHstStrmIn = NULL;
-    while ((pHstStrmIn = drvAudioFindAnyHstIn(pThis, pHstStrmIn)))
-    {
-        /* Disabled? Skip it! */
-        if (!(pHstStrmIn->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED))
-            continue;
-
-        /* Call the host backend to capture the audio input data. */
-        uint32_t cSamplesCaptured;
-        int rc2 = pThis->pHostDrvAudio->pfnCaptureIn(pThis->pHostDrvAudio, pHstStrmIn,
-                                                     &cSamplesCaptured);
-        if (RT_FAILURE(rc2))
-            continue;
-
-        PPDMAUDIOGSTSTRMIN pGstStrmIn = pHstStrmIn->pGstStrmIn;
-        AssertPtrBreak(pGstStrmIn);
-
-        if (pGstStrmIn->State.fActive)
-        {
-            cbAvailIn = RT_MAX(cbAvailIn, AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf,
-                                                          AudioMixBufMixed(&pHstStrmIn->MixBuf)));
-#ifdef DEBUG_andy
-            LogFlowFunc(("\t[%s] cbAvailIn=%RU32\n", pHstStrmIn->MixBuf.pszName, cbAvailIn));
-#endif
-        }
-    }
-
     if (RT_SUCCESS(rc))
     {
         if (cbFreeOut == UINT32_MAX)
             cbFreeOut = 0;
-
-        if (pcbAvailIn)
-            *pcbAvailIn = cbAvailIn;
 
         if (pcbFreeOut)
             *pcbFreeOut = cbFreeOut;
@@ -1712,12 +1730,15 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
 
         if (RT_SUCCESS(rc))
             rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_ENABLE);
+
+        if (RT_SUCCESS(rc))
+            pGstStrmOut->State.fActive = fEnable;
     }
     else /* Disable */
     {
         if (pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED)
         {
-            uint32_t cGstStrmsActive = 0;
+            size_t cGstStrmsActive = 0;
 
             /*
              * Check if there are any active guest streams assigned
@@ -1737,17 +1758,21 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
             }
 
             /* Do we need to defer closing the host stream? */
-            if (cGstStrmsActive >= 1)
+            if (cGstStrmsActive)
+            {
+                LogFlowFunc(("Closing stream deferred: %zu guest stream(s) active\n", cGstStrmsActive));
                 pHstStrmOut->fStatus |= PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
 
-            /* Can we close the host stream now instead of deferring it? */
-            if (!(pHstStrmOut->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE))
+                rc = VERR_AUDIO_STREAM_PENDING_DISABLE;
+            }
+            else
+            {
                 rc = drvAudioControlHstOut(pThis, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+                if (RT_SUCCESS(rc))
+                    pGstStrmOut->State.fActive = fEnable;
+            }
         }
     }
-
-    if (RT_SUCCESS(rc))
-        pGstStrmOut->State.fActive = fEnable;
 
     LogFlowFunc(("%s: fEnable=%RTbool, fStatus=0x%x, rc=%Rrc\n",
                  pGstStrmOut->MixBuf.pszName, fEnable, pHstStrmOut->fStatus, rc));
@@ -2070,7 +2095,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface                 = drvAudioQueryInterface;
     /* IAudioConnector. */
-    pThis->IAudioConnector.pfnQueryStatus            = drvAudioQueryStatus;
     pThis->IAudioConnector.pfnAddRefIn               = drvAudioAddRefIn;
     pThis->IAudioConnector.pfnAddRefOut              = drvAudioAddRefOut;
     pThis->IAudioConnector.pfnReleaseIn              = drvAudioReleaseIn;
@@ -2078,6 +2102,8 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pThis->IAudioConnector.pfnRead                   = drvAudioRead;
     pThis->IAudioConnector.pfnWrite                  = drvAudioWrite;
     pThis->IAudioConnector.pfnGetConfig              = drvAudioGetConfig;
+    pThis->IAudioConnector.pfnGetDataIn              = drvAudioGetDataIn;
+    pThis->IAudioConnector.pfnGetDataOut             = drvAudioGetDataOut;
     pThis->IAudioConnector.pfnIsActiveIn             = drvAudioIsActiveIn;
     pThis->IAudioConnector.pfnIsActiveOut            = drvAudioIsActiveOut;
     pThis->IAudioConnector.pfnIsValidIn              = drvAudioIsValidIn;

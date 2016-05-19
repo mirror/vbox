@@ -1684,8 +1684,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     uint32_t cbOut;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        int rc2 = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                                   NULL /* pcbIn */, &cbOut, NULL /* pcSamplesLive */);
+        int rc2 = pDrv->pConnector->pfnGetDataOut(pDrv->pConnector, &cbOut, NULL /* pcSamplesLive */);
         if (RT_SUCCESS(rc2))
             cbOutMin = RT_MIN(cbOutMin, cbOut);
     }
@@ -1760,6 +1759,9 @@ static void sb16TimerMaybeStart(PSB16STATE pThis)
 
     if (!pThis->pTimerIO)
         return;
+
+    /* Update current time timestamp. */
+    pThis->uTimerTSIO = TMTimerGet(pThis->pTimerIO);
 
     /* Fire off timer. */
     TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->cTimerTicksIO);
@@ -2051,7 +2053,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
         pDrv->Out.pMixStrm = NULL;
 
-        int rc2 = AudioMixerStreamCreate(pDrv->pConnector, pCfg, 0 /* fFlags */, &pDrv->Out.pMixStrm);
+        int rc2 = AudioMixerCreateStream(pThis->pMixer, pDrv->pConnector, pCfg, 0 /* fFlags */, &pDrv->Out.pMixStrm);
         if (RT_SUCCESS(rc2))
         {
             rc2 = AudioMixerSinkAddStream(pThis->pSinkOutput, pDrv->Out.pMixStrm);

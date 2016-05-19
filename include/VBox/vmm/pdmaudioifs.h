@@ -573,8 +573,6 @@ typedef struct PDMAUDIOCALLBACK
  */
 typedef struct PDMIAUDIOCONNECTOR
 {
-    DECLR3CALLBACKMEMBER(int, pfnQueryStatus, (PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcbAvailIn, uint32_t *pcbFreeOut, uint32_t *pcSamplesLive));
-
     /**
      * Adds a reference to the specified input stream.
      *
@@ -644,6 +642,23 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pCfg            Where to store the host audio backend configuration data.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetConfig, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOBACKENDCFG pCfg));
+
+    /**
+     * Processes input stream data and optionally returns its current status.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pcbAvail        Count (in bytes) of available input data. Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetDataIn, (PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcbAvail));
+
+    /**
+     * Processes output stream data and optionally returns its current status.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pcbFree         How much data (in bytes) is free for processing output data. Optional.
+     * @param   pcSamplesLive   How much audio live data (in audio samples) is present. Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetDataOut, (PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcbFree, uint32_t *pcSamplesLive));
 
     /**
      * Checks whether a specific guest input stream is active or not.
@@ -754,7 +769,8 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "5bba362c-092a-493b-854b-5d0ad3acecc4"
+#define PDMIAUDIOCONNECTOR_IID                  "20FC7EE1-46DC-8CB0-4C45-30B236155653"
+
 
 
 /**

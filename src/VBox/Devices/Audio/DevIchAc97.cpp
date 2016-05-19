@@ -26,6 +26,9 @@
 
 #include <iprt/assert.h>
 #ifdef IN_RING3
+# ifdef DEBUG
+#  include <iprt/file.h>
+# endif
 # include <iprt/mem.h>
 # include <iprt/string.h>
 # include <iprt/uuid.h>
@@ -370,6 +373,9 @@ typedef struct AC97STATE
 # if HC_ARCH_BITS == 32
     uint32_t                Padding0;
 # endif
+    /** Flag indicating whether the timer is active or not. */
+    bool                    fTimerActive;
+    uint8_t                 u8Padding1[7];
     /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
     uint64_t                cTimerTicks;
     /** Timestamp of the last timer callback (ac97Timer).
@@ -546,10 +552,18 @@ static int ichac97StreamSetActive(PAC97STATE pThis, PAC97STREAM pStream, bool fA
 #endif
     }
 
-    LogFlowFunc(("u8Strm=%RU8, fActive=%RTbool, cStreamsActive=%RU8\n", pStream->u8Strm, fActive, pThis->cStreamsActive));
+    int rc = AudioMixerSinkCtl(ichac97IndexToSink(pThis, pStream->u8Strm),
+                               fActive ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
 
-    return AudioMixerSinkCtl(ichac97IndexToSink(pThis, pStream->u8Strm),
-                             fActive ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
+    LogFlowFunc(("u8Strm=%RU8, fActive=%RTbool, cStreamsActive=%RU8, rc=%Rrc\n",
+                 pStream->u8Strm, fActive, pThis->cStreamsActive, rc));
+    if (rc == VERR_AUDIO_STREAM_PENDING_DISABLE)
+    {
+        LogFlowFunc(("On pending disable\n"));
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
@@ -742,7 +756,7 @@ static int ichac97OpenIn(PAC97STATE pThis,
         AudioMixerStreamDestroy(pStrmIn->pMixStrm);
         pStrmIn->pMixStrm = NULL;
 
-        int rc2 = AudioMixerStreamCreate(pDrv->pConnector, pCfg, 0 /* fFlags */ , &pStrmIn->pMixStrm);
+        int rc2 = AudioMixerCreateStream(pThis->pMixer, pDrv->pConnector, pCfg, 0 /* fFlags */ , &pStrmIn->pMixStrm);
         if (RT_SUCCESS(rc2))
         {
             rc2 = AudioMixerSinkAddStream(pSink, pStrmIn->pMixStrm);
@@ -787,7 +801,7 @@ static int ichac97OpenOut(PAC97STATE pThis, const char *pszName, PPDMAUDIOSTREAM
         AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
         pDrv->Out.pMixStrm = NULL;
 
-        int rc2 = AudioMixerStreamCreate(pDrv->pConnector, pCfg, 0 /* fFlags */, &pDrv->Out.pMixStrm);
+        int rc2 = AudioMixerCreateStream(pThis->pMixer, pDrv->pConnector, pCfg, 0 /* fFlags */, &pDrv->Out.pMixStrm);
         if (RT_SUCCESS(rc2))
         {
             rc2 = AudioMixerSinkAddStream(pThis->pSinkOutput, pDrv->Out.pMixStrm);
@@ -875,7 +889,7 @@ static int ichac97StreamInit(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8St
 
     if (RT_SUCCESS(rc))
     {
-        pStream->State.cbFIFOW  = 256; /** @todo Make FIFOW size configurable. */
+        pStream->State.cbFIFOW  = _4K; /** @todo Make FIFOW size configurable. */
         pStream->State.offFIFOW = 0;
         pStream->State.au8FIFOW = (uint8_t *)RTMemAllocZ(pStream->State.cbFIFOW);
         if (!pStream->State.au8FIFOW)
@@ -1157,6 +1171,13 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbM
         cbToRead = RT_MIN(cbToWrite, cbFIFOW);
         PDMDevHlpPhysRead(pDevIns, addr, pu8FIFOW, cbToRead); /** @todo r=andy Check rc? */
 
+#if defined (RT_OS_LINUX) && defined(DEBUG_andy)
+        RTFILE fh;
+        RTFileOpen(&fh, "/tmp/ac97WriteAudio.pcm",
+                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        RTFileWrite(fh, pu8FIFOW, cbToRead, NULL);
+        RTFileClose(fh);
+#endif
         /*
          * Write data to the mixer sink.
          */
@@ -1312,6 +1333,12 @@ static void ichac97TimerMaybeStart(PAC97STATE pThis)
     if (!pThis->pTimer)
         return;
 
+    /* Set timer flag. */
+    ASMAtomicXchgBool(&pThis->fTimerActive, true);
+
+    /* Update current time timestamp. */
+    pThis->uTimerTS = TMTimerGet(pThis->pTimer);
+
     /* Fire off timer. */
     TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->cTimerTicks);
 }
@@ -1326,8 +1353,8 @@ static void ichac97TimerMaybeStop(PAC97STATE pThis)
     if (!pThis->pTimer)
         return;
 
-    int rc2 = TMTimerStop(pThis->pTimer);
-    AssertRC(rc2);
+    /* Set timer flag. */
+    ASMAtomicXchgBool(&pThis->fTimerActive, false);
 }
 
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
@@ -1340,27 +1367,35 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     uint64_t cTicksNow     = TMTimerGet(pTimer);
     uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTS;
-    uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
+    /* Update current time timestamp. */
     pThis->uTimerTS = cTicksNow;
 
     uint32_t cbLineIn;
-    AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, cTicksPerSec, cTicksElapsed, &cbLineIn);
+    AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, pThis->cTimerTicks, cTicksElapsed, &cbLineIn);
     if (cbLineIn)
-        ichac97TransferAudio(pThis, &pThis->StreamLineIn, cbLineIn); /** @todo Add rc! */
+        ichac97TransferAudio(pThis, &pThis->StreamLineIn, cbLineIn);
 
     uint32_t cbMicIn;
-    AudioMixerSinkTimerUpdate(pThis->pSinkMicIn , cTicksPerSec, cTicksElapsed, &cbMicIn);
+    AudioMixerSinkTimerUpdate(pThis->pSinkMicIn , pThis->cTimerTicks, cTicksElapsed, &cbMicIn);
+    if (cbMicIn)
+        ichac97TransferAudio(pThis, &pThis->StreamMicIn, cbMicIn);
 
     uint32_t cbOut;
-    AudioMixerSinkTimerUpdate(pThis->pSinkOutput, cTicksPerSec, cTicksElapsed, &cbOut);
+    AudioMixerSinkTimerUpdate(pThis->pSinkOutput, pThis->cTimerTicks, cTicksElapsed, &cbOut);
     if (cbOut)
-        ichac97TransferAudio(pThis, &pThis->StreamOut, cbOut);  /** @todo Add rc! */
+        ichac97TransferAudio(pThis, &pThis->StreamOut, cbOut);
 
-    /* Kick the timer again. */
-    uint64_t cTicks = pThis->cTimerTicks;
-    /** @todo adjust cTicks down by now much cbOutMin represents. */
-    TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
+    if (   ASMAtomicReadBool(&pThis->fTimerActive)
+        || AudioMixerSinkHasData(pThis->pSinkLineIn)
+        || AudioMixerSinkHasData(pThis->pSinkMicIn)
+        || AudioMixerSinkHasData(pThis->pSinkOutput))
+    {
+        /* Kick the timer again. */
+        uint64_t cTicks = pThis->cTimerTicks;
+        /** @todo adjust cTicks down by now much cbOutMin represents. */
+        TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
+    }
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
