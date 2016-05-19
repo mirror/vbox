@@ -39,6 +39,10 @@
 /** Gets the APIC mode. */
 #define MSR_APICBASE_GET_MODE(a)             (((a) >> 10) & UINT64_C(3))
 /** The APIC global enable bit. */
+/** @todo r=bird: Please do   N O T  use _BIT for what clearly are masks!
+ *  See x86.h and vm.h for examples of how we use _BIT elsewhere!
+ * Besides, you are duplicating existing x86.h defines here
+ * (MSR_IA32_APICBASE_XXX). */
 #define MSR_APICBASE_XAPIC_ENABLE_BIT        RT_BIT_64(11)
 /** The x2APIC global enable bit. */
 #define MSR_APICBASE_X2APIC_ENABLE_BIT       RT_BIT_64(10)
