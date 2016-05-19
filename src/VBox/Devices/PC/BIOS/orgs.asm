@@ -143,6 +143,9 @@ endif
 if VBOX_BIOS_CPU ge 80286
 extrn		_int15_blkmove:near
 endif
+if VBOX_BIOS_CPU ge 80386
+extrn		_apic_setup:near
+endif
 
 
 ;; Symbols referenced from C code
@@ -598,6 +601,16 @@ norm_post_cont:
 		call	init_pic
 
 		C_SETUP
+
+if VBOX_BIOS_CPU ge 80386
+		;; Set up local APIC
+		.386
+		pushad
+		call	_apic_setup
+		popad
+		SET_DEFAULT_CPU_286
+endif
+
 		;; ATA/ATAPI driver setup
 		call	_ata_init
 		call	_ata_detect

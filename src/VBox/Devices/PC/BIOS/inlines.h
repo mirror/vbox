@@ -142,3 +142,38 @@ uint64_t swap_64(uint64_t val);
     parm [ax bx cx dx] value [ax bx cx dx] modify exact [ax bx cx dx] nomemory;
 
 #endif
+
+#if VBOX_BIOS_CPU >= 80386
+
+/* Warning: msr_read/msr_write destroy high bits of 32-bit registers. */
+
+uint64_t msr_read(uint32_t msr);
+#pragma aux msr_read =  \
+    ".586"              \
+    "shl    ecx, 16"    \
+    "mov    cx, ax"     \
+    "rdmsr"             \
+    "xchg   eax, edx"   \
+    "mov    bx, ax"     \
+    "shr    eax, 16"    \
+    "mov    cx, dx"     \
+    "shr    edx, 16"    \
+    "xchg   dx, cx"     \
+    parm [cx ax] value [ax bx cx dx] modify [] nomemory;
+
+void msr_write(uint64_t val, uint32_t msr);
+#pragma aux msr_write =  \
+    ".586"              \
+    "shl    eax, 16"    \
+    "mov    ax, bx"     \
+    "xchg   dx, cx"     \
+    "shl    edx, 16"    \
+    "mov    dx, cx"     \
+    "xchg   eax, edx"   \
+    "mov    cx, di"     \
+    "shl    ecx, 16"    \
+    "mov    cx, si"     \
+    "wrmsr"             \
+    parm [ax bx cx dx] [di si] modify [] nomemory;
+
+#endif

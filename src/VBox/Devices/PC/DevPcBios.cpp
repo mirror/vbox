@@ -102,6 +102,8 @@
          0x67 - 0x6e
     Fourth IDE HDD:
          0x70 - 0x77
+    APIC/x2APIC settings:
+         0x78
 
   Second CMOS bank (offsets 0x80 to 0xff):
     Reserved for internal use by PXE ROM:
@@ -193,7 +195,7 @@ typedef struct DEVPCBIOS
     /** I/O-APIC enabled? */
     uint8_t         u8IOAPIC;
     /** APIC mode to be set up by BIOS */
-    uint8_t         u8APIC;
+    uint8_t         u8APICMode;
     /** PXE debug logging enabled? */
     uint8_t         u8PXEDebug;
     /** PXE boot PCI bus/dev/fn list. */
@@ -664,6 +666,11 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      * Number of CPUs.
      */
     pcbiosCmosWrite(pDevIns, 0x60, pThis->cCpus & 0xff);
+
+    /*
+     * APIC mode.
+     */
+    pcbiosCmosWrite(pDevIns, 0x78, pThis->u8APICMode);
 
     /*
      * Bochs BIOS specifics - boot device.
@@ -1180,7 +1187,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
-    rc = CFGMR3QueryU8Def(pCfg, "APIC", &pThis->u8APIC, 1);
+    rc = CFGMR3QueryU8Def(pCfg, "APIC", &pThis->u8APICMode, 1);
     if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"APIC\""));

@@ -100,3 +100,51 @@ void rom_scan(uint16_t start_seg, uint16_t end_seg)
         }
     }
 }
+
+#if VBOX_BIOS_CPU >= 80386
+
+#define APICMODE_DISABLED   0
+#define APICMODE_APIC       1
+#define APICMODE_X2APIC     2
+
+#define APIC_BASE_MSR       0x1B
+#define APICBASE_X2APIC     0x400   /* bit 10 */
+#define APICBASE_DISABLE    0x800   /* bit 11 */
+
+/*
+ * Set up APIC/x2APIC. See also DevPcBios.cpp.
+ *
+ * NB: Virtual wire compatibility is set up earlier in 32-bit protected
+ * mode assembler (because it needs to access MMIO just under 4GB).
+ * Switching to x2APIC mode or disabling the APIC is done through an MSR
+ * and needs no 32-bit addressing. Going to x2APIC mode does not lose the
+ * existing virtual wire setup.
+ *
+ * NB: This code assumes that there *is* a local APIC.
+ *
+ * NB: Destroys high bits of 32-bit registers.
+ */
+void BIOSCALL apic_setup(void)
+{
+    uint64_t    base_msr;
+    uint16_t    mask;
+    uint8_t     apic_mode;
+
+    /* APIC mode at offset 78h in CMOS NVRAM. */
+    apic_mode = inb_cmos(0x78);
+
+    if (apic_mode == APICMODE_X2APIC)
+        mask = APICBASE_X2APIC;
+    else if (apic_mode == APICMODE_DISABLED)
+        mask = APICBASE_DISABLE;
+    else
+        mask = 0;   /* Any other setting leaves things alone. */
+
+    if (mask) {
+        base_msr = msr_read(APIC_BASE_MSR);
+        base_msr |= mask;
+        msr_write(base_msr, APIC_BASE_MSR);
+    }
+}
+
+#endif
