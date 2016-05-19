@@ -462,12 +462,13 @@ struct BIOSSettings
     bool            fACPIEnabled,
                     fIOAPICEnabled,
                     fLogoFadeIn,
-                    fLogoFadeOut;
+                    fLogoFadeOut,
+                    fPXEDebugEnabled;
     uint32_t        ulLogoDisplayTime;
-    com::Utf8Str    strLogoImagePath;
-    BIOSBootMenuMode_T  biosBootMenuMode;
-    bool            fPXEDebugEnabled;
+    BIOSBootMenuMode_T biosBootMenuMode;
+    APICMode_T      apicMode;           // requires settings version 1.16 (VirtualBox 5.1)
     int64_t         llTimeOffset;
+    com::Utf8Str    strLogoImagePath;
 };
 
 /**
@@ -891,7 +892,9 @@ struct Hardware
                         fHardwareVirtForce,
                         fSyntheticCpu,
                         fTripleFaultReset,
-                        fPAE;
+                        fPAE,
+                        fAPIC,                  // requires settings version 1.16 (VirtualBox 5.1)
+                        fX2APIC;                // requires settings version 1.16 (VirtualBox 5.1)
     typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
     LongModeType        enmLongMode;
     uint32_t            cCPUs;

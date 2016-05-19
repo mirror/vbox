@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -820,6 +820,26 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     BOOL fIOAPIC;
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                                 H();
 
+    APICMode_T apicMode;
+    hrc = biosSettings->COMGETTER(APICMode)(&apicMode);                                     H();
+    uint32_t uAPIC;
+    switch (apicMode)
+    {
+        case APICMode_Disabled:
+            uAPIC = 0;
+            break;
+        case APICMode_APIC:
+            uAPIC = 1;
+            break;
+        case APICMode_X2APIC:
+            uAPIC = 2;
+            break;
+        default:
+            AssertMsgFailed(("Invalid APICMode=%d\n", apicMode));
+            uAPIC = 1;
+            break;
+    }
+
     ComPtr<IGuestOSType> guestOSType;
     hrc = virtualBox->GetGuestOSType(osTypeId.raw(), guestOSType.asOutParam());             H();
 
@@ -978,6 +998,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);                   H();
         InsertConfigInteger(pRoot, "EnablePAE", fEnablePAE);
 
+        /* APIC/X2APIC configuration */
+        BOOL fEnableAPIC = true;
+        BOOL fEnableX2APIC = true;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_APIC, &fEnableAPIC);                 H();
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_X2APIC, &fEnableX2APIC);             H();
+        if (fEnableX2APIC)
+            Assert(fEnableAPIC);
+
         /* CPUM profile name. */
         hrc = pMachine->COMGETTER(CPUProfile)(bstr.asOutParam());                           H();
         InsertConfigString(pCPUM, "GuestCpuName", bstr);
@@ -988,7 +1016,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * raw-mode or qemu for the 186 and 286, while we'll get undefined opcodes
          * dead wrong on 8086 (see http://www.os2museum.com/wp/undocumented-8086-opcodes/).
          */
-        bool fDisableApic = false;
         if (   bstr.equals("Intel 80386") /* just for now */
             || bstr.equals("Intel 80286")
             || bstr.equals("Intel 80186")
@@ -998,10 +1025,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pEM, "IemExecutesAll", true);
             if (!bstr.equals("Intel 80386"))
             {
-                fDisableApic = true;
-                fIOAPIC      = false;
+                fEnableAPIC = false;
+                fIOAPIC     = false;
             }
+            fEnableX2APIC = false;
         }
+
+        /* /APIC/xzy */
+        PCFGMNODE pAPIC;
+        InsertConfigNode(pRoot, "APIC", &pAPIC);
+        uint32_t uAPICMode = 1;
+        if (fEnableX2APIC)
+            uAPICMode = 2;
+        else if (!fEnableAPIC)
+            uAPICMode = 0;
+        InsertConfigInteger(pAPIC, "Mode", uAPICMode);
 
         /*
          * Hardware virtualization extensions.
@@ -1551,7 +1589,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * SMP: Each CPU has a LAPIC, but we have a single device representing all LAPICs states,
          *      thus only single insert
          */
-        if (!fDisableApic)
+        if (fEnableAPIC)
         {
             InsertConfigNode(pDevices, "apic", &pDev);
             InsertConfigNode(pDev, "0", &pInst);
@@ -1633,6 +1671,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pBiosCfg,   "HardDiskDevice",       "piix3ide");
             InsertConfigString(pBiosCfg,   "FloppyDevice",         "i82078");
             InsertConfigInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);
+            InsertConfigInteger(pBiosCfg,  "APIC",                 uAPIC);
             BOOL fPXEDebug;
             hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
@@ -1737,6 +1776,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pCfg,   "BootArgs",         bootArgs);
             InsertConfigString(pCfg,   "DeviceProps",      deviceProps);
             InsertConfigInteger(pCfg,  "IOAPIC",           fIOAPIC);
+            InsertConfigInteger(pCfg,  "APIC",             uAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */
             InsertConfigInteger(pCfg,  "GopMode", u32GopMode);

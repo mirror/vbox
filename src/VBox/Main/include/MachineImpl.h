@@ -276,6 +276,8 @@ public:
         BOOL                mPAEEnabled;
         settings::Hardware::LongModeType mLongMode;
         BOOL                mTripleFaultReset;
+        BOOL                mAPIC;
+        BOOL                mX2APIC;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;
         ULONG               mCpuExecutionCap;

@@ -569,7 +569,8 @@
     <const name="v1_16" value="18">
       <desc>Settings version "1.16", written by VirtualBox 5.1.x.</desc>
       <!--
-          Machine changes: NVMe storage controller.
+          Machine changes: NVMe storage controller, paravirt debug options, CPU
+          profile and BIOS/CPU APIC settings.
           VirtualBox.xml: Add support for additional USB device sources (e.g. USB/IP)
       -->
     </const>
@@ -951,7 +952,7 @@
 
   <enum
     name="CPUPropertyType"
-    uuid="ed4094c1-d00e-483a-93e9-7163549ebd6e"
+    uuid="cc6ecdad-a07c-4e81-9c0e-d767e0678d5a"
     >
     <desc>
       Virtual CPU property type. This enumeration represents possible values of the
@@ -978,6 +979,19 @@
         This setting determines whether a triple fault within a guest will
         trigger an internal error condition and stop the VM (default) or reset
         the virtual CPU/VM and continue execution.
+      </desc>
+    </const>
+    <const name="APIC"                  value="4">
+      <desc>
+        This setting determines whether an APIC is part of the virtual CPU.
+        This feature can only be turned off when the X2APIC feature is off.
+      </desc>
+    </const>
+    <const name="X2APIC"                value="5">
+      <desc>
+        This setting determines whether an x2APIC is part of the virtual CPU.
+        Since this feature implies that the APIC feature is present, it
+        automatically enables the APIC feature when set.
       </desc>
     </const>
   </enum>
@@ -1241,6 +1255,20 @@
     <const name="Disabled"        value="0"/>
     <const name="MenuOnly"        value="1"/>
     <const name="MessageAndMenu"  value="2"/>
+  </enum>
+
+  <enum
+    name="APICMode"
+    uuid="c6884ba5-3cc4-4a92-a7f6-4410f9fd894e"
+    >
+    <desc>
+      BIOS APIC initialization mode. If the hardware does not support the
+      mode then the code falls back to a lower mode.
+    </desc>
+
+    <const name="Disabled"        value="0"/>
+    <const name="APIC"            value="1"/>
+    <const name="X2APIC"          value="2"/>
   </enum>
 
   <enum
@@ -2991,7 +3019,7 @@
     uuid="9e232a99-51d0-4dbd-96a0-ffac4bc3e2a8"
     >
     <desc>
-	X.509 certificate version numbers.
+      X.509 certificate version numbers.
     </desc>
     <const name="V1"       value="1"/>
     <const name="V2"       value="2"/>
@@ -4070,7 +4098,7 @@
 
   <interface
     name="IBIOSSettings" extends="$unknown"
-    uuid="c5b5afe3-4a6f-05eb-c9b6-4dbf98538b67"
+    uuid="f13f667d-3624-4ac5-99c1-3d982ebd8d98"
     wsmap="managed"
     reservedMethods="1" reservedAttributes="8"
     >
@@ -4109,6 +4137,12 @@
       <desc>
         IO APIC support flag. If set, VirtualBox will provide an IO APIC
         and support IRQs above 15.
+      </desc>
+    </attribute>
+
+    <attribute name="APICMode" type="APICMode">
+      <desc>
+        APIC mode to set up by the firmware.
       </desc>
     </attribute>
 

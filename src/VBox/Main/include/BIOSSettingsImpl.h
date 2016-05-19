@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,6 +71,8 @@ private:
     HRESULT setACPIEnabled(BOOL enable);
     HRESULT getIOAPICEnabled(BOOL *aIOAPICEnabled);
     HRESULT setIOAPICEnabled(BOOL aIOAPICEnabled);
+    HRESULT getAPICMode(APICMode_T *aAPICMode);
+    HRESULT setAPICMode(APICMode_T aAPICMode);
     HRESULT getTimeOffset(LONG64 *offset);
     HRESULT setTimeOffset(LONG64 offset);
     HRESULT getPXEDebugEnabled(BOOL *enabled);

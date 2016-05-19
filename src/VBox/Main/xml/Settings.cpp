@@ -2154,9 +2154,10 @@ BIOSSettings::BIOSSettings() :
     fIOAPICEnabled(false),
     fLogoFadeIn(true),
     fLogoFadeOut(true),
+    fPXEDebugEnabled(false),
     ulLogoDisplayTime(0),
     biosBootMenuMode(BIOSBootMenuMode_MessageAndMenu),
-    fPXEDebugEnabled(false),
+    apicMode(APICMode_APIC),
     llTimeOffset(0)
 {
 }
@@ -2170,10 +2171,12 @@ bool BIOSSettings::areDefaultSettings() const
         && !fIOAPICEnabled
         && fLogoFadeIn
         && fLogoFadeOut
+        && !fPXEDebugEnabled
         && ulLogoDisplayTime == 0
         && biosBootMenuMode == BIOSBootMenuMode_MessageAndMenu
-        && !fPXEDebugEnabled
-        && llTimeOffset == 0;
+        && apicMode == APICMode_APIC
+        && llTimeOffset == 0
+        && strLogoImagePath.isEmpty();
 }
 
 /**
@@ -2188,11 +2191,12 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
             && fIOAPICEnabled      == d.fIOAPICEnabled
             && fLogoFadeIn         == d.fLogoFadeIn
             && fLogoFadeOut        == d.fLogoFadeOut
-            && ulLogoDisplayTime   == d.ulLogoDisplayTime
-            && strLogoImagePath    == d.strLogoImagePath
-            && biosBootMenuMode    == d.biosBootMenuMode
             && fPXEDebugEnabled    == d.fPXEDebugEnabled
-            && llTimeOffset        == d.llTimeOffset);
+            && ulLogoDisplayTime   == d.ulLogoDisplayTime
+            && biosBootMenuMode    == d.biosBootMenuMode
+            && apicMode            == d.apicMode
+            && llTimeOffset        == d.llTimeOffset
+            && strLogoImagePath    == d.strLogoImagePath);
 }
 
 /**
@@ -2691,6 +2695,8 @@ Hardware::Hardware() :
     fHardwareVirtForce(false),
     fTripleFaultReset(false),
     fPAE(false),
+    fAPIC(true),
+    fX2APIC(false),
     enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
     cCPUs(1),
     fCpuHotPlug(false),
@@ -2841,6 +2847,8 @@ bool Hardware::operator==(const Hardware& h) const
             && fPAE                      == h.fPAE
             && enmLongMode               == h.enmLongMode
             && fTripleFaultReset         == h.fTripleFaultReset
+            && fAPIC                     == h.fAPIC
+            && fX2APIC                   == h.fX2APIC
             && cCPUs                     == h.cCPUs
             && fCpuHotPlug               == h.fCpuHotPlug
             && ulCpuExecutionCap         == h.ulCpuExecutionCap
@@ -3794,6 +3802,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCPUChild = pelmHwChild->findChildElement("TripleFaultReset")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fTripleFaultReset);
 
+            if ((pelmCPUChild = pelmHwChild->findChildElement("APIC")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fAPIC);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("X2APIC")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fX2APIC);
+
             if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
                 readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
         }
@@ -4077,6 +4090,22 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fACPIEnabled);
             if ((pelmBIOSChild = pelmHwChild->findChildElement("IOAPIC")))
                 pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fIOAPICEnabled);
+            if ((pelmBIOSChild = pelmHwChild->findChildElement("APIC")))
+            {
+                Utf8Str strAPIC;
+                if (pelmBIOSChild->getAttributeValue("mode", strAPIC))
+                {
+                    strAPIC.toUpper();
+                    if (strAPIC == "DISABLED")
+                        hw.biosSettings.apicMode = APICMode_Disabled;
+                    else if (strAPIC == "APIC")
+                        hw.biosSettings.apicMode = APICMode_APIC;
+                    else if (strAPIC == "X2APIC")
+                        hw.biosSettings.apicMode = APICMode_X2APIC;
+                    else
+                        throw ConfigFileError(this, pelmBIOSChild, N_("Invalid value '%s' in APIC/@mode attribute"), strAPIC.c_str());
+                }
+            }
             if ((pelmBIOSChild = pelmHwChild->findChildElement("Logo")))
             {
                 pelmBIOSChild->getAttributeValue("fadeIn", hw.biosSettings.fLogoFadeIn);
@@ -5099,6 +5128,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmCPU->createChild("HardwareVirtExUX")->setAttribute("enabled", hw.fUnrestrictedExecution);
     // PAE has too crazy default handling, must always save this setting.
     pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
+    if (m->sv >= SettingsVersion_v1_16)
+    {
+    }
     if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
     {
         // LongMode has too crazy default handling, must always save this setting.
@@ -5107,6 +5139,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     if (hw.fTripleFaultReset)
         pelmCPU->createChild("TripleFaultReset")->setAttribute("enabled", hw.fTripleFaultReset);
+    if (m->sv >= SettingsVersion_v1_14)
+    {
+        if (hw.fX2APIC)
+            pelmCPU->createChild("X2APIC")->setAttribute("enabled", hw.fX2APIC);
+        else if (!hw.fAPIC)
+            pelmCPU->createChild("APIC")->setAttribute("enabled", hw.fAPIC);
+    }
     if (hw.cCPUs > 1)
         pelmCPU->setAttribute("count", hw.cCPUs);
     if (hw.ulCpuExecutionCap != 100)
@@ -5449,6 +5488,24 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmBIOS->createChild("ACPI")->setAttribute("enabled", hw.biosSettings.fACPIEnabled);
         if (hw.biosSettings.fIOAPICEnabled)
             pelmBIOS->createChild("IOAPIC")->setAttribute("enabled", hw.biosSettings.fIOAPICEnabled);
+        if (hw.biosSettings.apicMode != APICMode_APIC)
+        {
+            const char *pcszAPIC;
+            switch (hw.biosSettings.apicMode)
+            {
+                case APICMode_Disabled:
+                    pcszAPIC = "Disabled";
+                    break;
+                case APICMode_APIC:
+                default:
+                    pcszAPIC = "APIC";
+                    break;
+                case APICMode_X2APIC:
+                    pcszAPIC = "X2APIC";
+                    break;
+            }
+            pelmBIOS->createChild("APIC")->setAttribute("mode", pcszAPIC);
+        }
 
         if (   !hw.biosSettings.fLogoFadeIn
             || !hw.biosSettings.fLogoFadeOut
@@ -6725,10 +6782,14 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_16)
     {
-        // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug options, cpu profile.
+        // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug
+        // options, cpu profile, APIC settings (CPU capability and BIOS).
 
         if (   hardwareMachine.strParavirtDebug.isNotEmpty()
-            || (!hardwareMachine.strCpuProfile.equals("host") && hardwareMachine.strCpuProfile.isNotEmpty())
+            || (!hardwareMachine.strCpuProfile.equals("host") && hardwareMachine.strCpuProfile.isNotEmpty()
+            || hardwareMachine.biosSettings.apicMode != APICMode_APIC
+            || !hardwareMachine.fAPIC
+            || hardwareMachine.fX2APIC)
            )
         {
             m->sv = SettingsVersion_v1_16;

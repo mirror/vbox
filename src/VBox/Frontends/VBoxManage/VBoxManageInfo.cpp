@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -617,6 +617,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_ULONG_PROP(       machine, CPUCount,                   "cpus",                 "Number of CPUs", "");
     SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_PAE, &f), "pae", "PAE");
     SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_LongMode, &f), "longmode", "Long Mode");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_TripleFaultReset, &f), "triplefaultreset", "Triple Fault Reset");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_APIC, &f), "apic", "APIC");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_X2APIC, &f), "x2apic", "X2APIC");
     SHOW_ULONG_PROP(       machine, CPUIDPortabilityLevel, "cpuid-portability-level",   "CPUID Portability Level", "");
 
     if (details != VMINFO_MACHINEREADABLE)
@@ -737,6 +740,34 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
     SHOW_BOOLEAN_PROP(biosSettings, ACPIEnabled,                "acpi",                 "ACPI");
     SHOW_BOOLEAN_PROP(biosSettings, IOAPICEnabled,              "ioapic",               "IOAPIC");
+
+    APICMode_T apicMode;
+    CHECK_ERROR2I_RET(biosSettings, COMGETTER(APICMode)(&apicMode), hrcCheck);
+    const char *pszAPIC;
+    switch (apicMode)
+    {
+        case APICMode_Disabled:
+            pszAPIC = "disabled";
+            break;
+        case APICMode_APIC:
+        default:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszAPIC = "apic";
+            else
+                pszAPIC = "APIC";
+            break;
+        case APICMode_X2APIC:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszBootMenu = "x2apic";
+            else
+                pszBootMenu = "x2APIC";
+            break;
+    }
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("biosapic=\"%s\"\n", pszAPIC);
+    else
+        RTPrintf("BIOS APIC mode:  %s\n", pszAPIC);
+
     SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset",  "ms");
     SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC",          "UTC", "local time");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Enabled,   &f),   "hwvirtex",     "Hardw. virt.ext");

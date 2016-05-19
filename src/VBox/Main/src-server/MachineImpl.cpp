@@ -192,6 +192,8 @@ Machine::HWData::HWData()
 #endif
     mLongMode =  HC_ARCH_BITS == 64 ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
     mTripleFaultReset = false;
+    mAPIC = true;
+    mX2APIC = false;
     mHPETEnabled = false;
     mCpuExecutionCap = 100; /* Maximum CPU execution cap by default. */
     mCpuIdPortabilityLevel = 0;
@@ -2248,6 +2250,14 @@ HRESULT Machine::getCPUProperty(CPUPropertyType_T aProperty, BOOL *aValue)
             *aValue = mHWData->mTripleFaultReset;
             break;
 
+        case CPUPropertyType_APIC:
+            *aValue = mHWData->mAPIC;
+            break;
+
+        case CPUPropertyType_X2APIC:
+            *aValue = mHWData->mX2APIC;
+            break;
+
         default:
             return E_INVALIDARG;
     }
@@ -2279,6 +2289,22 @@ HRESULT Machine::setCPUProperty(CPUPropertyType_T aProperty, BOOL aValue)
             i_setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mTripleFaultReset = !!aValue;
+            break;
+
+        case CPUPropertyType_APIC:
+            if (mHWData->mX2APIC)
+                aValue = TRUE;
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mAPIC = !!aValue;
+            break;
+
+        case CPUPropertyType_X2APIC:
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mX2APIC = !!aValue;
+            if (aValue)
+                mHWData->mAPIC = !!aValue;
             break;
 
         default:
@@ -8839,6 +8865,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mLongMode                    = data.enmLongMode;
         mHWData->mTripleFaultReset            = data.fTripleFaultReset;
+        mHWData->mAPIC                        = data.fAPIC;
+        mHWData->mX2APIC                      = data.fX2APIC;
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
         mHWData->mCpuExecutionCap             = data.ulCpuExecutionCap;
@@ -10158,6 +10186,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.enmLongMode            = mHWData->mLongMode;
         data.fTripleFaultReset      = !!mHWData->mTripleFaultReset;
+        data.fAPIC                  = !!mHWData->mAPIC;
+        data.fX2APIC                = !!mHWData->mX2APIC;
         data.cCPUs                  = mHWData->mCPUCount;
         data.fCpuHotPlug            = !!mHWData->mCPUHotPlugEnabled;
         data.ulCpuExecutionCap      = mHWData->mCpuExecutionCap;

@@ -192,6 +192,8 @@ typedef struct DEVPCBIOS
     uint8_t         uBootDelay;
     /** I/O-APIC enabled? */
     uint8_t         u8IOAPIC;
+    /** APIC mode to be set up by BIOS */
+    uint8_t         u8APIC;
     /** PXE debug logging enabled? */
     uint8_t         u8PXEDebug;
     /** PXE boot PCI bus/dev/fn list. */
@@ -1100,6 +1102,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "PXEDebug\0"
                               "UUID\0"
                               "IOAPIC\0"
+                              "APIC\0"
                               "NumCPUs\0"
                               "McfgBase\0"
                               "McfgLength\0"
@@ -1176,6 +1179,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
+
+    rc = CFGMR3QueryU8Def(pCfg, "APIC", &pThis->u8APIC, 1);
+    if (RT_FAILURE (rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"APIC\""));
 
     static const char * const s_apszBootDevices[] = { "BootDevice0", "BootDevice1", "BootDevice2", "BootDevice3" };
     Assert(RT_ELEMENTS(s_apszBootDevices) == RT_ELEMENTS(pThis->aenmBootDevice));
