@@ -2744,6 +2744,10 @@
 #define VERR_AUDIO_BACKEND_INIT_FAILED              (-6600)
 /** No free input streams.  */
 #define VERR_AUDIO_NO_FREE_INPUT_STREAMS            (-6601)
+/** No free output streams.  */
+#define VERR_AUDIO_NO_FREE_OUTPUT_STREAMS           (-6603)
+/** Pending stream disable operation in progress.  */
+#define VERR_AUDIO_STREAM_PENDING_DISABLE           (-6604)
 /** @} */
 
 
