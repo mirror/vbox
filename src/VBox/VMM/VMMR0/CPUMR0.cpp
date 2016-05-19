@@ -466,7 +466,7 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu)
             if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
             {
                 Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
-                HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
+                HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
             }
             else
                 pVCpu->cpum.s.fUseFlags &= ~CPUM_SYNC_FPU_STATE;
