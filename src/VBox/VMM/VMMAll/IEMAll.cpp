@@ -5230,11 +5230,43 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUI
 /**
  * Hook for preparing to use the host FPU.
  *
- * This is necessary in ring-0 and raw-mode context.
+ * This is necessary in ring-0 and raw-mode context (nop in ring-3).
  *
  * @param   pIemCpu             The IEM per CPU data.
  */
 DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
+{
+#ifdef IN_RING3
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
+#else
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
+/** @todo RZ: FIXME */
+//# error "Implement me"
+#endif
+}
+
+
+/**
+ * Hook for preparing to use the host FPU for SSE
+ *
+ * This is necessary in ring-0 and raw-mode context (nop in ring-3).
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECLINLINE(void) iemFpuPrepareUsageSse(PIEMCPU pIemCpu)
+{
+    iemFpuPrepareUsage(pIemCpu);
+}
+
+
+/**
+ * Hook for actualizing the guest FPU state before the interpreter reads it.
+ *
+ * This is necessary in ring-0 and raw-mode context (nop in ring-3).
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECLINLINE(void) iemFpuActualizeStateForRead(PIEMCPU pIemCpu)
 {
 #ifdef IN_RING3
     NOREF(pIemCpu);
@@ -5246,15 +5278,54 @@ DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
 
 
 /**
- * Hook for preparing to use the host FPU for SSE
+ * Hook for actualizing the guest FPU state before the interpreter changes it.
  *
- * This is necessary in ring-0 and raw-mode context.
+ * This is necessary in ring-0 and raw-mode context (nop in ring-3).
  *
  * @param   pIemCpu             The IEM per CPU data.
  */
-DECLINLINE(void) iemFpuPrepareUsageSse(PIEMCPU pIemCpu)
+DECLINLINE(void) iemFpuActualizeStateForChange(PIEMCPU pIemCpu)
 {
+#ifdef IN_RING3
+    NOREF(pIemCpu);
+#else
+    //CPUMRZFpuActualizeForChange(IEMCPU_TO_VMCPU(pIemCpu));
     iemFpuPrepareUsage(pIemCpu);
+#endif
+}
+
+
+/**
+ * Hook for actualizing the guest XMM0..15 register state for read only.
+ *
+ * This is necessary in ring-0 and raw-mode context (nop in ring-3).
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECLINLINE(void) iemFpuActualizeSseStateForRead(PIEMCPU pIemCpu)
+{
+#if defined(IN_RING3) || defined(VBOX_WITH_KERNEL_USING_XMM)
+    NOREF(pIemCpu);
+#else
+    iemFpuActualizeStateForRead(pIemCpu);
+#endif
+}
+
+
+/**
+ * Hook for actualizing the guest XMM0..15 register state for read+write.
+ *
+ * This is necessary in ring-0 and raw-mode context (nop in ring-3).
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECLINLINE(void) iemFpuActualizeSseStateForChange(PIEMCPU pIemCpu)
+{
+#if defined(IN_RING3) || defined(VBOX_WITH_KERNEL_USING_XMM)
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
+#else
+    iemFpuActualizeStateForChange(pIemCpu);
+#endif
 }
 
 
@@ -9194,7 +9265,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0) \
     do { \
-        iemFpuPrepareUsage(pIemCpu); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0)); \
     } while (0)
 
@@ -9207,7 +9277,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
-        iemFpuPrepareUsage(pIemCpu); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0), (a1)); \
     } while (0)
 
@@ -9221,7 +9290,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
-        iemFpuPrepareUsage(pIemCpu); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0), (a1), (a2)); \
     } while (0)
 
@@ -9325,9 +9393,23 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  *  FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff) \
     iemFpuStackPushOverflowWithMemOp(pIemCpu, a_iEffSeg, a_GCPtrEff)
-/** Indicates that we (might) have modified the FPU state. */
-#define IEM_MC_USED_FPU() \
-    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM)
+/** Prepares for using the FPU state.
+ * Ensures that we can use the host FPU in the current context (RC+R0.
+ * Ensures the guest FPU state in the CPUMCTX is up to date. */
+#define IEM_MC_PREPARE_FPU_USAGE()              iemFpuPrepareUsage(pIemCpu)
+/** Actualizes the guest FPU state so it can be accessed read-only fashion. */
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()   iemFpuActualizeStateForRead(pIemCpu)
+/** Actualizes the guest FPU state so it can be accessed and modified. */
+#define IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE() iemFpuActualizeStateForChange(pIemCpu)
+
+/** Prepares for using the SSE state.
+ * Ensures that we can use the host SSE/FPU in the current context (RC+R0.
+ * Ensures the guest SSE state in the CPUMCTX is up to date. */
+#define IEM_MC_PREPARE_SSE_USAGE()              iemFpuPrepareUsageSse(pIemCpu)
+/** Actualizes the guest XMM0..15 register state for read-only access. */
+#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()   iemFpuActualizeSseStateForRead(pIemCpu)
+/** Actualizes the guest XMM0..15 register state for read-write access. */
+#define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE() iemFpuActualizeSseStateForChange(pIemCpu)
 
 /**
  * Calls a MMX assembly implementation taking two visible arguments.
@@ -9338,7 +9420,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
-        iemFpuPrepareUsage(pIemCpu); \
+        IEM_MC_PREPARE_FPU_USAGE(); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0), (a1)); \
     } while (0)
 
@@ -9352,7 +9434,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
-        iemFpuPrepareUsage(pIemCpu); \
+        IEM_MC_PREPARE_FPU_USAGE(); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0), (a1), (a2)); \
     } while (0)
 
@@ -9366,7 +9448,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
-        iemFpuPrepareUsageSse(pIemCpu); \
+        IEM_MC_PREPARE_SSE_USAGE(); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0), (a1)); \
     } while (0)
 
@@ -9380,10 +9462,9 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
  */
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
-        iemFpuPrepareUsageSse(pIemCpu); \
+        IEM_MC_PREPARE_SSE_USAGE(); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87, (a0), (a1), (a2)); \
     } while (0)
-
 
 /** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
@@ -9440,6 +9521,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
+
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt) \
     if (iemFpuStRegNotEmpty(pIemCpu, (a_iSt)) == VINF_SUCCESS) {
 #define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt) \

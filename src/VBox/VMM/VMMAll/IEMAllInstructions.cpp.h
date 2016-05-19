@@ -1709,6 +1709,7 @@ FNIEMOP_DEF(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd)
             IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         else
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
         IEM_MC_COPY_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg,
                               (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
         IEM_MC_ADVANCE_RIP();
@@ -1729,6 +1730,7 @@ FNIEMOP_DEF(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd)
             IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         else
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
 
         IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
         IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, uSrc);
@@ -1756,6 +1758,7 @@ FNIEMOP_DEF(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd)
             IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         else
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
         IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB,
                               ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
         IEM_MC_ADVANCE_RIP();
@@ -1776,6 +1779,7 @@ FNIEMOP_DEF(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd)
             IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         else
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
 
         IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
         IEM_MC_STORE_MEM_U128_ALIGN_SSE(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
@@ -1792,7 +1796,6 @@ FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd
 
 
 /** Opcode 0x0f 0x2b. */
-#ifndef VBOX_WITH_REM /** @todo figure out why this causes moderate regressions when enabled... Enabled for non-REM to hopefully make some headway there... */
 FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntps mr,r" : "movntpd mr,r");
@@ -1812,6 +1815,7 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
             IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         else
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
 
         IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
         IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, uSrc);
@@ -1824,9 +1828,6 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd);
-#endif
 
 
 /** Opcode 0x0f 0x2c. */
@@ -2173,6 +2174,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_LowLow_To_Full, PCIEMOPMEDIAF1L1, pImpl)
                 IEM_MC_ARG(uint128_t *,          pDst, 0);
                 IEM_MC_ARG(uint64_t const *,     pSrc, 1);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_REF_XREG_U64_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
@@ -2195,6 +2197,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_LowLow_To_Full, PCIEMOPMEDIAF1L1, pImpl)
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
                 IEM_MC_FETCH_MEM_U64_ALIGN_U128(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
 
@@ -2218,6 +2221,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_LowLow_To_Full, PCIEMOPMEDIAF1L1, pImpl)
                 IEM_MC_ARG(uint64_t *,          pDst, 0);
                 IEM_MC_ARG(uint32_t const *,    pSrc, 1);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_REF_MREG_U32_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
                 IEM_MC_CALL_MMX_AIMPL_2(pImpl->pfnU64, pDst, pSrc);
@@ -2240,6 +2244,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_LowLow_To_Full, PCIEMOPMEDIAF1L1, pImpl)
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
                 IEM_MC_FETCH_MEM_U32(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_CALL_MMX_AIMPL_2(pImpl->pfnU64, pDst, pSrc);
 
@@ -2317,6 +2322,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_HighHigh_To_Full, PCIEMOPMEDIAF1H1, pImpl)
                 IEM_MC_ARG(uint128_t *,          pDst, 0);
                 IEM_MC_ARG(uint128_t const *,    pSrc, 1);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
@@ -2339,6 +2345,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_HighHigh_To_Full, PCIEMOPMEDIAF1H1, pImpl)
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
                 IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc); /* Most CPUs probably only right high qword */
 
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
 
@@ -2362,6 +2369,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_HighHigh_To_Full, PCIEMOPMEDIAF1H1, pImpl)
                 IEM_MC_ARG(uint64_t *,          pDst, 0);
                 IEM_MC_ARG(uint64_t const *,    pSrc, 1);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
                 IEM_MC_CALL_MMX_AIMPL_2(pImpl->pfnU64, pDst, pSrc);
@@ -2384,6 +2392,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_HighHigh_To_Full, PCIEMOPMEDIAF1H1, pImpl)
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
                 IEM_MC_FETCH_MEM_U64(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_CALL_MMX_AIMPL_2(pImpl->pfnU64, pDst, pSrc);
 
@@ -2455,6 +2464,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey__movd_q_Vy_Ey)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -2475,9 +2485,10 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey__movd_q_Vy_Ey)
                 /* XMM, [mem] */
                 IEM_MC_BEGIN(0, 2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-                IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT(); /** @todo order */
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -2503,6 +2514,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey__movd_q_Vy_Ey)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
                 IEM_MC_LOCAL(uint64_t, u64Tmp);
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                     IEM_MC_FETCH_GREG_U64(u64Tmp, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
@@ -2520,6 +2532,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey__movd_q_Vy_Ey)
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -2563,11 +2576,11 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq__movdqa_Vdq_Wdq__movdqu_Vdq_Wdq)
                  * Register, register.
                  */
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint128_t, u128Tmp);
+                IEM_MC_BEGIN(0, 0);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-                IEM_MC_FETCH_XREG_U128(u128Tmp, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
-                IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, u128Tmp);
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+                IEM_MC_COPY_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg,
+                                      (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
             }
@@ -2583,6 +2596,7 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq__movdqa_Vdq_Wdq__movdqu_Vdq_Wdq)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
                 if (fAligned)
                     IEM_MC_FETCH_MEM_U128_ALIGN_SSE(u128Tmp, pIemCpu->iEffSeg, GCPtrEffSrc);
                 else
@@ -2607,6 +2621,7 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq__movdqa_Vdq_Wdq__movdqu_Vdq_Wdq)
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_LOCAL(uint64_t, u64Tmp);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
                 IEM_MC_FETCH_MREG_U64(u64Tmp, bRm & X86_MODRM_RM_MASK);
                 IEM_MC_STORE_MREG_U64((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK, u64Tmp);
                 IEM_MC_ADVANCE_RIP();
@@ -2624,6 +2639,7 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq__movdqa_Vdq_Wdq__movdqu_Vdq_Wdq)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
                 IEM_MC_FETCH_MEM_U64(u64Tmp, pIemCpu->iEffSeg, GCPtrEffSrc);
                 IEM_MC_STORE_MREG_U64((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK, u64Tmp);
 
@@ -2678,6 +2694,7 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib__pshufd_Vdq_Wdq_Ib__pshufhw_Vdq_Wdq_Ib__pshufl
                 IEM_MC_ARG(uint128_t const *,   pSrc, 1);
                 IEM_MC_ARG_CONST(uint8_t,       bEvilArg, /*=*/ bEvil, 2);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_CALL_SSE_AIMPL_3(pfnAImpl, pDst, pSrc, bEvilArg);
@@ -2702,6 +2719,7 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib__pshufd_Vdq_Wdq_Ib__pshufhw_Vdq_Wdq_Ib__pshufl
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
 
                 IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_CALL_SSE_AIMPL_3(pfnAImpl, pDst, pSrc, bEvilArg);
 
@@ -2726,6 +2744,7 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib__pshufd_Vdq_Wdq_Ib__pshufhw_Vdq_Wdq_Ib__pshufl
                 IEM_MC_ARG(uint64_t const *,    pSrc, 1);
                 IEM_MC_ARG_CONST(uint8_t,       bEvilArg, /*=*/ bEvil, 2);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
                 IEM_MC_CALL_MMX_AIMPL_3(iemAImpl_pshufw, pDst, pSrc, bEvilArg);
@@ -2750,6 +2769,7 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib__pshufd_Vdq_Wdq_Ib__pshufhw_Vdq_Wdq_Ib__pshufl
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
 
                 IEM_MC_FETCH_MEM_U64(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_CALL_MMX_AIMPL_3(iemAImpl_pshufw, pDst, pSrc, bEvilArg);
 
@@ -2958,6 +2978,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse2_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
                 IEM_MC_ARG(uint128_t *,          pDst, 0);
                 IEM_MC_ARG(uint128_t const *,    pSrc, 1);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
@@ -2980,6 +3001,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse2_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
                 IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+                IEM_MC_PREPARE_SSE_USAGE();
                 IEM_MC_REF_XREG_U128(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_CALL_SSE_AIMPL_2(pImpl->pfnU128, pDst, pSrc);
 
@@ -3001,6 +3023,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse2_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
                 IEM_MC_ARG(uint64_t *,          pDst, 0);
                 IEM_MC_ARG(uint64_t const *,    pSrc, 1);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
                 IEM_MC_CALL_MMX_AIMPL_2(pImpl->pfnU64, pDst, pSrc);
@@ -3023,6 +3046,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse2_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
                 IEM_MC_FETCH_MEM_U64(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+                IEM_MC_PREPARE_FPU_USAGE();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_CALL_MMX_AIMPL_2(pImpl->pfnU64, pDst, pSrc);
 
@@ -3087,6 +3111,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd__movd_q_Ey_Vy__movq_Vq_Wq)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -3110,6 +3135,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd__movd_q_Ey_Vy__movq_Vq_Wq)
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -3135,6 +3161,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd__movd_q_Ey_Vy__movq_Vq_Wq)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -3158,6 +3185,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd__movd_q_Ey_Vy__movq_Vq_Wq)
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
                 if (pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_REX_W)
                 {
                     IEM_MC_LOCAL(uint64_t, u64Tmp);
@@ -3201,11 +3229,11 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq)
                  * Register, register.
                  */
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint128_t, u128Tmp);
+                IEM_MC_BEGIN(0, 0);
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-                IEM_MC_FETCH_XREG_U128(u128Tmp, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
-                IEM_MC_STORE_XREG_U128((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u128Tmp);
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+                IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB,
+                                      ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
             }
@@ -3221,6 +3249,8 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
                 IEM_MC_FETCH_XREG_U128(u128Tmp, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 if (fAligned)
                     IEM_MC_STORE_MEM_U128_ALIGN_SSE(pIemCpu->iEffSeg, GCPtrEffSrc, u128Tmp);
@@ -3246,6 +3276,7 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq)
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_LOCAL(uint64_t, u64Tmp);
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
                 IEM_MC_FETCH_MREG_U64(u64Tmp, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_STORE_MREG_U64(bRm & X86_MODRM_RM_MASK, u64Tmp);
                 IEM_MC_ADVANCE_RIP();
@@ -3263,6 +3294,8 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+
                 IEM_MC_FETCH_MREG_U64(u64Tmp, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_STORE_MEM_U64(pIemCpu->iEffSeg, GCPtrEffSrc, u64Tmp);
 
@@ -6770,6 +6803,7 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq__pmovmskb_Gd_Udq)
             IEM_MC_ARG(uint64_t *,           pDst, 0);
             IEM_MC_ARG(uint128_t const *,    pSrc, 1);
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE();
             IEM_MC_REF_GREG_U64(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
             IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
             IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_pmovmskb_u128, pDst, pSrc);
@@ -6784,6 +6818,7 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq__pmovmskb_Gd_Udq)
             IEM_MC_ARG(uint64_t *,          pDst, 0);
             IEM_MC_ARG(uint64_t const *,    pSrc, 1);
             IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+            IEM_MC_PREPARE_FPU_USAGE();
             IEM_MC_REF_GREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
             IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
             IEM_MC_CALL_MMX_AIMPL_2(iemAImpl_pmovmskb_u64, pDst, pSrc);
@@ -6830,7 +6865,6 @@ FNIEMOP_STUB(iemOp_cvttpd2dq_Vdq_Wdp__cvtdq2pd_Vdq_Wpd__cvtpd2dq_Vdq_Wpd);
 
 
 /** Opcode 0x0f 0xe7. */
-#if 0 //ndef VBOX_WITH_REM
 FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntq mr,r" : "movntdq mr,r");
@@ -6852,6 +6886,7 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
 
                 IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
                 IEM_MC_STORE_MEM_U128_ALIGN_SSE(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
@@ -6868,6 +6903,7 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
 
                 IEM_MC_FETCH_MREG_U64(uSrc, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_STORE_MEM_U64(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
@@ -6885,9 +6921,6 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq);
-#endif
 
 
 /** Opcode 0x0f 0xe8. */
@@ -13125,13 +13158,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, bRm & X86_MODRM_RM_MASK)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13157,13 +13190,13 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pf
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, bRm & X86_MODRM_RM_MASK)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pu16Fsw, pr80Value1, pr80Value2);
         IEM_MC_UPDATE_FSW(u16Fsw);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13189,13 +13222,13 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, bRm & X86_MODRM_RM_MASK)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pu16Fsw, pr80Value1, pr80Value2);
         IEM_MC_UPDATE_FSW_THEN_POP(u16Fsw);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(UINT8_MAX);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13290,13 +13323,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32r, uint8_t, bRm, PFNIEMAIMPLFPUR32, pfnAImpl)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R32(r32Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr32Val2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13340,13 +13373,13 @@ FNIEMOP_DEF_1(iemOp_fcom_m32r,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R32(r32Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r32, pu16Fsw, pr80Value1, pr32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13374,13 +13407,13 @@ FNIEMOP_DEF_1(iemOp_fcomp_m32r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R32(r32Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r32, pu16Fsw, pr80Value1, pr32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13479,13 +13512,13 @@ FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R32(r32Val, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r32_to_r80, pFpuRes, pr32Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13510,6 +13543,7 @@ FNIEMOP_DEF_1(iemOp_fst_m32r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pr32Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r32, pu16Fsw, pr32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr32Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -13521,7 +13555,6 @@ FNIEMOP_DEF_1(iemOp_fst_m32r, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13546,6 +13579,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m32r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pr32Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r32, pu16Fsw, pr32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr32Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -13557,7 +13591,6 @@ FNIEMOP_DEF_1(iemOp_fstp_m32r, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13628,6 +13661,7 @@ FNIEMOP_DEF_1(iemOp_fnstcw, uint8_t, bRm)
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
     IEM_MC_FETCH_FCW(u16Fcw);
     IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Fcw);
     IEM_MC_ADVANCE_RIP(); /* C0-C3 are documented as undefined, we leave them unmodified. */
@@ -13645,10 +13679,10 @@ FNIEMOP_DEF(iemOp_fnop)
     IEM_MC_BEGIN(0, 0);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     /** @todo Testcase: looks like FNOP leaves FOP alone but updates FPUIP. Could be
      *        intel optimizations. Investigate. */
     IEM_MC_UPDATE_FPU_OPCODE_IP();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP(); /* C0-C3 are documented as undefined, we leave them unmodified. */
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -13668,13 +13702,15 @@ FNIEMOP_DEF_1(iemOp_fld_stN, uint8_t, bRm)
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, bRm & X86_MODRM_RM_MASK)
         IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
         IEM_MC_PUSH_FPU_RESULT(FpuRes);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW();
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
+
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
 
@@ -13697,6 +13733,8 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
     IEM_MC_ARG_CONST(uint8_t,           iStReg, /*=*/ bRm & X86_MODRM_RM_MASK, 0);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, bRm & X86_MODRM_RM_MASK)
         IEM_MC_SET_FPU_RESULT(FpuRes, X86_FSW_C1, pr80Value2);
         IEM_MC_STORE_FPUREG_R80_SRC_REF(bRm & X86_MODRM_RM_MASK, pr80Value1);
@@ -13704,7 +13742,7 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_CALL_CIMPL_1(iemCImpl_fxch_underflow, iStReg);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
+
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
 
@@ -13726,12 +13764,14 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
         IEM_MC_LOCAL_CONST(uint16_t,        u16Fsw, /*=*/ 0);
         IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
         IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+        IEM_MC_PREPARE_FPU_USAGE();
         IEM_MC_IF_FPUREG_NOT_EMPTY(0)
             IEM_MC_UPDATE_FSW_THEN_POP(u16Fsw);
         IEM_MC_ELSE()
             IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(0);
         IEM_MC_ENDIF();
-        IEM_MC_USED_FPU();
+
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -13742,13 +13782,15 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
         IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
         IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
         IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+        IEM_MC_PREPARE_FPU_USAGE();
         IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
             IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
             IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, iDstReg);
         IEM_MC_ELSE()
             IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(iDstReg);
         IEM_MC_ENDIF();
-        IEM_MC_USED_FPU();
+
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -13773,13 +13815,13 @@ FNIEMOP_DEF_1(iemOpHlpFpu_st0, PFNIEMAIMPLFPUR80UNARY, pfnAImpl)
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pFpuRes, pr80Value);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13819,13 +13861,13 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0, PFNIEMAIMPLFPUR80UNARYFSW, pfnAImpl)
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pu16Fsw, pr80Value);
         IEM_MC_UPDATE_FSW(u16Fsw);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(UINT8_MAX);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13864,13 +13906,13 @@ FNIEMOP_DEF_1(iemOpHlpFpuPushConstant, PFNIEMAIMPLFPUR80LDCONST, pfnAImpl)
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_1(pfnAImpl, pFpuRes);
         IEM_MC_PUSH_FPU_RESULT(FpuRes);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW();
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -13965,13 +14007,13 @@ FNIEMOP_DEF_1(iemOpHlpFpuReplace_st0_push, PFNIEMAIMPLFPUR80UNARYTWO, pfnAImpl)
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pFpuResTwo, pr80Value);
         IEM_MC_PUSH_FPU_RESULT_TWO(FpuResTwo);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO();
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14006,13 +14048,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, bRm & X86_MODRM_RM_MASK, pr80Value2, 0)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
         IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, bRm & X86_MODRM_RM_MASK);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(bRm & X86_MODRM_RM_MASK);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14058,10 +14100,10 @@ FNIEMOP_DEF(iemOp_fdecstp)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     IEM_MC_FPU_STACK_DEC_TOP();
     IEM_MC_UPDATE_FSW_CONST(0);
 
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -14082,10 +14124,10 @@ FNIEMOP_DEF(iemOp_fincstp)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     IEM_MC_FPU_STACK_INC_TOP();
     IEM_MC_UPDATE_FSW_CONST(0);
 
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -14249,6 +14291,7 @@ FNIEMOP_DEF_1(iemOp_fcmovb_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14257,7 +14300,6 @@ FNIEMOP_DEF_1(iemOp_fcmovb_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14277,6 +14319,7 @@ FNIEMOP_DEF_1(iemOp_fcmove_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14285,7 +14328,6 @@ FNIEMOP_DEF_1(iemOp_fcmove_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14305,6 +14347,7 @@ FNIEMOP_DEF_1(iemOp_fcmovbe_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14313,7 +14356,6 @@ FNIEMOP_DEF_1(iemOp_fcmovbe_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14333,6 +14375,7 @@ FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14341,7 +14384,6 @@ FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14367,13 +14409,14 @@ FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_stN_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, 1)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pu16Fsw, pr80Value1, pr80Value2);
         IEM_MC_UPDATE_FSW_THEN_POP_POP(u16Fsw);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP();
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14412,13 +14455,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m32i, uint8_t, bRm, PFNIEMAIMPLFPUI32, pfnAImpl)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I32(i32Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pi32Val2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14462,13 +14505,13 @@ FNIEMOP_DEF_1(iemOp_ficom_m32i,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I32(i32Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i32, pu16Fsw, pr80Value1, pi32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14496,13 +14539,13 @@ FNIEMOP_DEF_1(iemOp_ficomp_m32i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I32(i32Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i32, pu16Fsw, pr80Value1, pi32Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14602,13 +14645,13 @@ FNIEMOP_DEF_1(iemOp_fild_m32i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I32(i32Val, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_i32_to_r80, pFpuRes, pi32Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14633,6 +14676,7 @@ FNIEMOP_DEF_1(iemOp_fisttp_m32i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i32, pu16Fsw, pi32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi32Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -14644,7 +14688,6 @@ FNIEMOP_DEF_1(iemOp_fisttp_m32i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14669,6 +14712,7 @@ FNIEMOP_DEF_1(iemOp_fist_m32i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i32, pu16Fsw, pi32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi32Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -14680,7 +14724,6 @@ FNIEMOP_DEF_1(iemOp_fist_m32i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14705,6 +14748,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m32i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i32, pu16Fsw, pi32Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi32Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -14716,7 +14760,6 @@ FNIEMOP_DEF_1(iemOp_fistp_m32i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14743,13 +14786,13 @@ FNIEMOP_DEF_1(iemOp_fld_m80r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R80(r80Val, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_r80, pFpuRes, pr80Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14774,6 +14817,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m80r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pr80Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r80, pu16Fsw, pr80Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr80Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -14785,7 +14829,6 @@ FNIEMOP_DEF_1(iemOp_fstp_m80r, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14805,6 +14848,7 @@ FNIEMOP_DEF_1(iemOp_fcmovnb_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_CF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14813,7 +14857,6 @@ FNIEMOP_DEF_1(iemOp_fcmovnb_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14833,6 +14876,7 @@ FNIEMOP_DEF_1(iemOp_fcmovne_stN,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14841,7 +14885,6 @@ FNIEMOP_DEF_1(iemOp_fcmovne_stN,  uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14861,6 +14904,7 @@ FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_NO_BITS_SET(X86_EFL_CF | X86_EFL_ZF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14869,7 +14913,6 @@ FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -14889,6 +14932,7 @@ FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(pr80ValueN, bRm & X86_MODRM_RM_MASK, 0)
         IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_PF)
             IEM_MC_STORE_FPUREG_R80_SRC_REF(0, pr80ValueN);
@@ -14897,7 +14941,6 @@ FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15071,13 +15114,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, bRm & X86_MODRM_RM_MASK, pr80Value2, 0)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, bRm & X86_MODRM_RM_MASK);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(bRm & X86_MODRM_RM_MASK);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15155,13 +15198,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_ST0_m64r, uint8_t, bRm, PFNIEMAIMPLFPUR64, pfnImpl)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_FETCH_MEM_R64(r64Factor2, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Factor1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(pfnImpl, pFpuRes, pr80Factor1, pr64Factor2);
         IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15205,13 +15248,13 @@ FNIEMOP_DEF_1(iemOp_fcom_m64r,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R64(r64Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r64, pu16Fsw, pr80Value1, pr64Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15239,13 +15282,13 @@ FNIEMOP_DEF_1(iemOp_fcomp_m64r, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R64(r64Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fcom_r80_by_r64, pu16Fsw, pr80Value1, pr64Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15342,13 +15385,13 @@ FNIEMOP_DEF_1(iemOp_fld_m64r,    uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_FETCH_MEM_R64(r64Val, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r64_to_r80, pFpuRes, pr64Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15373,6 +15416,7 @@ FNIEMOP_DEF_1(iemOp_fisttp_m64i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi64Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i64, pu16Fsw, pi64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi64Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -15384,7 +15428,6 @@ FNIEMOP_DEF_1(iemOp_fisttp_m64i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15409,6 +15452,7 @@ FNIEMOP_DEF_1(iemOp_fst_m64r,    uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pr64Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r64, pu16Fsw, pr64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr64Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -15420,7 +15464,6 @@ FNIEMOP_DEF_1(iemOp_fst_m64r,    uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15447,6 +15490,7 @@ FNIEMOP_DEF_1(iemOp_fstp_m64r,   uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pr64Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_r64, pu16Fsw, pr64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pr64Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -15458,7 +15502,6 @@ FNIEMOP_DEF_1(iemOp_fstp_m64r,   uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15515,6 +15558,7 @@ FNIEMOP_DEF_1(iemOp_fnstsw,      uint8_t, bRm)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
 
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
     IEM_MC_FETCH_FSW(u16Tmp);
     IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Tmp);
     IEM_MC_ADVANCE_RIP();
@@ -15540,10 +15584,10 @@ FNIEMOP_DEF_1(iemOp_ffree_stN,   uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     IEM_MC_FPU_STACK_FREE(bRm & X86_MODRM_RM_MASK);
     IEM_MC_UPDATE_FPU_OPCODE_IP();
 
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -15561,13 +15605,15 @@ FNIEMOP_DEF_1(iemOp_fst_stN,     uint8_t, bRm)
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
         IEM_MC_STORE_FPU_RESULT(FpuRes, bRm & X86_MODRM_RM_MASK);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(bRm & X86_MODRM_RM_MASK);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
+
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -15707,13 +15753,13 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_m16i, uint8_t, bRm, PFNIEMAIMPLFPUI16, pfnAImpl)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I16(i16Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pi16Val2);
         IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW(0);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15757,13 +15803,13 @@ FNIEMOP_DEF_1(iemOp_ficom_m16i,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I16(i16Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i16, pu16Fsw, pr80Value1, pi16Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15791,13 +15837,13 @@ FNIEMOP_DEF_1(iemOp_ficomp_m16i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I16(i16Val2, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value1, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_ficom_r80_by_i16, pu16Fsw, pr80Value1, pi16Val2);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15889,11 +15935,11 @@ FNIEMOP_DEF_1(iemOp_ffreep_stN, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     IEM_MC_FPU_STACK_FREE(bRm & X86_MODRM_RM_MASK);
     IEM_MC_FPU_STACK_INC_TOP();
     IEM_MC_UPDATE_FPU_OPCODE_IP();
 
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -15909,6 +15955,7 @@ FNIEMOP_DEF(iemOp_fnstsw_ax)
     IEM_MC_BEGIN(0, 1);
     IEM_MC_LOCAL(uint16_t, u16Tmp);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
     IEM_MC_FETCH_FSW(u16Tmp);
     IEM_MC_STORE_GREG_U16(X86_GREG_xAX, u16Tmp);
     IEM_MC_ADVANCE_RIP();
@@ -15952,13 +15999,13 @@ FNIEMOP_DEF_1(iemOp_fild_m16i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I16(i16Val, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_i16_to_r80, pFpuRes, pi16Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -15983,6 +16030,7 @@ FNIEMOP_DEF_1(iemOp_fisttp_m16i, uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -15994,7 +16042,6 @@ FNIEMOP_DEF_1(iemOp_fisttp_m16i, uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -16019,6 +16066,7 @@ FNIEMOP_DEF_1(iemOp_fist_m16i,   uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -16030,7 +16078,6 @@ FNIEMOP_DEF_1(iemOp_fist_m16i,   uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -16055,6 +16102,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -16066,7 +16114,6 @@ FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -16097,13 +16144,13 @@ FNIEMOP_DEF_1(iemOp_fild_m64i,   uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_I64(i64Val, pIemCpu->iEffSeg, GCPtrEffSrc);
 
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
         IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_i64_to_r80, pFpuRes, pi64Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -16132,6 +16179,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
 
     IEM_MC_MEM_MAP(pi64Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 1 /*arg*/);
+    IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i64, pu16Fsw, pi64Dst, pr80Value);
         IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi64Dst, IEM_ACCESS_DATA_W, u16Fsw);
@@ -16143,7 +16191,6 @@ FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
         IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pIemCpu->iEffSeg, GCPtrEffDst);
     IEM_MC_ENDIF();
-    IEM_MC_USED_FPU();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
