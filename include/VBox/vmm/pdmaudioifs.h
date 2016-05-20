@@ -339,11 +339,31 @@ typedef struct PDMAUDIOSTRMRATE
 } PDMAUDIOSTRMRATE, *PPDMAUDIOSTRMRATE;
 
 /**
+ * Structure for holding sample conversion parameters for
+ * the audioMixBufConvFromXXX / audioMixBufConvToXXX macros.
+ */
+typedef struct AUDMIXBUF_CONVOPTS
+{
+    /** Number of audio samples to convert. */
+    uint32_t       cSamples;
+    /** Volume to apply during conversion. Pass 0
+     *  to convert the original values. May not apply to
+     *  all conversion functions. */
+    PDMAUDIOVOLUME Volume;
+} AUDMIXBUF_CONVOPTS, *PAUDMIXBUF_CONVOPTS;
+
+/**
  * Note: All internal handling is done in samples,
  *       not in bytes!
  */
 typedef uint32_t PDMAUDIOMIXBUFFMT;
 typedef PDMAUDIOMIXBUFFMT *PPDMAUDIOMIXBUFFMT;
+
+typedef uint32_t (AUDMIXBUF_FN_CONVFROM) (PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, const PAUDMIXBUF_CONVOPTS pOpts);
+typedef AUDMIXBUF_FN_CONVFROM *PAUDMIXBUF_FN_CONVFROM;
+
+typedef void (AUDMIXBUF_FN_CONVTO) (void *pvDst, const PPDMAUDIOSAMPLE paSrc, const PAUDMIXBUF_CONVOPTS pOpts);
+typedef AUDMIXBUF_FN_CONVTO *PAUDMIXBUF_FN_CONVTO;
 
 typedef struct PDMAUDIOMIXBUF *PPDMAUDIOMIXBUF;
 typedef struct PDMAUDIOMIXBUF
@@ -377,6 +397,10 @@ typedef struct PDMAUDIOMIXBUF
     PDMAUDIOVOLUME         Volume;
     /** This buffer's audio format. */
     PDMAUDIOMIXBUFFMT      AudioFmt;
+    /** Standard conversion-to function for set AudioFmt. */
+    PAUDMIXBUF_FN_CONVTO   pConvTo;
+    /** Standard conversion-from function for set AudioFmt. */
+    PAUDMIXBUF_FN_CONVFROM pConvFrom;
     /**
      * Ratio of the associated parent stream's frequency by this stream's
      * frequency (1<<32), represented as a signed 64 bit integer.

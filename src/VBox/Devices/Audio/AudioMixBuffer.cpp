@@ -130,20 +130,6 @@ static uint32_t s_aVolumeConv[256] = {
 AssertCompile(AUDIOMIXBUF_VOL_0DB <= 0x40000000);   /* Must always hold. */
 AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only attenuation is used. */
 
-/**
- * Structure for holding sample conversion parameters for
- * the audioMixBufConvFromXXX / audioMixBufConvToXXX macros.
- */
-typedef struct AUDMIXBUF_CONVOPTS
-{
-    /** Number of audio samples to convert. */
-    uint32_t       cSamples;
-    /** Volume to apply during conversion. Pass 0
-     *  to convert the original values. May not apply to
-     *  all conversion functions. */
-    PDMAUDIOVOLUME Volume;
-} AUDMIXBUF_CONVOPTS, *PAUDMIXBUF_CONVOPTS;
-
 /*
  * When running the audio testcases we want to verfiy
  * the macro-generated routines separately, so unmark them as being
@@ -159,12 +145,6 @@ typedef struct AUDMIXBUF_CONVOPTS
 static uint64_t s_cSamplesMixedTotal = 0;
 static inline void audioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf);
 #endif
-
-typedef uint32_t (AUDMIXBUF_FN_CONVFROM) (PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, const PAUDMIXBUF_CONVOPTS pOpts);
-typedef AUDMIXBUF_FN_CONVFROM *PAUDMIXBUF_FN_CONVFROM;
-
-typedef void (AUDMIXBUF_FN_CONVTO) (void *pvDst, const PPDMAUDIOSAMPLE paSrc, const PAUDMIXBUF_CONVOPTS pOpts);
-typedef AUDMIXBUF_FN_CONVTO *PAUDMIXBUF_FN_CONVTO;
 
 /* Can return VINF_TRY_AGAIN for getting next pointer at beginning (circular) */
 
@@ -648,13 +628,9 @@ AUDMIXBUF_MACRO_FN uint32_t audioMixBufConvFromSilence(PPDMAUDIOSAMPLE paDst, co
  *
  * @return  PAUDMIXBUF_FN_CONVFROM  Function pointer to conversion macro if found, NULL if not supported.
  * @param   enmFmt                  Audio format to lookup conversion macro for.
- * @param   fMuted                  Flag determining whether the source is muted.
  */
-static inline PAUDMIXBUF_FN_CONVFROM audioMixBufConvFromLookup(PDMAUDIOMIXBUFFMT enmFmt, bool fMuted)
+static inline PAUDMIXBUF_FN_CONVFROM audioMixBufConvFromLookup(PDMAUDIOMIXBUFFMT enmFmt)
 {
-    if (fMuted)
-        return audioMixBufConvFromSilence;
-
     if (AUDMIXBUF_FMT_SIGNED(enmFmt))
     {
         if (AUDMIXBUF_FMT_CHANNELS(enmFmt) == 2)
@@ -806,6 +782,10 @@ int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMPCMPROPS p
                                                  pProps->cChannels,
                                                  pProps->cBits,
                                                  pProps->fSigned);
+
+    pMixBuf->pConvFrom = audioMixBufConvFromLookup(pMixBuf->AudioFmt);
+    pMixBuf->pConvTo   = audioMixBufConvToLookup(pMixBuf->AudioFmt);
+
     pMixBuf->cShift = pProps->cShift;
     pMixBuf->pszName = RTStrDup(pszName);
     if (!pMixBuf->pszName)
@@ -1320,20 +1300,26 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc;
     if (cToProcess)
     {
-        PAUDMIXBUF_FN_CONVTO pConv = audioMixBufConvToLookup(enmFmt);
+        PAUDMIXBUF_FN_CONVTO pConv;
+        if (pMixBuf->AudioFmt != enmFmt)
+            pConv = audioMixBufConvToLookup(enmFmt);
+        else
+            pConv = pMixBuf->pConvTo;
+
         if (pConv)
         {
             AUDMIXBUF_CONVOPTS convOpts = { cToProcess, pMixBuf->Volume };
+
+            AssertPtr(pConv);
             pConv(pvBuf, pMixBuf->pSamples + offSamples, &convOpts);
 
+#ifdef DEBUG
+            AudioMixBufDbgPrint(pMixBuf);
+#endif
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_INVALID_PARAMETER;
-
-#ifdef DEBUG
-        AudioMixBufDbgPrint(pMixBuf);
-#endif
+            rc = VERR_NOT_SUPPORTED;
     }
     else
         rc = VINF_SUCCESS;
@@ -1650,7 +1636,15 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (offSamples + cToProcess > pMixBuf->cSamples)
         return VERR_BUFFER_OVERFLOW;
 
-    PAUDMIXBUF_FN_CONVFROM pConv = audioMixBufConvFromLookup(enmFmt, pMixBuf->Volume.fMuted);
+    PAUDMIXBUF_FN_CONVFROM pConv;
+    if (pMixBuf->AudioFmt != enmFmt)
+        pConv = audioMixBufConvFromLookup(enmFmt);
+    else
+    {
+        pConv = pMixBuf->Volume.fMuted
+              ? &audioMixBufConvFromSilence : pMixBuf->pConvFrom;
+    }
+
     if (!pConv)
         return VERR_NOT_SUPPORTED;
 
@@ -1753,7 +1747,15 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VINF_SUCCESS;
     }
 
-    PAUDMIXBUF_FN_CONVFROM pConv = audioMixBufConvFromLookup(enmFmt, pMixBuf->Volume.fMuted);
+    PAUDMIXBUF_FN_CONVFROM pConv;
+    if (pMixBuf->AudioFmt != enmFmt)
+        pConv = audioMixBufConvFromLookup(enmFmt);
+    else
+    {
+        pConv = pMixBuf->Volume.fMuted
+              ? &audioMixBufConvFromSilence : pMixBuf->pConvFrom;
+    }
+
     if (!pConv)
         return VERR_NOT_SUPPORTED;
 
