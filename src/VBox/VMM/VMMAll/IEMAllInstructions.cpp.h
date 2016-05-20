@@ -6474,10 +6474,10 @@ FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib__cmppd_Vpd_Wpd_Ib__cmpss_Vss_Wss_Ib__cmpsd_V
 
 
 /** Opcode 0x0f 0xc3. */
-#if 0 //ndef VBOX_WITH_REM
+#ifndef VBOX_WITH_REM
 FNIEMOP_DEF(iemOp_movnti_My_Gy)
 {
-    IEMOP_MNEMONIC("mov Ev,Gv");
+    IEMOP_MNEMONIC("movnti My,Gy");
 
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
 
