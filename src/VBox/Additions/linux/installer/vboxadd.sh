@@ -214,7 +214,7 @@ start()
     /sbin/rcvboxadd-x11 setup
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
-    if /usr/bin/VBoxClient --check3d; then
+    if /usr/bin/VBoxClient --check3d 2>/dev/null; then
         rm -f /var/lib/VBoxGuestAdditions/lib/system/tmp.so
         mkdir -m 0755 -p /var/lib/VBoxGuestAdditions/lib/system
         ldconfig -p | while read -r line; do
