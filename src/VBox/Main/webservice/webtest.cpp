@@ -24,6 +24,10 @@
 #include <sstream>
 #include <string>
 
+/* TEMPORARY! */
+#if defined(_MSC_VER) && !defined(RT_ARCH_AMD64)
+# pragma optimize("g", off)
+#endif
 
 static void usage(int exitcode)
 {
