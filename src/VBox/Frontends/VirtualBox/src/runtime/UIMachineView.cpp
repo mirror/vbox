@@ -1874,6 +1874,18 @@ bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
         case WM_KEYUP:
         case WM_SYSKEYUP:
         {
+            // WORKAROUND:
+            // There is an issue in the Windows Qt5 event processing sequence
+            // causing QAbstractNativeEventFilter to receive Windows native events
+            // coming not just to the top-level window but to actual target as well.
+            // They are calling one - "global event" and another one - "context event".
+            // That way native events are always duplicated with almost no possibility
+            // to distinguish copies except the fact that synthetic event always have
+            // time set to 0 (actually that field was not initialized at all, we had
+            // fixed that in our private Qt tool). We should skip such events instantly.
+            if (pEvent->time == 0)
+                return false;
+
             /* Delegate key-event handling to the keyboard-handler: */
             return machineLogic()->keyboardHandler()->nativeEventPostprocessor(pMessage, screenId());
         }
