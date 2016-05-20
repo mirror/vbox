@@ -157,7 +157,7 @@ typedef struct AUDMIXBUF_CONVOPTS
 
 #ifdef DEBUG
 static uint64_t s_cSamplesMixedTotal = 0;
-static inline void audioMixBufPrint(PPDMAUDIOMIXBUF pMixBuf);
+static inline void audioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf);
 #endif
 
 typedef uint32_t (AUDMIXBUF_FN_CONVFROM) (PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, const PAUDMIXBUF_CONVOPTS pOpts);
@@ -871,7 +871,7 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
 
     if (pMixBuf->pParent) /* Already linked? */
     {
-        AUDMIXBUF_LOG(("%s: Already linked to \"%s\"\n",
+        AUDMIXBUF_LOG(("%s: Already linked to parent '%s'\n",
                        pMixBuf->pszName, pMixBuf->pParent->pszName));
         return VERR_ACCESS_DENIED;
     }
@@ -1067,7 +1067,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 
 #ifdef DEBUG
     s_cSamplesMixedTotal += cWrittenTotal;
-    audioMixBufPrint(pDst);
+    AudioMixBufDbgPrint(pDst);
 #endif
 
     if (pcProcessed)
@@ -1139,6 +1139,96 @@ int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
 }
 
 #ifdef DEBUG
+static void audioMixBufDbgBufPrintIndentV(uint16_t uIndent, const char *pszFormat, va_list va)
+{
+    char *pszValueFormat;
+    if (RTStrAPrintfV(&pszValueFormat, pszFormat, va))
+    {
+        AUDMIXBUF_LOG(("%*s%s", uIndent, "", pszValueFormat));
+        RTStrFree(pszValueFormat);
+    }
+}
+
+static void audioMixBufDbgPrintIndent(uint16_t uIdtLvl, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    audioMixBufDbgBufPrintIndentV(uIdtLvl * 4, pszFormat, va);
+    va_end(va);
+}
+
+/**
+ * Prints a single mixing buffer.
+ * Internal helper function for debugging. Do not use directly.
+ *
+ * @return  IPRT status code.
+ * @param   pMixBuf                 Mixing buffer to print.
+ * @param   fIsParent               Whether this is a parent buffer or not.
+ * @param   uIdtLvl                 Indention level to use.
+ */
+static void audioMixBufDbgPrintSingle(PPDMAUDIOMIXBUF pMixBuf, bool fIsParent, uint16_t uIdtLvl)
+{
+    audioMixBufDbgPrintIndent(uIdtLvl,
+                           "[%s] %s (%RU32): offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
+                           fIsParent ? "PARENT" : "CHILD",
+                           pMixBuf->pszName, pMixBuf->cSamples,
+                           pMixBuf->offReadWrite, pMixBuf->cProcessed, pMixBuf->cMixed,
+                           AUDIOMIXBUF_S2B(pMixBuf, 1));
+}
+
+/**
+ * Internal helper function for audioMixBufPrintChain().
+ * Do not use directly.
+ *
+ * @return  IPRT status code.
+ * @param   pMixBuf                 Mixing buffer to print.
+ * @param   uIdtLvl                 Indention level to use.
+ * @param   pcChildren              Pointer to children counter.
+ */
+static void audioMixBufDbgPrintChainHelper(PPDMAUDIOMIXBUF pMixBuf, uint16_t uIdtLvl, size_t *pcChildren)
+{
+    PPDMAUDIOMIXBUF pIter;
+    RTListForEach(&pMixBuf->lstBuffers, pIter, PDMAUDIOMIXBUF, Node)
+    {
+        audioMixBufDbgPrintSingle(pIter, false /* ifIsParent */, uIdtLvl + 1);
+        audioMixBufDbgPrintChainHelper(pIter, uIdtLvl + 1, pcChildren);
+    }
+}
+
+/**
+ * Prints statistics and status of the full chain of a mixing buffer to the logger,
+ * starting from the top root mixing buffer.
+ * For debug versions only.
+ *
+ * @return  IPRT status code.
+ * @param   pMixBuf                 Mixing buffer to print.
+ */
+void AudioMixBufDbgPrintChain(PPDMAUDIOMIXBUF pMixBuf)
+{
+    PPDMAUDIOMIXBUF pParent = pMixBuf->pParent;
+    while (pParent)
+    {
+        if (!pParent->pParent)
+            break;
+
+        pParent = pParent->pParent;
+    }
+
+    if (!pParent)
+        pParent = pMixBuf;
+
+    AUDMIXBUF_LOG(("********************************************\n"));
+
+    audioMixBufDbgPrintSingle(pParent, true /* fIsParent */, 0 /* uIdtLvl */);
+
+    /* Recursively iterate children. */
+    size_t cChildren = 0;
+    audioMixBufDbgPrintChainHelper(pParent, 0 /* uIdtLvl */, &cChildren);
+
+    AUDMIXBUF_LOG(("Children: %zu - Total samples mixed: %RU64\n", cChildren, s_cSamplesMixedTotal));
+    AUDMIXBUF_LOG(("********************************************\n"));
+}
+
 /**
  * Prints statistics and status of a mixing buffer to the logger.
  * For debug versions only.
@@ -1146,31 +1236,19 @@ int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
  * @return  IPRT status code.
  * @param   pMixBuf                 Mixing buffer to print.
  */
-static inline void audioMixBufPrint(PPDMAUDIOMIXBUF pMixBuf)
+void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
 {
     PPDMAUDIOMIXBUF pParent = pMixBuf;
     if (pMixBuf->pParent)
         pParent = pMixBuf->pParent;
 
     AUDMIXBUF_LOG(("********************************************\n"));
-    AUDMIXBUF_LOG(("[PARENT] %s (%RU32): offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
-                   pParent->pszName, pParent->cSamples,
-                   pParent->offReadWrite, pParent->cProcessed, pParent->cMixed,
-                   AUDIOMIXBUF_S2B(pParent, 1)));
 
-    size_t cChildren = 0;
+    audioMixBufDbgPrintSingle(pMixBuf, true /* fIsParent */, 0 /* iIdtLevel */);
 
     PPDMAUDIOMIXBUF pIter;
     RTListForEach(&pParent->lstBuffers, pIter, PDMAUDIOMIXBUF, Node)
-    {
-        AUDMIXBUF_LOG(("\t[CHILD] %s (%RU32): offReadWrite=%RU32, cProcessed=%RU32, cMixed=%RU32 (BpS=%RU32)\n",
-                       pIter->pszName, pIter->cSamples,
-                       pIter->offReadWrite, pIter->cProcessed, pIter->cMixed,
-                       AUDIOMIXBUF_S2B(pIter, 1)));
-        cChildren++;
-    }
-    AUDMIXBUF_LOG(("Children: %zu - Total samples mixed: %RU64\n", cChildren, s_cSamplesMixedTotal));
-    AUDMIXBUF_LOG(("********************************************\n"));
+        audioMixBufDbgPrintSingle(pMixBuf, false /* fIsParent */, 1 /* iIdtLevel */);
 }
 #endif
 
@@ -1254,7 +1332,7 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
             rc = VERR_INVALID_PARAMETER;
 
 #ifdef DEBUG
-        audioMixBufPrint(pMixBuf);
+        AudioMixBufDbgPrint(pMixBuf);
 #endif
     }
     else
@@ -1316,7 +1394,7 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (!cToRead)
     {
 #ifdef DEBUG
-        audioMixBufPrint(pMixBuf);
+        AudioMixBufDbgPrint(pMixBuf);
 #endif
         if (pcRead)
             *pcRead = 0;
@@ -1399,7 +1477,7 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     }
 
 #ifdef DEBUG
-    audioMixBufPrint(pMixBuf);
+    AudioMixBufDbgPrint(pMixBuf);
 #endif
 
     AUDMIXBUF_LOG(("cRead=%RU32 (%zu bytes), rc=%Rrc\n",
@@ -1596,7 +1674,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
         cWritten = pConv(pMixBuf->pSamples + offSamples, pvBuf, cbBuf, &convOpts);
 #ifdef DEBUG
-        audioMixBufPrint(pMixBuf);
+        AudioMixBufDbgPrint(pMixBuf);
 #endif
         rc = cWritten ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Fudge! */
     }
@@ -1753,7 +1831,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     }
 
 #ifdef DEBUG
-    audioMixBufPrint(pMixBuf);
+    AudioMixBufDbgPrint(pMixBuf);
 #endif
 
     AUDMIXBUF_LOG(("cWritten=%RU32 (%zu bytes), rc=%Rrc\n",
