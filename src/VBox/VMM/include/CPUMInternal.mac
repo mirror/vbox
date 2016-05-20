@@ -18,6 +18,12 @@
 %include "VBox/asmdefs.mac"
 %include "VBox/vmm/cpum.mac"
 
+;; Check sanity.
+%ifdef VBOX_WITH_KERNEL_USING_XMM
+ %ifndef IN_RING0
+  %error "What? We've got code assuming VBOX_WITH_KERNEL_USING_XMM is only defined in ring-0!"
+ %endif
+%endif
 
 ;; For numeric expressions
 %ifdef RT_ARCH_AMD64
@@ -592,7 +598,13 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
+ %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+ %elifdef IN_RC
+        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
+ %else
+  %error "Unsupported context!"
+ %endif
         mov     eax, [pCpumCpu + CPUMCPU.Host.fXStateMask]
 
         ;
@@ -603,20 +615,20 @@ endstruc
 
         ; XSAVE
         mov     edx, [pCpumCpu + CPUMCPU.Host.fXStateMask + 4]
-%ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64
         o64 xsave [pXState]
-%else
+ %else
         xsave   [pXState]
-%endif
+ %endif
         jmp     %%host_done
 
         ; FXSAVE
 %%host_fxsave:
-%ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64
         o64 fxsave [pXState]            ; Use explicit REX prefix. See @bugref{6398}.
-%else
+ %else
         fxsave  [pXState]
-%endif
+ %endif
 
 %%host_done:
 %endmacro ; CPUMR0_SAVE_HOST
@@ -633,7 +645,13 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
+ %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+ %elifdef IN_RC
+        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
+ %else
+  %error "Unsupported context!"
+ %endif
         mov     eax, [pCpumCpu + CPUMCPU.Host.fXStateMask]
 
         ;
@@ -644,20 +662,20 @@ endstruc
 
         ; XRSTOR
         mov     edx, [pCpumCpu + CPUMCPU.Host.fXStateMask + 4]
-%ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64
         o64 xrstor [pXState]
-%else
+ %else
         xrstor  [pXState]
-%endif
+ %endif
         jmp     %%host_done
 
         ; FXRSTOR
 %%host_fxrstor:
-%ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64
         o64 fxrstor [pXState]           ; Use explicit REX prefix. See @bugref{6398}.
-%else
+ %else
         fxrstor [pXState]
-%endif
+ %endif
 
 %%host_done:
 %endmacro ; CPUMR0_LOAD_HOST
@@ -715,7 +733,13 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
+ %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateR0]
+ %elifdef IN_RC
+        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
+ %else
+  %error "Unsupported context!"
+ %endif
         mov     eax, [pCpumCpu + CPUMCPU.Guest.fXStateMask]
 
         ;
@@ -726,14 +750,14 @@ endstruc
 
         ; XSAVE
         mov     edx, [pCpumCpu + CPUMCPU.Guest.fXStateMask + 4]
-%ifdef VBOX_WITH_KERNEL_USING_XMM
+ %ifdef VBOX_WITH_KERNEL_USING_XMM
         and     eax, ~CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS ; Already saved in HMR0A.asm.
-%endif
-%ifdef RT_ARCH_AMD64
+ %endif
+ %ifdef RT_ARCH_AMD64
         o64 xsave [pXState]
-%else
+ %else
         xsave   [pXState]
-%endif
+ %endif
         jmp     %%guest_done
 
         ; FXSAVE
@@ -783,7 +807,13 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
+ %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateR0]
+ %elifdef IN_RC
+        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
+ %else
+  %error "Unsupported context!"
+ %endif
         mov     eax, [pCpumCpu + CPUMCPU.Guest.fXStateMask]
 
         ;
@@ -794,14 +824,14 @@ endstruc
 
         ; XRSTOR
         mov     edx, [pCpumCpu + CPUMCPU.Guest.fXStateMask + 4]
-%ifdef VBOX_WITH_KERNEL_USING_XMM
+ %ifdef VBOX_WITH_KERNEL_USING_XMM
         and     eax, ~CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS ; Will be loaded by HMR0A.asm.
-%endif
-%ifdef RT_ARCH_AMD64
+ %endif
+ %ifdef RT_ARCH_AMD64
         o64 xrstor [pXState]
-%else
+ %else
         xrstor  [pXState]
-%endif
+ %endif
         jmp     %%guest_done
 
         ; FXRSTOR

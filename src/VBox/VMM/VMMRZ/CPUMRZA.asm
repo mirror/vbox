@@ -211,21 +211,21 @@ BEGINPROC cpumRZSaveGuestSseRegisters
         mov     xBP, xSP
         SEH64_SET_FRAME_xBP 0
 SEH64_END_PROLOGUE
-%ifdef VBOX_WITH_KERNEL_USING_XMM
+%ifndef VBOX_WITH_KERNEL_USING_XMM
 
         ;
         ; Load xCX with the guest pXStateR0.
         ;
-%ifdef RT_ARCH_AMD64
- %ifdef ASM_CALL64_MSC
+ %ifdef RT_ARCH_AMD64
+  %ifdef ASM_CALL64_MSC
         mov     xCX, [rcx + CPUMCPU.Guest.pXStateR0]
- %else
+  %else
         mov     xCX, [rdi + CPUMCPU.Guest.pXStateR0]
- %endif
-%else
+  %endif
+ %else
         mov     ecx, dword [ebp + 8]
         mov     ecx, [ecx + CPUMCPU.Guest.pXStateR0]
-%endif
+ %endif
 
         ;
         ; Do the job.
@@ -238,6 +238,7 @@ SEH64_END_PROLOGUE
         movdqa  [xCX + X86FXSTATE.xmm5 ], xmm5
         movdqa  [xCX + X86FXSTATE.xmm6 ], xmm6
         movdqa  [xCX + X86FXSTATE.xmm7 ], xmm7
+ %if ARCH_BITS == 64
         movdqa  [xCX + X86FXSTATE.xmm8 ], xmm8
         movdqa  [xCX + X86FXSTATE.xmm9 ], xmm9
         movdqa  [xCX + X86FXSTATE.xmm10], xmm10
@@ -246,6 +247,7 @@ SEH64_END_PROLOGUE
         movdqa  [xCX + X86FXSTATE.xmm13], xmm13
         movdqa  [xCX + X86FXSTATE.xmm14], xmm14
         movdqa  [xCX + X86FXSTATE.xmm15], xmm15
+ %endif
 %endif ; !VBOX_WITH_KERNEL_USING_XMM
 
         leave
