@@ -63,41 +63,57 @@ BEGINPROC pgmR3DbgFixedMemScan8Wide8Step
         xchg    rcx, rsi                ; rcx=cbHaystack, rsi=cbNeedle
         mov     rax, [rdx]              ; *(uint64_t *)pvNeedle
 %elifdef RT_ARCH_X86
-        mov     edx, edi                ; save it
+        push    ebp
+        mov     ebp, esp
+        push    edi                     ; save it
         mov     edi, [ebp + 08h]        ; pbHaystack
         mov     ecx, [ebp + 0ch]        ; cbHaystack
         mov     eax, [ebp + 10h]        ; pvNeedle
-        mov     eax, [eax]              ; *(uint64_t *)pvNeedle
+        mov     edx, [eax + 4]          ; ((uint32_t *)pvNeedle)[1]
+        mov     eax, [eax]              ; ((uint32_t *)pvNeedle)[0]
 %else
  %error "Unsupported arch!"
 %endif
 SEH64_END_PROLOGUE
 
-        cmp     ecx, 8
-        jb      .return_null
 %ifdef RT_ARCH_X86
+        ;
+        ; No string instruction to help us here.  Do a simple tight loop instead.
+        ;
+        shr     ecx, 3
+        jz      .return_null
 .again:
         cmp     [edi], eax
-        je      .return_edi
+        je      .needle_check
+.continue:
+        add     edi, 8
         dec     ecx
         jnz     .again
         jmp     .return_null
+
+        ; Check the needle 2nd dword, caller can do the rest.
+.needle_check:
+        cmp     edx, [edi + 4]
+        jne     .continue
+
 .return_edi:
-        ;; @todo check the whole needle.
         mov     eax, edi
 
-%else ; RT_ARCH_AMD64
+%else  ; RT_ARCH_AMD64
+        cmp     ecx, 8
+        jb      .return_null
 .continue:
         shr     ecx, 3
         repne   scasq
         jne     .return_null
         ; check more of the needle if we can.
         mov     r11d, 8
+        shl     ecx, 3
 .needle_check:
         cmp     cbNeedle, r11d
         je      .return_edi
-        cmp     ecx, r11d               ; don't bother converting ecx to bytes.
-        jb      .return_edi
+        cmp     ecx, r11d
+        jb      .return_edi             ; returns success here as we've might've lost stuff while shifting ecx around.
         mov     bTmp, [pvNeedle + r11]
         cmp     bTmp, [xDI + r11 - 8]
         jne     .continue
@@ -106,12 +122,14 @@ SEH64_END_PROLOGUE
 
 .return_edi:
         lea     xAX, [xDI - 8]
-%endif
+%endif ; RT_ARCH_AMD64
+
 .return:
 %ifdef ASM_CALL64_MSC
         mov     rdi, r10
 %elifdef RT_ARCH_X86
-        mov     edi, edx
+        pop     edi
+        leave
 %endif
         ret
 
