@@ -1539,7 +1539,7 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
  * @returns Pointer to the tool definition.  NULL if not found.
  * @param   pszTool     The name of the tool.
  */
-static PCVBOXSERVICETOOLBOXTOOL const vgsvcToolboxLookUp(const char *pszTool)
+static PCVBOXSERVICETOOLBOXTOOL vgsvcToolboxLookUp(const char *pszTool)
 {
     AssertPtrReturn(pszTool, NULL);
 
