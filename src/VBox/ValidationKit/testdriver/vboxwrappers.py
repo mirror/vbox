@@ -2218,6 +2218,19 @@ class SessionWrapper(TdTaskBase):
         Returns False on IConsole::powerDown() failure.
         Returns None if the progress object returns failure.
         """
+        #
+        # Deregister event handler before we power off the VM, otherwise we're
+        # racing for VM process termination and cause misleading spurious
+        # error messages in the event handling code, because the event objects
+        # disappear.
+        #
+        # Note! Doing this before powerDown to try prevent numerous smoketest
+        #       timeouts on XPCOM hosts.
+        #
+        self.deregisterEventHandlerForTask();
+
+
+        # Try power if off.
         try:
             oProgress = self.o.console.powerDown();
         except:
@@ -2227,11 +2240,7 @@ class SessionWrapper(TdTaskBase):
                 self.waitForTask(1000);                                # fudge
             return False;
 
-        # Deregister event handler now, otherwise we're racing for VM process
-        # termination and cause misleading spurious error messages in the
-        # event handling code, because the event objects disappear.
-        self.deregisterEventHandlerForTask();
-
+        # Wait on power off operation to complete.
         rc = self.oTstDrv.waitOnProgress(oProgress);
         if rc < 0:
             self.close();
