@@ -758,9 +758,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             break;
         case APICMode_X2APIC:
             if (details == VMINFO_MACHINEREADABLE)
-                pszBootMenu = "x2apic";
+                pszAPIC = "x2apic";
             else
-                pszBootMenu = "x2APIC";
+                pszAPIC = "x2APIC";
             break;
     }
     if (details == VMINFO_MACHINEREADABLE)
