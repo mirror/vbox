@@ -110,6 +110,7 @@ else
 endif
  TEMPLATE_iPxe_LNK_DEPS = $(VBOX_PATH_IPXE_SRC)/src/arch/i386/scripts/i386.lds
  TEMPLATE_iPxe_CFLAGS  = \
+	-fno-pie \
 	-ffreestanding \
 	-ffunction-sections \
 	-march=i386 \

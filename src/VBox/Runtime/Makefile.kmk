@@ -2981,6 +2981,8 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^g_Logger/d' \
 			-e '/^g_RelLogger/d' \
 			-e '/^g_VM/d',) \
+			$(if-expr "$(KBUILD_TARGET)" == "linux", \
+			-e '/^g_kLdrRdrFileOps/d',) \
                        \
 			-e '/^g_[ac]VTG/d' \
 			-e '/^g_VTGObjHeader/d' \
