@@ -28,6 +28,20 @@
  * @{
  */
 
+/** The APIC hardware version number for Pentium 4. */
+#define XAPIC_HARDWARE_VERSION_P4            UINT8_C(0x14)
+/** Maximum number of LVT entries for Pentium 4. */
+#define XAPIC_MAX_LVT_ENTRIES_P4             UINT8_C(6)
+/** Size of the APIC ID bits for Pentium 4. */
+#define XAPIC_APIC_ID_BIT_COUNT_P4           UINT8_C(8)
+
+/** The APIC hardware version number for Pentium 6. */
+#define XAPIC_HARDWARE_VERSION_P6            UINT8_C(0x10)
+/** Maximum number of LVT entries for Pentium 6. */
+#define XAPIC_MAX_LVT_ENTRIES_P6             UINT8_C(4)
+/** Size of the APIC ID bits for Pentium 6. */
+#define XAPIC_APIC_ID_BIT_COUNT_P6           UINT8_C(4)
+
 /** The APIC hardware version we are emulating. */
 #define XAPIC_HARDWARE_VERSION               XAPIC_HARDWARE_VERSION_P4
 
@@ -66,20 +80,6 @@
 #define XAPIC_REG256_VECTOR_OFF(a_Vector)    (((a_Vector) & UINT32_C(0xe0)) >> 1)
 /** Bit position at offset in an APIC 256-bit sparse register. */
 #define XAPIC_REG256_VECTOR_BIT(a_Vector)    ((a_Vector) & UINT32_C(0x1f))
-
-/** Maximum number of LVT entries for Pentium 4. */
-#define XAPIC_MAX_LVT_ENTRIES_P4             UINT8_C(6)
-/** Size of the APIC ID bits for Pentium 4. */
-#define XAPIC_APIC_ID_BIT_COUNT_P4           UINT8_C(8)
-/** The APIC hardware version number for Pentium 4. */
-#define XAPIC_HARDWARE_VERSION_P4            UINT8_C(0x14)
-
-/** Maximum number of LVT entries for Pentium 6. */
-#define XAPIC_MAX_LVT_ENTRIES_P6             UINT8_C(4)
-/** Size of the APIC ID bits for Pentium 6. */
-#define XAPIC_APIC_ID_BIT_COUNT_P6           UINT8_C(4)
-/** The APIC hardware version number for Pentium 6. */
-#define XAPIC_HARDWARE_VERSION_P6            UINT8_C(0x10)
 
 /** Maximum valid offset for a register (16-byte aligned, 4 byte wide access). */
 #define XAPIC_OFF_MAX_VALID                  (sizeof(XAPICPAGE) - 4 * sizeof(uint32_t))
