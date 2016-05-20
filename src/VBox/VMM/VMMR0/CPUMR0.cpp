@@ -403,7 +403,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
 
         /* Save the host state if necessary. */
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_HOST))
-            cpumR0SaveHostFPUState(&pVCpu->cpum.s);
+            cpumRZSaveHostFPUState(&pVCpu->cpum.s);
 
         /* Restore the state on entry as we need to be in 64-bit mode to access the full state. */
         pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;

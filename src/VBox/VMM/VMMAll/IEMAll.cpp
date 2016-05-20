@@ -5239,9 +5239,7 @@ DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
 #ifdef IN_RING3
     CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
 #else
-    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
-/** @todo RZ: FIXME */
-//# error "Implement me"
+    CPUMRZFpuStatePrepareHostCpuForUse(IEMCPU_TO_VMCPU(pIemCpu));
 #endif
 }
 
@@ -5271,8 +5269,7 @@ DECLINLINE(void) iemFpuActualizeStateForRead(PIEMCPU pIemCpu)
 #ifdef IN_RING3
     NOREF(pIemCpu);
 #else
-/** @todo RZ: FIXME */
-//# error "Implement me"
+    CPUMRZFpuStateActualizeForRead(IEMCPU_TO_VMCPU(pIemCpu));
 #endif
 }
 
@@ -5287,10 +5284,9 @@ DECLINLINE(void) iemFpuActualizeStateForRead(PIEMCPU pIemCpu)
 DECLINLINE(void) iemFpuActualizeStateForChange(PIEMCPU pIemCpu)
 {
 #ifdef IN_RING3
-    NOREF(pIemCpu);
+    CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
 #else
-    //CPUMRZFpuActualizeForChange(IEMCPU_TO_VMCPU(pIemCpu));
-    iemFpuPrepareUsage(pIemCpu);
+    CPUMRZFpuStateActualizeForChange(IEMCPU_TO_VMCPU(pIemCpu));
 #endif
 }
 
@@ -5307,7 +5303,7 @@ DECLINLINE(void) iemFpuActualizeSseStateForRead(PIEMCPU pIemCpu)
 #if defined(IN_RING3) || defined(VBOX_WITH_KERNEL_USING_XMM)
     NOREF(pIemCpu);
 #else
-    iemFpuActualizeStateForRead(pIemCpu);
+    CPUMRZFpuStateActualizeSseForRead(IEMCPU_TO_VMCPU(pIemCpu));
 #endif
 }
 
@@ -5324,7 +5320,7 @@ DECLINLINE(void) iemFpuActualizeSseStateForChange(PIEMCPU pIemCpu)
 #if defined(IN_RING3) || defined(VBOX_WITH_KERNEL_USING_XMM)
     CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM);
 #else
-    iemFpuActualizeStateForChange(pIemCpu);
+    CPUMRZFpuStateActualizeForChange(IEMCPU_TO_VMCPU(pIemCpu));
 #endif
 }
 

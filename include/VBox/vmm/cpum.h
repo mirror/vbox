@@ -1500,6 +1500,16 @@ VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet);
 /** @} */
 #endif /* IN_RING0 */
 
+/** @defgroup grp_cpum_rz    The CPUM raw-mode and ring-0 context API
+ * @{
+ */
+VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPU pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu);
+/** @} */
+
+
 #endif /* !VBOX_FOR_DTRACE_LIB */
 /** @} */
 RT_C_DECLS_END

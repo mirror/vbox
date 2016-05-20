@@ -477,6 +477,8 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRC/CSAMRC.cpp \
  	VMMRC/PATMRC.cpp \
  	,) \
+ 	VMMRZ/CPUMRZ.cpp \
+ 	VMMRZ/CPUMRZA.asm \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/PGMRZDynMap.cpp \
  	VMMRZ/VMMRZ.cpp \
@@ -593,6 +595,8 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMR0/TRPMR0.cpp \
  	VMMR0/TRPMR0A.asm \
  	VMMR0/VMMR0.cpp \
+ 	VMMRZ/CPUMRZ.cpp \
+ 	VMMRZ/CPUMRZA.asm \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/VMMRZ.cpp \
  	VMMAll/CPUMAllRegs.cpp \
