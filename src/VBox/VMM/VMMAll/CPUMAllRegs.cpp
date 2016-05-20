@@ -2631,11 +2631,27 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 /**
  * Checks if we activated the FPU/XMM state of the guest OS.
  *
- * @returns true if we did.
- * @returns false if not.
+ * This differs from CPUMIsGuestFPUStateLoaded() in that it refers to the next
+ * time we'll be executing guest code, so it may return true for 64-on-32 when
+ * we still haven't actually loaded the FPU status, just scheduled it to be
+ * loaded the next time we go thru the world switcher (CPUM_SYNC_FPU_STATE).
+ *
+ * @returns true / false.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
+{
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_SYNC_FPU_STATE));
+}
+
+
+/**
+ * Checks if we've really loaded the FPU/XMM state of the guest OS.
+ *
+ * @returns true / false.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMMDECL(bool) CPUMIsGuestFPUStateLoaded(PVMCPU pVCpu)
 {
     return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST);
 }

@@ -1365,6 +1365,7 @@ VMMDECL(bool)           CPUMSupportsXSave(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysEnter(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysCall(PVM pVM);
 VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVMCPU pVCpu);
+VMMDECL(bool)           CPUMIsGuestFPUStateLoaded(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsHostFPUStateSaved(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu);
