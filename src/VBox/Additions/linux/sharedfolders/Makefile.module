@@ -65,7 +65,7 @@ endif
 ifeq ($(KERN_VERSION), 24)
  MOD_CFLAGS =
 else
- MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(MANGLING)
+ MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(MANGLING) -fno-pie
 
 # special hack for Fedora Core 6 2.6.18 (fc6), rhel5 2.6.18 (el5),
 # ClarkConnect 4.3 (cc4) and ClarkConnect 5 (v5)

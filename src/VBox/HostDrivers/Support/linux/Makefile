@@ -287,7 +287,7 @@ MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS  += -include $(MANGLING) $(INCL) $(KFLAGS) $(KDEBUG) -fno-omit-frame-pointer
+EXTRA_CFLAGS  += -include $(MANGLING) $(INCL) $(KFLAGS) $(KDEBUG) -fno-omit-frame-pointer -fno-pie
 
 all: $(MODULE)
 
