@@ -226,34 +226,40 @@ RTDECL(int) RTLinuxSysFsOpenEx(PRTFILE phFile, uint64_t fOpen, const char *pszFo
 
 RTDECL(int) RTLinuxSysFsReadStr(RTFILE hFile, char *pszBuf, size_t cchBuf, size_t *pcchRead)
 {
-    Assert(cchBuf > 1);
-    size_t cchRead = 0;
-    int rc = RTFileRead(hFile, pszBuf, cchBuf - 1, &cchRead);
-    pszBuf[RT_SUCCESS(rc) ? cchRead : 0] = '\0';
-    if (   RT_SUCCESS(rc)
-        && pcchRead)
-        *pcchRead = cchRead;
+    Assert(cchBuf > 1); /* not mandatory */
+
+    int rc;
+    size_t cchRead;
+    rc = RTFileRead(hFile, pszBuf, cchBuf, &cchRead);
     if (RT_SUCCESS(rc))
     {
-        /* Check for EOF */
-        uint64_t offCur = 0;
-        uint8_t bRead;
-        rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offCur);
-        if (RT_SUCCESS(rc))
+        /*
+         * ASSUME that if we've read less than we asked for, we've reached the
+         * end of the file.  Otherwise, we've been given a buffer too small for
+         * the entire remainder of the file.
+         */
+        if (cchRead < cchBuf)
+            pszBuf[cchRead] = '\0';
+        else if (cchBuf)
         {
-            int rc2 = RTFileRead(hFile, &bRead, 1, NULL);
-            if (RT_SUCCESS(rc2))
-            {
+            rc = RTFileSeek(hFile, -1, RTFILE_SEEK_CURRENT, NULL);
+            if (RT_SUCCESS(rc))
                 rc = VERR_BUFFER_OVERFLOW;
-
-                rc2 = RTFileSeek(hFile, offCur, RTFILE_SEEK_BEGIN, NULL);
-                if (RT_FAILURE(rc2))
-                    rc = rc2;
-            }
-            else if (rc2 != VERR_EOF)
-                rc = rc2;
+            cchRead = cchBuf - 1;
+            pszBuf[cchRead] = '\0';
         }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
     }
+    else
+    {
+        if (cchBuf > 0)
+            *pszBuf = '\0';
+        cchRead = 0;
+    }
+
+    if (pcchRead)
+        *pcchRead = cchRead;
     return rc;
 }
 
@@ -517,47 +523,49 @@ RTDECL(int) RTLinuxSysFsReadStrFileV(char *pszBuf, size_t cchBuf, size_t *pcchRe
     int rc = RTLinuxSysFsOpenV(&hFile, pszFormat, va);
     if (RT_SUCCESS(rc))
     {
-        size_t cchRead = 0;
-        rc = RTLinuxSysFsReadStr(hFile, pszBuf, cchBuf, &cchRead);
-        if (   RT_SUCCESS(rc)
-            && cchRead > 0)
+        /*
+         * Note! We cannot use RTLinuxSysFsReadStr here as it has different
+         *       semantics wrt to newline characters.  It is not known why
+         *       the semantics has to differ... Michael, any clues?
+         */
+        size_t cchRead;
+        rc = RTFileRead(hFile, pszBuf, cchBuf, &cchRead);
+        if (RT_SUCCESS(rc))
         {
             char *pchNewLine = (char *)memchr(pszBuf, '\n', cchRead);
             if (pchNewLine)
             {
                 *pchNewLine = '\0';
-                cchRead--;
+                cchRead = pchNewLine - pszBuf;
             }
-        }
-        else if (   rc == VERR_BUFFER_OVERFLOW
-                 && cchRead > 0)
-        {
-            /*
-             * Check if the last character would have been a newline we filter out
-             * anyway and revert the buffer overflow.
-             */
-            char achBuf[2];
-            size_t cchPeek = 0;
-            uint64_t offCur = 0;
-
-            int rc2 = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offCur);
-            if (RT_SUCCESS(rc2))
+            else if (cchRead < cchBuf)
+                pszBuf[cchRead] = '\0';
+            else
             {
-                rc2 = RTLinuxSysFsReadStr(hFile, &achBuf[0], sizeof(achBuf), &cchPeek);
-                if (   RT_SUCCESS(rc2)
-                    && cchPeek > 0)
-                    rc2 = RTFileSeek(hFile, offCur, RTFILE_SEEK_BEGIN, NULL);
-                if (   RT_SUCCESS(rc2)
-                    && cchPeek > 0
-                    && achBuf[0] == '\n')
-                    rc = VINF_SUCCESS;
+                if (cchBuf)
+                {
+                    cchRead = cchBuf - 1;
+                    pszBuf[cchRead] = '\0';
+                }
+                else
+                    cchRead = 0;
+                rc = VERR_BUFFER_OVERFLOW;
             }
         }
+        else
+            cchRead = 0;
 
         RTFileClose(hFile);
 
         if (pcchRead)
             *pcchRead = cchRead;
+    }
+    else
+    {
+        if (cchBuf)
+            *pszBuf = '\0';
+        if (pcchRead)
+            *pcchRead = 0;
     }
     return rc;
 }
