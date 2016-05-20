@@ -2005,7 +2005,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
     /* Don't allow enabling xAPIC/x2APIC if the VM is configured with the APIC disabled. */
     if (pApic->enmOriginalMode == APICMODE_DISABLED)
     {
-        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM config is configured with APIC disabled!\n"));
+        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM is configured with APIC disabled!\n"));
         return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
     }
 
@@ -2054,6 +2054,13 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
 
             case APICMODE_X2APIC:
             {
+                if (pApic->enmOriginalMode != APICMODE_X2APIC)
+                {
+                    LogRel(("APIC%u: Disallowing transition to x2APIC mode as the VM is configured with the x2APIC disabled!\n",
+                            pVCpu->idCpu));
+                    return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
+                }
+
                 if (enmOldMode != APICMODE_XAPIC)
                 {
                     LogRel(("APIC%u: Can only transition to x2APIC state from xAPIC state\n", pVCpu->idCpu));
