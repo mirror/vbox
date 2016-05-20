@@ -2064,7 +2064,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
 
                 /*
                  * The APIC ID needs updating when entering x2APIC mode.
-                 * Software written APIC ID in xAPIC mode isn't preseved.
+                 * Software written APIC ID in xAPIC mode isn't preserved.
                  * The APIC ID becomes read-only to software in x2APIC mode.
                  *
                  * See Intel spec. 10.12.5.1 "x2APIC States".
@@ -2652,13 +2652,13 @@ VMMDECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
 
 
 /**
- * Dequeues a pending interrupt from in-service.
+ * De-queues a pending interrupt from in-service.
  *
  * This undoes APICQueueInterruptToService() for premature VM-exits before event
  * injection.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
- * @param   u8PendingIntr       The pending interrupt to dequeue from
+ * @param   u8PendingIntr       The pending interrupt to de-queue from
  *                              in-service.
  */
 VMMDECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr)

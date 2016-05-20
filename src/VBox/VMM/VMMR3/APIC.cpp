@@ -283,7 +283,7 @@ VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu, bool fResetApicBaseMsr)
 
     /*
      * The APIC version register is read-only, so just initialize it here.
-     * It is not clear from the specs, where exactly it is initalized.
+     * It is not clear from the specs, where exactly it is initialized.
      * The version determines the number of LVT entries and size of the APIC ID (8 bits for P4).
      */
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
