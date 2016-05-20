@@ -1463,7 +1463,7 @@ DECLINLINE(bool) ASMIsViaCentaurCpu(void)
 {
     uint32_t uEAX, uEBX, uECX, uEDX;
     ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-    return ASMIsAmdCpuEx(uEBX, uECX, uEDX);
+    return ASMIsViaCentaurCpuEx(uEBX, uECX, uEDX);
 }
 
 
