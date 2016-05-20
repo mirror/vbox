@@ -781,6 +781,24 @@ void UISelectorWindow::sltPerformResetMachine()
     }
 }
 
+void UISelectorWindow::sltPerformDetachMachineUI()
+{
+    /* Get selected items: */
+    QList<UIVMItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    /* For each selected item: */
+    foreach (UIVMItem *pItem, items)
+    {
+        /* Check if current item could be detached: */
+        if (!isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Detach, QList<UIVMItem*>() << pItem))
+            continue;
+
+        // TODO: Detach separate UI process..
+        AssertFailed();
+    }
+}
+
 void UISelectorWindow::sltPerformSaveMachineState()
 {
     /* Get selected items: */
@@ -1430,12 +1448,14 @@ void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
         return;
 
     /* Populate 'Group' / 'Close' menu: */
+    // pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff));
 
     /* Remember action list: */
-    m_groupActions << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState)
+    m_groupActions // << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach)
+                   << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState)
                    << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)
                    << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff);
 }
@@ -1447,12 +1467,14 @@ void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
         return;
 
     /* Populate 'Machine' / 'Close' menu: */
+    // pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff));
 
     /* Remember action list: */
-    m_machineActions << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
+    m_machineActions // << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach)
+                     << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
                      << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)
                      << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff);
 }
@@ -1589,12 +1611,14 @@ void UISelectorWindow::prepareConnections()
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu(), SIGNAL(aboutToShow()), this, SLOT(sltGroupCloseMenuAboutToShow()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), SIGNAL(triggered()), this, SLOT(sltPerformDetachMachineUI()));
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState), SIGNAL(triggered()), this, SLOT(sltPerformSaveMachineState()));
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown), SIGNAL(triggered()), this, SLOT(sltPerformShutdownMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff), SIGNAL(triggered()), this, SLOT(sltPerformPowerOffMachine()));
 
     /* 'Machine/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu(), SIGNAL(aboutToShow()), this, SLOT(sltMachineCloseMenuAboutToShow()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach), SIGNAL(triggered()), this, SLOT(sltPerformDetachMachineUI()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState), SIGNAL(triggered()), this, SLOT(sltPerformSaveMachineState()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown), SIGNAL(triggered()), this, SLOT(sltPerformShutdownMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff), SIGNAL(triggered()), this, SLOT(sltPerformPowerOffMachine()));
@@ -1782,12 +1806,14 @@ void UISelectorWindow::updateActionsAppearance()
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexST_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Detach, items));
     actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_SaveState, items));
     actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Shutdown, items));
     actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_PowerOff, items));
 
     /* Enable/disable machine-close actions: */
     actionPool()->action(UIActionIndexST_M_Machine_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Detach, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_SaveState, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_PowerOff, items));
@@ -1937,6 +1963,11 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexST_M_Machine_M_Close:
         {
             return isAtLeastOneItemStarted(items);
+        }
+        case UIActionIndexST_M_Group_M_Close_S_Detach:
+        case UIActionIndexST_M_Machine_M_Close_S_Detach:
+        {
+            return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
         }
         case UIActionIndexST_M_Group_M_Close_S_SaveState:
         case UIActionIndexST_M_Machine_M_Close_S_SaveState:

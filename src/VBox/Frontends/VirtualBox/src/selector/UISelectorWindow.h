@@ -142,6 +142,8 @@ private slots:
         void sltPerformPauseOrResumeMachine(bool fPause);
         /** Handles call to reset machine. */
         void sltPerformResetMachine();
+        /** Handles call to detach machine UI. */
+        void sltPerformDetachMachineUI();
         /** Handles call to save machine state. */
         void sltPerformSaveMachineState();
         /** Handles call to ask machine for shutdown. */
