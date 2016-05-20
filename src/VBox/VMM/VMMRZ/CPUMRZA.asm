@@ -211,20 +211,22 @@ BEGINPROC cpumRZSaveGuestSseRegisters
         mov     xBP, xSP
         SEH64_SET_FRAME_xBP 0
 SEH64_END_PROLOGUE
-%ifndef VBOX_WITH_KERNEL_USING_XMM
 
+%ifndef VBOX_WITH_KERNEL_USING_XMM
         ;
         ; Load xCX with the guest pXStateR0.
         ;
- %ifdef RT_ARCH_AMD64
-  %ifdef ASM_CALL64_MSC
-        mov     xCX, [rcx + CPUMCPU.Guest.pXStateR0]
-  %else
-        mov     xCX, [rdi + CPUMCPU.Guest.pXStateR0]
-  %endif
+ %ifdef ASM_CALL64_GCC
+        mov     xCX, rdi
+ %elifdef RT_ARCH_X86
+        mov     xCX, dword [ebp + 8]
+ %endif
+ %ifdef IN_RING0
+        mov     xCX, [xCX + CPUMCPU.Guest.pXStateR0]
+ %elifdef IN_RC
+        mov     xCX, [xCX + CPUMCPU.Guest.pXStateRC]
  %else
-        mov     ecx, dword [ebp + 8]
-        mov     ecx, [ecx + CPUMCPU.Guest.pXStateR0]
+  %error "Invalid context!"
  %endif
 
         ;
