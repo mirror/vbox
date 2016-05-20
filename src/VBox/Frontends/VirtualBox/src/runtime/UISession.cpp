@@ -1585,6 +1585,7 @@ static void renderCursorPixels(const uint32_t *pu32XOR, const uint8_t *pu8AND,
     }
 }
 
+#if defined(VBOX_WS_WIN) && QT_VERSION >= 0x050000
 static bool isPointer1bpp(const uint8_t *pu8XorMask,
                           uint uWidth,
                           uint uHeight)
@@ -1608,6 +1609,7 @@ static bool isPointer1bpp(const uint8_t *pu8XorMask,
 
     return true;
 }
+#endif
 
 void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
                                 uint uXHot, uint uYHot, uint uWidth, uint uHeight)
