@@ -1087,7 +1087,7 @@ bool UIActionPool::processHotKey(const QKeySequence &key)
             continue;
         /* Get the hot-key of the current action: */
         const QString strHotKey = gShortcutPool->shortcut(this, pAction).toString();
-        if (pAction->isEnabled() && pAction->isVisible() && !strHotKey.isEmpty())
+        if (pAction->isEnabled() && pAction->isAllowed() && !strHotKey.isEmpty())
         {
             if (key.matches(QKeySequence(strHotKey)) == QKeySequence::ExactMatch)
             {
