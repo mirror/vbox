@@ -1390,9 +1390,9 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled xAPIC\n"));
             break;
 
-       /*
-        * Set the x2APIC bit in the standard feature mask.
-        */
+        /*
+         * Set the x2APIC bit in the standard feature mask.
+         */
         case CPUMCPUIDFEATURE_X2APIC:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
