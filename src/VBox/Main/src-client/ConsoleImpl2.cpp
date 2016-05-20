@@ -822,21 +822,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
     APICMode_T apicMode;
     hrc = biosSettings->COMGETTER(APICMode)(&apicMode);                                     H();
-    uint32_t uAPIC;
+    uint32_t uFwAPIC;
     switch (apicMode)
     {
         case APICMode_Disabled:
-            uAPIC = 0;
+            uFwAPIC = 0;
             break;
         case APICMode_APIC:
-            uAPIC = 1;
+            uFwAPIC = 1;
             break;
         case APICMode_X2APIC:
-            uAPIC = 2;
+            uFwAPIC = 2;
             break;
         default:
             AssertMsgFailed(("Invalid APICMode=%d\n", apicMode));
-            uAPIC = 1;
+            uFwAPIC = 1;
             break;
     }
 
@@ -1030,6 +1030,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
             fEnableX2APIC = false;
         }
+
+        /* Adjust firmware APIC handling to stay within the VCPU limits. */
+	if (uFwAPIC == 2 && !fEnableX2APIC)
+	{
+	    if (fEnableAPIC)
+	        uFwAPIC = 1;
+	    else
+		uFwAPIC = 0;
+	    LogRel(("Limiting the firmware APIC level from x2APIC to %s\n", fEnableAPIC ? "APIC" : "Disabled"));
+	}
+	else if (uFwAPIC == 1 && !fEnableAPIC)
+	{
+	    uFwAPIC = 0;
+	    LogRel(("Limiting the firmware APIC level from APIC to Disabled\n"));
+	}
 
         /*
          * Hardware virtualization extensions.
@@ -1667,7 +1682,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pBiosCfg,   "HardDiskDevice",       "piix3ide");
             InsertConfigString(pBiosCfg,   "FloppyDevice",         "i82078");
             InsertConfigInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);
-            InsertConfigInteger(pBiosCfg,  "APIC",                 uAPIC);
+            InsertConfigInteger(pBiosCfg,  "APIC",                 uFwAPIC);
             BOOL fPXEDebug;
             hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
@@ -1772,7 +1787,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pCfg,   "BootArgs",         bootArgs);
             InsertConfigString(pCfg,   "DeviceProps",      deviceProps);
             InsertConfigInteger(pCfg,  "IOAPIC",           fIOAPIC);
-            InsertConfigInteger(pCfg,  "APIC",             uAPIC);
+            InsertConfigInteger(pCfg,  "APIC",             uFwAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */
             InsertConfigInteger(pCfg,  "GopMode", u32GopMode);
