@@ -6788,11 +6788,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // options, cpu profile, APIC settings (CPU capability and BIOS).
 
         if (   hardwareMachine.strParavirtDebug.isNotEmpty()
-            || (!hardwareMachine.strCpuProfile.equals("host") && hardwareMachine.strCpuProfile.isNotEmpty()
+            || (!hardwareMachine.strCpuProfile.equals("host") && hardwareMachine.strCpuProfile.isNotEmpty())
             || hardwareMachine.biosSettings.apicMode != APICMode_APIC
             || !hardwareMachine.fAPIC
             || hardwareMachine.fX2APIC)
-           )
         {
             m->sv = SettingsVersion_v1_16;
             return;
