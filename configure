@@ -2713,7 +2713,7 @@ for option in "$@"; do
     --disable-libvpx)
       WITH_LIBVPX=0
       ;;
-    --disable-vboxsdl)
+    --disable-sdl)
       WITH_SDL=0
       ;;
     --build-debug|-d)
