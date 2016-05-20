@@ -2582,7 +2582,7 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-overlength-strings?= $(call VBOX_GCC_CHECK_CC,-Wno-overlength-strings,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-pie               ?= $(call VBOX_GCC_CHECK_CC,-fno-pie,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_no-pie                ?= $(call VBOX_GCC_CHECK_CC,-no-pie,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-show-option ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-show-option,)'
 # Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
