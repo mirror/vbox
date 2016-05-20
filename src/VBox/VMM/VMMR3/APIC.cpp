@@ -235,14 +235,14 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
     /* Construct. */
     PAPICCPU pApicCpu     = VMCPU_TO_APICCPU(pVCpu);
     PAPIC    pApic        = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
-    uint64_t uApicBaseMsr = XAPIC_APICBASE_PHYSADDR;
+    uint64_t uApicBaseMsr = MSR_IA32_APICBASE_ADDR;;
     if (pVCpu->idCpu == 0)
-        uApicBaseMsr |= MSR_APICBASE_BOOTSTRAP_CPU_BIT;
+        uApicBaseMsr |= MSR_IA32_APICBASE_BSP;
 
     /* If the VM was configured with disabled mode, don't enable xAPIC mode. */
     if (pApic->enmOriginalMode != APICMODE_DISABLED)
     {
-        uApicBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+        uApicBaseMsr |= MSR_IA32_APICBASE_EN;
 
         /** @todo CPUID bits needs to be done on a per-VCPU basis! */
         CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
@@ -414,7 +414,7 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 
     pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC:\n", pVCpu->idCpu);
     pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64)\n", uBaseMsr,
-                    MSR_APICBASE_GET_PHYSADDR(uBaseMsr));
+                    MSR_IA32_APICBASE_GET_ADDR(uBaseMsr));
     pHlp->pfnPrintf(pHlp, "  Mode                          = %#x (%s)\n", enmMode, apicGetModeName(enmMode));
     if (fX2ApicMode)
     {
@@ -1585,7 +1585,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the MMIO range.
      */
     PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(&pVM->aCpus[0]);
-    RTGCPHYS GCPhysApicBase = MSR_APICBASE_GET_PHYSADDR(pApicCpu0->uApicBaseMsr);
+    RTGCPHYS GCPhysApicBase = MSR_IA32_APICBASE_GET_ADDR(pApicCpu0->uApicBaseMsr);
 
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NULL /* pvUser */,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,

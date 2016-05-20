@@ -375,7 +375,7 @@ const char *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode)
  */
 APICMODE apicGetMode(uint64_t uApicBaseMsr)
 {
-    uint32_t const uMode   = MSR_APICBASE_GET_MODE(uApicBaseMsr);
+    uint32_t const uMode   = (uApicBaseMsr >> 10) & UINT64_C(3);
     APICMODE const enmMode = (APICMODE)uMode;
 #ifdef VBOX_STRICT
     /* Paranoia. */
@@ -402,7 +402,7 @@ APICMODE apicGetMode(uint64_t uApicBaseMsr)
 DECLINLINE(bool) apicIsEnabled(PVMCPU pVCpu)
 {
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    return MSR_APICBASE_IS_ENABLED(pApicCpu->uApicBaseMsr);
+    return pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN;
 }
 
 
@@ -1995,10 +1995,10 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
      *      region remains mapped but doesn't belong to the called VCPU's APIC).
      */
     /** @todo Handle per-VCPU APIC base relocation. */
-    if (MSR_APICBASE_GET_PHYSADDR(uBaseMsr) != XAPIC_APICBASE_PHYSADDR)
+    if (MSR_IA32_APICBASE_GET_ADDR(uBaseMsr) != MSR_IA32_APICBASE_ADDR)
     {
         LogRelMax(5, ("APIC%u: Attempt to relocate base to %#RGp, unsupported -> #GP(0)\n", pVCpu->idCpu,
-                      MSR_APICBASE_GET_PHYSADDR(uBaseMsr)));
+                      MSR_IA32_APICBASE_GET_ADDR(uBaseMsr)));
         return VERR_CPUM_RAISE_GP_0;
     }
 
@@ -2032,7 +2032,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  * need to update the CPUID leaf ourselves.
                  */
                 APICR3Reset(pVCpu, false /* fResetApicBaseMsr */);
-                uBaseMsr &= ~(MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT);
+                uBaseMsr &= ~(MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD);
                 CPUMClearGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
                 LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
                 break;
@@ -2046,7 +2046,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
-                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT;
+                uBaseMsr |= MSR_IA32_APICBASE_EN;
                 CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
                 LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
                 break;
@@ -2060,8 +2060,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                     return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_INVALID);
                 }
 
-                /* Don't allow enabling x2APIC if the VM is configured with the APIC disabled. */
-                uBaseMsr |= MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT;
+                uBaseMsr |= MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD;
 
                 /*
                  * The APIC ID needs updating when entering x2APIC mode.

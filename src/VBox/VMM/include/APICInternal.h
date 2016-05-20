@@ -46,8 +46,8 @@
 
 /** Whether the APIC is in X2APIC mode or not. */
 #define XAPIC_IN_X2APIC_MODE(a_pVCpu)        (   (  ((a_pVCpu)->apic.s.uApicBaseMsr) \
-                                                  & (MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT)) \
-                                              ==    (MSR_APICBASE_XAPIC_ENABLE_BIT | MSR_APICBASE_X2APIC_ENABLE_BIT) )
+                                                  & (MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD)) \
+                                              ==    (MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD) )
 /** Get an xAPIC page offset for an x2APIC MSR value. */
 #define X2APIC_GET_XAPIC_OFF(a_uMsr)         ((((a_uMsr) - MSR_IA32_X2APIC_START) << 4) & UINT32_C(0xff0))
 /** Get an x2APIC MSR for an xAPIC page offset. */

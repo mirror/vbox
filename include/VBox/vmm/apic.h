@@ -34,25 +34,6 @@
  * @{
  */
 
-/** Gets the APIC base physical address. */
-#define MSR_APICBASE_GET_PHYSADDR(a)         ((a) & PAGE_BASE_GC_MASK)
-/** Gets the APIC mode. */
-#define MSR_APICBASE_GET_MODE(a)             (((a) >> 10) & UINT64_C(3))
-/** The APIC global enable bit. */
-/** @todo r=bird: Please do   N O T  use _BIT for what clearly are masks!
- *  See x86.h and vm.h for examples of how we use _BIT elsewhere!
- * Besides, you are duplicating existing x86.h defines here
- * (MSR_IA32_APICBASE_XXX). */
-#define MSR_APICBASE_XAPIC_ENABLE_BIT        RT_BIT_64(11)
-/** The x2APIC global enable bit. */
-#define MSR_APICBASE_X2APIC_ENABLE_BIT       RT_BIT_64(10)
-/** The APIC bootstrap processor bit. */
-#define MSR_APICBASE_BOOTSTRAP_CPU_BIT       RT_BIT_64(8)
-/** The default APIC base address. */
-#define XAPIC_APICBASE_PHYSADDR              UINT64_C(0xfee00000)
-/** The APIC base MSR - Is the APIC enabled?  */
-#define MSR_APICBASE_IS_ENABLED(a_Msr)       RT_BOOL((a_Msr) & MSR_APICBASE_XAPIC_ENABLE_BIT)
-
 /** Offset of APIC ID Register. */
 #define XAPIC_OFF_ID                         0x020
 /** Offset of APIC Version Register. */

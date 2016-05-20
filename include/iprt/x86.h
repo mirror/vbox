@@ -1057,6 +1057,10 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Minimum base address mask, consult CPUID leaf 0x80000008 for the actual
  *  width. */
 # define MSR_IA32_APICBASE_BASE_MIN         UINT64_C(0x0000000ffffff000)
+/** The default physical base address of the APIC. */
+# define MSR_IA32_APICBASE_ADDR             UINT64_C(0x00000000fee00000)
+/** Gets the physical base address from the MSR. */
+# define MSR_IA32_APICBASE_GET_ADDR(a_Msr)  ((a_Msr) & X86_PAGE_4K_BASE_MASK)
 #endif
 
 /** Undocumented intel MSR for reporting thread and core counts.
@@ -1487,7 +1491,7 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 #define X86_PAGE_SHIFT                      X86_PAGE_4K_SHIFT
 /** The default page offset mask. */
 #define X86_PAGE_OFFSET_MASK                X86_PAGE_4K_OFFSET_MASK
-/** The defaultpage base mask for virtual addresses. */
+/** The default page base mask for virtual addresses. */
 #define X86_PAGE_BASE_MASK                  X86_PAGE_4K_BASE_MASK
 /** The default page base mask for virtual addresses - 32bit version. */
 #define X86_PAGE_BASE_MASK_32               X86_PAGE_4K_BASE_MASK_32
