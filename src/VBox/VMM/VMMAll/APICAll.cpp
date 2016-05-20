@@ -402,7 +402,7 @@ APICMODE apicGetMode(uint64_t uApicBaseMsr)
 DECLINLINE(bool) apicIsEnabled(PVMCPU pVCpu)
 {
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    return pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN;
+    return RT_BOOL(pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN);
 }
 
 
