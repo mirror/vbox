@@ -27,6 +27,10 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* TEMPORARY! */
+#if defined(_MSC_VER) && !defined(RT_ARCH_AMD64)
+# pragma optimize("g", off)
+#endif
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
