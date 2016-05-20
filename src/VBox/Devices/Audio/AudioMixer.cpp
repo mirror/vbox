@@ -807,7 +807,10 @@ int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_
                                                  enmCmd == PDMAUDIOSTREAMCMD_ENABLE);
             }
             else
+            {
                 AssertFailed();
+                rc = VERR_INVALID_PARAMETER;
+            }
             break;
         }
 
@@ -820,12 +823,16 @@ int AudioMixerStreamCtl(PAUDMIXSTREAM pStream, PDMAUDIOSTREAMCMD enmCmd, uint32_
                                                   enmCmd == PDMAUDIOSTREAMCMD_ENABLE);
             }
             else
+            {
                 AssertFailed();
+                rc = VERR_INVALID_PARAMETER;
+            }
             break;
         }
 
         default:
             AssertMsgFailed(("Not implemented\n"));
+            rc = VERR_INVALID_PARAMETER;
             break;
     }
 
