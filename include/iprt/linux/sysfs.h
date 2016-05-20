@@ -131,6 +131,9 @@ RTDECL(int) RTLinuxSysFsOpenEx(PRTFILE phFile, uint64_t fOpen, const char *pszFo
 /**
  * Reads a string from a file opened with RTLinuxSysFsOpen or RTLinuxSysFsOpenV.
  *
+ * Expects to read the whole file, mind, and will return VERR_BUFFER_OVERFLOW if
+ * that is not possible with the given buffer size.
+ *
  * @returns IPRT status code.
  * @param   hFile       The file descriptor returned by RTLinuxSysFsOpen or RTLinuxSysFsOpenV.
  * @param   pszBuf      Where to store the string.
@@ -314,8 +317,10 @@ RTDECL(int) RTLinuxSysFsReadDevNumFileV(dev_t *pDevNum, const char *pszFormat, v
 RTDECL(int) RTLinuxSysFsReadDevNumFile(dev_t *pDevNum, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 /**
- * Reads a string from a sysfs file.  If the file contains a newline, we only
- * return the text up until there.
+ * Reads a string from a sysfs file.
+ *
+ * If the file contains a newline, we only return the text up until there.  This
+ * differs from the RTLinuxSysFsReadStr() behaviour.
  *
  * @returns IPRT status code.
  * @param   pszBuf      Where to store the path element.  Must be at least two
