@@ -103,10 +103,10 @@
 /** ESR - Send accept error. */
 #define XAPIC_ESR_ILLEGAL_REG_ADDRESS        RT_BIT(7)
 /** ESR - Valid write-only bits. */
-#define XAPIC_ESR_WO                         UINT32_C(0x0)
+#define XAPIC_ESR_WO_VALID                   UINT32_C(0x0)
 
 /** TPR - Valid bits. */
-#define XAPIC_TPR                            UINT32_C(0xff)
+#define XAPIC_TPR_VALID                      UINT32_C(0xff)
 /** TPR - Task-priority class. */
 #define XAPIC_TPR_TP                         UINT32_C(0xf0)
 /** TPR - Task-priority subclass. */
@@ -117,7 +117,7 @@
 #define XAPIC_TPR_GET_TP_SUBCLASS(a_Tpr)     ((a_Tpr) & XAPIC_TPR_TP_SUBCLASS)
 
 /** PPR - Valid bits. */
-#define XAPIC_PPR                            UINT32_C(0xff)
+#define XAPIC_PPR_VALID                      UINT32_C(0xff)
 /** PPR - Processor-priority class. */
 #define XAPIC_PPR_PP                         UINT32_C(0xf0)
 /** PPR - Processor-priority subclass. */
@@ -163,20 +163,20 @@
 /** LVT - Interrupt Input Pin Polarity. */
 #define XAPIC_LVT_INTR_INPUT_PIN_POLARITY    RT_BIT(13)
 /** LVT - Valid bits common to all LVTs. */
-#define XAPIC_LVT_COMMON                     (XAPIC_LVT_VECTOR | XAPIC_LVT_DELIVERY_STATUS | XAPIC_LVT_MASK)
+#define XAPIC_LVT_COMMON_VALID               (XAPIC_LVT_VECTOR | XAPIC_LVT_DELIVERY_STATUS | XAPIC_LVT_MASK)
 /** LVT CMCI - Valid bits. */
-#define XAPIC_LVT_CMCI_VALID                 (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
+#define XAPIC_LVT_CMCI_VALID                 (XAPIC_LVT_COMMON_VALID | XAPIC_LVT_DELIVERY_MODE)
 /** LVT Timer - Valid bits. */
-#define XAPIC_LVT_TIMER_VALID                (XAPIC_LVT_COMMON | XAPIC_LVT_TIMER_MODE | XAPIC_LVT_TIMER_TSCDEADLINE)
+#define XAPIC_LVT_TIMER_VALID                (XAPIC_LVT_COMMON_VALID | XAPIC_LVT_TIMER_MODE | XAPIC_LVT_TIMER_TSCDEADLINE)
 /** LVT Thermal - Valid bits. */
-#define XAPIC_LVT_THERMAL_VALID              (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
+#define XAPIC_LVT_THERMAL_VALID              (XAPIC_LVT_COMMON_VALID | XAPIC_LVT_DELIVERY_MODE)
 /** LVT Perf - Valid bits. */
-#define XAPIC_LVT_PERF_VALID                 (XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE)
+#define XAPIC_LVT_PERF_VALID                 (XAPIC_LVT_COMMON_VALID | XAPIC_LVT_DELIVERY_MODE)
 /** LVT LINTx - Valid bits. */
-#define XAPIC_LVT_LINT_VALID                 (  XAPIC_LVT_COMMON | XAPIC_LVT_DELIVERY_MODE | XAPIC_LVT_DELIVERY_STATUS \
+#define XAPIC_LVT_LINT_VALID                 (  XAPIC_LVT_COMMON_VALID | XAPIC_LVT_DELIVERY_MODE | XAPIC_LVT_DELIVERY_STATUS \
                                               | XAPIC_LVT_INTR_INPUT_PIN_POLARITY | XAPIC_LVT_REMOTE_IRR | XAPIC_LVT_TRIGGER_MODE)
 /** LVT Error - Valid bits. */
-#define XAPIC_LVT_ERROR_VALID                (XAPIC_LVT_COMMON)
+#define XAPIC_LVT_ERROR_VALID                (XAPIC_LVT_COMMON_VALID)
 
 /** SVR - The vector. */
 #define XAPIC_SVR_VECTOR                     UINT32_C(0xff)
@@ -186,13 +186,13 @@
 #define XAPIC_SVR_SUPRESS_EOI_BROADCAST      RT_BIT(12)
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
 /** SVR - Valid bits. */
-# define XAPIC_SVR                           (XAPIC_SVR_VECTOR | XAPIC_SVR_SOFTWARE_ENABLE)
+# define XAPIC_SVR_VALID                     (XAPIC_SVR_VECTOR | XAPIC_SVR_SOFTWARE_ENABLE)
 #else
 # error "Implement Pentium and P6 family APIC architectures"
 #endif
 
 /** DFR - Valid bits. */
-#define XAPIC_DFR                            UINT32_C(0xf0000000)
+#define XAPIC_DFR_VALID                      UINT32_C(0xf0000000)
 /** DFR - Reserved bits that must always remain set. */
 #define XAPIC_DFR_RSVD_MB1                   UINT32_C(0x0fffffff)
 /** DFR - The model. */
@@ -201,7 +201,7 @@
 #define XAPIC_DFR_GET_MODEL(a_uReg)          (((a_uReg) >> 28) & XAPIC_DFR_MODEL)
 
 /** LDR - Valid bits. */
-#define XAPIC_LDR                            UINT32_C(0xff000000)
+#define XAPIC_LDR_VALID                      UINT32_C(0xff000000)
 /** LDR - Cluster ID mask (x2APIC). */
 #define X2APIC_LDR_CLUSTER_ID                UINT32_C(0xffff0000)
 /** LDR - Mask of the LDR cluster ID (x2APIC). */
@@ -220,14 +220,14 @@
 
 
 /** EOI - Valid write-only bits. */
-#define XAPIC_EOI_WO                         UINT32_C(0x0)
+#define XAPIC_EOI_WO_VALID                   UINT32_C(0x0)
 /** Timer ICR - Valid bits. */
-#define XAPIC_TIMER_ICR                      UINT32_C(0xffffffff)
+#define XAPIC_TIMER_ICR_VALID                UINT32_C(0xffffffff)
 /** Timer DCR - Valid bits. */
-#define XAPIC_TIMER_DCR                      (RT_BIT(0) | RT_BIT(1) | RT_BIT(3))
+#define XAPIC_TIMER_DCR_VALID                (RT_BIT(0) | RT_BIT(1) | RT_BIT(3))
 
 /** Self IPI - Valid bits. */
-#define XAPIC_SELF_IPI                       UINT32_C(0xff)
+#define XAPIC_SELF_IPI_VALID                 UINT32_C(0xff)
 /** Self IPI - The vector. */
 #define XAPIC_SELF_IPI_VECTOR                UINT32_C(0xff)
 /** Self IPI - Gets the vector. */
@@ -250,7 +250,7 @@
 /** ICR Low - The destination shorthand. */
 #define XAPIC_ICR_LO_DEST_SHORTHAND          (RT_BIT(18) | RT_BIT(19))
 /** ICR Low - Valid write bits. */
-#define XAPIC_ICR_LO_WR                      (  XAPIC_ICR_LO_VECTOR | XAPIC_ICR_LO_DELIVERY_MODE | XAPIC_ICR_LO_DEST_MODE \
+#define XAPIC_ICR_LO_WR_VALID                (  XAPIC_ICR_LO_VECTOR | XAPIC_ICR_LO_DELIVERY_MODE | XAPIC_ICR_LO_DEST_MODE \
                                               | XAPIC_ICR_LO_LEVEL | XAPIC_ICR_TRIGGER_MODE | XAPIC_ICR_LO_DEST_SHORTHAND)
 
 /** ICR High - The destination field. */
@@ -258,7 +258,7 @@
 /** ICR High - Get the destination field. */
 #define XAPIC_ICR_HI_GET_DEST(a_u32IcrHi)    (((a_u32IcrHi) >> 24) & XAPIC_ICR_HI_DEST)
 /** ICR High - Valid write bits in xAPIC mode. */
-#define XAPIC_ICR_HI_WR                      XAPIC_ICR_HI_DEST
+#define XAPIC_ICR_HI_WR_VALID                XAPIC_ICR_HI_DEST
 
 /** APIC ID broadcast mask - x2APIC mode. */
 #define X2APIC_ID_BROADCAST_MASK             UINT32_C(0xffffffff)

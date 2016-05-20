@@ -542,7 +542,7 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    uint32_t   uValidMask = XAPIC_SVR;
+    uint32_t   uValidMask = XAPIC_SVR_VALID;
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     if (pXApicPage->version.u.fEoiBroadcastSupression)
         uValidMask |= XAPIC_SVR_SUPRESS_EOI_BROADCAST;
@@ -1029,7 +1029,7 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
     VMCPU_ASSERT_EMT(pVCpu);
 
     PXAPICPAGE pXApicPage  = VMCPU_TO_XAPICPAGE(pVCpu);
-    pXApicPage->icr_lo.all.u32IcrLo = uIcrLo & XAPIC_ICR_LO_WR;
+    pXApicPage->icr_lo.all.u32IcrLo = uIcrLo & XAPIC_ICR_LO_WR_VALID;
     Log2(("APIC%u: apicSetIcrLo: uIcrLo=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
 
     return apicSendIpi(pVCpu, rcRZ);
@@ -1052,7 +1052,7 @@ static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
 
     /* Validate. */
     uint32_t const uLo = RT_LO_U32(u64Icr);
-    if (RT_LIKELY(!(uLo & ~XAPIC_ICR_LO_WR)))
+    if (RT_LIKELY(!(uLo & ~XAPIC_ICR_LO_WR_VALID)))
     {
         /* Update high dword first, then update the low dword which sends the IPI. */
         PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
@@ -1077,7 +1077,7 @@ static VBOXSTRICTRC apicSetEsr(PVMCPU pVCpu, uint32_t uEsr)
     Log2(("APIC%u: apicSetEsr: uEsr=%#RX32\n", pVCpu->idCpu, uEsr));
 
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
-        && (uEsr & ~XAPIC_ESR_WO))
+        && (uEsr & ~XAPIC_ESR_WO_VALID))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_ESR, APICMSRACCESS_WRITE_RSVD_BITS);
 
     /*
@@ -1150,7 +1150,7 @@ static VBOXSTRICTRC apicSetTpr(PVMCPU pVCpu, uint32_t uTpr)
     STAM_COUNTER_INC(&pVCpu->apic.s.StatTprWrite);
 
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
-        && (uTpr & ~XAPIC_TPR))
+        && (uTpr & ~XAPIC_TPR_VALID))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TPR, APICMSRACCESS_WRITE_RSVD_BITS);
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
@@ -1176,7 +1176,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
     STAM_COUNTER_INC(&pVCpu->apic.s.StatEoiWrite);
 
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
-        && (uEoi & ~XAPIC_EOI_WO))
+        && (uEoi & ~XAPIC_EOI_WO_VALID))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_EOI, APICMSRACCESS_WRITE_RSVD_BITS);
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
@@ -1221,7 +1221,7 @@ static VBOXSTRICTRC apicSetLdr(PVMCPU pVCpu, uint32_t uLdr)
     Log2(("APIC%u: apicSetLdr: uLdr=%#RX32\n", pVCpu->idCpu, uLdr));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    apicWriteRaw32(pXApicPage, XAPIC_OFF_LDR, uLdr & XAPIC_LDR);
+    apicWriteRaw32(pXApicPage, XAPIC_OFF_LDR, uLdr & XAPIC_LDR_VALID);
     return VINF_SUCCESS;
 }
 
@@ -1240,7 +1240,7 @@ static VBOXSTRICTRC apicSetDfr(PVMCPU pVCpu, uint32_t uDfr)
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
 
-    uDfr &= XAPIC_DFR;
+    uDfr &= XAPIC_DFR_VALID;
     uDfr |= XAPIC_DFR_RSVD_MB1;
 
     Log2(("APIC%u: apicSetDfr: uDfr=%#RX32\n", pVCpu->idCpu, uDfr));
@@ -1262,7 +1262,7 @@ static VBOXSTRICTRC apicSetTimerDcr(PVMCPU pVCpu, uint32_t uTimerDcr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     if (   XAPIC_IN_X2APIC_MODE(pVCpu)
-        && (uTimerDcr & ~XAPIC_TIMER_DCR))
+        && (uTimerDcr & ~XAPIC_TIMER_DCR_VALID))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TIMER_DCR, APICMSRACCESS_WRITE_RSVD_BITS);
 
     Log2(("APIC%u: apicSetTimerDcr: uTimerDcr=%#RX32\n", pVCpu->idCpu, uTimerDcr));
