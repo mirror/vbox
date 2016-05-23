@@ -1005,7 +1005,7 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                         rc = VERR_TIMEOUT;
                     else
                         rc = RTErrConvertFromErrno(errno);
-                    Log(("RTLocalIpcSessionWaitForData: poll returns %u (rc=%%d), revents=%#x\n", cFds, rc, PollFd.revents));
+                    Log(("RTLocalIpcSessionWaitForData: poll returns %u (rc=%d), revents=%#x\n", cFds, rc, PollFd.revents));
 #endif
 
                     int rc2 = RTCritSectEnter(&pThis->CritSect);
