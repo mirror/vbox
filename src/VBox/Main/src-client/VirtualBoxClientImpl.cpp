@@ -144,7 +144,7 @@ HRESULT VirtualBoxClient::init()
     else
         autoInitSpan.setFailed(rc);
 
-    LogFlowThisFunc(("rc=%hrc\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
     /* Unconditionally return success, because the error return is delayed to
      * the attribute/method calls through the InitFailed object state. */

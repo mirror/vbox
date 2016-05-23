@@ -5021,7 +5021,7 @@ int Console::i_configNetwork(const char *pszDevice,
                         {
                             DWORD err = GetLastError();
                             hrc = HRESULT_FROM_WIN32(err);
-                            AssertMsgFailed(("%hrc=%Rhrc %#x\n", hrc, hrc));
+                            AssertMsgFailed(("hrc=%Rhrc %#x\n", hrc, hrc));
                             AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
                                                    hrc, hrc, err));
                         }
