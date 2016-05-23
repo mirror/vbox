@@ -183,7 +183,7 @@ static int tstRTCreateProcEx6Child(int argc, char **argv)
                     RTStrmPrintf(g_pStdErr, "child6: #%u: %s=%s\n", i, szVarNm, szValue);
                 else
                 {
-                    RTStrmPrintf(g_pStdErr, "child6: #%u: %Rrc\n", rc);
+                    RTStrmPrintf(g_pStdErr, "child6: #%u: %Rrc\n", i, rc);
                     cErrors++;
                 }
             }
