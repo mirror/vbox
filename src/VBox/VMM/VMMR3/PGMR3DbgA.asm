@@ -22,6 +22,8 @@
 %define RT_ASM_WITH_SEH64
 %include "VBox/asmdefs.mac"
 
+BEGINCODE ;; Doesn't end up in code seg on 64-bit darwin. weird.
+
 
 ;
 ; Common to all code below.
