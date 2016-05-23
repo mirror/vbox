@@ -251,7 +251,7 @@ RTDECL(int) RTCrStoreCertAddFromJavaKeyStoreInMem(RTCRSTORE hStore, uint32_t fFl
             uint32_t cbEncoded;
             GET_BE_U32_OR_BREAK(cbEncoded);
             ENSURE_CONTENT_OR_BREAK_EX(cbEncoded, "certificate data");
-            Log(("JKS: %#08zx: %#x certificate bytes\n", off, cbEncoded, cbEncoded));
+            Log(("JKS: %#08zx: %#x certificate bytes\n", off, cbEncoded));
 
             /* Try add the certificate. */
             RTERRINFOSTATIC StaticErrInfo;
