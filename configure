@@ -2106,22 +2106,17 @@ extern "C" int main(void)
 {
   Py_Initialize();
   printf("found version %s", PY_VERSION);
-#if PY_VERSION_HEX >= 0x02030000
+#if PY_VERSION_HEX >= 0x02060000
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 2.3 or higher\n");
+  printf(", expected version 2.6 or higher\n");
   return 1;
 #endif
 }
 EOF
   found=
-# For Solaris we use libpython2.4 for compatibility with Solaris 10 and passing IPS pkg audit
-  if [ "$OS" != "solaris" ]; then
-    SUPPYTHONLIBS="python2.7 python2.6 python2.5 python2.4 python2.3"
-  else
-    SUPPYTHONLIBS="python2.4"
-  fi
+  SUPPYTHONLIBS="python2.7 python2.6"
   for p in $PYTHONDIR; do
     for d in $SUPPYTHONLIBS; do
       for b in lib/x86_64-linux-gnu lib/i386-linux-gnu lib64 lib/64 lib; do
