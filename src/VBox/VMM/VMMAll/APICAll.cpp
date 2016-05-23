@@ -2005,7 +2005,8 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
     /* Don't allow enabling xAPIC/x2APIC if the VM is configured with the APIC disabled. */
     if (pApic->enmOriginalMode == APICMODE_DISABLED)
     {
-        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM is configured with APIC disabled!\n"));
+        LogRel(("APIC%u: Disallowing APIC base MSR write as the VM is configured with APIC disabled!\n",
+               pVCpu->idCpu));
         return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
     }
 

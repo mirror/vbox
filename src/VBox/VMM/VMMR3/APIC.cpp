@@ -1382,7 +1382,7 @@ static int apicR3InitState(PVM pVM)
             }
             else
             {
-                LogRel(("APIC%u: Failed to allocate %u bytes for the virtual-APIC page, rc=%Rrc\n", pApicCpu->cbApicPage, rc));
+                LogRel(("APIC%u: Failed to allocate %u bytes for the virtual-APIC page, rc=%Rrc\n", idCpu, pApicCpu->cbApicPage, rc));
                 apicR3TermState(pVM);
                 return rc;
             }
