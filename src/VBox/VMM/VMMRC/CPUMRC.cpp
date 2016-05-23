@@ -230,7 +230,7 @@ VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
  *
  * @param   pVCpu   The cross context CPU structure for the calling EMT.
  */
-VMMRCDECL(void) CPUMRCProcessForceFlag(PVMVCPU pVCpu)
+VMMRCDECL(void) CPUMRCProcessForceFlag(PVMCPU pVCpu)
 {
     /* Only modify CR0 if we're in the post IEM state (host state saved, guest no longer active). */
     if ((pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)) == CPUM_USED_FPU_HOST)

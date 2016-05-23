@@ -1473,7 +1473,7 @@ VMMDECL(uint32_t)       CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 #ifdef VBOX_WITH_RAW_RING1
 VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 #endif
-VMMRCDECL(void)         CPUMRCProcessForceFlag(PVMVCPU pVCpu);
+VMMRCDECL(void)         CPUMRCProcessForceFlag(PVMCPU pVCpu);
 
 /** @} */
 #endif /* IN_RC */
