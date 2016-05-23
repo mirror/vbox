@@ -1651,7 +1651,7 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
     else
-        LogRel2(("HDA: Warning: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd)));
+        LogRel2(("HDA: Warning: Unhandled get amplifier command: 0x%x (NID=0x%x [%RU8])\n", cmd, CODEC_NID(cmd), CODEC_NID(cmd)));
 
     return VINF_SUCCESS;
 }
@@ -1677,7 +1677,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
         pAmplifier = &pNode->adc.B_params;
     else
         LogRel2(("HDA: Warning: Unhandled set amplifier command: 0x%x (Payload=%RU16, NID=0x%x [%RU8])\n",
-                 cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd)));
+                 cmd, CODEC_VERB_PAYLOAD16(cmd), CODEC_NID(cmd), CODEC_NID(cmd)));
 
     if (!pAmplifier)
         return VINF_SUCCESS;

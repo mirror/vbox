@@ -4196,7 +4196,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
 
     if (!fProceed)
     {
-        Log3Func(("[SD%RU8] Skipping\n"));
+        Log3Func(("[SD%RU8] Skipping\n", pStream->u8SD));
 
         rc = RTSemMutexRelease(pStream->State.hMtx);
         AssertRC(rc);
