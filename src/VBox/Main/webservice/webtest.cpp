@@ -25,8 +25,12 @@
 #include <string>
 
 /* TEMPORARY! */
-#if defined(_MSC_VER) && !defined(RT_ARCH_AMD64)
-# pragma optimize("g", off)
+#if defined(_MSC_VER) && !defined(RT_ARCH_AMD64) && defined(DEBUG)
+void wastesomecodespace(int a, int b, int c)
+{
+    for (int i = 0; i < c ; i++)
+        a = a * b * c;
+}
 #endif
 
 static void usage(int exitcode)
