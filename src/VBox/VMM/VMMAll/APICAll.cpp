@@ -1745,15 +1745,15 @@ VMMDECL(VBOXSTRICTRC) APICReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32
     Assert(u32Reg >= MSR_IA32_X2APIC_START && u32Reg <= MSR_IA32_X2APIC_END);
     Assert(pu64Value);
 
+#ifndef IN_RING3
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (pApic->fRZEnabled)
     { /* likely */}
     else
     {
-#ifndef IN_RING3
         return VINF_CPUM_R3_MSR_READ;
-#endif
     }
+#endif
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrRead));
 
@@ -1851,15 +1851,15 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(u32Reg >= MSR_IA32_X2APIC_START && u32Reg <= MSR_IA32_X2APIC_END);
 
+#ifndef IN_RING3
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (pApic->fRZEnabled)
     { /* likely */ }
     else
     {
-#ifndef IN_RING3
         return VINF_CPUM_R3_MSR_WRITE;
-#endif
     }
+#endif
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrWrite));
 
