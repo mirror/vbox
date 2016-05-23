@@ -540,7 +540,7 @@ struct NetworkAdapter
     NetworkAdapter();
 
     bool areGenericDriverDefaultSettings() const;
-    bool areDefaultSettings() const;
+    bool areDefaultSettings(SettingsVersion_T sv) const;
     bool areDisabledDefaultSettings() const;
 
     bool operator==(const NetworkAdapter &n) const;
@@ -877,7 +877,7 @@ struct Hardware
     bool areBootOrderDefaultSettings() const;
     bool areDisplayDefaultSettings() const;
     bool areVideoCaptureDefaultSettings() const;
-    bool areAllNetworkAdaptersDefaultSettings() const;
+    bool areAllNetworkAdaptersDefaultSettings(SettingsVersion_T sv) const;
 
     bool operator==(const Hardware&) const;
 

@@ -2334,7 +2334,7 @@ NetworkAdapter::NetworkAdapter() :
     ulSlot(0),
     type(NetworkAdapterType_Am79C973),
     fEnabled(false),
-    fCableConnected(true),
+    fCableConnected(false), // default for old VMs, for new ones it's true
     ulLineSpeed(0),
     enmPromiscModePolicy(NetworkAdapterPromiscModePolicy_Deny),
     fTraceEnabled(false),
@@ -2355,11 +2355,15 @@ bool NetworkAdapter::areGenericDriverDefaultSettings() const
 /**
  * Check if all settings have default values.
  */
-bool NetworkAdapter::areDefaultSettings() const
+bool NetworkAdapter::areDefaultSettings(SettingsVersion_T sv) const
 {
+    // 5.0 and earlier had a default of fCableConnected=false, which doesn't
+    // make a lot of sense (but it's a fact). Later versions don't save the
+    // setting if it's at the default value and thus must get it right.
     return !fEnabled
         && strMACAddress.isEmpty()
-        && fCableConnected
+        && (   (sv >= SettingsVersion_v1_16 && fCableConnected)
+            || (sv < SettingsVersion_v1_16 && !fCableConnected))
         && ulLineSpeed == 0
         && enmPromiscModePolicy == NetworkAdapterPromiscModePolicy_Deny
         && type == NetworkAdapterType_Am79C973
@@ -2761,10 +2765,10 @@ Hardware::Hardware() :
 bool Hardware::areParavirtDefaultSettings(SettingsVersion_T sv) const
 {
     // 5.0 didn't save the paravirt settings if it is ParavirtProvider_Legacy,
-    // so this default must be kept. Later versions don't savethis release. Newer versionsRemember, this is the default for VMs created with 5.0, and older
-    // VMs will keep ParavirtProvider_Legacy which must be saved.
+    // so this default must be kept. Later versions don't save the setting if
+    // it's at the default value.
     return (   (sv >= SettingsVersion_v1_16 && paravirtProvider == ParavirtProvider_Default)
-            || (sv == SettingsVersion_v1_15 && paravirtProvider == ParavirtProvider_Legacy))
+            || (sv < SettingsVersion_v1_16 && paravirtProvider == ParavirtProvider_Legacy))
         && strParavirtDebug.isEmpty();
 }
 
@@ -2816,13 +2820,13 @@ bool Hardware::areVideoCaptureDefaultSettings() const
 /**
  * Check if all Network Adapter settings have default values.
  */
-bool Hardware::areAllNetworkAdaptersDefaultSettings() const
+bool Hardware::areAllNetworkAdaptersDefaultSettings(SettingsVersion_T sv) const
 {
     for (NetworkAdaptersList::const_iterator it = llNetworkAdapters.begin();
          it != llNetworkAdapters.end();
          ++it)
     {
-        if (!it->areDefaultSettings())
+        if (!it->areDefaultSettings(sv))
             return false;
     }
     return true;
@@ -3278,6 +3282,13 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
     while ((pelmAdapter = nl1.forAllNodes()))
     {
         NetworkAdapter nic;
+
+        if (m->sv >= SettingsVersion_v1_16)
+        {
+            /* Starting with VirtualBox 5.1 the default is true, before it was
+             * false. This needs to matched by NetworkAdapter.areDefaultSettings(). */
+            nic.fCableConnected = true;
+        }
 
         if (!pelmAdapter->getAttributeValue("slot", nic.ulSlot))
             throw ConfigFileError(this, pelmAdapter, N_("Required Adapter/@slot attribute is missing"));
@@ -5683,7 +5694,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
 
     if (   hw.llNetworkAdapters.size()
-        && !hw.areAllNetworkAdaptersDefaultSettings())
+        && !hw.areAllNetworkAdaptersDefaultSettings(m->sv))
     {
         xml::ElementNode *pelmNetwork = pelmHardware->createChild("Network");
         for (NetworkAdaptersList::const_iterator it = hw.llNetworkAdapters.begin();
@@ -5692,7 +5703,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         {
             const NetworkAdapter &nic = *it;
 
-            if (!nic.areDefaultSettings())
+            if (!nic.areDefaultSettings(m->sv))
             {
                 xml::ElementNode *pelmAdapter = pelmNetwork->createChild("Adapter");
                 pelmAdapter->setAttribute("slot", nic.ulSlot);
@@ -5700,7 +5711,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     pelmAdapter->setAttribute("enabled", nic.fEnabled);
                 if (!nic.strMACAddress.isEmpty())
                     pelmAdapter->setAttribute("MACAddress", nic.strMACAddress);
-                if (!nic.fCableConnected)
+                if (   (m->sv >= SettingsVersion_v1_16 && !nic.fCableConnected)
+                    || (m->sv < SettingsVersion_v1_16 && nic.fCableConnected))
                     pelmAdapter->setAttribute("cable", nic.fCableConnected);
                 if (nic.ulLineSpeed)
                     pelmAdapter->setAttribute("speed", nic.ulLineSpeed);
