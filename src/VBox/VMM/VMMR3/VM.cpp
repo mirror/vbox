@@ -124,7 +124,7 @@ static void                 vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNe
 static int                  vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, ...);
 static void                 vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
 static void                 vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
-static int                  vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+static int                  vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7);
 
 
 /**
@@ -4021,7 +4021,7 @@ VMMR3_INT_DECL(uint32_t) VMR3GetErrorCount(PUVM pUVM)
  * @param   ...             The arguments.
  * @thread  Any thread.
  */
-static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7)
+static int vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);

@@ -713,7 +713,7 @@ static DECLCALLBACK(int) csamR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     Assert(pVM->csam.s.savedstate.pSSM == NULL);
     AssertLogRelMsgReturn(uVersion >= CSAM_SAVED_STATE_VERSION_PUT_MEM && uVersion <= CSAM_SAVED_STATE_VERSION,
-                          ("uVersion=%d (%#x)\n", uVersion),
+                          ("uVersion=%d (%#x)\n", uVersion, uVersion),
                           VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     if (uVersion >= CSAM_SAVED_STATE_VERSION_PUT_STRUCT)
