@@ -842,7 +842,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                         pHv->uDbgStatusMsr = 0;
                 }
                 else
-                    LogRelMax(5, ("GIM: HyperV: Debug receive buffer address %#RGp invalid! Ignoring debug read!\n"));
+                    LogRelMax(5, ("GIM: HyperV: Debug receive buffer address %#RGp invalid! Ignoring debug read!\n", (RTGCPHYS)pHv->uDbgRecvBufferMsr));
             }
             return VINF_SUCCESS;
 #endif
