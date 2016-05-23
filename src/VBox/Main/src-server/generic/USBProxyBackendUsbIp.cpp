@@ -805,7 +805,7 @@ int USBProxyBackendUsbIp::receiveData()
         rc = RTTcpReadNB(m->hSocket, m->pbRecvBuf, m->cbResidualRecv, &cbRecvd);
 
         LogFlowFunc(("RTTcpReadNB(%#p, %#p, %zu, %zu) -> %Rrc\n",
-                     m->hSocket, m->pbRecvBuf, m->cbResidualRecv, cbRecvd));
+                     m->hSocket, m->pbRecvBuf, m->cbResidualRecv, cbRecvd, rc));
 
         if (rc == VINF_SUCCESS)
         {
