@@ -1774,24 +1774,29 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pFpuCtx->FPUIP, pszPrefix, pFpuCtx->CS,  pszPrefix, pFpuCtx->Rsrvd1,
                     pszPrefix, pFpuCtx->FPUDP, pszPrefix, pFpuCtx->DS,  pszPrefix, pFpuCtx->Rsrvd2
                     );
+                /*
+                 * The FSAVE style memory image contains ST(0)-ST(7) at increasing addresses,
+                 * not (FP)R0-7 as Intel SDM suggests.
+                 */
                 unsigned iShift = (pFpuCtx->FSW >> 11) & 7;
                 for (unsigned iST = 0; iST < RT_ELEMENTS(pFpuCtx->aRegs); iST++)
                 {
                     unsigned iFPR        = (iST + iShift) % RT_ELEMENTS(pFpuCtx->aRegs);
-                    unsigned uTag        = pFpuCtx->FTW & (1 << iFPR) ? 1 : 0;
-                    char     chSign      = pFpuCtx->aRegs[0].au16[4] & 0x8000 ? '-' : '+';
-                    unsigned iInteger    = (unsigned)(pFpuCtx->aRegs[0].au64[0] >> 63);
-                    uint64_t u64Fraction = pFpuCtx->aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
-                    unsigned uExponent   = pFpuCtx->aRegs[0].au16[4] & 0x7fff;
+                    unsigned uTag        = (pFpuCtx->FTW >> (2 * iFPR)) & 3;
+                    char     chSign      = pFpuCtx->aRegs[iST].au16[4] & 0x8000 ? '-' : '+';
+                    unsigned iInteger    = (unsigned)(pFpuCtx->aRegs[iST].au64[0] >> 63);
+                    uint64_t u64Fraction = pFpuCtx->aRegs[iST].au64[0] & UINT64_C(0x7fffffffffffffff);
+                    int      iExponent   = pFpuCtx->aRegs[iST].au16[4] & 0x7fff;
+                    iExponent -= 16383; /* subtract bias */
                     /** @todo This isn't entirenly correct and needs more work! */
                     pHlp->pfnPrintf(pHlp,
-                                    "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u (*)",
+                                    "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu * 2 ^ %d (*)",
                                     pszPrefix, iST, pszPrefix, iFPR,
-                                    pFpuCtx->aRegs[0].au16[4], pFpuCtx->aRegs[0].au32[1], pFpuCtx->aRegs[0].au32[0],
-                                    uTag, chSign, iInteger, u64Fraction, uExponent);
-                    if (pFpuCtx->aRegs[0].au16[5] || pFpuCtx->aRegs[0].au16[6] || pFpuCtx->aRegs[0].au16[7])
+                                    pFpuCtx->aRegs[iST].au16[4], pFpuCtx->aRegs[iST].au32[1], pFpuCtx->aRegs[iST].au32[0],
+                                    uTag, chSign, iInteger, u64Fraction, iExponent);
+                    if (pFpuCtx->aRegs[iST].au16[5] || pFpuCtx->aRegs[iST].au16[6] || pFpuCtx->aRegs[iST].au16[7])
                         pHlp->pfnPrintf(pHlp, " res={%04RX16,%04RX16,%04RX16}\n",
-                                        pFpuCtx->aRegs[0].au16[5], pFpuCtx->aRegs[0].au16[6], pFpuCtx->aRegs[0].au16[7]);
+                                        pFpuCtx->aRegs[iST].au16[5], pFpuCtx->aRegs[iST].au16[6], pFpuCtx->aRegs[iST].au16[7]);
                     else
                         pHlp->pfnPrintf(pHlp, "\n");
                 }
