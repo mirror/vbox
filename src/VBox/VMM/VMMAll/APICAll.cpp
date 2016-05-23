@@ -1749,7 +1749,11 @@ VMMDECL(VBOXSTRICTRC) APICReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32
     if (pApic->fRZEnabled)
     { /* likely */}
     else
+    {
+#ifndef IN_RING3
         return VINF_CPUM_R3_MSR_READ;
+#endif
+    }
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrRead));
 
@@ -1851,7 +1855,11 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
     if (pApic->fRZEnabled)
     { /* likely */ }
     else
+    {
+#ifndef IN_RING3
         return VINF_CPUM_R3_MSR_WRITE;
+#endif
+    }
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrWrite));
 
@@ -2417,7 +2425,7 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
 
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
     PVMCPU   pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = (GCPhysAddr & 0xff0);
+    uint16_t offReg   = GCPhysAddr & 0xff0;
     uint32_t uValue   = 0;
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioRead));
@@ -2441,7 +2449,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
 
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
     PVMCPU   pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
-    uint16_t offReg   = (GCPhysAddr & 0xff0);
+    uint16_t offReg   = GCPhysAddr & 0xff0;
     uint32_t uValue   = *(uint32_t *)pv;
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioWrite));
