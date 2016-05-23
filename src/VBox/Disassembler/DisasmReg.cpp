@@ -273,6 +273,8 @@ DISDECL(int) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
             return pDis->uOpMode == DISCPUMODE_64BIT ? 4 : 8;  //??
 
         case OP_PARM_z:
+            if (pParam->cb)
+                return pParam->cb;
             return pDis->uOpMode == DISCPUMODE_16BIT ? 2 : 4;  //??
 
         default:

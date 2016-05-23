@@ -119,6 +119,38 @@ static void testPerformance(const char *pszSub, uint8_t const *pabInstrs, uintpt
     RTTestIValueF(cNsElapsed / cInstrs, RTTESTUNIT_NS_PER_CALL, "%s-per-instruction", pszSub);
 }
 
+void testTwo(void)
+{
+    static const struct
+    {
+        DISCPUMODE  enmMode;
+        uint8_t     abInstr[24];
+        uint8_t     cbParam1;
+        uint8_t     cbParam2;
+        uint8_t     cbParam3;
+    } s_gInstrs[] =
+    {
+        { DISCPUMODE_64BIT, { 0x48, 0xc7, 0x03, 0x00, 0x00, 0x00, 0x00, },                 8, 8, 0, },
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_gInstrs); i++)
+    {
+        uint32_t    cb = 1;
+        DISSTATE    Dis;
+        int rc;
+        RTTESTI_CHECK_RC(rc = DISInstr(s_gInstrs[i].abInstr, s_gInstrs[i].enmMode, &Dis, &cb), VINF_SUCCESS);
+        if (rc == VINF_SUCCESS)
+        {
+            uint32_t cb2;
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param1)) == s_gInstrs[i].cbParam1,
+                              ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam1));
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param2)) == s_gInstrs[i].cbParam2,
+                              ("%u: %#x vs %#x (%s)\n", i , cb2, s_gInstrs[i].cbParam2, Dis.pCurInstr->pszOpcode));
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param3)) == s_gInstrs[i].cbParam3,
+                              ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam3));
+        }
+    }
+}
+
 
 int main(int argc, char **argv)
 {
@@ -142,6 +174,8 @@ int main(int argc, char **argv)
 
     for (unsigned i = 0; i < RT_ELEMENTS(aSnippets); i++)
         testDisas(aSnippets[i].pszDesc, aSnippets[i].pbStart, aSnippets[i].uEndPtr, aSnippets[i].enmCpuMode);
+
+    testTwo();
 
     if (RTTestIErrorCount() == 0)
     {
