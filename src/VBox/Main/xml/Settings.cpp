@@ -2763,8 +2763,8 @@ bool Hardware::areParavirtDefaultSettings(SettingsVersion_T sv) const
     // 5.0 didn't save the paravirt settings if it is ParavirtProvider_Legacy,
     // so this default must be kept. Later versions don't savethis release. Newer versionsRemember, this is the default for VMs created with 5.0, and older
     // VMs will keep ParavirtProvider_Legacy which must be saved.
-    return (   sv >= SettingsVersion_v1_16 && paravirtProvider == ParavirtProvider_Default
-            || sv == SettingsVersion_v1_15 && paravirtProvider == ParavirtProvider_Legacy)
+    return (   (sv >= SettingsVersion_v1_16 && paravirtProvider == ParavirtProvider_Default)
+            || (sv == SettingsVersion_v1_15 && paravirtProvider == ParavirtProvider_Legacy))
         && strParavirtDebug.isEmpty();
 }
 
