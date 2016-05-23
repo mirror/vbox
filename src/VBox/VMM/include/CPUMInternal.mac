@@ -32,6 +32,34 @@
  %define CPUM_IS_AMD64      0
 %endif
 
+;; @def CPUM_CAN_USE_FPU_IN_R0
+; Indicates that we can use the FPU directly in ring-0.
+; Only defined in ring-0.
+%ifdef VBOX_WITH_KERNEL_USING_XMM
+ ; Systems using XMM registers as part of their kernel calling convention must
+ ; support saving and restoring the state while in ring-0.  64-bit Windows will
+ ; always switch the FPU state when context switching.
+ %define CPUM_CAN_USE_FPU_IN_R0 1
+%endif
+%ifdef RT_OS_WINDOWS
+ ; 32-bit Windows will load the FPU context of the current thread (user land).
+ %define CPUM_CAN_USE_FPU_IN_R0 1
+%endif
+%ifdef RT_OS_DARWIN
+ ; Intel Darwin kernels will load the FPU context of the current thread (user land).
+ %define CPUM_CAN_USE_FPU_IN_R0 1
+%endif
+%ifdef RT_OS_LINUX
+ ; Intel Linux kernels will load the FPU context of the current thread (user land),
+ ; at least that what my LXR research on 2.6.18+ indicates.  It's possible this was
+ ; done differently at some point, I seems to recall issues with it ages and ages ago.
+; %define CPUM_CAN_USE_FPU_IN_R0 1 - test me first
+%endif
+%ifndef IN_RING0
+ %undef CPUM_CAN_USE_FPU_IN_R0
+%endif
+
+
 
 ;;
 ; CPU info
@@ -307,6 +335,7 @@ struc CPUMCPU
     ;.Host.cr2            resd    1 - scratch
     .Host.cr3            resd    1
     .Host.cr4            resd    1
+    .Host.cr0Fpu         resd    1
 
     .Host.dr0            resd    1
     .Host.dr1            resd    1
@@ -324,7 +353,7 @@ struc CPUMCPU
     .Host.tr             resw    1
     .Host.trPadding      resw    1
 
-    .Host.SysEnterPadding resd   1
+    alignb 8
     .Host.SysEnter.cs    resq    1
     .Host.SysEnter.eip   resq    1
     .Host.SysEnter.esp   resq    1
@@ -333,6 +362,7 @@ struc CPUMCPU
 
 %else ; 64-bit
 
+    .Host.cr0Fpu:
     .Host.cr0            resq    1
     ;.Host.cr2            resq    1 - scratch
     .Host.cr3            resq    1

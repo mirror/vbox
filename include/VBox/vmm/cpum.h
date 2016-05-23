@@ -1473,6 +1473,7 @@ VMMDECL(uint32_t)       CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 #ifdef VBOX_WITH_RAW_RING1
 VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 #endif
+VMMRCDECL(void)         CPUMRCProcessForceFlag(PVMVCPU pVCpu);
 
 /** @} */
 #endif /* IN_RC */
@@ -1484,6 +1485,7 @@ VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
 VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);
 VMMR0_INT_DECL(int)     CPUMR0ModuleTerm(void);
 VMMR0_INT_DECL(int)     CPUMR0InitVM(PVM pVM);
+DECLASM(void)           CPUMR0RegisterVCpuThread(PVMCPU pVCpu);
 VMMR0_INT_DECL(int)     CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int)     CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(bool)    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu);

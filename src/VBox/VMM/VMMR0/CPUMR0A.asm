@@ -30,17 +30,33 @@
 %include "VBox/vmm/cpum.mac"
 
 
-;*******************************************************************************
-;*      Defined Constants And Macros                                           *
-;*******************************************************************************
-;; The offset of the XMM registers in X86FXSTATE.
-; Use define because I'm too lazy to convert the struct.
-%define XMM_OFF_IN_X86FXSTATE   160
-
-
-
 BEGINCODE
 
+;;
+; Makes sure the EMTs have a FPU state associated with them on hosts where we're
+; allowed to use it in ring-0 too.
+;
+; This ensure that we don't have to allocate the state lazily while trying to execute
+; guest code with preemption disabled or worse.
+;
+; @cproto VMMR0_INT_DECL(void) CPUMR0RegisterVCpuThread(PVMCPU pVCpu);
+;
+BEGINPROC CPUMR0RegisterVCpuThread
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+SEH64_END_PROLOGUE
+
+%ifdef CPUM_CAN_USE_FPU_IN_R0
+        movaps  xmm0, xmm0
+%endif
+
+.return:
+        xor     eax, eax                ; paranoia
+        leave
+        ret
+ENDPROC   CPUMR0RegisterVCpuThread
 
 
 ;;
@@ -78,17 +94,24 @@ SEH64_END_PROLOGUE
         pushf                           ; The darwin kernel can get upset or upset things if an
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
 
-%ifdef VBOX_WITH_KERNEL_USING_XMM
-        movaps  xmm0, xmm0              ; Make 100% sure it's used before we save it or mess with CR0/XCR0.
-%endif
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX is now old CR0 value, don't use!
-
         ;
         ; Save the host state.
         ;
         test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USED_FPU_HOST
         jnz     .already_saved_host
+
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+        ; On systems where the kernel doesn't necessarily allow us to use the FPU
+        ; in ring-0 context, we have to disable FPU traps before doing fxsave/xsave
+        ; here.  (xCX is 0 if no CR0 was necessary.)  We leave it like that so IEM
+        ; can use the FPU/SSE/AVX host CPU features directly.
+        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX
+        mov     [pCpumCpu + CPUMCPU.Host.cr0Fpu], xCX
+        ;; @todo What about XCR0?
+%endif
+
         CPUMR0_SAVE_HOST
+
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         jmp     .load_guest
 %endif
@@ -129,8 +152,6 @@ SEH64_END_PROLOGUE
         movdqa  xmm15, [pXState + X86FXSTATE.xmm15]
 %endif
 
-        ;; @todo Save CR0 + XCR0 bits related to FPU, SSE and AVX*, leaving these register sets accessible to IEM.
-        RESTORE_CR0 xCX
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_SINCE_REM | CPUM_USED_FPU_HOST)
         popf
 
@@ -176,8 +197,6 @@ SEH64_END_PROLOGUE
 %endif
         pushf                           ; The darwin kernel can get upset or upset things if an
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX is now old CR0 value, don't use!
-
 
  %ifdef VBOX_WITH_KERNEL_USING_XMM
         ;
@@ -231,8 +250,12 @@ SEH64_END_PROLOGUE
 .load_only_host:
         CPUMR0_LOAD_HOST
 
-        ;; @todo Restore CR0 + XCR0 bits related to FPU, SSE and AVX* (for IEM).
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+        ; Restore the CR0 value we saved in cpumR0SaveHostRestoreGuestFPUState or
+        ; in cpumRZSaveHostFPUState.
+        mov     xCX, [pCpumCpu + CPUMCPU.Host.cr0Fpu]
         RESTORE_CR0 xCX
+%endif
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~(CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)
 
         popf
@@ -272,11 +295,16 @@ BEGINPROC cpumR0RestoreHostFPUState
         ;
         pushf                           ; The darwin kernel can get upset or upset things if an
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX is now old CR0 value, don't use!
 
         CPUMR0_LOAD_HOST
 
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+        ; Restore the CR0 value we saved in cpumR0SaveHostRestoreGuestFPUState or
+        ; in cpumRZSaveHostFPUState.
+        ;; @todo What about XCR0?
+        mov     xCX, [pCpumCpu + CPUMCPU.Host.cr0Fpu]
         RESTORE_CR0 xCX
+%endif
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_HOST
         popf
 

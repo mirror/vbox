@@ -1505,6 +1505,19 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
+
+/**
+ * Notification from CPUM that it has unloaded the guest FPU/SSE/AVX state from
+ * the host CPU and that guest access to it must be intercepted.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ */
+VMMR0_INT_DECL(void) HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU pVCpu)
+{
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
+}
+
+
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 
 /**

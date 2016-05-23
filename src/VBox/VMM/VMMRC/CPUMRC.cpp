@@ -30,6 +30,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
+#include <iprt/asm-amd64-x86.h>
 
 
 /*********************************************************************************************************************************
@@ -218,4 +219,30 @@ VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
     pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
 }
 #endif /* VBOX_WITH_RAW_RING1 */
+
+
+/**
+ * Called by trpmGCExitTrap when VMCPU_FF_CPUM is set (by CPUMRZ.cpp).
+ *
+ * We can be called unecessarily here if we returned to ring-3 for some other
+ * reason before we tried to resume executed guest code.  This is detected and
+ * ignored.
+ *
+ * @param   pVCpu   The cross context CPU structure for the calling EMT.
+ */
+VMMRCDECL(void) CPUMRCProcessForceFlag(PVMVCPU pVCpu)
+{
+    /* Only modify CR0 if we're in the post IEM state (host state saved, guest no longer active). */
+    if ((pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)) == CPUM_USED_FPU_HOST)
+    {
+        /*
+         * Doing the same CR0 calculation as in AMD64andLegacy.mac so that we'll
+         * catch guest FPU accesses and load the FPU/SSE/AVX register state as needed.
+         */
+        uint32_t cr0 = ASMGetCR0();
+        cr0 |= pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM;
+        cr0 |= X86_CR0_TS | X86_CR0_MP;
+        ASMSetCR0(cr0);
+    }
+}
 

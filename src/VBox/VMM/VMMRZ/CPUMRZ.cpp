@@ -49,6 +49,9 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
     {
         case 0:
             cpumRZSaveHostFPUState(&pVCpu->cpum.s);
+#ifdef IN_RC
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_CPUM); /* Must recalc CR0 before executing more code! */
+#endif
             break;
 
         case CPUM_USED_FPU_HOST:
@@ -56,21 +59,22 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
             if (pVCpu->cpum.s.fUseFlags | CPUM_SYNC_FPU_STATE)
             {
                 pVCpu->cpum.s.fUseFlags &= ~CPUM_SYNC_FPU_STATE;
-/** @todo tell HM! */
+                HMR0NotifyCpumUnloadedGuestFpuState(pVCpu);
             }
 #endif
             break;
 
         case CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST:
-/** @todo tell HM! */
 #if defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
             Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
             if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
                 HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
             else
 #endif
-                cpumRZSaveGuestFpuState(&pVCpu->cpum.s);
-
+                cpumRZSaveGuestFpuState(&pVCpu->cpum.s, true /*fLeaveFpuAccessible*/);
+#ifdef IN_RING0
+            HMR0NotifyCpumUnloadedGuestFpuState(pVCpu);
+#endif
             break;
 
         default:
@@ -111,7 +115,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu)
             HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
         else
 #endif
-            cpumRZSaveGuestFpuState(&pVCpu->cpum.s);
+            cpumRZSaveGuestFpuState(&pVCpu->cpum.s, false /*fLeaveFpuAccessible*/);
         pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU_GUEST;
     }
 }
@@ -128,6 +132,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu)
 {
 #if defined(VBOX_WITH_KERNEL_USING_XMM) && HC_ARCH_BITS == 64
     NOREF(pVCpu);
+#error "do NOT commit this"
 #else
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
@@ -140,7 +145,10 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu)
         }
         else
 # endif
+        {
+RTLogPrintf("calling cpumRZSaveGuestSseRegisters\n");
             cpumRZSaveGuestSseRegisters(&pVCpu->cpum.s);
+        }
     }
 #endif
 }

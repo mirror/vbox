@@ -261,6 +261,9 @@ typedef struct CPUMHOSTCTX
     /*uint32_t        cr2; - scratch*/
     uint32_t        cr3;
     uint32_t        cr4;
+    /** The CR0 FPU state in HM mode.  Can't use cr0 here because the
+     *  64-bit-on-32-bit-host world switches is using it. */
+    uint32_t        cr0Fpu;
     /** @} */
 
     /** Debug registers.
@@ -285,7 +288,6 @@ typedef struct CPUMHOSTCTX
     /** The task register. */
     RTSEL           tr;
     RTSEL           trPadding;
-    uint32_t        SysEnterPadding;
 
     /** The sysenter msr registers.
      * This member is not used by the hypervisor context. */
@@ -303,6 +305,7 @@ typedef struct CPUMHOSTCTX
 
     /** Control registers.
      * @{ */
+    /** The CR0 FPU state in HM mode.  */
     uint64_t        cr0;
     /*uint64_t        cr2; - scratch*/
     uint64_t        cr3;
@@ -341,7 +344,7 @@ typedef struct CPUMHOSTCTX
     uint64_t        efer;
     /** @} */
 
-    /* padding to get 32byte aligned size */
+    /* padding to get 64byte aligned size */
     uint8_t         auPadding[4];
 
 #else
@@ -545,7 +548,7 @@ DECLASM(void)       cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
 
 # if defined(IN_RC) || defined(IN_RING0)
 DECLASM(void)       cpumRZSaveHostFPUState(PCPUMCPU pCPUM);
-DECLASM(void)       cpumRZSaveGuestFpuState(PCPUMCPU pCPUM);
+DECLASM(void)       cpumRZSaveGuestFpuState(PCPUMCPU pCPUM, bool fLeaveFpuAccessible);
 DECLASM(void)       cpumRZSaveGuestSseRegisters(PCPUMCPU pCPUM);
 # endif
 

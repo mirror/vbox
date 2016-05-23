@@ -2873,6 +2873,7 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
         PRINT_FLAG(VMCPU_FF_,SELM_SYNC_LDT);
         PRINT_FLAG(VMCPU_FF_,CSAM_SCAN_PAGE);
         PRINT_FLAG(VMCPU_FF_,CSAM_PENDING_ACTION);
+        PRINT_FLAG(VMCPU_FF_,CPUM);
 #endif
         if (f)
             pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX32\n", c ? "," : "", f);

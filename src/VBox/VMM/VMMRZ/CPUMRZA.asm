@@ -33,6 +33,10 @@ BEGINCODE
 ;;
 ; Saves the host FPU/SSE/AVX state.
 ;
+; Will return with CR0.EM and CR0.TS cleared!  This is the normal state in
+; ring-0, whereas in raw-mode the caller will probably set VMCPU_FF_CPUM to
+; re-evaluate the situation before executing more guest code.
+;
 ; @returns  VINF_SUCCESS (0) in EAX
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
@@ -65,17 +69,28 @@ SEH64_END_PROLOGUE
 
         pushf                           ; The darwin kernel can get upset or upset things if an
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
-%ifdef VBOX_WITH_KERNEL_USING_XMM
+
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+        ;
+        ; In raw-mode context and on systems where the kernel doesn't necessarily
+        ; allow us to use the FPU in ring-0 context, we have to disable FPU traps
+        ; before doing fxsave/xsave here.  (xCX is 0 if no CR0 was necessary.)  We
+        ; leave it like that so IEM can use the FPU/SSE/AVX host CPU features directly.
+        ;
+        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX
+        ;; @todo What about XCR0?
  %ifdef IN_RING0
-        movaps  xmm0, xmm0              ; Make 100% sure it's used before we save it or mess with CR0/XCR0.
+        mov     [pCpumCpu + CPUMCPU.Host.cr0Fpu], xCX
+ %else
+  %error "Huh?"
  %endif
 %endif
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX is now old CR0 value, don't use!
-
+        ;
+        ; Save the host state (xsave/fxsave will cause thread FPU state to be
+        ; loaded on systems where we are allowed to use it in ring-0.
+        ;
         CPUMR0_SAVE_HOST
-        ;; @todo Save CR0 + XCR0 bits related to FPU, SSE and AVX*, leaving these register sets accessible to IEM.
 
-        RESTORE_CR0 xCX
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM) ; Latter is not necessarily true, but normally yes.
         popf
 
@@ -94,6 +109,8 @@ ENDPROC   cpumRZSaveHostFPUState
 ; Saves the guest FPU/SSE/AVX state.
 ;
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
+; @param    fLeaveFpuAccessible  x86:[ebp+c] gcc:sil msc:dl      Whether to restore CR0 and XCR0 on
+;                                                                the way out. Only really applicable to RC.
 ;
 align 16
 BEGINPROC cpumRZSaveGuestFpuState
@@ -123,8 +140,10 @@ SEH64_END_PROLOGUE
 %endif
         pushf                           ; The darwin kernel can get upset or upset things if an
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX is now old CR0 value, don't use!
 
+ %ifdef IN_RC
+        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX must be preserved until CR0 is restored!
+ %endif
 
  %ifndef VBOX_WITH_KERNEL_USING_XMM
         CPUMR0_SAVE_GUEST
@@ -184,9 +203,13 @@ SEH64_END_PROLOGUE
 
  %endif
 
-        RESTORE_CR0 xCX
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_GUEST
-
+ %ifdef IN_RC
+        test    byte [ebp + 0ch], 1     ; fLeaveFpuAccessible
+        jz      .no_cr0_restore
+        RESTORE_CR0 xCX
+.no_cr0_restore:
+ %endif
         popf
 %ifdef RT_ARCH_X86
         pop     esi
@@ -201,6 +224,10 @@ ENDPROC   cpumRZSaveGuestFpuState
 
 ;;
 ; Saves the guest XMM0..15 registers.
+;
+; The purpose is to actualize the register state for read-only use, so CR0 is
+; restored in raw-mode context (so, the FPU/SSE/AVX CPU features can be
+; inaccessible upon return).
 ;
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
@@ -229,6 +256,11 @@ SEH64_END_PROLOGUE
   %error "Invalid context!"
  %endif
 
+ %ifdef IN_RC
+        ; Temporarily grant access to the SSE state. xDX must be preserved until CR0 is restored!
+        SAVE_CR0_CLEAR_FPU_TRAPS xDX, xAX
+ %endif
+
         ;
         ; Do the job.
         ;
@@ -250,6 +282,11 @@ SEH64_END_PROLOGUE
         movdqa  [xCX + X86FXSTATE.xmm14], xmm14
         movdqa  [xCX + X86FXSTATE.xmm15], xmm15
  %endif
+
+ %ifdef IN_RC
+        RESTORE_CR0 xDX                 ; Restore CR0 if we changed it above.
+ %endif
+
 %endif ; !VBOX_WITH_KERNEL_USING_XMM
 
         leave

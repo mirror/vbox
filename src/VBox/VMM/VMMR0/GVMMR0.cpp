@@ -967,6 +967,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                             GVMMR0_USED_EXCLUSIVE_UNLOCK(pGVMM);
                                             gvmmR0CreateDestroyUnlock(pGVMM);
 
+                                            CPUMR0RegisterVCpuThread(&pVM->aCpus[0]);
+
                                             *ppVM = pVM;
                                             Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
                                             return VINF_SUCCESS;
@@ -1425,7 +1427,10 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
 
     pVM->aCpus[idCpu].hNativeThreadR0 = pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
 
-    return VMMR0ThreadCtxHookCreateForEmt(&pVM->aCpus[idCpu]);
+    rc = VMMR0ThreadCtxHookCreateForEmt(&pVM->aCpus[idCpu]);
+    if (RT_SUCCESS(rc))
+        CPUMR0RegisterVCpuThread(&pVM->aCpus[idCpu]);
+    return rc;
 }
 
 

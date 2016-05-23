@@ -323,7 +323,7 @@ typedef struct VMCPU
  *
  *
  * Available VMCPU bits:
- *      10, 11, 14, 15, 30, 31
+ *      10, 11, 14, 15, 31
  *
  * @todo If we run low on VMCPU, we may consider merging the SELM bits
  *
@@ -459,6 +459,12 @@ typedef struct VMCPU
  * VINF_IOM_R3_MMIO_COMMIT_WRITE, allowing VINF_EM_DBG_BREAKPOINT and similar
  * status codes to be propagated at the same time without loss. */
 #define VMCPU_FF_IOM                        RT_BIT_32(29)
+#ifdef VBOX_WITH_RAW_MODE
+/** CPUM need to adjust CR0.TS/EM before executing raw-mode code again.  */
+# define VMCPU_FF_CPUM                      RT_BIT_32(VMCPU_FF_CPUM_BIT)
+/** The bit number for VMCPU_FF_CPUM. */
+# define VMCPU_FF_CPUM_BIT                  30
+#endif /* VBOX_WITH_RAW_MODE */
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
 #define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS)
