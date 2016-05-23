@@ -44,6 +44,17 @@
 # define VBOX_RTASSERT_WITH_GDB
 #endif
 
+/** @def VBOX_RTASSERT_WITH_WAIT
+ * Enables the 'wait' VBOX_ASSERT option.
+ */
+#if defined(DOXYGEN_RUNNING) \
+ || (   !defined(VBOX_RTASSERT_WITH_WAIT) \
+     && defined(IN_RING3) \
+     && !defined(RT_OS_OS2) \
+     && !defined(RT_OS_WINDOWS))
+# define VBOX_RTASSERT_WITH_WAIT
+#endif
+
 #ifdef VBOX_RTASSERT_WITH_GDB
 # include <iprt/process.h>
 # include <iprt/path.h>
@@ -51,6 +62,10 @@
 # include <iprt/asm.h>
 #endif
 
+#ifdef VBOX_RTASSERT_WITH_WAIT
+# include <signal.h>
+# include <unistd.h>
+#endif
 
 /**
  * Worker that we can wrap with error variable saving and restoring.
@@ -69,6 +84,35 @@ static bool rtAssertShouldPanicWorker(void)
     /* 'breakpoint' or 'panic' means default behaviour. */
     if (!strcmp(psz, "breakpoint") || !strcmp(psz, "panic"))
         return true;
+
+#ifdef VBOX_RTASSERT_WITH_WAIT
+    /* 'wait' - execute a sigwait(3) while a debugger is attached. */
+    if (!strcmp(psz, "wait"))
+    {
+        sigset_t signalMask, oldMask;
+        int      iSignal;
+        static pid_t lastPid = -1;
+
+        /* Only wait on the first assertion we hit per process fork, assuming
+         * the user will attach the debugger at once if they want to do so.
+         * For a clever solution to detect an attached debugger, see:
+         *   http://stackoverflow.com/a/8135517
+         * For now I preferred to keep things simple and hopefully reliable. */
+        if (lastPid == getpid())
+            return true;
+        lastPid = getpid();
+        /* Register signal that we are waiting for */
+        sigemptyset(&signalMask);
+        sigaddset(&signalMask, SIGUSR2);
+        RTAssertMsg2("Attach debugger (pid: %ld) and resume with SIGUSR2.\n", (long)lastPid);
+        pthread_sigmask(SIG_BLOCK, &signalMask, &oldMask);
+        /* Ignoring return status */
+        sigwait(&signalMask, &iSignal);
+        pthread_sigmask(SIG_SETMASK, &oldMask, NULL);
+        /* Breakpoint no longer needed. */
+        return false;
+    }
+#endif
 
 #ifdef VBOX_RTASSERT_WITH_GDB
     /* 'gdb' - means try launch a gdb session in xterm. */
