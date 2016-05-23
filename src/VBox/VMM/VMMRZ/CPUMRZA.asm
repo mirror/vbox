@@ -81,8 +81,6 @@ SEH64_END_PROLOGUE
         ;; @todo What about XCR0?
  %ifdef IN_RING0
         mov     [pCpumCpu + CPUMCPU.Host.cr0Fpu], xCX
- %else
-  %error "Huh?"
  %endif
 %endif
         ;
