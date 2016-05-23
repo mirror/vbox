@@ -1120,20 +1120,6 @@ typedef enum XAPICDELIVERYMODE
 /** @} */
 
 /**
- * APIC operating modes.
- *
- * The values match hardware states.
- * See Intel spec. 10.12.1 "Detecting and Enabling x2APIC Mode".
- */
-typedef enum APICMODE
-{
-    APICMODE_DISABLED = 0,
-    APICMODE_INVALID,
-    APICMODE_XAPIC,
-    APICMODE_X2APIC
-} APICMODE;
-
-/**
  * APIC Pending-Interrupt Bitmap (PIB).
  */
 typedef struct APICPIB

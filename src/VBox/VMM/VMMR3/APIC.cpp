@@ -1459,16 +1459,16 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate APIC settings.
      */
-    int rc = CFGMR3ValidateConfig(pCfg, "/APIC/",
-                                  "RZEnabled"
-                                  "|Mode"
-                                  "|IOAPIC"
-                                  "|NumCPUs",
-                                  "" /* pszValidNodes */, "APIC" /* pszWho */, 0 /* uInstance */);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
+                                    "Mode\0"
+                                    "IOAPIC\0"
+                                    "NumCPUs\0"))
+    {
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("APIC configuration error: unknown option specified"));
+    }
 
-    rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pApic->fRZEnabled, true);
+    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pApic->fRZEnabled, true);
     AssertLogRelRCReturn(rc, rc);
 
     rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &pApic->fIoApicPresent, true);

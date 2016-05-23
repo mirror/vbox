@@ -140,6 +140,19 @@
 /** Offset of LVT extended range end (inclusive). */
 #define XAPIC_OFF_LVT_EXT_END                XAPIC_OFF_LVT_CMCI
 
+/**
+ * APIC operating modes.
+ *
+ * The values match hardware states.
+ * See Intel spec. 10.12.1 "Detecting and Enabling x2APIC Mode".
+ */
+typedef enum APICMODE
+{
+    APICMODE_DISABLED = 0,
+    APICMODE_INVALID,
+    APICMODE_XAPIC,
+    APICMODE_X2APIC
+} APICMODE;
 
 RT_C_DECLS_BEGIN
 

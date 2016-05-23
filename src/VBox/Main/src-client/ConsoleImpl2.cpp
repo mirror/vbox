@@ -71,6 +71,7 @@
 #include <VBox/param.h>
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
+#include <VBox/vmm/apic.h>   /* For APICMODE enum. */
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
@@ -1032,19 +1033,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         /* Adjust firmware APIC handling to stay within the VCPU limits. */
-	if (uFwAPIC == 2 && !fEnableX2APIC)
-	{
-	    if (fEnableAPIC)
-	        uFwAPIC = 1;
-	    else
-		uFwAPIC = 0;
-	    LogRel(("Limiting the firmware APIC level from x2APIC to %s\n", fEnableAPIC ? "APIC" : "Disabled"));
-	}
-	else if (uFwAPIC == 1 && !fEnableAPIC)
-	{
-	    uFwAPIC = 0;
-	    LogRel(("Limiting the firmware APIC level from APIC to Disabled\n"));
-	}
+        if (uFwAPIC == 2 && !fEnableX2APIC)
+        {
+            if (fEnableAPIC)
+                uFwAPIC = 1;
+            else
+                uFwAPIC = 0;
+            LogRel(("Limiting the firmware APIC level from x2APIC to %s\n", fEnableAPIC ? "APIC" : "Disabled"));
+        }
+        else if (uFwAPIC == 1 && !fEnableAPIC)
+        {
+            uFwAPIC = 0;
+            LogRel(("Limiting the firmware APIC level from APIC to Disabled\n"));
+        }
 
         /*
          * Hardware virtualization extensions.
@@ -1601,12 +1602,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
             InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
-            uint32_t uAPICMode = 2;
+            APICMODE enmAPICMode = APICMODE_XAPIC;
             if (fEnableX2APIC)
-                uAPICMode = 3;
+                enmAPICMode = APICMODE_X2APIC;
             else if (!fEnableAPIC)
-                uAPICMode = 0;
-            InsertConfigInteger(pCfg,  "Mode", uAPICMode);
+                enmAPICMode = APICMODE_DISABLED;
+            InsertConfigInteger(pCfg,  "Mode", enmAPICMode);
             InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
 
             if (fIOAPIC)
