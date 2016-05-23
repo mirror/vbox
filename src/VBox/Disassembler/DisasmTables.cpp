@@ -695,8 +695,8 @@ const DISOPCODE g_aTwoByteMapX86_PF66[256] =
     /* 1 */
     OP("movupd %Vpd,%Wpd",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVUPD,  OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movupd %Wpd,%Vpd",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVUPD,  OP_PARM_Wpd,        OP_PARM_Vpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("movlpd %Vq,%Ws",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVLPD,  OP_PARM_Vq,         OP_PARM_Ws,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movlpd %Vq,%Wq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVLPD,  OP_PARM_Vq,         OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("movlpd %Wq,%Vq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVLPD,  OP_PARM_Wq,         OP_PARM_Vq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("unpcklpd %Vpd,%Wq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_UNPCKLPD,OP_PARM_Vpd,        OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("unpckhpd %Vpd,%Wq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_UNPCKHPD,OP_PARM_Vpd,        OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movhpd %Vq,%Wq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVHPD,  OP_PARM_Vq,         OP_PARM_Wq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -761,7 +761,7 @@ const DISOPCODE g_aTwoByteMapX86_PF66[256] =
     OP("addpd %Vpd,%Wpd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_ADDPD,   OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mulpd %Vpd,%Wpd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MULPD,   OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("cvtpd2ps %Vps,%Wpd", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_CVTPD2PS,OP_PARM_Vps,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("cvtps2dq %Vpq,%Wps", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_CVTPS2DQ,OP_PARM_Vpq,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("cvtps2dq %Vdq,%Wps", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_CVTPS2DQ,OP_PARM_Vdq,        OP_PARM_Wps,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("subpd %Vpd,%Wpd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_SUBPD,   OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("minpd %Vpd,%Wpd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MINPD,   OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("divpd %Vpd,%Wpd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_DIVPD,   OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),

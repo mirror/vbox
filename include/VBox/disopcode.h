@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,8 @@
 
 #ifndef ___VBox_disopcode_h
 #define ___VBox_disopcode_h
+
+#include <iprt/assert.h>
 
 #define MODRM_MOD(a)    (a>>6)
 #define MODRM_REG(a)    ((a>>3)&0x7)
@@ -52,7 +54,11 @@ enum OPCODES
     OP_REPE,
     OP_REX,
     OP_LOCK,
+#ifndef IN_SLICKEDIT
     OP_LAST_PREFIX = OP_LOCK, /**< Last prefix for disassembler. */
+#else
+    OP_LAST_PREFIX = 7, /**< Last prefix for disassembler. */
+#endif
     OP_AND,
     OP_OR,
     OP_DAA,
@@ -759,6 +765,7 @@ enum OPCODES
     OP_MOVSXD
 /** @} */
 };
+AssertCompile(OP_LOCK == 7);
 /** @} */
 
 
@@ -872,6 +879,12 @@ enum OP_PARM
     OP_PARM_REG_GEN64_END = OP_PARM_REG_R15
 };
 
+/*
+ * Note! We don't document anything here if we can help it, because it we love
+ *       wasting other peoples time figuring out crypting crap.  The new VEX
+ *       stuff of course uphelds this vexing tradition.  Aaaaaaaaaaaaaaaaaaarg!
+ */
+
 #define OP_PARM_VTYPE(a)        ((unsigned)a & 0xFE0)
 #define OP_PARM_VSUBTYPE(a)     ((unsigned)a & 0x01F)
 
@@ -904,25 +917,24 @@ enum OP_PARM
 #define OP_PARM_L               0x460
 
 #define OP_PARM_NONE            0
-#define OP_PARM_a               0x1
-#define OP_PARM_b               0x2
-#define OP_PARM_d               0x3
-#define OP_PARM_dq              0x4
-#define OP_PARM_p               0x5
-#define OP_PARM_pd              0x6
-#define OP_PARM_pi              0x7
-#define OP_PARM_ps              0x8
-#define OP_PARM_pq              0x9
-#define OP_PARM_q               0xA
-#define OP_PARM_s               0xB
-#define OP_PARM_sd              0xC
-#define OP_PARM_ss              0xD
-#define OP_PARM_v               0xE
-#define OP_PARM_w               0xF
-#define OP_PARM_x               0x10
-#define OP_PARM_y               0x11
-#define OP_PARM_z               0x12
-#define OP_PARM_qq              0x13
+#define OP_PARM_a               0x1     /**< Operand to bound instruction. */
+#define OP_PARM_b               0x2     /**< Byte (always). */
+#define OP_PARM_d               0x3     /**< Double word (always).  */
+#define OP_PARM_dq              0x4     /**< Double quad word (always). */
+#define OP_PARM_p               0x5     /**< Far pointer (subject to opsize). */
+#define OP_PARM_pd              0x6     /**< 128-bit or 256-bit double precision floating point data. */
+#define OP_PARM_pi              0x7     /**< Quad word MMX register. */
+#define OP_PARM_ps              0x8     /**< 128-bit or 256-bit single precision floating point data. */
+#define OP_PARM_q               0xA     /**< Quad word (always). */
+#define OP_PARM_s               0xB     /**< Descriptor table size (SIDT/LIDT/SGDT/LGDT). */
+#define OP_PARM_sd              0xC     /**< Scalar element of 128-bit double precision floating point data. */
+#define OP_PARM_ss              0xD     /**< Scalar element of 128-bit single precision floating point data. */
+#define OP_PARM_v               0xE     /**< Word, double word, or quad word depending on opsize. */
+#define OP_PARM_w               0xF     /**< Word (always). */
+#define OP_PARM_x               0x10    /**< Double quad word (dq) or quad quad word (qq) depending on opsize. */
+#define OP_PARM_y               0x11    /**< Double word or quad word depending on opsize. */
+#define OP_PARM_z               0x12    /**< Word (16-bit opsize) or double word (32-bit/64-bit opsize). */
+#define OP_PARM_qq              0x13    /**< Quad quad word. */
 
 
 #define OP_PARM_Ap              (OP_PARM_A+OP_PARM_p)
@@ -985,7 +997,7 @@ enum OP_PARM
 #define OP_PARM_Vx              (OP_PARM_V+OP_PARM_x)
 #define OP_PARM_Vy              (OP_PARM_V+OP_PARM_y)
 #define OP_PARM_Wq              (OP_PARM_W+OP_PARM_q)
-#define OP_PARM_Ws              (OP_PARM_W+OP_PARM_s)
+//#define OP_PARM_Ws              (OP_PARM_W+OP_PARM_s) - wtf? Same as lgdt (OP_PARM_Ms)?
 #define OP_PARM_Wx              (OP_PARM_W+OP_PARM_x)
 #define OP_PARM_Xb              (OP_PARM_X+OP_PARM_b)
 #define OP_PARM_Xv              (OP_PARM_X+OP_PARM_v)
@@ -1009,7 +1021,6 @@ enum OP_PARM
 #define OP_PARM_Qdq             (OP_PARM_Q+OP_PARM_dq)
 #define OP_PARM_Vsd             (OP_PARM_V+OP_PARM_sd)
 #define OP_PARM_Wsd             (OP_PARM_W+OP_PARM_sd)
-#define OP_PARM_Vpq             (OP_PARM_V+OP_PARM_pq)
 #define OP_PARM_Vqq             (OP_PARM_V+OP_PARM_qq)
 #define OP_PARM_Pdq             (OP_PARM_P+OP_PARM_dq)
 #define OP_PARM_Ups             (OP_PARM_U+OP_PARM_ps)

@@ -203,54 +203,84 @@ static const unsigned g_aRegHidSegIndex[] =
 DISDECL(int) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
 {
     unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
-
-    if (subtype == OP_PARM_v)
-    {
-        switch (pDis->uOpMode)
-        {
-        case DISCPUMODE_32BIT:
-            subtype = OP_PARM_d;
-            break;
-        case DISCPUMODE_64BIT:
-            subtype = OP_PARM_q;
-            break;
-        case DISCPUMODE_16BIT:
-            subtype = OP_PARM_w;
-            break;
-        default:
-            /* make gcc happy */
-            break;
-        }
-    }
-
     switch (subtype)
     {
-    case OP_PARM_b:
-        return 1;
+        case OP_PARM_v:
+            switch (pDis->uOpMode)
+            {
+                case DISCPUMODE_32BIT:
+                    return 4;
+                case DISCPUMODE_64BIT:
+                    return 8;
+                case DISCPUMODE_16BIT:
+                    return 2;
+                default: AssertFailed(); /* make gcc happy */ return 4;
+            }
+            break;
 
-    case OP_PARM_w:
-        return 2;
+        case OP_PARM_b:
+            return 1;
 
-    case OP_PARM_d:
-        return 4;
+        case OP_PARM_w:
+            return 2;
 
-    case OP_PARM_q:
-    case OP_PARM_dq:
-        return 8;
+        case OP_PARM_d:
+            return 4;
 
-    case OP_PARM_p: /* far pointer */
-        if (pDis->uAddrMode == DISCPUMODE_32BIT)
-            return 6;   /* 16:32 */
-        else
-        if (pDis->uAddrMode == DISCPUMODE_64BIT)
-            return 12;  /* 16:64 */
-        else
-            return 4;   /* 16:16 */
+        case OP_PARM_q:
+            return 8;
 
-    default:
-        if (pParam->cb)
-            return pParam->cb;
-        else //@todo dangerous!!!
+        case OP_PARM_dq:
+            return 16;
+
+        case OP_PARM_qq:
+            return 32;
+
+        case 0: /* nop, pause, lea, wrmsr, rdmsr, etc.  Most of these due to DISOPPARAM::cb being initialized in the wrong place
+                   (disParseInstruction) where it will be called on intermediate stuff like IDX_ParseTwoByteEsc.  The parameter
+                   parsers should do it instead, though I see the potential filtering issue. */
+            //Assert(   pDis->pCurInstr
+            //       && (   pDis->pCurInstr->uOpcode == OP_NOP
+            //           || pDis->pCurInstr->uOpcode == OP_LEA ));
+            return 0;
+
+        case OP_PARM_p: /* far pointer */
+            if (pDis->uAddrMode == DISCPUMODE_32BIT)
+                return 6;   /* 16:32 */
+            if (pDis->uAddrMode == DISCPUMODE_64BIT)
+                return 12;  /* 16:64 */
+            return 4;       /* 16:16 */
+
+        case OP_PARM_s: /* lgdt, sgdt, lidt, sidt */
+            return pDis->uCpuMode == DISCPUMODE_64BIT ? 2 + 8 : 2 + 4;
+
+        case OP_PARM_a:
+            return pDis->uOpMode == DISCPUMODE_16BIT ? 2 + 2 : 4 + 4;
+
+        case OP_PARM_pi:
+            return 8;
+
+        case OP_PARM_sd:
+        case OP_PARM_ss:
+            return 16;
+
+        case OP_PARM_x:
+        case OP_PARM_pd:
+        case OP_PARM_ps:
+            return VEXREG_IS256B(pDis->bVexDestReg) ? 32 : 16; //??
+
+        case OP_PARM_y:
+            return pDis->uOpMode == DISCPUMODE_64BIT ? 4 : 8;  //??
+
+        case OP_PARM_z:
+            return pDis->uOpMode == DISCPUMODE_16BIT ? 2 : 4;  //??
+
+        default:
+            if (pParam->cb)
+                return pParam->cb;
+            /// @todo dangerous!!!
+            AssertMsgFailed(("subtype=%#x fParam=%#x fUse=%#RX64 op=%#x\n", subtype, pParam->fParam, pParam->fUse,
+                             pDis->pCurInstr ? pDis->pCurInstr->uOpcode : 0));
             return 4;
     }
 }
