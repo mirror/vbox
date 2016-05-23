@@ -14582,7 +14582,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="type" type="MediumType">
+    <attribute name="type" type="MediumType" wrap-hint-server="passcaller">
       <desc>
         Type (role) of this medium.
 
@@ -14646,7 +14646,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="readOnly" type="boolean" readonly="yes">
+    <attribute name="readOnly" type="boolean" readonly="yes" wrap-hint-server="passcaller">
       <desc>
         Returns @c true if this medium is read-only and @c false otherwise.
 
@@ -15200,7 +15200,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- diff methods -->
 
-    <method name="createDiffStorage">
+    <method name="createDiffStorage" wrap-hint-server="passcaller">
       <desc>
         Starts creating an empty differencing storage unit based on this
         medium in the format and at the location defined by the @a target
@@ -15508,7 +15508,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="reset">
+    <method name="reset" wrap-hint-server="passcaller">
       <desc>
         Starts erasing the contents of this differencing medium.
 

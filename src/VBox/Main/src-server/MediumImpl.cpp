@@ -1523,10 +1523,14 @@ void Medium::uninit()
 {
     /* It is possible that some previous/concurrent uninit has already cleared
      * the pVirtualBox reference, and in this case we don't need to continue.
-     * Normally this would be handled through the AutoUninitSpan magic,
-     * however this cannot be done at this point as the media tree must be
-     * locked before reaching the AutoUninitSpan, otherwise deadlocks can
-     * happen due to*/
+     * Normally this would be handled through the AutoUninitSpan magic, however
+     * this cannot be done at this point as the media tree must be locked
+     * before reaching the AutoUninitSpan, otherwise deadlocks can happen.
+     *
+     * NOTE: The tree lock is higher priority than the medium caller and medium
+     * object locks, i.e. the medium caller may have to be released and be
+     * re-acquired in the right place later. See Medium::getParent() for sample
+     * code how to do this safely. */
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
     if (!pVirtualBox)
         return;
@@ -1730,8 +1734,9 @@ HRESULT Medium::getMediumFormat(ComPtr<IMediumFormat> &aMediumFormat)
     return S_OK;
 }
 
-HRESULT Medium::getType(MediumType_T *aType)
+HRESULT Medium::getType(AutoCaller &autoCaller, MediumType_T *aType)
 {
+    NOREF(autoCaller);
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aType = m->type;
@@ -1739,10 +1744,20 @@ HRESULT Medium::getType(MediumType_T *aType)
     return S_OK;
 }
 
-HRESULT Medium::setType(MediumType_T aType)
+HRESULT Medium::setType(AutoCaller &autoCaller, MediumType_T aType)
 {
-    // we access mParent and members
-    AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    autoCaller.release();
+
+    /* It is possible that some previous/concurrent uninit has already cleared
+     * the pVirtualBox reference, see #uninit(). */
+    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+
+    // we access m->pParent
+    AutoReadLock treeLock(!pVirtualBox.isNull() ? &pVirtualBox->i_getMediaTreeLockHandle() : NULL COMMA_LOCKVAL_SRC_POS);
+
+    autoCaller.add();
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
@@ -1884,7 +1899,7 @@ HRESULT Medium::getParent(AutoCaller &autoCaller, ComPtr<IMedium> &aParent)
      * the pVirtualBox reference, see #uninit(). */
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
-    /* we access mParent */
+    /* we access m->pParent */
     AutoReadLock treeLock(!pVirtualBox.isNull() ? &pVirtualBox->i_getMediaTreeLockHandle() : NULL COMMA_LOCKVAL_SRC_POS);
 
     autoCaller.add();
@@ -1927,8 +1942,10 @@ HRESULT Medium::getBase(AutoCaller &autoCaller, ComPtr<IMedium> &aBase)
     return S_OK;
 }
 
-HRESULT Medium::getReadOnly(BOOL *aReadOnly)
+HRESULT Medium::getReadOnly(AutoCaller &autoCaller, BOOL *aReadOnly)
 {
+    autoCaller.release();
+
     /* isReadOnly() will do locking */
     *aReadOnly = i_isReadOnly();
 
@@ -2586,16 +2603,30 @@ HRESULT Medium::deleteStorage(ComPtr<IProgress> &aProgress)
     return mrc;
 }
 
-HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
+HRESULT Medium::createDiffStorage(AutoCaller &autoCaller,
+                                  const ComPtr<IMedium> &aTarget,
                                   const std::vector<MediumVariant_T> &aVariant,
                                   ComPtr<IProgress> &aProgress)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     IMedium *aT = aTarget;
     ComObjPtr<Medium> diff = static_cast<Medium*>(aT);
 
-    // locking: we need the tree lock first because we access parent pointers
-    AutoMultiWriteLock3 alock(&m->pVirtualBox->i_getMediaTreeLockHandle(),
-                              this->lockHandle(), diff->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    autoCaller.release();
+
+    /* It is possible that some previous/concurrent uninit has already cleared
+     * the pVirtualBox reference, see #uninit(). */
+    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+
+    // we access m->pParent
+    AutoReadLock treeLock(!pVirtualBox.isNull() ? &pVirtualBox->i_getMediaTreeLockHandle() : NULL COMMA_LOCKVAL_SRC_POS);
+
+    autoCaller.add();
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoMultiWriteLock2 alock(this->lockHandle(), diff->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
     if (m->type == MediumType_Writethrough)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -2613,11 +2644,13 @@ HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
     /* Apply the normal locking logic to the entire chain. */
     MediumLockList *pMediumLockList(new MediumLockList());
     alock.release();
+    treeLock.release();
     HRESULT rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
                                               diff /* pToLockWrite */,
                                               false /* fMediumLockWriteAll */,
                                               this,
                                               *pMediumLockList);
+    treeLock.acquire();
     alock.acquire();
     if (FAILED(rc))
     {
@@ -2626,7 +2659,9 @@ HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
     }
 
     alock.release();
+    treeLock.release();
     rc = pMediumLockList->Lock();
+    treeLock.acquire();
     alock.acquire();
     if (FAILED(rc))
     {
@@ -2642,11 +2677,14 @@ HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
         /* since this medium has been just created it isn't associated yet */
         diff->m->llRegistryIDs.push_back(parentMachineRegistry);
         alock.release();
+        treeLock.release();
         diff->i_markRegistriesModified();
+        treeLock.acquire();
         alock.acquire();
     }
 
     alock.release();
+    treeLock.release();
 
     ComObjPtr<Progress> pProgress;
 
@@ -2672,6 +2710,9 @@ HRESULT Medium::mergeTo(const ComPtr<IMedium> &aTarget,
                         ComPtr<IProgress> &aProgress)
 {
 
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     IMedium *aT = aTarget;
 
     ComAssertRet(aT != this, E_INVALIDARG);
@@ -2716,6 +2757,9 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
                         const ComPtr<IMedium> &aParent,
                         ComPtr<IProgress> &aProgress)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     ComAssertRet(aTarget != this, E_INVALIDARG);
 
     IMedium *aT = aTarget;
@@ -3009,7 +3053,7 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
     return rc;
 }
 
-HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
+HRESULT Medium::reset(AutoCaller &autoCaller, ComPtr<IProgress> &aProgress)
 {
     HRESULT rc = S_OK;
     ComObjPtr<Progress> pProgress;
@@ -3017,10 +3061,19 @@ HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
 
     try
     {
+        autoCaller.release();
+
+        /* It is possible that some previous/concurrent uninit has already
+         * cleared the pVirtualBox reference, see #uninit(). */
+        ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+
         /* canClose() needs the tree lock */
-        AutoMultiWriteLock2 multilock(&m->pVirtualBox->i_getMediaTreeLockHandle(),
+        AutoMultiWriteLock2 multilock(!pVirtualBox.isNull() ? &pVirtualBox->i_getMediaTreeLockHandle() : NULL,
                                       this->lockHandle()
                                       COMMA_LOCKVAL_SRC_POS);
+
+        autoCaller.add();
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
         LogFlowThisFunc(("ENTER for medium %s\n", m->strLocationFull.c_str()));
 
@@ -4033,7 +4086,7 @@ ComObjPtr<Medium> Medium::i_getBase(uint32_t *aLevel /*= NULL*/)
     if (!pVirtualBox)
         return pBase;
 
-    /* we access mParent */
+    /* we access m->pParent */
     AutoReadLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     AutoCaller autoCaller(this);
@@ -4076,7 +4129,7 @@ uint32_t Medium::i_getDepth()
     if (!pVirtualBox)
         return 1;
 
-    /* we access mParent */
+    /* we access m->pParent */
     AutoReadLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     uint32_t cDepth = 0;
@@ -4102,11 +4155,17 @@ uint32_t Medium::i_getDepth()
  */
 bool Medium::i_isReadOnly()
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), false);
+    /* it is possible that some previous/concurrent uninit has already cleared
+     * the pVirtualBox reference, and in this case we don't need to continue */
+    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+    if (!pVirtualBox)
+        return false;
 
     /* we access children */
     AutoReadLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), false);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -4233,11 +4292,11 @@ void Medium::i_saveSettingsOne(settings::Medium &data, const Utf8Str &strHardDis
 HRESULT Medium::i_saveSettings(settings::Medium &data,
                                const Utf8Str &strHardDiskFolder)
 {
+    /* we access m->pParent */
+    AutoReadLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* we access mParent */
-    AutoReadLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     i_saveSettingsOne(data, strHardDiskFolder);
 
@@ -4282,7 +4341,10 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
                                        Medium *pToBeParent,
                                        MediumLockList &mediumLockList)
 {
-    Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    /** @todo r=klaus this needs to be reworked, as the code below uses
+     * i_getParent without holding the tree lock, and changing this is
+     * a significant amount of effort. */
+    Assert(m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     Assert(!isWriteLockOnCurrentThread());
 
     AutoCaller autoCaller(this);
@@ -4650,6 +4712,9 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
 HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
                               bool aWait)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
     AutoCaller autoCaller(this);
@@ -4932,6 +4997,10 @@ HRESULT Medium::i_unmarkLockedForDeletion()
 HRESULT Medium::i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
                                                bool &fMergeForward)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. Likewise the code using this method seems
+     * problematic. */
     AssertReturn(pOther != NULL, E_FAIL);
     AssertReturn(pOther != this, E_FAIL);
 
@@ -5057,6 +5126,10 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                                  MediumLockList * &aChildrenToReparent,
                                  MediumLockList * &aMediumLockList)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. Likewise the code using this method seems
+     * problematic. */
     AssertReturn(pTarget != NULL, E_FAIL);
     AssertReturn(pTarget != this, E_FAIL);
 
@@ -5562,6 +5635,10 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
  */
 HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. Likewise the code using this method seems
+     * problematic. */
     Assert(!isWriteLockOnCurrentThread());
     Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     MediumLockList mediumLockList;
@@ -5741,6 +5818,9 @@ HRESULT Medium::i_importFile(const char *aFilename,
                              const ComObjPtr<Medium> &aParent,
                              const ComObjPtr<Progress> &aProgress)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     AssertPtrReturn(aFilename, E_INVALIDARG);
     AssertReturn(!aFormat.isNull(), E_INVALIDARG);
     AssertReturn(!aProgress.isNull(), E_INVALIDARG);
@@ -5837,6 +5917,9 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
                             const ComObjPtr<Medium> &aParent, IProgress **aProgress,
                             uint32_t idxSrcImageSame, uint32_t idxDstImageSame)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     CheckComArgNotNull(aTarget);
     CheckComArgOutPointerValid(aProgress);
     ComAssertRet(aTarget != this, E_INVALIDARG);
@@ -6032,7 +6115,7 @@ HRESULT Medium::i_getFilterProperties(std::vector<com::Utf8Str> &aReturnNames,
  *
  * @note Caller MUST NOT hold the media tree or medium lock.
  *
- * @note Locks mParent for reading. Locks this object for writing.
+ * @note Locks m->pParent for reading. Locks this object for writing.
  *
  * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
  * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent
@@ -6341,7 +6424,7 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
 
                     /* must drop the caller before taking the tree lock */
                     autoCaller.release();
-                    /* we set mParent & children() */
+                    /* we set m->pParent & children() */
                     treeLock.acquire();
                     autoCaller.add();
                     if (FAILED(autoCaller.rc()))
@@ -6366,7 +6449,7 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
                 {
                     /* must drop the caller before taking the tree lock */
                     autoCaller.release();
-                    /* we access mParent */
+                    /* we access m->pParent */
                     treeLock.acquire();
                     autoCaller.add();
                     if (FAILED(autoCaller.rc()))
@@ -6576,7 +6659,7 @@ HRESULT Medium::i_unregisterWithVirtualBox()
     /* Note that we need to de-associate ourselves from the parent to let
      * VirtualBox::i_unregisterMedium() properly save the registry */
 
-    /* we modify mParent and access children */
+    /* we modify m->pParent and access children */
     Assert(m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     Medium *pParentBackup = m->pParent;
@@ -7437,6 +7520,9 @@ HRESULT Medium::i_runNow(Medium::Task *pTask)
  */
 HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     HRESULT rc = S_OK;
 
     /* these parameters we need after creation */
@@ -7580,6 +7666,9 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
  */
 HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
@@ -7800,6 +7889,9 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
  */
 HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
@@ -8110,6 +8202,9 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
  */
 HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
@@ -8319,7 +8414,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
     /* Only do the parent changes for newly created media. */
     if (SUCCEEDED(mrc) && fCreatingTarget)
     {
-        /* we set mParent & children() */
+        /* we set m->pParent & children() */
         AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         Assert(pTarget->m->pParent.isNull());
@@ -9048,6 +9143,9 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
  */
 HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
 {
+    /** @todo r=klaus The code below needs to be double checked with regard
+     * to lock order violations, it probably causes lock order issues related
+     * to the AutoCaller usage. */
     HRESULT rcTmp = S_OK;
 
     const ComObjPtr<Medium> &pParent = task.mParent;
@@ -9217,7 +9315,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
     /* Only do the parent changes for newly created media. */
     if (SUCCEEDED(mrc) && fCreatingTarget)
     {
-        /* we set mParent & children() */
+        /* we set m->pParent & children() */
         AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         Assert(m->pParent.isNull());
