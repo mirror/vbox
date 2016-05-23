@@ -1013,7 +1013,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         /*
          * Temporary(?) hack to make sure we emulate the ancient 16-bit CPUs
-         * correctly.   There are way to many #UDs we'll miss using VT-x,
+         * correctly.   There are way too many #UDs we'll miss using VT-x,
          * raw-mode or qemu for the 186 and 286, while we'll get undefined opcodes
          * dead wrong on 8086 (see http://www.os2museum.com/wp/undocumented-8086-opcodes/).
          */
