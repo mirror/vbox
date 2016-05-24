@@ -24,6 +24,12 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
+
+# Need proper shell on windows.
+DEPTH = ../../../../..
+include $(KBUILD_PATH)/header.kmk
+
+
 GENERATED_FILES = TestManagerDatabaseComments.pgsql
 PSQL := $(firstword $(which $(foreach pgver, 92 91 90,psql$(pgver)) ) psql)
 PSQL_OPTS = -U postgres
@@ -35,7 +41,7 @@ clean:
 
 
 TestManagerDatabaseComments.pgsql: TestManagerDatabaseInit.pgsql gen-sql-comments.py
-	LC_ALL=C python gen-sql-comments.py $< > $@
+	LC_ALL=C $(VBOX_BLD_PYTHON) gen-sql-comments.py $< > $@
 
 
 load-testmanager-db: \
