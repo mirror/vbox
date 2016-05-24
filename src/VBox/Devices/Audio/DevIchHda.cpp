@@ -3844,7 +3844,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
         PHDADRIVER pDrv;
         RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
         {
-            PAUDMIXSTREAM pMixStream;
+            PAUDMIXSTREAM pMixStream = NULL;
             switch (enmMixerCtl)
             {
                 /*
@@ -3882,8 +3882,11 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     break;
             }
 
-            AudioMixerSinkRemoveStream(pSink->pMixSink, pMixStream);
-            AudioMixerStreamDestroy(pMixStream);
+            if (pMixStream)
+            {
+                AudioMixerSinkRemoveStream(pSink->pMixSink, pMixStream);
+                AudioMixerStreamDestroy(pMixStream);
+            }
         }
 
         AudioMixerSinkRemoveAllStreams(pSink->pMixSink);
@@ -4244,7 +4247,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
                 break;
         }
 
-        uint32_t cbProcessed;
+        uint32_t cbProcessed = 0;
         if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN)
             rc = hdaReadAudio (pThis, pStream, cbLeft, &cbProcessed);
         else
