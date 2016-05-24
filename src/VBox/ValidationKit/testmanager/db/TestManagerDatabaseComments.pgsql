@@ -157,6 +157,10 @@ COMMENT ON COLUMN BuildSources.iLastRevision IS
   'The last subversion tree revision to match, no upper limit if NULL.';
 
 
+COMMENT ON COLUMN BuildSources.cSecMaxAge IS
+  'The maximum age of the builds in seconds, unlimited if NULL.';
+
+
 COMMENT ON TABLE TestCases IS
   'Test case configuration.
 
@@ -626,6 +630,16 @@ COMMENT ON COLUMN TestBoxes.sCpuArch IS
   'Same as kBuild - x86, amd64, ... See KBUILD_ARCHES.';
 
 
+COMMENT ON COLUMN TestBoxes.sCpuName IS
+  'The CPU name if available.';
+
+
+COMMENT ON COLUMN TestBoxes.lCpuRevision IS
+  'Number identifying the CPU family/model/stepping/whatever.
+For x86 and AMD64 type CPUs, this will on the following format:
+  (EffFamily << 24) | (EffModel << 8) | Stepping.';
+
+
 COMMENT ON COLUMN TestBoxes.cCpus IS
   'Number of CPUs, CPU cores and CPU threads.';
 
@@ -652,6 +666,10 @@ COMMENT ON COLUMN TestBoxes.cMbMemory IS
 
 COMMENT ON COLUMN TestBoxes.cMbScratch IS
   'The amount of scratch space in megabytes (rounded down to nearest 64 MB).';
+
+
+COMMENT ON COLUMN TestBoxes.sReport IS
+  'Free form hardware and software report field.';
 
 
 COMMENT ON COLUMN TestBoxes.iTestBoxScriptRev IS
@@ -863,8 +881,12 @@ COMMENT ON COLUMN BuildCategories.sProduct IS
 The product name.  For instance ''VBox'' or ''VBoxTestSuite''.';
 
 
+COMMENT ON COLUMN BuildCategories.sRepository IS
+  'The version control repository name.';
+
+
 COMMENT ON COLUMN BuildCategories.sBranch IS
-  'The branch name.';
+  'The branch name (in the version control system).';
 
 
 COMMENT ON COLUMN BuildCategories.sType IS
@@ -947,6 +969,44 @@ The binaries have paths relative to the TESTBOX_PATH_BUILDS or full URLs.';
 
 COMMENT ON COLUMN Builds.fBinariesDeleted IS
   'Set when the binaries gets deleted by the build quota script.';
+
+
+COMMENT ON TABLE VcsRevisions IS
+  'This table is for translating build revisions into commit details.
+
+For graphs and test results, it would be useful to translate revisions into
+dates and maybe provide commit message and the committer.
+
+Data is entered exclusively thru one or more batch jobs, so no internal
+authorship needed.  Also, since we''re mirroring data from external sources
+here, the batch job is allowed to update/replace existing records.
+
+@todo We we could collect more info from the version control systems, if we
+      believe it''s useful and can be presented in a reasonable manner.
+      Getting a list of affected files would be simple (requires
+      a separate table with a M:1 relationship to this table), or try
+      associate a commit to a branch.';
+
+
+COMMENT ON COLUMN VcsRevisions.sRepository IS
+  'The version control tree name.';
+
+
+COMMENT ON COLUMN VcsRevisions.iRevision IS
+  'The version control tree revision number.';
+
+
+COMMENT ON COLUMN VcsRevisions.tsCreated IS
+  'When the revision was created (committed).';
+
+
+COMMENT ON COLUMN VcsRevisions.sAuthor IS
+  'The name of the committer.
+@note Not to be confused with uidAuthor and test manager users.';
+
+
+COMMENT ON COLUMN VcsRevisions.sMessage IS
+  'The commit message.';
 
 
 COMMENT ON TABLE TestResultStrTab IS
@@ -1139,6 +1199,14 @@ COMMENT ON INDEX TestSetsGangIdx IS
   'The test set of the gang leader, NULL if no gang involved.
 @note This is set by the gang leader as well, so that we can find all
       gang members by WHERE idTestSetGangLeader = :id.';
+
+
+COMMENT ON INDEX TestSetsDoneCreatedBuildCatIdx IS
+  'The TestSetsDoneCreatedBuildCatIdx is for testbox results, graph options and such.';
+
+
+COMMENT ON INDEX TestSetsGraphBoxIdx IS
+  'For graphs.';
 
 
 COMMENT ON TYPE TestBoxState_T IS
