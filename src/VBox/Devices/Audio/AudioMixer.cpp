@@ -981,7 +981,7 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream)
 bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
 {
     if (   !pMixStream
-        && !pMixStream->pConn)
+        || !pMixStream->pConn)
     {
         return false;
     }
