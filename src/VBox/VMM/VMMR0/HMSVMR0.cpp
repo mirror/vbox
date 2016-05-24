@@ -1772,7 +1772,7 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
             /* Restore longjmp state. */
             VMMRZCallRing3Enable(pVCpu);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPreempt);
+            STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatSwitchPreempt);
             break;
         }
 
