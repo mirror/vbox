@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -113,48 +113,12 @@ private:
     HRESULT i_checkAndSwitchFromNatNetworking(com::Utf8Str networkName);
     HRESULT i_switchToNatNetworking(const com::Utf8Str &aNatNetworkName);
 
-    typedef std::map<com::Utf8Str, com::Utf8Str> StringsMap;
-
-    struct Data
-    {
-        Data() : mSlot(0),
-                 mEnabled(FALSE),
-                 mAttachmentType(NetworkAttachmentType_Null),
-                 mCableConnected(TRUE),
-                 mLineSpeed(0),
-                 mPromiscModePolicy(NetworkAdapterPromiscModePolicy_Deny),
-                 mTraceEnabled(FALSE),
-                 mBridgedInterface("") /* cannot be null */,
-                 mHostOnlyInterface("") /* cannot be null */,
-                 mNATNetwork("") /* cannot be null */,
-                 mBootPriority(0)
-        {}
-
-        NetworkAdapterType_T mAdapterType;
-        ULONG mSlot;
-        BOOL mEnabled;
-        com::Utf8Str mMACAddress;
-        NetworkAttachmentType_T mAttachmentType;
-        BOOL mCableConnected;
-        ULONG mLineSpeed;
-        NetworkAdapterPromiscModePolicy_T mPromiscModePolicy;
-        BOOL mTraceEnabled;
-        com::Utf8Str mTraceFile;
-        com::Utf8Str mBridgedInterface;
-        com::Utf8Str mHostOnlyInterface;
-        com::Utf8Str mInternalNetwork;
-        com::Utf8Str mNATNetwork;
-        com::Utf8Str mGenericDriver;
-        StringsMap mGenericProperties;
-        ULONG mBootPriority;
-        com::Utf8Str mBandwidthGroup;
-    };
 
     Machine * const     mParent;
     const ComObjPtr<NetworkAdapter> mPeer;
     const ComObjPtr<NATEngine> mNATEngine;
 
-    Backupable<Data>    mData;
+    Backupable<settings::NetworkAdapter> mData;
 };
 
 #endif // ____H_NETWORKADAPTER
