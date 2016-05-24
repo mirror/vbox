@@ -1699,8 +1699,12 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,      "Number of EOI writes.", "/Devices/APIC/%u/EoiWrite");
         APIC_REG_COUNTER(&pApicCpu->StatMaskedByTpr,   "Number of times TPR masks an interrupt in APICGetInterrupt.",
                          "/Devices/APIC/%u/MaskedByTpr");
-        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "Number of time PPR masks an interrupt in APICGetInterrupt.",
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "Number of times PPR masks an interrupt in APICGetInterrupt.",
                          "/Devices/APIC/%u/MaskedByPpr");
+        APIC_REG_COUNTER(&pApicCpu->StatTimerIcrWrite, "Number of times the timer ICR is written.",
+                         "/Devices/APIC/%u/TimerIcrWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatIcrLoWrite,    "Number of times the ICR Lo (send IPI) is written.",
+                         "/Devices/APIC/%u/IcrLoWrite");
     }
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER

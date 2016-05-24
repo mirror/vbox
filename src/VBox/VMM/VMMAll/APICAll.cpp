@@ -1031,6 +1031,7 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
     PXAPICPAGE pXApicPage  = VMCPU_TO_XAPICPAGE(pVCpu);
     pXApicPage->icr_lo.all.u32IcrLo = uIcrLo & XAPIC_ICR_LO_WR_VALID;
     Log2(("APIC%u: apicSetIcrLo: uIcrLo=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrLoWrite);
 
     return apicSendIpi(pVCpu, rcRZ);
 }
@@ -1345,12 +1346,13 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPU pVCpu, int rcBusy, uint32_t uInitialC
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     PTMTIMER   pTimer     = pApicCpu->CTX_SUFF(pTimer);
 
+    Log2(("APIC%u: apicSetTimerIcr: uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
+    STAM_COUNTER_INC(&pApicCpu->StatTimerIcrWrite);
+
     /* In TSC-deadline mode, timer ICR writes are ignored, see Intel spec. 10.5.4.1 "TSC-Deadline Mode". */
     if (   pApic->fSupportsTscDeadline
         && pXApicPage->lvt_timer.u.u2TimerMode == XAPIC_TIMER_MODE_TSC_DEADLINE)
         return VINF_SUCCESS;
-
-    Log2(("APIC%u: apicSetTimerIcr: uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
 
     /*
      * The timer CCR may be modified by apicR3TimerCallback() in parallel,

@@ -1355,6 +1355,10 @@ typedef struct APICCPU
     STAMCOUNTER                 StatMaskedByTpr;
     /** Number of times PPR masks an interrupt in APICGetInterrupt(). */
     STAMCOUNTER                 StatMaskedByPpr;
+    /** Number of times the timer ICR is written. */
+    STAMCOUNTER                 StatTimerIcrWrite;
+    /** Number of times the ICR Lo (send IPI) is written. */
+    STAMCOUNTER                 StatIcrLoWrite;
     /** @} */
 #endif
 } APICCPU;
