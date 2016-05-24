@@ -293,11 +293,11 @@ HRESULT NetworkAdapter::setEnabled(BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->fEnabled != aEnabled)
+    if (mData->fEnabled != RT_BOOL(aEnabled))
     {
         mData.backup();
         mData->fEnabled = aEnabled;
-        if (aEnabled && mData->strMACAddress.isEmpty())
+        if (RT_BOOL(aEnabled) && mData->strMACAddress.isEmpty())
             i_generateMACAddress();
 
         // leave the lock before informing callbacks
@@ -705,10 +705,10 @@ HRESULT NetworkAdapter::setCableConnected(BOOL aConnected)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (aConnected != mData->fCableConnected)
+    if (RT_BOOL(aConnected) != mData->fCableConnected)
     {
         mData.backup();
-        mData->fCableConnected = aConnected;
+        mData->fCableConnected = RT_BOOL(aConnected);
 
         // leave the lock before informing callbacks
         alock.release();
@@ -825,10 +825,10 @@ HRESULT NetworkAdapter::setTraceEnabled(BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (aEnabled != mData->fTraceEnabled)
+    if (RT_BOOL(aEnabled) != mData->fTraceEnabled)
     {
         mData.backup();
-        mData->fTraceEnabled = aEnabled;
+        mData->fTraceEnabled = RT_BOOL(aEnabled);
 
         // leave the lock before informing callbacks
         alock.release();
@@ -1197,9 +1197,9 @@ void NetworkAdapter::i_applyDefaults(GuestOSType *aOsType)
         defaultType == NetworkAdapterType_I82543GC ||
         defaultType == NetworkAdapterType_I82545EM)
     {
-        if (e1000enabled) mData->mode = defaultType;
+        if (e1000enabled) mData->type = defaultType;
     }
-    else mData->mode = defaultType;
+    else mData->type = defaultType;
 
     /* Enable the first one adapter to the NAT */
     if (mData->ulSlot == 0)
@@ -1207,7 +1207,7 @@ void NetworkAdapter::i_applyDefaults(GuestOSType *aOsType)
         mData->fEnabled = true;
         if (mData->strMACAddress.isEmpty())
             i_generateMACAddress();
-        mData->type = NetworkAttachmentType_NAT;
+        mData->mode = NetworkAttachmentType_NAT;
     }
     mData->fCableConnected = true;
 }
