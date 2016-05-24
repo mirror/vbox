@@ -15,13 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  * --------------------------------------------------------------------
  */
-#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
-#include <VBox/log.h>
-#include "DrvAudio.h"
-#include "AudioMixBuffer.h"
-
-#include "VBoxDD.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -31,7 +24,15 @@
 
 #include <iprt/alloc.h>
 #include <iprt/uuid.h> /* For PDMIBASE_2_PDMDRV. */
+
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
+#include <VBox/log.h>
 #include <VBox/vmm/pdmaudioifs.h>
+
+#include "DrvAudio.h"
+#include "AudioMixBuffer.h"
+
+#include "VBoxDD.h"
 
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
@@ -79,7 +80,7 @@ typedef struct OSSAUDIOSTREAMCFG
 typedef struct OSSAUDIOSTREAMIN
 {
     /** Note: Always must come first! */
-    PDMAUDIOHSTSTRMIN  pStreamIn;
+    PDMAUDIOSTREAM     pStreamIn;
     int                hFile;
     int                cFragments;
     int                cbFragmentSize;
@@ -93,7 +94,7 @@ typedef struct OSSAUDIOSTREAMIN
 typedef struct OSSAUDIOSTREAMOUT
 {
     /** Note: Always must come first! */
-    PDMAUDIOHSTSTRMOUT  pStreamOut;
+    PDMAUDIOSTREAM      pStreamOut;
     int                 hFile;
     int                 cFragments;
     int                 cbFragmentSize;
@@ -332,11 +333,11 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pReq,
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioControlIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn,
-                                                   PDMAUDIOSTREAMCMD enmStreamCmd)
+static int ossControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
+                              PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     NOREF(pInterface);
-    NOREF(pHstStrmIn);
+    NOREF(pStream);
     NOREF(enmStreamCmd);
 
     /** @todo Nothing to do here right now!? */
@@ -344,18 +345,18 @@ static DECLCALLBACK(int) drvHostOSSAudioControlIn(PPDMIHOSTAUDIO pInterface, PPD
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut,
-                                                   PDMAUDIOSTREAMCMD enmStreamCmd)
+static int ossControlStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
+                               PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     NOREF(pInterface);
-    AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    POSSAUDIOSTREAMOUT pThisStrmOut = (POSSAUDIOSTREAMOUT)pHstStrmOut;
+    POSSAUDIOSTREAMOUT pThisStream = (POSSAUDIOSTREAMOUT)pStream;
 
 #ifdef RT_OS_L4
     return VINF_SUCCESS;
 #else
-    if (!pThisStrmOut->fMemMapped)
+    if (!pThisStream->fMemMapped)
         return VINF_SUCCESS;
 #endif
 
@@ -366,11 +367,11 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            DrvAudioClearBuf(&pHstStrmOut->Props,
-                             pThisStrmOut->pvBuf, pThisStrmOut->cbBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
+            DrvAudioClearBuf(&pStream->Props,
+                             pThisStream->pvBuf, pThisStream->cbBuf, AudioMixBufSize(&pStream->MixBuf));
 
             mask = PCM_ENABLE_OUTPUT;
-            if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
+            if (ioctl(pThisStream->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
             {
                 LogRel(("OSS: Failed to enable output stream: %s\n", strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
@@ -383,7 +384,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
             mask = 0;
-            if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
+            if (ioctl(pThisStream->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
             {
                 LogRel(("OSS: Failed to disable output stream: %s\n", strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
@@ -411,17 +412,17 @@ static DECLCALLBACK(int) drvHostOSSAudioInit(PPDMIHOSTAUDIO pInterface)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn,
-                                                  uint32_t *pcSamplesCaptured)
+static DECLCALLBACK(int) drvHostOSSAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
+                                                      uint32_t *pcSamplesCaptured)
 {
     NOREF(pInterface);
-    AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pHstStrmIn;
+    POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
 
     int rc = VINF_SUCCESS;
     size_t cbToRead = RT_MIN(pStrm->cbBuf,
-                             AudioMixBufFreeBytes(&pHstStrmIn->MixBuf));
+                             AudioMixBufFreeBytes(&pStream->MixBuf));
 
     LogFlowFunc(("cbToRead=%zu\n", cbToRead));
 
@@ -466,11 +467,11 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
         else if (cbRead)
         {
             uint32_t cWritten;
-            rc = AudioMixBufWriteCirc(&pHstStrmIn->MixBuf, pStrm->pvBuf, cbRead, &cWritten);
+            rc = AudioMixBufWriteCirc(&pStream->MixBuf, pStrm->pvBuf, cbRead, &cWritten);
             if (RT_FAILURE(rc))
                 break;
 
-            uint32_t cbWritten = AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cWritten);
+            uint32_t cbWritten = AUDIOMIXBUF_S2B(&pStream->MixBuf, cWritten);
 
             Assert(cbToRead >= cbWritten);
             cbToRead      -= cbWritten;
@@ -488,7 +489,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
     {
         uint32_t cProcessed = 0;
         if (cWrittenTotal)
-            rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal, &cProcessed);
+            rc = AudioMixBufMixToParent(&pStream->MixBuf, cWrittenTotal, &cProcessed);
 
         if (pcSamplesCaptured)
             *pcSamplesCaptured = cWrittenTotal;
@@ -501,12 +502,12 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn)
+static int ossDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     NOREF(pInterface);
-    AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pHstStrmIn;
+    POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
 
     LogFlowFuncEnter();
 
@@ -525,12 +526,12 @@ static DECLCALLBACK(int) drvHostOSSAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAU
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
+static int ossDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     NOREF(pInterface);
-    AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pHstStrmOut;
+    POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
 
     LogFlowFuncEnter();
 
@@ -574,7 +575,7 @@ static DECLCALLBACK(int) drvHostOSSAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDMA
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pCfg)
+static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pCfg)
 {
     NOREF(pInterface);
 
@@ -644,17 +645,15 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDMA
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
-                                               PPDMAUDIOHSTSTRMIN pHstStrmIn, PPDMAUDIOSTREAMCFG pCfg,
-                                               PDMAUDIORECSOURCE enmRecSource,
-                                               uint32_t *pcSamples)
+static int ossCreateStreamIn(PPDMIHOSTAUDIO pInterface,
+                             PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
 
     PDRVHOSTOSSAUDIO  pThis = PDMIHOSTAUDIO_2_DRVHOSTOSSAUDIO(pInterface);
-    POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pHstStrmIn;
+    POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
 
     int rc;
     int hFile = -1;
@@ -673,10 +672,10 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
         rc = ossStreamOpen(s_OSSConf.devpath_in, O_RDONLY | O_NONBLOCK, &reqStream, &obtStream, &hFile);
         if (RT_SUCCESS(rc))
         {
-            if (obtStream.cFragments * obtStream.cbFragmentSize & pHstStrmIn->Props.uAlign)
+            if (obtStream.cFragments * obtStream.cbFragmentSize & pStream->Props.uAlign)
                 LogRel(("OSS: Warning: Misaligned capturing buffer: Size = %zu, Alignment = %u\n",
                         obtStream.cFragments * obtStream.cbFragmentSize,
-                        pHstStrmIn->Props.uAlign + 1));
+                        pStream->Props.uAlign + 1));
 
             PDMAUDIOSTREAMCFG streamCfg;
             streamCfg.enmFormat     = obtStream.enmFormat;
@@ -684,11 +683,11 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
             streamCfg.cChannels     = pCfg->cChannels;
             streamCfg.enmEndianness = obtStream.enmENDIANNESS;
 
-            rc = DrvAudioStreamCfgToProps(&streamCfg, &pHstStrmIn->Props);
+            rc = DrvAudioStreamCfgToProps(&streamCfg, &pStream->Props);
             if (RT_SUCCESS(rc))
             {
                 cSamples = (obtStream.cFragments * obtStream.cbFragmentSize)
-                           >> pHstStrmIn->Props.cShift;
+                           >> pStream->Props.cShift;
                 if (!cSamples)
                     rc = VERR_INVALID_PARAMETER;
             }
@@ -696,7 +695,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
 
         if (RT_SUCCESS(rc))
         {
-            size_t cbSample = (1 << pHstStrmIn->Props.cShift);
+            size_t cbSample = (1 << pStream->Props.cShift);
 
             size_t cbBuf = cSamples * cbSample;
             void  *pvBuf = RTMemAlloc(cbBuf);
@@ -725,16 +724,16 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
-                                                PPDMAUDIOHSTSTRMOUT pHstStrmOut, PPDMAUDIOSTREAMCFG pCfg,
-                                                uint32_t *pcSamples)
+static int ossCreateStreamOut(PPDMIHOSTAUDIO pInterface,
+                              PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg,
+                              uint32_t *pcSamples)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,        VERR_INVALID_POINTER);
 
     PDRVHOSTOSSAUDIO   pThis = PDMIHOSTAUDIO_2_DRVHOSTOSSAUDIO(pInterface);
-    POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pHstStrmOut;
+    POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
 
     int rc;
     int hFile = -1;
@@ -753,10 +752,10 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
         rc = ossStreamOpen(s_OSSConf.devpath_out, O_WRONLY | O_NONBLOCK, &reqStream, &obtStream, &hFile);
         if (RT_SUCCESS(rc))
         {
-            if (obtStream.cFragments * obtStream.cbFragmentSize & pHstStrmOut->Props.uAlign)
+            if (obtStream.cFragments * obtStream.cbFragmentSize & pStream->Props.uAlign)
                 LogRel(("OSS: Warning: Misaligned playback buffer: Size = %zu, Alignment = %u\n",
                         obtStream.cFragments * obtStream.cbFragmentSize,
-                        pHstStrmOut->Props.uAlign + 1));
+                        pStream->Props.uAlign + 1));
 
             PDMAUDIOSTREAMCFG streamCfg;
             streamCfg.enmFormat     = obtStream.enmFormat;
@@ -764,17 +763,17 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
             streamCfg.cChannels     = pCfg->cChannels;
             streamCfg.enmEndianness = obtStream.enmENDIANNESS;
 
-            rc = DrvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
+            rc = DrvAudioStreamCfgToProps(&streamCfg, &pStream->Props);
             if (RT_SUCCESS(rc))
                 cSamples = (obtStream.cFragments * obtStream.cbFragmentSize)
-                           >> pHstStrmOut->Props.cShift;
+                           >> pStream->Props.cShift;
         }
 
         if (RT_SUCCESS(rc))
         {
             pStrm->fMemMapped = false;
 
-            size_t cbSamples =  cSamples << pHstStrmOut->Props.cShift;
+            size_t cbSamples =  cSamples << pStream->Props.cShift;
             Assert(cbSamples);
 
 #ifndef RT_OS_L4
@@ -859,13 +858,13 @@ static DECLCALLBACK(bool) drvHostOSSAudioIsEnabled(PPDMIHOSTAUDIO pInterface, PD
     return true; /* Always all enabled. */
 }
 
-static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut,
-                                                uint32_t *pcSamplesPlayed)
+static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
+                                                   uint32_t *pcSamplesPlayed)
 {
     NOREF(pInterface);
-    AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pHstStrmOut;
+    POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
 
     int rc = VINF_SUCCESS;
     uint32_t cbReadTotal = 0;
@@ -873,9 +872,9 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 
     do
     {
-        size_t cbBuf = AudioMixBufSizeBytes(&pHstStrmOut->MixBuf);
+        size_t cbBuf = AudioMixBufSizeBytes(&pStream->MixBuf);
 
-        uint32_t cLive = AudioMixBufAvail(&pHstStrmOut->MixBuf);
+        uint32_t cLive = AudioMixBufAvail(&pStream->MixBuf);
         uint32_t cToRead;
 
 #ifndef RT_OS_L4
@@ -902,7 +901,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
                 cbData = cbBuf + cntinfo.ptr - pStrm->old_optr;
             Assert(cbData);
 
-            cToRead = RT_MIN((uint32_t)AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbData),
+            cToRead = RT_MIN((uint32_t)AUDIOMIXBUF_B2S(&pStream->MixBuf, cbData),
                              cLive);
         }
         else
@@ -931,23 +930,23 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
                 break;
             }
 
-            cToRead = RT_MIN((uint32_t)AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, abinfo.bytes), cLive);
+            cToRead = RT_MIN((uint32_t)AUDIOMIXBUF_B2S(&pStream->MixBuf, abinfo.bytes), cLive);
             if (!cToRead)
                 break;
 #ifndef RT_OS_L4
         }
 #endif
-        size_t cbToRead = AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cToRead);
+        size_t cbToRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, cToRead);
         LogFlowFunc(("cbToRead=%zu\n", cbToRead));
 
         uint32_t cRead, cbRead;
         while (cbToRead)
         {
-            rc = AudioMixBufReadCirc(&pHstStrmOut->MixBuf, pStrm->pvBuf, cbToRead, &cRead);
+            rc = AudioMixBufReadCirc(&pStream->MixBuf, pStrm->pvBuf, cbToRead, &cRead);
             if (RT_FAILURE(rc))
                 break;
 
-            cbRead = AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cRead);
+            cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, cRead);
             ssize_t cbWritten = write(pStrm->hFile, pStrm->pvBuf, cbRead);
             if (cbWritten == -1)
             {
@@ -971,9 +970,9 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 
     if (RT_SUCCESS(rc))
     {
-        uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbReadTotal);
+        uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pStream->MixBuf, cbReadTotal);
         if (cReadTotal)
-            AudioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
+            AudioMixBufFinish(&pStream->MixBuf, cReadTotal);
 
         if (pcSamplesPlayed)
             *pcSamplesPlayed = cReadTotal;
@@ -988,6 +987,69 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 static DECLCALLBACK(void) drvHostOSSAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {
     NOREF(pInterface);
+}
+
+static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostOSSAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+{
+    AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
+
+    return PDMAUDIOBACKENDSTS_RUNNING;
+}
+
+static DECLCALLBACK(int) drvHostOSSAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
+                                                     PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
+
+    int rc;
+    if (pCfg->enmDir == PDMAUDIODIR_IN)
+        rc = ossCreateStreamIn(pInterface,  pStream, pCfg, pcSamples);
+    else
+        rc = ossCreateStreamOut(pInterface, pStream, pCfg, pcSamples);
+
+    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
+    return rc;
+}
+
+static DECLCALLBACK(int) drvHostOSSAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    int rc;
+    if (pStream->enmDir == PDMAUDIODIR_IN)
+        rc = ossDestroyStreamIn(pInterface,  pStream);
+    else
+        rc = ossDestroyStreamOut(pInterface, pStream);
+
+    return rc;
+}
+
+static DECLCALLBACK(int) drvHostOSSAudioStreamControl(PPDMIHOSTAUDIO pInterface,
+                                                      PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
+
+    int rc;
+    if (pStream->enmDir == PDMAUDIODIR_IN)
+        rc = ossControlStreamIn(pInterface,  pStream, enmStreamCmd);
+    else
+        rc = ossControlStreamOut(pInterface, pStream, enmStreamCmd);
+
+    return rc;
+}
+
+static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostOSSAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    NOREF(pInterface);
+    NOREF(pStream);
+
+    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
 /**

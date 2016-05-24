@@ -4144,7 +4144,7 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *p
         RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
         {
             uint32_t cSamplesPlayed;
-            int rc2 = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, &cSamplesPlayed);
+            int rc2 = pDrv->pConnector->pfnPlay(pDrv->pConnector, &cSamplesPlayed);
             LogFlowFunc(("LUN#%RU8: cSamplesPlayed=%RU32, rc=%Rrc\n", pDrv->uLUN, cSamplesPlayed, rc2));
         }
     }
@@ -5215,12 +5215,12 @@ static int hdaDbgLookupStrmIdx(PHDASTATE pThis, const char *pszArgs)
 static DECLCALLBACK(void) hdaDbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE   pThis         = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    int         iHdaStrmIndex = hdaDbgLookupStrmIdx(pThis, pszArgs);
-    if (iHdaStrmIndex != -1)
-        hdaDbgPrintStream(pThis, pHlp, iHdaStrmIndex);
+    int         iHdaStreamdex = hdaDbgLookupStrmIdx(pThis, pszArgs);
+    if (iHdaStreamdex != -1)
+        hdaDbgPrintStream(pThis, pHlp, iHdaStreamdex);
     else
-        for(iHdaStrmIndex = 0; iHdaStrmIndex < HDA_MAX_STREAMS; ++iHdaStrmIndex)
-            hdaDbgPrintStream(pThis, pHlp, iHdaStrmIndex);
+        for(iHdaStreamdex = 0; iHdaStreamdex < HDA_MAX_STREAMS; ++iHdaStreamdex)
+            hdaDbgPrintStream(pThis, pHlp, iHdaStreamdex);
 }
 
 /**
@@ -5229,12 +5229,12 @@ static DECLCALLBACK(void) hdaDbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 static DECLCALLBACK(void) hdaDbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE   pThis         = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    int         iHdaStrmIndex = hdaDbgLookupStrmIdx(pThis, pszArgs);
-    if (iHdaStrmIndex != -1)
-        hdaDbgPrintBDLE(pThis, pHlp, iHdaStrmIndex);
+    int         iHdaStreamdex = hdaDbgLookupStrmIdx(pThis, pszArgs);
+    if (iHdaStreamdex != -1)
+        hdaDbgPrintBDLE(pThis, pHlp, iHdaStreamdex);
     else
-        for(iHdaStrmIndex = 0; iHdaStrmIndex < HDA_MAX_STREAMS; ++iHdaStrmIndex)
-            hdaDbgPrintBDLE(pThis, pHlp, iHdaStrmIndex);
+        for(iHdaStreamdex = 0; iHdaStreamdex < HDA_MAX_STREAMS; ++iHdaStreamdex)
+            hdaDbgPrintBDLE(pThis, pHlp, iHdaStreamdex);
 }
 
 /**
@@ -5649,7 +5649,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                                 N_("HDA configuration error: failed to read R0Enabled as boolean"));
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
     uint16_t uTimerHz;
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 200 /* Hz */);
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 100 /* Hz */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));

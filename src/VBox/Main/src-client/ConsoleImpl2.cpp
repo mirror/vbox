@@ -2904,6 +2904,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif
             }
 
+#ifdef VBOX_WITH_VRDE_AUDIO
             /*
              * The VRDE audio backend driver. This one always is there
              * and therefore is hardcoded here.
@@ -2919,7 +2920,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pCfg, "StreamName", bstr);
             InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVRDE);
             InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
-
+#endif
             /** @todo Add audio video recording driver here. */
         }
 

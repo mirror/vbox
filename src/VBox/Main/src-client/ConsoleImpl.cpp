@@ -55,7 +55,9 @@
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
-#include "DrvAudioVRDE.h"
+#ifdef VBOX_WITH_VRDE_AUDIO
+# include "DrvAudioVRDE.h"
+#endif
 #include "Nvram.h"
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
@@ -569,9 +571,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         for (ULONG slot = 0; slot < maxNetworkAdapters; ++slot)
             meAttachmentType[slot] = NetworkAttachmentType_Null;
 
+#ifdef VBOX_WITH_VRDE_AUDIO
         unconst(mAudioVRDE) = new AudioVRDE(this);
         AssertReturn(mAudioVRDE, E_FAIL);
-
+#endif
         FirmwareType_T enmFirmwareType;
         mMachine->COMGETTER(FirmwareType)(&enmFirmwareType);
         if (   enmFirmwareType == FirmwareType_EFI
@@ -708,11 +711,13 @@ void Console::uninit()
     }
 #endif
 
+#ifdef VBOX_WITH_VRDE_AUDIO
     if (mAudioVRDE)
     {
         delete mAudioVRDE;
         unconst(mAudioVRDE) = NULL;
     }
+#endif
 
     // if the VM had a VMMDev with an HGCM thread, then remove that here
     if (m_pVMMDev)
@@ -1403,11 +1408,13 @@ void Console::i_VRDPClientDisconnect(uint32_t u32ClientId,
         mConsoleVRDPServer->ClipboardDelete(u32ClientId);
     }
 
+#ifdef VBOX_WITH_VRDE_AUDIO
     if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_AUDIO)
     {
         if (mAudioVRDE)
             mAudioVRDE->onVRDEControl(false /* fEnable */, 0 /* uFlags */);
     }
+#endif
 
     AuthType_T authType = AuthType_Null;
     HRESULT hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
@@ -1438,8 +1445,10 @@ void Console::i_VRDPInterceptAudio(uint32_t u32ClientId)
 
     LogFlowFunc(("u32ClientId=%RU32\n", u32ClientId));
 
+#ifdef VBOX_WITH_VRDE_AUDIO
     if (mAudioVRDE)
         mAudioVRDE->onVRDEControl(true /* fEnable */, 0 /* uFlags */);
+#endif
 
     LogFlowFuncLeave();
     return;

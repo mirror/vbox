@@ -76,7 +76,7 @@ static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
 typedef struct SB16OUTPUTSTREAM
 {
     /** PCM output stream. */
-    R3PTRTYPE(PPDMAUDIOGSTSTRMOUT)     pStrmOut;
+    R3PTRTYPE(PPDMAUDIOSTREAM)         pStream;
     /** Mixer handle for output stream. */
     R3PTRTYPE(PAUDMIXSTREAM)           pMixStrm;
 } SB16OUTPUTSTREAM, *PSB16OUTPUTSTREAM;
@@ -1684,7 +1684,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     uint32_t cbOut;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        int rc2 = pDrv->pConnector->pfnGetDataOut(pDrv->pConnector, &cbOut, NULL /* pcSamplesLive */);
+        int rc2 = pDrv->pConnector->pfnStreamGetData(pDrv->pConnector, pDrv->Out.pStream, &cbOut);
         if (RT_SUCCESS(rc2))
             cbOutMin = RT_MIN(cbOutMin, cbOut);
     }
@@ -1919,10 +1919,10 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        if (pDrv->Out.pStrmOut)
+        if (pDrv->Out.pStream)
         {
-            pDrv->pConnector->pfnCloseOut(pThis->pDrv, pDrv->Out.pStrmOut);
-            pDrv->Out.pStrmOut = NULL;
+            pDrv->pConnector->pfnCloseOut(pThis->pDrv, pDrv->Out.pStream);
+            pDrv->Out.pStream = NULL;
         }
     }
 #endif

@@ -565,7 +565,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifeq ($(KBUILD_TARGET),linux)
   VBoxDD_SOURCES += \
-   	Audio/DrvHostOSSAudio.cpp
+   Audio/DrvHostOSSAudio.cpp
 
   ifdef VBOX_WITH_PULSE
    VBoxDD_DEFS    += VBOX_WITH_PULSE

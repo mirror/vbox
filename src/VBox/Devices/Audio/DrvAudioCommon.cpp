@@ -204,8 +204,8 @@ PDMAUDIOFMT DrvAudioStrToAudFmt(const char *pszFmt)
 
 bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps, false);
+    AssertPtrReturn(pCfg,   false);
 
     int cBits = 8;
     bool fSigned = false;
@@ -244,14 +244,48 @@ bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 
 bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
 {
-    AssertPtrReturn(pProps1, VERR_INVALID_POINTER);
-    AssertPtrReturn(pProps2, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps1, false);
+    AssertPtrReturn(pProps2, false);
 
     return    pProps1->uHz         == pProps2->uHz
            && pProps1->cChannels   == pProps2->cChannels
            && pProps1->fSigned     == pProps2->fSigned
            && pProps1->cBits       == pProps2->cBits
            && pProps1->fSwapEndian == pProps2->fSwapEndian;
+}
+
+bool DrvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
+{
+    bool fValid = (   pCfg->cChannels == 1
+                   || pCfg->cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
+
+    fValid |= (   pCfg->enmEndianness == PDMAUDIOENDIANNESS_LITTLE
+               || pCfg->enmEndianness == PDMAUDIOENDIANNESS_BIG);
+
+    fValid |= (   pCfg->enmDir == PDMAUDIODIR_IN
+               || pCfg->enmDir == PDMAUDIODIR_OUT);
+
+    if (fValid)
+    {
+        switch (pCfg->enmFormat)
+        {
+            case PDMAUDIOFMT_S8:
+            case PDMAUDIOFMT_U8:
+            case PDMAUDIOFMT_S16:
+            case PDMAUDIOFMT_U16:
+            case PDMAUDIOFMT_S32:
+            case PDMAUDIOFMT_U32:
+                break;
+            default:
+                fValid = false;
+                break;
+        }
+    }
+
+    /** @todo Check for defined frequencies supported. */
+    fValid |= pCfg->uHz > 0;
+
+    return fValid;
 }
 
 /**

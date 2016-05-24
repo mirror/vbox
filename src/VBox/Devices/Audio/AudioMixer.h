@@ -45,6 +45,9 @@ typedef struct AUDIOMIXER
 /** No flags specified. */
 #define AUDMIXSTREAM_FLAG_NONE                  0
 
+/** Prototype needed for AUDMIXSTREAM struct definition. */
+typedef struct AUDMIXSINK *PAUDMIXSINK;
+
 /**
  * Structure for maintaining an audio mixer stream.
  */
@@ -54,18 +57,14 @@ typedef struct AUDMIXSTREAM
     RTLISTNODE              Node;
     /** Name of this stream. */
     char                   *pszName;
+    /** Sink this stream is attached to. */
+    PAUDMIXSINK             pSink;
     /** Stream flags of type AUDMIXSTREAM_FLAG_. */
     uint32_t                fFlags;
     /** Pointer to audio connector being used. */
     PPDMIAUDIOCONNECTOR     pConn;
-    /** Audio direction of this stream. */
-    PDMAUDIODIR             enmDir;
-    /** Union of PDM input/output streams for this stream. */
-    union
-    {
-        PPDMAUDIOGSTSTRMIN  pIn;
-        PPDMAUDIOGSTSTRMOUT pOut;
-    } InOut;
+    /** Pointer to PDM audio stream this mixer stream handles. */
+    PPDMAUDIOSTREAM         pStream;
 } AUDMIXSTREAM, *PAUDMIXSTREAM;
 
 /** No flags specified. */
@@ -123,11 +122,16 @@ typedef struct AUDMIXSINK
     PDMPCMPROPS             PCMProps;
     /** Number of streams assigned. */
     uint8_t                 cStreams;
-    /** List of assigned streams. */
+    /** List of assigned streams.
+     *  Note: All streams have the same PCM properties, so the
+     *        mixer does not do any conversion. */
     /** @todo Use something faster -- vector maybe? */
     RTLISTANCHOR            lstStreams;
-    /** This sink's mixing buffer. */
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+    /** This sink's mixing buffer, acting as
+     *  a parent buffer for all streams this sink owns. */
     PDMAUDIOMIXBUF          MixBuf;
+#endif
     /** The volume of this sink. The volume always will
      *  be combined with the mixer's master volume. */
     PDMAUDIOVOLUME          Volume;
