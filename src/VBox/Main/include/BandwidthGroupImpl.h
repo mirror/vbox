@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
 #ifndef ____H_BANDWIDTHGROUPIMPL
 #define ____H_BANDWIDTHGROUPIMPL
 
+#include <VBox/settings.h>
 #include "BandwidthControlImpl.h"
 #include "BandwidthGroupWrap.h"
 
@@ -50,9 +51,9 @@ public:
     void i_release();
 
     ComObjPtr<BandwidthGroup> i_getPeer() { return m->pPeer; }
-    const Utf8Str &i_getName() const { return m->bd->strName; }
-    BandwidthGroupType_T i_getType() const { return m->bd->enmType; }
-    LONG64 i_getMaxBytesPerSec() const { return m->bd->aMaxBytesPerSec; }
+    const Utf8Str &i_getName() const { return m->bd->mData.strName; }
+    BandwidthGroupType_T i_getType() const { return m->bd->mData.enmType; }
+    LONG64 i_getMaxBytesPerSec() const { return m->bd->mData.cMaxBytesPerSec; }
     ULONG i_getReferences() const { return m->bd->cReferences; }
 
 private:
@@ -73,15 +74,11 @@ private:
     struct BackupableBandwidthGroupData
     {
        BackupableBandwidthGroupData()
-           : enmType(BandwidthGroupType_Null),
-             aMaxBytesPerSec(0),
-             cReferences(0)
+           : cReferences(0)
        { }
 
-       Utf8Str                 strName;
-       BandwidthGroupType_T    enmType;
-       LONG64                  aMaxBytesPerSec;
-       ULONG                   cReferences;
+       settings::BandwidthGroup mData;
+       ULONG                    cReferences;
     };
 
     struct Data
