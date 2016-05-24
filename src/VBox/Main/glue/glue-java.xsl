@@ -4506,7 +4506,7 @@ class VBoxTLSSocketFactory extends SSLSocketFactory
 
     public String[] getDefaultCipherSuites()
     {
-        return sf.getSupportedCipherSuites();
+        return sf.getDefaultCipherSuites();
     }
 
     public String[] getSupportedCipherSuites()
