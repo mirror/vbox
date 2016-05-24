@@ -1685,9 +1685,8 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECTOR
     AssertRC(rc2);
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
-    PDMAUDIOSTRMSTS strmSts    = pHstStream->fStatus;
 
-    LogFlowFunc(("%s: strmSts=%0x%x\n", pHstStream->szName, strmSts));
+    LogFlowFunc(("%s: strmSts=0x%x\n", pHstStream->szName, pHstStream->fStatus));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
