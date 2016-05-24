@@ -1957,6 +1957,9 @@ endif
 
 ifeq ($(KBUILD_HOST),win)
  VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
+else ifeq ($(KBUILD_HOST),darwin) # Xcode 7.3.1 nm doesn't like -t, and -x behaves very differently.  Throwing in -B (bsd) to make sure.
+ VBOX_NM ?= $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN_BIN_SLASH)nm -p $(if-expr \
+ 	$(VBOX_XCODE_VERSION_MAJOR) > 7 || ($(VBOX_XCODE_VERSION_MAJOR) == 7 && $(VBOX_XCODE_VERSION_MINOR) >= 3),-B,)
 else
  VBOX_NM ?= nm -p -t x
 endif
@@ -2276,6 +2279,11 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
  endif
 
+ #
+ # Use bison and flex from Xcode to avoid linking issues (bison).
+ #
+ TOOL_BISON_YACC ?= $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN_BIN_SLASH)bison
+ TOOL_FLEX_LEX   ?= $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN_BIN_SLASH)flex
 
 endif # target=darwin
 
@@ -2681,8 +2689,13 @@ ifdef VBOX_PATH_PREFIX_MINGW64
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_Wno-maybe-uninitialized     ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64,-Wno-maybe-uninitialized,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_USER_LABEL_PREFIX           ?= $(shell echo "__USER_LABEL_PREFIX__" | $(VBOX_PATH_PREFIX_MINGW64)g++ -m64 -E -xc++ - | $(SED) -e "/^$(HASH)/d")'
 endif
+ifeq ($(KBUILD_HOST),darwin)
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_FLEX    ?= 1'
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_BISON   ?= 1'
+else
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_FLEX    ?= $(if $(which flex),1,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_BISON   ?= $(if $(which bison),1,)'
+endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_XMLLINT ?= $(which xmllint)'
 if "$(KBUILD_HOST)" == "solaris" && $(KBUILD_HOST_VERSION_MAJOR) == 5 && $(KBUILD_HOST_VERSION_MINOR) == 11
 # uname -v can report "snv_XYZ" or "11.X"
