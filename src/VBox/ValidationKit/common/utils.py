@@ -210,7 +210,9 @@ def getHostOsVersion():
                      "7": "Lion",
                      "8": "Mountain Lion",
                      "9": "Mavericks",
-                     "10": "Yosemite"}
+                     "10": "Yosemite",
+                     "11": "El Capitan",
+                     "12": "Fuji" }
         sVersion += ' / OS X ' + sOsxVersion + ' (' + codenames[sOsxVersion.split('.')[1]] + ')'
 
     return sVersion;
