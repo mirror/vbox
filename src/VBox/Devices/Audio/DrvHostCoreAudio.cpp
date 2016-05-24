@@ -1716,7 +1716,7 @@ static int coreAudioControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM p
     }
 
     int rc = VINF_SUCCESS;
-    OSStatus err;
+    OSStatus err = noErr;
 
     switch (enmStreamCmd)
     {
@@ -1972,7 +1972,7 @@ static int coreAudioCreateStreamIn(PPDMIHOSTAUDIO pInterface,
 {
     PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN)pStream;
 
-    LogFlowFunc(("enmRecSource=%ld\n", enmRecSource));
+    LogFlowFunc(("enmRecSource=%ld\n", pCfg->DestSource.Source));
 
     pStreamIn->deviceID                  = kAudioDeviceUnknown;
     pStreamIn->audioUnit                 = NULL;
