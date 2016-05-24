@@ -391,6 +391,19 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     int rc = DrvAudioHlpPCMPropsToStreamCfg(&pSink->PCMProps, &CfgSink);
     AssertRCReturn(rc, rc);
 
+    /* Apply the sink's direction for the configuration to use to
+     * create the stream. */
+    if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+    {
+        CfgSink.DestSource.Source = PDMAUDIORECSOURCE_UNKNOWN;
+        CfgSink.enmDir            = PDMAUDIODIR_IN;
+    }
+    else
+    {
+        CfgSink.DestSource.Dest = PDMAUDIOPLAYBACKDEST_UNKNOWN;
+        CfgSink.enmDir          = PDMAUDIODIR_OUT;
+    }
+
     /* Always use the sink's PCM audio format as the host side when creating a stream for it. */
     PPDMAUDIOSTREAM pStream;
     rc = pConn->pfnStreamCreate(pConn, &CfgSink, pCfg, &pStream);
@@ -967,10 +980,16 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream)
 
 bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
 {
-    if (!pMixStream)
+    if (   !pMixStream
+        && !pMixStream->pConn)
+    {
         return false;
+    }
 
-    return (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED);
+    bool fIsActive =
+        (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED);
+
+    return fIsActive;
 }
 
 bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)

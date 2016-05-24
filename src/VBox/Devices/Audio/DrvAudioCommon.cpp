@@ -173,12 +173,13 @@ const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
 {
     switch (enmRecSrc)
     {
-        case PDMAUDIORECSOURCE_MIC:   return "Microphone In";
-        case PDMAUDIORECSOURCE_CD:    return "CD";
-        case PDMAUDIORECSOURCE_VIDEO: return "Video";
-        case PDMAUDIORECSOURCE_AUX:   return "AUX";
-        case PDMAUDIORECSOURCE_LINE:  return "Line In";
-        case PDMAUDIORECSOURCE_PHONE: return "Phone";
+        case PDMAUDIORECSOURCE_UNKNOWN: return "Unknown";
+        case PDMAUDIORECSOURCE_MIC:     return "Microphone In";
+        case PDMAUDIORECSOURCE_CD:      return "CD";
+        case PDMAUDIORECSOURCE_VIDEO:   return "Video";
+        case PDMAUDIORECSOURCE_AUX:     return "AUX";
+        case PDMAUDIORECSOURCE_LINE:    return "Line In";
+        case PDMAUDIORECSOURCE_PHONE:   return "Phone";
         default:
             break;
     }
