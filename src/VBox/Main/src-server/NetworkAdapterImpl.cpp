@@ -296,7 +296,7 @@ HRESULT NetworkAdapter::setEnabled(BOOL aEnabled)
     if (mData->fEnabled != RT_BOOL(aEnabled))
     {
         mData.backup();
-        mData->fEnabled = aEnabled;
+        mData->fEnabled = RT_BOOL(aEnabled);
         if (RT_BOOL(aEnabled) && mData->strMACAddress.isEmpty())
             i_generateMACAddress();
 
