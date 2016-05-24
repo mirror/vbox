@@ -100,7 +100,7 @@ static DECLCALLBACK(int) drvHostNullAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
     return VINF_SUCCESS;
 }
 
-static int drvHostNullAudioInit(PPDMIHOSTAUDIO pInterface)
+static DECLCALLBACK(int) drvHostNullAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     NOREF(pInterface);
 
