@@ -4344,7 +4344,7 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
     /** @todo r=klaus this needs to be reworked, as the code below uses
      * i_getParent without holding the tree lock, and changing this is
      * a significant amount of effort. */
-    Assert(m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     Assert(!isWriteLockOnCurrentThread());
 
     AutoCaller autoCaller(this);
