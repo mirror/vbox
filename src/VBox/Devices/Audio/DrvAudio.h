@@ -111,18 +111,18 @@ typedef struct DRVAUDIO
     ( (PDRVAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIO, IAudioConnector)) )
 
 
-bool DrvAudioAudFmtIsSigned(PDMAUDIOFMT enmFmt);
-uint8_t DrvAudioAudFmtToBits(PDMAUDIOFMT enmFmt);
-const char *DrvAudioAudFmtToStr(PDMAUDIOFMT enmFmt);
-void DrvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
-bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pPCMProps1, PPDMPCMPROPS pPCMProps2);
-bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
-int DrvAudioPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
-const char *DrvAudRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
-void DrvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);
-bool DrvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg);
-int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps);
-PDMAUDIOFMT DrvAudioStrToAudFmt(const char *pszFmt);
+bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt);
+uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
+const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt);
+void DrvAudioHlpClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
+bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pPCMProps1, PPDMPCMPROPS pPCMProps2);
+bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+int DrvAudioHlpPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+const char *DrvAudHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
+void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);
+bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg);
+int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps);
+PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt);
 
 #endif /* DRV_AUDIO_H */
 

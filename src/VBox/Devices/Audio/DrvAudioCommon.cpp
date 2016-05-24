@@ -105,7 +105,7 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
  * @param   cbBuf                   Size (in bytes) of the buffer.
  * @param   cSamples                Number of audio samples to clear in the buffer.
  */
-void DrvAudioClearBuf(PPDMPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
+void DrvAudioHlpClearBuf(PPDMPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
 {
     AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pvBuf);
@@ -169,7 +169,7 @@ void DrvAudioClearBuf(PPDMPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_
     }
 }
 
-const char *DrvAudRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
+const char *DrvAudHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
 {
     switch (enmRecSrc)
     {
@@ -194,7 +194,7 @@ const char *DrvAudRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
  * @return  bool                @true for signed bits, @false for unsigned.
  * @param   enmFmt              Audio format to retrieve value for.
  */
-bool DrvAudioAudFmtIsSigned(PDMAUDIOFMT enmFmt)
+bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt)
 {
     switch (enmFmt)
     {
@@ -223,7 +223,7 @@ bool DrvAudioAudFmtIsSigned(PDMAUDIOFMT enmFmt)
  * @return  uint8_t             Bits of audio format.
  * @param   enmFmt              Audio format to retrieve value for.
  */
-uint8_t DrvAudioAudFmtToBits(PDMAUDIOFMT enmFmt)
+uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt)
 {
     switch (enmFmt)
     {
@@ -247,7 +247,7 @@ uint8_t DrvAudioAudFmtToBits(PDMAUDIOFMT enmFmt)
     return 0;
 }
 
-const char *DrvAudioAudFmtToStr(PDMAUDIOFMT enmFmt)
+const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt)
 {
     switch (enmFmt)
     {
@@ -277,7 +277,7 @@ const char *DrvAudioAudFmtToStr(PDMAUDIOFMT enmFmt)
     return "Invalid";
 }
 
-PDMAUDIOFMT DrvAudioStrToAudFmt(const char *pszFmt)
+PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
 {
     AssertPtrReturn(pszFmt, PDMAUDIOFMT_INVALID);
 
@@ -298,7 +298,7 @@ PDMAUDIOFMT DrvAudioStrToAudFmt(const char *pszFmt)
     return PDMAUDIOFMT_INVALID;
 }
 
-bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pProps, false);
     AssertPtrReturn(pCfg,   false);
@@ -338,7 +338,7 @@ bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
     return fEqual;
 }
 
-bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
+bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
 {
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
@@ -357,7 +357,7 @@ bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
  * @param   pPCMProps           Pointer to PCM properties to convert.
  * @param   pCfg                Pointer to audio stream configuration to store result into.
  */
-int DrvAudioPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
+int DrvAudioHlpPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
@@ -371,7 +371,7 @@ int DrvAudioPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
     return VINF_SUCCESS;
 }
 
-bool DrvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
 {
     bool fValid = (   pCfg->cChannels == 1
                    || pCfg->cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
@@ -412,7 +412,7 @@ bool DrvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
  * @param   pCfg                    Audio stream configuration to convert.
  * @param   pProps                  PCM properties to save result to.
  */
-int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
+int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
 {
     AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
@@ -464,7 +464,7 @@ int DrvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
     return rc;
 }
 
-void DrvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
+void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturnVoid(pCfg);
 

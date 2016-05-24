@@ -296,7 +296,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     /* Make sure only compatible streams are added. */
     if (pStream->enmDir == PDMAUDIODIR_IN)
     {
-        if (DrvAudioPCMPropsAreEqual(&pSink->PCMProps, &pStream->InOut.pIn->Props))
+        if (DrvAudioHlpPCMPropsAreEqual(&pSink->PCMProps, &pStream->InOut.pIn->Props))
         {
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
             /* Chain: Stream (Child) -> Sink (Child) -> Guest (Parent). */
@@ -326,7 +326,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     }
     else if (pStream->enmDir == PDMAUDIODIR_OUT)
     {
-        if (DrvAudioPCMPropsAreEqual(&pSink->PCMProps, &pStream->InOut.pOut->Props))
+        if (DrvAudioHlpPCMPropsAreEqual(&pSink->PCMProps, &pStream->InOut.pOut->Props))
         {
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
             /* Chain: Guest (Child) -> Sink (Child) -> Stream (Parent). */
@@ -385,10 +385,10 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     }
 
     LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %s, %RU8 channels, %RU32Hz)\n",
-                 pSink->pszName, fFlags, pCfg->enmDir, DrvAudioAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
+                 pSink->pszName, fFlags, pCfg->enmDir, DrvAudioHlpAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
 
     PDMAUDIOSTREAMCFG CfgSink;
-    int rc = DrvAudioPCMPropsToStreamCfg(&pSink->PCMProps, &CfgSink);
+    int rc = DrvAudioHlpPCMPropsToStreamCfg(&pSink->PCMProps, &CfgSink);
     AssertRCReturn(rc, rc);
 
     /* Always use the sink's PCM audio format as the host side when creating a stream for it. */
@@ -692,7 +692,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMPCMPROPS pPCMProps)
     AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
 
-    if (DrvAudioPCMPropsAreEqual(&pSink->PCMProps, pPCMProps)) /* Bail out early if PCM properties are equal. */
+    if (DrvAudioHlpPCMPropsAreEqual(&pSink->PCMProps, pPCMProps)) /* Bail out early if PCM properties are equal. */
         return VINF_SUCCESS;
 
     if (pSink->PCMProps.uHz)

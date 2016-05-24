@@ -1987,7 +1987,7 @@ static int coreAudioCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     bool fDeviceByUser = false; /* Do we use a device which was set by the user? */
 
     /* Initialize the hardware info section with the audio settings */
-    int rc = DrvAudioStreamCfgToProps(pCfg, &pStreamIn->Stream.Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &pStreamIn->Stream.Props);
     if (RT_SUCCESS(rc))
     {
 #if 0
@@ -2045,7 +2045,7 @@ static int coreAudioCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     bool fDeviceByUser = false; /* Do we use a device which was set by the user? */
 
     /* Initialize the hardware info section with the audio settings */
-    int rc = DrvAudioStreamCfgToProps(pCfg, &pStreamOut->Stream.Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &pStreamOut->Stream.Props);
     if (RT_SUCCESS(rc))
     {
 #if 0

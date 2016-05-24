@@ -96,7 +96,7 @@ static int vrdeCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     if (pcSamples)
         *pcSamples = _4K; /** @todo Make this configurable. */
 
-    return DrvAudioStreamCfgToProps(pCfg, &pVRDEStrmIn->Stream.Props);
+    return DrvAudioHlpStreamCfgToProps(pCfg, &pVRDEStrmIn->Stream.Props);
 }
 
 static int vrdeCreateStreamOut(PPDMIHOSTAUDIO pInterface,
@@ -113,7 +113,7 @@ static int vrdeCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (pcSamples)
         *pcSamples = _4K; /** @todo Make this configurable. */
 
-    return DrvAudioStreamCfgToProps(pCfg, &pVRDEStrmOut->Stream.Props);
+    return DrvAudioHlpStreamCfgToProps(pCfg, &pVRDEStrmOut->Stream.Props);
 }
 
 static int vrdeControlStreamOut(PPDMIHOSTAUDIO pInterface,

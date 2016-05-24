@@ -88,7 +88,7 @@ static PDMAUDIOFMT drvAudioGetConfFormat(PCFGMNODE pCfgHandle, const char *pszKe
         return enmDefault;
     }
 
-    PDMAUDIOFMT fmt = DrvAudioStrToAudFmt(pszValue);
+    PDMAUDIOFMT fmt = DrvAudioHlpStrToAudFmt(pszValue);
     if (fmt == PDMAUDIOFMT_INVALID)
     {
          *pfDefault = true;
@@ -1471,8 +1471,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
     LogFlowFunc(("Host=%s, Guest=%s\n", pCfgHost->szName, pCfgGuest->szName));
 #ifdef DEBUG
-    DrvAudioStreamCfgPrint(pCfgHost);
-    DrvAudioStreamCfgPrint(pCfgGuest);
+    DrvAudioHlpStreamCfgPrint(pCfgHost);
+    DrvAudioHlpStreamCfgPrint(pCfgGuest);
 #endif
 
     /*
@@ -1488,8 +1488,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
     do
     {
-        if (   !DrvAudioStreamCfgIsValid(pCfgHost)
-            || !DrvAudioStreamCfgIsValid(pCfgGuest))
+        if (   !DrvAudioHlpStreamCfgIsValid(pCfgHost)
+            || !DrvAudioHlpStreamCfgIsValid(pCfgGuest))
         {
             RC_BREAK(VERR_INVALID_PARAMETER);
         }
@@ -1567,7 +1567,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         pHstStrm->fStatus |= PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
         pHstStrm->pPair    = pGstStrm;
 
-        rc = DrvAudioStreamCfgToProps(pCfgHost, &pHstStrm->Props);
+        rc = DrvAudioHlpStreamCfgToProps(pCfgHost, &pHstStrm->Props);
         AssertRCBreak(rc);
 
         rc = AudioMixBufInit(&pHstStrm->MixBuf, pHstStrm->szName, &pHstStrm->Props, cSamples);
@@ -1580,7 +1580,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
         RTStrPrintf(pGstStrm->szName, RT_ELEMENTS(pGstStrm->szName), "%s (Guest)",
                     strlen(pCfgGuest->szName) ? pCfgGuest->szName : "<Untitled>");
 
-        rc = DrvAudioStreamCfgToProps(pCfgGuest, &pGstStrm->Props);
+        rc = DrvAudioHlpStreamCfgToProps(pCfgGuest, &pGstStrm->Props);
         AssertRCBreak(rc);
 
         rc = AudioMixBufInit(&pGstStrm->MixBuf, pGstStrm->szName, &pGstStrm->Props, AudioMixBufSize(&pHstStrm->MixBuf));

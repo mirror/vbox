@@ -651,7 +651,7 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     streamCfg.uHz       = pStrm->SampleSpec.rate;
     streamCfg.cChannels = pStrm->SampleSpec.channels;
 
-    rc = DrvAudioStreamCfgToProps(&streamCfg, &pStream->Props);
+    rc = DrvAudioHlpStreamCfgToProps(&streamCfg, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbBuf  = RT_MIN(pStrm->BufAttr.tlength * 2,
@@ -721,7 +721,7 @@ static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     streamCfg.uHz       = pStrm->SampleSpec.rate;
     streamCfg.cChannels = pStrm->SampleSpec.channels;
 
-    rc = DrvAudioStreamCfgToProps(&streamCfg, &pStream->Props);
+    rc = DrvAudioHlpStreamCfgToProps(&streamCfg, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
         uint32_t cSamples = RT_MIN(pStrm->BufAttr.fragsize * 10, pStrm->BufAttr.maxlength)

@@ -2029,7 +2029,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     /* Update the sink's format. */
     PDMPCMPROPS PCMProps;
-    int rc = DrvAudioStreamCfgToProps(pCfg, &PCMProps);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &PCMProps);
     if (RT_SUCCESS(rc))
         rc = AudioMixerSinkSetFormat(pThis->pSinkOutput, &PCMProps);
 

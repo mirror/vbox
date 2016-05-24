@@ -732,7 +732,7 @@ static int ichac97CreateIn(PAC97STATE pThis,
 
     /* Update the sink's format. */
     PDMPCMPROPS PCMProps;
-    int rc = DrvAudioStreamCfgToProps(pCfg, &PCMProps);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &PCMProps);
     if (RT_SUCCESS(rc))
         rc = AudioMixerSinkSetFormat(pSink, &PCMProps);
 
@@ -782,7 +782,7 @@ static int ichac97CreateOut(PAC97STATE pThis, const char *pszName, PPDMAUDIOSTRE
 
     /* Update the sink's format. */
     PDMPCMPROPS PCMProps;
-    int rc = DrvAudioStreamCfgToProps(pCfg, &PCMProps);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &PCMProps);
     if (RT_SUCCESS(rc))
         rc = AudioMixerSinkSetFormat(pThis->pSinkOutput, &PCMProps);
 

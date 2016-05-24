@@ -758,10 +758,10 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
         DWORD len2 = AUDIOMIXBUF_B2S(&pStream->MixBuf, cb2);
 
         if (pv1 && len1)
-            DrvAudioClearBuf(&pDSoundStream->Stream.Props, pv1, cb1, len1);
+            DrvAudioHlpClearBuf(&pDSoundStream->Stream.Props, pv1, cb1, len1);
 
         if (pv2 && len2)
-            DrvAudioClearBuf(&pDSoundStream->Stream.Props, pv2, cb2, len2);
+            DrvAudioHlpClearBuf(&pDSoundStream->Stream.Props, pv2, cb2, len2);
 
         directSoundPlayUnlock(pThis, pDSoundStream->pDSB, pv1, pv2, cb1, cb2);
     }
@@ -919,7 +919,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
         if (pDev)
         {
             DSLOG(("DSound: Guest \"%s\" is using host \"%s\"\n",
-                   DrvAudRecSrcToStr(pDSoundStream->enmRecSource), pDev->pszName));
+                   DrvAudHlpRecSrcToStr(pDSoundStream->enmRecSource), pDev->pszName));
 
             pGUID = &pDev->Guid;
         }
@@ -928,7 +928,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
     char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
     /* This always has to be in the release log. */
     LogRel(("DSound: Guest \"%s\" is using host device with GUID: %s\n",
-            DrvAudRecSrcToStr(pDSoundStream->enmRecSource), pszGUID? pszGUID: "{?}"));
+            DrvAudHlpRecSrcToStr(pDSoundStream->enmRecSource), pszGUID? pszGUID: "{?}"));
     RTStrFree(pszGUID);
 
     return pGUID;
@@ -1424,7 +1424,7 @@ static int dsoundCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     pDSoundStream->streamCfg = *pCfg;
     pDSoundStream->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
-    int rc = DrvAudioStreamCfgToProps(&pDSoundStream->streamCfg, &pDSoundStream->Stream.Props);
+    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pDSoundStream->Stream.Props);
     if (RT_SUCCESS(rc))
     {
         pDSoundStream->pDS = NULL;
@@ -1685,7 +1685,7 @@ static int dsoundCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     pDSoundStream->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
     /** @todo caller should already init Props? */
-    int rc = DrvAudioStreamCfgToProps(&pDSoundStream->streamCfg, &pStream->Props);
+    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
         /* Init the stream structure and save relevant information to it. */

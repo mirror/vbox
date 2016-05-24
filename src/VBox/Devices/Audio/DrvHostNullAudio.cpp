@@ -114,7 +114,7 @@ static int nullCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     NOREF(pInterface);
 
     /* Just adopt the wanted stream configuration. */
-    int rc = DrvAudioStreamCfgToProps(pCfg, &pStream->Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
         if (pcSamples)
@@ -132,7 +132,7 @@ static int nullCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     NOREF(pInterface);
 
     /* Just adopt the wanted stream configuration. */
-    int rc = DrvAudioStreamCfgToProps(pCfg, &pStream->Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
         PNULLAUDIOSTREAMOUT pNullStream = (PNULLAUDIOSTREAMOUT)pStream;

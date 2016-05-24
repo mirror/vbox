@@ -1128,7 +1128,7 @@ static int alsaCreateStreamOut(PPDMIHOSTAUDIO pInterface,
         streamCfg.enmFormat     = enmFormat;
         streamCfg.enmEndianness = enmEnd;
 
-        rc = DrvAudioStreamCfgToProps(&streamCfg, &pStream->Props);
+        rc = DrvAudioHlpStreamCfgToProps(&streamCfg, &pStream->Props);
         if (RT_FAILURE(rc))
             break;
 
@@ -1197,7 +1197,7 @@ static int alsaCreateStreamIn(PPDMIHOSTAUDIO pInterface,
         streamCfg.enmFormat     = enmFormat;
         streamCfg.enmEndianness = enmEnd;
 
-        rc = DrvAudioStreamCfgToProps(&streamCfg, &pStream->Props);
+        rc = DrvAudioHlpStreamCfgToProps(&streamCfg, &pStream->Props);
         if (RT_FAILURE(rc))
             break;
 
