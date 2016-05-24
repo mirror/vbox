@@ -802,7 +802,7 @@ private:
     ObjectState mState;
 
     /** User-level object lock for subclasses */
-    mutable RWLockHandle *mObjectLock;
+    RWLockHandle *mObjectLock;
 
     /** Slot of this object in the saFactoryStats array */
     uint32_t iFactoryStat;
