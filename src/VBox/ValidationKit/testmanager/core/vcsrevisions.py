@@ -50,6 +50,7 @@ class VcsRevisionData(ModelDataBase):
     ksParam_sMessage            = 'VcsRevision_sMessage';
 
     kasAllowNullAttributes      = [ ];
+    kfAllowUnicode_sMessage     = True;
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -159,7 +160,7 @@ class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
         # Check VcsRevisionData before do anything
         dDataErrors = oData.validateAndConvert(self._oDb);
         if len(dDataErrors) > 0:
-            raise TMExceptionBase('Invalid data passed to addCvsRevision(): %s' % (dDataErrors,));
+            raise TMExceptionBase('Invalid data passed to addVcsRevision(): %s' % (dDataErrors,));
 
         # Does it already exist?
         oOldData = self.tryFetch(oData.sRepository, oData.iRevision);

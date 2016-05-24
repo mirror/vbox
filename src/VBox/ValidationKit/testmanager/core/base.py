@@ -273,7 +273,8 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         elif sPrefix == 's':
             (oNewValue, sError) = self.validateStr( oValue, aoNilValues = aoNilValues, fAllowNull = fAllowNull,
                                                     cchMin = getattr(self, 'kcchMin_' + sAttr, 0),
-                                                    cchMax = getattr(self, 'kcchMax_' + sAttr, 4096));
+                                                    cchMax = getattr(self, 'kcchMax_' + sAttr, 4096),
+                                                    fAllowUnicodeSymbols = getattr(self, 'kfAllowUnicode_' + sAttr, False) );
         ## @todo al.
         elif sPrefix == 'aid':
             (oNewValue, sError) = self.validateListOfInts(oValue, aoNilValues = aoNilValues, fAllowNull = fAllowNull,
