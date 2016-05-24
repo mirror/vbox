@@ -413,7 +413,7 @@ DECLINLINE(bool) apicIsEnabled(PVMCPU pVCpu)
  * @param   pReg            The APIC 256-bit sparse register.
  * @param   rcNotFound      What to return when no bit is set.
  */
-static int apicGetHighestSetBit(volatile const XAPIC256BITREG *pReg, int rcNotFound)
+static int apicGetHighestSetBitInReg(volatile const XAPIC256BITREG *pReg, int rcNotFound)
 {
     ssize_t const  cFragments     = RT_ELEMENTS(pReg->u);
     unsigned const uFragmentShift = 5;
@@ -504,7 +504,7 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     if (pXApicPage->svr.u.fApicSoftwareEnable)
     {
-        int const irrv = apicGetHighestSetBit(&pXApicPage->irr, -1 /* rcNotFound */);
+        int const irrv = apicGetHighestSetBitInReg(&pXApicPage->irr, -1 /* rcNotFound */);
         if (irrv >= 0)
         {
             Assert(irrv <= (int)UINT8_MAX);
@@ -1102,7 +1102,7 @@ static void apicUpdatePpr(PVMCPU pVCpu)
 
     /* See Intel spec 10.8.3.1 "Task and Processor Priorities". */
     PXAPICPAGE    pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    uint8_t const uIsrv      = apicGetHighestSetBit(&pXApicPage->isr, 0 /* rcNotFound */);
+    uint8_t const uIsrv      = apicGetHighestSetBitInReg(&pXApicPage->isr, 0 /* rcNotFound */);
     uint8_t       uPpr;
     if (XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr) >= XAPIC_PPR_GET_PP(uIsrv))
         uPpr = pXApicPage->tpr.u8Tpr;
@@ -1181,7 +1181,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_EOI, APICMSRACCESS_WRITE_RSVD_BITS);
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    int isrv = apicGetHighestSetBit(&pXApicPage->isr, -1 /* rcNotFound */);
+    int isrv = apicGetHighestSetBitInReg(&pXApicPage->isr, -1 /* rcNotFound */);
     if (isrv >= 0)
     {
         Assert(isrv <= (int)UINT8_MAX);
@@ -2151,7 +2151,7 @@ VMMDECL(void) APICSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
 static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
 {
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-    int const irrv = apicGetHighestSetBit(&pXApicPage->irr, -1);
+    int const irrv = apicGetHighestSetBitInReg(&pXApicPage->irr, -1);
     if (irrv >= 0)
     {
         Assert(irrv <= (int)UINT8_MAX);
@@ -2360,7 +2360,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
     if (   fApicHwEnabled
         && pXApicPage->svr.u.fApicSoftwareEnable)
     {
-        int const irrv = apicGetHighestSetBit(&pXApicPage->irr, -1);
+        int const irrv = apicGetHighestSetBitInReg(&pXApicPage->irr, -1);
         if (RT_LIKELY(irrv >= 0))
         {
             Assert(irrv <= (int)UINT8_MAX);
