@@ -457,7 +457,7 @@ static int testSessionDataReadMessages(RTLOCALIPCSESSION hIpcSession, uint32_t c
                 for (uint32_t iWord = 1; iWord < cWords; iWord++)
                     if (pau32ScratchBuf[iWord] != iRound)
                     {
-                        RTTestIFailed("Message body word #%u mismatch: %#x, expected %#x", iWord, pau32ScratchBuf[iWord], iRound);
+                        RTTestIFailed("Message body word #%u mismatch: %#x, expected %#x", pau32ScratchBuf[iWord], iRound);
                         break;
                     }
             }
