@@ -919,7 +919,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
         if (pDev)
         {
             DSLOG(("DSound: Guest \"%s\" is using host \"%s\"\n",
-                   DrvAudHlpRecSrcToStr(pDSoundStream->enmRecSource), pDev->pszName));
+                   DrvAudioHlpRecSrcToStr(pDSoundStream->enmRecSource), pDev->pszName));
 
             pGUID = &pDev->Guid;
         }
@@ -928,7 +928,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
     char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
     /* This always has to be in the release log. */
     LogRel(("DSound: Guest \"%s\" is using host device with GUID: %s\n",
-            DrvAudHlpRecSrcToStr(pDSoundStream->enmRecSource), pszGUID? pszGUID: "{?}"));
+            DrvAudioHlpRecSrcToStr(pDSoundStream->enmRecSource), pszGUID ? pszGUID: "{?}"));
     RTStrFree(pszGUID);
 
     return pGUID;

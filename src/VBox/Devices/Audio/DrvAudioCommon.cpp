@@ -169,7 +169,7 @@ void DrvAudioHlpClearBuf(PPDMPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint
     }
 }
 
-const char *DrvAudHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
+const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
 {
     switch (enmRecSrc)
     {
