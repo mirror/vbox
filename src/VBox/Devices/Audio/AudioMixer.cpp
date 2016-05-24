@@ -104,61 +104,6 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
     return rc;
 }
 
-int AudioMixerCreateStream(PAUDIOMIXER pMixer,
-                           PPDMIAUDIOCONNECTOR pConn, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream)
-{
-    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pConn,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
-    /** @todo Validate fFlags. */
-    /* ppStream is optional. */
-
-    PAUDMIXSTREAM pMixStream = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
-    if (!pMixStream)
-        return VERR_NO_MEMORY;
-
-    pMixStream->pszName = RTStrDup(pCfg->szName);
-    if (!pMixStream->pszName)
-    {
-        RTMemFree(pMixStream);
-        return VERR_NO_MEMORY;
-    }
-
-    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %s, %RU8 channels, %RU32Hz)\n",
-                 pMixer->pszName, fFlags, pCfg->enmDir, DrvAudioAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
-
-    PPDMAUDIOSTREAM pStream;
-    int rc = pConn->pfnStreamCreate(pConn, pCfg, &pStream);
-    if (RT_SUCCESS(rc))
-    {
-        /* Save the audio stream pointer to this mixing stream. */
-        pMixStream->pStream = pStream;
-
-        /* Increase the stream's reference count to let others know
-         * we're reyling on it to be around now. */
-        pConn->pfnStreamAddRef(pConn, pStream);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        pMixStream->fFlags = fFlags;
-        pMixStream->pConn  = pConn;
-
-        if (ppStream)
-            *ppStream = pMixStream;
-    }
-    else if (pMixStream)
-    {
-        RTStrFree(pMixStream->pszName);
-        pMixStream->pszName = NULL;
-
-        RTMemFree(pMixStream);
-        pMixStream = NULL;
-    }
-
-    return rc;
-}
-
 int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -416,6 +361,66 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     }
 
     LogFlowFunc(("[%s]: cStreams=%RU8, rc=%Rrc\n", pSink->pszName, pSink->cStreams, rc));
+    return rc;
+}
+
+int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
+                               PPDMIAUDIOCONNECTOR pConn, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream)
+{
+    AssertPtrReturn(pSink,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pConn,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
+    /** @todo Validate fFlags. */
+    /* ppStream is optional. */
+
+    PAUDMIXSTREAM pMixStream = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
+    if (!pMixStream)
+        return VERR_NO_MEMORY;
+
+    pMixStream->pszName = RTStrDup(pCfg->szName);
+    if (!pMixStream->pszName)
+    {
+        RTMemFree(pMixStream);
+        return VERR_NO_MEMORY;
+    }
+
+    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %s, %RU8 channels, %RU32Hz)\n",
+                 pSink->pszName, fFlags, pCfg->enmDir, DrvAudioAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
+
+    PDMAUDIOSTREAMCFG CfgSink;
+    int rc = DrvAudioPCMPropsToStreamCfg(&pSink->PCMProps, &CfgSink);
+    AssertRCReturn(rc, rc);
+
+    /* Always use the sink's PCM audio format as the host side when creating a stream for it. */
+    PPDMAUDIOSTREAM pStream;
+    rc = pConn->pfnStreamCreate(pConn, &CfgSink, pCfg, &pStream);
+    if (RT_SUCCESS(rc))
+    {
+        /* Save the audio stream pointer to this mixing stream. */
+        pMixStream->pStream = pStream;
+
+        /* Increase the stream's reference count to let others know
+         * we're reyling on it to be around now. */
+        pConn->pfnStreamAddRef(pConn, pStream);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pMixStream->fFlags = fFlags;
+        pMixStream->pConn  = pConn;
+
+        if (ppStream)
+            *ppStream = pMixStream;
+    }
+    else if (pMixStream)
+    {
+        RTStrFree(pMixStream->pszName);
+        pMixStream->pszName = NULL;
+
+        RTMemFree(pMixStream);
+        pMixStream = NULL;
+    }
+
     return rc;
 }
 

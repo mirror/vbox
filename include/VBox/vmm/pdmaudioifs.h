@@ -636,10 +636,11 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
-     * @param   pszName              Friendly name of this input stream.
-     * @param   ppGstStrmIn          Pointer where to return the guest guest input stream on success.
+     * @param   pCfgHost             Stream configuration for host side.
+     * @param   pCfgGuest            Stream configuration for guest side.
+     * @param   ppStream             Pointer where to return the created audio stream on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOSTREAM *ppStream));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest, PPDMAUDIOSTREAM *ppStream));
 
     /**
      * Destroys an audio stream.
@@ -693,7 +694,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "45620608-5014-4322-8593-A15ACFDA2B12"
+#define PDMIAUDIOCONNECTOR_IID                  "9CDE2581-41B1-838E-24A5-448B2D0C822E"
 
 
 

@@ -60,6 +60,42 @@
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
 
+
+/**
+ * Retrieves the matching PDMAUDIOFMT for given bits + signing flag.
+ *
+ * @return  IPRT status code.
+ * @return  PDMAUDIOFMT         Resulting audio format or PDMAUDIOFMT_INVALID if invalid.
+ * @param   cBits               Bits to retrieve audio format for.
+ * @param   fSigned             Signed flag for bits to retrieve audio format for.
+ */
+PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
+{
+    if (fSigned)
+    {
+        switch (cBits)
+        {
+            case 8:  return PDMAUDIOFMT_S8;
+            case 16: return PDMAUDIOFMT_S16;
+            case 32: return PDMAUDIOFMT_S32;
+            default: break;
+        }
+    }
+    else
+    {
+        switch (cBits)
+        {
+            case 8:  return PDMAUDIOFMT_U8;
+            case 16: return PDMAUDIOFMT_U16;
+            case 32: return PDMAUDIOFMT_U32;
+            default: break;
+        }
+    }
+
+    AssertMsgFailed(("Bogus audio bits %RU8\n", cBits));
+    return PDMAUDIOFMT_INVALID;
+}
+
 /**
  * Clears a sample buffer by the given amount of audio samples.
  *
@@ -149,6 +185,66 @@ const char *DrvAudRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
 
     AssertMsgFailed(("Invalid recording source %ld\n", enmRecSrc));
     return "Unknown";
+}
+
+/**
+ * Returns wether the given audio format has signed bits or not.
+ *
+ * @return  IPRT status code.
+ * @return  bool                @true for signed bits, @false for unsigned.
+ * @param   enmFmt              Audio format to retrieve value for.
+ */
+bool DrvAudioAudFmtIsSigned(PDMAUDIOFMT enmFmt)
+{
+    switch (enmFmt)
+    {
+        case PDMAUDIOFMT_S8:
+        case PDMAUDIOFMT_S16:
+        case PDMAUDIOFMT_S32:
+            return true;
+
+        case PDMAUDIOFMT_U8:
+        case PDMAUDIOFMT_U16:
+        case PDMAUDIOFMT_U32:
+            return false;
+
+        default:
+            break;
+    }
+
+    AssertMsgFailed(("Bogus audio format %ld\n", enmFmt));
+    return false;
+}
+
+/**
+ * Returns the bits of a given audio format.
+ *
+ * @return  IPRT status code.
+ * @return  uint8_t             Bits of audio format.
+ * @param   enmFmt              Audio format to retrieve value for.
+ */
+uint8_t DrvAudioAudFmtToBits(PDMAUDIOFMT enmFmt)
+{
+    switch (enmFmt)
+    {
+        case PDMAUDIOFMT_S8:
+        case PDMAUDIOFMT_U8:
+            return 8;
+
+        case PDMAUDIOFMT_U16:
+        case PDMAUDIOFMT_S16:
+            return 16;
+
+        case PDMAUDIOFMT_U32:
+        case PDMAUDIOFMT_S32:
+            return 32;
+
+        default:
+            break;
+    }
+
+    AssertMsgFailed(("Bogus audio format %ld\n", enmFmt));
+    return 0;
 }
 
 const char *DrvAudioAudFmtToStr(PDMAUDIOFMT enmFmt)
@@ -252,6 +348,27 @@ bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
            && pProps1->fSigned     == pProps2->fSigned
            && pProps1->cBits       == pProps2->cBits
            && pProps1->fSwapEndian == pProps2->fSwapEndian;
+}
+
+/**
+ * Converts PCM properties to a audio stream configuration.
+ *
+ * @return  IPRT status code.
+ * @param   pPCMProps           Pointer to PCM properties to convert.
+ * @param   pCfg                Pointer to audio stream configuration to store result into.
+ */
+int DrvAudioPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
+
+    pCfg->uHz           = pPCMProps->uHz;
+    pCfg->cChannels     = pPCMProps->cChannels;
+    pCfg->enmFormat     = DrvAudioAudFmtBitsToAudFmt(pPCMProps->cBits, pPCMProps->fSigned);
+
+    /** @todo We assume little endian is the default for now. */
+    pCfg->enmEndianness = pPCMProps->fSwapEndian == false ? PDMAUDIOENDIANNESS_LITTLE : PDMAUDIOENDIANNESS_BIG;
+    return VINF_SUCCESS;
 }
 
 bool DrvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)

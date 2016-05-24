@@ -110,10 +110,14 @@ typedef struct DRVAUDIO
 #define PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface) \
     ( (PDRVAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIO, IAudioConnector)) )
 
+
+bool DrvAudioAudFmtIsSigned(PDMAUDIOFMT enmFmt);
+uint8_t DrvAudioAudFmtToBits(PDMAUDIOFMT enmFmt);
 const char *DrvAudioAudFmtToStr(PDMAUDIOFMT enmFmt);
 void DrvAudioClearBuf(PPDMPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
-bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2);
-bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pPCMInfo, PPDMAUDIOSTREAMCFG pCfg);
+bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pPCMProps1, PPDMPCMPROPS pPCMProps2);
+bool DrvAudioPCMPropsAreEqual(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+int DrvAudioPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 const char *DrvAudRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
 void DrvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);
 bool DrvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg);
