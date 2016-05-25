@@ -78,7 +78,7 @@ private:
        { }
 
        settings::BandwidthGroup mData;
-       ULONG                    cReferences = 0;
+       ULONG                    cReferences;
     };
 
     struct Data
