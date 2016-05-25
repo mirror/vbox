@@ -742,12 +742,14 @@ class RemoteReporter(ReporterBase):
         if sKind in [ 'text', 'log', ]  or  sKind.startswith('log/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
+            self.xmlFlush();
             g_oLock.release();
             self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'text/plain');
             g_oLock.acquire();
         elif sKind.startswith('screenshot/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
+            self.xmlFlush();
             g_oLock.release();
             self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'image/png');
             g_oLock.acquire();
