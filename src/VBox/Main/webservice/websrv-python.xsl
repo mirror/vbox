@@ -174,18 +174,24 @@ class <xsl:value-of select="$ifname"/>(<xsl:value-of select="$base" />):
            raise Exception("bad handle: "+str(handle))
        self.handle = handle
        self.isarray = isarray
-<!--
-    This doesn't work now
-       mgr.register(handle)
+       if self.isarray:
+           for strHnd in handle:
+               mgr.register(strHnd)
+       else:
+           mgr.register(self.handle)
 
    def __del__(self):
-       mgr.unregister(self.handle)
--->
+       self.releaseRemote()
+
    def releaseRemote(self):
         try:
-            req=IManagedObjectRef_releaseRequestMsg()
-            req._this=handle
-            self.mgr.getPort().IManagedObjectRef_release(req)
+            if self.handle is not None:
+               if self.isarray:
+                   for strHnd in self.handle:
+                       self.mgr.unregister(strHnd)
+               else:
+                   self.mgr.unregister(self.handle)
+               self.handle = None;
         except:
             pass
 
@@ -210,7 +216,10 @@ class <xsl:value-of select="$ifname"/>(<xsl:value-of select="$base" />):
       raise TypeError("iteration over non-sequence")
 
    def __str__(self):
-        return self.handle
+        if self.isarray:
+            return str(self.handle)
+        else:
+            return self.handle
 
    def isValid(self):
         return self.handle != None and self.handle != ''
@@ -494,18 +503,19 @@ class <xsl:value-of select="@name"/>:
 # Works only with ZSI 2.0 generated stubs (part of the VirtualBox SDK).
 from VirtualBox_client import *
 
-class ManagedManager:
-  def __init__(self):
+class ObjectRefManager:
+  def __init__(self, sessionmgr):
      self.map = {}
+     self.sessionmgr = sessionmgr
 
-  def register(self,handle):
+  def register(self, handle):
      if handle == None:
         return
      c = self.map.get(handle,0)
      c = c + 1
      self.map[handle]=c
 
-  def unregister(self,handle):
+  def unregister(self, handle):
      if handle == None:
         return
      c = self.map.get(handle,-1)
@@ -516,10 +526,10 @@ class ManagedManager:
         try:
             req=IManagedObjectRef_releaseRequestMsg()
             req._this=handle
-            self.mgr.getPort().IManagedObjectRef_release(req)
+            self.sessionmgr.getPort().IManagedObjectRef_release(req)
         except:
             pass
-        self.map[handle] = -1
+        del self.map[handle]
      else:
         self.map[handle] = c
 
@@ -872,12 +882,13 @@ class IUnknown:
 
 import base64
 
-class IWebsessionManager2(IWebsessionManager):
+class IWebsessionManager2(IWebsessionManager, ObjectRefManager):
   def __init__(self, url):
        self.url = url
        self.port = None
        self.handle = None
        self.mgr = self
+       ObjectRefManager.__init__(self, self.mgr)
 
   def getPort(self):
       if self.port is None:
