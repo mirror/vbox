@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 # Standard python imports
 import sys;
 import os;
+import zipfile;
 from optparse import OptionParser;
 import xml.etree.ElementTree as ET;
 
@@ -64,9 +65,12 @@ class PartialDbDump(object): # pylint: disable=R0903
         oParser = OptionParser()
         oParser.add_option('-q', '--quiet', dest = 'fQuiet', action = 'store_true',
                            help = 'Quiet execution');
-        oParser.add_option('-b', '--base-filename', dest = 'sBaseFilename', metavar = '<base-filename>',
-                           default = '/tmp/testmanager-partial-dump',
-                           help = 'Absolute base filename (dash + table name + sql appended).');
+        oParser.add_option('-f', '--filename', dest = 'sFilename', metavar = '<filename>',
+                           default = 'partial-db-dump.zip', help = 'The name of the partial database zip file to write/load.');
+
+        oParser.add_option('-t', '--tmp-file', dest = 'sTempFile', metavar = '<temp-file>',
+                           default = '/tmp/tm-partial-db-dump.pgtxt',
+                           help = 'Name of temporary file for duping tables. Must be absolute');
         oParser.add_option('--days-to-dump', dest = 'cDays', metavar = '<days>', type = 'int', default = 14,
                            help = 'How many days to dump (counting backward from current date).');
         oParser.add_option('--load-dump-into-database', dest = 'fLoadDumpIntoDatabase', action = 'store_true',
@@ -95,11 +99,8 @@ class PartialDbDump(object): # pylint: disable=R0903
         'SchedGroupMembers',            # ?
         'SchedQueues',
         'Builds',                       # ??
-        'SystemLog',                    # ?
         'VcsRevisions',                 # ?
         'TestResultStrTab',             # 36K rows, never mind complicated then.
-        'GlobalResourceStatuses',       # ?
-        'TestBoxStatuses',              # ?
     ];
 
     ##
@@ -113,20 +114,35 @@ class PartialDbDump(object): # pylint: disable=R0903
         'TestResultMsgs',               # 2016-05-25: ca.   29 MB
         'TestResultValues',             # 2016-05-25: ca. 3728 MB
         'TestResultFailures',
+        'SystemLog',
     ];
+
+    def _doCopyTo(self, sTable, oZipFile, oDb, sSql, aoArgs = None):
+        """ Does one COPY TO job. """
+        print 'Dumping %s...' % (sTable,);
+
+        if aoArgs is not None:
+            sSql = oDb.formatBindArgs(sSql, aoArgs);
+
+        oFile = open(self.oConfig.sTempFile, 'w');
+        oDb.copyExpert(sSql, oFile);
+        cRows = oDb.getRowCount();
+        oFile.close();
+        print '... %s rows.' % (cRows,);
+
+        oZipFile.write(self.oConfig.sTempFile, sTable);
+        return True;
 
     def _doDump(self, oDb):
         """ Does the dumping of the database. """
+
+        oZipFile = zipfile.ZipFile(self.oConfig.sFilename, 'w', zipfile.ZIP_DEFLATED);
 
         oDb.begin();
 
         # Dumping full tables is simple.
         for sTable in self.kasTablesToDumpInFull:
-            sFile = self.oConfig.sBaseFilename + '-' + sTable + '.pgtxt';
-            print 'Dumping %s into "%s"...' % (sTable, sFile,);
-            oDb.execute('COPY ' + sTable + ' TO %s WITH (FORMAT TEXT)', (sFile,));
-            cRows = oDb.getRowCount();
-            print '... %s rows.' % (cRows,);
+            self._doCopyTo(sTable, oZipFile, oDb, 'COPY ' + sTable + ' TO STDOUT WITH (FORMAT TEXT)');
 
         # Figure out how far back we need to go.
         oDb.execute('SELECT CURRENT_TIMESTAMP - INTERVAL \'%s days\'' % (self.oConfig.cDays,));
@@ -139,12 +155,9 @@ class PartialDbDump(object): # pylint: disable=R0903
         # use slightly dated test box references and we don't wish to have dangling
         # references when loading.
         for sTable in [ 'TestBoxes', ]:
-            sFile = self.oConfig.sBaseFilename + '-' + sTable + '.pgtxt';
-            print 'Dumping %s into "%s"...' % (sTable, sFile,);
-            oDb.execute('COPY (SELECT * FROM ' + sTable + ' WHERE tsExpire >= %s) TO %s WITH (FORMAT TEXT)',
-                        (tsEffectiveSafe, sFile,));
-            cRows = oDb.getRowCount();
-            print '... %s rows.' % (cRows,);
+            self._doCopyTo(sTable, oZipFile, oDb,
+                           'COPY (SELECT * FROM ' + sTable + ' WHERE tsExpire >= %s) TO STDOUT WITH (FORMAT TEXT)',
+                           (tsEffectiveSafe,));
 
         # The test results needs to start with test sets and then dump everything
         # releated to them.  So, figure the lowest (oldest) test set ID we'll be
@@ -157,31 +170,103 @@ class PartialDbDump(object): # pylint: disable=R0903
 
         # Tables with idTestSet member.
         for sTable in [ 'TestSets', 'TestResults', 'TestResultValues' ]:
-            sFile = self.oConfig.sBaseFilename + '-' + sTable + '.pgtxt';
-            print 'Dumping %s into "%s"...' % (sTable, sFile,);
-            oDb.execute('COPY (SELECT * FROM ' + sTable + ' WHERE idTestSet >= %s) TO %s WITH (FORMAT TEXT)',
-                        (idFirstTestSet, sFile,));
-            cRows = oDb.getRowCount();
-            print '... %s rows.' % (cRows,);
+            self._doCopyTo(sTable, oZipFile, oDb,
+                           'COPY (SELECT * FROM ' + sTable + ' WHERE idTestSet >= %s) TO STDOUT WITH (FORMAT TEXT)',
+                           (idFirstTestSet,));
 
         # Tables where we have to go via TestResult.
         for sTable in [ 'TestResultFiles', 'TestResultMsgs', 'TestResultFailures' ]:
-            sFile = self.oConfig.sBaseFilename + '-' + sTable + '.pgtxt';
-            print 'Dumping %s into "%s"...' % (sTable, sFile,);
-            oDb.execute('COPY (SELECT it.*\n'
-                        '      FROM ' + sTable + ' it, TestResults tr\n'
-                        '      WHERE  tr.idTestSet >= %s\n'
-                        '         AND tr.tsCreated >= %s\n' # performance hack.
-                        '         AND it.idTestResult = tr.idTestResult\n'
-                        ') TO %s WITH (FORMAT TEXT)',
-                        (idFirstTestSet, tsEffective, sFile,));
-            cRows = oDb.getRowCount();
-            print '... %s rows.' % (cRows,);
+            self._doCopyTo(sTable, oZipFile, oDb,
+                           'COPY (SELECT it.*\n'
+                           '      FROM ' + sTable + ' it, TestResults tr\n'
+                           '      WHERE  tr.idTestSet >= %s\n'
+                           '         AND tr.tsCreated >= %s\n' # performance hack.
+                           '         AND it.idTestResult = tr.idTestResult\n'
+                           ') TO STDOUT WITH (FORMAT TEXT)',
+                           (idFirstTestSet, tsEffective,));
 
+        # Tables which goes exclusively by tsCreated.
+        for sTable in [ 'SystemLog', ]:
+            self._doCopyTo(sTable, oZipFile, oDb,
+                           'COPY (SELECT * FROM ' + sTable + ' WHERE tsCreated >= %s) TO STDOUT WITH (FORMAT TEXT)',
+                           (tsEffective,));
+
+        oZipFile.close();
+        print "Done!";
         return 0;
 
     def _doLoad(self, oDb):
         """ Does the loading of the dumped data into the database. """
+
+        oZipFile = zipfile.ZipFile(self.oConfig.sFilename, 'r');
+
+        asTablesInLoadOrder = [
+            'Users',
+            'BuildBlacklist',
+            'BuildCategories',
+            'BuildSources',
+            'FailureCategories',
+            'FailureReasons',
+            'GlobalResources',
+            'Testcases',
+            'TestcaseArgs',
+            'TestcaseDeps',
+            'TestcaseGlobalRsrcDeps',
+            'TestGroups',
+            'TestGroupMembers',
+            'TestBoxes',
+            'SchedGroupMembers',
+            'SchedQueues',
+            'Builds',
+            'SystemLog',
+            'VcsRevisions',
+            'TestResultStrTab',
+            'TestSets',
+            'TestResults',
+            'TestResultFiles',
+            'TestResultMsgs',
+            'TestResultValues',
+            'TestResultFailures',
+        ];
+        assert len(asTablesInLoadOrder) == len(self.kasTablesToDumpInFull) + len(self.kasTablesToPartiallyDump);
+
+        oDb.begin();
+        oDb.execute('SET CONSTRAINTS ALL DEFERRED;');
+
+        print 'Checking if the database looks empty...\n'
+        for sTable in asTablesInLoadOrder + [ 'TestBoxStatuses', 'GlobalResourceStatuses' ]:
+            oDb.execute('SELECT COUNT(*) FROM ' + sTable);
+            cRows = oDb.fetchOne()[0];
+            cMaxRows = 0;
+            if sTable in [ 'TestResultStrTab', 'Users' ]:        cMaxRows =  1;
+            if cRows > cMaxRows:
+                print 'error: Table %s has %u rows which is more than %u - refusing to delete and load.' \
+                    % (sTable, cRows, cMaxRows,);
+                print 'info:  Please drop and recreate the database before loading!'
+                return 1;
+
+        print 'Dropping default table content...\n'
+        for sTable in [ 'TestResultStrTab', 'Users']:
+            oDb.execute('DELETE FROM ' + sTable);
+
+        oDb.execute('ALTER TABLE TestSets DROP CONSTRAINT IF EXISTS TestSets_idTestResult_fkey');
+
+        for sTable in asTablesInLoadOrder:
+            print 'Loading %s...' % (sTable,);
+            oFile = oZipFile.open(sTable);
+            oDb.copyExpert('COPY ' + sTable + ' FROM STDIN WITH (FORMAT TEXT)', oFile);
+            cRows = oDb.getRowCount();
+            print '... %s rows.' % (cRows,);
+
+        oDb.execute('ALTER TABLE TestSets ADD FOREIGN KEY (idTestResult) REFERENCES TestResults(idTestResult)');
+        oDb.commit();
+
+        # Last step.
+        print 'Analyzing...'
+        oDb.execute('ANALYZE');
+        oDb.commit();
+
+        print 'Done!'
         return 0;
 
     def main(self):
