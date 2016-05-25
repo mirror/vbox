@@ -63,7 +63,6 @@
 
 #include <slirp.h>
 #include "ip_icmp.h"
-#include "ctl.h"
 
 
 /*
