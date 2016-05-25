@@ -28,12 +28,16 @@
 # Description:    VirtualBox Linux Additions kernel modules
 ### END INIT INFO
 
+## @todo This file duplicates a lot of script with vboxdrv.sh.  When making
+# changes please try to reduce differences between the two wherever possible.
+
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
 LOG="/var/log/vboxadd-install.log"
 MODPROBE=/sbin/modprobe
 OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
 SCRIPTNAME=vboxadd.sh
+QUICKSETUP=
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -165,6 +169,8 @@ do_vboxguest_non_udev()
 start()
 {
     begin "Starting the VirtualBox Guest Additions" console;
+    # If we got this far assume that the slow set-up has been done.
+    QUICKSETUP=yes
     if test -r $config; then
       . $config
     else
@@ -299,36 +305,44 @@ cleanup_modules()
 setup_modules()
 {
     # don't stop the old modules here -- they might be in use
-    cleanup_modules
+    test -z "${QUICKSETUP}" && cleanup_modules
     begin "Building the VirtualBox Guest Additions kernel modules"
 
     begin "Building the main Guest Additions module"
-    if ! $BUILDINTMP \
-        --save-module-symvers /tmp/vboxguest-Module.symvers \
-        --module-source $MODULE_SRC/vboxguest \
-        --no-print-directory install >> $LOG 2>&1; then
-        show_error "Look at $LOG to find out what went wrong"
-        return 1
-    fi
-    succ_msg
-    begin "Building the shared folder support module"
-    if ! $BUILDINTMP \
-        --use-module-symvers /tmp/vboxguest-Module.symvers \
-        --module-source $MODULE_SRC/vboxsf \
-        --no-print-directory install >> $LOG 2>&1; then
-        show_error  "Look at $LOG to find out what went wrong"
-        return 1
-    fi
-    succ_msg
-    begin "Building the graphics driver module"
-    if ! $BUILDINTMP \
-        --use-module-symvers /tmp/vboxguest-Module.symvers \
-        --module-source $MODULE_SRC/vboxvideo \
-        --no-print-directory install >> $LOG 2>&1; then
-        show_error "Look at $LOG to find out what went wrong"
-    fi
-    succ_msg
-    depmod
+    for i in /lib/modules/*; do
+        test -d "${i}/build" || continue
+        # This does not work for 2.4 series kernels.  How sad.
+        test -n "${QUICKSETUP}" && test -f "${i}/misc/vboxguest.ko" && continue
+        begin "Building for kernel ${i##*/}" console
+        export KERN_DIR="${i}/build"
+        export MODULE_DIR="${i}/misc"
+        if ! $BUILDINTMP \
+            --save-module-symvers /tmp/vboxguest-Module.symvers \
+            --module-source $MODULE_SRC/vboxguest \
+            --no-print-directory install >> $LOG 2>&1; then
+            show_error "Look at $LOG to find out what went wrong"
+            test "${i##*/}" = "`uname -r`" && return 1
+        fi
+        succ_msg
+        begin "Building the shared folder support module"
+        if ! $BUILDINTMP \
+            --use-module-symvers /tmp/vboxguest-Module.symvers \
+            --module-source $MODULE_SRC/vboxsf \
+            --no-print-directory install >> $LOG 2>&1; then
+            show_error  "Look at $LOG to find out what went wrong"
+            test "${i##*/}" = "`uname -r`" && return 1
+        fi
+        succ_msg
+        begin "Building the graphics driver module"
+        if ! $BUILDINTMP \
+            --use-module-symvers /tmp/vboxguest-Module.symvers \
+            --module-source $MODULE_SRC/vboxvideo \
+            --no-print-directory install >> $LOG 2>&1; then
+            show_error "Look at $LOG to find out what went wrong"
+        fi
+        succ_msg
+        depmod "${i##*/}"
+    done
     return 0
 }
 
@@ -380,6 +394,21 @@ extra_setup()
     # And an rc file to re-build the kernel modules and re-set-up the X server.
     ln -sf "$lib_path/$PACKAGE/vboxadd" /sbin/rcvboxadd
     ln -sf "$lib_path/$PACKAGE/vboxadd-x11" /sbin/rcvboxadd-x11
+    # And a post-installation script for rebuilding modules when a new kernel
+    # is installed.
+    mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
+    cat << EOF > /etc/kernel/postinst.d/vboxadd
+#!/bin/sh
+/sbin/rcvboxadd quicksetup
+exit 0
+EOF
+    cat << EOF > /etc/kernel/prerm.d/vboxadd
+#!/bin/sh
+for i in ${OLDMODULES}; do rm -f /lib/modules/"\${1}"/misc/"\${i}".ko; done
+rmdir -p /lib/modules/"\$1"/misc 2>/dev/null
+exit 0
+EOF
+    chmod 0755 /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
     # At least Fedora 11 and Fedora 12 require the correct security context when
     # executing this command from service scripts. Shouldn't hurt for other
     # distributions.
@@ -423,7 +452,7 @@ setup()
         mod_succ=1
         show_error "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
     fi
-    extra_setup
+    test -z "${QUICKSETUP}" && extra_setup
     if [ "$mod_succ" -eq "0" ]; then
         if running_vboxguest || running_vboxadd; then
             begin "You should restart your guest to make sure the new modules are actually used" console
@@ -459,6 +488,8 @@ cleanup()
     rm /sbin/mount.vboxsf 2>/dev/null
     rm /sbin/rcvboxadd 2>/dev/null
     rm /sbin/rcvboxadd-x11 2>/dev/null
+    rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
+    rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
 }
 
@@ -484,6 +515,10 @@ restart)
 setup)
     setup && start
     ;;
+quicksetup)
+    QUICKSETUP=yes
+    setup && start
+    ;;
 cleanup)
     cleanup
     ;;
@@ -491,7 +526,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|setup}"
+    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup}"
     exit 1
 esac
 
