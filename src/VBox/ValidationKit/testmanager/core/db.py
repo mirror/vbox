@@ -154,6 +154,10 @@ class TMDatabaseCursor(object):
             oRet = oRet.decode('utf-8');
         return oRet;
 
+    def copyExpert(self, sSqlCopyStmt, oFile, cbBuf = 8192):
+        """ See TMDatabaseConnection.copyExpert()"""
+        return self._oCursor.copy_expert(sSqlCopyStmt, oFile, cbBuf);
+
     @staticmethod
     def isTsInfinity(tsValue):
         """ Checks if tsValue is an infinity timestamp. """
@@ -480,6 +484,10 @@ class TMDatabaseConnection(object):
         if sys.version_info[0] >= 3 and not isinstance(oRet, str):
             oRet = oRet.decode('utf-8');
         return oRet;
+
+    def copyExpert(self, sSqlCopyStmt, oFile, cbBuf = 8192):
+        """ Wrapper around Psycopg2.cursor.copy_expert. """
+        return self._oCursor.copy_expert(sSqlCopyStmt, oFile, cbBuf);
 
     def getCurrentTimestamps(self):
         """
