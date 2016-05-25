@@ -170,9 +170,11 @@ class PartialDbDump(object): # pylint: disable=R0903
             print 'Dumping %s into "%s"...' % (sTable, sFile,);
             oDb.execute('COPY (SELECT it.*\n'
                         '      FROM ' + sTable + ' it, TestResults tr\n'
-                        '      WHERE  tr.idTestSet >= %s AND it.idTestResult = tr.idTestResult )\n'
-                        '  TO %s WITH (FORMAT TEXT)',
-                        (idFirstTestSet, sFile,));
+                        '      WHERE  tr.idTestSet >= %s\n'
+                        '         AND tr.tsCreated >= %s\n' # performance hack.
+                        '         AND it.idTestResult = tr.idTestResult\n'
+                        ') TO %s WITH (FORMAT TEXT)',
+                        (idFirstTestSet, tsEffective, sFile,));
             cRows = oDb.getRowCount();
             print '... %s rows.' % (cRows,);
 
