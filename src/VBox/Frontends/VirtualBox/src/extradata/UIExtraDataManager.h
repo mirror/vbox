@@ -143,7 +143,7 @@ public:
     /** @name Messaging
       * @{ */
         /** Returns the list of supressed messages for the Message/Popup center frameworks. */
-        QStringList suppressedMessages();
+        QStringList suppressedMessages(const QString &strID = GlobalID);
         /** Defines the @a list of supressed messages for the Message/Popup center frameworks. */
         void setSuppressedMessages(const QStringList &list);
 
