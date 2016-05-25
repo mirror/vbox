@@ -152,7 +152,6 @@ typedef struct NATState
     struct in_addr loopback_addr;
     uint32_t dnsLastUpdate;
     uint32_t netmask;
-    uint8_t client_ethaddr[6];
     const uint8_t *slirp_ethaddr;
     char slirp_hostname[33];
     bool fPassDomain;
@@ -386,7 +385,6 @@ typedef struct NATState
 #endif
 #define dns_addr pData->dns_addr
 #define loopback_addr pData->loopback_addr
-#define client_ethaddr pData->client_ethaddr
 #define slirp_hostname pData->slirp_hostname
 
 #define tcb pData->tcb
