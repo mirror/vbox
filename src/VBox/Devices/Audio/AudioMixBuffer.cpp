@@ -1740,8 +1740,22 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VINF_SUCCESS;
     }
 
+    PPDMAUDIOMIXBUF pParent = pMixBuf->pParent;
+
     AUDMIXBUF_LOG(("%s: enmFmt=%ld, pvBuf=%p, cbBuf=%RU32 (%RU32 samples)\n",
                    pMixBuf->pszName, enmFmt, pvBuf, cbBuf, AUDIOMIXBUF_B2S(pMixBuf, cbBuf)));
+
+    if (   pParent
+        && pParent->cSamples <= pMixBuf->cMixed)
+    {
+        if (pcWritten)
+            *pcWritten = 0;
+
+        AUDMIXBUF_LOG(("%s: Parent buffer %s is full\n",
+                       pMixBuf->pszName, pMixBuf->pParent->pszName));
+
+        return VINF_BUFFER_OVERFLOW;
+    }
 
     PPDMAUDMIXBUF_FN_CONVFROM pCnvFrm;
     if (pMixBuf->AudioFmt != enmFmt)
@@ -1792,7 +1806,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
 #endif
 
-    uint32_t cWritten;
+    uint32_t cWrittenTotal = 0;
 
     PDMAUDMIXBUF_CONVOPTS convOpts;
     convOpts.Volume = pMixBuf->Volume;
@@ -1801,11 +1815,11 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (cLenDst1)
     {
         convOpts.cSamples = cLenDst1;
-        cWritten = pCnvFrm(pSamplesDst1, pvBuf, cbBuf, &convOpts);
-        Assert(cWritten == cLenDst1);
+        cWrittenTotal = pCnvFrm(pSamplesDst1, pvBuf, cbBuf, &convOpts);
+        Assert(cWrittenTotal == cLenDst1);
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
-        RTFileWrite(fh, pSamplesDst1, cWritten * sizeof(PDMAUDIOSAMPLE), NULL);
+        RTFileWrite(fh, pvBuf, cbBuf, NULL);
 #endif
     }
 
@@ -1816,11 +1830,11 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         AssertPtr(pSamplesDst2);
 
         convOpts.cSamples = cLenDst2;
-        cWritten = pCnvFrm(pSamplesDst2, (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), cbBuf, &convOpts);
-        Assert(cWritten == cLenDst2);
+        cWrittenTotal += pCnvFrm(pSamplesDst2, (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), cbBuf, &convOpts);
+        Assert(cWrittenTotal == (cLenDst1 + cLenDst2));
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
-        RTFileWrite(fh, pSamplesDst2, cWritten * sizeof(PDMAUDIOSAMPLE), NULL);
+        RTFileWrite(fh, (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), cbBuf, NULL);
 #endif
     }
 
@@ -1831,6 +1845,8 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (RT_SUCCESS(rc))
     {
         pMixBuf->offReadWrite = cOffWrite % pMixBuf->cSamples;
+        pMixBuf->cProcessed   = RT_MIN(pMixBuf->cProcessed + cLenDst1 + cLenDst2,
+                                       pMixBuf->cSamples /* Max */);
 
         uint32_t cProcessedTotal = pMixBuf->cProcessed + cLenDst1 + cLenDst2;
         if (cProcessedTotal > pMixBuf->cSamples)
