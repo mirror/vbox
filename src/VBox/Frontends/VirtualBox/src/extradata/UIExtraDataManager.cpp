@@ -2088,42 +2088,6 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QString
     return strValue;
 }
 
-QString UIExtraDataManager::extraDataStringUnion(const QString &strKey, const QString &strID)
-{
-    /* Machine extra-data first: */
-    if (strID != GlobalID)
-    {
-        MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(strID);
-
-        /* Hot-load machine extra-data map if necessary: */
-        if (itMap == m_data.constEnd())
-        {
-            hotloadMachineExtraDataMap(strID);
-            itMap = m_data.constFind(strID);
-        }
-        if (itMap != m_data.constEnd())
-        {
-            /* Return string if present in the map: */
-            ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
-            if (itValue != itMap->constEnd())
-                return *itValue;
-        }
-    }
-
-    /* Global extra-data: */
-    MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(GlobalID);
-    if (itMap != m_data.constEnd())
-    {
-        /* Return string if present in the map: */
-        ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
-        if (itValue != itMap->constEnd())
-            return *itValue;
-    }
-
-    /* Not found, return null string: */
-    return QString();
-}
-
 void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = GlobalID */)
 {
     /* Make sure VBoxSVC is available: */
@@ -4156,6 +4120,42 @@ void UIExtraDataManager::open(QWidget *pCenterWidget)
     m_pWindow->showAndRaise(pCenterWidget);
 }
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+
+QString UIExtraDataManager::extraDataStringUnion(const QString &strKey, const QString &strID)
+{
+    /* If passed strID differs from the GlobalID: */
+    if (strID != GlobalID)
+    {
+        /* Search through the machine extra-data first: */
+        MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(strID);
+        /* Hot-load machine extra-data map if necessary: */
+        if (itMap == m_data.constEnd())
+        {
+            hotloadMachineExtraDataMap(strID);
+            itMap = m_data.constFind(strID);
+        }
+        if (itMap != m_data.constEnd())
+        {
+            /* Return string if present in the map: */
+            ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
+            if (itValue != itMap->constEnd())
+                return *itValue;
+        }
+    }
+
+    /* Search through the global extra-data finally: */
+    MapOfExtraDataMaps::const_iterator itMap = m_data.constFind(GlobalID);
+    if (itMap != m_data.constEnd())
+    {
+        /* Return string if present in the map: */
+        ExtraDataMap::const_iterator itValue = itMap->constFind(strKey);
+        if (itValue != itMap->constEnd())
+            return *itValue;
+    }
+
+    /* Not found, return null string: */
+    return QString();
+}
 
 bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = GlobalID */)
 {
