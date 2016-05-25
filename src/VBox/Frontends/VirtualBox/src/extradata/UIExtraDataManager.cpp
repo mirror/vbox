@@ -2079,20 +2079,13 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
 
 QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = GlobalID */)
 {
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    // TODO: Check if we can avoid copying here..
-    /* Make a read-only copy of the corresponding map: */
-    const ExtraDataMap data = m_data.value(strID);
-
-    /* QString() if value was not set: */
-    if (!data.contains(strKey))
+    /* Get the value. Return 'QString()' if not found: */
+    const QString strValue = extraDataStringUnion(strKey, strID);
+    if (strValue.isNull())
         return QString();
 
     /* Returns corresponding value: */
-    return data[strKey];
+    return strValue;
 }
 
 QString UIExtraDataManager::extraDataStringUnion(const QString &strKey, const QString &strID)
@@ -2187,20 +2180,14 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
 
 QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QString &strID /* = GlobalID */)
 {
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Read-only access corresponding map: */
-    const ExtraDataMap data = m_data.value(strID);
-
-    /* QStringList() if machine value was not set: */
-    if (!data.contains(strKey))
+    /* Get the value. Return 'QStringList()' if not found: */
+    const QString strValue = extraDataStringUnion(strKey, strID);
+    if (strValue.isNull())
         return QStringList();
 
     /* Few old extra-data string-lists were separated with 'semicolon' symbol.
      * All new separated by 'comma'. We have to take that into account. */
-    return data[strKey].split(QRegExp("[;,]"), QString::SkipEmptyParts);
+    return strValue.split(QRegExp("[;,]"), QString::SkipEmptyParts);
 }
 
 void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &value, const QString &strID /* = GlobalID */)
