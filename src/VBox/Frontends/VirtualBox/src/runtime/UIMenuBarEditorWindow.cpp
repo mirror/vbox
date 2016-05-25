@@ -990,6 +990,7 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
     {
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_Contents));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_WebSite));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_BugTracker));
         pMenu->addSeparator();
 #ifndef VBOX_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_About));

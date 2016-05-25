@@ -383,6 +383,7 @@ public slots:
 
     /* Handlers: Help menu stuff: */
     void sltShowHelpWebDialog();
+    void sltShowBugTracker();
     void sltShowHelpAboutDialog();
     void sltShowHelpHelpDialog();
     void sltResetSuppressedMessages();

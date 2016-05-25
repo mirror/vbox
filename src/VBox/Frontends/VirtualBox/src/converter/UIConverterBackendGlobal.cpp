@@ -496,6 +496,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionTyp
     {
         case UIExtraDataMetaDefs::MenuHelpActionType_Contents:             strResult = "Contents"; break;
         case UIExtraDataMetaDefs::MenuHelpActionType_WebSite:              strResult = "WebSite"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_BugTracker:           strResult = "BugTracker"; break;
 #ifndef VBOX_WS_MAC
         case UIExtraDataMetaDefs::MenuHelpActionType_About:                strResult = "About"; break;
 #endif /* !VBOX_WS_MAC */
@@ -517,6 +518,7 @@ template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDat
     QStringList keys;               QList<UIExtraDataMetaDefs::MenuHelpActionType> values;
     keys << "Contents";             values << UIExtraDataMetaDefs::MenuHelpActionType_Contents;
     keys << "WebSite";              values << UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
+    keys << "BugTracker";           values << UIExtraDataMetaDefs::MenuHelpActionType_BugTracker;
 #ifndef VBOX_WS_MAC
     keys << "About";                values << UIExtraDataMetaDefs::MenuHelpActionType_About;
 #endif /* !VBOX_WS_MAC */

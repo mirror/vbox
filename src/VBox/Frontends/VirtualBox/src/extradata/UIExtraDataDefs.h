@@ -365,8 +365,9 @@ public:
         MenuHelpActionType_Invalid              = 0,
         MenuHelpActionType_Contents             = RT_BIT(0),
         MenuHelpActionType_WebSite              = RT_BIT(1),
+        MenuHelpActionType_BugTracker           = RT_BIT(2),
 #ifndef RT_OS_DARWIN
-        MenuHelpActionType_About                = RT_BIT(2),
+        MenuHelpActionType_About                = RT_BIT(3),
 #endif /* !RT_OS_DARWIN */
         MenuHelpActionType_All                  = 0xFFFF
     };

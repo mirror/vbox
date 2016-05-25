@@ -2620,6 +2620,11 @@ void UIMessageCenter::sltShowHelpWebDialog()
     vboxGlobal().openURL("https://www.virtualbox.org");
 }
 
+void UIMessageCenter::sltShowBugTracker()
+{
+    vboxGlobal().openURL("https://www.virtualbox.org/wiki/Bugtracker");
+}
+
 void UIMessageCenter::sltShowHelpAboutDialog()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();

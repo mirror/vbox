@@ -77,6 +77,7 @@ enum UIActionIndex
     UIActionIndex_Menu_Help,
     UIActionIndex_Simple_Contents,
     UIActionIndex_Simple_WebSite,
+    UIActionIndex_Simple_BugTracker,
 #ifndef RT_OS_DARWIN
     UIActionIndex_Simple_About,
 #endif /* !RT_OS_DARWIN */

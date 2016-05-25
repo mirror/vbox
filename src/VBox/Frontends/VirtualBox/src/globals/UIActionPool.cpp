@@ -638,6 +638,39 @@ protected:
     }
 };
 
+class UIActionSimpleBugTracker : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleBugTracker(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/site_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_BugTracker; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("BugTracker");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&VirtualBox Bug Tracker..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product bug tracker"));
+    }
+};
+
 class UIActionSimpleResetWarnings : public UIActionSimple
 {
     Q_OBJECT;
@@ -1013,6 +1046,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
     m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
+    m_pool[UIActionIndex_Simple_BugTracker] = new UIActionSimpleBugTracker(this);
 #ifndef RT_OS_DARWIN
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
 #endif /* !RT_OS_DARWIN */
@@ -1052,6 +1086,8 @@ void UIActionPool::prepareConnections()
             &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_BugTracker), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowBugTracker()), Qt::UniqueConnection);
 #ifndef RT_OS_DARWIN
     connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
@@ -1230,6 +1266,8 @@ void UIActionPool::updateMenuHelp()
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents)) || fSeparator;;
     /* 'Web Site' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite)) || fSeparator;;
+    /* 'Bug Tracker' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_BugTracker)) || fSeparator;;
 
     /* Separator? */
     if (fSeparator)
