@@ -37,12 +37,14 @@ import unittest;
 from common                         import constants;
 from testmanager                    import config;
 from testmanager.core.base          import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, TMExceptionBase, TMTooManyRows;
-from testmanager.core.testgroup     import TestGroupData
-from testmanager.core.build         import BuildDataEx
-from testmanager.core.testbox       import TestBoxData
-from testmanager.core.testcase      import TestCaseData
-from testmanager.core.schedgroup    import SchedGroupData
+from testmanager.core.testgroup     import TestGroupData;
+from testmanager.core.build         import BuildDataEx;
+from testmanager.core.failurereason import FailureReasonLogic;
+from testmanager.core.testbox       import TestBoxData;
+from testmanager.core.testcase      import TestCaseData;
+from testmanager.core.schedgroup    import SchedGroupData;
 from testmanager.core.systemlog     import SystemLogData, SystemLogLogic;
+from testmanager.core.useraccount   import UserAccountLogic;
 
 
 class TestResultData(ModelDataBase):
@@ -142,9 +144,10 @@ class TestResultDataEx(TestResultData):
         self.oParent    = None; # idTestResultParent within the tree.
 
         self.aoChildren = [];   # TestResultDataEx;
-        self.aoValues   = [];   # TestResultValue;
-        self.aoMsgs     = [];   # TestResultMsg;
-        self.aoFiles    = [];   # TestResultFile;
+        self.aoValues   = [];   # TestResultValueDataEx;
+        self.aoMsgs     = [];   # TestResultMsgDataEx;
+        self.aoFiles    = [];   # TestResultFileDataEx;
+        self.oReason    = None; # TestResultReasonDataEx;
 
     def initFromDbRow(self, aoRow):
         """
@@ -162,6 +165,7 @@ class TestResultDataEx(TestResultData):
         self.aoValues   = [];
         self.aoMsgs     = [];
         self.aoFiles    = [];
+        self.oReason    = None;
 
         TestResultData.initFromDbRow(self, aoRow);
 
@@ -407,6 +411,90 @@ class TestResultFileDataEx(TestResultFileData):
         return self.sMime;
 
 
+class TestResultFailureData(ModelDataBase):
+    """
+    Test result failure reason data.
+    """
+
+    ksIdAttr                    = 'idTestResult';
+
+    ksParam_idTestResult        = 'TestResultFailure_idTestResult';
+    ksParam_tsEffective         = 'TestResultFailure_tsEffective';
+    ksParam_tsExpire            = 'TestResultFailure_tsExpire';
+    ksParam_uidAuthor           = 'TestResultFailure_uidAuthor';
+    ksParam_idFailureReason     = 'TestResultFailure_idFailureReason';
+    ksParam_sComment            = 'TestResultFailure_sComment';
+
+    kasAllowNullAttributes      = ['tsEffective', 'tsExpire', 'uidAuthor', 'sComment' ];
+
+    def __init__(self):
+        ModelDataBase.__init__(self)
+        self.idTestResult       = None;
+        self.tsEffective        = None;
+        self.tsExpire           = None;
+        self.uidAuthor          = None;
+        self.idFailureReason    = None;
+        self.sComment           = None;
+
+    def initFromDbRow(self, aoRow):
+        """
+        Reinitialize from a SELECT * FROM TestResultFailures.
+        Return self. Raises exception if no row.
+        """
+        if aoRow is None:
+            raise TMExceptionBase('Test result file record not found.')
+
+        self.idTestResult       = aoRow[0];
+        self.tsEffective        = aoRow[1];
+        self.tsExpire           = aoRow[2];
+        self.uidAuthor          = aoRow[3];
+        self.idFailureReason    = aoRow[4];
+        self.sComment           = aoRow[5];
+        return self;
+
+    def initFromDbWithId(self, oDb, idTestResult, tsNow = None, sPeriodBack = None):
+        """
+        Initialize the object from the database.
+        """
+        oDb.execute(self.formatSimpleNowAndPeriodQuery(oDb,
+                                                       'SELECT *\n'
+                                                       'FROM   TestResultFailures\n'
+                                                       'WHERE  idTestResult = %s\n'
+                                                       , ( idTestResult,), tsNow, sPeriodBack));
+        aoRow = oDb.fetchOne()
+        if aoRow is None:
+            raise TMExceptionBase('idTestResult=%s not found (tsNow=%s, sPeriodBack=%s)' % (idTestResult, tsNow, sPeriodBack));
+        return self.initFromDbRow(aoRow);
+
+
+class TestResultFailureDataEx(TestResultFailureData):
+    """
+    Extends TestResultFailureData by resolving reasons and user.
+    """
+
+    def __init__(self):
+        TestResultFailureData.__init__(self);
+        self.oFailureReason     = None;
+        self.oAuthor            = None;
+
+    def initFromDbRowEx(self, aoRow, oFailureReasonLogic, oUserAccountLogic):
+        """
+        Reinitialize from a query like this:
+            SELECT   TestResultFiles.*,
+                     StrTabFile.sValue AS sFile,
+                     StrTabDesc.sValue AS sDescription
+                     StrTabKind.sValue AS sKind,
+                     StrTabMime.sValue AS sMime,
+            FROM ...
+
+        Return self. Raises exception if no row.
+        """
+        self.initFromDbRow(aoRow);
+        self.oFailureReason = oFailureReasonLogic.cachedLookup(self.idFailureReason);
+        self.oAuthor        = oUserAccountLogic.cachedLookup(self.uidAuthor);
+        return self;
+
+
 class TestResultListingData(ModelDataBase): # pylint: disable=R0902
     """
     Test case result data representation for table listing
@@ -452,7 +540,12 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.idBuildTestSuite        = None;
         self.iRevisionTestSuite      = None;
 
-    def initFromDbRow(self, aoRow):
+        self.oFailureReason          = None;
+        self.oFailureReasonAssigner  = None;
+        self.tsFailureReasonAssigned = None;
+        self.sFailureReasonComment   = None;
+
+    def initFromDbRowEx(self, aoRow, oFailureReasonLogic, oUserAccountLogic):
         """
         Reinitialize from a database query.
         Return self. Raises exception if no row.
@@ -496,12 +589,22 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.idBuildTestSuite        = aoRow[28];
         self.iRevisionTestSuite      = aoRow[29];
 
+        self.oFailureReason          = None;
+        if aoRow[30] is not None:
+            self.oFailureReason = oFailureReasonLogic.cachedLookup(aoRow[30]);
+        self.oFailureReasonAssigner  = None;
+        if aoRow[31] is not None:
+            self.oFailureReasonAssigner = oUserAccountLogic.cachedLookup(aoRow[31]);
+        self.tsFailureReasonAssigned = aoRow[32];
+        self.sFailureReasonComment   = aoRow[33];
+
         return self
 
 
 class TestResultHangingOffence(TMExceptionBase):
     """Hanging offence committed by test case."""
     pass;
+
 
 class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     """
@@ -533,6 +636,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     ksResultsSortByTestBoxCpuRev        = 'ResultsSortByTestBoxCpuRev';
     ksResultsSortByTestBoxCpuFeatures   = 'ResultsSortByTestBoxCpuFeatures';
     ksResultsSortByTestCaseName         = 'ResultsSortByTestCaseName';
+    ksResultsSortByFailureReason        = 'ResultsSortByFailureReason';
     kasResultsSortBy = {
         ksResultsSortByRunningAndStart,
         ksResultsSortByBuildRevision,
@@ -546,6 +650,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         ksResultsSortByTestBoxCpuRev,
         ksResultsSortByTestBoxCpuFeatures,
         ksResultsSortByTestCaseName,
+        ksResultsSortByFailureReason,
     };
     ## Used by the WUI for generating the drop down.
     kaasResultsSortByTitles = (
@@ -561,6 +666,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         ( ksResultsSortByTestBoxCpuRev,         'CPU Vendor & Revision' ),
         ( ksResultsSortByTestBoxCpuFeatures,    'CPU Features' ),
         ( ksResultsSortByTestCaseName,          'Test Case Name' ),
+        ( ksResultsSortByFailureReason,         'Failure Reason' ),
     );
     ## @}
 
@@ -628,6 +734,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             ' AND TestSets.idGenTestCase = TestCases.idGenTestCase',
             ' TestCases.sName',
             ''  ),
+        ksResultsSortByFailureReason: (
+            '', '',
+            'sSortByFailureReason ASC',
+            ', FailureReasons.sShort AS sSortByFailureReason' ),
     };
 
     kdResultGroupingMap = {
@@ -666,6 +776,11 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         ),
     };
 
+
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.oFailureReasonLogic = None;
+        self.oUserAccountLogic   = None;
 
     def _getTimePeriodQueryPart(self, tsNow, sInterval):
         """
@@ -751,11 +866,23 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       TestCaseArgs.sArgs,\n' \
                   '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
                   '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
+                  '       TestResultFailures.idFailureReason as idFailureReason,\n' \
+                  '       TestResultFailures.uidAuthor as uidFailureReasonAssigner,\n' \
+                  '       TestResultFailures.tsEffective as tsFailureReasonAssigned,\n' \
+                  '       TestResultFailures.sComment as sFailureReasonComment,\n' \
                   '       (TestSets.tsDone IS NULL) SortRunningFirst' + sSortingColumns + '\n' \
                   'FROM   BuildCategories,\n' \
                   '       Builds,\n' \
                   '       TestBoxes,\n' \
-                  '       TestResults,\n' \
+                  '       TestResults LEFT OUTER JOIN TestResultFailures\n' \
+                  '            ON TestResults.idTestResult    = TestResultFailures.idTestResult\n' \
+                  '           AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP';
+        if sSortingOrderBy.find('FailureReason') >= 0:
+            sQuery += '\n' \
+                      '       LEFT OUTER JOIN FailureReasons\n' \
+                      '            ON TestResultFailures.idFailureReason = FailureReasons.idFailureReason\n' \
+                      '           AND FailureReasons.tsExpire            = \'infinity\'::TIMESTAMP';
+        sQuery += ',\n'\
                   '       TestCases,\n' \
                   '       TestCaseArgs,\n' \
                   '       (  SELECT TestSets.idTestSet AS idTestSet,\n' \
@@ -779,7 +906,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         if sSortingWhere is not None:
             sQuery += sSortingWhere.replace(' AND ', '            AND ');
         sQuery += '          ORDER BY ';
-        if sSortingOrderBy is not None:
+        if sSortingOrderBy is not None and sSortingOrderBy.find('FailureReason') < 0:
             sQuery += sSortingOrderBy + ',\n                ';
         sQuery += '(TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n' \
                   '          LIMIT %s OFFSET %s\n' % (cMaxRows, iStart,);
@@ -806,9 +933,14 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         #
         self._oDb.execute(sQuery);
 
+        if self.oFailureReasonLogic is None:
+            self.oFailureReasonLogic = FailureReasonLogic(self._oDb);
+        if self.oUserAccountLogic is None:
+            self.oUserAccountLogic = UserAccountLogic(self._oDb);
+
         aoRows = [];
         for aoRow in self._oDb.fetchAll():
-            aoRows.append(TestResultListingData().initFromDbRow(aoRow))
+            aoRows.append(TestResultListingData().initFromDbRowEx(aoRow, self.oFailureReasonLogic, self.oUserAccountLogic));
 
         return aoRows
 
@@ -1013,7 +1145,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             '           WHERE  TestResultMsgs.idTestResult   = TestResults.idTestResult ) AS fHasMsgs,\n'
             '         EXISTS ( SELECT idTestResultFile\n'
             '           FROM   TestResultFiles\n'
-            '           WHERE  TestResultFiles.idTestResult  = TestResults.idTestResult ) AS fHasFiles\n'
+            '           WHERE  TestResultFiles.idTestResult  = TestResults.idTestResult ) AS fHasFiles,\n'
+            '         EXISTS ( SELECT idTestResult\n'
+            '           FROM   TestResultFailures\n'
+            '           WHERE  TestResultFailures.idTestResult = TestResults.idTestResult ) AS fHasReasons\n'
             'FROM     TestResults, TestResultStrTab\n'
             'WHERE    TestResults.idTestSet = %s\n'
             '     AND TestResults.idStrName = TestResultStrTab.idStr\n'
@@ -1037,7 +1172,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         if oRoot.idTestResultParent is not None:
             raise self._oDb.integrityException('The root TestResult (#%s) has a parent (#%s)!'
                                                % (oRoot.idTestResult, oRoot.idTestResultParent));
-        self._fetchResultTreeNodeExtras(oRoot, aoRow[-3], aoRow[-2], aoRow[-1]);
+        self._fetchResultTreeNodeExtras(oRoot, aoRow[-4], aoRow[-3], aoRow[-2], aoRow[-1]);
 
         # The chilren (if any).
         dLookup = { oRoot.idTestResult: oRoot };
@@ -1045,7 +1180,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         for iRow in range(1, len(aaoRows)):
             aoRow = aaoRows[iRow];
             oCur = TestResultDataEx().initFromDbRow(aoRow);
-            self._fetchResultTreeNodeExtras(oCur, aoRow[-3], aoRow[-2], aoRow[-1]);
+            self._fetchResultTreeNodeExtras(oCur, aoRow[-4], aoRow[-3], aoRow[-2], aoRow[-1]);
 
             # Figure out and vet the parent.
             if oParent.idTestResult != oCur.idTestResultParent:
@@ -1064,14 +1199,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         return (oRoot, dLookup);
 
-    def _fetchResultTreeNodeExtras(self, oCurNode, fHasValues, fHasMsgs, fHasFiles):
+    def _fetchResultTreeNodeExtras(self, oCurNode, fHasValues, fHasMsgs, fHasFiles, fHasReasons):
         """
         fetchResultTree worker that fetches values, message and files for the
         specified node.
         """
-        assert(oCurNode.aoValues == []);
-        assert(oCurNode.aoMsgs   == []);
-        assert(oCurNode.aoFiles  == []);
+        assert(oCurNode.aoValues  == []);
+        assert(oCurNode.aoMsgs    == []);
+        assert(oCurNode.aoFiles   == []);
+        assert(oCurNode.oReason is None);
 
         if fHasValues:
             self._oDb.execute('SELECT   TestResultValues.*,\n'
@@ -1115,6 +1251,20 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                               , ( oCurNode.idTestResult, ));
             for aoRow in self._oDb.fetchAll():
                 oCurNode.aoFiles.append(TestResultFileDataEx().initFromDbRow(aoRow));
+
+        if fHasReasons or True:
+            if self.oFailureReasonLogic is None:
+                self.oFailureReasonLogic = FailureReasonLogic(self._oDb);
+            if self.oUserAccountLogic is None:
+                self.oUserAccountLogic = UserAccountLogic(self._oDb);
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     TestResultFailures\n'
+                              'WHERE    idTestResult = %s\n'
+                              '     AND tsExpire = \'infinity\'::TIMESTAMP\n'
+                              , ( oCurNode.idTestResult, ));
+            if self._oDb.getRowCount() > 0:
+                oCurNode.oReason = TestResultFailureDataEx().initFromDbRowEx(self._oDb.fetchOne(), self.oFailureReasonLogic,
+                                                                             self.oUserAccountLogic);
 
         return True;
 
@@ -1183,7 +1333,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     def _stringifyStack(aoStack):
         """Returns a string rep of the stack."""
         sRet = '';
-        for i in range(len(aoStack)):
+        for i, _ in enumerate(aoStack):
             sRet += 'aoStack[%d]=%s\n' % (i, aoStack[i]);
         return sRet;
 
@@ -1201,7 +1351,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         for aoRow in self._oDb.fetchAll():
             aoStack.append(TestResultData().initFromDbRow(aoRow));
 
-        for i in range(len(aoStack)):
+        for i, _ in enumerate(aoStack):
             assert aoStack[i].iNestingDepth == len(aoStack) - i - 1, self._stringifyStack(aoStack);
 
         return aoStack;
@@ -1472,7 +1622,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         for sAttr in [ 'value', ]:
             if sAttr in dAttribs:
                 try:
-                    _ = long(dAttribs[sAttr]);
+                    _ = long(dAttribs[sAttr]);  # pylint: disable=R0204
                 except:
                     return 'Element %s has an invalid %s attribute value: %s.' % (sName, sAttr, dAttribs[sAttr],);
 
@@ -1758,6 +1908,134 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                                                    sError, ),
                                                cHoursRepeat = 6, fCommit = True);
         return (sError, False);
+
+
+
+class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
+    """
+    Test result failure reason logic.
+    """
+
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+
+    def getById(self, idTestResult):
+        """Get Test result failure reason data by idTestResult"""
+
+        self._oDb.execute('SELECT   *\n'
+                          'FROM     TestResultFailures\n'
+                          'WHERE    tsExpire   = \'infinity\'::timestamp\n'
+                          '  AND    idTestResult = %s;', (idTestResult,))
+        aRows = self._oDb.fetchAll()
+        if len(aRows) not in (0, 1):
+            raise self._oDb.integrityException(
+                'Found more than one failure reasons with the same credentials. Database structure is corrupted.')
+        try:
+            return TestResultFailureData().initFromDbRow(aRows[0])
+        except IndexError:
+            return None
+
+    def addEntry(self, oData, uidAuthor, fCommit = False):
+        """
+        Add a test result failure reason record.
+        """
+
+        # Check if it exist first (we're adding, not editing, collisions not allowed).
+        oOldData = self.getById(oData.idTestResult);
+        if oOldData is not None:
+            raise TMExceptionBase('TestResult %d already have a failure reason associated with it:'
+                                  '%s\n'
+                                  'Perhaps someone else beat you to it? Or did you try resubmit?'
+                                  % (oData.idTestResult, oOldData));
+
+        #
+        # Add record.
+        #
+        self._readdEntry(uidAuthor, oData);
+        self._oDb.maybeCommit(fCommit);
+        return True;
+
+    def editEntry(self, oData, uidAuthor, fCommit = False):
+        """
+        Modifies a test result failure reason.
+        """
+
+        #
+        # Validate inputs and read in the old(/current) data.
+        #
+        assert isinstance(oData, TestResultFailureData);
+        dErrors = oData.validateAndConvert(self._oDb);
+        if len(dErrors) > 0:
+            raise TMExceptionBase('editEntry invalid input: %s' % (dErrors,));
+
+        oOldData = self.getById(oData.idTestResult)
+
+        #
+        # Update the data that needs updating.
+        #
+        if not oData.isEqualEx(oOldData, [ 'tsEffective', 'tsExpire', 'uidAuthor', ]):
+            self._historizeEntry(oData.idTestResult);
+            self._readdEntry(uidAuthor, oData);
+        self._oDb.maybeCommit(fCommit);
+        return True;
+
+
+    def removeEntry(self, uidAuthor, idTestResult, fCascade = False, fCommit = False):
+        """
+        Deletes a test result failure reason.
+        """
+        _ = fCascade; # Not applicable.
+
+        oData = self.getById(idTestResult)
+        (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
+        if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
+            self._historizeEntry(idTestResult, tsCurMinusOne);
+            self._readdEntry(uidAuthor, oData, tsCurMinusOne);
+            self._historizeEntry(idTestResult);
+        self._oDb.execute('UPDATE   TestResultFaillures\n'
+                          'SET      tsExpire       = CURRENT_TIMESTAMP\n'
+                          'WHERE    idTestResult   = %s\n'
+                          '     AND tsExpire       = \'infinity\'::TIMESTAMP\n'
+                          , (idTestResult,));
+        self._oDb.maybeCommit(fCommit);
+        return True;
+
+    #
+    # Helpers.
+    #
+
+    def _readdEntry(self, uidAuthor, oData, tsEffective = None):
+        """
+        Re-adds the TestResultFailure entry. Used by addEntry, editEntry and removeEntry.
+        """
+        if tsEffective is None:
+            tsEffective = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('INSERT INTO TestResultFailures (\n'
+                          '         uidAuthor,\n'
+                          '         tsEffective,\n'
+                          '         idTestResult,\n'
+                          '         idFailureReason,\n'
+                          '         sComment)\n'
+                          'VALUES (%s, %s, %s, %s, %s)\n'
+                          , ( uidAuthor,
+                              tsEffective,
+                              oData.idTestResult,
+                              oData.idFailureReason,
+                              oData.sComment,) );
+        return True;
+
+
+    def _historizeEntry(self, idTestResult, tsExpire = None):
+        """ Historizes the current entry. """
+        if tsExpire is None:
+            tsExpire = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('UPDATE TestResultFailures\n'
+                          'SET    tsExpire   = %s\n'
+                          'WHERE  idTestResult = %s\n'
+                          '   AND tsExpire     = \'infinity\'::TIMESTAMP\n'
+                          , (tsExpire, idTestResult,));
+        return True;
+
 
 
 #

@@ -74,6 +74,9 @@ class WuiDispatcherBase(object):
     ## The name of the effective date (timestamp) parameter.
     ksParamEffectiveDate = 'EffectiveDate';
 
+    ## The name of the redirect-to (test manager relative url) parameter.
+    ksParamRedirectTo    = 'RedirectTo';
+
     ## The name of the list-action parameter (WuiListContentWithActionBase).
     ksParamListAction    = 'ListAction';
 
@@ -545,6 +548,28 @@ class WuiDispatcherBase(object):
 
         return str(oDate);
 
+    def getRedirectToParameter(self, sDefault = None):
+        """
+        Gets the special redirect to parameter if it exists, will Return default
+        if not, with None being a valid default.
+
+        Makes sure the it doesn't got offsite.
+        Raises exception if invalid.
+        """
+        if sDefault is not None or self.ksParamRedirectTo in self._dParams:
+            sValue = self.getStringParam(self.ksParamRedirectTo, sDefault = sDefault);
+            cch = sValue.find("?");
+            if cch < 0:
+                cch = sValue.find("#");
+                if cch < 0:
+                    cch = len(sValue);
+            for ch in (':', '/', '\\', '..'):
+                if sValue.find(ch, 0, cch) >= 0:
+                    raise WuiException('Invalid character (%c) in redirect-to url: %s' % (ch, sValue,));
+        else:
+            sValue = None;
+        return sValue;
+
 
     def _checkForUnknownParameters(self):
         """
@@ -700,7 +725,7 @@ class WuiDispatcherBase(object):
         (self._sPageTitle, self._sPageBody) = oContent.show();
         return True;
 
-    def _actionGenericFormAdd(self, oDataType, oFormType):
+    def _actionGenericFormAdd(self, oDataType, oFormType, sRedirectTo = None):
         """
         Generic add something form display request handler.
 
@@ -708,9 +733,11 @@ class WuiDispatcherBase(object):
         oFormType is a WuiFormContentBase child class.
         """
         oData = oDataType().initFromParams(oDisp = self, fStrict = False);
+        sRedirectTo = self.getRedirectToParameter(sRedirectTo);
         self._checkForUnknownParameters();
 
         oForm = oFormType(oData, oFormType.ksMode_Add, oDisp = self);
+        oForm.setRedirectTo(sRedirectTo);
         (self._sPageTitle, self._sPageBody) = oForm.showForm();
         return True
 
@@ -756,7 +783,7 @@ class WuiDispatcherBase(object):
         return True
 
 
-    def _actionGenericFormEdit(self, oDataType, oFormType, sIdParamName):
+    def _actionGenericFormEdit(self, oDataType, oFormType, sIdParamName, sRedirectTo = None):
         """
         Generic edit something form display request handler.
 
@@ -765,11 +792,14 @@ class WuiDispatcherBase(object):
         sIdParamName is the name of the ID parameter (not idGen!).
         """
 
+        tsNow    = self.getEffectiveDateParam();
         idObject = self.getIntParam(sIdParamName, 0, 0x7ffffffe);
+        sRedirectTo = self.getRedirectToParameter(sRedirectTo);
         self._checkForUnknownParameters();
-        oData = oDataType().initFromDbWithId(self._oDb, idObject);
+        oData = oDataType().initFromDbWithId(self._oDb, idObject, tsNow = tsNow);
 
         oContent = oFormType(oData, oFormType.ksMode_Edit, oDisp = self);
+        oContent.setRedirectTo(sRedirectTo);
         (self._sPageTitle, self._sPageBody) = oContent.showForm();
         return True
 
@@ -849,6 +879,7 @@ class WuiDispatcherBase(object):
         # Read and validate parameters.
         #
         oData = oDataType().initFromParams(oDisp = self, fStrict = fStrict);
+        sRedirectTo = self.getRedirectToParameter(sRedirectTo);
         self._checkForUnknownParameters();
         self._assertPostRequest();
         dErrors = oData.validateAndConvert(self._oDb);
@@ -863,6 +894,7 @@ class WuiDispatcherBase(object):
             except Exception as oXcpt:
                 self._oDb.rollback();
                 oForm = oFormType(oData, sMode, oDisp = self);
+                oForm.setRedirectTo(sRedirectTo);
                 sErrorMsg = str(oXcpt) if not config.g_kfDebugDbXcpt else '\n'.join(utils.getXcptInfo(4));
                 (self._sPageTitle, self._sPageBody) = oForm.showForm(sErrorMsg = sErrorMsg);
             else:
@@ -960,7 +992,7 @@ class WuiDispatcherBase(object):
         else:
             self._sAction = self.ksActionDefault;
 
-        if self._sAction not in self._dDispatch:
+        if isinstance(self._sAction, list) or  self._sAction not in self._dDispatch:
             raise WuiException('Unknown action "%s" requested' % (self._sAction,));
 
         #

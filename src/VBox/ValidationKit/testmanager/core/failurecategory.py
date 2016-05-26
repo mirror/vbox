@@ -87,6 +87,10 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
     Failure Category logic.
     """
 
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.ahCache = None;
+
     def fetchForListing(self, iStart, cMaxRows, tsNow):
         """
         Fetches Failure Category records.
@@ -192,8 +196,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
                           '   AND tsExpire    = \'infinity\'::TIMESTAMP\n',
                           (idFailureCategory,))
         for iFailureReasonId in self._oDb.fetchAll():
-            FailureReasonLogic(self._oDb).remove(
-                uidAuthor, iFailureReasonId, fNeedCommit=False)
+            FailureReasonLogic(self._oDb).remove(uidAuthor, iFailureReasonId, fNeedCommit = False)
 
         self._oDb.execute('UPDATE FailureCategories\n'
                           'SET    tsExpire    = CURRENT_TIMESTAMP,\n'
@@ -237,3 +240,38 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
             self._oDb.commit()
 
         return True
+
+    def cachedLookup(self, idFailureCategory):
+        """
+        Looks up the most recent FailureCategoryData object for idFailureCategory
+        via an object cache.
+
+        Returns a shared FailureCategoryData object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.ahCache is None:
+            self.ahCache = self._oDb.getCache('FailureCategory');
+
+        oEntry = self.ahCache.get(idFailureCategory, None);
+        if oEntry is None:
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     FailureCategories\n'
+                              'WHERE    idFailureCategory = %s\n'
+                              '     AND tsExpire = \'infinity\'::TIMESTAMP\n'
+                              , (idFailureCategory, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     FailureCategories\n'
+                                  'WHERE    idFailureCategory = %s\n'
+                                  'ORDER BY tsExpire\n'
+                                  'LIMIT 1\n'
+                                  , (idFailureCategory, ));
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idFailureCategory));
+
+            if self._oDb.getRowCount() == 1:
+                oEntry = FailureCategoryData().initFromDbRow(self._oDb.fetchOne());
+                self.ahCache[idFailureCategory] = oEntry;
+        return oEntry;
+

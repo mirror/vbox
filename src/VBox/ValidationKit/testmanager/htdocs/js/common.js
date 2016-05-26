@@ -26,6 +26,12 @@
  */
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Same as WuiDispatcherBase.ksParamRedirectTo. */
+var g_ksParamRedirectTo = 'RedirectTo';
+
 
 /**
  * Checks if the given value is a decimal integer value.
@@ -162,6 +168,36 @@ function getUnscaledElementWidthById(sElementId)
     return getUnscaledElementWidth(document.getElementById(sElementId));
 }
 
+/**
+ * Gets the part of the URL needed for a RedirectTo parameter.
+ *
+ * @returns URL string.
+ */
+function getCurrentBrowerUrlPartForRedirectTo()
+{
+    var sWhere = window.location.href;
+    var offTmp;
+    var offPathKeep;
+
+    /* Find the end of that URL 'path' component. */
+    var offPathEnd = sWhere.indexOf('?');
+    if (offPathEnd < 0)
+        offPathEnd = sWhere.indexOf('#');
+    if (offPathEnd < 0)
+        offPathEnd = sWhere.length;
+
+    /* Go backwards from the end of the and find the start of the last component. */
+    offPathKeep = sWhere.lastIndexOf("/", offPathEnd);
+    offTmp = sWhere.lastIndexOf(":", offPathEnd);
+    if (offPathKeep < offTmp)
+        offPathKeep = offTmp;
+    offTmp = sWhere.lastIndexOf("\\", offPathEnd);
+    if (offPathKeep < offTmp)
+        offPathKeep = offTmp;
+
+    return sWhere.substring(offPathKeep + 1);
+}
+
 
 /**
  * Sets the value of an input field element (give by ID).
@@ -265,6 +301,56 @@ function addDynamicGraphInputs(sFormId, sWidthSrcId, sWidthName, sDpiName)
     }
 
 }
+
+/**
+ * Adds the RedirecTo field with the current URL to the form.
+ *
+ * This is a 'onsubmit' action.
+ *
+ * @returns Returns success indicator (true/false).
+ * @param   oForm               The form being submitted.
+ */
+function addRedirectToInputFieldWithCurrentUrl(oForm)
+{
+    /* Constant used here is duplicated in WuiDispatcherBase.ksParamRedirectTo */
+    return addHiddenInputFieldToForm(oForm, 'RedirectTo', getCurrentBrowerUrlPartForRedirectTo(), null);
+}
+
+/**
+ * Adds the RedirecTo parameter to the href of the given anchor.
+ *
+ * This is a 'onclick' action.
+ *
+ * @returns Returns success indicator (true/false).
+ * @param   oAnchor         The anchor element being clicked on.
+ */
+function addRedirectToAnchorHref(oAnchor)
+{
+    var sRedirectToParam = g_ksParamRedirectTo + '=' + encodeURIComponent(getCurrentBrowerUrlPartForRedirectTo());
+    var sHref = oAnchor.href;
+    if (sHref.indexOf(sRedirectToParam) < 0)
+    {
+        var sHash;
+        var offHash = sHref.indexOf('#');
+        if (offHash >= 0)
+            sHash = sHref.substring(offHash);
+        else
+        {
+            sHash   = '';
+            offHash = sHref.length;
+        }
+        sHref = sHref.substring(0, offHash)
+        if (sHref.indexOf('?') >= 0)
+            sHref += '&';
+        else
+            sHref += '?';
+        sHref += sRedirectToParam;
+        sHref += sHash;
+        oAnchor.href = sHref;
+    }
+    return true;
+}
+
 
 
 /** @name Custom Tooltips

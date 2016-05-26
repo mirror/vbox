@@ -30,7 +30,9 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.core.base          import ModelDataBase, ModelLogicBase, TMExceptionBase
+from testmanager.core.base              import ModelDataBase, ModelLogicBase, TMExceptionBase
+from testmanager.core.useraccount       import UserAccountLogic;
+
 
 
 class FailureReasonData(ModelDataBase):
@@ -91,13 +93,43 @@ class FailureReasonData(ModelDataBase):
         self.iTicket           = aoRow[7]
         self.asUrls            = aoRow[8]
 
-        return self
+        return self;
+
+
+class FailureReasonDataEx(FailureReasonData):
+    """
+    Failure Reason Data, extended version that includes the category.
+    """
+
+    def __init__(self):
+        FailureReasonData.__init__(self);
+        self.oCategory  = None;
+        self.oAuthor    = None;
+
+    def initFromDbRowEx(self, aoRow, oCategoryLogic, oUserAccountLogic):
+        """
+        Re-initializes the data with a row from a SELECT * FROM FailureReasons.
+
+        Returns self. Raises exception if the row is None or otherwise invalid.
+        """
+
+        self.initFromDbRow(aoRow);
+        self.oCategory  = oCategoryLogic.cachedLookup(self.idFailureCategory);
+        self.oAuthor    = oUserAccountLogic.cachedLookup(self.uidAuthor);
+
+        return self;
 
 
 class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
     """
     Failure Reason logic.
     """
+
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.ahCache = None;
+        self.oCategoryLogic = None;
+        self.oUserAccountLogic = None;
 
     def fetchForListing(self, iStart, cMaxRows, tsNow):
         """
@@ -128,25 +160,33 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
             aoRows.append(FailureReasonData().initFromDbRow(aoRow))
         return aoRows
 
-    def fetchForCombo(self, tsEffective = None):
+    def fetchForCombo(self, sFirstEntry = 'Select a failure reason', tsEffective = None):
         """
         Gets the list of Failure Reasons for a combo box.
         Returns an array of (value [idFailureReason], drop-down-name [sShort],
         hover-text [sFull]) tuples.
         """
         if tsEffective is None:
-            self._oDb.execute('SELECT   idFailureReason, sShort, sFull\n'
-                              'FROM     FailureReasons\n'
-                              'WHERE    tsExpire = \'infinity\'::TIMESTAMP\n'
-                              'ORDER BY sShort')
+            self._oDb.execute('SELECT   fr.idFailureReason, CONCAT(fc.sShort, \' / \', fr.sShort) as sComboText, fr.sFull\n'
+                              'FROM     FailureReasons fr,\n'
+                              '         FailureCategories fc\n'
+                              'WHERE    fr.idFailureCategory = fc.idFailureCategory\n'
+                              '  AND    fr.tsExpire = \'infinity\'::TIMESTAMP\n'
+                              '  AND    fc.tsExpire = \'infinity\'::TIMESTAMP\n'
+                              'ORDER BY sComboText')
         else:
-            self._oDb.execute('SELECT   idFailureReason, sShort, sFull\n'
-                              'FROM     FailureReasons\n'
-                              'WHERE    tsExpire     > %s\n'
-                              '     AND tsEffective <= %s\n'
-                              'ORDER BY sShort'
-                              , (tsEffective, tsEffective))
-        return self._oDb.fetchAll()
+            self._oDb.execute('SELECT   fr.idFailureReason, CONCAT(fc.sShort, \' / \', fr.sShort) as sComboText, fr.sFull\n'
+                              'FROM     FailureReasons fr,\n'
+                              '         FailureCategories fc\n'
+                              'WHERE    fr.idFailureCategory = fc.idFailureCategory\n'
+                              '  AND    fr.tsExpire     > %s\n'
+                              '  AND    fr.tsEffective <= %s\n'
+                              '  AND    fc.tsExpire     > %s\n'
+                              '  AND    fc.tsEffective <= %s\n'
+                              'ORDER BY sComboText'
+                              , (tsEffective, tsEffective, tsEffective, tsEffective));
+        aoRows = self._oDb.fetchAll();
+        return [(-1, sFirstEntry, '')] + aoRows;
 
     def getById(self, idFailureReason):
         """Get Failure Reason data by idFailureReason"""
@@ -304,3 +344,43 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
             self._oDb.commit()
 
         return True
+
+    def cachedLookup(self, idFailureReason):
+        """
+        Looks up the most recent FailureReasonDataEx object for uid idFailureReason
+        an object cache.
+
+        Returns a shared FailureReasonData object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.ahCache is None:
+            self.ahCache = self._oDb.getCache('FailureReasonDataEx');
+        oEntry = self.ahCache.get(idFailureReason, None);
+        if oEntry is None:
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     FailureReasons\n'
+                              'WHERE    idFailureReason = %s\n'
+                              '     AND tsExpire = \'infinity\'::TIMESTAMP\n'
+                              , (idFailureReason, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     FailureReasons\n'
+                                  'WHERE    idFailureReason = %s\n'
+                                  'ORDER BY tsExpire\n'
+                                  'LIMIT 1\n'
+                                  , (idFailureReason, ));
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idFailureReason));
+
+            if self._oDb.getRowCount() == 1:
+                if self.oCategoryLogic is None:
+                    from testmanager.core.failurecategory import FailureCategoryLogic;
+                    self.oCategoryLogic = FailureCategoryLogic(self._oDb);
+                if self.oUserAccountLogic is None:
+                    self.oUserAccountLogic = UserAccountLogic(self._oDb);
+                oEntry = FailureReasonDataEx().initFromDbRowEx(self._oDb.fetchOne(), self.oCategoryLogic,
+                                                               self.oUserAccountLogic);
+                self.ahCache[idFailureReason] = oEntry;
+        return oEntry;
+

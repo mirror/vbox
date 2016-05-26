@@ -137,6 +137,7 @@ class WuiAdmin(WuiDispatcherBase):
     ksActionFailureCategoryDel      = 'FailureCategoryDel'
 
     ksActionFailureReasonList       = 'FailureReasonList'
+    ksActionFailureReasonDetails    = 'FailureReasonDetails'
     ksActionFailureReasonShowAdd    = 'FailureReasonShowAdd'
     ksActionFailureReasonShowEdit   = 'FailureReasonShowEdit'
     ksActionFailureReasonAdd        = 'FailureReasonAdd'
@@ -364,10 +365,10 @@ class WuiAdmin(WuiDispatcherBase):
                                                                 FailureReasonLogic,
                                                                 WuiAdminFailureReasonList)
 
-        d[self.ksActionFailureReasonShowAdd]    = lambda: self._actionGenericFormAdd(
-                                                                FailureReasonData,
-                                                                WuiAdminFailureReason)
-
+        d[self.ksActionFailureReasonDetails]    = lambda: self._actionGenericFormDetails(FailureReasonData,
+                                                                                         FailureReasonLogic,
+                                                                                         WuiAdminFailureReason,
+                                                                                         'idFailureReason');
         d[self.ksActionFailureReasonShowEdit]   = lambda: self._actionGenericFormEditL(
                                                                 FailureReasonLogic,
                                                                 FailureReasonData.ksParam_idFailureReason,

@@ -47,15 +47,23 @@ class WuiHlpForm(object):
 
     ksItemsList = 'ksItemsList'
 
-    def __init__(self, sId, sAction, dErrors = None, fReadOnly = False):
+    ksOnSubmit_AddReturnToFieldWithCurrentUrl = '+AddReturnToFieldWithCurrentUrl+';
+
+    def __init__(self, sId, sAction, dErrors = None, fReadOnly = False, sOnSubmit = None):
         self._fFinalized = False;
         self._fReadOnly  = fReadOnly;
         self._dErrors    = dErrors if dErrors is not None else dict();
+
+        if sOnSubmit == self.ksOnSubmit_AddReturnToFieldWithCurrentUrl:
+            sOnSubmit = 'return addRedirectToInputFieldWithCurrentUrl(this)';
+        if sOnSubmit is None:   sOnSubmit = u'';
+        else:                   sOnSubmit = u' onsubmit=\"%s\"' % (escapeAttr(sOnSubmit),);
+
         self._sBody      = u'\n' \
                            u'<div id="%s" class="tmform">\n' \
-                           u'  <form action="%s" method="post">\n' \
+                           u'  <form action="%s" method="post"%s>\n' \
                            u'    <ul>\n' \
-                         % (sId, sAction);
+                         % (sId, sAction, sOnSubmit);
 
     def _add(self, sText):
         """Internal worker for appending text to the body."""
@@ -69,7 +77,7 @@ class WuiHlpForm(object):
         """Escapes error text, preserving some predefined HTML tags."""
         if sText.find('<br>') >= 0:
             asParts = sText.split('<br>');
-            for i in range(len(asParts)):
+            for i, _ in enumerate(asParts):
                 asParts[i] = escapeElem(asParts[i].strip());
             sText = '<br>\n'.join(asParts);
         else:
@@ -113,6 +121,18 @@ class WuiHlpForm(object):
                          '      </div>\n'
                          '    </li>\n'
                          % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(str(sValue)) ));
+    #
+    # Non-input stuff.
+    #
+    def addNonText(self, sValue, sLabel, sPostHtml = ''):
+        """Adds a read-only text input."""
+        self._addLabel('non-text', sLabel, 'string');
+        if sValue is None: sValue = '';
+        return self._add('          <p>%s</p>%s\n'
+                         '        </div></div>\n'
+                         '      </li>\n'
+                         % (escapeElem(str(sValue)), sPostHtml ));
+
 
     #
     # Text input fields.
@@ -123,6 +143,7 @@ class WuiHlpForm(object):
             return self.addTextRO(sName, sValue, sLabel, sSubClass, sExtraAttribs);
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp', 'wide'): raise Exception(sSubClass);
         self._addLabel(sName, sLabel, sSubClass);
+        if sValue is None: sValue = '';
         return self._add('          <input name="%s" id="%s" type="text"%s value="%s">%s\n'
                          '        </div></div>\n'
                          '      </li>\n'
@@ -132,6 +153,7 @@ class WuiHlpForm(object):
         """Adds a read-only text input."""
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp', 'wide'): raise Exception(sSubClass);
         self._addLabel(sName, sLabel, sSubClass);
+        if sValue is None: sValue = '';
         return self._add('          <input name="%s" id="%s" type="text" readonly%s value="%s" class="tmform-input-readonly">%s\n'
                          '        </div></div>\n'
                          '      </li>\n'
@@ -152,6 +174,7 @@ class WuiHlpForm(object):
             return self.addMultilineTextRO(sName, sValue, sLabel, sSubClass, sExtraAttribs);
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp'): raise Exception(sSubClass)
         self._addLabel(sName, sLabel, sSubClass)
+        if sValue is None: sValue = '';
         sNewValue = str(sValue) if not isinstance(sValue, list) else '\n'.join(sValue)
         return self._add('          <textarea name="%s" id="%s" %s>%s</textarea>\n'
                          '        </div></div>\n'
@@ -162,6 +185,7 @@ class WuiHlpForm(object):
         """Adds a multiline read-only text input."""
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp'): raise Exception(sSubClass)
         self._addLabel(sName, sLabel, sSubClass)
+        if sValue is None: sValue = '';
         sNewValue = str(sValue) if not isinstance(sValue, list) else '\n'.join(sValue)
         return self._add('          <textarea name="%s" id="%s" readonly %s>%s</textarea>\n'
                          '        </div></div>\n'
@@ -212,10 +236,11 @@ class WuiHlpForm(object):
         self._addLabel(sName, sLabel, 'combobox');
         self._add('          <select name="%s" id="%s" class="tmform-combobox"%s>\n'
                   % (escapeAttr(sName), escapeAttr(sName), sExtraAttribs));
+        sSelected = str(sSelected);
         for iValue, sText, _ in aoOptions:
             sValue = str(iValue);
             self._add('            <option value="%s"%s>%s</option>\n'
-                      % (escapeAttr(sValue), ' selected' if sValue == str(sSelected) else '',
+                      % (escapeAttr(sValue), ' selected' if sValue == sSelected else '',
                          escapeElem(sText)));
         return self._add('          </select>\n'
                          '        </div></div>\n'
@@ -228,10 +253,11 @@ class WuiHlpForm(object):
         self._addLabel(sName, sLabel, 'combobox-readonly');
         self._add('          <select name="%s" id="%s" disabled class="tmform-combobox"%s>\n'
                   % (escapeAttr(sName), escapeAttr(sName), sExtraAttribs));
+        sSelected = str(sSelected);
         for iValue, sText, _ in aoOptions:
             sValue = str(iValue);
             self._add('            <option value="%s"%s>%s</option>\n'
-                      % (escapeAttr(sValue), ' selected' if sValue == str(sSelected) else '',
+                      % (escapeAttr(sValue), ' selected' if sValue == sSelected else '',
                          escapeElem(sText)));
         return self._add('          </select>\n'
                          '        </div></div>\n'
@@ -525,7 +551,7 @@ class WuiHlpForm(object):
         if sName in self._dErrors  and  isinstance(self._dErrors[sName], dict):
             dSubErrors = self._dErrors[sName];
 
-        for iVar in range(len(aoVariations)):
+        for iVar, _ in enumerate(aoVariations):
             oVar = copy.copy(aoVariations[iVar]);
             oVar.convertToParamNull();
 
@@ -622,12 +648,12 @@ class WuiHlpForm(object):
 
         oDefMember = TestGroupMemberData();
         aoTestGroupMembers = list(aoTestGroupMembers); # Copy it so we can pop.
-        for iTestCase in range(len(aoAllTestCases)):
+        for iTestCase, _ in enumerate(aoAllTestCases):
             oTestCase = aoAllTestCases[iTestCase];
 
             # Is it a member?
             oMember = None;
-            for i in range(len(aoTestGroupMembers)):
+            for i, _ in enumerate(aoTestGroupMembers):
                 if aoTestGroupMembers[i].oTestCase.idTestCase == oTestCase.idTestCase:
                     oMember = aoTestGroupMembers.pop(i);
                     break;
@@ -734,12 +760,12 @@ class WuiHlpForm(object):
 
         oDefMember = SchedGroupMemberData();
         aoSchedGroupMembers = list(aoSchedGroupMembers); # Copy it so we can pop.
-        for iTestGroup in range(len(aoAllTestGroups)):
+        for iTestGroup, _ in enumerate(aoAllTestGroups):
             oTestGroup = aoAllTestGroups[iTestGroup];
 
             # Is it a member?
             oMember = None;
-            for i in range(len(aoSchedGroupMembers)):
+            for i, _ in enumerate(aoSchedGroupMembers):
                 if aoSchedGroupMembers[i].oTestGroup.idTestGroup == oTestGroup.idTestGroup:
                     oMember = aoSchedGroupMembers.pop(i);
                     break;

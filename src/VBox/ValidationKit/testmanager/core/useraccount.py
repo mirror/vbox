@@ -115,8 +115,12 @@ class UserAccountData(ModelDataBase):
 
 class UserAccountLogic(ModelLogicBase):
     """
-    SystemLog logic.
+    User account logic (for the Users table).
     """
+
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.ahCache = None;
 
     def fetchForListing(self, iStart, cMaxRows, tsNow):
         """
@@ -220,6 +224,39 @@ class UserAccountLogic(ModelLogicBase):
             return None;
         return UserAccountData().initFromDbRow(self._oDb.fetchOne());
 
+    def cachedLookup(self, uid):
+        """
+        Looks up the current UserAccountData object for uid via an object cache.
+
+        Returns a shared UserAccountData object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.ahCache is None:
+            self.ahCache = self._oDb.getCache('UserAccount');
+
+        oUser = self.ahCache.get(uid, None);
+        if oUser is None:
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     Users\n'
+                              'WHERE    uid = %s\n'
+                              '     AND tsExpire = \'infinity\'::TIMESTAMP\n'
+                              , (uid, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     Users\n'
+                                  'WHERE    uid = %s\n'
+                                  'ORDER BY tsExpire\n'
+                                  'LIMIT 1\n'
+                                  , (uid, ));
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), uid));
+
+            if self._oDb.getRowCount() == 1:
+                oUser = UserAccountData().initFromDbRow(self._oDb.fetchOne());
+                self.ahCache[uid] = oUser;
+        return oUser;
+
     def resolveChangeLogAuthors(self, aoEntries):
         """
         Given an array of ChangeLogEntry instances, set sAuthor to whatever
@@ -228,17 +265,10 @@ class UserAccountLogic(ModelLogicBase):
         Returns aoEntries.
         Raises exception on DB error.
         """
-        ahCache = dict();
         for oEntry in aoEntries:
-            oEntry.sAuthor = ahCache.get(oEntry.uidAuthor, None);
-            if oEntry.sAuthor is None and oEntry.uidAuthor is not None:
-                try:
-                    oUser = UserAccountData().initFromDbWithId(self._oDb, oEntry.uidAuthor, oEntry.tsEffective);
-                except:
-                    pass;
-                else:
-                    ahCache[oEntry.uidAuthor] = oUser.sUsername;
-                    oEntry.sAuthor = oUser.sUsername;
+            oUser = self.cachedLookup(oEntry.uidAuthor)
+            if oUser is not None:
+                oEntry.sAuthor = oUser.sUsername;
         return aoEntries;
 
 

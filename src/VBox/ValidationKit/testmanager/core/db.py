@@ -32,9 +32,9 @@ __version__ = "$Revision$"
 # Standard python imports.
 import datetime;
 import os;
+import sys;
 import psycopg2;
 import psycopg2.extensions;
-import sys;
 
 # Validation Kit imports.
 from common                             import utils, webutils;
@@ -220,6 +220,9 @@ class TMDatabaseConnection(object):
 
         if oSrvGlue is not None:
             oSrvGlue.registerDebugInfoCallback(self.debugInfoCallback);
+
+        # Object caches (used by database logic classes).
+        self.ddCaches = dict();
 
     def isAutoCommitting(self):
         """ Work around missing autocommit attribute in older versions."""
@@ -527,6 +530,18 @@ class TMDatabaseConnection(object):
         """
         oCursor = self._oConn.cursor();
         return TMDatabaseCursor(self, oCursor);
+
+    #
+    # Cache support.
+    #
+    def getCache(self, sType):
+        """ Returns the cache dictionary for this data type. """
+        dRet = self.ddCaches.get(sType, None);
+        if dRet is None:
+            dRet = dict();
+            self.ddCaches[sType] = dRet;
+        return dRet;
+
 
     #
     # Utilities.

@@ -34,11 +34,14 @@ __version__ = "$Revision$"
 from testmanager.webui.wuicontentbase   import WuiContentBase, WuiListContentBase, WuiHtmlBase, WuiTmLink, WuiLinkBase, \
                                                WuiSvnLink, WuiSvnLinkWithTooltip, WuiBuildLogLink, WuiRawHtml;
 from testmanager.webui.wuimain          import WuiMain;
+from testmanager.webui.wuihlpform       import WuiHlpForm;
+from testmanager.core.failurereason     import FailureReasonData, FailureReasonLogic;
 from testmanager.core.report            import ReportGraphModel;
 from testmanager.core.testbox           import TestBoxData;
 from testmanager.core.testcase          import TestCaseData;
 from testmanager.core.testset           import TestSetData;
 from testmanager.core.testgroup         import TestGroupData;
+from testmanager.core.testresults       import TestResultFailureData;
 from testmanager.core.build             import BuildData;
 from testmanager.core                   import db;
 from testmanager                        import config;
@@ -136,6 +139,17 @@ class WuiTestResult(WuiContentBase):
         if oTestResult.cErrors > 0:
             sErrCnt = ' (1 error)' if oTestResult.cErrors == 1 else ' (%d errors)' % oTestResult.cErrors;
 
+        # Format bits for adding or editing the failure reason.  Level 0 is handled at the top of the page.
+        sChangeReason = '';
+        if oTestResult.cErrors > 0 and iDepth > 0:
+            dTmp = {
+                self._oDisp.ksParamAction: self._oDisp.ksActionTestResultFailureAdd if oTestResult.oReason is None else
+                                           self._oDisp.ksActionTestResultFailureEdit,
+                TestResultFailureData.ksParam_idTestResult: oTestResult.idTestResult,
+            };
+            sChangeReason = ' <a href="?%s" class="tmtbl-edit-reason" onclick="addRedirectToAnchorHref(this)">%s</a> ' \
+                          % ( webutils.encodeUrlParams(dTmp), WuiContentBase.ksShortEditLinkHtml );
+
         # Format the include in graph checkboxes.
         sLineage += ':%u' % (oTestResult.idStrName,);
         sResultGraph  = '<input type="checkbox" name="%s" value="%s%s" title="Include result in graph."/>' \
@@ -147,9 +161,7 @@ class WuiTestResult(WuiContentBase):
 
 
         if    len(oTestResult.aoChildren) == 0 \
-          and len(oTestResult.aoValues)   == 0 \
-          and len(oTestResult.aoMsgs)     == 0 \
-          and len(oTestResult.aoFiles)    == 0:
+          and len(oTestResult.aoValues) + len(oTestResult.aoMsgs) + len(oTestResult.aoFiles) == 0:
             # Leaf - single row.
             tsEvent = oTestResult.tsCreated;
             if oTestResult.tsElapsed is not None:
@@ -159,7 +171,7 @@ class WuiTestResult(WuiContentBase):
                      '  <td>%s</td>\n' \
                      '  <td>%s</td>\n' \
                      '  <td>%s</td>\n' \
-                     '  <td colspan="2"%s>%s%s</td>\n' \
+                     '  <td colspan="2"%s>%s%s%s</td>\n' \
                      '  <td>%s</td>\n' \
                      ' </tr>\n' \
                    % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth, oTestResult.enmStatus,
@@ -169,7 +181,7 @@ class WuiTestResult(WuiContentBase):
                                            else '',
                        sDisplayName,
                        ' id="failure-%u"' % (iFailure,) if oTestResult.isFailure() else '',
-                       webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt),
+                       webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt), sChangeReason,
                        sResultGraph );
             iRow += 1;
         else:
@@ -188,12 +200,16 @@ class WuiTestResult(WuiContentBase):
                        'running' if oTestResult.tsElapsed is None else '', );
             iRow += 1;
 
-            # Depth.
+            # Depth. Check if our error count is just reflecting the one of our children.
+            cErrorsBelow = 0;
             for oChild in oTestResult.aoChildren:
                 (sChildHtml, iRow, iFailure) = self._recursivelyGenerateEvents(oChild, sName, sLineage,
                                                                                iRow, iFailure, oTestSet, iDepth + 1);
                 sHtml += sChildHtml;
+                cErrorsBelow += oChild.cErrors;
 
+            if cErrorsBelow >= oTestResult.cErrors:
+                sChangeReason = '';
 
             # Messages.
             for oMsg in oTestResult.aoMsgs:
@@ -262,8 +278,8 @@ class WuiTestResult(WuiContentBase):
                                          sTitle = oFile.sDescription));
 
                 sHtml += ' <tr class="%s tmtbl-events-file tmtbl-events-lvl%s">\n' \
-                         '  <td></td>\n' \
                          '  <td>%s</td>\n' \
+                         '  <td></td>\n' \
                          '  <td></td>\n' \
                          '  <td>%s</td>\n' \
                          '  <td></td>\n' \
@@ -295,10 +311,88 @@ class WuiTestResult(WuiContentBase):
                            sResultGraph);
                 iRow += 1;
 
+        # Failure reason.
+        if oTestResult.oReason is not None:
+            sReasonText = '%s / %s' % (     oTestResult.oReason.oFailureReason.oCategory.sShort,
+                                            oTestResult.oReason.oFailureReason.sShort, );
+            sCommentHtml = '';
+            if oTestResult.oReason.sComment is not None and len(oTestResult.oReason.sComment.strip()) > 0:
+                sCommentHtml = '<br>' + webutils.escapeElem(oTestResult.oReason.sComment.strip());
+                sCommentHtml = sCommentHtml.replace('\n', '<br>');
+
+            sDetailedReason = ' <a href="?%s" class="tmtbl-show-reason">%s</a>' \
+                            % ( webutils.encodeUrlParams({ self._oDisp.ksParamAction:
+                                                           self._oDisp.ksActionTestResultFailureDetails,
+                                                           TestResultFailureData.ksParam_idTestResult:
+                                                           oTestResult.idTestResult,}),
+                                WuiContentBase.ksShortDetailsLinkHtml,);
+
+
+            sHtml += ' <tr class="%s tmtbl-events-reason tmtbl-events-lvl%s">\n' \
+                     '  <td>%s</td>\n' \
+                     '  <td colspan="2">%s</td>\n' \
+                     '  <td colspan="3">%s%s%s%s</td>\n' \
+                     '  <td>%s</td>\n' \
+                     ' </tr>\n' \
+                   % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth,
+                        webutils.escapeElem(self.formatTsShort(oTestResult.oReason.tsEffective)),
+                        oTestResult.oReason.oAuthor.sUsername,
+                        webutils.escapeElem(sReasonText), sDetailedReason, sChangeReason,
+                        sCommentHtml,
+                       'todo');
+            iRow += 1;
+
         if oTestResult.isFailure():
             iFailure += 1;
 
         return (sHtml, iRow, iFailure);
+
+
+    def _generateMainReason(self, oTestResultTree, oTestSet):
+        """
+        Generates the form for displaying and updating the main failure reason.
+
+        oTestResultTree is an instance TestResultDataEx.
+        oTestSet is an instance of TestSetData.
+
+        """
+        _ = oTestSet;
+        sHtml = ' ';
+
+        if oTestResultTree.isFailure() or oTestResultTree.cErrors > 0:
+            sHtml += '   <h2>Failure Reason:</h2>\n';
+            oData = oTestResultTree.oReason;
+
+            # We need the failure reasons for the combobox.
+            aoFailureReasons = FailureReasonLogic(self._oDisp.getDb()).fetchForCombo('Todo: Figure out why');
+            assert len(aoFailureReasons) > 0;
+
+            # For now we'll use the standard form helper.
+            sFormActionUrl = '%s?%s=%s' % ( self._oDisp.ksScriptName, self._oDisp.ksParamAction,
+                                            WuiMain.ksActionTestResultFailureAddPost if oData is None else
+                                            WuiMain.ksActionTestResultFailureEditPost )
+            oForm = WuiHlpForm('failure-reason', sFormActionUrl,
+                               sOnSubmit = WuiHlpForm.ksOnSubmit_AddReturnToFieldWithCurrentUrl);
+            oForm.addTextHidden(TestResultFailureData.ksParam_idTestResult, oTestResultTree.idTestResult);
+            oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, oData.idFailureReason if oData is not None else -1,
+                              'Reason', aoFailureReasons);
+            oForm.addMultilineText(TestResultFailureData.ksParam_sComment,
+                                   oData.sComment if oData is not None else '', 'Comment');
+            if oData is not None:
+                oForm.addNonText('%s (%s)' % (oData.oAuthor.sUsername, oData.oAuthor.sUsername), 'Sheriff');
+                oForm.addNonText(oData.tsEffective, 'When');
+                oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, oData.tsEffective);
+                oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, oData.tsExpire);
+                oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, oData.uidAuthor);
+            else:
+                oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, '');
+                oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, '');
+                oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, '');
+
+            oForm.addSubmit('Change Reason', );
+            sHtml += oForm.finalize();
+        return sHtml;
+
 
     def showTestCaseResultDetails(self,             # pylint: disable=R0914,R0915
                                   oTestResultTree,
@@ -533,6 +627,8 @@ class WuiTestResult(WuiContentBase):
         sHtml += '  <td valign="top" width="20%%">\n%s\n</td>\n' % '   <br>\n'.join(asHtml);
 
         sHtml += '  <td valign="top" width="80%" style="padding-left:6px">\n';
+        sHtml += self._generateMainReason(oTestResultTree, oTestSet);
+
         sHtml += '   <h2>Events:</h2>\n';
         sHtml += '   <form action="#" method="get" id="graph-form">\n' \
                  '    <input type="hidden" name="%s" value="%s"/>\n' \
@@ -613,17 +709,19 @@ class WuiGroupedResultList(WuiListContentBase):
         self._asColumnHeaders = [
             'Start',
             'Product Build',
-            'Validation Kit',
-            'TestBox OS',
-            'TestBox Name',
+            'Kit',
+            'Box',
+            'OS.Arch',
             'Test Case',
             'Elapsed',
             'Result',
+            'Reason',
         ];
         self._asColumnAttribs = ['align="center"', 'align="center"', 'align="center"',
                                  'align="center"', 'align="center"', 'align="center"',
                                  'align="center"', 'align="center"', 'align="center"',
-                                 'align="center"', 'align="center"', 'align="center"' ]
+                                 'align="center"', 'align="center"', 'align="center"',
+                                 'align="center"', ];
 
 
         # Prepare parameter lists.
@@ -649,20 +747,21 @@ class WuiGroupedResultList(WuiListContentBase):
 
         oValidationKit = None;
         if oEntry.idBuildTestSuite is not None:
-            oValidationKit = WuiTmLink('#%d - r%s' % (oEntry.idBuildTestSuite, oEntry.iRevisionTestSuite),
+            oValidationKit = WuiTmLink('r%s' % (oEntry.iRevisionTestSuite,),
                                    WuiAdmin.ksScriptName,
                                    { WuiAdmin.ksParamAction:  WuiAdmin.ksActionBuildDetails,
                                      BuildData.ksParam_idBuild: oEntry.idBuildTestSuite },
                                    fBracketed = False);
 
-
-        aoTestSetLinks = [ WuiTmLink(oEntry.enmStatus,
-                                     WuiMain.ksScriptName,
-                                     { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
-                                       TestSetData.ksParam_idTestSet: oEntry.idTestSet },
-                                     fBracketed = False),];
+        aoTestSetLinks = [];
+        aoTestSetLinks.append(WuiTmLink(oEntry.enmStatus,
+                                        WuiMain.ksScriptName,
+                                        { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
+                                          TestSetData.ksParam_idTestSet: oEntry.idTestSet },
+                                        fBracketed = False));
         if oEntry.cErrors > 0:
-            aoTestSetLinks.append(WuiTmLink('- %d error(s)' % (oEntry.cErrors, ),
+            aoTestSetLinks.append(WuiRawHtml('-'));
+            aoTestSetLinks.append(WuiTmLink('%d error%s' % (oEntry.cErrors, '' if oEntry.cErrors == 1 else 's', ),
                                             WuiMain.ksScriptName,
                                             { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
                                               TestSetData.ksParam_idTestSet: oEntry.idTestSet },
@@ -687,9 +786,29 @@ class WuiGroupedResultList(WuiListContentBase):
         #if oEntry.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
         sTestBoxTitle += u'CPU features:\t' + u', '.join(asFeatures);
 
+        # Reason:
+        oReason = None;
+        if oEntry.oFailureReason is not None:
+            sReasonTitle  = 'Reason:  \t%s\n' % ( oEntry.oFailureReason.sShort, );
+            sReasonTitle += 'Category:\t%s\n' % ( oEntry.oFailureReason.oCategory.sShort, );
+            sReasonTitle += 'Assigned:\t%s\n' % ( self.formatTsShort(oEntry.tsFailureReasonAssigned), );
+            sReasonTitle += 'By User: \t%s\n' % ( oEntry.oFailureReasonAssigner.sUsername, );
+            if oEntry.sFailureReasonComment is not None and len(oEntry.sFailureReasonComment) > 0:
+                sReasonTitle += 'Comment: \t%s\n' % ( self.formatTsShort(oEntry.sFailureReasonComment), );
+            if oEntry.oFailureReason.iTicket is not None and oEntry.oFailureReason.iTicket > 0:
+                sReasonTitle += 'xTracker:\t#%s\n' % ( oEntry.oFailureReason.iTicket, );
+            for i, sUrl in enumerate(oEntry.oFailureReason.asUrls):
+                sUrl = sUrl.strip();
+                if len(sUrl) > 0:
+                    sReasonTitle += 'URL#%u:  \t%s\n' % ( i, sUrl, );
+            oReason = WuiTmLink(oEntry.oFailureReason.sShort, WuiAdmin.ksScriptName,
+                                { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDetails,
+                                  FailureReasonData.ksParam_idFailureReason: oEntry.oFailureReason.idFailureReason },
+                                sTitle = sReasonTitle);
+
         return [
             oEntry.tsCreated,
-            [ WuiTmLink('#%d - %s %s (%s)' % (oEntry.idBuild, oEntry.sProduct, oEntry.sVersion, oEntry.sType,),
+            [ WuiTmLink('%s %s (%s)' % (oEntry.sProduct, oEntry.sVersion, oEntry.sType,),
                         WuiMain.ksScriptName, self._dRevLinkParams, sTitle = '%s' % (oEntry.sBranch,), fBracketed = False),
               WuiSvnLinkWithTooltip(oEntry.iRevision, 'vbox'), ## @todo add sRepository TestResultListingData
               WuiTmLink(self.ksShortDetailsLink, WuiAdmin.ksScriptName,
@@ -698,13 +817,13 @@ class WuiGroupedResultList(WuiListContentBase):
                         fBracketed = False),
               ],
             oValidationKit,
-            '%s.%s' % (oEntry.sOs, oEntry.sArch),
             [ WuiTmLink(oEntry.sTestBoxName, WuiMain.ksScriptName, self._dTestBoxLinkParams, fBracketed = False,
                         sTitle = sTestBoxTitle),
               WuiTmLink(self.ksShortDetailsLink, WuiAdmin.ksScriptName,
                         { WuiAdmin.ksParamAction:        WuiAdmin.ksActionTestBoxDetails,
                           TestBoxData.ksParam_idTestBox: oEntry.idTestBox },
                         fBracketed = False) ],
+            '%s.%s' % (oEntry.sOs, oEntry.sArch),
             [ WuiTmLink(oEntry.sTestCaseName, WuiMain.ksScriptName, self._dTestCaseLinkParams, fBracketed = False,
                         sTitle = (oEntry.sBaseCmd + ' ' + oEntry.sArgs) if oEntry.sArgs else oEntry.sBaseCmd),
               WuiTmLink(self.ksShortDetailsLink, WuiAdmin.ksScriptName,
@@ -712,5 +831,6 @@ class WuiGroupedResultList(WuiListContentBase):
                           TestCaseData.ksParam_idTestCase: oEntry.idTestCase },
                         fBracketed = False), ],
             oEntry.tsElapsed,
-            aoTestSetLinks
+            aoTestSetLinks,
+            oReason
         ];

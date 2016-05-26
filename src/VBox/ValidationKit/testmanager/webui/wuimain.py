@@ -68,6 +68,11 @@ class WuiMain(WuiDispatcherBase):
     ksActionResultsGroupedByTestBox     = 'ResultsGroupedByTestBox'
     ksActionResultsGroupedByTestCase    = 'ResultsGroupedByTestCase'
     ksActionTestResultDetails           = 'TestResultDetails'
+    ksActionTestResultFailureDetails    = 'TestResultFailureDetails'
+    ksActionTestResultFailureAdd        = 'TestResultFailureAdd'
+    ksActionTestResultFailureAddPost    = 'TestResultFailureAddPost'
+    ksActionTestResultFailureEdit       = 'TestResultFailureEdit'
+    ksActionTestResultFailureEditPost   = 'TestResultFailureEditPost'
     ksActionViewLog                     = 'ViewLog'
     ksActionGetFile                     = 'GetFile'
     ksActionReportSummary               = 'ReportSummary';
@@ -227,7 +232,13 @@ class WuiMain(WuiDispatcherBase):
                                                                 TestResultLogic,
                                                                 WuiGroupedResultList)
 
-        d[self.ksActionTestResultDetails]          = self.actionTestResultDetails
+        d[self.ksActionTestResultDetails]          = self._actionTestResultDetails;
+
+        d[self.ksActionTestResultFailureAdd]       = self._actionTestResultFailureAdd;
+        d[self.ksActionTestResultFailureAddPost]   = self._actionTestResultFailureAddPost;
+        d[self.ksActionTestResultFailureDetails]   = self._actionTestResultFailureDetails;
+        d[self.ksActionTestResultFailureEdit]      = self._actionTestResultFailureEdit;
+        d[self.ksActionTestResultFailureEditPost]  = self._actionTestResultFailureEditPost;
 
         d[self.ksActionViewLog]                 = self.actionViewLog;
         d[self.ksActionGetFile]                 = self.actionGetFile;
@@ -812,7 +823,7 @@ class WuiMain(WuiDispatcherBase):
 
         return WuiDispatcherBase._generatePage(self)
 
-    def actionTestResultDetails(self):
+    def _actionTestResultDetails(self):
         """Show test case execution result details."""
         from testmanager.webui.wuitestresult import WuiTestResult;
 
@@ -847,6 +858,46 @@ class WuiMain(WuiDispatcherBase):
                                                                                  oTestCaseDataEx,
                                                                                  oTestCaseArgsDataEx);
         return True
+
+    def _actionTestResultFailureAdd(self):
+        """ Pro forma. """
+        from testmanager.core.testresults import TestResultFailureLogic, TestResultFailureData;
+        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
+        return self._actionGenericFormAdd(TestResultFailureData, WuiTestResultFailure);
+
+    def _actionTestResultFailureAddPost(self):
+        """Add test result failure result"""
+        from testmanager.core.testresults import TestResultFailureLogic, TestResultFailureData;
+        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
+        if self.ksParamRedirectTo not in self._dParams:
+            raise WuiException('Missing parameter ' + self.ksParamRedirectTo);
+
+        return self._actionGenericFormAddPost(TestResultFailureData, TestResultFailureLogic,
+                                              WuiTestResultFailure, self.ksActionResultsUnGrouped);
+
+    def _actionTestResultFailureDetails(self):
+        """ Pro forma. """
+        from testmanager.core.testresults import TestResultFailureLogic, TestResultFailureData;
+        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
+        return self._actionGenericFormDetails(TestResultFailureData, TestResultFailureLogic,
+                                              WuiTestResultFailure, 'idTestResult');
+
+    def _actionTestResultFailureEdit(self):
+        """ Pro forma. """
+        from testmanager.core.testresults import TestResultFailureData;
+        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
+        return self._actionGenericFormEdit(TestResultFailureData, WuiTestResultFailure,
+                                           TestResultFailureData.ksParam_idTestResult);
+
+    def _actionTestResultFailureEditPost(self):
+        """Edit test result failure result"""
+        from testmanager.core.testresults import TestResultFailureLogic, TestResultFailureData;
+        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
+        if self.ksParamRedirectTo not in self._dParams:
+            raise WuiException('Missing parameter ' + self.ksParamRedirectTo);
+
+        return self._actionGenericFormEditPost(TestResultFailureData, TestResultFailureLogic,
+                                               WuiTestResultFailure, self.ksActionResultsUnGrouped);
 
     def actionViewLog(self):
         """

@@ -189,9 +189,13 @@ class WuiContentBase(object): # pylint: disable=R0903
     """
 
     ## The text/symbol for a very short edit link.
-    ksShortEditLink    = u'\u270D'
+    ksShortEditLink        = u'\u270D'
+    ## HTML hex entity string for ksShortDetailsLink.
+    ksShortEditLinkHtml    = '&#x270d;'
     ## The text/symbol for a very short details link.
-    ksShortDetailsLink = u'\u2318'
+    ksShortDetailsLink     = u'\u2318'
+    ## HTML hex entity string for ksShortDetailsLink.
+    ksShortDetailsLinkHtml = '&#x2318;'
 
 
     def __init__(self, fnDPrint = None, oDisp = None):
@@ -326,6 +330,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         self._sSubmitAction = sSubmitAction;
         if sSubmitAction is None and sMode != self.ksMode_Show:
             self._sSubmitAction = getattr(oDisp, self._sActionBase + self.kdSubmitActionMappings[sMode]);
+        self._sRedirectTo   = None;
 
 
     def _populateForm(self, oForm, oData):
@@ -469,6 +474,13 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
                        '</div>\n';
         return sNavigation;
 
+    def setRedirectTo(self, sRedirectTo):
+        """
+        For setting the hidden redirect-to field.
+        """
+        self._sRedirectTo = sRedirectTo;
+        return True;
+
     def showChangeLog(self, aoEntries, fMoreEntries, iPageNo, cEntriesPerPage, tsNow, fShowNavigation = True):
         """
         Render the change log, returning raw HTML.
@@ -520,6 +532,8 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         # need to show this reason
         try:
             self._populateForm(oForm, self._oData);
+            if self._sRedirectTo is not None:
+                oForm.addTextHidden(self._oDisp.ksParamRedirectTo, self._sRedirectTo);
         except WuiException, oXcpt:
             sContent = unicode(oXcpt)
         else:
@@ -557,7 +571,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
             elif hasattr(self._oData, 'tsEffective'):
                 dParams[WuiDispatcherBase.ksParamEffectiveDate] = self._oData.tsEffective;
                 dParams[getattr(self._oData, 'ksParam_' + self._oData.ksIdAttr)] = getattr(self._oData, self._oData.ksIdAttr);
-            dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Edit');
+            dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Details');
             aoActions.append(WuiTmLink('Details', '', dParams));
 
         if len(aoActions) > 0:
@@ -628,7 +642,7 @@ class WuiListContentBase(WuiContentBase):
         aoValues = self._formatListEntry(iEntry);
         assert len(aoValues) == len(self._asColumnHeaders), '%s vs %s' % (len(aoValues), len(self._asColumnHeaders));
 
-        for i in range(len(aoValues)):
+        for i, _ in enumerate(aoValues):
             if i < len(self._asColumnAttribs) and len(self._asColumnAttribs[i]) > 0:
                 sRow += u'    <td ' + self._asColumnAttribs[i] + '>';
             else:

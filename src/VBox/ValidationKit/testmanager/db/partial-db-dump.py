@@ -261,6 +261,39 @@ class PartialDbDump(object): # pylint: disable=R0903
         oDb.execute('ALTER TABLE TestSets ADD FOREIGN KEY (idTestResult) REFERENCES TestResults(idTestResult)');
         oDb.commit();
 
+        # Correct sequences.
+        atSequences = [
+            ( 'UserIdSeq',              'Users',                'uid' ),
+            ( 'GlobalResourceIdSeq',    'GlobalResources',      'idGlobalRsrc' ),
+            ( 'BuildSourceIdSeq',       'BuildSources',         'idBuildSrc' ),
+            ( 'TestCaseIdSeq',          'TestCases',            'idTestCase' ),
+            ( 'TestCaseGenIdSeq',       'TestCases',            'idGenTestCase' ),
+            ( 'TestCaseArgsIdSeq',      'TestCaseArgs',         'idTestCaseArgs' ),
+            ( 'TestCaseArgsGenIdSeq',   'TestCaseArgs',         'idGenTestCaseArgs' ),
+            ( 'TestGroupIdSeq',         'TestGroups',           'idTestGroup' ),
+            ( 'SchedGroupIdSeq',        'SchedGroups',          'idSchedGroup' ),
+            ( 'TestBoxIdSeq',           'TestBoxes',            'idTestBox' ),
+            ( 'TestBoxGenIdSeq',        'TestBoxes',            'idGenTestBox' ),
+            ( 'FailureCategoryIdSeq',   'FailureCategories',    'idFailureCategory' ),
+            ( 'FailureReasonIdSeq',     'FailureReasons',       'idFailureReason' ),
+            ( 'BuildBlacklistIdSeq',    'BuildBlacklist',       'idBlacklisting' ),
+            ( 'BuildCategoryIdSeq',     'BuildCategories',      'idBuildCategory' ),
+            ( 'BuildIdSeq',             'Builds',               'idBuild' ),
+            ( 'TestResultStrTabIdSeq',  'TestResultStrTab',     'idStr' ),
+            ( 'TestResultIdSeq',        'TestResults',          'idTestResult' ),
+            ( 'TestResultValueIdSeq',   'TestResultValues',     'idTestResultValue' ),
+            ( 'TestResultFileId',       'TestResultFiles',      'idTestResultFile' ),
+            ( 'TestResultMsgIdSeq',     'TestResultMsgs',       'idTestResultMsg' ),
+            ( 'TestSetIdSeq',           'TestSets',             'idTestSet' ),
+            ( 'SchedQueueItemIdSeq',    'SchedQueues',          'idItem' ),
+        ];
+        for (sSeq, sTab, sCol) in atSequences:
+            oDb.execute('SELECT MAX(%s) FROM %s' % (sCol, sTab,));
+            idMax = oDb.fetchOne()[0];
+            print '%s: idMax=%s' % (sSeq, idMax);
+            if idMax is not None:
+                oDb.execute('SELECT setval(\'%s\', %s)' % (sSeq, idMax));
+
         # Last step.
         print 'Analyzing...'
         oDb.execute('ANALYZE');
