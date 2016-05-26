@@ -861,7 +861,7 @@ class WuiMain(WuiDispatcherBase):
 
     def _actionTestResultFailureAdd(self):
         """ Pro forma. """
-        from testmanager.core.testresults import TestResultFailureLogic, TestResultFailureData;
+        from testmanager.core.testresults import TestResultFailureData;
         from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
         return self._actionGenericFormAdd(TestResultFailureData, WuiTestResultFailure);
 
