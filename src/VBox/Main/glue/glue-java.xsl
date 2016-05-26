@@ -647,11 +647,17 @@
 </xsl:template>
 
 <xsl:template name="startExcWrapper">
+  <xsl:param name="preventObjRelease" />
+
+  <xsl:if test="$G_vboxGlueStyle='jaxws' and $preventObjRelease">
+    <xsl:text>        this.getObjMgr().preventObjRelease();&#10;</xsl:text>
+  </xsl:if>
   <xsl:text>        try&#10;</xsl:text>
   <xsl:text>        {&#10;</xsl:text>
 </xsl:template>
 
 <xsl:template name="endExcWrapper">
+  <xsl:param name="allowObjRelease" />
 
   <xsl:choose>
     <xsl:when test="$G_vboxGlueStyle='xpcom'">
@@ -674,12 +680,18 @@
       <xsl:text>        }&#10;</xsl:text>
       <xsl:text>        catch (InvalidObjectFaultMsg e)&#10;</xsl:text>
       <xsl:text>        {&#10;</xsl:text>
-      <xsl:text>            throw new VBoxException(e.getMessage(), e, this.port);&#10;</xsl:text>
+      <xsl:text>            throw new VBoxException(e.getMessage(), e, this.getObjMgr(), this.port);&#10;</xsl:text>
       <xsl:text>        }&#10;</xsl:text>
       <xsl:text>        catch (RuntimeFaultMsg e)&#10;</xsl:text>
       <xsl:text>        {&#10;</xsl:text>
-      <xsl:text>            throw new VBoxException(e.getMessage(), e, this.port);&#10;</xsl:text>
+      <xsl:text>            throw new VBoxException(e.getMessage(), e, this.getObjMgr(), this.port);&#10;</xsl:text>
       <xsl:text>        }&#10;</xsl:text>
+      <xsl:if test="$allowObjRelease">
+        <xsl:text>        finally&#10;</xsl:text>
+        <xsl:text>        {&#10;</xsl:text>
+        <xsl:text>            getObjMgr().allowObjRelease();&#10;</xsl:text>
+        <xsl:text>        }&#10;</xsl:text>
+      </xsl:if>
     </xsl:when>
 
     <xsl:otherwise>
@@ -1159,13 +1171,13 @@
       </xsl:variable>
       <xsl:choose>
         <xsl:when test="$isstruct">
-          <xsl:value-of select="concat('Helper.wrap2(', $elemgluetype, '.class, ', $elembacktype, '.class, port, ', $value, ')')"/>
+          <xsl:value-of select="concat('Helper.wrap2(', $elemgluetype, '.class, ', $elembacktype, '.class, objMgr, port, ', $value, ')')"/>
         </xsl:when>
         <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
           <xsl:value-of select="concat('Helper.convertEnums(', $elembacktype, '.class, ', $elemgluetype, '.class, ', $value, ')')"/>
         </xsl:when>
         <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
-          <xsl:value-of select="concat('Helper.wrap(', $elemgluetype, '.class, port, ', $value, ')')"/>
+          <xsl:value-of select="concat('Helper.wrap(', $elemgluetype, '.class, getObjMgr(), port, ', $value, ')')"/>
         </xsl:when>
         <xsl:when test="$idltype='octet'">
           <xsl:value-of select="concat('Helper.decodeBase64(', $value, ')')"/>
@@ -1209,11 +1221,11 @@
           <xsl:value-of select="$value"/>
         </xsl:when>
         <xsl:when test="$isstruct">
-          <xsl:value-of select="concat('(', $value, ' != null) ? new ', $gluetype, '(', $value, ', port) : null')" />
+          <xsl:value-of select="concat('(', $value, ' != null) ? new ', $gluetype, '(', $value, ', getObjMgr(), port) : null')" />
         </xsl:when>
         <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
           <!-- if the MOR string is empty, that means NULL, so return NULL instead of an object then -->
-          <xsl:value-of select="concat('(', $value, '.length() > 0) ? new ', $gluetype, '(', $value, ', port) : null')" />
+          <xsl:value-of select="concat('(', $value, '.length() > 0) ? new ', $gluetype, '(', $value, ', getObjMgr(), port) : null')" />
         </xsl:when>
         <xsl:otherwise>
           <xsl:call-template name="fatalError">
@@ -1850,13 +1862,77 @@
   <xsl:param name="ifname"/>
 
   <xsl:value-of select="concat('    private ', $G_virtualBoxPackageCom, '.', $ifname, ' real;&#10;')"/>
-  <xsl:text>    private VboxPortType port;&#10;&#10;</xsl:text>
+  <xsl:text>    private VboxPortType port;&#10;</xsl:text>
+  <xsl:text>    private ObjectRefManager objMgr;&#10;</xsl:text>
 
-  <xsl:value-of select="concat('    public ', $ifname, '(', $G_virtualBoxPackageCom, '.', $ifname, ' real, VboxPortType port)&#10;')" />
+  <!-- For structs which contain references to other objects we have to create the stub object during construction time
+       or it is possible that the reference was released by the garbage collector because the reference is not
+       accounted for. -->
+  <!-- Create the private members for containing objects here. -->
+  <xsl:for-each select="attribute">
+    <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
+    <xsl:variable name="attrtype"><xsl:value-of select="@type" /></xsl:variable>
+    <xsl:variable name="attrsafearray"><xsl:value-of select="@safearray" /></xsl:variable>
+
+    <xsl:if test="(not(@wsmap = 'suppress')) and ($attrtype = '$unknown' or (count(key('G_keyInterfacesByName', $attrtype)) > 0))">
+      <xsl:variable name="gluegettertype">
+        <xsl:call-template name="typeIdl2Glue">
+          <xsl:with-param name="type" select="$attrtype" />
+          <xsl:with-param name="safearray" select="@safearray" />
+        </xsl:call-template>
+      </xsl:variable>
+      <xsl:value-of select="concat('    private ', $gluegettertype, ' ', $attrname, ';&#10;')" />
+    </xsl:if>
+  </xsl:for-each>
+
+  <xsl:value-of select="concat('&#10;    public ', $ifname, '(', $G_virtualBoxPackageCom, '.', $ifname, ' real, ObjectRefManager objMgr, VboxPortType port)&#10;')" />
   <xsl:text>    {&#10;</xsl:text>
   <xsl:text>        this.real = real;&#10;</xsl:text>
   <xsl:text>        this.port = port;&#10;</xsl:text>
+  <xsl:text>        this.objMgr = objMgr;&#10;</xsl:text>
+  <!-- Construct stub objects for every attribute containing a reference to a webserver side object -->
+  <xsl:for-each select="attribute">
+    <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
+    <xsl:variable name="attrtype"><xsl:value-of select="@type" /></xsl:variable>
+    <xsl:variable name="attrsafearray"><xsl:value-of select="@safearray" /></xsl:variable>
+
+    <xsl:if test="(not(@wsmap = 'suppress')) and ($attrtype = '$unknown' or (count(key('G_keyInterfacesByName', $attrtype)) > 0))">
+      <xsl:variable name="backgettername">
+        <xsl:choose>
+          <!-- Stupid, but backend boolean getters called isFoo(), not getFoo() -->
+          <xsl:when test="$attrtype = 'boolean'">
+            <xsl:variable name="capsname">
+              <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="$attrname" />
+              </xsl:call-template>
+            </xsl:variable>
+            <xsl:value-of select="concat('is', $capsname)" />
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:call-template name="makeGetterName">
+              <xsl:with-param name="attrname" select="$attrname" />
+            </xsl:call-template>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+
+      <xsl:variable name="wrapped">
+      <xsl:call-template name="cookOutParam">
+        <xsl:with-param name="value" select="concat('real.', $backgettername, '()')" />
+        <xsl:with-param name="idltype" select="$attrtype" />
+        <xsl:with-param name="safearray" select="@safearray" />
+      </xsl:call-template>
+      </xsl:variable>
+      <xsl:value-of select="concat('        ', $attrname, ' = ', $wrapped, ';&#10;')" /> 
+    </xsl:if>
+  </xsl:for-each>
   <xsl:text>    }&#10;&#10;</xsl:text>
+
+  <xsl:text><![CDATA[    private ObjectRefManager getObjMgr()
+    {
+        return this.objMgr;
+    }
+]]></xsl:text>
 
   <xsl:for-each select="attribute">
     <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
@@ -1911,18 +1987,26 @@
         </xsl:call-template>
       </xsl:variable>
 
+      <!-- For attributes containing a reference to another object just return the already cerated stub -->
       <xsl:apply-templates select="desc" mode="attribute_get"/>
       <xsl:value-of select="concat('    public ', $gluegettertype, ' ', $gluegettername, '()&#10;')" />
       <xsl:text>    {&#10;</xsl:text>
-      <xsl:value-of select="concat('        ', $backgettertype, ' retVal = real.', $backgettername, '();&#10;')" />
-      <xsl:variable name="wrapped">
-        <xsl:call-template name="cookOutParam">
-          <xsl:with-param name="value" select="'retVal'" />
-          <xsl:with-param name="idltype" select="$attrtype" />
-          <xsl:with-param name="safearray" select="@safearray" />
-        </xsl:call-template>
-      </xsl:variable>
-      <xsl:value-of select="concat('        return ', $wrapped, ';&#10;')" />
+      <xsl:choose>
+        <xsl:when test="$attrtype = '$unknown' or (count(key('G_keyInterfacesByName', $attrtype)) > 0)">
+          <xsl:value-of select="concat('        return ', $attrname, ';&#10;')" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat('        ', $backgettertype, ' retVal = real.', $backgettername, '();&#10;')" />
+          <xsl:variable name="wrapped">
+            <xsl:call-template name="cookOutParam">
+              <xsl:with-param name="value" select="'retVal'" />
+              <xsl:with-param name="idltype" select="$attrtype" />
+              <xsl:with-param name="safearray" select="@safearray" />
+            </xsl:call-template>
+          </xsl:variable>
+          <xsl:value-of select="concat('        return ', $wrapped, ';&#10;')" />
+        </xsl:otherwise>
+      </xsl:choose>
       <xsl:text>    }&#10;</xsl:text>
     </xsl:if>
 
@@ -2000,7 +2084,9 @@
       <xsl:text>)&#10;</xsl:text>
       <xsl:text>    {&#10;</xsl:text>
 
-      <xsl:call-template name="startExcWrapper"/>
+      <xsl:call-template name="startExcWrapper">
+          <xsl:with-param name="preventObjRelease" select="$hasReturnParms and ($returnidltype = '$unknown' or (count(key('G_keyInterfacesByName', $returnidltype)) > 0))" />
+      </xsl:call-template>
 
       <!-- declare temp out params -->
       <xsl:for-each select="param[@dir='out']">
@@ -2094,9 +2180,11 @@
             <xsl:with-param name="safearray" select="$returnidlsafearray" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="concat('            return ', $wrapped, ';&#10;')" />
+        <xsl:value-of select="concat('           return ', $wrapped, ';&#10;')" />
       </xsl:if>
-      <xsl:call-template name="endExcWrapper"/>
+      <xsl:call-template name="endExcWrapper">
+        <xsl:with-param name="allowObjRelease" select="$hasReturnParms and ($returnidltype = '$unknown' or (count(key('G_keyInterfacesByName', $returnidltype)) > 0))" />
+      </xsl:call-template>
 
       <xsl:text>    }&#10;</xsl:text>
     </xsl:otherwise>
@@ -2181,7 +2269,7 @@
 
     <xsl:when test="$G_vboxGlueStyle='jaxws'">
       <!-- bad, need to check that we really can be casted to this type -->
-      <xsl:value-of select="concat('        return obj == null ?  null : new ', $ifname, '(obj.getWrapped(), obj.getRemoteWSPort());&#10;')" />
+      <xsl:value-of select="concat('        return obj == null ?  null : new ', $ifname, '(obj.getWrapped(), obj.getObjMgr(), obj.getRemoteWSPort());&#10;')" />
     </xsl:when>
 
     <xsl:otherwise>
@@ -2377,9 +2465,9 @@
   <!-- Constructor -->
   <xsl:choose>
       <xsl:when test="($G_vboxGlueStyle='jaxws')">
-        <xsl:value-of select="concat('    public ', $ifname, '(String wrapped, VboxPortType port)&#10;')" />
+        <xsl:value-of select="concat('    public ', $ifname, '(String wrapped, ObjectRefManager objMgr, VboxPortType port)&#10;')" />
         <xsl:text>    {&#10;</xsl:text>
-        <xsl:text>        super(wrapped, port);&#10;</xsl:text>
+        <xsl:text>        super(wrapped, objMgr, port);&#10;</xsl:text>
         <xsl:text>    }&#10;</xsl:text>
       </xsl:when>
 
@@ -2446,7 +2534,10 @@
         <xsl:value-of select="concat('    public ', $gluetype, ' ', $gettername, '()&#10;')" />
         <xsl:text>    {&#10;</xsl:text>
 
-        <xsl:call-template name="startExcWrapper"/>
+
+        <xsl:call-template name="startExcWrapper">
+          <xsl:with-param name="preventObjRelease" select="$attrtype = '$unknown' or (count(key('G_keyInterfacesByName', $attrtype)) > 0)" />
+        </xsl:call-template>
 
         <!-- Actual getter implementation -->
         <xsl:call-template name="genGetterCall">
@@ -2457,7 +2548,10 @@
         </xsl:call-template>
 
         <xsl:value-of select="concat('            return ', $wrapped, ';&#10;')" />
-        <xsl:call-template name="endExcWrapper"/>
+
+        <xsl:call-template name="endExcWrapper">
+          <xsl:with-param name="allowObjRelease" select="$attrtype = '$unknown' or (count(key('G_keyInterfacesByName', $attrtype)) > 0)" />
+        </xsl:call-template>
 
         <xsl:text>    }&#10;</xsl:text>
         <xsl:if test="not(@readonly = 'yes')">
@@ -3920,12 +4014,15 @@ public class VirtualBoxManager
 public class IUnknown
 {
     protected String obj;
+    protected ObjectRefManager objMgr;
     protected final VboxPortType port;
 
-    public IUnknown(String obj, VboxPortType port)
+    public IUnknown(String obj, ObjectRefManager objMgr, VboxPortType port)
     {
-        this.obj = obj;
-        this.port = port;
+        this.obj    = obj;
+        this.objMgr = objMgr;
+        this.port   = port;
+        objMgr.registerObj(this);
     }
 
     public final String getWrapped()
@@ -3936,6 +4033,11 @@ public class IUnknown
     public final VboxPortType getRemoteWSPort()
     {
         return this.port;
+    }
+
+    public final ObjectRefManager getObjMgr()
+    {
+        return this.objMgr;
     }
 
     public synchronized void releaseRemote() throws WebServiceException
@@ -3983,18 +4085,18 @@ import java.math.BigInteger;
 
 public class Helper
 {
-    public static <T> List<T> wrap(Class<T> wrapperClass, VboxPortType pt, List<String> values)
+    public static <T> List<T> wrap(Class<T> wrapperClass, ObjectRefManager objMgr, VboxPortType pt, List<String> values)
     {
         try
         {
             if (values == null)
                 return null;
 
-            Constructor<T> c = wrapperClass.getConstructor(String.class, VboxPortType.class);
+            Constructor<T> c = wrapperClass.getConstructor(String.class, ObjectRefManager.class, VboxPortType.class);
             List<T> ret = new ArrayList<T>(values.size());
             for (String v : values)
             {
-                ret.add(c.newInstance(v, pt));
+                ret.add(c.newInstance(v, objMgr, pt));
             }
             return ret;
         }
@@ -4016,18 +4118,18 @@ public class Helper
         }
     }
 
-    public static <T1, T2> List<T1> wrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, VboxPortType pt, List<T2> values)
+    public static <T1, T2> List<T1> wrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, ObjectRefManager objMgr, VboxPortType pt, List<T2> values)
     {
         try
         {
             if (values == null)
                 return null;
 
-            Constructor<T1> c = wrapperClass1.getConstructor(wrapperClass2, VboxPortType.class);
+            Constructor<T1> c = wrapperClass1.getConstructor(wrapperClass2, ObjectRefManager.class, VboxPortType.class);
             List<T1> ret = new ArrayList<T1>(values.size());
             for (T2 v : values)
             {
-                ret.add(c.newInstance(v, pt));
+                ret.add(c.newInstance(v, objMgr, pt));
             }
             return ret;
         }
@@ -4252,7 +4354,7 @@ public class VBoxException extends RuntimeException
         errorInfo = null;
     }
 
-    public VBoxException(String message, Throwable cause, VboxPortType port)
+    public VBoxException(String message, Throwable cause, ObjectRefManager objMgr, VboxPortType port)
     {
         super(message, cause);
         if (cause instanceof RuntimeFaultMsg)
@@ -4261,7 +4363,7 @@ public class VBoxException extends RuntimeException
             RuntimeFault f = m.getFaultInfo();
             resultCode = f.getResultCode();
             String retVal = f.getReturnval();
-            errorInfo = (retVal.length() > 0) ? new IVirtualBoxErrorInfo(retVal, port) : null;
+            errorInfo = (retVal.length() > 0) ? new IVirtualBoxErrorInfo(retVal, objMgr, port) : null;
         }
         else
             resultCode = -1;
@@ -4292,10 +4394,19 @@ public class VBoxException extends RuntimeException
   <xsl:if test="$filelistonly=''">
     <xsl:text>import java.net.URL;
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.lang.Integer;
+import java.lang.ref.WeakReference;
+import java.lang.ref.ReferenceQueue;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Holder;
@@ -4423,6 +4534,272 @@ class PortPool
 }
 
 
+/**
+ * This class manages the object references between us and the webservice server.
+ * It makes sure that the object on the server side is destroyed when all
+ */
+class ObjectRefManager
+{
+    private final static ReferenceQueue<IUnknown> refQ = new ReferenceQueue<IUnknown>();
+
+    private final VboxPortType port;
+    private final ConcurrentMap<String, ManagedObj> map = new ConcurrentHashMap<String, ManagedObj>();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ObjRefMgrCleanupThread objRefMgrCleanup;
+
+    public ObjectRefManager(VboxPortType port)
+    {
+        this.port = port;
+        this.objRefMgrCleanup = new ObjRefMgrCleanupThread(this, 100);
+        this.objRefMgrCleanup.start();
+    }
+
+    /**
+     * Prevents the object reference manager cleanup thread from releasing any
+     * server side objects to avoid a fundamental race in the multi threaded
+     * java environment where it is possible that a wrapper got the object ID
+     * from the server but couldn't create the local stub protecting the object
+     * before the cleanup thread released it.
+     */
+    public void preventObjRelease()
+    {
+        lock.readLock().lock();
+    }
+
+    /**
+     * Allows releasing server side objects from the cleanup thread again.
+     */
+    public void allowObjRelease()
+    {
+        lock.readLock().unlock();
+    }
+
+    /**
+     * Marks the start of a run to release server side objects which don't hold
+     * a reference locally anymore.
+     */
+    public void startObjRelease()
+    {
+        lock.writeLock().lock();
+    }
+
+    /**
+     * Marks the end of a cleanup run.
+     */
+    public void endObjRelease()
+    {
+        lock.writeLock().unlock();
+    }
+
+    /**
+     * Registers a new stub object for automatic reference managing.
+     */
+    public void registerObj(IUnknown obj)
+    {
+        ManagedObjRef ref = new ManagedObjRef(obj);
+
+        ManagedObj mgrobj = map.get(obj.getWrapped());
+        if (mgrobj != null)
+        {
+            mgrobj.addObject(ref);
+        }
+        else
+        {
+            /* Create new. */
+            mgrobj = new ManagedObj(obj.getWrapped());
+            mgrobj.addObject(ref);
+            map.put(obj.getWrapped(), mgrobj);
+        }
+    }
+
+    /**
+     * Removes a garbage collected object reference from our reference manager.
+     *
+     * Returns the server side object wrapper if there is no stub referencing it
+     * anymore otherwise null is returned.
+     */
+    public ManagedObj unregisterObj(ManagedObjRef objRef)
+    {
+        assert lock.isWriteLockedByCurrentThread();
+
+        ManagedObj obj = this.map.get(objRef.objId);
+
+        assert obj != null;
+        obj.removeObject(objRef);
+        if (!obj.isReferenced())
+            return obj;
+
+        return null;
+    }
+
+    public void releaseRemoteObj(ManagedObj obj)
+    {
+        if (!obj.isReferenced())
+        {
+            try
+            {
+                this.port.iManagedObjectRefRelease(obj.objId);
+            }
+            catch (InvalidObjectFaultMsg e)
+            {
+                throw new WebServiceException(e);
+            }
+            catch (RuntimeFaultMsg e)
+            {
+                throw new WebServiceException(e);
+            }
+            finally
+            {
+                this.map.remove(obj.objId);
+            }
+        }
+    }
+
+    /**
+     * An object which is living on the server side. This can be referenced
+     * by multiple stub objects here.
+     */
+    static class ManagedObj
+    {
+        private final String                               objId;
+        private final ConcurrentLinkedQueue<ManagedObjRef> refQ;
+
+        ManagedObj(String objId)
+        {
+          this.objId = objId;
+          this.refQ  = new ConcurrentLinkedQueue<ManagedObjRef>();
+        }
+
+        public void addObject(ManagedObjRef obj)
+        {
+            this.refQ.add(obj);
+        }
+
+        public void removeObject(ManagedObjRef obj)
+        {
+            this.refQ.remove(obj);
+        }
+
+        public boolean isReferenced()
+        {
+            return !this.refQ.isEmpty();
+        }
+    }
+
+    /**
+     * A private class extending WeakReference to get notified about garbage
+     * collected stub objects.
+     */
+    static class ManagedObjRef extends WeakReference<IUnknown>
+    {
+        final String objId;
+
+        ManagedObjRef(IUnknown obj)
+        {
+            super(obj, refQ);
+            this.objId = obj.getWrapped();
+        }
+    }
+
+    /**
+     * A private class implementing a thread getting notified
+     * about garbage collected objects so it can release the object on the
+     * server side if it is not used anymore.
+     */
+    static class ObjRefMgrCleanupThread extends Thread
+    {
+        ObjectRefManager            objRefMgr;
+        int                         cStubsReleased;
+        int                         cStubsReleaseThreshold;
+        HashMap<String, ManagedObj> mapToRelease = new HashMap<String, ManagedObj>();
+
+        ObjRefMgrCleanupThread(ObjectRefManager objRefMgr)
+        {
+            init(objRefMgr, 500);
+        }
+
+        ObjRefMgrCleanupThread(ObjectRefManager objRefMgr, int cStubsReleaseThreshold)
+        {
+            init(objRefMgr, cStubsReleaseThreshold);
+        }
+
+        private void init(ObjectRefManager objRefMgr, int cStubsReleaseThreshold)
+        {
+            this.objRefMgr = objRefMgr;
+            this.cStubsReleased = 0;
+            this.cStubsReleaseThreshold = cStubsReleaseThreshold;
+            setName("ObjectRefManager-VBoxWSObjRefGcThrd");
+            /*
+             * setDaemon() makes sure the jvm exits and is not blocked
+             * if the thread is still running so we don't have to care about
+             * tearing it down.
+             */
+            setDaemon(true);
+        }
+
+        public void run()
+        {
+            while (true)
+            {
+                while (cStubsReleased < cStubsReleaseThreshold)
+                {
+                    try
+                    {
+                        ManagedObjRef ref = (ManagedObjRef)refQ.remove();
+
+                        /* Accumulate a few objects before we start. */
+                        while (cStubsReleased < cStubsReleaseThreshold)
+                        {
+                            ManagedObj obj = this.objRefMgr.unregisterObj(ref);
+                            /*
+                             * If the server side object is not referenced anymore
+                             * promote to map for releasing later.
+                             */
+                            if (obj != null && !mapToRelease.containsKey(ref.objId))
+                                mapToRelease.put(ref.objId, obj);
+
+                            cStubsReleased++;
+                            ref = (ManagedObjRef)refQ.remove();
+                        }
+                    }
+                    catch (InterruptedException e)
+                    { /* ignore */ }
+                    catch (javax.xml.ws.WebServiceException e)
+                    { /* ignore */ }
+                }
+
+                /*
+                 * After we released enough stubs we go over all non referenced
+                 * server side objects and release them if they were not
+                 * referenced again in between.
+                 */
+                cStubsReleased = 0;
+                if (!mapToRelease.isEmpty())
+                {
+                    this.objRefMgr.startObjRelease();
+                    try
+                    {
+                        Iterator<ManagedObj> it = mapToRelease.values().iterator();
+                        while (it.hasNext())
+                        {
+                            ManagedObj obj = it.next();
+                            this.objRefMgr.releaseRemoteObj(obj);
+                        }
+
+                        mapToRelease.clear();
+                    }
+                    catch (javax.xml.ws.WebServiceException e)
+                    { /* ignore */ }
+                    finally
+                    {
+                        this.objRefMgr.endObjRelease();
+                    }
+                }
+            }
+        }
+    }
+}
+
 class VBoxTLSSocketFactory extends SSLSocketFactory
 {
     private final SSLSocketFactory sf;
@@ -4522,6 +4899,7 @@ public class VirtualBoxManager
     protected VboxPortType port;
 
     private IVirtualBox vbox;
+    private ObjectRefManager objMgr;
 
     private VirtualBoxManager()
     {
@@ -4538,6 +4916,7 @@ public class VirtualBoxManager
     public void connect(String url, String username, String passwd)
     {
         this.port = pool.getPort();
+        this.objMgr = new ObjectRefManager(this.port);
         try
         {
             ((BindingProvider)port).getRequestContext().
@@ -4558,7 +4937,7 @@ public class VirtualBoxManager
                 put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", sf);
 
             String handle = port.iWebsessionManagerLogon(username, passwd);
-            this.vbox = new IVirtualBox(handle, port);
+            this.vbox = new IVirtualBox(handle, this.objMgr, port);
         }
         catch (Throwable t)
         {
@@ -4568,7 +4947,7 @@ public class VirtualBoxManager
                 this.port = null;
             }
             // we have to throw smth derived from RuntimeException
-            throw new VBoxException(t.getMessage(), t, this.port);
+            throw new VBoxException(t.getMessage(), t, this.objMgr, this.port);
         }
     }
 
@@ -4576,6 +4955,7 @@ public class VirtualBoxManager
                         Map<String, Object> requestContext, Map<String, Object> responseContext)
     {
         this.port = pool.getPort();
+        this.objMgr = new ObjectRefManager(this.port);
 
         try
         {
@@ -4589,7 +4969,7 @@ public class VirtualBoxManager
             ((BindingProvider)port).getRequestContext().
                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
             String handle = port.iWebsessionManagerLogon(username, passwd);
-            this.vbox = new IVirtualBox(handle, port);
+            this.vbox = new IVirtualBox(handle, this.objMgr, port);
         }
         catch (Throwable t)
         {
@@ -4599,7 +4979,7 @@ public class VirtualBoxManager
                 this.port = null;
             }
             // we have to throw smth derived from RuntimeException
-            throw new VBoxException(t.getMessage(), t, this.port);
+            throw new VBoxException(t.getMessage(), t, this.objMgr, this.port);
         }
     }
 
@@ -4615,11 +4995,11 @@ public class VirtualBoxManager
         }
         catch (InvalidObjectFaultMsg e)
         {
-            throw new VBoxException(e.getMessage(), e, this.port);
+            throw new VBoxException(e.getMessage(), e, this.objMgr, this.port);
         }
         catch (RuntimeFaultMsg e)
         {
-            throw new VBoxException(e.getMessage(), e, this.port);
+            throw new VBoxException(e.getMessage(), e, this.objMgr, this.port);
         }
         finally
         {
@@ -4650,15 +5030,15 @@ public class VirtualBoxManager
         try
         {
             String handle = port.iWebsessionManagerGetSessionObject(this.vbox.getWrapped());
-            return new ISession(handle, port);
+            return new ISession(handle, this.objMgr, port);
         }
         catch (InvalidObjectFaultMsg e)
         {
-            throw new VBoxException(e.getMessage(), e, this.port);
+            throw new VBoxException(e.getMessage(), e, this.objMgr, this.port);
         }
         catch (RuntimeFaultMsg e)
         {
-            throw new VBoxException(e.getMessage(), e, this.port);
+            throw new VBoxException(e.getMessage(), e, this.objMgr, this.port);
         }
     }
 
