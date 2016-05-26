@@ -2625,6 +2625,16 @@ void UIMessageCenter::sltShowBugTracker()
     vboxGlobal().openURL("https://www.virtualbox.org/wiki/Bugtracker");
 }
 
+void UIMessageCenter::sltShowForums()
+{
+    vboxGlobal().openURL("https://forums.virtualbox.org/");
+}
+
+void UIMessageCenter::sltShowOracle()
+{
+    vboxGlobal().openURL("http://www.oracle.com/us/technologies/virtualization/virtualbox/overview/index.html");
+}
+
 void UIMessageCenter::sltShowHelpAboutDialog()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();

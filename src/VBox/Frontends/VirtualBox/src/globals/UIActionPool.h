@@ -78,6 +78,8 @@ enum UIActionIndex
     UIActionIndex_Simple_Contents,
     UIActionIndex_Simple_WebSite,
     UIActionIndex_Simple_BugTracker,
+    UIActionIndex_Simple_Forums,
+    UIActionIndex_Simple_Oracle,
 #ifndef RT_OS_DARWIN
     UIActionIndex_Simple_About,
 #endif /* !RT_OS_DARWIN */

@@ -671,6 +671,72 @@ protected:
     }
 };
 
+class UIActionSimpleForums : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleForums(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/site_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Forums; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Forums); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Forums); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("Forums");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&VirtualBox Forums..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product forums"));
+    }
+};
+
+class UIActionSimpleOracle : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleOracle(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/site_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Oracle; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Oracle); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Oracle); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("Oracle");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Oracle Web Site..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the Oracle web site"));
+    }
+};
+
 class UIActionSimpleResetWarnings : public UIActionSimple
 {
     Q_OBJECT;
@@ -1047,6 +1113,8 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
     m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
     m_pool[UIActionIndex_Simple_BugTracker] = new UIActionSimpleBugTracker(this);
+    m_pool[UIActionIndex_Simple_Forums] = new UIActionSimpleForums(this);
+    m_pool[UIActionIndex_Simple_Oracle] = new UIActionSimpleOracle(this);
 #ifndef RT_OS_DARWIN
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
 #endif /* !RT_OS_DARWIN */
@@ -1088,6 +1156,10 @@ void UIActionPool::prepareConnections()
             &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_BugTracker), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowBugTracker()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_Forums), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowForums()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_Oracle), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowOracle()), Qt::UniqueConnection);
 #ifndef RT_OS_DARWIN
     connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
@@ -1263,11 +1335,15 @@ void UIActionPool::updateMenuHelp()
     bool fSeparator = false;
 
     /* 'Contents' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents)) || fSeparator;
     /* 'Web Site' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite)) || fSeparator;
     /* 'Bug Tracker' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_BugTracker)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_BugTracker)) || fSeparator;
+    /* 'Forums' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Forums)) || fSeparator;
+    /* 'Oracle' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Oracle)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)

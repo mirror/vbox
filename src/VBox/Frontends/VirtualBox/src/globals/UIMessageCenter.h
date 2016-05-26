@@ -384,6 +384,8 @@ public slots:
     /* Handlers: Help menu stuff: */
     void sltShowHelpWebDialog();
     void sltShowBugTracker();
+    void sltShowForums();
+    void sltShowOracle();
     void sltShowHelpAboutDialog();
     void sltShowHelpHelpDialog();
     void sltResetSuppressedMessages();
