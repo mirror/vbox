@@ -190,20 +190,6 @@ ip_input(PNATState pData, struct mbuf *m)
     if ((ip->ip_src.s_addr & RT_N2H_U32_C(0xe0000000)) == RT_N2H_U32_C(0xe0000000))
         goto free_m;
 
-    /* check ip_ttl for a correct ICMP reply */
-    if (ip->ip_ttl==0 || ip->ip_ttl == 1)
-    {
-        /* XXX: if we're in destination so perhaps we need to send ICMP_TIMXCEED_REASS */
-        icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
-        goto no_free_m;
-    }
-
-    ip->ip_ttl--;
-    if (ip->ip_sum > RT_H2N_U16_C(0xffffU - (1 << 8)))
-        ip->ip_sum += RT_H2N_U16_C(1 << 8) + 1;
-    else
-        ip->ip_sum += RT_H2N_U16_C(1 << 8);
-
     /*
      * Drop multicast (class d) and reserved (class e) here.  The rest
      * of the code is not yet prepared to deal with it.  IGMP is not
@@ -214,6 +200,32 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         goto free_m;
     }
+
+
+    /* do we need to "forward" this packet? */
+    if (!CTL_CHECK_MINE(ip->ip_dst.s_addr))
+    {
+        if (ip->ip_ttl <= 1)
+        {
+            icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
+            goto no_free_m;
+        }
+
+        /* ignore packets to other nodes from our private network */
+        if (   CTL_CHECK_NETWORK(ip->ip_dst.s_addr)
+            && !CTL_CHECK_BROADCAST(ip->ip_dst.s_addr))
+        {
+            /* XXX: send ICMP_REDIRECT_HOST to be pedantic? */
+            goto free_m;
+        }
+
+        ip->ip_ttl--;
+        if (ip->ip_sum > RT_H2N_U16_C(0xffffU - (1 << 8)))
+            ip->ip_sum += RT_H2N_U16_C(1 << 8) + 1;
+        else
+            ip->ip_sum += RT_H2N_U16_C(1 << 8);
+    }
+
 
     /*
      * If offset or IP_MF are set, must reassemble.
