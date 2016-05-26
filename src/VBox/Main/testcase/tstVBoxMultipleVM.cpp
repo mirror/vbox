@@ -151,8 +151,9 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, boo
     if(SUCCEEDED(rc))
         rc = TST_COM_EXPR(machine->COMGETTER(State)(&machineState));
     // check that machine is in running state
-    if (   machineState == MachineState_Running
-        || machineState == MachineState_Paused)
+    if (   SUCCEEDE(rc)
+        && (   machineState == MachineState_Running
+            || machineState == MachineState_Paused))
     {
         ComPtr<IConsole> console;
         ComPtr<IProgress> progress;
