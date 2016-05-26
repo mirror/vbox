@@ -792,11 +792,35 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             }
             return false;
     }
+
+    /*
+     * Anything having ESP on the left side means stack writes.
+     */
     if (    (    (pDis->Param1.fUse & DISUSE_REG_GEN32)
              ||  (pDis->Param1.fUse & DISUSE_REG_GEN64))
         &&  (pDis->Param1.Base.idxGenReg == DISGREG_ESP))
     {
         Log4(("pgmPoolMonitorIsReused: ESP\n"));
+        return true;
+    }
+
+    /*
+     * Page table updates are very very unlikely to be crossing page boundraries,
+     * and we don't want to deal with that in pgmPoolMonitorChainChanging and such.
+     */
+    uint32_t const cbWrite = DISGetParamSize(pDis, &pDis->Param1);
+    if ( (((uintptr_t)pvFault + cbWrite) >> X86_PAGE_SHIFT) != ((uintptr_t)pvFault >> X86_PAGE_SHIFT) )
+    {
+        Log4(("pgmPoolMonitorIsReused: cross page write\n"));
+        return true;
+    }
+
+    /*
+     * Nobody does an unaligned 8 byte write to a page table, right.
+     */
+    if (cbWrite >= 8 && ((uintptr_t)pvFault & 7) != 0)
+    {
+        Log4(("pgmPoolMonitorIsReused: Unaligned 8+ byte write\n"));
         return true;
     }
 
