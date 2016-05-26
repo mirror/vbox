@@ -299,6 +299,8 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 ifeq ($(KBUILD_HOST),darwin)
  if !defined(VBOX_WITH_NEW_XCODE) && !defined(VBOX_WITHOUT_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
   VBOX_WITH_NEW_XCODE = 1
+  # broken by TOOL_VBoxXcode62_ENV_SETUP
+  NO_COMPILE_CMDS_DEPS = 1
  endif
 endif
 
@@ -2627,7 +2629,9 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-nested-anon-types ?= $(call VBOX_GCC_CHECK_CC,-Wno-nested-anon-types,)'
 # C++ Std settings
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
-	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40800),)'
+	$(QUIET)$(APPEND) '$@' ' ifeq ($(BUILD_PLATFORM),darwin)'
+	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++11'
+	$(QUIET)$(APPEND) '$@' ' else ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40800),)'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++11'
 	$(QUIET)$(APPEND) '$@' ' else ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40600),)'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++0x'
