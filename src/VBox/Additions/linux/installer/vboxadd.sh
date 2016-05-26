@@ -306,43 +306,37 @@ setup_modules()
 {
     # don't stop the old modules here -- they might be in use
     test -z "${QUICKSETUP}" && cleanup_modules
+    # This does not work for 2.4 series kernels.  How sad.
+    test -n "${QUICKSETUP}" && test -f "${MODULE_DIR}/vboxguest.ko" && return 0
     begin "Building the VirtualBox Guest Additions kernel modules"
 
     begin "Building the main Guest Additions module"
-    for i in /lib/modules/*; do
-        test -d "${i}/build" || continue
-        # This does not work for 2.4 series kernels.  How sad.
-        test -n "${QUICKSETUP}" && test -f "${i}/misc/vboxguest.ko" && continue
-        begin "Building for kernel ${i##*/}" console
-        export KERN_DIR="${i}/build"
-        export MODULE_DIR="${i}/misc"
-        if ! $BUILDINTMP \
-            --save-module-symvers /tmp/vboxguest-Module.symvers \
-            --module-source $MODULE_SRC/vboxguest \
-            --no-print-directory install >> $LOG 2>&1; then
-            show_error "Look at $LOG to find out what went wrong"
-            test "${i##*/}" = "`uname -r`" && return 1
-        fi
-        succ_msg
-        begin "Building the shared folder support module"
-        if ! $BUILDINTMP \
-            --use-module-symvers /tmp/vboxguest-Module.symvers \
-            --module-source $MODULE_SRC/vboxsf \
-            --no-print-directory install >> $LOG 2>&1; then
-            show_error  "Look at $LOG to find out what went wrong"
-            test "${i##*/}" = "`uname -r`" && return 1
-        fi
-        succ_msg
-        begin "Building the graphics driver module"
-        if ! $BUILDINTMP \
-            --use-module-symvers /tmp/vboxguest-Module.symvers \
-            --module-source $MODULE_SRC/vboxvideo \
-            --no-print-directory install >> $LOG 2>&1; then
-            show_error "Look at $LOG to find out what went wrong"
-        fi
-        succ_msg
-        depmod "${i##*/}"
-    done
+    if ! $BUILDINTMP \
+        --save-module-symvers /tmp/vboxguest-Module.symvers \
+        --module-source $MODULE_SRC/vboxguest \
+        --no-print-directory install >> $LOG 2>&1; then
+        show_error "Look at $LOG to find out what went wrong"
+        return 1
+    fi
+    succ_msg
+    begin "Building the shared folder support module"
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxguest-Module.symvers \
+        --module-source $MODULE_SRC/vboxsf \
+        --no-print-directory install >> $LOG 2>&1; then
+        show_error  "Look at $LOG to find out what went wrong"
+        return 1
+    fi
+    succ_msg
+    begin "Building the graphics driver module"
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxguest-Module.symvers \
+        --module-source $MODULE_SRC/vboxvideo \
+        --no-print-directory install >> $LOG 2>&1; then
+        show_error "Look at $LOG to find out what went wrong"
+    fi
+    succ_msg
+    depmod
     return 0
 }
 
@@ -399,6 +393,8 @@ extra_setup()
     mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
     cat << EOF > /etc/kernel/postinst.d/vboxadd
 #!/bin/sh
+test -d "/lib/modules/\${1}/build" || exit 0
+KERN_DIR="/lib/modules/\${1}/build" MODULE_DIR="/lib/modules/\${1}/misc" \
 /sbin/rcvboxadd quicksetup
 exit 0
 EOF
@@ -452,7 +448,8 @@ setup()
         mod_succ=1
         show_error "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
     fi
-    test -z "${QUICKSETUP}" && extra_setup
+    test -n "${QUICKSETUP}" && return "${mod_succ}"
+    extra_setup
     if [ "$mod_succ" -eq "0" ]; then
         if running_vboxguest || running_vboxadd; then
             begin "You should restart your guest to make sure the new modules are actually used" console
@@ -517,7 +514,7 @@ setup)
     ;;
 quicksetup)
     QUICKSETUP=yes
-    setup && start
+    setup
     ;;
 cleanup)
     cleanup
