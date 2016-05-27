@@ -61,7 +61,7 @@ from testmanager.webui.wuiadminuseraccount     import WuiUserAccountList, WuiUse
 from testmanager.webui.wuiadmintestgroup       import WuiTestGroup, WuiTestGroupList;
 from testmanager.webui.wuiadminschedgroup      import WuiSchedGroup, WuiAdminSchedGroupList;
 from testmanager.webui.wuiadminbuildblacklist  import WuiAdminBuildBlacklist, WuiAdminListOfBlacklistItems
-from testmanager.webui.wuifailurecategory      import WuiFailureCategory, WuiFailureCategoryList
+from testmanager.webui.wuiadminfailurecategory import WuiFailureCategory, WuiFailureCategoryList
 from testmanager.webui.wuiadminfailurereason   import WuiAdminFailureReason, WuiAdminFailureReasonList
 
 
