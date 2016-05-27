@@ -405,6 +405,7 @@ RTEXITCODE errorTooManyParameters(char **papszArgs)
 
     /* check if help was requested. */
     if (papszArgs)
+    {
         for (uint32_t i = 0; papszArgs[i]; i++)
             if (   strcmp(papszArgs[i], "--help") == 0
                 || strcmp(papszArgs[i], "-h") == 0
@@ -415,6 +416,7 @@ RTEXITCODE errorTooManyParameters(char **papszArgs)
             }
             else if (!strcmp(papszArgs[i], "--"))
                 break;
+    }
 
     return errorSyntax("Too many parameters");
 }
