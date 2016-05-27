@@ -51,12 +51,12 @@ int main(int argc, char **argv)
          * Allocate a bit of contiguous memory.
          */
         RTHCPHYS HCPhys;
-        void *pv = SUPR3ContAlloc(8, NIL_RTR0PTR, &HCPhys);
+        void *pv = SUPR3ContAlloc(8, NULL, &HCPhys);
         rcRet += pv == NULL || HCPhys == 0;
         if (pv && HCPhys)
         {
             memset(pv, 0xff, PAGE_SIZE * 8);
-            pv = SUPR3ContAlloc(5, NIL_RTR0PTR, &HCPhys);
+            pv = SUPR3ContAlloc(5, NULL, &HCPhys);
             rcRet += pv == NULL || HCPhys == 0;
             if (pv && HCPhys)
             {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
                 void *apv[128];
                 for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
                 {
-                    apv[i] = SUPR3ContAlloc(1 + (i % 11), NIL_RTR0PTR, &HCPhys);
+                    apv[i] = SUPR3ContAlloc(1 + (i % 11), NULL, &HCPhys);
                     if (!apv[i])
                     {
                         RTPrintf("tstContiguous: i=%d: failed to allocate %d pages\n", i, 1 + (i % 11));
