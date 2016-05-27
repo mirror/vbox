@@ -29,7 +29,7 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Validation Kit imports.
-from testmanager.webui.wuicontentbase           import WuiFormContentBase, WuiTmLink;
+from testmanager.webui.wuicontentbase           import WuiFormContentBase, WuiContentBase, WuiTmLink;
 from testmanager.webui.wuimain                  import WuiMain;
 from testmanager.webui.wuiadminfailurereason    import WuiFailureReasonDetailsLink, WuiFailureReasonAddLink;
 from testmanager.core.testresults               import TestResultFailureData;
@@ -40,7 +40,7 @@ from testmanager.core.failurereason             import FailureReasonLogic;
 
 class WuiTestResultFailureDetailsLink(WuiTmLink):
     """ Link for adding a failure reason. """
-    def __init__(self, idTestResult, sName = u'\u2397', sTitle = None, fBracketed = None):
+    def __init__(self, idTestResult, sName = WuiContentBase.ksShortDetailsLink, sTitle = None, fBracketed = None):
         if fBracketed is None:
             fBracketed = len(sName) > 2;
         WuiTmLink.__init__(self, sName = sName,

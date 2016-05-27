@@ -200,6 +200,10 @@ class WuiContentBase(object): # pylint: disable=R0903
     ksShortDetailsLink     = u'\u2318'
     ## HTML hex entity string for ksShortDetailsLink.
     ksShortDetailsLinkHtml = '&#x2318;'
+    ## The text/symbol for a very short change log / details / previous page link.
+    ksShortChangeLogLink   = u'\u2397'
+    ## HTML hex entity string for ksShortDetailsLink.
+    ksShortChangeLogLinkHtml = '&#x2397;'
 
 
     def __init__(self, fnDPrint = None, oDisp = None):
