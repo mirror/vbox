@@ -979,7 +979,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 bool UIKeyboardHandler::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)
 {
     /* Redirect event to machine-view: */
-    return m_views.contains(m_iKeyboardHookViewIndex) ? m_views.value(m_iKeyboardHookViewIndex)->nativeEvent(eventType, pMessage) : false;
+    return m_views.contains(m_iKeyboardHookViewIndex) ? m_views.value(m_iKeyboardHookViewIndex)->nativeEventPreprocessor(eventType, pMessage) : false;
 }
 
 bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId)
@@ -1813,7 +1813,7 @@ bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef even
 #else /* QT_VERSION >= 0x050000 */
     Q_UNUSED(event);
     QByteArray eventType("mac_generic_NSEvent");
-    return m_views[m_iKeyboardHookViewIndex]->nativeEvent(eventType, unconst(pvCocoaEvent));
+    return m_views[m_iKeyboardHookViewIndex]->nativeEventPreprocessor(eventType, unconst(pvCocoaEvent));
 #endif /* QT_VERSION >= 0x050000 */
 }
 
@@ -1879,7 +1879,7 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
     return m_views[m_iKeyboardHookViewIndex]->winEvent(&message, &dummyResult);
 #else /* QT_VERSION >= 0x050000 */
     QByteArray eventType("windows_generic_MSG");
-    return m_views[m_iKeyboardHookViewIndex]->nativeEvent(eventType, &message);
+    return m_views[m_iKeyboardHookViewIndex]->nativeEventPreprocessor(eventType, &message);
 #endif /* QT_VERSION >= 0x050000 */
 }
 

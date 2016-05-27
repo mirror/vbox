@@ -367,11 +367,8 @@ protected:
     virtual bool x11Event(XEvent *pEvent);
 # endif /* VBOX_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
-    /** Qt5: Performs pre-processing of all the native events.
-      * @note     Take into account this function is _not_ called by
-      *           the Qt itself because it has another signature,
-      *           only by the keyboard-hook of the keyboard-handler. */
-    virtual bool nativeEvent(const QByteArray &eventType, void *pMessage);
+    /** Qt5: Performs pre-processing of all the native events. */
+    virtual bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
 #endif /* QT_VERSION >= 0x050000 */
 
     /** Scales passed size forward. */

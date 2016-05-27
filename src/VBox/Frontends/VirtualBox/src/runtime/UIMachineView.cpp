@@ -1819,7 +1819,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 # endif /* VBOX_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
-bool UIMachineView::nativeEvent(const QByteArray &eventType, void *pMessage)
+bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)
 {
 # if defined(VBOX_WS_MAC)
 

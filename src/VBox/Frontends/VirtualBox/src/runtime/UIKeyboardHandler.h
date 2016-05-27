@@ -239,7 +239,7 @@ protected:
     /** Win: Holds the native event filter instance. */
     KeyboardHandlerEventFilter *m_pPrivateEventFilter;
     /** Win: Allows the native event filter to
-      * redirect events directly to nativeEvent handler. */
+      * redirect events directly to nativeEventPreprocessor handler. */
     friend class KeyboardHandlerEventFilter;
 #endif /* QT_VERSION >= 0x050000 */
 
