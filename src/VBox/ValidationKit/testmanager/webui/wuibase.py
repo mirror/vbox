@@ -149,6 +149,14 @@ class WuiDispatcherBase(object):
         self._oSrvGlue.setRedirect(self._sRedirectTo);
         return True;
 
+    def _isMenuMatch(self, sMenuUrl, sActionParam):
+        """ Overridable menu matcher. """
+        return sMenuUrl.find(sActionParam) > 0;
+
+    def _isSideMenuMatch(self, sSideMenuUrl, sActionParam):
+        """ Overridable side menu matcher. """
+        return sSideMenuUrl.find(sActionParam) > 0;
+
     def _generateMenus(self):
         """
         Generates the two menus, returning them as (sTopMenuItems, sSideMenuItems).
@@ -160,11 +168,11 @@ class WuiDispatcherBase(object):
         for cchAction in range(len(self._sAction), 1, -1):
             sActionParam = '%s=%s' % (self.ksParamAction, self._sAction[:cchAction]);
             for aoItem in self._aaoMenus:
-                if aoItem[1].find(sActionParam) > 0:
+                if self._isMenuMatch(aoItem[1], sActionParam):
                     aasSideMenu = aoItem[2];
                     break;
                 for asSubItem in aoItem[2]:
-                    if asSubItem[1].find(sActionParam) > 0:
+                    if self._isMenuMatch(asSubItem[1], sActionParam):
                         aasSideMenu = aoItem[2];
                         break;
                 if aasSideMenu is not None:
@@ -189,7 +197,7 @@ class WuiDispatcherBase(object):
         sSideMenuItems = '';
         if aasSideMenu is not None:
             for asSubItem in aasSideMenu:
-                if asSubItem[1].find(sActionParam) > 0:
+                if self._isSideMenuMatch(asSubItem[1], sActionParam):
                     sSideMenuItems += '<li class="current_page_item">';
                 else:
                     sSideMenuItems += '<li>';

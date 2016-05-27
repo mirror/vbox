@@ -265,6 +265,7 @@ class WuiMain(WuiDispatcherBase):
 
         # Shorthand to keep within margins.
         sActUrlBase = self._sActionUrlBase;
+        sOFail = '&%s' % webutils.encodeUrlParams({self.ksParamOnlyFailures: True});
 
         self._aaoMenus = \
         [
@@ -292,6 +293,17 @@ class WuiMain(WuiDispatcherBase):
                 ]
             ],
             [
+                'Test Failures',     sActUrlBase + self.ksActionResultsUnGrouped + sOFail + sExtraTimeNav,
+                [
+                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped          +sOFail+sExtraTimeNav],
+                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup+sOFail+sExtraTimeNav],
+                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup +sOFail+sExtraTimeNav],
+                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox   +sOFail+sExtraTimeNav],
+                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase  +sOFail+sExtraTimeNav],
+                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev  +sOFail+sExtraTimeNav],
+                ]
+            ],
+            [
                 '> Admin', 'admin.py?' + webutils.encodeUrlParams(self._dDbgParams), []
             ],
         ];
@@ -304,6 +316,12 @@ class WuiMain(WuiDispatcherBase):
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeNone,
                                                  TestResultLogic,
                                                  WuiGroupedResultList)
+
+    def _isMenuMatch(self, sMenuUrl, sActionParam):
+        if super(WuiMain, self)._isMenuMatch(sMenuUrl, sActionParam):
+            fOnlyFailures = self.getBoolParam(self.ksParamOnlyFailures, fDefault = False);
+            return (sMenuUrl.find(self.ksParamOnlyFailures) > 0) == fOnlyFailures;
+        return False;
 
 
     #
