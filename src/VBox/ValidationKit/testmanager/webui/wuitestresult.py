@@ -820,7 +820,7 @@ class WuiGroupedResultList(WuiListContentBase):
             sReasonTitle += 'Assigned:\t%s\n' % ( self.formatTsShort(oEntry.tsFailureReasonAssigned), );
             sReasonTitle += 'By User: \t%s\n' % ( oEntry.oFailureReasonAssigner.sUsername, );
             if oEntry.sFailureReasonComment is not None and len(oEntry.sFailureReasonComment) > 0:
-                sReasonTitle += 'Comment: \t%s\n' % ( self.formatTsShort(oEntry.sFailureReasonComment), );
+                sReasonTitle += 'Comment: \t%s\n' % ( oEntry.sFailureReasonComment, );
             if oEntry.oFailureReason.iTicket is not None and oEntry.oFailureReason.iTicket > 0:
                 sReasonTitle += 'xTracker:\t#%s\n' % ( oEntry.oFailureReason.iTicket, );
             for i, sUrl in enumerate(oEntry.oFailureReason.asUrls):
