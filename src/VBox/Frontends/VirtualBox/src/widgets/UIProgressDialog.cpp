@@ -172,7 +172,7 @@ int UIProgressDialog::run(int cRefreshInterval)
             QPointer<UIProgressDialog> guard = this;
 
             /* Holds the modal loop, but don't show the window immediately: */
-            exec(false);
+            execute(false);
 
             /* Are we still valid? */
             if (guard.isNull())

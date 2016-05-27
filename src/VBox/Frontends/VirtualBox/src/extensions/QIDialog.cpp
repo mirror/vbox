@@ -50,7 +50,7 @@ void QIDialog::setVisible(bool fVisible)
         m_pEventLoop->exit();
 }
 
-int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /* = false */)
+int QIDialog::execute(bool fShow /* = true */, bool fApplicationModal /* = false */)
 {
     /* Check for the recursive run: */
     AssertMsgReturn(!m_pEventLoop, ("QIDialog::exec() is called recursively!\n"), QDialog::Rejected);
