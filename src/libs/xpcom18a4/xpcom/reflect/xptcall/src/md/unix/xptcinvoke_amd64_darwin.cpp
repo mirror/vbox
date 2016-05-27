@@ -149,6 +149,11 @@ XPTC_InvokeByIndex(nsISupports * that, PRUint32 methodIndex,
     double fpregs[FPR_COUNT];
     invoke_copy_to_stack(stack, paramCount, params, gpregs, fpregs);
 
+    // disable the warning about sometimes not initialized variables which is hit
+    // when we pass less than 8 XMM or less than 6 GPR registers.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+
     // Load FPR registers from fpregs[]
     register double d0 asm("xmm0");
     register double d1 asm("xmm1");
@@ -208,4 +213,6 @@ XPTC_InvokeByIndex(nsISupports * that, PRUint32 methodIndex,
     typedef PRUint32 (*Method)(PRUint64, PRUint64, PRUint64, PRUint64, PRUint64, PRUint64);
     PRUint32 result = ((Method)methodAddress)(a0, a1, a2, a3, a4, a5);
     return result;
+
+#pragma clang diagnostic pop
 }
