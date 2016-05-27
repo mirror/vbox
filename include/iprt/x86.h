@@ -1230,6 +1230,14 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** MTRR Default Range. */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 
+/** Global performance counter control facilities (Intel only). */
+#define MSR_IA32_PERF_GLOBAL_STATUS         0x38E
+#define MSR_IA32_PERF_GLOBAL_CTRL           0x38F
+#define MSR_IA32_PERF_GLOBAL_OVF_CTRL       0x390
+
+/** Precise Event Based sampling (Intel only). */
+#define MSR_PEBS_ENABLE                     0x3F1
+
 #define MSR_IA32_MC0_CTL                    0x400
 #define MSR_IA32_MC0_STATUS                 0x401
 
