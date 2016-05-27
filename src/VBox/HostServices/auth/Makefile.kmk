@@ -30,6 +30,7 @@ VBoxAuth_SOURCES.solaris = pam/VBoxAuthPAM.c
 VBoxAuth_SOURCES.freebsd = pam/VBoxAuthPAM.c
 VBoxAuth_SOURCES.win = winlogon/winlogon.cpp winlogon/VBoxAuth.rc
 VBoxAuth_SOURCES.darwin = directoryservice/directoryservice.cpp
+VBoxAuth_CXXFLAGS.darwin = -Wno-deprecated-declarations
 VBoxAuth_LIBS.linux = $(LIB_RUNTIME) dl
 VBoxAuth_LIBS.solaris = $(LIB_RUNTIME) dl
 VBoxAuth_LIBS.freebsd = $(LIB_RUNTIME)
