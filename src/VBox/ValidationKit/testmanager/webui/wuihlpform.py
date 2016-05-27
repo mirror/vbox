@@ -195,7 +195,7 @@ class WuiHlpForm(object):
         return self._add(u'          <textarea name="%s" id="%s" %s>%s</textarea>\n'
                          u'        </div></div>\n'
                          u'      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sValue),
+                         % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sNewValue),
                              escapeElem(sNewValue)))
 
     def addMultilineTextRO(self, sName, sValue, sLabel, sSubClass = 'string', sExtraAttribs = ''):
@@ -207,7 +207,7 @@ class WuiHlpForm(object):
         return self._add(u'          <textarea name="%s" id="%s" readonly %s>%s</textarea>\n'
                          u'        </div></div>\n'
                          u'      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sValue),
+                         % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sNewValue),
                              escapeElem(sNewValue)))
 
     def addInt(self, sName, iValue, sLabel, sExtraAttribs = ''):
