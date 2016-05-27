@@ -133,7 +133,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 /*
  * Class for arranging/updating the layers for the glossy monitor preview.
  */
-@implementation UIDockTileMonitor;
+@implementation UIDockTileMonitor
 - (id)initWithFrame:(NSRect)frame parent:(UICocoaDockIconPreviewPrivate*)parent
 {
     self = [super initWithFrame:frame];
@@ -156,7 +156,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
     return self;
 }
 
-- (void)drawRect:(NSRect)aRect;
+- (void)drawRect:(NSRect)aRect
 {
     NSImage *dockMonitor = ::darwinToNSImageRef(p->m_dockMonitor);
     [dockMonitor drawInRect:NSRectFromCGRect(p->flipRect(p->m_monitorRect)) fromRect:aRect operation:NSCompositeSourceOver fraction:1.0];
@@ -168,7 +168,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
     return mScreenContent;
 }
 
-- (void)resize:(NSSize)size;
+- (void)resize:(NSSize)size
 {
     /* Calculate the new size based on the aspect ratio of the original screen
        size */
@@ -209,7 +209,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
     return self;
 }
 
-- (void)drawRect:(NSRect)aRect;
+- (void)drawRect:(NSRect)aRect
 {
     NSGraphicsContext *nsContext = [NSGraphicsContext currentContext];
     CGContextRef pCGContext = (CGContextRef)[nsContext graphicsPort];
@@ -318,7 +318,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
     [[[NSApplication sharedApplication] dockTile] display];
 }
 
-- (void)resizeMonitor:(NSSize)size;
+- (void)resizeMonitor:(NSSize)size
 {
     [self restoreMonitor];
     [mMonitor resize:size];

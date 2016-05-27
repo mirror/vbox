@@ -104,7 +104,7 @@
     return self;
 }
 
--(IBAction)clicked:(id)sender;
+-(IBAction)clicked:(id)sender
 {
     mRealTarget->onClicked();
 }
@@ -120,7 +120,7 @@
     return self;
 }
 
--(IBAction)segControlClicked:(id)sender;
+-(IBAction)segControlClicked:(id)sender
 {
     mRealTarget->onClicked([sender selectedSegment]);
 }
