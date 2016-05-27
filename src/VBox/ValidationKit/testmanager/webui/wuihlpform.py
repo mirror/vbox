@@ -89,16 +89,16 @@ class WuiHlpForm(object):
         if sName in self._dErrors:
             sError = self._dErrors[sName];
             if utils.isString(sError):          # List error trick (it's an associative array).
-                return self._add('      <li>\n'
-                                 '        <div class="tmform-field"><div class="tmform-field-%s">\n'
-                                 '          <label for="%s" class="tmform-error-label">%s\n'
-                                 '              <span class="tmform-error-desc">%s</span>\n'
-                                 '          </label>\n'
+                return self._add(u'      <li>\n'
+                                 u'        <div class="tmform-field"><div class="tmform-field-%s">\n'
+                                 u'          <label for="%s" class="tmform-error-label">%s\n'
+                                 u'              <span class="tmform-error-desc">%s</span>\n'
+                                 u'          </label>\n'
                                  % (escapeAttr(sDivSubClass), escapeAttr(sName), escapeElem(sLabel),
                                     self._escapeErrorText(sError), ) );
-        return self._add('      <li>\n'
-                         '        <div class="tmform-field"><div class="tmform-field-%s">\n'
-                         '          <label  for="%s">%s</label>\n'
+        return self._add(u'      <li>\n'
+                         u'        <div class="tmform-field"><div class="tmform-field-%s">\n'
+                         u'          <label  for="%s">%s</label>\n'
                          % (escapeAttr(sDivSubClass), escapeAttr(sName), escapeElem(sLabel)) );
 
 
@@ -107,20 +107,19 @@ class WuiHlpForm(object):
         Finalizes the form and returns the body.
         """
         if not self._fFinalized:
-            self._add('    </ul>\n'
-                      '  </form>\n'
-                      '</div>\n'
-                      '<div class="clear"></div>\n'
-                     );
+            self._add(u'    </ul>\n'
+                      u'  </form>\n'
+                      u'</div>\n'
+                      u'<div class="clear"></div>\n' );
         return self._sBody;
 
     def addTextHidden(self, sName, sValue, sExtraAttribs = ''):
         """Adds a hidden text input."""
-        return self._add('      <div class="tmform-field-hidden">\n'
-                         '        <input name="%s" id="%s" type="text" hidden%s value="%s" class="tmform-hidden">\n'
-                         '      </div>\n'
-                         '    </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(str(sValue)) ));
+        return self._add(u'      <div class="tmform-field-hidden">\n'
+                         u'        <input name="%s" id="%s" type="text" hidden%s value="%s" class="tmform-hidden">\n'
+                         u'      </div>\n'
+                         u'    </li>\n'
+                          % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(str(sValue)) ));
     #
     # Non-input stuff.
     #
@@ -128,10 +127,10 @@ class WuiHlpForm(object):
         """Adds a read-only text input."""
         self._addLabel('non-text', sLabel, 'string');
         if sValue is None: sValue = '';
-        return self._add('          <p>%s</p>%s\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                         % (escapeElem(str(sValue)), sPostHtml ));
+        return self._add(u'          <p>%s</p>%s\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
+                         % (escapeElem(unicode(sValue)), sPostHtml ));
 
 
     #
@@ -144,9 +143,9 @@ class WuiHlpForm(object):
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp', 'wide'): raise Exception(sSubClass);
         self._addLabel(sName, sLabel, sSubClass);
         if sValue is None: sValue = '';
-        return self._add('          <input name="%s" id="%s" type="text"%s value="%s">%s\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
+        return self._add(u'          <input name="%s" id="%s" type="text"%s value="%s">%s\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
                          % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(sValue), sPostHtml ));
 
     def addTextRO(self, sName, sValue, sLabel, sSubClass = 'string', sExtraAttribs = '', sPostHtml = ''):
@@ -154,10 +153,11 @@ class WuiHlpForm(object):
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp', 'wide'): raise Exception(sSubClass);
         self._addLabel(sName, sLabel, sSubClass);
         if sValue is None: sValue = '';
-        return self._add('          <input name="%s" id="%s" type="text" readonly%s value="%s" class="tmform-input-readonly">%s\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(str(sValue)), sPostHtml ));
+        return self._add(u'          <input name="%s" id="%s" type="text" readonly%s value="%s" class="tmform-input-readonly">'
+                         u'%s\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
+                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(unicode(sValue)), sPostHtml ));
 
     def addWideText(self, sName, sValue, sLabel, sExtraAttribs = ''):
         """Adds a wide text input."""
@@ -167,6 +167,22 @@ class WuiHlpForm(object):
         """Adds a wide read-only text input."""
         return self.addTextRO(sName, sValue, sLabel, 'wide', sExtraAttribs);
 
+    def _adjustMultilineTextAttribs(self, sExtraAttribs, sValue):
+        """ Internal helper for setting good default sizes for textarea based on content."""
+        if sExtraAttribs.find('cols') < 0 and sExtraAttribs.find('width') < 0:
+            sExtraAttribs = 'cols="96%" ' + sExtraAttribs;
+
+        if sExtraAttribs.find('rows') < 0 and sExtraAttribs.find('width') < 0:
+            if sValue is None:  sValue = '';
+            else:               sValue = sValue.strip();
+
+            cRows = sValue.count('\n') + (sValue[-1] != '\n');
+            if cRows * 80 < len(sValue):
+                cRows += 2;
+            cRows = max(min(cRows, 16), 2);
+            sExtraAttribs = ('rows="%s" ' % (cRows,)) + sExtraAttribs;
+
+        return sExtraAttribs;
 
     def addMultilineText(self, sName, sValue, sLabel, sSubClass = 'string', sExtraAttribs = ''):
         """Adds a multiline text input."""
@@ -175,46 +191,48 @@ class WuiHlpForm(object):
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp'): raise Exception(sSubClass)
         self._addLabel(sName, sLabel, sSubClass)
         if sValue is None: sValue = '';
-        sNewValue = str(sValue) if not isinstance(sValue, list) else '\n'.join(sValue)
-        return self._add('          <textarea name="%s" id="%s" %s>%s</textarea>\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(sNewValue)))
+        sNewValue = unicode(sValue) if not isinstance(sValue, list) else '\n'.join(sValue)
+        return self._add(u'          <textarea name="%s" id="%s" %s>%s</textarea>\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
+                         % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sValue),
+                             escapeElem(sNewValue)))
 
     def addMultilineTextRO(self, sName, sValue, sLabel, sSubClass = 'string', sExtraAttribs = ''):
         """Adds a multiline read-only text input."""
         if sSubClass not in ('int', 'long', 'string', 'uuid', 'timestamp'): raise Exception(sSubClass)
         self._addLabel(sName, sLabel, sSubClass)
         if sValue is None: sValue = '';
-        sNewValue = str(sValue) if not isinstance(sValue, list) else '\n'.join(sValue)
-        return self._add('          <textarea name="%s" id="%s" readonly %s>%s</textarea>\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(sNewValue)))
+        sNewValue = unicode(sValue) if not isinstance(sValue, list) else '\n'.join(sValue)
+        return self._add(u'          <textarea name="%s" id="%s" readonly %s>%s</textarea>\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
+                         % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sValue),
+                             escapeElem(sNewValue)))
 
     def addInt(self, sName, iValue, sLabel, sExtraAttribs = ''):
         """Adds an integer input."""
-        return self.addText(sName, str(iValue), sLabel, 'int', sExtraAttribs);
+        return self.addText(sName, unicode(iValue), sLabel, 'int', sExtraAttribs);
 
     def addIntRO(self, sName, iValue, sLabel, sExtraAttribs = ''):
         """Adds an integer input."""
-        return self.addTextRO(sName, str(iValue), sLabel, 'int', sExtraAttribs);
+        return self.addTextRO(sName, unicode(iValue), sLabel, 'int', sExtraAttribs);
 
     def addLong(self, sName, lValue, sLabel, sExtraAttribs = ''):
         """Adds a long input."""
-        return self.addText(sName, str(lValue), sLabel, 'long', sExtraAttribs);
+        return self.addText(sName, unicode(lValue), sLabel, 'long', sExtraAttribs);
 
     def addLongRO(self, sName, lValue, sLabel, sExtraAttribs = ''):
         """Adds a long input."""
-        return self.addTextRO(sName, str(lValue), sLabel, 'long', sExtraAttribs);
+        return self.addTextRO(sName, unicode(lValue), sLabel, 'long', sExtraAttribs);
 
     def addUuid(self, sName, uuidValue, sLabel, sExtraAttribs = ''):
         """Adds an UUID input."""
-        return self.addText(sName, str(uuidValue), sLabel, 'uuid', sExtraAttribs);
+        return self.addText(sName, unicode(uuidValue), sLabel, 'uuid', sExtraAttribs);
 
     def addUuidRO(self, sName, uuidValue, sLabel, sExtraAttribs = ''):
         """Adds a read-only UUID input."""
-        return self.addTextRO(sName, str(uuidValue), sLabel, 'uuid', sExtraAttribs);
+        return self.addTextRO(sName, unicode(uuidValue), sLabel, 'uuid', sExtraAttribs);
 
     def addTimestampRO(self, sName, sTimestamp, sLabel, sExtraAttribs = ''):
         """Adds a read-only database string timstamp input."""
@@ -229,40 +247,38 @@ class WuiHlpForm(object):
     #
     # Combo boxes.
     #
-    def addComboBox(self, sName, sSelected, sLabel, aoOptions, sExtraAttribs = ''):
+    def addComboBox(self, sName, sSelected, sLabel, aoOptions, sExtraAttribs = '', sPostHtml = ''):
         """Adds a combo box."""
         if self._fReadOnly:
-            return self.addComboBoxRO(sName, sSelected, sLabel, aoOptions, sExtraAttribs);
+            return self.addComboBoxRO(sName, sSelected, sLabel, aoOptions, sExtraAttribs, sPostHtml);
         self._addLabel(sName, sLabel, 'combobox');
         self._add('          <select name="%s" id="%s" class="tmform-combobox"%s>\n'
                   % (escapeAttr(sName), escapeAttr(sName), sExtraAttribs));
-        sSelected = str(sSelected);
+        sSelected = unicode(sSelected);
         for iValue, sText, _ in aoOptions:
-            sValue = str(iValue);
+            sValue = unicode(iValue);
             self._add('            <option value="%s"%s>%s</option>\n'
                       % (escapeAttr(sValue), ' selected' if sValue == sSelected else '',
                          escapeElem(sText)));
-        return self._add('          </select>\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                        );
+        return self._add(u'          </select>' + sPostHtml + '\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n');
 
-    def addComboBoxRO(self, sName, sSelected, sLabel, aoOptions, sExtraAttribs = ''):
+    def addComboBoxRO(self, sName, sSelected, sLabel, aoOptions, sExtraAttribs = '', sPostHtml = ''):
         """Adds a read-only combo box."""
         self.addTextHidden(sName, sSelected);
         self._addLabel(sName, sLabel, 'combobox-readonly');
-        self._add('          <select name="%s" id="%s" disabled class="tmform-combobox"%s>\n'
+        self._add(u'          <select name="%s" id="%s" disabled class="tmform-combobox"%s>\n'
                   % (escapeAttr(sName), escapeAttr(sName), sExtraAttribs));
-        sSelected = str(sSelected);
+        sSelected = unicode(sSelected);
         for iValue, sText, _ in aoOptions:
-            sValue = str(iValue);
+            sValue = unicode(iValue);
             self._add('            <option value="%s"%s>%s</option>\n'
                       % (escapeAttr(sValue), ' selected' if sValue == sSelected else '',
                          escapeElem(sText)));
-        return self._add('          </select>\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                        );
+        return self._add(u'          </select>' + sPostHtml + '\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n');
 
     #
     # Check boxes.
@@ -285,9 +301,9 @@ class WuiHlpForm(object):
             return self.addCheckBoxRO(sName, fChecked, sLabel, sExtraAttribs);
         self._addLabel(sName, sLabel, 'checkbox');
         fChecked = self._reinterpretBool(fChecked);
-        return self._add('          <input name="%s" id="%s" type="checkbox"%s%s value="1" class="tmform-checkbox">\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
+        return self._add(u'          <input name="%s" id="%s" type="checkbox"%s%s value="1" class="tmform-checkbox">\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
                          % (escapeAttr(sName), escapeAttr(sName), ' checked' if fChecked else '', sExtraAttribs));
 
     def addCheckBoxRO(self, sName, fChecked, sLabel, sExtraAttribs = ''):
@@ -295,10 +311,10 @@ class WuiHlpForm(object):
         self._addLabel(sName, sLabel, 'checkbox');
         fChecked = self._reinterpretBool(fChecked);
         # Hack Alert! The onclick and onkeydown are for preventing editing and fake readonly/disabled.
-        return self._add('          <input name="%s" id="%s" type="checkbox"%s readonly%s value="1" class="readonly"\n'
-                         '              onclick="return false" onkeydown="return false">\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
+        return self._add(u'          <input name="%s" id="%s" type="checkbox"%s readonly%s value="1" class="readonly"\n'
+                         u'              onclick="return false" onkeydown="return false">\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
                          % (escapeAttr(sName), escapeAttr(sName), ' checked' if fChecked else '', sExtraAttribs));
 
     #
@@ -327,23 +343,23 @@ class WuiHlpForm(object):
             for asRow in aoRows:
                 assert len(asRow) == 3; # Don't allow sloppy input data!
                 fChecked = self._reinterpretBool(asRow[1])
-                self._add('            <tr>\n'
-                          '              <td><input type="checkbox" name="%s" value="%s"%s%s></td>\n'
-                          '              <td>%s</td>\n'
-                          '            </tr>\n'
-                          % ( sNameEscaped, escapeAttr(str(asRow[0])), ' checked' if fChecked else '', sExtraAttribs,
-                              escapeElem(str(asRow[2])), ));
-            self._add('          </table>\n');
+                self._add(u'            <tr>\n'
+                          u'              <td><input type="checkbox" name="%s" value="%s"%s%s></td>\n'
+                          u'              <td>%s</td>\n'
+                          u'            </tr>\n'
+                          % ( sNameEscaped, escapeAttr(unicode(asRow[0])), ' checked' if fChecked else '', sExtraAttribs,
+                               escapeElem(unicode(asRow[2])), ));
+            self._add(u'          </table>\n');
         else:
             for asRow in aoRows:
                 assert len(asRow) == 3; # Don't allow sloppy input data!
                 fChecked = self._reinterpretBool(asRow[1])
-                self._add('            <div class="tmform-checkbox-holder">'
-                          '<input type="checkbox" name="%s" value="%s"%s%s> %s</input></div>\n'
-                          % ( sNameEscaped, escapeAttr(str(asRow[0])), ' checked' if fChecked else '', sExtraAttribs,
-                              escapeElem(str(asRow[2])),));
-        return self._add('        </div></div></div>\n'
-                         '      </li>\n');
+                self._add(u'            <div class="tmform-checkbox-holder">'
+                          u'<input type="checkbox" name="%s" value="%s"%s%s> %s</input></div>\n'
+                          % ( sNameEscaped, escapeAttr(unicode(asRow[0])), ' checked' if fChecked else '', sExtraAttribs,
+                              escapeElem(unicode(asRow[2])),));
+        return self._add(u'        </div></div></div>\n'
+                         u'      </li>\n');
 
 
     def addListOfOsArches(self, sName, aoOsArches, sLabel, sExtraAttribs = ''):
@@ -396,11 +412,11 @@ class WuiHlpForm(object):
         """
         self._addLabel(sName, sLabel);
 
-        sTableId = 'TestArgsExtendingListRoot';
+        sTableId = u'TestArgsExtendingListRoot';
         fReadOnly = self._fReadOnly;  ## @todo argument?
-        sReadOnlyAttr = ' readonly class="tmform-input-readonly"' if fReadOnly else '';
+        sReadOnlyAttr = u' readonly class="tmform-input-readonly"' if fReadOnly else '';
 
-        sHtml  = '<li>\n'
+        sHtml  = u'<li>\n'
 
         #
         # Define javascript function for extending the list of test case
@@ -409,143 +425,143 @@ class WuiHlpForm(object):
         # required...
         #
         if not fReadOnly:
-            sHtml += '<script type="text/javascript">\n'
-            sHtml += '\n';
-            sHtml += 'g_%s_aItems = { %s };\n' % (sName, ', '.join(('%s: 1' % (i,)) for i in range(len(aoVariations))),);
-            sHtml += 'g_%s_cItems = %s;\n' % (sName, len(aoVariations),);
-            sHtml += 'g_%s_iIdMod = %s;\n' % (sName, len(aoVariations) + 32);
-            sHtml += '\n';
-            sHtml += 'function %s_removeEntry(sId)\n' % (sName,);
-            sHtml += '{\n';
-            sHtml += '    if (g_%s_cItems > 1)\n' % (sName,);
-            sHtml += '    {\n';
-            sHtml += '        g_%s_cItems--;\n' % (sName,);
-            sHtml += '        delete g_%s_aItems[sId];\n' % (sName,);
-            sHtml += '        setElementValueToKeyList(\'%s\', g_%s_aItems);\n' % (sName, sName);
-            sHtml += '\n';
+            sHtml += u'<script type="text/javascript">\n'
+            sHtml += u'\n';
+            sHtml += u'g_%s_aItems = { %s };\n' % (sName, ', '.join(('%s: 1' % (i,)) for i in range(len(aoVariations))),);
+            sHtml += u'g_%s_cItems = %s;\n' % (sName, len(aoVariations),);
+            sHtml += u'g_%s_iIdMod = %s;\n' % (sName, len(aoVariations) + 32);
+            sHtml += u'\n';
+            sHtml += u'function %s_removeEntry(sId)\n' % (sName,);
+            sHtml += u'{\n';
+            sHtml += u'    if (g_%s_cItems > 1)\n' % (sName,);
+            sHtml += u'    {\n';
+            sHtml += u'        g_%s_cItems--;\n' % (sName,);
+            sHtml += u'        delete g_%s_aItems[sId];\n' % (sName,);
+            sHtml += u'        setElementValueToKeyList(\'%s\', g_%s_aItems);\n' % (sName, sName);
+            sHtml += u'\n';
             for iInput in range(8):
-                sHtml += '        removeHtmlNode(\'%s[\' + sId + \'][%s]\');\n' % (sName, iInput,);
-            sHtml += '    }\n';
-            sHtml += '}\n';
-            sHtml += '\n';
-            sHtml += 'function %s_extendListEx(cGangMembers, cSecTimeout, sArgs, sTestBoxReqExpr, sBuildReqExpr)\n' % (sName,);
-            sHtml += '{\n';
-            sHtml += '    var oElement = document.getElementById(\'%s\');\n' % (sTableId,);
-            sHtml += '    var oTBody   = document.createElement(\'tbody\');\n';
-            sHtml += '    var sHtml    = \'\';\n';
-            sHtml += '    var sId;\n';
-            sHtml += '\n';
-            sHtml += '    g_%s_iIdMod += 1;\n' % (sName,);
-            sHtml += '    sId = g_%s_iIdMod.toString();\n' % (sName,);
+                sHtml += u'        removeHtmlNode(\'%s[\' + sId + \'][%s]\');\n' % (sName, iInput,);
+            sHtml += u'    }\n';
+            sHtml += u'}\n';
+            sHtml += u'\n';
+            sHtml += u'function %s_extendListEx(cGangMembers, cSecTimeout, sArgs, sTestBoxReqExpr, sBuildReqExpr)\n' % (sName,);
+            sHtml += u'{\n';
+            sHtml += u'    var oElement = document.getElementById(\'%s\');\n' % (sTableId,);
+            sHtml += u'    var oTBody   = document.createElement(\'tbody\');\n';
+            sHtml += u'    var sHtml    = \'\';\n';
+            sHtml += u'    var sId;\n';
+            sHtml += u'\n';
+            sHtml += u'    g_%s_iIdMod += 1;\n' % (sName,);
+            sHtml += u'    sId = g_%s_iIdMod.toString();\n' % (sName,);
 
             oVarDefaults = TestCaseArgsData();
             oVarDefaults.convertToParamNull();
-            sHtml += '\n';
-            sHtml += '    sHtml += \'<tr class="tmform-testcasevars-first-row">\';\n';
-            sHtml += '    sHtml += \'  <td>Gang Members:</td>\';\n';
-            sHtml += '    sHtml += \'  <td class="tmform-field-tiny-int">' \
-                     '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][0]" value="\' + cGangMembers + \'"></td>\';\n' \
+            sHtml += u'\n';
+            sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-first-row">\';\n';
+            sHtml += u'    sHtml += \'  <td>Gang Members:</td>\';\n';
+            sHtml += u'    sHtml += \'  <td class="tmform-field-tiny-int">' \
+                      '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][0]" value="\' + cGangMembers + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_cGangMembers, sName,);
-            sHtml += '    sHtml += \'  <td>Timeout:</td>\';\n';
-            sHtml += '    sHtml += \'  <td class="tmform-field-int">' \
-                     '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][1]" value="\'+ cSecTimeout + \'"></td>\';\n' \
+            sHtml += u'    sHtml += \'  <td>Timeout:</td>\';\n';
+            sHtml += u'    sHtml += \'  <td class="tmform-field-int">' \
+                     u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][1]" value="\'+ cSecTimeout + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_cSecTimeout, sName,);
-            sHtml += '    sHtml += \'  <td><a href="#" onclick="%s_removeEntry(\\\'\' + sId + \'\\\');"> Remove</a></td>\';\n' \
+            sHtml += u'    sHtml += \'  <td><a href="#" onclick="%s_removeEntry(\\\'\' + sId + \'\\\');"> Remove</a></td>\';\n' \
                    % (sName, );
-            sHtml += '    sHtml += \'  <td></td>\';\n';
-            sHtml += '    sHtml += \'</tr>\';\n'
-            sHtml += '\n';
-            sHtml += '    sHtml += \'<tr class="tmform-testcasevars-inner-row">\';\n';
-            sHtml += '    sHtml += \'  <td>Arguments:</td>\';\n';
-            sHtml += '    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
-                     '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sArgs + \'"></td>\';\n' \
+            sHtml += u'    sHtml += \'  <td></td>\';\n';
+            sHtml += u'    sHtml += \'</tr>\';\n'
+            sHtml += u'\n';
+            sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-inner-row">\';\n';
+            sHtml += u'    sHtml += \'  <td>Arguments:</td>\';\n';
+            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
+                     u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sArgs + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_sArgs, sName,);
-            sHtml += '    sHtml += \'  <td></td>\';\n';
-            sHtml += '    sHtml += \'</tr>\';\n'
-            sHtml += '\n';
-            sHtml += '    sHtml += \'<tr class="tmform-testcasevars-inner-row">\';\n';
-            sHtml += '    sHtml += \'  <td>TestBox Reqs:</td>\';\n';
-            sHtml += '    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
-                     '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sTestBoxReqExpr' \
-                     ' + \'"></td>\';\n' \
+            sHtml += u'    sHtml += \'  <td></td>\';\n';
+            sHtml += u'    sHtml += \'</tr>\';\n'
+            sHtml += u'\n';
+            sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-inner-row">\';\n';
+            sHtml += u'    sHtml += \'  <td>TestBox Reqs:</td>\';\n';
+            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
+                     u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sTestBoxReqExpr' \
+                     u' + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_sTestBoxReqExpr, sName,);
-            sHtml += '    sHtml += \'  <td></td>\';\n';
-            sHtml += '    sHtml += \'</tr>\';\n'
-            sHtml += '\n';
-            sHtml += '    sHtml += \'<tr class="tmform-testcasevars-final-row">\';\n';
-            sHtml += '    sHtml += \'  <td>Build Reqs:</td>\';\n';
-            sHtml += '    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
-                     '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sBuildReqExpr + \'"></td>\';\n' \
+            sHtml += u'    sHtml += \'  <td></td>\';\n';
+            sHtml += u'    sHtml += \'</tr>\';\n'
+            sHtml += u'\n';
+            sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-final-row">\';\n';
+            sHtml += u'    sHtml += \'  <td>Build Reqs:</td>\';\n';
+            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
+                     u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sBuildReqExpr + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_sBuildReqExpr, sName,);
-            sHtml += '    sHtml += \'  <td></td>\';\n';
-            sHtml += '    sHtml += \'</tr>\';\n'
-            sHtml += '\n';
-            sHtml += '    oTBody.id = \'%s[\' + sId + \'][6]\';\n' % (sName,);
-            sHtml += '    oTBody.innerHTML = sHtml;\n';
-            sHtml += '\n';
-            sHtml += '    oElement.appendChild(oTBody);\n';
-            sHtml += '\n';
-            sHtml += '    g_%s_aItems[sId] = 1;\n' % (sName,);
-            sHtml += '    g_%s_cItems++;\n' % (sName,);
-            sHtml += '    setElementValueToKeyList(\'%s\', g_%s_aItems);\n' % (sName, sName);
-            sHtml += '}\n';
-            sHtml += 'function %s_extendList()\n' % (sName,);
-            sHtml += '{\n';
-            sHtml += '    %s_extendListEx("%s", "%s", "%s", "%s", "%s");\n' % (sName,
-                escapeAttr(str(oVarDefaults.cGangMembers)), escapeAttr(str(oVarDefaults.cSecTimeout)),
+            sHtml += u'    sHtml += \'  <td></td>\';\n';
+            sHtml += u'    sHtml += \'</tr>\';\n'
+            sHtml += u'\n';
+            sHtml += u'    oTBody.id = \'%s[\' + sId + \'][6]\';\n' % (sName,);
+            sHtml += u'    oTBody.innerHTML = sHtml;\n';
+            sHtml += u'\n';
+            sHtml += u'    oElement.appendChild(oTBody);\n';
+            sHtml += u'\n';
+            sHtml += u'    g_%s_aItems[sId] = 1;\n' % (sName,);
+            sHtml += u'    g_%s_cItems++;\n' % (sName,);
+            sHtml += u'    setElementValueToKeyList(\'%s\', g_%s_aItems);\n' % (sName, sName);
+            sHtml += u'}\n';
+            sHtml += u'function %s_extendList()\n' % (sName,);
+            sHtml += u'{\n';
+            sHtml += u'    %s_extendListEx("%s", "%s", "%s", "%s", "%s");\n' % (sName,
+                escapeAttr(unicode(oVarDefaults.cGangMembers)), escapeAttr(unicode(oVarDefaults.cSecTimeout)),
                 escapeAttr(oVarDefaults.sArgs), escapeAttr(oVarDefaults.sTestBoxReqExpr),
                 escapeAttr(oVarDefaults.sBuildReqExpr), );
-            sHtml += '}\n';
+            sHtml += u'}\n';
             if config.g_kfVBoxSpecific:
-                sSecTimeoutDef = escapeAttr(str(oVarDefaults.cSecTimeout));
-                sHtml += 'function vbox_%s_add_uni()\n' % (sName,);
-                sHtml += '{\n';
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes raw", ' \
-                         ' "", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
-                         ' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
-                         ' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '}\n';
-                sHtml += 'function vbox_%s_add_uni_amd64()\n' % (sName,);
-                sHtml += '{\n';
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
-                         ' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
-                         ' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '}\n';
-                sHtml += 'function vbox_%s_add_smp()\n' % (sName,);
-                sHtml += '{\n';
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 2 --virt-modes hwvirt",' \
-                         ' "fCpuHwVirt is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 2 --virt-modes hwvirt-np",' \
-                         ' "fCpuNestedPaging is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 3 --virt-modes hwvirt",' \
-                         ' "fCpuHwVirt is True and cCpus >= 3", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 4 --virt-modes hwvirt-np ",' \
-                         ' "fCpuNestedPaging is True and cCpus >= 4", "");\n' % (sName, sSecTimeoutDef);
-                #sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 6 --virt-modes hwvirt",' \
-                #         ' "fCpuHwVirt is True and cCpus >= 6", "");\n' % (sName, sSecTimeoutDef);
-                #sHtml += '    %s_extendListEx("1", "%s", "--cpu-counts 8 --virt-modes hwvirt-np",' \
-                #         ' "fCpuNestedPaging is True and cCpus >= 8", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += '}\n';
-            sHtml += '</script>\n';
+                sSecTimeoutDef = escapeAttr(unicode(oVarDefaults.cSecTimeout));
+                sHtml += u'function vbox_%s_add_uni()\n' % (sName,);
+                sHtml += u'{\n';
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes raw", ' \
+                         u' "", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
+                         u' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
+                         u' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'}\n';
+                sHtml += u'function vbox_%s_add_uni_amd64()\n' % (sName,);
+                sHtml += u'{\n';
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
+                         u' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
+                         u' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'}\n';
+                sHtml += u'function vbox_%s_add_smp()\n' % (sName,);
+                sHtml += u'{\n';
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 2 --virt-modes hwvirt",' \
+                         u' "fCpuHwVirt is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 2 --virt-modes hwvirt-np",' \
+                         u' "fCpuNestedPaging is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 3 --virt-modes hwvirt",' \
+                         u' "fCpuHwVirt is True and cCpus >= 3", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 4 --virt-modes hwvirt-np ",' \
+                         u' "fCpuNestedPaging is True and cCpus >= 4", "");\n' % (sName, sSecTimeoutDef);
+                #sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 6 --virt-modes hwvirt",' \
+                #         u' "fCpuHwVirt is True and cCpus >= 6", "");\n' % (sName, sSecTimeoutDef);
+                #sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 8 --virt-modes hwvirt-np",' \
+                #         u' "fCpuNestedPaging is True and cCpus >= 8", "");\n' % (sName, sSecTimeoutDef);
+                sHtml += u'}\n';
+            sHtml += u'</script>\n';
 
 
         #
         # List current entries.
         #
-        sHtml += '<input type="hidden" name="%s" id="%s" value="%s">\n' \
-               % (sName, sName, ','.join(str(i) for i in range(len(aoVariations))), );
-        sHtml += '  <table id="%s" class="tmform-testcasevars">\n' % (sTableId,)
+        sHtml += u'<input type="hidden" name="%s" id="%s" value="%s">\n' \
+               % (sName, sName, ','.join(unicode(i) for i in range(len(aoVariations))), );
+        sHtml += u'  <table id="%s" class="tmform-testcasevars">\n' % (sTableId,)
         if not fReadOnly:
-            sHtml += '  <caption>\n' \
-                     '    <a href="#" onClick="%s_extendList()">Add</a>\n' % (sName,);
+            sHtml += u'  <caption>\n' \
+                     u'    <a href="#" onClick="%s_extendList()">Add</a>\n' % (sName,);
             if config.g_kfVBoxSpecific:
-                sHtml += '    [<a href="#" onClick="vbox_%s_add_uni()">Single CPU Variations</a>\n' % (sName,);
-                sHtml += '    <a href="#" onClick="vbox_%s_add_uni_amd64()">amd64</a>]\n' % (sName,);
-                sHtml += '    [<a href="#" onClick="vbox_%s_add_smp()">SMP Variations</a>]\n' % (sName,);
-            sHtml += '  </caption>\n';
+                sHtml += u'    [<a href="#" onClick="vbox_%s_add_uni()">Single CPU Variations</a>\n' % (sName,);
+                sHtml += u'    <a href="#" onClick="vbox_%s_add_uni_amd64()">amd64</a>]\n' % (sName,);
+                sHtml += u'    [<a href="#" onClick="vbox_%s_add_smp()">SMP Variations</a>]\n' % (sName,);
+            sHtml += u'  </caption>\n';
 
         dSubErrors = {};
         if sName in self._dErrors  and  isinstance(self._dErrors[sName], dict):
@@ -555,57 +571,57 @@ class WuiHlpForm(object):
             oVar = copy.copy(aoVariations[iVar]);
             oVar.convertToParamNull();
 
-            sHtml += '<tbody id="%s[%s][6]">\n' % (sName, iVar,)
-            sHtml += '  <tr class="tmform-testcasevars-first-row">\n' \
-                     '    <td>Gang Members:</td>' \
-                     '    <td class="tmform-field-tiny-int"><input name="%s[%s][%s]" id="%s[%s][1]" value="%s"%s></td>\n' \
-                     '    <td>Timeout:</td>' \
-                     '    <td class="tmform-field-int"><input name="%s[%s][%s]" id="%s[%s][2]" value="%s"%s></td>\n' \
+            sHtml += u'<tbody id="%s[%s][6]">\n' % (sName, iVar,)
+            sHtml += u'  <tr class="tmform-testcasevars-first-row">\n' \
+                     u'    <td>Gang Members:</td>' \
+                     u'    <td class="tmform-field-tiny-int"><input name="%s[%s][%s]" id="%s[%s][1]" value="%s"%s></td>\n' \
+                     u'    <td>Timeout:</td>' \
+                     u'    <td class="tmform-field-int"><input name="%s[%s][%s]" id="%s[%s][2]" value="%s"%s></td>\n' \
                    % ( sName, iVar, TestCaseArgsData.ksParam_cGangMembers, sName, iVar, oVar.cGangMembers, sReadOnlyAttr,
                        sName, iVar, TestCaseArgsData.ksParam_cSecTimeout,  sName, iVar,
                        utils.formatIntervalSeconds2(oVar.cSecTimeout), sReadOnlyAttr, );
             if not fReadOnly:
-                sHtml += '    <td><a href="#" onclick="%s_removeEntry(\'%s\');">Remove</a></td>\n' \
+                sHtml += u'    <td><a href="#" onclick="%s_removeEntry(\'%s\');">Remove</a></td>\n' \
                        % (sName, iVar);
             else:
-                sHtml +=  '    <td></td>\n';
-            sHtml += '    <td class="tmform-testcasevars-stupid-border-column"></td>\n' \
-                     '  </tr>\n';
+                sHtml += u'    <td></td>\n';
+            sHtml += u'    <td class="tmform-testcasevars-stupid-border-column"></td>\n' \
+                     u'  </tr>\n';
 
-            sHtml += '  <tr class="tmform-testcasevars-inner-row">\n' \
-                     '    <td>Arguments:</td>' \
-                     '    <td class="tmform-field-wide100" colspan="4">' \
-                     '<input name="%s[%s][%s]" id="%s[%s][3]" value="%s"%s></td>\n' \
-                     '    <td></td>\n' \
-                     '  </tr>\n' \
+            sHtml += u'  <tr class="tmform-testcasevars-inner-row">\n' \
+                     u'    <td>Arguments:</td>' \
+                     u'    <td class="tmform-field-wide100" colspan="4">' \
+                     u'<input name="%s[%s][%s]" id="%s[%s][3]" value="%s"%s></td>\n' \
+                     u'    <td></td>\n' \
+                     u'  </tr>\n' \
                    % ( sName, iVar, TestCaseArgsData.ksParam_sArgs, sName, iVar, escapeAttr(oVar.sArgs), sReadOnlyAttr)
 
-            sHtml += '  <tr class="tmform-testcasevars-inner-row">\n' \
-                     '    <td>TestBox Reqs:</td>' \
-                     '    <td class="tmform-field-wide100" colspan="4">' \
-                     '<input name="%s[%s][%s]" id="%s[%s][4]" value="%s"%s></td>\n' \
-                     '    <td></td>\n' \
-                     '  </tr>\n' \
+            sHtml += u'  <tr class="tmform-testcasevars-inner-row">\n' \
+                     u'    <td>TestBox Reqs:</td>' \
+                     u'    <td class="tmform-field-wide100" colspan="4">' \
+                     u'<input name="%s[%s][%s]" id="%s[%s][4]" value="%s"%s></td>\n' \
+                     u'    <td></td>\n' \
+                     u'  </tr>\n' \
                    % ( sName, iVar, TestCaseArgsData.ksParam_sTestBoxReqExpr, sName, iVar,
                        escapeAttr(oVar.sTestBoxReqExpr), sReadOnlyAttr)
 
-            sHtml += '  <tr class="tmform-testcasevars-final-row">\n' \
-                     '    <td>Build Reqs:</td>' \
-                     '    <td class="tmform-field-wide100" colspan="4">' \
-                     '<input name="%s[%s][%s]" id="%s[%s][5]" value="%s"%s></td>\n' \
-                     '    <td></td>\n' \
-                     '  </tr>\n' \
+            sHtml += u'  <tr class="tmform-testcasevars-final-row">\n' \
+                     u'    <td>Build Reqs:</td>' \
+                     u'    <td class="tmform-field-wide100" colspan="4">' \
+                     u'<input name="%s[%s][%s]" id="%s[%s][5]" value="%s"%s></td>\n' \
+                     u'    <td></td>\n' \
+                     u'  </tr>\n' \
                    % ( sName, iVar, TestCaseArgsData.ksParam_sBuildReqExpr, sName, iVar,
                        escapeAttr(oVar.sBuildReqExpr), sReadOnlyAttr)
 
 
             if iVar in dSubErrors:
-                sHtml += '  <tr><td colspan="4"><p align="left" class="tmform-error-desc">%s</p></td></tr>\n' \
+                sHtml += u'  <tr><td colspan="4"><p align="left" class="tmform-error-desc">%s</p></td></tr>\n' \
                        % (self._escapeErrorText(dSubErrors[iVar]),);
 
-            sHtml += '</tbody>\n';
-        sHtml += '  </table>\n'
-        sHtml += '</li>\n'
+            sHtml += u'</tbody>\n';
+        sHtml += u'  </table>\n'
+        sHtml += u'</li>\n'
 
         return self._add(sHtml)
 
@@ -619,27 +635,27 @@ class WuiHlpForm(object):
         if len(aoAllTestCases) == 0:
             return self._add('<li>No testcases available.</li>\n')
 
-        self._add('<input name="%s" type="hidden" value="%s">\n'
+        self._add(u'<input name="%s" type="hidden" value="%s">\n'
                   % ( TestGroupDataEx.ksParam_aidTestCases,
-                      ','.join([str(oTestCase.idTestCase) for oTestCase in aoAllTestCases]), ));
+                      ','.join([unicode(oTestCase.idTestCase) for oTestCase in aoAllTestCases]), ));
 
-        self._add('<table class="tmformtbl">\n'
-                  ' <thead>\n'
-                  '  <tr>\n'
-                  '    <th rowspan="2"></th>\n'
-                  '    <th rowspan="2">Test Case</th>\n'
-                  '    <th rowspan="2">All Vars</th>\n'
-                  '    <th rowspan="2">Priority [0..31]</th>\n'
-                  '    <th colspan="4" align="center">Variations</th>\n'
-                  '  </tr>\n'
-                  '  <tr>\n'
-                  '    <th>Included</th>\n'
-                  '    <th>Gang size</th>\n'
-                  '    <th>Timeout</th>\n'
-                  '    <th>Arguments</th>\n'
-                  '  </tr>\n'
-                  ' </thead>\n'
-                  ' <tbody>\n'
+        self._add(u'<table class="tmformtbl">\n'
+                  u' <thead>\n'
+                  u'  <tr>\n'
+                  u'    <th rowspan="2"></th>\n'
+                  u'    <th rowspan="2">Test Case</th>\n'
+                  u'    <th rowspan="2">All Vars</th>\n'
+                  u'    <th rowspan="2">Priority [0..31]</th>\n'
+                  u'    <th colspan="4" align="center">Variations</th>\n'
+                  u'  </tr>\n'
+                  u'  <tr>\n'
+                  u'    <th>Included</th>\n'
+                  u'    <th>Gang size</th>\n'
+                  u'    <th>Timeout</th>\n'
+                  u'    <th>Arguments</th>\n'
+                  u'  </tr>\n'
+                  u' </thead>\n'
+                  u' <tbody>\n'
                   );
 
         if self._fReadOnly:
@@ -659,16 +675,16 @@ class WuiHlpForm(object):
                     break;
 
             # Start on the rows...
-            sPrefix = '%s[%d]' % (sName, oTestCase.idTestCase,);
-            self._add('  <tr class="%s">\n'
-                      '    <td rowspan="%d">\n'
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestCase
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestGroup
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
-                      '      <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' # (list)
-                      '    </td>\n'
+            sPrefix = u'%s[%d]' % (sName, oTestCase.idTestCase,);
+            self._add(u'  <tr class="%s">\n'
+                      u'    <td rowspan="%d">\n'
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestCase
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestGroup
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
+                      u'      <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' #(list)
+                      u'    </td>\n'
                       % ( 'tmodd' if iTestCase & 1 else 'tmeven',
                           len(oTestCase.aoTestCaseArgs),
                           sPrefix, TestGroupMemberData.ksParam_idTestCase,  oTestCase.idTestCase,
@@ -679,19 +695,19 @@ class WuiHlpForm(object):
                           TestGroupDataEx.ksParam_aoMembers, '' if oMember is None else ' checked', sCheckBoxAttr,
                           oTestCase.idTestCase, oTestCase.idTestCase, escapeElem(oTestCase.sName),
                           ));
-            self._add('    <td rowspan="%d" align="left">%s</td>\n'
+            self._add(u'    <td rowspan="%d" align="left">%s</td>\n'
                       % ( len(oTestCase.aoTestCaseArgs), escapeElem(oTestCase.sName), ));
 
-            self._add('    <td rowspan="%d" title="Include all variations (checked) or choose a set?">\n'
-                      '      <input name="%s[%s]" type="checkbox"%s%s value="-1">\n'
-                      '    </td>\n'
+            self._add(u'    <td rowspan="%d" title="Include all variations (checked) or choose a set?">\n'
+                      u'      <input name="%s[%s]" type="checkbox"%s%s value="-1">\n'
+                      u'    </td>\n'
                       % ( len(oTestCase.aoTestCaseArgs),
                           sPrefix, TestGroupMemberData.ksParam_aidTestCaseArgs,
                           ' checked' if oMember is None  or  oMember.aidTestCaseArgs is None else '', sCheckBoxAttr, ));
 
-            self._add('    <td rowspan="%d" align="center">\n'
-                      '      <input name="%s[%s]" type="text" value="%s" style="max-width:3em;" %s>\n'
-                      '    </td>\n'
+            self._add(u'    <td rowspan="%d" align="center">\n'
+                      u'      <input name="%s[%s]" type="text" value="%s" style="max-width:3em;" %s>\n'
+                      u'    </td>\n'
                       % ( len(oTestCase.aoTestCaseArgs),
                           sPrefix, TestGroupMemberData.ksParam_iSchedPriority,
                           (oMember if oMember is not None else oDefMember).iSchedPriority,
@@ -703,28 +719,28 @@ class WuiHlpForm(object):
                 oVar = oTestCase.aoTestCaseArgs[iVar];
                 if iVar > 0:
                     self._add('  <tr class="%s">\n' % ('tmodd' if iTestCase & 1 else 'tmeven',));
-                self._add('   <td align="center">\n'
-                          '     <input name="%s[%s]" type="checkbox"%s%s value="%d">'
-                          '   </td>\n'
+                self._add(u'   <td align="center">\n'
+                          u'     <input name="%s[%s]" type="checkbox"%s%s value="%d">'
+                          u'   </td>\n'
                           % ( sPrefix, TestGroupMemberData.ksParam_aidTestCaseArgs,
                               ' checked' if oVar.idTestCaseArgs in aidTestCaseArgs else '', sCheckBoxAttr, oVar.idTestCaseArgs,
                               ));
-                self._add('   <td align="center">%s</td>\n'
-                          '   <td align="center">%s</td>\n'
-                          '   <td align="left">%s</td>\n'
+                self._add(u'   <td align="center">%s</td>\n'
+                          u'   <td align="center">%s</td>\n'
+                          u'   <td align="left">%s</td>\n'
                           % ( oVar.cGangMembers,
                               'Default' if oVar.cSecTimeout is None else oVar.cSecTimeout,
                               escapeElem(oVar.sArgs) ));
 
-                self._add('  </tr>\n');
+                self._add(u'  </tr>\n');
 
 
 
             if len(oTestCase.aoTestCaseArgs) == 0:
-                self._add('    <td></td> <td></td> <td></td> <td></td>\n'
-                          '  </tr>\n');
-        return self._add(' </tbody>\n'
-                         '</table>\n');
+                self._add(u'    <td></td> <td></td> <td></td> <td></td>\n'
+                          u'  </tr>\n');
+        return self._add(u' </tbody>\n'
+                         u'</table>\n');
 
     def addListOfSchedGroupMembers(self, sName, aoSchedGroupMembers, aoAllTestGroups,  # pylint: disable=R0914
                                    sLabel, fReadOnly = True):
@@ -736,27 +752,27 @@ class WuiHlpForm(object):
         assert len(aoSchedGroupMembers) <= len(aoAllTestGroups);
         self._addLabel(sName, sLabel);
         if len(aoAllTestGroups) == 0:
-            return self._add('<li>No test groups available.</li>\n')
+            return self._add(u'<li>No test groups available.</li>\n')
 
-        self._add('<input name="%s" type="hidden" value="%s">\n'
+        self._add(u'<input name="%s" type="hidden" value="%s">\n'
                   % ( SchedGroupDataEx.ksParam_aidTestGroups,
-                      ','.join([str(oTestGroup.idTestGroup) for oTestGroup in aoAllTestGroups]), ));
+                      ','.join([unicode(oTestGroup.idTestGroup) for oTestGroup in aoAllTestGroups]), ));
 
-        self._add('<table class="tmformtbl">\n'
-                  ' <thead>\n'
-                  '  <tr>\n'
-                  '    <th></th>\n'
-                  '    <th>Test Group</th>\n'
-                  '    <th>Priority [0..31]</th>\n'
-                  '    <th>Prerequisite Test Group</th>\n'
-                  '    <th>Weekly schedule</th>\n'
-                  '  </tr>\n'
-                  ' </thead>\n'
-                  ' <tbody>\n'
+        self._add(u'<table class="tmformtbl">\n'
+                  u' <thead>\n'
+                  u'  <tr>\n'
+                  u'    <th></th>\n'
+                  u'    <th>Test Group</th>\n'
+                  u'    <th>Priority [0..31]</th>\n'
+                  u'    <th>Prerequisite Test Group</th>\n'
+                  u'    <th>Weekly schedule</th>\n'
+                  u'  </tr>\n'
+                  u' </thead>\n'
+                  u' <tbody>\n'
                   );
 
-        sCheckBoxAttr = ' readonly onclick="return false" onkeydown="return false"' if fReadOnly else '';
-        sComboBoxAttr = ' disabled' if fReadOnly else '';
+        sCheckBoxAttr = u' readonly onclick="return false" onkeydown="return false"' if fReadOnly else '';
+        sComboBoxAttr = u' disabled' if fReadOnly else '';
 
         oDefMember = SchedGroupMemberData();
         aoSchedGroupMembers = list(aoSchedGroupMembers); # Copy it so we can pop.
@@ -771,16 +787,16 @@ class WuiHlpForm(object):
                     break;
 
             # Start on the rows...
-            sPrefix = '%s[%d]' % (sName, oTestGroup.idTestGroup,);
-            self._add('  <tr class="%s">\n'
-                      '    <td>\n'
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestGroup
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # idSchedGroup
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
-                      '      <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
-                      '      <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' # (list)
-                      '    </td>\n'
+            sPrefix = u'%s[%d]' % (sName, oTestGroup.idTestGroup,);
+            self._add(u'  <tr class="%s">\n'
+                      u'    <td>\n'
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestGroup
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # idSchedGroup
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
+                      u'      <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' #(list)
+                      u'    </td>\n'
                       % ( 'tmodd' if iTestGroup & 1 else 'tmeven',
                           sPrefix, SchedGroupMemberData.ksParam_idTestGroup,    oTestGroup.idTestGroup,
                           sPrefix, SchedGroupMemberData.ksParam_idSchedGroup,   -1 if oMember is None else oMember.idSchedGroup,
@@ -790,18 +806,18 @@ class WuiHlpForm(object):
                           SchedGroupDataEx.ksParam_aoMembers, '' if oMember is None else ' checked', sCheckBoxAttr,
                           oTestGroup.idTestGroup, oTestGroup.idTestGroup, escapeElem(oTestGroup.sName),
                           ));
-            self._add('    <td align="left">%s</td>\n' % ( escapeElem(oTestGroup.sName), ));
+            self._add(u'    <td align="left">%s</td>\n' % ( escapeElem(oTestGroup.sName), ));
 
-            self._add('    <td align="center">\n'
-                      '      <input name="%s[%s]" type="text" value="%s" style="max-width:3em;" %s>\n'
-                      '    </td>\n'
+            self._add(u'    <td align="center">\n'
+                      u'      <input name="%s[%s]" type="text" value="%s" style="max-width:3em;" %s>\n'
+                      u'    </td>\n'
                       % ( sPrefix, SchedGroupMemberData.ksParam_iSchedPriority,
                           (oMember if oMember is not None else oDefMember).iSchedPriority,
                           ' readonly class="tmform-input-readonly"' if fReadOnly else '', ));
 
-            self._add('    <td align="center">\n'
-                      '      <select name="%s[%s]" id="%s[%s]" class="tmform-combobox"%s>\n'
-                      '        <option value="-1"%s>None</option>\n'
+            self._add(u'    <td align="center">\n'
+                      u'      <select name="%s[%s]" id="%s[%s]" class="tmform-combobox"%s>\n'
+                      u'        <option value="-1"%s>None</option>\n'
                       % ( sPrefix, SchedGroupMemberData.ksParam_idTestGroupPreReq,
                           sPrefix, SchedGroupMemberData.ksParam_idTestGroupPreReq,
                           sComboBoxAttr,
@@ -812,18 +828,18 @@ class WuiHlpForm(object):
                     fSelected = oMember is not None and oTestGroup2.idTestGroup == oMember.idTestGroupPreReq;
                     self._add('        <option value="%s"%s>%s</option>\n'
                               % ( oTestGroup2.idTestGroup, ' selected' if fSelected else '', escapeElem(oTestGroup2.sName), ));
-            self._add('      </select>\n'
-                      '    </td>\n');
+            self._add(u'      </select>\n'
+                      u'    </td>\n');
 
-            self._add('    <td align="left">\n'
-                      '      Todo<input name="%s[%s]" type="hidden" value="%s">\n'
-                      '    </td>\n'
+            self._add(u'    <td align="left">\n'
+                      u'      Todo<input name="%s[%s]" type="hidden" value="%s">\n'
+                      u'    </td>\n'
                       % ( sPrefix, SchedGroupMemberData.ksParam_bmHourlySchedule,
                           '' if oMember is None else oMember.bmHourlySchedule, ));
 
-            self._add('  </tr>\n');
-        return self._add(' </tbody>\n'
-                         '</table>\n');
+            self._add(u'  </tr>\n');
+        return self._add(u' </tbody>\n'
+                         u'</table>\n');
 
     #
     # Buttons.
@@ -832,23 +848,22 @@ class WuiHlpForm(object):
         """Adds the submit button to the form."""
         if self._fReadOnly:
             return True;
-        return self._add('      <li>\n'
-                         '        <br>\n'
-                         '        <div class="tmform-field"><div class="tmform-field-submit">\n'
-                         '           <label>&nbsp;</label>\n'
-                         '           <input type="submit" value="%s">\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
+        return self._add(u'      <li>\n'
+                         u'        <br>\n'
+                         u'        <div class="tmform-field"><div class="tmform-field-submit">\n'
+                         u'           <label>&nbsp;</label>\n'
+                         u'           <input type="submit" value="%s">\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n'
                          % (escapeElem(sLabel),));
 
     def addReset(self):
         """Adds a reset button to the form."""
         if self._fReadOnly:
             return True;
-        return self._add('      <li>\n'
-                         '        <div class="tmform-button"><div class="tmform-button-reset">\n'
-                         '          <input type="reset" value="%s">\n'
-                         '        </div></div>\n'
-                         '      </li>\n'
-                        );
+        return self._add(u'      <li>\n'
+                         u'        <div class="tmform-button"><div class="tmform-button-reset">\n'
+                         u'          <input type="reset" value="%s">\n'
+                         u'        </div></div>\n'
+                         u'      </li>\n');
 

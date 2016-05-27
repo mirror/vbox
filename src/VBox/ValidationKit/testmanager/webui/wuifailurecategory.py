@@ -68,7 +68,7 @@ class WuiFailureCategory(WuiFormContentBase):
 
         oForm.addSubmit()
 
-        return True
+        return True;
 
 
 class WuiFailureCategoryList(WuiListContentBase):

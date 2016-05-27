@@ -188,6 +188,10 @@ class WuiContentBase(object): # pylint: disable=R0903
     Base for the content classes.
     """
 
+    ## The text/symbol for a very short add link.
+    ksShortAddLink         = u'\u2795'
+    ## HTML hex entity string for ksShortAddLink.
+    ksShortAddLinkHtml     = '&#x2795;;'
     ## The text/symbol for a very short edit link.
     ksShortEditLink        = u'\u270D'
     ## HTML hex entity string for ksShortDetailsLink.

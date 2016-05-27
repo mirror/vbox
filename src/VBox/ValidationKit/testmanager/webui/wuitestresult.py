@@ -48,6 +48,31 @@ from testmanager                        import config;
 from common                             import webutils, utils;
 
 
+class WuiFailureReasonDetailsLink(WuiTmLink):
+    """ Short link to a failure reason. """
+    def __init__(self, idFailureReason, sName = WuiContentBase.ksShortDetailsLink, sTitle = None, fBracketed = None):
+        if fBracketed is None:
+            fBracketed = len(sName) > 2;
+        from testmanager.webui.wuiadmin import WuiAdmin;
+        WuiTmLink.__init__(self, sName = sName,
+                           sUrlBase = WuiAdmin.ksScriptName,
+                           dParams = { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDetails,
+                                       FailureReasonData.ksParam_idFailureReason: idFailureReason, },
+                           fBracketed = fBracketed);
+        self.idFailureReason = idFailureReason;
+
+class WuiFailureReasonAddLink(WuiTmLink):
+    """ Link for adding a failure reason. """
+    def __init__(self, sName = WuiContentBase.ksShortAddLink, sTitle = None, fBracketed = None):
+        if fBracketed is None:
+            fBracketed = len(sName) > 2;
+        from testmanager.webui.wuiadmin import WuiAdmin;
+        WuiTmLink.__init__(self, sName = sName,
+                           sUrlBase = WuiAdmin.ksScriptName,
+                           dParams = { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonAdd, },
+                           fBracketed = fBracketed);
+
+
 class WuiTestResult(WuiContentBase):
     """Display test case result"""
 
@@ -372,22 +397,25 @@ class WuiTestResult(WuiContentBase):
             oForm = WuiHlpForm('failure-reason', sFormActionUrl,
                                sOnSubmit = WuiHlpForm.ksOnSubmit_AddReturnToFieldWithCurrentUrl);
             oForm.addTextHidden(TestResultFailureData.ksParam_idTestResult, oTestResultTree.idTestResult);
-            oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, oData.idFailureReason if oData is not None else -1,
-                              'Reason', aoFailureReasons);
-            oForm.addMultilineText(TestResultFailureData.ksParam_sComment,
-                                   oData.sComment if oData is not None else '', 'Comment');
             if oData is not None:
-                oForm.addNonText('%s (%s)' % (oData.oAuthor.sUsername, oData.oAuthor.sUsername), 'Sheriff');
-                oForm.addNonText(oData.tsEffective, 'When');
+                oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, oData.idFailureReason, 'Reason',
+                                  aoFailureReasons,
+                                  sPostHtml = WuiFailureReasonDetailsLink(oData.idFailureReason).toHtml());
+                oForm.addMultilineText(TestResultFailureData.ksParam_sComment, oData.sComment, 'Comment')
+
+                oForm.addNonText('%s (%s), %s' % (oData.oAuthor.sUsername, oData.oAuthor.sUsername, self.formatTsShort(oData.tsEffective)), 'Sheriff');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, oData.tsEffective);
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, oData.tsExpire);
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, oData.uidAuthor);
             else:
+                oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, -1, 'Reason', aoFailureReasons,
+                                  sPostHtml = ' ' + WuiFailureReasonAddLink('New').toHtml());
+                oForm.addMultilineText(TestResultFailureData.ksParam_sComment, '', 'Comment');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, '');
 
-            oForm.addSubmit('Change Reason', );
+            oForm.addSubmit('Change Reason');
             sHtml += oForm.finalize();
         return sHtml;
 
