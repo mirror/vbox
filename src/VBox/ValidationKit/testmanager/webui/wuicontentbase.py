@@ -345,6 +345,15 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         _ = oForm; _ = oData;
         raise Exception('Reimplement me!');
 
+    def _generatePostFormContent(self, oData):
+        """
+        Generate optional content that comes below the form.
+        Returns a list of tuples, where the first tuple element is the title
+        and the second the content.  I.e. similar to show() output.
+        """
+        _ = oData;
+        return [];
+
     def _calcChangeLogEntryLinks(self, aoEntries, iEntry):
         """
         Returns an array of links to go with the change log entry.
@@ -521,6 +530,46 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         sContent += '</div>\n\n';
         return sContent;
 
+    def _generateTopRowFormActions(self, oData):
+        """
+        Returns a list of WuiTmLinks.
+        """
+        aoActions = [];
+        if self._sMode == self.ksMode_Show and self._fEditable:
+            # Remove _idGen and effective date since we're always editing the current data,
+            # and make sure the primary ID is present.
+            dParams = self._oDisp.getParameters();
+            if hasattr(oData, 'ksIdGenAttr'):
+                sIdGenParam = getattr(oData, 'ksParam_' + oData.ksIdGenAttr);
+                if sIdGenParam in dParams:
+                    del dParams[sIdGenParam];
+            if WuiDispatcherBase.ksParamEffectiveDate in dParams:
+                del dParams[WuiDispatcherBase.ksParamEffectiveDate];
+            dParams[getattr(oData, 'ksParam_' + oData.ksIdAttr)] = getattr(oData, oData.ksIdAttr);
+
+            dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Edit');
+            aoActions.append(WuiTmLink('Edit', '', dParams));
+
+            # Add clone operation if available. This uses the same data selection as for showing details.
+            if hasattr(self._oDisp, self._sActionBase + 'Clone'):
+                dParams = self._oDisp.getParameters();
+                dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Clone');
+                aoActions.append(WuiTmLink('Clone', '', dParams));
+
+        elif self._sMode == self.ksMode_Edit:
+            # Details views the details at a given time, so we need either idGen or an effecive date + regular id.
+            dParams = {};
+            if hasattr(oData, 'ksIdGenAttr'):
+                sIdGenParam = getattr(oData, 'ksParam_' + oData.ksIdGenAttr);
+                dParams[sIdGenParam] = getattr(oData, oData.ksIdGenAttr);
+            elif hasattr(oData, 'tsEffective'):
+                dParams[WuiDispatcherBase.ksParamEffectiveDate] = oData.tsEffective;
+                dParams[getattr(oData, 'ksParam_' + oData.ksIdAttr)] = getattr(oData, oData.ksIdAttr);
+            dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Details');
+            aoActions.append(WuiTmLink('Details', '', dParams));
+
+        return aoActions;
+
     def showForm(self, dErrors = None, sErrorMsg = None):
         """
         Render the form.
@@ -543,41 +592,21 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         else:
             sContent = oForm.finalize();
 
+        # Add any post form content.
+        atPostFormContent = self._generatePostFormContent(self._oData);
+        if atPostFormContent is not None and len(atPostFormContent) > 0:
+            for iSection, tSection in enumerate(atPostFormContent):
+                (sSectionTitle, sSectionContent) = tSection;
+                sContent += u'<div id="postform-%d"  class="tmformpostsection">\n' % (iSection,);
+                if sSectionTitle is not None and len(sSectionTitle) > 0:
+                    sContent += '<h3 class="tmformpostheader">%s</h3>\n' % (webutils.escapeElem(sSectionTitle),);
+                sContent += u' <div id="postform-%d-content" class="tmformpostcontent">\n' % (iSection,);
+                sContent += sSectionContent;
+                sContent += u' </div>\n' \
+                            u'</div>\n';
+
         # Add action to the top.
-        aoActions = [];
-        if self._sMode == self.ksMode_Show and self._fEditable:
-            # Remove _idGen and effective date since we're always editing the current data,
-            # and make sure the primary ID is present.
-            dParams = self._oDisp.getParameters();
-            if hasattr(self._oData, 'ksIdGenAttr'):
-                sIdGenParam = getattr(self._oData, 'ksParam_' + self._oData.ksIdGenAttr);
-                if sIdGenParam in dParams:
-                    del dParams[sIdGenParam];
-            if WuiDispatcherBase.ksParamEffectiveDate in dParams:
-                del dParams[WuiDispatcherBase.ksParamEffectiveDate];
-            dParams[getattr(self._oData, 'ksParam_' + self._oData.ksIdAttr)] = getattr(self._oData, self._oData.ksIdAttr);
-
-            dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Edit');
-            aoActions.append(WuiTmLink('Edit', '', dParams));
-
-            # Add clone operation if available. This uses the same data selection as for showing details.
-            if hasattr(self._oDisp, self._sActionBase + 'Clone'):
-                dParams = self._oDisp.getParameters();
-                dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Clone');
-                aoActions.append(WuiTmLink('Clone', '', dParams));
-
-        elif self._sMode == self.ksMode_Edit:
-            # Details views the details at a given time, so we need either idGen or an effecive date + regular id.
-            dParams = {};
-            if hasattr(self._oData, 'ksIdGenAttr'):
-                sIdGenParam = getattr(self._oData, 'ksParam_' + self._oData.ksIdGenAttr);
-                dParams[sIdGenParam] = getattr(self._oData, self._oData.ksIdGenAttr);
-            elif hasattr(self._oData, 'tsEffective'):
-                dParams[WuiDispatcherBase.ksParamEffectiveDate] = self._oData.tsEffective;
-                dParams[getattr(self._oData, 'ksParam_' + self._oData.ksIdAttr)] = getattr(self._oData, self._oData.ksIdAttr);
-            dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Details');
-            aoActions.append(WuiTmLink('Details', '', dParams));
-
+        aoActions = self._generateTopRowFormActions(self._oData);
         if len(aoActions) > 0:
             sActionLinks = '<p>%s</p>' % (' '.join(unicode(oLink) for oLink in aoActions));
             sContent = sActionLinks + sContent;

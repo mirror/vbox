@@ -30,7 +30,9 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.core.base          import ModelDataBase, ModelLogicBase, TMRowInUse, TMInvalidData, TMRowNotFound;
+from testmanager.core.base          import ModelDataBase, ModelLogicBase, TMRowInUse, TMInvalidData, TMRowNotFound, \
+                                           ChangeLogEntry, AttributeChangeEntry;
+from testmanager.core.useraccount   import UserAccountLogic;
 
 
 class FailureCategoryData(ModelDataBase):
@@ -136,6 +138,51 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
         for aoRow in self._oDb.fetchAll():
             aoRows.append(FailureCategoryData().initFromDbRow(aoRow))
         return aoRows
+
+
+    def fetchForChangeLog(self, idFailureCategory, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+        """
+        Fetches change log entries for a failure reason.
+
+        Returns an array of ChangeLogEntry instance and an indicator whether
+        there are more entries.
+        Raises exception on error.
+        """
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+
+        # 1. Get a list of the relevant changes.
+        self._oDb.execute('SELECT * FROM FailureCategories WHERE idFailureCategory = %s AND tsEffective <= %s\n'
+                          'ORDER BY tsEffective DESC\n'
+                          'LIMIT %s OFFSET %s\n'
+                          , ( idFailureCategory, tsNow, cMaxRows + 1, iStart, ));
+        aoRows = [];
+        for aoChange in self._oDb.fetchAll():
+            aoRows.append(FailureCategoryData().initFromDbRow(aoChange));
+
+        # 2. Calculate the changes.
+        aoEntries = [];
+        for i in xrange(0, len(aoRows) - 1):
+            oNew = aoRows[i];
+            oOld = aoRows[i + 1];
+
+            aoChanges = [];
+            for sAttr in oNew.getDataAttributes():
+                if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
+                    oOldAttr = getattr(oOld, sAttr);
+                    oNewAttr = getattr(oNew, sAttr);
+                    if oOldAttr != oNewAttr:
+                        aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+
+            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
+
+        # If we're at the end of the log, add the initial entry.
+        if len(aoRows) <= cMaxRows and len(aoRows) > 0:
+            oNew = aoRows[-1];
+            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, None, []));
+
+        return (UserAccountLogic(self._oDb).resolveChangeLogAuthors(aoEntries), len(aoRows) > cMaxRows);
+
 
     def getFailureCategoriesForCombo(self, tsEffective = None):
         """

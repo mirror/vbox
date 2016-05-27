@@ -29,9 +29,27 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Validation Kit imports.
-from testmanager.webui.wuicontentbase   import WuiFormContentBase;
-from testmanager.core.testresults       import TestResultFailureData;
-from testmanager.core.failurereason     import FailureReasonLogic;
+from testmanager.webui.wuicontentbase           import WuiFormContentBase, WuiTmLink;
+from testmanager.webui.wuimain                  import WuiMain;
+from testmanager.webui.wuiadminfailurereason    import WuiFailureReasonDetailsLink, WuiFailureReasonAddLink;
+from testmanager.core.testresults               import TestResultFailureData;
+from testmanager.core.testset                   import TestSetData;
+from testmanager.core.failurereason             import FailureReasonLogic;
+
+
+
+class WuiTestResultFailureDetailsLink(WuiTmLink):
+    """ Link for adding a failure reason. """
+    def __init__(self, idTestResult, sName = u'\u2397', sTitle = None, fBracketed = None):
+        if fBracketed is None:
+            fBracketed = len(sName) > 2;
+        WuiTmLink.__init__(self, sName = sName,
+                           sUrlBase = WuiMain.ksScriptName,
+                           dParams = { WuiMain.ksParamAction: WuiMain.ksActionTestResultFailureDetails,
+                                       TestResultFailureData.ksParam_idTestResult: idTestResult, },
+                           fBracketed = fBracketed);
+        self.idTestResult = idTestResult;
+
 
 
 class WuiTestResultFailure(WuiFormContentBase):
@@ -52,8 +70,12 @@ class WuiTestResultFailure(WuiFormContentBase):
     def _populateForm(self, oForm, oData):
 
         aoFailureReasons = FailureReasonLogic(self._oDisp.getDb()).fetchForCombo('Todo: Figure out why');
+        sPostHtml = '';
+        if oData.idFailureReason is not None and oData.idFailureReason >= 0:
+            sPostHtml += u' ' + WuiFailureReasonDetailsLink(oData.idFailureReason).toHtml();
+        sPostHtml += u' ' + WuiFailureReasonAddLink('New', fBracketed = False).toHtml();
         oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, oData.idFailureReason,
-                          'Reason', aoFailureReasons)
+                          'Reason', aoFailureReasons, sPostHtml = sPostHtml);
         oForm.addMultilineText(TestResultFailureData.ksParam_sComment,   oData.sComment,     'Comment');
         oForm.addIntRO(      TestResultFailureData.ksParam_idTestResult, oData.idTestResult, 'Test Result ID');
         oForm.addTimestampRO(TestResultFailureData.ksParam_tsEffective,  oData.tsEffective,  'Effective Date');
@@ -62,4 +84,18 @@ class WuiTestResultFailure(WuiFormContentBase):
         if self._sMode != WuiFormContentBase.ksMode_Show:
             oForm.addSubmit('Add' if self._sMode == WuiFormContentBase.ksMode_Add else 'Modify');
         return True;
+
+    def _generateTopRowFormActions(self, oData):
+        """
+        We add a way to get back to the test set to the actions.
+        """
+        aoActions = super(WuiTestResultFailure, self)._generateTopRowFormActions(oData);
+        if oData and oData.idTestResult is not None and oData.idTestResult > 0:
+            aoActions.append(WuiTmLink('Associated Test Set', WuiMain.ksScriptName,
+                                       { WuiMain.ksParamAction: WuiMain.ksActionTestSetDetailsFromResult,
+                                         TestSetData.ksParam_idTestResult: oData.idTestResult }
+                                       ));
+        return aoActions;
+
+
 

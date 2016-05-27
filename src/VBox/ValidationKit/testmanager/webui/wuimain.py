@@ -35,7 +35,7 @@ from testmanager                            import config;
 from testmanager.webui.wuibase              import WuiDispatcherBase, WuiException;
 from testmanager.webui.wuicontentbase       import WuiTmLink;
 from testmanager.core.report                import ReportLazyModel, ReportGraphModel, ReportModelBase;
-from testmanager.core.testresults           import TestResultLogic, TestResultFileDataEx;
+from testmanager.core.testresults           import TestResultLogic, TestResultFileDataEx, TestResultData;
 from testmanager.core.base                  import TMExceptionBase, TMTooManyRows;
 from testmanager.core.testset               import TestSetData, TestSetLogic;
 from testmanager.core.build                 import BuildDataEx;
@@ -67,7 +67,9 @@ class WuiMain(WuiDispatcherBase):
     ksActionResultsGroupedByBuildRev    = 'ResultsGroupedByBuildRev'
     ksActionResultsGroupedByTestBox     = 'ResultsGroupedByTestBox'
     ksActionResultsGroupedByTestCase    = 'ResultsGroupedByTestCase'
-    ksActionTestResultDetails           = 'TestResultDetails'
+    ksActionTestSetDetails              = 'TestSetDetails';
+    ksActionTestResultDetails           = ksActionTestSetDetails;
+    ksActionTestSetDetailsFromResult    = 'TestSetDetailsFromResult'
     ksActionTestResultFailureDetails    = 'TestResultFailureDetails'
     ksActionTestResultFailureAdd        = 'TestResultFailureAdd'
     ksActionTestResultFailureAddPost    = 'TestResultFailureAddPost'
@@ -161,27 +163,27 @@ class WuiMain(WuiDispatcherBase):
 
     ## Test result period values.
     kaoResultPeriods = [
-        ( '1 hour',   'One hour',    1 ),
-        ( '2 hours',  'Two hours',   2 ),
-        ( '3 hours',  'Three hours', 3 ),
-        ( '6 hours',  'Six hours',   6 ),
+        ( '1 hour',   '1 hour',      1 ),
+        ( '2 hours',  '2 hours',     2 ),
+        ( '3 hours',  '3 hours',     3 ),
+        ( '6 hours',  '6 hours',     6 ),
         ( '12 hours', '12 hours',    12 ),
 
-        ( '1 day',    'One day',     24 ),
-        ( '2 days',   'Two days',    48 ),
-        ( '3 days',   'Three days',  72 ),
+        ( '1 day',    '1 day',       24 ),
+        ( '2 days',   '2 days',      48 ),
+        ( '3 days',   '3 days',      72 ),
 
-        ( '1 week',   'One week',    168 ),
-        ( '2 weeks',  'Two weeks',   336 ),
-        ( '3 weeks',  'Three weeks', 504 ),
+        ( '1 week',   '1 week',      168 ),
+        ( '2 weeks',  '2 weeks',     336 ),
+        ( '3 weeks',  '3 weeks',     504 ),
 
-        ( '1 month',  'One month',   31 * 24 ),                             # The approx hour count varies with the start date.
-        ( '2 months', 'Two month',   (31 + 31) * 24 ),                      # Using maximum values.
-        ( '3 months', 'Three month', (31 + 30 + 31) * 24 ),
+        ( '1 month',  '1 month',     31 * 24 ),                             # The approx hour count varies with the start date.
+        ( '2 months', '2 months',    (31 + 31) * 24 ),                      # Using maximum values.
+        ( '3 months', '3 months',    (31 + 30 + 31) * 24 ),
 
-        ( '6 months', 'Six month',   (31 + 31 + 30 + 31 + 30 + 31) * 24 ),
+        ( '6 months', '6 months',    (31 + 31 + 30 + 31 + 30 + 31) * 24 ),
 
-        ( '1 year',   'One year',    365 * 24 ),
+        ( '1 year',   '1 year',      365 * 24 ),
     ];
     ## The default test result period.
     ksResultPeriodDefault = '6 hours';
@@ -201,53 +203,57 @@ class WuiMain(WuiDispatcherBase):
         d = self._dDispatch;  # pylint: disable=C0103
 
         from testmanager.webui.wuitestresult import WuiGroupedResultList;
-        #d[self.ksActionResultsUnGrouped]          = lambda: self._actionResultsListing(TestResultLogic, WuiGroupedResultList)
-        d[self.ksActionResultsUnGrouped]          = lambda: self._actionGroupedResultsListing(
-                                                                TestResultLogic.ksResultsGroupingTypeNone,
-                                                                TestResultLogic,
+        #d[self.ksActionResultsUnGrouped]            = lambda: self._actionResultsListing(TestResultLogic, WuiGroupedResultList)
+        d[self.ksActionResultsUnGrouped]            = lambda: self._actionGroupedResultsListing(
+                                                                  TestResultLogic.ksResultsGroupingTypeNone,
+                                                                  TestResultLogic,
+                                                                  WuiGroupedResultList)
+
+        d[self.ksActionResultsGroupedByTestGroup]   = lambda: self._actionGroupedResultsListing(
+                                                                  TestResultLogic.ksResultsGroupingTypeTestGroup,
+                                                                  TestResultLogic,
+                                                                  WuiGroupedResultList)
+
+        d[self.ksActionResultsGroupedByBuildRev]    = lambda: self._actionGroupedResultsListing(
+                                                                  TestResultLogic.ksResultsGroupingTypeBuildRev,
+                                                                  TestResultLogic,
+                                                                  WuiGroupedResultList)
+
+        d[self.ksActionResultsGroupedByTestBox]     = lambda: self._actionGroupedResultsListing(
+                                                                  TestResultLogic.ksResultsGroupingTypeTestBox,
+                                                                  TestResultLogic,
                                                                 WuiGroupedResultList)
 
-        d[self.ksActionResultsGroupedByTestGroup] = lambda: self._actionGroupedResultsListing(
-                                                                TestResultLogic.ksResultsGroupingTypeTestGroup,
-                                                                TestResultLogic,
-                                                                WuiGroupedResultList)
+        d[self.ksActionResultsGroupedByTestCase]    = lambda: self._actionGroupedResultsListing(
+                                                                 TestResultLogic.ksResultsGroupingTypeTestCase,
+                                                                 TestResultLogic,
+                                                                 WuiGroupedResultList)
 
-        d[self.ksActionResultsGroupedByBuildRev]  = lambda: self._actionGroupedResultsListing(
-                                                                TestResultLogic.ksResultsGroupingTypeBuildRev,
-                                                                TestResultLogic,
-                                                                WuiGroupedResultList)
+        d[self.ksActionResultsGroupedBySchedGroup]  = lambda: self._actionGroupedResultsListing(
+                                                                 TestResultLogic.ksResultsGroupingTypeSchedGroup,
+                                                                 TestResultLogic,
+                                                                 WuiGroupedResultList)
 
-        d[self.ksActionResultsGroupedByTestBox]   = lambda: self._actionGroupedResultsListing(
-                                                                TestResultLogic.ksResultsGroupingTypeTestBox,
-                                                                TestResultLogic,
-                                                                WuiGroupedResultList)
+        d[self.ksActionTestSetDetails]              = self._actionTestSetDetails;
+        d[self.ksActionTestSetDetailsFromResult]    = self._actionTestSetDetailsFromResult;
 
-        d[self.ksActionResultsGroupedByTestCase]   = lambda: self._actionGroupedResultsListing(
-                                                                TestResultLogic.ksResultsGroupingTypeTestCase,
-                                                                TestResultLogic,
-                                                                WuiGroupedResultList)
+        d[self.ksActionTestResultFailureAdd]        = self._actionTestResultFailureAdd;
+        d[self.ksActionTestResultFailureAddPost]    = self._actionTestResultFailureAddPost;
+        d[self.ksActionTestResultFailureDetails]    = self._actionTestResultFailureDetails;
+        d[self.ksActionTestResultFailureEdit]       = self._actionTestResultFailureEdit;
+        d[self.ksActionTestResultFailureEditPost]   = self._actionTestResultFailureEditPost;
 
-        d[self.ksActionResultsGroupedBySchedGroup] = lambda: self._actionGroupedResultsListing(
-                                                                TestResultLogic.ksResultsGroupingTypeSchedGroup,
-                                                                TestResultLogic,
-                                                                WuiGroupedResultList)
-
-        d[self.ksActionTestResultDetails]          = self._actionTestResultDetails;
-
-        d[self.ksActionTestResultFailureAdd]       = self._actionTestResultFailureAdd;
-        d[self.ksActionTestResultFailureAddPost]   = self._actionTestResultFailureAddPost;
-        d[self.ksActionTestResultFailureDetails]   = self._actionTestResultFailureDetails;
-        d[self.ksActionTestResultFailureEdit]      = self._actionTestResultFailureEdit;
-        d[self.ksActionTestResultFailureEditPost]  = self._actionTestResultFailureEditPost;
-
-        d[self.ksActionViewLog]                 = self.actionViewLog;
-        d[self.ksActionGetFile]                 = self.actionGetFile;
+        d[self.ksActionViewLog]                     = self.actionViewLog;
+        d[self.ksActionGetFile]                     = self.actionGetFile;
         from testmanager.webui.wuireport import WuiReportSummary, WuiReportSuccessRate, WuiReportFailureReasons;
-        d[self.ksActionReportSummary]           = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSummary);
-        d[self.ksActionReportRate]              = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
-        d[self.ksActionReportFailureReasons]    = lambda: self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
-        d[self.ksActionGraphWiz]                = self._actionGraphWiz;
-        d[self.ksActionVcsHistoryTooltip]       = self._actionVcsHistoryTooltip;
+        d[self.ksActionReportSummary]               = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSummary);
+        d[self.ksActionReportRate]                  = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
+        d[self.ksActionReportFailureReasons]        = lambda: self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
+        d[self.ksActionGraphWiz]                    = self._actionGraphWiz;
+        d[self.ksActionVcsHistoryTooltip]           = self._actionVcsHistoryTooltip;
+
+        # Legacy.
+        d['TestResultDetails']                      = d[self.ksActionTestSetDetails];
 
 
         #
@@ -388,26 +394,26 @@ class WuiMain(WuiDispatcherBase):
         aoWayBackPoints = [
             ('+0000-00-00 00:00:00.00', 'Now', ' title="Present Day. Present Time."'), # lain :)
 
-            ('-0000-00-00 01:00:00.00', 'One hour ago', ''),
-            ('-0000-00-00 02:00:00.00', 'Two hours ago', ''),
-            ('-0000-00-00 03:00:00.00', 'Three hours ago', ''),
+            ('-0000-00-00 01:00:00.00', '1 hour ago', ''),
+            ('-0000-00-00 02:00:00.00', '2 hours ago', ''),
+            ('-0000-00-00 03:00:00.00', '3 hours ago', ''),
 
-            ('-0000-00-01 00:00:00.00', 'One day ago', ''),
-            ('-0000-00-02 00:00:00.00', 'Two days ago', ''),
-            ('-0000-00-03 00:00:00.00', 'Three days ago', ''),
+            ('-0000-00-01 00:00:00.00', '1 day ago', ''),
+            ('-0000-00-02 00:00:00.00', '2 days ago', ''),
+            ('-0000-00-03 00:00:00.00', '3 days ago', ''),
 
-            ('-0000-00-07 00:00:00.00', 'One week ago', ''),
-            ('-0000-00-14 00:00:00.00', 'Two weeks ago', ''),
-            ('-0000-00-21 00:00:00.00', 'Three weeks ago', ''),
+            ('-0000-00-07 00:00:00.00', '1 week ago', ''),
+            ('-0000-00-14 00:00:00.00', '2 weeks ago', ''),
+            ('-0000-00-21 00:00:00.00', '3 weeks ago', ''),
 
-            ('-0000-01-00 00:00:00.00', 'One month ago', ''),
-            ('-0000-02-00 00:00:00.00', 'Two months ago', ''),
-            ('-0000-03-00 00:00:00.00', 'Three months ago', ''),
-            ('-0000-04-00 00:00:00.00', 'Four months ago', ''),
-            ('-0000-05-00 00:00:00.00', 'Five months ago', ''),
+            ('-0000-01-00 00:00:00.00', '1 month ago', ''),
+            ('-0000-02-00 00:00:00.00', '2 months ago', ''),
+            ('-0000-03-00 00:00:00.00', '3 months ago', ''),
+            ('-0000-04-00 00:00:00.00', '4 months ago', ''),
+            ('-0000-05-00 00:00:00.00', '5 months ago', ''),
             ('-0000-06-00 00:00:00.00', 'Half a year ago', ''),
 
-            ('-0001-00-00 00:00:00.00', 'One year ago', ''),
+            ('-0001-00-00 00:00:00.00', '1 year ago', ''),
         ]
         fSelected = False;
         for sTimestamp, sWayBackPointCaption, sExtraAttrs in aoWayBackPoints:
@@ -841,12 +847,11 @@ class WuiMain(WuiDispatcherBase):
 
         return WuiDispatcherBase._generatePage(self)
 
-    def _actionTestResultDetails(self):
+    def _actionTestSetDetailsCommon(self, idTestSet):
         """Show test case execution result details."""
         from testmanager.webui.wuitestresult import WuiTestResult;
 
         self._sTemplate = 'template-details.html';
-        idTestSet = self.getIntParam(TestSetData.ksParam_idTestSet);
         self._checkForUnknownParameters()
 
         oTestSetData          = TestSetData().initFromDbWithId(self._oDb, idTestSet);
@@ -876,6 +881,18 @@ class WuiMain(WuiDispatcherBase):
                                                                                  oTestCaseDataEx,
                                                                                  oTestCaseArgsDataEx);
         return True
+
+    def _actionTestSetDetails(self):
+        """Show test case execution result details."""
+        idTestSet = self.getIntParam(TestSetData.ksParam_idTestSet);
+        return self._actionTestSetDetailsCommon(idTestSet);
+
+    def _actionTestSetDetailsFromResult(self):
+        """Show test case execution result details."""
+        idTestResult = self.getIntParam(TestSetData.ksParam_idTestResult);
+        oTestResultData = TestResultData().initFromDbWithId(self._oDb, idTestResult);
+        return self._actionTestSetDetailsCommon(oTestResultData.idTestSet);
+
 
     def _actionTestResultFailureAdd(self):
         """ Pro forma. """
@@ -911,9 +928,6 @@ class WuiMain(WuiDispatcherBase):
         """Edit test result failure result"""
         from testmanager.core.testresults import TestResultFailureLogic, TestResultFailureData;
         from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
-        if self.ksParamRedirectTo not in self._dParams:
-            raise WuiException('Missing parameter ' + self.ksParamRedirectTo);
-
         return self._actionGenericFormEditPost(TestResultFailureData, TestResultFailureLogic,
                                                WuiTestResultFailure, self.ksActionResultsUnGrouped);
 

@@ -123,14 +123,21 @@ class WuiHlpForm(object):
     #
     # Non-input stuff.
     #
-    def addNonText(self, sValue, sLabel, sPostHtml = ''):
+    def addNonText(self, sValue, sLabel, sName = 'non-text', sPostHtml = ''):
         """Adds a read-only text input."""
-        self._addLabel('non-text', sLabel, 'string');
+        self._addLabel(sName, sLabel, 'string');
         if sValue is None: sValue = '';
-        return self._add(u'          <p>%s</p>%s\n'
+        return self._add(u'          <p>%s%s</p>\n'
                          u'        </div></div>\n'
                          u'      </li>\n'
                          % (escapeElem(unicode(sValue)), sPostHtml ));
+
+    def addRawHtml(self, sRawHtml, sLabel, sName = 'raw-html'):
+        """Adds a read-only text input."""
+        self._addLabel(sName, sLabel, 'string');
+        self._add(sRawHtml);
+        return self._add(u'        </div></div>\n'
+                         u'      </li>\n');
 
 
     #

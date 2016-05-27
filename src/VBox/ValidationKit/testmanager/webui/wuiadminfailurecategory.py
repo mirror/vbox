@@ -30,8 +30,25 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.webui.wuicontentbase  import WuiFormContentBase, WuiListContentBase, WuiTmLink
-from testmanager.core.failurecategory  import FailureCategoryData
+from testmanager.webui.wuicontentbase           import WuiFormContentBase, WuiContentBase, WuiListContentBase, WuiTmLink;
+from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReasonList;
+from testmanager.core.failurecategory           import FailureCategoryData;
+from testmanager.core.failurereason             import FailureReasonLogic;
+
+
+class WuiFailureReasonCategoryLink(WuiTmLink):
+    """ Link to a failure category. """
+    def __init__(self, idFailureCategory, sName = WuiContentBase.ksShortDetailsLink, sTitle = None, fBracketed = None):
+        if fBracketed is None:
+            fBracketed = len(sName) > 2;
+        from testmanager.webui.wuiadmin import WuiAdmin;
+        WuiTmLink.__init__(self, sName = sName,
+                           sUrlBase = WuiAdmin.ksScriptName,
+                           dParams = { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryDetails,
+                                       FailureCategoryData.ksParam_idFailureCategory: idFailureCategory, },
+                           fBracketed = fBracketed);
+        self.idFailureCategory = idFailureCategory;
+
 
 
 class WuiFailureCategory(WuiFormContentBase):
@@ -69,6 +86,21 @@ class WuiFailureCategory(WuiFormContentBase):
         oForm.addSubmit()
 
         return True;
+
+    def _generatePostFormContent(self, oData):
+        """
+        Adds a table with the category members below the form.
+        """
+        if oData.idFailureCategory is not None and oData.idFailureCategory >= 0:
+            oLogic    = FailureReasonLogic(self._oDisp.getDb());
+            tsNow     = self._oDisp.getNow();
+            cMax      = 4096;
+            aoEntries = oLogic.fetchForListingInCategory(0, cMax, tsNow, oData.idFailureCategory)
+            if len(aoEntries) > 0:
+                oList = WuiAdminFailureReasonList(aoEntries, 0, cMax, tsNow, fnDPrint = None, oDisp = self._oDisp);
+                return [ [ 'Members', oList.show(fShowNavigation = False)[1]], ];
+        return [];
+
 
 
 class WuiFailureCategoryList(WuiListContentBase):

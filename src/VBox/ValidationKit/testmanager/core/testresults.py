@@ -37,10 +37,11 @@ import unittest;
 from common                         import constants;
 from testmanager                    import config;
 from testmanager.core.base          import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, TMExceptionBase, \
-                                           TMTooManyRows, TMInvalidData, TMRowNotFound, TMRowAlreadyExists;
+                                           TMTooManyRows, TMInvalidData, TMRowNotFound, TMRowAlreadyExists, \
+                                           ChangeLogEntry, AttributeChangeEntry;
 from testmanager.core.testgroup     import TestGroupData;
 from testmanager.core.build         import BuildDataEx;
-from testmanager.core.failurereason import FailureReasonLogic;
+from testmanager.core.failurereason import FailureReasonLogic, FailureReasonData;
 from testmanager.core.testbox       import TestBoxData;
 from testmanager.core.testcase      import TestCaseData;
 from testmanager.core.schedgroup    import SchedGroupData;
@@ -124,6 +125,21 @@ class TestResultData(ModelDataBase):
         self.enmStatus          = aoRow[7]
         self.iNestingDepth      = aoRow[8]
         return self;
+
+    def initFromDbWithId(self, oDb, idTestResult, tsNow = None, sPeriodBack = None):
+        """
+        Initialize from the database, given the ID of a row.
+        """
+        _ = tsNow;
+        _ = sPeriodBack;
+        oDb.execute('SELECT *\n'
+                    'FROM   TestResults\n'
+                    'WHERE  idTestResult = %s\n'
+                    , ( idTestResult,));
+        aoRow = oDb.fetchOne()
+        if aoRow is None:
+            raise TMRowNotFound('idTestResult=%s not found' % (idTestResult,));
+        return self.initFromDbRow(aoRow);
 
     def isFailure(self):
         """ Check if it's a real failure. """
@@ -429,6 +445,8 @@ class TestResultFailureData(ModelDataBase):
 
     kasAllowNullAttributes      = ['tsEffective', 'tsExpire', 'uidAuthor', 'sComment' ];
 
+    kcDbColumns                 = 6;
+
     def __init__(self):
         ModelDataBase.__init__(self)
         self.idTestResult       = None;
@@ -466,6 +484,7 @@ class TestResultFailureData(ModelDataBase):
         aoRow = oDb.fetchOne()
         if aoRow is None:
             raise TMRowNotFound('idTestResult=%s not found (tsNow=%s, sPeriodBack=%s)' % (idTestResult, tsNow, sPeriodBack));
+        assert len(aoRow) == self.kcDbColumns;
         return self.initFromDbRow(aoRow);
 
 
@@ -1920,6 +1939,109 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
 
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb)
+
+    def fetchForChangeLog(self, idTestResult, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+        """
+        Fetches change log entries for a failure reason.
+
+        Returns an array of ChangeLogEntry instance and an indicator whether
+        there are more entries.
+        Raises exception on error.
+        """
+
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+
+        # 1. Get a list of the changes from both TestResultFailures and assoicated
+        #    FailureReasons.  The latter is useful since the failure reason
+        #    description may evolve along side the invidiual failure analysis.
+        self._oDb.execute('( SELECT trf.tsEffective AS tsEffectiveChangeLog,\n'
+                          '         trf.uidAuthor   AS uidAuthorChangeLog,\n'
+                          '         trf.*,\n'
+                          '         fr.*\n'
+                          '  FROM   TestResultFailures trf,\n'
+                          '         FailureReasons fr\n'
+                          '  WHERE  trf.idTestResult = %s\n'
+                          '     AND trf.tsEffective <= %s\n'
+                          '     AND trf.idFailureReason = fr.idFailureReason\n'
+                          '     AND fr.tsEffective      <= trf.tsEffective\n'
+                          '     AND fr.tsExpire         >  trf.tsEffective\n'
+                          ')\n'
+                          'UNION\n'
+                          '( SELECT fr.tsEffective AS tsEffectiveChangeLog,\n'
+                          '         fr.uidAuthor   AS uidAuthorChangeLog,\n'
+                          '         trf.*,\n'
+                          '         fr.*\n'
+                          '  FROM   TestResultFailures trf,\n'
+                          '         FailureReasons fr\n'
+                          '  WHERE  trf.idTestResult    = %s\n'
+                          '     AND trf.tsEffective    <= %s\n'
+                          '     AND trf.idFailureReason = fr.idFailureReason\n'
+                          '     AND fr.tsEffective      > trf.tsEffective\n'
+                          '     AND fr.tsEffective      < trf.tsExpire\n'
+                          ')\n'
+                          'ORDER BY tsEffectiveChangeLog DESC\n'
+                          'LIMIT %s OFFSET %s\n'
+                          , ( idTestResult, tsNow, idTestResult, tsNow, cMaxRows + 1, iStart, ));
+
+        aaoRows = [];
+        for aoChange in self._oDb.fetchAll():
+            oTrf = TestResultFailureDataEx().initFromDbRow(aoChange[2:]);
+            oFr  = FailureReasonData().initFromDbRow(aoChange[(2+TestResultFailureData.kcDbColumns):]);
+            oTrf.oFailureReason = oFr;
+            aaoRows.append([aoChange[0], aoChange[1], oTrf, oFr]);
+
+        # 2. Calculate the changes.
+        oFailureCategoryLogic = None;
+        aoEntries = [];
+        for i in xrange(0, len(aaoRows) - 1):
+            aoNew = aaoRows[i];
+            aoOld = aaoRows[i + 1];
+
+            aoChanges = [];
+            oNew = aoNew[2];
+            oOld = aoOld[2];
+            for sAttr in oNew.getDataAttributes():
+                if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', 'oFailureReason', 'oAuthor' ]:
+                    oOldAttr = getattr(oOld, sAttr);
+                    oNewAttr = getattr(oNew, sAttr);
+                    if oOldAttr != oNewAttr:
+                        if sAttr == 'idFailureReason':
+                            oNewAttr = '%s (%s)' % (oNewAttr, oNew.oFailureReason.sShort, );
+                            oOldAttr = '%s (%s)' % (oOldAttr, oOld.oFailureReason.sShort, );
+                        aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+            if oOld.idFailureReason == oNew.idFailureReason:
+                oNew = aoNew[3];
+                oOld = aoOld[3];
+                for sAttr in oNew.getDataAttributes():
+                    if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
+                        oOldAttr = getattr(oOld, sAttr);
+                        oNewAttr = getattr(oNew, sAttr);
+                        if oOldAttr != oNewAttr:
+                            if sAttr == 'idFailureCategory':
+                                if oFailureCategoryLogic is None:
+                                    from testmanager.core.failurecategory import FailureCategoryLogic;
+                                    oFailureCategoryLogic = FailureCategoryLogic(self._oDb);
+                                oCat = oFailureCategoryLogic.cachedLookup(oNewAttr);
+                                if oCat is not None:
+                                    oNewAttr = '%s (%s)' % (oNewAttr, oCat.sShort, );
+                                oCat = oFailureCategoryLogic.cachedLookup(oOldAttr);
+                                if oCat is not None:
+                                    oOldAttr = '%s (%s)' % (oOldAttr, oCat.sShort, );
+                            aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+
+
+            tsExpire    = aaoRows[i - 1][0] if i > 0 else aoNew[2].tsExpire;
+            aoEntries.append(ChangeLogEntry(aoNew[1], None, aoNew[0], tsExpire, aoNew[2], aoOld[2], aoChanges));
+
+        # If we're at the end of the log, add the initial entry.
+        if len(aaoRows) <= cMaxRows and len(aaoRows) > 0:
+            aoNew    = aaoRows[-1];
+            tsExpire = aaoRows[-1 - 1][0] if len(aaoRows) > 1 else aoNew[2].tsExpire;
+            aoEntries.append(ChangeLogEntry(aoNew[1], None, aoNew[0], tsExpire, aoNew[2], None, []));
+
+        return (UserAccountLogic(self._oDb).resolveChangeLogAuthors(aoEntries), len(aaoRows) > cMaxRows);
+
 
     def getById(self, idTestResult):
         """Get Test result failure reason data by idTestResult"""

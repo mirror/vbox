@@ -30,7 +30,8 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.core.base              import ModelDataBase, ModelLogicBase, TMRowNotFound, TMInvalidData, TMRowInUse;
+from testmanager.core.base              import ModelDataBase, ModelLogicBase, TMRowNotFound, TMInvalidData, TMRowInUse, \
+                                               AttributeChangeEntry, ChangeLogEntry;
 from testmanager.core.useraccount       import UserAccountLogic;
 
 
@@ -150,29 +151,71 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
         """
         Fetches Failure Category records.
 
-        Returns an array (list) of FailureReasonData items, empty list if none.
+        Returns an array (list) of FailureReasonDataEx items, empty list if none.
         Raises exception on error.
         """
+        self._ensureCachesPresent();
+
+        if tsNow is None:
+            self._oDb.execute('SELECT   FailureReasons.*,\n'
+                              '         FailureCategories.sShort AS sCategory\n'
+                              'FROM     FailureReasons,\n'
+                              '         FailureCategories\n'
+                              'WHERE    FailureReasons.tsExpire             = \'infinity\'::TIMESTAMP\n'
+                              '     AND FailureCategories.idFailureCategory = FailureReasons.idFailureCategory\n'
+                              '     AND FailureCategories.tsExpire          = \'infinity\'::TIMESTAMP\n'
+                              'ORDER BY sCategory ASC, sShort ASC\n'
+                              'LIMIT %s OFFSET %s\n'
+                              , (cMaxRows, iStart,));
+        else:
+            self._oDb.execute('SELECT   FailureReasons.*,\n'
+                              '         FailureCategories.sShort AS sCategory\n'
+                              'FROM     FailureReasons,\n'
+                              '         FailureCategories\n'
+                              'WHERE    FailureReasons.tsExpire     > %s\n'
+                              '     AND FailureReasons.tsEffective <= %s\n'
+                              '     AND FailureCategories.idFailureCategory = FailureReasons.idFailureCategory\n'
+                              '     AND FailureReasons.tsExpire     > %s\n'
+                              '     AND FailureReasons.tsEffective <= %s\n'
+                              'ORDER BY sCategory ASC, sShort ASC\n'
+                              'LIMIT %s OFFSET %s\n'
+                              , (tsNow, tsNow, tsNow, tsNow, cMaxRows, iStart,));
+
+        aoRows = []
+        for aoRow in self._oDb.fetchAll():
+            aoRows.append(FailureReasonDataEx().initFromDbRowEx(aoRow, self.oCategoryLogic, self.oUserAccountLogic));
+        return aoRows
+
+    def fetchForListingInCategory(self, iStart, cMaxRows, tsNow, idFailureCategory):
+        """
+        Fetches Failure Category records.
+
+        Returns an array (list) of FailureReasonDataEx items, empty list if none.
+        Raises exception on error.
+        """
+        self._ensureCachesPresent();
 
         if tsNow is None:
             self._oDb.execute('SELECT   *\n'
                               'FROM     FailureReasons\n'
-                              'WHERE    tsExpire = \'infinity\'::TIMESTAMP\n'
-                              'ORDER BY idFailureReason DESC\n'
+                              'WHERE    tsExpire          = \'infinity\'::TIMESTAMP\n'
+                              '     AND idFailureCategory = %s\n'
+                              'ORDER BY sShort ASC\n'
                               'LIMIT %s OFFSET %s\n'
-                              , (cMaxRows, iStart,));
+                              , ( idFailureCategory, cMaxRows, iStart,));
         else:
             self._oDb.execute('SELECT   *\n'
                               'FROM     FailureReasons\n'
-                              'WHERE    tsExpire     > %s\n'
-                              '     AND tsEffective <= %s\n'
-                              'ORDER BY idFailureReason DESC\n'
+                              'WHERE    idFailureCategory = %s\n'
+                              '     AND tsExpire          > %s\n'
+                              '     AND tsEffective      <= %s\n'
+                              'ORDER BY sShort ASC\n'
                               'LIMIT %s OFFSET %s\n'
-                              , (tsNow, tsNow, cMaxRows, iStart,));
+                              , ( tsNow, tsNow, idFailureCategory, cMaxRows, iStart,));
 
         aoRows = []
         for aoRow in self._oDb.fetchAll():
-            aoRows.append(FailureReasonData().initFromDbRow(aoRow))
+            aoRows.append(FailureReasonDataEx().initFromDbRowEx(aoRow, self.oCategoryLogic, self.oUserAccountLogic));
         return aoRows
 
     def fetchForCombo(self, sFirstEntry = 'Select a failure reason', tsEffective = None):
@@ -202,6 +245,60 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                               , (tsEffective, tsEffective, tsEffective, tsEffective));
         aoRows = self._oDb.fetchAll();
         return [(-1, sFirstEntry, '')] + aoRows;
+
+
+    def fetchForChangeLog(self, idFailureReason, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+        """
+        Fetches change log entries for a failure reason.
+
+        Returns an array of ChangeLogEntry instance and an indicator whether
+        there are more entries.
+        Raises exception on error.
+        """
+        self._ensureCachesPresent();
+
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+
+        # 1. Get a list of the relevant changes.
+        self._oDb.execute('SELECT * FROM FailureReasons WHERE idFailureReason = %s AND tsEffective <= %s\n'
+                          'ORDER BY tsEffective DESC\n'
+                          'LIMIT %s OFFSET %s\n'
+                          , ( idFailureReason, tsNow, cMaxRows + 1, iStart, ));
+        aoRows = [];
+        for aoChange in self._oDb.fetchAll():
+            aoRows.append(FailureReasonData().initFromDbRow(aoChange));
+
+        # 2. Calculate the changes.
+        aoEntries = [];
+        for i in xrange(0, len(aoRows) - 1):
+            oNew = aoRows[i];
+            oOld = aoRows[i + 1];
+
+            aoChanges = [];
+            for sAttr in oNew.getDataAttributes():
+                if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
+                    oOldAttr = getattr(oOld, sAttr);
+                    oNewAttr = getattr(oNew, sAttr);
+                    if oOldAttr != oNewAttr:
+                        if sAttr == 'idFailureCategory':
+                            oCat = self.oCategoryLogic.cachedLookup(oOldAttr);
+                            if oCat is not None:
+                                oOldAttr = '%s (%s)' % (oOldAttr, oCat.sShort, );
+                            oCat = self.oCategoryLogic.cachedLookup(oNewAttr);
+                            if oCat is not None:
+                                oNewAttr = '%s (%s)' % (oNewAttr, oCat.sShort, );
+                        aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+
+            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
+
+        # If we're at the end of the log, add the initial entry.
+        if len(aoRows) <= cMaxRows and len(aoRows) > 0:
+            oNew = aoRows[-1];
+            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, None, []));
+
+        return (UserAccountLogic(self._oDb).resolveChangeLogAuthors(aoEntries), len(aoRows) > cMaxRows);
+
 
     def getById(self, idFailureReason):
         """Get Failure Reason data by idFailureReason"""
@@ -332,11 +429,7 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                 raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idFailureReason));
 
             if self._oDb.getRowCount() == 1:
-                if self.oCategoryLogic is None:
-                    from testmanager.core.failurecategory import FailureCategoryLogic;
-                    self.oCategoryLogic = FailureCategoryLogic(self._oDb);
-                if self.oUserAccountLogic is None:
-                    self.oUserAccountLogic = UserAccountLogic(self._oDb);
+                self._ensureCachesPresent();
                 oEntry = FailureReasonDataEx().initFromDbRowEx(self._oDb.fetchOne(), self.oCategoryLogic,
                                                                self.oUserAccountLogic);
                 self.ahCache[idFailureReason] = oEntry;
@@ -384,4 +477,15 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                           '   AND tsExpire        = \'infinity\'::TIMESTAMP\n'
                           , (tsExpire, idFailureReason,));
         return True;
+
+
+    def _ensureCachesPresent(self):
+        """ Ensures we've got the cache references resolved. """
+        if self.oCategoryLogic is None:
+            from testmanager.core.failurecategory import FailureCategoryLogic;
+            self.oCategoryLogic = FailureCategoryLogic(self._oDb);
+        if self.oUserAccountLogic is None:
+            self.oUserAccountLogic = UserAccountLogic(self._oDb);
+        return True;
+
 

@@ -103,6 +103,7 @@ class WuiDispatcherBase(object):
     def __init__(self, oSrvGlue, sScriptName):
         self._oSrvGlue          = oSrvGlue;
         self._oDb               = TMDatabaseConnection(self.dprint if config.g_kfWebUiSqlDebug else None, oSrvGlue = oSrvGlue);
+        self._tsNow             = None;  # Set by getEffectiveDateParam.
         self._asCheckedParams   = [];
         self._dParams           = None;  # Set by dispatchRequest.
         self._sAction           = None;  # Set by dispatchRequest.
@@ -301,6 +302,12 @@ class WuiDispatcherBase(object):
         Returns the database connection.
         """
         return self._oDb;
+
+    def getNow(self):
+        """
+        Returns the effective date.
+        """
+        return self._tsNow;
 
 
     #
@@ -505,11 +512,15 @@ class WuiDispatcherBase(object):
 
         return aoListOfTestCases
 
-    def getEffectiveDateParam(self, sParamName=None):
+    def getEffectiveDateParam(self, sParamName = None):
         """
         Gets the effective date parameter.
+
         Returns a timestamp suitable for database and url parameters.
         Returns None if not found or empty.
+
+        The first call with sParamName set to None will set the internal _tsNow
+        value upon successfull return.
         """
 
         sName = sParamName if sParamName is not None else WuiDispatcherBase.ksParamEffectiveDate
@@ -534,6 +545,8 @@ class WuiDispatcherBase(object):
             (sValue, sError) = ModelDataBase.validateTs(sValue);
             if sError is not None:
                 raise WuiException('%s parameter "%s" ("%s") is invalid: %s' % (self._sAction, sName, sValue, sError));
+            if sParamName is None and self._tsNow is None:
+                self._tsNow = sValue;
             return sValue;
 
         #
@@ -554,7 +567,10 @@ class WuiDispatcherBase(object):
         self._oDb.execute('SELECT CURRENT_TIMESTAMP ' + chSign + ' \'' + sInterval + '\'::INTERVAL');
         oDate = self._oDb.fetchOne()[0];
 
-        return str(oDate);
+        sValue = str(oDate);
+        if sParamName is None and self._tsNow is None:
+            self._tsNow = sValue;
+        return sValue;
 
     def getRedirectToParameter(self, sDefault = None):
         """

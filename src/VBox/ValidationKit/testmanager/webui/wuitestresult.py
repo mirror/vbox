@@ -31,46 +31,24 @@ __version__ = "$Revision$"
 # Python imports.
 
 # Validation Kit imports.
-from testmanager.webui.wuicontentbase   import WuiContentBase, WuiListContentBase, WuiHtmlBase, WuiTmLink, WuiLinkBase, \
-                                               WuiSvnLink, WuiSvnLinkWithTooltip, WuiBuildLogLink, WuiRawHtml;
-from testmanager.webui.wuimain          import WuiMain;
-from testmanager.webui.wuihlpform       import WuiHlpForm;
-from testmanager.core.failurereason     import FailureReasonData, FailureReasonLogic;
-from testmanager.core.report            import ReportGraphModel;
-from testmanager.core.testbox           import TestBoxData;
-from testmanager.core.testcase          import TestCaseData;
-from testmanager.core.testset           import TestSetData;
-from testmanager.core.testgroup         import TestGroupData;
-from testmanager.core.testresults       import TestResultFailureData;
-from testmanager.core.build             import BuildData;
-from testmanager.core                   import db;
-from testmanager                        import config;
-from common                             import webutils, utils;
+from testmanager.webui.wuicontentbase           import WuiContentBase, WuiListContentBase, WuiHtmlBase, WuiTmLink, WuiLinkBase, \
+                                                       WuiSvnLink, WuiSvnLinkWithTooltip, WuiBuildLogLink, WuiRawHtml;
+from testmanager.webui.wuimain                  import WuiMain;
+from testmanager.webui.wuihlpform               import WuiHlpForm;
+from testmanager.webui.wuiadminfailurereason    import WuiFailureReasonAddLink, WuiFailureReasonDetailsLink;
+from testmanager.webui.wuitestresultfailure     import WuiTestResultFailureDetailsLink;
+from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+from testmanager.core.report                    import ReportGraphModel;
+from testmanager.core.testbox                   import TestBoxData;
+from testmanager.core.testcase                  import TestCaseData;
+from testmanager.core.testset                   import TestSetData;
+from testmanager.core.testgroup                 import TestGroupData;
+from testmanager.core.testresults               import TestResultFailureData;
+from testmanager.core.build                     import BuildData;
+from testmanager.core                           import db;
+from testmanager                                import config;
+from common                                     import webutils, utils;
 
-
-class WuiFailureReasonDetailsLink(WuiTmLink):
-    """ Short link to a failure reason. """
-    def __init__(self, idFailureReason, sName = WuiContentBase.ksShortDetailsLink, sTitle = None, fBracketed = None):
-        if fBracketed is None:
-            fBracketed = len(sName) > 2;
-        from testmanager.webui.wuiadmin import WuiAdmin;
-        WuiTmLink.__init__(self, sName = sName,
-                           sUrlBase = WuiAdmin.ksScriptName,
-                           dParams = { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDetails,
-                                       FailureReasonData.ksParam_idFailureReason: idFailureReason, },
-                           fBracketed = fBracketed);
-        self.idFailureReason = idFailureReason;
-
-class WuiFailureReasonAddLink(WuiTmLink):
-    """ Link for adding a failure reason. """
-    def __init__(self, sName = WuiContentBase.ksShortAddLink, sTitle = None, fBracketed = None):
-        if fBracketed is None:
-            fBracketed = len(sName) > 2;
-        from testmanager.webui.wuiadmin import WuiAdmin;
-        WuiTmLink.__init__(self, sName = sName,
-                           sUrlBase = WuiAdmin.ksScriptName,
-                           dParams = { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonAdd, },
-                           fBracketed = fBracketed);
 
 
 class WuiTestResult(WuiContentBase):
@@ -400,13 +378,21 @@ class WuiTestResult(WuiContentBase):
             if oData is not None:
                 oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, oData.idFailureReason, 'Reason',
                                   aoFailureReasons,
-                                  sPostHtml = WuiFailureReasonDetailsLink(oData.idFailureReason).toHtml());
+                                  sPostHtml = u' ' + WuiFailureReasonDetailsLink(oData.idFailureReason).toHtml()
+                                            + u' ' + WuiFailureReasonAddLink('New', fBracketed = False).toHtml());
                 oForm.addMultilineText(TestResultFailureData.ksParam_sComment, oData.sComment, 'Comment')
 
-                oForm.addNonText('%s (%s), %s' % (oData.oAuthor.sUsername, oData.oAuthor.sUsername, self.formatTsShort(oData.tsEffective)), 'Sheriff');
+                oForm.addNonText(u'%s (%s), %s'
+                                 % ( oData.oAuthor.sUsername, oData.oAuthor.sUsername,
+                                     self.formatTsShort(oData.tsEffective),),
+                                 'Sheriff',
+                                 sPostHtml = ' ' + WuiTestResultFailureDetailsLink(oData.idTestResult, "Show Details").toHtml() )
+
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, oData.tsEffective);
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, oData.tsExpire);
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, oData.uidAuthor);
+                oForm.addSubmit('Change Reason');
+
             else:
                 oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, -1, 'Reason', aoFailureReasons,
                                   sPostHtml = ' ' + WuiFailureReasonAddLink('New').toHtml());
@@ -414,8 +400,8 @@ class WuiTestResult(WuiContentBase):
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, '');
+                oForm.addSubmit('Add Reason');
 
-            oForm.addSubmit('Change Reason');
             sHtml += oForm.finalize();
         return sHtml;
 
