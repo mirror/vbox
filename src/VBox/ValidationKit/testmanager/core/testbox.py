@@ -522,6 +522,12 @@ class TestBoxLogic(ModelLogicBase):
             tsEffective = self._oDb.fetchOne()[0];
 
             # Would be easier to do this using an insert or update hook, I think. Much easier.
+
+            ##
+            ## @todo The table is growing too fast.  Rows are too long.  Mixing data from here and there.  Split it and
+            ##       rethink storage and update strategy!
+            ##
+
             self._oDb.execute('INSERT INTO TestBoxes (\n'
                               '         idGenTestBox,\n'
                               '         idTestBox,\n'
@@ -549,6 +555,7 @@ class TestBoxLogic(ModelLogicBase):
                               '         fChipsetIoMmu,\n'
                               '         cMbMemory,\n'
                               '         cMbScratch,\n'
+                              '         sReport,\n'
                               '         iTestBoxScriptRev,\n'
                               '         iPythonHexVersion,\n'
                               '         enmPendingCmd\n'
@@ -579,6 +586,7 @@ class TestBoxLogic(ModelLogicBase):
                               '         fChipsetIoMmu,\n'
                               '         cMbMemory,\n'
                               '         cMbScratch,\n'
+                              '         sReport,\n'
                               '         iTestBoxScriptRev,\n'
                               '         iPythonHexVersion,\n'
                               '         %s\n'           # enmPendingCmd
