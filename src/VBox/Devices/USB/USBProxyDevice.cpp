@@ -54,8 +54,9 @@ static PCUSBPROXYBACK g_aUsbProxies[] =
  */
 static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t iIdx, uint16_t LangId, uint16_t cbHint)
 {
-#define VUSBSTATUS_DNR_RETRIES 5
+#define GET_DESC_RETRIES 6
     int cRetries = 0;
+    uint16_t cbInitialHint = cbHint;
 
     LogFlow(("GetStdDescSync: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
     for (;;)
@@ -90,15 +91,22 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         pSetup->wIndex = LangId;
         pSetup->wLength = cbHint;
 
+        uint8_t *pbDesc = (uint8_t *)(pSetup + 1);
+        uint32_t cbDesc = 0;
+        PVUSBURB pUrbReaped = NULL;
+
         rc = pProxyDev->pOps->pfnUrbQueue(pProxyDev, &Urb);
         if (RT_FAILURE(rc))
-            break;
+        {
+            Log(("GetStdDescSync: pfnUrbReap failed, rc=%d\n", rc));
+            goto err;
+        }
 
         /* Don't wait forever, it's just a simple request that should
            return immediately. Since we're executing in the EMT thread
            it's important not to get stuck here. (Some of the builtin
-           iMac devices may not refuse respond for instance.) */
-        PVUSBURB pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, 10000 /* ms */);
+           iMac devices may refuse to respond for instance.) */
+        pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, 10000 /* ms */);
         if (!pUrbReaped)
         {
             rc = pProxyDev->pOps->pfnUrbCancel(pProxyDev, &Urb);
@@ -109,37 +117,24 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         if (pUrbReaped != &Urb)
         {
             Log(("GetStdDescSync: pfnUrbReap failed, pUrbReaped=%p\n", pUrbReaped));
-            break;
+            goto err;
         }
 
         if (Urb.enmStatus != VUSBSTATUS_OK)
         {
             Log(("GetStdDescSync: Urb.enmStatus=%d\n", Urb.enmStatus));
-
-            if (Urb.enmStatus == VUSBSTATUS_DNR)
-            {
-                cRetries++;
-                if (cRetries < VUSBSTATUS_DNR_RETRIES)
-                {
-                    Log(("GetStdDescSync: Retrying %u/%u\n", cRetries, VUSBSTATUS_DNR_RETRIES));
-                    continue;
-                }
-            }
-
-            break;
+            goto err;
         }
 
         /*
          * Check the length, config descriptors have total_length field
          */
-        uint8_t *pbDesc = (uint8_t *)(pSetup + 1);
-        uint32_t cbDesc;
         if (iDescType == VUSB_DT_CONFIG)
         {
             if (Urb.cbData < sizeof(VUSBSETUP) + 4)
             {
                 Log(("GetStdDescSync: Urb.cbData=%#x (min 4)\n", Urb.cbData));
-                break;
+                goto err;
             }
             cbDesc = RT_LE2H_U16(((uint16_t *)pbDesc)[1]);
         }
@@ -148,7 +143,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
             if (Urb.cbData < sizeof(VUSBSETUP) + 1)
             {
                 Log(("GetStdDescSync: Urb.cbData=%#x (min 1)\n", Urb.cbData));
-                break;
+                goto err;
             }
             cbDesc = ((uint8_t *)pbDesc)[0];
         }
@@ -159,14 +154,27 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
             &&  cbDesc > Urb.cbData - sizeof(VUSBSETUP))
         {
             cbHint = cbDesc;
+            Log(("GetStdDescSync: Part descriptor, Urb.cbData=%u, cbDesc=%u cbHint=%u\n", Urb.cbData, cbDesc, cbHint));
+
             if (cbHint > sizeof(Urb.abData))
-            {
-                AssertMsgFailed(("cbHint=%u\n", cbHint));
-                break;
-            }
-            continue;
+                Log(("GetStdDescSync: cbHint=%u, Urb.abData=%u\n", cbHint, sizeof(Urb.abData)));
+
+            goto err;
         }
-        Assert(cbDesc <= Urb.cbData - sizeof(VUSBSETUP));
+
+        if ((cbDesc > (Urb.cbData - sizeof(VUSBSETUP))))
+        {
+            Log(("GetStdDescSync: Descriptor length too short, cbDesc=%u, Urb.cbData=%u\n", cbDesc, Urb.cbData));
+            goto err;
+        }
+
+        if ((cbInitialHint != cbHint) &&
+        	((cbDesc != cbHint) || (Urb.cbData < cbInitialHint)))
+        {
+            Log(("GetStdDescSync: Descriptor length incorrect, cbDesc=%u, Urb.cbData=%u, cbHint=%u\n", cbDesc, Urb.cbData, cbHint));
+            goto err;
+        }
+
 #ifdef LOG_ENABLED
         vusbUrbTrace(&Urb, "GetStdDescSync", true);
 #endif
@@ -175,7 +183,22 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
          * Fine, we got everything return a heap duplicate of the descriptor.
          */
         return RTMemDup(pbDesc, cbDesc);
+
+err:
+        cRetries++;
+        if (cRetries < GET_DESC_RETRIES)
+        {
+            Log(("GetStdDescSync: Retrying %u/%u\n", cRetries, GET_DESC_RETRIES));
+            RTThreadSleep(100);
+            continue;
+        }
+        else
+        {
+            Log(("GetStdDescSync: Retries exceeded %u/%u. Giving up.\n", cRetries, GET_DESC_RETRIES));
+            break;
+        }
     }
+
     return NULL;
 }
 
