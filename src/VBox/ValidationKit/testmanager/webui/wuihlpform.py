@@ -176,7 +176,7 @@ class WuiHlpForm(object):
             if sValue is None:  sValue = '';
             else:               sValue = sValue.strip();
 
-            cRows = sValue.count('\n') + (sValue[-1] != '\n');
+            cRows = sValue.count('\n') + (not sValue.endswith('\n'));
             if cRows * 80 < len(sValue):
                 cRows += 2;
             cRows = max(min(cRows, 16), 2);
