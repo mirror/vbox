@@ -412,7 +412,6 @@ private:
 
     StorageSlot mAttSlot;
     QString mAttMediumId;
-    bool mAttIsShowDiffs;
     bool mAttIsHostDrive;
     bool mAttIsPassthrough;
     bool mAttIsTempEject;
