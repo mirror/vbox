@@ -106,7 +106,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
            return immediately. Since we're executing in the EMT thread
            it's important not to get stuck here. (Some of the builtin
            iMac devices may refuse to respond for instance.) */
-        pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, 10000 /* ms */);
+        pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, 5000 /* ms */);
         if (!pUrbReaped)
         {
             rc = pProxyDev->pOps->pfnUrbCancel(pProxyDev, &Urb);
