@@ -37,7 +37,8 @@ import unittest;
 # Validation Kit imports.
 from common                         import utils;
 from testmanager                    import config;
-from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase;
+from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase,  \
+                                           TMExceptionBase, TMTooManyRows, TMRowNotFound;
 from testmanager.core.testbox       import TestBoxData;
 from testmanager.core.testresults   import TestResultFileDataEx;
 
@@ -135,7 +136,7 @@ class TestSetData(ModelDataBase):
         """
 
         if aoRow is None:
-            raise TMExceptionBase('TestSet not found.');
+            raise TMRowNotFound('TestSet not found.');
 
         self.idTestSet              = aoRow[0];
         self.tsConfig               = aoRow[1];
@@ -169,7 +170,7 @@ class TestSetData(ModelDataBase):
                     , (idTestSet, ) );
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idTestSet=%s not found' % (idTestSet,));
+            raise TMRowNotFound('idTestSet=%s not found' % (idTestSet,));
         return self.initFromDbRow(aoRow);
 
 
@@ -604,7 +605,7 @@ class TestSetLogic(ModelLogicBase):
 
         aRows = self._oDb.fetchAll()
         if len(aRows) not in (0, 1):
-            raise TMExceptionBase('Found more than one test sets with the same credentials. Database structure is corrupted.')
+            raise TMTooManyRows('Found more than one test sets with the same credentials. Database structure is corrupted.')
         try:
             return TestSetData().initFromDbRow(aRows[0])
         except IndexError:

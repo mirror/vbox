@@ -55,7 +55,7 @@ class WuiHlpForm(object):
         self._dErrors    = dErrors if dErrors is not None else dict();
 
         if sOnSubmit == self.ksOnSubmit_AddReturnToFieldWithCurrentUrl:
-            sOnSubmit = 'return addRedirectToInputFieldWithCurrentUrl(this)';
+            sOnSubmit = u'return addRedirectToInputFieldWithCurrentUrl(this)';
         if sOnSubmit is None:   sOnSubmit = u'';
         else:                   sOnSubmit = u' onsubmit=\"%s\"' % (escapeAttr(sOnSubmit),);
 

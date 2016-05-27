@@ -33,13 +33,13 @@ __version__ = "$Revision$"
 import socket;
 
 # Validation Kit imports.
+from common                             import utils;
 from testmanager.webui.wuicontentbase   import WuiListContentWithActionBase, WuiFormContentBase, WuiLinkBase, WuiSvnLink, \
                                                WuiTmLink, WuiSpanText, WuiRawHtml;
 from testmanager.core.db                import TMDatabaseConnection;
 from testmanager.core.schedgroup        import SchedGroupLogic, SchedGroupData;
 from testmanager.core.testbox           import TestBoxData;
 from testmanager.core.testset           import TestSetData;
-from common                             import utils;
 from testmanager.core.db                import isDbTimestampInfinity;
 
 
@@ -214,7 +214,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                 oState = str(oEntry.oStatus.enmState);
             else:
                 from testmanager.webui.wuimain import WuiMain;
-                oState = WuiTmLink(oEntry.oStatus.enmState, WuiMain.ksScriptName,
+                oState = WuiTmLink(oEntry.oStatus.enmState, WuiMain.ksScriptName,                       # pylint: disable=R0204
                                    { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
                                      TestSetData.ksParam_idTestSet: oEntry.oStatus.idTestSet, },
                                    sTitle = '#%u' % (oEntry.oStatus.idTestSet,),

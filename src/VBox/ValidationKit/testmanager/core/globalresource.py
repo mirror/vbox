@@ -33,7 +33,7 @@ __version__ = "$Revision$"
 import unittest;
 
 # Validation Kit imports.
-from testmanager.core.base import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase;
+from testmanager.core.base import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMRowNotFound;
 
 
 class GlobalResourceData(ModelDataBase):
@@ -76,7 +76,7 @@ class GlobalResourceData(ModelDataBase):
         Returns self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Global resource not found.')
+            raise TMRowNotFound('Global resource not found.')
 
         self.idGlobalRsrc       = aoRow[0]
         self.tsEffective        = aoRow[1]
@@ -98,7 +98,7 @@ class GlobalResourceData(ModelDataBase):
                                                        , ( idGlobalRsrc,), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idGlobalRsrc=%s not found (tsNow=%s sPeriodBack=%s)' % (idGlobalRsrc, tsNow, sPeriodBack,));
+            raise TMRowNotFound('idGlobalRsrc=%s not found (tsNow=%s sPeriodBack=%s)' % (idGlobalRsrc, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
     def isEqual(self, oOther):
@@ -219,7 +219,7 @@ class GlobalResourceLogic(ModelLogicBase):
         try:
             return GlobalResourceData().initFromDbRow(aRows[0])
         except IndexError:
-            raise TMExceptionBase('Global resource not found.')
+            raise TMRowNotFound('Global resource not found.')
 
     def allocateResources(self, idTestBox, aoGlobalRsrcs, fCommit = False):
         """

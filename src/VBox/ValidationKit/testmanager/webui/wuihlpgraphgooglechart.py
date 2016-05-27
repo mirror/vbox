@@ -29,8 +29,9 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Validation Kit imports.
-from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;
 from common                             import webutils;
+from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;
+from testmanager.webui                  import wuihlpgraphsimple;
 
 
 #*******************************************************************************
@@ -44,7 +45,6 @@ class WuiHlpGraphGoogleChartsBase(WuiHlpGraphBase):
 
 
 ## @todo bar graphs later.
-from testmanager.webui import wuihlpgraphsimple;
 WuiHlpBarGraph = wuihlpgraphsimple.WuiHlpBarGraph;
 
 

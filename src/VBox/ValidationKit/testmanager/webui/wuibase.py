@@ -35,7 +35,7 @@ import os;
 # Validation Kit imports.
 from common                       import webutils, utils;
 from testmanager                  import config;
-from testmanager.core.base        import ModelDataBase, TMExceptionBase;
+from testmanager.core.base        import ModelDataBase, ModelLogicBase, TMExceptionBase;
 from testmanager.core.db          import TMDatabaseConnection;
 from testmanager.core.systemlog   import SystemLogLogic, SystemLogData;
 from testmanager.core.useraccount import UserAccountLogic
@@ -732,6 +732,10 @@ class WuiDispatcherBase(object):
         oDataType is a ModelDataBase child class.
         oFormType is a WuiFormContentBase child class.
         """
+        assert issubclass(oDataType, ModelDataBase);
+        from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
         oData = oDataType().initFromParams(oDisp = self, fStrict = False);
         sRedirectTo = self.getRedirectToParameter(sRedirectTo);
         self._checkForUnknownParameters();
@@ -741,7 +745,7 @@ class WuiDispatcherBase(object):
         (self._sPageTitle, self._sPageBody) = oForm.showForm();
         return True
 
-    def _actionGenericFormDetails(self, oDataType, oLogicType, oFormType, sIdAttr, sGenIdAttr = None): # pylint: disable=R0914
+    def _actionGenericFormDetails(self, oDataType, oLogicType, oFormType, sIdAttr = None, sGenIdAttr = None): # pylint: disable=R0914
         """
         Generic handler for showing a details form/page.
 
@@ -750,6 +754,17 @@ class WuiDispatcherBase(object):
         oFormType is a WuiFormContentBase child class.
         sIdParamName is the name of the ID parameter (not idGen!).
         """
+        # Input.
+        assert issubclass(oDataType, ModelDataBase);
+        assert issubclass(oLogicType, ModelLogicBase);
+        from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
+        if sIdAttr is None:
+            sIdAttr = oDataType.ksIdAttr;
+        if sGenIdAttr is None:
+            sGenIdAttr = getattr(oDataType, 'ksGenIdAttr', None);
+
         # Parameters.
         idGenObject = -1;
         if sGenIdAttr is not None:
@@ -783,7 +798,7 @@ class WuiDispatcherBase(object):
         return True
 
 
-    def _actionGenericFormEdit(self, oDataType, oFormType, sIdParamName, sRedirectTo = None):
+    def _actionGenericFormEdit(self, oDataType, oFormType, sIdParamName = None, sRedirectTo = None):
         """
         Generic edit something form display request handler.
 
@@ -791,6 +806,13 @@ class WuiDispatcherBase(object):
         oFormType is a WuiFormContentBase child class.
         sIdParamName is the name of the ID parameter (not idGen!).
         """
+        assert issubclass(oDataType, ModelDataBase);
+        from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
+        if sIdParamName is None:
+            sIdParamName = getattr(oDataType, 'ksParam_' + oDataType.ksIdAttr);
+        assert len(sIdParamName) > 1;
 
         tsNow    = self.getEffectiveDateParam();
         idObject = self.getIntParam(sIdParamName, 0, 0x7ffffffe);
@@ -838,6 +860,11 @@ class WuiDispatcherBase(object):
         sIdParamName is the name of the ID parameter.
         sGenIdParamName is the name of the generation ID parameter, None if not applicable.
         """
+        # Input.
+        assert issubclass(oDataType, ModelDataBase);
+        from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
         # Parameters.
         idGenObject = -1;
         if sGenIdAttr is not None:
@@ -875,6 +902,10 @@ class WuiDispatcherBase(object):
         oFormType is a WuiFormContentBase child class.
         fnLogicAction is a method taking a oDataType instance and uidAuthor as arguments.
         """
+        assert issubclass(oDataType, ModelDataBase);
+        from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
         #
         # Read and validate parameters.
         #
@@ -882,7 +913,13 @@ class WuiDispatcherBase(object):
         sRedirectTo = self.getRedirectToParameter(sRedirectTo);
         self._checkForUnknownParameters();
         self._assertPostRequest();
-        dErrors = oData.validateAndConvert(self._oDb);
+        if sMode == WuiFormContentBase.ksMode_Add and  getattr(oData, 'kfIdAttrIsForForeign', False):
+            enmValidateFor = oData.ksValidateFor_AddForeignId;
+        elif sMode == WuiFormContentBase.ksMode_Add:
+            enmValidateFor = oData.ksValidateFor_Add;
+        else:
+            enmValidateFor = oData.ksValidateFor_Edit;
+        dErrors = oData.validateAndConvert(self._oDb, enmValidateFor);
         if len(dErrors) == 0:
             oData.convertFromParamNull();
 
@@ -906,6 +943,7 @@ class WuiDispatcherBase(object):
                 self._sRedirectTo = sRedirectTo;
         else:
             oForm = oFormType(oData, sMode, oDisp = self);
+            oForm.setRedirectTo(sRedirectTo);
             (self._sPageTitle, self._sPageBody) = oForm.showForm(dErrors = dErrors);
         return True;
 
@@ -918,8 +956,12 @@ class WuiDispatcherBase(object):
         oFormType is a WuiFormContentBase child class.
         sRedirAction is what action to redirect to on success.
         """
-        oLogic = oLogicType(self._oDb);
+        assert issubclass(oDataType, ModelDataBase);
+        assert issubclass(oLogicType, ModelLogicBase);
         from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
+        oLogic = oLogicType(self._oDb);
         return self._actionGenericFormPost(WuiFormContentBase.ksMode_Add, oLogic.addEntry, oDataType, oFormType,
                                            '?' + webutils.encodeUrlParams({self.ksParamAction: sRedirAction}), fStrict=fStrict)
     def _actionGenericFormEditPost(self, oDataType, oLogicType, oFormType, sRedirAction, fStrict = True):
@@ -931,8 +973,12 @@ class WuiDispatcherBase(object):
         oFormType is a WuiFormContentBase child class.
         sRedirAction is what action to redirect to on success.
         """
-        oLogic = oLogicType(self._oDb);
+        assert issubclass(oDataType, ModelDataBase);
+        assert issubclass(oLogicType, ModelLogicBase);
         from testmanager.webui.wuicontentbase import WuiFormContentBase;
+        assert issubclass(oFormType, WuiFormContentBase);
+
+        oLogic = oLogicType(self._oDb);
         return self._actionGenericFormPost(WuiFormContentBase.ksMode_Edit, oLogic.editEntry, oDataType, oFormType,
                                            '?' + webutils.encodeUrlParams({self.ksParamAction: sRedirAction}),
                                            fStrict = fStrict);

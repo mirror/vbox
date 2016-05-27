@@ -34,7 +34,7 @@ import unittest;
 
 # Validation Kit imports.
 from testmanager.core.base  import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, \
-                                   ChangeLogEntry, AttributeChangeEntry;
+                                   TMInvalidData, TMTooManyRows, TMRowNotFound, ChangeLogEntry, AttributeChangeEntry;
 
 
 # pylint: disable=C0103
@@ -170,7 +170,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         """
 
         if aoRow is None:
-            raise TMExceptionBase('TestBox not found.');
+            raise TMRowNotFound('TestBox not found.');
 
         self.idTestBox           = aoRow[0];
         self.tsEffective         = aoRow[1];
@@ -216,7 +216,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
                                                        , ( idTestBox, ), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idTestBox=%s not found (tsNow=%s sPeriodBack=%s)' % (idTestBox, tsNow, sPeriodBack,));
+            raise TMRowNotFound('idTestBox=%s not found (tsNow=%s sPeriodBack=%s)' % (idTestBox, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
     def initFromDbWithGenId(self, oDb, idGenTestBox):
@@ -229,9 +229,9 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
                     , (idGenTestBox, ) );
         return self.initFromDbRow(oDb.fetchOne());
 
-    def _validateAndConvertWorker(self, asAllowNullAttributes, oDb):
+    def _validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor = ModelDataBase.ksValidateFor_Other):
         # Override to do extra ipLom checks.
-        dErrors = ModelDataBase._validateAndConvertWorker(self, asAllowNullAttributes, oDb);
+        dErrors = ModelDataBase._validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor);
         if    self.ksParam_ipLom      not in dErrors \
           and self.ksParam_enmLomKind not in dErrors \
           and self.enmLomKind != self.ksLomKind_None \
@@ -292,7 +292,7 @@ class TestBoxLogic(ModelLogicBase):
         if self._oDb.getRowCount() == 0:
             return None;
         if self._oDb.getRowCount() != 1:
-            raise TMExceptionBase('Database integrity error: %u hits' % (self._oDb.getRowCount(),));
+            raise TMTooManyRows('Database integrity error: %u hits' % (self._oDb.getRowCount(),));
         oData = TestBoxData();
         oData.initFromDbRow(self._oDb.fetchOne());
         return oData;
@@ -396,9 +396,9 @@ class TestBoxLogic(ModelLogicBase):
         Returns the testbox ID, testbox generation ID and effective timestamp
         of the created testbox on success.  Throws error on failure.
         """
-        dDataErrors = oData.validateAndConvert(self._oDb);
+        dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
         if len(dDataErrors) > 0:
-            raise TMExceptionBase('Invalid data passed to create(): %s' % (dDataErrors,));
+            raise TMInvalidData('Invalid data passed to create(): %s' % (dDataErrors,));
 
         self._oDb.execute('INSERT INTO TestBoxes (\n'
                           '         idTestBox,\n'
@@ -506,9 +506,9 @@ class TestBoxLogic(ModelLogicBase):
         Returns the new generation ID and effective date.
         """
 
-        dDataErrors = oData.validateAndConvert(self._oDb);
+        dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
         if len(dDataErrors) > 0:
-            raise TMExceptionBase('Invalid data passed to create(): %s' % (dDataErrors,));
+            raise TMInvalidData('Invalid data passed to create(): %s' % (dDataErrors,));
 
         ## @todo check if the data changed.
 

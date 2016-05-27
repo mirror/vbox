@@ -47,17 +47,15 @@ class WuiAdminFailureReason(WuiFormContentBase):
         Prepare & initialize parent
         """
 
+        sTitle = 'Failure Reason';
         if sMode == WuiFormContentBase.ksMode_Add:
-            sTitle = 'Add Failure Reason'
-            sSubmitAction = oDisp.ksActionFailureReasonAdd
+            sTitle = 'Add' + sTitle;
         elif sMode == WuiFormContentBase.ksMode_Edit:
-            sTitle = 'Edit Failure Reason'
-            sSubmitAction = oDisp.ksActionFailureReasonEdit
+            sTitle = 'Edit' + sTitle;
         else:
-            raise WuiException('Unknown parameter')
+            assert sMode == WuiFormContentBase.ksMode_Show;
 
-        WuiFormContentBase.__init__(self, oFailureReasonData, sMode, 'FailureReason', oDisp, sTitle,
-                                    sSubmitAction = sSubmitAction, fEditable = False); ## @todo non-standard action names.
+        WuiFormContentBase.__init__(self, oFailureReasonData, sMode, 'FailureReason', oDisp, sTitle);
 
     def _populateForm(self, oForm, oData):
         """
@@ -68,7 +66,7 @@ class WuiAdminFailureReason(WuiFormContentBase):
         if len(aoFailureCategories) == 0:
             from testmanager.webui.wuiadmin import WuiAdmin
             sExceptionMsg = 'Please <a href="%s?%s=%s">add</a> Failure Category first.' % \
-                (WuiAdmin.ksScriptName, WuiAdmin.ksParamAction, WuiAdmin.ksActionFailureCategoryShowAdd)
+                (WuiAdmin.ksScriptName, WuiAdmin.ksParamAction, WuiAdmin.ksActionFailureCategoryAdd)
 
             raise WuiException(sExceptionMsg)
 
@@ -89,6 +87,7 @@ class WuiAdminFailureReason(WuiFormContentBase):
         oForm.addSubmit()
 
         return True
+
 
 class WuiAdminFailureReasonList(WuiListContentBase):
     """
@@ -116,11 +115,14 @@ class WuiAdminFailureReasonList(WuiListContentBase):
                  oEntry.sFull,
                  oEntry.iTicket,
                  oEntry.asUrls,
-                 [ WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonShowEdit,
+                 [ WuiTmLink('Details', WuiAdmin.ksScriptName,
+                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDetails,
+                               FailureReasonData.ksParam_idFailureReason: oEntry.idFailureReason } ),
+                   WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonEdit,
                                FailureReasonData.ksParam_idFailureReason: oEntry.idFailureReason } ),
                    WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDel,
+                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDoRemove,
                                FailureReasonData.ksParam_idFailureReason: oEntry.idFailureReason },
                              sConfirm = 'Are you sure you want to remove failure reason #%d?' % (oEntry.idFailureReason,)),
                ] ]

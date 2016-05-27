@@ -30,7 +30,7 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.core.base          import ModelDataBase, ModelLogicBase, TMExceptionBase
+from testmanager.core.base          import ModelDataBase, ModelLogicBase, TMInvalidData, TMRowNotFound;
 
 
 class BuildBlacklistData(ModelDataBase):
@@ -86,7 +86,7 @@ class BuildBlacklistData(ModelDataBase):
         """
 
         if aoRow is None:
-            raise TMExceptionBase('Build Blacklist item not found.')
+            raise TMRowNotFound('Build Blacklist item not found.')
 
         self.idBlacklisting  = aoRow[0]
         self.tsEffective     = aoRow[1]
@@ -113,8 +113,8 @@ class BuildBlacklistData(ModelDataBase):
                                                        , ( idBlacklisting,), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idBlacklisting=%s not found (tsNow=%s sPeriodBack=%s)'
-                                  % (idBlacklisting, tsNow, sPeriodBack,));
+            raise TMRowNotFound('idBlacklisting=%s not found (tsNow=%s sPeriodBack=%s)'
+                                % (idBlacklisting, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
 
@@ -186,9 +186,9 @@ class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=R0903
         # Validate inputs and read in the old(/current) data.
         #
         assert isinstance(oData, BuildBlacklistData);
-        dErrors = oData.validateAndConvert(self._oDb);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
         if len(dErrors) > 0:
-            raise TMExceptionBase('editEntry invalid input: %s' % (dErrors,));
+            raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         oOldData = BuildBlacklistData().initFromDbWithId(self._oDb, oData.idBlacklisting);
 

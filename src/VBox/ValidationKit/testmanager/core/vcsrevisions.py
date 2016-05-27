@@ -158,7 +158,7 @@ class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
         """
 
         # Check VcsRevisionData before do anything
-        dDataErrors = oData.validateAndConvert(self._oDb);
+        dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
         if len(dDataErrors) > 0:
             raise TMExceptionBase('Invalid data passed to addVcsRevision(): %s' % (dDataErrors,));
 

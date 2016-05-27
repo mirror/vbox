@@ -498,18 +498,18 @@ class WebServerGlueBase(object):
         if self._fHtmlDebugOutput:
             fnWrite('<h2>%s</h2>\n'
                     '<table border="1"><tr><th>index</th><th>value</th></tr>\n' % (sName,));
-            for i in range(len(aoStuff)):
+            for i, _ in enumerate(aoStuff):
                 fnWrite('  <tr><td>' + str(i) + '</td><td>' + webutils.escapeElem(str(aoStuff[i])) + '</td></tr>\n');
             fnWrite('</table>\n');
         else:
-            for i in range(len(sName) - 1):
-                fnWrite('%s ' % (sName[i],));
+            for ch in sName[:-1]:
+                fnWrite('%s ' % (ch,));
             fnWrite('%s\n\n' % (sName[-1],));
 
             fnWrite('Index  Value\n');
             fnWrite('------------------------------------------------------------------------\n');
-            for i in range(len(aoStuff)):
-                fnWrite('%5u  %s\n' % (i, str(aoStuff[i])));
+            for i, oStuff in enumerate(aoStuff):
+                fnWrite('%5u  %s\n' % (i, str(oStuff)));
             fnWrite('\n');
 
         return True;

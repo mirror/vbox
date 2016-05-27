@@ -30,7 +30,7 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.core.base              import ModelDataBase, ModelLogicBase, TMExceptionBase
+from testmanager.core.base              import ModelDataBase, ModelLogicBase, TMRowNotFound, TMInvalidData, TMRowInUse;
 from testmanager.core.useraccount       import UserAccountLogic;
 
 
@@ -81,7 +81,7 @@ class FailureReasonData(ModelDataBase):
         """
 
         if aoRow is None:
-            raise TMExceptionBase('Failure Reason not found.');
+            raise TMRowNotFound('Failure Reason not found.');
 
         self.idFailureReason   = aoRow[0]
         self.tsEffective       = aoRow[1]
@@ -94,6 +94,21 @@ class FailureReasonData(ModelDataBase):
         self.asUrls            = aoRow[8]
 
         return self;
+
+    def initFromDbWithId(self, oDb, idFailureReason, tsNow = None, sPeriodBack = None):
+        """
+        Initialize from the database, given the ID of a row.
+        """
+        oDb.execute(self.formatSimpleNowAndPeriodQuery(oDb,
+                                                       'SELECT *\n'
+                                                       'FROM   FailureReasons\n'
+                                                       'WHERE  idFailureReason = %s\n'
+                                                       , ( idFailureReason,), tsNow, sPeriodBack));
+        aoRow = oDb.fetchOne()
+        if aoRow is None:
+            raise TMRowNotFound('idFailureReason=%s not found (tsNow=%s sPeriodBack=%s)'
+                                % (idFailureReason, tsNow, sPeriodBack,));
+        return self.initFromDbRow(aoRow);
 
 
 class FailureReasonDataEx(FailureReasonData):
@@ -204,146 +219,89 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
         except IndexError:
             return None
 
-    def getIdsByCategory(self, idFailureCategory, tsEffective=None):
+
+    def addEntry(self, oData, uidAuthor, fCommit = False):
         """
-        Gets the list of Failure Ressons IDs,
-        all the items belong to @param idFailureCategory
+        Add a failure reason.
         """
-        if tsEffective is None:
-            self._oDb.execute('SELECT   idFailureReason\n'
-                              'FROM     FailureReasons\n'
-                              'WHERE    tsExpire = \'infinity\'::TIMESTAMP\n'
-                              '     AND idFailureCategory = %s\n'
-                              'ORDER BY idFailureReason DESC'
-                              , (idFailureCategory,))
-        else:
-            self._oDb.execute('SELECT   idFailureReason\n'
-                              'FROM     FailureReasons\n'
-                              'WHERE    tsExpire     > %s\n'
-                              '     AND tsEffective <= %s\n'
-                              '     AND idFailureCategory = %s\n'
-                              'ORDER BY idFailureReason DESC'
-                              , (tsEffective, tsEffective, idFailureCategory))
-        return self._oDb.fetchAll()
+        #
+        # Validate.
+        #
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
+        if len(dErrors) > 0:
+            raise TMInvalidData('addEntry invalid input: %s' % (dErrors,));
 
-    def getAll(self, tsEffective=None):
+        #
+        # Add the record.
+        #
+        self._readdEntry(uidAuthor, oData);
+        self._oDb.maybeCommit(fCommit);
+        return True;
+
+
+    def editEntry(self, oData, uidAuthor, fCommit = False):
         """
-        Gets the list of all Failure Reasons.
-        Returns an array of FailureReasonData instances.
+        Modifies a failure reason.
         """
-        if tsEffective is None:
-            self._oDb.execute('SELECT   *\n'
-                              'FROM     FailureReasons\n'
-                              'WHERE    tsExpire = \'infinity\'::TIMESTAMP\n'
-                              'ORDER BY idFailureReason DESC')
-        else:
-            self._oDb.execute('SELECT   *\n'
-                              'FROM     FailureReasons\n'
-                              'WHERE    tsExpire     > %s\n'
-                              '     AND tsEffective <= %s\n'
-                              'ORDER BY idFailureReason DESC'
-                              , (tsEffective, tsEffective))
-        aoRet = []
-        for aoRow in self._oDb.fetchAll():
-            aoRet.append(FailureReasonData().initFromDbRow(aoRow))
-        return aoRet
 
-    def addEntry(self, oFailureReasonData, uidAuthor, fCommit=True):
-        """Add record to database"""
+        #
+        # Validate inputs and read in the old(/current) data.
+        #
+        assert isinstance(oData, FailureReasonData);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
+        if len(dErrors) > 0:
+            raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
-        # Check if record with the same sShort fiels is already exists
-        self._oDb.execute('SELECT *\n'
-                          'FROM   FailureReasons\n'
-                          'WHERE  tsExpire   = \'infinity\'::TIMESTAMP\n'
-                          '   AND sShort = %s\n',
-                          (oFailureReasonData.sShort,))
-        if len(self._oDb.fetchAll()) != 0:
-            raise Exception('Record already exist')
+        oOldData = FailureReasonData().initFromDbWithId(self._oDb, oData.idFailureReason);
 
-        # Add record
-        self._oDb.execute('INSERT INTO FailureReasons (\n'
-                          '  uidAuthor, idFailureCategory,'
-                          '  sShort, sFull, iTicket, asUrls'
-                          ')\n'
-                          'VALUES (%s, %s, %s, %s, %s, %s)',
-                          (uidAuthor,
-                           oFailureReasonData.idFailureCategory,
-                           oFailureReasonData.sShort,
-                           oFailureReasonData.sFull,
-                           oFailureReasonData.iTicket,
-                           oFailureReasonData.asUrls))
-        if fCommit:
-            self._oDb.commit()
+        #
+        # Update the data that needs updating.
+        #
+        if not oData.isEqualEx(oOldData, [ 'tsEffective', 'tsExpire', 'uidAuthor', ]):
+            self._historizeEntry(oData.idFailureReason);
+            self._readdEntry(uidAuthor, oData);
+        self._oDb.maybeCommit(fCommit);
+        return True;
 
-        return True
 
-    def remove(self, uidAuthor, idFailureReason, fNeedCommit=True):
+    def removeEntry(self, uidAuthor, idFailureReason, fCascade = False, fCommit = False):
         """
-        Historize record
+        Deletes a failure reason.
         """
-        self._oDb.execute('UPDATE FailureReasons\n'
-                          'SET    tsExpire    = CURRENT_TIMESTAMP,\n'
-                          '       uidAuthor   = %s\n'
-                          'WHERE  idFailureReason = %s\n'
-                          '   AND tsExpire    = \'infinity\'::TIMESTAMP\n',
-                          (uidAuthor, idFailureReason))
+        _ = fCascade; # too complicated for now.
 
-        # Also historize Black List records
-        self._oDb.execute('UPDATE BuildBlackList\n'
-                          'SET    tsExpire    = CURRENT_TIMESTAMP,\n'
-                          '       uidAuthor   = %s\n'
-                          'WHERE  idFailureReason = %s\n'
-                          '   AND tsExpire    = \'infinity\'::TIMESTAMP\n',
-                          (uidAuthor, idFailureReason))
+        #
+        # Check whether it's being used by other tables and bitch if it is .
+        # We currently do not implement cascading.
+        #
+        self._oDb.execute('SELECT   CONCAT(idBlacklisting, \' - blacklisting\')\n'
+                          'FROM     BuildBlacklist\n'
+                          'WHERE    idFailureReason = %s\n'
+                          '    AND  tsExpire = \'infinity\'::TIMESTAMP\n'
+                          'UNION\n'
+                          'SELECT   CONCAT(idTestResult, \' - test result failure reason\')\n'
+                          'FROM     TestResultFailures\n'
+                          'WHERE    idFailureReason = %s\n'
+                          '    AND  tsExpire = \'infinity\'::TIMESTAMP\n'
+                          , (idFailureReason, idFailureReason,));
+        aaoRows = self._oDb.fetchAll();
+        if len(aaoRows) > 0:
+            raise TMRowInUse('Cannot remove failure reason %u because its being used by: %s'
+                             % (idFailureReason, ', '.join(aoRow[0] for aoRow in aaoRows),));
 
-        if fNeedCommit:
-            self._oDb.commit()
+        #
+        # Do the job.
+        #
+        oData = FailureReasonData().initFromDbWithId(self._oDb, idFailureReason);
+        assert oData.idFailureReason == idFailureReason;
+        (tsCur, tsCurMinusOne) = self._oDb.getCurrentTimestamps();
+        if oData.tsEffective != tsCur and oData.tsEffective != tsCurMinusOne:
+            self._historizeEntry(idFailureReason, tsCurMinusOne);
+            self._readdEntry(uidAuthor, oData, tsCurMinusOne);
+        self._historizeEntry(idFailureReason);
+        self._oDb.maybeCommit(fCommit);
+        return True;
 
-        return True
-
-    def editEntry(self, oFailureReasonData, uidAuthor, fCommit=True):
-        """Modify database record"""
-
-        # Check if record exists
-        oFailureReasonDataOld = self.getById(oFailureReasonData.idFailureReason)
-        if oFailureReasonDataOld is None:
-            raise TMExceptionBase(
-                'Failure Reason (id: %d) does not exist'
-                % oFailureReasonData.idFailureReason)
-
-        # Check if anything has been changed
-        if oFailureReasonData.isEqual(oFailureReasonDataOld):
-            return True
-
-        # Historize record
-        self.remove(
-            uidAuthor, oFailureReasonData.idFailureReason, fNeedCommit=False)
-
-
-        # Add new record (keeping its ID)
-        self._oDb.execute('INSERT INTO FailureReasons (\n'
-                          '  idFailureReason,'
-                          '  uidAuthor,'
-                          '  idFailureCategory,'
-                          '  sShort,'
-                          '  sFull,'
-                          '  iTicket,'
-                          '  asUrls'
-                          ')\n'
-                          'VALUES (%s, %s, %s, %s, %s, %s, %s)',
-                          (oFailureReasonData.idFailureReason,
-                           uidAuthor,
-                           oFailureReasonData.idFailureCategory,
-                           oFailureReasonData.sShort,
-                           oFailureReasonData.sFull,
-                           oFailureReasonData.iTicket,
-                           oFailureReasonData.asUrls
-                           ))
-
-        if fCommit:
-            self._oDb.commit()
-
-        return True
 
     def cachedLookup(self, idFailureReason):
         """
@@ -383,4 +341,47 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                                                                self.oUserAccountLogic);
                 self.ahCache[idFailureReason] = oEntry;
         return oEntry;
+
+    #
+    # Helpers.
+    #
+
+    def _readdEntry(self, uidAuthor, oData, tsEffective = None):
+        """
+        Re-adds the FailureReasons entry. Used by addEntry, editEntry and removeEntry.
+        """
+        if tsEffective is None:
+            tsEffective = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('INSERT INTO FailureReasons (\n'
+                          '         uidAuthor,\n'
+                          '         tsEffective,\n'
+                          '         idFailureReason,\n'
+                          '         idFailureCategory,\n'
+                          '         sShort,\n'
+                          '         sFull,\n'
+                          '         iTicket,\n'
+                          '         asUrls)\n'
+                          'VALUES (%s, %s, '
+                          + ( 'DEFAULT' if oData.idFailureReason is None else str(oData.idFailureReason) )
+                          + ', %s, %s, %s, %s, %s)\n'
+                          , ( uidAuthor,
+                              tsEffective,
+                              oData.idFailureCategory,
+                              oData.sShort,
+                              oData.sFull,
+                              oData.iTicket,
+                              oData.asUrls,) );
+        return True;
+
+
+    def _historizeEntry(self, idFailureReason, tsExpire = None):
+        """ Historizes the current entry. """
+        if tsExpire is None:
+            tsExpire = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('UPDATE FailureReasons\n'
+                          'SET    tsExpire   = %s\n'
+                          'WHERE  idFailureReason = %s\n'
+                          '   AND tsExpire        = \'infinity\'::TIMESTAMP\n'
+                          , (tsExpire, idFailureReason,));
+        return True;
 

@@ -181,7 +181,8 @@ class WuiTestResult(WuiContentBase):
                                            else '',
                        sDisplayName,
                        ' id="failure-%u"' % (iFailure,) if oTestResult.isFailure() else '',
-                       webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt), sChangeReason,
+                       webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt),
+                       sChangeReason if oTestResult.oReason is None else '',
                        sResultGraph );
             iRow += 1;
         else:
@@ -207,9 +208,6 @@ class WuiTestResult(WuiContentBase):
                                                                                iRow, iFailure, oTestSet, iDepth + 1);
                 sHtml += sChildHtml;
                 cErrorsBelow += oChild.cErrors;
-
-            if cErrorsBelow >= oTestResult.cErrors:
-                sChangeReason = '';
 
             # Messages.
             for oMsg in oTestResult.aoMsgs:
@@ -298,7 +296,7 @@ class WuiTestResult(WuiContentBase):
                          '  <td>%s</td>\n' \
                          '  <td>%s</td>\n' \
                          '  <td>%s</td>\n' \
-                         '  <td colspan="2"%s>%s%s</td>\n' \
+                         '  <td colspan="2"%s>%s%s%s</td>\n' \
                          '  <td>%s</td>\n' \
                          ' </tr>\n' \
                        % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth, oTestResult.enmStatus,
@@ -308,13 +306,14 @@ class WuiTestResult(WuiContentBase):
                            sDisplayName,
                            ' id="failure-%u"' % (iFailure,) if oTestResult.isFailure() else '',
                            webutils.escapeElem(oTestResult.enmStatus), webutils.escapeElem(sErrCnt),
+                           sChangeReason if cErrorsBelow < oTestResult.cErrors and oTestResult.oReason is None else '',
                            sResultGraph);
                 iRow += 1;
 
         # Failure reason.
         if oTestResult.oReason is not None:
-            sReasonText = '%s / %s' % (     oTestResult.oReason.oFailureReason.oCategory.sShort,
-                                            oTestResult.oReason.oFailureReason.sShort, );
+            sReasonText = '%s / %s' % ( oTestResult.oReason.oFailureReason.oCategory.sShort,
+                                        oTestResult.oReason.oFailureReason.sShort, );
             sCommentHtml = '';
             if oTestResult.oReason.sComment is not None and len(oTestResult.oReason.sComment.strip()) > 0:
                 sCommentHtml = '<br>' + webutils.escapeElem(oTestResult.oReason.sComment.strip());
@@ -326,7 +325,6 @@ class WuiTestResult(WuiContentBase):
                                                            TestResultFailureData.ksParam_idTestResult:
                                                            oTestResult.idTestResult,}),
                                 WuiContentBase.ksShortDetailsLinkHtml,);
-
 
             sHtml += ' <tr class="%s tmtbl-events-reason tmtbl-events-lvl%s">\n' \
                      '  <td>%s</td>\n' \
@@ -364,7 +362,7 @@ class WuiTestResult(WuiContentBase):
             oData = oTestResultTree.oReason;
 
             # We need the failure reasons for the combobox.
-            aoFailureReasons = FailureReasonLogic(self._oDisp.getDb()).fetchForCombo('Todo: Figure out why');
+            aoFailureReasons = FailureReasonLogic(self._oDisp.getDb()).fetchForCombo('Test Sheriff, you figure out why!');
             assert len(aoFailureReasons) > 0;
 
             # For now we'll use the standard form helper.

@@ -34,7 +34,8 @@ import unittest;
 
 # Validation Kit imports.
 from common                             import utils;
-from testmanager.core.base              import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase;
+from testmanager.core.base              import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMRowAlreadyExists, \
+                                               TMRowInUse, TMInvalidData, TMRowNotFound;
 from testmanager.core                   import coreconsts;
 
 
@@ -89,7 +90,7 @@ class BuildSourceData(ModelDataBase):
         Returns self.  Raises exception if aoRow is None.
         """
         if aoRow is None:
-            raise TMExceptionBase('Build source not found.');
+            raise TMRowNotFound('Build source not found.');
 
         self.idBuildSrc         = aoRow[0];
         self.tsEffective        = aoRow[1];
@@ -117,7 +118,7 @@ class BuildSourceData(ModelDataBase):
                                                        , ( idBuildSrc,), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idBuildSrc=%s not found (tsNow=%s sPeriodBack=%s)' % (idBuildSrc, tsNow, sPeriodBack,));
+            raise TMRowNotFound('idBuildSrc=%s not found (tsNow=%s sPeriodBack=%s)' % (idBuildSrc, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
     def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb):
@@ -204,9 +205,9 @@ class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
         #
         # Validate the input.
         #
-        dErrors = oData.validateAndConvert(self._oDb);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
         if len(dErrors) > 0:
-            raise TMExceptionBase('addEntry invalid input: %s' % (dErrors,));
+            raise TMInvalidData('addEntry invalid input: %s' % (dErrors,));
         self._assertUnique(oData, None);
 
         #
@@ -246,9 +247,9 @@ class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
         #
         # Validate the input and read the old entry.
         #
-        dErrors = oData.validateAndConvert(self._oDb);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
         if len(dErrors) > 0:
-            raise TMExceptionBase('addEntry invalid input: %s' % (dErrors,));
+            raise TMInvalidData('addEntry invalid input: %s' % (dErrors,));
         self._assertUnique(oData, oData.idBuildSrc);
         oOldData = BuildSourceData().initFromDbWithId(self._oDb, oData.idBuildSrc);
 
@@ -302,8 +303,8 @@ class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
                 asGroups = [];
                 for aoRow in self._oDb.fetchAll():
                     asGroups.append('%s (#%d)' % (aoRow[1], aoRow[0]));
-                raise TMExceptionBase('Build source #%d is used by one or more scheduling groups: %s'
-                                      % (idBuildSrc, ', '.join(asGroups),));
+                raise TMRowInUse('Build source #%d is used by one or more scheduling groups: %s'
+                                 % (idBuildSrc, ', '.join(asGroups),));
         else:
             self._oDb.execute('UPDATE   SchedGroups\n'
                               'SET      idBuildSrc = NULL\n'
@@ -434,7 +435,7 @@ class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
                           + ('' if idBuildSrcIgnore is None else  '   AND idBuildSrc <> %d\n' % (idBuildSrcIgnore,))
                           , ( oData.sName, ))
         if self._oDb.getRowCount() > 0:
-            raise TMExceptionBase('A build source with name "%s" already exist.' % (oData.sName,));
+            raise TMRowAlreadyExists('A build source with name "%s" already exist.' % (oData.sName,));
         return True;
 
 

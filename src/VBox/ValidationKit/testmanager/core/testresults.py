@@ -36,7 +36,8 @@ import unittest;
 # Validation Kit imports.
 from common                         import constants;
 from testmanager                    import config;
-from testmanager.core.base          import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, TMExceptionBase, TMTooManyRows;
+from testmanager.core.base          import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, TMExceptionBase, \
+                                           TMTooManyRows, TMInvalidData, TMRowNotFound, TMRowAlreadyExists;
 from testmanager.core.testgroup     import TestGroupData;
 from testmanager.core.build         import BuildDataEx;
 from testmanager.core.failurereason import FailureReasonLogic;
@@ -111,7 +112,7 @@ class TestResultData(ModelDataBase):
         Return self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test result record not found.')
+            raise TMRowNotFound('Test result record not found.')
 
         self.idTestResult       = aoRow[0]
         self.idTestResultParent = aoRow[1]
@@ -204,7 +205,7 @@ class TestResultValueData(ModelDataBase):
         Return self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test result value record not found.')
+            raise TMRowNotFound('Test result value record not found.')
 
         self.idTestResultValue  = aoRow[0];
         self.idTestResult       = aoRow[1];
@@ -270,7 +271,7 @@ class TestResultMsgData(ModelDataBase):
         Return self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test result value record not found.')
+            raise TMRowNotFound('Test result value record not found.')
 
         self.idTestResultMsg    = aoRow[0];
         self.idTestResult       = aoRow[1];
@@ -332,7 +333,7 @@ class TestResultFileData(ModelDataBase):
         Return self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test result file record not found.')
+            raise TMRowNotFound('Test result file record not found.')
 
         self.idTestResultFile   = aoRow[0];
         self.idTestResult       = aoRow[1];
@@ -417,6 +418,7 @@ class TestResultFailureData(ModelDataBase):
     """
 
     ksIdAttr                    = 'idTestResult';
+    kfIdAttrIsForForeign        = True; # Modifies the 'add' validation.
 
     ksParam_idTestResult        = 'TestResultFailure_idTestResult';
     ksParam_tsEffective         = 'TestResultFailure_tsEffective';
@@ -442,7 +444,7 @@ class TestResultFailureData(ModelDataBase):
         Return self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test result file record not found.')
+            raise TMRowNotFound('Test result file record not found.')
 
         self.idTestResult       = aoRow[0];
         self.tsEffective        = aoRow[1];
@@ -463,7 +465,7 @@ class TestResultFailureData(ModelDataBase):
                                                        , ( idTestResult,), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idTestResult=%s not found (tsNow=%s, sPeriodBack=%s)' % (idTestResult, tsNow, sPeriodBack));
+            raise TMRowNotFound('idTestResult=%s not found (tsNow=%s, sPeriodBack=%s)' % (idTestResult, tsNow, sPeriodBack));
         return self.initFromDbRow(aoRow);
 
 
@@ -551,7 +553,7 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         Return self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test result record not found.')
+            raise TMRowNotFound('Test result record not found.')
 
         self.idTestSet               = aoRow[0];
 
@@ -1114,7 +1116,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         aRows = self._oDb.fetchAll()
         if len(aRows) not in (0, 1):
-            raise TMExceptionBase('Found more than one test result with the same credentials. Database structure is corrupted.')
+            raise TMTooManyRows('Found more than one test result with the same credentials. Database structure is corrupted.')
         try:
             return TestResultData().initFromDbRow(aRows[0])
         except IndexError:
@@ -1164,7 +1166,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         aaoRows = self._oDb.fetchAll();
         if len(aaoRows) == 0:
-            raise TMExceptionBase('No test results for idTestSet=%d.' % (idTestSet,));
+            raise TMRowNotFound('No test results for idTestSet=%d.' % (idTestSet,));
 
         # Set up the root node first.
         aoRow = aaoRows[0];
@@ -1940,13 +1942,21 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
         Add a test result failure reason record.
         """
 
+        #
+        # Validate inputs and read in the old(/current) data.
+        #
+        assert isinstance(oData, TestResultFailureData);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_AddForeignId);
+        if len(dErrors) > 0:
+            raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
+
         # Check if it exist first (we're adding, not editing, collisions not allowed).
         oOldData = self.getById(oData.idTestResult);
         if oOldData is not None:
-            raise TMExceptionBase('TestResult %d already have a failure reason associated with it:'
-                                  '%s\n'
-                                  'Perhaps someone else beat you to it? Or did you try resubmit?'
-                                  % (oData.idTestResult, oOldData));
+            raise TMRowAlreadyExists('TestResult %d already have a failure reason associated with it:'
+                                     '%s\n'
+                                     'Perhaps someone else beat you to it? Or did you try resubmit?'
+                                     % (oData.idTestResult, oOldData));
 
         #
         # Add record.
@@ -1964,9 +1974,9 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
         # Validate inputs and read in the old(/current) data.
         #
         assert isinstance(oData, TestResultFailureData);
-        dErrors = oData.validateAndConvert(self._oDb);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
         if len(dErrors) > 0:
-            raise TMExceptionBase('editEntry invalid input: %s' % (dErrors,));
+            raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         oOldData = self.getById(oData.idTestResult)
 
@@ -1992,7 +2002,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
             self._historizeEntry(idTestResult, tsCurMinusOne);
             self._readdEntry(uidAuthor, oData, tsCurMinusOne);
             self._historizeEntry(idTestResult);
-        self._oDb.execute('UPDATE   TestResultFaillures\n'
+        self._oDb.execute('UPDATE   TestResultFailures\n'
                           'SET      tsExpire       = CURRENT_TIMESTAMP\n'
                           'WHERE    idTestResult   = %s\n'
                           '     AND tsExpire       = \'infinity\'::TIMESTAMP\n'

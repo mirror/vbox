@@ -35,7 +35,7 @@ import StringIO;
 import matplotlib;                          # pylint: disable=F0401
 matplotlib.use('Agg'); # Force backend.
 import matplotlib.pyplot;                   # pylint: disable=F0401
-from numpy import arange as numpy_arange;   # pylint: disable=E0611
+from numpy import arange as numpy_arange;   # pylint: disable=E0611,E0401
 
 # Validation Kit imports.
 from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;
@@ -93,7 +93,7 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
     def __init__(self, sId, oData, oDisp = None):
         WuiHlpGraphMatplotlibBase.__init__(self, sId, oData, oDisp);
         self.fpMax      = None;
-        self.fpMin      = 0;
+        self.fpMin      = 0.0;
         self.cxBarWidth = None;
 
     def setRangeMax(self, fpMax):
@@ -137,7 +137,7 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         oSubPlot = oFigure.add_subplot(1, 1, 1);
 
         aoBars = list();
-        for i in range(len(aoSeries)):
+        for i, _ in enumerate(aoSeries):
             sColor = self.calcSeriesColor(i);
             aoBars.append(oSubPlot.bar(oXRange + self.cxBarWidth * i,
                                        aoSeries[i],
@@ -156,9 +156,9 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         oSubPlot.set_yticks(numpy_arange(fpMin, fpMax + (fpMax - fpMin) / 10 * 0, fpMax / 10));
         oSubPlot.grid(True);
         fpPadding = (fpMax - fpMin) * 0.02;
-        for i in range(len(aoBars)):
+        for i, _ in enumerate(aoBars):
             aoRects = aoBars[i]
-            for j in range(len(aoRects)):
+            for j, _ in enumerate(aoRects):
                 oRect = aoRects[j];
                 fpValue = float(aoTable[j + 1].aoValues[i]);
                 if fpValue <= fpMid:
@@ -241,7 +241,7 @@ class WuiHlpLineGraph(WuiHlpGraphMatplotlibBase):
             oSubPlot.grid(True, 'major', axis = 'both');
             oSubPlot.grid(True, 'both', axis = 'x');
 
-        if True:
+        if True: # pylint: disable=W0125
             #    oSubPlot.axis('off');
             #oSubPlot.grid(True, 'major', axis = 'none');
             #oSubPlot.grid(True, 'both', axis = 'none');
@@ -283,7 +283,7 @@ class WuiHlpMiniSuccessRateGraph(WuiHlpGraphMatplotlibBase):
         # end
 
         oFigure = self._createFigure();
-        from mpl_toolkits.axes_grid.axislines import SubplotZero;
+        from mpl_toolkits.axes_grid.axislines import SubplotZero; # pylint: disable=E0401
         oAxis = SubplotZero(oFigure, 111);
         oFigure.add_subplot(oAxis);
 

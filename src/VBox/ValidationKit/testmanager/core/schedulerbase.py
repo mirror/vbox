@@ -724,7 +724,7 @@ class SchedulerBase(object):
         aoGangMembers = TestSetLogic(self._oDb).getGang(oTestSet.idTestSetGangLeader);
 
         sArgs = ' --gang-member-no %s --gang-members %s' % (oTestSet.iGangMemberNo, len(aoGangMembers));
-        for i in range(len(aoGangMembers)):
+        for i, _ in enumerate(aoGangMembers):
             sArgs = ' --gang-ipv4-%s %s' % (i, aoGangMembers[i].ip); ## @todo IPv6
 
         return sArgs;

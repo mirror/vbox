@@ -93,8 +93,7 @@ class WuiReportSuccessRate(WuiReportBase):
         oTable = WuiHlpGraphDataTable('Period', [ 'Succeeded', 'Skipped', 'Failed' ]);
 
         #for i in range(len(adPeriods) - 1, -1, -1):
-        for i in range(len(adPeriods)):
-            dStatuses = adPeriods[i];
+        for i, dStatuses in enumerate(adPeriods):
             cSuccess  = dStatuses[ReportModelBase.ksTestStatus_Success] + dStatuses[ReportModelBase.ksTestStatus_Skipped];
             cTotal    = cSuccess + dStatuses[ReportModelBase.ksTestStatus_Failure];
             sPeriod   = self._oModel.getPeriodDesc(i);

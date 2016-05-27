@@ -99,7 +99,7 @@ class WuiHlpGraphDataTableEx(object): # pylint: disable=R0903
 #
 # Dynamically choose implementation.
 #
-if True:
+if True: # pylint: disable=W0125
     from testmanager.webui import wuihlpgraphgooglechart        as GraphImplementation;
 else:
     try:

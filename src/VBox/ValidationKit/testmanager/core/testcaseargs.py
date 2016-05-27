@@ -35,7 +35,8 @@ import sys;
 
 # Validation Kit imports.
 from common                             import utils;
-from testmanager.core.base              import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase;
+from testmanager.core.base              import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, \
+                                               TMRowNotFound;
 from testmanager.core.testcase          import TestCaseData, TestCaseDependencyLogic, TestCaseGlobalRsrcDepLogic;
 
 # Python 3 hacks:
@@ -91,7 +92,7 @@ class TestCaseArgsData(ModelDataBase):
         Returns self.  Raises exception if aoRow is None.
         """
         if aoRow is None:
-            raise TMExceptionBase('TestBoxStatus not found.');
+            raise TMRowNotFound('TestBoxStatus not found.');
 
         self.idTestCase         = aoRow[0];
         self.idTestCaseArgs     = aoRow[1];
@@ -117,8 +118,8 @@ class TestCaseArgsData(ModelDataBase):
                                                        , ( idTestCaseArgs,), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idTestCaseArgs=%s not found (tsNow=%s sPeriodBack=%s)'
-                                  % (idTestCaseArgs, tsNow, sPeriodBack,));
+            raise TMRowNotFound('idTestCaseArgs=%s not found (tsNow=%s sPeriodBack=%s)'
+                                % (idTestCaseArgs, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
     def initFromDbWithGenId(self, oDb, idGenTestCaseArgs):
@@ -187,11 +188,11 @@ class TestCaseArgsDataEx(TestCaseArgsData):
 
     def initFromDbWithId(self, oDb, idTestCaseArgs, tsNow = None, sPeriodBack = None):
         _ = oDb; _ = idTestCaseArgs; _ = tsNow; _ = sPeriodBack;
-        raise Exception('Not supported.');
+        raise TMExceptionBase('Not supported.');
 
     def initFromDbWithGenId(self, oDb, idGenTestCaseArgs):
         _ = oDb; _ = idGenTestCaseArgs;
-        raise Exception('Use initFromDbWithGenIdEx...');
+        raise TMExceptionBase('Use initFromDbWithGenIdEx...');
 
     def initFromDbWithGenIdEx(self, oDb, idGenTestCaseArgs, tsConfigEff = None, tsRsrcEff = None):
         """

@@ -43,7 +43,7 @@ class WuiHlpBarGraph(WuiHlpGraphBase):
         WuiHlpGraphBase.__init__(self, sId, oData, oDisp);
         self.cxMaxBar = 480;
         self.fpMax = None;
-        self.fpMin = 0;
+        self.fpMin = 0.0;
 
     def setRangeMax(self, fpMax):
         """ Sets the max range."""

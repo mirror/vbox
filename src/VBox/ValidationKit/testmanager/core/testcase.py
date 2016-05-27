@@ -37,7 +37,7 @@ import unittest;
 # Validation Kit imports.
 from common                             import utils;
 from testmanager.core.base              import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, \
-                                               ChangeLogEntry, AttributeChangeEntry;
+                                               TMInvalidData, TMRowNotFound, ChangeLogEntry, AttributeChangeEntry;
 from testmanager.core.globalresource    import GlobalResourceData;
 from testmanager.core.useraccount       import UserAccountLogic;
 
@@ -74,7 +74,7 @@ class TestCaseGlobalRsrcDepData(ModelDataBase):
         Reinitialize from a SELECT * FROM TestCaseDeps row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test case not found.');
+            raise TMRowNotFound('Test case not found.');
 
         self.idTestCase         = aoRow[0];
         self.idGlobalRsrc       = aoRow[1];
@@ -213,7 +213,7 @@ class TestCaseDependencyData(ModelDataBase):
         Reinitialize from a SELECT * FROM TestCaseDeps row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test case not found.');
+            raise TMRowNotFound('Test case not found.');
 
         self.idTestCase         = aoRow[0];
         self.idTestCasePreReq   = aoRow[1];
@@ -241,7 +241,7 @@ class TestCaseDependencyData(ModelDataBase):
 
         return True
 
-    def validateAndConvert(self, oDb = None):
+    def validateAndConvert(self, oDb = None, enmValidateFor = ModelDataBase.ksValidateFor_Other):
         """
         Validates the input and converts valid fields to their right type.
         Returns a dictionary with per field reports, only invalid fields will
@@ -258,6 +258,7 @@ class TestCaseDependencyData(ModelDataBase):
         self.uidAuthor          = self._validateInt(   dErrors, self.ksParam_uidAuthor,         self.uidAuthor);
 
         _ = oDb;
+        _ = enmValidateFor;
         return dErrors
 
     def convertFromParamNull(self):
@@ -468,7 +469,7 @@ class TestCaseData(ModelDataBase):
         Returns self. Raises exception if no row.
         """
         if aoRow is None:
-            raise TMExceptionBase('Test case not found.');
+            raise TMRowNotFound('Test case not found.');
 
         self.idTestCase         = aoRow[0];
         self.tsEffective        = aoRow[1];
@@ -496,7 +497,7 @@ class TestCaseData(ModelDataBase):
                                                        , ( idTestCase,), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
         if aoRow is None:
-            raise TMExceptionBase('idTestCase=%s not found (tsNow=%s sPeriodBack=%s)' % (idTestCase, tsNow, sPeriodBack,));
+            raise TMRowNotFound('idTestCase=%s not found (tsNow=%s sPeriodBack=%s)' % (idTestCase, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
     def initFromDbWithGenId(self, oDb, idGenTestCase, tsNow = None):
@@ -809,7 +810,7 @@ class TestCaseDataEx(TestCaseData):
         Initialize the object from the database.
         """
         TestCaseData.initFromDbWithGenId(self, oDb, idGenTestCase);
-        if tsNow == None and not oDb.isTsInfinity(self.tsExpire):
+        if tsNow is None and not oDb.isTsInfinity(self.tsExpire):
             tsNow = self.tsEffective;
         return self._initExtraMembersFromDb(oDb, tsNow);
 
@@ -889,7 +890,7 @@ class TestCaseDataEx(TestCaseData):
             for iVar in range(len(self.aoTestCaseArgs)):
                 oVar = copy.copy(self.aoTestCaseArgs[iVar]);
                 oVar.idTestCase = self.idTestCase;
-                dCurErrors = oVar.validateAndConvert(oDb);
+                dCurErrors = oVar.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
                 if len(dCurErrors) == 0:
                     pass; ## @todo figure out the ID?
                 else:
@@ -914,8 +915,8 @@ class TestCaseDataEx(TestCaseData):
 
         return (aoNewValues, None if len(asErrors) == 0 else ' <br>'.join(asErrors));
 
-    def _validateAndConvertWorker(self, asAllowNullAttributes, oDb):
-        dErrors = TestCaseData._validateAndConvertWorker(self, asAllowNullAttributes, oDb);
+    def _validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor = ModelDataBase.ksValidateFor_Other):
+        dErrors = TestCaseData._validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor);
 
         # Validate dependencies a wee bit for paranoid reasons. The scheduler
         # queue generation code does the real validation here!
@@ -1126,9 +1127,9 @@ class TestCaseLogic(ModelLogicBase):
         # Validate the input first.
         #
         assert isinstance(oData, TestCaseDataEx);
-        dErrors = oData.validateAndConvert(self._oDb);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
         if len(dErrors) > 0:
-            raise TMExceptionBase('Invalid input data: %s' % (dErrors,));
+            raise TMInvalidData('Invalid input data: %s' % (dErrors,));
 
         #
         # Add the testcase.
@@ -1170,9 +1171,9 @@ class TestCaseLogic(ModelLogicBase):
         # Validate the input.
         #
         assert isinstance(oData, TestCaseDataEx);
-        dErrors = oData.validateAndConvert(self._oDb);
+        dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
         if len(dErrors) > 0:
-            raise TMExceptionBase('Invalid input data: %s' % (dErrors,));
+            raise TMInvalidData('Invalid input data: %s' % (dErrors,));
 
         #
         # Did anything change? If not return straight away.

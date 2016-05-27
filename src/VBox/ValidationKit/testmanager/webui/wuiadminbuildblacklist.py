@@ -72,7 +72,7 @@ class WuiAdminBuildBlacklist(WuiFormContentBase):
         if len(aoFailureReasons) == 0:
             from testmanager.webui.wuiadmin import WuiAdmin
             raise WuiException('Please <a href="%s?%s=%s">add</a> some Failure Reasons first.'
-                               % (WuiAdmin.ksScriptName, WuiAdmin.ksParamAction, WuiAdmin.ksActionFailureReasonShowAdd));
+                               % (WuiAdmin.ksScriptName, WuiAdmin.ksParamAction, WuiAdmin.ksActionFailureReasonAdd));
 
         asTypes    = self.getListOfItems(self.asTypes,    oData.asTypes)
         asOsArches = self.getListOfItems(self.asOsArches, oData.asOsArches)
