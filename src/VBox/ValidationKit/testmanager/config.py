@@ -31,7 +31,7 @@ __version__ = "$Revision$"
 import os;
 
 ## Test Manager version string.
-g_ksVersion             = 'v0.0.2';
+g_ksVersion             = 'v0.0.3';
 ## Test Manager revision string.
 g_ksRevision            = ('$Revision$')[11:-2];
 
