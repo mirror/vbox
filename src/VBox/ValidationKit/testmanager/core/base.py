@@ -361,7 +361,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
             sAttr = getattr(self, 'ksIdAttr', None);
             if sAttr is not None:
                 oValue = getattr(self, sAttr);
-                if (oValue is None) != fMustBeNull:
+                if self.isAttributeNull(sAttr, oValue) != fMustBeNull:
                     sParam = getattr(self, 'ksParam_' + sAttr);
                     sErrMsg = 'Must be NULL!' if fMustBeNull else 'Must not be NULL!'
                     if sParam in dErrors:
