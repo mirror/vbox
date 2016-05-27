@@ -1694,7 +1694,13 @@ void UISelectorWindow::loadSettings()
     /* Restore toolbar and statusbar visibility: */
     {
 #ifdef VBOX_WS_MAC
-        m_pToolBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
+        // WORKAROUND:
+        // There is an issue in Qt5 main-window tool-bar implementation:
+        // if you are hiding it before it's shown for the first time,
+        // there is an ugly empty container appears instead, so we
+        // have to hide tool-bar asynchronously to avoid that.
+        if (!gEDataManager->selectorWindowToolBarVisible())
+            QMetaObject::invokeMethod(m_pToolBar, "hide", Qt::QueuedConnection);
 #else /* VBOX_WS_MAC */
         m_pBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
 #endif /* !VBOX_WS_MAC */
