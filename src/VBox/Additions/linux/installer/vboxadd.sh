@@ -39,6 +39,12 @@ OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
 SCRIPTNAME=vboxadd.sh
 QUICKSETUP=
 
+# These are getting hard-coded in more and more places...
+test -z "${KERN_DIR}" && KERN_DIR="/lib/modules/`uname -r`/build"
+test -z "${MODULE_DIR}" && MODULE_DIR="/lib/modules/`uname -r`/misc"
+KERN_DIR_SUFFIX="${KERN_DIR#/lib/modules/}"
+KERN_VER="${KERN_DIR_SUFFIX%/*}"
+
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
 fi
@@ -282,6 +288,26 @@ restart()
     return 0
 }
 
+## Update the initramfs.  Debian and Ubuntu put the graphics driver in, and
+# need the touch(1) command below.  Everyone else that I checked just need
+# the right module alias file from depmod(1) and only use the initramfs to
+# load the root filesystem, not the boot splash.  update-initramfs works
+# for the first two and dracut for every one else I checked.  We are only
+# interested in distributions recent enough to use the KMS vboxvideo driver.
+## @param $1  kernel version to update for.
+update_module_dependencies()
+{
+    depmod "${1}"
+    test -d "/lib/modules/${1}/initrd" &&
+        touch "/lib/modules/${1}/initrd/vboxvideo"
+    test -n "${QUICKSETUP}" && return
+    if type dracut >/dev/null 2>&1; then
+        dracut -f "/boot/initramfs-${1}.img"
+    elif type update-initramfs >/dev/null 2>&1; then
+        update-initramfs -u -k "${1}"
+    fi
+}
+
 # Remove any existing VirtualBox guest kernel modules from the disk, but not
 # from the kernel as they may still be in use
 cleanup_modules()
@@ -336,7 +362,7 @@ setup_modules()
         show_error "Look at $LOG to find out what went wrong"
     fi
     succ_msg
-    depmod
+    update_module_dependencies "${KERN_VER}"
     return 0
 }
 
@@ -471,7 +497,9 @@ cleanup()
 
     # Delete old versions of VBox modules.
     cleanup_modules
-    depmod
+    for i in /lib/modules/*; do
+        update_module_dependencies "${i#/lib/modules}"
+    done
 
     # Remove old module sources
     for i in $OLDMODULES; do
@@ -488,6 +516,7 @@ cleanup()
     rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
     rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
+    rm -f /lib/modules/*/initrd/vboxvideo
 }
 
 dmnstatus()
