@@ -93,7 +93,6 @@ INSERT INTO TestResultFailures ( idTestResult, tsEffective, tsExpire, uidAuthor,
    
 -- Add unique constraint to TestResult for our new foreign key.
 ALTER TABLE TestResults ADD CONSTRAINT TestResults_idTestResult_idTestSet_key UNIQUE (idTestResult, idTestSet);
-    FOREIGN KEY (idTestResult, idTestSet) REFERENCES TestResults(idTestResult, idTestSet) MATCH FULL;
 
 -- Restore foreign key.
 ALTER TABLE TestResultFailures ADD CONSTRAINT TestResultFailures_idTestResult_idTestSet_fkey 
