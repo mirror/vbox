@@ -63,9 +63,12 @@ class TestCaseArgsData(ModelDataBase):
     ksParam_sTestBoxReqExpr    = 'TestCaseArgs_sTestBoxReqExpr';
     ksParam_sBuildReqExpr      = 'TestCaseArgs_sBuildReqExpr';
     ksParam_cGangMembers       = 'TestCaseArgs_cGangMembers';
+    ksParam_sSubName           = 'TestCaseArgs_sSubName';
+
+    kcDbColumns                 = 12;
 
     kasAllowNullAttributes      = [ 'idTestCase', 'idTestCaseArgs', 'tsEffective', 'tsExpire', 'uidAuthor', 'idGenTestCaseArgs',
-                                    'cSecTimeout', 'sTestBoxReqExpr', 'sBuildReqExpr', ];
+                                    'cSecTimeout', 'sTestBoxReqExpr', 'sBuildReqExpr', 'sSubName', ];
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -85,6 +88,7 @@ class TestCaseArgsData(ModelDataBase):
         self.sTestBoxReqExpr    = None;
         self.sBuildReqExpr      = None;
         self.cGangMembers       = 1;
+        self.sSubName           = None;
 
     def initFromDbRow(self, aoRow):
         """
@@ -105,6 +109,7 @@ class TestCaseArgsData(ModelDataBase):
         self.sTestBoxReqExpr    = aoRow[8];
         self.sBuildReqExpr      = aoRow[9];
         self.cGangMembers       = aoRow[10];
+        self.sSubName           = aoRow[11];
         return self;
 
     def initFromDbWithId(self, oDb, idTestCaseArgs, tsNow = None, sPeriodBack = None):
@@ -131,7 +136,7 @@ class TestCaseArgsData(ModelDataBase):
 
     def initFromValues(self, sArgs, cSecTimeout = None, sTestBoxReqExpr = None, sBuildReqExpr = None,  # pylint: disable=R0913
                        cGangMembers = 1, idTestCase = None, idTestCaseArgs = None, tsEffective = None, tsExpire = None,
-                       uidAuthor = None, idGenTestCaseArgs = None):
+                       uidAuthor = None, idGenTestCaseArgs = None, sSubName = None):
         """
         Reinitialize from values.
         Returns self.
@@ -147,6 +152,7 @@ class TestCaseArgsData(ModelDataBase):
         self.sTestBoxReqExpr    = sTestBoxReqExpr;
         self.sBuildReqExpr      = sBuildReqExpr;
         self.cGangMembers       = cGangMembers;
+        self.sSubName           = sSubName;
         return self;
 
     def getAttributeParamNullValues(self, sAttr):

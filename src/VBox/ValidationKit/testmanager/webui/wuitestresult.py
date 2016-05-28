@@ -391,6 +391,7 @@ class WuiTestResult(WuiContentBase):
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, oData.tsEffective);
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, oData.tsExpire);
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, oData.uidAuthor);
+                oForm.addTextHidden(TestResultFailureData.ksParam_idTestSet, oData.idTestSet);
                 oForm.addSubmit('Change Reason');
 
             else:
@@ -400,6 +401,7 @@ class WuiTestResult(WuiContentBase):
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, '');
+                oForm.addTextHidden(TestResultFailureData.ksParam_idTestSet, oData.idTestSet);
                 oForm.addSubmit('Add Reason');
 
             sHtml += oForm.finalize();

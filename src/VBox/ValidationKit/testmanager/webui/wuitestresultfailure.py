@@ -78,6 +78,7 @@ class WuiTestResultFailure(WuiFormContentBase):
                           'Reason', aoFailureReasons, sPostHtml = sPostHtml);
         oForm.addMultilineText(TestResultFailureData.ksParam_sComment,   oData.sComment,     'Comment');
         oForm.addIntRO(      TestResultFailureData.ksParam_idTestResult, oData.idTestResult, 'Test Result ID');
+        oForm.addIntRO(      TestResultFailureData.ksParam_idTestSet,    oData.idTestSet,    'Test Set ID');
         oForm.addTimestampRO(TestResultFailureData.ksParam_tsEffective,  oData.tsEffective,  'Effective Date');
         oForm.addTimestampRO(TestResultFailureData.ksParam_tsExpire,     oData.tsExpire,     'Expire (excl)');
         oForm.addIntRO(      TestResultFailureData.ksParam_uidAuthor,    oData.uidAuthor,    'Changed by UID');

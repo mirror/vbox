@@ -68,24 +68,39 @@ class WuiTestCaseList(WuiListContentBase):
 
         # Base command and variations.
         fNoGang = True;
+        fNoSubName = True;
+        fAllDefaultTimeouts = True;
         for oVar in oEntry.aoTestCaseArgs:
+            if fNoSubName and oVar.sSubName is not None and len(oVar.sSubName.strip()) > 0:
+                fNoSubName = False;
             if oVar.cGangMembers > 1:
                 fNoGang = False;
-                break;
+            if oVar.cSecTimeout is not None:
+                fAllDefaultTimeouts = False;
+
         sHtml  = '  <table class="tminnertbl" width=100%>\n' \
                  '    <tr>\n' \
-                 '      <th>';
+                 '      ';
+        if not fNoSubName:
+            sHtml += '<th class="tmtcasubname">Sub-name</th>';
         if not fNoGang:
-            sHtml += '<th>Gang Size</th>';
-        sHtml += 'Timeout</th><th>Additional Arguments</b></th>\n' \
+            sHtml += '<th class="tmtcagangsize">Gang Size</th>';
+        if not fAllDefaultTimeouts:
+            sHtml += '<th class="tmtcatimeout">Timeout</th>';
+        sHtml += '<th>Additional Arguments</b></th>\n' \
                  '    </tr>\n'
         for oTmp in oEntry.aoTestCaseArgs:
             sHtml += '<tr>';
+            if not fNoSubName:
+                sHtml += '<td>%s</td>' % (webutils.escapeElem(oTmp.sSubName) if oTmp.sSubName is not None else '');
             if not fNoGang:
                 sHtml += '<td>%d</td>' % (oTmp.cGangMembers,)
-            sHtml += '<td>%s</td><td>%s</td></tr>\n' \
-                   % ( utils.formatIntervalSeconds(oTmp.cSecTimeout) if oTmp.cSecTimeout is not None else 'Default',
-                       webutils.escapeElem(oTmp.sArgs.replace('-', u'\u2011')),)
+            if not fAllDefaultTimeouts:
+                sHtml += '<td>%s</td>' \
+                       % (utils.formatIntervalSeconds(oTmp.cSecTimeout) if oTmp.cSecTimeout is not None else 'Default',)
+            sHtml += u'<td>%s</td></tr>' \
+                % ( webutils.escapeElem(oTmp.sArgs.replace('-', u'\u2011')) if len(oTmp.sArgs) > 0 else u'\u2011',);
+            sHtml += '</tr>\n';
         sHtml += '  </table>'
 
         aoRet.append([oEntry.sBaseCmd.replace('-', u'\u2011'), WuiRawHtml(sHtml)]);

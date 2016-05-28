@@ -451,7 +451,7 @@ class WuiHlpForm(object):
             sHtml += u'    }\n';
             sHtml += u'}\n';
             sHtml += u'\n';
-            sHtml += u'function %s_extendListEx(cGangMembers, cSecTimeout, sArgs, sTestBoxReqExpr, sBuildReqExpr)\n' % (sName,);
+            sHtml += u'function %s_extendListEx(sSubName, cGangMembers, cSecTimeout, sArgs, sTestBoxReqExpr, sBuildReqExpr)\n' % (sName,);
             sHtml += u'{\n';
             sHtml += u'    var oElement = document.getElementById(\'%s\');\n' % (sTableId,);
             sHtml += u'    var oTBody   = document.createElement(\'tbody\');\n';
@@ -465,6 +465,10 @@ class WuiHlpForm(object):
             oVarDefaults.convertToParamNull();
             sHtml += u'\n';
             sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-first-row">\';\n';
+            sHtml += u'    sHtml += \'  <td>Sub-Name:</td>\';\n';
+            sHtml += u'    sHtml += \'  <td class="tmform-field-subname">' \
+                      '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][0]" value="\' + sSubName + \'"></td>\';\n' \
+                   % (sName, TestCaseArgsData.ksParam_sSubName, sName,);
             sHtml += u'    sHtml += \'  <td>Gang Members:</td>\';\n';
             sHtml += u'    sHtml += \'  <td class="tmform-field-tiny-int">' \
                       '<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][0]" value="\' + cGangMembers + \'"></td>\';\n' \
@@ -480,7 +484,7 @@ class WuiHlpForm(object):
             sHtml += u'\n';
             sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-inner-row">\';\n';
             sHtml += u'    sHtml += \'  <td>Arguments:</td>\';\n';
-            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
+            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="6">' \
                      u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sArgs + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_sArgs, sName,);
             sHtml += u'    sHtml += \'  <td></td>\';\n';
@@ -488,7 +492,7 @@ class WuiHlpForm(object):
             sHtml += u'\n';
             sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-inner-row">\';\n';
             sHtml += u'    sHtml += \'  <td>TestBox Reqs:</td>\';\n';
-            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
+            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="6">' \
                      u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sTestBoxReqExpr' \
                      u' + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_sTestBoxReqExpr, sName,);
@@ -497,7 +501,7 @@ class WuiHlpForm(object):
             sHtml += u'\n';
             sHtml += u'    sHtml += \'<tr class="tmform-testcasevars-final-row">\';\n';
             sHtml += u'    sHtml += \'  <td>Build Reqs:</td>\';\n';
-            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="4">' \
+            sHtml += u'    sHtml += \'  <td class="tmform-field-wide100" colspan="6">' \
                      u'<input name="%s[\' + sId + \'][%s]" id="%s[\' + sId + \'][2]" value="\' + sBuildReqExpr + \'"></td>\';\n' \
                    % (sName, TestCaseArgsData.ksParam_sBuildReqExpr, sName,);
             sHtml += u'    sHtml += \'  <td></td>\';\n';
@@ -514,42 +518,42 @@ class WuiHlpForm(object):
             sHtml += u'}\n';
             sHtml += u'function %s_extendList()\n' % (sName,);
             sHtml += u'{\n';
-            sHtml += u'    %s_extendListEx("%s", "%s", "%s", "%s", "%s");\n' % (sName,
-                escapeAttr(unicode(oVarDefaults.cGangMembers)), escapeAttr(unicode(oVarDefaults.cSecTimeout)),
-                escapeAttr(oVarDefaults.sArgs), escapeAttr(oVarDefaults.sTestBoxReqExpr),
-                escapeAttr(oVarDefaults.sBuildReqExpr), );
+            sHtml += u'    %s_extendListEx("%s", "%s", "%s", "%s", "%s", "%s");\n' % (sName,
+                escapeAttr(unicode(oVarDefaults.sSubName)), escapeAttr(unicode(oVarDefaults.cGangMembers)),
+                escapeAttr(unicode(oVarDefaults.cSecTimeout)), escapeAttr(oVarDefaults.sArgs),
+                escapeAttr(oVarDefaults.sTestBoxReqExpr), escapeAttr(oVarDefaults.sBuildReqExpr), );
             sHtml += u'}\n';
             if config.g_kfVBoxSpecific:
                 sSecTimeoutDef = escapeAttr(unicode(oVarDefaults.cSecTimeout));
                 sHtml += u'function vbox_%s_add_uni()\n' % (sName,);
                 sHtml += u'{\n';
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes raw", ' \
+                sHtml += u'    %s_extendListEx("uni-raw", "1", "%s", "--cpu-counts 1 --virt-modes raw", ' \
                          u' "", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
+                sHtml += u'    %s_extendListEx("uni-hw", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
                          u' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
+                sHtml += u'    %s_extendListEx("uni-np", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
                          u' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
                 sHtml += u'}\n';
                 sHtml += u'function vbox_%s_add_uni_amd64()\n' % (sName,);
                 sHtml += u'{\n';
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
+                sHtml += u'    %s_extendListEx("uni-64-hw", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
                          u' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
+                sHtml += u'    %s_extendListEx("uni-64-np", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
                          u' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
                 sHtml += u'}\n';
                 sHtml += u'function vbox_%s_add_smp()\n' % (sName,);
                 sHtml += u'{\n';
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 2 --virt-modes hwvirt",' \
+                sHtml += u'    %s_extendListEx("smp2-hw", "1", "%s", "--cpu-counts 2 --virt-modes hwvirt",' \
                          u' "fCpuHwVirt is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 2 --virt-modes hwvirt-np",' \
+                sHtml += u'    %s_extendListEx("smp2-np", "1", "%s", "--cpu-counts 2 --virt-modes hwvirt-np",' \
                          u' "fCpuNestedPaging is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 3 --virt-modes hwvirt",' \
+                sHtml += u'    %s_extendListEx("smp3-hw", "1", "%s", "--cpu-counts 3 --virt-modes hwvirt",' \
                          u' "fCpuHwVirt is True and cCpus >= 3", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 4 --virt-modes hwvirt-np ",' \
+                sHtml += u'    %s_extendListEx("smp4-np", "1", "%s", "--cpu-counts 4 --virt-modes hwvirt-np ",' \
                          u' "fCpuNestedPaging is True and cCpus >= 4", "");\n' % (sName, sSecTimeoutDef);
-                #sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 6 --virt-modes hwvirt",' \
+                #sHtml += u'    %s_extendListEx("smp6-hw", "1", "%s", "--cpu-counts 6 --virt-modes hwvirt",' \
                 #         u' "fCpuHwVirt is True and cCpus >= 6", "");\n' % (sName, sSecTimeoutDef);
-                #sHtml += u'    %s_extendListEx("1", "%s", "--cpu-counts 8 --virt-modes hwvirt-np",' \
+                #sHtml += u'    %s_extendListEx("smp8-np", "1", "%s", "--cpu-counts 8 --virt-modes hwvirt-np",' \
                 #         u' "fCpuNestedPaging is True and cCpus >= 8", "");\n' % (sName, sSecTimeoutDef);
                 sHtml += u'}\n';
             sHtml += u'</script>\n';
@@ -580,11 +584,14 @@ class WuiHlpForm(object):
 
             sHtml += u'<tbody id="%s[%s][6]">\n' % (sName, iVar,)
             sHtml += u'  <tr class="tmform-testcasevars-first-row">\n' \
+                     u'    <td>Sub-name:</td>' \
+                     u'    <td class="tmform-field-subname"><input name="%s[%s][%s]" id="%s[%s][1]" value="%s"%s></td>\n' \
                      u'    <td>Gang Members:</td>' \
                      u'    <td class="tmform-field-tiny-int"><input name="%s[%s][%s]" id="%s[%s][1]" value="%s"%s></td>\n' \
                      u'    <td>Timeout:</td>' \
                      u'    <td class="tmform-field-int"><input name="%s[%s][%s]" id="%s[%s][2]" value="%s"%s></td>\n' \
-                   % ( sName, iVar, TestCaseArgsData.ksParam_cGangMembers, sName, iVar, oVar.cGangMembers, sReadOnlyAttr,
+                   % ( sName, iVar, TestCaseArgsData.ksParam_sSubName, sName, iVar, oVar.sSubName, sReadOnlyAttr,
+                       sName, iVar, TestCaseArgsData.ksParam_cGangMembers, sName, iVar, oVar.cGangMembers, sReadOnlyAttr,
                        sName, iVar, TestCaseArgsData.ksParam_cSecTimeout,  sName, iVar,
                        utils.formatIntervalSeconds2(oVar.cSecTimeout), sReadOnlyAttr, );
             if not fReadOnly:
@@ -597,7 +604,7 @@ class WuiHlpForm(object):
 
             sHtml += u'  <tr class="tmform-testcasevars-inner-row">\n' \
                      u'    <td>Arguments:</td>' \
-                     u'    <td class="tmform-field-wide100" colspan="4">' \
+                     u'    <td class="tmform-field-wide100" colspan="6">' \
                      u'<input name="%s[%s][%s]" id="%s[%s][3]" value="%s"%s></td>\n' \
                      u'    <td></td>\n' \
                      u'  </tr>\n' \
@@ -605,7 +612,7 @@ class WuiHlpForm(object):
 
             sHtml += u'  <tr class="tmform-testcasevars-inner-row">\n' \
                      u'    <td>TestBox Reqs:</td>' \
-                     u'    <td class="tmform-field-wide100" colspan="4">' \
+                     u'    <td class="tmform-field-wide100" colspan="6">' \
                      u'<input name="%s[%s][%s]" id="%s[%s][4]" value="%s"%s></td>\n' \
                      u'    <td></td>\n' \
                      u'  </tr>\n' \
@@ -614,7 +621,7 @@ class WuiHlpForm(object):
 
             sHtml += u'  <tr class="tmform-testcasevars-final-row">\n' \
                      u'    <td>Build Reqs:</td>' \
-                     u'    <td class="tmform-field-wide100" colspan="4">' \
+                     u'    <td class="tmform-field-wide100" colspan="6">' \
                      u'<input name="%s[%s][%s]" id="%s[%s][5]" value="%s"%s></td>\n' \
                      u'    <td></td>\n' \
                      u'  </tr>\n' \

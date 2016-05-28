@@ -401,6 +401,8 @@ CREATE TABLE TestCaseArgs (
     sBuildReqExpr       TEXT        DEFAULT NULL,
     --- Number of testboxes required (gang scheduling).
     cGangMembers        SMALLINT    DEFAULT 1  NOT NULL  CHECK (cGangMembers > 0 AND cGangMembers < 1024),
+    --- Optional variation sub-name.
+    sSubName            TEXT        DEFAULT NULL,
 
     --- The arguments are part of the primary key for several reasons.
     -- No duplicate argument lists (makes no sense - if you want to prioritize
@@ -956,6 +958,11 @@ CREATE TABLE TestResultFailures (
     --- The user id of the one who created/modified this entry.
     -- Non-unique foreign key: Users(uid)
     uidAuthor           INTEGER     NOT NULL,
+    --- The testsest this result is a part of.
+    -- This is mainly an aid for bypassing the enormous TestResults table.
+    -- Note! This is a foreign key, but we have to add it after TestSets has
+    --       been created, see further down.
+    idTestSet           INTEGER     NOT NULL,
 
     --- The suggested failure reason.
     -- Non-unique foreign key: FailureReasons(idFailureReason)
@@ -965,7 +972,9 @@ CREATE TABLE TestResultFailures (
 
     PRIMARY KEY (idTestResult, tsExpire)
 );
-
+CREATE INDEX TestResultFailureIdx  ON TestResultFailures (idTestSet, tsExpire DESC, tsEffective ASC);
+CREATE INDEX TestResultFailureIdx2 ON TestResultFailures (idTestResult, tsExpire DESC, tsEffective ASC);
+CREATE INDEX TestResultFailureIdx3 ON TestResultFailures (idFailureReason, idTestResult, tsExpire DESC, tsEffective ASC);
 
 
 
@@ -1308,7 +1317,10 @@ CREATE TABLE TestResults (
                                                  'failure'::TestStatus_T, 'timed-out'::TestStatus_T, 'rebooted'::TestStatus_T ))
                OR (cErrors = 0 AND enmStatus IN ('running'::TestStatus_T, 'success'::TestStatus_T,
                                                  'skipped'::TestStatus_T, 'aborted'::TestStatus_T, 'bad-testbox'::TestStatus_T))
-              )
+              ),
+    -- The following is for the TestResultFailures foreign key.
+    -- Note! This was added with the name TestResults_idTestResult_idTestSet_key in the tmdb-r16 update script.
+    UNIQUE (idTestResult, idTestSet)
 );
 
 CREATE INDEX TestResultsSetIdx ON TestResults (idTestSet, idStrName, idTestResult);
@@ -1317,8 +1329,8 @@ CREATE INDEX TestResultsParentIdx ON TestResults (idTestResultParent);
 CREATE INDEX TestResultsNameIdx ON TestResults (idStrName, tsCreated DESC);
 CREATE INDEX TestResultsNameIdx2 ON TestResults (idTestResult, idStrName);
 
-ALTER TABLE TestResultFailures
-    ADD CONSTRAINT idTestResultFk FOREIGN KEY (idTestResult) REFERENCES TestResults(idTestResult) MATCH FULL;
+ALTER TABLE TestResultFailures ADD CONSTRAINT TestResultFailures_idTestResult_idTestSet_fkey 
+    FOREIGN KEY (idTestResult, idTestSet) REFERENCES TestResults(idTestResult, idTestSet) MATCH FULL;
 
 
 --- @table TestResultValues
@@ -1556,6 +1568,7 @@ CREATE INDEX TestSetsGraphBoxIdx    ON TestSets (idTestBox, tsCreated DESC, tsDo
 
 ALTER TABLE TestResults      ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 ALTER TABLE TestResultValues ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultFailures ADD CONSTRAINT idTestSetFk FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 
 
 

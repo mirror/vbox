@@ -585,6 +585,10 @@ table.tmlistnavtab {
     width:          24em;
 }
 
+.tmform-field-subname input {
+    width:          10em;
+}
+
 .tmform-field-timestamp input {
     width:          20em;
 }

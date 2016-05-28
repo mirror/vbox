@@ -339,32 +339,6 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         oFailureReasonLogic = FailureReasonLogic(self._oDb);
         oSet = ReportFailureReasonSet();
         for iPeriod in xrange(self.cPeriods):
-            #cHoursStarted = (self.cPeriods - iPeriod) * self.cHoursPerPeriod;
-            #if self.tsNow is None:
-            #    sTsFirst = '(CURRENT_TIMESTAMP - interval \'%u hours\')' % (cHoursStarted,);
-            #
-            #else:
-            #    sTsFirst = '(%s - interval \'%u hours\')' \
-            #             % ( self._oDb.formatBindArgs('%s::TIMESTAMP', (self.tsNow,)), cHoursStarted,) ;
-            #
-            #self._oDb.execute('SELECT   TestResultFailures.idFailureReason,\n'
-            #                  '         COUNT(TestResultFailures.idTestResult),\n'
-            #                  '         MIN(TestSets.tsDone),\n'
-            #                  '         MAX(TestSets.tsDone)\n'
-            #                  'FROM     TestResultFailures,\n'
-            #                  '         TestResults,\n'
-            #                  '         TestSets' + self.getExtraSubjectTables() + '\n'
-            #                  'WHERE    TestResultFailures.idTestResult = TestResults.idTestResult\n'
-            #                  '     AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP\n'
-            #                  '     AND TestResultFailures.tsEffective >= ' + sTsFirst + '\n'
-            #                  '     AND TestResults.enmStatus <> \'running\'\n'
-            #                  '     AND TestResults.enmStatus <> \'success\'\n'
-            #                  '     AND TestResults.tsCreated >= ' + sTsFirst + '\n'
-            #                  '     AND TestResults.idTestSet = TestSets.idTestSet\n'
-            #                + self.getExtraSubjectWhereExpr()
-            #                + self.getExtraWhereExprForPeriod(iPeriod)
-            #                + 'GROUP BY TestResultFailures.idFailureReason\n');
-
             self._oDb.execute('SELECT   idFailureReason,\n'
                               '         COUNT(idTestResult),\n'
                               '         MIN(tsDone),\n'
@@ -373,7 +347,6 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                               'WHERE    TRUE\n'
                             + self.getExtraWhereExprForPeriod(iPeriod).replace('TestSets.', '')
                             + 'GROUP BY idFailureReason\n');
-
             aaoRows = self._oDb.fetchAll()
 
             oPeriod = ReportFailureReasonPeriod(oSet, iPeriod, self.getStraightPeriodDesc(iPeriod),
@@ -399,6 +372,31 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                 if oPeriodRow.tsMax > oPeriod.tsMax:
                     oPeriod.tsMax = oPeriodRow.tsMax;
             oSet.cHits += oPeriod.cHits;
+
+            ## Count how many test sets we've got without any reason associated with them.
+            #self._oDb.execute('SELECT   COUNT(idTestSet)\n'
+            #                  'FROM     TestSets,\n'
+            #                  '         Test'
+            #                  'WHERE    TRUE\n'
+            #                  + self.getExtraWhereExprForPeriod(iPeriod) +
+            #                  '     AND TestSets.enmStatus          <> \'running\'\n'
+            #                  '     AND TestSets.enmStatus          <> \'success\'\n'
+            #
+            #                  'WHERE    TestResultFailures.idTestResult = TestResults.idTestResult\n'
+            #                  '     AND TestResultFailures.tsExpire     = \'infinity\'::TIMESTAMP\n'
+            #                  '     AND TestResultFailures.tsEffective >= ' + sTsFirst + '\n'
+            #                  '     AND TestResults.enmStatus          <> \'running\'\n'
+            #                  '     AND TestResults.enmStatus          <> \'success\'\n'
+            #                  '     AND TestResults.tsCreated          >= ' + sTsFirst + '\n'
+            #                  '     AND TestResults.tsCreated          <  ' + sTsNow + '\n'
+            #                  '     AND TestResults.idTestSet           = TestSets.idTestSet\n'
+            #                  '     AND TestSets.tsDone                >= ' + sTsFirst + '\n'
+            #                  '     AND TestSets.tsDone                <  ' + sTsNow + '\n'
+            #
+            #                + self.getExtraWhereExprForPeriod(iPeriod).replace('TestSets.', '')
+            #                + 'GROUP BY idFailureReason\n');
+            #aaoRows = self._oDb.fetchAll()
+
 
         #
         # construct the diLast and dLast bits.
