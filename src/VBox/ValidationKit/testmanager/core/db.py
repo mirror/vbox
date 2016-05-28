@@ -332,7 +332,7 @@ class TMDatabaseConnection(object):
             sBound = sBound.decode('utf-8');
 
         aasExplain = None;
-        if self._oExplainCursor is not None:
+        if self._oExplainCursor is not None and not sBound.startswith('DROP'):
             try:
                 if config.g_kfWebUiSqlTraceExplainTiming:
                     self._oExplainCursor.execute('EXPLAIN (ANALYZE, BUFFERS, COSTS, VERBOSE, TIMING) ' + sBound);

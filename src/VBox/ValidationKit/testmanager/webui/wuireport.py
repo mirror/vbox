@@ -30,8 +30,9 @@ __version__ = "$Revision$"
 
 
 # Validation Kit imports.
-from testmanager.webui.wuicontentbase   import WuiContentBase;
-from testmanager.webui.wuihlpgraph       import WuiHlpGraphDataTable, WuiHlpBarGraph;
+from common                             import webutils;
+from testmanager.webui.wuicontentbase   import WuiContentBase, WuiSvnLinkWithTooltip;
+from testmanager.webui.wuihlpgraph      import WuiHlpGraphDataTable, WuiHlpBarGraph;
 from testmanager.core.report            import ReportModelBase;
 
 
@@ -131,12 +132,95 @@ class WuiReportFailureReasons(WuiReportBase):
     Generates a report displaying the failure reasons over time.
     """
 
+    def _formatEdgeOccurence(self, oTransient):
+        """
+        Helper for formatting the transients.
+        oTransient is of type ReportFailureReasonTransient.
+        """
+        sHtml = u'<li>';
+        if oTransient.fEnter:   sHtml += 'Since ';
+        else:                   sHtml += 'Till ';
+        sHtml += WuiSvnLinkWithTooltip(oTransient.iRevision, oTransient.sRepository, fBracketed = 'False').toHtml();
+        sHtml += u', %s: ' % (self.formatTsShort(oTransient.tsDone),);
+        sHtml += u'%s / %s' % (webutils.escapeElem(oTransient.oReason.oCategory.sShort),
+                               webutils.escapeElem(oTransient.oReason.sShort),);
+        sHtml += u'</li>\n';
+
+        return sHtml;
+
+
     def generateReportBody(self):
-        # Mockup.
-        self._sTitle = 'Success rate';
-        return '<p>Graph showing COUNT(idFailureReason) grouped by time period.</p>' \
-               '<p>New reasons per period, tracked down to build revision.</p>' \
-               '<p>Show graph content in table form.</p>';
+        self._sTitle = 'Failure reasons';
+
+        sHtml = u'';
+
+        #
+        # The array of periods we get have the oldest period first [0].
+        #
+        oSet = self._oModel.getFailureReasons();
+
+        #
+        # List failure reasons starting or stopping to appear within the data set.
+        #
+        dtFirstLast = {};
+        for iPeriod, oPeriod in enumerate(oSet.aoPeriods):
+            for oRow in oPeriod.aoRows:
+                tIt = dtFirstLast.get(oRow.idFailureReason, (iPeriod, iPeriod));
+                #sHtml += u'<!-- %d: %d,%d -- %d -->\n' % (oRow.idFailureReason, tIt[0], tIt[1], iPeriod);
+                dtFirstLast[oRow.idFailureReason] = (tIt[0], iPeriod);
+
+        sHtml += '<!-- \n';
+        for iPeriod, oPeriod in enumerate(oSet.aoPeriods):
+            sHtml += ' iPeriod=%d tsStart=%s tsEnd=%s\n' % (iPeriod, oPeriod.tsStart, oPeriod.tsEnd,);
+            sHtml += '             tsMin=%s tsMax=%s\n' % (oPeriod.tsMin, oPeriod.tsMax,);
+            sHtml += '              %d / %s\n' % (oPeriod.iPeriod, oPeriod.sDesc,)
+        sHtml += '-->\n';
+
+        sHtml += u'<h4>Changes:</h4>\n' \
+                 u'<ul>\n';
+        if len(oSet.aoEnterInfo) == 0 and len(oSet.aoLeaveInfo) == 0:
+            sHtml += u'<li> No changes</li>\n';
+        else:
+            for oTransient in oSet.aoEnterInfo:
+                sHtml += self._formatEdgeOccurence(oTransient);
+            for oTransient in oSet.aoLeaveInfo:
+                sHtml += self._formatEdgeOccurence(oTransient);
+        sHtml += u'</ul>\n';
+
+        #
+        # Graph.
+        #
+        if True: # pylint: disable=W0125
+            aidSorted = sorted(oSet.dReasons, key = lambda idReason: oSet.dTotals[idReason], reverse = True);
+        else:
+            aidSorted = sorted(oSet.dReasons,
+                               key = lambda idReason: '%s / %s' % (oSet.dReasons[idReason].oCategory.sShort,
+                                                                   oSet.dReasons[idReason].sShort,));
+
+        asNames = [];
+        for idReason in aidSorted:
+            oReason = oSet.dReasons[idReason];
+            asNames.append('%s / %s' % (oReason.oCategory.sShort, oReason.sShort,) )
+        oTable = WuiHlpGraphDataTable('Period', asNames);
+
+        for iPeriod, oPeriod in enumerate(reversed(oSet.aoPeriods)):
+            aiValues = [];
+            for idReason in aidSorted:
+                oRow = oPeriod.dById.get(idReason, None);
+                iValue = oRow.cHits if oRow is not None else 0;
+                aiValues.append(iValue);
+            oTable.addRow(oPeriod.sDesc, aiValues);
+
+        oGraph = WuiHlpBarGraph('failure-reason', oTable, self._oDisp);
+        oGraph.setRangeMax(max(oSet.cMaxRowHits + 1, 3));
+        sHtml += oGraph.renderGraph();
+
+        #
+        # Table form necessary?
+        #
+        #sHtml += u'<p>TODO: Show graph content in table form.</p>';
+
+        return sHtml;
 
 
 class WuiReportSummary(WuiReportBase):
@@ -151,7 +235,18 @@ class WuiReportSummary(WuiReportBase):
 
         oSuccessRate = WuiReportSuccessRate(self._oModel, self._dParams, fSubReport = True,
                                             fnDPrint = self._fnDPrint, oDisp = self._oDisp);
-        sHtml += oSuccessRate.show()[1];
+
+
+
+        oFailureReasons = WuiReportFailureReasons(self._oModel, self._dParams, fSubReport = True,
+                                                  fnDPrint = self._fnDPrint, oDisp = self._oDisp);
+        for oReport in [oSuccessRate, oFailureReasons, ]:
+            (sTitle, sContent) = oReport.show();
+            sHtml += '<br>'; # drop this layout hack
+            sHtml += '<div>';
+            sHtml += '<h3>%s</h3>\n' % (webutils.escapeElem(sTitle),);
+            sHtml += sContent;
+            sHtml += '</div>';
 
         return sHtml;
 

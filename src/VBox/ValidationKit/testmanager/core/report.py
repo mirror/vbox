@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 from testmanager.core.base          import ModelLogicBase, TMExceptionBase;
 from testmanager.core.build         import BuildCategoryData;
 from testmanager.core.dbobjcache    import DatabaseObjCache;
+from testmanager.core.failurereason import FailureReasonLogic;
 from testmanager.core.testbox       import TestBoxData;
 from common                         import constants;
 
@@ -125,6 +126,20 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
 
         return sWhere;
 
+    def getPeriodStart(self, iPeriod):
+        """ Gets the python timestamp for the start of the given period. """
+        from datetime import timedelta;
+        tsNow = self.tsNow if self.tsNow is not None else self._oDb.getCurrentTimestamp();
+        cHoursStart = (self.cPeriods - iPeriod    ) * self.cHoursPerPeriod;
+        return tsNow - timedelta(hours = cHoursStart);
+
+    def getPeriodEnd(self, iPeriod):
+        """ Gets the python timestamp for the end of the given period. """
+        from datetime import timedelta;
+        tsNow = self.tsNow if self.tsNow is not None else self._oDb.getCurrentTimestamp();
+        cHoursEnd   = (self.cPeriods - iPeriod - 1) * self.cHoursPerPeriod;
+        return tsNow - timedelta(hours = cHoursEnd);
+
     def getExtraWhereExprForPeriod(self, iPeriod):
         """
         Returns additional WHERE expression for getting test sets for the
@@ -156,6 +171,64 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
             return '%dd ago' % (iPeriod, );
         return '%dh ago' % (iPeriod * self.cHoursPerPeriod, );
 
+    def getStraightPeriodDesc(self, iPeriod):
+        """
+        Returns the period description, usually for graph data.
+        """
+        iWickedPeriod = self.cPeriods - iPeriod - 1;
+        return self.getPeriodDesc(iWickedPeriod);
+
+
+class ReportFailureReasonRow(object):
+    """ Simpler to return this than muck about with stupid arrays. """
+    def __init__(self, aoRow, oReason):
+        self.idFailureReason = aoRow[0];
+        self.cHits           = aoRow[1];
+        self.tsMin           = aoRow[2];
+        self.tsMax           = aoRow[3];
+        self.oReason         = oReason; # FailureReasonDataEx
+
+class ReportFailureReasonTransient(object):
+    """ Details the first or last occurence of a reason.  """
+    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, oReason, iPeriod, fEnter):
+        self.idBuild      = idBuild;        # Build ID.
+        self.iRevision    = iRevision;      # SVN revision for build.
+        self.sRepository  = sRepository;    # SVN repository for build.
+        self.idTestSet    = idTestSet;      # Test set.
+        self.idTestResult = idTestResult;   # Test result.
+        self.tsDone       = tsDone;         # When the test set was done.
+        self.oReason      = oReason;        # FailureReasonDataEx
+        self.iPeriod      = iPeriod;        # Data set period.
+        self.fEnter       = fEnter;         # True if enter event, False if leave event.
+
+class ReportFailureReasonPeriod(object):
+    """ A period in ReportFailureReasonSet. """
+    def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
+        self.oSet      = oSet   # Reference to the parent ReportFailureReasonSet.
+        self.iPeriod   = iPeriod;
+        self.sDesc     = sDesc;
+        self.aoRows    = [];    # Rows in order the database returned them.
+        self.dById     = {};    # Same as aoRows but indexed by idFailureReason.
+        self.cHits     = 0;     # Total number of hits.
+        self.dFirst    = {};    # The reasons seen for the first time (idFailureReason key).
+        self.dLast     = {};    # The reasons seen for the last time (idFailureReason key).
+        self.tsStart   = tsFrom;
+        self.tsEnd     = tsTo;
+        self.tsMin     = tsTo;
+        self.tsMax     = tsFrom;
+
+class ReportFailureReasonSet(object):
+    """ What ReportLazyModel.getFailureReasons returns. """
+    def __init__(self):
+        self.aoPeriods   = [];  # Periods in ascending order (time wise).
+        self.dReasons    = {};  # FailureReasonDataEx objected indexted by idFailureReason
+        self.dTotals     = {};  # Totals per reason, indexed by idFailureReason.
+        self.cHits       = 0;   # Total number of hits in all periods and all reasons.
+        self.cMaxRowHits = 0;   # Max hits in a row.
+        self.diFirst     = {};  # The period number a reason was first seen (idFailureReason key).
+        self.diLast      = {};  # The period number a reason was last seen (idFailureReason key).
+        self.aoEnterInfo = [];  # Array of ReportFailureReasonTransient order by iRevision. Excludes the first period.
+        self.aoLeaveInfo = [];  # Array of ReportFailureReasonTransient order in descending order by iRevision.  Excludes last.
 
 
 
@@ -190,7 +263,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         """
 
         adPeriods = [];
-        for iPeriod in range(self.cPeriods):
+        for iPeriod in xrange(self.cPeriods):
             self._oDb.execute('SELECT   enmStatus, COUNT(TestSets.idTestSet)\n'
                               'FROM     TestSets' + self.getExtraSubjectTables() +'\n'
                               'WHERE    enmStatus <> \'running\'\n'
@@ -218,6 +291,186 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
             adPeriods.insert(0, dRet);
 
         return adPeriods;
+
+
+    def getFailureReasons(self):
+        """
+        Gets the failure reasons of the subject in the specified period.
+
+        Returns an array of data per period (0 is the oldes, self.cPeriods-1 is
+        the latest) where each entry is a dicationary using failure reason ID as
+        key.  The dictionary contains a tuple where the first element is the
+        number of occurences and the second is the corresponding
+        FailureReasonDataEx object from the cache.
+
+        Note that reason IDs may not be present in every period, we only return
+        those with actual occurences.
+        """
+
+        # Create a temporary table
+        sTsNow   = 'CURRENT_TIMESTAMP' if self.tsNow is None else self._oDb.formatBindArgs('%s::TIMESTAMP', (self.tsNow,));
+        sTsFirst = '(%s - interval \'%s hours\')' \
+                 % (sTsNow, self.cHoursPerPeriod * self.cPeriods,);
+        self._oDb.execute('CREATE TEMPORARY TABLE TmpReasons ON COMMIT DROP AS\n'
+                          'SELECT   TestResultFailures.idFailureReason AS idFailureReason,\n'
+                          '         TestResultFailures.idTestResult    AS idTestResult,\n'
+                          '         TestSets.idTestSet                 AS idTestSet,\n'
+                          '         TestSets.tsDone                    AS tsDone,\n'
+                          '         TestSets.tsCreated                 AS tsCreated,\n'
+                          '         TestSets.idBuild                   AS idBuild\n'
+                          'FROM     TestResultFailures,\n'
+                          '         TestResults,\n'
+                          '         TestSets' + self.getExtraSubjectTables() + '\n'
+                          'WHERE    TestResultFailures.idTestResult = TestResults.idTestResult\n'
+                          '     AND TestResultFailures.tsExpire     = \'infinity\'::TIMESTAMP\n'
+                          '     AND TestResultFailures.tsEffective >= ' + sTsFirst + '\n'
+                          '     AND TestResults.enmStatus          <> \'running\'\n'
+                          '     AND TestResults.enmStatus          <> \'success\'\n'
+                          '     AND TestResults.tsCreated          >= ' + sTsFirst + '\n'
+                          '     AND TestResults.tsCreated          <  ' + sTsNow + '\n'
+                          '     AND TestResults.idTestSet           = TestSets.idTestSet\n'
+                          '     AND TestSets.tsDone                >= ' + sTsFirst + '\n'
+                          '     AND TestSets.tsDone                <  ' + sTsNow + '\n'
+                        + self.getExtraSubjectWhereExpr());
+        self._oDb.execute('SELECT idFailureReason FROM TmpReasons;');
+
+
+        # Retrieve the period results.
+        oFailureReasonLogic = FailureReasonLogic(self._oDb);
+        oSet = ReportFailureReasonSet();
+        for iPeriod in xrange(self.cPeriods):
+            #cHoursStarted = (self.cPeriods - iPeriod) * self.cHoursPerPeriod;
+            #if self.tsNow is None:
+            #    sTsFirst = '(CURRENT_TIMESTAMP - interval \'%u hours\')' % (cHoursStarted,);
+            #
+            #else:
+            #    sTsFirst = '(%s - interval \'%u hours\')' \
+            #             % ( self._oDb.formatBindArgs('%s::TIMESTAMP', (self.tsNow,)), cHoursStarted,) ;
+            #
+            #self._oDb.execute('SELECT   TestResultFailures.idFailureReason,\n'
+            #                  '         COUNT(TestResultFailures.idTestResult),\n'
+            #                  '         MIN(TestSets.tsDone),\n'
+            #                  '         MAX(TestSets.tsDone)\n'
+            #                  'FROM     TestResultFailures,\n'
+            #                  '         TestResults,\n'
+            #                  '         TestSets' + self.getExtraSubjectTables() + '\n'
+            #                  'WHERE    TestResultFailures.idTestResult = TestResults.idTestResult\n'
+            #                  '     AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP\n'
+            #                  '     AND TestResultFailures.tsEffective >= ' + sTsFirst + '\n'
+            #                  '     AND TestResults.enmStatus <> \'running\'\n'
+            #                  '     AND TestResults.enmStatus <> \'success\'\n'
+            #                  '     AND TestResults.tsCreated >= ' + sTsFirst + '\n'
+            #                  '     AND TestResults.idTestSet = TestSets.idTestSet\n'
+            #                + self.getExtraSubjectWhereExpr()
+            #                + self.getExtraWhereExprForPeriod(iPeriod)
+            #                + 'GROUP BY TestResultFailures.idFailureReason\n');
+
+            self._oDb.execute('SELECT   idFailureReason,\n'
+                              '         COUNT(idTestResult),\n'
+                              '         MIN(tsDone),\n'
+                              '         MAX(tsDone)\n'
+                              'FROM     TmpReasons\n'
+                              'WHERE    TRUE\n'
+                            + self.getExtraWhereExprForPeriod(iPeriod).replace('TestSets.', '')
+                            + 'GROUP BY idFailureReason\n');
+
+            aaoRows = self._oDb.fetchAll()
+
+            oPeriod = ReportFailureReasonPeriod(oSet, iPeriod, self.getStraightPeriodDesc(iPeriod),
+                                                self.getPeriodStart(iPeriod), self.getPeriodEnd(iPeriod));
+            oSet.aoPeriods.append(oPeriod);
+            for aoRow in aaoRows:
+                oReason = oFailureReasonLogic.cachedLookup(aoRow[0]);
+                oPeriodRow = ReportFailureReasonRow(aoRow, oReason);
+                oPeriod.aoRows.append(oPeriodRow);
+                oPeriod.dById[oPeriodRow.idFailureReason] = oPeriodRow;
+                oPeriod.cHits += oPeriodRow.cHits;
+                if oPeriodRow.idFailureReason in oSet.dReasons:
+                    oSet.dTotals[oPeriodRow.idFailureReason]  += oPeriodRow.cHits;
+                else:
+                    oSet.dTotals[oPeriodRow.idFailureReason]   = oPeriodRow.cHits;
+                    oSet.dReasons[oPeriodRow.idFailureReason]  = oReason;
+                    oSet.diFirst[oPeriodRow.idFailureReason]   = iPeriod;
+                    oPeriod.dFirst[oPeriodRow.idFailureReason] = oReason;
+                if oPeriodRow.cHits > oSet.cMaxRowHits:
+                    oSet.cMaxRowHits = oPeriodRow.cHits;
+                if oPeriodRow.tsMin < oPeriod.tsMin:
+                    oPeriod.tsMin = oPeriodRow.tsMin;
+                if oPeriodRow.tsMax > oPeriod.tsMax:
+                    oPeriod.tsMax = oPeriodRow.tsMax;
+            oSet.cHits += oPeriod.cHits;
+
+        #
+        # construct the diLast and dLast bits.
+        #
+        for iPeriod in xrange(self.cPeriods - 1, 0, -1):
+            oPeriod = oSet.aoPeriods[iPeriod];
+            for oRow in oPeriod.aoRows:
+                if oRow.idFailureReason not in oSet.diLast:
+                    oSet.diLast[oRow.idFailureReason]   = iPeriod;
+                    oPeriod.dLast[oRow.idFailureReason] = oRow.oReason;
+
+        #
+        # For reasons entering after the first period, look up the build and
+        # test set it first occured with.
+        #
+        for iPeriod in xrange(1, self.cPeriods):
+            oPeriod = oSet.aoPeriods[iPeriod];
+            for oReason in oPeriod.dFirst.values():
+                oSet.aoEnterInfo.append(self._getEdgeFailureReasonOccurence(oReason, iPeriod, fEnter = True));
+        oSet.aoEnterInfo = sorted(oSet.aoEnterInfo, key = lambda oTrans: oTrans.iRevision);
+
+        # Ditto for reasons leaving before the last.
+        for iPeriod in xrange(self.cPeriods - 1):
+            oPeriod = oSet.aoPeriods[iPeriod];
+            for oReason in oPeriod.dLast.values():
+                oSet.aoLeaveInfo.append(self._getEdgeFailureReasonOccurence(oReason, iPeriod, fEnter = False));
+        oSet.aoLeaveInfo = sorted(oSet.aoLeaveInfo, key = lambda oTrans: oTrans.iRevision, reverse = True);
+
+        self._oDb.execute('DROP TABLE TmpReasons\n');
+        return oSet;
+
+
+    def _getEdgeFailureReasonOccurence(self, oReason, iPeriod, fEnter = True):
+        """
+        Helper for the failure reason report that finds the oldest or newest build
+        (SVN rev) and test set (start time) it occured with.
+
+        If fEnter is set the oldest occurence is return, if fEnter clear the newest
+        is is returned.
+
+        Returns ReportFailureReasonTransient instant.
+
+        """
+        sSorting = 'ASC' if fEnter else 'DESC';
+        self._oDb.execute('SELECT   TmpReasons.idTestResult,\n'
+                          '         TmpReasons.idTestSet,\n'
+                          '         TmpReasons.tsDone,\n'
+                          '         TmpReasons.idBuild,\n'
+                          '         Builds.iRevision,\n'
+                          '         BuildCategories.sRepository\n'
+                          'FROM     TmpReasons,\n'
+                          '         Builds,\n'
+                          '         BuildCategories\n'
+                          'WHERE    TmpReasons.idFailureReason  = %s\n'
+                          '     AND TmpReasons.idBuild          = Builds.idBuild\n'
+                          '     AND Builds.tsExpire             > TmpReasons.tsCreated\n'
+                          '     AND Builds.tsEffective         <= TmpReasons.tsCreated\n'
+                          '     AND Builds.idBuildCategory      = BuildCategories.idBuildCategory\n'
+                          'ORDER BY Builds.iRevision ' + sSorting + ',\n'
+                          '         TmpReasons.tsCreated ' + sSorting + '\n'
+                          'LIMIT 1\n'
+                          , ( oReason.idFailureReason, ));
+        aoRow = self._oDb.fetchOne();
+        if aoRow is None:
+            return ReportFailureReasonTransient(-1, -1, 'internal-error', -1, -1,
+                                                self._oDb.getCurrentTimestamp(), oReason, iPeriod);
+        return ReportFailureReasonTransient(idBuild = aoRow[3], iRevision = aoRow[4], sRepository = aoRow[5],
+                                            idTestSet = aoRow[1], idTestResult = aoRow[0], tsDone = aoRow[2],
+                                            oReason = oReason, iPeriod = iPeriod, fEnter = fEnter);
+
+
+
 
 class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
     """
