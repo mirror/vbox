@@ -139,7 +139,7 @@ class WuiReportFailureReasons(WuiReportBase):
         """
         sHtml = u'<li>';
         if oTransient.fEnter:   sHtml += 'Since ';
-        else:                   sHtml += 'Till ';
+        else:                   sHtml += 'Until ';
         sHtml += WuiSvnLinkWithTooltip(oTransient.iRevision, oTransient.sRepository, fBracketed = 'False').toHtml();
         sHtml += u', %s: ' % (self.formatTsShort(oTransient.tsDone),);
         sHtml += u'%s / %s' % (webutils.escapeElem(oTransient.oReason.oCategory.sShort),
@@ -188,31 +188,51 @@ class WuiReportFailureReasons(WuiReportBase):
         sHtml += u'</ul>\n';
 
         #
+        # Check if most of the stuff is without any assign reason, if so, skip
+        # that part of the graph so it doesn't offset the interesting bits.
+        #
+        fIncludeWithoutReason = True;
+        for oPeriod in reversed(oSet.aoPeriods):
+            if oPeriod.cWithoutReason > oSet.cMaxRowHits * 4:
+                fIncludeWithoutReason = False;
+                sHtml += '<p>Warning: Many failures without assigned reason!</p>\n';
+                break;
+
+        #
         # Graph.
         #
         if True: # pylint: disable=W0125
             aidSorted = sorted(oSet.dReasons, key = lambda idReason: oSet.dTotals[idReason], reverse = True);
         else:
-            aidSorted = sorted(oSet.dReasons,
-                               key = lambda idReason: '%s / %s' % (oSet.dReasons[idReason].oCategory.sShort,
-                                                                   oSet.dReasons[idReason].sShort,));
-
+            aidSorted = sorted(oSet.dReasons, key = lambda idReason: '%s / %s' % ( oSet.dReasons[idReason].oCategory.sShort,
+                                                                                   oSet.dReasons[idReason].sShort, ));
         asNames = [];
         for idReason in aidSorted:
             oReason = oSet.dReasons[idReason];
             asNames.append('%s / %s' % (oReason.oCategory.sShort, oReason.sShort,) )
+        if fIncludeWithoutReason:
+            asNames.append('No reason');
+
         oTable = WuiHlpGraphDataTable('Period', asNames);
 
+        cMax = oSet.cMaxRowHits;
         for iPeriod, oPeriod in enumerate(reversed(oSet.aoPeriods)):
             aiValues = [];
+
             for idReason in aidSorted:
                 oRow = oPeriod.dById.get(idReason, None);
                 iValue = oRow.cHits if oRow is not None else 0;
                 aiValues.append(iValue);
+
+            if fIncludeWithoutReason:
+                aiValues.append(oPeriod.cWithoutReason);
+                if oPeriod.cWithoutReason > cMax:
+                    cMax = oPeriod.cWithoutReason;
+
             oTable.addRow(oPeriod.sDesc, aiValues);
 
         oGraph = WuiHlpBarGraph('failure-reason', oTable, self._oDisp);
-        oGraph.setRangeMax(max(oSet.cMaxRowHits + 1, 3));
+        oGraph.setRangeMax(max(cMax + 1, 3));
         sHtml += oGraph.renderGraph();
 
         #
