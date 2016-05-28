@@ -401,7 +401,7 @@ class WuiTestResult(WuiContentBase):
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, '');
-                oForm.addTextHidden(TestResultFailureData.ksParam_idTestSet, oData.idTestSet);
+                oForm.addTextHidden(TestResultFailureData.ksParam_idTestSet, '');
                 oForm.addSubmit('Add Reason');
 
             sHtml += oForm.finalize();
