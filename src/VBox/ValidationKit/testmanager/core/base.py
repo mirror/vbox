@@ -404,7 +404,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
                 # HACK ALERT! Checkboxes are only present when checked, so we always have to provide a default.
                 oNewValue = oDisp.getStringParam(sParam, asValidValues, '0');
             elif sPrefix[0] == 'a':
-                # HACK ALERT! List are not present if empty.
+                # HACK ALERT! Lists are not present if empty.
                 oNewValue = oDisp.getListOfStrParams(sParam, []);
             else:
                 oNewValue = oDisp.getStringParam(sParam, asValidValues, None);
