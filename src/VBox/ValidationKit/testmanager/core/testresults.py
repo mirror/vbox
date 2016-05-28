@@ -824,8 +824,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         else:
             sTsNow = '\'%s\'::TIMESTAMP' % (tsNow,); # It's actually a string already. duh.
             sRet =        'TestSets.tsCreated <= %s\n' \
-                   '%   AND TestSets.tsCreated >= (%s  - \'%s\'::interval - \'%u months\'::interval)\n' \
-                   '%   AND (TestSets.tsDone IS NULL OR TestSets.tsDone >= (%s - \'%s\'::interval))\n' \
+                   '%s   AND TestSets.tsCreated >= (%s  - \'%s\'::interval - \'%u months\'::interval)\n' \
+                   '%s   AND (TestSets.tsDone IS NULL OR TestSets.tsDone >= (%s - \'%s\'::interval))\n' \
                  % ( sTsNow,
                      sExtraIndent, sTsNow, sInterval, cMonthsMourningPeriod,
                      sExtraIndent, sTsNow, sInterval );
@@ -1046,13 +1046,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '   AND TestGroups.tsExpire    >  TestSets.tsCreated\n'
                           '   AND TestGroups.tsEffective <= TestSets.tsCreated'
                           '   AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod))
-
         aaoRows = self._oDb.fetchAll()
         aoRet = []
         for aoRow in aaoRows:
-            ## @todo Need to take time into consideration. Will go belly up if we delete a testgroup.
             aoRet.append(TestGroupData().initFromDbRow(aoRow))
-
         return aoRet
 
     def getBuilds(self, tsNow, sPeriod):
@@ -1068,12 +1065,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '     AND Builds.tsExpire        >  TestSets.tsCreated\n'
                           '     AND Builds.tsEffective     <= TestSets.tsCreated'
                           '     AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod))
-
         aaoRows = self._oDb.fetchAll()
         aoRet = []
         for aoRow in aaoRows:
             aoRet.append(BuildDataEx().initFromDbRow(aoRow))
-
         return aoRet
 
     def getTestBoxes(self, tsNow, sPeriod):
@@ -1084,13 +1079,11 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         self._oDb.execute('SELECT TestBoxes.*\n'
                           'FROM   TestBoxes,\n'
-                          '       ( SELECT TestBoxes.idTestBox  AS idTestBox,\n'
-                          '         MAX(TestBoxes.idGenTestBox) AS idGenTestBox\n'
-                          '         FROM   TestBoxes, TestSets\n'
-                          '         WHERE  TestSets.idGenTestBox = TestBoxes.idGenTestBox\n'
-                          '           AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
-                          '         GROUP BY TestBoxes.idTestBox\n'
-                          '         ORDER BY TestBoxes.idTestBox\n'
+                          '       ( SELECT idTestBox         AS idTestBox,\n'
+                          '                MAX(idGenTestBox) AS idGenTestBox\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '         GROUP BY idTestBox\n'
                           '       ) AS TestBoxIDs\n'
                           'WHERE  TestBoxes.idGenTestBox = TestBoxIDs.idGenTestBox\n'
                           'ORDER BY TestBoxes.sName\n' );
@@ -1105,23 +1098,19 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         specified result period.
         """
 
-        self._oDb.execute('SELECT DISTINCT TestCases.idTestCase, TestCases.idGenTestCase, TestSets.tsConfig\n'
-                          'FROM TestCases, TestSets\n'
-                          'WHERE TestSets.idTestCase   =  TestCases.idTestCase\n'
-                          '  AND TestCases.tsExpire    >  TestSets.tsCreated\n'
-                          '  AND TestCases.tsEffective <= TestSets.tsCreated\n'
-                          '  AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod) +
-                          'ORDER BY TestCases.idTestCase, TestCases.idGenTestCase DESC\n');
-
-        aaoRows        = self._oDb.fetchAll()
-        aoRet          = []
-        idPrevTestCase = -1;
-        for aoRow in aaoRows:
-            ## @todo reduce subqueries
-            if aoRow[0] != idPrevTestCase:
-                idPrevTestCase = aoRow[0];
-                aoRet.append(TestCaseData().initFromDbWithGenId(self._oDb, aoRow[1], aoRow[2]))
-
+        self._oDb.execute('SELECT TestCases.*\n'
+                          'FROM   TestCases,\n'
+                          '       ( SELECT idTestCase         AS idTestCase,\n'
+                          '                MAX(idGenTestCase) AS idGenTestCase\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '         GROUP BY idTestCase\n'
+                          '       ) AS TestCasesIDs\n'
+                          'WHERE  TestCases.idGenTestCase = TestCasesIDs.idGenTestCase\n'
+                          'ORDER BY TestCases.sName\n' );
+        aoRet = [];
+        for aoRow in self._oDb.fetchAll():
+            aoRet.append(TestCaseData().initFromDbRow(aoRow));
         return aoRet
 
     def getSchedGroups(self, tsNow, sPeriod):
@@ -1130,19 +1119,23 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         found in all test results.
         """
 
-        self._oDb.execute('SELECT DISTINCT TestBoxes.idSchedGroup\n'
-                          'FROM TestBoxes, TestSets\n'
-                          'WHERE TestSets.idGenTestBox =  TestBoxes.idGenTestBox\n'
-                          '  AND TestBoxes.tsExpire    >  TestSets.tsCreated\n'
-                          '  AND TestBoxes.tsEffective <= TestSets.tsCreated'
-                          '  AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod))
-
-        aiRows = self._oDb.fetchAll()
+        self._oDb.execute('SELECT SchedGroups.*\n'
+                          'FROM   SchedGroups,\n'
+                          '       ( SELECT TestBoxes.idSchedGroup  AS idSchedGroup,\n'
+                          '                MAX(TestSets.tsCreated) AS tsNow\n'
+                          '         FROM   TestSets,\n'
+                          '                TestBoxes\n'
+                          '         WHERE  TestSets.idGenTestBox = TestBoxes.idGenTestBox\n'
+                          '            AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '         ') +
+                          '         GROUP BY idSchedGroup\n'
+                          '       ) AS SchedGroupIDs\n'
+                          'WHERE  SchedGroups.idSchedGroup = SchedGroupIDs.idSchedGroup\n'
+                          '   AND SchedGroups.tsExpire     > SchedGroupIDs.tsNow\n'
+                          '   AND SchedGroups.tsEffective <= SchedGroupIDs.tsNow\n'
+                          'ORDER BY SchedGroups.sName\n' );
         aoRet = []
-        for iRow in aiRows:
-            ## @todo reduce subqueries
-            aoRet.append(SchedGroupData().initFromDbWithId(self._oDb, iRow))
-
+        for aoRow in self._oDb.fetchAll():
+            aoRet.append(SchedGroupData().initFromDbRow(aoRow));
         return aoRet
 
     def getById(self, idTestResult):
