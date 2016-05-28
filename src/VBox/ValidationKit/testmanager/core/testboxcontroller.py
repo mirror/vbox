@@ -394,6 +394,8 @@ class TestBoxController(object): # pylint: disable=R0903
         #
         # Update the row in TestBoxes if something changed.
         #
+        cPctScratchDiff = (cMbScratch - oTestBox.cMbScratch) * 100 / oTestBox.cMbScratch;
+
         # pylint: disable=R0916
         if   self._sTestBoxAddr != oTestBox.ip \
           or sOs                != oTestBox.sOs \
@@ -408,7 +410,7 @@ class TestBoxController(object): # pylint: disable=R0903
           or fCpu64BitGuest     != oTestBox.fCpu64BitGuest \
           or fChipsetIoMmu      != oTestBox.fChipsetIoMmu \
           or cMbMemory          != oTestBox.cMbMemory \
-          or cMbScratch         != oTestBox.cMbScratch \
+          or abs(cPctScratchDiff) >= min(4 + cMbScratch / 10240, 12) \
           or sReport            != oTestBox.sReport \
           or iTestBoxScriptRev  != oTestBox.iTestBoxScriptRev \
           or iPythonHexVersion  != oTestBox.iPythonHexVersion:
