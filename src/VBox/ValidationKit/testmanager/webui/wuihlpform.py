@@ -527,33 +527,33 @@ class WuiHlpForm(object):
                 sSecTimeoutDef = escapeAttr(unicode(oVarDefaults.cSecTimeout));
                 sHtml += u'function vbox_%s_add_uni()\n' % (sName,);
                 sHtml += u'{\n';
-                sHtml += u'    %s_extendListEx("uni-raw", "1", "%s", "--cpu-counts 1 --virt-modes raw", ' \
+                sHtml += u'    %s_extendListEx("1-raw", "1", "%s", "--cpu-counts 1 --virt-modes raw", ' \
                          u' "", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("uni-hw", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
+                sHtml += u'    %s_extendListEx("1-hw", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
                          u' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("uni-np", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
+                sHtml += u'    %s_extendListEx("1-np", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
                          u' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
                 sHtml += u'}\n';
                 sHtml += u'function vbox_%s_add_uni_amd64()\n' % (sName,);
                 sHtml += u'{\n';
-                sHtml += u'    %s_extendListEx("uni-64-hw", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
+                sHtml += u'    %s_extendListEx("1-hw", "1", "%s", "--cpu-counts 1 --virt-modes hwvirt", ' \
                          u' "fCpuHwVirt is True", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("uni-64-np", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
+                sHtml += u'    %s_extendListEx("1-np", "%s", "--cpu-counts 1 --virt-modes hwvirt-np", ' \
                          u' "fCpuNestedPaging is True", "");\n' % (sName, sSecTimeoutDef);
                 sHtml += u'}\n';
                 sHtml += u'function vbox_%s_add_smp()\n' % (sName,);
                 sHtml += u'{\n';
-                sHtml += u'    %s_extendListEx("smp2-hw", "1", "%s", "--cpu-counts 2 --virt-modes hwvirt",' \
+                sHtml += u'    %s_extendListEx("2-hw", "1", "%s", "--cpu-counts 2 --virt-modes hwvirt",' \
                          u' "fCpuHwVirt is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("smp2-np", "1", "%s", "--cpu-counts 2 --virt-modes hwvirt-np",' \
+                sHtml += u'    %s_extendListEx("2-np", "1", "%s", "--cpu-counts 2 --virt-modes hwvirt-np",' \
                          u' "fCpuNestedPaging is True and cCpus >= 2", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("smp3-hw", "1", "%s", "--cpu-counts 3 --virt-modes hwvirt",' \
+                sHtml += u'    %s_extendListEx("3-hw", "1", "%s", "--cpu-counts 3 --virt-modes hwvirt",' \
                          u' "fCpuHwVirt is True and cCpus >= 3", "");\n' % (sName, sSecTimeoutDef);
-                sHtml += u'    %s_extendListEx("smp4-np", "1", "%s", "--cpu-counts 4 --virt-modes hwvirt-np ",' \
+                sHtml += u'    %s_extendListEx("4-np", "1", "%s", "--cpu-counts 4 --virt-modes hwvirt-np ",' \
                          u' "fCpuNestedPaging is True and cCpus >= 4", "");\n' % (sName, sSecTimeoutDef);
-                #sHtml += u'    %s_extendListEx("smp6-hw", "1", "%s", "--cpu-counts 6 --virt-modes hwvirt",' \
+                #sHtml += u'    %s_extendListEx("6-hw", "1", "%s", "--cpu-counts 6 --virt-modes hwvirt",' \
                 #         u' "fCpuHwVirt is True and cCpus >= 6", "");\n' % (sName, sSecTimeoutDef);
-                #sHtml += u'    %s_extendListEx("smp8-np", "1", "%s", "--cpu-counts 8 --virt-modes hwvirt-np",' \
+                #sHtml += u'    %s_extendListEx("8-np", "1", "%s", "--cpu-counts 8 --virt-modes hwvirt-np",' \
                 #         u' "fCpuNestedPaging is True and cCpus >= 8", "");\n' % (sName, sSecTimeoutDef);
                 sHtml += u'}\n';
             sHtml += u'</script>\n';
