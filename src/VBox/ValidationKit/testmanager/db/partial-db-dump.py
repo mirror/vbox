@@ -96,6 +96,7 @@ class PartialDbDump(object): # pylint: disable=R0903
         'TestcaseGlobalRsrcDeps',
         'TestGroups',
         'TestGroupMembers',
+        'SchedGroups',
         'SchedGroupMembers',            # ?
         'SchedQueues',
         'Builds',                       # ??
@@ -214,6 +215,7 @@ class PartialDbDump(object): # pylint: disable=R0903
             'TestcaseGlobalRsrcDeps',
             'TestGroups',
             'TestGroupMembers',
+            'SchedGroups',
             'TestBoxes',
             'SchedGroupMembers',
             'SchedQueues',
