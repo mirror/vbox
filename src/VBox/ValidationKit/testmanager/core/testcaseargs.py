@@ -209,7 +209,7 @@ class TestCaseArgsDataEx(TestCaseArgsData):
         aoRow = oDb.fetchOne();
         TestCaseArgsData.initFromDbRow(self, aoRow);
 
-        tsNow = aoRow[11];
+        tsNow = aoRow[TestCaseArgsData.kcDbColumns];
         if tsConfigEff is None: tsConfigEff = tsNow;
         if tsRsrcEff is None:   tsRsrcEff   = tsNow;
 
