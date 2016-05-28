@@ -800,6 +800,12 @@ class WuiGroupedResultList(WuiListContentBase):
         #if oEntry.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
         sTestBoxTitle += u'CPU features:\t' + u', '.join(asFeatures);
 
+        # Testcase
+        if oEntry.sSubName is not None and len(oEntry.sSubName) > 0:
+            sTestCaseName = '%s / %s' % (oEntry.sTestCaseName, oEntry.sSubName,);
+        else:
+            sTestCaseName = oEntry.sTestCaseName;
+
         # Reason:
         oReason = None;
         if oEntry.oFailureReason is not None:
@@ -838,7 +844,7 @@ class WuiGroupedResultList(WuiListContentBase):
                           TestBoxData.ksParam_idTestBox: oEntry.idTestBox },
                         fBracketed = False) ],
             '%s.%s' % (oEntry.sOs, oEntry.sArch),
-            [ WuiTmLink(oEntry.sTestCaseName, WuiMain.ksScriptName, self._dTestCaseLinkParams, fBracketed = False,
+            [ WuiTmLink(sTestCaseName, WuiMain.ksScriptName, self._dTestCaseLinkParams, fBracketed = False,
                         sTitle = (oEntry.sBaseCmd + ' ' + oEntry.sArgs) if oEntry.sArgs else oEntry.sBaseCmd),
               WuiTmLink(self.ksShortDetailsLink, WuiAdmin.ksScriptName,
                         { WuiAdmin.ksParamAction:          WuiAdmin.ksActionTestCaseDetails,

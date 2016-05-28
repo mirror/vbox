@@ -560,6 +560,7 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.sTestCaseName           = None
         self.sBaseCmd                = None
         self.sArgs                   = None
+        self.sSubName                = None;
 
         self.idBuildTestSuite        = None;
         self.iRevisionTestSuite      = None;
@@ -609,18 +610,19 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.sTestCaseName           = aoRow[25];
         self.sBaseCmd                = aoRow[26];
         self.sArgs                   = aoRow[27];
+        self.sSubName                = aoRow[28];
 
-        self.idBuildTestSuite        = aoRow[28];
-        self.iRevisionTestSuite      = aoRow[29];
+        self.idBuildTestSuite        = aoRow[29];
+        self.iRevisionTestSuite      = aoRow[30];
 
         self.oFailureReason          = None;
-        if aoRow[30] is not None:
+        if aoRow[31] is not None:
             self.oFailureReason = oFailureReasonLogic.cachedLookup(aoRow[30]);
         self.oFailureReasonAssigner  = None;
-        if aoRow[31] is not None:
+        if aoRow[32] is not None:
             self.oFailureReasonAssigner = oUserAccountLogic.cachedLookup(aoRow[31]);
-        self.tsFailureReasonAssigned = aoRow[32];
-        self.sFailureReasonComment   = aoRow[33];
+        self.tsFailureReasonAssigned = aoRow[33];
+        self.sFailureReasonComment   = aoRow[34];
 
         return self
 
@@ -888,6 +890,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       TestCases.sName,\n' \
                   '       TestCases.sBaseCmd,\n' \
                   '       TestCaseArgs.sArgs,\n' \
+                  '       TestCaseArgs.sSubName,\n' \
                   '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
                   '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
                   '       TestResultFailures.idFailureReason as idFailureReason,\n' \
