@@ -393,7 +393,6 @@ class WuiTestResult(WuiContentBase):
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, oData.tsExpire);
                 oForm.addTextHidden(TestResultFailureData.ksParam_uidAuthor, oData.uidAuthor);
                 oForm.addSubmit('Change Reason');
-
             else:
                 oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, -1, 'Reason', aoFailureReasons,
                                   sPostHtml = ' ' + WuiFailureReasonAddLink('New').toHtml());
@@ -807,6 +806,7 @@ class WuiGroupedResultList(WuiListContentBase):
 
         # Reason:
         oReason = None;
+        #assert (oEntry.oFailureReason is None) == (oEntry.tsFailureReasonAssigned is None);
         if oEntry.oFailureReason is not None:
             sReasonTitle  = 'Reason:  \t%s\n' % ( oEntry.oFailureReason.sShort, );
             sReasonTitle += 'Category:\t%s\n' % ( oEntry.oFailureReason.oCategory.sShort, );

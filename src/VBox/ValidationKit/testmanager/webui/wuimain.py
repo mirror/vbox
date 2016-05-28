@@ -153,7 +153,9 @@ class WuiMain(WuiDispatcherBase):
     ## If this param is specified, then show only results for this member when results grouped by some parameter.
     ksParamGroupMemberId        = 'GroupMemberId'
     ## Optional parameter for indicating whether to restrict the listing to failures only.
-    ksParamOnlyFailures         = 'OnlyFailures'
+    ksParamOnlyFailures         = 'OnlyFailures';
+    ## The sheriff parameter for getting failures needing a reason or two assigned to them.
+    ksParamOnlyNeedingReason    = 'OnlyNeedingReason';
     ## Result listing sorting.
     ksParamTestResultsSortBy    = 'enmSortBy'
     ## @}
@@ -270,14 +272,22 @@ class WuiMain(WuiDispatcherBase):
                     sExtraTimeNav += '&%s' % webutils.encodeUrlParams({sExtraParam: dCurParams[sExtraParam]})
 
         # Shorthand to keep within margins.
-        sActUrlBase = self._sActionUrlBase;
-        sOFail = '&%s' % webutils.encodeUrlParams({self.ksParamOnlyFailures: True});
+        sActUrlBase   = self._sActionUrlBase;
+        sOnlyFailures = '&%s%s' % ( webutils.encodeUrlParams({self.ksParamOnlyFailures: True}), sExtraTimeNav, );
+        sSheriff      = '&%s%s' % ( webutils.encodeUrlParams({self.ksParamOnlyNeedingReason: True}), sExtraTimeNav, );
 
         self._aaoMenus = \
         [
             [
-                'Inbox',            sActUrlBase + 'TODO', ## @todo list of failures that needs categorizing.
-                []
+                'Sheriff',     sActUrlBase + self.ksActionResultsUnGrouped + sSheriff,
+                [
+                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped           + sSheriff ],
+                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sSheriff ],
+                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sSheriff ],
+                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sSheriff ],
+                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sSheriff ],
+                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sSheriff ],
+                ]
             ],
             [
                 'Reports',          sActUrlBase + self.ksActionReportSummary,
@@ -299,14 +309,14 @@ class WuiMain(WuiDispatcherBase):
                 ]
             ],
             [
-                'Test Failures',     sActUrlBase + self.ksActionResultsUnGrouped + sOFail + sExtraTimeNav,
+                'Test Failures',     sActUrlBase + self.ksActionResultsUnGrouped + sOnlyFailures,
                 [
-                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped          +sOFail+sExtraTimeNav],
-                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup+sOFail+sExtraTimeNav],
-                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup +sOFail+sExtraTimeNav],
-                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox   +sOFail+sExtraTimeNav],
-                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase  +sOFail+sExtraTimeNav],
-                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev  +sOFail+sExtraTimeNav],
+                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped           + sOnlyFailures ],
+                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sOnlyFailures ],
+                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sOnlyFailures ],
+                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sOnlyFailures ],
+                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sOnlyFailures ],
+                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sOnlyFailures ],
                 ]
             ],
             [
@@ -325,8 +335,12 @@ class WuiMain(WuiDispatcherBase):
 
     def _isMenuMatch(self, sMenuUrl, sActionParam):
         if super(WuiMain, self)._isMenuMatch(sMenuUrl, sActionParam):
+            fOnlyNeedingReason = self.getBoolParam(self.ksParamOnlyNeedingReason, fDefault = False);
+            if fOnlyNeedingReason:
+                return (sMenuUrl.find(self.ksParamOnlyNeedingReason) > 0);
             fOnlyFailures = self.getBoolParam(self.ksParamOnlyFailures, fDefault = False);
-            return (sMenuUrl.find(self.ksParamOnlyFailures) > 0) == fOnlyFailures;
+            return (sMenuUrl.find(self.ksParamOnlyFailures) > 0) == fOnlyFailures \
+                and sMenuUrl.find(self.ksParamOnlyNeedingReason) < 0;
         return False;
 
 
@@ -704,19 +718,20 @@ class WuiMain(WuiDispatcherBase):
         oLogicType implements fetchForListing.
         oListContentType is a child of WuiListContentBase.
         """
-        cItemsPerPage     = self.getIntParam(self.ksParamItemsPerPage,  iMin =  2, iMax =   9999, iDefault = 128);
-        iPage             = self.getIntParam(self.ksParamPageNo,        iMin =  0, iMax = 999999, iDefault = 0);
-        tsEffective       = self.getEffectiveDateParam();
-        iGroupMemberId    = self.getIntParam(self.ksParamGroupMemberId, iMin = -1, iMax = 999999, iDefault = -1);
-        fOnlyFailures     = self.getBoolParam(self.ksParamOnlyFailures, fDefault = False);
-        enmResultSortBy   = self.getStringParam(self.ksParamTestResultsSortBy,
-                                                asValidValues = TestResultLogic.kasResultsSortBy,
-                                                sDefault = TestResultLogic.ksResultsSortByRunningAndStart);
+        cItemsPerPage       = self.getIntParam(self.ksParamItemsPerPage,  iMin =  2, iMax =   9999, iDefault = 128);
+        iPage               = self.getIntParam(self.ksParamPageNo,        iMin =  0, iMax = 999999, iDefault = 0);
+        tsEffective         = self.getEffectiveDateParam();
+        iGroupMemberId      = self.getIntParam(self.ksParamGroupMemberId, iMin = -1, iMax = 999999, iDefault = -1);
+        fOnlyFailures       = self.getBoolParam(self.ksParamOnlyFailures, fDefault = False);
+        fOnlyNeedingReason  = self.getBoolParam(self.ksParamOnlyNeedingReason, fDefault = False);
+        enmResultSortBy     = self.getStringParam(self.ksParamTestResultsSortBy,
+                                                  asValidValues = TestResultLogic.kasResultsSortBy,
+                                                  sDefault = TestResultLogic.ksResultsSortByRunningAndStart);
 
         # Get testing results period and validate it
-        asValidValues     = [x for (x, _, _) in self.kaoResultPeriods]
-        sCurPeriod        = self.getStringParam(self.ksParamEffectivePeriod, asValidValues = asValidValues,
-                                                sDefault = self.ksResultPeriodDefault)
+        asValidValues       = [x for (x, _, _) in self.kaoResultPeriods]
+        sCurPeriod          = self.getStringParam(self.ksParamEffectivePeriod, asValidValues = asValidValues,
+                                                  sDefault = self.ksResultPeriodDefault)
         assert sCurPeriod != ''; # Impossible!
 
         self._checkForUnknownParameters()
@@ -789,7 +804,8 @@ class WuiMain(WuiDispatcherBase):
                                                     sInterval = sCurPeriod,
                                                     enmResultsGroupingType = enmResultsGroupingType,
                                                     iResultsGroupingValue = idMember,
-                                                    fOnlyFailures = fOnlyFailures);
+                                                    fOnlyFailures = fOnlyFailures,
+                                                    fOnlyNeedingReason = fOnlyNeedingReason);
             if cEntries == 0: # Do not display empty groups
                 continue
             aoEntries = oResultLogic.fetchResultsForListing(iPage * cItemsPerPage,
@@ -799,7 +815,8 @@ class WuiMain(WuiDispatcherBase):
                                                             enmResultSortBy = enmResultSortBy,
                                                             enmResultsGroupingType = enmResultsGroupingType,
                                                             iResultsGroupingValue = idMember,
-                                                            fOnlyFailures = fOnlyFailures);
+                                                            fOnlyFailures = fOnlyFailures,
+                                                            fOnlyNeedingReason = fOnlyNeedingReason);
             cEntriesMax = max(cEntriesMax, cEntries)
 
             #

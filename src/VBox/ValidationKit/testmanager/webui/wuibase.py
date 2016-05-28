@@ -918,7 +918,7 @@ class WuiDispatcherBase(object):
         return True
 
 
-    def _actionGenericFormPost(self, sMode, fnLogicAction, oDataType, oFormType, sRedirectTo, fStrict=True):
+    def _actionGenericFormPost(self, sMode, fnLogicAction, oDataType, oFormType, sRedirectTo, fStrict = True):
         """
         Generic POST request handling from a WuiFormContentBase child.
 
@@ -988,6 +988,7 @@ class WuiDispatcherBase(object):
         oLogic = oLogicType(self._oDb);
         return self._actionGenericFormPost(WuiFormContentBase.ksMode_Add, oLogic.addEntry, oDataType, oFormType,
                                            '?' + webutils.encodeUrlParams({self.ksParamAction: sRedirAction}), fStrict=fStrict)
+
     def _actionGenericFormEditPost(self, oDataType, oLogicType, oFormType, sRedirAction, fStrict = True):
         """
         Generic edit POST request handling from a WuiFormContentBase child.
