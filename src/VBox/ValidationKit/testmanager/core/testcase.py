@@ -934,6 +934,10 @@ class TestCaseLogic(ModelLogicBase):
     Test case management logic.
     """
 
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.ahCache = None;
+
     def getAll(self):
         """
         Fetches all test case records from DB (TestCaseData).
@@ -1346,6 +1350,47 @@ class TestCaseLogic(ModelLogicBase):
         for aoRow in self._oDb.fetchAll():
             aidPreReqs.append(aoRow[0]);
         return aidPreReqs;
+
+
+    def cachedLookup(self, idTestCase):
+        """
+        Looks up the most recent TestCaseDataEx object for uid idTestCase
+        an object cache.
+
+        Returns a shared TestCaseDataEx object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.ahCache is None:
+            self.ahCache = self._oDb.getCache('TestCaseDataEx');
+        oEntry = self.ahCache.get(idTestCase, None);
+        if oEntry is None:
+            ##fNeedTsNow = False;
+            fNeedTsNow = True;
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     TestCases\n'
+                              'WHERE    idTestCase = %s\n'
+                              '     AND tsExpire   = \'infinity\'::TIMESTAMP\n'
+                              , (idTestCase, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     TestCases\n'
+                                  'WHERE    idTestCase = %s\n'
+                                  'ORDER BY tsExpire DESC\n'
+                                  'LIMIT 1\n'
+                                  , (idTestCase, ));
+                fNeedTsNow = True;
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idTestCase));
+
+            if self._oDb.getRowCount() == 1:
+                aaoRow = self._oDb.fetchOne();
+                oEntry = TestCaseDataEx();
+                tsNow  = oEntry.initFromDbRow(aaoRow).tsEffective if fNeedTsNow else None;
+                oEntry.initFromDbRowEx(aaoRow, self._oDb, tsNow);
+                self.ahCache[idTestCase] = oEntry;
+        return oEntry;
+
 
 
 #

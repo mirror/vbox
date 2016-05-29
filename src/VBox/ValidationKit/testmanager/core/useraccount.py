@@ -246,7 +246,7 @@ class UserAccountLogic(ModelLogicBase):
                 self._oDb.execute('SELECT   *\n'
                                   'FROM     Users\n'
                                   'WHERE    uid = %s\n'
-                                  'ORDER BY tsExpire\n'
+                                  'ORDER BY tsExpire DESC\n'
                                   'LIMIT 1\n'
                                   , (uid, ));
             elif self._oDb.getRowCount() > 1:

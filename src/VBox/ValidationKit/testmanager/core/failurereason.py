@@ -422,7 +422,7 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                 self._oDb.execute('SELECT   *\n'
                                   'FROM     FailureReasons\n'
                                   'WHERE    idFailureReason = %s\n'
-                                  'ORDER BY tsExpire\n'
+                                  'ORDER BY tsExpire DESC\n'
                                   'LIMIT 1\n'
                                   , (idFailureReason, ));
             elif self._oDb.getRowCount() > 1:

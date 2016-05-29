@@ -79,6 +79,7 @@ class WuiMain(WuiDispatcherBase):
     ksActionGetFile                     = 'GetFile'
     ksActionReportSummary               = 'ReportSummary';
     ksActionReportRate                  = 'ReportRate';
+    ksActionReportTestCaseFailures      = 'ReportTestCaseFailures';
     ksActionReportFailureReasons        = 'ReportFailureReasons';
     ksActionGraphWiz                    = 'GraphWiz';
     ksActionVcsHistoryTooltip           = 'VcsHistoryTooltip';
@@ -247,15 +248,19 @@ class WuiMain(WuiDispatcherBase):
 
         d[self.ksActionViewLog]                     = self.actionViewLog;
         d[self.ksActionGetFile]                     = self.actionGetFile;
-        from testmanager.webui.wuireport import WuiReportSummary, WuiReportSuccessRate, WuiReportFailureReasons;
-        d[self.ksActionReportSummary]               = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSummary);
-        d[self.ksActionReportRate]                  = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
-        d[self.ksActionReportFailureReasons]        = lambda: self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
-        d[self.ksActionGraphWiz]                    = self._actionGraphWiz;
-        d[self.ksActionVcsHistoryTooltip]           = self._actionVcsHistoryTooltip;
+
+        from testmanager.webui.wuireport import WuiReportSummary, WuiReportSuccessRate, WuiReportTestCaseFailures, \
+                                                WuiReportFailureReasons;
+        d[self.ksActionReportSummary]          = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSummary);
+        d[self.ksActionReportRate]             = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
+        d[self.ksActionReportTestCaseFailures] = lambda: self._actionGenericReport(ReportLazyModel, WuiReportTestCaseFailures);
+        d[self.ksActionReportFailureReasons]   = lambda: self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
+        d[self.ksActionGraphWiz]               = self._actionGraphWiz;
+
+        d[self.ksActionVcsHistoryTooltip]      = self._actionVcsHistoryTooltip;
 
         # Legacy.
-        d['TestResultDetails']                      = d[self.ksActionTestSetDetails];
+        d['TestResultDetails']                 = d[self.ksActionTestSetDetails];
 
 
         #
@@ -294,6 +299,7 @@ class WuiMain(WuiDispatcherBase):
                 [
                     [ 'Summary',                  sActUrlBase + self.ksActionReportSummary ],
                     [ 'Success Rate',             sActUrlBase + self.ksActionReportRate ],
+                    [ 'Test Case Failures',       sActUrlBase + self.ksActionReportTestCaseFailures ],
                     [ 'Failure Reasons',          sActUrlBase + self.ksActionReportFailureReasons ],
                 ]
             ],

@@ -323,7 +323,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
                 self._oDb.execute('SELECT   *\n'
                                   'FROM     FailureCategories\n'
                                   'WHERE    idFailureCategory = %s\n'
-                                  'ORDER BY tsExpire\n'
+                                  'ORDER BY tsExpire DESC\n'
                                   'LIMIT 1\n'
                                   , (idFailureCategory, ));
             elif self._oDb.getRowCount() > 1:

@@ -35,6 +35,7 @@ from testmanager.core.build         import BuildCategoryData;
 from testmanager.core.dbobjcache    import DatabaseObjCache;
 from testmanager.core.failurereason import FailureReasonLogic;
 from testmanager.core.testbox       import TestBoxData;
+from testmanager.core.testcase      import TestCaseLogic;
 from common                         import constants;
 
 
@@ -74,6 +75,7 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
         ModelLogicBase.__init__(self, oDb);
         # Public so the report generator can easily access them.
         self.tsNow           = tsNow;               # (Can be None.)
+        self.__tsNowDateTime = None;
         self.cPeriods        = cPeriods;
         self.cHoursPerPeriod = cHoursPerPeriod;
         self.sSubject        = sSubject;
@@ -126,19 +128,27 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
 
         return sWhere;
 
+    def getNowAsDateTime(self):
+        """ Returns a datetime instance corresponding to tsNow. """
+        if self.__tsNowDateTime is None:
+            if self.tsNow is None:
+                self.__tsNowDateTime = self._oDb.getCurrentTimestamp();
+            else:
+                self._oDb.execute('SELECT %s::TIMESTAMP WITH TIME ZONE', (self.tsNow,));
+                self.__tsNowDateTime = self._oDb.fetchOne()[0];
+        return self.__tsNowDateTime;
+
     def getPeriodStart(self, iPeriod):
         """ Gets the python timestamp for the start of the given period. """
         from datetime import timedelta;
-        tsNow = self.tsNow if self.tsNow is not None else self._oDb.getCurrentTimestamp();
         cHoursStart = (self.cPeriods - iPeriod    ) * self.cHoursPerPeriod;
-        return tsNow - timedelta(hours = cHoursStart);
+        return self.getNowAsDateTime() - timedelta(hours = cHoursStart);
 
     def getPeriodEnd(self, iPeriod):
         """ Gets the python timestamp for the end of the given period. """
         from datetime import timedelta;
-        tsNow = self.tsNow if self.tsNow is not None else self._oDb.getCurrentTimestamp();
         cHoursEnd   = (self.cPeriods - iPeriod - 1) * self.cHoursPerPeriod;
-        return tsNow - timedelta(hours = cHoursEnd);
+        return self.getNowAsDateTime() - timedelta(hours = cHoursEnd);
 
     def getExtraWhereExprForPeriod(self, iPeriod):
         """
@@ -179,58 +189,172 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
         return self.getPeriodDesc(iWickedPeriod);
 
 
-class ReportFailureReasonRow(object):
-    """ Simpler to return this than muck about with stupid arrays. """
-    def __init__(self, aoRow, oReason):
-        self.idFailureReason    = aoRow[0];
-        self.cHits              = aoRow[1];
-        self.tsMin              = aoRow[2];
-        self.tsMax              = aoRow[3];
-        self.oReason            = oReason; # FailureReasonDataEx
+#
+# Data structures produced and returned by the ReportLazyModel.
+#
 
-class ReportFailureReasonTransient(object):
-    """ Details the first or last occurence of a reason.  """
-    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=R0913
-                 oReason, iPeriod, fEnter):
+class ReportTransientBase(object):
+    """ Details on the test where a problem was first/last seen.  """
+    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter):
         self.idBuild            = idBuild;      # Build ID.
         self.iRevision          = iRevision;    # SVN revision for build.
         self.sRepository        = sRepository;  # SVN repository for build.
         self.idTestSet          = idTestSet;    # Test set.
         self.idTestResult       = idTestResult; # Test result.
         self.tsDone             = tsDone;       # When the test set was done.
-        self.oReason            = oReason;      # FailureReasonDataEx
         self.iPeriod            = iPeriod;      # Data set period.
         self.fEnter             = fEnter;       # True if enter event, False if leave event.
 
-class ReportFailureReasonPeriod(object):
+class ReportFailureReasonTransient(ReportTransientBase):
+    """ Details on the test where a failure reason was first/last seen.  """
+    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=R0913
+                 iPeriod, fEnter, oReason):
+        ReportTransientBase.__init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter);
+        self.oReason            = oReason;      # FailureReasonDataEx
+
+class ReportTestCaseFailureTransient(ReportTransientBase):
+    """ Details on the test where a test case was first/last seen.  """
+    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=R0913
+                 iPeriod, fEnter, oTestCase):
+        ReportTransientBase.__init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter);
+        self.oTestCase          = oTestCase;      # TestCaseDataEx
+
+
+class ReportHitRowBase(object):
+    """ A row in a period. """
+    def __init__(self, cHits, tsMin = None, tsMax = None):
+        self.cHits              = cHits;
+        self.tsMin              = tsMin;
+        self.tsMax              = tsMax;
+
+class ReportFailureReasonRow(ReportHitRowBase):
+    """ The account of one failure reason for a period. """
+    def __init__(self, aoRow, oReason):
+        ReportHitRowBase.__init__(self, aoRow[1], aoRow[2], aoRow[3]);
+        self.idFailureReason    = aoRow[0];
+        self.oReason            = oReason;      # FailureReasonDataEx
+
+class ReportTestCaseFailureRow(ReportHitRowBase):
+    """ The account of one test case for a period. """
+    def __init__(self, aoRow, aoTestCase):
+        ReportHitRowBase.__init__(self, aoRow[1], aoRow[2], aoRow[3]);
+        self.idTestCase         = aoRow[0];
+        self.aoTestCase         = aoTestCase;   # TestCaseDataEx
+
+
+class ReportPeriodBase(object):
     """ A period in ReportFailureReasonSet. """
     def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
-        self.oSet               = oSet          # Reference to the parent ReportFailureReasonSet.
-        self.iPeriod            = iPeriod;
-        self.sDesc              = sDesc;
-        self.aoRows             = [];           # Rows in order the database returned them.
-        self.dById              = {};           # Same as aoRows but indexed by idFailureReason.
-        self.cHits              = 0;            # Total number of hits.
-        self.dFirst             = {};           # The reasons seen for the first time (idFailureReason key).
-        self.dLast              = {};           # The reasons seen for the last time (idFailureReason key).
-        self.tsStart            = tsFrom;
-        self.tsEnd              = tsTo;
-        self.tsMin              = tsTo;
-        self.tsMax              = tsFrom;
+        self.oSet               = oSet          # Reference to the parent ReportSetBase derived object.
+        self.iPeriod            = iPeriod;      # Period number in the set.
+        self.sDesc              = sDesc;        # Short period description.
+        self.tsStart            = tsFrom;       # Start of the period.
+        self.tsEnd              = tsTo;         # End of the period (exclusive).
+        self.tsMin              = tsTo;         # The earlierst hit of the period (only valid for cHits > 0).
+        self.tsMax              = tsFrom;       # The latest hit of the period (only valid for cHits > 0).
+        self.aoRows             = [];           # Rows in order the database returned them (ReportHitRowBase descendant).
+        self.dRowsById          = {};           # Same as aoRows but indexed by object ID (see ReportSetBase::sIdAttr).
+        self.dFirst             = {};           # The subjects seen for the first time - data object, keyed by ID.
+        self.dLast              = {};           # The subjects seen for the last  time - data object, keyed by ID.
+        self.cHits              = 0;            # Total number of hits in this period.
+        self.cMaxHits           = 0;            # Max hits in a row.
+        self.cMinHits           = 99999999;     # Min hits in a row (only valid for cHits > 0).
+
+    def appendRow(self, oRow, idRow, oData):
+        """ Adds a row. """
+        assert isinstance(oRow, ReportHitRowBase);
+        self.aoRows.append(oRow);
+        self.dRowsById[idRow] = oRow;
+
+        if oRow.tsMin is not None and oRow.tsMin < self.tsMin:
+            self.tsMin = oRow.tsMin;
+        if oRow.tsMax is not None and oRow.tsMax < self.tsMax:
+            self.tsMax = oRow.tsMax;
+
+        self.cHits += oRow.cHits;
+        if oRow.cHits > self.cMaxHits:
+            self.cMaxHits = oRow.cHits;
+        if oRow.cHits < self.cMinHits:
+            self.cMinHits = oRow.cHits;
+
+        if idRow in self.oSet.dcTotalsPerId:
+            self.oSet.dcTotalsPerId[idRow] += oRow.cHits;
+        else:
+            self.dFirst[idRow]              = oData;
+            self.oSet.dSubjects[idRow]      = oData;
+            self.oSet.dcTotalsPerId[idRow]  = oRow.cHits;
+            self.oSet.diPeriodFirst[idRow]  = self.iPeriod;
+        self.oSet.diPeriodLast[idRow]       = self.iPeriod;
+
+class ReportFailureReasonPeriod(ReportPeriodBase):
+    """ A period in ReportFailureReasonSet. """
+    def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
+        ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
         self.cWithoutReason     = 0;            # Number of failed test sets without any assigned reason.
 
-class ReportFailureReasonSet(object):
+class ReportTestCaseFailurePeriod(ReportPeriodBase):
+    """ A period in ReportTestCaseFailureSet. """
+    def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
+        ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
+
+
+class ReportPeriodSetBase(object):
+    """ Period data set base class. """
+    def __init__(self, sIdAttr):
+        self.sIdAttr            = sIdAttr;      # The name of the key attribute.  Mainly for documentation purposes.
+        self.aoPeriods          = [];           # Periods (ReportPeriodBase descendant) in ascending order (time wise).
+        self.dcTotalsPerId      = {};           # Totals per subject ID (key).
+        self.dSubjects          = {};           # The subject data objects, keyed by the subject ID.
+        self.cHits              = 0;            # Total number of hits in all periods and all reasons.
+        self.cMaxHits           = 0;            # Max hits in a row.
+        self.cMinHits           = 0;            # Min hits in a row.
+        self.cMaxRows           = 0;            # Max number of rows in a period.
+        self.cMinRows           = 0;            # Min number of rows in a period.
+        self.diPeriodFirst      = {};           # The period number a reason was first seen (keyed by subject ID).
+        self.diPeriodLast       = {};           # The period number a reason was last seen (keyed by subject ID).
+        self.aoEnterInfo        = [];           # Array of ReportTransientBase children order by iRevision.  Excludes
+                                                # the first period of course.  (Child class populates this.)
+        self.aoLeaveInfo        = [];           # Array of ReportTransientBase children order in descending order by
+                                                # iRevision. Excludes the last priod.  (Child class populates this.)
+
+    def appendPeriod(self, oPeriod):
+        """ Appends a period to the set. """
+        assert isinstance(oPeriod, ReportPeriodBase);
+        self.aoPeriods.append(oPeriod);
+
+        self.cHits += oPeriod.cHits;
+        if oPeriod.cHits > self.cMaxHits:
+            self.cMaxHits = oPeriod.cHits;
+        if oPeriod.cHits < self.cMinHits:
+            self.cMinHits = oPeriod.cHits;
+
+        if len(oPeriod.aoRows) > self.cMaxHits:
+            self.cMaxHits = len(oPeriod.aoRows);
+        if len(oPeriod.aoRows) < self.cMinHits:
+            self.cMinHits = len(oPeriod.aoRows);
+
+    def finalizePass1(self):
+        """ Finished all but aoEnterInfo and aoLeaveInfo. """
+        # All we need to do here is to populate the dLast members.
+        for idKey, iPeriod in self.diPeriodLast.items():
+            self.aoPeriods[iPeriod].dLast[idKey] = self.dSubjects[idKey];
+        return self;
+
+    def finalizePass2(self):
+        """ Called after aoEnterInfo and aoLeaveInfo has been populated to sort them. """
+        self.aoEnterInfo = sorted(self.aoEnterInfo, key = lambda oTrans: oTrans.iRevision);
+        self.aoLeaveInfo = sorted(self.aoLeaveInfo, key = lambda oTrans: oTrans.iRevision, reverse = True);
+        return self;
+
+class ReportFailureReasonSet(ReportPeriodSetBase):
     """ What ReportLazyModel.getFailureReasons returns. """
     def __init__(self):
-        self.aoPeriods   = [];  # Periods in ascending order (time wise).
-        self.dReasons    = {};  # FailureReasonDataEx objected indexted by idFailureReason
-        self.dTotals     = {};  # Totals per reason, indexed by idFailureReason.
-        self.cHits       = 0;   # Total number of hits in all periods and all reasons.
-        self.cMaxRowHits = 0;   # Max hits in a row.
-        self.diFirst     = {};  # The period number a reason was first seen (idFailureReason key).
-        self.diLast      = {};  # The period number a reason was last seen (idFailureReason key).
-        self.aoEnterInfo = [];  # Array of ReportFailureReasonTransient order by iRevision. Excludes the first period.
-        self.aoLeaveInfo = [];  # Array of ReportFailureReasonTransient order in descending order by iRevision.  Excludes last.
+        ReportPeriodSetBase.__init__(self, 'idFailureReason');
+
+class ReportTestCaseFailureSet(ReportPeriodSetBase):
+    """ What ReportLazyModel.getTestCaseFailures returns. """
+    def __init__(self):
+        ReportPeriodSetBase.__init__(self, 'idTestCase');
 
 
 
@@ -299,15 +423,10 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         """
         Gets the failure reasons of the subject in the specified period.
 
-        Returns an array of data per period (0 is the oldes, self.cPeriods-1 is
-        the latest) where each entry is a dicationary using failure reason ID as
-        key.  The dictionary contains a tuple where the first element is the
-        number of occurences and the second is the corresponding
-        FailureReasonDataEx object from the cache.
-
-        Note that reason IDs may not be present in every period, we only return
-        those with actual occurences.
+        Returns a ReportFailureReasonSet instance.
         """
+
+        oFailureReasonLogic = FailureReasonLogic(self._oDb);
 
         # Create a temporary table
         sTsNow   = 'CURRENT_TIMESTAMP' if self.tsNow is None else self._oDb.formatBindArgs('%s::TIMESTAMP', (self.tsNow,));
@@ -336,9 +455,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                           + self.getExtraSubjectWhereExpr());
         self._oDb.execute('SELECT idFailureReason FROM TmpReasons;');
 
-
         # Retrieve the period results.
-        oFailureReasonLogic = FailureReasonLogic(self._oDb);
         oSet = ReportFailureReasonSet();
         for iPeriod in xrange(self.cPeriods):
             self._oDb.execute('SELECT   idFailureReason,\n'
@@ -353,27 +470,11 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
 
             oPeriod = ReportFailureReasonPeriod(oSet, iPeriod, self.getStraightPeriodDesc(iPeriod),
                                                 self.getPeriodStart(iPeriod), self.getPeriodEnd(iPeriod));
-            oSet.aoPeriods.append(oPeriod);
+
             for aoRow in aaoRows:
                 oReason = oFailureReasonLogic.cachedLookup(aoRow[0]);
                 oPeriodRow = ReportFailureReasonRow(aoRow, oReason);
-                oPeriod.aoRows.append(oPeriodRow);
-                oPeriod.dById[oPeriodRow.idFailureReason] = oPeriodRow;
-                oPeriod.cHits += oPeriodRow.cHits;
-                if oPeriodRow.idFailureReason in oSet.dReasons:
-                    oSet.dTotals[oPeriodRow.idFailureReason]  += oPeriodRow.cHits;
-                else:
-                    oSet.dTotals[oPeriodRow.idFailureReason]   = oPeriodRow.cHits;
-                    oSet.dReasons[oPeriodRow.idFailureReason]  = oReason;
-                    oSet.diFirst[oPeriodRow.idFailureReason]   = iPeriod;
-                    oPeriod.dFirst[oPeriodRow.idFailureReason] = oReason;
-                if oPeriodRow.cHits > oSet.cMaxRowHits:
-                    oSet.cMaxRowHits = oPeriodRow.cHits;
-                if oPeriodRow.tsMin < oPeriod.tsMin:
-                    oPeriod.tsMin = oPeriodRow.tsMin;
-                if oPeriodRow.tsMax > oPeriod.tsMax:
-                    oPeriod.tsMax = oPeriodRow.tsMax;
-            oSet.cHits += oPeriod.cHits;
+                oPeriod.appendRow(oPeriodRow, oReason.idFailureReason, oReason);
 
             # Count how many test sets we've got without any reason associated with them.
             self._oDb.execute('SELECT   COUNT(TestSets.idTestSet)\n'
@@ -387,33 +488,27 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                               '     AND TestResultFailures.idTestSet IS NULL\n');
             oPeriod.cWithoutReason = self._oDb.fetchOne()[0];
 
+            oSet.appendPeriod(oPeriod);
 
-        #
-        # construct the diLast and dLast bits.
-        #
-        for iPeriod in xrange(self.cPeriods - 1, 0, -1):
-            oPeriod = oSet.aoPeriods[iPeriod];
-            for oRow in oPeriod.aoRows:
-                if oRow.idFailureReason not in oSet.diLast:
-                    oSet.diLast[oRow.idFailureReason]   = iPeriod;
-                    oPeriod.dLast[oRow.idFailureReason] = oRow.oReason;
 
         #
         # For reasons entering after the first period, look up the build and
         # test set it first occured with.
         #
+        oSet.finalizePass1();
+
         for iPeriod in xrange(1, self.cPeriods):
             oPeriod = oSet.aoPeriods[iPeriod];
             for oReason in oPeriod.dFirst.values():
                 oSet.aoEnterInfo.append(self._getEdgeFailureReasonOccurence(oReason, iPeriod, fEnter = True));
-        oSet.aoEnterInfo = sorted(oSet.aoEnterInfo, key = lambda oTrans: oTrans.iRevision);
 
         # Ditto for reasons leaving before the last.
         for iPeriod in xrange(self.cPeriods - 1):
             oPeriod = oSet.aoPeriods[iPeriod];
             for oReason in oPeriod.dLast.values():
                 oSet.aoLeaveInfo.append(self._getEdgeFailureReasonOccurence(oReason, iPeriod, fEnter = False));
-        oSet.aoLeaveInfo = sorted(oSet.aoLeaveInfo, key = lambda oTrans: oTrans.iRevision, reverse = True);
+
+        oSet.finalizePass2();
 
         self._oDb.execute('DROP TABLE TmpReasons\n');
         return oSet;
@@ -430,6 +525,8 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         Returns ReportFailureReasonTransient instant.
 
         """
+
+
         sSorting = 'ASC' if fEnter else 'DESC';
         self._oDb.execute('SELECT   TmpReasons.idTestResult,\n'
                           '         TmpReasons.idTestSet,\n'
@@ -451,11 +548,106 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                           , ( oReason.idFailureReason, ));
         aoRow = self._oDb.fetchOne();
         if aoRow is None:
-            return ReportFailureReasonTransient(-1, -1, 'internal-error', -1, -1,
-                                                self._oDb.getCurrentTimestamp(), oReason, iPeriod, fEnter);
+            return ReportFailureReasonTransient(-1, -1, 'internal-error', -1, -1, self._oDb.getCurrentTimestamp(),
+                                                iPeriod, fEnter, oReason);
         return ReportFailureReasonTransient(idBuild = aoRow[3], iRevision = aoRow[4], sRepository = aoRow[5],
                                             idTestSet = aoRow[1], idTestResult = aoRow[0], tsDone = aoRow[2],
-                                            oReason = oReason, iPeriod = iPeriod, fEnter = fEnter);
+                                            iPeriod = iPeriod, fEnter = fEnter, oReason = oReason);
+
+
+    def getTestCaseFailures(self):
+        """
+        Gets the test case failures of the subject in the specified period.
+
+        Returns a ReportTestCaseFailureSet instance.
+
+        """
+
+        oTestCaseLogic = TestCaseLogic(self._oDb);
+
+        # Retrieve the period results.
+        oSet = ReportTestCaseFailureSet();
+        for iPeriod in xrange(self.cPeriods):
+            self._oDb.execute('SELECT   idTestCase,\n'
+                              '         COUNT(idTestResult),\n'
+                              '         MIN(tsDone),\n'
+                              '         MAX(tsDone)\n'
+                              'FROM     TestSets\n'
+                              'WHERE    TRUE\n'
+                              + self.getExtraWhereExprForPeriod(iPeriod) +
+                              'GROUP BY idTestCase\n');
+            aaoRows = self._oDb.fetchAll()
+
+            oPeriod = ReportTestCaseFailurePeriod(oSet, iPeriod, self.getStraightPeriodDesc(iPeriod),
+                                                  self.getPeriodStart(iPeriod), self.getPeriodEnd(iPeriod));
+
+            for aoRow in aaoRows:
+                oTestCase = oTestCaseLogic.cachedLookup(aoRow[0]);
+                oPeriodRow = ReportTestCaseFailureRow(aoRow, oTestCase);
+                oPeriod.appendRow(oPeriodRow, oTestCase.idTestCase, oTestCase);
+
+            oSet.appendPeriod(oPeriod);
+
+
+        #
+        # For reasons entering after the first period, look up the build and
+        # test set it first occured with.
+        #
+        oSet.finalizePass1();
+
+        for iPeriod in xrange(1, self.cPeriods):
+            oPeriod = oSet.aoPeriods[iPeriod];
+            for oTestCase in oPeriod.dFirst.values():
+                oSet.aoEnterInfo.append(self._getEdgeTestCaseFailureOccurence(oTestCase, iPeriod, fEnter = True));
+
+        # Ditto for reasons leaving before the last.
+        for iPeriod in xrange(self.cPeriods - 1):
+            oPeriod = oSet.aoPeriods[iPeriod];
+            for oTestCase in oPeriod.dLast.values():
+                oSet.aoLeaveInfo.append(self._getEdgeTestCaseFailureOccurence(oTestCase, iPeriod, fEnter = False));
+
+        oSet.finalizePass2();
+
+        return oSet;
+
+
+    def _getEdgeTestCaseFailureOccurence(self, oTestCase, iPeriod, fEnter = True):
+        """
+        Helper for the failure reason report that finds the oldest or newest build
+        (SVN rev) and test set (start time) it occured with.
+
+        If fEnter is set the oldest occurence is return, if fEnter clear the newest
+        is is returned.
+
+        Returns ReportFailureReasonTransient instant.
+
+        """
+        sSorting = 'ASC' if fEnter else 'DESC';
+        self._oDb.execute('SELECT   TestSets.idTestResult,\n'
+                          '         TestSets.idTestSet,\n'
+                          '         TestSets.tsDone,\n'
+                          '         TestSets.idBuild,\n'
+                          '         Builds.iRevision,\n'
+                          '         BuildCategories.sRepository\n'
+                          'FROM     TestSets,\n'
+                          '         Builds,\n'
+                          '         BuildCategories\n'
+                          'WHERE    TestSets.idTestCase       = %s\n'
+                          '     AND TestSets.idBuild          = Builds.idBuild\n'
+                          '     AND Builds.tsExpire             > TestSets.tsCreated\n'
+                          '     AND Builds.tsEffective         <= TestSets.tsCreated\n'
+                          '     AND Builds.idBuildCategory      = BuildCategories.idBuildCategory\n'
+                          'ORDER BY Builds.iRevision ' + sSorting + ',\n'
+                          '         TestSets.tsCreated ' + sSorting + '\n'
+                          'LIMIT 1\n'
+                          , ( oTestCase.idTestCase, ));
+        aoRow = self._oDb.fetchOne();
+        if aoRow is None:
+            return ReportTestCaseFailureTransient(-1, -1, 'internal-error', -1, -1,
+                                                  self._oDb.getCurrentTimestamp(), oTestCase, iPeriod, fEnter);
+        return ReportTestCaseFailureTransient(idBuild = aoRow[3], iRevision = aoRow[4], sRepository = aoRow[5],
+                                              idTestSet = aoRow[1], idTestResult = aoRow[0], tsDone = aoRow[2],
+                                              oTestCase = oTestCase, iPeriod = iPeriod, fEnter = fEnter);
 
 
 
