@@ -1790,8 +1790,7 @@ ifndef VBOX_BLD_PYTHON
 endif
 
 #
-# pylint setup, see http://www.logilab.org/857.
-# Supported are 0.21.0 - 0.25.2, but no 0.26.0.
+# pylint setup, see https://www.pylint.org/.
 #
 # Disabled:
 #   W0301 - Unnecessary semicolon.
@@ -1802,6 +1801,14 @@ endif
 #   I0011 - Locally disabling XXXXX.
 #   C0321 - More than one statement on a single line.
 #   R0201 - Method could be a function.
+#   C0326 - ????
+#   W0123 - ????
+#   C0330:bad-continuation - Wrong continued indentation (add X spaces).
+#         * Triggering on perfectly legal comments in array initializers and stuff.
+#   C0413:wrong-import-position - Import "YYYYY XXXXX" should be placed at the top of the module.
+#         * False positives due to __copyright__, __version__, probably.
+#   E0012:bad-option-value - Bad option value XXXXX.
+#         * Newere pylint doesn't grok older warning disables in sources (e.g. W0142 in db.py). Wonderful!
 #
 # Note! Yes, --max-branchs is a typo, but not by me.
 #
@@ -1818,16 +1825,27 @@ ifndef VBOX_PYLINT
 endif
 if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
  VBOX_WITH_PYLINT := 1
+ ifndef VBOX_PYLINT_VERSION
+  ifdef VBOX_WITH_PYLINT_PRE_V1_0
+   VBOX_PYLINT_VERSION =  9999
+  else ifdef VBOX_WITH_PYLINT_V1_2_1_PLUS
+   VBOX_PYLINT_VERSION = 10201
+  else ifdef VBOX_WITH_PYLINT_V1_1_PLUS
+   VBOX_PYLINT_VERSION = 10100
+  else
+   VBOX_PYLINT_VERSION = 10000
+  endif
+ endif
 endif
-VBOX_PYLINT_FLAGS   := --report=n \
-	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0)\
+VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--report=n,) \
+	$(if-expr $(VBOX_PYLINT_VERSION) >= 10000\
 	  ,--msg-template='{path}:{line}: <{msg_id}>({obj}:{symbol}): {msg}' \
 	  ,--output-format=msvs --include-ids=y) \
 	--persistent=n \
 	--rcfile=$(PATH_ROOT)/tools/pylintrc \
 	--max-line-length=130 \
 	--max-attributes=20 \
-	--max-branch$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),e,)s=50 \
+	--max-branch$(if-expr $(VBOX_PYLINT_VERSION) >= 10000,e,)s=50 \
 	--max-statements=100 \
 	--max-returns=100 \
 	--max-public-methods=139 \
@@ -1844,9 +1862,11 @@ VBOX_PYLINT_FLAGS   := --report=n \
 	--class-rgx='(td|)[A-Z_][a-zA-Z0-9_]+$(DOLLAR)' \
 	--const-rgx='(g_(k|)[abcdefhmnpilorstu]+[A-Z][a-zA-Z0-9]+|[A-Z_][A-Z0-9_]+|__copyright__|__version__|__file__|__all__)$(DOLLAR)' \
 	--good-names='i,j,k,t,o,c,e,ch,s,_' \
-	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
-       $(if-expr defined(VBOX_WITH_PYLINT_V1_1_PLUS) || defined(VBOX_WITH_PYLINT_V1_2_1_PLUS),--disable=C0326,) \
-       $(if-expr defined(VBOX_WITH_PYLINT_V1_2_1_PLUS),--disable=C0330 --disable=W0123,) \
+	$(if-expr $(VBOX_PYLINT_VERSION) >= 10000,--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
+	$(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--max-nested-blocks=9,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10100,--disable=C0326,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10201,--disable=C0330 --disable=W0123,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--disable=C0413 --disable=E0012,) \
 	--disable=W0301,W0511,W0603,W0702,W0703,C0321,R0201,I0011 \
 	--ignored-classes=testdriver.vboxcon \
 
@@ -2553,6 +2573,10 @@ else
  VBOX_NASM_CHECK =
 endif
 
+# Figures the pylin version.
+VBOX_PYLINT_FIGURE_VERSION = $(shell $(1) --version 2> /dev/null \
+	| $(SED_EXT) -n -e 's|^ *pylint *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
+
 # No $(QUIET) here as it's interesting to see what goes into the file.
 $(PATH_OUT)/DynamicConfig.kmk: \
 		$(PATH_ROOT)/Config.kmk \
@@ -2711,6 +2735,9 @@ if "$(KBUILD_HOST)" == "solaris" && $(KBUILD_HOST_VERSION_MAJOR) == 5 && $(KBUIL
 	$(QUIET)$(APPEND) '$@' 'endif'
 	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_UPDATE_VERSION := $$(word 3, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_SOLARIS_11_BUILD_VERSION  := $$(word 6, $$(subst ., ,$$(word 2,$$(subst -, ,$$(VBOX_SOLARIS_11_FULLVERSION)))))'
+endif
+if defined(VBOX_WITH_PYLINT) && !defined(VBOX_WITH_PYLINT_PRE_V1_0) && !defined(VBOX_WITH_PYLINT_V1_1_PLUS) && !defined(VBOX_WITH_PYLINT_V1_2_1_PLUS)
+	$(QUIET)$(APPEND) '$@' "VBOX_PYLINT_VERSION  := $(call VBOX_PYLINT_FIGURE_VERSION, $(VBOX_PYLINT))"
 endif
 
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
