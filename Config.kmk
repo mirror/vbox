@@ -1837,7 +1837,7 @@ if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
   endif
  endif
 endif
-VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--report=n,) \
+VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--report=n) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 10000\
 	  ,--msg-template='{path}:{line}: <{msg_id}>({obj}:{symbol}): {msg}' \
 	  ,--output-format=msvs --include-ids=y) \
