@@ -312,12 +312,12 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         # Get the data and sort the data series in descending order of badness.
         #
         oSet = self._oModel.getFailureReasons();
-        aidSorted = sorted(oSet.dSubjects, key = lambda idReason: oSet.dcHitsPerId[idReason], reverse = True);
+        aidSortedRaw = sorted(oSet.dSubjects, key = lambda idReason: oSet.dcHitsPerId[idReason], reverse = True);
 
         #
         # Generate table and transition list. These are the most useful ones with the current graph machinery.
         #
-        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSorted);
+        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw);
         sHtml += self._generateTransitionList(oSet);
 
         #
@@ -336,6 +336,8 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         #
         fGenerateGraph = len(aidSortedRaw) <= 9 and len(aidSortedRaw) > 0; ## Make this configurable.
         if fGenerateGraph:
+            aidSorted = aidSortedRaw;
+
             asNames = [];
             for idReason in aidSorted:
                 oReason = oSet.dSubjects[idReason];
