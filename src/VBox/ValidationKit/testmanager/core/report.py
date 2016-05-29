@@ -220,26 +220,34 @@ class ReportTestCaseFailureTransient(ReportTransientBase):
         self.oTestCase          = oTestCase;      # TestCaseDataEx
 
 
+
 class ReportHitRowBase(object):
     """ A row in a period. """
-    def __init__(self, cHits, tsMin = None, tsMax = None):
+    def __init__(self, idSubject, oSubject, cHits, tsMin = None, tsMax = None):
+        self.idSubject          = idSubject;
+        self.oSubject           = oSubject;
         self.cHits              = cHits;
         self.tsMin              = tsMin;
         self.tsMax              = tsMax;
 
+class ReportHitRowWithTotalBase(ReportHitRowBase):
+    """ A row in a period. """
+    def __init__(self, idSubject, oSubject, cHits, cTotal, tsMin = None, tsMax = None):
+        ReportHitRowBase.__init__(self, idSubject, oSubject, cHits, tsMin, tsMax)
+        self.cTotal             = cTotal;
+        self.uPct               = cHits * 100 / cTotal;
+
 class ReportFailureReasonRow(ReportHitRowBase):
     """ The account of one failure reason for a period. """
     def __init__(self, aoRow, oReason):
-        ReportHitRowBase.__init__(self, aoRow[1], aoRow[2], aoRow[3]);
+        ReportHitRowBase.__init__(self, aoRow[0], oReason, aoRow[1], aoRow[2], aoRow[3]);
         self.idFailureReason    = aoRow[0];
         self.oReason            = oReason;      # FailureReasonDataEx
 
-class ReportTestCaseFailureRow(ReportHitRowBase):
+class ReportTestCaseFailureRow(ReportHitRowWithTotalBase):
     """ The account of one test case for a period. """
-    def __init__(self, aoRow, aoTestCase):
-        ReportHitRowBase.__init__(self, aoRow[1], aoRow[2], aoRow[3]);
-        self.idTestCase         = aoRow[0];
-        self.aoTestCase         = aoTestCase;   # TestCaseDataEx
+    def __init__(self, aoRow, oTestCase):
+        ReportHitRowWithTotalBase.__init__(self, aoRow[0], oTestCase, aoRow[1], aoRow[4], aoRow[2], aoRow[3]);
 
 
 class ReportPeriodBase(object):
@@ -265,7 +273,12 @@ class ReportPeriodBase(object):
         assert isinstance(oRow, ReportHitRowBase);
         self.aoRows.append(oRow);
         self.dRowsById[idRow] = oRow;
+        if idRow not in self.oSet.dSubjects:
+            self.oSet.dSubjects[idRow] = oData;
+        self._doStatsForRow(oRow, idRow, oData);
 
+    def _doStatsForRow(self, oRow, idRow, oData):
+        """ Does the statistics for a row. Helper for appendRow as well as helpRecalcStats. """
         if oRow.tsMin is not None and oRow.tsMin < self.tsMin:
             self.tsMin = oRow.tsMin;
         if oRow.tsMax is not None and oRow.tsMax < self.tsMax:
@@ -277,14 +290,70 @@ class ReportPeriodBase(object):
         if oRow.cHits < self.cMinHits:
             self.cMinHits = oRow.cHits;
 
-        if idRow in self.oSet.dcTotalsPerId:
-            self.oSet.dcTotalsPerId[idRow] += oRow.cHits;
+        if idRow in self.oSet.dcHitsPerId:
+            self.oSet.dcHitsPerId[idRow] += oRow.cHits;
         else:
-            self.dFirst[idRow]              = oData;
-            self.oSet.dSubjects[idRow]      = oData;
-            self.oSet.dcTotalsPerId[idRow]  = oRow.cHits;
-            self.oSet.diPeriodFirst[idRow]  = self.iPeriod;
-        self.oSet.diPeriodLast[idRow]       = self.iPeriod;
+            self.oSet.dcHitsPerId[idRow]  = oRow.cHits;
+
+        if oRow.cHits > 0:
+            if idRow not in self.oSet.diPeriodFirst:
+                self.dFirst[idRow]              = oData;
+                self.oSet.diPeriodFirst[idRow]  = self.iPeriod;
+            self.oSet.diPeriodLast[idRow]       = self.iPeriod;
+
+    def helperSetRecalcStats(self):
+        """ Recalc the statistics (do resetStats first on set). """
+        for idRow, oRow in self.dRowsById.items():
+            self._doStatsForRow(oRow, idRow, self.oSet.dSubjects[idRow]);
+
+    def helperSetResetStats(self):
+        """ Resets the statistics. """
+        self.tsMin      = self.tsEnd;
+        self.tsMax      = self.tsStart;
+        self.cHits      = 0;
+        self.cMaxHits   = 0;
+        self.cMinHits   = 99999999;
+        self.dFirst     = {};
+        self.dLast      = {};
+
+    def helperSetDeleteKeyFromSet(self, idKey):
+        """ Helper for ReportPeriodSetBase::deleteKey """
+        if idKey in self.dRowsById:
+            oRow = self.dRowsById[idKey];
+            self.aoRows.remove(oRow);
+            del self.dRowsById[idKey]
+            self.cHits -= oRow.cHits;
+            if idKey in self.dFirst:
+                del self.dFirst[idKey];
+            if idKey in self.dLast:
+                del self.dLast[idKey];
+
+class ReportPeriodWithTotalBase(ReportPeriodBase):
+    """ In addition to the cHits, we also have a total to relate it too. """
+    def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
+        ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
+        self.cTotal             = 0;
+        self.cMinTotal          = 0;
+        self.cMaxTotal          = 99999999;
+
+    def _doStatsForRow(self, oRow, idRow, oData):
+        assert isinstance(oRow, ReportHitRowWithTotalBase);
+        super(ReportPeriodWithTotalBase, self)._doStatsForRow(oRow, idRow, oData);
+        self.cTotal += oRow.cTotal;
+        if oRow.cTotal > self.cMaxTotal:
+            self.cMaxTotal = oRow.cTotal;
+        if oRow.cTotal < self.cMinTotal:
+            self.cMinTotal = oRow.cTotal;
+        if idRow in self.oSet.dcTotalPerId:
+            self.oSet.dcTotalPerId[idRow] += oRow.cTotal;
+        else:
+            self.oSet.dcTotalPerId[idRow]  = oRow.cTotal;
+
+    def helperSetResetStats(self):
+        super(ReportPeriodWithTotalBase, self).helperSetResetStats();
+        self.cTotal             = 0;
+        self.cMinTotal          = 0;
+        self.cMaxTotal          = 99999999;
 
 class ReportFailureReasonPeriod(ReportPeriodBase):
     """ A period in ReportFailureReasonSet. """
@@ -292,10 +361,11 @@ class ReportFailureReasonPeriod(ReportPeriodBase):
         ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
         self.cWithoutReason     = 0;            # Number of failed test sets without any assigned reason.
 
-class ReportTestCaseFailurePeriod(ReportPeriodBase):
+class ReportTestCaseFailurePeriod(ReportPeriodWithTotalBase):
     """ A period in ReportTestCaseFailureSet. """
     def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
-        ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
+        ReportPeriodWithTotalBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
+
 
 
 class ReportPeriodSetBase(object):
@@ -303,9 +373,9 @@ class ReportPeriodSetBase(object):
     def __init__(self, sIdAttr):
         self.sIdAttr            = sIdAttr;      # The name of the key attribute.  Mainly for documentation purposes.
         self.aoPeriods          = [];           # Periods (ReportPeriodBase descendant) in ascending order (time wise).
-        self.dcTotalsPerId      = {};           # Totals per subject ID (key).
         self.dSubjects          = {};           # The subject data objects, keyed by the subject ID.
-        self.cHits              = 0;            # Total number of hits in all periods and all reasons.
+        self.dcHitsPerId        = {};           # Sum hits per subject ID (key).
+        self.cHits              = 0;            # Sum number of hits in all periods and all reasons.
         self.cMaxHits           = 0;            # Max hits in a row.
         self.cMinHits           = 0;            # Min hits in a row.
         self.cMaxRows           = 0;            # Max number of rows in a period.
@@ -321,7 +391,10 @@ class ReportPeriodSetBase(object):
         """ Appends a period to the set. """
         assert isinstance(oPeriod, ReportPeriodBase);
         self.aoPeriods.append(oPeriod);
+        self._doStatsForPeriod(oPeriod);
 
+    def _doStatsForPeriod(self, oPeriod):
+        """ Worker for appendPeriod and recalcStats. """
         self.cHits += oPeriod.cHits;
         if oPeriod.cHits > self.cMaxHits:
             self.cMaxHits = oPeriod.cHits;
@@ -332,6 +405,50 @@ class ReportPeriodSetBase(object):
             self.cMaxHits = len(oPeriod.aoRows);
         if len(oPeriod.aoRows) < self.cMinHits:
             self.cMinHits = len(oPeriod.aoRows);
+
+    def recalcStats(self):
+        """ Recalculates the statistics. ASSUMES finalizePass1 hasn't been done yet. """
+        self.cHits          = 0;
+        self.cMaxHits       = 0;
+        self.cMinHits       = 0;
+        self.cMaxRows       = 0;
+        self.cMinRows       = 0;
+        self.diPeriodFirst  = {};
+        self.diPeriodLast   = {};
+        self.dcHitsPerId    = {};
+        for oPeriod in self.aoPeriods:
+            oPeriod.helperSetResetStats();
+
+        for oPeriod in self.aoPeriods:
+            oPeriod.helperSetRecalcStats();
+            self._doStatsForPeriod(oPeriod);
+
+    def deleteKey(self, idKey):
+        """ Deletes a key from the set.  May leave cMaxHits and cMinHits with outdated values. """
+        self.cHits -= self.dcHitsPerId[idKey];
+        del self.dcHitsPerId[idKey];
+        if idKey in self.diPeriodFirst:
+            del self.diPeriodFirst[idKey];
+        if idKey in self.diPeriodLast:
+            del self.diPeriodLast[idKey];
+        if idKey in self.aoEnterInfo:
+            del self.aoEnterInfo[idKey];
+        if idKey in self.aoLeaveInfo:
+            del self.aoLeaveInfo[idKey];
+        del self.dSubjects[idKey];
+        for oPeriod in self.aoPeriods:
+            oPeriod.helperSetDeleteKeyFromSet(idKey);
+
+    def pruneRowsWithZeroSumHits(self):
+        """ Discards rows with zero sum hits across all periods.  Works around lazy selects counting both totals and hits. """
+        fDeleted = False;
+        aidKeys  = self.dcHitsPerId.keys();
+        for idKey in aidKeys:
+            if self.dcHitsPerId[idKey] == 0:
+                self.deleteKey(idKey);
+                fDeleted = True;
+        if fDeleted:
+            self.recalcStats();
 
     def finalizePass1(self):
         """ Finished all but aoEnterInfo and aoLeaveInfo. """
@@ -346,16 +463,45 @@ class ReportPeriodSetBase(object):
         self.aoLeaveInfo = sorted(self.aoLeaveInfo, key = lambda oTrans: oTrans.iRevision, reverse = True);
         return self;
 
+class ReportPeriodSetWithTotalBase(ReportPeriodSetBase):
+    """ In addition to the cHits, we also have a total to relate it too. """
+    def __init__(self, sIdAttr):
+        ReportPeriodSetBase.__init__(self, sIdAttr);
+        self.dcTotalPerId       = {};           # Sum total per subject ID (key).
+        self.cTotal             = 0;            # Sum number of total in all periods and all reasons.
+        self.cMaxTotal          = 0;            # Max total in a row.
+        self.cMinTotal          = 0;            # Min total in a row.
+
+    def _doStatsForPeriod(self, oPeriod):
+        assert isinstance(oPeriod, ReportPeriodWithTotalBase);
+        super(ReportPeriodSetWithTotalBase, self)._doStatsForPeriod(oPeriod);
+        self.cTotal += oPeriod.cTotal;
+        if oPeriod.cTotal > self.cMaxTotal:
+            self.cMaxTotal = oPeriod.cTotal;
+        if oPeriod.cTotal < self.cMinTotal:
+            self.cMinTotal = oPeriod.cTotal;
+
+    def recalcStats(self):
+        self.dcTotalPerId       = {};
+        self.cTotal             = 0;
+        self.cMaxTotal          = 0;
+        self.cMinTotal          = 0;
+        super(ReportPeriodSetWithTotalBase, self).recalcStats();
+
+    def deleteKey(self, idKey):
+        self.cTotal -= self.dcTotalPerId[idKey];
+        del self.dcTotalPerId[idKey];
+        super(ReportPeriodSetWithTotalBase, self).recalcStats();
+
 class ReportFailureReasonSet(ReportPeriodSetBase):
     """ What ReportLazyModel.getFailureReasons returns. """
     def __init__(self):
         ReportPeriodSetBase.__init__(self, 'idFailureReason');
 
-class ReportTestCaseFailureSet(ReportPeriodSetBase):
+class ReportTestCaseFailureSet(ReportPeriodSetWithTotalBase):
     """ What ReportLazyModel.getTestCaseFailures returns. """
     def __init__(self):
-        ReportPeriodSetBase.__init__(self, 'idTestCase');
-
+        ReportPeriodSetWithTotalBase.__init__(self, 'idTestCase');
 
 
 class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
@@ -569,9 +715,10 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         oSet = ReportTestCaseFailureSet();
         for iPeriod in xrange(self.cPeriods):
             self._oDb.execute('SELECT   idTestCase,\n'
-                              '         COUNT(idTestResult),\n'
+                              '         COUNT(CASE WHEN enmStatus >= \'failure\' THEN 1 END),\n'
                               '         MIN(tsDone),\n'
-                              '         MAX(tsDone)\n'
+                              '         MAX(tsDone),\n'
+                              '         COUNT(idTestResult)\n'
                               'FROM     TestSets\n'
                               'WHERE    TRUE\n'
                               + self.getExtraWhereExprForPeriod(iPeriod) +
@@ -587,6 +734,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                 oPeriod.appendRow(oPeriodRow, oTestCase.idTestCase, oTestCase);
 
             oSet.appendPeriod(oPeriod);
+        oSet.pruneRowsWithZeroSumHits();
 
 
         #
@@ -634,9 +782,11 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                           '         BuildCategories\n'
                           'WHERE    TestSets.idTestCase       = %s\n'
                           '     AND TestSets.idBuild          = Builds.idBuild\n'
-                          '     AND Builds.tsExpire             > TestSets.tsCreated\n'
-                          '     AND Builds.tsEffective         <= TestSets.tsCreated\n'
-                          '     AND Builds.idBuildCategory      = BuildCategories.idBuildCategory\n'
+                          '     AND TestSets.enmStatus       >= \'failure\'\n'
+                          + self.getExtraWhereExprForPeriod(iPeriod) +
+                          '     AND Builds.tsExpire           > TestSets.tsCreated\n'
+                          '     AND Builds.tsEffective       <= TestSets.tsCreated\n'
+                          '     AND Builds.idBuildCategory    = BuildCategories.idBuildCategory\n'
                           'ORDER BY Builds.iRevision ' + sSorting + ',\n'
                           '         TestSets.tsCreated ' + sSorting + '\n'
                           'LIMIT 1\n'

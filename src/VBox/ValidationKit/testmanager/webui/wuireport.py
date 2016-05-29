@@ -207,7 +207,7 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         #
         # Generate the graph.
         #
-        aidSorted = sorted(oSet.dSubjects, key = lambda idReason: oSet.dcTotalsPerId[idReason], reverse = True);
+        aidSorted = sorted(oSet.dSubjects, key = lambda idReason: oSet.dcHitsPerId[idReason], reverse = True);
 
         asNames = [];
         for idReason in aidSorted:
@@ -252,7 +252,7 @@ class WuiReportTestCaseFailures(WuiReportFailuresBase):
     """
 
     def _formatEdgeOccurenceSubject(self, oTransient):
-        return u'%s' % ( webutils.escapeElem(oTransient.oTestCase.sName),);
+        return u'%s (#%u)' % ( webutils.escapeElem(oTransient.oTestCase.sName), oTransient.oTestCase.idTestCase,);
 
 
     def generateReportBody(self):
@@ -267,7 +267,9 @@ class WuiReportTestCaseFailures(WuiReportFailuresBase):
         #
         # Generate the graph.
         #
-        aidSorted = sorted(oSet.dSubjects, key = lambda idTestCase: oSet.dcTotalsPerId[idTestCase], reverse = True);
+        aidSorted = sorted(oSet.dSubjects,
+                           key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
+                           reverse = True);
 
         asNames = [];
         for idKey in aidSorted:
@@ -276,19 +278,36 @@ class WuiReportTestCaseFailures(WuiReportFailuresBase):
 
         oTable = WuiHlpGraphDataTable('Period', asNames);
 
-        cMax = oSet.cMaxHits;
+        uPctMax = 10;
         for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
             aiValues = [];
+            asValues = [];
 
             for idKey in aidSorted:
                 oRow = oPeriod.dRowsById.get(idKey, None);
-                iValue = oRow.cHits if oRow is not None else 0;
-                aiValues.append(iValue);
+                if oRow is not None:
+                    uPct = oRow.cHits * 100 / oRow.cTotal;
+                    uPctMax = max(uPctMax, uPct);
+                    aiValues.append(uPct);
+                    asValues.append('%u%% (%u/%u)' % (uPct, oRow.cHits, oRow.cTotal));
+                else:
+                    aiValues.append(0);
+                    asValues.append('0');
 
-            oTable.addRow(oPeriod.sDesc, aiValues);
+            oTable.addRow(oPeriod.sDesc, aiValues, asValues);
+
+        if True: # pylint: disable=W0125
+            aiValues = [];
+            asValues = [];
+            for idKey in aidSorted:
+                uPct = oSet.dcHitsPerId[idKey] * 100 / oSet.dcTotalPerId[idKey];
+                uPctMax = max(uPctMax, uPct);
+                aiValues.append(uPct);
+                asValues.append('%u%% (%u/%u)' % (uPct, oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
+            oTable.addRow('Totals', aiValues, asValues);
 
         oGraph = WuiHlpBarGraph('testcase-failures', oTable, self._oDisp);
-        oGraph.setRangeMax(max(cMax + 1, 3));
+        oGraph.setRangeMax(uPct + 2);
         sHtml += oGraph.renderGraph();
 
         return sHtml;
