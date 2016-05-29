@@ -80,18 +80,25 @@ def dbTimestampToZuluDatetime(oValue):
     """
     tsValue = dbTimestampToDatetime(oValue);
 
+    class UTC(datetime.tzinfo):
+        """UTC TZ Info Class"""
+        def utcoffset(self, _):
+            return datetime.timedelta(0);
+        def tzname(self, _):
+            return "UTC";
+        def dst(self, _):
+            return datetime.timedelta(0);
     if tsValue.tzinfo is not None:
-        class UTC(datetime.tzinfo):
-            """UTC TZ Info Class"""
-            def utcoffset(self, _):
-                return datetime.timedelta(0);
-            def tzname(self, _):
-                return "UTC";
-            def dst(self, _):
-                return datetime.timedelta(0);
         tsValue = tsValue.astimezone(UTC());
-
+    else:
+        tsValue = tsValue.replace(tzinfo=UTC());
     return tsValue;
+
+def dbTimestampPythonNow():
+    """
+    Gets the current python timestamp in a database compatible way.
+    """
+    return dbTimestampToZuluDatetime(datetime.datetime.utcnow());
 
 def isDbInterval(oValue):
     """

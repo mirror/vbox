@@ -29,16 +29,18 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Python imports.
+import datetime;
 
 # Validation Kit imports.
 from testmanager.webui.wuicontentbase           import WuiContentBase, WuiListContentBase, WuiHtmlBase, WuiTmLink, WuiLinkBase, \
-                                                       WuiSvnLink, WuiSvnLinkWithTooltip, WuiBuildLogLink, WuiRawHtml;
+                                                       WuiSvnLink, WuiSvnLinkWithTooltip, WuiBuildLogLink, WuiRawHtml, \
+                                                       WuiHtmlKeeper;
 from testmanager.webui.wuimain                  import WuiMain;
 from testmanager.webui.wuihlpform               import WuiHlpForm;
 from testmanager.webui.wuiadminfailurereason    import WuiFailureReasonAddLink, WuiFailureReasonDetailsLink;
 from testmanager.webui.wuitestresultfailure     import WuiTestResultFailureDetailsLink;
 from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
-from testmanager.core.report                    import ReportGraphModel;
+from testmanager.core.report                    import ReportGraphModel, ReportModelBase;
 from testmanager.core.testbox                   import TestBoxData;
 from testmanager.core.testcase                  import TestCaseData;
 from testmanager.core.testset                   import TestSetData;
@@ -48,6 +50,16 @@ from testmanager.core.build                     import BuildData;
 from testmanager.core                           import db;
 from testmanager                                import config;
 from common                                     import webutils, utils;
+
+
+class WuiTestSetLink(WuiTmLink):
+    """  Test set link. """
+
+    def __init__(self, idTestSet, sName = WuiContentBase.ksShortDetailsLink, fBracketed = False):
+        WuiTmLink.__init__(self, sName, WuiMain.ksScriptName,
+                           { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
+                             TestSetData.ksParam_idTestSet: idTestSet, }, fBracketed = fBracketed);
+        self.idTestSet = idTestSet;
 
 
 
@@ -441,13 +453,23 @@ class WuiTestResult(WuiContentBase):
 
         asHtml = []
 
+        from testmanager.webui.wuireport import WuiReportSummaryLink;
+        tsReportEffectiveDate = None;
+        if oTestSet.tsDone is not None:
+            tsReportEffectiveDate = oTestSet.tsDone + datetime.timedelta(days = 4);
+            if tsReportEffectiveDate >= self.getNowTs():
+                tsReportEffectiveDate = None;
+
         # Test result + test set details.
         aoResultRows = [
-            WuiTmLink(oTestCaseEx.sName, self.oWuiAdmin.ksScriptName,
-                      { self.oWuiAdmin.ksParamAction:         self.oWuiAdmin.ksActionTestCaseDetails,
-                        TestCaseData.ksParam_idTestCase:      oTestCaseEx.idTestCase,
-                        self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsConfig, },
-                      fBracketed = False),
+            WuiHtmlKeeper([ WuiTmLink(oTestCaseEx.sName, self.oWuiAdmin.ksScriptName,
+                                      { self.oWuiAdmin.ksParamAction:         self.oWuiAdmin.ksActionTestCaseDetails,
+                                        TestCaseData.ksParam_idTestCase:      oTestCaseEx.idTestCase,
+                                        self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsConfig, },
+                                      fBracketed = False),
+                            WuiReportSummaryLink(ReportModelBase.ksSubTestCase, oTestCaseEx.idTestCase,
+                                                 tsNow = tsReportEffectiveDate, fBracketed = False),
+                          ]),
         ];
         if oTestCaseEx.sDescription is not None and len(oTestCaseEx.sDescription) > 0:
             aoResultRows.append([oTestCaseEx.sDescription,]);
@@ -482,11 +504,15 @@ class WuiTestResult(WuiContentBase):
             aoResultRows.append([ 'Member No:',    '#%s (of %s)' % (oTestSet.iGangMemberNo, oTestVarEx.cGangMembers) ]);
 
         aoResultRows += [
-            ( 'Test Group:',    WuiTmLink(oTestGroup.sName, self.oWuiAdmin.ksScriptName,
-                                          { self.oWuiAdmin.ksParamAction:         self.oWuiAdmin.ksActionTestGroupDetails,
-                                            TestGroupData.ksParam_idTestGroup:    oTestGroup.idTestGroup,
-                                            self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsConfig,  },
-                                          fBracketed = False) ),
+            ( 'Test Group:',
+              WuiHtmlKeeper([ WuiTmLink(oTestGroup.sName, self.oWuiAdmin.ksScriptName,
+                                        { self.oWuiAdmin.ksParamAction:         self.oWuiAdmin.ksActionTestGroupDetails,
+                                          TestGroupData.ksParam_idTestGroup:    oTestGroup.idTestGroup,
+                                          self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsConfig,  },
+                                        fBracketed = False),
+                              WuiReportSummaryLink(ReportModelBase.ksSubTestGroup, oTestGroup.idTestGroup,
+                                                   tsNow = tsReportEffectiveDate, fBracketed = False),
+                              ]), ),
         ];
         if oTestVarEx.sTestBoxReqExpr is not None:
             aoResultRows.append([ 'TestBox reqs:', oTestVarEx.sTestBoxReqExpr ]);
@@ -507,11 +533,13 @@ class WuiTestResult(WuiContentBase):
         aoBuildRows = [];
         if oBuildEx is not None:
             aoBuildRows += [
-                WuiTmLink('Build', self.oWuiAdmin.ksScriptName,
-                          { self.oWuiAdmin.ksParamAction:         self.oWuiAdmin.ksActionBuildDetails,
-                            BuildData.ksParam_idBuild:            oBuildEx.idBuild,
-                            self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsCreated, },
-                          fBracketed = False),
+                WuiHtmlKeeper([ WuiTmLink('Build', self.oWuiAdmin.ksScriptName,
+                                          { self.oWuiAdmin.ksParamAction:         self.oWuiAdmin.ksActionBuildDetails,
+                                            BuildData.ksParam_idBuild:            oBuildEx.idBuild,
+                                            self.oWuiAdmin.ksParamEffectiveDate:  oTestSet.tsCreated, },
+                                          fBracketed = False),
+                                WuiReportSummaryLink(ReportModelBase.ksSubBuild, oBuildEx.idBuild,
+                                                     tsNow = tsReportEffectiveDate, fBracketed = False), ]),
             ];
             self._anchorAndAppendBinaries(oBuildEx.sBinaries, aoBuildRows);
             aoBuildRows += [
@@ -557,10 +585,12 @@ class WuiTestResult(WuiContentBase):
 
         # TestBox.
         aoTestBoxRows = [
-            WuiTmLink(oTestBox.sName, self.oWuiAdmin.ksScriptName,
-                      { self.oWuiAdmin.ksParamAction:     self.oWuiAdmin.ksActionTestBoxDetails,
-                        TestBoxData.ksParam_idGenTestBox: oTestSet.idGenTestBox, },
-                      fBracketed = False),
+            WuiHtmlKeeper([ WuiTmLink(oTestBox.sName, self.oWuiAdmin.ksScriptName,
+                                      { self.oWuiAdmin.ksParamAction:     self.oWuiAdmin.ksActionTestBoxDetails,
+                                        TestBoxData.ksParam_idGenTestBox: oTestSet.idGenTestBox, },
+                                      fBracketed = False),
+                            WuiReportSummaryLink(ReportModelBase.ksSubTestBox, oTestSet.idTestBox,
+                                                 tsNow = tsReportEffectiveDate, fBracketed = False), ]),
         ];
         if oTestBox.sDescription is not None and len(oTestBox.sDescription) > 0:
             aoTestBoxRows.append([oTestBox.sDescription, ]);
@@ -755,7 +785,7 @@ class WuiGroupedResultList(WuiListContentBase):
         oEntry = self._aoEntries[iEntry];
 
         from testmanager.webui.wuiadmin import WuiAdmin;
-
+        from testmanager.webui.wuireport import WuiReportSummaryLink;
 
         oValidationKit = None;
         if oEntry.idBuildTestSuite is not None:
@@ -841,14 +871,16 @@ class WuiGroupedResultList(WuiListContentBase):
               WuiTmLink(self.ksShortDetailsLink, WuiAdmin.ksScriptName,
                         { WuiAdmin.ksParamAction:        WuiAdmin.ksActionTestBoxDetails,
                           TestBoxData.ksParam_idTestBox: oEntry.idTestBox },
-                        fBracketed = False) ],
+                        fBracketed = False),
+              WuiReportSummaryLink(ReportModelBase.ksSubTestBox, oEntry.idTestBox, fBracketed = False), ],
             '%s.%s' % (oEntry.sOs, oEntry.sArch),
             [ WuiTmLink(sTestCaseName, WuiMain.ksScriptName, self._dTestCaseLinkParams, fBracketed = False,
                         sTitle = (oEntry.sBaseCmd + ' ' + oEntry.sArgs) if oEntry.sArgs else oEntry.sBaseCmd),
               WuiTmLink(self.ksShortDetailsLink, WuiAdmin.ksScriptName,
                         { WuiAdmin.ksParamAction:          WuiAdmin.ksActionTestCaseDetails,
                           TestCaseData.ksParam_idTestCase: oEntry.idTestCase },
-                        fBracketed = False), ],
+                        fBracketed = False),
+              WuiReportSummaryLink(ReportModelBase.ksSubTestCase, oEntry.idTestCase, fBracketed = False), ],
             oEntry.tsElapsed,
             aoTestSetLinks,
             oReason

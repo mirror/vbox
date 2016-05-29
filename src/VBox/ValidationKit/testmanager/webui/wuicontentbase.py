@@ -173,6 +173,31 @@ class WuiRawHtml(WuiHtmlBase): # pylint: disable=R0903
     def toHtml(self):
         return self.sHtml;
 
+class WuiHtmlKeeper(WuiHtmlBase): # pylint: disable=R0903
+    """
+    For keeping a list of elements, concatenating their toHtml output together.
+    """
+    def __init__(self, aoInitial = None, sSep = ' '):
+        WuiHtmlBase.__init__(self);
+        self.sSep   = sSep;
+        self.aoKept = [];
+        if aoInitial is not None:
+            if isinstance(aoInitial, WuiHtmlBase):
+                self.aoKept.append(aoInitial);
+            else:
+                self.aoKept.extend(aoInitial);
+
+    def append(self, oObject):
+        """ Appends one objects. """
+        self.aoKept.append(oObject);
+
+    def extend(self, aoObjects):
+        """ Appends a list of objects. """
+        self.aoKept.extend(aoObjects);
+
+    def toHtml(self):
+        return self.sSep.join(oObj.toHtml() for oObj in self.aoKept);
+
 class WuiSpanText(WuiRawHtml): # pylint: disable=R0903
     """
     Outputs the given text within a span of the given CSS class.
@@ -204,6 +229,10 @@ class WuiContentBase(object): # pylint: disable=R0903
     ksShortChangeLogLink   = u'\u2397'
     ## HTML hex entity string for ksShortDetailsLink.
     ksShortChangeLogLinkHtml = '&#x2397;'
+    ## The text/symbol for a very short reports link.
+    ksShortReportLink      = u'\u2397'
+    ## HTML hex entity string for ksShortReportLink.
+    ksShortReportLinkHtml  = '&#x2397;'
 
 
     def __init__(self, fnDPrint = None, oDisp = None):
@@ -224,6 +253,10 @@ class WuiContentBase(object): # pylint: disable=R0903
         oTsZulu = db.dbTimestampToZuluDatetime(oTs);
         sTs = oTsZulu.strftime('%Y-%m-%d %H:%M:%SZ');
         return unicode(sTs).replace('-', u'\u2011').replace(' ', u'\u00a0');
+
+    def getNowTs(self):
+        """ Gets a database compatible current timestamp from python. See db.dbTimestampPythonNow(). """
+        return db.dbTimestampPythonNow();
 
     def formatIntervalShort(self, oInterval):
         """

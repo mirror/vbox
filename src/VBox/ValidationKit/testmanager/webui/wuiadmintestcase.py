@@ -31,10 +31,27 @@ __version__ = "$Revision$"
 
 # Validation Kit imports.
 from common                             import utils, webutils;
-from testmanager.webui.wuicontentbase   import WuiFormContentBase, WuiListContentBase, WuiTmLink, WuiRawHtml;
+from testmanager.webui.wuicontentbase   import WuiFormContentBase, WuiListContentBase, WuiContentBase, WuiTmLink, WuiRawHtml;
 from testmanager.core.db                import isDbTimestampInfinity;
 from testmanager.core.testcase          import TestCaseDataEx, TestCaseData, TestCaseDependencyLogic;
 from testmanager.core.globalresource    import GlobalResourceData, GlobalResourceLogic;
+
+
+
+class WuiTestCaseDetailsLink(WuiTmLink):
+    """  Test case details link by ID. """
+
+    def __init__(self, idTestCase, sName = WuiContentBase.ksShortDetailsLink, fBracketed = False, tsNow = None):
+        from testmanager.webui.wuiadmin import WuiAdmin;
+        dParams = {
+            WuiAdmin.ksParamAction:             WuiAdmin.ksActionTestCaseDetails,
+            TestCaseData.ksParam_idTestCase:    idTestCase,
+        };
+        if tsNow is not None:
+            dParams[WuiAdmin.ksParamEffectiveDate] = tsNow; ## ??
+        WuiTmLink.__init__(self, sName, WuiAdmin.ksScriptName, dParams, fBracketed = fBracketed);
+        self.idTestCase = idTestCase;
+
 
 class WuiTestCaseList(WuiListContentBase):
     """

@@ -335,6 +335,7 @@ class ReportPeriodWithTotalBase(ReportPeriodBase):
         self.cTotal             = 0;
         self.cMinTotal          = 0;
         self.cMaxTotal          = 99999999;
+        self.uMaxPct            = 0;            # Max percentage in a row (100 = 100%).
 
     def _doStatsForRow(self, oRow, idRow, oData):
         assert isinstance(oRow, ReportHitRowWithTotalBase);
@@ -344,6 +345,10 @@ class ReportPeriodWithTotalBase(ReportPeriodBase):
             self.cMaxTotal = oRow.cTotal;
         if oRow.cTotal < self.cMinTotal:
             self.cMinTotal = oRow.cTotal;
+
+        if oRow.uPct > self.uMaxPct:
+            self.uMaxPct = oRow.uPct;
+
         if idRow in self.oSet.dcTotalPerId:
             self.oSet.dcTotalPerId[idRow] += oRow.cTotal;
         else:
@@ -354,6 +359,7 @@ class ReportPeriodWithTotalBase(ReportPeriodBase):
         self.cTotal             = 0;
         self.cMinTotal          = 0;
         self.cMaxTotal          = 99999999;
+        self.uMaxPct            = 0;
 
 class ReportFailureReasonPeriod(ReportPeriodBase):
     """ A period in ReportFailureReasonSet. """
@@ -441,14 +447,15 @@ class ReportPeriodSetBase(object):
 
     def pruneRowsWithZeroSumHits(self):
         """ Discards rows with zero sum hits across all periods.  Works around lazy selects counting both totals and hits. """
-        fDeleted = False;
+        cDeleted = 0;
         aidKeys  = self.dcHitsPerId.keys();
         for idKey in aidKeys:
             if self.dcHitsPerId[idKey] == 0:
                 self.deleteKey(idKey);
-                fDeleted = True;
-        if fDeleted:
+                cDeleted += 1;
+        if cDeleted > 0:
             self.recalcStats();
+        return cDeleted;
 
     def finalizePass1(self):
         """ Finished all but aoEnterInfo and aoLeaveInfo. """
@@ -471,6 +478,7 @@ class ReportPeriodSetWithTotalBase(ReportPeriodSetBase):
         self.cTotal             = 0;            # Sum number of total in all periods and all reasons.
         self.cMaxTotal          = 0;            # Max total in a row.
         self.cMinTotal          = 0;            # Min total in a row.
+        self.uMaxPct            = 0;            # Max percentage in a row (100 = 100%).
 
     def _doStatsForPeriod(self, oPeriod):
         assert isinstance(oPeriod, ReportPeriodWithTotalBase);
@@ -481,17 +489,21 @@ class ReportPeriodSetWithTotalBase(ReportPeriodSetBase):
         if oPeriod.cTotal < self.cMinTotal:
             self.cMinTotal = oPeriod.cTotal;
 
+        if oPeriod.uMaxPct > self.uMaxPct:
+            self.uMaxPct = oPeriod.uMaxPct;
+
     def recalcStats(self):
         self.dcTotalPerId       = {};
         self.cTotal             = 0;
         self.cMaxTotal          = 0;
         self.cMinTotal          = 0;
+        self.uMaxPct            = 0;
         super(ReportPeriodSetWithTotalBase, self).recalcStats();
 
     def deleteKey(self, idKey):
         self.cTotal -= self.dcTotalPerId[idKey];
         del self.dcTotalPerId[idKey];
-        super(ReportPeriodSetWithTotalBase, self).recalcStats();
+        super(ReportPeriodSetWithTotalBase, self).deleteKey(idKey);
 
 class ReportFailureReasonSet(ReportPeriodSetBase):
     """ What ReportLazyModel.getFailureReasons returns. """
@@ -719,9 +731,10 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                               '         MIN(tsDone),\n'
                               '         MAX(tsDone),\n'
                               '         COUNT(idTestResult)\n'
-                              'FROM     TestSets\n'
+                              'FROM     TestSets' + self.getExtraSubjectTables() + '\n'
                               'WHERE    TRUE\n'
-                              + self.getExtraWhereExprForPeriod(iPeriod) +
+                              + self.getExtraWhereExprForPeriod(iPeriod)
+                              + self.getExtraSubjectWhereExpr() + '\n'
                               'GROUP BY idTestCase\n');
             aaoRows = self._oDb.fetchAll()
 
@@ -734,7 +747,8 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                 oPeriod.appendRow(oPeriodRow, oTestCase.idTestCase, oTestCase);
 
             oSet.appendPeriod(oPeriod);
-        oSet.pruneRowsWithZeroSumHits();
+        cDeleted = oSet.pruneRowsWithZeroSumHits();
+
 
 
         #
@@ -779,14 +793,15 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                           '         BuildCategories.sRepository\n'
                           'FROM     TestSets,\n'
                           '         Builds,\n'
-                          '         BuildCategories\n'
+                          '         BuildCategories' + self.getExtraSubjectTables() + '\n'
                           'WHERE    TestSets.idTestCase       = %s\n'
                           '     AND TestSets.idBuild          = Builds.idBuild\n'
                           '     AND TestSets.enmStatus       >= \'failure\'\n'
                           + self.getExtraWhereExprForPeriod(iPeriod) +
                           '     AND Builds.tsExpire           > TestSets.tsCreated\n'
                           '     AND Builds.tsEffective       <= TestSets.tsCreated\n'
-                          '     AND Builds.idBuildCategory    = BuildCategories.idBuildCategory\n'
+                          '     AND Builds.idBuildCategory    = BuildCategories.idBuildCategory'
+                          + self.getExtraSubjectWhereExpr() + '\n'
                           'ORDER BY Builds.iRevision ' + sSorting + ',\n'
                           '         TestSets.tsCreated ' + sSorting + '\n'
                           'LIMIT 1\n'

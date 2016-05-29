@@ -31,9 +31,31 @@ __version__ = "$Revision$"
 
 # Validation Kit imports.
 from common                             import webutils;
-from testmanager.webui.wuicontentbase   import WuiContentBase, WuiSvnLinkWithTooltip;
+from testmanager.webui.wuicontentbase   import WuiContentBase, WuiTmLink, WuiSvnLinkWithTooltip;
 from testmanager.webui.wuihlpgraph      import WuiHlpGraphDataTable, WuiHlpBarGraph;
+from testmanager.webui.wuitestresult    import WuiTestSetLink;
+from testmanager.webui.wuiadmintestcase import WuiTestCaseDetailsLink;
 from testmanager.core.report            import ReportModelBase;
+
+
+class WuiReportSummaryLink(WuiTmLink):
+    """ Generic report summary link. """
+
+    def __init__(self, sSubject, aIdSubjects, sName = WuiContentBase.ksShortReportLink,
+                 tsNow = None, cPeriods = None, cHoursPerPeriod = None, fBracketed = False):
+        from testmanager.webui.wuimain import WuiMain;
+        dParams = {
+            WuiMain.ksParamAction:                WuiMain.ksActionReportSummary,
+            WuiMain.ksParamReportSubject:         sSubject,
+            WuiMain.ksParamReportSubjectIds:      aIdSubjects,
+        };
+        if tsNow is not None:
+            dParams[WuiMain.ksParamEffectiveDate] = tsNow;
+        if cPeriods is not None:
+            dParams[WuiMain.ksParamReportPeriods] = cPeriods;
+        if cPeriods is not None:
+            dParams[WuiMain.ksParamReportPeriodInHours] = cHoursPerPeriod;
+        WuiTmLink.__init__(self, sName, WuiMain.ksScriptName, dParams, fBracketed = fBracketed);
 
 
 class WuiReportBase(WuiContentBase):
@@ -76,6 +98,7 @@ class WuiReportBase(WuiContentBase):
             sReport = self.generateNavigator('top') + sReport + self.generateNavigator('bottom');
             sTitle = self._oModel.sSubject + ' - ' + sTitle; ## @todo add subject to title in a proper way!
 
+        sReport += '\n\n<!-- HEYYOU: sSubject=%s aidSubjects=%s -->\n\n' % (self._oModel.sSubject, self._oModel.aidSubjects);
         return (sTitle, sReport);
 
 
@@ -132,6 +155,31 @@ class WuiReportFailuresBase(WuiReportBase):
     Common parent of WuiReportFailureReasons and WuiReportTestCaseFailures.
     """
 
+    def _splitSeriesIntoMultipleGraphs(self, aidSorted, cMaxSeriesPerGraph = 8):
+        """
+        Splits the ID array into one or more arrays, making sure we don't
+        have too many series per graph.
+        Returns array of ID arrays.
+        """
+        if len(aidSorted) <= cMaxSeriesPerGraph + 2:
+            return [aidSorted,];
+        cGraphs   = len(aidSorted) / cMaxSeriesPerGraph + (len(aidSorted) % cMaxSeriesPerGraph != 0);
+        cPerGraph = len(aidSorted) / cGraphs + (len(aidSorted) % cGraphs != 0);
+
+        aaoRet = [];
+        cLeft  = len(aidSorted);
+        iSrc   = 0;
+        while cLeft > 0:
+            cThis = cPerGraph;
+            if cLeft <= cPerGraph + 2:
+                cThis = cLeft;
+            elif cLeft <= cPerGraph * 2 + 4:
+                cThis = cLeft / 2;
+            aaoRet.append(aidSorted[iSrc : iSrc + cThis]);
+            iSrc  += cThis;
+            cLeft -= cThis;
+        return aaoRet;
+
     def _formatEdgeOccurenceSubject(self, oTransient):
         """
         Worker for _formatEdgeOccurence that child classes overrides to format
@@ -150,7 +198,8 @@ class WuiReportFailuresBase(WuiReportBase):
         if oTransient.fEnter:   sHtml += 'Since ';
         else:                   sHtml += 'Until ';
         sHtml += WuiSvnLinkWithTooltip(oTransient.iRevision, oTransient.sRepository, fBracketed = 'False').toHtml();
-        sHtml += u', %s: ' % (self.formatTsShort(oTransient.tsDone),);
+        sHtml += u', %s: ' % (WuiTestSetLink(oTransient.idTestSet, self.formatTsShort(oTransient.tsDone),
+                                             fBracketed = False).toHtml(), )
         sHtml += self._formatEdgeOccurenceSubject(oTransient);
         sHtml += u'</li>\n';
         return sHtml;
@@ -159,6 +208,10 @@ class WuiReportFailuresBase(WuiReportBase):
         """
         Generates the enter and leave lists.
         """
+        # Skip this if we're looking at builds.
+        if self._oModel.sSubject in [self._oModel.ksSubBuild,] and len(self._oModel.aidSubjects) in [1, 2]:
+            return u'';
+
         sHtml  = u'<h4>Movements:</h4>\n' \
                  u'<ul>\n';
         if len(oSet.aoEnterInfo) == 0 and len(oSet.aoLeaveInfo) == 0:
@@ -173,6 +226,67 @@ class WuiReportFailuresBase(WuiReportBase):
         return sHtml;
 
 
+    def _formatSeriesNameForTable(self, oSet, idKey):
+        """ Formats the series name for the HTML table. """
+        _ = oSet;
+        return '<td>%d</td>' % (idKey,);
+
+    def _formatRowValueForTable(self, oRow, oPeriod, cColsPerSeries):
+        """ Formats a row value for the HTML table. """
+        _ = oPeriod;
+        if oRow is None:
+            return u'<td colspan="%d"> </td>' % (cColsPerSeries,);
+        if cColsPerSeries == 2:
+            return u'<td align="right">%u%%</td><td align="center">%u / %u</td>' \
+                   % (oRow.cHits * 100 / oRow.cTotal, oRow.cHits, oRow.cTotal);
+        return u'<td align="center">%u</td>' % (oRow.cHits,);
+
+    def _formatSeriesTotalForTable(self, oSet, idKey, cColsPerSeries):
+        """ Formats the totals cell for a data series in the HTML table. """
+        dcTotalPerId = getattr(oSet, 'dcTotalPerId', None);
+        if cColsPerSeries == 2:
+            return u'<td align="right">%u%%</td><td align="center">%u/%u</td>' \
+                   % (oSet.dcHitsPerId[idKey] * 100 / dcTotalPerId[idKey], oSet.dcHitsPerId[idKey], dcTotalPerId[idKey]);
+        return u'<td align="center">%u</td>' % (oSet.dcHitsPerId[idKey],);
+
+    def _generateTableForSet(self, oSet, sColumnName, aidSorted = None, fWithTotals = True, cColsPerSeries = None):
+        """
+        Turns the set into a table.
+
+        Returns raw html.
+        """
+        sHtml  = u'<table class="tmtbl-report-set" width="100%%">\n';
+        if cColsPerSeries is None:
+            cColsPerSeries = 2 if hasattr(oSet, 'dcTotalPerId') else 1;
+
+        # Header row.
+        sHtml += u' <tr><thead><th></th><th>%s</th>' % (webutils.escapeElem(sColumnName),)
+        for oPeriod in reversed(oSet.aoPeriods):
+            sHtml += u'<th colspan="%d">%s</th>' % (cColsPerSeries, webutils.escapeElem(oPeriod.sDesc),);
+        if fWithTotals:
+            sHtml += u'<th colspan="%d">Total</th>' % (cColsPerSeries,);
+        sHtml += u'</thead></td>\n';
+
+        # Each data series.
+        if aidSorted is None:
+            aidSorted = oSet.dSubjects.keys();
+        sHtml += u' <tbody>\n';
+        for iRow, idKey in enumerate(aidSorted):
+            sHtml += u'  <tr class="%s">' % ('tmodd' if iRow & 1 else 'tmeven',);
+            sHtml += u'<td align="left">#%u</td>' % (iRow + 1,);
+            sHtml += self._formatSeriesNameForTable(oSet, idKey);
+            for oPeriod in reversed(oSet.aoPeriods):
+                oRow = oPeriod.dRowsById.get(idKey, None);
+                sHtml += self._formatRowValueForTable(oRow, oPeriod, cColsPerSeries);
+            if fWithTotals:
+                sHtml += self._formatSeriesTotalForTable(oSet, idKey, cColsPerSeries);
+            sHtml += u' </tr>\n';
+        sHtml += u' </tbody>\n';
+        sHtml += u'</table>\n';
+        return sHtml;
+
+
+
 
 class WuiReportFailureReasons(WuiReportFailuresBase):
     """
@@ -183,15 +297,28 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         return u'%s / %s' % ( webutils.escapeElem(oTransient.oReason.oCategory.sShort),
                               webutils.escapeElem(oTransient.oReason.sShort),);
 
+    def _formatSeriesNameForTable(self, oSet, idKey):
+        oReason = oSet.dSubjects[idKey];
+        sHtml  = '<td>'
+        sHtml += u'%s / %s' % ( webutils.escapeElem(oReason.oCategory.sShort), webutils.escapeElem(oReason.sShort),);
+        sHtml += '</td>'
+        return sHtml;
+
 
     def generateReportBody(self):
         self._sTitle = 'Failure reasons';
 
         #
-        # Get the data and generate transition list.
+        # Get the data and sort the data series in descending order of badness.
         #
         oSet = self._oModel.getFailureReasons();
-        sHtml = self._generateTransitionList(oSet);
+        aidSorted = sorted(oSet.dSubjects, key = lambda idReason: oSet.dcHitsPerId[idReason], reverse = True);
+
+        #
+        # Generate table and transition list. These are the most useful ones with the current graph machinery.
+        #
+        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSorted);
+        sHtml += self._generateTransitionList(oSet);
 
         #
         # Check if most of the stuff is without any assign reason, if so, skip
@@ -207,42 +334,36 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         #
         # Generate the graph.
         #
-        aidSorted = sorted(oSet.dSubjects, key = lambda idReason: oSet.dcHitsPerId[idReason], reverse = True);
-
-        asNames = [];
-        for idReason in aidSorted:
-            oReason = oSet.dSubjects[idReason];
-            asNames.append('%s / %s' % (oReason.oCategory.sShort, oReason.sShort,) )
-        if fIncludeWithoutReason:
-            asNames.append('No reason');
-
-        oTable = WuiHlpGraphDataTable('Period', asNames);
-
-        cMax = oSet.cMaxHits;
-        for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
-            aiValues = [];
-
+        fGenerateGraph = True;
+        if fGenerateGraph:
+            asNames = [];
             for idReason in aidSorted:
-                oRow = oPeriod.dRowsById.get(idReason, None);
-                iValue = oRow.cHits if oRow is not None else 0;
-                aiValues.append(iValue);
-
+                oReason = oSet.dSubjects[idReason];
+                asNames.append('%s / %s' % (oReason.oCategory.sShort, oReason.sShort,) )
             if fIncludeWithoutReason:
-                aiValues.append(oPeriod.cWithoutReason);
-                if oPeriod.cWithoutReason > cMax:
-                    cMax = oPeriod.cWithoutReason;
+                asNames.append('No reason');
 
-            oTable.addRow(oPeriod.sDesc, aiValues);
+            oTable = WuiHlpGraphDataTable('Period', asNames);
 
-        oGraph = WuiHlpBarGraph('failure-reason', oTable, self._oDisp);
-        oGraph.setRangeMax(max(cMax + 1, 3));
-        sHtml += oGraph.renderGraph();
+            cMax = oSet.cMaxHits;
+            for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
+                aiValues = [];
 
-        #
-        # Table form necessary?
-        #
-        #sHtml += u'<p>TODO: Show graph content in table form.</p>';
+                for idReason in aidSorted:
+                    oRow = oPeriod.dRowsById.get(idReason, None);
+                    iValue = oRow.cHits if oRow is not None else 0;
+                    aiValues.append(iValue);
 
+                if fIncludeWithoutReason:
+                    aiValues.append(oPeriod.cWithoutReason);
+                    if oPeriod.cWithoutReason > cMax:
+                        cMax = oPeriod.cWithoutReason;
+
+                oTable.addRow(oPeriod.sDesc, aiValues);
+
+            oGraph = WuiHlpBarGraph('failure-reason', oTable, self._oDisp);
+            oGraph.setRangeMax(max(cMax + 1, 3));
+            sHtml += oGraph.renderGraph();
         return sHtml;
 
 
@@ -252,63 +373,93 @@ class WuiReportTestCaseFailures(WuiReportFailuresBase):
     """
 
     def _formatEdgeOccurenceSubject(self, oTransient):
-        return u'%s (#%u)' % ( webutils.escapeElem(oTransient.oTestCase.sName), oTransient.oTestCase.idTestCase,);
+        sHtml = u'%s ' % ( webutils.escapeElem(oTransient.oTestCase.sName),);
+        sHtml += WuiTestCaseDetailsLink(oTransient.oTestCase.idTestCase, fBracketed = False).toHtml();
+        return sHtml;
 
+    def _formatSeriesNameForTable(self, oSet, idKey):
+        oTestCase = oSet.dSubjects[idKey];
+        sHtml  = '<td>'
+        sHtml += WuiReportSummaryLink(ReportModelBase.ksSubTestCase, oTestCase.idTestCase, sName = oTestCase.sName).toHtml();
+        sHtml += u' ';
+        sHtml += WuiTestCaseDetailsLink(oTestCase.idTestCase).toHtml();
+        sHtml += '</td>'
+        return sHtml;
 
     def generateReportBody(self):
         self._sTitle = 'Test Case Failures';
 
+
         #
-        # Get the data and generate transition list.
+        # Get the data and sort the data series in descending order of badness.
         #
         oSet = self._oModel.getTestCaseFailures();
-        sHtml = self._generateTransitionList(oSet);
+        if self._oModel.tsNow is not None and False:
+            # Sort the total.
+            aidSortedRaw = sorted(oSet.dSubjects,
+                                  key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
+                                  reverse = True);
+        else:
+            # Sort by NOW column.
+            dTmp = {};
+            for idKey in oSet.dSubjects:
+                oRow = oSet.aoPeriods[-1].dRowsById.get(idKey, None);
+                if oRow is None:    dTmp[idKey] = 0;
+                else:               dTmp[idKey] = oRow.cHits * 10000 / max(1, oRow.cTotal);
+            aidSortedRaw = sorted(dTmp, key = lambda idKey: dTmp[idKey], reverse = True);
+
+        #
+        # Generate table and transition list. These are the most useful ones with the current graph machinery.
+        #
+        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw);
+        sHtml += self._generateTransitionList(oSet);
 
         #
         # Generate the graph.
         #
-        aidSorted = sorted(oSet.dSubjects,
-                           key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
-                           reverse = True);
+        fGenerateGraph = len(aidSortedRaw) <= 6; ## Make this configurable.
+        if fGenerateGraph:
+            # Figure the graph width for all of them.
+            uPctMax = max(oSet.uMaxPct, oSet.cMaxHits * 100 / oSet.cMaxTotal);
+            uPctMax = max(uPctMax + 2, 10);
 
-        asNames = [];
-        for idKey in aidSorted:
-            oSubject = oSet.dSubjects[idKey];
-            asNames.append(oSubject.sName);
+            for _, aidSorted in enumerate(self._splitSeriesIntoMultipleGraphs(aidSortedRaw, 8)):
+                asNames = [];
+                for idKey in aidSorted:
+                    oSubject = oSet.dSubjects[idKey];
+                    asNames.append(oSubject.sName);
 
-        oTable = WuiHlpGraphDataTable('Period', asNames);
+                oTable = WuiHlpGraphDataTable('Period', asNames);
 
-        uPctMax = 10;
-        for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
-            aiValues = [];
-            asValues = [];
+                for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
+                    aiValues = [];
+                    asValues = [];
 
-            for idKey in aidSorted:
-                oRow = oPeriod.dRowsById.get(idKey, None);
-                if oRow is not None:
-                    uPct = oRow.cHits * 100 / oRow.cTotal;
-                    uPctMax = max(uPctMax, uPct);
-                    aiValues.append(uPct);
-                    asValues.append('%u%% (%u/%u)' % (uPct, oRow.cHits, oRow.cTotal));
-                else:
-                    aiValues.append(0);
-                    asValues.append('0');
+                    for idKey in aidSorted:
+                        oRow = oPeriod.dRowsById.get(idKey, None);
+                        if oRow is not None:
+                            uPct = oRow.cHits * 100 / oRow.cTotal;
+                            aiValues.append(uPct);
+                            asValues.append('%u%% (%u/%u)' % (uPct, oRow.cHits, oRow.cTotal));
+                        else:
+                            aiValues.append(0);
+                            asValues.append('0');
 
-            oTable.addRow(oPeriod.sDesc, aiValues, asValues);
+                    oTable.addRow(oPeriod.sDesc, aiValues, asValues);
 
-        if True: # pylint: disable=W0125
-            aiValues = [];
-            asValues = [];
-            for idKey in aidSorted:
-                uPct = oSet.dcHitsPerId[idKey] * 100 / oSet.dcTotalPerId[idKey];
-                uPctMax = max(uPctMax, uPct);
-                aiValues.append(uPct);
-                asValues.append('%u%% (%u/%u)' % (uPct, oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
-            oTable.addRow('Totals', aiValues, asValues);
+                if True: # pylint: disable=W0125
+                    aiValues = [];
+                    asValues = [];
+                    for idKey in aidSorted:
+                        uPct = oSet.dcHitsPerId[idKey] * 100 / oSet.dcTotalPerId[idKey];
+                        aiValues.append(uPct);
+                        asValues.append('%u%% (%u/%u)' % (uPct, oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
+                    oTable.addRow('Totals', aiValues, asValues);
 
-        oGraph = WuiHlpBarGraph('testcase-failures', oTable, self._oDisp);
-        oGraph.setRangeMax(uPct + 2);
-        sHtml += oGraph.renderGraph();
+                oGraph = WuiHlpBarGraph('testcase-failures', oTable, self._oDisp);
+                oGraph.setRangeMax(uPctMax);
+                sHtml += '<br>\n';
+                sHtml += oGraph.renderGraph();
 
         return sHtml;
 
