@@ -736,7 +736,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         if len(asValues) > 0:
             oType = type(asValues[0]);
             for i in range(1, len(asValues)):
-                if type(asValues[i]) is not oType: # pylint: disable=C0123
+                if type(asValues[i]) is not oType: # pylint: disable=unidiomatic-typecheck
                     return (asValues, 'Invalid entry data type ([0]=%s vs [%d]=%s).' % (oType, i, type(asValues[i])) );
 
         return (asValues, None);
