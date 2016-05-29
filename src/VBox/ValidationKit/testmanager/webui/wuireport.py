@@ -334,7 +334,7 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         #
         # Generate the graph.
         #
-        fGenerateGraph = len(aidSortedRaw) <= 9 && len(aidSortedRaw) > 0; ## Make this configurable.
+        fGenerateGraph = len(aidSortedRaw) <= 9 and len(aidSortedRaw) > 0; ## Make this configurable.
         if fGenerateGraph:
             asNames = [];
             for idReason in aidSorted:
@@ -417,7 +417,7 @@ class WuiReportTestCaseFailures(WuiReportFailuresBase):
         #
         # Generate the graph.
         #
-        fGenerateGraph = len(aidSortedRaw) <= 6 && len(aidSortedRaw) > 0; ## Make this configurable.
+        fGenerateGraph = len(aidSortedRaw) <= 6 and len(aidSortedRaw) > 0; ## Make this configurable.
         if fGenerateGraph:
             # Figure the graph width for all of them.
             uPctMax = max(oSet.uMaxPct, oSet.cMaxHits * 100 / oSet.cMaxTotal);
