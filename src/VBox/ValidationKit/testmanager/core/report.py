@@ -176,9 +176,11 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
         Returns the period description, usually for graph data.
         """
         if iPeriod == 0:
-            return 'now';
+            return 'now' if self.tsNow is None else 'then';
         if self.cHoursPerPeriod == 24:
             return '%dd ago' % (iPeriod, );
+        if (iPeriod * self.cHoursPerPeriod) % 24 == 0:
+            return '%dd ago' % (iPeriod * self.cHoursPerPeriod / 24, );
         return '%dh ago' % (iPeriod * self.cHoursPerPeriod, );
 
     def getStraightPeriodDesc(self, iPeriod):
@@ -747,7 +749,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                 oPeriod.appendRow(oPeriodRow, oTestCase.idTestCase, oTestCase);
 
             oSet.appendPeriod(oPeriod);
-        cDeleted = oSet.pruneRowsWithZeroSumHits();
+        oSet.pruneRowsWithZeroSumHits();
 
 
 

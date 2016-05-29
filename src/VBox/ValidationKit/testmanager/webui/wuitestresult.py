@@ -45,7 +45,7 @@ from testmanager.core.testbox                   import TestBoxData;
 from testmanager.core.testcase                  import TestCaseData;
 from testmanager.core.testset                   import TestSetData;
 from testmanager.core.testgroup                 import TestGroupData;
-from testmanager.core.testresults               import TestResultFailureData;
+from testmanager.core.testresultfailures        import TestResultFailureData;
 from testmanager.core.build                     import BuildData;
 from testmanager.core                           import db;
 from testmanager                                import config;

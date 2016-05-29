@@ -32,7 +32,7 @@ __version__ = "$Revision$"
 from testmanager.webui.wuicontentbase           import WuiFormContentBase, WuiContentBase, WuiTmLink;
 from testmanager.webui.wuimain                  import WuiMain;
 from testmanager.webui.wuiadminfailurereason    import WuiFailureReasonDetailsLink, WuiFailureReasonAddLink;
-from testmanager.core.testresults               import TestResultFailureData;
+from testmanager.core.testresultfailures        import TestResultFailureData;
 from testmanager.core.testset                   import TestSetData;
 from testmanager.core.failurereason             import FailureReasonLogic;
 

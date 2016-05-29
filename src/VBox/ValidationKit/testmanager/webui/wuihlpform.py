@@ -451,7 +451,8 @@ class WuiHlpForm(object):
             sHtml += u'    }\n';
             sHtml += u'}\n';
             sHtml += u'\n';
-            sHtml += u'function %s_extendListEx(sSubName, cGangMembers, cSecTimeout, sArgs, sTestBoxReqExpr, sBuildReqExpr)\n' % (sName,);
+            sHtml += u'function %s_extendListEx(sSubName, cGangMembers, cSecTimeout, sArgs, sTestBoxReqExpr, sBuildReqExpr)\n' \
+                     % (sName,);
             sHtml += u'{\n';
             sHtml += u'    var oElement = document.getElementById(\'%s\');\n' % (sTableId,);
             sHtml += u'    var oTBody   = document.createElement(\'tbody\');\n';
