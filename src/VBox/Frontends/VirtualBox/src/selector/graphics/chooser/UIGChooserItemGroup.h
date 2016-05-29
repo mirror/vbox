@@ -149,10 +149,12 @@ private:
     int minimumHeightHint(bool fOpenedGroup) const;
     int minimumWidthHint() const;
     int minimumHeightHint() const;
-#pragma clang diagnostic push
+#ifdef VBOX_WS_MAC
+# pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Woverloaded-virtual"
     QSizeF minimumSizeHint(bool fOpenedGroup) const;
-#pragma clang diagnostic pop
+# pragma clang diagnostic pop
+#endif
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
 
     /* Helpers: Drag&drop stuff: */
