@@ -907,7 +907,7 @@ class TestBoxLogic(ModelLogicBase):
                           'FROM   TestBoxes\n'
                           'WHERE  idTestBox      = %s\n'
                           '   AND tsExpire       < %s\n'
-                          '   AND tsExpire      >= %s - interval \'%u hours\'\n'
+                          '   AND tsExpire      >= %s - interval \'%s hours\'\n'
                           '   AND enmPendingCmd IN (%s, %s)\n'
                           , ( idTestBox, tsNow, tsNow, cHoursBack,
                               TestBoxData.ksTestBoxCmd_Reboot, TestBoxData.ksTestBoxCmd_UpgradeAndReboot, ));

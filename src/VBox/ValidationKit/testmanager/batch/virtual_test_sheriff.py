@@ -72,22 +72,28 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.oTestSetLogic = None;
         self.oLogin = None;
         self.uidSelf = -1;
+        self.oLogFile = None;
 
         oParser = OptionParser();
-        oParser.add_option('--start-hours-ago', dest = 'cStartHoursAgo', metavar = '<hours>', default = 0,
+        oParser.add_option('--start-hours-ago', dest = 'cStartHoursAgo', metavar = '<hours>', default = 0, type = 'int',
                            help = 'When to start specified as hours relative to current time.  Defauls is right now.', );
-        oParser.add_option('--hours-period', dest = 'cPeriodInHours', metavar = '<period-in-hours>', default = 2,
+        oParser.add_option('--hours-period', dest = 'cHoursBack', metavar = '<period-in-hours>', default = 2, type = 'int',
                            help = 'Work period specified in hours.  Defauls is 2 hours.');
         oParser.add_option('--real-run-back', dest = 'fRealRun', action = 'store_true', default = False,
                            help = 'Whether to commit the findings to the database. Default is a dry run.');
         oParser.add_option('-q', '--quiet', dest = 'fQuiet', action = 'store_true', default = False,
                            help = 'Quiet execution');
-        oParser.add_option('-l', '--log', dest = 'sBuildLogPath', metavar = '<url>',
+        oParser.add_option('-l', '--log', dest = 'sBuildLogPath', metavar = '<url>', default = None,
                            help = 'URL to the build logs (optional).');
         oParser.add_option('--debug', dest = 'fDebug', action = 'store_true', default = False,
                            help = 'Enables debug mode.');
 
         (self.oConfig, _) = oParser.parse_args();
+
+        if self.oConfig.sBuildLogPath is not None and len(self.oConfig.sBuildLogPath) > 0:
+            self.oLogFile = open(self.oConfig.sBuildLogPath, "a");
+            self.oLogFile.write('VirtualTestSheriff: $Revision$ \n');
+
 
     def eprint(self, sText):
         """
@@ -95,14 +101,19 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         Returns 1 (for exit code usage.)
         """
         print 'error: %s' % (sText,);
+        if self.oLogFile is not None:
+            self.oLogFile.write('error: %s\n' % (sText,));
         return 1;
 
     def dprint(self, sText):
         """
         Prints debug info.
         """
-        if not self.oConfig.fDebug:
-            print 'debug: %s' % (sText, );
+        if self.oConfig.fDebug:
+            if not self.oConfig.fQuiet:
+                print 'debug: %s' % (sText, );
+            if self.oLogFile is not None:
+                self.oLogFile.write('debug: %s\n' % (sText,));
         return 0;
 
     def vprint(self, sText):
@@ -111,6 +122,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         """
         if not self.oConfig.fQuiet:
             print 'info: %s' % (sText,);
+        if self.oLogFile is not None:
+            self.oLogFile.write('info: %s\n' % (sText,));
         return 0;
 
 
@@ -126,13 +139,14 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         if    self.oConfig.cStartHoursAgo != 0 \
           and (not self.oConfig.fDebug or self.oConfig.fRealRun):
             return rcExit;
-        tsNow = self.oConfig.tsNow if self.oConfig.fDebug else None;
+        tsNow      = self.tsNow              if self.oConfig.fDebug else None;
+        cHoursBack = self.oConfig.cHoursBack if self.oConfig.fDebug else 2;
         oTestBoxLogic = TestBoxLogic(self.oDb);
 
         #
         # Get list of bad test boxes for given period and check them out individually.
         #
-        aidBadTestBoxes = self.oTestSetLogic.fetchBadTestBoxIds();
+        aidBadTestBoxes = self.oTestSetLogic.fetchBadTestBoxIds(cHoursBack = cHoursBack, tsNow = tsNow);
         for idTestBox in aidBadTestBoxes:
             # Skip if the testbox is already disabled or has a pending reboot command.
             try:
@@ -150,7 +164,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 continue;
 
             # Get the most recent testsets for this box (descending on tsDone) and see how bad it is.
-            aoSets  = self.oTestSetLogic.fetchResultForTestBox(idTestBox, cHoursBack = 2, tsNow = tsNow);
+            aoSets  = self.oTestSetLogic.fetchResultForTestBox(idTestBox, cHoursBack = cHoursBack, tsNow = tsNow);
             cOkay      = 0;
             cBad       = 0;
             iFirstOkay = len(aoSets);
@@ -159,18 +173,19 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     cBad += 1;
                 else:
                     ## @todo maybe check the elapsed time here, it could still be a bad run.
-                    iFirstOkay = iSet;
                     cOkay += 1;
+                    if iFirstOkay > iSet:
+                        iFirstOkay = iSet;
                 if iSet > 10:
                     break;
 
             # We react if there are two or more bad-testbox statuses at the head of the
             # history and at least three in the last 10 results.
             if iFirstOkay >= 2 and cBad > 2:
-                if oTestBoxLogic.hasTestBoxRecentlyBeenRebooted(idTestBox, cHoursBack = 2, tsNow = tsNow):
+                if oTestBoxLogic.hasTestBoxRecentlyBeenRebooted(idTestBox, cHoursBack = cHoursBack, tsNow = tsNow):
                     self.vprint('Disabling testbox #%u (%s) - iFirstOkay=%u cBad=%u cOkay=%u'
                                 % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
-                    if self.oConfig.fRealRun:
+                    if self.oConfig.fRealRun is True:
                         try:
                             oTestBoxLogic.disableTestBox(idTestBox, self.uidSelf, fCommit = True,
                                                          sComment = 'Automatically disabled (iFirstOkay=%u cBad=%u cOkay=%u)'
@@ -180,13 +195,16 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 else:
                     self.vprint('Rebooting testbox #%u (%s) - iFirstOkay=%u cBad=%u cOkay=%u'
                                 % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
-                    if self.oConfig.fRealRun:
+                    if self.oConfig.fRealRun is True:
                         try:
                             oTestBoxLogic.rebootTestBox(idTestBox, self.uidSelf, fCommit = True,
                                                         sComment = 'Automatically rebooted (iFirstOkay=%u cBad=%u cOkay=%u)'
                                                                  % (iFirstOkay, cBad, cOkay),);
                         except Exception as oXcpt:
                             rcExit = self.eprint('Error rebooting testbox #%u (%u): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
+            else:
+                self.dprint('badTestBoxManagement: #%u (%s) looks ok:  iFirstOkay=%u cBad=%u cOkay=%u'
+                            % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
         return rcExit;
 
 
@@ -233,6 +251,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.oResultLogic = None;
         self.oDb.close();
         self.oDb = None;
+        if self.oLogFile is not None:
+            self.oLogFile.close();
+            self.oLogFile = None;
         return rcExit;
 
 if __name__ == '__main__':
