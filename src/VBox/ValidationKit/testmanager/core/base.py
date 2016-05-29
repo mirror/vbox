@@ -93,6 +93,15 @@ class TMRowInUse(TMExceptionBase):
     pass;
 
 
+class TMInFligthCollision(TMExceptionBase):
+    """
+    Database update failed because someone else had already made changes to
+    the data there.
+    Used by ModelLogicBase decendants.
+    """
+    pass;
+
+
 class ModelBase(object): # pylint: disable=R0903
     """
     Something all classes in the logical model inherits from.
@@ -1157,6 +1166,26 @@ class ModelLogicBase(ModelBase): # pylint: disable=R0903
         This should only be used for instantiating other ModelLogicBase children.
         """
         return self._oDb;
+
+    def _dbRowsToModelDataList(self, oModelDataType, aaoRows = None):
+        """
+        Helper for conerting a simple fetch into a list of ModelDataType python objects.
+
+        If aaoRows is None, we'll fetchAll from the database ourselves.
+
+        The oModelDataType must be a class derived from ModelDataBase and implement
+        the initFormDbRow method.
+
+        Returns a list of oModelDataType instances.
+        """
+        assert issubclass(oModelDataType, ModelDataBase);
+        aoRet = [];
+        if aaoRows is None:
+            aaoRows = self._oDb.fetchAll();
+        for aoRow in aaoRows:
+            aoRet.append(oModelDataType().initFromDbRow(aoRow));
+        return aoRet;
+
 
 
 class AttributeChangeEntry(object): # pylint: disable=R0903

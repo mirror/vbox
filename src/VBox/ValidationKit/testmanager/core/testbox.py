@@ -33,7 +33,7 @@ __version__ = "$Revision$"
 import unittest;
 
 # Validation Kit imports.
-from testmanager.core.base  import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, \
+from testmanager.core.base  import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, TMInFligthCollision, \
                                    TMInvalidData, TMTooManyRows, TMRowNotFound, ChangeLogEntry, AttributeChangeEntry;
 
 
@@ -730,11 +730,13 @@ class TestBoxLogic(ModelLogicBase):
 
         return idGenTestBox;
 
-    def setCommand(self, idTestBox, sOldCommand, sNewCommand, uidAuthor = None, fCommit = False):
+    def setCommand(self, idTestBox, sOldCommand, sNewCommand, uidAuthor = None, fCommit = False, sComment = None,
+                   fNoRollbackOnInFlightCollision = False):
         """
         Sets or resets the pending command on a testbox.
         Returns (idGenTestBox, tsEffective) of the new row.
         """
+        _ = sComment;
         try:
             # Would be easier to do this using an insert or update hook, I think. Much easier.
             self._oDb.execute('UPDATE ONLY TestBoxes\n'
@@ -744,6 +746,8 @@ class TestBoxLogic(ModelLogicBase):
                               '     AND enmPendingCmd = %s\n'
                               'RETURNING tsExpire\n',
                               (idTestBox, sOldCommand,));
+            if self._oDb.getRowCount() == 0:
+                raise TMInFligthCollision();
             tsEffective = self._oDb.fetchOne()[0];
 
             self._oDb.execute('INSERT INTO TestBoxes (\n'
@@ -824,6 +828,11 @@ class TestBoxLogic(ModelLogicBase):
             idGenTestBox = self._oDb.fetchOne()[0];
             if fCommit is True:
                 self._oDb.commit();
+
+        except TMInFligthCollision: # This is pretty stupid, but don't want to touch testboxcontroller.py now.
+            if not fNoRollbackOnInFlightCollision:
+                self._oDb.rollback();
+            raise;
         except:
             self._oDb.rollback();
             raise;
@@ -876,6 +885,65 @@ class TestBoxLogic(ModelLogicBase):
             self._oDb.maybeCommit(fCommit);
 
         return fRc
+
+
+    #
+    # The virtual test sheriff interface.
+    #
+
+    def hasTestBoxRecentlyBeenRebooted(self, idTestBox, cHoursBack = 2, tsNow = None):
+        """
+        Checks if the testbox has been rebooted in the specified time period.
+
+        This does not include already pending reboots, though under some
+        circumstances it may.  These being the test box entry being edited for
+        other reasons.
+
+        Returns True / False.
+        """
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('SELECT COUNT(idTestBox)\n'
+                          'FROM   TestBoxes\n'
+                          'WHERE  idTestBox      = %s\n'
+                          '   AND tsExpire       < %s\n'
+                          '   AND tsExpire      >= %s - interval \'%u hours\'\n'
+                          '   AND enmPendingCmd IN (%s, %s)\n'
+                          , ( idTestBox, tsNow, tsNow, cHoursBack,
+                              TestBoxData.ksTestBoxCmd_Reboot, TestBoxData.ksTestBoxCmd_UpgradeAndReboot, ));
+        return self._oDb.fetchOne()[0] > 0;
+
+
+    def rebootTestBox(self, idTestBox, uidAuthor, sComment, sOldCommand = TestBoxData.ksTestBoxCmd_None, fCommit = False):
+        """
+        Issues a reboot command for the given test box.
+        Return True on succes, False on in-flight collision.
+        May raise DB exception with rollback on other trouble.
+        """
+        try:
+            self.setCommand(idTestBox, sOldCommand, TestBoxData.ksTestBoxCmd_Reboot,
+                            uidAuthor = uidAuthor, fCommit = fCommit, sComment = sComment,
+                            fNoRollbackOnInFlightCollision = True);
+        except TMInFligthCollision:
+            return False;
+        except:
+            raise;
+        return True;
+
+
+    def disableTestBox(self, idTestBox, uidAuthor, sComment, fCommit = False):
+        """
+        Disables the given test box.
+
+        Raises exception on trouble, without rollback.
+        """
+        oTestBox = TestBoxData().initFromDbWithId(self._oDb, idTestBox);
+        if oTestBox.fEnabled:
+            oTestBox.fEnabled = False;
+            if sComment is not None:
+                _ = sComment; # oTestBox.sComment = sComment;
+            self.editEntry(oTestBox, uidAuthor = uidAuthor, fCommit = fCommit);
+        return None;
 
 
 #

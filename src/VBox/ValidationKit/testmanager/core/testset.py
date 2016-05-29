@@ -228,6 +228,8 @@ class TestSetData(ModelDataBase):
             return str(oXcpt1);
         return oFile;
 
+
+
 class TestSetLogic(ModelLogicBase):
     """
     TestSet logic.
@@ -634,6 +636,45 @@ class TestSetLogic(ModelLogicBase):
         for aoRow in self._oDb.fetchAll():
             aoRet.append(TestSetData().initFromDbRow(aoRow));
         return aoRet;
+
+
+    #
+    # The virtual test sheriff interface.
+    #
+
+    def fetchBadTestBoxIds(self, cHoursBack = 2, tsNow = None):
+        """
+        Fetches a list of test box IDs which returned bad-testbox statuses in the
+        given period (tsDone).
+        """
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('SELECT DISTINCT idTestBox\n'
+                          'FROM   TestSets\n'
+                          'WHERE  TestSets.enmStatus = \'bad-testbox\'\n'
+                          '   AND tsDone           <= %s\n'
+                          '   AND tsDone            > (%s - interval \'%s hours\')\n'
+                          , ( tsNow, tsNow, cHoursBack,));
+        return [aoRow[0] for aoRow in self._oDb.fetchAll()];
+
+    def fetchResultForTestBox(self, idTestBox, cHoursBack = 2, tsNow = None):
+        """
+        Fetches the TestSet rows for idTestBox for the given period (tsDone), w/o running ones.
+
+        Returns list of TestSetData sorted by tsDone in descending order.
+        """
+        if tsNow is None:
+            tsNow = self._oDb.getCurrentTimestamp();
+        self._oDb.execute('SELECT *\n'
+                          'FROM   TestSets\n'
+                          'WHERE  TestSets.idTestBox = %s\n'
+                          '   AND tsDone IS NOT NULL\n'
+                          '   AND tsDone           <= %s\n'
+                          '   AND tsDone            > (%s - interval \'%s hours\')\n'
+                          'ORDER by tsDone DESC\n'
+                          , ( idTestBox, tsNow, tsNow, cHoursBack,));
+        return self._dbRowsToModelDataList(TestSetData);
+
 
 
 #
