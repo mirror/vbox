@@ -29,7 +29,24 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 
-
+static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
+{
+    switch (enmTargetCpu)
+    {
+#define CASE_RET_STR(enmValue) case enmValue: return #enmValue + (sizeof("IEMTARGETCPU_") - 1)
+        CASE_RET_STR(IEMTARGETCPU_8086);
+        CASE_RET_STR(IEMTARGETCPU_V20);
+        CASE_RET_STR(IEMTARGETCPU_186);
+        CASE_RET_STR(IEMTARGETCPU_286);
+        CASE_RET_STR(IEMTARGETCPU_386);
+        CASE_RET_STR(IEMTARGETCPU_486);
+        CASE_RET_STR(IEMTARGETCPU_PENTIUM);
+        CASE_RET_STR(IEMTARGETCPU_PPRO);
+        CASE_RET_STR(IEMTARGETCPU_CURRENT);
+#undef CASE_RET_STR
+        default: return "Unknown";
+    }
+}
 
 /**
  * Initializes the interpreted execution manager.
@@ -89,7 +106,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                 case kCpumMicroarch_NEC_V30:        pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_V20; break;
                 default:                            pVCpu->iem.s.uTargetCpu = IEMTARGETCPU_CURRENT; break;
             }
-            LogRel(("IEM: uTargetCpu=%d (%d)\n", pVCpu->iem.s.uTargetCpu, pVM->cpum.ro.GuestFeatures.enmMicroarch));
+            LogRel(("IEM: TargetCpu=%s, Microarch=%s\n", iemGetTargetCpuName(pVCpu->iem.s.uTargetCpu), CPUMR3MicroarchName(pVM->cpum.ro.GuestFeatures.enmMicroarch)));
 #endif
         }
         else
