@@ -584,7 +584,11 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         sHtml += u' ';
         sHtml += WuiTestBoxDetailsLink(oTestBox.idTestBox).toHtml();
         sHtml += u'</td>';
-        sHtml += u'<td>%s %s</td>' % (webutils.escapeElem(oTestBox.sOs), webutils.escapeElem(oTestBox.sOsVersion),);
+        sOsAndVer = '%s %s' % (oTestBox.sOs, oTestBox.sOsVersion.strip(),);
+        if len(sOsAndVer) < 22:
+            sHtml += u'<td>%s</td>' % (webutils.escapeElem(sOsAndVer),);
+        else: # wonder if td.title works..
+            sHtml += u'<td title="%s">%s...</td>' % (webutils.escapeAttr(sOsAndVer), webutils.escapeElem(sOsAndVer[:20]));
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.sCpuArch),);
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.sCpuVendor),);
         sHtml += u'<td>f=%#x, m=%#x, s=%#x' % (oTestBox.getCpuFamily(), oTestBox.getCpuModel(), oTestBox.getCpuStepping(),)
