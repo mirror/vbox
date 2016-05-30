@@ -226,7 +226,7 @@ void tstASMCpuId(void)
          * The same seems to apply to invalid standard functions */
         if (iStd > cFunctions)
             continue;
-        if (iStd != 0x04 && iStd != 0x0b && iStd != 0x0d)
+        if (iStd != 0x04 && iStd != 0x07 && iStd != 0x0b && iStd != 0x0d)
         {
             u32 = ASMCpuId_EAX(iStd);
             CHECKVAL(u32, s.uEAX, "%x");
@@ -256,6 +256,16 @@ void tstASMCpuId(void)
                 RTTestIPrintf(RTTESTLVL_ALWAYS, "    [%02x]  %08x %08x %08x %08x\n", uECX, s.uEAX, s.uEBX, s.uECX, s.uEDX);
                 RTTESTI_CHECK_BREAK(uECX < 128);
             }
+        else if (iStd == 0x07)
+        {
+            uint32_t uMax = s.uEAX;
+            for (uint32_t uECX = 1; uECX < uMax; uECX++)
+            {
+                ASMCpuId_Idx_ECX(iStd, uECX, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "    [%02x]  %08x %08x %08x %08x\n", uECX, s.uEAX, s.uEBX, s.uECX, s.uEDX);
+                RTTESTI_CHECK_BREAK(uECX < 128);
+            }
+        }
         else if (iStd == 0x0b)
             for (uint32_t uECX = 1; (s.uEAX & 0x1f) && (s.uEBX & 0xffff); uECX++)
             {
