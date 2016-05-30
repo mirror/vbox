@@ -240,6 +240,10 @@ class WuiReportFailuresBase(WuiReportBase):
         return sHtml;
 
 
+    def _formatSeriesNameColumnHeadersForTable(self):
+        """ Formats the series name column for the HTML table. """
+        return '<th>Subject Name</th>';
+
     def _formatSeriesNameForTable(self, oSet, idKey):
         """ Formats the series name for the HTML table. """
         _ = oSet;
@@ -263,7 +267,7 @@ class WuiReportFailuresBase(WuiReportBase):
                    % (oSet.dcHitsPerId[idKey] * 100 / dcTotalPerId[idKey], oSet.dcHitsPerId[idKey], dcTotalPerId[idKey]);
         return u'<td align="center">%u</td>' % (oSet.dcHitsPerId[idKey],);
 
-    def _generateTableForSet(self, oSet, sColumnName, aidSorted = None, iSortColumn = 0,
+    def _generateTableForSet(self, oSet, aidSorted = None, iSortColumn = 0,
                              fWithTotals = True, cColsPerSeries = None):
         """
         Turns the set into a table.
@@ -275,7 +279,8 @@ class WuiReportFailuresBase(WuiReportBase):
             cColsPerSeries = 2 if hasattr(oSet, 'dcTotalPerId') else 1;
 
         # Header row.
-        sHtml += u' <tr><thead><th></th><th>%s</th>' % (webutils.escapeElem(sColumnName),)
+        sHtml += u' <tr><thead><th>#</th>';
+        self._formatSeriesNameColumnHeadersForTable();
         for iPeriod, oPeriod in enumerate(reversed(oSet.aoPeriods)):
             sHtml += u'<th colspan="%d">%s%s</th>' % ( cColsPerSeries, webutils.escapeElem(oPeriod.sDesc),
                                                        '&#x25bc;' if iPeriod == iSortColumn else '');
@@ -400,6 +405,9 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         return u'%s / %s' % ( webutils.escapeElem(oTransient.oReason.oCategory.sShort),
                               webutils.escapeElem(oTransient.oReason.sShort),);
 
+    def _formatSeriesNameColumnHeadersForTable(self):
+        return '<th>Failure Reason</th>';
+
     def _formatSeriesNameForTable(self, oSet, idKey):
         oReason = oSet.dSubjects[idKey];
         sHtml  = u'<td>';
@@ -420,7 +428,7 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         #
         # Generate table and transition list. These are the most useful ones with the current graph machinery.
         #
-        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw, len(oSet.aoPeriods));
+        sHtml  = self._generateTableForSet(oSet, aidSortedRaw, len(oSet.aoPeriods));
         sHtml += self._generateTransitionList(oSet);
 
         #
@@ -482,6 +490,9 @@ class WuiReportTestCaseFailures(WuiReportFailuresWithTotalBase):
         sHtml += WuiTestCaseDetailsLink(oTransient.oSubject.idTestCase, fBracketed = False).toHtml();
         return sHtml;
 
+    def _formatSeriesNameColumnHeadersForTable(self):
+        return '<th>Test Case</th>';
+
     def _formatSeriesNameForTable(self, oSet, idKey):
         oTestCase = oSet.dSubjects[idKey];
         sHtml  = u'<td>';
@@ -500,7 +511,7 @@ class WuiReportTestCaseFailures(WuiReportFailuresWithTotalBase):
         oSet = self._oModel.getTestCaseFailures();
         (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw, iSortColumn);
+        sHtml  = self._generateTableForSet(oSet, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testcase-graph', aidSortedRaw);
         return sHtml;
@@ -524,6 +535,9 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
         sHtml += WuiTestCaseDetailsLink(oTransient.oSubject.idTestCase, fBracketed = False).toHtml();
         return sHtml;
 
+    def _formatSeriesNameColumnHeadersForTable(self):
+        return '<th>Test Case / Variation</th>';
+
     def _formatSeriesNameForTable(self, oSet, idKey):
         oTestCaseArgs = oSet.dSubjects[idKey];
         sHtml  = u'<td>';
@@ -542,7 +556,7 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
         oSet = self._oModel.getTestCaseVariationFailures();
         (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, 'Test Case Variations', aidSortedRaw, iSortColumn);
+        sHtml  = self._generateTableForSet(oSet, aidSortedRaw, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testcasearg-graph', aidSortedRaw);
         return sHtml;
@@ -559,6 +573,9 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         sHtml += WuiTestBoxDetailsLink(oTransient.oSubject.idTestBox, fBracketed = False).toHtml();
         return sHtml;
 
+    def _formatSeriesNameColumnHeadersForTable(self):
+        return '<th colspan="5">Test Box</th>';
+
     def _formatSeriesNameForTable(self, oSet, idKey):
         oTestBox = oSet.dSubjects[idKey];
         sHtml  = u'<td>';
@@ -566,6 +583,15 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
                                       dExtraParams = self._dExtraParams).toHtml();
         sHtml += u' ';
         sHtml += WuiTestBoxDetailsLink(oTestBox.idTestBox).toHtml();
+        sHtml += u'</td>';
+        sHtml += u'<td>%s %s</td>' % (webutils.escapeElem(oTestBox.sOs), webutils.escapeElem(oTestBox.sOsVersion),);
+        sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.sCpuArch),);
+        sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.sCpuVendor),);
+        sHtml += u'<td>f=%#x, m=%#x, s=%#x' % (oTestBox.getCpuFamily(), oTestBox.getCpuModel(), oTestBox.getCpuStepping(),)
+        if oTestBox.fCpuNestedPaging:   sHtml += u', np';
+        elif oTestBox.fCpuHwVirt:       sHtml += u', hw';
+        else:                           sHtml += u', raw';
+        if oTestBox.fCpu64BitGuest:     sHtml += u', 64';
         sHtml += u'</td>';
         return sHtml;
 
@@ -577,7 +603,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         oSet = self._oModel.getTestBoxFailures();
         (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, 'Test Boxes', aidSortedRaw, iSortColumn);
+        sHtml  = self._generateTableForSet(oSet, aidSortedRaw, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testbox-graph', aidSortedRaw);
         return sHtml;
