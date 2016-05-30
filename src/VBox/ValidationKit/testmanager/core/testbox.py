@@ -269,6 +269,103 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
             return 0;
         return (self.lCpuRevision & 0xff);
 
+    # The following is a translation of the g_aenmIntelFamily06 array in CPUMR3CpuId.cpp:
+    kdIntelFamily06 = {
+        0x00: 'P6',
+        0x01: 'P6',
+        0x03: 'P6_II',
+        0x05: 'P6_II',
+        0x06: 'P6_II',
+        0x07: 'P6_III',
+        0x08: 'P6_III',
+        0x09: 'P6_M_Banias',
+        0x0a: 'P6_III',
+        0x0b: 'P6_III',
+        0x0d: 'P6_M_Dothan',
+        0x0e: 'Core_Yonah',
+        0x0f: 'Core2_Merom',
+        0x15: 'P6_M_Dothan',
+        0x16: 'Core2_Merom',
+        0x17: 'Core2_Penryn',
+        0x1a: 'Core7_Nehalem',
+        0x1c: 'Atom_Bonnell',
+        0x1d: 'Core2_Penryn',
+        0x1e: 'Core7_Nehalem',
+        0x1f: 'Core7_Nehalem',
+        0x25: 'Core7_Westmere',
+        0x26: 'Atom_Lincroft',
+        0x27: 'Atom_Saltwell',
+        0x2a: 'Core7_SandyBridge',
+        0x2c: 'Core7_Westmere',
+        0x2d: 'Core7_SandyBridge',
+        0x2e: 'Core7_Nehalem',
+        0x2f: 'Core7_Westmere',
+        0x35: 'Atom_Saltwell',
+        0x36: 'Atom_Saltwell',
+        0x37: 'Atom_Silvermont',
+        0x3a: 'Core7_IvyBridge',
+        0x3c: 'Core7_Haswell',
+        0x3d: 'Core7_Broadwell',
+        0x3e: 'Core7_IvyBridge',
+        0x3f: 'Core7_Haswell',
+        0x45: 'Core7_Haswell',
+        0x46: 'Core7_Haswell',
+        0x47: 'Core7_Broadwell',
+        0x4a: 'Atom_Silvermont',
+        0x4c: 'Atom_Airmount',
+        0x4d: 'Atom_Silvermont',
+        0x4e: 'Core7_Skylake',
+        0x4f: 'Core7_Broadwell',
+        0x55: 'Core7_Skylake',
+        0x56: 'Core7_Broadwell',
+        0x5a: 'Atom_Silvermont',
+        0x5c: 'Atom_Goldmont',
+        0x5d: 'Atom_Silvermont',
+        0x5e: 'Core7_Skylake',
+        0x66: 'Core7_Cannonlake',
+    };
+    # Also from CPUMR3CpuId.cpp, but the switch.
+    kdIntelFamily15 = {
+        0x00: 'NB_Willamette',
+        0x01: 'NB_Willamette',
+        0x02: 'NB_Northwood',
+        0x03: 'NB_Prescott',
+        0x04: 'NB_Prescott2M',
+        0x05: 'NB_Unknown',
+        0x06: 'NB_CedarMill',
+        0x07: 'NB_Gallatin',
+    };
+
+    def queryCpuMicroarch(self):
+        """ Try guess the microarch name for the cpu.  Returns None if we cannot. """
+        if self.lCpuRevision is None or self.sCpuVendor is None:
+            return None;
+        uFam = self.getCpuFamily();
+        uMod = self.getCpuModel();
+        if self.sCpuVendor == 'GenuineIntel':
+            if uFam == 6:
+                return self.kdIntelFamily06.get(uMod, None);
+            if uFam == 15:
+                return self.kdIntelFamily15.get(uMod, None);
+        elif self.sCpuVendor == 'AuthenticAMD':
+            if uFam == 0xf:
+                if uMod < 0x10:                             return 'K8_130nm';
+                if uMod >= 0x60 and uMod < 0x80:            return 'K8_65nm';
+                if uMod >= 0x40:                            return 'K8_90nm_AMDV';
+                if uMod in [0x21, 0x23, 0x2b, 0x37, 0x3f]:  return 'K8_90nm_DualCore';
+                return 'AMD_K8_90nm';
+            if uFam == 0x10:                                return 'K10';
+            if uFam == 0x11:                                return 'K10_Lion';
+            if uFam == 0x12:                                return 'K10_Llano';
+            if uFam == 0x14:                                return 'Bobcat';
+            if uFam == 0x15:
+                if uMod <= 0x01:                            return 'Bulldozer';
+                if uMod in [0x02, 0x10, 0x13]:              return 'Piledriver';
+                return None;
+            if uFam == 0x16:
+                return 'Jaguar';
+        return None;
+
     def getArchBitString(self):
         """ Returns 32-bit, 64-bit, <none>, or sCpuArch. """
         if self.sCpuArch is None:
