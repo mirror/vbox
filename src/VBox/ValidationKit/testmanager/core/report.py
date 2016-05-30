@@ -327,8 +327,8 @@ class ReportPeriodWithTotalBase(ReportPeriodBase):
     def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
         ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
         self.cTotal             = 0;
-        self.cMinTotal          = 0;
-        self.cMaxTotal          = 99999999;
+        self.cMaxTotal          = 0;
+        self.cMinTotal          = 99999999;
         self.uMaxPct            = 0;            # Max percentage in a row (100 = 100%).
 
     def _doStatsForRow(self, oRow, idRow, oData):
@@ -351,8 +351,8 @@ class ReportPeriodWithTotalBase(ReportPeriodBase):
     def helperSetResetStats(self):
         super(ReportPeriodWithTotalBase, self).helperSetResetStats();
         self.cTotal             = 0;
-        self.cMinTotal          = 0;
-        self.cMaxTotal          = 99999999;
+        self.cMaxTotal          = 0;
+        self.cMinTotal          = 99999999;
         self.uMaxPct            = 0;
 
 class ReportFailureReasonPeriod(ReportPeriodBase):
