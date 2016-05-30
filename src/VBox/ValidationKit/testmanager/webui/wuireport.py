@@ -308,6 +308,12 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
     For ReportPeriodSetWithTotalBase.
     """
 
+    def _formatSeriedNameForGraph(self, oSubject):
+        """
+        Format the subject name for the graph.
+        """
+        return str(oSubject);
+
     def _getSortedIds(self, oSet, fByTotal = None):
         """
         Get default sorted subject IDs and which column.
@@ -348,7 +354,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
                 asNames = [];
                 for idKey in aidSorted:
                     oSubject = oSet.dSubjects[idKey];
-                    asNames.append(oSubject.sName);
+                    asNames.append(self._formatSeriedNameForGraph(oSubject));
 
                 oTable = WuiHlpGraphDataTable('Period', asNames);
 
@@ -486,6 +492,9 @@ class WuiReportTestCaseFailures(WuiReportFailuresWithTotalBase):
         sHtml += u'</td>';
         return sHtml;
 
+    def _formatSeriedNameForGraph(self, oSubject):
+        return oSubject.sName;
+
     def generateReportBody(self):
         self._sTitle = 'Test Case Failures';
         oSet = self._oModel.getTestCaseFailures();
@@ -525,6 +534,9 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
         sHtml += u'</td>';
         return sHtml;
 
+    def _formatSeriedNameForGraph(self, oSubject):
+        return self._formatName(oSubject);
+
     def generateReportBody(self):
         self._sTitle = 'Test Case Variation Failures';
         oSet = self._oModel.getTestCaseVariationFailures();
@@ -556,6 +568,9 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         sHtml += WuiTestBoxDetailsLink(oTestBox.idTestBox).toHtml();
         sHtml += u'</td>';
         return sHtml;
+
+    def _formatSeriedNameForGraph(self, oSubject):
+        return oSubject.sName;
 
     def generateReportBody(self):
         self._sTitle = 'Test Box Failures';
