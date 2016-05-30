@@ -588,7 +588,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         if len(sOsAndVer) < 22:
             sHtml += u'<td>%s</td>' % (webutils.escapeElem(sOsAndVer),);
         else: # wonder if td.title works..
-            sHtml += u'<td title="%s" width="21em">%s...</td>' % (webutils.escapeAttr(sOsAndVer), webutils.escapeElem(sOsAndVer[:20]));
+            sHtml += u'<td title="%s" width="27em">%s...</td>' % (webutils.escapeAttr(sOsAndVer), webutils.escapeElem(sOsAndVer[:20]));
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.sCpuArch),);
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.sCpuVendor),);
         sHtml += u'<td>f=%#x, m=%#x, s=%#x' % (oTestBox.getCpuFamily(), oTestBox.getCpuModel(), oTestBox.getCpuStepping(),)
