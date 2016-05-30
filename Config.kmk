@@ -584,7 +584,7 @@ VBOX_WITH_WEBSERVICES_SSL = 1
 # The Qt GUI.
 VBOX_WITH_QTGUI = 1
 if1of ($(KBUILD_TARGET), linux win solaris)
- VBOX_WITH_QTGUI_V5 = 1
+ VBOX_WITH_QTGUI_V5 = 1 # r=bird: s/VBOX_WITH_QTGUI_V5/VBOX_WITH_QT5/g - our we released version 5.0 of the VirtualBox GUI last year, remember?
 else if "$(KBUILD_TARGET)" == "darwin" && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
  VBOX_WITH_QTGUI_V5 = 1
 endif
