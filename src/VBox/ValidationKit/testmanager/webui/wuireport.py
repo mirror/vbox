@@ -590,7 +590,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
         else: # wonder if td.title works..
             sHtml += u'<td title="%s" width="1%%" style="white-space:nowrap;">%s...</td>' \
                   % (webutils.escapeAttr(sOsAndVer), webutils.escapeElem(sOsAndVer[:20]));
-        sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.getCpuBitString()),);
+        sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.getArchBitString()),);
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.getPrettyCpuVendor()),);
         sHtml += u'<td>f=%#x, m=%#x, s=%#x' % (oTestBox.getCpuFamily(), oTestBox.getCpuModel(), oTestBox.getCpuStepping(),)
         if oTestBox.fCpuNestedPaging:   sHtml += u', np';
