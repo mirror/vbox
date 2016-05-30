@@ -46,11 +46,131 @@ g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abs
 sys.path.append(g_ksTestManagerDir);
 
 # Test Manager imports
-from testmanager.core.db            import TMDatabaseConnection;
-from testmanager.core.testbox       import TestBoxLogic, TestBoxData;
-from testmanager.core.testset       import TestSetLogic, TestSetData;
-from testmanager.core.testresults   import TestResultLogic;
-from testmanager.core.useraccount   import UserAccountLogic;
+from testmanager.core.db                    import TMDatabaseConnection;
+from testmanager.core.build                 import BuildDataEx;
+from testmanager.core.failurereason         import FailureReasonLogic;
+from testmanager.core.testbox               import TestBoxLogic, TestBoxData;
+from testmanager.core.testcase              import TestCaseDataEx;
+from testmanager.core.testgroup             import TestGroupData;
+from testmanager.core.testset               import TestSetLogic, TestSetData;
+from testmanager.core.testresults           import TestResultLogic;
+from testmanager.core.testresultfailures    import TestResultFailureLogic, TestResultFailureData;
+from testmanager.core.useraccount           import UserAccountLogic;
+
+
+class VirtualTestSheriffCaseFile(object):
+    """
+    A failure investigation case file.
+
+    """
+
+
+    ## Max log file we'll read into memory. (256 MB)
+    kcbMaxLogRead = 0x10000000;
+
+
+    def __init__(self, oSheriff, oTestSet, oTree, oBuild, oTestBox, oTestGroup, oTestCase):
+        self.oSheriff       = oSheriff;
+        self.oTestSet       = oTestSet;     # TestSetData
+        self.oTree          = oTree;        # TestResultDataEx
+        self.oBuild         = oBuild;       # BuildDataEx
+        self.oTestBox       = oTestBox;     # TestBoxData
+        self.oTestGroup     = oTestGroup;   # TestGroupData
+        self.oTestCase      = oTestCase;    # TestCaseDataEx
+        self.sMainLog       = '';           # The main log file.  Empty string if not accessible.
+
+        # Generate a case file name.
+        self.sName          = '#%u: %s' % (self.oTestSet.idTestSet, self.oTestCase.sName,)
+        self.sLongName      = '#%u: "%s" on "%s" running %s %s (%s), "%s" by %s, using %s %s %s r%u'  \
+                            % ( self.oTestSet.idTestSet,
+                                self.oTestCase.sName,
+                                self.oTestBox.sName,
+                                self.oTestBox.sOs,
+                                self.oTestBox.sOsVersion,
+                                self.oTestBox.sCpuArch,
+                                self.oTestBox.sCpuName,
+                                self.oTestBox.sCpuVendor,
+                                self.oBuild.oCat.sProduct,
+                                self.oBuild.oCat.sBranch,
+                                self.oBuild.oCat.sType,
+                                self.oBuild.iRevision, );
+
+        # Investigation notes.
+        self.tReason            = None;     # None or one of the ktReason_XXX constants.
+        self.dReasonForResultId = {};       # Reason assignments indexed by idTestResult.
+
+    #
+    # Reason.
+    #
+
+    def noteReason(self, tReason):
+        """ Notes down a possible reason. """
+        self.oSheriff.dprint('noteReason: %s -> %s' % (self.tReason, tReason,));
+        self.tReason = tReason;
+
+    def noteReasonForId(self, tReason, idTestResult):
+        """ Notes down a possible reason for a specific test result. """
+        self.oSheriff.dprint('noteReasonForId: %u: %s -> %s'
+                             % (idTestResult, self.dReasonForResultId.get(idTestResult, None), tReason,));
+        self.dReasonForResultId[idTestResult] = tReason;
+
+
+    #
+    # Test classification.
+    #
+
+    def isVBoxTest(self):
+        """ Test classification: VirtualBox (using the build) """
+        return self.oBuild.oCat.sProduct.lower() in [ 'virtualbox', 'vbox' ];
+
+    def isVBoxUnitTest(self):
+        """ Test case classification: The unit test doing all our testcase/*.cpp stuff. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower() == 'unit tests';
+
+    def isVBoxInstallTest(self):
+        """ Test case classification: VirtualBox Guest installation test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('install:');
+
+    def isVBoxSmokeTest(self):
+        """ Test case classification: Smoke test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('smoketest');
+
+
+    #
+    # Utility methods.
+    #
+
+    def getMainLog(self):
+        """
+        Tries to reads the main log file since this will be the first source of information.
+        """
+        if len(self.sMainLog) > 0:
+            return self.sMainLog;
+        (oFile, oSizeOrError, _) = self.oTestSet.openFile('main.log', 'rb');
+        if oFile is not None:
+            try:
+                self.sMainLog = oFile.read(min(self.kcbMaxLogRead, oSizeOrError)).decode('utf-8', 'replace');
+            except Exception as oXcpt:
+                self.oSheriff.vprint('Error reading main log file: %s' % (oXcpt,))
+                self.sMainLog = '';
+        else:
+            self.oSheriff.vprint('Error opening main log file: %s' % (oSizeOrError,));
+        return self.sMainLog;
+
+    def isSingleTestFailure(self):
+        """
+        Figure out if this is a single test failing or if it's one of the
+        more complicated ones.
+        """
+        if self.oTree.cErrors == 1:
+            return True;
+        if self.oTree.deepCountErrorContributers() <= 1:
+            return True;
+        return False;
+
 
 
 class VirtualTestSheriff(object): # pylint: disable=R0903
@@ -61,18 +181,19 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ## The user account for the virtual sheriff.
     ksLoginName = 'vsheriff';
 
-
     def __init__(self):
         """
         Parse command line.
         """
-        self.oDb = None;
-        self.tsNow = None;
-        self.oResultLogic = None;
-        self.oTestSetLogic = None;
-        self.oLogin = None;
-        self.uidSelf = -1;
-        self.oLogFile = None;
+        self.oDb                     = None;
+        self.tsNow                   = None;
+        self.oTestResultLogic        = None;
+        self.oTestSetLogic           = None;
+        self.oFailureReasonLogic     = None;    # FailureReasonLogic;
+        self.oTestResultFailureLogic = None;    # TestResultFailureLogic
+        self.oLogin                  = None;
+        self.uidSelf                 = -1;
+        self.oLogFile                = None;
 
         oParser = OptionParser();
         oParser.add_option('--start-hours-ago', dest = 'cStartHoursAgo', metavar = '<hours>', default = 0, type = 'int',
@@ -83,15 +204,15 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                            help = 'Whether to commit the findings to the database. Default is a dry run.');
         oParser.add_option('-q', '--quiet', dest = 'fQuiet', action = 'store_true', default = False,
                            help = 'Quiet execution');
-        oParser.add_option('-l', '--log', dest = 'sBuildLogPath', metavar = '<url>', default = None,
-                           help = 'URL to the build logs (optional).');
+        oParser.add_option('-l', '--log', dest = 'sLogFile', metavar = '<logfile>', default = None,
+                           help = 'Where to log messages.');
         oParser.add_option('--debug', dest = 'fDebug', action = 'store_true', default = False,
                            help = 'Enables debug mode.');
 
         (self.oConfig, _) = oParser.parse_args();
 
-        if self.oConfig.sBuildLogPath is not None and len(self.oConfig.sBuildLogPath) > 0:
-            self.oLogFile = open(self.oConfig.sBuildLogPath, "a");
+        if self.oConfig.sLogFile is not None and len(self.oConfig.sLogFile) > 0:
+            self.oLogFile = open(self.oConfig.sLogFile, "a");
             self.oLogFile.write('VirtualTestSheriff: $Revision$ \n');
 
 
@@ -125,6 +246,26 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         if self.oLogFile is not None:
             self.oLogFile.write('info: %s\n' % (sText,));
         return 0;
+
+
+    def selfCheck(self):
+        """ Does some self checks, looking up things we expect to be in the database and such. """
+        rcExit = 0;
+        for sAttr in dir(self.__class__):
+            if sAttr.startswith('ktReason_'):
+                tReason = getattr(self.__class__, sAttr);
+                oFailureReason = self.oFailureReasonLogic.cachedLookupByNameAndCategory(tReason[1], tReason[0]);
+                if oFailureReason is None:
+                    rcExit = self.eprint('Failured to find failure reason "%s" in category "%s" in the database!'
+                                         % (tReason[1], tReason[0],));
+
+        # Check the user account as well.
+        if self.oLogin is None:
+            oLogin = UserAccountLogic(self.oDb).tryFetchAccountByLoginName(VirtualTestSheriff.ksLoginName);
+            if oLogin is None:
+                rcExit = self.eprint('Cannot find my user account "%s"!' % (VirtualTestSheriff.ksLoginName,));
+        return rcExit;
+
 
 
     def badTestBoxManagement(self):
@@ -164,7 +305,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 continue;
 
             # Get the most recent testsets for this box (descending on tsDone) and see how bad it is.
-            aoSets  = self.oTestSetLogic.fetchResultForTestBox(idTestBox, cHoursBack = cHoursBack, tsNow = tsNow);
+            aoSets  = self.oTestSetLogic.fetchSetsForTestBox(idTestBox, cHoursBack = cHoursBack, tsNow = tsNow);
             cOkay      = 0;
             cBad       = 0;
             iFirstOkay = len(aoSets);
@@ -208,11 +349,156 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         return rcExit;
 
 
+    ## @name Failure reasons we know.
+    ## @{
+    ktReason_Guru_Generic                              = ( 'Guru Meditations', 'Generic Guru Meditation' );
+    ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations', 'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
+    ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations', 'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
+    ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations', 'VINF_EM_TRIPLE_FAULT' );
+    ## @}
+
+    def caseClosed(self, oCaseFile):
+        """
+        Reports the findings in the case and closes it.
+        """
+        #
+        # Log it and create a dReasonForReasultId we can use below.
+        #
+        if len(oCaseFile.dReasonForResultId):
+            self.vprint('Closing %s with following reasons: %s' % (oCaseFile.sName, oCaseFile.dReasonForResultId,));
+            dReasonForReasultId = oCaseFile.dReasonForResultId;
+        elif oCaseFile.tReason is not None:
+            self.vprint('Closing %s with following reason: %s'  % (oCaseFile.sName, oCaseFile.tReason,));
+            dReasonForReasultId = { oCaseFile.oTestSet.idTestResult: oCaseFile.tReason, };
+        else:
+            self.vprint('Closing %s without a reason ... weird!' % (oCaseFile.sName,));
+            return False;
+
+        #
+        # Add the test failure reason record(s).
+        #
+        for idTestResult, tReason in dReasonForReasultId.items():
+            oFailureReason = self.oFailureReasonLogic.cachedLookupByNameAndCategory(tReason[1], tReason[0]);
+            if oFailureReason is not None:
+                oAdd = TestResultFailureData();
+                oAdd.initFromValues(idTestResult     = idTestResult,
+                                    idFailureReason  = oFailureReason.idFailureReason,
+                                    uidAuthor        = self.uidSelf,
+                                    idTestSet        = oCaseFile.oTestSet.idTestSet,
+                                    sComment         = 'Set by $Revision$',); # Handy for reverting later.
+                if self.oConfig.fRealRun:
+                    try:
+                        self.oTestResultFailureLogic.addEntry(oAdd, self.uidSelf, fCommit = True);
+                    except Exception as oXcpt:
+                        self.eprint('caseClosed: Exception "%s" while adding reason %s for %s'
+                                    % (oXcpt, oAdd, oCaseFile.sLongName,));
+            else:
+                self.eprint('caseClosed: Cannot locate failure reason: %s / %s' % ( tReason[0], tReason[1],));
+        return True;
+
+
+    def investigateBadTestBox(self, oCaseFile):
+        """
+        Checks out bad-testbox statuses.
+        """
+        _ = oCaseFile;
+        return False;
+
+
+    def investigateVBoxUnitTest(self, oCaseFile):
+        """
+        Checks out a VBox unittest problem.
+        """
+        _ = oCaseFile;
+
+        #
+        # As a first step we'll just fish out what failed here and report
+        # the unit test case name as the "reason".  This can mostly be done
+        # using the TestResultDataEx bits, however in case it timed out and
+        # got killed we have to fish the test timing out from the logs.
+        #
+
+        #
+        # Report lone failures on the testcase, multiple failures must be
+        # reported directly on the failing test (will fix the test result
+        # listing to collect all of them).
+        #
+        return False;
+
+
+    ## Thing we search a main or VM log for to figure out why something went bust.
+    katSimpleMainAndVmLogReasons = [
+        # ( Whether to stop on hit, needle, reason tuple ),
+        ( False, 'GuruMeditation',                                  ktReason_Guru_Generic ),
+        ( True,  'VERR_IEM_INSTR_NOT_IMPLEMENTED',                  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED ),
+        ( True,  'VERR_IEM_ASPECT_NOT_IMPLEMENTED',                 ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED ),
+        ( True,  'VINF_EM_TRIPLE_FAULT',                            ktReason_Guru_VINF_EM_TRIPLE_FAULT ),
+    ];
+
+    def investigateVBoxVMTest(self, oCaseFile, fSingleVM):
+        """
+        Checks out a VBox VM test.
+
+        This is generic investigation of a test running one or more VMs, like
+        for example a smoke test or a guest installation test.
+
+        The fSingleVM parameter is a hint, which probably won't come in useful.
+        """
+        _ = fSingleVM;
+
+        #
+        # Do some quick searches thru the main log to see if there is anything
+        # immediately incriminating evidence there.
+        #
+        sMainLog = oCaseFile.getMainLog();
+        for fStopOnHit, sNeedle, tReason in self.katSimpleMainAndVmLogReasons:
+            if sMainLog.find(sNeedle) > 0:
+                oCaseFile.noteReason(tReason);
+                if fStopOnHit:
+                    if oCaseFile.isSingleTestFailure():
+                        return self.caseClosed(oCaseFile);
+                    break;
+
+        return False;
+
+
     def reasoningFailures(self):
         """
         Guess the reason for failures.
         """
+        #
+        # Get a list of failed test sets without any assigned failure reason.
+        #
+        aoTestSets = self.oTestSetLogic.fetchFailedSetsWithoutReason(cHoursBack = self.oConfig.cHoursBack, tsNow = self.tsNow);
+        for oTestSet in aoTestSets:
+            self.dprint('');
+            self.dprint('reasoningFailures: Checking out test set #%u, status %s'  % ( oTestSet.idTestSet, oTestSet.enmStatus,))
 
+            #
+            # Open a case file and assign it to the right investigator.
+            #
+            (oTree, _ ) = self.oTestResultLogic.fetchResultTree(oTestSet.idTestSet);
+            oBuild      = BuildDataEx().initFromDbWithId(       self.oDb, oTestSet.idBuild,       oTestSet.tsCreated);
+            oTestBox    = TestBoxData().initFromDbWithGenId(    self.oDb, oTestSet.idGenTestBox);
+            oTestGroup  = TestGroupData().initFromDbWithId(     self.oDb, oTestSet.idTestGroup,   oTestSet.tsCreated);
+            oTestCase   = TestCaseDataEx().initFromDbWithGenId( self.oDb, oTestSet.idGenTestCase, oTestSet.tsConfig);
+
+            oCaseFile = VirtualTestSheriffCaseFile(self, oTestSet, oTree, oBuild, oTestBox, oTestGroup, oTestCase);
+
+            if oTestSet.enmStatus == TestSetData.ksTestStatus_BadTestBox:
+                self.dprint('investigateBadTestBox is taking over %s.' % (oCaseFile.sLongName,));
+                self.investigateBadTestBox(oCaseFile);
+            elif oCaseFile.isVBoxUnitTest():
+                self.dprint('investigateVBoxUnitTest is taking over %s.' % (oCaseFile.sLongName,));
+                self.investigateVBoxUnitTest(oCaseFile);
+            elif oCaseFile.isVBoxInstallTest():
+                self.dprint('investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+            elif oCaseFile.isVBoxSmokeTest():
+                self.dprint('investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                self.investigateVBoxVMTest(oCaseFile, fSingleVM = False);
+            else:
+                self.vprint('reasoningFailures: Unable to classify test set: %s' % (oCaseFile.sLongName,));
         return 0;
 
 
@@ -222,16 +508,17 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         Return exit code (0, 1, etc).
         """
         # Database stuff.
-        self.oDb = TMDatabaseConnection()
-        self.oResultLogic = TestResultLogic(self.oDb);
-        self.oTestSetLogic = TestSetLogic(self.oDb);
+        self.oDb                     = TMDatabaseConnection()
+        self.oTestResultLogic        = TestResultLogic(self.oDb);
+        self.oTestSetLogic           = TestSetLogic(self.oDb);
+        self.oFailureReasonLogic     = FailureReasonLogic(self.oDb);
+        self.oTestResultFailureLogic = TestResultFailureLogic(self.oDb);
 
         # Get a fix on our 'now' before we do anything..
         self.oDb.execute('SELECT CURRENT_TIMESTAMP - interval \'%s hours\'', (self.oConfig.cStartHoursAgo,));
         self.tsNow = self.oDb.fetchOne();
 
         # If we're suppost to commit anything we need to get our user ID.
-        rcExit = 0;
         if self.oConfig.fRealRun:
             self.oLogin = UserAccountLogic(self.oDb).tryFetchAccountByLoginName(VirtualTestSheriff.ksLoginName);
             if self.oLogin is None:
@@ -239,16 +526,20 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             else:
                 self.uidSelf = self.oLogin.uid;
 
+        # Do the stuff.
         if rcExit == 0:
-            # Do the stuff.
+            rcExit  = self.selfCheck();
+        if rcExit == 0:
             rcExit  = self.badTestBoxManagement();
             rcExit2 = self.reasoningFailures();
             if rcExit == 0:
                 rcExit = rcExit2;
 
         # Cleanup.
-        self.oTestSetLogic = None;
-        self.oResultLogic = None;
+        self.oFailureReasonLogic     = None;
+        self.oTestResultFailureLogic = None;
+        self.oTestSetLogic           = None;
+        self.oTestResultLogic        = None;
         self.oDb.close();
         self.oDb = None;
         if self.oLogFile is not None:
