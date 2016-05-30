@@ -426,12 +426,13 @@ void HostDnsMonitorProxy::updateInfo()
 static void dumpHostDnsInformation(const HostDnsInformation& info)
 {
     dumpHostDnsStrVector("server", info.servers);
-    dumpHostDnsStrVector("search string", info.searchList);
 
     if (!info.domain.empty())
         LogRel(("  domain: %s\n", info.domain.c_str()));
     else
         LogRel(("  no domain set\n"));
+
+    dumpHostDnsStrVector("search string", info.searchList);
 }
 
 
