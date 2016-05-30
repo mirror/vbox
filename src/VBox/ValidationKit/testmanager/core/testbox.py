@@ -278,6 +278,7 @@ class TestBoxLogic(ModelLogicBase):
 
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb);
+        self.dCache = None;
 
     def tryFetchTestBoxByUuid(self, sTestBoxUuid):
         """
@@ -885,6 +886,42 @@ class TestBoxLogic(ModelLogicBase):
             self._oDb.maybeCommit(fCommit);
 
         return fRc
+
+
+    def cachedLookup(self, idTestBox):
+        """
+        Looks up the most recent TestBoxData object for idTestBox via
+        an object cache.
+
+        Returns a shared TestBoxData object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.dCache is None:
+            self.dCache = self._oDb.getCache('TestBoxData');
+        oEntry = self.dCache.get(idTestBox, None);
+        if oEntry is None:
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     TestBoxes\n'
+                              'WHERE    idTestBox  = %s\n'
+                              '     AND tsExpire   = \'infinity\'::TIMESTAMP\n'
+                              , (idTestBox, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     TestBoxes\n'
+                                  'WHERE    idTestBox = %s\n'
+                                  'ORDER BY tsExpire DESC\n'
+                                  'LIMIT 1\n'
+                                  , (idTestBox, ));
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idTestBox));
+
+            if self._oDb.getRowCount() == 1:
+                aaoRow = self._oDb.fetchOne();
+                oEntry = TestBoxData().initFromDbRow(aaoRow);
+                self.dCache[idTestBox] = oEntry;
+        return oEntry;
+
 
 
     #

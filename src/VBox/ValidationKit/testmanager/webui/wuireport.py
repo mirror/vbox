@@ -35,6 +35,7 @@ from testmanager.webui.wuicontentbase   import WuiContentBase, WuiTmLink, WuiSvn
 from testmanager.webui.wuihlpgraph      import WuiHlpGraphDataTable, WuiHlpBarGraph;
 from testmanager.webui.wuitestresult    import WuiTestSetLink;
 from testmanager.webui.wuiadmintestcase import WuiTestCaseDetailsLink;
+from testmanager.webui.wuiadmintestbox  import WuiTestBoxDetailsLink;
 from testmanager.core.report            import ReportModelBase;
 
 
@@ -42,13 +43,15 @@ class WuiReportSummaryLink(WuiTmLink):
     """ Generic report summary link. """
 
     def __init__(self, sSubject, aIdSubjects, sName = WuiContentBase.ksShortReportLink,
-                 tsNow = None, cPeriods = None, cHoursPerPeriod = None, fBracketed = False):
+                 tsNow = None, cPeriods = None, cHoursPerPeriod = None, fBracketed = False, dExtraParams = None):
         from testmanager.webui.wuimain import WuiMain;
         dParams = {
             WuiMain.ksParamAction:                WuiMain.ksActionReportSummary,
             WuiMain.ksParamReportSubject:         sSubject,
             WuiMain.ksParamReportSubjectIds:      aIdSubjects,
         };
+        if dExtraParams is not None:
+            dParams.update(dExtraParams);
         if tsNow is not None:
             dParams[WuiMain.ksParamEffectiveDate] = tsNow;
         if cPeriods is not None:
@@ -69,6 +72,17 @@ class WuiReportBase(WuiContentBase):
         self._dParams       = dParams;
         self._fSubReport    = fSubReport;
         self._sTitle        = None;
+
+        # Additional URL parameters for reports
+        self._dExtraParams  = {};
+        dCurParams = None if oDisp is None else oDisp.getParameters();
+        if dCurParams is not None:
+            from testmanager.webui.wuimain import WuiMain;
+            for sExtraParam in [ WuiMain.ksParamReportPeriods, WuiMain.ksParamReportPeriodInHours,
+                                 WuiMain.ksParamEffectiveDate, ]:
+                if sExtraParam in dCurParams:
+                    self._dExtraParams[sExtraParam] = dCurParams[sExtraParam];
+
 
     def generateNavigator(self, sWhere):
         """
@@ -286,6 +300,81 @@ class WuiReportFailuresBase(WuiReportBase):
         return sHtml;
 
 
+class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
+    """
+    For ReportPeriodSetWithTotalBase.
+    """
+
+    def _getSortedIds(self, oSet):
+        """
+        Get default sorted subject IDs.
+        """
+
+        if self._oModel.tsNow is not None and False:
+            # Sort the total.
+            aidSortedRaw = sorted(oSet.dSubjects,
+                                  key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
+                                  reverse = True);
+        else:
+            # Sort by NOW column.
+            dTmp = {};
+            for idKey in oSet.dSubjects:
+                oRow = oSet.aoPeriods[-1].dRowsById.get(idKey, None);
+                if oRow is None:    dTmp[idKey] = 0;
+                else:               dTmp[idKey] = oRow.cHits * 10000 / max(1, oRow.cTotal);
+            aidSortedRaw = sorted(dTmp, key = lambda idKey: dTmp[idKey], reverse = True);
+        return aidSortedRaw;
+
+    def _generateGraph(self, oSet, sIdBase, aidSortedRaw):
+        """
+        Generates graph.
+        """
+        sHtml = u'';
+        fGenerateGraph = len(aidSortedRaw) <= 6 and len(aidSortedRaw) > 0; ## Make this configurable.
+        if fGenerateGraph:
+            # Figure the graph width for all of them.
+            uPctMax = max(oSet.uMaxPct, oSet.cMaxHits * 100 / oSet.cMaxTotal);
+            uPctMax = max(uPctMax + 2, 10);
+
+            for _, aidSorted in enumerate(self._splitSeriesIntoMultipleGraphs(aidSortedRaw, 8)):
+                asNames = [];
+                for idKey in aidSorted:
+                    oSubject = oSet.dSubjects[idKey];
+                    asNames.append(oSubject.sName);
+
+                oTable = WuiHlpGraphDataTable('Period', asNames);
+
+                for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
+                    aiValues = [];
+                    asValues = [];
+
+                    for idKey in aidSorted:
+                        oRow = oPeriod.dRowsById.get(idKey, None);
+                        if oRow is not None:
+                            uPct = oRow.cHits * 100 / oRow.cTotal;
+                            aiValues.append(uPct);
+                            asValues.append('%u%% (%u/%u)' % (uPct, oRow.cHits, oRow.cTotal));
+                        else:
+                            aiValues.append(0);
+                            asValues.append('0');
+
+                    oTable.addRow(oPeriod.sDesc, aiValues, asValues);
+
+                if True: # pylint: disable=W0125
+                    aiValues = [];
+                    asValues = [];
+                    for idKey in aidSorted:
+                        uPct = oSet.dcHitsPerId[idKey] * 100 / oSet.dcTotalPerId[idKey];
+                        aiValues.append(uPct);
+                        asValues.append('%u%% (%u/%u)' % (uPct, oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
+                    oTable.addRow('Totals', aiValues, asValues);
+
+                oGraph = WuiHlpBarGraph(sIdBase, oTable, self._oDisp);
+                oGraph.setRangeMax(uPctMax);
+                sHtml += '<br>\n';
+                sHtml += oGraph.renderGraph();
+        return sHtml;
+
 
 
 class WuiReportFailureReasons(WuiReportFailuresBase):
@@ -299,9 +388,9 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
 
     def _formatSeriesNameForTable(self, oSet, idKey):
         oReason = oSet.dSubjects[idKey];
-        sHtml  = '<td>'
+        sHtml  = u'<td>';
         sHtml += u'%s / %s' % ( webutils.escapeElem(oReason.oCategory.sShort), webutils.escapeElem(oReason.sShort),);
-        sHtml += '</td>'
+        sHtml += u'</td>';
         return sHtml;
 
 
@@ -369,100 +458,105 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         return sHtml;
 
 
-class WuiReportTestCaseFailures(WuiReportFailuresBase):
+class WuiReportTestCaseFailures(WuiReportFailuresWithTotalBase):
     """
     Generates a report displaying the failure reasons over time.
     """
 
     def _formatEdgeOccurenceSubject(self, oTransient):
-        sHtml = u'%s ' % ( webutils.escapeElem(oTransient.oTestCase.sName),);
-        sHtml += WuiTestCaseDetailsLink(oTransient.oTestCase.idTestCase, fBracketed = False).toHtml();
+        sHtml = u'%s ' % ( webutils.escapeElem(oTransient.oSubject.sName),);
+        sHtml += WuiTestCaseDetailsLink(oTransient.oSubject.idTestCase, fBracketed = False).toHtml();
         return sHtml;
 
     def _formatSeriesNameForTable(self, oSet, idKey):
         oTestCase = oSet.dSubjects[idKey];
-        sHtml  = '<td>'
-        sHtml += WuiReportSummaryLink(ReportModelBase.ksSubTestCase, oTestCase.idTestCase, sName = oTestCase.sName).toHtml();
+        sHtml  = u'<td>';
+        sHtml += WuiReportSummaryLink(ReportModelBase.ksSubTestCase, oTestCase.idTestCase, sName = oTestCase.sName,
+                                      dExtraParams = self._dExtraParams).toHtml();
         sHtml += u' ';
         sHtml += WuiTestCaseDetailsLink(oTestCase.idTestCase).toHtml();
-        sHtml += '</td>'
+        sHtml += u'</td>';
         return sHtml;
 
     def generateReportBody(self):
         self._sTitle = 'Test Case Failures';
-
-
-        #
-        # Get the data and sort the data series in descending order of badness.
-        #
         oSet = self._oModel.getTestCaseFailures();
-        if self._oModel.tsNow is not None and False:
-            # Sort the total.
-            aidSortedRaw = sorted(oSet.dSubjects,
-                                  key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
-                                  reverse = True);
-        else:
-            # Sort by NOW column.
-            dTmp = {};
-            for idKey in oSet.dSubjects:
-                oRow = oSet.aoPeriods[-1].dRowsById.get(idKey, None);
-                if oRow is None:    dTmp[idKey] = 0;
-                else:               dTmp[idKey] = oRow.cHits * 10000 / max(1, oRow.cTotal);
-            aidSortedRaw = sorted(dTmp, key = lambda idKey: dTmp[idKey], reverse = True);
+        aidSortedRaw = self._getSortedIds(oSet);
 
-        #
-        # Generate table and transition list. These are the most useful ones with the current graph machinery.
-        #
         sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw);
         sHtml += self._generateTransitionList(oSet);
+        sHtml += self._generateGraph(oSet, 'testcase-graph', aidSortedRaw);
+        return sHtml;
 
-        #
-        # Generate the graph.
-        #
-        fGenerateGraph = len(aidSortedRaw) <= 6 and len(aidSortedRaw) > 0; ## Make this configurable.
-        if fGenerateGraph:
-            # Figure the graph width for all of them.
-            uPctMax = max(oSet.uMaxPct, oSet.cMaxHits * 100 / oSet.cMaxTotal);
-            uPctMax = max(uPctMax + 2, 10);
 
-            for _, aidSorted in enumerate(self._splitSeriesIntoMultipleGraphs(aidSortedRaw, 8)):
-                asNames = [];
-                for idKey in aidSorted:
-                    oSubject = oSet.dSubjects[idKey];
-                    asNames.append(oSubject.sName);
+class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
+    """
+    Generates a report displaying the failure reasons over time.
+    """
 
-                oTable = WuiHlpGraphDataTable('Period', asNames);
+    @staticmethod
+    def _formatName(oTestCaseArgs):
+        if oTestCaseArgs.sSubName is not None and len(oTestCaseArgs.sSubName) > 0:
+            sName = u'%s / %s'  % ( oTestCaseArgs.oTestCase.sName, oTestCaseArgs.sSubName, );
+        else:
+            sName = u'%s / #%u' % ( oTestCaseArgs.oTestCase.sName, oTestCaseArgs.idTestCaseArgs, );
+        return sName;
 
-                for _, oPeriod in enumerate(reversed(oSet.aoPeriods)):
-                    aiValues = [];
-                    asValues = [];
+    def _formatEdgeOccurenceSubject(self, oTransient):
+        sHtml  = u'%s ' % ( webutils.escapeElem(self._formatName(oTransient.oSubject)),);
+        sHtml += WuiTestCaseDetailsLink(oTransient.oSubject.idTestCase, fBracketed = False).toHtml();
+        return sHtml;
 
-                    for idKey in aidSorted:
-                        oRow = oPeriod.dRowsById.get(idKey, None);
-                        if oRow is not None:
-                            uPct = oRow.cHits * 100 / oRow.cTotal;
-                            aiValues.append(uPct);
-                            asValues.append('%u%% (%u/%u)' % (uPct, oRow.cHits, oRow.cTotal));
-                        else:
-                            aiValues.append(0);
-                            asValues.append('0');
+    def _formatSeriesNameForTable(self, oSet, idKey):
+        oTestCaseArgs = oSet.dSubjects[idKey];
+        sHtml  = u'<td>';
+        sHtml += WuiReportSummaryLink(ReportModelBase.ksSubTestCaseArgs, oTestCaseArgs.idTestCaseArgs,
+                                      sName = self._formatName(oTestCaseArgs), dExtraParams = self._dExtraParams).toHtml();
+        sHtml += u' ';
+        sHtml += WuiTestCaseDetailsLink(oTestCaseArgs.idTestCase).toHtml();
+        sHtml += u'</td>';
+        return sHtml;
 
-                    oTable.addRow(oPeriod.sDesc, aiValues, asValues);
+    def generateReportBody(self):
+        self._sTitle = 'Test Case Variation Failures';
+        oSet = self._oModel.getTestCaseVariationFailures();
+        aidSortedRaw = self._getSortedIds(oSet);
 
-                if True: # pylint: disable=W0125
-                    aiValues = [];
-                    asValues = [];
-                    for idKey in aidSorted:
-                        uPct = oSet.dcHitsPerId[idKey] * 100 / oSet.dcTotalPerId[idKey];
-                        aiValues.append(uPct);
-                        asValues.append('%u%% (%u/%u)' % (uPct, oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
-                    oTable.addRow('Totals', aiValues, asValues);
+        sHtml  = self._generateTableForSet(oSet, 'Test Case Variations', aidSortedRaw);
+        sHtml += self._generateTransitionList(oSet);
+        sHtml += self._generateGraph(oSet, 'testcasearg-graph', aidSortedRaw);
+        return sHtml;
 
-                oGraph = WuiHlpBarGraph('testcase-failures', oTable, self._oDisp);
-                oGraph.setRangeMax(uPctMax);
-                sHtml += '<br>\n';
-                sHtml += oGraph.renderGraph();
 
+
+class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
+    """
+    Generates a report displaying the failure reasons over time.
+    """
+
+    def _formatEdgeOccurenceSubject(self, oTransient):
+        sHtml = u'%s ' % ( webutils.escapeElem(oTransient.oSubject.sName),);
+        sHtml += WuiTestBoxDetailsLink(oTransient.oSubject.idTestBox, fBracketed = False).toHtml();
+        return sHtml;
+
+    def _formatSeriesNameForTable(self, oSet, idKey):
+        oTestBox = oSet.dSubjects[idKey];
+        sHtml  = u'<td>';
+        sHtml += WuiReportSummaryLink(ReportModelBase.ksSubTestBox, oTestBox.idTestBox, sName = oTestBox.sName,
+                                      dExtraParams = self._dExtraParams).toHtml();
+        sHtml += u' ';
+        sHtml += WuiTestBoxDetailsLink(oTestBox.idTestBox).toHtml();
+        sHtml += u'</td>';
+        return sHtml;
+
+    def generateReportBody(self):
+        self._sTitle = 'Test Box Failures';
+        oSet = self._oModel.getTestBoxFailures();
+        aidSortedRaw = self._getSortedIds(oSet);
+
+        sHtml  = self._generateTableForSet(oSet, 'Test Boxes', aidSortedRaw);
+        sHtml += self._generateTransitionList(oSet);
+        sHtml += self._generateGraph(oSet, 'testbox-graph', aidSortedRaw);
         return sHtml;
 
 
@@ -476,13 +570,21 @@ class WuiReportSummary(WuiReportBase):
         sHtml = '<p>This will display several reports and listings useful to get an overview of %s (id=%s).</p>' \
              % (self._oModel.sSubject, self._oModel.aidSubjects,);
 
-        oSuccessRate      = WuiReportSuccessRate(     self._oModel, self._dParams, fSubReport = True,
-                                                      fnDPrint = self._fnDPrint, oDisp = self._oDisp);
-        oTestCaseFailures = WuiReportTestCaseFailures(self._oModel, self._dParams, fSubReport = True,
-                                                      fnDPrint = self._fnDPrint, oDisp = self._oDisp);
-        oFailureReasons   = WuiReportFailureReasons(  self._oModel, self._dParams, fSubReport = True,
-                                                      fnDPrint = self._fnDPrint, oDisp = self._oDisp);
-        for oReport in [oSuccessRate, oTestCaseFailures, oFailureReasons, ]:
+        aoReports = [];
+
+        aoReports.append(WuiReportSuccessRate(     self._oModel, self._dParams, fSubReport = True,
+                                                   fnDPrint = self._fnDPrint, oDisp = self._oDisp));
+        aoReports.append(WuiReportTestCaseFailures(self._oModel, self._dParams, fSubReport = True,
+                                                   fnDPrint = self._fnDPrint, oDisp = self._oDisp));
+        if self._oModel.sSubject == ReportModelBase.ksSubTestCase:
+            aoReports.append(WuiReportTestCaseArgsFailures(self._oModel, self._dParams, fSubReport = True,
+                                                           fnDPrint = self._fnDPrint, oDisp = self._oDisp));
+        aoReports.append(WuiReportTestBoxFailures( self._oModel, self._dParams, fSubReport = True,
+                                                   fnDPrint = self._fnDPrint, oDisp = self._oDisp));
+        aoReports.append(WuiReportFailureReasons(  self._oModel, self._dParams, fSubReport = True,
+                                                   fnDPrint = self._fnDPrint, oDisp = self._oDisp));
+
+        for oReport in aoReports:
             (sTitle, sContent) = oReport.show();
             sHtml += '<br>'; # drop this layout hack
             sHtml += '<div>';

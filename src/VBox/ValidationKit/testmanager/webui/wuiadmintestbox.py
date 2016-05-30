@@ -34,13 +34,30 @@ import socket;
 
 # Validation Kit imports.
 from common                             import utils;
-from testmanager.webui.wuicontentbase   import WuiListContentWithActionBase, WuiFormContentBase, WuiLinkBase, WuiSvnLink, \
-                                               WuiTmLink, WuiSpanText, WuiRawHtml;
+from testmanager.webui.wuicontentbase   import WuiContentBase, WuiListContentWithActionBase, WuiFormContentBase, WuiLinkBase, \
+                                               WuiSvnLink, WuiTmLink, WuiSpanText, WuiRawHtml;
 from testmanager.core.db                import TMDatabaseConnection;
 from testmanager.core.schedgroup        import SchedGroupLogic, SchedGroupData;
 from testmanager.core.testbox           import TestBoxData;
 from testmanager.core.testset           import TestSetData;
 from testmanager.core.db                import isDbTimestampInfinity;
+
+
+
+class WuiTestBoxDetailsLink(WuiTmLink):
+    """  Test box details link by ID. """
+
+    def __init__(self, idTestBox, sName = WuiContentBase.ksShortDetailsLink, fBracketed = False, tsNow = None):
+        from testmanager.webui.wuiadmin import WuiAdmin;
+        dParams = {
+            WuiAdmin.ksParamAction:             WuiAdmin.ksActionTestBoxDetails,
+            TestBoxData.ksParam_idTestBox:      idTestBox,
+        };
+        if tsNow is not None:
+            dParams[WuiAdmin.ksParamEffectiveDate] = tsNow; ## ??
+        WuiTmLink.__init__(self, sName, WuiAdmin.ksScriptName, dParams, fBracketed = fBracketed);
+        self.idTestBox = idTestBox;
+
 
 
 class WuiTestBox(WuiFormContentBase):

@@ -120,7 +120,7 @@ class UserAccountLogic(ModelLogicBase):
 
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb)
-        self.ahCache = None;
+        self.dCache = None;
 
     def fetchForListing(self, iStart, cMaxRows, tsNow):
         """
@@ -231,10 +231,10 @@ class UserAccountLogic(ModelLogicBase):
         Returns a shared UserAccountData object.  None if not found.
         Raises exception on DB error.
         """
-        if self.ahCache is None:
-            self.ahCache = self._oDb.getCache('UserAccount');
+        if self.dCache is None:
+            self.dCache = self._oDb.getCache('UserAccount');
 
-        oUser = self.ahCache.get(uid, None);
+        oUser = self.dCache.get(uid, None);
         if oUser is None:
             self._oDb.execute('SELECT   *\n'
                               'FROM     Users\n'
@@ -254,7 +254,7 @@ class UserAccountLogic(ModelLogicBase):
 
             if self._oDb.getRowCount() == 1:
                 oUser = UserAccountData().initFromDbRow(self._oDb.fetchOne());
-                self.ahCache[uid] = oUser;
+                self.dCache[uid] = oUser;
         return oUser;
 
     def resolveChangeLogAuthors(self, aoEntries):

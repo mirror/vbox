@@ -34,8 +34,9 @@ from testmanager.core.base          import ModelLogicBase, TMExceptionBase;
 from testmanager.core.build         import BuildCategoryData;
 from testmanager.core.dbobjcache    import DatabaseObjCache;
 from testmanager.core.failurereason import FailureReasonLogic;
-from testmanager.core.testbox       import TestBoxData;
+from testmanager.core.testbox       import TestBoxLogic, TestBoxData;
 from testmanager.core.testcase      import TestCaseLogic;
+from testmanager.core.testcaseargs  import TestCaseArgsLogic;
 from common                         import constants;
 
 
@@ -197,7 +198,8 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
 
 class ReportTransientBase(object):
     """ Details on the test where a problem was first/last seen.  """
-    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter):
+    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, # pylint: disable=too-many-arguments
+                 iPeriod, fEnter, idSubject, oSubject):
         self.idBuild            = idBuild;      # Build ID.
         self.iRevision          = iRevision;    # SVN revision for build.
         self.sRepository        = sRepository;  # SVN repository for build.
@@ -206,21 +208,16 @@ class ReportTransientBase(object):
         self.tsDone             = tsDone;       # When the test set was done.
         self.iPeriod            = iPeriod;      # Data set period.
         self.fEnter             = fEnter;       # True if enter event, False if leave event.
+        self.idSubject          = idSubject;
+        self.oSubject           = oSubject;
 
 class ReportFailureReasonTransient(ReportTransientBase):
     """ Details on the test where a failure reason was first/last seen.  """
     def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=R0913
                  iPeriod, fEnter, oReason):
-        ReportTransientBase.__init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter);
+        ReportTransientBase.__init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter,
+                                     oReason.idFailureReason, oReason);
         self.oReason            = oReason;      # FailureReasonDataEx
-
-class ReportTestCaseFailureTransient(ReportTransientBase):
-    """ Details on the test where a test case was first/last seen.  """
-    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=R0913
-                 iPeriod, fEnter, oTestCase):
-        ReportTransientBase.__init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter);
-        self.oTestCase          = oTestCase;      # TestCaseDataEx
-
 
 
 class ReportHitRowBase(object):
@@ -245,11 +242,6 @@ class ReportFailureReasonRow(ReportHitRowBase):
         ReportHitRowBase.__init__(self, aoRow[0], oReason, aoRow[1], aoRow[2], aoRow[3]);
         self.idFailureReason    = aoRow[0];
         self.oReason            = oReason;      # FailureReasonDataEx
-
-class ReportTestCaseFailureRow(ReportHitRowWithTotalBase):
-    """ The account of one test case for a period. """
-    def __init__(self, aoRow, oTestCase):
-        ReportHitRowWithTotalBase.__init__(self, aoRow[0], oTestCase, aoRow[1], aoRow[4], aoRow[2], aoRow[3]);
 
 
 class ReportPeriodBase(object):
@@ -368,11 +360,6 @@ class ReportFailureReasonPeriod(ReportPeriodBase):
     def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
         ReportPeriodBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
         self.cWithoutReason     = 0;            # Number of failed test sets without any assigned reason.
-
-class ReportTestCaseFailurePeriod(ReportPeriodWithTotalBase):
-    """ A period in ReportTestCaseFailureSet. """
-    def __init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo):
-        ReportPeriodWithTotalBase.__init__(self, oSet, iPeriod, sDesc, tsFrom, tsTo);
 
 
 
@@ -512,10 +499,6 @@ class ReportFailureReasonSet(ReportPeriodSetBase):
     def __init__(self):
         ReportPeriodSetBase.__init__(self, 'idFailureReason');
 
-class ReportTestCaseFailureSet(ReportPeriodSetWithTotalBase):
-    """ What ReportLazyModel.getTestCaseFailures returns. """
-    def __init__(self):
-        ReportPeriodSetWithTotalBase.__init__(self, 'idTestCase');
 
 
 class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
@@ -719,16 +702,46 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         """
         Gets the test case failures of the subject in the specified period.
 
-        Returns a ReportTestCaseFailureSet instance.
+        Returns a ReportPeriodSetWithTotalBase instance.
+
+        """
+        return self._getSimpleFailures('idTestCase', TestCaseLogic);
+
+
+    def getTestCaseVariationFailures(self):
+        """
+        Gets the test case failures of the subject in the specified period.
+
+        Returns a ReportPeriodSetWithTotalBase instance.
+
+        """
+        return self._getSimpleFailures('idTestCaseArgs', TestCaseArgsLogic);
+
+
+    def getTestBoxFailures(self):
+        """
+        Gets the test box failures of the subject in the specified period.
+
+        Returns a ReportPeriodSetWithTotalBase instance.
+
+        """
+        return self._getSimpleFailures('idTestBox', TestBoxLogic);
+
+
+    def _getSimpleFailures(self, sIdColumn, oCacheLogicType, sIdAttr = None):
+        """
+        Gets the test box failures of the subject in the specified period.
+
+        Returns a ReportPeriodSetWithTotalBase instance.
 
         """
 
-        oTestCaseLogic = TestCaseLogic(self._oDb);
+        oLogic = oCacheLogicType(self._oDb);
+        oSet = ReportPeriodSetWithTotalBase(sIdColumn if sIdAttr is None else sIdAttr);
 
         # Retrieve the period results.
-        oSet = ReportTestCaseFailureSet();
         for iPeriod in xrange(self.cPeriods):
-            self._oDb.execute('SELECT   idTestCase,\n'
+            self._oDb.execute('SELECT   ' + sIdColumn + ',\n'
                               '         COUNT(CASE WHEN enmStatus >= \'failure\' THEN 1 END),\n'
                               '         MIN(tsDone),\n'
                               '         MAX(tsDone),\n'
@@ -737,16 +750,16 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                               'WHERE    TRUE\n'
                               + self.getExtraWhereExprForPeriod(iPeriod)
                               + self.getExtraSubjectWhereExpr() + '\n'
-                              'GROUP BY idTestCase\n');
+                              'GROUP BY ' + sIdColumn + '\n');
             aaoRows = self._oDb.fetchAll()
 
-            oPeriod = ReportTestCaseFailurePeriod(oSet, iPeriod, self.getStraightPeriodDesc(iPeriod),
-                                                  self.getPeriodStart(iPeriod), self.getPeriodEnd(iPeriod));
+            oPeriod = ReportPeriodWithTotalBase(oSet, iPeriod, self.getStraightPeriodDesc(iPeriod),
+                                                self.getPeriodStart(iPeriod), self.getPeriodEnd(iPeriod));
 
             for aoRow in aaoRows:
-                oTestCase = oTestCaseLogic.cachedLookup(aoRow[0]);
-                oPeriodRow = ReportTestCaseFailureRow(aoRow, oTestCase);
-                oPeriod.appendRow(oPeriodRow, oTestCase.idTestCase, oTestCase);
+                oSubject = oLogic.cachedLookup(aoRow[0]);
+                oPeriodRow = ReportHitRowWithTotalBase(aoRow[0], oSubject, aoRow[1], aoRow[4], aoRow[2], aoRow[3]);
+                oPeriod.appendRow(oPeriodRow, aoRow[0], oSubject);
 
             oSet.appendPeriod(oPeriod);
         oSet.pruneRowsWithZeroSumHits();
@@ -761,21 +774,22 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
 
         for iPeriod in xrange(1, self.cPeriods):
             oPeriod = oSet.aoPeriods[iPeriod];
-            for oTestCase in oPeriod.dFirst.values():
-                oSet.aoEnterInfo.append(self._getEdgeTestCaseFailureOccurence(oTestCase, iPeriod, fEnter = True));
+            for idSubject, oSubject in oPeriod.dFirst.items():
+                oSet.aoEnterInfo.append(self._getEdgeSimpleFailureOccurence(idSubject, sIdColumn, oSubject,
+                                                                            iPeriod, fEnter = True));
 
         # Ditto for reasons leaving before the last.
         for iPeriod in xrange(self.cPeriods - 1):
             oPeriod = oSet.aoPeriods[iPeriod];
-            for oTestCase in oPeriod.dLast.values():
-                oSet.aoLeaveInfo.append(self._getEdgeTestCaseFailureOccurence(oTestCase, iPeriod, fEnter = False));
+            for idSubject, oSubject in oPeriod.dLast.items():
+                oSet.aoLeaveInfo.append(self._getEdgeSimpleFailureOccurence(idSubject, sIdColumn, oSubject,
+                                                                            iPeriod, fEnter = False));
 
         oSet.finalizePass2();
 
         return oSet;
 
-
-    def _getEdgeTestCaseFailureOccurence(self, oTestCase, iPeriod, fEnter = True):
+    def _getEdgeSimpleFailureOccurence(self, idSubject, sIdColumn, oSubject, iPeriod, fEnter = True):
         """
         Helper for the failure reason report that finds the oldest or newest build
         (SVN rev) and test set (start time) it occured with.
@@ -783,7 +797,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         If fEnter is set the oldest occurence is return, if fEnter clear the newest
         is is returned.
 
-        Returns ReportFailureReasonTransient instant.
+        Returns ReportTransientBase instant.
 
         """
         sSorting = 'ASC' if fEnter else 'DESC';
@@ -796,7 +810,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                           'FROM     TestSets,\n'
                           '         Builds,\n'
                           '         BuildCategories' + self.getExtraSubjectTables() + '\n'
-                          'WHERE    TestSets.idTestCase       = %s\n'
+                          'WHERE    TestSets.' + sIdColumn + '      = %s\n'
                           '     AND TestSets.idBuild          = Builds.idBuild\n'
                           '     AND TestSets.enmStatus       >= \'failure\'\n'
                           + self.getExtraWhereExprForPeriod(iPeriod) +
@@ -807,14 +821,15 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
                           'ORDER BY Builds.iRevision ' + sSorting + ',\n'
                           '         TestSets.tsCreated ' + sSorting + '\n'
                           'LIMIT 1\n'
-                          , ( oTestCase.idTestCase, ));
+                          , ( idSubject, ));
         aoRow = self._oDb.fetchOne();
         if aoRow is None:
-            return ReportTestCaseFailureTransient(-1, -1, 'internal-error', -1, -1,
-                                                  self._oDb.getCurrentTimestamp(), oTestCase, iPeriod, fEnter);
-        return ReportTestCaseFailureTransient(idBuild = aoRow[3], iRevision = aoRow[4], sRepository = aoRow[5],
-                                              idTestSet = aoRow[1], idTestResult = aoRow[0], tsDone = aoRow[2],
-                                              oTestCase = oTestCase, iPeriod = iPeriod, fEnter = fEnter);
+            return ReportTransientBase(-1, -1, 'internal-error', -1, -1, self._oDb.getCurrentTimestamp(),
+                                       iPeriod, fEnter, idSubject, oSubject);
+        return ReportTransientBase(idBuild = aoRow[3], iRevision = aoRow[4], sRepository = aoRow[5],
+                                   idTestSet = aoRow[1], idTestResult = aoRow[0], tsDone = aoRow[2],
+                                   iPeriod = iPeriod, fEnter = fEnter, idSubject = idSubject, oSubject = oSubject);
+
 
 
 

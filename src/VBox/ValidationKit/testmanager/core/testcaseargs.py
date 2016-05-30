@@ -192,6 +192,21 @@ class TestCaseArgsDataEx(TestCaseArgsData):
     def initFromDbRow(self, aoRow):
         raise TMExceptionBase('Do not call me: %s' % (aoRow,))
 
+    def initFromDbRowEx(self, aoRow, oDb, tsConfigEff = None, tsRsrcEff = None):
+        """
+        Extended version of initFromDbRow that fills in the rest from the database.
+        """
+        TestCaseArgsData.initFromDbRow(self, aoRow);
+
+        if tsConfigEff is None: tsConfigEff = oDb.getCurrentTimestamp();
+        if tsRsrcEff is None:   tsRsrcEff   = oDb.getCurrentTimestamp();
+
+        self.oTestCase         = TestCaseData().initFromDbWithId(oDb, self.idTestCase, tsConfigEff);
+        self.aoTestCasePreReqs = TestCaseDependencyLogic(oDb).getTestCaseDeps(self.idTestCase, tsConfigEff);
+        self.aoGlobalRsrc      = TestCaseGlobalRsrcDepLogic(oDb).getTestCaseDeps(self.idTestCase, tsRsrcEff);
+
+        return self;
+
     def initFromDbWithId(self, oDb, idTestCaseArgs, tsNow = None, sPeriodBack = None):
         _ = oDb; _ = idTestCaseArgs; _ = tsNow; _ = sPeriodBack;
         raise TMExceptionBase('Not supported.');
@@ -204,20 +219,9 @@ class TestCaseArgsDataEx(TestCaseArgsData):
         """
         Initialize from the database, given the ID of a row.
         """
-
         oDb.execute('SELECT *, CURRENT_TIMESTAMP FROM TestCaseArgs WHERE idGenTestCaseArgs = %s', (idGenTestCaseArgs,));
         aoRow = oDb.fetchOne();
-        TestCaseArgsData.initFromDbRow(self, aoRow);
-
-        tsNow = aoRow[TestCaseArgsData.kcDbColumns];
-        if tsConfigEff is None: tsConfigEff = tsNow;
-        if tsRsrcEff is None:   tsRsrcEff   = tsNow;
-
-        self.oTestCase         = TestCaseData().initFromDbWithId(oDb, self.idTestCase, tsConfigEff);
-        self.aoTestCasePreReqs = TestCaseDependencyLogic(oDb).getTestCaseDeps(self.idTestCase, tsConfigEff);
-        self.aoGlobalRsrc      = TestCaseGlobalRsrcDepLogic(oDb).getTestCaseDeps(self.idTestCase, tsRsrcEff);
-
-        return self;
+        return self.initFromDbRowEx(aoRow, oDb, tsConfigEff, tsRsrcEff);
 
     def convertFromParamNull(self):
         raise TMExceptionBase('Not implemented');
@@ -258,6 +262,7 @@ class TestCaseArgsLogic(ModelLogicBase):
 
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb);
+        self.dCache = None;
 
 
     def areResourcesFree(self, oDataEx):
@@ -346,6 +351,44 @@ class TestCaseArgsLogic(ModelLogicBase):
     def addTestCaseArgs(self, oTestCaseArgsData):
         """Add Test Case Args record into DB"""
         pass
+
+    def cachedLookup(self, idTestCaseArgs):
+        """
+        Looks up the most recent TestCaseArgsDataEx object for idTestCaseArg
+        via in an object cache.
+
+        Returns a shared TestCaseArgDataEx object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.dCache is None:
+            self.dCache = self._oDb.getCache('TestCaseArgsDataEx');
+        oEntry = self.dCache.get(idTestCaseArgs, None);
+        if oEntry is None:
+            fNeedTsNow = False;
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     TestCaseArgs\n'
+                              'WHERE    idTestCaseArgs = %s\n'
+                              '     AND tsExpire       = \'infinity\'::TIMESTAMP\n'
+                              , (idTestCaseArgs, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     TestCaseArgs\n'
+                                  'WHERE    idTestCaseArgs = %s\n'
+                                  'ORDER BY tsExpire DESC\n'
+                                  'LIMIT 1\n'
+                                  , (idTestCaseArgs, ));
+                fNeedTsNow = True;
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idTestCaseArgs));
+
+            if self._oDb.getRowCount() == 1:
+                aaoRow = self._oDb.fetchOne();
+                oEntry = TestCaseArgsDataEx();
+                tsNow  = oEntry.initFromDbRow(aaoRow).tsEffective if fNeedTsNow else None;
+                oEntry.initFromDbRowEx(aaoRow, self._oDb, tsNow, tsNow);
+                self.dCache[idTestCaseArgs] = oEntry;
+        return oEntry;
 
 
 #
