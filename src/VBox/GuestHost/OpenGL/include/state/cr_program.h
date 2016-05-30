@@ -100,8 +100,13 @@ typedef struct {
     CRProgram *defaultFragmentProgram;
 
     /* tracking matrices for vertex programs */
+#ifdef VBOX /* see state_program.c */
+    GLenum TrackMatrix[CR_MAX_VERTEX_PROGRAM_ENV_PARAMS / 4];
+    GLenum TrackMatrixTransform[CR_MAX_VERTEX_PROGRAM_ENV_PARAMS / 4];
+#else
     GLenum TrackMatrix[CR_MAX_VERTEX_PROGRAM_LOCAL_PARAMS / 4];
     GLenum TrackMatrixTransform[CR_MAX_VERTEX_PROGRAM_LOCAL_PARAMS / 4];
+#endif
 
     /* global/env params shared by all programs */
     GLfloat fragmentParameters[CR_MAX_FRAGMENT_PROGRAM_ENV_PARAMS][4];
