@@ -372,8 +372,8 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
             return u'<none>';
         sMarch = self.queryCpuMicroarch();
         if sMarch is not None:
-            return '%s m%02x s%02x' % (sMarch, self.getCpuModel(), self.getCpuStepping());
-        return 'fam%02x m%02x s%02x' % (self.getCpuFamily(), self.getCpuModel(), self.getCpuStepping());
+            return '%s m%02X s%02X' % (sMarch, self.getCpuModel(), self.getCpuStepping());
+        return 'fam%02X m%02X s%02X' % (self.getCpuFamily(), self.getCpuModel(), self.getCpuStepping());
 
     def getArchBitString(self):
         """ Returns 32-bit, 64-bit, <none>, or sCpuArch. """
