@@ -511,7 +511,7 @@ class WuiReportTestCaseFailures(WuiReportFailuresWithTotalBase):
         oSet = self._oModel.getTestCaseFailures();
         (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, iSortColumn);
+        sHtml  = self._generateTableForSet(oSet, aidSortedRaw, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testcase-graph', aidSortedRaw);
         return sHtml;
