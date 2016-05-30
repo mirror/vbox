@@ -376,8 +376,8 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
                 if uMod == 0x07: return 'VIA_C3_C5B' if self.getCpuStepping() < 8 else 'VIA_C3_C5C';
                 if uMod == 0x08: return 'VIA_C3_C5N';
                 if uMod == 0x09: return 'VIA_C3_C5XL' if self.getCpuStepping() < 8 else 'VIA_C3_C5P';
-                if uMod == 0x10: return 'VIA_C7_C5J';
-                if uMod == 0x15: return 'VIA_Isaiah';
+                if uMod == 0x0a: return 'VIA_C7_C5J';
+                if uMod == 0x0f: return 'VIA_Isaiah';
         return None;
 
     def getPrettyCpuVersion(self):
