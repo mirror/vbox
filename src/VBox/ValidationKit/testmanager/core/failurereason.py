@@ -144,6 +144,7 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb)
         self.ahCache = None;
+        self.ahCacheNameAndCat = None;
         self.oCategoryLogic = None;
         self.oUserAccountLogic = None;
 
@@ -434,6 +435,58 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                                                                self.oUserAccountLogic);
                 self.ahCache[idFailureReason] = oEntry;
         return oEntry;
+
+
+    def cachedLookupByNameAndCategory(self, sName, sCategory):
+        """
+        Looks up a failure reason by it's name and category.
+
+        Should the request be ambigiuos, we'll return the oldest one.
+
+        Returns a shared FailureReasonData object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.ahCacheNameAndCat is None:
+            self.ahCacheNameAndCat = self._oDb.getCache('FailureReasonDataEx-By-Name-And-Category');
+        sKey = '%s:::%s' % (sName, sCategory,);
+        oEntry = self.ahCacheNameAndCat.get(sKey, None);
+        if oEntry is None:
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     FailureReasons,\n'
+                              '         FailureCategories\n'
+                              'WHERE    FailureReasons.sShort            = %s\n'
+                              '     AND FailureReasons.tsExpire          = \'infinity\'::TIMESTAMP\n'
+                              '     AND FailureReasons.idFailureCategory = FailureCategories.idFailureCategory '
+                              '     AND FailureCategories.sShort         = %s\n'
+                              '     AND FailureCategories.tsExpire       = \'infinity\'::TIMESTAMP\n'
+                              'ORDER BY FailureReasons.tsEffective\n'
+                              , ( sName, sCategory));
+            if self._oDb.getRowCount() == 0:
+                sLikeSucks = self._oDb.formatBindArgs(
+                                  'SELECT   *\n'
+                                  'FROM     FailureReasons,\n'
+                                  '         FailureCategories\n'
+                                  'WHERE    (   FailureReasons.sShort    ILIKE @@@@@@@! %s !@@@@@@@\n'
+                                  '          OR FailureReasons.sFull     ILIKE @@@@@@@! %s !@@@@@@@)\n'
+                                  '     AND FailureCategories.tsExpire       = \'infinity\'::TIMESTAMP\n'
+                                  '     AND FailureReasons.idFailureCategory = FailureCategories.idFailureCategory\n'
+                                  '     AND (   FailureCategories.sShort     = %s\n'
+                                  '          OR FailureCategories.sFull      = %s)\n'
+                                  '     AND FailureReasons.tsExpire          = \'infinity\'::TIMESTAMP\n'
+                                  'ORDER BY FailureReasons.tsEffective\n'
+                                  , ( sName, sName, sCategory, sCategory ));
+                sLikeSucks = sLikeSucks.replace('LIKE @@@@@@@! \'', 'LIKE \'%').replace('\' !@@@@@@@', '%\'');
+                self._oDb.execute(sLikeSucks);
+            if self._oDb.getRowCount() > 0:
+                self._ensureCachesPresent();
+                oEntry = FailureReasonDataEx().initFromDbRowEx(self._oDb.fetchOne(), self.oCategoryLogic,
+                                                               self.oUserAccountLogic);
+                self.ahCacheNameAndCat[sKey] = oEntry;
+                if sName != oEntry.sShort or sCategory != oEntry.oCategory.sShort:
+                    sKey2 = '%s:::%s' % (oEntry.sShort, oEntry.oCategory.sShort,);
+                    self.ahCacheNameAndCat[sKey2] = oEntry;
+        return oEntry;
+
 
     #
     # Helpers.

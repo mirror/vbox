@@ -189,6 +189,24 @@ class TestResultDataEx(TestResultData):
         self.sName = aoRow[9];
         return self;
 
+    def deepCountErrorContributers(self):
+        """
+        Counts how many test result instances actually contributed to cErrors.
+        """
+
+        # Check each child (if any).
+        cChanges = 0;
+        cChildErrors = 0;
+        for oChild in self.aoChildren:
+            cChanges += oChild.deepCountErrorContributers();
+            cChildErrors += oChild.cErrors;
+
+        # Did we contribute as well?
+        if self.cErrors != cChildErrors:
+            assert self.cErrors >= cChildErrors;
+            cChanges += 1;
+        return cChanges;
+
 
 class TestResultValueData(ModelDataBase):
     """

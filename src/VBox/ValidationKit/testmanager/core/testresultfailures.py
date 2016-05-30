@@ -103,6 +103,21 @@ class TestResultFailureData(ModelDataBase):
         assert len(aoRow) == self.kcDbColumns;
         return self.initFromDbRow(aoRow);
 
+    def initFromValues(self, idTestResult, idFailureReason, uidAuthor,
+                       tsExpire = None, tsEffective = None, idTestSet = None, sComment = None):
+        """
+        Initialize from values.
+        """
+        self.idTestResult       = idTestResult;
+        self.tsEffective        = tsEffective;
+        self.tsExpire           = tsExpire;
+        self.uidAuthor          = uidAuthor;
+        self.idTestSet          = idTestSet;
+        self.idFailureReason    = idFailureReason;
+        self.sComment           = sComment;
+        return self;
+
+
 
 class TestResultFailureDataEx(TestResultFailureData):
     """

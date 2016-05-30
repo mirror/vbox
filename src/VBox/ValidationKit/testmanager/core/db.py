@@ -331,10 +331,13 @@ class TMDatabaseConnection(object):
         Mostly a wrapper around the psycopg2 cursor method with the same name,
         but collect data for traceback.
         """
-        if aoArgs is None:
-            aoArgs = list();
+        if aoArgs is not None:
+            sBound = oCursor.mogrify(unicode(sOperation), aoArgs);
+        elif sOperation.find('%') < 0:
+            sBound = oCursor.mogrify(unicode(sOperation), list());
+        else:
+            sBound = unicode(sOperation);
 
-        sBound = oCursor.mogrify(unicode(sOperation), aoArgs);
         if sys.version_info[0] >= 3 and not isinstance(sBound, str):
             sBound = sBound.decode('utf-8');
 
