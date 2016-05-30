@@ -263,7 +263,8 @@ class WuiReportFailuresBase(WuiReportBase):
                    % (oSet.dcHitsPerId[idKey] * 100 / dcTotalPerId[idKey], oSet.dcHitsPerId[idKey], dcTotalPerId[idKey]);
         return u'<td align="center">%u</td>' % (oSet.dcHitsPerId[idKey],);
 
-    def _generateTableForSet(self, oSet, sColumnName, aidSorted = None, fWithTotals = True, cColsPerSeries = None):
+    def _generateTableForSet(self, oSet, sColumnName, aidSorted = None, iSortColumn = 0,
+                             fWithTotals = True, cColsPerSeries = None):
         """
         Turns the set into a table.
 
@@ -275,10 +276,12 @@ class WuiReportFailuresBase(WuiReportBase):
 
         # Header row.
         sHtml += u' <tr><thead><th></th><th>%s</th>' % (webutils.escapeElem(sColumnName),)
-        for oPeriod in reversed(oSet.aoPeriods):
-            sHtml += u'<th colspan="%d">%s</th>' % (cColsPerSeries, webutils.escapeElem(oPeriod.sDesc),);
+        for iPeriod, oPeriod in enumerate(reversed(oSet.aoPeriods)):
+            sHtml += u'<th colspan="%d">%s%s</th>' % ( cColsPerSeries, webutils.escapeElem(oPeriod.sDesc),
+                                                       '&#x25bc;' if iPeriod == iSortColumn else '');
         if fWithTotals:
-            sHtml += u'<th colspan="%d">Total</th>' % (cColsPerSeries,);
+            sHtml += u'<th colspan="%d">Total%s</th>' % (cColsPerSeries,
+                                                         '&#x25bc;' if iSortColumn == len(oSet.aoPeriods) else '');
         sHtml += u'</thead></td>\n';
 
         # Each data series.
@@ -307,7 +310,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
 
     def _getSortedIds(self, oSet, fByTotal = None):
         """
-        Get default sorted subject IDs.
+        Get default sorted subject IDs and which column.
         """
 
         if fByTotal is None:
@@ -318,6 +321,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
             aidSortedRaw = sorted(oSet.dSubjects,
                                   key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
                                   reverse = True);
+            iColumn = len(oSet.aoPeriods);
         else:
             # Sort by NOW column.
             dTmp = {};
@@ -326,7 +330,8 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
                 if oRow is None:    dTmp[idKey] = 0;
                 else:               dTmp[idKey] = oRow.cHits * 10000 / max(1, oRow.cTotal);
             aidSortedRaw = sorted(dTmp, key = lambda idKey: dTmp[idKey], reverse = True);
-        return aidSortedRaw;
+            iColumn = 0;
+        return (aidSortedRaw, iColumn);
 
     def _generateGraph(self, oSet, sIdBase, aidSortedRaw):
         """
@@ -409,7 +414,7 @@ class WuiReportFailureReasons(WuiReportFailuresBase):
         #
         # Generate table and transition list. These are the most useful ones with the current graph machinery.
         #
-        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw);
+        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw, len(oSet.aoPeriods));
         sHtml += self._generateTransitionList(oSet);
 
         #
@@ -484,9 +489,9 @@ class WuiReportTestCaseFailures(WuiReportFailuresWithTotalBase):
     def generateReportBody(self):
         self._sTitle = 'Test Case Failures';
         oSet = self._oModel.getTestCaseFailures();
-        aidSortedRaw = self._getSortedIds(oSet);
+        (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw);
+        sHtml  = self._generateTableForSet(oSet, 'Test Cases', aidSortedRaw, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testcase-graph', aidSortedRaw);
         return sHtml;
@@ -523,9 +528,9 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
     def generateReportBody(self):
         self._sTitle = 'Test Case Variation Failures';
         oSet = self._oModel.getTestCaseVariationFailures();
-        aidSortedRaw = self._getSortedIds(oSet);
+        (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, 'Test Case Variations', aidSortedRaw);
+        sHtml  = self._generateTableForSet(oSet, 'Test Case Variations', aidSortedRaw, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testcasearg-graph', aidSortedRaw);
         return sHtml;
@@ -555,9 +560,9 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
     def generateReportBody(self):
         self._sTitle = 'Test Box Failures';
         oSet = self._oModel.getTestBoxFailures();
-        aidSortedRaw = self._getSortedIds(oSet);
+        (aidSortedRaw, iSortColumn) = self._getSortedIds(oSet);
 
-        sHtml  = self._generateTableForSet(oSet, 'Test Boxes', aidSortedRaw);
+        sHtml  = self._generateTableForSet(oSet, 'Test Boxes', aidSortedRaw, iSortColumn);
         sHtml += self._generateTransitionList(oSet);
         sHtml += self._generateGraph(oSet, 'testbox-graph', aidSortedRaw);
         return sHtml;

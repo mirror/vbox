@@ -372,9 +372,9 @@ class ReportPeriodSetBase(object):
         self.dcHitsPerId        = {};           # Sum hits per subject ID (key).
         self.cHits              = 0;            # Sum number of hits in all periods and all reasons.
         self.cMaxHits           = 0;            # Max hits in a row.
-        self.cMinHits           = 0;            # Min hits in a row.
+        self.cMinHits           = 99999999;     # Min hits in a row.
         self.cMaxRows           = 0;            # Max number of rows in a period.
-        self.cMinRows           = 0;            # Min number of rows in a period.
+        self.cMinRows           = 99999999;     # Min number of rows in a period.
         self.diPeriodFirst      = {};           # The period number a reason was first seen (keyed by subject ID).
         self.diPeriodLast       = {};           # The period number a reason was last seen (keyed by subject ID).
         self.aoEnterInfo        = [];           # Array of ReportTransientBase children order by iRevision.  Excludes
@@ -391,23 +391,23 @@ class ReportPeriodSetBase(object):
     def _doStatsForPeriod(self, oPeriod):
         """ Worker for appendPeriod and recalcStats. """
         self.cHits += oPeriod.cHits;
-        if oPeriod.cHits > self.cMaxHits:
-            self.cMaxHits = oPeriod.cHits;
-        if oPeriod.cHits < self.cMinHits:
-            self.cMinHits = oPeriod.cHits;
+        if oPeriod.cMaxHits > self.cMaxHits:
+            self.cMaxHits = oPeriod.cMaxHits;
+        if oPeriod.cMinHits < self.cMinHits:
+            self.cMinHits = oPeriod.cMinHits;
 
-        if len(oPeriod.aoRows) > self.cMaxHits:
-            self.cMaxHits = len(oPeriod.aoRows);
-        if len(oPeriod.aoRows) < self.cMinHits:
-            self.cMinHits = len(oPeriod.aoRows);
+        if len(oPeriod.aoRows) > self.cMaxRows:
+            self.cMaxRows = len(oPeriod.aoRows);
+        if len(oPeriod.aoRows) < self.cMinRows:
+            self.cMinRows = len(oPeriod.aoRows);
 
     def recalcStats(self):
         """ Recalculates the statistics. ASSUMES finalizePass1 hasn't been done yet. """
         self.cHits          = 0;
         self.cMaxHits       = 0;
-        self.cMinHits       = 0;
+        self.cMinHits       = 99999999;
         self.cMaxRows       = 0;
-        self.cMinRows       = 0;
+        self.cMinRows       = 99999999;
         self.diPeriodFirst  = {};
         self.diPeriodLast   = {};
         self.dcHitsPerId    = {};
@@ -473,10 +473,10 @@ class ReportPeriodSetWithTotalBase(ReportPeriodSetBase):
         assert isinstance(oPeriod, ReportPeriodWithTotalBase);
         super(ReportPeriodSetWithTotalBase, self)._doStatsForPeriod(oPeriod);
         self.cTotal += oPeriod.cTotal;
-        if oPeriod.cTotal > self.cMaxTotal:
-            self.cMaxTotal = oPeriod.cTotal;
-        if oPeriod.cTotal < self.cMinTotal:
-            self.cMinTotal = oPeriod.cTotal;
+        if oPeriod.cMaxTotal > self.cMaxTotal:
+            self.cMaxTotal = oPeriod.cMaxTotal;
+        if oPeriod.cMinTotal < self.cMinTotal:
+            self.cMinTotal = oPeriod.cMinTotal;
 
         if oPeriod.uMaxPct > self.uMaxPct:
             self.uMaxPct = oPeriod.uMaxPct;
