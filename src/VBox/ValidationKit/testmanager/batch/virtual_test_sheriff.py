@@ -519,6 +519,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.tsNow = self.oDb.fetchOne();
 
         # If we're suppost to commit anything we need to get our user ID.
+        rcExit = 0;
         if self.oConfig.fRealRun:
             self.oLogin = UserAccountLogic(self.oDb).tryFetchAccountByLoginName(VirtualTestSheriff.ksLoginName);
             if self.oLogin is None:
