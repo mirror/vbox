@@ -366,6 +366,15 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
                 return 'Jaguar';
         return None;
 
+    def getPrettyCpuVersion(self):
+        """ Pretty formatting of the family/model/stepping with microarch optimizations. """
+        if self.lCpuRevision is None or self.sCpuVendor is None:
+            return u'<none>';
+        sMarch = self.queryCpuMicroarch();
+        if sMarch is not None:
+            return '%s m%02x s%02x' % (sMarch, self.getCpuModel(), self.getCpuStepping());
+        return 'fam%02x m%02x s%02x' % (self.getCpuFamily(), self.getCpuModel(), self.getCpuStepping());
+
     def getArchBitString(self):
         """ Returns 32-bit, 64-bit, <none>, or sCpuArch. """
         if self.sCpuArch is None:
@@ -377,7 +386,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         return self.sCpuArch;
 
     def getPrettyCpuVendor(self):
-        """ Returns the CPU model for a x86 or amd64 testboxes."""
+        """ Pretty vendor name."""
         if self.sCpuVendor is None:
             return '<none>';
         if self.sCpuVendor == 'GenuineIntel':     return 'Intel';

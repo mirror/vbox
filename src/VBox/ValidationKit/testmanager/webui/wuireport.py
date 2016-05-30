@@ -592,11 +592,7 @@ class WuiReportTestBoxFailures(WuiReportFailuresWithTotalBase):
                   % (webutils.escapeAttr(sOsAndVer), webutils.escapeElem(sOsAndVer[:20]));
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.getArchBitString()),);
         sHtml += u'<td>%s</td>'    % (webutils.escapeElem(oTestBox.getPrettyCpuVendor()),);
-        sMarch = oTestBox.queryCpuMicroarch();
-        if sMarch is not None:
-            sHtml += u'<td>%s (%#x/%#x)' % (sMarch, oTestBox.getCpuModel(), oTestBox.getCpuStepping(),)
-        else:
-            sHtml += u'<td>fam%x %#x/%#x' % (oTestBox.getCpuFamily(), oTestBox.getCpuModel(), oTestBox.getCpuStepping(),)
+        sHtml += u'<td>%s'         % (oTestBox.getPrettyCpuVersion(),);
         if oTestBox.fCpuNestedPaging:   sHtml += u', np';
         elif oTestBox.fCpuHwVirt:       sHtml += u', hw';
         else:                           sHtml += u', raw';

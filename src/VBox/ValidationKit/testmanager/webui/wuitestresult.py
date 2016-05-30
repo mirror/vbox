@@ -607,10 +607,12 @@ class WuiTestResult(WuiContentBase):
         if oTestBox.sCpuName is not None:
             aoTestBoxRows.append(['CPU Name', oTestBox.sCpuName.replace('  ', ' ')]);
         if oTestBox.lCpuRevision is not None:
-            # ASSUMING x86+AMD64 versioning scheme here.
-            uFamily   = (oTestBox.lCpuRevision >> 24) & 0xff;
-            uModel    = (oTestBox.lCpuRevision >>  8) & 0xffff;
-            uStepping = oTestBox.lCpuRevision         & 0xff;
+            sMarch = oTestBox.queryCpuMicroarch();
+            if sMarch is not None:
+                aoTestBoxRows.append( ('CPU Microarch', sMarch) );
+            uFamily   = oTestBox.getCpuFamily();
+            uModel    = oTestBox.getCpuModel();
+            uStepping = oTestBox.getCpuStepping();
             aoTestBoxRows += [
                 ( 'CPU Family',   '%u (%#x)' % ( uFamily,   uFamily, ) ),
                 ( 'CPU Model',    '%u (%#x)' % ( uModel,    uModel, ) ),
