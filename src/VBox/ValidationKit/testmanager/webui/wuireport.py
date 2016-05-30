@@ -280,7 +280,7 @@ class WuiReportFailuresBase(WuiReportBase):
 
         # Header row.
         sHtml += u' <tr><thead><th>#</th>';
-        self._formatSeriesNameColumnHeadersForTable();
+        sHtml += self._formatSeriesNameColumnHeadersForTable();
         for iPeriod, oPeriod in enumerate(reversed(oSet.aoPeriods)):
             sHtml += u'<th colspan="%d">%s%s</th>' % ( cColsPerSeries, webutils.escapeElem(oPeriod.sDesc),
                                                        '&#x25bc;' if iPeriod == iSortColumn else '');
