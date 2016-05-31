@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -564,8 +564,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifeq ($(KBUILD_TARGET),linux)
-  VBoxDD_SOURCES += \
-   Audio/DrvHostOSSAudio.cpp
+  ifdef VBOX_WITH_OSS
+   VBoxDD_DEFS    += VBOX_WITH_OSS
+   VBoxDD_SOURCES += \
+        Audio/DrvHostOSSAudio.cpp
+  endif
 
   ifdef VBOX_WITH_PULSE
    VBoxDD_DEFS    += VBOX_WITH_PULSE
@@ -583,8 +586,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifeq ($(KBUILD_TARGET),freebsd)
-  VBoxDD_SOURCES  += \
-   	Audio/DrvHostOSSAudio.cpp
+  ifdef VBOX_WITH_OSS
+   VBoxDD_DEFS    += VBOX_WITH_OSS
+   VBoxDD_SOURCES  += \
+    	Audio/DrvHostOSSAudio.cpp
+  endif
   ifdef VBOX_WITH_PULSE
    VBoxDD_DEFS    += VBOX_WITH_PULSE
    VBoxDD_SOURCES += \
@@ -594,9 +600,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifeq ($(KBUILD_TARGET),solaris)
-  ifdef VBOX_WITH_SOLARIS_OSS
+  ifdef VBOX_WITH_OSS
    VBoxDD_SOURCES += Audio/DrvHostOSSAudio.cpp
-   VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
+   VBoxDD_DEFS    += VBOX_WITH_OSS
   endif
  endif
 

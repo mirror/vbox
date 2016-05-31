@@ -2888,7 +2888,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     break;
                 }
 #endif
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
+#ifdef VBOX_WITH_OSS
                 case AudioDriverType_OSS:
                 {
                     InsertConfigString(pLunL1, "Driver", "OSSAudio");

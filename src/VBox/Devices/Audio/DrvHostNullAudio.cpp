@@ -279,6 +279,14 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostNullAudioStreamGetStatus(PPDMIHOSTAU
     return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
+static DECLCALLBACK(int) drvHostNullAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    NOREF(pInterface);
+    NOREF(pStream);
+
+    return VINF_SUCCESS;
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

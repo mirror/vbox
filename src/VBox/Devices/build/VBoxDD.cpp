@@ -288,14 +288,18 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 # endif
+# ifdef VBOX_WITH_OSS
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
         return rc;
+# endif
 #endif /* RT_OS_LINUX */
 #if defined(RT_OS_FREEBSD)
+# ifdef VBOX_WITH_OSS
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
         return rc;
+# endif
 #endif
 #if defined(RT_OS_DARWIN)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostCoreAudio);
@@ -303,9 +307,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 #endif
 #if defined(RT_OS_SOLARIS)
+# ifdef VBOX_WITH_OSS
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
         return rc;
+# endif
 #endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvACPI);
     if (RT_FAILURE(rc))

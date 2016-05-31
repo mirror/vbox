@@ -380,36 +380,26 @@ typedef struct PDMAUDIOMIXBUF
     PPDMAUDIOSAMPLE           pSamples;
     /** Size of the sample buffer (in samples). */
     uint32_t                  cSamples;
-#if 1
-    /** The current read/write position (in samples)
-     *  in the samples buffer. */
-    uint32_t                  offReadWrite;
+    /** The current read position (in samples). */
+    uint32_t                  offRead;
+    /** The current write position (in samples). */
+    uint32_t                  offWrite;
     /**
      * Total samples already mixed down to the parent buffer (if any). Always starting at
-     * the parent's offReadWrite position.
+     * the parent's offRead position.
      *
      * Note: Count always is specified in parent samples, as the sample count can differ between parent
      *       and child.
      */
     uint32_t                  cMixed;
-    uint32_t                  cProcessed;
-#else
-    /** The current read position in the buffer. */
-    uint32_t          offRead;
-    /** Is a read block acquired currently? */
-    bool            fReading;
-    /** Is a write block acquired currently? */
-    bool            fWriting;
-    /** The current write position in the buffer. */
-    uint32_t          offWrite;
-    /** How much space of the buffer is currently in use. */
-    volatile uint32_t cUsed;
-    uint32_t                 cMixed;
-#endif
+    /** How much audio samples are currently being used
+     *  in this buffer.
+     *  Note: This also is known as the distance in ring buffer terms. */
+    uint32_t                  cUsed;
     /** Pointer to parent buffer (if any). */
     PPDMAUDIOMIXBUF           pParent;
     /** List of children mix buffers to keep in sync with (if being a parent buffer). */
-    RTLISTANCHOR              lstBuffers;
+    RTLISTANCHOR              lstChildren;
     /** Intermediate structure for buffer conversion tasks. */
     PPDMAUDIOSTRMRATE         pRate;
     /** Current volume used for mixing. */
@@ -452,8 +442,12 @@ typedef uint32_t PDMAUDIOSTRMSTS;
  *  but there are still associated guest output streams
  *  which rely on its data. */
 #define PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE RT_BIT_32(3)
+/** Data can be read from the stream. */
+#define PDMAUDIOSTRMSTS_FLAG_DATA_READABLE   RT_BIT_32(4)
+/** Data can be written to the stream. */
+#define PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE   RT_BIT_32(5)
 /** Validation mask. */
-#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000000F)
+#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000003F)
 
 /**
  * Enumeration presenting a backend's current status.
@@ -580,6 +574,40 @@ typedef struct PDMAUDIOCALLBACK
 typedef struct PDMIAUDIOCONNECTOR
 {
     /**
+     * Retrieves the current configuration of the host audio backend.
+     *
+     * @returns VBox status code.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pCfg            Where to store the host audio backend configuration data.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetConfig, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOBACKENDCFG pCfg));
+
+    /**
+     *  @todo Docs!
+     */
+    DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir));
+
+    /**
+     * Creates an audio stream.
+     *
+     * @returns VBox status code.
+     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
+     * @param   pCfgHost             Stream configuration for host side.
+     * @param   pCfgGuest            Stream configuration for guest side.
+     * @param   ppStream             Pointer where to return the created audio stream on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest, PPDMAUDIOSTREAM *ppStream));
+
+    /**
+     * Destroys an audio stream.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pStream         Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+
+    /**
      * Adds a reference to the specified audio stream.
      *
      * @returns New reference count.
@@ -622,35 +650,6 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamWrite, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
     /**
-     * Retrieves the current configuration of the host audio backend.
-     *
-     * @returns VBox status code.
-     *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pCfg            Where to store the host audio backend configuration data.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnGetConfig, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOBACKENDCFG pCfg));
-
-    /**
-     * Creates an audio stream.
-     *
-     * @returns VBox status code.
-     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
-     * @param   pCfgHost             Stream configuration for host side.
-     * @param   pCfgGuest            Stream configuration for guest side.
-     * @param   ppStream             Pointer where to return the created audio stream on success.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest, PPDMAUDIOSTREAM *ppStream));
-
-    /**
-     * Destroys an audio stream.
-     *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pStream         Pointer to audio stream.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
-
-    /**
      * Controls a specific audio stream.
      *
      * @returns VBox status code.
@@ -661,12 +660,13 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd));
 
     /**
-     * Processes stream data and optionally returns its current status.
+     * Processes stream data.
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pStream         Pointer to audio stream.
      * @param   pcData          Data (in audio samples) available. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamGetData, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcData));
+    DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Retrieves the status of a specific audio stream.
@@ -694,7 +694,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "9CDE2581-41B1-838E-24A5-448B2D0C822E"
+#define PDMIAUDIOCONNECTOR_IID                  "9E03C980-64E9-42EC-9C70-316995990BE3"
 
 
 
@@ -713,6 +713,7 @@ typedef struct PDMIAUDIOCONNECTOR
         pThis->IHostAudio.pfnStreamDestroy   = RT_CONCAT(a_NamePrefix,StreamDestroy); \
         pThis->IHostAudio.pfnStreamControl   = RT_CONCAT(a_NamePrefix,StreamControl); \
         pThis->IHostAudio.pfnStreamGetStatus = RT_CONCAT(a_NamePrefix,StreamGetStatus); \
+        pThis->IHostAudio.pfnStreamIterate   = RT_CONCAT(a_NamePrefix,StreamIterate); \
         pThis->IHostAudio.pfnStreamPlay      = RT_CONCAT(a_NamePrefix,StreamPlay); \
         pThis->IHostAudio.pfnStreamCapture   = RT_CONCAT(a_NamePrefix,StreamCapture); \
     } while (0)
@@ -797,6 +798,11 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
+     ** @todo Docs!
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
+
+    /**
      * Plays an audio (output) stream.
      *
      * @returns VBox status code.
@@ -819,7 +825,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "946441D4-7C82-4654-90DD-443BEF796E21"
+#define PDMIHOSTAUDIO_IID                           "96AC69D0-F301-42AC-8F1D-1E19BA808887"
 
 /** @} */
 

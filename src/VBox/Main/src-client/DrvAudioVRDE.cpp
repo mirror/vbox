@@ -425,6 +425,17 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioVRDEStreamGetStatus(PPDMIHOSTAUDIO 
     return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
+static DECLCALLBACK(int) drvAudioVRDEStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* Nothing to do here for VRDE. */
+    return VINF_SUCCESS;
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

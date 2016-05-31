@@ -54,7 +54,7 @@
 
 #define AC97_SSM_VERSION 1
 
-#define AC97_TIMER_HZ 100
+#define AC97_TIMER_HZ 50
 
 #ifdef VBOX
 # define SOFT_VOLUME /** @todo Get rid of this crap. */

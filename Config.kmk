@@ -429,9 +429,11 @@ VBOX_WITH_E1000 = 1
 VBOX_WITH_VIRTIO = 1
 # Enable new PS/2 mouse emulation.
 VBOX_WITH_NEW_PS2M = 1
-# Enable ALSA support for Linux.
+# Enable OSS audio support.
+VBOX_WITH_OSS = 1
+# Enable ALSA audio support.
 VBOX_WITH_ALSA = 1
-# Enable Pulse support for Linux.
+# Enable PulseAudio audio support.
 VBOX_WITH_PULSE = 1
 # Enable PCI passthrough support.
 VBOX_WITH_PCI_PASSTHROUGH = 1

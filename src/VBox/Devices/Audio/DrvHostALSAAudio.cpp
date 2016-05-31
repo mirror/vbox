@@ -1434,6 +1434,17 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostALSAAudioStreamGetStatus(PPDMIHOSTAU
     return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
+static DECLCALLBACK(int) drvHostALSAAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* Nothing to do here for ALSA. */
+    return VINF_SUCCESS;
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

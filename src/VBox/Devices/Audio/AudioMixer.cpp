@@ -404,6 +404,8 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
         CfgSink.enmDir          = PDMAUDIODIR_OUT;
     }
 
+    RTStrPrintf(CfgSink.szName, sizeof(CfgSink.szName), "%s", pCfg->szName);
+
     /* Always use the sink's PCM audio format as the host side when creating a stream for it. */
     PPDMAUDIOSTREAM pStream;
     rc = pConn->pfnStreamCreate(pConn, &CfgSink, pCfg, &pStream);
@@ -581,6 +583,9 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     /* pcbRead is optional. */
 
     /** @todo Handle mixing operation enmOp! */
+
+    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT,
+              ("Can't read from a sink which is not an input sink\n"));
 
     uint8_t *pvMixBuf = (uint8_t *)RTMemAlloc(cbBuf);
     if (!pvMixBuf)
@@ -796,36 +801,35 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
     int rc = VINF_SUCCESS;
 
+    Log3Func(("[%s]\n", pSink->pszName));
+
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
         PPDMAUDIOSTREAM pStream = pMixStream->pStream;
         AssertPtr(pStream);
 
-        uint32_t cSamplesAvail;
-        uint32_t cSamplesProcessed = 0;
+        uint32_t cPlayed = 0;
 
-        rc = pMixStream->pConn->pfnStreamGetData(pMixStream->pConn, pStream, &cSamplesAvail);
-        if (   RT_SUCCESS(rc)
-            && cSamplesAvail)
+        rc = pMixStream->pConn->pfnStreamIterate(pMixStream->pConn, pStream);
+        if (RT_SUCCESS(rc))
         {
             if (pStream->enmDir == PDMAUDIODIR_IN)
             {
                 /** @todo Implement this! */
-            //  rc = pStream->pConn->pfnCapture(pStream->pConn, NULL /* pcSamplesCaptured */);
+#if 0
+                rc = pStream->pConn->pfnStreamCapture(pStream->pConn, NULL /* pcSamplesCaptured */);
+#endif
             }
             else
             {
-                rc = pMixStream->pConn->pfnStreamPlay(pMixStream->pConn, pStream, &cSamplesProcessed);
+                rc = pMixStream->pConn->pfnStreamPlay(pMixStream->pConn, pMixStream->pStream, &cPlayed);
+                if (RT_FAILURE(rc))
+                    LogFlowFunc(("%s: Failed playing stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc));
             }
-
-            pSink->fFlags |= AUDMIXSINK_FLAG_DIRTY;
         }
-        else if (!cSamplesAvail)
-            pSink->fFlags &= ~AUDMIXSINK_FLAG_DIRTY;
 
-        Log3Func(("[%s]: fFlags=0x%x, %RU32/%RU32 samples, rc=%Rrc\n",
-                  pSink->pszName, pSink->fFlags, cSamplesProcessed, cSamplesAvail, rc));
+        Log3Func(("\t%s: cPlayed=%RU32, rc=%Rrc\n", pMixStream->pStream->szName, cPlayed, rc));
     }
 
     return rc;
@@ -883,7 +887,13 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         return VINF_SUCCESS;
     }
 
-    uint32_t cbProcessed = 0;
+    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
+              ("Can't write to a sink which is not an output sink\n"));
+
+    LogFlowFunc(("%s: enmOp=%ld, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
+
+    uint32_t cPlayed;
+    uint32_t cbProcessed;
 
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
@@ -892,12 +902,15 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
             continue;
 
         int rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvBuf, cbBuf, &cbProcessed);
-        if (   RT_FAILURE(rc2)
-            || cbProcessed < cbBuf)
-        {
-            LogFlowFunc(("rc=%Rrc, cbBuf=%RU32, cbProcessed=%RU32\n", rc2, cbBuf, cbProcessed));
-        }
+        if (RT_FAILURE(rc2))
+            LogFlowFunc(("%s: Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
+
+        if (cbProcessed < cbBuf)
+            LogFlowFunc(("%s: Only written %RU32/%RU32 bytes\n", pSink->pszName, pMixStream->pStream->szName, cbProcessed, cbBuf));
     }
+
+    /* Set dirty bit. */
+    pSink->fFlags |= AUDMIXSINK_FLAG_DIRTY;
 
     if (pcbWritten)
         *pcbWritten = cbBuf; /* Always report back a complete write for now. */

@@ -1044,6 +1044,17 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamControl(PPDMIHOSTAUDIO pInterface,
     return rc;
 }
 
+static DECLCALLBACK(int) drvHostOSSAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* Nothing to do here for OSS. */
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostOSSAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     NOREF(pInterface);
