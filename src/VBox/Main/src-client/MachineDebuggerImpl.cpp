@@ -1084,7 +1084,7 @@ HRESULT MachineDebugger::loadPlugIn(const com::Utf8Str &aName, com::Utf8Str &aPl
             {
                 try
                 {
-                    aPlugInName = "all";
+                    aPlugInName = szName;
                     hrc = S_OK;
                 }
                 catch (std::bad_alloc)
