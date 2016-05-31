@@ -302,9 +302,9 @@
 
     <!-- Interface forward declaration: -->
     <xsl:text>/* Interface forward declaration: */&#x0A;</xsl:text>
-    <xsl:text>class I</xsl:text>
+    <xsl:text>COM_STRUCT_OR_CLASS(I</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>;&#x0A;&#x0A;</xsl:text>
+    <xsl:text>);&#x0A;&#x0A;</xsl:text>
 
     <!-- Interface wrapper declaration: -->
     <xsl:text>/* Interface wrapper declaration: */&#x0A;</xsl:text>
