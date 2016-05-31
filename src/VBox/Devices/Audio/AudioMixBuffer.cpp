@@ -1373,8 +1373,6 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (!cbBuf)
         return VINF_SUCCESS;
 
-    Assert(AUDIOMIXBUF_B2S(pMixBuf, cbBuf) <= pMixBuf->cSamples);
-
     uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), pMixBuf->cUsed);
 
     AUDMIXBUF_LOG(("%s: pvBuf=%p, cbBuf=%zu (%RU32 samples), cToRead=%RU32\n",
