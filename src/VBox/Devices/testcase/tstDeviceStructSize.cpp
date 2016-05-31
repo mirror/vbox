@@ -64,7 +64,11 @@
 # include "../PC/DevAPIC.cpp"
 #endif
 #undef LOG_GROUP
-#include "../PC/DevIoApic.cpp"
+#ifdef VBOX_WITH_NEW_IOAPIC
+# include "../PC/DevIOAPIC_New.cpp"
+#else
+# include "../PC/DevIoApic.cpp"
+#endif
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
 #undef LOG_GROUP
@@ -331,9 +335,16 @@ int main()
 # endif
 #endif
     CHECK_MEMBER_ALIGNMENT(E1KSTATE, StatReceiveBytes, 8);
-#ifdef VBOX_WITH_STATISTICS
+#ifdef VBOX_WITH_NEW_IOAPIC
+    CHECK_MEMBER_ALIGNMENT(IOAPIC, au64RedirTable, 8);
+# ifdef VBOX_WITH_STATISTICS
+    CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMmioReadR0, 8);
+# endif
+#else
+# ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMMIOReadGC, 8);
     CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMMIOReadGC, 8);
+# endif
 #endif
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, GCPhysMMIOBase, 8);
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, aMessage, 8);

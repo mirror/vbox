@@ -657,6 +657,8 @@ typedef struct PDMIOAPIC
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
     /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc));
+    /** @copydoc PDMIOAPICREG::pfnSetEoiR3 */
+    DECLR3CALLBACKMEMBER(void,      pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Pointer to the PIC device instance - R0. */
     PPDMDEVINSR0                    pDevInsR0;
@@ -664,6 +666,8 @@ typedef struct PDMIOAPIC
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
     /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSendMsiR0,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc));
+    /** @copydoc PDMIOAPICREG::pfnSetEoiR3 */
+    DECLR0CALLBACKMEMBER(void,      pfnSetEoiR0,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Pointer to the APIC device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
@@ -671,8 +675,8 @@ typedef struct PDMIOAPIC
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
      /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
     DECLRCCALLBACKMEMBER(void,      pfnSendMsiRC,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc));
-
-    uint8_t                         Alignment[4];
+     /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+    DECLRCCALLBACKMEMBER(void,      pfnSetEoiRC,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 } PDMIOAPIC;
 
 /** Maximum number of PCI busses for a VM. */

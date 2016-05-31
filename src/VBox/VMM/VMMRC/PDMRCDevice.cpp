@@ -559,6 +559,27 @@ static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
 }
 
 
+/** @interface_method_impl{PDMAPICHLPRC,pfnBusBroadcastEoi} */
+static DECLCALLBACK(void) pdmRCApicHlp_BusBroadcastEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
+{
+    /* pfnSetEoi will be NULL in the old IOAPIC code as it's not implemented. */
+#ifdef VBOX_WITH_NEW_IOAPIC
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.CTX_SUFF(pVM);
+
+    /* At present, we support only a maximum of one I/O APIC for a VM. If we ever implement having
+       multiple I/O APICs per-VM, we'll have to broadcast this EOI to all of the I/O APICs. */
+    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
+    {
+        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi));
+        pdmLock(pVM);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Vector);
+        pdmUnlock(pVM);
+    }
+#endif
+}
+
+
 /** @interface_method_impl{PDMAPICHLPRC,pfnCalcIrqTag} */
 static DECLCALLBACK(uint32_t) pdmRCApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_t u8Level)
 {
@@ -638,6 +659,7 @@ extern DECLEXPORT(const PDMAPICHLPRC) g_pdmRCApicHlp =
     PDM_APICHLPRC_VERSION,
     pdmRCApicHlp_SetInterruptFF,
     pdmRCApicHlp_ClearInterruptFF,
+    pdmRCApicHlp_BusBroadcastEoi,
     pdmRCApicHlp_CalcIrqTag,
     pdmRCApicHlp_ChangeFeature,
     pdmRCApicHlp_Lock,

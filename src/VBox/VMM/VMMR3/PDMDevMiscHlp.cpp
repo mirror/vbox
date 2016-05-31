@@ -267,6 +267,28 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
 }
 
 
+/** @interface_method_impl{PDMAPICHLPR3,pfnBusBroadcastEoi} */
+static DECLCALLBACK(void) pdmR3ApicHlp_BusBroadcastEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
+{
+    /* pfnSetEoi will be NULL in the old IOAPIC code as it's not implemented. */
+#ifdef VBOX_WITH_NEW_IOAPIC
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.CTX_SUFF(pVM);
+
+    /* At present, we support only a maximum of one I/O APIC for a VM. If we ever implement having
+       multiple I/O APICs per-VM, we'll have to broadcast this EOI to all of the I/O APICs. */
+    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
+    {
+        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi));
+        pdmLock(pVM);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Vector);
+        pdmUnlock(pVM);
+    }
+#endif
+}
+
+
+
 /** @interface_method_impl{PDMAPICHLPR3,pfnCalcIrqTag} */
 static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_t u8Level)
 {
@@ -430,6 +452,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     PDM_APICHLPR3_VERSION,
     pdmR3ApicHlp_SetInterruptFF,
     pdmR3ApicHlp_ClearInterruptFF,
+    pdmR3ApicHlp_BusBroadcastEoi,
     pdmR3ApicHlp_CalcIrqTag,
     pdmR3ApicHlp_ChangeFeature,
     pdmR3ApicHlp_GetCpuId,

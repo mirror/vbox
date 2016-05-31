@@ -116,6 +116,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	VBOX_ACPI \
  	VBOX_HGCM_HOST_CODE \
  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
+ 	$(if $(VBOX_WITH_NEW_IOAPIC),VBOX_WITH_NEW_IOAPIC,) \
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
  	VBOX_WITH_DMI_CHASSIS \
  	VBOX_WITH_DMI_OEMSTRINGS
@@ -158,6 +159,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Audio/DevIchHdaCodec.cpp \
  	PC/DevDMA.cpp \
  	PC/DevHPET.cpp \
+ 	$(if $(VBOX_WITH_NEW_IOAPIC),PC/DevIOAPIC_New.cpp,) \
  	Storage/DevFdc.cpp \
  	Serial/DevSerial.cpp \
  	Parallel/DevParallel.cpp \
@@ -879,26 +881,27 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDRC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
   VBoxDDRC_INCS           = build
   VBoxDDRC_SOURCES        = \
- 	Audio/DevIchHda.cpp \
+  	Audio/DevIchHda.cpp \
   	Bus/DevPCI.cpp \
- 	Bus/DevPciIch9.cpp \
- 	Bus/MsiCommon.cpp \
- 	Bus/MsixCommon.cpp \
-	EFI/DevSmc.cpp \
+  	Bus/DevPciIch9.cpp \
+  	Bus/MsiCommon.cpp \
+  	Bus/MsixCommon.cpp \
+  	EFI/DevSmc.cpp \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
- 	Input/PS2K.cpp \
- 	Input/PS2M.cpp \
+  	Input/PS2K.cpp \
+  	Input/PS2M.cpp \
   	PC/DevACPI.cpp \
+  	$(if $(VBOX_WITH_NEW_IOAPIC),PC/DevIOAPIC_New.cpp,) \
   	PC/DevPit-i8254.cpp \
   	PC/DevPIC.cpp \
   	PC/DevRTC.cpp \
- 	PC/DevHPET.cpp \
+  	PC/DevHPET.cpp \
   	Storage/DevATA.cpp \
   	Network/DevPCNet.cpp \
   	Serial/DevSerial.cpp \
   	Parallel/DevParallel.cpp \
- 	VMMDev/VMMDevTesting.cpp
+  	VMMDev/VMMDevTesting.cpp
 
   ifdef VBOX_WITH_E1000
    VBoxDDRC_DEFS        += VBOX_WITH_E1000
@@ -1013,10 +1016,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(PATH_SUB_CURRENT)
  VBoxDD2_SOURCES         = \
  	build/VBoxDD2.cpp  \
- 	PC/DevIoApic.cpp \
  	PC/DevLPC.cpp
  ifndef VBOX_WITH_NEW_APIC
   VBoxDD2_SOURCES += PC/DevAPIC.cpp
+ endif
+ ifndef VBOX_WITH_NEW_IOAPIC
+  VBoxDD2_SOURCES += PC/DevIoApic.cpp
  endif
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
@@ -1037,6 +1042,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_NEW_APIC
   VBoxDD2_DEFS          += VBOX_WITH_NEW_APIC
  endif
+ ifdef VBOX_WITH_NEW_IOAPIC
+  VBoxDD2_DEFS          += VBOX_WITH_NEW_IOAPIC
+ endif
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
 
@@ -1055,12 +1063,13 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
-	EFI/DevSmc.cpp \
+ 	EFI/DevSmc.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
  	Input/PS2M.cpp \
  	PC/DevACPI.cpp \
+ 	$(if $(VBOX_WITH_NEW_IOAPIC),PC/DevIOAPIC_New.cpp,) \
  	PC/DevPit-i8254.cpp \
  	PC/DevPIC.cpp \
  	PC/DevRTC.cpp \

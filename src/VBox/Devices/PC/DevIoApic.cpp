@@ -796,6 +796,9 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     IoApicReg.pfnSendMsiR3 = ioapicSendMsi;
     IoApicReg.pszSendMsiRC = fRZEnabled ? "ioapicSendMsi" : NULL;
     IoApicReg.pszSendMsiR0 = fRZEnabled ? "ioapicSendMsi" : NULL;
+    IoApicReg.pfnSetEoiR3  = NULL;
+    IoApicReg.pszSetEoiR0  = NULL;
+    IoApicReg.pszSetEoiRC  = NULL;
 
     rc = PDMDevHlpIOAPICRegister(pDevIns, &IoApicReg, &pThis->pIoApicHlpR3);
     if (RT_FAILURE(rc))

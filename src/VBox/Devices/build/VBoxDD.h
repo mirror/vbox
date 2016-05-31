@@ -32,6 +32,9 @@ extern const PDMDEVREG g_DevicePCI;
 extern const PDMDEVREG g_DevicePciIch9;
 extern const PDMDEVREG g_DevicePcArch;
 extern const PDMDEVREG g_DevicePcBios;
+#ifdef VBOX_WITH_NEW_IOAPIC
+extern const PDMDEVREG g_DeviceIOAPIC;
+#endif
 extern const PDMDEVREG g_DevicePS2KeyboardMouse;
 extern const PDMDEVREG g_DeviceI8254;
 extern const PDMDEVREG g_DeviceI8259;

@@ -66,7 +66,11 @@
 # include "../PC/DevAPIC.cpp"
 #endif
 #undef LOG_GROUP
-#include "../PC/DevIoApic.cpp"
+#ifdef VBOX_WITH_NEW_IOAPIC
+# include "../PC/DevIOAPIC_New.cpp"
+#else
+# include "../PC/DevIoApic.cpp"
+#endif
 #undef LOG_GROUP
 #include "../Storage/DevATA.cpp"
 #ifdef VBOX_WITH_USB
@@ -865,6 +869,35 @@ int main()
 # endif
 #endif  /* VBOX_WITH_NEW_APIC */
 
+#ifdef VBOX_WITH_NEW_IOAPIC
+    /* PC/DevIOAPIC_New.cpp */
+    GEN_CHECK_SIZE(IOAPIC);
+    GEN_CHECK_OFF(IOAPIC, pDevInsR3);
+    GEN_CHECK_OFF(IOAPIC, pIoApicHlpR3);
+    GEN_CHECK_OFF(IOAPIC, pDevInsR0);
+    GEN_CHECK_OFF(IOAPIC, pIoApicHlpR0);
+    GEN_CHECK_OFF(IOAPIC, pDevInsRC);
+    GEN_CHECK_OFF(IOAPIC, pIoApicHlpRC);
+    GEN_CHECK_OFF(IOAPIC, u8Id);
+    GEN_CHECK_OFF(IOAPIC, u8Index);
+    GEN_CHECK_OFF(IOAPIC, cCpus);
+    GEN_CHECK_OFF(IOAPIC, au64RedirTable);
+    GEN_CHECK_OFF(IOAPIC, uIrr);
+# ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(IOAPIC, StatMmioReadR0);
+    GEN_CHECK_OFF(IOAPIC, StatMmioReadR3);
+    GEN_CHECK_OFF(IOAPIC, StatMmioReadRC);
+    GEN_CHECK_OFF(IOAPIC, StatMmioWriteR0);
+    GEN_CHECK_OFF(IOAPIC, StatMmioWriteR3);
+    GEN_CHECK_OFF(IOAPIC, StatMmioWriteRC);
+    GEN_CHECK_OFF(IOAPIC, StatSetIrqR0);
+    GEN_CHECK_OFF(IOAPIC, StatSetIrqR3);
+    GEN_CHECK_OFF(IOAPIC, StatSetIrqRC);
+    GEN_CHECK_OFF(IOAPIC, StatSetEoiR0);
+    GEN_CHECK_OFF(IOAPIC, StatSetEoiR3);
+    GEN_CHECK_OFF(IOAPIC, StatSetEoiRC);
+# endif
+#else
     /* PC/DevIoApic.cpp */
     GEN_CHECK_SIZE(IOAPIC);
     GEN_CHECK_OFF(IOAPIC, id);
@@ -879,10 +912,11 @@ int main()
     GEN_CHECK_OFF(IOAPIC, pIoApicHlpR0);
     GEN_CHECK_OFF(IOAPIC, pDevInsRC);
     GEN_CHECK_OFF(IOAPIC, pIoApicHlpRC);
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(IOAPIC, StatMMIOReadGC);
     GEN_CHECK_OFF(IOAPIC, StatSetIrqHC);
-#endif
+# endif
+#endif /* VBOX_WITH_NEW_IOAPIC */
 
     /* Storage/DevATA.cpp */
     GEN_CHECK_SIZE(BMDMAState);

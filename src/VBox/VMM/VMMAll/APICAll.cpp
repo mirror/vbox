@@ -465,6 +465,20 @@ DECLINLINE(void) apicWriteRaw32(PXAPICPAGE pXApicPage, uint16_t offReg, uint32_t
 
 
 /**
+ * Broadcasts the EOI to the I/O APICs.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uVector         The interrupt vector corresponding to the EOI.
+ */
+DECLINLINE(void) apicBusBroadcastEoi(PVMCPU pVCpu, uint8_t uVector)
+{
+    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
+    PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
+    pApicDev->CTX_SUFF(pApicHlp)->pfnBusBroadcastEoi(pApicDev->CTX_SUFF(pDevIns), uVector);
+}
+
+
+/**
  * Sets an error in the internal ESR of the specified APIC.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -1193,8 +1207,8 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
         bool fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
         if (fLevelTriggered)
         {
-            /** @todo We need to broadcast EOI to IO APICs here. */
             apicClearVectorInReg(&pXApicPage->tmr, uVector);
+            apicBusBroadcastEoi(pVCpu, uVector);
             Log2(("APIC%u: apicSetEoi: Cleared level triggered interrupt from TMR. uVector=%#x\n", pVCpu->idCpu, uVector));
         }
 

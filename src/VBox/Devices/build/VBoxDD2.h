@@ -63,7 +63,9 @@ extern DECLIMPORT(const unsigned)       g_cbNetBiosBinary;
 #ifndef VBOX_WITH_NEW_APIC
 extern const PDMDEVREG g_DeviceAPIC;
 #endif
+#ifndef VBOX_WITH_NEW_IOAPIC
 extern const PDMDEVREG g_DeviceIOAPIC;
+#endif
 extern const PDMDEVREG g_DeviceLPC;
 
 RT_C_DECLS_END

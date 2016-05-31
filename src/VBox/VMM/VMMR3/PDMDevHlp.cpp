@@ -2612,16 +2612,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 /** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3)
 {
-#if 0
-#ifdef VBOX_WITH_NEW_APIC
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    NOREF(pApicReg);
-    *ppApicHlpR3 = &g_pdmR3DevApicHlp;
-    return VINF_SUCCESS;
-#endif
-#endif
-
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: pApicReg=%p:{.u32Version=%#x, .pfnGetInterruptR3=%p, .pfnSetBaseMsrR3=%p, .pfnGetBaseMsrR3=%p, "
@@ -2945,7 +2935,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-    if (!pIoApicReg->pfnSetIrqR3 || !pIoApicReg->pfnSendMsiR3)
+    if (!pIoApicReg->pfnSetIrqR3 || !pIoApicReg->pfnSendMsiR3
+#ifdef VBOX_WITH_NEW_IOAPIC
+        || !pIoApicReg->pfnSetEoiR3
+#endif
+        )
     {
         Assert(pIoApicReg->pfnSetIrqR3);
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
@@ -2965,6 +2959,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+    if (    pIoApicReg->pszSetEoiRC
+        &&  !VALID_PTR(pIoApicReg->pszSetEoiRC))
+    {
+        Assert(VALID_PTR(pIoApicReg->pszSetEoiRC));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
     if (    pIoApicReg->pszSetIrqR0
         &&  !VALID_PTR(pIoApicReg->pszSetIrqR0))
     {
@@ -2976,6 +2977,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         &&  !VALID_PTR(pIoApicReg->pszSendMsiR0))
     {
         Assert(VALID_PTR(pIoApicReg->pszSendMsiR0));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (    pIoApicReg->pszSetEoiR0
+        &&  !VALID_PTR(pIoApicReg->pszSetEoiR0))
+    {
+        Assert(VALID_PTR(pIoApicReg->pszSetEoiR0));
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -3037,7 +3045,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
 
     if (pIoApicReg->pszSendMsiRC)
     {
-        int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pIoApicReg->pszSetIrqRC, &pVM->pdm.s.IoApic.pfnSendMsiRC);
+        int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pIoApicReg->pszSendMsiRC, &pVM->pdm.s.IoApic.pfnSendMsiRC);
         AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pIoApicReg->pszSendMsiRC, rc));
         if (RT_FAILURE(rc))
         {
@@ -3048,6 +3056,21 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     else
     {
         pVM->pdm.s.IoApic.pfnSendMsiRC = 0;
+    }
+
+    if (pIoApicReg->pszSetEoiRC)
+    {
+        int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pIoApicReg->pszSetEoiRC, &pVM->pdm.s.IoApic.pfnSetEoiRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pIoApicReg->pszSetEoiRC, rc));
+        if (RT_FAILURE(rc))
+        {
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            return rc;
+        }
+    }
+    else
+    {
+        pVM->pdm.s.IoApic.pfnSetEoiRC = 0;
     }
 
     /*
@@ -3086,13 +3109,29 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         pVM->pdm.s.IoApic.pfnSendMsiR0 = 0;
     }
 
+    if (pIoApicReg->pszSetEoiR0)
+    {
+        int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pIoApicReg->pszSetEoiR0, &pVM->pdm.s.IoApic.pfnSetEoiR0);
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pIoApicReg->pszSetEoiR0, rc));
+        if (RT_FAILURE(rc))
+        {
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            return rc;
+        }
+    }
+    else
+    {
+        pVM->pdm.s.IoApic.pfnSetEoiR0 = 0;
+    }
+
 
     /*
      * Initialize the R3 bits.
      */
     pVM->pdm.s.IoApic.pDevInsR3   = pDevIns;
-    pVM->pdm.s.IoApic.pfnSetIrqR3 = pIoApicReg->pfnSetIrqR3;
+    pVM->pdm.s.IoApic.pfnSetIrqR3  = pIoApicReg->pfnSetIrqR3;
     pVM->pdm.s.IoApic.pfnSendMsiR3 = pIoApicReg->pfnSendMsiR3;
+    pVM->pdm.s.IoApic.pfnSetEoiR3  = pIoApicReg->pfnSetEoiR3;
     Log(("PDM: Registered I/O APIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
     /* set the helper pointer and return. */
