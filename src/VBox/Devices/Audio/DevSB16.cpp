@@ -2063,6 +2063,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
         if (pDrv->Out.pStream)
         {
+            pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
+
             int rc3 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
             AssertRC(rc3);
 
@@ -2070,6 +2072,9 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         }
 
         int rc2 = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, &CfgHost, pCfg, &pDrv->Out.pStream);
+        if (RT_SUCCESS(rc2))
+            pDrv->pConnector->pfnStreamAddRef(pDrv->pConnector, pDrv->Out.pStream);
+
         LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc2));
 
         uLUN++;
@@ -2089,6 +2094,8 @@ static void sb16CloseOut(PSB16STATE pThis)
     {
         if (pDrv->Out.pStream)
         {
+            pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
+
             pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
             pDrv->Out.pStream = NULL;
         }
