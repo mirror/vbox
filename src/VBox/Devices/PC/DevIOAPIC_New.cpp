@@ -906,8 +906,10 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "    Arb ID                  = %#x\n",     IOAPIC_ARB_GET_ID(uArb));
 #endif
 
-    pHlp->pfnPrintf(pHlp, "  I/O Redirection Table:\n");
-    pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask trigger rirr polarity dlvr_st dlvr_mode vector\n");
+    pHlp->pfnPrintf(pHlp, "  Current index             = %#x\n",     ioapicGetIndex(pThis));
+
+    pHlp->pfnPrintf(pHlp, "  I/O Redirection Table and IRR:\n");
+    pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask irr trigger rirr polar dlvr_st dlvr_mode vector\n");
 
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
     {
@@ -929,18 +931,19 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         const uint8_t  uMask             = IOAPIC_RTE_GET_MASK(uEntry);
         const char    *pszTriggerMode    = IOAPIC_RTE_GET_TRIGGER_MODE(uEntry) == 0 ? "edge " : "level";
         const uint8_t  uRemoteIrr        = IOAPIC_RTE_GET_REMOTE_IRR(uEntry);
-        const char    *pszPolarity       = IOAPIC_RTE_GET_POLARITY(uEntry) == 0 ? "activehi" : "activelo";
+        const char    *pszPolarity       = IOAPIC_RTE_GET_POLARITY(uEntry) == 0 ? "acthi" : "actlo";
         const char    *pszDeliveryStatus = IOAPIC_RTE_GET_DELIVERY_STATUS(uEntry) == 0 ? "idle" : "pend";
         const uint8_t  uDeliveryMode     = IOAPIC_RTE_GET_DELIVERY_MODE(uEntry);
                                            Assert(uDeliveryMode < RT_ELEMENTS(s_apszDeliveryModes));
         const char    *pszDeliveryMode   = s_apszDeliveryModes[uDeliveryMode];
         const uint8_t  uVector           = IOAPIC_RTE_GET_VECTOR(uEntry);
 
-        pHlp->pfnPrintf(pHlp, "   %02d   %s      %02x     %u    %s   %u   %s  %s     %s   %3u (%016llx)\n",
+        pHlp->pfnPrintf(pHlp, "   %02d   %s      %02x     %u    %u   %s   %u   %s  %s     %s   %3u (%016llx)\n",
                         idxRte,
                         pszDestMode,
                         uDest,
                         uMask,
+                        (pThis->uIrr >> idxRte) & 1,
                         pszTriggerMode,
                         uRemoteIrr,
                         pszPolarity,
