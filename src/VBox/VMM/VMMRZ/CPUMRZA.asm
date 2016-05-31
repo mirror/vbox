@@ -24,6 +24,7 @@
 %include "CPUMInternal.mac"
 %include "iprt/x86.mac"
 %include "VBox/vmm/cpum.mac"
+%include "VBox/err.mac"
 
 
 
@@ -37,7 +38,7 @@ BEGINCODE
 ; ring-0, whereas in raw-mode the caller will probably set VMCPU_FF_CPUM to
 ; re-evaluate the situation before executing more guest code.
 ;
-; @returns  VINF_SUCCESS (0) in EAX
+; @returns  VINF_SUCCESS (0) or VINF_CPUM_HOST_CR0_MODIFIED. (EAX)
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
@@ -77,7 +78,7 @@ SEH64_END_PROLOGUE
         ; before doing fxsave/xsave here.  (xCX is 0 if no CR0 was necessary.)  We
         ; leave it like that so IEM can use the FPU/SSE/AVX host CPU features directly.
         ;
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX
+        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX               ; xCX must be preserved!
         ;; @todo What about XCR0?
  %ifdef IN_RING0
         mov     [pCpumCpu + CPUMCPU.Host.cr0Fpu], xCX
@@ -92,12 +93,26 @@ SEH64_END_PROLOGUE
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM) ; Latter is not necessarily true, but normally yes.
         popf
 
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+        ; Figure the return code.
+        test    ecx, ecx
+        jnz     .modified_cr0
+%endif
+        xor     eax, eax
+.return:
+
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
 %endif
         leave
         ret
+
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+.modified_cr0:
+        mov     eax, VINF_CPUM_HOST_CR0_MODIFIED
+        jmp     .return
+%endif
 %undef pCpumCpu
 %undef pXState
 ENDPROC   cpumRZSaveHostFPUState

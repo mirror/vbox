@@ -1518,6 +1518,17 @@ VMMR0_INT_DECL(void) HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU pVCpu)
 }
 
 
+/**
+ * Notification from CPUM that it has modified the host CR0 (because of FPU).
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ */
+VMMR0_INT_DECL(void) HMR0NotifyCpumModifiedHostCr0(PVMCPU pVCpu)
+{
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
+}
+
+
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 
 /**

@@ -8625,14 +8625,16 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 
 #ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
     if (!CPUMIsGuestFPUStateActive(pVCpu))
-        CPUMR0LoadGuestFPU(pVM, pVCpu);
+        if (CPUMR0LoadGuestFPU(pVM, pVCpu) == VINF_CPUM_HOST_CR0_MODIFIED)
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
 #endif
 
     if (   pVCpu->hm.s.fPreloadGuestFpu
         && !CPUMIsGuestFPUStateActive(pVCpu))
     {
-        CPUMR0LoadGuestFPU(pVM, pVCpu);
+        if (CPUMR0LoadGuestFPU(pVM, pVCpu) == VINF_CPUM_HOST_CR0_MODIFIED)
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0));
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
@@ -12987,13 +12989,16 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         Assert(!pVmxTransient->fWasGuestFPUStateActive || pVCpu->hm.s.fUsingDebugLoop);
 #endif
         rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu);
-        Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
+        Assert(   rc == VINF_EM_RAW_GUEST_TRAP
+               || ((rc == VINF_SUCCESS || rc == VINF_CPUM_HOST_CR0_MODIFIED) && CPUMIsGuestFPUStateActive(pVCpu)));
+        if (rc == VINF_CPUM_HOST_CR0_MODIFIED)
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
     }
 
     HM_RESTORE_PREEMPT();
     VMMRZCallRing3Enable(pVCpu);
 
-    if (rc == VINF_SUCCESS)
+    if (rc == VINF_SUCCESS || rc == VINF_CPUM_HOST_CR0_MODIFIED)
     {
         /* Guest FPU state was activated, we'll want to change CR0 FPU intercepts before the next VM-reentry. */
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);

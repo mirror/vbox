@@ -62,6 +62,7 @@ ENDPROC   CPUMR0RegisterVCpuThread
 ;;
 ; Saves the host FPU/SSE/AVX state and restores the guest FPU/SSE/AVX state.
 ;
+; @returns  VINF_SUCCESS (0) or VINF_CPUM_HOST_CR0_MODIFIED. (EAX)
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
@@ -155,12 +156,24 @@ SEH64_END_PROLOGUE
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_SINCE_REM | CPUM_USED_FPU_HOST)
         popf
 
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+        test    ecx, ecx
+        jnz     .modified_cr0
+%endif
+        xor     eax, eax
+.return:
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
 %endif
         leave
         ret
+
+%ifndef CPUM_CAN_USE_FPU_IN_R0
+.modified_cr0:
+        mov     eax, VINF_CPUM_HOST_CR0_MODIFIED
+        jmp     .return
+%endif
 ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 
 

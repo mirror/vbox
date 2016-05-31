@@ -326,6 +326,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @retval VINF_SUCCESS           if the guest FPU state is loaded.
  * @retval VINF_EM_RAW_GUEST_TRAP if it is a guest trap.
+ * @retval VINF_CPUM_HOST_CR0_MODIFIED if we modified the host CR0.
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -385,13 +386,16 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu)
  * Saves the host-FPU/XMM state (if necessary) and (always) loads the guest-FPU
  * state into the CPU.
  *
- * @returns VINF_SUCCESS (for CPUMR0Trap07Handler).
+ * @returns VINF_SUCCESS on success, host CR0 unmodified.
+ * @returns VINF_CPUM_HOST_CR0_MODIFIED on success when the host CR0 was
+ *          modified and VT-x needs to update the value in the VMCS.
  *
  * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
 {
+    int rc = VINF_SUCCESS;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST));
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
@@ -403,7 +407,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
 
         /* Save the host state if necessary. */
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_HOST))
-            cpumRZSaveHostFPUState(&pVCpu->cpum.s);
+            rc = cpumRZSaveHostFPUState(&pVCpu->cpum.s);
 
         /* Restore the state on entry as we need to be in 64-bit mode to access the full state. */
         pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;
@@ -417,7 +421,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
         if (!pVM->cpum.s.HostFeatures.fLeakyFxSR)
         {
             Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE));
-            cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
+            rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
         }
         else
         {
@@ -427,13 +431,13 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
              *        change. */
             uint64_t uHostEfer = ASMRdMsr(MSR_K6_EFER);
             if (!(uHostEfer & MSR_K6_EFER_FFXSR))
-                cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
+                rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
             else
             {
                 RTCCUINTREG const uSavedFlags = ASMIntDisableFlags();
                 pVCpu->cpum.s.fUseFlags |= CPUM_USED_MANUAL_XMM_RESTORE;
                 ASMWrMsr(MSR_K6_EFER, uHostEfer & ~MSR_K6_EFER_FFXSR);
-                cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
+                rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
                 ASMWrMsr(MSR_K6_EFER, uHostEfer | MSR_K6_EFER_FFXSR);
                 ASMSetFlags(uSavedFlags);
             }
@@ -441,7 +445,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
         Assert(   (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM))
                ==                            (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM));
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

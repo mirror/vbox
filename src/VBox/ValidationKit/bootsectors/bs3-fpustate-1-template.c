@@ -90,7 +90,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 
     /* Check that we can keep it consistent for a while. */
     g_usBs3TestStep = 3;
-    for (iLoops = 0; iLoops < _4M; iLoops++) /** @todo adjust counter. will hardcode for now and do timers later so day... */
+    for (iLoops = 0; iLoops < _4M*16; iLoops++) /** @todo adjust counter. will hardcode for now and do timers later so day... */
     {
         TMPL_NM(bs3FpuState1_Save)(pChecking);
         if (Bs3MemCmp(pExpected, pChecking, sizeof(*pExpected)) != 0)

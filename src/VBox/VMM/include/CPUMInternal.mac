@@ -47,13 +47,15 @@
 %endif
 %ifdef RT_OS_DARWIN
  ; Intel Darwin kernels will load the FPU context of the current thread (user land).
- %define CPUM_CAN_USE_FPU_IN_R0 1
+ ;; @todo we still need to check CR0 and tell HMVMX when CR0 changes!
+ ;%define CPUM_CAN_USE_FPU_IN_R0 1
 %endif
 %ifdef RT_OS_LINUX
  ; Intel Linux kernels will load the FPU context of the current thread (user land),
  ; at least that what my LXR research on 2.6.18+ indicates.  It's possible this was
  ; done differently at some point, I seems to recall issues with it ages and ages ago.
-; %define CPUM_CAN_USE_FPU_IN_R0 1 - test me first
+ ;; @todo We still need to check CR0 and tell HMVMX when CR0 changes!
+ ;%define CPUM_CAN_USE_FPU_IN_R0 1
 %endif
 %ifndef IN_RING0
  %undef CPUM_CAN_USE_FPU_IN_R0

@@ -643,6 +643,8 @@
 #define VERR_CPUM_INVALID_XSAVE_HDR             (-1764)
 /** The loaded XCR0 register value is not valid. */
 #define VERR_CPUM_INVALID_XCR0                  (-1765)
+/** Indicates that we modified the host CR0 (FPU related). */
+#define VINF_CPUM_HOST_CR0_MODIFIED             (1766)
 /** @} */
 
 

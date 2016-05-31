@@ -189,6 +189,7 @@ VMMR0_INT_DECL(int)             HMR0EnterCpu(PVMCPU pVCpu);
 VMMR0_INT_DECL(int)             HMR0LeaveCpu(PVMCPU pVCpu);
 VMMR0_INT_DECL(void)            HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser);
 VMMR0_INT_DECL(void)            HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU VCpu);
+VMMR0_INT_DECL(void)            HMR0NotifyCpumModifiedHostCr0(PVMCPU VCpu);
 VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
