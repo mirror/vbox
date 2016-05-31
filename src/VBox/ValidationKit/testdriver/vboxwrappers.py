@@ -2382,19 +2382,21 @@ class SessionWrapper(TdTaskBase):
         Returns string containing the kernel log on success.
         Returns None on failure.
         """
+        sOsKernelLog = None;
         try:
-            sPluginsLoaded = self.o.console.debugger.loadPlugIn('all');
-            if sPluginsLoaded == 'all':
-                sOsDetected = self.o.console.debugger.detectOS();
-                if sOsDetected is not None:
-                    sOsKernelLog = self.o.console.debugger.queryOSKernelLog(0);
-            else:
-                reporter.log('Unable to load debugger plugins');
-                return None;
+            self.o.console.debugger.loadPlugIn('all');
         except:
-            reporter.logXcpt('Unable to query the OS kernel log');
-            return None;
-
+            reporter.logXcpt('Unable to load debugger plugins');
+        else:
+            try:
+                sOsDetected = self.o.console.debugger.detectOS();
+            except:
+                reporter.logXcpt('Failed to detect the guest OS');
+            else:
+                try:
+                    sOsKernelLog = self.o.console.debugger.queryOSKernelLog(0);
+                except:
+                    reporter.logXcpt('Unable to get the guest OS (%s) kernel log' % (sOsDetected,));
         return sOsKernelLog;
 
     #
