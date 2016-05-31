@@ -317,7 +317,7 @@ static int sb16Reattach(PSB16STATE pThis, PSB16DRIVER pDrv, uint8_t uLUN, const 
 
     PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
     PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/SB16/0/");
+    PCFGMNODE pDev0 = CFGMR3GetChild(pRoot, "Devices/sb16/0/");
 
     /* Remove LUN branch. */
     CFGMR3RemoveNode(CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN));
@@ -451,6 +451,9 @@ static void sb16Control(PSB16STATE pThis, int hold)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
+        if (!pDrv->Out.pStream)
+            continue;
+
         int rc2 = pDrv->pConnector->pfnStreamControl(pDrv->pConnector, pDrv->Out.pStream,
                                                      hold == 1 ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
         LogFlowFunc(("%s: rc=%Rrc\n", pDrv->Out.pStream->szName, rc2));
@@ -1774,6 +1777,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
         PPDMAUDIOSTREAM pStream = pDrv->Out.pStream;
+        if (!pStream)
+            continue;
 
         PDMAUDIOSTRMSTS strmSts = pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pStream);
         fIsPlaying |= (   (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
@@ -2326,8 +2331,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertPtr(pCon);
 
         /** @todo No input streams available for SB16 yet. */
-        /* Note: Only query the whole backend status here, as we don't have multiple streams to check for. */
-        bool fValidOut = pCon->pfnGetStatus(pCon, PDMAUDIODIR_OUT) == PDMAUDIOBACKENDSTS_RUNNING;
+        bool fValidOut = pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream) & PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
         if (!fValidOut)
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));

@@ -1060,9 +1060,15 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostOSSAudioStreamGetStatus(PPDMIHOSTAUD
     NOREF(pInterface);
     NOREF(pStream);
 
-    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
-}
+    PDMAUDIOSTRMSTS strmSts =   PDMAUDIOSTRMSTS_FLAG_INITIALIZED
+                              | PDMAUDIOSTRMSTS_FLAG_ENABLED;
 
+    strmSts |=   pStream->enmDir == PDMAUDIODIR_IN
+               ? PDMAUDIOSTRMSTS_FLAG_DATA_READABLE
+               : PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+
+    return strmSts;
+}
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

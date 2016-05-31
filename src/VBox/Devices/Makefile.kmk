@@ -588,7 +588,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifeq ($(KBUILD_TARGET),freebsd)
   ifdef VBOX_WITH_OSS
    VBoxDD_DEFS    += VBOX_WITH_OSS
-   VBoxDD_SOURCES  += \
+   VBoxDD_SOURCES += \
     	Audio/DrvHostOSSAudio.cpp
   endif
   ifdef VBOX_WITH_PULSE

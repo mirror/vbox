@@ -253,7 +253,9 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, a
 static DECLCALLBACK(int) drvAudioStreamControl(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    if (!pStream)
+        return VINF_SUCCESS;
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
@@ -336,6 +338,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     if (!pHstStream)
         return VINF_SUCCESS;
 
+    AssertPtr(pThis->pHostDrvAudio);
     AssertMsg(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST,
               ("Stream '%s' is not a host stream and therefore has no backend\n", pHstStream->szName));
 
@@ -449,13 +452,13 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
                                              const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
-    if (!cbBuf)
+    if (   !pStream
+        || !cbBuf)
     {
         if (pcbWritten)
             *pcbWritten = 0;
@@ -675,8 +678,10 @@ static DECLCALLBACK(uint32_t) drvAudioStreamRelease(PPDMIAUDIOCONNECTOR pInterfa
 static DECLCALLBACK(int) drvAudioStreamIterate(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcData is optional. */
+
+    if (!pStream)
+        return VINF_SUCCESS;
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
@@ -1331,7 +1336,7 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
 static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
 {
     AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDrvIns,    VERR_INVALID_POINTER);
 
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     LogFlowFunc(("pThis=%p, pDrvIns=%p\n", pThis, pDrvIns));
@@ -1364,7 +1369,11 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     if (!pStream)
-        return VERR_NOT_AVAILABLE;
+    {
+        if (pcbRead)
+            *pcbRead = 0;
+        return VINF_SUCCESS;
+    }
 
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf,    VERR_INVALID_PARAMETER);
@@ -1618,7 +1627,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
             if (!pThis->cStreamsFreeOut)
             {
                 LogFlowFunc(("Maximum number of host output streams reached\n"));
-                RC_BREAK(VERR_NO_MORE_HANDLES); /** @todo Fudge! */
+                RC_BREAK(VERR_AUDIO_NO_FREE_OUTPUT_STREAMS);
             }
 
             /* Validate backend configuration. */
@@ -1872,12 +1881,13 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     if (!pHstStream)
         return VINF_SUCCESS;
 
+    AssertPtr(pThis->pHostDrvAudio);
+    AssertMsg(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST,
+              ("Stream '%s' is not a host stream and therefore has no backend\n", pHstStream->szName));
+
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("%s: fStatus=0x%x\n", pHstStream->szName, pHstStream->fStatus));
-
-    AssertMsg(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST,
-              ("Stream '%s' is not a host stream and therefore has no backend\n", pHstStream->szName));
 
     if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_INITIALIZED)
     {
@@ -1919,8 +1929,11 @@ static int drvAudioStreamDestroyInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     }
 
     int rc = drvAudioStreamControlInternal(pThis, pGstStream, PDMAUDIOSTREAMCMD_DISABLE);
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && pThis->pHostDrvAudio)
+    {
         rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
+    }
 
     if (RT_SUCCESS(rc))
     {

@@ -1431,7 +1431,28 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostALSAAudioStreamGetStatus(PPDMIHOSTAU
     NOREF(pInterface);
     NOREF(pStream);
 
-    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
+    PDMAUDIOSTRMSTS strmSts =   PDMAUDIOSTRMSTS_FLAG_INITIALIZED
+                              | PDMAUDIOSTRMSTS_FLAG_ENABLED;
+
+    if (pStream->enmDir == PDMAUDIODIR_IN)
+    {
+
+    }
+    else
+    {
+        PALSAAUDIOSTREAMOUT pStreamOut = (PALSAAUDIOSTREAMOUT)pStream;
+
+        snd_pcm_sframes_t cAvail;
+        int rc2 = alsaStreamGetAvail(pStreamOut->phPCM, &cAvail);
+        if (   RT_SUCCESS(rc2)
+            && cAvail >= 1024) /** @todo !!! HACK ALERT !!! Use bufsize. */
+        {
+            LogFlowFunc(("cAvail=%ld\n", cAvail));
+            strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+        }
+    }
+
+    return strmSts;
 }
 
 static DECLCALLBACK(int) drvHostALSAAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)

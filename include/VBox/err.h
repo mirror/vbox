@@ -2747,9 +2747,9 @@
 /** No free input streams.  */
 #define VERR_AUDIO_NO_FREE_INPUT_STREAMS            (-6601)
 /** No free output streams.  */
-#define VERR_AUDIO_NO_FREE_OUTPUT_STREAMS           (-6603)
+#define VERR_AUDIO_NO_FREE_OUTPUT_STREAMS           (-6602)
 /** Pending stream disable operation in progress.  */
-#define VERR_AUDIO_STREAM_PENDING_DISABLE           (-6604)
+#define VERR_AUDIO_STREAM_PENDING_DISABLE           (-6603)
 /** @} */
 
 

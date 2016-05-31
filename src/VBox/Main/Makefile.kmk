@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2004-2015 Oracle Corporation
+# Copyright (C) 2004-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -270,10 +270,11 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_HEADLESS),VBOX_WITH_HEADLESS,) \
 	$(if $(VBOX_WITH_QTGUI),VBOX_WITH_QTGUI,) \
 	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
+	$(if $(VBOX_WITH_OSS),VBOX_WITH_OSS,) \
 	$(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA,) \
 	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,) \
+	$(if $(VBOX_WITH_VRDE_AUDIO),VBOX_WITH_VRDE_AUDIO,) \
 	$(if $(VBOX_WITH_WINMM),VBOX_WITH_WINMM,) \
-	$(if $(VBOX_WITH_SOLARIS_OSS),VBOX_WITH_SOLARIS_OSS,) \
 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO,) \
 	$(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,) \
@@ -639,10 +640,10 @@ VBoxC_DEFS = \
 	$(VBOX_MAIN_DEFS) \
 	VBOX_COM_INPROC \
 	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
+	$(if $(VBOX_WITH_OSS),VBOX_WITH_OSS,) \
 	$(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA,) \
 	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,) \
 	$(if $(VBOX_WITH_WINMM),VBOX_WITH_WINMM,) \
-	$(if $(VBOX_WITH_SOLARIS_OSS),VBOX_WITH_SOLARIS_OSS,) \
 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO,) \
 	$(if $(VBOX_WITH_EFI),VBOX_WITH_EFI,) \
