@@ -499,7 +499,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     rc = AudioMixBufWriteCirc(&pGstStream->MixBuf, pvBuf, cbBuf, &cWritten);
     if (rc == VINF_BUFFER_OVERFLOW)
     {
-        LogRel2(("Audio: Lost audio samples from guest stream '%s' (only %zu / %zu bytes written), expect stuttering audio output\n"
+        LogRel2(("Audio: Lost audio samples from guest stream '%s' (only %zu / %zu bytes written), expect stuttering audio output\n",
                  pGstStream->szName, AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritten), cbBuf));
         rc = VINF_SUCCESS;
     }
