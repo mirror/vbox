@@ -273,7 +273,6 @@ AssertCompileMemberAlignment(IOAPIC, au64RedirTable, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-
 #if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
 /**
  * Gets the arbitration register.
@@ -763,6 +762,124 @@ PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 
 
 #ifdef IN_RING3
+/** @interface_method_impl{DBGFREGDESC,pfnGet} */
+static DECLCALLBACK(int) ioapicDbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+{
+    pValue->u32 = ioapicGetIndex(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnSet} */
+static DECLCALLBACK(int) ioapicDbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
+{
+    ioapicSetIndex(PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u8);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnGet} */
+static DECLCALLBACK(int) ioapicDbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+{
+    pValue->u32 = ioapicGetData((PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC)));
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnSet} */
+static DECLCALLBACK(int) ioapicDbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
+{
+     ioapicSetData(PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32);
+     return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnGet} */
+static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+{
+    pValue->u32 = ioapicGetVersion();
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnGet} */
+static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+{
+#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
+    pValue->u32 = ioapicGetArb(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
+#else
+    pValue->u32 = UINT32_C(0xffffffff);
+#endif
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnGet} */
+static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+{
+    PCIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
+    pValue->u64 = ioapicGetRedirTableEntry(pThis, pDesc->offRegister);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{DBGFREGDESC,pfnSet} */
+static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue,
+                                                         PCDBGFREGVAL pfMask)
+{
+    PIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
+    ioapicSetRedirTableEntry(pThis, pDesc->offRegister, pValue->u64);
+    return VINF_SUCCESS;
+}
+
+/** IOREDTBLn sub fields. */
+static DBGFREGSUBFIELD const g_aRteSubs[] =
+{
+    { "vector",       0,   8,  0,  0, NULL, NULL },
+    { "dlvr_mode",    8,   3,  0,  0, NULL, NULL },
+    { "dest_mode",    11,  1,  0,  0, NULL, NULL },
+    { "dlvr_status",  12,  1,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
+    { "polarity",     13,  1,  0,  0, NULL, NULL },
+    { "remote_irr",   14,  1,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
+    { "trigger_mode", 15,  1,  0,  0, NULL, NULL },
+    { "mask",         16,  1,  0,  0, NULL, NULL },
+#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_ICH9
+    { "ext_dest_id",  48,  8,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
+#endif
+    { "dest",         56,  8,  0,  0, NULL, NULL },
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+/** Register descriptors for DBGF. */
+static DBGFREGDESC const g_aRegDesc[] =
+{
+    { "index",      DBGFREG_END, DBGFREGVALTYPE_U8,  0,  0, ioapicDbgReg_GetIndex, ioapicDbgReg_SetIndex,    NULL, NULL },
+    { "data",       DBGFREG_END, DBGFREGVALTYPE_U32, 0,  0, ioapicDbgReg_GetData,  ioapicDbgReg_SetData,     NULL, NULL },
+    { "version",    DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_GetVersion, NULL, NULL, NULL },
+#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
+    { "arb",        DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_GetArb,     NULL, NULL, NULL },
+#endif
+    { "rte0",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  0, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte1",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  1, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte2",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  2, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte3",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  3, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte4",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  4, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte5",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  5, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte6",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  6, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte7",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  7, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte8",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  8, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte9",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  9, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte10",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 10, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte11",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 11, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte12",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 12, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte13",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 13, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte14",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 14, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte15",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 15, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte16",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 16, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte17",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 17, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte18",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 18, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte19",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 19, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte20",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 20, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte21",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 21, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte22",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 22, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    { "rte23",      DBGFREG_END, DBGFREGVALTYPE_U64, 0, 23, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
+    DBGFREGDESC_TERMINATOR()
+};
+
+
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
@@ -1038,11 +1155,11 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = PDMDevHlpDBGFInfoRegister(pDevIns, "ioapic", "Display IO APIC state.", ioapicR3DbgInfo);
     AssertRCReturn(rc, rc);
 
-    /** @todo register manipulation via DBGF. */
-#if 0
+    /*
+     * Register debugger register access.
+     */
     rc = PDMDevHlpDBGFRegRegister(pDevIns, g_aRegDesc); AssertRC(rc);
     AssertRCReturn(rc, rc);
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /*
