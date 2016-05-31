@@ -516,7 +516,7 @@ class TestSetLogic(ModelLogicBase):
                           'FROM     TestResults\n'
                           'WHERE    idTestSet = %s\n'
                           '     AND enmStatus = \'running\'::TestStatus_T\n'
-                          'ORDER BY idTestResult\n'
+                          'ORDER BY idTestResult DESC\n'
                           'LIMIT    1\n'
                           % ( oTestSet.idTestSet, ));
         if self._oDb.getRowCount() < 1:
