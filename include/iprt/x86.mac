@@ -40,6 +40,8 @@
 %define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
 %define X86_EFL_POPF_BITS       (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
                                  | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID )
+%define X86_EFL_POPF_BITS_386   (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
+                                 | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT )
 %define X86_EFL_STATUS_BITS     ( X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF )
 %ifndef VBOX_FOR_DTRACE_LIB
 %else
@@ -122,9 +124,11 @@
 %define X86_CPUID_MWAIT_ECX_BREAKIRQIF0    RT_BIT_32(1)
 %define X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE          RT_BIT_32(0)
 %define X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT_32(1)
+%define X86_CPUID_STEXT_FEATURE_EBX_SGX               RT_BIT_32(2)
 %define X86_CPUID_STEXT_FEATURE_EBX_BMI1              RT_BIT_32(3)
 %define X86_CPUID_STEXT_FEATURE_EBX_HLE               RT_BIT_32(4)
 %define X86_CPUID_STEXT_FEATURE_EBX_AVX2              RT_BIT_32(5)
+%define X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY   RT_BIT_32(6)
 %define X86_CPUID_STEXT_FEATURE_EBX_SMEP              RT_BIT_32(7)
 %define X86_CPUID_STEXT_FEATURE_EBX_BMI2              RT_BIT_32(8)
 %define X86_CPUID_STEXT_FEATURE_EBX_ERMS              RT_BIT_32(9)
@@ -326,6 +330,8 @@
  %define MSR_IA32_APICBASE_EXTD             RT_BIT_64(10)
  %define MSR_IA32_APICBASE_BSP              RT_BIT_64(8)
  %define MSR_IA32_APICBASE_BASE_MIN         0x0000000ffffff000
+ %define MSR_IA32_APICBASE_ADDR             0x00000000fee00000
+ %define MSR_IA32_APICBASE_GET_ADDR(a_Msr)  ((a_Msr) & X86_PAGE_4K_BASE_MASK)
 %endif
 %define MSR_CORE_THREAD_COUNT               0x35
 %define MSR_IA32_FEATURE_CONTROL            0x3A
@@ -411,6 +417,10 @@
 %define IA32_MTRR_FIX4K_F0000               0x26e
 %define IA32_MTRR_FIX4K_F8000               0x26f
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
+%define MSR_IA32_PERF_GLOBAL_STATUS         0x38E
+%define MSR_IA32_PERF_GLOBAL_CTRL           0x38F
+%define MSR_IA32_PERF_GLOBAL_OVF_CTRL       0x390
+%define MSR_IA32_PEBS_ENABLE                0x3F1
 %define MSR_IA32_MC0_CTL                    0x400
 %define MSR_IA32_MC0_STATUS                 0x401
 %define MSR_IA32_VMX_BASIC_INFO             0x480
@@ -530,6 +540,11 @@
 %define X86_PG_PAE_PDPE_ENTRIES             4
 %define X86_PG_AMD64_ENTRIES                X86_PG_PAE_ENTRIES
 %define X86_PG_AMD64_PDPE_ENTRIES           X86_PG_AMD64_ENTRIES
+%define X86_PAGE_SIZE                       X86_PAGE_4K_SIZE
+%define X86_PAGE_SHIFT                      X86_PAGE_4K_SHIFT
+%define X86_PAGE_OFFSET_MASK                X86_PAGE_4K_OFFSET_MASK
+%define X86_PAGE_BASE_MASK                  X86_PAGE_4K_BASE_MASK
+%define X86_PAGE_BASE_MASK_32               X86_PAGE_4K_BASE_MASK_32
 %define X86_PAGE_4K_SIZE                    _4K
 %define X86_PAGE_4K_SHIFT                   12
 %define X86_PAGE_4K_OFFSET_MASK             0xfff
