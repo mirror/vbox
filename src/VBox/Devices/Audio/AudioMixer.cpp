@@ -906,7 +906,10 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
             LogFlowFunc(("%s: Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
 
         if (cbProcessed < cbBuf)
-            LogFlowFunc(("%s: Only written %RU32/%RU32 bytes\n", pSink->pszName, pMixStream->pStream->szName, cbProcessed, cbBuf));
+        {
+            LogFlowFunc(("%s: Only written %RU32/%RU32 bytes for stream '%s'\n",
+                         pSink->pszName, cbProcessed, cbBuf, pMixStream->pStream->szName));
+        }
     }
 
     /* Set dirty bit. */
