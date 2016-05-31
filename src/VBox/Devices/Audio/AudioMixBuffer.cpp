@@ -42,8 +42,6 @@
 #include <iprt/mem.h>
 #include <iprt/string.h> /* For RT_BZERO. */
 
-#define VBOX_AUDIO_TESTCASE
-
 #ifdef VBOX_AUDIO_TESTCASE
 # define LOG_ENABLED
 # include <iprt/stream.h>
@@ -1625,7 +1623,10 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc = VINF_SUCCESS;
 
     if (offSamples + cToWrite > pMixBuf->cSamples)
+    {
+        RT_BREAKPOINT();
         rc = VINF_BUFFER_OVERFLOW;
+    }
 
     cToWrite = RT_MIN(cToWrite, pMixBuf->cSamples - offSamples);
 
