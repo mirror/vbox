@@ -2622,10 +2622,7 @@ class TestDriver(base.TestDriver):                                              
 
         # Add the guest OS log if it has been requested and taken successfully.
         if sOsKernelLog is not None:
-            if reporter.testErrorCount() > 0:
-                reporter.addLogString(sOsKernelLog, 'kern.log', 'log/guest/kernel/failure', 'Guest OS kernel log');
-            else:
-                reporter.addLogString(sOsKernelLog, 'kern.log', 'log/guest/kernel/success', 'Guest OS kernel log');
+            reporter.addLogString(sOsKernelLog, 'kernel.log', 'log/guest/kernel', 'Guest OS kernel log');
 
         return fRc;
 

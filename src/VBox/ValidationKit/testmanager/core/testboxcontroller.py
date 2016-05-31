@@ -707,6 +707,7 @@ class TestBoxController(object): # pylint: disable=R0903
                           'log/debug/client',
                           'log/installer',
                           'log/uninstaller',
+                          'log/guest/kernel',
                           'crash/report/vm',
                           'crash/dump/vm',
                           'crash/report/svc',
