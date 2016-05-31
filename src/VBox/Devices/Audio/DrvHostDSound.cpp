@@ -2240,6 +2240,17 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO
     return strmSts;
 }
 
+static DECLCALLBACK(int) drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* Nothing to do here for DSound. */
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTDSOUND pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDSOUND);

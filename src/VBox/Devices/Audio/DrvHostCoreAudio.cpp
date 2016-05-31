@@ -2170,6 +2170,17 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAU
     return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
+static DECLCALLBACK(int) drvHostCoreAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+{
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* Nothing to do here for Core Audio. */
+    return VINF_SUCCESS;
+}
+
 static DECLCALLBACK(void) drvHostCoreAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {
     NOREF(pInterface);
