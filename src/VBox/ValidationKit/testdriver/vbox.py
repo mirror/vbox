@@ -1523,9 +1523,9 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('      Whether to always upload log files, or only do so on failure.');
         reporter.log('  --vbox-always-upload-screenshots');
         reporter.log('      Whether to always upload final screen shots, or only do so on failure.');
-        reporter.log('  --debugger, --no-debugger');
+        reporter.log('  --vbox-debugger, --no-vbox-debugger');
         reporter.log('      Enables the VBox debugger, port at 5000');
-        reporter.log('      Default: --debugger');
+        reporter.log('      Default: --vbox-debugger');
         if self.oTestVmSet is not None:
             self.oTestVmSet.showUsage();
         return rc;
@@ -1627,9 +1627,9 @@ class TestDriver(base.TestDriver):                                              
             self.fAlwaysUploadLogs = True;
         elif asArgs[iArg] == '--vbox-always-upload-screenshots':
             self.fAlwaysUploadScreenshots = True;
-        elif asArgs[iArg] == '--debugger':
+        elif asArgs[iArg] == '--vbox-debugger':
             self.fEnableDebugger = True;
-        elif asArgs[iArg] == '--no-debugger':
+        elif asArgs[iArg] == '--no-vbox-debugger':
             self.fEnableDebugger = False;
         else:
             # Relevant for selecting VMs to test?
