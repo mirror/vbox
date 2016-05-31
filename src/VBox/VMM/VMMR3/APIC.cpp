@@ -171,6 +171,7 @@ static void apicR3InitIpi(PVMCPU pVCpu)
     RT_ZERO(pXApicPage->icr_lo);
     RT_ZERO(pXApicPage->ldr);
     RT_ZERO(pXApicPage->tpr);
+    RT_ZERO(pXApicPage->ppr);
     RT_ZERO(pXApicPage->timer_icr);
     RT_ZERO(pXApicPage->timer_ccr);
     RT_ZERO(pXApicPage->timer_dcr);
