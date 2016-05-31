@@ -2372,6 +2372,32 @@ class SessionWrapper(TdTaskBase):
         return True
 
     #
+    # IMachineDebugger wrappers.
+    #
+
+    def queryOsKernelLog(self):
+        """
+        Tries to get the OS kernel log using the VM debugger interface.
+
+        Returns string containing the kernel log on success.
+        Returns None on failure.
+        """
+        try:
+            sPluginsLoaded = self.o.console.debugger.loadPlugIn('all');
+            if sPluginsLoaded == 'all':
+                sOsDetected = self.o.console.debugger.detectOS();
+                if sOsDetected is not None:
+                    sOsKernelLog = self.o.console.debugger.queryOSKernelLog(0);
+            else:
+                reporter.log('Unable to load debugger plugins');
+                return None;
+        except:
+            reporter.logXcpt('Unable to query the OS kernel log');
+            return None;
+
+        return sOsKernelLog;
+
+    #
     # Other methods.
     #
 

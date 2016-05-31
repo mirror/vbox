@@ -169,6 +169,14 @@ class ReporterBase(object):
         _ = oSrcFile; _ = sSrcFilename; _ = sAltName; _ = sDescription; _ = sKind; _ = sCaller; _ = sTsPrf;
         return True;
 
+    def addLogString(self, sLog, sLogName, sAltName, sDescription, sKind, sCaller, sTsPrf):
+        """
+        Adds the file to the report.
+        Returns True on success, False on failure.
+        """
+        _ = sLog; _ = sLogName; _ = sAltName; _ = sDescription; _ = sKind; _ = sCaller; _ = sTsPrf;
+        return True;
+
     #
     # Test reporting
     #
@@ -464,6 +472,36 @@ class LocalReporter(ReporterBase):
         _ = sAltName;
         return fRc;
 
+    def addLogString(self, sLog, sLogName, sAltName, sDescription, sKind, sCaller, sTsPrf):
+        # Figure the destination filename.
+        iOtherFile = self.iOtherFile;
+        self.iOtherFile += 1;
+        sDstFilename = os.path.join(self.sLogDir, 'other-%d-%s.log' \
+                                    % (iOtherFile, os.path.splitext(os.path.basename(sLogName))[0]));
+        self.log(0, '** Other log file: %s - %s (%s)' % (sDstFilename, sDescription, sLogName), sCaller, sTsPrf);
+
+        # Open the destination file and copy over the data.
+        fRc = True;
+        try:
+            oDstFile = utils.openNoInherit(sDstFilename, 'w');
+        except Exception, oXcpt:
+            self.log(0, 'error opening %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
+        else:
+            try:
+                oDstFile.write(sLog);
+            except Exception, oXcpt:
+                fRc = False;
+                self.log(0, 'error writing %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
+
+            oDstFile.close();
+
+            # Leave a mark in the XML log.
+            self._xmlWrite(['<LogFile timestamp="%s" filename="%s" source="%s" kind="%s" ok="%s">%s</LogFile>\n'
+                % (utils.getIsoTimestamp(), self._xmlEscAttr(os.path.basename(sDstFilename)), self._xmlEscAttr(sLogName), \
+                   self._xmlEscAttr(sKind), fRc, self._xmlEscAttr(sDescription))] );
+        _ = sAltName;
+        return fRc;
+
     def subXmlStart(self, oFileWrapper):
         # Open a new file and just include it from the main XML.
         iSubXml = self.iSubXml;
@@ -681,6 +719,45 @@ class RemoteReporter(ReporterBase):
 
         return False;
 
+    def _doUploadString(self, sSrc, sSrcName, sDescription, sKind, sMime):
+        """ Uploads the given string as a separate file to the test manager. """
+
+        # Prepare header and url.
+        dHeader = dict(self._dHttpHeader);
+        dHeader['Content-Type'] = 'application/octet-stream';
+        self._writeOutput('%s: _doUploadString: sHeader=%s' % (utils.getTimePrefix(), dHeader,));
+        self._writeOutput('%s: _doUploadString: size=%d' % (utils.getTimePrefix(), sys.getsizeof(sSrc),));
+
+        from common import constants;
+        sUrl = self._sTmServerPath + '&' \
+             + self._fnUrlEncode({ constants.tbreq.UPLOAD_PARAM_NAME: os.path.basename(sSrcName),
+                                   constants.tbreq.UPLOAD_PARAM_DESC: sDescription,
+                                   constants.tbreq.UPLOAD_PARAM_KIND: sKind,
+                                   constants.tbreq.UPLOAD_PARAM_MIME: sMime,
+                                   constants.tbreq.ALL_PARAM_ACTION:  constants.tbreq.UPLOAD,
+                                });
+
+        # Retry loop.
+        secStart = utils.timestampSecond();
+        while True:
+            try:
+                oConn = self._fnTmConnect();
+                oConn.request('POST', sUrl, sSrc, dHeader);
+                fRc = self._processTmStatusResponse(oConn, '_doUploadString', fClose = True);
+                oConn.close();
+                if fRc is not None:
+                    return fRc;
+            except:
+                logXcpt('warning: exception during UPLOAD request');
+
+            if utils.timestampSecond() - secStart >= self.kcSecTestManagerRetryTimeout:
+                self._writeOutput('%s: _doUploadString: Timed out.' % (utils.getTimePrefix(),));
+                break;
+            self._writeOutput('%s: _doUploadString: Retrying...' % (utils.getTimePrefix(), ));
+            time.sleep(2);
+
+        return False;
+
     def _xmlDoFlush(self, asXml, fRetry = False, fDtor = False):
         """
         The code that does the actual talking to the server.
@@ -756,6 +833,20 @@ class RemoteReporter(ReporterBase):
         else:
             self.log(0, '*** UNKNOWN FILE "%s" - KIND "%s" - DESC "%s" ***'
                      % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
+        return fRc;
+
+    def addLogString(self, sLog, sLogName, sAltName, sDescription, sKind, sCaller, sTsPrf):
+        fRc = True;
+        if sKind in [ 'text', 'log', ]  or  sKind.startswith('log/'):
+            self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
+                        % (sLogName, sKind, sDescription),  sCaller, sTsPrf);
+            self.xmlFlush();
+            g_oLock.release();
+            self._doUploadString(sLog, sAltName, sDescription, sKind, 'text/plain');
+            g_oLock.acquire();
+        else:
+            self.log(0, '*** UNKNOWN FILE "%s" - KIND "%s" - DESC "%s" ***'
+                     % (sLogName, sKind, sDescription),  sCaller, sTsPrf);
         return fRc;
 
     def xmlFlush(self, fRetry = False, fForce = False):
@@ -1220,6 +1311,28 @@ def addLogFile(sFilename, sKind, sDescription = '', sAltName = None):
         fRc = g_oReporter.addLogFile(oSrcFile, sFilename, sAltName, sDescription, sKind, sCaller, sTsPrf);
         g_oLock.release();
         oSrcFile.close();
+    return fRc;
+
+def addLogString(sLog, sLogName, sKind, sDescription = ''):
+    """
+    Adds the specified log string to the report.
+
+    The sLog parameter sets the name of the log file.
+
+    The sDescription is a free form description of the log file.
+
+    The sKind parameter is for adding some machine parsable hint what kind of
+    log file this really is.
+
+    Returns True on success, False on failure (no ENOENT errors are logged).
+    """
+    sTsPrf  = utils.getTimePrefix();
+    sCaller = utils.getCallerName();
+    fRc     = False;
+
+    g_oLock.acquire();
+    fRc = g_oReporter.addLogString(sLog, sLogName, None, sDescription, sKind, sCaller, sTsPrf);
+    g_oLock.release();
     return fRc;
 
 def isLocal():

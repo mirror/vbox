@@ -800,6 +800,7 @@ class TestDriver(base.TestDriver):                                              
         self.sVBoxBootSectors   = None;
         self.fAlwaysUploadLogs  = False;
         self.fAlwaysUploadScreenshots = False;
+        self.fEnableDebugger          = True;
 
         # Quietly detect build and validation kit.
         self._detectBuild(False);
@@ -1522,6 +1523,9 @@ class TestDriver(base.TestDriver):                                              
         reporter.log('      Whether to always upload log files, or only do so on failure.');
         reporter.log('  --vbox-always-upload-screenshots');
         reporter.log('      Whether to always upload final screen shots, or only do so on failure.');
+        reporter.log('  --debugger, --no-debugger');
+        reporter.log('      Enables the VBox debugger, port at 5000');
+        reporter.log('      Default: --debugger');
         if self.oTestVmSet is not None:
             self.oTestVmSet.showUsage();
         return rc;
@@ -1623,6 +1627,10 @@ class TestDriver(base.TestDriver):                                              
             self.fAlwaysUploadLogs = True;
         elif asArgs[iArg] == '--vbox-always-upload-screenshots':
             self.fAlwaysUploadScreenshots = True;
+        elif asArgs[iArg] == '--debugger':
+            self.fEnableDebugger = True;
+        elif asArgs[iArg] == '--no-debugger':
+            self.fEnableDebugger = False;
         else:
             # Relevant for selecting VMs to test?
             if self.oTestVmSet is not None:
@@ -2123,6 +2131,8 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setFirmwareType(vboxcon.FirmwareType_BIOS);
             elif sFirmwareType == 'efi':
                 fRc = oSession.setFirmwareType(vboxcon.FirmwareType_EFI);
+            if fRc and self.fEnableDebugger:
+                fRc = oSession.setExtraData('VBoxInternal/DBGC/Enabled', '1');
 
             if fRc: fRc = oSession.saveSettings();
             if not fRc:   oSession.discardSettings(True);
@@ -2526,12 +2536,19 @@ class TestDriver(base.TestDriver):                                              
         #
         # Take Screenshot and upload it (see below) to Test Manager if appropriate/requested.
         #
-        sLastScreenshotPath = None
+        sLastScreenshotPath = None;
         if fTakeScreenshot is True  or  self.fAlwaysUploadScreenshots  or  reporter.testErrorCount() > 0:
-            sLastScreenshotPath = os.path.join(self.sScratchPath, "LastScreenshot-%s.png" % oSession.sName)
-            fRc = oSession.takeScreenshot(sLastScreenshotPath)
+            sLastScreenshotPath = os.path.join(self.sScratchPath, "LastScreenshot-%s.png" % oSession.sName);
+            fRc = oSession.takeScreenshot(sLastScreenshotPath);
             if fRc is not True:
-                sLastScreenshotPath = None
+                sLastScreenshotPath = None;
+
+        #
+        # Query the OS kernel log from the debugger if appropriate/requested.
+        #
+        sOsKernelLog = None;
+        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+            sOsKernelLog = oSession.queryOsKernelLog();
 
         #
         # Terminate the VM
@@ -2602,6 +2619,13 @@ class TestDriver(base.TestDriver):                                              
                 reporter.addLogFile(sLastScreenshotPath, 'screenshot/failure', 'Last VM screenshot');
             else:
                 reporter.addLogFile(sLastScreenshotPath, 'screenshot/success', 'Last VM screenshot');
+
+        # Add the guest OS log if it has been requested and taken successfully.
+        if sOsKernelLog is not None:
+            if reporter.testErrorCount() > 0:
+                reporter.addLogString(sOsKernelLog, 'kern.log', 'log/guest/kernel/failure', 'Guest OS kernel log');
+            else:
+                reporter.addLogString(sOsKernelLog, 'kern.log', 'log/guest/kernel/success', 'Guest OS kernel log');
 
         return fRc;
 
