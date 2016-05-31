@@ -29,6 +29,69 @@
  * world switcher (@see pg_vmm).
  *
  * @see grp_cpum
+ *
+ * @section sec_cpum_fpu        FPU / SSE / AVX / ++ state.
+ *
+ * TODO: proper write up, currently just some notes.
+ *
+ * The ring-0 FPU handling per OS:
+ *
+ *      - 64-bit Windows uses XMM registers in the kernel as part of the calling
+ *        convention (Visual C++ doesn't seem to have a way to disable
+ *        generating such code either), so CR0.TS/EM are always zero from what I
+ *        can tell.  We are also forced to always load/save the guest XMM0-XMM15
+ *        registers when entering/leaving guest context.  Interrupt handlers
+ *        using FPU/SSE will offically have call save and restore functions
+ *        exported by the kernel, if the really really have to use the state.
+ *
+ *      - 32-bit windows does lazy FPU handling, I think, probably including
+ *        lazying saving.  The Windows Internals book states that it's a bad
+ *        idea to use the FPU in kernel space. However, it looks like it will
+ *        restore the FPU state of the current thread in case of a kernel \#NM.
+ *        Interrupt handlers should be same as for 64-bit.
+ *
+ *      - Darwin allows taking \#NM in kernel space, restoring current thread's
+ *        state if I read the code correctly.  It saves the FPU state of the
+ *        outgoing thread, and uses CR0.TS to lazily load the state of the
+ *        incoming one.  No idea yet how the FPU is treated by interrupt
+ *        handlers, i.e. whether they are allowed to disable the state or
+ *        something.
+ *
+ *      - Linux also allows \#NM in kernel space (don't know since when), and
+ *        uses CR0.TS for lazy loading.  Saves outgoing thread's state, lazy
+ *        loads the incoming unless configured to agressivly load it.  Interrupt
+ *        handlers can ask whether they're allowed to use the FPU, and may
+ *        freely trash the state if Linux thinks it has saved the thread's state
+ *        already.  This is a problem.
+ *
+ *      - Solaris will, from what I can tell, panic if it gets an \#NM in kernel
+ *        context.  When switching threads, the kernel will save the state of
+ *        the outgoing thread and lazy load the incoming one using CR0.TS.
+ *        There are a few routines in seeblk.s which uses the SSE unit in ring-0
+ *        to do stuff, HAT are among the users.  The routines there will
+ *        manually clear CR0.TS and save the XMM registers they use only if
+ *        CR0.TS was zero upon entry.  They will skip it when not, because as
+ *        mentioned above, the FPU state is saved when switching away from a
+ *        thread and CR0.TS set to 1, so when CR0.TS is 1 there is nothing to
+ *        preserve.  This is a problem if we restore CR0.TS to 1 after loading
+ *        the guest state.
+ *
+ *      - FreeBSD - no idea yet.
+ *
+ *      - OS/2 does not allow \#NMs in kernel space IIRC.  Does lazy loading,
+ *        possibly also lazy saving.  Interrupts must preserve the CR0.TS+EM &
+ *        FPU states.
+ *
+ * Up to r107425 (2016-05-24) we would only temporarily modify CR0.TS/EM while
+ * saving and restoring the host and guest states.  The motivation for this
+ * change is that we want to be able to emulate SSE instruction in ring-0 (IEM).
+ *
+ * Starting with that change, we will leave CR0.TS=EM=0 after saving the host
+ * state and only restore it once we've restore the host FPU state. This has the
+ * accidental side effect of triggering Solaris to preserve XMM registers in
+ * sseblk.s. When CR0 was changed by saving the FPU state, CPUM must now inform
+ * the VT-x (HMVMX) code about it as it caches the CR0 value in the VMCS.
+ *
  */
 
 
