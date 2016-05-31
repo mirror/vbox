@@ -1017,10 +1017,10 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     LogFlow(("APIC: apicR3LoadExec: uVersion=%u uPass=%#x\n", uVersion, uPass));
 
     /* Weed out invalid versions. */
-    if (    uVersion != APIC_SAVED_STATE_VERSION
-        &&  uVersion != APIC_SAVED_STATE_VERSION_VBOX_50
-        &&  uVersion != APIC_SAVED_STATE_VERSION_VBOX_30
-        &&  uVersion != APIC_SAVED_STATE_VERSION_ANCIENT)
+    if (   uVersion != APIC_SAVED_STATE_VERSION
+        && uVersion != APIC_SAVED_STATE_VERSION_VBOX_50
+        && uVersion != APIC_SAVED_STATE_VERSION_VBOX_30
+        && uVersion != APIC_SAVED_STATE_VERSION_ANCIENT)
     {
         LogRel(("APIC: apicR3LoadExec: Invalid/unrecognized saved-state version %u (%#x)\n", uVersion, uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
