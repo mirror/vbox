@@ -524,6 +524,7 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
 
     @staticmethod
     def _formatName(oTestCaseArgs):
+        """ Internal helper for formatting the testcase name. """
         if oTestCaseArgs.sSubName is not None and len(oTestCaseArgs.sSubName) > 0:
             sName = u'%s / %s'  % ( oTestCaseArgs.oTestCase.sName, oTestCaseArgs.sSubName, );
         else:
