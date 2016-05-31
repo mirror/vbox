@@ -1,0 +1,184 @@
+; $Id$
+;; @file
+; BS3Kit - bs3-fpustate-1, assembly template.
+;
+
+;
+; Copyright (C) 2007-2016 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
+%include "bs3kit-template-header.mac"   ; setup environment
+
+
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
+TMPL_BEGIN_TEXT
+
+
+;;
+; Initializes the FPU state and saves it to pFxState.
+;
+; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_InitState)(X86FXSTATE BS3_FAR *pFxState);
+;
+BS3_PROC_BEGIN_MODE bs3FpuState1_InitState, BS3_PBC_NEAR
+        BS3_CALL_CONV_PROLOG 1
+        push    xBP
+        mov     xBP, xSP
+        push    xBX
+TONLY16 push    ds
+        pushf
+
+        ;
+        ; x87 state.
+        ;
+        fninit
+        fld dword [TMPL_DATA16_WRT(g_r32V1)]
+        fld qword [TMPL_DATA16_WRT(g_r64V1)]
+        fld tword [TMPL_DATA16_WRT(g_r80V1)]
+        fld qword [TMPL_DATA16_WRT(g_r64V1)]
+        fld dword [TMPL_DATA16_WRT(g_r32V2)]
+        fld dword [TMPL_DATA16_WRT(g_r80_QNaNMax)]
+        fld tword [TMPL_DATA16_WRT(g_r80_ThirtyTwo)]
+        fld tword [TMPL_DATA16_WRT(g_r80_SNaNMax)]
+        ;; @todo status regs
+
+
+        ;
+        ; SSE state
+        ;
+        movdqu  xmm0, [TMPL_DATA16_WRT(g_r32_0dot1)]
+        movdqu  xmm1, [TMPL_DATA16_WRT(g_r32_Two)]
+        movdqu  xmm2, [TMPL_DATA16_WRT(g_r32_ThirtyTwo)]
+        movdqu  xmm3, [TMPL_DATA16_WRT(g_r32_ThirtyTwo)]
+        movdqu  xmm4, [TMPL_DATA16_WRT(g_r32_SNaN)]
+        movdqu  xmm5, [TMPL_DATA16_WRT(g_r32_NegQNaN)]
+        movdqu  xmm6, [TMPL_DATA16_WRT(g_r64_Zero)]
+        movdqu  xmm7, [TMPL_DATA16_WRT(g_r64_Two)]
+%if TMPL_BITS == 64
+        movdqu  xmm8, [TMPL_DATA16_WRT(g_r64_Ten)]
+        movdqu  xmm9, [TMPL_DATA16_WRT(g_r64_ThirtyTwo)]
+        movdqu  xmm10, [TMPL_DATA16_WRT(g_r64_Max)]
+        movdqu  xmm11, [TMPL_DATA16_WRT(g_r64_SNaN)]
+        movdqu  xmm12, [TMPL_DATA16_WRT(g_r64_NegQNaN)]
+        movdqu  xmm13, [TMPL_DATA16_WRT(g_r64_QNaNMax)]
+        movdqu  xmm14, [TMPL_DATA16_WRT(g_r64_DnMax)]
+        movdqu  xmm15, [TMPL_DATA16_WRT(g_r80_Eleven)]
+%endif
+
+        ;; @todo status regs
+
+        ;
+        ; Save it.  Note that DS is no longer valid in 16-bit code.
+        ; To be on the safe side, we load and save the state once again.
+        ;
+TONLY16 mov     ds, [xBP + xCB + cbCurRetAddr + 2]
+        mov     xBX, [xBP + xCB + cbCurRetAddr]
+        cli
+%if TMPL_BITS == 64
+        o64 fxsave [xBX]
+        fninit
+        o64 fxrstor [xBX]
+        o64 fxsave [xBX]
+%else
+        fxsave  [xBX]
+        fninit
+        fxrstor [xBX]
+        fxsave  [xBX]
+%endif
+
+.return:
+        popf
+TONLY16 pop     ds
+        pop     xBX
+        mov     xSP, xBP
+        pop     xBP
+        BS3_CALL_CONV_EPILOG 1
+        BS3_HYBRID_RET
+BS3_PROC_END_MODE   bs3FpuState1_InitState
+
+
+;;
+; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_Restore)(X86FXSTATE const BS3_FAR *pFxState);
+;
+BS3_PROC_BEGIN_MODE bs3FpuState1_Restore, BS3_PBC_NEAR
+        push    xBP
+        mov     xBP, xSP
+
+%if TMPL_BITS == 64
+        o64     fxrstor [rcx]
+
+%elif TMPL_BITS == 32
+        mov     eax, [xBP + xCB*2]
+        fxrstor [eax]
+
+%elif TMPL_BITS == 16
+        mov     ax, ds
+        mov     ds, [xBP + xCB + cbCurRetAddr + 2]
+        mov     xBX, [xBP + xCB + cbCurRetAddr]
+        fxrstor [bx]
+        mov     ds, ax
+%else
+ %error TMPL_BITS
+%endif
+
+        mov     xSP, xBP
+        pop     xBP
+        BS3_HYBRID_RET
+BS3_PROC_END_MODE   bs3FpuState1_Restore
+
+;;
+; BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_Save)(X86FXSTATE BS3_FAR *pFxState);
+;
+BS3_PROC_BEGIN_MODE bs3FpuState1_Save, BS3_PBC_NEAR
+        push    xBP
+        mov     xBP, xSP
+
+%if TMPL_BITS == 64
+        o64     fxsave [rcx]
+
+%elif TMPL_BITS == 32
+        mov     eax, [xBP + xCB*2]
+        fxsave  [eax]
+
+%elif TMPL_BITS == 16
+        push    bx
+        push    ds
+        mov     ds, [xBP + xCB + cbCurRetAddr + 2]
+        mov     bx, [xBP + xCB + cbCurRetAddr]
+        fxsave  [bx]
+        pop     ds
+        pop     bx
+%else
+ %error TMPL_BITS
+%endif
+
+        mov     xSP, xBP
+        pop     xBP
+        BS3_HYBRID_RET
+BS3_PROC_END_MODE   bs3FpuState1_Save
+
+
+%include "bs3kit-template-footer.mac"   ; reset environment
+
