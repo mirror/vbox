@@ -1287,6 +1287,28 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 
 #else /* !VBOX_WS_MAC */
 
+# ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+#  ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+#  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
+#  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+    addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+#  endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
+# endif /* VBOX_WS_X11 */
+
     /* 'Preferences' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
     /* Separator after 'Preferences' action of the 'File' menu: */
@@ -1323,6 +1345,28 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     /* Do not touch if filled already: */
     if (!pMenu->isEmpty())
         return;
+
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+#endif /* VBOX_WS_X11 */
 
     /* Populate Machine-menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
@@ -1366,6 +1410,30 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     /* Do not touch if filled already: */
     if (!pMenu->isEmpty())
         return;
+
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
+#endif /* VBOX_WS_X11 */
 
     /* Populate Machine-menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
@@ -1413,6 +1481,18 @@ void UISelectorWindow::prepareMenuGroupStartOrShow(QMenu *pMenu)
     if (!pMenu->isEmpty())
         return;
 
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable));
+#endif /* VBOX_WS_X11 */
+
     /* Populate 'Group' / 'Start or Show' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless));
@@ -1430,6 +1510,18 @@ void UISelectorWindow::prepareMenuMachineStartOrShow(QMenu *pMenu)
     if (!pMenu->isEmpty())
         return;
 
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable));
+#endif /* VBOX_WS_X11 */
+
     /* Populate 'Machine' / 'Start or Show' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless));
@@ -1446,6 +1538,19 @@ void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
     /* Do not touch if filled already: */
     if (!pMenu->isEmpty())
         return;
+
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    // addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown));
+    addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff));
+#endif /* VBOX_WS_X11 */
 
     /* Populate 'Group' / 'Close' menu: */
     // pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach));
@@ -1465,6 +1570,19 @@ void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
     /* Do not touch if filled already: */
     if (!pMenu->isEmpty())
         return;
+
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // There is an issue under Ubuntu which uses special kind of QPA
+    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
+    // directly to Ubuntu Application menu-bar. In that case action
+    // shortcuts are not being handled by the Qt and that way ignored.
+    // As a workaround we can add those actions into QMainWindow as well.
+    // addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff));
+#endif /* VBOX_WS_X11 */
 
     /* Populate 'Machine' / 'Close' menu: */
     // pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach));
