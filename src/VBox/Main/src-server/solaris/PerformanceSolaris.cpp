@@ -401,7 +401,13 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
             ksAdapter = kstat_lookup(mKC, szModule, uInstance, (char *)name);
             if (ksAdapter == 0)
             {
-                LogRel(("Failed to get network statistics for %s\n", name));
+                static uint64_t s_tsLogRelLast;
+                uint64_t tsNow = RTTimeSystemMilliTS();
+                if (tsNow - s_tsLogRelLast > RT_MS_1MIN)
+                {
+                    s_tsLogRelLast = tsNow;
+                    LogRel(("Failed to get network statistics for %s. Max one msg/min.\n", name));
+                }
                 return VERR_INTERNAL_ERROR;
             }
         }
