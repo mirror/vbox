@@ -42,6 +42,8 @@
 #include <iprt/mem.h>
 #include <iprt/string.h> /* For RT_BZERO. */
 
+#define VBOX_AUDIO_TESTCASE
+
 #ifdef VBOX_AUDIO_TESTCASE
 # define LOG_ENABLED
 # include <iprt/stream.h>
@@ -1615,22 +1617,17 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                          uint32_t *pcWritten)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf,   VERR_INVALID_POINTER);
     /* pcWritten is optional. */
 
-    uint32_t cDstSamples = pMixBuf->pParent
-                         ? pMixBuf->pParent->cSamples : pMixBuf->cSamples;
-    uint32_t cLive = pMixBuf->cUsed;
+    uint32_t cToWrite = AUDIOMIXBUF_B2S(pMixBuf, cbBuf);
 
-    uint32_t cDead = cDstSamples - cLive;
-    uint32_t cToProcess = (uint32_t)AUDIOMIXBUF_S2S_RATIO(pMixBuf, cDead);
-    cToProcess = RT_MIN(cToProcess, AUDIOMIXBUF_B2S(pMixBuf, cbBuf));
+    int rc = VINF_SUCCESS;
 
-    AUDMIXBUF_LOG(("%s: offSamples=%RU32, cLive=%RU32, cDead=%RU32, cToProcess=%RU32\n",
-                   pMixBuf->pszName, offSamples, cLive, cDead, cToProcess));
+    if (offSamples + cToWrite > pMixBuf->cSamples)
+        rc = VINF_BUFFER_OVERFLOW;
 
-    if (offSamples + cToProcess > pMixBuf->cSamples)
-        return VERR_BUFFER_OVERFLOW;
+    cToWrite = RT_MIN(cToWrite, pMixBuf->cSamples - offSamples);
 
     PPDMAUDMIXBUF_FN_CONVFROM pConv;
     if (pMixBuf->AudioFmt != enmFmt)
@@ -1642,37 +1639,39 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     }
 
     if (!pConv)
-        return VERR_NOT_SUPPORTED;
+        rc = VERR_NOT_SUPPORTED;
 
-    int rc;
     uint32_t cWritten;
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
     RTFILE fh;
-    rc = RTFileOpen(&fh, AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "mixbuf_writeat.pcm",
-                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-    if (RT_SUCCESS(rc))
+    int rc2 = RTFileOpen(&fh, AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "mixbuf_writeat.pcm",
+                         RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc2))
     {
-        RTFileWrite(fh, pvBuf, cbBuf, NULL);
+        RTFileWrite(fh, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), NULL);
         RTFileClose(fh);
     }
 #endif
 
-    if (cToProcess)
+    if (   pConv
+        && cToWrite)
     {
-        PDMAUDMIXBUF_CONVOPTS convOpts = { cToProcess, pMixBuf->Volume };
+        PDMAUDMIXBUF_CONVOPTS convOpts = { cToWrite, pMixBuf->Volume };
 
-        cWritten = pConv(pMixBuf->pSamples + offSamples, pvBuf, cbBuf, &convOpts);
-#ifdef DEBUG
-        audioMixBufDbgPrintInternal(pMixBuf);
-#endif
-        rc = cWritten ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Fudge! */
+        cWritten = pConv(pMixBuf->pSamples + offSamples, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), &convOpts);
     }
     else
-    {
         cWritten = 0;
-        rc = VINF_SUCCESS;
-    }
+
+#ifdef DEBUG
+    audioMixBufDbgPrintInternal(pMixBuf);
+#endif
+
+    AUDMIXBUF_LOG(("%s: offSamples=%RU32, cbBuf=%RU32, cToWrite=%RU32 (%zu bytes), cWritten=%RU32 (%zu bytes), rc=%Rrc\n",
+                   pMixBuf->pszName, offSamples, cbBuf,
+                   cToWrite, AUDIOMIXBUF_S2B(pMixBuf, cToWrite),
+                   cWritten, AUDIOMIXBUF_S2B(pMixBuf, cWritten), rc));
 
     if (RT_SUCCESS(rc))
     {
@@ -1680,7 +1679,6 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
             *pcWritten = cWritten;
     }
 
-    AUDMIXBUF_LOG(("cWritten=%RU32, rc=%Rrc\n", cWritten, rc));
     return rc;
 }
 

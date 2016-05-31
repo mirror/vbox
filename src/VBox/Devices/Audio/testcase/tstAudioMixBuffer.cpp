@@ -138,7 +138,8 @@ static int tstSingle(RTTEST hTest)
 
 static int tstParentChild(RTTEST hTest)
 {
-    uint32_t cBufSize = RTRandU32() % 256;
+    uint32_t cSamples = 16;
+    uint32_t cBufSize = RTRandU32Ex(cSamples /* Min */, 256 /* Max */);
 
     PDMAUDIOSTREAMCFG cfg_p =
     {
@@ -204,13 +205,13 @@ static int tstParentChild(RTTEST hTest)
 
     uint32_t cChild1Free     = cBufSize;
     uint32_t cChild1Mixed    = 0;
-    uint32_t cSamplesParent1 = 16;
-    uint32_t cSamplesChild1  = 16;
+    uint32_t cSamplesParent1 = cSamples;
+    uint32_t cSamplesChild1  = cSamples;
 
     uint32_t cChild2Free     = cBufSize;
     uint32_t cChild2Mixed    = 0;
-    uint32_t cSamplesParent2 = 16;
-    uint32_t cSamplesChild2  = 16;
+    uint32_t cSamplesParent2 = cSamples;
+    uint32_t cSamplesChild2  = cSamples;
 
     uint32_t t = RTRandU32() % 1024;
 
