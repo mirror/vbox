@@ -394,7 +394,10 @@ class TestBoxController(object): # pylint: disable=R0903
         #
         # Update the row in TestBoxes if something changed.
         #
-        cPctScratchDiff = (cMbScratch - oTestBox.cMbScratch) * 100 / oTestBox.cMbScratch;
+        if oTestBox.cMbScratch != 0:
+            cPctScratchDiff = (cMbScratch - oTestBox.cMbScratch) * 100 / oTestBox.cMbScratch;
+        else:
+            cPctScratchDiff = 100;
 
         # pylint: disable=R0916
         if   self._sTestBoxAddr != oTestBox.ip \
