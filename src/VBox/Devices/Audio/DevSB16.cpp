@@ -1792,7 +1792,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
             {
                 rc2 = pDrv->pConnector->pfnStreamPlay(pDrv->pConnector, pStream, NULL /* cPlayed */);
                 if (RT_FAILURE(rc2))
-                    LogFlowFunc(("%s: Failed playing stream '%s': %Rrc\n", pStream->szName, rc2));
+                    LogFlowFunc(("%s: Failed playing stream, rc=%Rrc\n", pStream->szName, rc2));
             }
         }
     }
