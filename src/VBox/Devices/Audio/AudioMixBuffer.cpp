@@ -1623,10 +1623,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc = VINF_SUCCESS;
 
     if (offSamples + cToWrite > pMixBuf->cSamples)
-    {
-        RT_BREAKPOINT();
         rc = VINF_BUFFER_OVERFLOW;
-    }
 
     cToWrite = RT_MIN(cToWrite, pMixBuf->cSamples - offSamples);
 
