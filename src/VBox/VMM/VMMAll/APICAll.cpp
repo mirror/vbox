@@ -499,7 +499,7 @@ DECLINLINE(uint32_t) apicClearAllErrors(PVMCPU pVCpu)
  */
 static void apicSignalNextPendingIntr(PVMCPU pVCpu)
 {
-    VMCPU_ASSERT_EMT(pVCpu);
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     if (pXApicPage->svr.u.fApicSoftwareEnable)
