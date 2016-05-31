@@ -1125,6 +1125,14 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 }
 #endif
 
+#ifdef VMM_R0_TOUCH_FPU
+                /*
+                 * Make sure we've got the FPU state loaded so and we don't need to clear
+                 * CR0.TS and get out of sync with the host kernel when loading the guest
+                 * FPU state.  @ref sec_cpum_fpu (CPUM.cpp) and @bugref{4053}.
+                 */
+                CPUMR0TouchHostFpu();
+#endif
                 int  rc;
                 bool fPreemptRestored = false;
                 if (!HMR0SuspendPending())

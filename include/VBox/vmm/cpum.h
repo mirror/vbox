@@ -1486,6 +1486,7 @@ VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);
 VMMR0_INT_DECL(int)     CPUMR0ModuleTerm(void);
 VMMR0_INT_DECL(int)     CPUMR0InitVM(PVM pVM);
 DECLASM(void)           CPUMR0RegisterVCpuThread(PVMCPU pVCpu);
+DECLASM(void)           CPUMR0TouchHostFpu(void);
 VMMR0_INT_DECL(int)     CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int)     CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(bool)    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu);

@@ -71,19 +71,12 @@ SEH64_END_PROLOGUE
         pushf                           ; The darwin kernel can get upset or upset things if an
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
 
-%ifndef CPUM_CAN_USE_FPU_IN_R0
         ;
-        ; In raw-mode context and on systems where the kernel doesn't necessarily
-        ; allow us to use the FPU in ring-0 context, we have to disable FPU traps
-        ; before doing fxsave/xsave here.  (xCX is 0 if no CR0 was necessary.)  We
-        ; leave it like that so IEM can use the FPU/SSE/AVX host CPU features directly.
+        ; We may have to update CR0, indirectly or directly.  We must report any
+        ; changes to the VT-x code.
         ;
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX               ; xCX must be preserved!
-        ;; @todo What about XCR0?
- %ifdef IN_RING0
-        mov     [pCpumCpu + CPUMCPU.Host.cr0Fpu], xCX
- %endif
-%endif
+        CPUMRZ_TOUCH_FPU_CLEAR_CR0_FPU_TRAPS_SET_RC xCX, xAX, pCpumCpu ; xCX is the return value (xAX scratch)
+
         ;
         ; Save the host state (xsave/fxsave will cause thread FPU state to be
         ; loaded on systems where we are allowed to use it in ring-0.
@@ -93,26 +86,13 @@ SEH64_END_PROLOGUE
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM) ; Latter is not necessarily true, but normally yes.
         popf
 
-%ifndef CPUM_CAN_USE_FPU_IN_R0
-        ; Figure the return code.
-        test    ecx, ecx
-        jnz     .modified_cr0
-%endif
-        xor     eax, eax
-.return:
-
+        mov     eax, ecx                ; The return value from above.
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
 %endif
         leave
         ret
-
-%ifndef CPUM_CAN_USE_FPU_IN_R0
-.modified_cr0:
-        mov     eax, VINF_CPUM_HOST_CR0_MODIFIED
-        jmp     .return
-%endif
 %undef pCpumCpu
 %undef pXState
 ENDPROC   cpumRZSaveHostFPUState
@@ -155,7 +135,13 @@ SEH64_END_PROLOGUE
         cli                             ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
 
  %ifdef IN_RC
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX ; xCX must be preserved until CR0 is restored!
+        mov     ecx, cr0                ; ecx = saved cr0
+        test    ecx, X86_CR0_TS | X86_CR0_EM
+        jz      .skip_cr0_write
+        mov     eax, ecx
+        and     eax, ~(X86_CR0_TS | X86_CR0_EM)
+        mov     cr0, ecx
+.skip_cr0_write:
  %endif
 
  %ifndef VBOX_WITH_KERNEL_USING_XMM
@@ -220,7 +206,7 @@ SEH64_END_PROLOGUE
  %ifdef IN_RC
         test    byte [ebp + 0ch], 1     ; fLeaveFpuAccessible
         jz      .no_cr0_restore
-        RESTORE_CR0 xCX
+        CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET ecx
 .no_cr0_restore:
  %endif
         popf
@@ -271,7 +257,12 @@ SEH64_END_PROLOGUE
 
  %ifdef IN_RC
         ; Temporarily grant access to the SSE state. xDX must be preserved until CR0 is restored!
-        SAVE_CR0_CLEAR_FPU_TRAPS xDX, xAX
+        mov     edx, cr0
+        jz      .skip_cr0_write
+        mov     eax, edx
+        and     eax, ~(X86_CR0_TS | X86_CR0_EM)
+        mov     cr0, ecx
+.skip_cr0_write:
  %endif
 
         ;
@@ -297,7 +288,7 @@ SEH64_END_PROLOGUE
  %endif
 
  %ifdef IN_RC
-        RESTORE_CR0 xDX                 ; Restore CR0 if we changed it above.
+        CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET edx  ; Restore CR0 if we changed it above.
  %endif
 
 %endif ; !VBOX_WITH_KERNEL_USING_XMM

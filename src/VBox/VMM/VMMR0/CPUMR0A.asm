@@ -48,8 +48,8 @@ BEGINPROC CPUMR0RegisterVCpuThread
         SEH64_SET_FRAME_xBP 0
 SEH64_END_PROLOGUE
 
-%ifdef CPUM_CAN_USE_FPU_IN_R0
-        movaps  xmm0, xmm0
+%ifdef VMM_R0_TOUCH_FPU
+        movdqa  xmm0, xmm0              ; hope this is harmless.
 %endif
 
 .return:
@@ -59,13 +59,35 @@ SEH64_END_PROLOGUE
 ENDPROC   CPUMR0RegisterVCpuThread
 
 
+%ifdef VMM_R0_TOUCH_FPU
+;;
+; Touches the host FPU state.
+;
+; @uses nothing (well, maybe cr0)
+;
+ALIGNCODE(16)
+BEGINPROC CPUMR0TouchHostFpu
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+SEH64_END_PROLOGUE
+
+        movdqa  xmm0, xmm0              ; Hope this is harmless.
+
+        leave
+        ret
+ENDPROC   CPUMR0TouchHostFpu
+%endif ; VMM_R0_TOUCH_FPU
+
+
 ;;
 ; Saves the host FPU/SSE/AVX state and restores the guest FPU/SSE/AVX state.
 ;
 ; @returns  VINF_SUCCESS (0) or VINF_CPUM_HOST_CR0_MODIFIED. (EAX)
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
-align 16
+ALIGNCODE(16)
 BEGINPROC cpumR0SaveHostRestoreGuestFPUState
         push    xBP
         SEH64_PUSH_xBP
@@ -101,15 +123,7 @@ SEH64_END_PROLOGUE
         test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USED_FPU_HOST
         jnz     .already_saved_host
 
-%ifndef CPUM_CAN_USE_FPU_IN_R0
-        ; On systems where the kernel doesn't necessarily allow us to use the FPU
-        ; in ring-0 context, we have to disable FPU traps before doing fxsave/xsave
-        ; here.  (xCX is 0 if no CR0 was necessary.)  We leave it like that so IEM
-        ; can use the FPU/SSE/AVX host CPU features directly.
-        SAVE_CR0_CLEAR_FPU_TRAPS xCX, xAX
-        mov     [pCpumCpu + CPUMCPU.Host.cr0Fpu], xCX
-        ;; @todo What about XCR0?
-%endif
+        CPUMRZ_TOUCH_FPU_CLEAR_CR0_FPU_TRAPS_SET_RC xCX, xAX, pCpumCpu ; xCX is the return value for VT-x; xAX is scratch.
 
         CPUMR0_SAVE_HOST
 
@@ -156,11 +170,7 @@ SEH64_END_PROLOGUE
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_SINCE_REM | CPUM_USED_FPU_HOST)
         popf
 
-%ifndef CPUM_CAN_USE_FPU_IN_R0
-        test    ecx, ecx
-        jnz     .modified_cr0
-%endif
-        xor     eax, eax
+        mov     eax, ecx
 .return:
 %ifdef RT_ARCH_X86
         pop     esi
@@ -168,12 +178,6 @@ SEH64_END_PROLOGUE
 %endif
         leave
         ret
-
-%ifndef CPUM_CAN_USE_FPU_IN_R0
-.modified_cr0:
-        mov     eax, VINF_CPUM_HOST_CR0_MODIFIED
-        jmp     .return
-%endif
 ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 
 
@@ -182,7 +186,7 @@ ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 ;
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
-align 16
+ALIGNCODE(16)
 BEGINPROC cpumR0SaveGuestRestoreHostFPUState
         push    xBP
         SEH64_PUSH_xBP
@@ -263,12 +267,10 @@ SEH64_END_PROLOGUE
 .load_only_host:
         CPUMR0_LOAD_HOST
 
-%ifndef CPUM_CAN_USE_FPU_IN_R0
         ; Restore the CR0 value we saved in cpumR0SaveHostRestoreGuestFPUState or
         ; in cpumRZSaveHostFPUState.
         mov     xCX, [pCpumCpu + CPUMCPU.Host.cr0Fpu]
-        RESTORE_CR0 xCX
-%endif
+        CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET xCX
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~(CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST)
 
         popf
@@ -290,7 +292,7 @@ ENDPROC   cpumR0SaveGuestRestoreHostFPUState
 ;
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
-align 16
+ALIGNCODE(16)
 BEGINPROC cpumR0RestoreHostFPUState
         ;
         ; Prologue - xAX+xDX must be free for XSAVE/XRSTOR input.
@@ -311,13 +313,12 @@ BEGINPROC cpumR0RestoreHostFPUState
 
         CPUMR0_LOAD_HOST
 
-%ifndef CPUM_CAN_USE_FPU_IN_R0
         ; Restore the CR0 value we saved in cpumR0SaveHostRestoreGuestFPUState or
         ; in cpumRZSaveHostFPUState.
         ;; @todo What about XCR0?
         mov     xCX, [pCpumCpu + CPUMCPU.Host.cr0Fpu]
-        RESTORE_CR0 xCX
-%endif
+        CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET xCX
+
         and     dword [pCpumCpu + CPUMCPU.fUseFlags], ~CPUM_USED_FPU_HOST
         popf
 

@@ -32,36 +32,6 @@
  %define CPUM_IS_AMD64      0
 %endif
 
-;; @def CPUM_CAN_USE_FPU_IN_R0
-; Indicates that we can use the FPU directly in ring-0.
-; Only defined in ring-0.
-%ifdef VBOX_WITH_KERNEL_USING_XMM
- ; Systems using XMM registers as part of their kernel calling convention must
- ; support saving and restoring the state while in ring-0.  64-bit Windows will
- ; always switch the FPU state when context switching.
- %define CPUM_CAN_USE_FPU_IN_R0 1
-%endif
-%ifdef RT_OS_WINDOWS
- ; 32-bit Windows will load the FPU context of the current thread (user land).
- %define CPUM_CAN_USE_FPU_IN_R0 1
-%endif
-%ifdef RT_OS_DARWIN
- ; Intel Darwin kernels will load the FPU context of the current thread (user land).
- ;; @todo we still need to check CR0 and tell HMVMX when CR0 changes!
- ;%define CPUM_CAN_USE_FPU_IN_R0 1
-%endif
-%ifdef RT_OS_LINUX
- ; Intel Linux kernels will load the FPU context of the current thread (user land),
- ; at least that what my LXR research on 2.6.18+ indicates.  It's possible this was
- ; done differently at some point, I seems to recall issues with it ages and ages ago.
- ;; @todo We still need to check CR0 and tell HMVMX when CR0 changes!
- ;%define CPUM_CAN_USE_FPU_IN_R0 1
-%endif
-%ifndef IN_RING0
- %undef CPUM_CAN_USE_FPU_IN_R0
-%endif
-
-
 
 ;;
 ; CPU info
@@ -587,33 +557,73 @@ endstruc
 
 
 ;;
-; Clears CR0.TS and CR0.EM if necessary, saving the previous result.
+; Makes sure we don't trap (#NM) accessing the FPU.
 ;
-; This is used to avoid FPU exceptions when touching the FPU state.
+; In ring-0 this is a bit of work since we may have try convince the host kernel
+; to do the work for us, also, we must report any CR0 changes back to HMR0VMX
+; via the VINF_CPUM_HOST_CR0_MODIFIED status code.
 ;
-; @param    %1      Register to save the old CR0 in (pass to RESTORE_CR0).
-; @param    %2      Temporary scratch register.
-; @uses     EFLAGS, CR0
+; If we end up clearing CR0.TS/EM ourselves in ring-0, we'll save the original
+; value in CPUMCPU.Host.cr0Fpu.  If we don't, we'll store zero there.  (See also
+; CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET.)
 ;
-%macro SAVE_CR0_CLEAR_FPU_TRAPS 2
-        xor     %1, %1
+; In raw-mode we will always have to clear TS and it will be recalculated
+; elsewhere and thus needs no saving.
+;
+; @param    %1          Register to return the return status code in.
+; @param    %2          Temporary scratch register.
+; @param    %3          Ring-0 only, register pointing to the CPUMCPU structure
+;                       of the EMT we're on.
+; @uses     EFLAGS, CR0, %1, %2
+;
+%macro CPUMRZ_TOUCH_FPU_CLEAR_CR0_FPU_TRAPS_SET_RC 3
+ %ifdef IN_RC
+        ;
+        ; raw-mode - always clear it.  We won't be here otherwise.
+        ;
         mov     %2, cr0
-        test    %2, X86_CR0_TS | X86_CR0_EM ; Make sure its safe to access the FPU state.
-        jz      %%skip_cr0_write
-        mov     %1, %2                  ; Save old CR0
         and     %2, ~(X86_CR0_TS | X86_CR0_EM)
         mov     cr0, %2
-%%skip_cr0_write:
+
+ %else
+        ;
+        ; ring-0 - slightly complicated.
+        ;
+        xor     %1, %1                          ; 0 / VINF_SUCCESS. Wishing for no CR0 changes.
+        mov     [%3 + CPUMCPU.Host.cr0Fpu], %1
+
+        mov     %2, cr0
+        test    %2, X86_CR0_TS | X86_CR0_EM ; Make sure its safe to access the FPU state.
+        jz      %%no_cr0_change
+
+  %ifdef VMM_R0_TOUCH_FPU
+        ; Touch the state and check that the kernel updated CR0 for us.
+        movdqa  xmm0, xmm0
+        mov     %2, cr0
+        test    %2, X86_CR0_TS | X86_CR0_EM
+        jz      %%cr0_changed
+  %endif
+
+        ; Save CR0 and clear them flags ourselves.
+        mov     [%3 + CPUMCPU.Host.cr0Fpu], %2
+        and     %2, ~(X86_CR0_TS | X86_CR0_EM)
+        mov     cr0, %2
+ %endif ; IN_RING0
+
+%%cr0_changed:
+        mov     %1,  VINF_CPUM_HOST_CR0_MODIFIED
+%%no_cr0_change:
 %endmacro
 
+
 ;;
-; Restore CR0.TS and CR0.EM state if SAVE_CR0_CLEAR_FPU_TRAPS change it.
+; Restore CR0 if CR0.TS or CR0.EM were non-zero in the original state.
 ;
-; @param    %1      The register that SAVE_CR0_CLEAR_FPU_TRAPS saved the old CR0 in.
+; @param    %1      The original state to restore (or zero).
 ;
-%macro RESTORE_CR0 1
-        cmp     %1, 0
-        je      %%skip_cr0_restore
+%macro CPUMRZ_RESTORE_CR0_IF_TS_OR_EM_SET 1
+        test    %1, X86_CR0_TS | X86_CR0_EM
+        jz      %%skip_cr0_restore
         mov     cr0, %1
 %%skip_cr0_restore:
 %endmacro
