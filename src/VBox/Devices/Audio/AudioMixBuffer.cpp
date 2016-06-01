@@ -1045,8 +1045,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     pSrc->cUsed      -= cReadTotal;
 
     /* Note: Always count in parent samples, as the rate can differ! */
-    pSrc->cMixed      = cDstMixed;
-    Assert(pSrc->cMixed <= pDst->cSamples);
+    pSrc->cMixed      = RT_MIN(cDstMixed, pDst->cSamples);
 
     pDst->offWrite    = offDstWrite;
     Assert(pDst->offWrite <= pDst->cSamples);
@@ -1541,18 +1540,22 @@ void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
         pMixBuf->pParent = NULL;
     }
 
-    PPDMAUDIOMIXBUF pIter;
-    while (!RTListIsEmpty(&pMixBuf->lstChildren))
+    PPDMAUDIOMIXBUF pChild, pChildNext;
+    RTListForEachSafe(&pMixBuf->lstChildren, pChild, pChildNext, PDMAUDIOMIXBUF, Node)
     {
-        pIter = RTListGetFirst(&pMixBuf->lstChildren, PDMAUDIOMIXBUF, Node);
+        AUDMIXBUF_LOG(("\tUnlinking \"%s\"\n", pChild->pszName));
 
-        AUDMIXBUF_LOG(("\tUnlinking \"%s\"\n", pIter->pszName));
+        AudioMixBufReset(pChild);
 
-        AudioMixBufReset(pIter->pParent);
-        pIter->pParent = NULL;
+        Assert(pChild->pParent == pMixBuf);
+        pChild->pParent = NULL;
 
-        RTListNodeRemove(&pIter->Node);
+        RTListNodeRemove(&pChild->Node);
     }
+
+    Assert(RTListIsEmpty(&pMixBuf->lstChildren));
+
+    AudioMixBufReset(pMixBuf);
 
     if (pMixBuf->pRate)
     {

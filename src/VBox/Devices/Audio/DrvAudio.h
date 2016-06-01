@@ -89,8 +89,10 @@ typedef struct DRVAUDIO
     PPDMDRVINS              pDrvIns;
     /** Pointer to audio driver below us. */
     PPDMIHOSTAUDIO          pHostDrvAudio;
-    /** List of input/output audio streams. */
-    RTLISTANCHOR            lstStreams;
+    /** List of host input/output audio streams. */
+    RTLISTANCHOR            lstHstStreams;
+    /** List of guest input/output audio streams. */
+    RTLISTANCHOR            lstGstStreams;
     /** Max. number of free input streams.
      *  UINT32_MAX for unlimited streams. */
     uint32_t                cStreamsFreeIn;

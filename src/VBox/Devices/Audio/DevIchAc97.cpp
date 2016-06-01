@@ -1375,6 +1375,8 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     /* Update current time timestamp. */
     pThis->uTimerTS = cTicksNow;
 
+    LogFlowFuncEnter();
+
     uint32_t cbLineIn;
     AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, pThis->cTimerTicks, cTicksPerSec, &cbLineIn);
     if (cbLineIn)

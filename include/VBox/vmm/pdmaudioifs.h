@@ -701,6 +701,16 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
+     * Sets the audio volume of a specific audio stream.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pStream         Pointer to audio stream.
+     * @param   pVol            Pointer to audio volume structure to set the stream's audio volume to.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamSetVolume, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOVOLUME pVol));
+
+    /**
      * Plays (transfers) all available audio samples of a an output stream via the connected host backend.
      *
      * @returns VBox status code.
@@ -717,7 +727,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "9E03C980-64E9-42EC-9C70-316995990BE3"
+#define PDMIAUDIOCONNECTOR_IID                  "9C097435-3276-4D88-A49A-A4FE671D86F8"
 
 
 

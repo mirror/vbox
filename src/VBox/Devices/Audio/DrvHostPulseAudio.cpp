@@ -168,6 +168,9 @@ static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvContext)
  */
 static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 {
+    if (!pThis)
+        return;
+
     pThis->fLoopWait = true;
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
@@ -1142,9 +1145,9 @@ static int paDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
         pa_stream_disconnect(pStrm->pPAStream);
         pa_stream_unref(pStrm->pPAStream);
 
-        pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
         pStrm->pPAStream = NULL;
+
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
 
     return VINF_SUCCESS;
@@ -1174,9 +1177,9 @@ static int paDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream
         pa_stream_disconnect(pStrm->pPAStream);
         pa_stream_unref(pStrm->pPAStream);
 
-        pa_threaded_mainloop_unlock(pThis->pMainLoop);
-
         pStrm->pPAStream = NULL;
+
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
 
     if (pStrm->pvPCMBuf)
@@ -1235,7 +1238,7 @@ static int paControlStreamOut(PPDMIHOSTAUDIO pInterface,
             if (!pStrm->pDrainOp)
             {
                 rc = paWaitFor(pThis, pa_stream_trigger(pStrm->pPAStream, paStreamCbSuccess, pStrm));
-                if (RT_LIKELY(RT_SUCCESS(rc)))
+                if (RT_SUCCESS(rc))
                     pStrm->pDrainOp = pa_stream_drain(pStrm->pPAStream, paStreamCbDrain, pStrm);
             }
             pa_threaded_mainloop_unlock(pThis->pMainLoop);
@@ -1354,8 +1357,10 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCreate(PPDMIHOSTAUDIO pInterface
     int rc;
     if (pCfg->enmDir == PDMAUDIODIR_IN)
         rc = paCreateStreamIn(pInterface,  pStream, pCfg, pcSamples);
-    else
+    else if (pStream->enmDir == PDMAUDIODIR_OUT)
         rc = paCreateStreamOut(pInterface, pStream, pCfg, pcSamples);
+    else
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
     LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
@@ -1366,12 +1371,17 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamDestroy(PPDMIHOSTAUDIO pInterfac
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
+    LogFlowFunc(("%s\n", pStream->szName));
+
     int rc;
     if (pStream->enmDir == PDMAUDIODIR_IN)
         rc = paDestroyStreamIn(pInterface,  pStream);
-    else
+    else if (pStream->enmDir == PDMAUDIODIR_OUT)
         rc = paDestroyStreamOut(pInterface, pStream);
+    else
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
+    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
 }
 
@@ -1386,9 +1396,12 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamControl(PPDMIHOSTAUDIO pInterfac
     int rc;
     if (pStream->enmDir == PDMAUDIODIR_IN)
         rc = paControlStreamIn(pInterface,  pStream, enmStreamCmd);
-    else
+    else if (pStream->enmDir == PDMAUDIODIR_OUT)
         rc = paControlStreamOut(pInterface, pStream, enmStreamCmd);
+    else
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
+    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
 }
 

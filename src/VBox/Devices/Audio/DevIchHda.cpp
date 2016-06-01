@@ -3464,7 +3464,6 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbMax, uin
         /* Sanity checks. */
         Assert(cbRead <= cbBuf);
         Assert(cbRead <= pBDLE->u32BufSize - pBDLE->State.u32BufOff);
-        //Assert(cbRead <= pStream->u16FIFOS);
 
         /*
          * Write to the BDLE's DMA buffer.
@@ -3476,12 +3475,14 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbMax, uin
 
         if (pBDLE->State.cbBelowFIFOW + cbRead > hdaStreamGetFIFOW(pThis, pStream))
         {
+            Assert(pBDLE->State.u32BufOff + cbRead <= pBDLE->u32BufSize);
             pBDLE->State.u32BufOff    += cbRead;
             pBDLE->State.cbBelowFIFOW  = 0;
             //hdaBackendReadTransferReported(pBDLE, cbDMAData, cbRead, &cbRead, pcbAvail);
         }
         else
         {
+            Assert(pBDLE->State.u32BufOff + cbRead <= pBDLE->u32BufSize);
             pBDLE->State.u32BufOff    += cbRead;
             pBDLE->State.cbBelowFIFOW += cbRead;
             Assert(pBDLE->State.cbBelowFIFOW <= hdaStreamGetFIFOW(pThis, pStream));
@@ -3627,7 +3628,8 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbMax, ui
         }
         else
         {
-            pBDLE->State.u32BufOff += cbWritten;
+            Assert(pBDLE->State.u32BufOff + cbWritten <= pBDLE->u32BufSize);
+            pBDLE->State.u32BufOff    += cbWritten;
             pBDLE->State.cbBelowFIFOW += cbWritten;
             Assert(pBDLE->State.cbBelowFIFOW <= hdaStreamGetFIFOW(pThis, pStream));
 

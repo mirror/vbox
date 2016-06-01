@@ -433,8 +433,8 @@ static void sb16Control(PSB16STATE pThis, int hold)
 
     if (hold)
     {
-        pThis->cStreamsActive++;
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
+        pThis->cStreamsActive++;
         sb16TimerMaybeStart(pThis);
 #endif
         PDMDevHlpDMASchedule(pThis->pDevInsR3);
@@ -1038,7 +1038,7 @@ static void complete(PSB16STATE pThis)
                 PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 1);
             else
                 TMTimerSet(pThis->pTimerIRQ, TMTimerGet(pThis->pTimerIRQ) + ticks);
-            LogFlowFunc(("mix silence %d %d % %RU64\n", samples, bytes, ticks));
+            LogFlowFunc(("mix silence: %d samples, %d bytes, %RU64 ticks\n", samples, bytes, ticks));
             break;
         }
 
@@ -1107,9 +1107,15 @@ static void sb16SetMasterVolume(PSB16STATE pThis)
     /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
-    PDMAUDIOVOLUME vol = { false, lvol, rvol };
 
-//    AudioMixerSetMasterVolume(pThis->pMixer, &vol);
+    PDMAUDIOVOLUME Vol = { false /* fMute */, lvol, rvol };
+
+    PSB16DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
+        int rc2 = pDrv->pConnector->pfnStreamSetVolume(pDrv->pConnector, pDrv->Out.pStream, &Vol);
+        AssertRC(rc2);
+    }
 }
 
 static void sb16SetPcmOutVolume(PSB16STATE pThis)
@@ -1117,13 +1123,21 @@ static void sb16SetPcmOutVolume(PSB16STATE pThis)
     /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
-    PDMAUDIOVOLUME vol = { false, lvol, rvol };
 
-  //  AudioMixerSinkSetVolume(pThis->pSinkOutput, &vol);
+    PDMAUDIOVOLUME Vol = { false /* fMute */, lvol, rvol };
+
+    PSB16DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
+        int rc2 = pDrv->pConnector->pfnStreamSetVolume(pDrv->pConnector, pDrv->Out.pStream, &Vol);
+        AssertRC(rc2);
+    }
 }
 
 static void sb16ResetLegacy(PSB16STATE pThis)
 {
+    LogFlowFuncEnter();
+
     sb16CloseOut(pThis);
 
     pThis->freq       = 11025;
@@ -1167,6 +1181,7 @@ static void sb16Reset(PSB16STATE pThis)
 
     dsp_out_data(pThis, 0xaa);
     sb16SpeakerControl(pThis, 0);
+
     sb16Control(pThis, 0);
     sb16ResetLegacy(pThis);
 }
@@ -1780,12 +1795,6 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         if (!pStream)
             continue;
 
-        PDMAUDIOSTRMSTS strmSts = pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pStream);
-        fIsPlaying |= (   (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
-                       || (strmSts & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE));
-
-        LogFlowFunc(("%s: strmSts=0x%x -> fIsPlaying=%RTbool\n", pStream->szName, strmSts, fIsPlaying));
-
         int rc2 = pDrv->pConnector->pfnStreamIterate(pDrv->pConnector, pStream);
         if (RT_SUCCESS(rc2))
         {
@@ -1800,6 +1809,12 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
                     LogFlowFunc(("%s: Failed playing stream, rc=%Rrc\n", pStream->szName, rc2));
             }
         }
+
+        PDMAUDIOSTRMSTS strmSts = pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pStream);
+        fIsPlaying |= (   (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
+                       || (strmSts & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE));
+
+        LogFlowFunc(("%s: strmSts=0x%x -> fIsPlaying=%RTbool\n", pStream->szName, strmSts, fIsPlaying));
     }
 
     if (   ASMAtomicReadBool(&pThis->fTimerActive)
@@ -1813,6 +1828,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         /** @todo adjust cTicks down by now much cbOutMin represents. */
         TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
     }
+
+    LogFlowFuncLeave();
 }
 
 #endif /* !VBOX_WITH_AUDIO_CALLBACKS */
@@ -2034,9 +2051,9 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
-    AssertReturn(pCfg->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
+    LogFlowFuncEnter();
 
-    int rc = VINF_SUCCESS;
+    AssertReturn(pCfg->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
 
     /* Set a default audio format for the host. */
     PDMAUDIOSTREAMCFG CfgHost;
@@ -2051,6 +2068,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     uint8_t uLUN = 0;
 
+    int rc = VINF_SUCCESS;
+
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
@@ -2061,25 +2080,32 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             break;
         }
 
+        int rc2;
+
         if (pDrv->Out.pStream)
         {
             pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
 
-            int rc3 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
-            AssertRC(rc3);
-
-            pDrv->Out.pStream = NULL;
+            rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
+            if (RT_SUCCESS(rc2))
+                pDrv->Out.pStream = NULL;
         }
+        else
+            rc2 = VINF_SUCCESS;
 
-        int rc2 = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, &CfgHost, pCfg, &pDrv->Out.pStream);
         if (RT_SUCCESS(rc2))
-            pDrv->pConnector->pfnStreamAddRef(pDrv->pConnector, pDrv->Out.pStream);
+        {
+            rc2 = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, &CfgHost, pCfg, &pDrv->Out.pStream);
+            if (RT_SUCCESS(rc2))
+                pDrv->pConnector->pfnStreamAddRef(pDrv->pConnector, pDrv->Out.pStream);
+        }
 
         LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc2));
 
         uLUN++;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -2096,10 +2122,13 @@ static void sb16CloseOut(PSB16STATE pThis)
         {
             pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
 
-            pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
-            pDrv->Out.pStream = NULL;
+            int rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
+            if (RT_SUCCESS(rc2))
+                pDrv->Out.pStream = NULL;
         }
     }
+
+    LogFlowFuncLeave();
 }
 
 /**
