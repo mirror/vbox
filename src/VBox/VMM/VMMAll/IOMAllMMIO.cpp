@@ -753,9 +753,20 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     STAM_COUNTER_INC(&pVM->iom.s.StatR3MMIOHandler);
 
-    AssertMsg(cbBuf >= 1 && cbBuf <= 16, ("%zu\n", cbBuf));
-    AssertPtr(pRange);
     NOREF(pvPhys); NOREF(enmOrigin);
+    AssertPtr(pRange);
+    AssertMsg(cbBuf >= 1, ("%zu\n", cbBuf));
+
+
+#ifndef IN_RING3
+    /*
+     * If someone is doing FXSAVE, FXRSTOR, XSAVE, XRSTOR or other stuff dealing with
+     * large amounts of data, just go to ring-3 where we don't need to deal with partial
+     * successes.  No chance any of these will be problematic read-modify-write stuff.
+     */
+    if (cbBuf > sizeof(pVCpu->iom.s.PendingMmioWrite.abValue))
+        return enmAccessType == PGMACCESSTYPE_WRITE ? VINF_IOM_R3_MMIO_WRITE : VINF_IOM_R3_MMIO_READ;
+#endif
 
     /*
      * Validate the range.
