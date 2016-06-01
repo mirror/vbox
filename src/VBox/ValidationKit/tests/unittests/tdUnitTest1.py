@@ -375,6 +375,7 @@ class tdUnitTest1(vbox.TestDriver):
             return False;
 
         self._figureVersion();
+        self._makeEnvironmentChanges();
 
         self.testRunUnitTestsSet(r'^tst*', 'testcase')
         self.testRunUnitTestsSet(r'^tst*', '.')

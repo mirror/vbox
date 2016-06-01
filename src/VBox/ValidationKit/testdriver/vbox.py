@@ -932,6 +932,18 @@ class TestDriver(base.TestDriver):                                              
         self.sVBoxBootSectors   = os.path.join(sCandidate, 'bootsectors');
         return fRc;
 
+    def _makeEnvironmentChanges(self):
+        """
+        Make the necessary VBox related environment changes.
+        Children not importing the VBox API should call this.
+        """
+        # Make sure we've got our own VirtualBox config and VBoxSVC (on XPCOM at least).
+        if not self.fUseDefaultSvc:
+            os.environ['VBOX_USER_HOME']    = os.path.join(self.sScratchPath, 'VBoxUserHome');
+            sUser = os.environ.get('USERNAME', os.environ.get('USER', os.environ.get('LOGNAME', 'unknown')));
+            os.environ['VBOX_IPC_SOCKETID'] = sUser + '-VBoxTest';
+        return True;
+
     def importVBoxApi(self):
         """
         Import the 'vboxapi' module from the VirtualBox build we're using and
@@ -943,13 +955,7 @@ class TestDriver(base.TestDriver):                                              
         if self.fImportedVBoxApi:
             return True;
 
-        ## @todo split up this messy function.
-
-        # Make sure we've got our own VirtualBox config and VBoxSVC (on XPCOM at least).
-        if not self.fUseDefaultSvc:
-            os.environ['VBOX_USER_HOME']    = os.path.join(self.sScratchPath, 'VBoxUserHome');
-            sUser = os.environ.get('USERNAME', os.environ.get('USER', os.environ.get('LOGNAME', 'unknown')));
-            os.environ['VBOX_IPC_SOCKETID'] = sUser + '-VBoxTest';
+        self._makeEnvironmentChanges();
 
         # Do the detecting.
         self._detectBuild();
