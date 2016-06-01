@@ -368,15 +368,16 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                 }
             }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-#if 0
-# ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_CRHGSMI
             /* 3D acceleration video RAM amount test: */
             else if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
             {
+# if 0
                 int cGuestScreenCount = m_pEditorVideoScreenCount->value();
                 uNeedBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cGuestScreenCount);
-                uNeedBytes = qMax(uNeedBytes, 128 * _1M);
                 uNeedBytes = qMin(uNeedBytes, 256 * _1M);
+# endif
+                uNeedBytes = qMax(uNeedBytes, (quint64) 128 * _1M);
                 if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
                 {
                     message.second << tr("The virtual machine is set up to use hardware graphics acceleration "
@@ -385,8 +386,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                          .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 }
             }
-# endif /* VBOX_WITH_CRHGSMI */
-#endif /* 0 */
+#endif /* VBOX_WITH_CRHGSMI */
         }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -961,9 +961,9 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
     {
 # if 0
         uNeedMBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cGuestScreenCount) / _1M;
-        uNeedMBytes = qMax(uNeedMBytes, 128);
         uNeedMBytes = qMin(uNeedMBytes, 256);
 # endif
+        uNeedMBytes = qMax(uNeedMBytes, (quint64) 128);
         /* No less than 256MB (if possible): */
         if (m_iMaxVRAMVisible < 256 && m_iMaxVRAM >= 256)
             m_iMaxVRAMVisible = 256;
