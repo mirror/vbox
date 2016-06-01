@@ -23,6 +23,7 @@
 #include "DBGPlugIns.h"
 #include "DBGPlugInCommonELF.h"
 #include <VBox/vmm/dbgf.h>
+#include <VBox/dis.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
@@ -162,6 +163,150 @@ static uint64_t g_au64LnxKernelAddresses[] =
 
 
 /**
+ * Disassembles a simple getter returning the value for it.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The VM handle.
+ * @param   hMod                The module to use.
+ * @param   pszSymbol           The symbol of the getter.
+ * @param   pvVal               Where to store the value on success.
+ * @param   cbVal               Size of the value in bytes.
+ */
+static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+                                                 const char *pszSymbol, void *pvVal, uint32_t cbVal)
+{
+    int rc = VINF_SUCCESS;
+
+    RTDBGSYMBOL SymInfo;
+    rc = RTDbgModSymbolByName(hMod, pszSymbol, &SymInfo);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do the diassembling. Disassemble until a ret instruction is encountered
+         * or a limit is reached (don't want to disassemble for too long as the getter
+         * should be short).
+         * push and pop instructions are skipped as well as any mov instructions not
+         * touching the rax or eax register (depending on the size of the value).
+         */
+        unsigned cInstrDisassembled = 0;
+        uint32_t offInstr = 0;
+        bool fRet = false;
+        DISSTATE DisState;
+        RT_ZERO(DisState);
+
+        do
+        {
+            DBGFADDRESS Addr;
+            RTGCPTR GCPtrCur = (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr + offInstr;
+            DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrCur);
+
+            /* Prefetch the instruction. */
+            uint8_t abInstr[32];
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &abInstr[0], sizeof(abInstr));
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t cbInstr = 0;
+
+                rc = DISInstr(&abInstr[0], pThis->f64Bit ? DISCPUMODE_64BIT : DISCPUMODE_32BIT, &DisState, &cbInstr);
+                if (RT_SUCCESS(rc))
+                {
+                    switch (DisState.pCurInstr->uOpcode)
+                    {
+                        case OP_PUSH:
+                        case OP_POP:
+                        case OP_NOP:
+                        case OP_LEA:
+                            break;
+                        case OP_RETN:
+                            /* Getter returned, abort disassembling. */
+                            fRet = true;
+                            break;
+                        case OP_MOV:
+                            /*
+                             * Check that the destination is either rax or eax depending on the
+                             * value size.
+                             *
+                             * Param1 is the destination and Param2 the source.
+                             */
+                            if (   (   (   (DisState.Param1.fUse & (DISUSE_BASE | DISUSE_REG_GEN32))
+                                        && cbVal == sizeof(uint32_t))
+                                    || (    (DisState.Param1.fUse & (DISUSE_BASE | DISUSE_REG_GEN64))
+                                         && cbVal == sizeof(uint64_t)))
+                                && DisState.Param1.Base.idxGenReg == DISGREG_RAX)
+                            {
+                                /* Parse the source. */
+                                if (DisState.Param2.fUse & (DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64))
+                                    memcpy(pvVal, &DisState.Param2.uValue, cbVal);
+                                else if (DisState.Param2.fUse & (DISUSE_RIPDISPLACEMENT32|DISUSE_DISPLACEMENT32|DISUSE_DISPLACEMENT64))
+                                {
+                                    RTGCPTR GCPtrVal = 0;
+
+                                    if (DisState.Param2.fUse & DISUSE_RIPDISPLACEMENT32)
+                                        GCPtrVal = GCPtrCur + DisState.Param2.uDisp.i32 + cbInstr;
+                                    else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT32)
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u32;
+                                    else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT64)
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u64;
+                                    else
+                                        AssertMsgFailedBreakStmt(("Invalid displacement\n"), rc = VERR_INVALID_STATE);
+
+                                    DBGFADDRESS AddrVal;
+                                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                       DBGFR3AddrFromFlat(pUVM, &AddrVal, GCPtrVal),
+                                                       pvVal, cbVal);
+                                }
+                            }
+                            break;
+                        default:
+                            /* All other instructions will cause an error for now (playing safe here). */
+                            rc = VERR_INVALID_PARAMETER;
+                            break;
+                    }
+                    cInstrDisassembled++;
+                    offInstr += cbInstr;
+                }
+            }
+        } while (   RT_SUCCESS(rc)
+                 && cInstrDisassembled < 20
+                 && !fRet);
+    }
+
+    return rc;
+}
+
+/**
+ * Try to get at the log buffer starting address and size by disassembling some exposed helpers.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The VM handle.
+ * @param   hMod                The module to use.
+ * @param   pGCPtrLogBuf        Where to store the log buffer pointer on success.
+ * @param   pcbLogBuf           Where to store the size of the log buffer on success.
+ */
+static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+                                            RTGCPTR *pGCPtrLogBuf, uint32_t *pcbLogBuf)
+{
+    int rc = VINF_SUCCESS;
+
+    struct { void *pvVar; size_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
+    {
+        { pGCPtrLogBuf, sizeof(RTGCPTR),  pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t), "log_buf_addr_get" },
+        { pcbLogBuf,    sizeof(uint32_t), sizeof(uint32_t),                                    "log_buf_len_get" }
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(aSymbols) && RT_SUCCESS(rc); i++)
+    {
+        RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
+        Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
+        rc = dbgDiggerLinuxDisassembleSimpleGetter(pThis, pUVM, hMod, aSymbols[i].pszSymbol,
+                                                   aSymbols[i].pvVar,  aSymbols[i].cbGuest);
+    }
+
+    return rc;
+}
+
+/**
  * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
  */
 static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
@@ -212,8 +357,27 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
         }
         else
             Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
+        rc = VERR_NOT_FOUND;
+        break;
+    }
+
+    /*
+     * Some kernels don't expose the variables in kallsyms so we have to try disassemble
+     * some public helpers to get at the addresses.
+     *
+     * @todo: Maybe cache those values so we don't have to do the heavy work every time?
+     */
+    if (rc == VERR_NOT_FOUND)
+    {
+        idxFirst = 0;
+        idxNext = 0;
+        rc = dbgDiggerLinuxQueryLogBufferPtrs(pData, pUVM, hMod, &GCPtrLogBuf, &cbLogBuf);
+
+        /* Release the module in any case. */
         RTDbgModRelease(hMod);
-        return VERR_NOT_FOUND;
+
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     /*
