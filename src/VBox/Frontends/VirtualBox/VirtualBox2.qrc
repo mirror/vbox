@@ -128,6 +128,9 @@
         <file alias="site_16px.png">images/site_16px.png</file>
         <file alias="site_24px.png">images/site_24px.png</file>
         <file alias="site_32px.png">images/site_32px.png</file>
+        <file alias="site_bugtracker_16px.png">images/site_bugtracker_16px.png</file>
+        <file alias="site_forum_16px.png">images/site_forum_16px.png</file>
+        <file alias="site_oracle_16px.png">images/site_oracle_16px.png</file>
         <file alias="site_warning_16px.png">images/site_warning_16px.png</file>
         <file alias="snapshot_delete_16px.png">images/snapshot_delete_16px.png</file>
         <file alias="snapshot_delete_22px.png">images/snapshot_delete_22px.png</file>

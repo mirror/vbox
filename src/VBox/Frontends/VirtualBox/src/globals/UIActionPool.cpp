@@ -645,7 +645,7 @@ class UIActionSimpleBugTracker : public UIActionSimple
 public:
 
     UIActionSimpleBugTracker(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_16px.png")
+        : UIActionSimple(pParent, ":/site_bugtracker_16px.png")
     {
         retranslateUi();
     }
@@ -678,7 +678,7 @@ class UIActionSimpleForums : public UIActionSimple
 public:
 
     UIActionSimpleForums(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_16px.png")
+        : UIActionSimple(pParent, ":/site_forum_16px.png")
     {
         retranslateUi();
     }
@@ -711,7 +711,7 @@ class UIActionSimpleOracle : public UIActionSimple
 public:
 
     UIActionSimpleOracle(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/site_16px.png")
+        : UIActionSimple(pParent, ":/site_oracle_16px.png")
     {
         retranslateUi();
     }

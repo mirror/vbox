@@ -137,6 +137,9 @@
         <file alias="site_16px_hidpi.png">images/hidpi/site_16px_hidpi.png</file>
         <file alias="site_24px_hidpi.png">images/hidpi/site_24px_hidpi.png</file>
         <file alias="site_32px_hidpi.png">images/hidpi/site_32px_hidpi.png</file>
+        <file alias="site_bugtracker_16px_hidpi.png">images/hidpi/site_bugtracker_16px_hidpi.png</file>
+        <file alias="site_forum_16px_hidpi.png">images/hidpi/site_forum_16px_hidpi.png</file>
+        <file alias="site_oracle_16px_hidpi.png">images/hidpi/site_oracle_16px_hidpi.png</file>
         <file alias="site_warning_16px_hidpi.png">images/hidpi/site_warning_16px_hidpi.png</file>
         <file alias="snapshot_delete_16px_hidpi.png">images/hidpi/snapshot_delete_16px_hidpi.png</file>
         <file alias="snapshot_delete_22px_hidpi.png">images/hidpi/snapshot_delete_22px_hidpi.png</file>
