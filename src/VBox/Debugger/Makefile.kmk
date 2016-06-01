@@ -64,6 +64,7 @@ DbgPlugInDiggers_SOURCES = \
 	DBGPlugInOS2.cpp \
 	DBGPlugInCommonELF.cpp
 DbgPlugInDiggers_LIBS = \
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
 	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
 	$(VBOX_LIB_VMM_LAZY) \
 	$(LIB_RUNTIME)
