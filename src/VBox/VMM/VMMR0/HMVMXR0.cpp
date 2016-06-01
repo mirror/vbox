@@ -1457,7 +1457,6 @@ static void hmR0VmxUpdateAutoLoadStoreHostMsrs(PVMCPU pVCpu)
 }
 
 
-#if HC_ARCH_BITS == 64
 /**
  * Saves a set of host MSRs to allow read/write passthru access to the guest and
  * perform lazy restoration of the host MSRs while leaving VT-x.
@@ -1473,12 +1472,18 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
     /*
      * Note: If you're adding MSRs here, make sure to update the MSR-bitmap permissions in hmR0VmxSetupProcCtls().
      */
-    if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
+    Assert(!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST));
+    if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST))
     {
-        pVCpu->hm.s.vmx.u64HostLStarMsr        = ASMRdMsr(MSR_K8_LSTAR);
-        pVCpu->hm.s.vmx.u64HostStarMsr         = ASMRdMsr(MSR_K6_STAR);
-        pVCpu->hm.s.vmx.u64HostSFMaskMsr       = ASMRdMsr(MSR_K8_SF_MASK);
-        pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
+#if HC_ARCH_BITS == 64
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+        {
+            pVCpu->hm.s.vmx.u64HostLStarMsr        = ASMRdMsr(MSR_K8_LSTAR);
+            pVCpu->hm.s.vmx.u64HostStarMsr         = ASMRdMsr(MSR_K6_STAR);
+            pVCpu->hm.s.vmx.u64HostSFMaskMsr       = ASMRdMsr(MSR_K8_SF_MASK);
+            pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
+        }
+#endif
         pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_SAVED_HOST;
     }
 }
@@ -1495,14 +1500,19 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
 static bool hmR0VmxIsLazyGuestMsr(PVMCPU pVCpu, uint32_t uMsr)
 {
     NOREF(pVCpu);
-    switch (uMsr)
+#if HC_ARCH_BITS == 64
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
     {
-        case MSR_K8_LSTAR:
-        case MSR_K6_STAR:
-        case MSR_K8_SF_MASK:
-        case MSR_K8_KERNEL_GS_BASE:
-            return true;
+        switch (uMsr)
+        {
+            case MSR_K8_LSTAR:
+            case MSR_K6_STAR:
+            case MSR_K8_SF_MASK:
+            case MSR_K8_KERNEL_GS_BASE:
+                return true;
+        }
     }
+#endif
     return false;
 }
 
@@ -1525,10 +1535,15 @@ static void hmR0VmxLazySaveGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
         Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
-        pMixedCtx->msrLSTAR        = ASMRdMsr(MSR_K8_LSTAR);
-        pMixedCtx->msrSTAR         = ASMRdMsr(MSR_K6_STAR);
-        pMixedCtx->msrSFMASK       = ASMRdMsr(MSR_K8_SF_MASK);
-        pMixedCtx->msrKERNELGSBASE = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
+#if HC_ARCH_BITS == 64
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+        {
+            pMixedCtx->msrLSTAR        = ASMRdMsr(MSR_K8_LSTAR);
+            pMixedCtx->msrSTAR         = ASMRdMsr(MSR_K6_STAR);
+            pMixedCtx->msrSFMASK       = ASMRdMsr(MSR_K8_SF_MASK);
+            pMixedCtx->msrKERNELGSBASE = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
+        }
+#endif
     }
 }
 
@@ -1564,18 +1579,16 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
     if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
     {
-        VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_LSTAR, LSTAR, LStar);
-        VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K6_STAR, STAR, Star);
-        VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_SF_MASK, SFMASK, SFMask);
-        VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_KERNEL_GS_BASE, KERNELGSBASE, KernelGSBase);
+#if HC_ARCH_BITS == 64
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+        {
+            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_LSTAR, LSTAR, LStar);
+            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K6_STAR, STAR, Star);
+            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_SF_MASK, SFMASK, SFMask);
+            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_KERNEL_GS_BASE, KERNELGSBASE, KernelGSBase);
+        }
+#endif
         pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
-    }
-    else
-    {
-        ASMWrMsr(MSR_K8_LSTAR,          pMixedCtx->msrLSTAR);
-        ASMWrMsr(MSR_K6_STAR,           pMixedCtx->msrSTAR);
-        ASMWrMsr(MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK);
-        ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE);
     }
 
 #undef VMXLOCAL_LAZY_LOAD_GUEST_MSR
@@ -1600,14 +1613,18 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
     if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
         Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
-        ASMWrMsr(MSR_K8_LSTAR,          pVCpu->hm.s.vmx.u64HostLStarMsr);
-        ASMWrMsr(MSR_K6_STAR,           pVCpu->hm.s.vmx.u64HostStarMsr);
-        ASMWrMsr(MSR_K8_SF_MASK,        pVCpu->hm.s.vmx.u64HostSFMaskMsr);
-        ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr);
+#if HC_ARCH_BITS == 64
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+        {
+            ASMWrMsr(MSR_K8_LSTAR,          pVCpu->hm.s.vmx.u64HostLStarMsr);
+            ASMWrMsr(MSR_K6_STAR,           pVCpu->hm.s.vmx.u64HostStarMsr);
+            ASMWrMsr(MSR_K8_SF_MASK,        pVCpu->hm.s.vmx.u64HostSFMaskMsr);
+            ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr);
+        }
+#endif
     }
     pVCpu->hm.s.vmx.fLazyMsrs &= ~(VMX_LAZY_MSRS_LOADED_GUEST | VMX_LAZY_MSRS_SAVED_HOST);
 }
-#endif  /* HC_ARCH_BITS == 64 */
 
 
 /**
@@ -2430,6 +2447,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
             hmR0VmxSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         }
 #endif
+        /* Though MSR_IA32_PERF_GLOBAL_CTRL is saved/restored lazily, we want intercept reads/write to it for now. */
     }
 
     /* Use the secondary processor-based VM-execution controls if supported by the CPU. */
@@ -3094,16 +3112,16 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVCpu);
     AssertPtr(pVCpu->hm.s.vmx.pvHostMsr);
 
-    int rc = VINF_SUCCESS;
-#if HC_ARCH_BITS == 64
-    if (pVM->hm.s.fAllow64BitGuests)
-        hmR0VmxLazySaveHostMsrs(pVCpu);
-#endif
+    /*
+     * Save MSRs that we restore lazily (due to preemption or transition to ring-3)
+     * rather than swapping them on every VM-entry.
+     */
+    hmR0VmxLazySaveHostMsrs(pVCpu);
 
     /*
      * Host Sysenter MSRs.
      */
-    rc  = VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,       ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
+    int rc  = VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,   ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
 #if HC_ARCH_BITS == 32
     rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,        ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
     rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,        ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
@@ -6168,29 +6186,19 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-#if HC_ARCH_BITS == 64
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+    /* Since this can be called from our preemption hook it's safer to make the guest-MSRs update non-preemptible. */
+    VMMRZCallRing3Disable(pVCpu);
+    HM_DISABLE_PREEMPT();
+
+    /* Doing the check here ensures we don't overwrite already-saved guest MSRs from a preemption hook. */
+    if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS))
     {
-        /* Since this can be called from our preemption hook it's safer to make the guest-MSRs update non-preemptible. */
-        VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT();
-
-        /* Doing the check here ensures we don't overwrite already-saved guest MSRs from a preemption hook. */
-        if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS))
-        {
-            hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
-            HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS);
-        }
-
-        HM_RESTORE_PREEMPT();
-        VMMRZCallRing3Enable(pVCpu);
-    }
-    else
+        hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS);
-#else
-    NOREF(pMixedCtx);
-    HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS);
-#endif
+    }
+
+    HM_RESTORE_PREEMPT();
+    VMMRZCallRing3Enable(pVCpu);
 
     return VINF_SUCCESS;
 }
@@ -7046,10 +7054,8 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
     pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 #endif
 
-#if HC_ARCH_BITS == 64
     /* Restore the lazy host MSRs as we're leaving VT-x context. */
-    if (   pVM->hm.s.fAllow64BitGuests
-        && pVCpu->hm.s.vmx.fLazyMsrs)
+    if (pVCpu->hm.s.vmx.fLazyMsrs)
     {
         /* We shouldn't reload the guest MSRs without saving it first. */
         if (!fSaveGuestState)
@@ -7061,7 +7067,6 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
         hmR0VmxLazyRestoreHostMsrs(pVCpu);
         Assert(!pVCpu->hm.s.vmx.fLazyMsrs);
     }
-#endif
 
     /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
     pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
@@ -7287,12 +7292,11 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
             && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
             VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
         pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
-
-        /* Restore the lazy host MSRs as we're leaving VT-x context. */
-        if (   pVCpu->hm.s.vmx.fLazyMsrs
-            && pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
-            hmR0VmxLazyRestoreHostMsrs(pVCpu);
 #endif
+        /* Restore the lazy host MSRs as we're leaving VT-x context. */
+        if (pVCpu->hm.s.vmx.fLazyMsrs)
+            hmR0VmxLazyRestoreHostMsrs(pVCpu);
+
         /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
         pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
@@ -8181,19 +8185,20 @@ static int hmR0VmxSaveHostState(PVM pVM, PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    if (!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_CONTEXT))
-        return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_CONTEXT))
+    {
+        rc = hmR0VmxSaveHostControlRegs(pVM, pVCpu);
+        AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostControlRegisters failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    int rc = hmR0VmxSaveHostControlRegs(pVM, pVCpu);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostControlRegisters failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+        rc = hmR0VmxSaveHostSegmentRegs(pVM, pVCpu);
+        AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostSegmentRegisters failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc = hmR0VmxSaveHostSegmentRegs(pVM, pVCpu);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostSegmentRegisters failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+        rc = hmR0VmxSaveHostMsrs(pVM, pVCpu);
+        AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostMsrs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc = hmR0VmxSaveHostMsrs(pVM, pVCpu);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostMsrs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
-
-    HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);
+    }
     return rc;
 }
 
@@ -8366,10 +8371,7 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS))
     {
-#if HC_ARCH_BITS == 64
-        if (pVM->hm.s.fAllow64BitGuests)
-            hmR0VmxLazyLoadGuestMsrs(pVCpu, pCtx);
-#endif
+        hmR0VmxLazyLoadGuestMsrs(pVCpu, pCtx);
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
     }
 
@@ -11883,14 +11885,18 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                              pMixedCtx->ecx));
             HMVMX_RETURN_UNEXPECTED_EXIT();
         }
-# if HC_ARCH_BITS == 64
-        if (   pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests
-            && hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
+        if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
         {
-            AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
-            HMVMX_RETURN_UNEXPECTED_EXIT();
+            VMXMSREXITREAD  enmRead;
+            VMXMSREXITWRITE enmWrite;
+            int rc2 = hmR0VmxGetMsrPermission(pVCpu, pMixedCtx->ecx, &enmRead, &enmWrite);
+            AssertRCReturn(rc2, rc2);
+            if (enmRead == VMXMSREXIT_PASSTHRU_READ)
+            {
+                AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
+                HMVMX_RETURN_UNEXPECTED_EXIT();
+            }
         }
-# endif
     }
 #endif
 
@@ -11973,10 +11979,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 {
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
                         HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
-#if HC_ARCH_BITS == 64
                     else if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
                         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
-#endif
                     break;
                 }
             }
@@ -12011,13 +12015,18 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                         }
                     }
 
-#if HC_ARCH_BITS == 64
                     if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
                     {
-                        AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
-                        HMVMX_RETURN_UNEXPECTED_EXIT();
+                        VMXMSREXITREAD  enmRead;
+                        VMXMSREXITWRITE enmWrite;
+                        int rc2 = hmR0VmxGetMsrPermission(pVCpu, pMixedCtx->ecx, &enmRead, &enmWrite);
+                        AssertRCReturn(rc2, rc2);
+                        if (enmWrite == VMXMSREXIT_PASSTHRU_WRITE)
+                        {
+                            AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
+                            HMVMX_RETURN_UNEXPECTED_EXIT();
+                        }
                     }
-#endif
                     break;
                 }
             }
