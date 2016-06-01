@@ -169,12 +169,12 @@ class ReporterBase(object):
         _ = oSrcFile; _ = sSrcFilename; _ = sAltName; _ = sDescription; _ = sKind; _ = sCaller; _ = sTsPrf;
         return True;
 
-    def addLogString(self, sLog, sLogName, sAltName, sDescription, sKind, sCaller, sTsPrf):
+    def addLogString(self, sLog, sLogName, sDescription, sKind, sCaller, sTsPrf):
         """
         Adds the file to the report.
         Returns True on success, False on failure.
         """
-        _ = sLog; _ = sLogName; _ = sAltName; _ = sDescription; _ = sKind; _ = sCaller; _ = sTsPrf;
+        _ = sLog; _ = sLogName; _ = sDescription; _ = sKind; _ = sCaller; _ = sTsPrf;
         return True;
 
     #
@@ -472,7 +472,7 @@ class LocalReporter(ReporterBase):
         _ = sAltName;
         return fRc;
 
-    def addLogString(self, sLog, sLogName, sAltName, sDescription, sKind, sCaller, sTsPrf):
+    def addLogString(self, sLog, sLogName, sDescription, sKind, sCaller, sTsPrf):
         # Figure the destination filename.
         iOtherFile = self.iOtherFile;
         self.iOtherFile += 1;
@@ -499,7 +499,6 @@ class LocalReporter(ReporterBase):
             self._xmlWrite(['<LogFile timestamp="%s" filename="%s" source="%s" kind="%s" ok="%s">%s</LogFile>\n'
                 % (utils.getIsoTimestamp(), self._xmlEscAttr(os.path.basename(sDstFilename)), self._xmlEscAttr(sLogName), \
                    self._xmlEscAttr(sKind), fRc, self._xmlEscAttr(sDescription))] );
-        _ = sAltName;
         return fRc;
 
     def subXmlStart(self, oFileWrapper):
