@@ -835,14 +835,14 @@ class RemoteReporter(ReporterBase):
                      % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
         return fRc;
 
-    def addLogString(self, sLog, sLogName, sAltName, sDescription, sKind, sCaller, sTsPrf):
+    def addLogString(self, sLog, sLogName, sDescription, sKind, sCaller, sTsPrf):
         fRc = True;
         if sKind in [ 'text', 'log', ]  or  sKind.startswith('log/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sLogName, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
             g_oLock.release();
-            self._doUploadString(sLog, sAltName, sDescription, sKind, 'text/plain');
+            self._doUploadString(sLog, sLogName, sDescription, sKind, 'text/plain');
             g_oLock.acquire();
         else:
             self.log(0, '*** UNKNOWN FILE "%s" - KIND "%s" - DESC "%s" ***'
@@ -1331,7 +1331,7 @@ def addLogString(sLog, sLogName, sKind, sDescription = ''):
     fRc     = False;
 
     g_oLock.acquire();
-    fRc = g_oReporter.addLogString(sLog, sLogName, None, sDescription, sKind, sCaller, sTsPrf);
+    fRc = g_oReporter.addLogString(sLog, sLogName, sDescription, sKind, sCaller, sTsPrf);
     g_oLock.release();
     return fRc;
 
