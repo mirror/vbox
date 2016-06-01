@@ -1168,7 +1168,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR0,  STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioReadG0",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R0.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR0,  STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioReadR0",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R0.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR0, STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioWriteR0", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in R0.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR0,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/SetIrqR0",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R0.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiR0,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/SetEoiR0",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in R0.");
