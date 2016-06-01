@@ -4542,14 +4542,12 @@ class ObjectRefManager
 {
     private final static ReferenceQueue<IUnknown> refQ = new ReferenceQueue<IUnknown>();
 
-    private final VboxPortType port;
     private final ConcurrentMap<String, ManagedObj> map = new ConcurrentHashMap<String, ManagedObj>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ObjRefMgrCleanupThread objRefMgrCleanup;
 
-    public ObjectRefManager(VboxPortType port)
+    public ObjectRefManager()
     {
-        this.port = port;
         this.objRefMgrCleanup = new ObjRefMgrCleanupThread(this, 100);
         this.objRefMgrCleanup.start();
     }
@@ -4596,6 +4594,7 @@ class ObjectRefManager
      */
     public void registerObj(IUnknown obj)
     {
+        assert lock.getReadLockCount() > 0;
         ManagedObjRef ref = new ManagedObjRef(obj);
 
         ManagedObj mgrobj = map.get(obj.getWrapped());
@@ -4606,7 +4605,7 @@ class ObjectRefManager
         else
         {
             /* Create new. */
-            mgrobj = new ManagedObj(obj.getWrapped());
+            mgrobj = new ManagedObj(obj.getWrapped(), obj.getRemoteWSPort());
             mgrobj.addObject(ref);
             map.put(obj.getWrapped(), mgrobj);
         }
@@ -4620,8 +4619,6 @@ class ObjectRefManager
      */
     public ManagedObj unregisterObj(ManagedObjRef objRef)
     {
-        assert lock.isWriteLockedByCurrentThread();
-
         ManagedObj obj = this.map.get(objRef.objId);
 
         assert obj != null;
@@ -4634,11 +4631,13 @@ class ObjectRefManager
 
     public void releaseRemoteObj(ManagedObj obj)
     {
+        assert lock.isWriteLockedByCurrentThread();
+
         if (!obj.isReferenced())
         {
             try
             {
-                this.port.iManagedObjectRefRelease(obj.objId);
+                obj.port.iManagedObjectRefRelease(obj.objId);
             }
             catch (InvalidObjectFaultMsg e)
             {
@@ -4662,11 +4661,13 @@ class ObjectRefManager
     static class ManagedObj
     {
         private final String                               objId;
+        private final VboxPortType                         port;
         private final ConcurrentLinkedQueue<ManagedObjRef> refQ;
 
-        ManagedObj(String objId)
+        ManagedObj(String objId,  VboxPortType port)
         {
           this.objId = objId;
+          this.port  = port;
           this.refQ  = new ConcurrentLinkedQueue<ManagedObjRef>();
         }
 
@@ -4896,10 +4897,10 @@ class VBoxTLSSocketFactory extends SSLSocketFactory
 public class VirtualBoxManager
 {
     private static PortPool pool = new PortPool(true);
+    private static final ObjectRefManager objMgr = new ObjectRefManager();
     protected VboxPortType port;
 
     private IVirtualBox vbox;
-    private ObjectRefManager objMgr;
 
     private VirtualBoxManager()
     {
@@ -4916,7 +4917,6 @@ public class VirtualBoxManager
     public void connect(String url, String username, String passwd)
     {
         this.port = pool.getPort();
-        this.objMgr = new ObjectRefManager(this.port);
         try
         {
             ((BindingProvider)port).getRequestContext().
@@ -4937,7 +4937,15 @@ public class VirtualBoxManager
                 put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", sf);
 
             String handle = port.iWebsessionManagerLogon(username, passwd);
-            this.vbox = new IVirtualBox(handle, this.objMgr, port);
+            this.objMgr.preventObjRelease();
+            try
+            {
+                this.vbox = new IVirtualBox(handle, this.objMgr, port);
+            }
+            finally
+            {
+                this.objMgr.allowObjRelease();
+            }
         }
         catch (Throwable t)
         {
@@ -4955,8 +4963,6 @@ public class VirtualBoxManager
                         Map<String, Object> requestContext, Map<String, Object> responseContext)
     {
         this.port = pool.getPort();
-        this.objMgr = new ObjectRefManager(this.port);
-
         try
         {
             ((BindingProvider)port).getRequestContext();
@@ -4969,7 +4975,15 @@ public class VirtualBoxManager
             ((BindingProvider)port).getRequestContext().
                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
             String handle = port.iWebsessionManagerLogon(username, passwd);
-            this.vbox = new IVirtualBox(handle, this.objMgr, port);
+            this.objMgr.preventObjRelease();
+            try
+            {
+                this.vbox = new IVirtualBox(handle, this.objMgr, port);
+            }
+            finally
+            {
+                this.objMgr.allowObjRelease();
+            }
         }
         catch (Throwable t)
         {
@@ -5030,7 +5044,15 @@ public class VirtualBoxManager
         try
         {
             String handle = port.iWebsessionManagerGetSessionObject(this.vbox.getWrapped());
-            return new ISession(handle, this.objMgr, port);
+            this.objMgr.preventObjRelease();
+            try
+            {
+                return new ISession(handle, this.objMgr, port);
+            }
+            finally
+            {
+                this.objMgr.allowObjRelease();
+            }
         }
         catch (InvalidObjectFaultMsg e)
         {
