@@ -29,7 +29,6 @@ lib/virtualbox/VBoxOGLhostcrutil.so
 lib/virtualbox/VBoxOGLhosterrorspu.so
 lib/virtualbox/VBoxOGLrenderspu.so
 lib/virtualbox/vboxwebsrv
-lib/virtualbox/webtest
 lib/virtualbox/rdesktop-vrdp
 lib/virtualbox/VBoxTestOGL
 _VBOX_REM_32BIT_MODULE_

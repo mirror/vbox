@@ -337,8 +337,7 @@ endif
 # Webservices
 ifdef VBOX_WITH_WEBSERVICES
  VBOX_LNX_STRIP_BIN += \
- 	vboxwebsrv \
- 	webtest
+ 	vboxwebsrv
 endif
 
 # vbox-img

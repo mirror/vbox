@@ -207,8 +207,7 @@ endif
 # Webservices
 ifdef VBOX_WITH_WEBSERVICES
  VBOX_FBSD_STRIP_BIN += \
-	vboxwebsrv \
-	webtest
+	vboxwebsrv
  VBOX_FBSD_SYMLINKS += \
 	vboxwebsrv
 endif

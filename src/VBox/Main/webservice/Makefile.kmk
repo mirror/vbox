@@ -579,6 +579,17 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
 	$(VBOXWEB_WSDL)=>vboxweb.wsdl \
 	$(VBOXWEBSERVICE_WSDL)=>vboxwebService.wsdl
 
+ INSTALLS += vboxwebinst_webtest
+ vboxwebinst_webtest_INST = $(INST_SDK)bindings/webservice
+ vboxwebinst_webtest_MODE = a+r,u+w
+ vboxwebinst_webtest_SOURCES = \
+	$(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl=>xsl/websrv-wsdl2gsoapH.xsl \
+	$(VBOX_PATH_WEBSERVICE)/websrv-nsmap.xsl=>xsl/websrv-nsmap.xsl \
+	$(VBOX_PATH_IDL)/typemap-shared.inc.xsl=>idl/typemap-shared.inc.xsl \
+	$(VBOX_PATH_WEBSERVICE)/split-soapC.cpp=>tools/split-soapC.cpp \
+	$(VBOX_PATH_WEBSERVICE)/webtest.cpp=>cpp/samples/webtest/webtest.cpp \
+	$(VBOX_PATH_WEBSERVICE)/Makefile.webtest=>cpp/samples/webtest/Makefile
+
 endif # VBOX_ONLY_SDK
 
 #

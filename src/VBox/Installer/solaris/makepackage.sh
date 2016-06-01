@@ -120,7 +120,6 @@ create_hardlink VBoxManage
 create_hardlink VBoxSDL
 create_hardlink VBoxAutostart
 create_hardlink vboxwebsrv
-create_hardlink webtest
 create_hardlink VBoxZoneAccess
 create_hardlink VBoxSVC
 create_hardlink VBoxBalloonCtrl
