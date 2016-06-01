@@ -42,15 +42,34 @@
 #define VMMDEV_TESTING_MMIO_BASE        UINT32_C(0x00101000)
 /** The size of the MMIO range used for testing.  */
 #define VMMDEV_TESTING_MMIO_SIZE        UINT32_C(0x00001000)
-/** The NOP MMIO register - 1248 RW. */
-#define VMMDEV_TESTING_MMIO_NOP         (VMMDEV_TESTING_MMIO_BASE + 0x000)
-/** The go-to-ring-3-NOP MMIO register - 1248 RW. */
-#define VMMDEV_TESTING_MMIO_NOP_R3      (VMMDEV_TESTING_MMIO_BASE + 0x008)
+
+/** MMIO offset: The NOP register - 1248 RW. */
+#define VMMDEV_TESTING_MMIO_OFF_NOP         (0x000)
+/** MMIO offset: The go-to-ring-3-NOP register - 1248 RW. */
+#define VMMDEV_TESTING_MMIO_OFF_NOP_R3      (0x008)
+/** MMIO offset: The readback registers - 64 bytes of read/write "memory". */
+#define VMMDEV_TESTING_MMIO_OFF_READBACK    (0x040)
+/** MMIO offset: Readback register view that always goes to ring-3. */
+#define VMMDEV_TESTING_MMIO_OFF_READBACK_R3 (0x080)
+/** The size of the MMIO readback registers. */
+#define VMMDEV_TESTING_READBACK_SIZE        (0x40)
+
+/** Default address of VMMDEV_TESTING_MMIO_OFF_NOP. */
+#define VMMDEV_TESTING_MMIO_NOP             (VMMDEV_TESTING_MMIO_BASE + VMMDEV_TESTING_MMIO_OFF_NOP)
+/** Default address of VMMDEV_TESTING_MMIO_OFF_NOP_R3. */
+#define VMMDEV_TESTING_MMIO_NOP_R3          (VMMDEV_TESTING_MMIO_BASE + VMMDEV_TESTING_MMIO_OFF_NOP_R3)
+/** Default address of VMMDEV_TESTING_MMIO_OFF_READBACK. */
+#define VMMDEV_TESTING_MMIO_READBACK        (VMMDEV_TESTING_MMIO_BASE + VMMDEV_TESTING_MMIO_OFF_READBACK)
+/** Default address of VMMDEV_TESTING_MMIO_OFF_READBACK_R3. */
+#define VMMDEV_TESTING_MMIO_READBACK_R3     (VMMDEV_TESTING_MMIO_BASE + VMMDEV_TESTING_MMIO_OFF_READBACK_R3)
+
 /** The real mode selector to use.
  * @remarks Requires that the A20 gate is enabled. */
 #define VMMDEV_TESTING_MMIO_RM_SEL       0xffff
 /** Calculate the real mode offset of a MMIO register. */
 #define VMMDEV_TESTING_MMIO_RM_OFF(val)  ((val) - 0xffff0)
+/** Calculate the real mode offset of a MMIO register offset. */
+#define VMMDEV_TESTING_MMIO_RM_OFF2(off) ((off) + 16 + 0x1000)
 
 /** The base port of the I/O range used for testing. */
 #define VMMDEV_TESTING_IOPORT_BASE      0x0510
