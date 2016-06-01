@@ -74,7 +74,7 @@ BEGINPROC main
         mov     ebx, [bs2Gdt + BS2_SEL_SS16 + 4]
 
         and     eax, 0xffff
-        or      eax, BS2_PXX_BASE << 16
+        or      eax, (BS2_PXX_BASE & 0xffff) << 16
         and     ebx, 0x00ffff00
         or      ebx, BS2_PXX_BASE & 0xff000000
         or      ebx, (BS2_PXX_BASE & 0x00ff0000) >> 16
