@@ -89,7 +89,9 @@ static int tstSingle(RTTEST hTest)
 
     /* Beyond buffer. */
     RTTESTI_CHECK_RC(AudioMixBufWriteAt(&mb, AudioMixBufSize(&mb) + 1, &samples16, sizeof(samples16),
-                                        &written), VERR_BUFFER_OVERFLOW);
+                                        &written), VINF_BUFFER_OVERFLOW);
+    /** @todo (bird): this was checking for VERR_BUFFER_OVERFLOW, which do you want
+     *        the function to actually return? */
 
     /*
      * Circular writes.

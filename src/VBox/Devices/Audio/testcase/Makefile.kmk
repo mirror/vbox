@@ -24,12 +24,13 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  TESTING  += $(tstAudioMixBuffer_0_OUTDIR)/tstAudioMixBuffer.run
 
  tstAudioMixBuffer_TEMPLATE = VBOXR3TSTEXE
- tstAudioMixBuffer_DEFS    += TESTCASE
- tstAudioMixBuffer_SOURCES  = \
+ tstAudioMixBuffer_DEFS = TESTCASE
+ tstAudioMixBuffer_DEFS.debug  = VBOX_WITH_EF_WRAPS
+ tstAudioMixBuffer_SOURCES = \
 	tstAudioMixBuffer.cpp \
 	../AudioMixBuffer.cpp \
 	../DrvAudioCommon.cpp
- tstAudioMixBuffer_LIBS     = $(LIB_RUNTIME)
+ tstAudioMixBuffer_LIBS = $(LIB_RUNTIME)
 
  $$(tstAudioMixBuffer_0_OUTDIR)/tstAudioMixBuffer.run: $$(tstAudioMixBuffer_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstAudioMixBuffer_1_STAGE_TARGET) quiet

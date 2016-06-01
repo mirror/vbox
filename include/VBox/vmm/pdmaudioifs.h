@@ -91,7 +91,11 @@ typedef struct PDMAUDIOSAMPLE
 {
     int64_t i64LSample;
     int64_t i64RSample;
-} PDMAUDIOSAMPLE, *PPDMAUDIOSAMPLE;
+} PDMAUDIOSAMPLE;
+/** Pointer to a single (stereo) audio sample.   */
+typedef PDMAUDIOSAMPLE *PPDMAUDIOSAMPLE;
+/** Pointer to a const single (stereo) audio sample.   */
+typedef PDMAUDIOSAMPLE const *PCPDMAUDIOSAMPLE;
 
 typedef enum PDMAUDIOENDIANNESS
 {
@@ -343,7 +347,7 @@ typedef struct PDMAUDIOSTRMRATE
  * Structure for holding sample conversion parameters for
  * the audioMixBufConvFromXXX / audioMixBufConvToXXX macros.
  */
-typedef struct PDMAUDMIXBUF_CONVOPTS
+typedef struct PDMAUDMIXBUFCONVOPTS
 {
     /** Number of audio samples to convert. */
     uint32_t       cSamples;
@@ -351,7 +355,11 @@ typedef struct PDMAUDMIXBUF_CONVOPTS
      *  to convert the original values. May not apply to
      *  all conversion functions. */
     PDMAUDIOVOLUME Volume;
-} PDMAUDMIXBUF_CONVOPTS, *PPDMAUDMIXBUF_CONVOPTS;
+} PDMAUDMIXBUFCONVOPTS;
+/** Pointer to conversion parameters for the audio mixer.   */
+typedef PDMAUDMIXBUFCONVOPTS *PPDMAUDMIXBUFCONVOPTS;
+/** Pointer to const conversion parameters for the audio mixer.   */
+typedef PDMAUDMIXBUFCONVOPTS const *PCPDMAUDMIXBUFCONVOPTS;
 
 /**
  * Note: All internal handling is done in samples,
@@ -360,15 +368,30 @@ typedef struct PDMAUDMIXBUF_CONVOPTS
 typedef uint32_t PDMAUDIOMIXBUFFMT;
 typedef PDMAUDIOMIXBUFFMT *PPDMAUDIOMIXBUFFMT;
 
-/** Function pointer definition for a conversion-from routine
- *  used by the PDM audio mixing buffer. */
-typedef uint32_t (PDMAUDMIXBUF_FN_CONVFROM) (PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, const PPDMAUDMIXBUF_CONVOPTS pOpts);
-typedef PDMAUDMIXBUF_FN_CONVFROM *PPDMAUDMIXBUF_FN_CONVFROM;
+/**
+ * Convertion-from function used by the PDM audio buffer mixer.
+ *
+ * @returns Number of samples returned.
+ * @param   paDst           Where to return the converted samples.
+ * @param   pvSrc           The source samples bytes.
+ * @param   cbSrc           Number of bytes to convert.
+ * @param   pOpts           Conversion options.
+ */
+typedef DECLCALLBACK(uint32_t) FNPDMAUDIOMIXBUFCONVFROM(PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc,
+                                                        PCPDMAUDMIXBUFCONVOPTS pOpts);
+/** Pointer to a convertion-from function used by the PDM audio buffer mixer. */
+typedef FNPDMAUDIOMIXBUFCONVFROM *PFNPDMAUDIOMIXBUFCONVFROM;
 
-/** Function definition for a conversion-to routine
- *  used by the PDM audio mixing buffer. */
-typedef void (PDMAUDMIXBUF_FN_CONVTO) (void *pvDst, const PPDMAUDIOSAMPLE paSrc, const PPDMAUDMIXBUF_CONVOPTS pOpts);
-typedef PDMAUDMIXBUF_FN_CONVTO *PPDMAUDMIXBUF_FN_CONVTO;
+/**
+ * Convertion-to function used by the PDM audio buffer mixer.
+ *
+ * @param   pvDst           Output buffer.
+ * @param   paSrc           The input samples.
+ * @param   pOpts           Conversion options.
+ */
+typedef DECLCALLBACK(void) FNPDMAUDIOMIXBUFCONVTO(void *pvDst, PCPDMAUDIOSAMPLE paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts);
+/** Pointer to a convertion-to function used by the PDM audio buffer mixer. */
+typedef FNPDMAUDIOMIXBUFCONVTO *PFNPDMAUDIOMIXBUFCONVTO;
 
 typedef struct PDMAUDIOMIXBUF *PPDMAUDIOMIXBUF;
 typedef struct PDMAUDIOMIXBUF
@@ -407,9 +430,9 @@ typedef struct PDMAUDIOMIXBUF
     /** This buffer's audio format. */
     PDMAUDIOMIXBUFFMT         AudioFmt;
     /** Standard conversion-to function for set AudioFmt. */
-    PPDMAUDMIXBUF_FN_CONVTO   pConvTo;
+    PFNPDMAUDIOMIXBUFCONVTO   pfnConvTo;
     /** Standard conversion-from function for set AudioFmt. */
-    PPDMAUDMIXBUF_FN_CONVFROM pConvFrom;
+    PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom;
     /**
      * Ratio of the associated parent stream's frequency by this stream's
      * frequency (1<<32), represented as a signed 64 bit integer.
