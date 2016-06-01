@@ -220,7 +220,7 @@
 #define CR0_NE_MASK  (1 << 5)
 #define CR0_WP_MASK  (1 << 16)
 #define CR0_AM_MASK  (1 << 18)
-#define CR0_PG_MASK  (1 << 31)
+#define CR0_PG_MASK  (1U << 31)
 
 #define CR4_VME_MASK  (1 << 0)
 #define CR4_PVI_MASK  (1 << 1)
