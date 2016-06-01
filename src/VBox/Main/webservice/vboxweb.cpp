@@ -1445,13 +1445,14 @@ static DECLCALLBACK(int) fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
 
     WEBDEBUG(("Watchdog thread started\n"));
 
+    uint32_t tNextStat = 0;
+
     while (g_fKeepRunning)
     {
         WEBDEBUG(("Watchdog: sleeping %d seconds\n", g_iWatchdogCheckInterval));
         RTThreadSleep(g_iWatchdogCheckInterval * 1000);
 
-        time_t                      tNow;
-        time(&tNow);
+        uint32_t tNow = RTTimeProgramSecTS();
 
         // we're messing with websessions, so lock them
         util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
@@ -1480,6 +1481,28 @@ static DECLCALLBACK(int) fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
             g_pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
             if (pSystemProperties)
                 pSystemProperties->COMSETTER(WebServiceAuthLibrary)(com::Bstr(g_pcszAuthentication).raw());
+        }
+
+        // Log some MOR usage statistics every 5 minutes, but only if there's
+        // something worth logging (at least one reference or a transition to
+        // zero references). Avoids useless log spamming in idle webservice.
+        if (tNow >= tNextStat)
+        {
+            size_t cMOR = 0;
+            it = g_mapWebsessions.begin();
+            itEnd = g_mapWebsessions.end();
+            while (it != itEnd)
+            {
+                cMOR += it->second->CountRefs();
+                ++it;
+            }
+            static bool fLastZero = false;
+            if (cMOR || !fLastZero)
+                LogRel(("Statistics: %zu websessions, %zu references\n",
+                        g_mapWebsessions.size(), cMOR));
+            fLastZero = (cMOR == 0);
+            while (tNextStat <= tNow)
+                tNextStat += 5 * 60; /* 5 minutes */
         }
     }
 
@@ -2011,7 +2034,15 @@ WebServiceSession *WebServiceSession::findWebsessionFromRef(const WSDLT_ID &id)
  */
 void WebServiceSession::touch()
 {
-    time(&_tLastObjectLookup);
+    _tLastObjectLookup = RTTimeProgramSecTS();
+}
+
+/**
+ * Counts the number of managed object references in this websession.
+ */
+size_t WebServiceSession::CountRefs()
+{
+    return _pp->_mapManagedObjectsById.size();
 }
 
 

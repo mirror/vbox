@@ -2,7 +2,7 @@
  * vboxweb.h:
  *      header file for "real" web server code.
  *
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -103,7 +103,7 @@ class WebServiceSession
         WebServiceSessionPrivate    *_pp;               // opaque data struct (defined in vboxweb.cpp)
         bool                        _fDestructing;
 
-        time_t                      _tLastObjectLookup;
+        uint32_t                    _tLastObjectLookup;
 
         // hide the copy constructor because we're not copyable
         WebServiceSession(const WebServiceSession &copyFrom);
@@ -132,14 +132,14 @@ class WebServiceSession
 
         void touch();
 
-        time_t getLastObjectLookup() const
+        uint32_t getLastObjectLookup() const
         {
             return _tLastObjectLookup;
         }
 
         static WebServiceSession* findWebsessionFromRef(const WSDLT_ID &id);
 
-        void DumpRefs();
+        size_t CountRefs();
 };
 
 /**
