@@ -38,16 +38,6 @@
 // defines
 /////////////////////////////////////////////////////////////////////////////
 
-struct BackupableUSBData
-{
-    BackupableUSBData()
-        : enmType(USBControllerType_Null)
-    { }
-
-    Utf8Str             strName;
-    USBControllerType_T enmType;
-};
-
 struct USBController::Data
 {
     Data(Machine *pMachine)
@@ -57,12 +47,12 @@ struct USBController::Data
     ~Data()
     {};
 
-    Machine * const                 pParent;
+    Machine * const                       pParent;
 
     // peer machine's USB controller
-    const ComObjPtr<USBController>  pPeer;
+    const ComObjPtr<USBController>        pPeer;
 
-    Backupable<BackupableUSBData>   bd;
+    Backupable<settings::USBController>   bd;
 };
 
 
@@ -164,14 +154,14 @@ HRESULT USBController::init(Machine *aParent, USBController *aPeer,
         AutoWriteLock peerLock(aPeer COMMA_LOCKVAL_SRC_POS);
 
         unconst(aPeer->m->pPeer) = this;
-        m->bd.attach (aPeer->m->bd);
+        m->bd.attach(aPeer->m->bd);
     }
     else
     {
         unconst(m->pPeer) = aPeer;
 
         AutoReadLock peerLock(aPeer COMMA_LOCKVAL_SRC_POS);
-        m->bd.share (aPeer->m->bd);
+        m->bd.share(aPeer->m->bd);
     }
 
     /* Confirm a successful initialization */
@@ -417,11 +407,11 @@ void USBController::i_unshare()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (m->pPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(m->pPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* peer is not modified, lock it for reading (m->pPeer is "master" so locked
      * first) */
