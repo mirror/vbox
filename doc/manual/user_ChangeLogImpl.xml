@@ -11,6 +11,26 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: overall migration to Qt5</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: passive Main event listener which improves the VM GUI performance and response time</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: New VM wizard now allows to choose VM location for VM you are going to create</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: previously forgotten Detach UI action is now a part of the VM Machine menu</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: various bugfixes and internal cleanup</para>
+      </listitem>
+
+      <listitem>
         <para>Audio: added HDA (High Definition Audio) support for newer Linux guests</para>
       </listitem>
 
