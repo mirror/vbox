@@ -267,6 +267,7 @@ bs3-fpustate-1-template.o:: \
 	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
 	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
 	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+	$$(bs3-fpustate-1_0_OUTDIR)/bs3-fpustate-1-asm.o16
 
 endif # VBOX_WITH_BS3KIT
 

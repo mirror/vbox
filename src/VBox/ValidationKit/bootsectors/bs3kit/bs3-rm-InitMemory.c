@@ -31,6 +31,7 @@
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-memory.h"
 #include <iprt/asm.h>
+#include <VBox/VMMDevTesting.h>
 
 
 /*********************************************************************************************************************************
@@ -247,10 +248,11 @@ static void bs3InitMemoryAddRange32(uint32_t uRange, uint32_t cbRange)
 
 BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm_far(void)
 {
-    uint16_t        i;
-    uint16_t        cPages;
-    uint32_t        u32;
-    INT15E820ENTRY  Entry;
+    uint16_t            i;
+    uint16_t            cPages;
+    uint32_t            u32;
+    INT15E820ENTRY      Entry;
+    uint32_t BS3_FAR   *pu32Mmio;
 
     /*
      * Enable the A20 gate.
@@ -329,6 +331,19 @@ BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm_far(void)
              && (u32 = Bs3BiosInt15h88()) != UINT32_MAX
              && u32 > 0)
         bs3InitMemoryAddRange32(_1M, u32 * _1K);
+
+    /*
+     * Check if we've got the VMMDev MMIO testing memory mapped above 1MB.
+     */
+    pu32Mmio = (uint32_t BS3_FAR *)BS3_FP_MAKE(VMMDEV_TESTING_MMIO_RM_SEL,
+                                               VMMDEV_TESTING_MMIO_RM_OFF2(VMMDEV_TESTING_MMIO_OFF_NOP));
+    if (*pu32Mmio == VMMDEV_TESTING_NOP_RET)
+    {
+        Bs3Printf("Memory: Found VMMDev MMIO testing region\n");
+        if (!ASMBitTestAndSet(g_Bs3Mem4KUpperTiled.Core.bmAllocated, 1))
+            g_Bs3Mem4KUpperTiled.Core.cFreeChunks--;
+
+    }
 
     /*
      * Initialize the slab lists.
