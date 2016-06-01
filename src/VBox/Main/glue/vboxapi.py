@@ -992,12 +992,12 @@ class VirtualBoxManager(object):
         try:
             self.vbox = self.platform.getVirtualBox()
         except NameError:
-            print_("Installation problem: check that appropriate libs in place")
+            print("Installation problem: check that appropriate libs in place")
             traceback.print_exc()
             raise
         except Exception:
             _, e, _ = sys.exc_info()
-            print_("init exception: ", e)
+            print("init exception: ", e)
             traceback.print_exc()
             if self.remote:
                 self.vbox = None
@@ -1073,10 +1073,10 @@ class VirtualBoxManager(object):
         For unitializing the manager.
         Do not access it after calling this method.
         """
-        if hasattr(self, "vbox"):
+        if hasattr(self, "vbox") and self.vbox is not None:
             del self.vbox
             self.vbox = None
-        if hasattr(self, "platform"):
+        if hasattr(self, "platform") and self.platform is not None:
             self.platform.deinit()
             self.platform = None
         return True
