@@ -6487,23 +6487,27 @@ static void iemCImplCommonFpuStoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, RTP
     else
     {
         /** @todo Testcase: what is stored in the "gray" areas? (figure 8-9 and 8-10) */
-        uPtr.pu16[0*2] = pSrcX87->FCW;
-        uPtr.pu16[1*2] = pSrcX87->FSW;
-        uPtr.pu16[2*2] = iemFpuCalcFullFtw(pSrcX87);
+        uPtr.pu16[0*2]   = pSrcX87->FCW;
+        uPtr.pu16[0*2+1] = 0xffff;  /* (0xffff observed on intel skylake.) */
+        uPtr.pu16[1*2]   = pSrcX87->FSW;
+        uPtr.pu16[1*2+1] = 0xffff;
+        uPtr.pu16[2*2]   = iemFpuCalcFullFtw(pSrcX87);
+        uPtr.pu16[2*2+1] = 0xffff;
         if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         {
-            uPtr.pu16[3*2]  = (uint16_t)pSrcX87->FPUIP;
-            uPtr.pu32[4]    = ((pSrcX87->FPUIP & UINT32_C(0xffff0000)) >> 4) | pSrcX87->FOP;
-            uPtr.pu16[5*2]  = (uint16_t)pSrcX87->FPUDP;
-            uPtr.pu32[6]    = (pSrcX87->FPUDP  & UINT32_C(0xffff0000)) >> 4;
+            uPtr.pu16[3*2]   = (uint16_t)pSrcX87->FPUIP;
+            uPtr.pu32[4]     = ((pSrcX87->FPUIP & UINT32_C(0xffff0000)) >> 4) | pSrcX87->FOP;
+            uPtr.pu16[5*2]   = (uint16_t)pSrcX87->FPUDP;
+            uPtr.pu32[6]     = (pSrcX87->FPUDP  & UINT32_C(0xffff0000)) >> 4;
         }
         else
         {
-            uPtr.pu32[3]    = pSrcX87->FPUIP;
-            uPtr.pu16[4*2]  = pSrcX87->CS;
-            uPtr.pu16[4*2+1]= pSrcX87->FOP;
-            uPtr.pu32[5]    = pSrcX87->FPUDP;
-            uPtr.pu16[6*2]  = pSrcX87->DS;
+            uPtr.pu32[3]     = pSrcX87->FPUIP;
+            uPtr.pu16[4*2]   = pSrcX87->CS;
+            uPtr.pu16[4*2+1] = pSrcX87->FOP;
+            uPtr.pu32[5]     = pSrcX87->FPUDP;
+            uPtr.pu16[6*2]   = pSrcX87->DS;
+            uPtr.pu16[6*2+1] = 0xffff;
         }
     }
 }

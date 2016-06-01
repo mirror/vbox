@@ -5393,7 +5393,7 @@ DECLINLINE(void) iemFpuUpdateDP(PIEMCPU pIemCpu, PCPUMCTX pCtx, PX86FXSTATE pFpu
     if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
     {
         pFpuCtx->DS    = 0;
-        pFpuCtx->FPUDP = (uint32_t)GCPtrEff | ((uint32_t)sel << 4);
+        pFpuCtx->FPUDP = (uint32_t)GCPtrEff + ((uint32_t)sel << 4);
     }
     else
     {
