@@ -55,6 +55,7 @@ Debugger_SOURCES   = \
 #
 DLLS += DbgPlugInDiggers
 DbgPlugInDiggers_TEMPLATE = VBOXR3
+DbgPlugInDiggers_DEFS     = IN_DIS
 DbgPlugInDiggers_SOURCES = \
 	DBGPlugInDiggers.cpp \
 	DBGPlugInDarwin.cpp \
