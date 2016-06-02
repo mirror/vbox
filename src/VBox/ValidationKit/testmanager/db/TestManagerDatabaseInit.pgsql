@@ -35,7 +35,7 @@
 --
 
 
-DROP DATABASE testmanager; -- WARNING!! WE CURRENTLY DROP THE DATABASE!
+--  D R O P   D A T A B A S E    t e s t m a n a g e r  - -   you do this now.
 \set ON_ERROR_STOP 1
 CREATE DATABASE testmanager;
 \connect testmanager;
