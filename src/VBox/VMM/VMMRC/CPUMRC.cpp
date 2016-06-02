@@ -243,6 +243,9 @@ VMMRCDECL(void) CPUMRCProcessForceFlag(PVMCPU pVCpu)
         cr0 |= pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM;
         cr0 |= X86_CR0_TS | X86_CR0_MP;
         ASMSetCR0(cr0);
+        Log6(("CPUMRCProcessForceFlag: cr0=%#x\n", cr0));
     }
+    else
+        Log6(("CPUMRCProcessForceFlag: no change -  cr0=%#x\n", ASMGetCR0()));
 }
 

@@ -92,6 +92,13 @@
  * sseblk.s. When CR0 was changed by saving the FPU state, CPUM must now inform
  * the VT-x (HMVMX) code about it as it caches the CR0 value in the VMCS.
  *
+ *
+ * @section sec_cpum_logging        Logging Level Assignments.
+ *
+ * Following log level assignments:
+ *      - Log6 is used for FPU state management.
+ *      - Log7 is used for FPU state actualization.
+ *
  */
 
 
