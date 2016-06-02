@@ -70,13 +70,13 @@ BS3_DECL_NEAR(void) bs3FpuState1_Diff(X86FXSTATE const BS3_FAR *pExpected, X86FX
             || pChecking->aRegs[i].au64[1] != pExpected->aRegs[i].au64[1])
             Bs3TestPrintf("st%u: %.16Rhxs\n"
                           "exp: %.16Rhxs\n",
-                          &pChecking->aRegs[i], &pExpected->aRegs[i]);
+                          i, &pChecking->aRegs[i], &pExpected->aRegs[i]);
     for (i = 0; i < RT_ELEMENTS(pExpected->aXMM); i++)
         if (   pChecking->aXMM[i].au64[0] != pExpected->aXMM[i].au64[0]
             || pChecking->aXMM[i].au64[1] != pExpected->aXMM[i].au64[1])
             Bs3TestPrintf("xmm%u: %.16Rhxs\n"
                           " %sexp: %.16Rhxs\n",
-                          &pChecking->aRegs[i], &pExpected->aRegs[i], i >= 10 ? " " : "");
+                          i, &pChecking->aRegs[i], &pExpected->aRegs[i], i >= 10 ? " " : "");
 }
 
 
