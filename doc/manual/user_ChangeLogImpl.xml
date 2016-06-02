@@ -11,6 +11,15 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: new APIC and I/O APIC implementations that result in significantly improved
+          performance in certain situations</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: added support for Hyper-V paravirtualized debugging of Windows guests</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: overall migration to Qt5</para>
       </listitem>
 
@@ -19,7 +28,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: New VM wizard now allows to choose VM location for VM you are going to create</para>
+        <para>GUI: new VM wizard now allows to choose VM location for VM you are going to create</para>
       </listitem>
 
       <listitem>
