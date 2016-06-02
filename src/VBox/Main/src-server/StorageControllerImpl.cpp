@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2015 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,34 +40,6 @@
 //
 DEFINE_EMPTY_CTOR_DTOR(StorageController)
 
-struct BackupableStorageControllerData
-{
-    /* Constructor. */
-    BackupableStorageControllerData()
-        : mStorageBus(StorageBus_IDE),
-          mStorageControllerType(StorageControllerType_PIIX4),
-          mInstance(0),
-          mPortCount(2),
-          fUseHostIOCache(true),
-          fBootable(false)
-    { }
-
-    /** Unique name of the storage controller. */
-    Utf8Str strName;
-    /** The connection type of the storage controller. */
-    StorageBus_T mStorageBus;
-    /** Type of the Storage controller. */
-    StorageControllerType_T mStorageControllerType;
-    /** Instance number of the storage controller. */
-    ULONG mInstance;
-    /** Number of usable ports. */
-    ULONG mPortCount;
-    /** Whether to use the host IO caches. */
-    BOOL fUseHostIOCache;
-    /** Whether it is possible to boot from disks attached to this controller. */
-    BOOL fBootable;
-};
-
 struct StorageController::Data
 {
     Data(Machine * const aMachine)
@@ -84,7 +56,7 @@ struct StorageController::Data
     Machine * const                     pParent;
     const ComObjPtr<StorageController>  pPeer;
 
-    Backupable<BackupableStorageControllerData> bd;
+    Backupable<settings::StorageController> bd;
 };
 
 
@@ -151,9 +123,9 @@ HRESULT StorageController::init(Machine *aParent,
     m->bd.allocate();
 
     m->bd->strName = aName;
-    m->bd->mInstance = aInstance;
+    m->bd->ulInstance = aInstance;
     m->bd->fBootable = fBootable;
-    m->bd->mStorageBus = aStorageBus;
+    m->bd->storageBus = aStorageBus;
     if (   aStorageBus != StorageBus_IDE
         && aStorageBus != StorageBus_Floppy)
         m->bd->fUseHostIOCache = false;
@@ -163,31 +135,31 @@ HRESULT StorageController::init(Machine *aParent,
     switch (aStorageBus)
     {
         case StorageBus_IDE:
-            m->bd->mPortCount = 2;
-            m->bd->mStorageControllerType = StorageControllerType_PIIX4;
+            m->bd->ulPortCount = 2;
+            m->bd->controllerType = StorageControllerType_PIIX4;
             break;
         case StorageBus_SATA:
-            m->bd->mPortCount = 30;
-            m->bd->mStorageControllerType = StorageControllerType_IntelAhci;
+            m->bd->ulPortCount = 30;
+            m->bd->controllerType = StorageControllerType_IntelAhci;
             break;
         case StorageBus_SCSI:
-            m->bd->mPortCount = 16;
-            m->bd->mStorageControllerType = StorageControllerType_LsiLogic;
+            m->bd->ulPortCount = 16;
+            m->bd->controllerType = StorageControllerType_LsiLogic;
             break;
         case StorageBus_Floppy:
-            m->bd->mPortCount = 1;
-            m->bd->mStorageControllerType = StorageControllerType_I82078;
+            m->bd->ulPortCount = 1;
+            m->bd->controllerType = StorageControllerType_I82078;
             break;
         case StorageBus_SAS:
-            m->bd->mPortCount = 8;
-            m->bd->mStorageControllerType = StorageControllerType_LsiLogicSas;
+            m->bd->ulPortCount = 8;
+            m->bd->controllerType = StorageControllerType_LsiLogicSas;
         case StorageBus_USB:
-            m->bd->mPortCount = 8;
-            m->bd->mStorageControllerType = StorageControllerType_USB;
+            m->bd->ulPortCount = 8;
+            m->bd->controllerType = StorageControllerType_USB;
             break;
         case StorageBus_PCIe:
-            m->bd->mPortCount = 1;
-            m->bd->mStorageControllerType = StorageControllerType_NVMe;
+            m->bd->ulPortCount = 1;
+            m->bd->controllerType = StorageControllerType_NVMe;
             break;
     }
 
@@ -363,7 +335,7 @@ HRESULT StorageController::getBus(StorageBus_T *aBus)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aBus = m->bd->mStorageBus;
+    *aBus = m->bd->storageBus;
 
     return S_OK;
 }
@@ -372,7 +344,7 @@ HRESULT StorageController::getControllerType(StorageControllerType_T *aControlle
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aControllerType = m->bd->mStorageControllerType;
+    *aControllerType = m->bd->controllerType;
 
     return S_OK;
 }
@@ -387,7 +359,7 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
 
     HRESULT rc = S_OK;
 
-    switch (m->bd->mStorageBus)
+    switch (m->bd->storageBus)
     {
         case StorageBus_IDE:
         {
@@ -435,7 +407,7 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
             break;
         }
         default:
-            AssertMsgFailed(("Invalid controller type %d\n", m->bd->mStorageBus));
+            AssertMsgFailed(("Invalid controller type %d\n", m->bd->storageBus));
             rc = E_INVALIDARG;
     }
 
@@ -444,10 +416,10 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
                         tr("Invalid controller type %d"),
                         aControllerType);
 
-    if (m->bd->mStorageControllerType != aControllerType)
+    if (m->bd->controllerType != aControllerType)
     {
         m->bd.backup();
-        m->bd->mStorageControllerType = aControllerType;
+        m->bd->controllerType = aControllerType;
 
         alock.release();
         AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
@@ -464,7 +436,7 @@ HRESULT StorageController::getMaxDevicesPerPortCount(ULONG *aMaxDevicesPerPortCo
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, aMaxDevicesPerPortCount);
+    HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->storageBus, aMaxDevicesPerPortCount);
 
     return rc;
 }
@@ -473,14 +445,14 @@ HRESULT StorageController::getMinPortCount(ULONG *aMinPortCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = m->pSystemProperties->GetMinPortCountForStorageBus(m->bd->mStorageBus, aMinPortCount);
+    HRESULT rc = m->pSystemProperties->GetMinPortCountForStorageBus(m->bd->storageBus, aMinPortCount);
     return rc;
 }
 
 HRESULT StorageController::getMaxPortCount(ULONG *aMaxPortCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = m->pSystemProperties->GetMaxPortCountForStorageBus(m->bd->mStorageBus, aMaxPortCount);
+    HRESULT rc = m->pSystemProperties->GetMaxPortCountForStorageBus(m->bd->storageBus, aMaxPortCount);
 
     return rc;
 }
@@ -489,7 +461,7 @@ HRESULT StorageController::getPortCount(ULONG *aPortCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aPortCount = m->bd->mPortCount;
+    *aPortCount = m->bd->ulPortCount;
 
     return S_OK;
 }
@@ -502,7 +474,7 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    switch (m->bd->mStorageBus)
+    switch (m->bd->storageBus)
     {
         case StorageBus_SATA:
         {
@@ -582,13 +554,13 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
             break;
         }
         default:
-            AssertMsgFailed(("Invalid controller type %d\n", m->bd->mStorageBus));
+            AssertMsgFailed(("Invalid controller type %d\n", m->bd->storageBus));
     }
 
-    if (m->bd->mPortCount != aPortCount)
+    if (m->bd->ulPortCount != aPortCount)
     {
         m->bd.backup();
-        m->bd->mPortCount = aPortCount;
+        m->bd->ulPortCount = aPortCount;
 
         alock.release();
         AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
@@ -605,7 +577,7 @@ HRESULT StorageController::getInstance(ULONG *aInstance)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aInstance = m->bd->mInstance;
+    *aInstance = m->bd->ulInstance;
 
     return S_OK;
 }
@@ -618,10 +590,10 @@ HRESULT StorageController::setInstance(ULONG aInstance)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->mInstance != aInstance)
+    if (m->bd->ulInstance != aInstance)
     {
         m->bd.backup();
-        m->bd->mInstance = aInstance;
+        m->bd->ulInstance = aInstance;
 
         alock.release();
         AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
@@ -686,17 +658,17 @@ const Utf8Str& StorageController::i_getName() const
 
 StorageControllerType_T StorageController::i_getControllerType() const
 {
-    return m->bd->mStorageControllerType;
+    return m->bd->controllerType;
 }
 
 StorageBus_T StorageController::i_getStorageBus() const
 {
-    return m->bd->mStorageBus;
+    return m->bd->storageBus;
 }
 
 ULONG StorageController::i_getInstance() const
 {
-    return m->bd->mInstance;
+    return m->bd->ulInstance;
 }
 
 bool StorageController::i_getBootable() const
@@ -718,9 +690,9 @@ HRESULT StorageController::i_checkPortAndDeviceValid(LONG aControllerPort,
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ULONG portCount = m->bd->mPortCount;
+    ULONG portCount = m->bd->ulPortCount;
     ULONG devicesPerPort;
-    HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, &devicesPerPort);
+    HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->storageBus, &devicesPerPort);
     if (FAILED(rc)) return rc;
 
     if (   aControllerPort < 0
