@@ -355,6 +355,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations', 'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
     ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations', 'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations', 'VINF_EM_TRIPLE_FAULT' );
+    ktReason_XPCOM_Exit_Minus_11                       = ( 'XPCOM', 'exit -11' );
     ## @}
 
     def caseClosed(self, oCaseFile):
@@ -433,6 +434,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  'VERR_IEM_INSTR_NOT_IMPLEMENTED',                  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED ),
         ( True,  'VERR_IEM_ASPECT_NOT_IMPLEMENTED',                 ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED ),
         ( True,  'VINF_EM_TRIPLE_FAULT',                            ktReason_Guru_VINF_EM_TRIPLE_FAULT ),
+        ( True,  'vboxinstaller: Exit code: -11 (',                 ktReason_XPCOM_Exit_Minus_11),
     ];
 
     def investigateVBoxVMTest(self, oCaseFile, fSingleVM):
