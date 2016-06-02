@@ -3980,6 +3980,11 @@ void VBoxGlobal::prepare()
     m_osRelease = determineOsRelease();
 #endif /* VBOX_WS_MAC */
 
+#ifdef VBOX_WS_X11
+    /* Create desktop-widget watchdog instance: */
+    m_pDesktopWidgetWatchdog = new UIDesktopWidgetWatchdog(this);
+#endif /* VBOX_WS_X11 */
+
     /* Create message-center: */
     UIMessageCenter::create();
     /* Create popup-center: */
@@ -4068,9 +4073,6 @@ void VBoxGlobal::prepare()
 
     /* Acquire current Window Manager type: */
     m_enmWindowManagerType = X11WindowManagerType();
-
-    /* Create desktop-widget watchdog instance: */
-    m_pDesktopWidgetWatchdog = new UIDesktopWidgetWatchdog(this);
 #endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
