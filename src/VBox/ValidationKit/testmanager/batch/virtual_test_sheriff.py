@@ -351,11 +351,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
     ## @name Failure reasons we know.
     ## @{
-    ktReason_Guru_Generic                              = ( 'Guru Meditations', 'Generic Guru Meditation' );
-    ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations', 'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
-    ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations', 'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
-    ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations', 'VINF_EM_TRIPLE_FAULT' );
-    ktReason_XPCOM_Exit_Minus_11                       = ( 'XPCOM', 'exit -11' );
+    ktReason_Guru_Generic                              = ( 'Guru Meditations',  'Generic Guru Meditation' );
+    ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations',  'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
+    ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations',  'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
+    ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
+    ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ## @}
 
     def caseClosed(self, oCaseFile):
