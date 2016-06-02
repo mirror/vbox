@@ -320,6 +320,10 @@ COMMENT ON COLUMN TestCaseArgs.cGangMembers IS
   'Number of testboxes required (gang scheduling).';
 
 
+COMMENT ON COLUMN TestCaseArgs.sSubName IS
+  'Optional variation sub-name.';
+
+
 COMMENT ON INDEX TestCaseArgsLookupIdx IS
   'The arguments are part of the primary key for several reasons.
 No duplicate argument lists (makes no sense - if you want to prioritize
