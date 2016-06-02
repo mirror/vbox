@@ -50,6 +50,7 @@
 #ifdef VBOX
 # include "prenv.h"
 # include <stdio.h>
+# include <VBox/log.h>
 #endif
 
 
