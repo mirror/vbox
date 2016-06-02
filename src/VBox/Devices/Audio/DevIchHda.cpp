@@ -1750,16 +1750,36 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     ASMAtomicXchgBool(&pStream->State.fInReset, false);
 }
 
+static bool hdaStreamIsActive(PHDASTATE pThis, PHDASTREAM pStream)
+{
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    bool fActive = false;
+
+    AssertPtr(pStream->pMixSink);
+    if (pStream->pMixSink->pMixSink)
+        fActive = AudioMixerSinkHasData(pStream->pMixSink->pMixSink);
+
+    LogFlowFunc(("SD=%RU8, fActive=%RTbool\n", pStream->u8SD, fActive));
+    return fActive;
+}
+
 static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
+    if (!pStream->pMixSink) /* No mixer sink assigned? Bail out early. */
+    {
+        LogFlowFunc(("u8Strm=%RU8 has no mixer sink assigned\n", pStream->u8SD));
+        return VINF_SUCCESS;
+    }
+
     AUDMIXSINKCMD enmCmd = fActive
                          ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
 
     /* First, enable or disable the stream's sink, if any. */
-    AssertPtr(pStream->pMixSink);
     if (pStream->pMixSink->pMixSink)
         AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
 
@@ -1782,7 +1802,6 @@ static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
     }
 
     LogFlowFunc(("u8Strm=%RU8, fActive=%RTbool, cStreamsActive=%RU8\n", pStream->u8SD, fActive, pThis->cStreamsActive));
-
     return VINF_SUCCESS;
 }
 
@@ -3942,7 +3961,7 @@ static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis,
 
         Assert(uSD < HDA_MAX_STREAMS);
 
-        PHDASTREAM pStream = hdaStreamFromSD(pThis, pSink->uSD);
+        PHDASTREAM pStream = hdaStreamFromSD(pThis, uSD);
         if (pStream)
         {
             pSink->uSD      = uSD;
