@@ -776,10 +776,16 @@ VBoxC_SOURCES = \
 	src-client/VirtualBoxClientImpl.cpp \
 	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
-	$(VBOX_XML_SCHEMADEFS_CPP) \
-	../Devices/Audio/AudioMixBuffer.cpp \
-	../Devices/Audio/DrvAudioCommon.cpp \
-    $(if $(VBOX_WITH_VRDE_AUDIO),src-client/DrvAudioVRDE.cpp,)
+	$(VBOX_XML_SCHEMADEFS_CPP)
+
+# Audio bits.
+VBoxC_DEFS    += \
+    $(if $(VBOX_WITH_AUDIO_STABLE), VBOX_WITH_AUDIO_STABLE,)
+
+VBoxC_SOURCES += \
+	../Devices/$(VBOX_AUDIO_PATH_SOURCES)/AudioMixBuffer.cpp \
+	../Devices/$(VBOX_AUDIO_PATH_SOURCES)/DrvAudioCommon.cpp \
+    $(if $(VBOX_WITH_VRDE_AUDIO),src-client/DrvAudioVRDE$(VBOX_AUDIO_FILE_SUFFIX).cpp,)
 
 VBoxC_SOURCES.win = \
 	src-client/win/dllmain.cpp \

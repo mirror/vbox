@@ -227,6 +227,8 @@ VBOX_VERSION_PRERELEASE =
 # Force the additions.sh script to get an exact additions build when we're doing the release.
 ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
   VBOX_RELEASE_EXACT_MATCH=1
+  # Decide whether to use the stable (5.0) audio code or not.
+  VBOX_WITH_AUDIO_STABLE:=1
 endif
 ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
  export VBOX_ADDITIONS_SH_MODE     = release
@@ -431,6 +433,13 @@ VBOX_WITH_E1000 = 1
 VBOX_WITH_VIRTIO = 1
 # Enable new PS/2 mouse emulation.
 VBOX_WITH_NEW_PS2M = 1
+ifdef VBOX_WITH_AUDIO_STABLE
+ VBOX_AUDIO_PATH_SOURCES=Audio_old
+ VBOX_AUDIO_FILE_SUFFIX=_old
+else
+ VBOX_AUDIO_PATH_SOURCES=Audio
+ VBOX_AUDIO_FILE_SUFFIX=
+endif
 # Enable OSS audio support.
 VBOX_WITH_OSS = 1
 # Enable ALSA audio support.

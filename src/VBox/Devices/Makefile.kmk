@@ -153,10 +153,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_HGCM),VMMDev/VMMDevHGCM.cpp,) \
  	VMMDev/VMMDevTesting.cpp \
  	Network/DevPCNet.cpp \
- 	Audio/DevIchAc97.cpp \
- 	Audio/DevSB16.cpp \
- 	Audio/DevIchHda.cpp \
- 	Audio/DevIchHdaCodec.cpp \
  	PC/DevDMA.cpp \
  	PC/DevHPET.cpp \
  	$(if $(VBOX_WITH_NEW_IOAPIC),PC/DevIOAPIC_New.cpp,) \
@@ -543,47 +539,53 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  # --- Audio bits. ---
 
- if 0
+ if 0 # Not stable yet.
   VBoxDD_DEFS += VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
   VBoxDD_DEFS += VBOX_WITH_HDA_51_SURROUND
  endif
 
+ VBoxDD_DEFS  += $(if $(VBOX_WITH_AUDIO_STABLE),VBOX_WITH_AUDIO_STABLE,)
+
  VBoxDD_SOURCES         += \
-   Audio/AudioMixBuffer.cpp \
-   Audio/AudioMixer.cpp \
-   Audio/DrvAudio.cpp \
-   Audio/DrvAudioCommon.cpp \
-   Audio/DrvHostNullAudio.cpp
+   $(VBOX_AUDIO_PATH_SOURCES)/DevIchAc97.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/DevSB16.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/DevIchHdaCodec.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/AudioMixBuffer.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/AudioMixer.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvAudio.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvAudioCommon.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvHostNullAudio.cpp
 
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES += \
-   Audio/DrvHostCoreAudio.cpp
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvHostCoreAudio.cpp
  endif
 
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_SOURCES += \
-   Audio/DrvHostDSound.cpp
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvHostDSound.cpp
  endif
 
  ifeq ($(KBUILD_TARGET),linux)
   ifdef VBOX_WITH_OSS
    VBoxDD_DEFS    += VBOX_WITH_OSS
    VBoxDD_SOURCES += \
-        Audio/DrvHostOSSAudio.cpp
+        $(VBOX_AUDIO_PATH_SOURCES)/DrvHostOSSAudio.cpp
   endif
 
   ifdef VBOX_WITH_PULSE
    VBoxDD_DEFS    += VBOX_WITH_PULSE
    VBoxDD_SOURCES += \
-   Audio/DrvHostPulseAudio.cpp \
-   Audio/pulse_stubs.c
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvHostPulseAudio.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/pulse_stubs.c
   endif
 
   ifdef VBOX_WITH_ALSA
    VBoxDD_DEFS    += VBOX_WITH_ALSA
    VBoxDD_SOURCES += \
-   	Audio/DrvHostALSAAudio.cpp \
-   	Audio/alsa_stubs.c
+   	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostALSAAudio.cpp \
+   	$(VBOX_AUDIO_PATH_SOURCES)/alsa_stubs.c
   endif
  endif
 
@@ -591,19 +593,19 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   ifdef VBOX_WITH_OSS
    VBoxDD_DEFS    += VBOX_WITH_OSS
    VBoxDD_SOURCES += \
-    	Audio/DrvHostOSSAudio.cpp
+    	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostOSSAudio.cpp
   endif
   ifdef VBOX_WITH_PULSE
    VBoxDD_DEFS    += VBOX_WITH_PULSE
    VBoxDD_SOURCES += \
-   Audio/DrvHostPulseAudio.cpp \
-   Audio/pulse_stubs.c
+   $(VBOX_AUDIO_PATH_SOURCES)/DrvHostPulseAudio.cpp \
+   $(VBOX_AUDIO_PATH_SOURCES)/pulse_stubs.c
   endif
  endif
 
  ifeq ($(KBUILD_TARGET),solaris)
   ifdef VBOX_WITH_OSS
-   VBoxDD_SOURCES += Audio/DrvHostOSSAudio.cpp
+   VBoxDD_SOURCES += $(VBOX_AUDIO_PATH_SOURCES)/DrvHostOSSAudio.cpp
    VBoxDD_DEFS    += VBOX_WITH_OSS
   endif
  endif
