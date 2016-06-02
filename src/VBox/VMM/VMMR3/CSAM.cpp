@@ -1777,10 +1777,10 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     {
         if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS)
         {
-            Log(("csamR3CalcPageHash: page %RRv not present!!\n", pInstr));
+            Log(("csamR3CalcPageHash: page %RRv not present/invalid!!\n", pInstr));
             return ~0ULL;
         }
-        AssertMsgFailed(("rc = %Rrc\n", rc));
+        AssertMsgFailed(("rc = %Rrc %RRv\n", rc, pInstr));
     }
 
     rc = PGMPhysSimpleReadGCPtr(pVCpu, &val[1], pInstr+1024, sizeof(val[0]));
