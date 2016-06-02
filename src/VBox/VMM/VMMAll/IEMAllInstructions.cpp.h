@@ -1796,7 +1796,6 @@ FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd
 
 
 /** Opcode 0x0f 0x2b. */
-#ifndef VBOX_WITH_REM /** @todo enable tomorrow */
 FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntps mr,r" : "movntpd mr,r");
@@ -1829,9 +1828,6 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd);
-#endif
 
 
 /** Opcode 0x0f 0x2c. */
@@ -6474,7 +6470,6 @@ FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib__cmppd_Vpd_Wpd_Ib__cmpss_Vss_Wss_Ib__cmpsd_V
 
 
 /** Opcode 0x0f 0xc3. */
-#ifndef VBOX_WITH_REM
 FNIEMOP_DEF(iemOp_movnti_My_Gy)
 {
     IEMOP_MNEMONIC("movnti My,Gy");
@@ -6527,9 +6522,6 @@ FNIEMOP_DEF(iemOp_movnti_My_Gy)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movnti_My_Gy); // solaris 10 uses this in hat_pte_zero().
-#endif
 
 
 /** Opcode 0x0f 0xc4. */
@@ -6869,7 +6861,6 @@ FNIEMOP_STUB(iemOp_cvttpd2dq_Vdq_Wdp__cvtdq2pd_Vdq_Wpd__cvtpd2dq_Vdq_Wpd);
 
 
 /** Opcode 0x0f 0xe7. */
-#ifndef VBOX_WITH_REM /** @todo enable tomorrow */
 FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntq mr,r" : "movntdq mr,r");
@@ -6926,9 +6917,6 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq);
-#endif
 
 
 /** Opcode 0x0f 0xe8. */
