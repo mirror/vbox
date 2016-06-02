@@ -2357,7 +2357,7 @@ class TestDriver(base.TestDriver):                                              
         if sName is None:
             try:    sName = oVM.name;
             except: sName = 'bad-vm-handle';
-        reporter.log2('startVmEx: sName=%s fWait=%s sType=%s' % (sName, fWait, sType));
+        reporter.log('startVmEx: sName=%s fWait=%s sType=%s' % (sName, fWait, sType));
         if oVM is None:
             return (None, None);
 
