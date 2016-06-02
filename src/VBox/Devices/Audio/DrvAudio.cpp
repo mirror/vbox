@@ -1835,7 +1835,9 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, false);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    if (!pStream)
+        return PDMAUDIOSTRMSTS_FLAG_NONE;
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
