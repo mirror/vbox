@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Trap, data shared between real, virtual 8086, and 16-bit protected mode.
+; BS3Kit - Per bit-count trap data.
 ;
 
 ;
@@ -29,14 +29,12 @@
 ;*********************************************************************************************************************************
 %include "bs3kit-template-header.mac"
 
-%ifndef TMPL_16BIT
- %error "16-bit only template"
-%endif
 
 
 BS3_BEGIN_DATA16
-;; Pointer C trap handlers (CGROUP16).
-BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c16, 512
-        resw 256
-
+;; Pointer C trap handlers.
+;; Note! The 16-bit ones are all near so we can share them between real, v86 and prot mode.
+;; Note! Must be in 16-bit data because of BS3TrapSetHandlerEx.
+BS3_GLOBAL_NAME_EX BS3_CMN_NM(g_apfnBs3TrapHandlers), , 256 * xCB
+        resb 256 * xCB
 

@@ -89,7 +89,12 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-PagingAlias.c \
        bs3-cmn-PagingProtect.c \
        bs3-cmn-PagingSetupCanonicalTraps.c \
+       bs3-cmn-pic-data.c \
        bs3-cmn-PicMaskAll.c \
+       bs3-cmn-PicUpdateMask.c \
+       bs3-cmn-PicSetup.c \
+       bs3-cmn-pit.c \
+       bs3-cmn-PitIrqHandler.c \
        bs3-cmn-RegCtxRestore.asm \
        bs3-cmn-RegCtxConvertToRingX.c \
        bs3-cmn-RegCtxPrint.c \
@@ -157,8 +162,10 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-Trap64Init.c \
 	bs3-cmn-Trap64SetGate.c \
 	bs3-cmn-TrapDefaultHandler.c \
+	bs3-cmn-TrapHandlersData.asm \
 	bs3-cmn-TrapPrintFrame.c \
 	bs3-cmn-TrapSetHandler.c \
+	bs3-cmn-TrapSetHandlerEx.c \
 	bs3-cmn-TrapSetJmp.asm \
 	bs3-cmn-TrapSetJmpAndRestore.c \
 	bs3-cmn-TrapUnsetJmp.c \
@@ -209,7 +216,6 @@ bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
        bs3-c16-SwitchFromV86To16BitAndCallC.asm \
        bs3-c16-Trap16Generic.asm \
        bs3-c16-TrapRmV86Generic.asm \
-       bs3-c16-Trap16RmV86Data.asm \
        bs3-c16-TrapRmV86Data.c \
 	bs3-c16-CreateHybridFarRet.asm
 bs3kit-common-16_bs3-cmn-UInt64Div.c_CFLAGS = -oh -d0 # -d1+ vs -d0 saves 0x6a3-0x577 = 0x12C (300)!

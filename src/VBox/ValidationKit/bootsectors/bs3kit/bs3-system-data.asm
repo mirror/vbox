@@ -57,7 +57,7 @@ BS3GdtAssertOffset 8
         dw  00000h, 00000h, 00000h, 00000h      ; Entry 008h - currently unused
 
 BS3_GLOBAL_DATA Bs3Gdte_Ldt, 16                 ; Entry 010h
-        dw  BS3_DATA_NM(Bs3LdtEnd) - BS3_DATA_NM(Bs3Ldt)
+        dw  BS3_DATA_NM(Bs3LdtEnd) - BS3_DATA_NM(Bs3Ldt) - 1
         dw  BS3_SYSTEM16_BASE_LOW(Bs3Ldt)
         db  BS3_SYSTEM16_BASE_16_23
         db  X86_SEL_TYPE_SYS_LDT | 0x80

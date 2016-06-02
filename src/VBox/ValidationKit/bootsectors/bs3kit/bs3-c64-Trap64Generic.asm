@@ -38,6 +38,7 @@
 ;*  External Symbols                                                                                                             *
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+BS3_EXTERN_DATA16 g_apfnBs3TrapHandlers_c64
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
 BS3_EXTERN_CMN Bs3RegCtxRestore
@@ -52,12 +53,8 @@ BS3_BEGIN_DATA16
 BS3_GLOBAL_DATA g_Bs3Trap64GenericEntriesFlatAddr, 4
         dd Bs3Trap64GenericEntries wrt FLAT
 
-BS3_BEGIN_DATA64
-;; Pointer C trap handlers.
-BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c64, 2048
-        resq 256
 
-
+TMPL_BEGIN_TEXT
 
 ;;
 ; Generic entry points for IDT handlers, 8 byte spacing.

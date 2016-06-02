@@ -59,6 +59,10 @@
 #undef Bs3PagingUnalias
 #undef Bs3Panic
 #undef Bs3PicMaskAll
+#undef Bs3PicSetup
+#undef Bs3PicUpdateMask
+#undef Bs3PitDisable
+#undef Bs3PitSetupAndEnablePeriodTimer
 #undef Bs3PrintChr
 #undef Bs3Printf
 #undef Bs3PrintfV
@@ -138,6 +142,7 @@
 #undef Bs3TrapRmV86InitEx
 #undef Bs3TrapRmV86SetGate
 #undef Bs3TrapSetHandler
+#undef Bs3TrapSetHandlerEx
 #undef Bs3TrapSetJmp
 #undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapUnsetJmp

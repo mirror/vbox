@@ -68,7 +68,7 @@ BS3_DECL(void) Bs3InitAll_rm(void)
             ASMHalt();
     }
     ASMIntDisable();
-    Bs3PicMaskAll();
+    Bs3PicSetup();
 
     /*
      * Initialize IDTs and such.

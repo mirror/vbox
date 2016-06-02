@@ -39,6 +39,7 @@
 ;*********************************************************************************************************************************
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
+BS3_EXTERN_DATA16 g_apfnBs3TrapHandlers_c32
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 TMPL_BEGIN_TEXT
 BS3_EXTERN_CMN Bs3TrapDefaultHandler
@@ -57,12 +58,8 @@ BS3_GLOBAL_DATA g_Bs3Trap32GenericEntriesFlatAddr, 4
 BS3_GLOBAL_DATA g_Bs3Trap32DoubleFaultHandlerFlatAddr, 4
         dd Bs3Trap32DoubleFaultHandler wrt FLAT
 
-BS3_BEGIN_DATA32
-;; Pointer C trap handlers.
-BS3_GLOBAL_DATA g_apfnBs3TrapHandlers_c32, 1024
-        resd 256
 
-
+TMPL_BEGIN_TEXT
 
 ;;
 ; Generic entry points for IDT handlers, 8 byte spacing.

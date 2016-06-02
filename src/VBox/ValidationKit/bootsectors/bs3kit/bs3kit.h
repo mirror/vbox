@@ -627,13 +627,23 @@ RT_C_DECLS_BEGIN
 /** @def BS3_DECL_CALLBACK
  * Declares a BS3Kit callback function (typically static).
  *
- * Until we outgrow BS3TEXT16, we use all near functions in 16-bit.
- *
  * @param a_Type        The return type. */
 #ifdef IN_BS3KIT
 # define BS3_DECL_CALLBACK(a_Type)   a_Type BS3_FAR_CODE BS3_CALL
 #else
 # define BS3_DECL_CALLBACK(a_Type)   a_Type BS3_FAR_CODE BS3_CALL
+#endif
+
+/** @def BS3_DECL_NEAR_CALLBACK
+ * Declares a near BS3Kit callback function (typically static).
+ *
+ * 16-bit users must be in CGROUP16!
+ *
+ * @param a_Type        The return type. */
+#ifdef IN_BS3KIT
+# define BS3_DECL_NEAR_CALLBACK(a_Type) a_Type BS3_NEAR_CODE BS3_CALL
+#else
+# define BS3_DECL_NEAR_CALLBACK(a_Type) a_Type BS3_NEAR_CODE BS3_CALL
 #endif
 
 /**
@@ -684,7 +694,7 @@ RT_C_DECLS_BEGIN
  * Example: @code{.c}
  *  \#define Bs3Gdt BS3_DATA_NM(Bs3Gdt)
  *  extern X86DESC BS3_FAR_DATA Bs3Gdt
- * @endcode
+f * @endcode
  *
  * @param   a_Name      The name of the global variable.
  * @remarks Mainly used in bs3kit-mangling.h, internal headers and templates.
@@ -2222,8 +2232,8 @@ BS3_CMN_PROTO_NOSB(void, Bs3KbdWait,(void));
  * The caller is responsible for making sure the keyboard controller is ready
  * for a command (call #Bs3KbdWait if unsure).
  *
- * @returns      The value read is returned (in al).
- * @param        bCmd            The read command.
+ * @returns The value read is returned (in al).
+ * @param   bCmd            The read command.
  */
 BS3_CMN_PROTO_NOSB(uint8_t, Bs3KbdRead,(uint8_t bCmd));
 
@@ -2233,16 +2243,66 @@ BS3_CMN_PROTO_NOSB(uint8_t, Bs3KbdRead,(uint8_t bCmd));
  * The caller is responsible for making sure the keyboard controller is ready
  * for a command (call #Bs3KbdWait if unsure).
  *
- * @param        bCmd           The write command.
- * @param        bData          The data to write.
+ * @param   bCmd           The write command.
+ * @param   bData          The data to write.
  */
 BS3_CMN_PROTO_NOSB(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData));
 
 
 /**
+ * Configures the PIC, once only.
+ *
+ * Subsequent calls to this function will not do anything.
+ *
+ * The PIC will be programmed to use IDT/IVT vectors 0x70 thru 0x7f, auto
+ * end-of-interrupt, and all IRQs masked.  The individual PIC users will have to
+ * use #Bs3PicUpdateMask unmask their IRQ once they've got all the handlers
+ * installed.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PicSetup,(void));
+
+/**
+ * Updates the PIC masks.
+ *
+ * @returns The new mask - master in low, slave in high byte.
+ * @param   fAndMask    Things to keep as-is. Master in low, slave in high byte.
+ * @param   fOrMask     Things to start masking. Ditto wrt bytes.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3PicUpdateMask,(uint16_t fAndMask, uint16_t fOrMask));
+
+/**
  * Disables all IRQs on the PIC.
  */
 BS3_CMN_PROTO_STUB(void, Bs3PicMaskAll,(void));
+
+
+/**
+ * Sets up the PIT for periodic callback.
+ *
+ * @param   cHzDesired      The desired Hz.  Zero means max interval length
+ *                          (18.2Hz).  Plase check the various PIT globals for
+ *                          the actual interval length.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PitSetupAndEnablePeriodTimer,(uint16_t cHzDesired));
+
+/**
+ * Disables the PIT if active.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PitDisable,(void));
+
+/** Nano seconds (approx) since last the PIT timer was started. */
+extern uint64_t volatile    g_cBs3PitNs;
+/** Milliseconds seconds (very approx) since last the PIT timer was started. */
+extern uint64_t volatile    g_cBs3PitMs;
+/** Number of ticks since last the PIT timer was started.  */
+extern uint32_t volatile    g_cBs3PitTicks;
+/** The current interval in nanon seconds.  */
+extern uint32_t             g_cBs3PitIntervalNs;
+/** The current interval in milliseconds (approximately).
+ * This is 0 if not yet started (used for checking the state internally). */
+extern uint16_t volatile    g_cBs3PitIntervalMs;
+/** The current PIT frequency (approximately).  0 if not yet started.  */
+extern uint16_t             g_cBs3PitIntervalHz;
 
 
 /**
@@ -2644,33 +2704,80 @@ extern uint32_t g_Bs3Trap64GenericEntriesFlatAddr;
 /**
  * C-style trap handler.
  *
- * Upon return Bs3Trap16ResumeFrame_c16, #Bs3Trap32ResumeFrame_c32, or
- * Bs3Trap64ResumeFrame_c64 will be called depending on the current template
- * context.
+ * The caller will resume the context in @a pTrapFrame upon return.
+ *
+ * @param   pTrapFrame  The trap frame.  Registers can be modified.
+ * @note    The 16-bit versions must be in CGROUP16!
+ */
+typedef BS3_DECL_NEAR_CALLBACK(void) FNBS3TRAPHANDLER(PBS3TRAPFRAME pTrapFrame);
+/** Pointer to a trap handler (current template context). */
+typedef FNBS3TRAPHANDLER *PFNBS3TRAPHANDLER;
+
+/** @copydoc FNBS3TRAPHANDLER */
+typedef FNBS3TRAPHANDLER    FNBS3TRAPHANDLER16;
+/** @copydoc PFNBS3TRAPHANDLER */
+typedef FNBS3TRAPHANDLER16 *PFNBS3TRAPHANDLER16;
+#if ARCH_BITS == 16
+/** @copydoc FNBS3TRAPHANDLER */
+typedef FNBS3FAR            FNBS3TRAPHANDLER32;
+/** @copydoc FNBS3TRAPHANDLER */
+typedef FNBS3FAR            FNBS3TRAPHANDLER64;
+#else
+/** @copydoc FNBS3TRAPHANDLER */
+typedef FNBS3TRAPHANDLER    FNBS3TRAPHANDLER32;
+/** @copydoc FNBS3TRAPHANDLER */
+typedef FNBS3TRAPHANDLER    FNBS3TRAPHANDLER64;
+#endif
+/** @copydoc PFNBS3TRAPHANDLER */
+typedef FNBS3TRAPHANDLER32 *PFNBS3TRAPHANDLER32;
+/** @copydoc PFNBS3TRAPHANDLER */
+typedef FNBS3TRAPHANDLER64 *PFNBS3TRAPHANDLER64;
+
+
+/**
+ * C-style trap handler, near 16-bit (CGROUP16).
+ *
+ * The caller will resume the context in @a pTrapFrame upon return.
  *
  * @param   pTrapFrame  The trap frame.  Registers can be modified.
  */
-typedef BS3_DECL_CALLBACK(void) FNBS3TRAPHANDLER(PBS3TRAPFRAME pTrapFrame);
+typedef BS3_DECL_NEAR_CALLBACK(void) FNBS3TRAPHANDLER16(PBS3TRAPFRAME pTrapFrame);
 /** Pointer to a trap handler (current template context). */
-typedef FNBS3TRAPHANDLER *PFNBS3TRAPHANDLER;
+typedef FNBS3TRAPHANDLER16 *PFNBS3TRAPHANDLER16;
+
+/**
+ * C-style trap handler, near 16-bit (CGROUP16).
+ *
+ * The caller will resume the context in @a pTrapFrame upon return.
+ *
+ * @param   pTrapFrame  The trap frame.  Registers can be modified.
+ */
+typedef BS3_DECL_CALLBACK(void) FNBS3TRAPHANDLER3264(PBS3TRAPFRAME pTrapFrame);
+/** Pointer to a trap handler (current template context). */
+typedef FNBS3TRAPHANDLER3264 *FPFNBS3TRAPHANDLER3264;
+
 
 /**
  * Sets a trap handler (C/C++/assembly) for the current bitcount.
  *
- * When using a 32-bit IDT, only #Bs3TrapSetHandler_c32 will have any effect.
- * Likewise, when using a 16-bit IDT, only Bs3TrapSetHandler_c16 will make any
- * difference.  Ditto 64-bit.
- *
- * Rational: It's mainly a C API, can't easily mix function pointers from other
- * bit counts in C.  Use assembly helpers or something if that is necessary.
- * Besides, most of the real trap handling goes thru the default handler with
- * help of trap records.
- *
  * @returns Previous handler.
  * @param   iIdt        The index of the IDT entry to set.
  * @param   pfnHandler  Pointer to the handler.
+ * @sa      Bs3TrapSetHandlerEx
  */
 BS3_CMN_PROTO_STUB(PFNBS3TRAPHANDLER, Bs3TrapSetHandler,(uint8_t iIdt, PFNBS3TRAPHANDLER pfnHandler));
+
+/**
+ * Sets a trap handler (C/C++/assembly) for all the bitcounts.
+ *
+ * @param   iIdt            The index of the IDT and IVT entry to set.
+ * @param   pfnHandler16    Pointer to the 16-bit handler. (Assumes linker addresses.)
+ * @param   pfnHandler32    Pointer to the 32-bit handler. (Assumes linker addresses.)
+ * @param   pfnHandler64    Pointer to the 64-bit handler. (Assumes linker addresses.)
+ * @sa      Bs3TrapSetHandler
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TrapSetHandlerEx,(uint8_t iIdt, PFNBS3TRAPHANDLER16 pfnHandler16,
+                                              PFNBS3TRAPHANDLER32 pfnHandler32, PFNBS3TRAPHANDLER64 pfnHandler64));
 
 /**
  * Default C/C++ trap handler.

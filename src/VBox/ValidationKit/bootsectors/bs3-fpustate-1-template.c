@@ -125,9 +125,11 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     X86FXSTATE BS3_FAR *pExpected = (X86FXSTATE BS3_FAR *)pbTmp;
     X86FXSTATE BS3_FAR *pChecking = pExpected + 1;
     uint32_t            iLoop;
+    uint32_t            uStartTick;
     bool                fMmioReadback;
     bool                fReadBackError = false;
     BS3PTRUNION         MmioReg;
+
 
 # undef  CHECK_STATE
 # define CHECK_STATE(a_Instr) \
@@ -137,6 +139,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
             { \
                 Bs3TestFailedF("State differs after " #a_Instr " (write) in loop #%RU32\n", iLoop); \
                 bs3FpuState1_Diff(pExpected, pChecking); \
+                Bs3PitDisable(); \
                 return 1; \
             } \
         } while (0)
@@ -145,7 +148,15 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
      * Setup the test.
      */
 
-    /* First, figure out which MMIO region we'll be using so we can correctly initialize FPUDS. */
+    /* Make this code executable in raw-mode.  A bit tricky. */
+    ASMSetCR0(ASMGetCR0() | X86_CR0_WP);
+    Bs3PitSetupAndEnablePeriodTimer(20);
+    ASMIntEnable();
+# if ARCH_BITS != 64
+    ASMHalt();
+# endif
+
+    /* Figure out which MMIO region we'll be using so we can correctly initialize FPUDS. */
 # if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
     MmioReg.pv = BS3_FP_MAKE(0xffff, VMMDEV_TESTING_MMIO_BASE - _1M + 16);
 # elif BS3_MODE_IS_16BIT_CODE(TMPL_MODE)
@@ -165,22 +176,29 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
         MmioReg.pv = Bs3XptrFlatToCurrent(0xa7800);
     }
 
-    /* Second, make 100% sure we don't trap accessing the FPU state and that we can use fxsave/fxrstor. */
+    /* Make 100% sure we don't trap accessing the FPU state and that we can use fxsave/fxrstor. */
     g_usBs3TestStep = 1;
     ASMSetCR0((ASMGetCR0() & ~(X86_CR0_TS | X86_CR0_EM)) | X86_CR0_MP);
     ASMSetCR4(ASMGetCR4() | X86_CR4_OSFXSR /*| X86_CR4_OSXMMEEXCPT*/);
 
-    /* Third, come up with a distinct state. We do that from assembly (will do FPU in R0/RC). */
+    /* Come up with a distinct state. We do that from assembly (will do FPU in R0/RC). */
     g_usBs3TestStep = 2;
     Bs3MemSet(abBuf, 0x42, sizeof(abBuf));
     TMPL_NM(bs3FpuState1_InitState)(pExpected, MmioReg.pb);
+
 
     /*
      * Test #1: Check that we can keep it consistent for a while.
      */
     g_usBs3TestStep = 3;
-    for (iLoop = 0; iLoop < _1M; iLoop++) /** @todo adjust counter. will hardcode for now and do timers later so day... */
+    uStartTick = g_cBs3PitTicks;
+    for (iLoop = 0; iLoop < _16M; iLoop++)
+    {
         CHECK_STATE(nop);
+        if (   (iLoop & 0xffff) == 0xffff
+            && g_cBs3PitTicks - uStartTick >= 20 * 20) /* 20 seconds*/
+            break;
+    }
 
     /*
      * Test #2: Use various FPU, SSE and weird instructions to do MMIO writes.
@@ -189,7 +207,8 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
      * with VGA if not configured.
      */
     g_usBs3TestStep = 4;
-    for (iLoop = 0; iLoop < _128K; iLoop++) /** @todo adjust counter. will hardcode for now and do timers later so day... */
+    uStartTick = g_cBs3PitTicks;
+    for (iLoop = 0; iLoop < _1M; iLoop++)
     {
         unsigned off;
         uint8_t  abCompare[64];
@@ -268,8 +287,14 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
         pExpected->FPUDP  = BS3_FP_OFF(&MmioReg.pb[off]);
 # endif
         CHECK_STATE(FMUL);
+
+        /* check for timeout every now an then. */
+        if (   (iLoop & 0xfff) == 0xfff
+            && g_cBs3PitTicks - uStartTick >= 20 * 20) /* 20 seconds*/
+            break;
     }
 
+    Bs3PitDisable();
     return 0;
 }
 # endif
