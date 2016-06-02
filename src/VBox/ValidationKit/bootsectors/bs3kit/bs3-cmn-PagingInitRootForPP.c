@@ -96,6 +96,11 @@ BS3_CMN_DEF(int, Bs3PagingInitRootForPP,(void))
                 pPgDir->a[i].u = (uint32_t)i << X86_PD_SHIFT;
                 pPgDir->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PS | X86_PDE4M_A | X86_PDE4M_D;
             }
+
+            /* Free up 4 consequtive entries for raw-mode hypervisor code. */
+            if (1) /** @todo detect raw-mode and only do this then. */
+                for (i = 0; i < 4; i++)
+                    pPgDir->a[i + (UINT32_C(0xc0000000) >> X86_PD_SHIFT)].b.u1Present = 0;
         }
         else
         {

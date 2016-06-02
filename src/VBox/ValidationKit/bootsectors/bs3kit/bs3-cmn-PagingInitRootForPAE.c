@@ -72,6 +72,11 @@ BS3_CMN_DEF(int, Bs3PagingInitRootForPAE,(void))
             pPdPtr->a[2].u = pPdPtr->a[1].u + _4K;
             pPdPtr->a[3].u = pPdPtr->a[2].u + _4K;
 
+            /* Free up 8 consequtive entries for raw-mode hypervisor code. */
+            if (1) /** @todo detect raw-mode and only do this then. */
+                for (i = 0; i < 8; i++)
+                    paPgDirs->a[i + (UINT32_C(0xc0000000) >> X86_PD_PAE_SHIFT)].b.u1Present = 0;
+
             /* Set the global root pointer and we're done. */
             BS3_XPTR_SET(X86PDPT, XPtrPdPtr, pPdPtr);
             g_PhysPagingRootPAE = BS3_XPTR_GET_FLAT(X86PDPT, XPtrPdPtr);
