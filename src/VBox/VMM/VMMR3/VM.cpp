@@ -1181,15 +1181,19 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         rc = PGMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = CPUMR3InitCompleted(pVM, enmWhat);
-#ifndef VBOX_WITH_RAW_MODE
     if (enmWhat == VMINITCOMPLETED_RING3)
     {
+#ifndef VBOX_WITH_RAW_MODE
         if (RT_SUCCESS(rc))
             rc = SSMR3RegisterStub(pVM, "CSAM", 0);
         if (RT_SUCCESS(rc))
             rc = SSMR3RegisterStub(pVM, "PATM", 0);
-    }
 #endif
+#ifndef VBOX_WITH_REM
+        if (RT_SUCCESS(rc))
+            rc = SSMR3RegisterStub(pVM, "rem", 1);
+#endif
+    }
     if (RT_SUCCESS(rc))
         rc = PDMR3InitCompleted(pVM, enmWhat);
     return rc;
