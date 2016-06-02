@@ -109,7 +109,7 @@ class tdUnitTest1(vbox.TestDriver):
     };
 
     ## The permanent exclude list.
-    # @note Stripped extensions!
+    # @note Stripped of extensions!
     kdTestCasesBlackList = {
         'testcase/tstClipboardX11Smoke': '',
         'testcase/tstFileLock': '',
@@ -195,6 +195,8 @@ class tdUnitTest1(vbox.TestDriver):
         'tstDeviceStructSizeRC': '',        # This is a C-code generator.
         'testcase/tstTSC': '',              # Doesn't test anything and might fail with HT or/and too many cores.
         'testcase/tstOpenUSBDev': '',       # Not a useful testcase.
+        'testcase/tstX86-1': '',            # Really more guest side.
+        'testcase/tstX86-FpuSaveRestore': '', # Experiments, could be useful for the guest not the host.
     };
 
     # Suffix exclude list.
