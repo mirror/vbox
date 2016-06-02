@@ -970,7 +970,7 @@ class WuiMain(WuiDispatcherBase):
         self._sTemplate = 'template-details.html'; ## @todo create new template (background color, etc)
         idTestSet       = self.getIntParam(self.ksParamLogSetId,     iMin = 1);
         idLogFile       = self.getIntParam(self.ksParamLogFileId,    iMin = 0,                    iDefault = 0);
-        cbChunk         = self.getIntParam(self.ksParamLogChunkSize, iMin = 256, iMax = 16777216, iDefault = 65536);
+        cbChunk         = self.getIntParam(self.ksParamLogChunkSize, iMin = 256, iMax = 16777216, iDefault = 1024*1024);
         iChunk          = self.getIntParam(self.ksParamLogChunkNo,   iMin = 0,
                                            iMax = config.g_kcMbMaxMainLog * 1048576 / cbChunk,    iDefault = 0);
         self._checkForUnknownParameters();

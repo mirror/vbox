@@ -148,10 +148,10 @@ class WuiLogViewer(WuiContentBase):
         #
         # Got to where we wanted, format the chunk.
         #
-        sHtml = '\n<div class="tmlog">\n<pre>\n';
+        asLines = [];
         while True:
-            sHtml += '<a id="L%d" href="#L%d">%05d</a><a id="O%d"> </a>%s\n' \
-                   % (iLine, iLine, iLine, offLine, webutils.escapeElem(sLine.rstrip()));
+            asLines.append('<a id="L%d" href="#L%d">%05d</a><a id="O%d"></a>%s\n' \
+                           % (iLine, iLine, iLine, offLine, webutils.escapeElem(sLine.rstrip())));
             if offCur >= offEnd:
                 break;
             sLine   = oFile.readline().decode('utf-8', 'replace');
@@ -160,9 +160,7 @@ class WuiLogViewer(WuiContentBase):
             offCur += len(sLine);
             if len(sLine) == 0:
                 break;
-        sHtml += '<pre/></div>\n';
-
-        return sHtml;
+        return '\n<div class="tmlog">\n<pre>\n' + ''.join(asLines) + '<pre/></div>\n';
 
 
     def show(self):
