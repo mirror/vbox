@@ -36,33 +36,7 @@ import sys;
 # Validation Kit imports.
 from common                                    import webutils
 from testmanager                               import config;
-from testmanager.core.buildsource              import BuildSourceLogic, BuildSourceData
-from testmanager.core.build                    import BuildCategoryLogic, BuildCategoryData, BuildLogic, BuildData;
-from testmanager.core.globalresource           import GlobalResourceLogic, GlobalResourceData
-from testmanager.core.schedulerbase            import SchedulerBase
-from testmanager.core.schedgroup               import SchedGroupLogic, SchedGroupData, SchedGroupDataEx
-from testmanager.core.systemlog                import SystemLogLogic
-from testmanager.core.testbox                  import TestBoxData, TestBoxLogic
-from testmanager.core.testcase                 import TestCaseLogic, TestCaseData, TestCaseDataEx
-from testmanager.core.useraccount              import UserAccountLogic, UserAccountData
-from testmanager.core.testgroup                import TestGroupLogic, TestGroupDataEx;
-from testmanager.core.failurecategory          import FailureCategoryLogic, FailureCategoryData
-from testmanager.core.failurereason            import FailureReasonLogic, FailureReasonData
-from testmanager.core.buildblacklist           import BuildBlacklistLogic, BuildBlacklistData
 from testmanager.webui.wuibase                 import WuiDispatcherBase, WuiException
-from testmanager.webui.wuiadminbuild           import WuiAdminBuild, WuiAdminBuildList
-from testmanager.webui.wuiadminsystemlog       import WuiAdminSystemLogList
-from testmanager.webui.wuiadminbuildsource     import WuiAdminBuildSrc, WuiAdminBuildSrcList;
-from testmanager.webui.wuiadminbuildcategory   import WuiAdminBuildCat, WuiAdminBuildCatList;
-from testmanager.webui.wuiadminglobalrsrc      import WuiGlobalResource, WuiGlobalResourceList
-from testmanager.webui.wuiadmintestbox         import WuiTestBoxList, WuiTestBox
-from testmanager.webui.wuiadmintestcase        import WuiTestCase, WuiTestCaseList
-from testmanager.webui.wuiadminuseraccount     import WuiUserAccountList, WuiUserAccount
-from testmanager.webui.wuiadmintestgroup       import WuiTestGroup, WuiTestGroupList;
-from testmanager.webui.wuiadminschedgroup      import WuiSchedGroup, WuiAdminSchedGroupList;
-from testmanager.webui.wuiadminbuildblacklist  import WuiAdminBuildBlacklist, WuiAdminListOfBlacklistItems
-from testmanager.webui.wuiadminfailurecategory import WuiFailureCategory, WuiFailureCategoryList
-from testmanager.webui.wuiadminfailurereason   import WuiAdminFailureReason, WuiAdminFailureReasonList
 
 
 class WuiAdmin(WuiDispatcherBase):
@@ -181,252 +155,158 @@ class WuiAdmin(WuiDispatcherBase):
     ksActionSchedGroupEditPost      = 'SchedGroupEditPost';
     ## @}
 
-    def __init__(self, oSrvGlue):
+    def __init__(self, oSrvGlue): # pylint: disable=too-many-locals,too-many-statements
         WuiDispatcherBase.__init__(self, oSrvGlue, self.ksScriptName);
-
         self._sTemplate     = 'template.html';
 
-        # Use short form to avoid hitting the right margin (130) when using lambda.
-        d = self._dDispatch;  # pylint: disable=C0103
 
         #
         # System Log actions.
         #
-        d[self.ksActionSystemLogList]           = lambda: self._actionGenericListing(SystemLogLogic, WuiAdminSystemLogList)
+        self._dDispatch[self.ksActionSystemLogList]             = self._actionSystemLogList;
 
         #
         # User Account actions.
         #
-        d[self.ksActionUserList]                = lambda: self._actionGenericListing(UserAccountLogic, WuiUserAccountList)
-        d[self.ksActionUserAdd]                 = lambda: self._actionGenericFormAdd(UserAccountData, WuiUserAccount)
-        d[self.ksActionUserEdit]                = lambda: self._actionGenericFormEdit(UserAccountData, WuiUserAccount,
-                                                                                      UserAccountData.ksParam_uid);
-        d[self.ksActionUserAddPost]             = lambda: self._actionGenericFormAddPost(UserAccountData, UserAccountLogic,
-                                                                                         WuiUserAccount, self.ksActionUserList)
-        d[self.ksActionUserEditPost]            = lambda: self._actionGenericFormEditPost(UserAccountData, UserAccountLogic,
-                                                                                          WuiUserAccount, self.ksActionUserList)
-        d[self.ksActionUserDelPost]             = lambda: self._actionGenericDoRemove(UserAccountLogic,
-                                                                                      UserAccountData.ksParam_uid,
-                                                                                      self.ksActionUserList)
+        self._dDispatch[self.ksActionUserList]                  = self._actionUserList;
+        self._dDispatch[self.ksActionUserAdd]                   = self._actionUserAdd;
+        self._dDispatch[self.ksActionUserEdit]                  = self._actionUserEdit;
+        self._dDispatch[self.ksActionUserAddPost]               = self._actionUserAddPost;
+        self._dDispatch[self.ksActionUserEditPost]              = self._actionUserEditPost;
+        self._dDispatch[self.ksActionUserDelPost]               = self._actionUserDelPost;
 
         #
         # TestBox actions.
         #
-        d[self.ksActionTestBoxList]             = lambda: self._actionGenericListing(TestBoxLogic, WuiTestBoxList);
-        d[self.ksActionTestBoxListPost]         = self._actionTestBoxListPost;
-        d[self.ksActionTestBoxAdd]              = lambda: self._actionGenericFormAdd(TestBoxData, WuiTestBox);
-        d[self.ksActionTestBoxAddPost]          = lambda: self._actionGenericFormAddPost(TestBoxData, TestBoxLogic,
-                                                                                         WuiTestBox, self.ksActionTestBoxList);
-        d[self.ksActionTestBoxDetails]          = lambda: self._actionGenericFormDetails(TestBoxData, TestBoxLogic, WuiTestBox,
-                                                                                         'idTestBox', 'idGenTestBox');
-        d[self.ksActionTestBoxEdit]             = lambda: self._actionGenericFormEdit(TestBoxData, WuiTestBox,
-                                                                                      TestBoxData.ksParam_idTestBox);
-        d[self.ksActionTestBoxEditPost]         = lambda: self._actionGenericFormEditPost(TestBoxData, TestBoxLogic,
-                                                                                          WuiTestBox, self.ksActionTestBoxList);
-        d[self.ksActionTestBoxRemovePost]       = lambda: self._actionGenericDoRemove(TestBoxLogic,
-                                                                                      TestBoxData.ksParam_idTestBox,
-                                                                                      self.ksActionTestBoxList)
-        d[self.ksActionTestBoxesRegenQueues]    = self._actionRegenQueuesCommon;
+        self._dDispatch[self.ksActionTestBoxList]               = self._actionTestBoxList;
+        self._dDispatch[self.ksActionTestBoxListPost]           = self._actionTestBoxListPost;
+        self._dDispatch[self.ksActionTestBoxAdd]                = self._actionTestBoxAdd;
+        self._dDispatch[self.ksActionTestBoxAddPost]            = self._actionTestBoxAddPost;
+        self._dDispatch[self.ksActionTestBoxDetails]            = self._actionTestBoxDetails;
+        self._dDispatch[self.ksActionTestBoxEdit]               = self._actionTestBoxEdit;
+        self._dDispatch[self.ksActionTestBoxEditPost]           = self._actionTestBoxEditPost;
+        self._dDispatch[self.ksActionTestBoxRemovePost]         = self._actionTestBoxRemovePost;
+        self._dDispatch[self.ksActionTestBoxesRegenQueues]      = self._actionRegenQueuesCommon;
 
         #
         # Test Case actions.
         #
-        d[self.ksActionTestCaseList]            = lambda: self._actionGenericListing(TestCaseLogic, WuiTestCaseList);
-        d[self.ksActionTestCaseAdd]             = lambda: self._actionGenericFormAdd(TestCaseDataEx, WuiTestCase);
-        d[self.ksActionTestCaseAddPost]         = lambda: self._actionGenericFormAddPost(TestCaseDataEx, TestCaseLogic,
-                                                                                         WuiTestCase, self.ksActionTestCaseList);
-        d[self.ksActionTestCaseClone]           = lambda: self._actionGenericFormClone(  TestCaseDataEx, WuiTestCase,
-                                                                                         'idTestCase', 'idGenTestCase');
-        d[self.ksActionTestCaseDetails]         = lambda: self._actionGenericFormDetails(TestCaseDataEx, TestCaseLogic,
-                                                                                         WuiTestCase, 'idTestCase',
-                                                                                         'idGenTestCase');
-        d[self.ksActionTestCaseEdit]            = lambda: self._actionGenericFormEdit(TestCaseDataEx, WuiTestCase,
-                                                                                      TestCaseDataEx.ksParam_idTestCase);
-        d[self.ksActionTestCaseEditPost]        = lambda: self._actionGenericFormEditPost(TestCaseDataEx, TestCaseLogic,
-                                                                                          WuiTestCase, self.ksActionTestCaseList);
-        d[self.ksActionTestCaseDoRemove]        = lambda: self._actionGenericDoRemove(TestCaseLogic,
-                                                                                      TestCaseData.ksParam_idTestCase,
-                                                                                      self.ksActionTestCaseList);
+        self._dDispatch[self.ksActionTestCaseList]              = self._actionTestCaseList;
+        self._dDispatch[self.ksActionTestCaseAdd]               = self._actionTestCaseAdd;
+        self._dDispatch[self.ksActionTestCaseAddPost]           = self._actionTestCaseAddPost;
+        self._dDispatch[self.ksActionTestCaseClone]             = self._actionTestCaseClone;
+        self._dDispatch[self.ksActionTestCaseDetails]           = self._actionTestCaseDetails;
+        self._dDispatch[self.ksActionTestCaseEdit]              = self._actionTestCaseEdit;
+        self._dDispatch[self.ksActionTestCaseEditPost]          = self._actionTestCaseEditPost;
+        self._dDispatch[self.ksActionTestCaseDoRemove]          = self._actionTestCaseDoRemove;
 
         #
         # Global Resource actions
         #
-        d[self.ksActionGlobalRsrcShowAll]       = lambda: self._actionGenericListing(GlobalResourceLogic, WuiGlobalResourceList)
-        d[self.ksActionGlobalRsrcShowAdd]       = lambda: self._actionGlobalRsrcShowAddEdit(WuiAdmin.ksActionGlobalRsrcAdd)
-        d[self.ksActionGlobalRsrcShowEdit]      = lambda: self._actionGlobalRsrcShowAddEdit(WuiAdmin.ksActionGlobalRsrcEdit)
-        d[self.ksActionGlobalRsrcAdd]           = lambda: self._actionGlobalRsrcAddEdit(WuiAdmin.ksActionGlobalRsrcAdd)
-        d[self.ksActionGlobalRsrcEdit]          = lambda: self._actionGlobalRsrcAddEdit(WuiAdmin.ksActionGlobalRsrcEdit)
-        d[self.ksActionGlobalRsrcDel]           = lambda: self._actionGenericDoDelOld(GlobalResourceLogic,
-                                                                                      GlobalResourceData.ksParam_idGlobalRsrc,
-                                                                                      self.ksActionGlobalRsrcShowAll)
+        self._dDispatch[self.ksActionGlobalRsrcShowAll]         = self._actionGlobalRsrcShowAll;
+        self._dDispatch[self.ksActionGlobalRsrcShowAdd]         = self._actionGlobalRsrcShowAdd;
+        self._dDispatch[self.ksActionGlobalRsrcShowEdit]        = self._actionGlobalRsrcShowEdit;
+        self._dDispatch[self.ksActionGlobalRsrcAdd]             = self._actionGlobalRsrcAdd;
+        self._dDispatch[self.ksActionGlobalRsrcEdit]            = self._actionGlobalRsrcEdit;
+        self._dDispatch[self.ksActionGlobalRsrcDel]             = self._actionGlobalRsrcDel;
 
         #
         # Build Source actions
         #
-        d[self.ksActionBuildSrcList]        = lambda: self._actionGenericListing(BuildSourceLogic, WuiAdminBuildSrcList)
-        d[self.ksActionBuildSrcAdd]         = lambda: self._actionGenericFormAdd(BuildSourceData, WuiAdminBuildSrc);
-        d[self.ksActionBuildSrcAddPost]     = lambda: self._actionGenericFormAddPost(BuildSourceData, BuildSourceLogic,
-                                                                                     WuiAdminBuildSrc, self.ksActionBuildSrcList);
-        d[self.ksActionBuildSrcClone]       = lambda: self._actionGenericFormClone(  BuildSourceData, WuiAdminBuildSrc,
-                                                                                     'idBuildSrc');
-        d[self.ksActionBuildSrcDetails]     = lambda: self._actionGenericFormDetails(BuildSourceData, BuildSourceLogic,
-                                                                                     WuiAdminBuildSrc, 'idBuildSrc');
-        d[self.ksActionBuildSrcDoRemove]    = lambda: self._actionGenericDoRemove(BuildSourceLogic,
-                                                                                  BuildSourceData.ksParam_idBuildSrc,
-                                                                                  self.ksActionBuildSrcList);
-        d[self.ksActionBuildSrcEdit]        = lambda: self._actionGenericFormEdit(BuildSourceData, WuiAdminBuildSrc,
-                                                                                  BuildSourceData.ksParam_idBuildSrc);
-        d[self.ksActionBuildSrcEditPost]    = lambda: self._actionGenericFormEditPost(BuildSourceData, BuildSourceLogic,
-                                                                                      WuiAdminBuildSrc,
-                                                                                      self.ksActionBuildSrcList);
-
+        self._dDispatch[self.ksActionBuildSrcList]              = self._actionBuildSrcList;
+        self._dDispatch[self.ksActionBuildSrcAdd]               = self._actionBuildSrcAdd;
+        self._dDispatch[self.ksActionBuildSrcAddPost]           = self._actionBuildSrcAddPost;
+        self._dDispatch[self.ksActionBuildSrcClone]             = self._actionBuildSrcClone;
+        self._dDispatch[self.ksActionBuildSrcDetails]           = self._actionBuildSrcDetails;
+        self._dDispatch[self.ksActionBuildSrcDoRemove]          = self._actionBuildSrcDoRemove;
+        self._dDispatch[self.ksActionBuildSrcEdit]              = self._actionBuildSrcEdit;
+        self._dDispatch[self.ksActionBuildSrcEditPost]          = self._actionBuildSrcEditPost;
 
         #
         # Build actions
         #
-        d[self.ksActionBuildList]           = lambda: self._actionGenericListing(BuildLogic, WuiAdminBuildList)
-        d[self.ksActionBuildAdd]            = lambda: self._actionGenericFormAdd(BuildData, WuiAdminBuild)
-        d[self.ksActionBuildAddPost]        = lambda: self._actionGenericFormAddPost(BuildData, BuildLogic, WuiAdminBuild,
-                                                                                     self.ksActionBuildList)
-        d[self.ksActionBuildClone]          = lambda: self._actionGenericFormClone(  BuildData, WuiAdminBuild, 'idBuild');
-        d[self.ksActionBuildDetails]        = lambda: self._actionGenericFormDetails(BuildData, BuildLogic,
-                                                                                     WuiAdminBuild, 'idBuild');
-        d[self.ksActionBuildDoRemove]       = lambda: self._actionGenericDoRemove(BuildLogic, BuildData.ksParam_idBuild,
-                                                                                  self.ksActionBuildList);
-        d[self.ksActionBuildEdit]           = lambda: self._actionGenericFormEdit(BuildData, WuiAdminBuild,
-                                                                                  BuildData.ksParam_idBuild);
-        d[self.ksActionBuildEditPost]       = lambda: self._actionGenericFormEditPost(BuildData, BuildLogic, WuiAdminBuild,
-                                                                                      self.ksActionBuildList)
+        self._dDispatch[self.ksActionBuildList]                 = self._actionBuildList;
+        self._dDispatch[self.ksActionBuildAdd]                  = self._actionBuildAdd;
+        self._dDispatch[self.ksActionBuildAddPost]              = self._actionBuildAddPost;
+        self._dDispatch[self.ksActionBuildClone]                = self._actionBuildClone;
+        self._dDispatch[self.ksActionBuildDetails]              = self._actionBuildDetails;
+        self._dDispatch[self.ksActionBuildDoRemove]             = self._actionBuildDoRemove;
+        self._dDispatch[self.ksActionBuildEdit]                 = self._actionBuildEdit;
+        self._dDispatch[self.ksActionBuildEditPost]             = self._actionBuildEditPost;
 
         #
         # Build Black List actions
         #
-        d[self.ksActionBuildBlacklist]          = lambda: self._actionGenericListing(BuildBlacklistLogic,
-                                                                                     WuiAdminListOfBlacklistItems);
-        d[self.ksActionBuildBlacklistAdd]       = lambda: self._actionGenericFormAdd(BuildBlacklistData, WuiAdminBuildBlacklist);
-        d[self.ksActionBuildBlacklistAddPost]   = lambda: self._actionGenericFormAddPost(BuildBlacklistData, BuildBlacklistLogic,
-                                                                                         WuiAdminBuildBlacklist,
-                                                                                         self.ksActionBuildBlacklist);
-        d[self.ksActionBuildBlacklistClone]     = lambda: self._actionGenericFormClone(BuildBlacklistData,
-                                                                                       WuiAdminBuildBlacklist,
-                                                                                       'idBlacklisting');
-        d[self.ksActionBuildBlacklistDetails]   = lambda: self._actionGenericFormDetails(BuildBlacklistData,
-                                                                                         BuildBlacklistLogic,
-                                                                                         WuiAdminBuildBlacklist,
-                                                                                         'idBlacklisting');
-        d[self.ksActionBuildBlacklistDoRemove]  = lambda: self._actionGenericDoRemove(BuildBlacklistLogic,
-                                                                                      BuildBlacklistData.ksParam_idBlacklisting,
-                                                                                      self.ksActionBuildBlacklist)
-        d[self.ksActionBuildBlacklistEdit]      = lambda: self._actionGenericFormEdit(BuildBlacklistData,
-                                                                                      WuiAdminBuildBlacklist,
-                                                                                      BuildBlacklistData.ksParam_idBlacklisting);
-        d[self.ksActionBuildBlacklistEditPost]  = lambda: self._actionGenericFormEditPost(BuildBlacklistData,
-                                                                                          BuildBlacklistLogic,
-                                                                                          WuiAdminBuildBlacklist,
-                                                                                          self.ksActionBuildBlacklist)
-
+        self._dDispatch[self.ksActionBuildBlacklist]            = self._actionBuildBlacklist;
+        self._dDispatch[self.ksActionBuildBlacklistAdd]         = self._actionBuildBlacklistAdd;
+        self._dDispatch[self.ksActionBuildBlacklistAddPost]     = self._actionBuildBlacklistAddPost;
+        self._dDispatch[self.ksActionBuildBlacklistClone]       = self._actionBuildBlacklistClone;
+        self._dDispatch[self.ksActionBuildBlacklistDetails]     = self._actionBuildBlacklistDetails;
+        self._dDispatch[self.ksActionBuildBlacklistDoRemove]    = self._actionBuildBlacklistDoRemove;
+        self._dDispatch[self.ksActionBuildBlacklistEdit]        = self._actionBuildBlacklistEdit;
+        self._dDispatch[self.ksActionBuildBlacklistEditPost]    = self._actionBuildBlacklistEditPost;
 
         #
         # Failure Category actions
         #
-        d[self.ksActionFailureCategoryList] = \
-            lambda: self._actionGenericListing(FailureCategoryLogic, WuiFailureCategoryList);
-        d[self.ksActionFailureCategoryAdd] = \
-            lambda: self._actionGenericFormAdd(FailureCategoryData, WuiFailureCategory);
-        d[self.ksActionFailureCategoryAddPost] = \
-            lambda: self._actionGenericFormAddPost(FailureCategoryData, FailureCategoryLogic, WuiFailureCategory,
-                                                   self.ksActionFailureCategoryList)
-        d[self.ksActionFailureCategoryDetails] = \
-            lambda: self._actionGenericFormDetails(FailureCategoryData, FailureCategoryLogic, WuiFailureCategory);
-
-        d[self.ksActionFailureCategoryDoRemove] = \
-            lambda: self._actionGenericDoRemove(FailureCategoryLogic, FailureCategoryData.ksParam_idFailureCategory,
-                                                self.ksActionFailureCategoryList);
-        d[self.ksActionFailureCategoryEdit] = \
-            lambda: self._actionGenericFormEdit(FailureCategoryData, WuiFailureCategory,
-                                                FailureCategoryData.ksParam_idFailureCategory);
-        d[self.ksActionFailureCategoryEditPost] = \
-            lambda: self._actionGenericFormEditPost(FailureCategoryData, FailureCategoryLogic, WuiFailureCategory,
-                                                    self.ksActionFailureCategoryList);
+        self._dDispatch[self.ksActionFailureCategoryList]       = self._actionFailureCategoryList;
+        self._dDispatch[self.ksActionFailureCategoryAdd]        = self._actionFailureCategoryAdd;
+        self._dDispatch[self.ksActionFailureCategoryAddPost]    = self._actionFailureCategoryAddPost;
+        self._dDispatch[self.ksActionFailureCategoryDetails]    = self._actionFailureCategoryDetails;
+        self._dDispatch[self.ksActionFailureCategoryDoRemove]   = self._actionFailureCategoryDoRemove;
+        self._dDispatch[self.ksActionFailureCategoryEdit]       = self._actionFailureCategoryEdit;
+        self._dDispatch[self.ksActionFailureCategoryEditPost]   = self._actionFailureCategoryEditPost;
 
         #
         # Failure Reason actions
         #
-        d[self.ksActionFailureReasonList] = \
-            lambda: self._actionGenericListing(FailureReasonLogic, WuiAdminFailureReasonList)
-
-        d[self.ksActionFailureReasonAdd] = \
-            lambda: self._actionGenericFormAdd(FailureReasonData, WuiAdminFailureReason);
-        d[self.ksActionFailureReasonAddPost] = \
-            lambda: self._actionGenericFormAddPost(FailureReasonData, FailureReasonLogic, WuiAdminFailureReason,
-                                                   self.ksActionFailureReasonList);
-        d[self.ksActionFailureReasonDetails] = \
-            lambda: self._actionGenericFormDetails(FailureReasonData, FailureReasonLogic, WuiAdminFailureReason);
-        d[self.ksActionFailureReasonDoRemove] = \
-            lambda: self._actionGenericDoRemove(FailureReasonLogic, FailureReasonData.ksParam_idFailureReason,
-                                                self.ksActionFailureReasonList);
-        d[self.ksActionFailureReasonEdit] = \
-            lambda: self._actionGenericFormEdit(FailureReasonData, WuiAdminFailureReason);
-
-        d[self.ksActionFailureReasonEditPost] = \
-            lambda: self._actionGenericFormEditPost(FailureReasonData, FailureReasonLogic, WuiAdminFailureReason,\
-                                                    self.ksActionFailureReasonList)
+        self._dDispatch[self.ksActionFailureReasonList]         = self._actionFailureReasonList;
+        self._dDispatch[self.ksActionFailureReasonAdd]          = self._actionFailureReasonAdd;
+        self._dDispatch[self.ksActionFailureReasonAddPost]      = self._actionFailureReasonAddPost;
+        self._dDispatch[self.ksActionFailureReasonDetails]      = self._actionFailureReasonDetails;
+        self._dDispatch[self.ksActionFailureReasonDoRemove]     = self._actionFailureReasonDoRemove;
+        self._dDispatch[self.ksActionFailureReasonEdit]         = self._actionFailureReasonEdit;
+        self._dDispatch[self.ksActionFailureReasonEditPost]     = self._actionFailureReasonEditPost;
 
         #
         # Build Category actions
         #
-        d[self.ksActionBuildCategoryList]       = lambda: self._actionGenericListing(BuildCategoryLogic, WuiAdminBuildCatList);
-        d[self.ksActionBuildCategoryAdd]        = lambda: self._actionGenericFormAdd(BuildCategoryData, WuiAdminBuildCat);
-        d[self.ksActionBuildCategoryAddPost]    = lambda: self._actionGenericFormAddPost(BuildCategoryData, BuildCategoryLogic,
-                                                                                     WuiAdminBuildCat,
-                                                                                     self.ksActionBuildCategoryList);
-        d[self.ksActionBuildCategoryClone]      = lambda: self._actionGenericFormClone(  BuildCategoryData, WuiAdminBuildCat,
-                                                                                         'idBuildCategory');
-        d[self.ksActionBuildCategoryDetails]    = lambda: self._actionGenericFormDetails(BuildCategoryData, BuildCategoryLogic,
-                                                                                         WuiAdminBuildCat, 'idBuildCategory');
-        d[self.ksActionBuildCategoryDoRemove]   = lambda: self._actionGenericDoRemove(BuildCategoryLogic,
-                                                                                  BuildCategoryData.ksParam_idBuildCategory,
-                                                                                  self.ksActionBuildCategoryList)
+        self._dDispatch[self.ksActionBuildCategoryList]         = self._actionBuildCategoryList;
+        self._dDispatch[self.ksActionBuildCategoryAdd]          = self._actionBuildCategoryAdd;
+        self._dDispatch[self.ksActionBuildCategoryAddPost]      = self._actionBuildCategoryAddPost;
+        self._dDispatch[self.ksActionBuildCategoryClone]        = self._actionBuildCategoryClone;
+        self._dDispatch[self.ksActionBuildCategoryDetails]      = self._actionBuildCategoryDetails;
+        self._dDispatch[self.ksActionBuildCategoryDoRemove]     = self._actionBuildCategoryDoRemove;
 
         #
         # Test Group actions
         #
-        d[self.ksActionTestGroupList]       = lambda: self._actionGenericListing(TestGroupLogic, WuiTestGroupList);
-        d[self.ksActionTestGroupAdd]        = lambda: self._actionGenericFormAdd(TestGroupDataEx, WuiTestGroup);
-        d[self.ksActionTestGroupAddPost]    = lambda: self._actionGenericFormAddPost(TestGroupDataEx, TestGroupLogic,
-                                                                                     WuiTestGroup, self.ksActionTestGroupList);
-        d[self.ksActionTestGroupClone]      = lambda: self._actionGenericFormClone(  TestGroupDataEx, WuiTestGroup,
-                                                                                     'idTestGroup');
-        d[self.ksActionTestGroupDetails]    = lambda: self._actionGenericFormDetails(TestGroupDataEx, TestGroupLogic,
-                                                                                     WuiTestGroup, 'idTestGroup');
-        d[self.ksActionTestGroupEdit]       = lambda: self._actionGenericFormEdit(TestGroupDataEx, WuiTestGroup,
-                                                                                  TestGroupDataEx.ksParam_idTestGroup);
-        d[self.ksActionTestGroupEditPost]   = lambda: self._actionGenericFormEditPost(TestGroupDataEx, TestGroupLogic,
-                                                                                      WuiTestGroup, self.ksActionTestGroupList);
-        d[self.ksActionTestGroupDoRemove]   = lambda: self._actionGenericDoRemove(TestGroupLogic,
-                                                                                  TestGroupDataEx.ksParam_idTestGroup,
-                                                                                  self.ksActionTestGroupList)
-        d[self.ksActionTestCfgRegenQueues]  = self._actionRegenQueuesCommon;
+        self._dDispatch[self.ksActionTestGroupList]             = self._actionTestGroupList;
+        self._dDispatch[self.ksActionTestGroupAdd]              = self._actionTestGroupAdd;
+        self._dDispatch[self.ksActionTestGroupAddPost]          = self._actionTestGroupAddPost;
+        self._dDispatch[self.ksActionTestGroupClone]            = self._actionTestGroupClone;
+        self._dDispatch[self.ksActionTestGroupDetails]          = self._actionTestGroupDetails;
+        self._dDispatch[self.ksActionTestGroupEdit]             = self._actionTestGroupEdit;
+        self._dDispatch[self.ksActionTestGroupEditPost]         = self._actionTestGroupEditPost;
+        self._dDispatch[self.ksActionTestGroupDoRemove]         = self._actionTestGroupDoRemove;
+        self._dDispatch[self.ksActionTestCfgRegenQueues]        = self._actionRegenQueuesCommon;
 
         #
         # Scheduling Group actions
         #
-        d[self.ksActionSchedGroupList]      = lambda: self._actionGenericListing(SchedGroupLogic, WuiAdminSchedGroupList)
-        d[self.ksActionSchedGroupAdd]       = lambda: self._actionGenericFormAdd(SchedGroupDataEx, WuiSchedGroup);
-        d[self.ksActionSchedGroupClone]     = lambda: self._actionGenericFormClone(  SchedGroupDataEx, WuiSchedGroup,
-                                                                                     'idSchedGroup');
-        d[self.ksActionSchedGroupDetails]   = lambda: self._actionGenericFormDetails(SchedGroupDataEx, SchedGroupLogic,
-                                                                                     WuiSchedGroup, 'idSchedGroup');
-        d[self.ksActionSchedGroupEdit]      = lambda: self._actionGenericFormEdit(SchedGroupDataEx, WuiSchedGroup,
-                                                                                  SchedGroupData.ksParam_idSchedGroup);
-        d[self.ksActionSchedGroupAddPost]   = lambda: self._actionGenericFormAddPost(SchedGroupDataEx, SchedGroupLogic,
-                                                                                     WuiSchedGroup, self.ksActionSchedGroupList);
-        d[self.ksActionSchedGroupEditPost]  = lambda: self._actionGenericFormEditPost(SchedGroupDataEx, SchedGroupLogic,
-                                                                                      WuiSchedGroup, self.ksActionSchedGroupList);
-        d[self.ksActionSchedGroupDoRemove]  = lambda: self._actionGenericDoRemove(SchedGroupLogic,
-                                                                                  SchedGroupData.ksParam_idSchedGroup,
-                                                                                  self.ksActionSchedGroupList)
+        self._dDispatch[self.ksActionSchedGroupList]            = self._actionSchedGroupList;
+        self._dDispatch[self.ksActionSchedGroupAdd]             = self._actionSchedGroupAdd;
+        self._dDispatch[self.ksActionSchedGroupClone]           = self._actionSchedGroupClone;
+        self._dDispatch[self.ksActionSchedGroupDetails]         = self._actionSchedGroupDetails;
+        self._dDispatch[self.ksActionSchedGroupEdit]            = self._actionSchedGroupEdit;
+        self._dDispatch[self.ksActionSchedGroupAddPost]         = self._actionSchedGroupAddPost;
+        self._dDispatch[self.ksActionSchedGroupEditPost]        = self._actionSchedGroupEditPost;
+        self._dDispatch[self.ksActionSchedGroupDoRemove]        = self._actionSchedGroupDoRemove;
 
+
+        #
+        # Menus
+        #
         self._aaoMenus = \
         [
             [
@@ -490,6 +370,8 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionDefault(self):
         """Show the default admin page."""
         self._sAction = self.ksActionTestBoxList;
+        from testmanager.core.testbox                  import TestBoxLogic;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBoxList;
         return self._actionGenericListing(TestBoxLogic, WuiTestBoxList);
 
     def _actionGenericDoDelOld(self, oCoreObjectLogic, sCoreObjectIdFieldName, sRedirectAction):
@@ -556,14 +438,66 @@ class WuiAdmin(WuiDispatcherBase):
     # System Category.
     #
 
-    # (all generic)
+    # System Log actions.
+
+    def _actionSystemLogList(self):
+        """ Action wrapper. """
+        from testmanager.core.systemlog                import SystemLogLogic;
+        from testmanager.webui.wuiadminsystemlog       import WuiAdminSystemLogList;
+        return self._actionGenericListing(SystemLogLogic, WuiAdminSystemLogList)
+
+    # User Account actions.
+
+    def _actionUserList(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountLogic;
+        from testmanager.webui.wuiadminuseraccount     import WuiUserAccountList;
+        return self._actionGenericListing(UserAccountLogic, WuiUserAccountList)
+
+    def _actionUserAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountData;
+        from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
+        return self._actionGenericFormAdd(UserAccountData, WuiUserAccount)
+
+    def _actionUserEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountData, UserAccountLogic;
+        from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
+        return self._actionGenericFormEdit(UserAccountData, WuiUserAccount, UserAccountData.ksParam_uid);
+
+    def _actionUserAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountData, UserAccountLogic;
+        from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
+        return self._actionGenericFormAddPost(UserAccountData, UserAccountLogic, WuiUserAccount, self.ksActionUserList)
+
+    def _actionUserEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountData, UserAccountLogic;
+        from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
+        return self._actionGenericFormEditPost(UserAccountData, UserAccountLogic, WuiUserAccount, self.ksActionUserList)
+
+    def _actionUserDelPost(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountData, UserAccountLogic;
+        return self._actionGenericDoRemove(UserAccountLogic, UserAccountData.ksParam_uid, self.ksActionUserList)
+
 
     #
     # TestBox & Scheduling Category.
     #
 
+    def _actionTestBoxList(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxLogic
+        from testmanager.webui.wuiadmintestbox         import WuiTestBoxList;
+        return self._actionGenericListing(TestBoxLogic, WuiTestBoxList);
+
     def _actionTestBoxListPost(self):
         """Actions on a list of testboxes."""
+        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic
+        from testmanager.webui.wuiadmintestbox         import WuiTestBoxList;
 
         # Parameters.
         aidTestBoxes = self.getListOfIntParams(TestBoxData.ksParam_idTestBox, iMin = 1, aiDefaults = []);
@@ -618,7 +552,92 @@ class WuiAdmin(WuiDispatcherBase):
         self._sRedirectTo = self._sActionUrlBase + self.ksActionTestBoxList;
         return True;
 
-    ## @todo scheduling groups code goes here...
+    def _actionTestBoxAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxData;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
+        return self._actionGenericFormAdd(TestBoxData, WuiTestBox);
+
+    def _actionTestBoxAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
+        return self._actionGenericFormAddPost(TestBoxData, TestBoxLogic, WuiTestBox, self.ksActionTestBoxList);
+
+    def _actionTestBoxDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
+        return self._actionGenericFormDetails(TestBoxData, TestBoxLogic, WuiTestBox, 'idTestBox', 'idGenTestBox');
+
+    def _actionTestBoxEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
+        return self._actionGenericFormEdit(TestBoxData, WuiTestBox, TestBoxData.ksParam_idTestBox);
+
+    def _actionTestBoxEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
+        return self._actionGenericFormEditPost(TestBoxData, TestBoxLogic,WuiTestBox, self.ksActionTestBoxList);
+
+    def _actionTestBoxRemovePost(self):
+        """ Action wrapper. """
+        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
+        return self._actionGenericDoRemove(TestBoxLogic, TestBoxData.ksParam_idTestBox, self.ksActionTestBoxList);
+
+
+    # Scheduling Group actions
+
+    def _actionSchedGroupList(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupLogic;
+        from testmanager.webui.wuiadminschedgroup       import WuiAdminSchedGroupList;
+        return self._actionGenericListing(SchedGroupLogic, WuiAdminSchedGroupList);
+
+    def _actionSchedGroupAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupDataEx;
+        from testmanager.webui.wuiadminschedgroup       import WuiSchedGroup;
+        return self._actionGenericFormAdd(SchedGroupDataEx, WuiSchedGroup);
+
+    def _actionSchedGroupClone(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupDataEx;
+        from testmanager.webui.wuiadminschedgroup       import WuiSchedGroup;
+        return self._actionGenericFormClone(  SchedGroupDataEx, WuiSchedGroup, 'idSchedGroup');
+
+    def _actionSchedGroupDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupDataEx, SchedGroupLogic;
+        from testmanager.webui.wuiadminschedgroup       import WuiSchedGroup;
+        return self._actionGenericFormDetails(SchedGroupDataEx, SchedGroupLogic, WuiSchedGroup, 'idSchedGroup');
+
+    def _actionSchedGroupEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupDataEx;
+        from testmanager.webui.wuiadminschedgroup       import WuiSchedGroup;
+        return self._actionGenericFormEdit(SchedGroupDataEx, WuiSchedGroup, SchedGroupDataEx.ksParam_idSchedGroup);
+
+    def _actionSchedGroupAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupDataEx, SchedGroupLogic;
+        from testmanager.webui.wuiadminschedgroup       import WuiSchedGroup;
+        return self._actionGenericFormAddPost(SchedGroupDataEx, SchedGroupLogic, WuiSchedGroup, self.ksActionSchedGroupList);
+
+    def _actionSchedGroupEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupDataEx, SchedGroupLogic;
+        from testmanager.webui.wuiadminschedgroup       import WuiSchedGroup;
+        return self._actionGenericFormEditPost(SchedGroupDataEx, SchedGroupLogic, WuiSchedGroup, self.ksActionSchedGroupList);
+
+    def _actionSchedGroupDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.schedgroup                import SchedGroupData, SchedGroupLogic;
+        return self._actionGenericDoRemove(SchedGroupLogic, SchedGroupData.ksParam_idSchedGroup, self.ksActionSchedGroupList)
+
 
     def _actionRegenQueuesCommon(self):
         """
@@ -626,6 +645,9 @@ class WuiAdmin(WuiDispatcherBase):
 
         Too lazy to put this in some separate place right now.
         """
+        from testmanager.core.schedgroup               import SchedGroupLogic;
+        from testmanager.core.schedulerbase            import SchedulerBase;
+
         self._checkForUnknownParameters();
         ## @todo should also be changed to a POST with a confirmation dialog preceeding it.
 
@@ -666,8 +688,131 @@ class WuiAdmin(WuiDispatcherBase):
     # Test Config Category.
     #
 
+    # Test Cases
+
+    def _actionTestCaseList(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseLogic;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCaseList;
+        return self._actionGenericListing(TestCaseLogic, WuiTestCaseList);
+
+    def _actionTestCaseAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseDataEx;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCase;
+        return self._actionGenericFormAdd(TestCaseDataEx, WuiTestCase);
+
+    def _actionTestCaseAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseDataEx, TestCaseLogic;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCase;
+        return self._actionGenericFormAddPost(TestCaseDataEx, TestCaseLogic, WuiTestCase, self.ksActionTestCaseList);
+
+    def _actionTestCaseClone(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseDataEx;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCase;
+        return self._actionGenericFormClone(  TestCaseDataEx, WuiTestCase, 'idTestCase', 'idGenTestCase');
+
+    def _actionTestCaseDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseDataEx, TestCaseLogic;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCase;
+        return self._actionGenericFormDetails(TestCaseDataEx, TestCaseLogic, WuiTestCase, 'idTestCase', 'idGenTestCase');
+
+    def _actionTestCaseEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseDataEx, TestCaseLogic;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCase;
+        return self._actionGenericFormEdit(TestCaseDataEx, WuiTestCase, TestCaseDataEx.ksParam_idTestCase);
+
+    def _actionTestCaseEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseDataEx, TestCaseLogic;
+        from testmanager.webui.wuiadmintestcase         import WuiTestCase;
+        return self._actionGenericFormEditPost(TestCaseDataEx, TestCaseLogic, WuiTestCase, self.ksActionTestCaseList);
+
+    def _actionTestCaseDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.testcase                  import TestCaseData, TestCaseLogic;
+        return self._actionGenericDoRemove(TestCaseLogic, TestCaseData.ksParam_idTestCase, self.ksActionTestCaseList);
+
+    # Test Group actions
+    def _actionTestGroupList(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupLogic;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroupList;
+        return self._actionGenericListing(TestGroupLogic, WuiTestGroupList);
+    def _actionTestGroupAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroup;
+        return self._actionGenericFormAdd(TestGroupDataEx, WuiTestGroup);
+    def _actionTestGroupAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx, TestGroupLogic;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroup;
+        return self._actionGenericFormAddPost(TestGroupDataEx, TestGroupLogic, WuiTestGroup, self.ksActionTestGroupList);
+    def _actionTestGroupClone(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroup;
+        return self._actionGenericFormClone(TestGroupDataEx, WuiTestGroup, 'idTestGroup');
+    def _actionTestGroupDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx, TestGroupLogic;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroup;
+        return self._actionGenericFormDetails(TestGroupDataEx, TestGroupLogic, WuiTestGroup, 'idTestGroup');
+    def _actionTestGroupEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroup;
+        return self._actionGenericFormEdit(TestGroupDataEx, WuiTestGroup, TestGroupDataEx.ksParam_idTestGroup);
+    def _actionTestGroupEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx, TestGroupLogic;
+        from testmanager.webui.wuiadmintestgroup        import WuiTestGroup;
+        return self._actionGenericFormEditPost(TestGroupDataEx, TestGroupLogic, WuiTestGroup, self.ksActionTestGroupList);
+    def _actionTestGroupDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.testgroup                 import TestGroupDataEx, TestGroupLogic;
+        return self._actionGenericDoRemove(TestGroupLogic, TestGroupDataEx.ksParam_idTestGroup, self.ksActionTestGroupList)
+
+
+    # Global Resources
+
+    def _actionGlobalRsrcShowAll(self):
+        """ Action wrapper. """
+        from testmanager.core.globalresource            import GlobalResourceLogic;
+        from testmanager.webui.wuiadminglobalrsrc       import WuiGlobalResourceList;
+        return self._actionGenericListing(GlobalResourceLogic, WuiGlobalResourceList);
+
+    def _actionGlobalRsrcShowAdd(self):
+        """ Action wrapper. """
+        return self._actionGlobalRsrcShowAddEdit(WuiAdmin.ksActionGlobalRsrcAdd);
+
+    def _actionGlobalRsrcShowEdit(self):
+        """ Action wrapper. """
+        return self._actionGlobalRsrcShowAddEdit(WuiAdmin.ksActionGlobalRsrcEdit);
+
+    def _actionGlobalRsrcAdd(self):
+        """ Action wrapper. """
+        return self._actionGlobalRsrcAddEdit(WuiAdmin.ksActionGlobalRsrcAdd);
+
+    def _actionGlobalRsrcEdit(self):
+        """ Action wrapper. """
+        return self._actionGlobalRsrcAddEdit(WuiAdmin.ksActionGlobalRsrcEdit);
+
+    def _actionGlobalRsrcDel(self):
+        """ Action wrapper. """
+        from testmanager.core.globalresource            import GlobalResourceData, GlobalResourceLogic;
+        return self._actionGenericDoDelOld(GlobalResourceLogic, GlobalResourceData.ksParam_idGlobalRsrc,
+                                           self.ksActionGlobalRsrcShowAll);
+
     def _actionGlobalRsrcShowAddEdit(self, sAction): # pylint: disable=C0103
         """Show Global Resource creation or edit dialog"""
+        from testmanager.core.globalresource           import GlobalResourceLogic, GlobalResourceData;
+        from testmanager.webui.wuiadminglobalrsrc      import WuiGlobalResource;
 
         oGlobalResourceLogic = GlobalResourceLogic(self._oDb)
         if sAction == WuiAdmin.ksActionGlobalRsrcEdit:
@@ -686,6 +831,8 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionGlobalRsrcAddEdit(self, sAction):
         """Add or modify Global Resource record"""
+        from testmanager.core.globalresource           import GlobalResourceLogic, GlobalResourceData;
+        from testmanager.webui.wuiadminglobalrsrc      import WuiGlobalResource;
 
         oData = GlobalResourceData()
         oData.initFromParams(self, fStrict=True)
@@ -713,6 +860,313 @@ class WuiAdmin(WuiDispatcherBase):
             (self._sPageTitle, self._sPageBody) = oContent.showAddModifyPage(sAction, dErrors=dErrors)
 
         return True
+
+
+    #
+    # Build Source actions
+    #
+
+    def _actionBuildSrcList(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceLogic;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrcList;
+        return self._actionGenericListing(BuildSourceLogic, WuiAdminBuildSrcList);
+
+    def _actionBuildSrcAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericFormAdd(BuildSourceData, WuiAdminBuildSrc);
+
+    def _actionBuildSrcAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData, BuildSourceLogic;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericFormAddPost(BuildSourceData, BuildSourceLogic, WuiAdminBuildSrc, self.ksActionBuildSrcList);
+
+    def _actionBuildSrcClone(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericFormClone(  BuildSourceData, WuiAdminBuildSrc, 'idBuildSrc');
+
+    def _actionBuildSrcDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData, BuildSourceLogic;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericFormDetails(BuildSourceData, BuildSourceLogic, WuiAdminBuildSrc, 'idBuildSrc');
+
+    def _actionBuildSrcDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData, BuildSourceLogic;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericDoRemove(BuildSourceLogic, BuildSourceData.ksParam_idBuildSrc, self.ksActionBuildSrcList);
+
+    def _actionBuildSrcEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericFormEdit(BuildSourceData, WuiAdminBuildSrc, BuildSourceData.ksParam_idBuildSrc);
+
+    def _actionBuildSrcEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.buildsource               import BuildSourceData, BuildSourceLogic;
+        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
+        return self._actionGenericFormEditPost(BuildSourceData, BuildSourceLogic, WuiAdminBuildSrc, self.ksActionBuildSrcList);
+
+
+    #
+    # Build actions
+    #
+    def _actionBuildList(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildLogic;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuildList;
+        return self._actionGenericListing(BuildLogic, WuiAdminBuildList);
+
+    def _actionBuildAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericFormAdd(BuildData, WuiAdminBuild);
+
+    def _actionBuildAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData, BuildLogic;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericFormAddPost(BuildData, BuildLogic, WuiAdminBuild, self.ksActionBuildList);
+
+    def _actionBuildClone(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericFormClone(  BuildData, WuiAdminBuild, 'idBuild');
+
+    def _actionBuildDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData, BuildLogic;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericFormDetails(BuildData, BuildLogic, WuiAdminBuild, 'idBuild');
+
+    def _actionBuildDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData, BuildLogic;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericDoRemove(BuildLogic, BuildData.ksParam_idBuild, self.ksActionBuildList);
+
+    def _actionBuildEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericFormEdit(BuildData, WuiAdminBuild, BuildData.ksParam_idBuild);
+
+    def _actionBuildEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildData, BuildLogic;
+        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
+        return self._actionGenericFormEditPost(BuildData, BuildLogic, WuiAdminBuild, self.ksActionBuildList)
+
+
+    #
+    # Build Category actions
+    #
+    def _actionBuildCategoryList(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildCategoryLogic;
+        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCatList;
+        return self._actionGenericListing(BuildCategoryLogic, WuiAdminBuildCatList);
+
+    def _actionBuildCategoryAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildCategoryData;
+        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
+        return self._actionGenericFormAdd(BuildCategoryData, WuiAdminBuildCat);
+
+    def _actionBuildCategoryAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildCategoryData, BuildCategoryLogic;
+        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
+        return self._actionGenericFormAddPost(BuildCategoryData, BuildCategoryLogic, WuiAdminBuildCat,
+                                              self.ksActionBuildCategoryList);
+
+    def _actionBuildCategoryClone(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildCategoryData, BuildCategoryLogic;
+        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
+        return self._actionGenericFormClone(BuildCategoryData, WuiAdminBuildCat, 'idBuildCategory');
+
+    def _actionBuildCategoryDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildCategoryData, BuildCategoryLogic;
+        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
+        return self._actionGenericFormDetails(BuildCategoryData, BuildCategoryLogic, WuiAdminBuildCat, 'idBuildCategory');
+
+    def _actionBuildCategoryDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.build                     import BuildCategoryData, BuildCategoryLogic;
+        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
+        return self._actionGenericDoRemove(BuildCategoryLogic, BuildCategoryData.ksParam_idBuildCategory,
+                                           self.ksActionBuildCategoryList)
+
+
+    #
+    # Build Black List actions
+    #
+    def _actionBuildBlacklist(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminListOfBlacklistItems;
+        return self._actionGenericListing(BuildBlacklistLogic, WuiAdminListOfBlacklistItems);
+
+    def _actionBuildBlacklistAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericFormAdd(BuildBlacklistData, WuiAdminBuildBlacklist);
+
+    def _actionBuildBlacklistAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericFormAddPost(BuildBlacklistData, BuildBlacklistLogic,
+                                              WuiAdminBuildBlacklist, self.ksActionBuildBlacklist);
+
+    def _actionBuildBlacklistClone(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericFormClone(BuildBlacklistData, WuiAdminBuildBlacklist, 'idBlacklisting');
+
+    def _actionBuildBlacklistDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericFormDetails(BuildBlacklistData, BuildBlacklistLogic, WuiAdminBuildBlacklist, 'idBlacklisting');
+
+    def _actionBuildBlacklistDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericDoRemove(BuildBlacklistLogic, BuildBlacklistData.ksParam_idBlacklisting,
+                                           self.ksActionBuildBlacklist);
+
+    def _actionBuildBlacklistEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericFormEdit(BuildBlacklistData, WuiAdminBuildBlacklist, BuildBlacklistData.ksParam_idBlacklisting);
+
+    def _actionBuildBlacklistEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
+        return self._actionGenericFormEditPost(BuildBlacklistData, BuildBlacklistLogic, WuiAdminBuildBlacklist,
+                                               self.ksActionBuildBlacklist)
+
+
+    #
+    # Failure Category actions
+    #
+    def _actionFailureCategoryList(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategoryList;
+        return self._actionGenericListing(FailureCategoryLogic, WuiFailureCategoryList);
+
+    def _actionFailureCategoryAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
+        return self._actionGenericFormAdd(FailureCategoryData, WuiFailureCategory);
+
+    def _actionFailureCategoryAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
+        return self._actionGenericFormAddPost(FailureCategoryData, FailureCategoryLogic, WuiFailureCategory,
+                                              self.ksActionFailureCategoryList)
+
+    def _actionFailureCategoryDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
+        return self._actionGenericFormDetails(FailureCategoryData, FailureCategoryLogic, WuiFailureCategory);
+
+
+    def _actionFailureCategoryDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
+        return self._actionGenericDoRemove(FailureCategoryLogic, FailureCategoryData.ksParam_idFailureCategory,
+                                           self.ksActionFailureCategoryList);
+
+    def _actionFailureCategoryEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
+        return self._actionGenericFormEdit(FailureCategoryData, WuiFailureCategory,
+                                           FailureCategoryData.ksParam_idFailureCategory);
+
+    def _actionFailureCategoryEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
+        return self._actionGenericFormEditPost(FailureCategoryData, FailureCategoryLogic, WuiFailureCategory,
+                                               self.ksActionFailureCategoryList);
+
+    #
+    # Failure Reason actions
+    #
+    def _actionFailureReasonList(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReasonList;
+        return self._actionGenericListing(FailureReasonLogic, WuiAdminFailureReasonList)
+
+    def _actionFailureReasonAdd(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
+        return self._actionGenericFormAdd(FailureReasonData, WuiAdminFailureReason);
+
+    def _actionFailureReasonAddPost(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
+        return self._actionGenericFormAddPost(FailureReasonData, FailureReasonLogic, WuiAdminFailureReason,
+                                              self.ksActionFailureReasonList);
+
+    def _actionFailureReasonDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
+        return self._actionGenericFormDetails(FailureReasonData, FailureReasonLogic, WuiAdminFailureReason);
+
+    def _actionFailureReasonDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
+        return self._actionGenericDoRemove(FailureReasonLogic, FailureReasonData.ksParam_idFailureReason,
+                                           self.ksActionFailureReasonList);
+
+    def _actionFailureReasonEdit(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
+        return self._actionGenericFormEdit(FailureReasonData, WuiAdminFailureReason);
+
+
+    def _actionFailureReasonEditPost(self):
+        """ Action wrapper. """
+        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
+        return self._actionGenericFormEditPost(FailureReasonData, FailureReasonLogic, WuiAdminFailureReason,
+                                               self.ksActionFailureReasonList)
+
+
+    #
+    # Overrides.
+    #
 
     def _generatePage(self):
         """Override parent handler in order to change page titte"""

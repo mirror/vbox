@@ -32,19 +32,11 @@ __version__ = "$Revision$"
 
 # Validation Kit imports.
 from testmanager                            import config;
+from testmanager.core.base                  import TMExceptionBase, TMTooManyRows;
 from testmanager.webui.wuibase              import WuiDispatcherBase, WuiException;
 from testmanager.webui.wuicontentbase       import WuiTmLink;
-from testmanager.core.report                import ReportLazyModel, ReportGraphModel, ReportModelBase;
-from testmanager.core.testresults           import TestResultLogic, TestResultFileDataEx, TestResultData;
-from testmanager.core.base                  import TMExceptionBase, TMTooManyRows;
-from testmanager.core.testset               import TestSetData, TestSetLogic;
-from testmanager.core.build                 import BuildDataEx;
-from testmanager.core.testbox               import TestBoxData
-from testmanager.core.testgroup             import TestGroupData;
-from testmanager.core.testcase              import TestCaseDataEx
-from testmanager.core.testcaseargs          import TestCaseArgsDataEx
-from testmanager.core.vcsrevisions          import VcsRevisionLogic;
 from common                                 import webutils, utils;
+
 
 
 class WuiMain(WuiDispatcherBase):
@@ -196,72 +188,41 @@ class WuiMain(WuiDispatcherBase):
 
     def __init__(self, oSrvGlue):
         WuiDispatcherBase.__init__(self, oSrvGlue, self.ksScriptName);
-
         self._sTemplate     = 'template.html'
 
         #
         # Populate the action dispatcher dictionary.
+        # Lambda is forbidden because of readability, speed and reducing number of imports.
         #
+        self._dDispatch[self.ksActionResultsUnGrouped]              = self._actionResultsUnGrouped;
+        self._dDispatch[self.ksActionResultsGroupedByTestGroup]     = self._actionResultsGroupedByTestGroup;
+        self._dDispatch[self.ksActionResultsGroupedByBuildRev]      = self._actionResultsGroupedByBuildRev;
+        self._dDispatch[self.ksActionResultsGroupedByTestBox]       = self._actionResultsGroupedByTestBox;
+        self._dDispatch[self.ksActionResultsGroupedByTestCase]      = self._actionResultsGroupedByTestCase;
+        self._dDispatch[self.ksActionResultsGroupedBySchedGroup]    = self._actionResultsGroupedBySchedGroup;
 
-        # Use short form to avoid hitting the right margin (130) when using lambda.
-        d = self._dDispatch;  # pylint: disable=C0103
+        self._dDispatch[self.ksActionTestSetDetails]                = self._actionTestSetDetails;
+        self._dDispatch[self.ksActionTestSetDetailsFromResult]      = self._actionTestSetDetailsFromResult;
 
-        from testmanager.webui.wuitestresult import WuiGroupedResultList;
-        #d[self.ksActionResultsUnGrouped]            = lambda: self._actionResultsListing(TestResultLogic, WuiGroupedResultList)
-        d[self.ksActionResultsUnGrouped]            = lambda: self._actionGroupedResultsListing(
-                                                                  TestResultLogic.ksResultsGroupingTypeNone,
-                                                                  TestResultLogic,
-                                                                  WuiGroupedResultList)
+        self._dDispatch[self.ksActionTestResultFailureAdd]          = self._actionTestResultFailureAdd;
+        self._dDispatch[self.ksActionTestResultFailureAddPost]      = self._actionTestResultFailureAddPost;
+        self._dDispatch[self.ksActionTestResultFailureDetails]      = self._actionTestResultFailureDetails;
+        self._dDispatch[self.ksActionTestResultFailureEdit]         = self._actionTestResultFailureEdit;
+        self._dDispatch[self.ksActionTestResultFailureEditPost]     = self._actionTestResultFailureEditPost;
 
-        d[self.ksActionResultsGroupedByTestGroup]   = lambda: self._actionGroupedResultsListing(
-                                                                  TestResultLogic.ksResultsGroupingTypeTestGroup,
-                                                                  TestResultLogic,
-                                                                  WuiGroupedResultList)
+        self._dDispatch[self.ksActionViewLog]                       = self._actionViewLog;
+        self._dDispatch[self.ksActionGetFile]                       = self._actionGetFile;
 
-        d[self.ksActionResultsGroupedByBuildRev]    = lambda: self._actionGroupedResultsListing(
-                                                                  TestResultLogic.ksResultsGroupingTypeBuildRev,
-                                                                  TestResultLogic,
-                                                                  WuiGroupedResultList)
+        self._dDispatch[self.ksActionReportSummary]                 = self._actionReportSummary;
+        self._dDispatch[self.ksActionReportRate]                    = self._actionReportRate;
+        self._dDispatch[self.ksActionReportTestCaseFailures]        = self._actionReportTestCaseFailures;
+        self._dDispatch[self.ksActionReportFailureReasons]          = self._actionReportFailureReasons;
+        self._dDispatch[self.ksActionGraphWiz]                      = self._actionGraphWiz;
 
-        d[self.ksActionResultsGroupedByTestBox]     = lambda: self._actionGroupedResultsListing(
-                                                                  TestResultLogic.ksResultsGroupingTypeTestBox,
-                                                                  TestResultLogic,
-                                                                WuiGroupedResultList)
-
-        d[self.ksActionResultsGroupedByTestCase]    = lambda: self._actionGroupedResultsListing(
-                                                                 TestResultLogic.ksResultsGroupingTypeTestCase,
-                                                                 TestResultLogic,
-                                                                 WuiGroupedResultList)
-
-        d[self.ksActionResultsGroupedBySchedGroup]  = lambda: self._actionGroupedResultsListing(
-                                                                 TestResultLogic.ksResultsGroupingTypeSchedGroup,
-                                                                 TestResultLogic,
-                                                                 WuiGroupedResultList)
-
-        d[self.ksActionTestSetDetails]              = self._actionTestSetDetails;
-        d[self.ksActionTestSetDetailsFromResult]    = self._actionTestSetDetailsFromResult;
-
-        d[self.ksActionTestResultFailureAdd]        = self._actionTestResultFailureAdd;
-        d[self.ksActionTestResultFailureAddPost]    = self._actionTestResultFailureAddPost;
-        d[self.ksActionTestResultFailureDetails]    = self._actionTestResultFailureDetails;
-        d[self.ksActionTestResultFailureEdit]       = self._actionTestResultFailureEdit;
-        d[self.ksActionTestResultFailureEditPost]   = self._actionTestResultFailureEditPost;
-
-        d[self.ksActionViewLog]                     = self.actionViewLog;
-        d[self.ksActionGetFile]                     = self.actionGetFile;
-
-        from testmanager.webui.wuireport import WuiReportSummary, WuiReportSuccessRate, WuiReportTestCaseFailures, \
-                                                WuiReportFailureReasons;
-        d[self.ksActionReportSummary]          = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSummary);
-        d[self.ksActionReportRate]             = lambda: self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
-        d[self.ksActionReportTestCaseFailures] = lambda: self._actionGenericReport(ReportLazyModel, WuiReportTestCaseFailures);
-        d[self.ksActionReportFailureReasons]   = lambda: self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
-        d[self.ksActionGraphWiz]               = self._actionGraphWiz;
-
-        d[self.ksActionVcsHistoryTooltip]      = self._actionVcsHistoryTooltip;
+        self._dDispatch[self.ksActionVcsHistoryTooltip]             = self._actionVcsHistoryTooltip;
 
         # Legacy.
-        d['TestResultDetails']                 = d[self.ksActionTestSetDetails];
+        self._dDispatch['TestResultDetails']                        = self._dDispatch[self.ksActionTestSetDetails];
 
 
         #
@@ -339,9 +300,21 @@ class WuiMain(WuiDispatcherBase):
         ];
 
 
+    #
+    # Overriding parent methods.
+    #
+
+    def _generatePage(self):
+        """Override parent handler in order to change page title."""
+        if self._sPageTitle is not None:
+            self._sPageTitle = 'Test Results - ' + self._sPageTitle
+
+        return WuiDispatcherBase._generatePage(self)
+
     def _actionDefault(self):
         """Show the default admin page."""
         from testmanager.webui.wuitestresult import WuiGroupedResultList;
+        from testmanager.core.testresults    import TestResultLogic;
         self._sAction = self.ksActionResultsUnGrouped
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeNone,
                                                  TestResultLogic,
@@ -366,6 +339,8 @@ class WuiMain(WuiDispatcherBase):
         """
         Generate HTML code for the sort by selector.
         """
+        from testmanager.core.testresults    import TestResultLogic;
+
         if self.ksParamTestResultsSortBy in dParams:
             enmResultSortBy = dParams[self.ksParamTestResultsSortBy];
             del dParams[self.ksParamTestResultsSortBy];
@@ -717,6 +692,7 @@ class WuiMain(WuiDispatcherBase):
                 '</table>\n';
         return sHtml;
 
+
     #
     # The rest of stuff
     #
@@ -732,6 +708,8 @@ class WuiMain(WuiDispatcherBase):
         oLogicType implements fetchForListing.
         oListContentType is a child of WuiListContentBase.
         """
+        from testmanager.core.testresults    import TestResultLogic;
+
         cItemsPerPage       = self.getIntParam(self.ksParamItemsPerPage,  iMin =  2, iMax =   9999, iDefault = 128);
         iPage               = self.getIntParam(self.ksParamPageNo,        iMin =  0, iMax = 999999, iDefault = 0);
         tsEffective         = self.getEffectiveDateParam();
@@ -871,15 +849,60 @@ class WuiMain(WuiDispatcherBase):
             self._sPageBody = sHtmlNavigation + '<p align="center"><i>No data to display</i></p>\n';
         return True;
 
-    def _generatePage(self):
-        """Override parent handler in order to change page title."""
-        if self._sPageTitle is not None:
-            self._sPageTitle = 'Test Results - ' + self._sPageTitle
 
-        return WuiDispatcherBase._generatePage(self)
+    def _actionResultsUnGrouped(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        #return self._actionResultsListing(TestResultLogic, WuiGroupedResultList)?
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeNone,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedByTestGroup(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestGroup,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedByBuildRev(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeBuildRev,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedByTestBox(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestBox,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedByTestCase(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestCase,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedBySchedGroup(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeSchedGroup,
+                                                 TestResultLogic, WuiGroupedResultList);
+
 
     def _actionTestSetDetailsCommon(self, idTestSet):
         """Show test case execution result details."""
+        from testmanager.core.build          import BuildDataEx;
+        from testmanager.core.testbox        import TestBoxData;
+        from testmanager.core.testcase       import TestCaseDataEx;
+        from testmanager.core.testcaseargs   import TestCaseArgsDataEx;
+        from testmanager.core.testgroup      import TestGroupData;
+        from testmanager.core.testresults    import TestResultLogic;
+        from testmanager.core.testset        import TestSetData;
         from testmanager.webui.wuitestresult import WuiTestResult;
 
         self._sTemplate = 'template-details.html';
@@ -915,11 +938,15 @@ class WuiMain(WuiDispatcherBase):
 
     def _actionTestSetDetails(self):
         """Show test case execution result details."""
+        from testmanager.core.testset        import TestSetData;
+
         idTestSet = self.getIntParam(TestSetData.ksParam_idTestSet);
         return self._actionTestSetDetailsCommon(idTestSet);
 
     def _actionTestSetDetailsFromResult(self):
         """Show test case execution result details."""
+        from testmanager.core.testresults    import TestResultData;
+        from testmanager.core.testset        import TestSetData;
         idTestResult = self.getIntParam(TestSetData.ksParam_idTestResult);
         oTestResultData = TestResultData().initFromDbWithId(self._oDb, idTestResult);
         return self._actionTestSetDetailsCommon(oTestResultData.idTestSet);
@@ -962,11 +989,14 @@ class WuiMain(WuiDispatcherBase):
         return self._actionGenericFormEditPost(TestResultFailureData, TestResultFailureLogic,
                                                WuiTestResultFailure, self.ksActionResultsUnGrouped);
 
-    def actionViewLog(self):
+    def _actionViewLog(self):
         """
         Log viewer action.
         """
+        from testmanager.core.testresults   import TestResultLogic, TestResultFileDataEx;
+        from testmanager.core.testset       import TestSetData, TestSetLogic;
         from testmanager.webui.wuilogviewer import WuiLogViewer;
+
         self._sTemplate = 'template-details.html'; ## @todo create new template (background color, etc)
         idTestSet       = self.getIntParam(self.ksParamLogSetId,     iMin = 1);
         idLogFile       = self.getIntParam(self.ksParamLogFileId,    iMin = 0,                    iDefault = 0);
@@ -987,10 +1017,13 @@ class WuiMain(WuiDispatcherBase):
         (self._sPageTitle, self._sPageBody) = oContent.show();
         return True;
 
-    def actionGetFile(self):
+    def _actionGetFile(self):
         """
         Get file action.
         """
+        from testmanager.core.testset           import TestSetData, TestSetLogic;
+        from testmanager.core.testresults       import TestResultFileDataEx;
+
         idTestSet       = self.getIntParam(self.ksParamGetFileSetId,        iMin = 1);
         idFile          = self.getIntParam(self.ksParamGetFileId,           iMin = 0, iDefault = 0);
         fDownloadIt     = self.getBoolParam(self.ksParamGetFileDownloadIt,  fDefault = True);
@@ -1029,6 +1062,8 @@ class WuiMain(WuiDispatcherBase):
         oReportType is a child of WuiReportContentBase.
         oModelType is a child of ReportModelBase.
         """
+        from testmanager.core.report                import ReportModelBase;
+
         tsEffective     = self.getEffectiveDateParam();
         cPeriods        = self.getIntParam(self.ksParamReportPeriods,       iMin = 2, iMax =   99,  iDefault = 7);
         cHoursPerPeriod = self.getIntParam(self.ksParamReportPeriodInHours, iMin = 1, iMax =   168, iDefault = 24);
@@ -1058,11 +1093,36 @@ class WuiMain(WuiDispatcherBase):
         self._sPageBody = sNavi + self._sPageBody;
         return True;
 
+    def _actionReportSummary(self):
+        """ Action wrapper. """
+        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.webui.wuireport            import WuiReportSummary;
+        return self._actionGenericReport(ReportLazyModel, WuiReportSummary);
+
+    def _actionReportRate(self):
+        """ Action wrapper. """
+        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.webui.wuireport            import WuiReportSuccessRate;
+        return self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
+
+    def _actionReportTestCaseFailures(self):
+        """ Action wrapper. """
+        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.webui.wuireport            import WuiReportTestCaseFailures;
+        return self._actionGenericReport(ReportLazyModel, WuiReportTestCaseFailures);
+
+    def _actionReportFailureReasons(self):
+        """ Action wrapper. """
+        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.webui.wuireport            import WuiReportFailureReasons;
+        return self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
+
     def _actionGraphWiz(self):
         """
         Graph wizard action.
         """
-        from testmanager.webui.wuigraphwiz import WuiGraphWiz;
+        from testmanager.core.report                import ReportModelBase, ReportGraphModel;
+        from testmanager.webui.wuigraphwiz          import WuiGraphWiz;
         self._sTemplate = 'template-graphwiz.html';
 
         tsEffective     = self.getEffectiveDateParam();
@@ -1127,9 +1187,10 @@ class WuiMain(WuiDispatcherBase):
         """
         Version control system history.
         """
-        self._sTemplate = 'template-tooltip.html';
         from testmanager.webui.wuivcshistory import WuiVcsHistoryTooltip;
+        from testmanager.core.vcsrevisions   import VcsRevisionLogic;
 
+        self._sTemplate = 'template-tooltip.html';
         iRevision   = self.getIntParam(self.ksParamVcsHistoryRevision, iMin = 0, iMax = 999999999);
         sRepository = self.getStringParam(self.ksParamVcsHistoryRepository);
         cEntries    = self.getIntParam(self.ksParamVcsHistoryEntries, iMin = 1, iMax = 1024, iDefault = 8);
