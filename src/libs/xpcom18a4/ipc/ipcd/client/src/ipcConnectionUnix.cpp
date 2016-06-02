@@ -47,6 +47,11 @@
 #include "ipcConfig.h"
 #include "ipcLog.h"
 
+#ifdef VBOX
+# include "prenv.h"
+# include <stdio.h>
+#endif
+
 
 //-----------------------------------------------------------------------------
 // NOTE: this code does not need to link with anything but NSPR.  that is by
@@ -425,6 +430,12 @@ TryConnect(PRFileDesc **result)
   // blocking connect... will fail if no one is listening.
   if (PR_Connect(fd, &addr, PR_INTERVAL_NO_TIMEOUT) == PR_FAILURE)
     goto end;
+
+#ifdef VBOX
+  if (PR_GetEnv("TESTBOX_UUID"))
+    fprintf(stderr, "IPC socket path: %s\n", addr.local.path);
+  LogRel(("IPC socket path: %s\n", addr.local.path));
+#endif
 
   // make socket non-blocking
   opt.option = PR_SockOpt_Nonblocking;
