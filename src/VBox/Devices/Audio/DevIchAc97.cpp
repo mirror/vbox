@@ -301,18 +301,14 @@ typedef struct AC97STREAM
 
 typedef struct AC97INPUTSTREAM
 {
-    /** PCM line input stream. */
-    R3PTRTYPE(PPDMAUDIOSTREAM)    pStream;
-    /** Mixer handle for line input stream. */
-    R3PTRTYPE(PAUDMIXSTREAM)      pMixStrm;
+    /** Mixer handle for input stream. */
+    R3PTRTYPE(PAUDMIXSTREAM) pMixStrm;
 } AC97INPUTSTREAM, *PAC97INPUTSTREAM;
 
 typedef struct AC97OUTPUTSTREAM
 {
-    /** PCM output stream. */
-    R3PTRTYPE(PPDMAUDIOSTREAM)     pStream;
     /** Mixer handle for output stream. */
-    R3PTRTYPE(PAUDMIXSTREAM)       pMixStrm;
+    R3PTRTYPE(PAUDMIXSTREAM) pMixStrm;
 } AC97OUTPUTSTREAM, *PAC97OUTPUTSTREAM;
 
 /**
@@ -528,6 +524,17 @@ static void ichac97StreamUpdateStatus(PAC97STATE pThis, PAC97STREAM pStream, uin
         LogFlowFunc(("Setting IRQ level=%d\n", iIRQL));
         PDMDevHlpPCISetIrq(pDevIns, 0, iIRQL);
     }
+}
+
+static bool ichac97StreamIsActive(PAC97STATE pThis, PAC97STREAM pStream)
+{
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    bool fActive = AudioMixerSinkHasData(ichac97IndexToSink(pThis, pStream->u8Strm));
+
+    LogFlowFunc(("SD=%RU8, fActive=%RTbool\n", pStream->u8Strm, fActive));
+    return fActive;
 }
 
 static int ichac97StreamSetActive(PAC97STATE pThis, PAC97STREAM pStream, bool fActive)
@@ -1245,28 +1252,13 @@ static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
     {
         uint32_t cbToWrite = RT_MIN(cbElapsed, (uint32_t)sizeof(pThis->silence));
         uint32_t cbWrittenToStream;
-        int rc2;
 
-        PAC97DRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
+        int rc2 = AudioMixerSinkWrite(pThis->pSinkOutput, AUDMIXOP_COPY,
+                                      pThis->silence, cbToWrite, &cbWrittenToStream);
+        if (RT_SUCCESS(rc2))
         {
-            if (pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pDrv->Out.pStream) == PDMAUDIOSTRMSTS_FLAG_ENABLED)
-            {
-                rc2 = pDrv->pConnector->pfnStreamWrite(pDrv->pConnector, pDrv->Out.pStream,
-                                                       pThis->silence, cbToWrite, &cbWrittenToStream);
-                if (RT_SUCCESS(rc2))
-                {
-                    if (cbWrittenToStream < cbToWrite) /* Lagging behind? */
-                        LogFlowFunc(("\tLUN#%RU8: Warning: Only written %RU32 / %RU32 bytes, expect lags\n",
-                                     pDrv->uLUN, cbWrittenToStream, cbToWrite));
-                }
-            }
-            else /* Stream disabled, not fatal. */
-            {
-                cbWrittenToStream = 0;
-                rc2 = VERR_NOT_AVAILABLE;
-                /* Keep going. */
-            }
+            if (cbWrittenToStream < cbToWrite) /* Lagging behind? */
+                LogFlowFunc(("Warning: Only written %RU32 / %RU32 bytes, expect lags\n", cbWrittenToStream, cbToWrite));
         }
 
         /* Always report all data as being written;
@@ -2088,6 +2080,8 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
+    LogFlowFuncEnter();
+
     SSMR3PutU32(pSSM, pThis->glob_cnt);
     SSMR3PutU32(pSSM, pThis->glob_sta);
     SSMR3PutU32(pSSM, pThis->cas);
@@ -2105,18 +2099,13 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     uint8_t active[LAST_INDEX];
 
-    PAC97DRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-    {
-        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-        AssertPtr(pCon);
-        active[PI_INDEX] = (pCon->pfnStreamGetStatus(pCon, pDrv->LineIn.pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED) ? 1 : 0;
-        active[PO_INDEX] = (pCon->pfnStreamGetStatus(pCon, pDrv->Out.pStream)   & PDMAUDIOSTRMSTS_FLAG_ENABLED) ? 1 : 0;
-        active[MC_INDEX] = (pCon->pfnStreamGetStatus(pCon, pDrv->MicIn.pStream)  & PDMAUDIOSTRMSTS_FLAG_ENABLED) ? 1 : 0;
-    }
+    active[PI_INDEX] = ichac97StreamIsActive(pThis, &pThis->StreamLineIn) ? 1 : 0;
+    active[PO_INDEX] = ichac97StreamIsActive(pThis, &pThis->StreamOut)    ? 1 : 0;
+    active[MC_INDEX] = ichac97StreamIsActive(pThis, &pThis->StreamMicIn)  ? 1 : 0;
 
     SSMR3PutMem(pSSM, active, sizeof(active));
 
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -2144,6 +2133,8 @@ static int ichac97LoadStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pS
 static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+
+    LogRel2(("ichac97LoadExec: uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
 
     AssertMsgReturn (uVersion == AC97_SSM_VERSION, ("%RU32\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -2179,20 +2170,21 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
                              ichac97MixerGet(pThis, AC97_Headphone_Volume_Mute));
 
     int rc = ichac97StreamsInit(pThis);
-    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo r=andy Stream IDs are hardcoded to certain streams. */
+        rc = ichac97StreamSetActive(pThis, &pThis->StreamLineIn,    RT_BOOL(uaStrmsActive[PI_INDEX]));
+        if (RT_SUCCESS(rc))
+            rc = ichac97StreamSetActive(pThis, &pThis->StreamMicIn, RT_BOOL(uaStrmsActive[MC_INDEX]));
+        if (RT_SUCCESS(rc))
+            rc = ichac97StreamSetActive(pThis, &pThis->StreamOut,   RT_BOOL(uaStrmsActive[PO_INDEX]));
+    }
 
-    /** @todo r=andy Stream IDs are hardcoded to certain streams. */
-    rc = ichac97StreamSetActive(pThis, &pThis->StreamLineIn, RT_BOOL(uaStrmsActive[PI_INDEX]));
-    AssertRC(rc);
-    rc = ichac97StreamSetActive(pThis, &pThis->StreamMicIn,  RT_BOOL(uaStrmsActive[MC_INDEX]));
-    AssertRC(rc);
-    rc = ichac97StreamSetActive(pThis, &pThis->StreamOut,    RT_BOOL(uaStrmsActive[PO_INDEX]));
-    AssertRC(rc);
-
-    pThis->bup_flag = 0;
+    pThis->bup_flag  = 0;
     pThis->last_samp = 0;
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 
