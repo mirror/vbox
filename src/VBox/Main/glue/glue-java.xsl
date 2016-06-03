@@ -4746,11 +4746,10 @@ class ObjectRefManager
                 {
                     try
                     {
-                        ManagedObjRef ref = (ManagedObjRef)refQ.remove();
-
                         /* Accumulate a few objects before we start. */
                         while (cStubsReleased < cStubsReleaseThreshold)
                         {
+                            ManagedObjRef ref = (ManagedObjRef)refQ.remove();
                             ManagedObj obj = this.objRefMgr.unregisterObj(ref);
                             /*
                              * If the server side object is not referenced anymore
@@ -4760,7 +4759,6 @@ class ObjectRefManager
                                 mapToRelease.put(ref.objId, obj);
 
                             cStubsReleased++;
-                            ref = (ManagedObjRef)refQ.remove();
                         }
                     }
                     catch (InterruptedException e)
