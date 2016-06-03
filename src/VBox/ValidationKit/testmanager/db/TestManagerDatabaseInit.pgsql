@@ -1372,6 +1372,8 @@ CREATE TABLE TestResultValues (
 CREATE INDEX TestResultValuesIdx ON TestResultValues(idTestResult);
 -- The TestResultValuesGraphIdx is for speeding up the result graph & reporting code.
 CREATE INDEX TestResultValuesGraphIdx ON TestResultValues(idStrName, tsCreated);
+-- The TestResultValuesLogIdx is for speeding up the log viewer.
+CREATE INDEX TestResultValuesLogIdx ON TestResultValues(idTestSet, tsCreated);
 
 
 --- @table TestResultFiles
