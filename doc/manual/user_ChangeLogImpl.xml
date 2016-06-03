@@ -12,7 +12,7 @@
 
       <listitem>
         <para>VMM: new APIC and I/O APIC implementations that result in significantly improved
-          performance in certain situations</para>
+          performance in certain situations, for example with networking</para>
       </listitem>
 
       <listitem>
@@ -20,7 +20,8 @@
       </listitem>
 
       <listitem>
-        <para>VMM: emulate even more MMIO and shadow pagetable exits without going back to user mode</para>
+        <para>VMM: emulate even more MMIO and shadow pagetable exits without going back to
+          user mode</para>
       </listitem>
 
       <listitem>
@@ -28,21 +29,11 @@
       </listitem>
 
       <listitem>
-        <para>GUI: passive Main event listener which improves the VM GUI performance and response time</para>
+        <para>GUI: passive Main event listener which improves the VM GUI performance and
+          response time</para>
       </listitem>
 
-      <listitem>
-        <para>GUI: new VM wizard now allows to choose VM location for VM you are going to create</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: previously forgotten Detach UI action is now a part of the VM Machine menu</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: various bugfixes and internal cleanup</para>
-      </listitem>
-
+      <!--- (new code currently disabled)
       <listitem>
         <para>Audio: added HDA (High Definition Audio) support for newer Linux guests</para>
       </listitem>
@@ -53,6 +44,10 @@
 
       <listitem>
         <para>Audio: various bugfixes and infrastructure improvements</para>
+      </listitem>-->
+
+      <listitem>
+        <para>better support for Python 3</para>
       </listitem>
 
     </itemizedlist>
@@ -60,6 +55,44 @@
     <para>In addition, the following items were fixed and/or added:</para>
 
     <itemizedlist>
+
+      <listitem>
+        <para>GUI: the Detach UI action is now a part of the VM Machine menu</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: reworked session information window</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: the new VM wizard now allows to choose the VM location for the VM
+          which is beeing created</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: various bugfixes and internal cleanup</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: use fallocate or similar if present to speed up creating
+          fixed-sized disk images</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: implemented NVMHCI-compatible storage controller</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: many improvements, for example allow to boot from USB</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF: improved handling of signed manifests</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: rework COM proxy (e.g. bug #8298)</para>
+      </listitem>
 
       <listitem>
         <para>Linux installers: no longer rely on DKMS for module rebuilding</para>
