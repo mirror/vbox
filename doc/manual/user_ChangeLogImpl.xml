@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.1.0 BETA 1 (2016-05-xx)</title>
+    <title>Version 5.1.0 Beta 1 (2016-06-03)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -12,7 +12,7 @@
 
       <listitem>
         <para>VMM: new APIC and I/O APIC implementations that result in significantly improved
-          performance in certain situations, for example with networking</para>
+          performance in certain situations (for example with networking, bug #15295)</para>
       </listitem>
 
       <listitem>
@@ -29,7 +29,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: passive Main event listener which improves the VM GUI performance and
+        <para>GUI: passive API event listener improving the VM GUI performance and
           response time</para>
       </listitem>
 
@@ -57,7 +57,12 @@
     <itemizedlist>
 
       <listitem>
-        <para>GUI: the Detach UI action is now a part of the VM Machine menu</para>
+        <para>VMM: many fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: the <emphasis>Detach UI</emphasis> action is now a part of the
+          VM Machine menu</para>
       </listitem>
 
       <listitem>

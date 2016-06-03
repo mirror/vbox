@@ -46,7 +46,7 @@ export DH_COMPAT=4
 # STAGEDISO are set.
 
 package  := virtualbox
-verpkg   := virtualbox-5.0
+verpkg   := virtualbox-5.1
 current  := $(shell pwd)
 vboxroot := $(shell cd ../../../..; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd ../../../../..; pwd))
