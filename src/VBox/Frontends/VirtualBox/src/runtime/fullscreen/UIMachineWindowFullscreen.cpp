@@ -65,7 +65,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
     if (pChangeEvent->type() == QEvent::WindowStateChange)
     {
         /* If machine-window is in minimized mode: */
-        if(isMinimized())
+        if (isMinimized())
         {
             /* If there is a mini-toolbar: */
             if (m_pMiniToolBar)
