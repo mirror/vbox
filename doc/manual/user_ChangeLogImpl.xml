@@ -98,6 +98,10 @@
         <para>Linux installers: no longer rely on DKMS for module rebuilding</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: rework and small improvements to session-information dialog</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
