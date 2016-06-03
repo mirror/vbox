@@ -1283,7 +1283,7 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("sVer=%s" % (sVer,));          # Temporary - debugging hang somewhere after 'sys.path' log line above.
             if sVer.startswith("5.1"):
                 self.fpApiVer = 5.1;
-            if sVer.startswith("5.0") or (sVer.startswith("4.3.5") and len(sVer) == 6):
+            elif sVer.startswith("5.0") or (sVer.startswith("4.3.5") and len(sVer) == 6):
                 self.fpApiVer = 5.0;
             elif sVer.startswith("4.3") or (sVer.startswith("4.2.5") and len(sVer) == 6):
                 self.fpApiVer = 4.3;
