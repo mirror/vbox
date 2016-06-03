@@ -31,6 +31,7 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import os;
+import sys;
 
 # Validation Kit imports.
 from common                       import webutils, utils;
@@ -832,6 +833,8 @@ class WuiDispatcherBase(object):
 
         sRedirAction is what action to redirect to on success.
         """
+        import cgitb;
+
         idEntry = self.getIntParam(sParamId, iMin = 1, iMax = 0x7ffffffe)
         fCascade = self.getBoolParam('fCascadeDelete', False);
         self._checkForUnknownParameters()

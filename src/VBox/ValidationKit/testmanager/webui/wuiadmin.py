@@ -433,7 +433,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionUserEdit(self):
         """ Action wrapper. """
-        from testmanager.core.useraccount              import UserAccountData, UserAccountLogic;
+        from testmanager.core.useraccount              import UserAccountData;
         from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
         return self._actionGenericFormEdit(UserAccountData, WuiUserAccount, UserAccountData.ksParam_uid);
 
@@ -543,7 +543,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionTestBoxEdit(self):
         """ Action wrapper. """
-        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.core.testbox                  import TestBoxData;
         from testmanager.webui.wuiadmintestbox         import WuiTestBox;
         return self._actionGenericFormEdit(TestBoxData, WuiTestBox, TestBoxData.ksParam_idTestBox);
 
@@ -556,7 +556,6 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionTestBoxRemovePost(self):
         """ Action wrapper. """
         from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
-        from testmanager.webui.wuiadmintestbox         import WuiTestBox;
         return self._actionGenericDoRemove(TestBoxLogic, TestBoxData.ksParam_idTestBox, self.ksActionTestBoxList);
 
 
@@ -693,7 +692,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionTestCaseEdit(self):
         """ Action wrapper. """
-        from testmanager.core.testcase                  import TestCaseDataEx, TestCaseLogic;
+        from testmanager.core.testcase                  import TestCaseDataEx;
         from testmanager.webui.wuiadmintestcase         import WuiTestCase;
         return self._actionGenericFormEdit(TestCaseDataEx, WuiTestCase, TestCaseDataEx.ksParam_idTestCase);
 
@@ -870,7 +869,6 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionBuildSrcDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.buildsource               import BuildSourceData, BuildSourceLogic;
-        from testmanager.webui.wuiadminbuildsource      import WuiAdminBuildSrc;
         return self._actionGenericDoRemove(BuildSourceLogic, BuildSourceData.ksParam_idBuildSrc, self.ksActionBuildSrcList);
 
     def _actionBuildSrcEdit(self):
@@ -922,7 +920,6 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionBuildDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.build                     import BuildData, BuildLogic;
-        from testmanager.webui.wuiadminbuild            import WuiAdminBuild;
         return self._actionGenericDoRemove(BuildLogic, BuildData.ksParam_idBuild, self.ksActionBuildList);
 
     def _actionBuildEdit(self):
@@ -962,7 +959,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionBuildCategoryClone(self):
         """ Action wrapper. """
-        from testmanager.core.build                     import BuildCategoryData, BuildCategoryLogic;
+        from testmanager.core.build                     import BuildCategoryData;
         from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
         return self._actionGenericFormClone(BuildCategoryData, WuiAdminBuildCat, 'idBuildCategory');
 
@@ -975,7 +972,6 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionBuildCategoryDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.build                     import BuildCategoryData, BuildCategoryLogic;
-        from testmanager.webui.wuiadminbuildcategory    import WuiAdminBuildCat;
         return self._actionGenericDoRemove(BuildCategoryLogic, BuildCategoryData.ksParam_idBuildCategory,
                                            self.ksActionBuildCategoryList)
 
@@ -991,7 +987,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionBuildBlacklistAdd(self):
         """ Action wrapper. """
-        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.core.buildblacklist            import BuildBlacklistData;
         from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
         return self._actionGenericFormAdd(BuildBlacklistData, WuiAdminBuildBlacklist);
 
@@ -1004,7 +1000,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionBuildBlacklistClone(self):
         """ Action wrapper. """
-        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.core.buildblacklist            import BuildBlacklistData;
         from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
         return self._actionGenericFormClone(BuildBlacklistData, WuiAdminBuildBlacklist, 'idBlacklisting');
 
@@ -1017,13 +1013,12 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionBuildBlacklistDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
-        from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
         return self._actionGenericDoRemove(BuildBlacklistLogic, BuildBlacklistData.ksParam_idBlacklisting,
                                            self.ksActionBuildBlacklist);
 
     def _actionBuildBlacklistEdit(self):
         """ Action wrapper. """
-        from testmanager.core.buildblacklist            import BuildBlacklistData, BuildBlacklistLogic;
+        from testmanager.core.buildblacklist            import BuildBlacklistData;
         from testmanager.webui.wuiadminbuildblacklist   import WuiAdminBuildBlacklist;
         return self._actionGenericFormEdit(BuildBlacklistData, WuiAdminBuildBlacklist, BuildBlacklistData.ksParam_idBlacklisting);
 
@@ -1046,7 +1041,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionFailureCategoryAdd(self):
         """ Action wrapper. """
-        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.core.failurecategory           import FailureCategoryData;
         from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
         return self._actionGenericFormAdd(FailureCategoryData, WuiFailureCategory);
 
@@ -1067,13 +1062,12 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionFailureCategoryDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
-        from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
         return self._actionGenericDoRemove(FailureCategoryLogic, FailureCategoryData.ksParam_idFailureCategory,
                                            self.ksActionFailureCategoryList);
 
     def _actionFailureCategoryEdit(self):
         """ Action wrapper. """
-        from testmanager.core.failurecategory           import FailureCategoryData, FailureCategoryLogic;
+        from testmanager.core.failurecategory           import FailureCategoryData;
         from testmanager.webui.wuiadminfailurecategory  import WuiFailureCategory;
         return self._actionGenericFormEdit(FailureCategoryData, WuiFailureCategory,
                                            FailureCategoryData.ksParam_idFailureCategory);
@@ -1096,7 +1090,7 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionFailureReasonAdd(self):
         """ Action wrapper. """
-        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.core.failurereason             import FailureReasonData;
         from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
         return self._actionGenericFormAdd(FailureReasonData, WuiAdminFailureReason);
 
@@ -1116,13 +1110,12 @@ class WuiAdmin(WuiDispatcherBase):
     def _actionFailureReasonDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
-        from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
         return self._actionGenericDoRemove(FailureReasonLogic, FailureReasonData.ksParam_idFailureReason,
                                            self.ksActionFailureReasonList);
 
     def _actionFailureReasonEdit(self):
         """ Action wrapper. """
-        from testmanager.core.failurereason             import FailureReasonData, FailureReasonLogic;
+        from testmanager.core.failurereason             import FailureReasonData;
         from testmanager.webui.wuiadminfailurereason    import WuiAdminFailureReason;
         return self._actionGenericFormEdit(FailureReasonData, WuiAdminFailureReason);
 
