@@ -202,7 +202,11 @@ vbox_user_framebuffer_create(struct drm_device *dev,
     int ret;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+    obj = drm_gem_object_lookup(filp, mode_cmd->handles[0]);
+#else
     obj = drm_gem_object_lookup(dev, filp, mode_cmd->handles[0]);
+#endif
     if (obj == NULL)
         return ERR_PTR(-ENOENT);
 
@@ -545,7 +549,11 @@ vbox_dumb_mmap_offset(struct drm_file *file,
     LogFunc(("vboxvideo: %d: dev=%p, handle=%u\n", __LINE__,
              dev, (unsigned)handle));
     mutex_lock(&dev->struct_mutex);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+    obj = drm_gem_object_lookup(file, handle);
+#else
     obj = drm_gem_object_lookup(dev, file, handle);
+#endif
     if (obj == NULL) {
         ret = -ENOENT;
         goto out_unlock;

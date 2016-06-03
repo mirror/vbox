@@ -74,7 +74,6 @@
 static void vbox_dirty_update(struct vbox_fbdev *fbdev,
                  int x, int y, int width, int height)
 {
-    struct drm_device *dev = fbdev->helper.dev;
     int i;
 
     struct drm_gem_object *obj;

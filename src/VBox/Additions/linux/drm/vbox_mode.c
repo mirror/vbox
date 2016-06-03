@@ -719,7 +719,11 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
         || !(caps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         return -EINVAL;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+    obj = drm_gem_object_lookup(file_priv, handle);
+#else
     obj = drm_gem_object_lookup(crtc->dev, file_priv, handle);
+#endif
     if (obj)
     {
         bo = gem_to_vbox_bo(obj);
