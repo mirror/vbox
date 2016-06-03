@@ -218,6 +218,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.uidSelf                 = -1;
         self.oLogFile                = None;
         self.asBsodReasons           = [];
+        self.asUnitTestReasons       = [];
 
         oParser = OptionParser();
         oParser.add_option('--start-hours-ago', dest = 'cStartHoursAgo', metavar = '<hours>', default = 0, type = 'int',
@@ -390,9 +391,14 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ## @}
 
     ## BSOD category.
-    ksBsodCategory    = 'BSOD';
+    ksBsodCategory      = 'BSOD';
     ## Special reason indicating that the flesh and blood sheriff has work to do.
-    ksBsodAddNew      = 'Add new BSOD';
+    ksBsodAddNew        = 'Add new BSOD';
+
+    ## Unit test category.
+    ksUnitTestCategory  = 'Unit';
+    ## Special reason indicating that the flesh and blood sheriff has work to do.
+    ksUnitTestAddNew    = 'Add new';
 
     ## Used for indica that we shouldn't report anything for this test result ID and
     ## consider promoting the previous error to test set level if it's the only one.
@@ -552,20 +558,49 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         """
         Checks out a VBox unittest problem.
         """
-        _ = oCaseFile;
 
         #
-        # As a first step we'll just fish out what failed here and report
-        # the unit test case name as the "reason".  This can mostly be done
-        # using the TestResultDataEx bits, however in case it timed out and
-        # got killed we have to fish the test timing out from the logs.
+        # Process simple test case failures first, using their name as reason.
+        # We do the reason management just like for BSODs.
         #
+        cRelevantOnes = 0;
+        aoFailedResults = oCaseFile.oTree.getListOfFailures();
+        for oFailedResult in aoFailedResults:
+            if oFailedResult is oCaseFile.oTree:
+                cRelevantOnes += 1
+            if oFailedResult.sName == 'Installing VirtualBox':
+                self.vprint('TODO: Installation failure');
+                cRelevantOnes += 1
+            elif oFailedResult.sName == 'Uninstalling VirtualBox':
+                self.vprint('TODO: Uninstallation failure');
+                cRelevantOnes += 1
+            elif oFailedResult.oParent is not None:
+                # Get the 2nd level node because that's where we'll find the unit test name.
+                o2ndLevel = oFailedResult;
+                while o2ndLevel.oParent.oParent is not None:
+                    o2ndLevel = o2ndLevel.oParent;
+
+                # Only report a failure once.
+                if o2ndLevel.idTestResult not in oCaseFile.dReasonForResultId:
+                    sKey = o2ndLevel.sName;
+                    if sKey.startswith('testcase/'):
+                        sKey = sKey[9:];
+                    if sKey in self.asUnitTestReasons:
+                        tReason = ( self.ksUnitTestCategory, sKey );
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                    else:
+                        self.dprint('Unit test failure "%s" not found in %s;' % (sKey, self.asUnitTestReasons));
+                        tReason = ( self.ksUnitTestCategory, self.ksUnitTestAddNew );
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult, sComment = sKey);
+                    cRelevantOnes += 1
+            else:
+                self.vprint('Internal error: expected oParent to NOT be None for %s' % (oFailedResult,));
 
         #
-        # Report lone failures on the testcase, multiple failures must be
-        # reported directly on the failing test (will fix the test result
-        # listing to collect all of them).
+        # If we've caught all the relevant ones by now, report the result.
         #
+        if len(oCaseFile.dReasonForResultId) >= cRelevantOnes:
+            return self.caseClosed(oCaseFile);
         return False;
 
 
@@ -612,8 +647,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 sKey = sDetails.split(' ', 1)[0];
                 try:    sKey = '0x%08X' % (int(sKey, 16),);
                 except: pass;
-                if sKey in self.asBsodReasons or sKey.lower() in self.asBsodReasons:
+                if sKey in self.asBsodReasons:
                     tReason = ( self.ksBsodCategory, sKey );
+                elif sKey.lower() in self.asBsodReasons: # just in case.
+                    tReason = ( self.ksBsodCategory, sKey.lower() );
                 else:
                     self.dprint('BSOD "%s" not found in %s;' % (sKey, self.asBsodReasons));
                     tReason = ( self.ksBsodCategory, self.ksBsodAddNew );
@@ -818,6 +855,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.oFailureReasonLogic     = FailureReasonLogic(self.oDb);
         self.oTestResultFailureLogic = TestResultFailureLogic(self.oDb);
         self.asBsodReasons           = self.oFailureReasonLogic.fetchForSheriffByNamedCategory(self.ksBsodCategory);
+        self.asUnitTestReasons       = self.oFailureReasonLogic.fetchForSheriffByNamedCategory(self.ksUnitTestCategory);
 
         # Get a fix on our 'now' before we do anything..
         self.oDb.execute('SELECT CURRENT_TIMESTAMP - interval \'%s hours\'', (self.oConfig.cStartHoursAgo,));
