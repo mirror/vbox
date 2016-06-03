@@ -2560,7 +2560,7 @@ iemTaskSwitch(PIEMCPU         pIemCpu,
     bool const fIsNewTSS386 = (   uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_AVAIL
                                || uNewTSSType == X86_SEL_TYPE_SYS_386_TSS_BUSY);
 
-    Log(("iemTaskSwitch: enmTaskSwitch=%u NewTSS=%#x fIsNewTSS386=%RTbool EIP=%#RGv uNextEip=%#RGv\n", enmTaskSwitch, SelTSS,
+    Log(("iemTaskSwitch: enmTaskSwitch=%u NewTSS=%#x fIsNewTSS386=%RTbool EIP=%#RX32 uNextEip=%#RX32\n", enmTaskSwitch, SelTSS,
          fIsNewTSS386, pCtx->eip, uNextEip));
 
     /* Update CR2 in case it's a page-fault. */
@@ -3245,7 +3245,7 @@ iemTaskSwitch(PIEMCPU         pIemCpu,
     /* Check the new EIP against the new CS limit. */
     if (pCtx->eip > pCtx->cs.u32Limit)
     {
-        Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: New EIP exceeds CS limit. uNewEIP=%#RGv CS limit=%u -> #GP(0)\n",
+        Log(("iemHlpTaskSwitchLoadDataSelectorInProtMode: New EIP exceeds CS limit. uNewEIP=%#RX32 CS limit=%u -> #GP(0)\n",
              pCtx->eip, pCtx->cs.u32Limit));
         /** @todo Intel says \#GP(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
         return iemRaiseGeneralProtectionFault(pIemCpu, uExt);
