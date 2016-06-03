@@ -502,6 +502,14 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
     Test case result data representation for table listing
     """
 
+    class FailureReasonListingData(object):
+        """ Failure reason listing data """
+        def __init__(self):
+            self.oFailureReason          = None;
+            self.oFailureReasonAssigner  = None;
+            self.tsFailureReasonAssigned = None;
+            self.sFailureReasonComment   = None;
+
     def __init__(self):
         """Initialize"""
         ModelDataBase.__init__(self)
@@ -543,10 +551,7 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.idBuildTestSuite        = None;
         self.iRevisionTestSuite      = None;
 
-        self.oFailureReason          = None;
-        self.oFailureReasonAssigner  = None;
-        self.tsFailureReasonAssigned = None;
-        self.sFailureReasonComment   = None;
+        self.aoFailureReasons        = [];
 
     def initFromDbRowEx(self, aoRow, oFailureReasonLogic, oUserAccountLogic):
         """
@@ -593,14 +598,20 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.idBuildTestSuite        = aoRow[29];
         self.iRevisionTestSuite      = aoRow[30];
 
-        self.oFailureReason          = None;
-        if aoRow[31] is not None:
-            self.oFailureReason = oFailureReasonLogic.cachedLookup(aoRow[31]);
-        self.oFailureReasonAssigner  = None;
-        if aoRow[32] is not None:
-            self.oFailureReasonAssigner = oUserAccountLogic.cachedLookup(aoRow[32]);
-        self.tsFailureReasonAssigned = aoRow[33];
-        self.sFailureReasonComment   = aoRow[34];
+        self.aoFailureReasons         = [];
+        for i, _ in enumerate(aoRow[31]):
+            if   aoRow[31][i] is not None \
+              or aoRow[32][i] is not None \
+              or aoRow[33][i] is not None \
+              or aoRow[34][i] is not None:
+                oReason = self.FailureReasonListingData();
+                if aoRow[31][i] is not None:
+                    oReason.oFailureReason      = oFailureReasonLogic.cachedLookup(aoRow[31][i]);
+                if aoRow[32][i] is not None:
+                    oReason.oFailureReasonAssigner = oUserAccountLogic.cachedLookup(aoRow[32][i]);
+                oReason.tsFailureReasonAssigned = aoRow[33][i];
+                oReason.sFailureReasonComment   = aoRow[34][i];
+                self.aoFailureReasons.append(oReason);
 
         return self
 
@@ -676,7 +687,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
     ## Default sort by map.
     kdResultSortByMap = {
-        ksResultsSortByRunningAndStart:  ('', None, None, ''),
+        ksResultsSortByRunningAndStart:  ( '', None, None, '', '' ),
         ksResultsSortByBuildRevision: (
             # Sorting tables.
             ', Builds',
@@ -687,71 +698,76 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             # Start of ORDER BY statement.
             ' Builds.iRevision DESC',
             # Extra columns to fetch for the above ORDER BY to work in a SELECT DISTINCT statement.
-            ''  ),
+            '',
+            # Columns for the GROUP BY
+            ''),
         ksResultsSortByTestBoxName: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sName DESC',
-            '' ),
+            '', '' ),
         ksResultsSortByTestBoxOsArch: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sOs, TestBoxes.sCpuArch',
-            ''  ),
+            '', ''  ),
         ksResultsSortByTestBoxOs: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sOs',
-            ''  ),
+            '', ''  ),
         ksResultsSortByTestBoxOsVersion: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sOs, TestBoxes.sOsVersion DESC',
-            ''  ),
+            '', ''  ),
         ksResultsSortByTestBoxArch: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sCpuArch',
-            ''  ),
+            '', ''  ),
         ksResultsSortByTestBoxCpuVendor: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sCpuVendor',
-            ''  ),
+            '', ''  ),
         ksResultsSortByTestBoxCpuName: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sCpuVendor, TestBoxes.sCpuName',
-            ''  ),
+            '', ''  ),
         ksResultsSortByTestBoxCpuRev: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC',
-            ', TestBoxes.lCpuRevision'  ),
+            ', TestBoxes.lCpuRevision',
+            ', TestBoxes.lCpuRevision' ),
         ksResultsSortByTestBoxCpuFeatures: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.fCpuHwVirt DESC, TestBoxes.fCpuNestedPaging DESC, TestBoxes.fCpu64BitGuest DESC, TestBoxes.cCpus DESC',
+            ', TestBoxes.cCpus',
             ', TestBoxes.cCpus' ),
         ksResultsSortByTestCaseName: (
             ', TestCases',
             ' AND TestSets.idGenTestCase = TestCases.idGenTestCase',
             ' TestCases.sName',
-            ''  ),
+            '', ''  ),
         ksResultsSortByFailureReason: (
             '', '',
-            'sSortByFailureReason ASC',
-            ', FailureReasons.sShort AS sSortByFailureReason' ),
+            'asSortByFailureReason ASC',
+            ', array_agg(FailureReasons.sShort ORDER BY TestResultFailures.idTestResult) AS asSortByFailureReason',
+            '' ),
     };
 
     kdResultGroupingMap = {
         ksResultsGroupingTypeNone: (
             # Grouping tables;                # Grouping field;          # Grouping where addition.  # Sort by overrides.
-            '',                                None,                      None,                       {}
+            '',                                None,                      None,                      {},
         ),
-        ksResultsGroupingTypeTestGroup:  ('', 'TestSets.idTestGroup',     None,                {}),
-        ksResultsGroupingTypeTestBox:    ('', 'TestSets.idTestBox',       None,                {}),
-        ksResultsGroupingTypeTestCase:   ('', 'TestSets.idTestCase',      None,                {}),
+        ksResultsGroupingTypeTestGroup:  ('', 'TestSets.idTestGroup',     None,                      {},),
+        ksResultsGroupingTypeTestBox:    ('', 'TestSets.idTestBox',       None,                      {},),
+        ksResultsGroupingTypeTestCase:   ('', 'TestSets.idTestCase',      None,                      {},),
         ksResultsGroupingTypeBuildRev: (
             ', Builds',
             'Builds.iRevision',
@@ -764,19 +780,20 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             ', TestBoxes',
             'TestBoxes.idSchedGroup',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            { ksResultsSortByTestBoxName:       ( '', None, ' TestBoxes.sName DESC', '' ),
-              ksResultsSortByTestBoxOsArch:     ( '', None, ' TestBoxes.sOs, TestBoxes.sCpuArch', ''  ),
-              ksResultsSortByTestBoxOs:         ( '', None,  ' TestBoxes.sOs', ''  ),
-              ksResultsSortByTestBoxOsVersion:  ( '', None, ' TestBoxes.sOs, TestBoxes.sOsVersion DESC', ''  ),
+            { ksResultsSortByTestBoxName:       ( '', None, ' TestBoxes.sName DESC', '', '' ),
+              ksResultsSortByTestBoxOsArch:     ( '', None, ' TestBoxes.sOs, TestBoxes.sCpuArch', '', '' ),
+              ksResultsSortByTestBoxOs:         ( '', None, ' TestBoxes.sOs', ''  ),
+              ksResultsSortByTestBoxOsVersion:  ( '', None, ' TestBoxes.sOs, TestBoxes.sOsVersion DESC', '', '' ),
               ksResultsSortByTestBoxArch:       ( '', None, ' TestBoxes.sCpuArch', ''  ),
               ksResultsSortByTestBoxCpuVendor:  ( '', None, ' TestBoxes.sCpuVendor', ''  ),
-              ksResultsSortByTestBoxCpuName:    ( '', None, ' TestBoxes.sCpuVendor, TestBoxes.sCpuName', ''  ),
+              ksResultsSortByTestBoxCpuName:    ( '', None, ' TestBoxes.sCpuVendor, TestBoxes.sCpuName', '', '' ),
               ksResultsSortByTestBoxCpuRev: (
-                  '', None,  ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC', ', TestBoxes.lCpuRevision'  ),
+                  '', None,  ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC', ', TestBoxes.lCpuRevision', '' ),
               ksResultsSortByTestBoxCpuFeatures: (
                   ' TestBoxes.fCpuHwVirt DESC, TestBoxes.fCpuNestedPaging DESC, TestBoxes.fCpu64BitGuest DESC, '
                   + 'TestBoxes.cCpus DESC',
-                  ', TestBoxes.cCpus' ), }
+                  ', TestBoxes.cCpus',
+                  '' ), }
         ),
     };
 
@@ -834,9 +851,9 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             raise TMExceptionBase('Unknown sorting');
         sGroupingTables, sGroupingField, sGroupingCondition, dSortingOverrides = self.kdResultGroupingMap[enmResultsGroupingType];
         if enmResultSortBy in dSortingOverrides:
-            sSortingTables, sSortingWhere, sSortingOrderBy, sSortingColumns = dSortingOverrides[enmResultSortBy];
+            sSortTables, sSortWhere, sSortOrderBy, sSortColumns, sSortGroupBy = dSortingOverrides[enmResultSortBy];
         else:
-            sSortingTables, sSortingWhere, sSortingOrderBy, sSortingColumns = self.kdResultSortByMap[enmResultSortBy];
+            sSortTables, sSortWhere, sSortOrderBy, sSortColumns, sSortGroupBy = self.kdResultSortByMap[enmResultSortBy];
 
         #
         # Construct the query.
@@ -862,7 +879,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       TestBoxes.idTestBox,\n' \
                   '       TestBoxes.sName,\n' \
                   '       TestResults.tsCreated,\n' \
-                  '       COALESCE(TestResults.tsElapsed, CURRENT_TIMESTAMP - TestResults.tsCreated),\n' \
+                  '       COALESCE(TestResults.tsElapsed, CURRENT_TIMESTAMP - TestResults.tsCreated) AS tsElapsedTestResult,\n' \
                   '       TestSets.enmStatus,\n' \
                   '       TestResults.cErrors,\n' \
                   '       TestCases.idTestCase,\n' \
@@ -872,24 +889,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       TestCaseArgs.sSubName,\n' \
                   '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
                   '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
-                  '       TestResultFailures.idFailureReason as idFailureReason,\n' \
-                  '       TestResultFailures.uidAuthor as uidFailureReasonAssigner,\n' \
-                  '       TestResultFailures.tsEffective as tsFailureReasonAssigned,\n' \
-                  '       TestResultFailures.sComment as sFailureReasonComment,\n' \
-                  '       (TestSets.tsDone IS NULL) SortRunningFirst' + sSortingColumns + '\n' \
+                  '       array_agg(TestResultFailures.idFailureReason ORDER BY TestResultFailures.idTestResult),\n' \
+                  '       array_agg(TestResultFailures.uidAuthor       ORDER BY TestResultFailures.idTestResult),\n' \
+                  '       array_agg(TestResultFailures.tsEffective     ORDER BY TestResultFailures.idTestResult),\n' \
+                  '       array_agg(TestResultFailures.sComment        ORDER BY TestResultFailures.idTestResult),\n' \
+                  '       (TestSets.tsDone IS NULL) SortRunningFirst' + sSortColumns + '\n' \
                   'FROM   BuildCategories,\n' \
                   '       Builds,\n' \
                   '       TestBoxes,\n' \
-                  '       TestResults\n' \
-                  '       LEFT OUTER JOIN TestResultFailures\n' \
-                  '                    ON     TestResults.idTestResult    = TestResultFailures.idTestResult\n' \
-                  '                       AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP';
-        if sSortingOrderBy is not None and sSortingOrderBy.find('FailureReason') >= 0:
-            sQuery += '\n' \
-                      '       LEFT OUTER JOIN FailureReasons\n' \
-                      '                    ON     TestResultFailures.idFailureReason = FailureReasons.idFailureReason\n' \
-                      '                       AND FailureReasons.tsExpire            = \'infinity\'::TIMESTAMP';
-        sQuery += ',\n'\
+                  '       TestResults,\n' \
                   '       TestCases,\n' \
                   '       TestCaseArgs,\n' \
                   '       (  SELECT TestSets.idTestSet AS idTestSet,\n' \
@@ -908,7 +916,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                       '                       ON     TestSets.idTestSet          = TestResultFailures.idTestSet\n' \
                       '                          AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP';
         sQuery += sGroupingTables.replace(',', ',\n                ');
-        sQuery += sSortingTables.replace( ',', ',\n                ');
+        sQuery += sSortTables.replace( ',', ',\n                ');
         sQuery += '\n' \
                   '          WHERE ' + self._getTimePeriodQueryPart(tsNow, sInterval, '         ');
         if fOnlyFailures or fOnlyNeedingReason:
@@ -920,18 +928,26 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             sQuery += '            AND %s = %d\n' % (sGroupingField, iResultsGroupingValue,);
         if sGroupingCondition is not None:
             sQuery += sGroupingCondition.replace(' AND ', '            AND ');
-        if sSortingWhere is not None:
-            sQuery += sSortingWhere.replace(' AND ', '            AND ');
+        if sSortWhere is not None:
+            sQuery += sSortWhere.replace(' AND ', '            AND ');
         sQuery += '          ORDER BY ';
-        if sSortingOrderBy is not None and sSortingOrderBy.find('FailureReason') < 0:
-            sQuery += sSortingOrderBy + ',\n                ';
+        if sSortOrderBy is not None and sSortOrderBy.find('FailureReason') < 0:
+            sQuery += sSortOrderBy + ',\n                ';
         sQuery += '(TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n' \
                   '          LIMIT %s OFFSET %s\n' % (cMaxRows, iStart,);
 
         sQuery += '       ) AS TestSets\n' \
                   '       LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
                   '                    ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild\n' \
-                  'WHERE  TestSets.idTestSet         = TestResults.idTestSet\n' \
+                  '       LEFT OUTER JOIN TestResultFailures\n' \
+                  '                    ON     TestSets.idTestSet          = TestResultFailures.idTestSet\n' \
+                  '                       AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP\n';
+        if sSortOrderBy is not None and sSortOrderBy.find('FailureReason') >= 0:
+            sQuery += '\n' \
+                      '       LEFT OUTER JOIN FailureReasons\n' \
+                      '                    ON     TestResultFailures.idFailureReason = FailureReasons.idFailureReason\n' \
+                      '                       AND FailureReasons.tsExpire            = \'infinity\'::TIMESTAMP\n';
+        sQuery += 'WHERE  TestSets.idTestSet         = TestResults.idTestSet\n' \
                   '   AND TestResults.idTestResultParent is NULL\n' \
                   '   AND TestSets.idBuild           = Builds.idBuild\n' \
                   '   AND Builds.tsExpire            > TestSets.tsCreated\n' \
@@ -939,10 +955,42 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '   AND Builds.idBuildCategory     = BuildCategories.idBuildCategory\n' \
                   '   AND TestSets.idGenTestBox      = TestBoxes.idGenTestBox\n' \
                   '   AND TestSets.idGenTestCase     = TestCases.idGenTestCase\n' \
-                  '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n' \
-                  'ORDER BY ';
-        if sSortingOrderBy is not None:
-            sQuery += sSortingOrderBy + ',\n       ';
+                  '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n';
+        sQuery += 'GROUP BY TestSets.idTestSet,\n' \
+                  '         BuildCategories.idBuildCategory,\n' \
+                  '         BuildCategories.sProduct,\n' \
+                  '         BuildCategories.sRepository,\n' \
+                  '         BuildCategories.sBranch,\n' \
+                  '         BuildCategories.sType,\n' \
+                  '         Builds.idBuild,\n' \
+                  '         Builds.sVersion,\n' \
+                  '         Builds.iRevision,\n' \
+                  '         TestBoxes.sOs,\n' \
+                  '         TestBoxes.sOsVersion,\n' \
+                  '         TestBoxes.sCpuArch,\n' \
+                  '         TestBoxes.sCpuVendor,\n' \
+                  '         TestBoxes.sCpuName,\n' \
+                  '         TestBoxes.cCpus,\n' \
+                  '         TestBoxes.fCpuHwVirt,\n' \
+                  '         TestBoxes.fCpuNestedPaging,\n' \
+                  '         TestBoxes.fCpu64BitGuest,\n' \
+                  '         TestBoxes.idTestBox,\n' \
+                  '         TestBoxes.sName,\n' \
+                  '         TestResults.tsCreated,\n' \
+                  '         tsElapsedTestResult,\n' \
+                  '         TestSets.enmStatus,\n' \
+                  '         TestResults.cErrors,\n' \
+                  '         TestCases.idTestCase,\n' \
+                  '         TestCases.sName,\n' \
+                  '         TestCases.sBaseCmd,\n' \
+                  '         TestCaseArgs.sArgs,\n' \
+                  '         TestCaseArgs.sSubName,\n' \
+                  '         TestSuiteBits.idBuild,\n' \
+                  '         TestSuiteBits.iRevision,\n' \
+                  '         SortRunningFirst' + sSortGroupBy + '\n';
+        sQuery += 'ORDER BY ';
+        if sSortOrderBy is not None:
+            sQuery += sSortOrderBy + ',\n       ';
         sQuery += '(TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n';
 
         #
@@ -960,6 +1008,28 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             aoRows.append(TestResultListingData().initFromDbRowEx(aoRow, self.oFailureReasonLogic, self.oUserAccountLogic));
 
         return aoRows
+
+
+    def fetchTimestampsForLogViewer(self, idTestSet):
+        """
+        Returns an ordered list with all the test result timestamps, both start
+        and end.
+
+        The log viewer create anchors in the log text so we can jump directly to
+        the log lines relevant for a test event.
+        """
+        self._oDb.execute('(\n'
+                          'SELECT tsCreated\n'
+                          'FROM   TestResults\n'
+                          'WHERE  idTestSet = %s\n'
+                          ') UNION (\n'
+                          'SELECT tsCreated + tsElapsed\n'
+                          'FROM   TestResults\n'
+                          'WHERE  idTestSet = %s\n'
+                          ') ORDER by 1'
+                          , ( idTestSet, idTestSet, ));
+        return [aoRow[0] for aoRow in self._oDb.fetchAll()];
+
 
     def getEntriesCount(self, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures, fOnlyNeedingReason):
         """
