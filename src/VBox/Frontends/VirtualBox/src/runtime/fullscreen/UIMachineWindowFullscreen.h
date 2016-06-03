@@ -51,6 +51,9 @@ protected:
     /** Constructor, passes @a pMachineLogic and @a uScreenId to the UIMachineWindow constructor. */
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
 
+    /** Handles Qt change @a pChangeEvent. */
+    void changeEvent(QEvent *pChangeEvent);
+
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Handles native notifications @a strNativeNotificationName for 'fullscreen' window. */
     void handleNativeNotification(const QString &strNativeNotificationName);
