@@ -567,8 +567,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         aoFailedResults = oCaseFile.oTree.getListOfFailures();
         for oFailedResult in aoFailedResults:
             if oFailedResult is oCaseFile.oTree:
+                self.vprint('TODO: toplevel failure');
                 cRelevantOnes += 1
-            if oFailedResult.sName == 'Installing VirtualBox':
+            elif oFailedResult.sName == 'Installing VirtualBox':
                 self.vprint('TODO: Installation failure');
                 cRelevantOnes += 1
             elif oFailedResult.sName == 'Uninstalling VirtualBox':
@@ -760,7 +761,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
             # Look for heap corruption without visible hang.
             if   sMainLog.find('*** glibc detected *** /') > 0 \
-              or sMainLog.find("-1073740940"): # STATUS_HEAP_CORRUPTION / 0xc0000374
+              or sMainLog.find("-1073740940") > 0: # STATUS_HEAP_CORRUPTION / 0xc0000374
                 oCaseFile.noteReason(self.ktReason_Unknown_Heap_Corruption);
                 return self.caseClosed(oCaseFile);
 
