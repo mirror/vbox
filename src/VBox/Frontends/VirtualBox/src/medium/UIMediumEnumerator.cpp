@@ -332,6 +332,13 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     }
 }
 
+void UIMediumEnumerator::retranslateUi()
+{
+    /* Translating NULL uimedium by recreating it: */
+    if (m_mediums.contains(UIMedium::nullID()))
+        m_mediums[UIMedium::nullID()] = UIMedium();
+}
+
 void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &medium)
 {
     /* Prepare medium-enumeration task: */
