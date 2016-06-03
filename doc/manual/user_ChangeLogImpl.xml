@@ -20,6 +20,10 @@
       </listitem>
 
       <listitem>
+        <para>VMM: emulate even more MMIO and shadow pagetable exits without going back to user mode</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: overall migration to Qt5</para>
       </listitem>
 
