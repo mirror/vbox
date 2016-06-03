@@ -4125,12 +4125,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                     Log4(("IDT: Contributory #PF idCpu=%u uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
                 }
 #endif
-                if (   uIdtVector == X86_XCPT_BP
-                    || uIdtVector == X86_XCPT_OF)
-                {
-                    /* Ignore INT3/INTO just retry execution. See #8357. */
-                } 
-                else if (   uExitVector == X86_XCPT_PF
+                if (   uExitVector == X86_XCPT_PF
                     && uIdtVector  == X86_XCPT_PF)
                 {
                     pSvmTransient->fVectoringDoublePF = true;
