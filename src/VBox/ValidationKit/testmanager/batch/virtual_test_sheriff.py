@@ -53,7 +53,7 @@ from testmanager.core.testbox               import TestBoxLogic, TestBoxData;
 from testmanager.core.testcase              import TestCaseDataEx;
 from testmanager.core.testgroup             import TestGroupData;
 from testmanager.core.testset               import TestSetLogic, TestSetData;
-from testmanager.core.testresults           import TestResultLogic;
+from testmanager.core.testresults           import TestResultLogic, TestResultFileData;
 from testmanager.core.testresultfailures    import TestResultFailureLogic, TestResultFailureData;
 from testmanager.core.useraccount           import UserAccountLogic;
 
@@ -67,7 +67,6 @@ class VirtualTestSheriffCaseFile(object):
 
     ## Max log file we'll read into memory. (256 MB)
     kcbMaxLogRead = 0x10000000;
-
 
     def __init__(self, oSheriff, oTestSet, oTree, oBuild, oTestBox, oTestGroup, oTestCase):
         self.oSheriff       = oSheriff;
@@ -96,8 +95,9 @@ class VirtualTestSheriffCaseFile(object):
                                 self.oBuild.iRevision, );
 
         # Investigation notes.
-        self.tReason            = None;     # None or one of the ktReason_XXX constants.
-        self.dReasonForResultId = {};       # Reason assignments indexed by idTestResult.
+        self.tReason                = None; # None or one of the ktReason_XXX constants.
+        self.dReasonForResultId     = {};   # Reason assignments indexed by idTestResult.
+        self.dCommentForResultId    = {};   # Comment assignments indexed by idTestResult.
 
     #
     # Reason.
@@ -107,12 +107,17 @@ class VirtualTestSheriffCaseFile(object):
         """ Notes down a possible reason. """
         self.oSheriff.dprint('noteReason: %s -> %s' % (self.tReason, tReason,));
         self.tReason = tReason;
+        return True;
 
-    def noteReasonForId(self, tReason, idTestResult):
+    def noteReasonForId(self, tReason, idTestResult, sComment = None):
         """ Notes down a possible reason for a specific test result. """
-        self.oSheriff.dprint('noteReasonForId: %u: %s -> %s'
-                             % (idTestResult, self.dReasonForResultId.get(idTestResult, None), tReason,));
+        self.oSheriff.dprint('noteReasonForId: %u: %s -> %s%s'
+                             % (idTestResult, self.dReasonForResultId.get(idTestResult, None), tReason,
+                                (' (%s)' % (sComment,)) if sComment is not None else ''));
         self.dReasonForResultId[idTestResult] = tReason;
+        if sComment is not None:
+            self.dCommentForResultId[idTestResult] = sComment;
+        return True;
 
 
     #
@@ -160,6 +165,24 @@ class VirtualTestSheriffCaseFile(object):
             self.oSheriff.vprint('Error opening main log file: %s' % (oSizeOrError,));
         return self.sMainLog;
 
+    def getLogFile(self, oFile):
+        """
+        Tries to reads the given file as a utf-8 log file.
+        oFile is a TestFileDataEx instance.
+        Returns empty string if problems opening or reading the file.
+        """
+        sContent = '';
+        (oFile, oSizeOrError, _) = self.oTestSet.openFile(oFile.sFile, 'rb');
+        if oFile is not None:
+            try:
+                sContent = oFile.read(min(self.kcbMaxLogRead, oSizeOrError)).decode('utf-8', 'replace');
+            except Exception as oXcpt:
+                self.oSheriff.vprint('Error reading the "%s" log file: %s' % (oFile.sFile, oXcpt,))
+        else:
+            self.oSheriff.vprint('Error opening the "%s" log file: %s' % (oFile.sFile, oSizeOrError,));
+        return sContent;
+
+
     def isSingleTestFailure(self):
         """
         Figure out if this is a single test failing or if it's one of the
@@ -194,6 +217,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.oLogin                  = None;
         self.uidSelf                 = -1;
         self.oLogFile                = None;
+        self.asBsodReasons           = [];
 
         oParser = OptionParser();
         oParser.add_option('--start-hours-ago', dest = 'cStartHoursAgo', metavar = '<hours>', default = 0, type = 'int',
@@ -354,9 +378,24 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_Generic                              = ( 'Guru Meditations',  'Generic Guru Meditation' );
     ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations',  'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
     ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations',  'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
+    ktReason_Guru_VERR_TRPM_DONT_PANIC                 = ( 'Guru Meditations',  'VERR_TRPM_DONT_PANIC' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
+    ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
+    ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
+    ktReason_Unknown_Heap_Corruption                   = ( 'Unknown',           'Heap corruption' );
+    ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
     ## @}
+
+    ## BSOD category.
+    ksBsodCategory    = 'BSOD';
+    ## Special reason indicating that the flesh and blood sheriff has work to do.
+    ksBsodAddNew      = 'Add new BSOD';
+
+    ## Used for indica that we shouldn't report anything for this test result ID and
+    ## consider promoting the previous error to test set level if it's the only one.
+    ktHarmless = ( 'Probably', 'Caused by previous error' );
+
 
     def caseClosed(self, oCaseFile):
         """
@@ -365,28 +404,50 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         #
         # Log it and create a dReasonForReasultId we can use below.
         #
-        if len(oCaseFile.dReasonForResultId):
-            self.vprint('Closing %s with following reasons: %s' % (oCaseFile.sName, oCaseFile.dReasonForResultId,));
-            dReasonForReasultId = oCaseFile.dReasonForResultId;
+        dCommentForResultId = oCaseFile.dCommentForResultId;
+        if len(oCaseFile.dReasonForResultId) > 0:
+            # Must weed out ktHarmless.
+            dReasonForResultId = {};
+            for idKey, tReason in oCaseFile.dReasonForResultId.items():
+                if tReason is not self.ktHarmless:
+                    dReasonForResultId[idKey] = tReason;
+            if len(dReasonForResultId) == 0:
+                self.vprint('TODO: Closing %s without a real reason, only %s.' % (oCaseFile.sName, oCaseFile.dReasonForResultId));
+                return False;
+
+            # Try promote to single reason.
+            if len(dReasonForResultId) > 1:
+                atValues = dReasonForResultId.values();
+                if len(atValues) == atValues.count(atValues[0]):
+                    self.dprint('Merged %d reasons to a single one: %s' % (len(atValues), atValues[0]));
+                    dReasonForResultId = { oCaseFile.oTestSet.idTestResult: atValues[0], };
+                    if len(dCommentForResultId) > 0:
+                        dCommentForResultId = { oCaseFile.oTestSet.idTestResult: dCommentForResultId.values()[0], };
         elif oCaseFile.tReason is not None:
-            self.vprint('Closing %s with following reason: %s'  % (oCaseFile.sName, oCaseFile.tReason,));
-            dReasonForReasultId = { oCaseFile.oTestSet.idTestResult: oCaseFile.tReason, };
+            dReasonForResultId = { oCaseFile.oTestSet.idTestResult: oCaseFile.tReason, };
         else:
-            self.vprint('Closing %s without a reason ... weird!' % (oCaseFile.sName,));
+            self.vprint('Closing %s without a reason - this should not happen!' % (oCaseFile.sName,));
             return False;
+
+        self.vprint('Closing %s with following reason%s: %s'
+                    % ( oCaseFile.sName, 's' if dReasonForResultId > 0 else '', dReasonForResultId, ));
 
         #
         # Add the test failure reason record(s).
         #
-        for idTestResult, tReason in dReasonForReasultId.items():
+        for idTestResult, tReason in dReasonForResultId.items():
             oFailureReason = self.oFailureReasonLogic.cachedLookupByNameAndCategory(tReason[1], tReason[0]);
             if oFailureReason is not None:
+                sComment = 'Set by $Revision$' # Handy for reverting later.
+                if idTestResult in dCommentForResultId:
+                    sComment += ': ' + dCommentForResultId[idTestResult];
+
                 oAdd = TestResultFailureData();
-                oAdd.initFromValues(idTestResult     = idTestResult,
-                                    idFailureReason  = oFailureReason.idFailureReason,
-                                    uidAuthor        = self.uidSelf,
-                                    idTestSet        = oCaseFile.oTestSet.idTestSet,
-                                    sComment         = 'Set by $Revision$',); # Handy for reverting later.
+                oAdd.initFromValues(idTestResult    = idTestResult,
+                                    idFailureReason = oFailureReason.idFailureReason,
+                                    uidAuthor       = self.uidSelf,
+                                    idTestSet       = oCaseFile.oTestSet.idTestSet,
+                                    sComment        = sComment,);
                 if self.oConfig.fRealRun:
                     try:
                         self.oTestResultFailureLogic.addEntry(oAdd, self.uidSelf, fCommit = True);
@@ -397,6 +458,80 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 self.eprint('caseClosed: Cannot locate failure reason: %s / %s' % ( tReason[0], tReason[1],));
         return True;
 
+    #
+    # Tools for assiting log parsing.
+    #
+
+    @staticmethod
+    def matchFollowedByLines(sStr, off, asFollowingLines):
+        """ Worker for isThisFollowedByTheseLines. """
+
+        # Advance off to the end of the line.
+        off = sStr.find('\n', off);
+        if off < 0:
+            return False;
+        off += 1;
+
+        # Match each string with the subsequent lines.
+        for iLine, sLine in enumerate(asFollowingLines):
+            offEnd = sStr.find('\n', off);
+            if offEnd < 0:
+                return  iLine + 1 == len(asFollowingLines) and sStr.find(sLine, off) < 0;
+            if len(sLine) > 0 and sStr.find(sLine, off, offEnd) < 0:
+                return False;
+
+            # next line.
+            off = offEnd + 1;
+
+        return True;
+
+    @staticmethod
+    def isThisFollowedByTheseLines(sStr, sFirst, asFollowingLines):
+        """
+        Looks for a line contining sFirst which is then followed by lines
+        with the strings in asFollowingLines.  (No newline chars anywhere!)
+        Returns True / False.
+        """
+        off = sStr.find(sFirst, 0);
+        while off >= 0:
+            if VirtualTestSheriff.matchFollowedByLines(sStr, off, asFollowingLines):
+                return True;
+            off = sStr.find(sFirst, off + 1);
+        return False;
+
+    @staticmethod
+    def findAndReturnResetOfLine(sHaystack, sNeedle):
+        """
+        Looks for sNeedle in sHaystack.
+        Returns The text following the needle up to the end of the line.
+        Returns None if not found.
+        """
+        off = sHaystack.find(sNeedle);
+        if off < 0:
+            return None;
+        off += len(sNeedle)
+        offEol = sHaystack.find('\n', off);
+        if offEol < 0:
+            offEol = len(sHaystack);
+        return sHaystack[off:offEol]
+
+    @staticmethod
+    def findInAnyAndReturnResetOfLine(asHaystacks, sNeedle):
+        """
+        Looks for sNeedle in zeroe or more haystacks (asHaystack).
+        Returns The text following the first needed found up to the end of the line.
+        Returns None if not found.
+        """
+        for sHaystack in asHaystacks:
+            sRet = VirtualTestSheriff.findAndReturnResetOfLine(sHaystack, sNeedle);
+            if sRet is not None:
+                return sRet;
+        return None;
+
+
+    #
+    # The investigative units.
+    #
 
     def investigateBadTestBox(self, oCaseFile):
         """
@@ -433,9 +568,107 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( False, 'GuruMeditation',                                  ktReason_Guru_Generic ),
         ( True,  'VERR_IEM_INSTR_NOT_IMPLEMENTED',                  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED ),
         ( True,  'VERR_IEM_ASPECT_NOT_IMPLEMENTED',                 ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED ),
+        ( True,  'VERR_TRPM_DONT_PANIC',                            ktReason_Guru_VERR_TRPM_DONT_PANIC ),
         ( True,  'VINF_EM_TRIPLE_FAULT',                            ktReason_Guru_VINF_EM_TRIPLE_FAULT ),
-        ( True,  'vboxinstaller: Exit code: -11 (',                 ktReason_XPCOM_Exit_Minus_11),
     ];
+
+    def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
+        """
+        Investigates a failed VM run.
+        """
+
+        def investigateLogSet():
+            """
+            Investigates the current set of VM related logs.
+            """
+            self.dprint('investigateLogSet: %u chars result log, %u chars VM log, %u chars kernel log'
+                        % ( len(sResultLog) if sResultLog is not None else 0,
+                            len(sVMLog)     if sVMLog is not None else 0,
+                            len(sKrnlLog)   if sKrnlLog is not None else 0), );
+            #self.dprint('main.log<<<\n%s\n<<<\n' % (sResultLog,));
+            #self.dprint('vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
+            #self.dprint('krnl.log<<<\n%s\n<<<\n' % (sKrnlLog,));
+
+            # TODO: more
+
+            #
+            # Look for BSODs. Some stupid stupid inconsistencies in reason and log messages here, so don't try prettify this.
+            #
+            sDetails = self.findInAnyAndReturnResetOfLine([ sVMLog, sResultLog ],
+                                                          'GIM: HyperV: Guest indicates a fatal condition! P0=');
+            if sDetails is not None:
+                # P0=%#RX64 P1=%#RX64 P2=%#RX64 P3=%#RX64 P4=%#RX64 "
+                sKey = sDetails.split(' ', 1)[0];
+                try:    sKey = '0x%08X' % (int(sKey, 16),);
+                except: pass;
+                if sKey in self.asBsodReasons or sKey.lower() in self.asBsodReasons:
+                    tReason = ( self.ksBsodCategory, sKey );
+                else:
+                    self.dprint('BSOD "%s" not found in %s;' % (sKey, self.asBsodReasons));
+                    tReason = ( self.ksBsodCategory, self.ksBsodAddNew );
+                return oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult, sComment = sDetails.strip());
+
+            #
+            # Look for linux panic.
+            #
+            if sKrnlLog is not None:
+                pass; ## @todo
+
+            #
+            # Loop thru the simple stuff.
+            #
+            fFoundSomething = False;
+            for fStopOnHit, sNeedle, tReason in self.katSimpleMainAndVmLogReasons:
+                if sResultLog.find(sNeedle) > 0 or sVMLog.find(sNeedle) > 0:
+                    oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                    if fStopOnHit:
+                        return True;
+                    fFoundSomething = True;
+
+            #
+            # Check for repeated reboots...
+            #
+            cResets = sVMLog.count('Changing the VM state from \'RUNNING\' to \'RESETTING\'');
+            if cResets > 10:
+                return oCaseFile.noteReasonForId(self.ktReason_Unknown_Reboot_Loop, oFailedResult.idTestResult,
+                                                 sComment = 'Counted %s reboots' % (cResets,));
+
+            return fFoundSomething;
+
+        #
+        # Check if we got any VM or/and kernel logs.  Treat them as sets in
+        # case we run multiple VMs here.
+        #
+        sVMLog   = None;
+        sKrnlLog = None;
+        for oFile in oFailedResult.aoFiles:
+            if oFile.sKind == TestResultFileData.ksKind_LogReleaseVm:
+                if sVMLog is not None:
+                    if investigateLogSet() is True:
+                        return True;
+                sKrnlLog = None;
+                sVMLog   = oCaseFile.getLogFile(oFile);
+            elif oFile.sKind == TestResultFileData.ksKind_LogGuestKernel:
+                sKrnlLog = oCaseFile.getLogFile(oFile);
+        if sVMLog is not None and investigateLogSet() is True:
+            return True;
+
+        return None;
+
+
+    def isResultFromVMRun(self, oFailedResult, sResultLog):
+        """
+        Checks if this result and corresponding log snippet looks like a VM run.
+        """
+
+        # Look for startVmEx/ startVmAndConnectToTxsViaTcp and similar output in the log.
+        if sResultLog.find(' startVm') > 0:
+            return True;
+
+        # Any other indicators? No?
+        _ = oFailedResult;
+        return False;
+
 
     def investigateVBoxVMTest(self, oCaseFile, fSingleVM):
         """
@@ -449,18 +682,70 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         _ = fSingleVM;
 
         #
-        # Do some quick searches thru the main log to see if there is anything
-        # immediately incriminating evidence there.
+        # Get a list of test result failures we should be looking into and the main log.
         #
-        sMainLog = oCaseFile.getMainLog();
-        for fStopOnHit, sNeedle, tReason in self.katSimpleMainAndVmLogReasons:
-            if sMainLog.find(sNeedle) > 0:
-                oCaseFile.noteReason(tReason);
-                if fStopOnHit:
-                    if oCaseFile.isSingleTestFailure():
-                        return self.caseClosed(oCaseFile);
-                    break;
+        aoFailedResults = oCaseFile.oTree.getListOfFailures();
+        sMainLog        = oCaseFile.getMainLog();
 
+        #
+        # There are a set of errors ending up on the top level result record.
+        # Should deal with these first.
+        #
+        if len(aoFailedResults) == 1 and aoFailedResults[0] == oCaseFile.oTree:
+            # Check if we've just got that XPCOM client smoke test shutdown issue.  This will currently always
+            # be reported on the top result because vboxinstall.py doesn't add an error for it.  It is easy to
+            # ignore other failures in the test if we're not a little bit careful here.
+            if sMainLog.find('vboxinstaller: Exit code: -11 (') > 0:
+                oCaseFile.noteReason(self.ktReason_XPCOM_Exit_Minus_11);
+                return self.caseClosed(oCaseFile);
+
+            # Hang after starting VBoxSVC (e.g. idTestSet=136307258)
+            if self.isThisFollowedByTheseLines(sMainLog, 'oVBoxMgr=<vboxapi.VirtualBoxManager object at',
+                                               (' Timeout: ', ' Attempting to abort child...',) ):
+                if sMainLog.find('*** glibc detected *** /') > 0:
+                    oCaseFile.noteReason(self.ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption);
+                else:
+                    oCaseFile.noteReason(self.ktReason_XPCOM_VBoxSVC_Hang);
+                return self.caseClosed(oCaseFile);
+
+
+
+            # Look for heap corruption without visible hang.
+            if   sMainLog.find('*** glibc detected *** /') > 0 \
+              or sMainLog.find("-1073740940"): # STATUS_HEAP_CORRUPTION / 0xc0000374
+                oCaseFile.noteReason(self.ktReason_Unknown_Heap_Corruption);
+                return self.caseClosed(oCaseFile);
+
+        #
+        # Go thru each failed result.
+        #
+        for oFailedResult in aoFailedResults:
+            self.dprint('Looking at test result #%u - %s' % (oFailedResult.idTestResult, oFailedResult.getFullName(),));
+            sResultLog = TestSetData.extractLogSectionElapsed(sMainLog, oFailedResult.tsCreated, oFailedResult.tsElapsed);
+            if oFailedResult.sName == 'Installing VirtualBox':
+                self.vprint('TODO: Installation failure');
+            elif oFailedResult.sName == 'Uninstalling VirtualBox':
+                self.vprint('TODO: Uninstallation failure');
+            elif self.isResultFromVMRun(oFailedResult, sResultLog):
+                self.investigateVMResult(oCaseFile, oFailedResult, sResultLog);
+            elif sResultLog.find('The machine is not mutable (state is ') > 0:
+                self.vprint('Ignorining "machine not mutable" error as it is probably due to an earlier problem');
+                oCaseFile.noteReasonForId(self.ktHarmless, oFailedResult.idTestResult);
+            else:
+                self.vprint('TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
+                self.dprint('%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
+
+        #
+        # Report home and close the case if we got them all, otherwise log it.
+        #
+        if len(oCaseFile.dReasonForResultId) >= len(aoFailedResults):
+            return self.caseClosed(oCaseFile);
+
+        if len(oCaseFile.dReasonForResultId) > 0:
+            self.vprint('TODO: Got %u out of %u - close, but no cigar. :-/'
+                        % (len(oCaseFile.dReasonForResultId), len(aoFailedResults)));
+        else:
+            self.vprint('XXX: Could not figure out anything at all! :-(');
         return False;
 
 
@@ -471,6 +756,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         #
         # Get a list of failed test sets without any assigned failure reason.
         #
+        cGot = 0;
         aoTestSets = self.oTestSetLogic.fetchFailedSetsWithoutReason(cHoursBack = self.oConfig.cHoursBack, tsNow = self.tsNow);
         for oTestSet in aoTestSets:
             self.dprint('');
@@ -489,18 +775,21 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
             if oTestSet.enmStatus == TestSetData.ksTestStatus_BadTestBox:
                 self.dprint('investigateBadTestBox is taking over %s.' % (oCaseFile.sLongName,));
-                self.investigateBadTestBox(oCaseFile);
+                fRc = self.investigateBadTestBox(oCaseFile);
             elif oCaseFile.isVBoxUnitTest():
                 self.dprint('investigateVBoxUnitTest is taking over %s.' % (oCaseFile.sLongName,));
-                self.investigateVBoxUnitTest(oCaseFile);
+                fRc = self.investigateVBoxUnitTest(oCaseFile);
             elif oCaseFile.isVBoxInstallTest():
                 self.dprint('investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
-                self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
             elif oCaseFile.isVBoxSmokeTest():
                 self.dprint('investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
-                self.investigateVBoxVMTest(oCaseFile, fSingleVM = False);
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = False);
             else:
                 self.vprint('reasoningFailures: Unable to classify test set: %s' % (oCaseFile.sLongName,));
+                fRc = False;
+            cGot += fRc is True;
+        self.vprint('reasoningFailures: Got %u out of %u' % (cGot, len(aoTestSets), ));
         return 0;
 
 
@@ -515,6 +804,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         self.oTestSetLogic           = TestSetLogic(self.oDb);
         self.oFailureReasonLogic     = FailureReasonLogic(self.oDb);
         self.oTestResultFailureLogic = TestResultFailureLogic(self.oDb);
+        self.asBsodReasons           = self.oFailureReasonLogic.fetchForSheriffByNamedCategory(self.ksBsodCategory);
 
         # Get a fix on our 'now' before we do anything..
         self.oDb.execute('SELECT CURRENT_TIMESTAMP - interval \'%s hours\'', (self.oConfig.cStartHoursAgo,));

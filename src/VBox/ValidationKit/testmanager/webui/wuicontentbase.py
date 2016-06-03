@@ -605,6 +605,13 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
             dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'Details');
             aoActions.append(WuiTmLink('Details', '', dParams));
 
+            # Add delete operation if available.
+            if hasattr(self._oDisp, self._sActionBase + 'DoRemove'):
+                dParams = self._oDisp.getParameters();
+                dParams[WuiDispatcherBase.ksParamAction] = getattr(self._oDisp, self._sActionBase + 'DoRemove');
+                dParams[getattr(oData, 'ksParam_' + oData.ksIdAttr)] = getattr(oData, oData.ksIdAttr);
+                aoActions.append(WuiTmLink('Delete', '', dParams, sConfirm = "Are you absolutely sure?"));
+
         return aoActions;
 
     def showForm(self, dErrors = None, sErrorMsg = None):

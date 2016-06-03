@@ -219,6 +219,25 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
             aoRows.append(FailureReasonDataEx().initFromDbRowEx(aoRow, self.oCategoryLogic, self.oUserAccountLogic));
         return aoRows
 
+
+    def fetchForSheriffByNamedCategory(self, sFailureCategory):
+        """
+        Fetches the short names of the reasons in the named category.
+
+        Returns array of strings.
+        Raises exception on error.
+        """
+        self._oDb.execute('SELECT   FailureReasons.sShort\n'
+                          'FROM     FailureReasons,\n'
+                          '         FailureCategories\n'
+                          'WHERE    FailureReasons.tsExpire          = \'infinity\'::TIMESTAMP\n'
+                          '     AND FailureReasons.idFailureCategory = FailureCategories.idFailureCategory\n'
+                          '     AND FailureCategories.sShort         = %s\n'
+                          'ORDER BY FailureReasons.sShort ASC\n'
+                          , ( sFailureCategory,));
+        return [aoRow[0] for aoRow in self._oDb.fetchAll()];
+
+
     def fetchForCombo(self, sFirstEntry = 'Select a failure reason', tsEffective = None):
         """
         Gets the list of Failure Reasons for a combo box.

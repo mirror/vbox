@@ -198,14 +198,41 @@ class TestResultDataEx(TestResultData):
         cChanges = 0;
         cChildErrors = 0;
         for oChild in self.aoChildren:
-            cChanges += oChild.deepCountErrorContributers();
-            cChildErrors += oChild.cErrors;
+            if oChild.cErrors > 0:
+                cChildErrors += oChild.cErrors;
+                cChanges     += oChild.deepCountErrorContributers();
 
         # Did we contribute as well?
-        if self.cErrors != cChildErrors:
-            assert self.cErrors >= cChildErrors;
+        if self.cErrors > cChildErrors:
             cChanges += 1;
         return cChanges;
+
+    def getListOfFailures(self):
+        """
+        Get a list of test results insances actually contributing to cErrors.
+
+        Returns a list of TestResultDataEx insance from this tree. (shared!)
+        """
+        # Check each child (if any).
+        aoRet = [];
+        cChildErrors = 0;
+        for oChild in self.aoChildren:
+            if oChild.cErrors > 0:
+                cChildErrors += oChild.cErrors;
+                aoRet.extend(oChild.getListOfFailures());
+
+        # Did we contribute as well?
+        if self.cErrors > cChildErrors:
+            aoRet.append(self);
+
+        return aoRet;
+
+    def getFullName(self):
+        """ Constructs the full name of this test result. """
+        if self.oParent is None:
+            return self.sName;
+        return self.oParent.getFullName() + ' / ' + self.sName;
+
 
 
 class TestResultValueData(ModelDataBase):
@@ -350,6 +377,29 @@ class TestResultFileData(ModelDataBase):
     ksParam_idStrDescription    = 'TestResultFile_idStrDescription';
     ksParam_idStrKind           = 'TestResultFile_idStrKind';
     ksParam_idStrMime           = 'TestResultFile_idStrMime';
+
+    ## @name Kind of files.
+    ## @{
+    ksKind_LogReleaseVm         = 'log/release/vm';
+    ksKind_LogDebugVm           = 'log/debug/vm';
+    ksKind_LogReleaseSvc        = 'log/release/svc';
+    ksKind_LogRebugSvc          = 'log/debug/svc';
+    ksKind_LogReleaseClient     = 'log/release/client';
+    ksKind_LogDebugClient       = 'log/debug/client';
+    ksKind_LogInstaller         = 'log/installer';
+    ksKind_LogUninstaller       = 'log/uninstaller';
+    ksKind_LogGuestKernel       = 'log/guest/kernel';
+    ksKind_CrashReportVm        = 'crash/report/vm';
+    ksKind_CrashDumpVm          = 'crash/dump/vm';
+    ksKind_CrashReportSvc       = 'crash/report/svc';
+    ksKind_CrashDumpSvc         = 'crash/dump/svc';
+    ksKind_CrashReportClient    = 'crash/report/client';
+    ksKind_CrashDumpClient      = 'crash/dump/client';
+    ksKind_MiscOther            = 'misc/other';
+    ksKind_ScreenshotFailure    = 'screenshot/failure';
+    ksKind_ScreenshotSuccesss   = 'screenshot/success';
+    #kSkind_ScreenCaptureFailure = 'screencapture/failure';
+    ## @}
 
     def __init__(self):
         ModelDataBase.__init__(self)

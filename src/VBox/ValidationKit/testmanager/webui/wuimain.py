@@ -67,6 +67,7 @@ class WuiMain(WuiDispatcherBase):
     ksActionTestResultFailureAddPost    = 'TestResultFailureAddPost'
     ksActionTestResultFailureEdit       = 'TestResultFailureEdit'
     ksActionTestResultFailureEditPost   = 'TestResultFailureEditPost'
+    ksActionTestResultFailureDoRemove   = 'TestResultFailureDoRemove'
     ksActionViewLog                     = 'ViewLog'
     ksActionGetFile                     = 'GetFile'
     ksActionReportSummary               = 'ReportSummary';
@@ -207,6 +208,7 @@ class WuiMain(WuiDispatcherBase):
         self._dDispatch[self.ksActionTestResultFailureAdd]          = self._actionTestResultFailureAdd;
         self._dDispatch[self.ksActionTestResultFailureAddPost]      = self._actionTestResultFailureAddPost;
         self._dDispatch[self.ksActionTestResultFailureDetails]      = self._actionTestResultFailureDetails;
+        self._dDispatch[self.ksActionTestResultFailureDoRemove]     = self._actionTestResultFailureDoRemove;
         self._dDispatch[self.ksActionTestResultFailureEdit]         = self._actionTestResultFailureEdit;
         self._dDispatch[self.ksActionTestResultFailureEditPost]     = self._actionTestResultFailureEditPost;
 
@@ -967,6 +969,13 @@ class WuiMain(WuiDispatcherBase):
 
         return self._actionGenericFormAddPost(TestResultFailureData, TestResultFailureLogic,
                                               WuiTestResultFailure, self.ksActionResultsUnGrouped);
+
+    def _actionTestResultFailureDoRemove(self):
+        """ Action wrapper. """
+        from testmanager.core.testresultfailures import TestResultFailureData, TestResultFailureLogic;
+        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
+        return self._actionGenericDoRemove(TestResultFailureLogic, TestResultFailureData.ksParam_idTestResult,
+                                           self.ksActionResultsUnGrouped);
 
     def _actionTestResultFailureDetails(self):
         """ Pro forma. """

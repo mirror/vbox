@@ -404,35 +404,6 @@ class WuiAdmin(WuiDispatcherBase):
 
         return False
 
-    def _actionGenericDoRemove(self, oLogicType, sParamId, sRedirAction):
-        """
-        Delete entry (using oLogicType.removeEntry).
-
-        oLogicType is a class that implements addEntry.
-
-        sParamId is the name (ksParam_...) of the HTTP variable hold the ID of
-        the database entry to delete.
-
-        sRedirAction is what action to redirect to on success.
-        """
-        idEntry = self.getIntParam(sParamId, iMin = 1, iMax = 0x7fffffe)
-        fCascade = self.getBoolParam('fCascadeDelete', False);
-        self._checkForUnknownParameters()
-
-        try:
-            self._sPageTitle  = None
-            self._sPageBody   = None
-            self._sRedirectTo = self._sActionUrlBase + sRedirAction;
-            return oLogicType(self._oDb).removeEntry(self._oCurUser.uid, idEntry, fCascade = fCascade, fCommit = True);
-        except Exception as oXcpt:
-            self._oDb.rollback();
-            self._sPageTitle  = 'Unable to delete entry';
-            self._sPageBody   = str(oXcpt);
-            if config.g_kfDebugDbXcpt:
-                self._sPageBody += cgitb.html(sys.exc_info());
-            self._sRedirectTo = None;
-        return False;
-
 
     #
     # System Category.
