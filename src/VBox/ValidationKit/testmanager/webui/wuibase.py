@@ -837,12 +837,13 @@ class WuiDispatcherBase(object):
 
         idEntry = self.getIntParam(sParamId, iMin = 1, iMax = 0x7ffffffe)
         fCascade = self.getBoolParam('fCascadeDelete', False);
+        sRedirectTo = self.getRedirectToParameter(self._sActionUrlBase + sRedirAction);
         self._checkForUnknownParameters()
 
         try:
             self._sPageTitle  = None
             self._sPageBody   = None
-            self._sRedirectTo = self._sActionUrlBase + sRedirAction;
+            self._sRedirectTo = sRedirectTo;
             return oLogicType(self._oDb).removeEntry(self._oCurUser.uid, idEntry, fCascade = fCascade, fCommit = True);
         except Exception as oXcpt:
             self._oDb.rollback();
