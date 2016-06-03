@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -211,9 +211,9 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(USBControllerNormal,      ":/usb_16px.png");
     m_names.insert(USBControllerExpand,      ":/usb_expand_16px.png");
     m_names.insert(USBControllerCollapse,    ":/usb_collapse_16px.png");
-    m_names.insert(PCIeControllerNormal,     ":/ide_16px.png");
-    m_names.insert(PCIeControllerExpand,     ":/ide_expand_16px.png");
-    m_names.insert(PCIeControllerCollapse,   ":/ide_collapse_16px.png");
+    m_names.insert(NVMeControllerNormal,     ":/ide_16px.png");
+    m_names.insert(NVMeControllerExpand,     ":/ide_expand_16px.png");
+    m_names.insert(NVMeControllerCollapse,   ":/ide_collapse_16px.png");
     m_names.insert(FloppyControllerNormal,   ":/floppy_16px.png");
     m_names.insert(FloppyControllerExpand,   ":/floppy_expand_16px.png");
     m_names.insert(FloppyControllerCollapse, ":/floppy_collapse_16px.png");
@@ -226,8 +226,8 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(SCSIControllerAddDis,     ":/scsi_add_disabled_16px.png");
     m_names.insert(USBControllerAddEn,       ":/usb_add_16px.png");
     m_names.insert(USBControllerAddDis,      ":/usb_add_disabled_16px.png");
-    m_names.insert(PCIeControllerAddEn,      ":/ide_add_16px.png");
-    m_names.insert(PCIeControllerAddDis,     ":/ide_add_disabled_16px.png");
+    m_names.insert(NVMeControllerAddEn,      ":/ide_add_16px.png");
+    m_names.insert(NVMeControllerAddDis,     ":/ide_add_disabled_16px.png");
     m_names.insert(FloppyControllerAddEn,    ":/floppy_add_16px.png");
     m_names.insert(FloppyControllerAddDis,   ":/floppy_add_disabled_16px.png");
     /* Specific attachment file-names: */
@@ -291,7 +291,7 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
                 mPixmaps [i] = (PixmapType)(USBControllerNormal + i);
                 break;
             case KStorageBus_PCIe:
-                mPixmaps [i] = (PixmapType)(PCIeControllerNormal + i);
+                mPixmaps [i] = (PixmapType)(NVMeControllerNormal + i);
                 break;
             default:
                 break;
@@ -429,18 +429,18 @@ uint USBStorageControllerType::size() const
     return 1;
 }
 
-/* PCIe Controller Type */
-PCIeStorageControllerType::PCIeStorageControllerType (KStorageControllerType aSubType)
+/* NVMe Controller Type */
+NVMeStorageControllerType::NVMeStorageControllerType (KStorageControllerType aSubType)
     : AbstractControllerType (KStorageBus_PCIe, aSubType)
 {
 }
 
-KStorageControllerType PCIeStorageControllerType::first() const
+KStorageControllerType NVMeStorageControllerType::first() const
 {
     return KStorageControllerType_NVMe;
 }
 
-uint PCIeStorageControllerType::size() const
+uint NVMeStorageControllerType::size() const
 {
     return 1;
 }
@@ -589,7 +589,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
             mCtrType = new USBStorageControllerType (aControllerType);
             break;
         case KStorageBus_PCIe:
-            mCtrType = new PCIeStorageControllerType (aControllerType);
+            mCtrType = new NVMeStorageControllerType (aControllerType);
             break;
 
         default:
@@ -1224,7 +1224,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_USB) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
         }
-        case R_IsMorePCIeControllersPossible:
+        case R_IsMoreNVMeControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_PCIe) <
@@ -1990,7 +1990,7 @@ private:
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : mStorageModel(0)
     , mAddCtrAction(0), mDelCtrAction(0)
-    , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0), mAddUSBCtrAction(0), mAddPCIeCtrAction(0)
+    , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0), mAddUSBCtrAction(0), mAddNVMeCtrAction(0)
     , mAddAttAction(0), mDelAttAction(0)
     , mAddHDAttAction(0), mAddCDAttAction(0), mAddFDAttAction(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
@@ -2031,8 +2031,8 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mAddUSBCtrAction = new QAction (this);
     mAddUSBCtrAction->setIcon(iconPool()->icon(USBControllerAddEn, USBControllerAddDis));
 
-    mAddPCIeCtrAction = new QAction (this);
-    mAddPCIeCtrAction->setIcon(iconPool()->icon(PCIeControllerAddEn, PCIeControllerAddDis));
+    mAddNVMeCtrAction = new QAction (this);
+    mAddNVMeCtrAction->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
 
     mDelCtrAction = new QAction (this);
     mDelCtrAction->setIcon(iconPool()->icon(ControllerDelEn, ControllerDelDis));
@@ -2110,7 +2110,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mAddSASCtrAction, SIGNAL (triggered (bool)), this, SLOT (addSASController()));
     connect (mAddFloppyCtrAction, SIGNAL (triggered (bool)), this, SLOT (addFloppyController()));
     connect (mAddUSBCtrAction, SIGNAL (triggered (bool)), this, SLOT (addUSBController()));
-    connect (mAddPCIeCtrAction, SIGNAL (triggered (bool)), this, SLOT (addPCIeController()));
+    connect (mAddNVMeCtrAction, SIGNAL (triggered (bool)), this, SLOT (addNVMeController()));
     connect (mDelCtrAction, SIGNAL (triggered (bool)), this, SLOT (delController()));
     connect (mAddAttAction, SIGNAL (triggered (bool)), this, SLOT (addAttachment()));
     connect (mAddHDAttAction, SIGNAL (triggered (bool)), this, SLOT (addHDAttachment()));
@@ -2492,7 +2492,7 @@ void UIMachineSettingsStorage::retranslateUi()
     mAddSASCtrAction->setText(tr("Add SAS Controller"));
     mAddFloppyCtrAction->setText(tr("Add Floppy Controller"));
     mAddUSBCtrAction->setText(tr("Add USB Controller"));
-    mAddPCIeCtrAction->setText(tr("Add PCIe Controller"));
+    mAddNVMeCtrAction->setText(tr("Add NVMe Controller"));
     mDelCtrAction->setText(tr("Remove Controller"));
     mAddAttAction->setText(tr("Add Attachment"));
     mAddHDAttAction->setText(tr("Add Hard Disk"));
@@ -2594,7 +2594,7 @@ void UIMachineSettingsStorage::addController()
     menu.addAction (mAddSASCtrAction);
     menu.addAction (mAddFloppyCtrAction);
     menu.addAction (mAddUSBCtrAction);
-    menu.addAction (mAddPCIeCtrAction);
+    menu.addAction (mAddNVMeCtrAction);
     menu.exec (QCursor::pos());
 }
 
@@ -2628,9 +2628,9 @@ void UIMachineSettingsStorage::addUSBController()
     addControllerWrapper (generateUniqueName ("USB"), KStorageBus_USB, KStorageControllerType_USB);
 }
 
-void UIMachineSettingsStorage::addPCIeController()
+void UIMachineSettingsStorage::addNVMeController()
 {
-    addControllerWrapper (generateUniqueName ("PCIe"), KStorageBus_PCIe, KStorageControllerType_NVMe);
+    addControllerWrapper (generateUniqueName ("NVMe"), KStorageBus_PCIe, KStorageControllerType_NVMe);
 }
 
 void UIMachineSettingsStorage::delController()
@@ -3053,7 +3053,7 @@ void UIMachineSettingsStorage::updateActionsState()
     bool isFloppyPossible = mStorageModel->data (index, StorageModel::R_IsMoreFloppyControllersPossible).toBool();
     bool isSASPossible = mStorageModel->data (index, StorageModel::R_IsMoreSASControllersPossible).toBool();
     bool isUSBPossible = mStorageModel->data (index, StorageModel::R_IsMoreUSBControllersPossible).toBool();
-    bool isPCIePossible = mStorageModel->data (index, StorageModel::R_IsMorePCIeControllersPossible).toBool();
+    bool isNVMePossible = mStorageModel->data (index, StorageModel::R_IsMoreNVMeControllersPossible).toBool();
 
     bool isController = mStorageModel->data (index, StorageModel::R_IsController).toBool();
     bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
@@ -3061,14 +3061,14 @@ void UIMachineSettingsStorage::updateActionsState()
     bool fIsAttachmentHotPluggable = mStorageModel->data(index, StorageModel::R_AttIsHotPluggable).toBool();
 
     /* Configure "add controller" actions: */
-    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible || isSASPossible || isUSBPossible || isPCIePossible);
+    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible || isSASPossible || isUSBPossible || isNVMePossible);
     mAddIDECtrAction->setEnabled (isIDEPossible);
     mAddSATACtrAction->setEnabled (isSATAPossible);
     mAddSCSICtrAction->setEnabled (isSCSIPossible);
     mAddFloppyCtrAction->setEnabled (isFloppyPossible);
     mAddSASCtrAction->setEnabled (isSASPossible);
     mAddUSBCtrAction->setEnabled (isUSBPossible);
-    mAddPCIeCtrAction->setEnabled (isPCIePossible);
+    mAddNVMeCtrAction->setEnabled (isNVMePossible);
 
     /* Configure "add attachment" actions: */
     mAddAttAction->setEnabled (isController && isAttachmentsPossible);
@@ -3364,7 +3364,7 @@ void UIMachineSettingsStorage::addControllerWrapper (const QString &aName, KStor
             Assert (mStorageModel->data (index, StorageModel::R_IsMoreUSBControllersPossible).toBool());
             break;
         case KStorageBus_PCIe:
-            Assert (mStorageModel->data (index, StorageModel::R_IsMorePCIeControllersPossible).toBool());
+            Assert (mStorageModel->data (index, StorageModel::R_IsMoreNVMeControllersPossible).toBool());
             break;
         default:
             break;

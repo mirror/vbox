@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -82,9 +82,9 @@ enum PixmapType
     USBControllerNormal,
     USBControllerExpand,
     USBControllerCollapse,
-    PCIeControllerNormal,
-    PCIeControllerExpand,
-    PCIeControllerCollapse,
+    NVMeControllerNormal,
+    NVMeControllerExpand,
+    NVMeControllerCollapse,
     FloppyControllerNormal,
     FloppyControllerExpand,
     FloppyControllerCollapse,
@@ -97,8 +97,8 @@ enum PixmapType
     SCSIControllerAddDis,
     USBControllerAddEn,
     USBControllerAddDis,
-    PCIeControllerAddEn,
-    PCIeControllerAddDis,
+    NVMeControllerAddEn,
+    NVMeControllerAddDis,
     FloppyControllerAddEn,
     FloppyControllerAddDis,
 
@@ -230,12 +230,12 @@ private:
     uint size() const;
 };
 
-/* PCIe Controller Type */
-class PCIeStorageControllerType : public AbstractControllerType
+/* NVMe Controller Type */
+class NVMeStorageControllerType : public AbstractControllerType
 {
 public:
 
-    PCIeStorageControllerType (KStorageControllerType aSubType);
+    NVMeStorageControllerType (KStorageControllerType aSubType);
 
 private:
 
@@ -456,7 +456,7 @@ public:
         R_IsMoreFloppyControllersPossible,
         R_IsMoreSASControllersPossible,
         R_IsMoreUSBControllersPossible,
-        R_IsMorePCIeControllersPossible,
+        R_IsMoreNVMeControllersPossible,
         R_IsMoreAttachmentsPossible,
 
         R_CtrName,
@@ -725,7 +725,7 @@ private slots:
     void addFloppyController();
     void addSASController();
     void addUSBController();
-    void addPCIeController();
+    void addNVMeController();
     void delController();
 
     void addAttachment();
@@ -807,7 +807,7 @@ private:
     QAction *mAddSASCtrAction;
     QAction *mAddFloppyCtrAction;
     QAction *mAddUSBCtrAction;
-    QAction *mAddPCIeCtrAction;
+    QAction *mAddNVMeCtrAction;
     QAction *mAddAttAction;
     QAction *mDelAttAction;
     QAction *mAddHDAttAction;
