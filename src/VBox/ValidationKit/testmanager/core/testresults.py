@@ -1026,8 +1026,22 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'SELECT tsCreated + tsElapsed\n'
                           'FROM   TestResults\n'
                           'WHERE  idTestSet = %s\n'
+                          ') UNION (\n'
+                          'SELECT TestResultFiles.tsCreated\n'
+                          'FROM   TestResultFiles\n'
+                          '  JOIN TestResults ON TestResultFiles.idTestResult = TestResults.idTestResult\n'
+                          'WHERE  idTestSet = %s\n'
+                          ') UNION (\n'
+                          'SELECT tsCreated\n'
+                          'FROM   TestResultValues\n'
+                          'WHERE  idTestSet = %s\n'
+                          ') UNION (\n'
+                          'SELECT TestResultMsgs.tsCreated\n'
+                          'FROM   TestResultMsgs\n'
+                          '  JOIN TestResults ON TestResultMsgs.idTestResult = TestResults.idTestResult\n'
+                          'WHERE  idTestSet = %s\n'
                           ') ORDER by 1'
-                          , ( idTestSet, idTestSet, ));
+                          , ( idTestSet, idTestSet, idTestSet, idTestSet, idTestSet, ));
         return [aoRow[0] for aoRow in self._oDb.fetchAll()];
 
 

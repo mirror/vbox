@@ -134,6 +134,24 @@ class WuiTestResult(WuiContentBase):
         return aoRows;
 
 
+    def _formatEventTimestampHtml(self, tsEvent, tsLog, idEvent, oTestSet):
+        """ Formats an event timestamp with a main log link. """
+        tsEvent = db.dbTimestampToZuluDatetime(tsEvent);
+        #sFormattedTimestamp = u'%04u\u2011%02u\u2011%02u\u00a0%02u:%02u:%02uZ' \
+        #                    % ( tsEvent.year, tsEvent.month, tsEvent.day,
+        #                        tsEvent.hour, tsEvent.minute, tsEvent.second,);
+        sFormattedTimestamp = u'%02u:%02u:%02uZ' \
+                            % ( tsEvent.hour, tsEvent.minute, tsEvent.second,);
+        sTitle              = u'#%u - %04u\u2011%02u\u2011%02u\u00a0%02u:%02u:%02u.%06uZ' \
+                            % ( idEvent, tsEvent.year, tsEvent.month, tsEvent.day,
+                                tsEvent.hour, tsEvent.minute, tsEvent.second, tsEvent.microsecond, );
+        tsLog = db.dbTimestampToZuluDatetime(tsLog);
+        sFragment = u'%02u_%02u_%02u_%06u' % ( tsLog.hour, tsLog.minute, tsLog.second, tsLog.microsecond);
+        return WuiTmLink(sFormattedTimestamp, '',
+                         { WuiMain.ksParamAction:             WuiMain.ksActionViewLog,
+                           WuiMain.ksParamLogSetId:           oTestSet.idTestSet,  },
+                         sFragmentId = sFragment, sTitle = sTitle, fBracketed = False, ).toHtml();
+
     def _recursivelyGenerateEvents(self, oTestResult, sParentName, sLineage, iRow,
                                    iFailure, oTestSet, iDepth):     # pylint: disable=R0914
         """
@@ -190,7 +208,8 @@ class WuiTestResult(WuiContentBase):
                      '  <td>%s</td>\n' \
                      ' </tr>\n' \
                    % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth, oTestResult.enmStatus, oTestResult.idTestResult,
-                       oTestResult.idTestResult, webutils.escapeElem(self.formatTsShort(tsEvent)),
+                       oTestResult.idTestResult,
+                       self._formatEventTimestampHtml(tsEvent, oTestResult.tsCreated, oTestResult.idTestResult, oTestSet),
                        sElapsedGraph,
                        webutils.escapeElem(self.formatIntervalShort(oTestResult.tsElapsed)) if oTestResult.tsElapsed is not None
                                            else '',
@@ -211,7 +230,8 @@ class WuiTestResult(WuiContentBase):
                      '  <td></td>\n' \
                      ' </tr>\n' \
                    % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth,
-                       webutils.escapeElem(self.formatTsShort(oTestResult.tsCreated)), ## @todo more timeline stuff later.
+                       self._formatEventTimestampHtml(oTestResult.tsCreated, oTestResult.tsCreated,
+                                                      oTestResult.idTestResult, oTestSet),
                        sDisplayName,
                        'running' if oTestResult.tsElapsed is None else '', );
             iRow += 1;
@@ -234,7 +254,7 @@ class WuiTestResult(WuiContentBase):
                          '  <td></td>\n' \
                          ' </tr>\n' \
                        % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth,
-                           webutils.escapeElem(self.formatTsShort(oMsg.tsCreated)),
+                           self._formatEventTimestampHtml(oMsg.tsCreated, oMsg.tsCreated, oMsg.idTestResultMsg, oTestSet),
                            webutils.escapeElem(oMsg.enmLevel),
                            webutils.escapeElem(oMsg.sMsg), );
                 iRow += 1;
@@ -251,7 +271,7 @@ class WuiTestResult(WuiContentBase):
                          '  <td><input type="checkbox" name="%s" value="%s%s:%u" title="Include value in graph."></td>\n' \
                          ' </tr>\n' \
                        % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth,
-                           webutils.escapeElem(self.formatTsShort(oValue.tsCreated)),
+                           self._formatEventTimestampHtml(oValue.tsCreated, oValue.tsCreated, oValue.idTestResultValue, oTestSet),
                            webutils.escapeElem(oValue.sName),
                            utils.formatNumber(oValue.lValue).replace(' ', '&nbsp;'),
                            webutils.escapeElem(oValue.sUnit),
@@ -300,12 +320,13 @@ class WuiTestResult(WuiContentBase):
                          '  <td></td>\n' \
                          ' </tr>\n' \
                        % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth,
-                           webutils.escapeElem(self.formatTsShort(oFile.tsCreated)),
+                           self._formatEventTimestampHtml(oFile.tsCreated, oFile.tsCreated, oFile.idTestResultFile, oTestSet),
                            '\n'.join(oLink.toHtml() for oLink in aoLinks),);
                 iRow += 1;
 
             # Done?
             if oTestResult.tsElapsed is not None:
+                tsEvent = oTestResult.tsCreated + oTestResult.tsElapsed;
                 sHtml += ' <tr class="%s tmtbl-events-final tmtbl-events-lvl%s tmstatusrow-%s" id="E%d">\n' \
                          '  <td>%s</td>\n' \
                          '  <td>%s</td>\n' \
@@ -315,7 +336,7 @@ class WuiTestResult(WuiContentBase):
                          '  <td>%s</td>\n' \
                          ' </tr>\n' \
                        % ( 'tmodd' if iRow & 1 else 'tmeven', iDepth, oTestResult.enmStatus, oTestResult.idTestResult,
-                           webutils.escapeElem(self.formatTsShort(oTestResult.tsCreated + oTestResult.tsElapsed)),
+                           self._formatEventTimestampHtml(tsEvent, tsEvent, oTestResult.idTestResult, oTestSet),
                            sElapsedGraph,
                            webutils.escapeElem(self.formatIntervalShort(oTestResult.tsElapsed)),
                            sDisplayName,

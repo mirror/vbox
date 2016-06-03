@@ -38,12 +38,13 @@ from testmanager.webui.wuimain          import WuiMain;
 class WuiLogViewer(WuiContentBase):
     """Log viewer."""
 
-    def __init__(self, oTestSet, oLogFile, cbChunk, iChunk, oDisp = None, fnDPrint = None):
+    def __init__(self, oTestSet, oLogFile, cbChunk, iChunk, aoTimestamps, oDisp = None, fnDPrint = None):
         WuiContentBase.__init__(self, oDisp = oDisp, fnDPrint = fnDPrint);
-        self._oTestSet  = oTestSet;
-        self._oLogFile  = oLogFile;
-        self._cbChunk   = cbChunk;
-        self._iChunk    = iChunk;
+        self._oTestSet      = oTestSet;
+        self._oLogFile      = oLogFile;
+        self._cbChunk       = cbChunk;
+        self._iChunk        = iChunk;
+        self._aoTimestamps  = aoTimestamps;
 
     def _generateNavigation(self, cbFile):
         """Generate the HTML for the log navigation."""
@@ -124,8 +125,29 @@ class WuiLogViewer(WuiContentBase):
                ' </table>\n' \
                '</div>\n';
 
-    def _displayLog(self, oFile, offFile, cbFile):
+    def _displayLog(self, oFile, offFile, cbFile, aoTimestamps):
         """Displays the current section of the log file."""
+        from testmanager.core import db;
+
+        def prepCurTs():
+            """ Formats the current timestamp. """
+            if iCurTs < len(aoTimestamps):
+                oTsZulu = db.dbTimestampToZuluDatetime(aoTimestamps[iCurTs]);
+                return (oTsZulu.strftime('%H:%M:%S.%f'), oTsZulu.strftime('%H_%M_%S_%f'));
+            return '~~|~~|~~|~~~~~~'; # ASCII chars with high values. Limit hits.
+
+        def isCurLineAtOrAfterCurTs():
+            """ Checks if the current line starts with a timestamp that is after the current one. """
+            if    len(sLine) >= 15 \
+              and sLine[2]  == ':' \
+              and sLine[5]  == ':' \
+              and sLine[8]  == '.' \
+              and sLine[14] in '0123456789':
+                if sLine[:15] >=  sCurTs and iCurTs < len(aoTimestamps):
+                    return True;
+            return False;
+
+        # Figure the end offset.
         offEnd = offFile + self._cbChunk;
         if offEnd > cbFile:
             offEnd = cbFile;
@@ -135,8 +157,10 @@ class WuiLogViewer(WuiContentBase):
         # since we have to read from the start, we can just as well count line
         # numbers while we're at it.
         #
-        offCur  = 0;
-        iLine   = 0;
+        iCurTs           = 0;
+        (sCurTs, sCurId) = prepCurTs();
+        offCur           = 0;
+        iLine            = 0;
         while True:
             sLine   = oFile.readline().decode('utf-8', 'replace');
             offLine = offCur;
@@ -144,14 +168,28 @@ class WuiLogViewer(WuiContentBase):
             offCur += len(sLine);
             if offCur >= offFile or len(sLine) == 0:
                 break;
+            while isCurLineAtOrAfterCurTs():
+                iCurTs += 1;
+                (sCurTs, sCurId) = prepCurTs();
 
         #
         # Got to where we wanted, format the chunk.
         #
-        asLines = [];
+        asLines = ['\n<div class="tmlog">\n<pre>\n', ];
         while True:
+            # The timestamp IDs.
+            sPrevTs = '';
+            while isCurLineAtOrAfterCurTs():
+                if sPrevTs != sCurTs:
+                    asLines.append('<a id="%s"></a>' % (sCurId,));
+                iCurTs += 1;
+                (sCurTs, sCurId) = prepCurTs();
+
+            # The line.
             asLines.append('<a id="L%d" href="#L%d">%05d</a><a id="O%d"></a>%s\n' \
                            % (iLine, iLine, iLine, offLine, webutils.escapeElem(sLine.rstrip())));
+
+            # next
             if offCur >= offEnd:
                 break;
             sLine   = oFile.readline().decode('utf-8', 'replace');
@@ -160,7 +198,8 @@ class WuiLogViewer(WuiContentBase):
             offCur += len(sLine);
             if len(sLine) == 0:
                 break;
-        return '\n<div class="tmlog">\n<pre>\n' + ''.join(asLines) + '<pre/></div>\n';
+        asLines.append('<pre/></div>\n');
+        return ''.join(asLines);
 
 
     def show(self):
@@ -194,7 +233,7 @@ class WuiLogViewer(WuiContentBase):
 
         offFile   = self._iChunk * self._cbChunk;
         if offFile < cbFile:
-            sHtml += self._displayLog(oFile, offFile, cbFile);
+            sHtml += self._displayLog(oFile, offFile, cbFile, self._aoTimestamps);
             sHtml += sNaviHtml;
         else:
             sHtml += '<p>End Of File</p>';
