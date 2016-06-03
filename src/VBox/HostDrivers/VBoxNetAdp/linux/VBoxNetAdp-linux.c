@@ -152,8 +152,10 @@ static int vboxNetAdpLinuxXmit(struct sk_buff *pSkb, struct net_device *pNetDev)
     /* Update the stats. */
     pPriv->Stats.tx_packets++;
     pPriv->Stats.tx_bytes += pSkb->len;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
     /* Update transmission time stamp. */
     pNetDev->trans_start = jiffies;
+#endif
     /* Nothing else to do, just free the sk_buff. */
     dev_kfree_skb(pSkb);
     return 0;
