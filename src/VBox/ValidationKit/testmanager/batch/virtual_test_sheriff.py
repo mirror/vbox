@@ -383,6 +383,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
     ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
+    ktReason_XPCOM_NS_ERROR_CALL_FAILED                = ( 'API / (XP)COM',     'NS_ERROR_CALL_FAILED' );
     ktReason_Unknown_Heap_Corruption                   = ( 'Unknown',           'Heap corruption' );
     ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
     ## @}
@@ -570,6 +571,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  'VERR_IEM_ASPECT_NOT_IMPLEMENTED',                 ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED ),
         ( True,  'VERR_TRPM_DONT_PANIC',                            ktReason_Guru_VERR_TRPM_DONT_PANIC ),
         ( True,  'VINF_EM_TRIPLE_FAULT',                            ktReason_Guru_VINF_EM_TRIPLE_FAULT ),
+        ( False, 'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))',
+                                                                    ktReason_XPCOM_NS_ERROR_CALL_FAILED ),
     ];
 
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
@@ -728,6 +731,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 self.vprint('TODO: Uninstallation failure');
             elif self.isResultFromVMRun(oFailedResult, sResultLog):
                 self.investigateVMResult(oCaseFile, oFailedResult, sResultLog);
+            elif sResultLog.find('Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))') > 0:
+                oCaseFile.noteReasonForId(self.ktReason_XPCOM_NS_ERROR_CALL_FAILED, oFailedResult.idTestResult);
             elif sResultLog.find('The machine is not mutable (state is ') > 0:
                 self.vprint('Ignorining "machine not mutable" error as it is probably due to an earlier problem');
                 oCaseFile.noteReasonForId(self.ktHarmless, oFailedResult.idTestResult);
