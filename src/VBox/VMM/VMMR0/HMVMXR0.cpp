@@ -6735,7 +6735,11 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
     /* Note! Since this is only applicable to VT-x, the implementation is placed
              in the VT-x part of the sources instead of the generic stuff. */
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
+    {
+        /* For now, imply that the caller might change everything too. */
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
         return hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+    }
     return VINF_SUCCESS;
 }
 
