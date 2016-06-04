@@ -54,9 +54,9 @@ CREATE TABLE TestResultFiles (
     --- The ID of this file.
     idTestResultFile    INTEGER     PRIMARY KEY DEFAULT NEXTVAL('TestResultFileId'),
     --- The test result it was reported within.
-    idTestResult        INTEGER     REFERENCES TestResults(idTestResult)  NOT NULL,
+    idTestResult        INTEGER     NOT NULL,
     --- The test set this file is a part of (for avoiding joining thru TestResults).
-    idTestSet           INTEGER     REFERENCES TestSets(idTestSet) NOT NULL,
+    idTestSet           INTEGER     NOT NULL,
     --- Creation time stamp.
     tsCreated           TIMESTAMP WITH TIME ZONE  DEFAULT current_timestamp  NOT NULL,
     --- The filename relative to TestSets(sBaseFilename) + '-'.
@@ -64,21 +64,21 @@ CREATE TABLE TestResultFiles (
     -- file system issues can occure either on the TM side or the user when
     -- loading the files.  Tests trying to use other characters will fail.
     -- Valid character regular expession: '^[a-zA-Z0-9_-(){}#@+,.=]*$'
-    idStrFile           INTEGER     REFERENCES TestResultStrTab(idStr)  NOT NULL,
+    idStrFile           INTEGER     NOT NULL,
     --- The description.
-    idStrDescription    INTEGER     REFERENCES TestResultStrTab(idStr)  NOT NULL,
+    idStrDescription    INTEGER     NOT NULL,
     --- The kind of file.
     -- For instance: 'log/release/vm',
     --               'screenshot/failure',
     --               'screencapture/failure',
     --               'xmllog/somestuff'
-    idStrKind           INTEGER     REFERENCES TestResultStrTab(idStr)  NOT NULL,
+    idStrKind           INTEGER     NOT NULL,
     --- The mime type for the file.
     -- For instance: 'text/plain',
     --               'image/png',
     --               'video/webm',
     --               'text/xml'
-    idStrMime           INTEGER     REFERENCES TestResultStrTab(idStr)  NOT NULL
+    idStrMime           INTEGER     NOT NULL
 );
 
 INSERT INTO TestResultFiles ( idTestResultFile, idTestResult, idTestSet, tsCreated, idStrFile, idStrDescription, 
@@ -90,8 +90,16 @@ INSERT INTO TestResultFiles ( idTestResultFile, idTestResult, idTestSet, tsCreat
     WHERE  o.idTestResult = tr.idTestResult;
    
 -- Add new indexes.
-CREATE INDEX TestResultFilesIdx ON TestResultFiles(idTestResult);
+CREATE INDEX TestResultFilesIdx  ON TestResultFiles(idTestResult);
 CREATE INDEX TestResultFilesIdx2 ON TestResultFiles(idTestSet, tsCreated DESC);
+
+-- Restore foreign keys.
+ALTER TABLE TestResultFiles ADD CONSTRAINT TestResultFiles_idTestResult_fkey     FOREIGN KEY(idTestResult)     REFERENCES TestResults(idTestResult);
+ALTER TABLE TestResultFiles ADD CONSTRAINT TestResultFiles_idTestSet_fkey        FOREIGN KEY(idTestSet)        REFERENCES TestSets(idTestSet);
+ALTER TABLE TestResultFiles ADD CONSTRAINT TestResultFiles_idStrFile_fkey        FOREIGN KEY(idStrFile)        REFERENCES TestResultStrTab(idStr);
+ALTER TABLE TestResultFiles ADD CONSTRAINT TestResultFiles_idStrDescription_fkey FOREIGN KEY(idStrDescription) REFERENCES TestResultStrTab(idStr);
+ALTER TABLE TestResultFiles ADD CONSTRAINT TestResultFiles_idStrKind_fkey        FOREIGN KEY(idStrKind)        REFERENCES TestResultStrTab(idStr);
+ALTER TABLE TestResultFiles ADD CONSTRAINT TestResultFiles_idStrMime_fkey        FOREIGN KEY(idStrMime)        REFERENCES TestResultStrTab(idStr);
 
 \d TestResultFiles;
 
@@ -113,13 +121,13 @@ CREATE TABLE TestResultMsgs (
     --- The ID of this file.
     idTestResultMsg     INTEGER     PRIMARY KEY DEFAULT NEXTVAL('TestResultMsgIdSeq'),
     --- The test result it was reported within.
-    idTestResult        INTEGER     REFERENCES TestResults(idTestResult)  NOT NULL,
+    idTestResult        INTEGER     NOT NULL,
     --- The test set this file is a part of (for avoiding joining thru TestResults).
-    idTestSet           INTEGER     REFERENCES TestSets(idTestSet) NOT NULL,
+    idTestSet           INTEGER     NOT NULL,
     --- Creation time stamp.
     tsCreated           TIMESTAMP WITH TIME ZONE  DEFAULT current_timestamp  NOT NULL,
     --- The message string.
-    idStrMsg            INTEGER     REFERENCES TestResultStrTab(idStr)  NOT NULL,
+    idStrMsg            INTEGER     NOT NULL,
     --- The message level.
     enmLevel            TestResultMsgLevel_T  NOT NULL
 );
@@ -133,6 +141,12 @@ INSERT INTO TestResultMsgs ( idTestResultMsg, idTestResult, idTestSet, tsCreated
 -- Add new indexes.
 CREATE INDEX TestResultMsgsIdx  ON TestResultMsgs(idTestResult);
 CREATE INDEX TestResultMsgsIdx2 ON TestResultMsgs(idTestSet, tsCreated DESC);
+
+-- Restore foreign keys.
+ALTER TABLE TestResultMsgs ADD CONSTRAINT TestResultMsgs_idTestResult_fkey FOREIGN KEY(idTestResult)        REFERENCES TestResults(idTestResult);
+ALTER TABLE TestResultMsgs ADD CONSTRAINT TestResultMsgs_idTestSet_fkey    FOREIGN KEY(idTestSet)           REFERENCES TestSets(idTestSet);
+ALTER TABLE TestResultMsgs ADD CONSTRAINT TestResultMsgs_idStrMsg_fkey     FOREIGN KEY(idStrMsg)            REFERENCES TestResultStrTab(idStr);
+
 
 \d TestResultMsgs;
 
