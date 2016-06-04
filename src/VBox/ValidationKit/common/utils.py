@@ -45,6 +45,7 @@ import unittest;
 import zipfile
 
 if sys.platform == 'win32':
+    import ctypes;
     import win32api;            # pylint: disable=F0401
     import win32con;            # pylint: disable=F0401
     import win32console;        # pylint: disable=F0401
@@ -329,8 +330,8 @@ def processCall(*aPositionalArgs, **dKeywordArgs):
     python versions.
     Returns process exit code (see subprocess.poll).
     """
-    assert dKeywordArgs.get('stdout') == None;
-    assert dKeywordArgs.get('stderr') == None;
+    assert dKeywordArgs.get('stdout') is None;
+    assert dKeywordArgs.get('stderr') is None;
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
     oProcess = subprocess.Popen(*aPositionalArgs, **dKeywordArgs);
     return oProcess.wait();
@@ -450,7 +451,7 @@ def processInterrupt(uPid):
     """
     if sys.platform == 'win32':
         try:
-            win32console.GenerateConsoleCtrlEvent(win32con.CTRL_BREAK_EVENT, uPid); # pylint
+            win32console.GenerateConsoleCtrlEvent(win32con.CTRL_BREAK_EVENT, uPid);             # pylint: disable=no-member
             fRc = True;
         except:
             fRc = False;
@@ -489,16 +490,16 @@ def processTerminate(uPid):
     fRc = False;
     if sys.platform == 'win32':
         try:
-            hProcess = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, uPid);
+            hProcess = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, uPid);           # pylint: disable=no-member
         except:
             pass;
         else:
             try:
-                win32process.TerminateProcess(hProcess, 0x40010004); # DBG_TERMINATE_PROCESS
+                win32process.TerminateProcess(hProcess, 0x40010004); # DBG_TERMINATE_PROCESS    # pylint: disable=no-member
                 fRc = True;
             except:
                 pass;
-            win32api.CloseHandle(hProcess)
+            win32api.CloseHandle(hProcess)                                                      # pylint: disable=no-member
     else:
         try:
             os.kill(uPid, signal.SIGTERM);
@@ -545,11 +546,11 @@ def processExists(uPid):
     if sys.platform == 'win32':
         fRc = False;
         try:
-            hProcess = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, uPid);
+            hProcess = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, uPid);   # pylint: disable=no-member
         except:
             pass;
         else:
-            win32api.CloseHandle(hProcess)
+            win32api.CloseHandle(hProcess);                                                     # pylint: disable=no-member
             fRc = True;
     else:
         try:
@@ -887,28 +888,91 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
 # Time.
 #
 
+#
+# The following test case shows how time.time() only have ~ms resolution
+# on Windows (tested W10) and why it therefore makes sense to try use
+# performance counters.
+#
+# Note! We cannot use time.clock() as the timestamp must be portable across
+#       processes.  See timeout testcase problem on win hosts (no logs).
+#
+#import sys;
+#import time;
+#from common import utils;
+#
+#atSeries = [];
+#for i in xrange(1,160):
+#    if i == 159: time.sleep(10);
+#    atSeries.append((utils.timestampNano(), long(time.clock() * 1000000000), long(time.time() * 1000000000)));
+#
+#tPrev = atSeries[0]
+#for tCur in atSeries:
+#    print 't1=%+22u, %u' % (tCur[0], tCur[0] - tPrev[0]);
+#    print 't2=%+22u, %u' % (tCur[1], tCur[1] - tPrev[1]);
+#    print 't3=%+22u, %u' % (tCur[2], tCur[2] - tPrev[2]);
+#    print '';
+#    tPrev = tCur
+#
+#print 't1=%u' % (atSeries[-1][0] - atSeries[0][0]);
+#print 't2=%u' % (atSeries[-1][1] - atSeries[0][1]);
+#print 't3=%u' % (atSeries[-1][2] - atSeries[0][2]);
+
+g_fWinUseWinPerfCounter           = sys.platform == 'win32';
+g_fpWinPerfCounterFreq            = None;
+g_oFuncwinQueryPerformanceCounter = None;
+
+def _winInitPerfCounter():
+    """ Initializes the use of performance counters. """
+    global g_fWinUseWinPerfCounter, g_fpWinPerfCounterFreq, g_oFuncwinQueryPerformanceCounter
+
+    uFrequency = ctypes.c_ulonglong(0);
+    if ctypes.windll.kernel32.QueryPerformanceFrequency(ctypes.byref(uFrequency)):
+        if uFrequency.value >= 1000:
+            print 'uFrequency = %s' % (uFrequency,);
+            print 'type(uFrequency) = %s' % (type(uFrequency),);
+            g_fpWinPerfCounterFreq = float(uFrequency.value);
+
+            # Check that querying the counter works too.
+            global g_oFuncwinQueryPerformanceCounter
+            g_oFuncwinQueryPerformanceCounter = ctypes.windll.kernel32.QueryPerformanceCounter;
+            uCurValue = ctypes.c_ulonglong(0);
+            if g_oFuncwinQueryPerformanceCounter(ctypes.byref(uCurValue)):
+                if uCurValue.value > 0:
+                    return True;
+    g_fWinUseWinPerfCounter = False;
+    return False;
+
+def _winFloatTime():
+    """ Gets floating point time on windows. """
+    if g_fpWinPerfCounterFreq is not None or _winInitPerfCounter():
+        uCurValue = ctypes.c_ulonglong(0);
+        if g_oFuncwinQueryPerformanceCounter(ctypes.byref(uCurValue)):
+            return float(uCurValue.value) / g_fpWinPerfCounterFreq;
+    return time.time();
+
+
 def timestampNano():
     """
     Gets a nanosecond timestamp.
     """
-    if sys.platform == 'win32':
-        return long(time.clock() * 1000000000);
+    if g_fWinUseWinPerfCounter is True:
+        return long(_winFloatTime() * 1000000000);
     return long(time.time() * 1000000000);
 
 def timestampMilli():
     """
     Gets a millisecond timestamp.
     """
-    if sys.platform == 'win32':
-        return long(time.clock() * 1000);
+    if g_fWinUseWinPerfCounter is True:
+        return long(_winFloatTime() * 1000);
     return long(time.time() * 1000);
 
 def timestampSecond():
     """
     Gets a second timestamp.
     """
-    if sys.platform == 'win32':
-        return long(time.clock());
+    if g_fWinUseWinPerfCounter is True:
+        return long(_winFloatTime());
     return long(time.time());
 
 def getTimePrefix():
@@ -1437,7 +1501,6 @@ def getDiskUsage(sPath):
     Returns partition free space value in MB.
     """
     if platform.system() == 'Windows':
-        import ctypes
         oCTypeFreeSpace = ctypes.c_ulonglong(0);
         ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(sPath), None, None,
                                                    ctypes.pointer(oCTypeFreeSpace));
