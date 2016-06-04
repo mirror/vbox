@@ -844,6 +844,10 @@ class TestDriverBase(object): # pylint: disable=R0902
         self.secTimeoutAbs = os.environ.get('TESTBOX_TIMEOUT_ABS', None);
         if self.secTimeoutAbs is not None:
             self.secTimeoutAbs = long(self.secTimeoutAbs);
+            reporter.log('secTimeoutAbs: %s' % (self.secTimeoutAbs,));
+        else:
+            reporter.log('TESTBOX_TIMEOUT_ABS not found in the environment');
+
 
         # Distance from secTimeoutAbs that timeouts should be adjusted to.
         self.secTimeoutFudge = 30;
@@ -868,6 +872,9 @@ class TestDriverBase(object): # pylint: disable=R0902
         print >> sys.stderr, "testdriver.base: asSpecialActions  = '%s'" % self.asSpecialActions;
         print >> sys.stderr, "testdriver.base: asNormalActions   = '%s'" % self.asNormalActions;
         print >> sys.stderr, "testdriver.base: asActions         = '%s'" % self.asActions;
+        print >> sys.stderr, "testdriver.base: secTimeoutAbs     = '%s'" % self.secTimeoutAbs;
+        for sVar in sorted(os.environ.keys()):
+            print >> sys.stderr, "os.environ[%s] = '%s'" % (sVar, os.environ[sVar],);
 
     #
     # Resource utility methods.
@@ -1243,8 +1250,11 @@ class TestDriverBase(object): # pylint: disable=R0902
                 if cMsTimeout > cMsToDeadline:
                     reporter.log('adjusting timeout: %s ms -> %s ms (deadline)\n' % (cMsTimeout, cMsToDeadline,));
                     return cMsToDeadline;
-
-            #else: Don't bother, we've passed the deadline.
+                reporter.log('adjustTimeoutMs: cMsTimeout (%s) > cMsToDeadline (%s)' % (cMsTimeout, cMsToDeadline,));
+            else:
+                # Don't bother, we've passed the deadline.
+                reporter.log('adjustTimeoutMs: ooops! cMsToDeadline=%s (%s), utils.timestampMilli()=%s'
+                             % (cMsToDeadline, cMsToDeadline*1000, utils.timestampMilli(),));
 
         # Only enforce the minimum timeout if specified.
         if cMsMinimum is not None and cMsTimeout < cMsMinimum:
