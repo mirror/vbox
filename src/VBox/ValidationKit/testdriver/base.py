@@ -1253,8 +1253,8 @@ class TestDriverBase(object): # pylint: disable=R0902
                 reporter.log('adjustTimeoutMs: cMsTimeout (%s) > cMsToDeadline (%s)' % (cMsTimeout, cMsToDeadline,));
             else:
                 # Don't bother, we've passed the deadline.
-                reporter.log('adjustTimeoutMs: ooops! cMsToDeadline=%s (%s), utils.timestampMilli()=%s'
-                             % (cMsToDeadline, cMsToDeadline*1000, utils.timestampMilli(),));
+                reporter.log('adjustTimeoutMs: ooops! cMsToDeadline=%s (%s), timestampMilli()=%s, timestampSecond()=%s'
+                             % (cMsToDeadline, cMsToDeadline*1000, utils.timestampMilli(), utils.timestampSecond()));
 
         # Only enforce the minimum timeout if specified.
         if cMsMinimum is not None and cMsTimeout < cMsMinimum:
