@@ -973,7 +973,6 @@ class WuiMain(WuiDispatcherBase):
     def _actionTestResultFailureDoRemove(self):
         """ Action wrapper. """
         from testmanager.core.testresultfailures import TestResultFailureData, TestResultFailureLogic;
-        from testmanager.webui.wuitestresultfailure import WuiTestResultFailure;
         return self._actionGenericDoRemove(TestResultFailureLogic, TestResultFailureData.ksParam_idTestResult,
                                            self.ksActionResultsUnGrouped);
 
