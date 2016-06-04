@@ -1292,7 +1292,7 @@ CREATE TABLE TestResults (
     --- The parent test result.
     -- This is NULL for the top test result.
     idTestResultParent  INTEGER     REFERENCES TestResults(idTestResult),
-    --- The testsest this result is a part of.
+    --- The test set this result is a part of.
     -- Note! This is a foreign key, but we have to add it after TestSets has
     --       been created, see further down.
     idTestSet           INTEGER     NOT NULL,
@@ -1353,7 +1353,7 @@ CREATE TABLE TestResultValues (
     idTestResultValue   INTEGER     PRIMARY KEY DEFAULT NEXTVAL('TestResultValueIdSeq'),
     --- The test result it was reported within.
     idTestResult        INTEGER     REFERENCES TestResults(idTestResult)  NOT NULL,
-    --- The test result it was reported within.
+    --- The test set this value is a part of (for avoiding joining thru TestResults).
     -- Note! This is a foreign key, but we have to add it after TestSets has
     --       been created, see further down.
     idTestSet           INTEGER     NOT NULL,
@@ -1399,6 +1399,10 @@ CREATE TABLE TestResultFiles (
     idTestResultFile    INTEGER     PRIMARY KEY DEFAULT NEXTVAL('TestResultFileId'),
     --- The test result it was reported within.
     idTestResult        INTEGER     REFERENCES TestResults(idTestResult)  NOT NULL,
+    --- The test set this file is a part of (for avoiding joining thru TestResults).
+    -- Note! This is a foreign key, but we have to add it after TestSets has
+    --       been created, see further down.
+    idTestSet           INTEGER     NOT NULL,
     --- Creation time stamp.
     tsCreated           TIMESTAMP WITH TIME ZONE  DEFAULT current_timestamp  NOT NULL,
     --- The filename relative to TestSets(sBaseFilename) + '-'.
@@ -1424,6 +1428,7 @@ CREATE TABLE TestResultFiles (
 );
 
 CREATE INDEX TestResultFilesIdx ON TestResultFiles(idTestResult);
+CREATE INDEX TestResultFilesIdx2 ON TestResultFiles(idTestSet, tsCreated DESC);
 
 
 --- @table TestResultMsgs
@@ -1452,6 +1457,10 @@ CREATE TABLE TestResultMsgs (
     idTestResultMsg     INTEGER     PRIMARY KEY DEFAULT NEXTVAL('TestResultMsgIdSeq'),
     --- The test result it was reported within.
     idTestResult        INTEGER     REFERENCES TestResults(idTestResult)  NOT NULL,
+    --- The test set this file is a part of (for avoiding joining thru TestResults).
+    -- Note! This is a foreign key, but we have to add it after TestSets has
+    --       been created, see further down.
+    idTestSet           INTEGER     NOT NULL,
     --- Creation time stamp.
     tsCreated           TIMESTAMP WITH TIME ZONE  DEFAULT current_timestamp  NOT NULL,
     --- The message string.
@@ -1460,7 +1469,8 @@ CREATE TABLE TestResultMsgs (
     enmLevel            TestResultMsgLevel_T  NOT NULL
 );
 
-CREATE INDEX TestResultMsgsIdx ON TestResultMsgs(idTestResult);
+CREATE INDEX TestResultMsgsIdx  ON TestResultMsgs(idTestResult);
+CREATE INDEX TestResultMsgsIdx2 ON TestResultMsgs(idTestSet, tsCreated DESC);
 
 
 --- @table TestSets
@@ -1570,6 +1580,8 @@ CREATE INDEX TestSetsGraphBoxIdx    ON TestSets (idTestBox, tsCreated DESC, tsDo
 
 ALTER TABLE TestResults      ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 ALTER TABLE TestResultValues ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultFiles  ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultMsgs   ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 ALTER TABLE TestResultFailures ADD CONSTRAINT idTestSetFk FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 
 

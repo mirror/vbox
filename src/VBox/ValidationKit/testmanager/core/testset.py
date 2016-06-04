@@ -380,9 +380,9 @@ class TestSetLogic(ModelLogicBase):
                                   '         cErrors   = cErrors + 1\n'
                                   'WHERE    idTestResult = %s\n'
                                   , (aoRow[0],));
-                self._oDb.execute('INSERT INTO TestResultMsgs (idTestResult, idStrMsg, enmLevel)\n'
-                                  'VALUES ( %s, %s, \'failure\'::TestResultMsgLevel_T)\n'
-                                  , (aoRow[0], idStr,));
+                self._oDb.execute('INSERT INTO TestResultMsgs (idTestResult, idTestSet, idStrMsg, enmLevel)\n'
+                                  'VALUES ( %s, %s, %s, \'failure\'::TestResultMsgLevel_T)\n'
+                                  , (aoRow[0], idTestSet, idStr,));
 
         #
         # If it's a success result, check it against error counters.
@@ -475,9 +475,9 @@ class TestSetLogic(ModelLogicBase):
                               , (idTestSet,));
 
             idStr = self.strTabString('The test was abandond by the testbox', fCommit = fCommit);
-            self._oDb.execute('INSERT INTO TestResultMsgs (idTestResult, idStrMsg, enmLevel)\n'
-                              'VALUES ( %s, %s, \'failure\'::TestResultMsgLevel_T)\n'
-                              , (oData.idTestResult, idStr,));
+            self._oDb.execute('INSERT INTO TestResultMsgs (idTestResult, idTestSet, idStrMsg, enmLevel)\n'
+                              'VALUES ( %s, %s, %s, \'failure\'::TestResultMsgLevel_T)\n'
+                              , (oData.idTestResult, idTestSet, idStr,));
 
         #
         # Complete the testset.
@@ -518,9 +518,9 @@ class TestSetLogic(ModelLogicBase):
                           , (idTestSet,));
 
         idStr = self.strTabString('Gang gathering timed out', fCommit = fCommit);
-        self._oDb.execute('INSERT INTO TestResultMsgs (idTestResult, idStrMsg, enmLevel)\n'
-                          'VALUES ( %s, %s, \'failure\'::TestResultMsgLevel_T)\n'
-                          , (oData.idTestResult, idStr,));
+        self._oDb.execute('INSERT INTO TestResultMsgs (idTestResult, idTestSet, idStrMsg, enmLevel)\n'
+                          'VALUES ( %s, %s, %s, \'failure\'::TestResultMsgLevel_T)\n'
+                          , (oData.idTestResult, idTestSet, idStr,));
 
         self._oDb.execute('UPDATE   TestSets\n'
                           'SET      enmStatus = \'failure\',\n'
@@ -601,9 +601,11 @@ class TestSetLogic(ModelLogicBase):
             if sName is None:
                 raise TMExceptionBase('Failed to find unique name for %s.' % (sOrgName,));
 
-        self._oDb.execute('INSERT INTO TestResultFiles(idTestResult, idStrFile, idStrDescription, idStrKind, idStrMime)\n'
-                          'VALUES (%s, %s, %s, %s, %s)\n'
+        self._oDb.execute('INSERT INTO TestResultFiles(idTestResult, idTestSet, idStrFile, idStrDescription,\n'
+                          '                            idStrKind, idStrMime)\n'
+                          'VALUES (%s, %s, %s, %s, %s, %s)\n'
                           , ( idTestResult,
+                              oTestSet.idTestSet,
                               self.strTabString(sName),
                               self.strTabString(sDesc),
                               self.strTabString(sKind),

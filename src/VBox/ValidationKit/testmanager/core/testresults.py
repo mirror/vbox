@@ -250,6 +250,8 @@ class TestResultValueData(ModelDataBase):
     ksParam_lValue              = 'TestResultValue_lValue';
     ksParam_iUnit               = 'TestResultValue_iUnit';
 
+    kasAllowNullAttributes      = [ 'idTestSet', ];
+
     def __init__(self):
         ModelDataBase.__init__(self)
         self.idTestResultValue  = None;
@@ -312,16 +314,22 @@ class TestResultMsgData(ModelDataBase):
 
     ksIdAttr    = 'idTestResultMsg';
 
-    ksParam_idTestResultMsg    = 'TestResultValue_idTestResultMsg';
-    ksParam_idTestResult       = 'TestResultValue_idTestResult';
-    ksParam_tsCreated          = 'TestResultValue_tsCreated';
-    ksParam_idStrMsg           = 'TestResultValue_idStrMsg';
-    ksParam_enmLevel           = 'TestResultValue_enmLevel';
+    ksParam_idTestResultMsg     = 'TestResultValue_idTestResultMsg';
+    ksParam_idTestResult        = 'TestResultValue_idTestResult';
+    ksParam_idTestSet           = 'TestResultValue_idTestSet';
+    ksParam_tsCreated           = 'TestResultValue_tsCreated';
+    ksParam_idStrMsg            = 'TestResultValue_idStrMsg';
+    ksParam_enmLevel            = 'TestResultValue_enmLevel';
+
+    kasAllowNullAttributes      = [ 'idTestSet', ];
+
+    kcDbColumns                 = 6
 
     def __init__(self):
         ModelDataBase.__init__(self)
         self.idTestResultMsg    = None;
         self.idTestResult       = None;
+        self.idTestSet          = None;
         self.tsCreated          = None;
         self.idStrMsg           = None;
         self.enmLevel           = None;
@@ -336,9 +344,10 @@ class TestResultMsgData(ModelDataBase):
 
         self.idTestResultMsg    = aoRow[0];
         self.idTestResult       = aoRow[1];
-        self.tsCreated          = aoRow[2];
-        self.idStrMsg           = aoRow[3];
-        self.enmLevel           = aoRow[4];
+        self.idTestSet          = aoRow[2];
+        self.tsCreated          = aoRow[3];
+        self.idStrMsg           = aoRow[4];
+        self.enmLevel           = aoRow[5];
         return self;
 
 class TestResultMsgDataEx(TestResultMsgData):
@@ -360,8 +369,9 @@ class TestResultMsgDataEx(TestResultMsgData):
         Return self. Raises exception if no row.
         """
         TestResultMsgData.initFromDbRow(self, aoRow);
-        self.sMsg = aoRow[5];
+        self.sMsg = aoRow[self.kcDbColumns];
         return self;
+
 
 class TestResultFileData(ModelDataBase):
     """
@@ -401,10 +411,15 @@ class TestResultFileData(ModelDataBase):
     #kSkind_ScreenCaptureFailure = 'screencapture/failure';
     ## @}
 
+    kasAllowNullAttributes      = [ 'idTestSet', ];
+
+    kcDbColumns                 =  8
+
     def __init__(self):
         ModelDataBase.__init__(self)
         self.idTestResultFile   = None;
         self.idTestResult       = None;
+        self.idTestSet          = None;
         self.tsCreated          = None;
         self.idStrFile          = None;
         self.idStrDescription   = None;
@@ -421,11 +436,12 @@ class TestResultFileData(ModelDataBase):
 
         self.idTestResultFile   = aoRow[0];
         self.idTestResult       = aoRow[1];
-        self.tsCreated          = aoRow[2];
-        self.idStrFile          = aoRow[3];
-        self.idStrDescription   = aoRow[4];
-        self.idStrKind          = aoRow[5];
-        self.idStrMime          = aoRow[6];
+        self.idTestSet          = aoRow[2];
+        self.tsCreated          = aoRow[3];
+        self.idStrFile          = aoRow[4];
+        self.idStrDescription   = aoRow[5];
+        self.idStrKind          = aoRow[6];
+        self.idStrMime          = aoRow[7];
         return self;
 
 class TestResultFileDataEx(TestResultFileData):
@@ -453,10 +469,10 @@ class TestResultFileDataEx(TestResultFileData):
         Return self. Raises exception if no row.
         """
         TestResultFileData.initFromDbRow(self, aoRow);
-        self.sFile          = aoRow[7];
-        self.sDescription   = aoRow[8];
-        self.sKind          = aoRow[9];
-        self.sMime          = aoRow[10];
+        self.sFile          = aoRow[self.kcDbColumns];
+        self.sDescription   = aoRow[self.kcDbColumns + 1];
+        self.sKind          = aoRow[self.kcDbColumns + 2];
+        self.sMime          = aoRow[self.kcDbColumns + 3];
         return self;
 
     def initFakeMainLog(self, oTestSet):
@@ -1029,7 +1045,6 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           ') UNION (\n'
                           'SELECT TestResultFiles.tsCreated\n'
                           'FROM   TestResultFiles\n'
-                          '  JOIN TestResults ON TestResultFiles.idTestResult = TestResults.idTestResult\n'
                           'WHERE  idTestSet = %s\n'
                           ') UNION (\n'
                           'SELECT tsCreated\n'
@@ -1038,7 +1053,6 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           ') UNION (\n'
                           'SELECT TestResultMsgs.tsCreated\n'
                           'FROM   TestResultMsgs\n'
-                          '  JOIN TestResults ON TestResultMsgs.idTestResult = TestResults.idTestResult\n'
                           'WHERE  idTestSet = %s\n'
                           ') ORDER by 1'
                           , ( idTestSet, idTestSet, idTestSet, idTestSet, idTestSet, ));
@@ -1385,7 +1399,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         #
         # First add a message.
         #
-        self._newFailureDetails(aoStack[0].idTestResult, sError, None);
+        self._newFailureDetails(aoStack[0].idTestResult, idTestSet, sError, None);
 
         #
         # The complete all open test results.
@@ -1577,7 +1591,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.maybeCommit(fCommit);
         return True;
 
-    def _newFailureDetails(self, idTestResult, sText, dCounts, tsCreated = None, fCommit = False):
+    def _newFailureDetails(self, idTestResult, idTestSet, sText, dCounts, tsCreated = None, fCommit = False):
         """
         Creates a record detailing cause of failure.
         May raise exception on database error.
@@ -1608,18 +1622,20 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         if tsCreated is None:
             self._oDb.execute('INSERT INTO TestResultMsgs (\n'
                               '         idTestResult,\n'
+                              '         idTestSet,\n'
                               '         idStrMsg,\n'
                               '         enmLevel)\n'
-                              'VALUES ( %s, %s, %s)\n'
-                              , ( idTestResult, idStrMsg, 'failure',) );
+                              'VALUES ( %s, %s, %s, %s)\n'
+                              , ( idTestResult, idTestSet, idStrMsg, 'failure',) );
         else:
             self._oDb.execute('INSERT INTO TestResultMsgs (\n'
                               '         idTestResult,\n'
+                              '         idTestSet,\n'
                               '         tsCreated,\n'
                               '         idStrMsg,\n'
                               '         enmLevel)\n'
-                              'VALUES ( %s, TIMESTAMP WITH TIME ZONE %s, %s, %s)\n'
-                              , ( idTestResult, tsCreated, idStrMsg, 'failure',) );
+                              'VALUES ( %s, %s, TIMESTAMP WITH TIME ZONE %s, %s, %s)\n'
+                              , ( idTestResult, idTestSet, tsCreated, idStrMsg, 'failure',) );
 
         self._oDb.maybeCommit(fCommit);
         return True;
@@ -1685,12 +1701,12 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.maybeCommit(fCommit);
         return None;
 
-    def _doPopHint(self, aoStack, cStackEntries, dCounts):
+    def _doPopHint(self, aoStack, cStackEntries, dCounts, idTestSet):
         """ Executes a PopHint. """
         assert cStackEntries >= 0;
         while len(aoStack) > cStackEntries:
             if aoStack[0].enmStatus == TestResultData.ksTestStatus_Running:
-                self._newFailureDetails(aoStack[0].idTestResult, 'XML error: Missing </Test>', dCounts);
+                self._newFailureDetails(aoStack[0].idTestResult, idTestSet, 'XML error: Missing </Test>', dCounts);
                 self._completeTestResults(aoStack[0], tsDone = None, cErrors = 1,
                                           enmStatus = TestResultData.ksTestStatus_Failure, fCommit = True);
             aoStack.pop(0);
@@ -1857,8 +1873,9 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                                dCounts = dCounts, fCommit = True);
 
         elif sName == 'FailureDetails':
-            self._newFailureDetails(idTestResult = aoStack[0].idTestResult, tsCreated = dAttribs['timestamp'],
-                                    sText = dAttribs['text'], dCounts = dCounts, fCommit = True);
+            self._newFailureDetails(idTestResult = aoStack[0].idTestResult, idTestSet = idTestSet,
+                                    tsCreated = dAttribs['timestamp'], sText = dAttribs['text'], dCounts = dCounts,
+                                    fCommit = True);
 
         elif sName == 'Passed':
             self._completeTestResults(aoStack[0], tsDone = dAttribs['timestamp'],
@@ -1893,7 +1910,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
             iDesiredTestDepth = int(dAttribs['testdepth']);
             cStackEntries, iTestDepth = aaiHints.pop(0);
-            self._doPopHint(aoStack, cStackEntries, dCounts); # Fake the necessary '<End/></Test>' tags.
+            self._doPopHint(aoStack, cStackEntries, dCounts, idTestSet); # Fake the necessary '<End/></Test>' tags.
             if iDesiredTestDepth != iTestDepth:
                 return 'PopHint tag has different testdepth: %d, on stack %d.' % (iDesiredTestDepth, iTestDepth);
         else:
@@ -1991,7 +2008,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         elif sError is None and len(aaiHints) > 0:
             sError = 'Expected </PopHint> before the end of the XML section.'
         if len(aaiHints) > 0:
-            self._doPopHint(aoStack, aaiHints[-1][0], dCounts);
+            self._doPopHint(aoStack, aaiHints[-1][0], dCounts, idTestSet);
 
         #
         # Log the error.
