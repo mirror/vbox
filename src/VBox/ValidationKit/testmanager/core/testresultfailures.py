@@ -131,14 +131,7 @@ class TestResultFailureDataEx(TestResultFailureData):
 
     def initFromDbRowEx(self, aoRow, oFailureReasonLogic, oUserAccountLogic):
         """
-        Reinitialize from a query like this:
-            SELECT   TestResultFiles.*,
-                     StrTabFile.sValue AS sFile,
-                     StrTabDesc.sValue AS sDescription
-                     StrTabKind.sValue AS sKind,
-                     StrTabMime.sValue AS sMime,
-            FROM ...
-
+        Reinitialize from a SELECT * FROM TestResultFailures.
         Return self. Raises exception if no row.
         """
         self.initFromDbRow(aoRow);
