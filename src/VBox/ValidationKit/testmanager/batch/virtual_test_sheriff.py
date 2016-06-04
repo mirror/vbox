@@ -577,13 +577,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 cRelevantOnes += 1
             elif oFailedResult.oParent is not None:
                 # Get the 2nd level node because that's where we'll find the unit test name.
-                o2ndLevel = oFailedResult;
-                while o2ndLevel.oParent.oParent is not None:
-                    o2ndLevel = o2ndLevel.oParent;
+                while oFailedResult.oParent.oParent is not None:
+                    oFailedResult = oFailedResult.oParent;
 
                 # Only report a failure once.
-                if o2ndLevel.idTestResult not in oCaseFile.dReasonForResultId:
-                    sKey = o2ndLevel.sName;
+                if oFailedResult.idTestResult not in oCaseFile.dReasonForResultId:
+                    sKey = oFailedResult.sName;
                     if sKey.startswith('testcase/'):
                         sKey = sKey[9:];
                     if sKey in self.asUnitTestReasons:
