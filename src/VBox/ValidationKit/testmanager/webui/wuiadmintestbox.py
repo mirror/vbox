@@ -234,14 +234,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                                    sTitle = '#%u' % (oEntry.oStatus.idTestSet,),
                                    fBracketed = False);
         # Comment
-        oComment = None;
-        if oEntry.sComment is not None:
-            sComment = oEntry.sComment.strip();
-            if len(sComment) > 64:
-                oComment = WuiRawHtml('<span title="%s">%s...</span>'
-                                      % (webutils.escapeAttr(sComment), webutils.escapeElem(sComment[:60]),));
-            elif len(sComment) > 0:
-                oComment = WuiRawHtml(webutils.escapeElem(sComment));
+        oComment = self._formatCommentCell(oEntry.sComment);
 
         # Group link.
         oGroup = self._dSchedGroups.get(oEntry.idSchedGroup);

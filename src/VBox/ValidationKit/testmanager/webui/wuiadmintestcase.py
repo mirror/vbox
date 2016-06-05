@@ -63,13 +63,13 @@ class WuiTestCaseList(WuiListContentBase):
                                     sTitle = 'Test Cases', fnDPrint = fnDPrint, oDisp = oDisp);
         self._asColumnHeaders = \
         [
-            'Name', 'Active', 'Default Timeout', 'Base Command / Variations', 'Validation Kit Files',
-            'Test Case Prereqs', 'Global Resources', 'Actions'
+            'Name', 'Active', 'Timeout', 'Base Command / Variations', 'Validation Kit Files',
+            'Test Case Prereqs', 'Global Rsrces', 'Note', 'Actions'
         ];
         self._asColumnAttribs = \
         [
-            '', '', '', '', '',
-            'valign="top"', 'valign="top"', 'align="center"'
+            '', '', 'align="center"', '', '',
+            'valign="top"', 'valign="top"', 'align="center"', 'align="center"'
         ];
 
     def _formatListEntry(self, iEntry):
@@ -153,6 +153,9 @@ class WuiTestCaseList(WuiListContentBase):
             sHtml = '<ul class="tmshowall"><li class="tmshowall">None</li></ul>\n'
         aoRet.append(WuiRawHtml(sHtml));
 
+        # Comment (note).
+        aoRet.append(self._formatCommentCell(oEntry.sComment));
+
         # Show actions that can be taken.
         aoActions = [ WuiTmLink('Details', WuiAdmin.ksScriptName,
                                 { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseDetails,
@@ -235,6 +238,8 @@ class WuiTestCase(WuiFormContentBase):
                     break;
             aoGlobalResrcDeps.append([oGlobalRsrc.idGlobalRsrc, fSelected, oGlobalRsrc.sName]);
         oForm.addListOfResources(TestCaseDataEx.ksParam_aoDepGlobalResources, aoGlobalResrcDeps, 'Depends on resources')
+
+        oForm.addMultilineText(TestCaseDataEx.ksParam_sComment, oData.sComment, 'Comment');
 
         oForm.addSubmit();
 

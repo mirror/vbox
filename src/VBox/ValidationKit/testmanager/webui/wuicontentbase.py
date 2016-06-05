@@ -202,10 +202,16 @@ class WuiSpanText(WuiRawHtml): # pylint: disable=R0903
     """
     Outputs the given text within a span of the given CSS class.
     """
-    def __init__(self, sSpanClass, sText):
-        WuiRawHtml.__init__(self,
-                            u'<span class="%s">%s</span>'
-                            % (webutils.escapeAttr(sSpanClass), webutils.escapeElem(sText),));
+    def __init__(self, sSpanClass, sText, sTitle = None):
+        if sTitle is None:
+            WuiRawHtml.__init__(self,
+                                u'<span class="%s">%s</span>'
+                                % ( webutils.escapeAttr(sSpanClass),  webutils.escapeElem(sText),));
+        else:
+            WuiRawHtml.__init__(self,
+                                u'<span class="%s" title="%s">%s</span>'
+                                % ( webutils.escapeAttr(sSpanClass), webutils.escapeAttr(sTitle), webutils.escapeElem(sText),));
+
 
 
 class WuiContentBase(object): # pylint: disable=R0903
@@ -690,6 +696,36 @@ class WuiListContentBase(WuiContentBase):
         self._sId               = sId;
         self._asColumnHeaders   = [];
         self._asColumnAttribs   = [];
+
+    def _formatCommentCell(self, sComment, cMaxLines = 3, cchMaxLine = 63):
+        """
+        Helper functions for formatting comment cell.
+        Returns None or WuiRawHtml instance.
+        """
+        # Nothing to do for empty comments.
+        if sComment is None:
+            return None;
+        sComment = sComment.strip();
+        if len(sComment) == 0:
+            return None;
+
+        # Restrict the text if necessary, making the whole text available thru mouse-over.
+        ## @todo this would be better done by java script or smth, so it could automatically adjust to the table size.
+        if len(sComment) > cchMaxLine or sComment.count('\n') >= cMaxLines:
+            sShortHtml = '';
+            for iLine, sLine in enumerate(sComment.split('\n')):
+                if iLine >= cMaxLines:
+                    break;
+                if iLine > 0:
+                    sShortHtml += '<br>\n';
+                if len(sLine) > cchMaxLine:
+                    sShortHtml += webutils.escapeElem(sLine[:(cchMaxLine - 3)]);
+                    sShortHtml += '...';
+                else:
+                    sShortHtml += webutils.escapeElem(sLine);
+            return WuiRawHtml('<span class="tmcomment" title="%s">%s</span>' % (webutils.escapeAttr(sComment), sShortHtml,));
+
+        return WuiRawHtml('<span class="tmcomment">%s</span>' % (webutils.escapeElem(sComment).replace('\n', '<br>'),));
 
     def _formatListEntry(self, iEntry):
         """

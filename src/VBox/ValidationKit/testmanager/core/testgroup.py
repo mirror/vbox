@@ -53,6 +53,7 @@ class TestGroupMemberData(ModelDataBase):
     kiMin_iSchedPriority        = 0;
     kiMax_iSchedPriority        = 31;
 
+    kcDbColumns                 = 7;
 
     def __init__(self):
         ModelDataBase.__init__(self)
@@ -132,7 +133,7 @@ class TestGroupMemberDataEx(TestGroupMemberData):
         """
         TestGroupMemberData.initFromDbRow(self, aoRow);
         self.oTestCase = TestCaseDataEx();
-        self.oTestCase.initFromDbRowEx(aoRow[7:], oDb, tsNow);
+        self.oTestCase.initFromDbRowEx(aoRow[TestGroupMemberData.kcDbColumns:], oDb, tsNow);
         return self;
 
     def initFromParams(self, oDisp, fStrict = True):
@@ -167,25 +168,15 @@ class TestGroupMemberData2(TestCaseData):
 
     def initFromDbRowEx(self, aoRow):
         """
-        Reinitialize from a :WRONG QUERY:
+        Reinitialize from this query:
 
-            SELECT TestCases.idTestCase,
-                   TestGroupMembers.tsEffective,
-                   TestGroupMembers.tsExpire,
-                   TestGroupMembers.uidAuthor,
-                   TestCases.idGenTestCase,
-                   TestCases.sName,
-                   TestCases.sDescription,
-                   TestCases.fEnabled,
-                   TestCases.cSecTimeout,
-                   TestCases.sBaseCmd,
-                   TestCases.sValidationKitZips,
+            SELECT TestCases.*,
                    TestGroupMembers.idTestGroup,
                    TestGroupMembers.aidTestCaseArgs
             FROM TestCases, TestGroupMembers
             WHERE TestCases.idTestCase = TestGroupMembers.idTestCase
 
-        ..row. Represents complete test group member (test case) info.
+        Represents complete test group member (test case) info.
         Returns object of type TestGroupMemberData2. Raises exception if no row.
         """
         TestCaseData.initFromDbRow(self, aoRow);
@@ -207,8 +198,11 @@ class TestGroupData(ModelDataBase):
     ksParam_uidAuthor       = 'TestGroup_uidAuthor'
     ksParam_sName           = 'TestGroup_sName'
     ksParam_sDescription    = 'TestGroup_sDescription'
+    ksParam_sComment        = 'TestGroup_sComment'
 
-    kasAllowNullAttributes      = ['idTestGroup', 'tsEffective', 'tsExpire', 'uidAuthor', 'sDescription' ];
+    kasAllowNullAttributes      = ['idTestGroup', 'tsEffective', 'tsExpire', 'uidAuthor', 'sDescription', 'sComment' ];
+
+    kcDbColumns             = 7;
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -223,6 +217,7 @@ class TestGroupData(ModelDataBase):
         self.uidAuthor       = None
         self.sName           = None
         self.sDescription    = None
+        self.sComment        = None
 
     def initFromDbRow(self, aoRow):
         """
@@ -238,6 +233,7 @@ class TestGroupData(ModelDataBase):
         self.uidAuthor       = aoRow[3]
         self.sName           = aoRow[4]
         self.sDescription    = aoRow[5]
+        self.sComment        = aoRow[6]
         return self
 
     def initFromDbWithId(self, oDb, idTestGroup, tsNow = None, sPeriodBack = None):
@@ -424,12 +420,13 @@ class TestGroupLogic(ModelLogicBase):
         #
         # Do the job.
         #
-        self._oDb.execute('INSERT INTO TestGroups (uidAuthor, sName, sDescription)\n'
+        self._oDb.execute('INSERT INTO TestGroups (uidAuthor, sName, sDescription, sComment)\n'
                           'VALUES (%s, %s, %s)\n'
                           'RETURNING idTestGroup\n'
                           , ( uidAuthor,
                               oData.sName,
-                              oData.sDescription,));
+                              oData.sDescription,
+                              oData.sComment, ));
         idTestGroup = self._oDb.fetchOne()[0];
         oData.idTestGroup = idTestGroup;
 
@@ -463,12 +460,13 @@ class TestGroupLogic(ModelLogicBase):
         if not oData.isEqualEx(oOldData, [ 'aoMembers', 'tsEffective', 'tsExpire', 'uidAuthor', ]):
             self._historizeTestGroup(oData.idTestGroup);
             self._oDb.execute('INSERT INTO TestGroups\n'
-                              '       (uidAuthor, idTestGroup, sName, sDescription)\n'
-                              'VALUES (%s, %s, %s, %s)\n'
+                              '       (uidAuthor, idTestGroup, sName, sDescription, sComment)\n'
+                              'VALUES (%s, %s, %s, %s, %s)\n'
                               , ( uidAuthor,
                                   oData.idTestGroup,
                                   oData.sName,
-                                  oData.sDescription, ));
+                                  oData.sDescription,
+                                  oData.sComment ));
 
         # Create a lookup dictionary for old entries.
         dOld = {};
@@ -633,15 +631,16 @@ class TestGroupLogic(ModelLogicBase):
                               'FROM     TestGroups\n'
                               'WHERE    tsExpire     = \'infinity\'::timestamp\n'
                               '  AND    idTestGroup  = %s\n'
-                              'ORDER BY idTestGroup ASC;', (idTestGroup,))
+                              'ORDER BY idTestGroup ASC;'
+                              , (idTestGroup,))
         else:
             self._oDb.execute('SELECT   *\n'
                               'FROM     TestGroups\n'
                               'WHERE    tsExpire     > %s\n'
                               '  AND    tsEffective <= %s\n'
                               '  AND    idTestGroup  = %s\n'
-                              'ORDER BY idTestGroup ASC;',
-                              (tsNow, tsNow, idTestGroup))
+                              'ORDER BY idTestGroup ASC;'
+                              , (tsNow, tsNow, idTestGroup))
 
         aRows = self._oDb.fetchAll()
         if len(aRows) not in (0, 1):

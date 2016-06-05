@@ -83,6 +83,7 @@ class WuiSchedGroup(WuiFormContentBase):
                                          oData.aoMembers, self._aoAllTestGroups, 'Test groups',
                                          fReadOnly = self._sMode == WuiFormContentBase.ksMode_Show);
 
+        oForm.addMultilineText  (SchedGroupData.ksParam_sComment,     oData.sComment,         'Comment');
         oForm.addSubmit()
 
         return True;
@@ -99,12 +100,12 @@ class WuiAdminSchedGroupList(WuiListContentBase):
 
         self._asColumnHeaders = [
             'ID',  'Name', 'Enabled', 'Scheduler Type',
-            'Build Source', 'Validation Kit Source', 'Test Groups', 'TestBoxes', 'Actions',
+            'Build Source', 'Validation Kit Source', 'Test Groups', 'TestBoxes', 'Note', 'Actions',
         ];
 
         self._asColumnAttribs = [
             'align="right"', 'align="center"', 'align="center"', 'align="center"',
-            'align="center"', 'align="center"', '', '', 'align="center"',
+            'align="center"', 'align="center"', '', '', 'align="center"', 'align="center"',
         ];
 
     def _formatListEntry(self, iEntry):
@@ -180,5 +181,6 @@ class WuiAdminSchedGroupList(WuiListContentBase):
             oValidationKitSrc,
             aoMembers,
             aoTestBoxes,
+            self._formatCommentCell(oEntry.sComment),
             aoActions,
         ];

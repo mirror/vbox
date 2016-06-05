@@ -31,6 +31,12 @@ DROP FUNCTION IF EXISTS add_testcase(INTEGER, TEXT, TEXT, BOOLEAN, INTEGER, TEXT
 DROP FUNCTION IF EXISTS edit_testcase(INTEGER, INTEGER, TEXT, TEXT, BOOLEAN, INTEGER, TEXT, TEXT);
 DROP FUNCTION IF EXISTS del_testcase(INTEGER);
 DROP FUNCTION IF EXISTS TestCaseLogic_delEntry(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS TestCaseLogic_addEntry(a_uidAuthor INTEGER, a_sName TEXT, a_sDescription TEXT,
+                                               a_fEnabled BOOL, a_cSecTimeout INTEGER,  a_sTestBoxReqExpr TEXT,
+                                               a_sBuildReqExpr TEXT, a_sBaseCmd TEXT, a_sTestSuiteZips TEXT);
+DROP FUNCTION IF EXISTS TestCaseLogic_editEntry(a_uidAuthor INTEGER, a_idTestCase INTEGER, a_sName TEXT, a_sDescription TEXT,
+                                                a_fEnabled BOOL, a_cSecTimeout INTEGER,  a_sTestBoxReqExpr TEXT,
+                                                a_sBuildReqExpr TEXT, a_sBaseCmd TEXT, a_sTestSuiteZips TEXT);
 
 ---
 -- Checks if the test case name is unique, ignoring a_idTestCaseIgnore.
@@ -95,9 +101,11 @@ CREATE OR REPLACE FUNCTION TestCaseLogic_historizeEntry(a_idTestCase INTEGER, a_
     END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE function TestCaseLogic_addEntry(a_uidAuthor INTEGER, a_sName TEXT, a_sDescription TEXT, 
                                                   a_fEnabled BOOL, a_cSecTimeout INTEGER,  a_sTestBoxReqExpr TEXT, 
-                                                  a_sBuildReqExpr TEXT, a_sBaseCmd TEXT, a_sTestSuiteZips TEXT) 
+                                                  a_sBuildReqExpr TEXT, a_sBaseCmd TEXT, a_sTestSuiteZips TEXT,
+                                                  a_sComment TEXT)
     RETURNS INTEGER AS $$
     DECLARE 
          v_idTestCase INTEGER;
@@ -105,17 +113,19 @@ CREATE OR REPLACE function TestCaseLogic_addEntry(a_uidAuthor INTEGER, a_sName T
         PERFORM TestCaseLogic_checkUniqueName(a_sName, -1);
 
         INSERT INTO TestCases (uidAuthor, sName, sDescription, fEnabled, cSecTimeout, 
-                               sTestBoxReqExpr, sBuildReqExpr, sBaseCmd, sTestSuiteZips)
+                               sTestBoxReqExpr, sBuildReqExpr, sBaseCmd, sTestSuiteZips, sComment)
             VALUES (a_uidAuthor, a_sName, a_sDescription, a_fEnabled, a_cSecTimeout, 
-                    a_sTestBoxReqExpr, a_sBuildReqExpr, a_sBaseCmd, a_sTestSuiteZips)
+                    a_sTestBoxReqExpr, a_sBuildReqExpr, a_sBaseCmd, a_sTestSuiteZips, a_Comment)
             RETURNING idTestcase INTO v_idTestCase;
         RETURN v_idTestCase;
     END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE OR REPLACE function TestCaseLogic_editEntry(a_uidAuthor INTEGER, a_idTestCase INTEGER, a_sName TEXT, a_sDescription TEXT, 
                                                    a_fEnabled BOOL, a_cSecTimeout INTEGER,  a_sTestBoxReqExpr TEXT, 
-                                                   a_sBuildReqExpr TEXT, a_sBaseCmd TEXT, a_sTestSuiteZips TEXT) 
+                                                   a_sBuildReqExpr TEXT, a_sBaseCmd TEXT, a_sTestSuiteZips TEXT,
+                                                   a_sComment TEXT)
     RETURNS INTEGER AS $$
     DECLARE 
          v_idGenTestCase INTEGER;
@@ -125,9 +135,9 @@ CREATE OR REPLACE function TestCaseLogic_editEntry(a_uidAuthor INTEGER, a_idTest
 
         PERFORM TestCaseLogic_historizeEntry(a_idTestCase, CURRENT_TIMESTAMP);
         INSERT INTO TestCases (idTestCase, uidAuthor, sName, sDescription, fEnabled, cSecTimeout, 
-                               sTestBoxReqExpr, sBuildReqExpr, sBaseCmd, sTestSuiteZips)
+                               sTestBoxReqExpr, sBuildReqExpr, sBaseCmd, sTestSuiteZips, sComment)
             VALUES (a_idTestCase, a_uidAuthor, a_sName, a_sDescription, a_fEnabled, a_cSecTimeout, 
-                    a_sTestBoxReqExpr, a_sBuildReqExpr, a_sBaseCmd, a_sTestSuiteZips)
+                    a_sTestBoxReqExpr, a_sBuildReqExpr, a_sBaseCmd, a_sTestSuiteZips, a_sComment)
             RETURNING idGenTestCase INTO v_idGenTestCase;
        RETURN v_idGenTestCase;
     END;

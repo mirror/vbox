@@ -72,7 +72,7 @@ class GlobalResourceData(ModelDataBase):
 
     def initFromDbRow(self, aoRow):
         """
-        Reinitialize from a SELECT * FROM TestCases row.
+        Reinitialize from a SELECT * FROM GlobalResources row.
         Returns self. Raises exception if no row.
         """
         if aoRow is None:

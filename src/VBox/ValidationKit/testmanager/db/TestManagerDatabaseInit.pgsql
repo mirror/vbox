@@ -301,6 +301,9 @@ CREATE TABLE TestCases (
     -- @DOWNLOAD_BASE_URL@ prefix can be used to refer to this area.
     sTestSuiteZips      TEXT        DEFAULT NULL,
 
+    -- Comment regarding a change or something.
+    sComment            TEXT        DEFAULT NULL,
+
     PRIMARY KEY (idTestCase, tsExpire)
 );
 
@@ -510,9 +513,11 @@ CREATE TABLE TestGroups (
     uidAuthor           INTEGER     NOT NULL,
 
     --- The name of the scheduling group.
-    sName               text        NOT NULL,
+    sName               TEXT        NOT NULL,
     --- Optional group description.
-    sDescription        text,
+    sDescription        TEXT,
+    -- Comment regarding a change or something.
+    sComment            TEXT        DEFAULT NULL,
 
     PRIMARY KEY (idTestGroup, tsExpire)
 );
@@ -603,9 +608,9 @@ CREATE TABLE SchedGroups (
     uidAuthor           INTEGER     DEFAULT NULL,
 
     --- The name of the scheduling group.
-    sName               text        NOT NULL,
+    sName               TEXT        NOT NULL,
     --- Optional group description.
-    sDescription        text,
+    sDescription        TEXT,
     --- Indicates whether this group is currently enabled.
     fEnabled            boolean     NOT NULL,
     --- The scheduler to use.
@@ -618,6 +623,8 @@ CREATE TABLE SchedGroups (
     --- The Validation Kit build source (@VALIDATIONKIT_ZIP@).
     -- Non-unique foreign key: BuildSources(idBuildSrc)
     idBuildSrcTestSuite INTEGER     DEFAULT NULL,
+    -- Comment regarding a change or something.
+    sComment            TEXT        DEFAULT NULL,
 
     PRIMARY KEY (idSchedGroup, tsExpire)
 );

@@ -64,6 +64,7 @@ class SchedGroupMemberData(ModelDataBase):
     kiMin_iSchedPriority        = 0;
     kiMax_iSchedPriority        = 32;
 
+    kcDbColumns                 = 8
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -124,7 +125,7 @@ class SchedGroupMemberDataEx(SchedGroupMemberData):
         Returns self. Raises exception if the row is None or otherwise invalid.
         """
         SchedGroupMemberData.initFromDbRow(self, aoRow);
-        self.oTestGroup = TestGroupData().initFromDbRow(aoRow[8:]);
+        self.oTestGroup = TestGroupData().initFromDbRow(aoRow[SchedGroupMemberData.kcDbColumns:]);
         return self;
 
     def getDataAttributes(self):
@@ -169,10 +170,13 @@ class SchedGroupData(ModelDataBase):
     ksParam_enmScheduler        = 'SchedGroup_enmScheduler';
     ksParam_idBuildSrc          = 'SchedGroup_idBuildSrc';
     ksParam_idBuildSrcTestSuite = 'SchedGroup_idBuildSrcTestSuite';
+    ksParam_sComment            = 'SchedGroup_sComment';
 
     kasAllowNullAttributes      = ['idSchedGroup', 'tsEffective', 'tsExpire', 'uidAuthor', 'sDescription',
-                                   'idBuildSrc', 'idBuildSrcTestSuite'];
+                                   'idBuildSrc', 'idBuildSrcTestSuite', 'sComment' ];
     kasValidValues_enmScheduler = [ksScheduler_BestEffortContinousItegration, ];
+
+    kcDbColumns                 = 11;
 
     # Scheduler types
     kasSchedulerDesc            = \
@@ -196,7 +200,8 @@ class SchedGroupData(ModelDataBase):
         self.fEnabled                = None;
         self.enmScheduler            = SchedGroupData.ksScheduler_BestEffortContinousItegration;
         self.idBuildSrc              = None;
-        self.idBuildSrcTestSuite = None;
+        self.idBuildSrcTestSuite     = None;
+        self.sComment                = None;
 
     def initFromDbRow(self, aoRow):
         """
@@ -217,7 +222,8 @@ class SchedGroupData(ModelDataBase):
         self.fEnabled                = aoRow[6];
         self.enmScheduler            = aoRow[7];
         self.idBuildSrc              = aoRow[8];
-        self.idBuildSrcTestSuite = aoRow[9];
+        self.idBuildSrcTestSuite     = aoRow[9];
+        self.sComment                = aoRow[10];
         return self;
 
     def initFromDbWithId(self, oDb, idSchedGroup, tsNow = None, sPeriodBack = None):
@@ -495,16 +501,18 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
                           '         fEnabled,\n'
                           '         enmScheduler,\n'
                           '         idBuildSrc,\n'
-                          '         idBuildSrcTestSuite)\n'
-                          'VALUES (%s, %s, %s, %s, %s, %s, %s)\n'
+                          '         idBuildSrcTestSuite,\n'
+                          '         sComment)\n'
+                          'VALUES (%s, %s, %s, %s, %s, %s, %s, %s)\n'
                           'RETURNING idSchedGroup\n'
-                          , (uidAuthor,
-                             oData.sName,
-                             oData.sDescription,
-                             oData.fEnabled,
-                             oData.enmScheduler,
-                             oData.idBuildSrc,
-                             oData.idBuildSrcTestSuite));
+                          , ( uidAuthor,
+                              oData.sName,
+                              oData.sDescription,
+                              oData.fEnabled,
+                              oData.enmScheduler,
+                              oData.idBuildSrc,
+                              oData.idBuildSrcTestSuite,
+                              oData.sComment ));
         idSchedGroup = self._oDb.fetchOne()[0];
         oData.idSchedGroup = idSchedGroup;
 
@@ -802,10 +810,11 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
 
     def exists(self, sName):
         """Checks if a group with the given name exists."""
-        self._oDb.execute('SELECT *\n'
+        self._oDb.execute('SELECT idSchedGroup\n'
                           'FROM   SchedGroups\n'
                           'WHERE  tsExpire   = \'infinity\'::TIMESTAMP\n'
-                          '   AND sName = %s\n'
+                          '   AND sName      = %s\n'
+                          'LIMIT 1\n'
                           , (sName,));
         return self._oDb.getRowCount() > 0;
 
@@ -813,7 +822,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
         """Get Scheduling Group data by idSchedGroup"""
         self._oDb.execute('SELECT   *\n'
                           'FROM     SchedGroups\n'
-                          'WHERE    tsExpire   = \'infinity\'::timestamp\n'
+                          'WHERE    tsExpire     = \'infinity\'::timestamp\n'
                           '  AND    idSchedGroup = %s;', (idSchedGroup,))
         aRows = self._oDb.fetchAll()
         if len(aRows) not in (0, 1):
@@ -824,17 +833,6 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
         except IndexError:
             return None
 
-    def remove(self, uidAuthor, idScedGroup, fNeedCommit=True):
-        """Historize Scheduling Group record"""
-        self._oDb.execute('UPDATE SchedGroups\n'
-                          'SET    tsExpire     = CURRENT_TIMESTAMP,\n'
-                          '       uidAuthor    = %s\n'
-                          'WHERE  idSchedGroup = %s\n'
-                          '   AND tsExpire     = \'infinity\'::TIMESTAMP\n',
-                          (uidAuthor, idScedGroup))
-        if fNeedCommit:
-            self._oDb.commit()
-        return True
 
     #
     # Internal helpers.
@@ -877,8 +875,9 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
                           '         fEnabled,\n'
                           '         enmScheduler,\n'
                           '         idBuildSrc,\n'
-                          '         idBuildSrcTestSuite )\n'
-                          'VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s )\n'
+                          '         idBuildSrcTestSuite,\n'
+                          '         sComment )\n'
+                          'VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )\n'
                           , ( uidAuthor,
                               tsEffective,
                               oData.idSchedGroup,
@@ -887,7 +886,8 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
                               oData.fEnabled,
                               oData.enmScheduler,
                               oData.idBuildSrc,
-                              oData.idBuildSrcTestSuite, ));
+                              oData.idBuildSrcTestSuite,
+                              oData.sComment, ));
         return True;
 
     def _historizeEntry(self, idSchedGroup, tsExpire = None):
