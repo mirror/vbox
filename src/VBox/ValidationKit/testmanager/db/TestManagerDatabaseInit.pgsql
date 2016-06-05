@@ -58,8 +58,8 @@ CREATE DATABASE testmanager;
 --              WHERE   tsCreated >= (current_timestamp - interval '24 hours')
 --                  AND sEvent = 'TBoxUnkn'
 --                  AND sLogText = :sNewLogText;
---      - When cleaning up an abandond testcase (scenario #9), log which
---        testbox abandond which testset.
+--      - When cleaning up an abandoned testcase (scenario #9), log which
+--        testbox abandoned which testset.
 --
 -- The Web UI will have some way of displaying the log.
 --
@@ -1604,6 +1604,9 @@ CREATE TABLE TestSets (
     --- The testbox ID for joining with (valid: tsStarted).
     -- Non-unique foreign key: TestBoxes(idTestBox)
     idTestBox           INTEGER     NOT NULL,
+    --- The scheduling group ID the test was scheduled thru (valid: tsStarted).
+    -- Non-unique foreign key: SchedGroups(idSchedGroup)
+    idSchedGroup        INTEGER     NOT NULL,
 
     --- The testgroup (valid: tsConfig).
     -- Non-unique foreign key: TestBoxes(idTestGroup)
@@ -1663,11 +1666,11 @@ CREATE INDEX TestSetsDoneCreatedBuildCatIdx ON TestSets (tsDone DESC NULLS FIRST
 --- For graphs.
 CREATE INDEX TestSetsGraphBoxIdx    ON TestSets (idTestBox, tsCreated DESC, tsDone ASC NULLS LAST, idBuildCategory, idTestCase);
 
-ALTER TABLE TestResults      ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
-ALTER TABLE TestResultValues ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
-ALTER TABLE TestResultFiles  ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
-ALTER TABLE TestResultMsgs   ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
-ALTER TABLE TestResultFailures ADD CONSTRAINT idTestSetFk FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResults        ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultValues   ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultFiles    ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultMsgs     ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
+ALTER TABLE TestResultFailures ADD FOREIGN KEY (idTestSet) REFERENCES TestSets(idTestSet) MATCH FULL;
 
 
 

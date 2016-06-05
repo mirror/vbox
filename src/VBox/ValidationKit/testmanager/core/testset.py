@@ -78,6 +78,7 @@ class TestSetData(ModelDataBase):
     ksParam_idBuildTestSuite    = 'TestSet_idBuildTestSuite';
     ksParam_idGenTestBox        = 'TestSet_idGenTestBox';
     ksParam_idTestBox           = 'TestSet_idTestBox';
+    ksParam_idSchedGroup        = 'TestSet_idSchedGroup';
     ksParam_idTestGroup         = 'TestSet_idTestGroup';
     ksParam_idGenTestCase       = 'TestSet_idGenTestCase';
     ksParam_idTestCase          = 'TestSet_idTestCase';
@@ -88,7 +89,7 @@ class TestSetData(ModelDataBase):
     ksParam_iGangMemberNo       = 'TestSet_iGangMemberNo';
     ksParam_idTestSetGangLeader = 'TestSet_idTestSetGangLeader';
 
-    kasAllowNullAttributes      = ['tsDone', 'idBuildTestSuite', 'idTestSetGangLeader' ];
+    kasAllowNullAttributes      = [ 'tsDone', 'idBuildTestSuite', 'idTestSetGangLeader' ];
     kasValidValues_enmStatus    = [
         ksTestStatus_Running,
         ksTestStatus_Success,
@@ -102,6 +103,8 @@ class TestSetData(ModelDataBase):
     kiMin_iGangMemberNo         = 0;
     kiMax_iGangMemberNo         = 1023;
 
+
+    kcDbColumns                 = 20;
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -120,6 +123,7 @@ class TestSetData(ModelDataBase):
         self.idBuildTestSuite       = None;
         self.idGenTestBox           = None;
         self.idTestBox              = None;
+        self.idSchedGroup           = None;
         self.idTestGroup            = None;
         self.idGenTestCase          = None;
         self.idTestCase             = None;
@@ -149,15 +153,16 @@ class TestSetData(ModelDataBase):
         self.idBuildTestSuite       = aoRow[7];
         self.idGenTestBox           = aoRow[8];
         self.idTestBox              = aoRow[9];
-        self.idTestGroup            = aoRow[10];
-        self.idGenTestCase          = aoRow[11];
-        self.idTestCase             = aoRow[12];
-        self.idGenTestCaseArgs      = aoRow[13];
-        self.idTestCaseArgs         = aoRow[14];
-        self.idTestResult           = aoRow[15];
-        self.sBaseFilename          = aoRow[16];
-        self.iGangMemberNo          = aoRow[17];
-        self.idTestSetGangLeader    = aoRow[18];
+        self.idSchedGroup           = aoRow[10];
+        self.idTestGroup            = aoRow[11];
+        self.idGenTestCase          = aoRow[12];
+        self.idTestCase             = aoRow[13];
+        self.idGenTestCaseArgs      = aoRow[14];
+        self.idTestCaseArgs         = aoRow[15];
+        self.idTestResult           = aoRow[16];
+        self.sBaseFilename          = aoRow[17];
+        self.iGangMemberNo          = aoRow[18];
+        self.idTestSetGangLeader    = aoRow[19];
         return self;
 
 
@@ -442,7 +447,7 @@ class TestSetLogic(ModelLogicBase):
         self._oDb.maybeCommit(fCommit);
         return oData.idTestSetGangLeader;
 
-    def completeAsAbandond(self, idTestSet, fCommit = False):
+    def completeAsAbandoned(self, idTestSet, fCommit = False):
         """
         Completes the testset as abandoned if necessary.
 

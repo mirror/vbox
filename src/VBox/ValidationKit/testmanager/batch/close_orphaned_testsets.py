@@ -71,11 +71,11 @@ class CloseOrphanedTestSets(object):
         if len(aoOrphans) > 0:
             # Complete them.
             if self.oConfig.fJustDoIt:
-                print 'Completing %u test sets as abandond:' % (len(aoOrphans),);
+                print 'Completing %u test sets as abandoned:' % (len(aoOrphans),);
                 for oTestSet in aoOrphans:
                     print '#%-7u: idTestBox=%-3u tsCreated=%s tsDone=%s' \
                         % (oTestSet.idTestSet, oTestSet.idTestBox, oTestSet.tsCreated, oTestSet.tsDone);
-                    oLogic.completeAsAbandond(oTestSet.idTestSet);
+                    oLogic.completeAsAbandoned(oTestSet.idTestSet);
                 print 'Committing...';
                 oDb.commit();
             else:

@@ -272,19 +272,19 @@ class TestBoxController(object): # pylint: disable=R0903
         """
         Cleans up any old test set that may be left behind and changes the
         state to 'idle'.  See scenario #9:
-        file://../../docs/AutomaticTestingRevamp.html#cleaning-up-abandond-testcase
+        file://../../docs/AutomaticTestingRevamp.html#cleaning-up-abandoned-testcase
 
         Note. oStatusData.enmState is set to idle, but tsUpdated is not changed.
         """
 
-        # Cleanup any abandond test.
+        # Cleanup any abandoned test.
         if oStatusData.idTestSet is not None:
-            SystemLogLogic(oDb).addEntry(SystemLogData.ksEvent_TestSetAbandond,
+            SystemLogLogic(oDb).addEntry(SystemLogData.ksEvent_TestSetAbandoned,
                                          "idTestSet=%u idTestBox=%u enmState=%s %s"
                                          % (oStatusData.idTestSet, oStatusData.idTestBox,
                                             oStatusData.enmState, self._sAction),
                                          fCommit = False);
-            TestSetLogic(oDb).completeAsAbandond(oStatusData.idTestSet, fCommit = False);
+            TestSetLogic(oDb).completeAsAbandoned(oStatusData.idTestSet, fCommit = False);
             GlobalResourceLogic(oDb).freeGlobalResourcesByTestBox(self._idTestBox, fCommit = False);
 
         # Change to idle status

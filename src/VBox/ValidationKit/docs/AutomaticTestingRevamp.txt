@@ -634,7 +634,7 @@ Actions:
 
 3. If the testbox was marked as disabled, respond with an IDLE command to the
    testbox [done]. (Note! Must do this after TestBoxStatuses maintainance from
-   point 2, or abandond tests won't be cleaned up after a testbox is disabled.)
+   point 2, or abandoned tests won't be cleaned up after a testbox is disabled.)
 
 4. Consider testcases in the scheduling queue, pick the first one which the
    testbox can execute.  There is a concurrency issue here, so we put and
@@ -783,8 +783,8 @@ state.  Once there are none, we continue closing the testset and such.
 TODO
 
 
-#9 - Cleaning Up Abandond Testcase
-----------------------------------
+#9 - Cleaning Up Abandoned Testcase
+-----------------------------------
 
 This is a subfunction of scenario #1 and #2.  The actions taken are the same in
 both situations.  The precondition for taking this path is that the row in the
@@ -795,7 +795,7 @@ Actions:
 
 1. If the testset is incomplete, we need to completed:
         a) Add a message to the root TestResults row, creating one if necesary,
-           that explains that the test was abandond.  This is done
+           that explains that the test was abandoned.  This is done
            by inserting/finding the string into/in TestResultStrTab and adding
            a row to TestResultMsgs with idStrMsg set to that string id and
            enmLevel set to 'failure'.
@@ -812,7 +812,7 @@ Actions:
 -----------------------------------------
 
 The UI needs to be able to clean up the remains of a testbox which for some
-reason is out of action.  Normal cleaning up of abandond testcases requires
+reason is out of action.  Normal cleaning up of abandoned testcases requires
 that the testbox signs on or asks for work, but if the testbox is dead or
 in some way indisposed, it won't be doing any of that.  So, the testbox
 sheriff needs to have a way of cleaning up after it.

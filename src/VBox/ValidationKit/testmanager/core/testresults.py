@@ -798,45 +798,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             ' AND Builds.tsEffective <= TestSets.tsCreated',
             { ksResultsSortByBuildRevision: ( '', None,  ' Builds.iRevision DESC' ), }
         ),
-        ksResultsGroupingTypeSchedGroup: (
-            ', TestBoxesWithStrings',
-            'TestBoxesWithStrings.idSchedGroup',
-            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
-            {
-
-              ksResultsSortByTestBoxName: (
-                  # Sorting tables.
-                  '',
-                  # Sorting table join(s).
-                  None,
-                  # Start of ORDER BY statement.
-                  ' TestBoxesWithStrings.sName DESC',
-                  # Extra columns to fetch for the above ORDER BY to work in a SELECT DISTINCT statement.
-                  '',
-                  # Columns for the GROUP BY
-                  '' ),
-              ksResultsSortByTestBoxOsArch:     ( '', None, ' TestBoxesWithStrings.sOs, TestBoxesWithStrings.sCpuArch', '', '' ),
-              ksResultsSortByTestBoxOs:         ( '', None, ' TestBoxesWithStrings.sOs', '', ''  ),
-              ksResultsSortByTestBoxOsVersion:  ( '', None, ' TestBoxesWithStrings.sOs, TestBoxesWithStrings.sOsVersion DESC',
-                                                  '', '' ),
-              ksResultsSortByTestBoxArch:       ( '', None, ' TestBoxesWithStrings.sCpuArch', '', ''  ),
-              ksResultsSortByTestBoxCpuVendor:  ( '', None, ' TestBoxesWithStrings.sCpuVendor', '', ''  ),
-              ksResultsSortByTestBoxCpuName:    ( '', None, ' TestBoxesWithStrings.sCpuVendor, TestBoxesWithStrings.sCpuName',
-                                                  '', '' ),
-              ksResultsSortByTestBoxCpuRev: (
-                  '',
-                  None,
-                  ' TestBoxesWithStrings.sCpuVendor, TestBoxesWithStrings.lCpuRevision DESC',
-                  ', TestBoxesWithStrings.lCpuRevision',
-                  ', TestBoxesWithStrings.lCpuRevision' ),
-              ksResultsSortByTestBoxCpuFeatures: (
-                  '',
-                  None,
-                  ' TestBoxesWithStrings.fCpuHwVirt DESC, TestBoxesWithStrings.fCpuNestedPaging DESC, '
-                  +'TestBoxesWithStrings.fCpu64BitGuest DESC, TestBoxesWithStrings.cCpus DESC',
-                  '',
-                  '' ), }
-        ),
+        ksResultsGroupingTypeSchedGroup: ( '', 'TestSets.idSchedGroup',   None,                      {},),
     };
 
 
@@ -1227,12 +1189,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         """
 
         self._oDb.execute('SELECT SchedGroups.*\n'
-                          'FROM   ( SELECT TestBoxes.idSchedGroup  AS idSchedGroup,\n'
+                          'FROM   ( SELECT idSchedGroup,\n'
                           '                MAX(TestSets.tsCreated) AS tsNow\n'
-                          '         FROM   TestSets,\n'
-                          '                TestBoxes\n'
-                          '         WHERE  TestSets.idGenTestBox = TestBoxes.idGenTestBox\n'
-                          '            AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '         ') +
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '         ') +
                           '         GROUP BY idSchedGroup\n'
                           '       ) AS SchedGroupIDs\n'
                           '       INNER JOIN SchedGroups\n'

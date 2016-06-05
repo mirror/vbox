@@ -945,7 +945,7 @@ will fix the problem (see above)</p>
 </li>
 <li><p class="first">If the testbox was marked as disabled, respond with an IDLE command to the
 testbox [done]. (Note! Must do this after TestBoxStatuses maintainance from
-point 2, or abandond tests won't be cleaned up after a testbox is disabled.)</p>
+point 2, or abandoned tests won't be cleaned up after a testbox is disabled.)</p>
 </li>
 <li><p class="first">Consider testcases in the scheduling queue, pick the first one which the
 testbox can execute.  There is a concurrency issue here, so we put and
@@ -1098,8 +1098,8 @@ state.  Once there are none, we continue closing the testset and such.</p>
 <h2>#8 - Testbox Reports A Crash During Test Execution</h2>
 <p>TODO</p>
 </div>
-<div class="section" id="cleaning-up-abandond-testcase">
-<h2>#9 - Cleaning Up Abandond Testcase</h2>
+<div class="section" id="cleaning-up-abandoned-testcase">
+<h2>#9 - Cleaning Up Abandoned Testcase</h2>
 <p>This is a subfunction of scenario #1 and #2.  The actions taken are the same in
 both situations.  The precondition for taking this path is that the row in the
 testboxstatus table is refering to a testset (i.e. testset_id is not NULL).</p>
@@ -1109,7 +1109,7 @@ testboxstatus table is refering to a testset (i.e. testset_id is not NULL).</p>
 <dt>If the testset is incomplete, we need to completed:</dt>
 <dd><ol class="first last loweralpha simple">
 <li>Add a message to the root TestResults row, creating one if necesary,
-that explains that the test was abandond.  This is done
+that explains that the test was abandoned.  This is done
 by inserting/finding the string into/in TestResultStrTab and adding
 a row to TestResultMsgs with idStrMsg set to that string id and
 enmLevel set to 'failure'.</li>
@@ -1128,7 +1128,7 @@ deleting all rows in GlobalResourceStatuses matching the testbox id.</p>
 <div class="section" id="cleaning-up-a-disabled-dead-testbox">
 <h2>#10 - Cleaning Up a Disabled/Dead TestBox</h2>
 <p>The UI needs to be able to clean up the remains of a testbox which for some
-reason is out of action.  Normal cleaning up of abandond testcases requires
+reason is out of action.  Normal cleaning up of abandoned testcases requires
 that the testbox signs on or asks for work, but if the testbox is dead or
 in some way indisposed, it won't be doing any of that.  So, the testbox
 sheriff needs to have a way of cleaning up after it.</p>

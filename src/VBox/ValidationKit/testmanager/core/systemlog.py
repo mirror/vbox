@@ -45,7 +45,7 @@ class SystemLogData(ModelDataBase):  # pylint: disable=R0902
     # @{
     ksEvent_CmdNacked           = 'CmdNack ';
     ksEvent_TestBoxUnknown      = 'TBoxUnkn';
-    ksEvent_TestSetAbandond     = 'TSetAbdd';
+    ksEvent_TestSetAbandoned    = 'TSetAbdd';
     ksEvent_UserAccountUnknown  = 'TAccUnkn';
     ksEvent_XmlResultMalformed  = 'XmlRMalf';
     ksEvent_SchedQueueRecreate  = 'SchQRecr';
@@ -56,7 +56,7 @@ class SystemLogData(ModelDataBase):  # pylint: disable=R0902
     [ \
         ksEvent_CmdNacked,
         ksEvent_TestBoxUnknown,
-        ksEvent_TestSetAbandond,
+        ksEvent_TestSetAbandoned,
         ksEvent_UserAccountUnknown,
         ksEvent_XmlResultMalformed,
         ksEvent_SchedQueueRecreate,
