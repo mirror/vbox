@@ -78,7 +78,8 @@ ALTER TABLE OldTestSets     DROP CONSTRAINT TestSets_idGenTestCaseArgs_fkey;
 ALTER TABLE OldTestSets     DROP CONSTRAINT TestSets_idTestResult_fkey;
 ALTER TABLE OldTestSets     DROP CONSTRAINT TestSets_idTestSetGangLeader_fkey;
 
-ALTER TABLE OldTestSets     DROP CONSTRAINT TestSets_sBaseFilename_key;
+ALTER TABLE OldTestSets     DROP CONSTRAINT IF EXISTS TestSets_sBaseFilename_key;
+ALTER TABLE OldTestSets     DROP CONSTRAINT IF EXISTS NewTestSets_sBaseFilename_key;
 ALTER TABLE OldTestSets     DROP CONSTRAINT TestSets_pkey;
 
 DROP INDEX IF EXISTS TestSetsGangIdx;
