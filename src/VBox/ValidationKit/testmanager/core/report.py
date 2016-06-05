@@ -88,8 +88,6 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
         table name is prefixed by a comma, so can be appended to a FROM
         statement.
         """
-        if self.sSubject == self.ksSubSchedGroup:
-            return ', TestBoxes';
         return '';
 
     def getExtraSubjectWhereExpr(self):
@@ -101,10 +99,7 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
             return '';
 
         if self.sSubject == self.ksSubSchedGroup:
-            sWhere = '     AND TestBoxes.idTestBox    =  TestSets.idTestBox\n' \
-                     '     AND TestBoxes.tsEffective  >  TestSets.tsCreated\n' \
-                     '     AND TestBoxes.tsExpire     <= TestSets.tsCreated\n' \
-                     '     AND TestBoxes.idSchedGroup';
+            sWhere = '     AND TestSets.idSchedGroup';
         elif self.sSubject == self.ksSubTestGroup:
             sWhere = '     AND TestSets.idTestGroup';
         elif self.sSubject == self.ksSubTestCase:
