@@ -68,6 +68,7 @@ ALTER TABLE TestResultFiles     DROP CONSTRAINT IF EXISTS TestResultFiles_idTest
 ALTER TABLE TestResultMsgs      DROP CONSTRAINT IF EXISTS TestResultMsgs_idTestSet_fkey;
 ALTER TABLE TestResults         DROP CONSTRAINT IF EXISTS TestResults_idTestSet_fkey;
 ALTER TABLE TestResultValues    DROP CONSTRAINT IF EXISTS TestResultValues_idTestSet_fkey;
+ALTER TABLE TestResultValues    DROP CONSTRAINT IF EXISTS TestResultValues_idTestSet_fkey1;
 
 ALTER TABLE OldTestSets     DROP CONSTRAINT testsets_igangmemberno_check;
 
