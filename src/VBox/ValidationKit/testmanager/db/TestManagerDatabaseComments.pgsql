@@ -506,6 +506,11 @@ This is for when we later desire different scheduling that the best
 effort stuff provided by the initial implementation.';
 
 
+COMMENT ON COLUMN SchedGroups.sComment IS
+  'The Validation Kit build source (@VALIDATIONKIT_ZIP@).
+Non-unique foreign key: BuildSources(idBuildSrc)';
+
+
 COMMENT ON TABLE SchedGroupMembers IS
   'N:M relationship between scheduling groups and test groups.
 
@@ -547,6 +552,46 @@ COMMENT ON COLUMN SchedGroupMembers.bmHourlySchedule IS
 there are no constraints.
 Each bit in the bitstring represents one hour, with bit 0 indicating the
 midnight hour on a monday.';
+
+
+COMMENT ON TABLE TestBoxStrTab IS
+  'String table for the test boxes.
+
+This is a string cache for all string members in TestBoxes except the name.
+The rational is to avoid duplicating large strings like sReport when the
+testbox reports a new cMbScratch value or the box when the test sheriff
+sends a reboot command or similar.
+
+At the time this table was introduced, we had 400558 TestBoxes rows,  where
+the SUM(LENGTH(sReport)) was 993MB.  There were really just 1066 distinct
+sReport values, with a total length of 0x3 MB.
+
+Nothing is ever deleted from this table.
+
+@note Should use a stored procedure to query/insert a string.
+
+
+TestBox stats prior to conversion:
+     SELECT COUNT(*) FROM TestBoxes:                     400558 rows
+     SELECT pg_total_relation_size(''TestBoxes''):      740794368 bytes (706 MB)
+     Average row cost:           740794368 / 400558 =      1849 bytes/row
+
+After conversion:
+     SELECT COUNT(*) FROM TestBoxes:                     400558 rows
+     SELECT pg_total_relation_size(''TestBoxes''):      144375808 bytes (138 MB)
+     SELECT COUNT(idStr) FROM TestBoxStrTab:               1292 rows
+     SELECT pg_total_relation_size(''TestBoxStrTab''):    5709824 bytes (5.5 MB)
+                  (144375808 + 5709824) / 740794368 =        20 %
+     Average row cost boxes:     144375808 / 400558 =       360 bytes/row
+     Average row cost strings:       5709824 / 1292 =      4420 bytes/row';
+
+
+COMMENT ON COLUMN TestBoxStrTab.sValue IS
+  'The string value.';
+
+
+COMMENT ON COLUMN TestBoxStrTab.tsCreated IS
+  'Creation time stamp.';
 
 
 COMMENT ON TYPE TestBoxCmd_T IS
@@ -602,11 +647,6 @@ COMMENT ON COLUMN TestBoxes.sName IS
 Usually similar to the DNS name.';
 
 
-COMMENT ON COLUMN TestBoxes.sDescription IS
-  'Optional testbox description.
-Intended for describing the box as well as making other relevant notes.';
-
-
 COMMENT ON COLUMN TestBoxes.fEnabled IS
   'Indicates whether this testbox is enabled.
 A testbox gets disabled when we''re doing maintenance, debugging a issue
@@ -616,26 +656,6 @@ alternative to deleting the testbox.';
 
 COMMENT ON COLUMN TestBoxes.enmLomKind IS
   'The kind of lights-out-management.';
-
-
-COMMENT ON COLUMN TestBoxes.sOs IS
-  'Same abbrieviations as kBuild, see KBUILD_OSES.';
-
-
-COMMENT ON COLUMN TestBoxes.sOsVersion IS
-  'Informational, no fixed format.';
-
-
-COMMENT ON COLUMN TestBoxes.sCpuVendor IS
-  'Same as CPUID reports (GenuineIntel, AuthenticAMD, CentaurHauls, ...).';
-
-
-COMMENT ON COLUMN TestBoxes.sCpuArch IS
-  'Same as kBuild - x86, amd64, ... See KBUILD_ARCHES.';
-
-
-COMMENT ON COLUMN TestBoxes.sCpuName IS
-  'The CPU name if available.';
 
 
 COMMENT ON COLUMN TestBoxes.lCpuRevision IS
@@ -664,16 +684,16 @@ COMMENT ON COLUMN TestBoxes.fChipsetIoMmu IS
   'Set if chipset with usable IOMMU (VT-d / AMD-Vi).';
 
 
+COMMENT ON COLUMN TestBoxes.fRawMode IS
+  'Set if the test box does raw-mode tests.';
+
+
 COMMENT ON COLUMN TestBoxes.cMbMemory IS
   'The (approximate) memory size in megabytes (rounded down to nearest 4 MB).';
 
 
 COMMENT ON COLUMN TestBoxes.cMbScratch IS
   'The amount of scratch space in megabytes (rounded down to nearest 64 MB).';
-
-
-COMMENT ON COLUMN TestBoxes.sReport IS
-  'Free form hardware and software report field.';
 
 
 COMMENT ON COLUMN TestBoxes.iTestBoxScriptRev IS
