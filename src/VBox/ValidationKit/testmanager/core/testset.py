@@ -627,27 +627,11 @@ class TestSetLogic(ModelLogicBase):
         """
         Returns an array of TestBoxData object representing the gang for the given testset.
         """
-        self._oDb.execute('SELECT   TestBoxes.*,\n'
-                          '         Str1.sValue,\n'
-                          '         Str2.sValue,\n'
-                          '         Str3.sValue,\n'
-                          '         Str4.sValue,\n'
-                          '         Str5.sValue,\n'
-                          '         Str6.sValue,\n'
-                          '         Str7.sValue,\n'
-                          '         Str8.sValue\n'
-                          'FROM     TestBoxes\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str1 ON idStrDescription = Str1.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str2 ON idStrComment     = Str2.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str3 ON idStrOs          = Str3.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str4 ON idStrOsVersion   = Str4.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str5 ON idStrCpuVendor   = Str5.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str6 ON idStrCpuArch     = Str6.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str7 ON idStrCpuName     = Str7.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str8 ON idStrReport      = Str8.idStr,\n'
+        self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
+                          'FROM     TestBoxesWithStrings,\n'
                           '         TestSets'
                           'WHERE    TestSets.idTestSetGangLeader = %s\n'
-                          '     AND TestSets.idGenTestBox        = TestBoxes.idGenTestBox\n'
+                          '     AND TestSets.idGenTestBox        = TestBoxesWithStrings.idGenTestBox\n'
                           'ORDER BY iGangMemberNo ASC\n'
                           , ( idTestSetGangLeader,));
         aaoRows = self._oDb.fetchAll();
