@@ -290,18 +290,18 @@ class SchedGroupDataEx(SchedGroupData):
         ## @todo sPeriodBack!
         if tsNow is None:
             oDb.execute('SELECT *\n'
-                        'FROM   TestBoxes\n'
-                        'WHERE  TestBoxes.idSchedGroup = %s\n'
-                        '   AND TestBoxes.tsExpire     = \'infinity\'::TIMESTAMP\n'
-                        'ORDER BY TestBoxes.sName, TestBoxes.idTestBox\n'
+                        'FROM   TestBoxesWithStrings\n'
+                        'WHERE  TestBoxesWithStrings.idSchedGroup = %s\n'
+                        '   AND TestBoxesWithStrings.tsExpire     = \'infinity\'::TIMESTAMP\n'
+                        'ORDER BY TestBoxesWithStrings.sName, TestBoxesWithStrings.idTestBox\n'
                         , (self.idSchedGroup,));
         else:
             oDb.execute('SELECT *\n'
-                        'FROM   TestBoxes\n'
-                        'WHERE  TestBoxes.idSchedGroup = %s\n'
-                        '   AND TestBoxes.tsExpire     > %s\n'
-                        '   AND TestBoxes.tsEffective  <= %s\n'
-                        'ORDER BY TestBoxes.sName, TestBoxes.idTestBox\n'
+                        'FROM   TestBoxesWithStrings\n'
+                        'WHERE  TestBoxesWithStrings.idSchedGroup = %s\n'
+                        '   AND TestBoxesWithStrings.tsExpire     > %s\n'
+                        '   AND TestBoxesWithStrings.tsEffective  <= %s\n'
+                        'ORDER BY TestBoxesWithStrings.sName, TestBoxesWithStrings.idTestBox\n'
                         , (self.idSchedGroup, tsNow, tsNow, tsNow, tsNow));
         for aoRow in oDb.fetchAll():
             self.aoTestBoxes.append(TestBoxData().initFromDbRow(aoRow));

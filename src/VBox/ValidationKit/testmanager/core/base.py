@@ -132,6 +132,10 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
     ## @}
 
 
+    ## List of internal attributes which should be ignored by
+    ## getDataAttributes and related machinery
+    kasInternalAttributes       = [];
+
     def __init__(self):
         ModelBase.__init__(self);
 
@@ -148,6 +152,8 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         asAttrs = dir(self);
         for sAttr in asAttrs:
             if sAttr[0] == '_' or sAttr[0] == 'k':
+                continue;
+            if sAttr in self.kasInternalAttributes:
                 continue;
             oValue = getattr(self, sAttr);
             if callable(oValue):

@@ -679,6 +679,58 @@ CREATE TABLE SchedGroupMembers (
 );
 
 
+--- @table TestBoxStrTab
+-- String table for the test boxes.
+--
+-- This is a string cache for all string members in TestBoxes except the name.
+-- The rational is to avoid duplicating large strings like sReport when the 
+-- testbox reports a new cMbScratch value or the box when the test sheriff 
+-- sends a reboot command or similar.  
+-- 
+-- At the time this table was introduced, we had 400558 TestBoxes rows,  where 
+-- the SUM(LENGTH(sReport)) was 993MB.  There were really just 1066 distinct
+-- sReport values, with a total length of 0x3 MB.
+--
+-- Nothing is ever deleted from this table.
+--
+-- @note Should use a stored procedure to query/insert a string.
+--
+--
+-- TestBox stats prior to conversion:
+--      SELECT COUNT(*) FROM TestBoxes:                     400558 rows
+--      SELECT pg_total_relation_size('TestBoxes'):      740794368 bytes (706 MB)
+--      Average row cost:           740794368 / 400558 =      1849 bytes/row
+--
+-- After conversion:
+--      SELECT COUNT(*) FROM TestBoxes:                     400558 rows
+--      SELECT pg_total_relation_size('TestBoxes'):      144375808 bytes (138 MB)
+--      SELECT COUNT(idStr) FROM TestBoxStrTab:               1292 rows
+--      SELECT pg_total_relation_size('TestBoxStrTab'):    5709824 bytes (5.5 MB)
+--                   (144375808 + 5709824) / 740794368 =        20 %
+--      Average row cost boxes:     144375808 / 400558 =       360 bytes/row
+--      Average row cost strings:       5709824 / 1292 =      4420 bytes/row
+--
+CREATE SEQUENCE TestBoxStrTabIdSeq
+    START 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+CREATE TABLE TestBoxStrTab (
+    --- The ID of this string.
+    idStr               INTEGER     PRIMARY KEY DEFAULT NEXTVAL('TestBoxStrTabIdSeq'),
+    --- The string value.
+    sValue              text        NOT NULL,
+    --- Creation time stamp.
+    tsCreated           TIMESTAMP WITH TIME ZONE  DEFAULT current_timestamp  NOT NULL
+);
+-- Note! Must use hash index as the sReport strings are too long for regular indexing.
+CREATE INDEX TestBoxStrTabNameIdx ON TestBoxStrTab USING hash (sValue);
+
+--- Empty string with ID 0.
+INSERT INTO TestBoxStrTab (idStr, sValue) VALUES (0, '');
+
+
 --- @type TestBoxCmd_T
 -- Testbox commands.
 CREATE TYPE TestBoxCmd_T AS ENUM (
@@ -762,7 +814,7 @@ CREATE TABLE TestBoxes (
     sName               text        NOT NULL,
     --- Optional testbox description.
     -- Intended for describing the box as well as making other relevant notes.
-    sDescription        text        DEFAULT NULL,
+    idStrDescription    INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
 
     --- Reference to the scheduling group that this testbox is a member of.
     -- Non-unique foreign key: SchedGroups(idSchedGroup)
@@ -785,18 +837,21 @@ CREATE TABLE TestBoxes (
     -- This is a crude adjustment of the test case timeout for slower hardware.
     pctScaleTimeout     smallint    DEFAULT 100  NOT NULL  CHECK (pctScaleTimeout > 10 AND pctScaleTimeout < 20000),
 
+    --- Change comment or similar.
+    idStrComment        INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
+
     --- @name Scheduling properties (reported by testbox script).
     -- @{
     --- Same abbrieviations as kBuild, see KBUILD_OSES.
-    sOs                 text        DEFAULT NULL,
+    idStrOs             INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
     --- Informational, no fixed format.
-    sOsVersion          text        DEFAULT NULL,
+    idStrOsVersion      INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
     --- Same as CPUID reports (GenuineIntel, AuthenticAMD, CentaurHauls, ...).
-    sCpuVendor          text        DEFAULT NULL,
+    idStrCpuVendor      INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
     --- Same as kBuild - x86, amd64, ... See KBUILD_ARCHES.
-    sCpuArch            text        DEFAULT NULL,
+    idStrCpuArch        INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
     --- The CPU name if available.
-    sCpuName            text        DEFAULT NULL,
+    idStrCpuName        INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
     --- Number identifying the CPU family/model/stepping/whatever.
     -- For x86 and AMD64 type CPUs, this will on the following format:
     --   (EffFamily << 24) | (EffModel << 8) | Stepping.
@@ -811,12 +866,14 @@ CREATE TABLE TestBoxes (
     fCpu64BitGuest      boolean     DEFAULT NULL,
     --- Set if chipset with usable IOMMU (VT-d / AMD-Vi).
     fChipsetIoMmu       boolean     DEFAULT NULL,
+    --- Set if the test box does raw-mode tests.
+    fRawMode            boolean     DEFAULT NULL,
     --- The (approximate) memory size in megabytes (rounded down to nearest 4 MB).
     cMbMemory           bigint      DEFAULT NULL  CHECK (cMbMemory IS NULL OR cMbMemory > 0),
     --- The amount of scratch space in megabytes (rounded down to nearest 64 MB).
     cMbScratch          bigint      DEFAULT NULL  CHECK (cMbScratch IS NULL OR cMbScratch >= 0),
     --- Free form hardware and software report field.
-    sReport             text        DEFAULT NULL,
+    idStrReport         INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
     --- @}
 
     --- The testbox script revision number, serves the purpose of a version number.
@@ -839,7 +896,28 @@ CREATE UNIQUE INDEX TestBoxesUuidIdx ON TestBoxes (uuidSystem, tsExpire DESC);
 CREATE INDEX TestBoxesExpireEffectiveIdx ON TestBoxes (tsExpire DESC, tsEffective ASC);
 
 
-
+--
+-- Create a view for TestBoxes where the strings are resolved.
+--
+CREATE VIEW TestBoxesWithStrings AS
+    SELECT  TestBoxes.*,
+            Str1.sValue AS sDescription,
+            Str2.sValue AS sComment,
+            Str3.sValue AS sOs,
+            Str4.sValue AS sOsVersion,
+            Str5.sValue AS sCpuVendor,
+            Str6.sValue AS sCpuArch,
+            Str7.sValue AS sCpuName,
+            Str8.sValue AS sReport
+    FROM    TestBoxes
+            LEFT OUTER JOIN TestBoxStrTab Str1 ON idStrDescription = Str1.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str2 ON idStrComment     = Str2.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str3 ON idStrOs          = Str3.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str4 ON idStrOsVersion   = Str4.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str5 ON idStrCpuVendor   = Str5.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str6 ON idStrCpuArch     = Str6.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str7 ON idStrCpuName     = Str7.idStr
+            LEFT OUTER JOIN TestBoxStrTab Str8 ON idStrReport      = Str8.idStr;
 
 
 

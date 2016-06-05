@@ -723,47 +723,47 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             ' TestBoxes.sName DESC',
             '', '' ),
         ksResultsSortByTestBoxOsArch: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sOs, TestBoxes.sCpuArch',
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sOs, TestBoxesWithStrings.sCpuArch',
             '', ''  ),
         ksResultsSortByTestBoxOs: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sOs',
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sOs',
             '', ''  ),
         ksResultsSortByTestBoxOsVersion: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sOs, TestBoxes.sOsVersion DESC',
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sOs, TestBoxesWithStrings.sOsVersion DESC',
             '', ''  ),
         ksResultsSortByTestBoxArch: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sCpuArch',
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sCpuArch',
             '', ''  ),
         ksResultsSortByTestBoxCpuVendor: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sCpuVendor',
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sCpuVendor',
             '', ''  ),
         ksResultsSortByTestBoxCpuName: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sCpuVendor, TestBoxes.sCpuName',
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sCpuVendor, TestBoxesWithStrings.sCpuName',
             '', ''  ),
         ksResultsSortByTestBoxCpuRev: (
-            ', TestBoxes',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC',
-            ', TestBoxes.lCpuRevision',
-            ', TestBoxes.lCpuRevision' ),
+            ', TestBoxesWithStrings',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            ' TestBoxesWithStrings.sCpuVendor, TestBoxesWithStrings.lCpuRevision DESC',
+            ', TestBoxesWithStrings.lCpuRevision',
+            ', TestBoxesWithStrings.lCpuRevision' ),
         ksResultsSortByTestBoxCpuFeatures: (
             ', TestBoxes',
             ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
             ' TestBoxes.fCpuHwVirt DESC, TestBoxes.fCpuNestedPaging DESC, TestBoxes.fCpu64BitGuest DESC, TestBoxes.cCpus DESC',
-            ', TestBoxes.cCpus',
-            ', TestBoxes.cCpus' ),
+            '',
+            '' ),
         ksResultsSortByTestCaseName: (
             ', TestCases',
             ' AND TestSets.idGenTestCase = TestCases.idGenTestCase',
@@ -778,8 +778,14 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
     kdResultGroupingMap = {
         ksResultsGroupingTypeNone: (
-            # Grouping tables;                # Grouping field;          # Grouping where addition.  # Sort by overrides.
-            '',                                None,                      None,                      {},
+            # Grouping tables;
+            '',
+            # Grouping field;
+            None,
+            # Grouping where addition.
+            None,
+            # Sort by overrides.
+            {},
         ),
         ksResultsGroupingTypeTestGroup:  ('', 'TestSets.idTestGroup',     None,                      {},),
         ksResultsGroupingTypeTestBox:    ('', 'TestSets.idTestBox',       None,                      {},),
@@ -793,22 +799,42 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             { ksResultsSortByBuildRevision: ( '', None,  ' Builds.iRevision DESC' ), }
         ),
         ksResultsGroupingTypeSchedGroup: (
-            ', TestBoxes',
-            'TestBoxes.idSchedGroup',
-            ' AND TestSets.idGenTestBox = TestBoxes.idGenTestBox',
-            { ksResultsSortByTestBoxName:       ( '', None, ' TestBoxes.sName DESC', '', '' ),
-              ksResultsSortByTestBoxOsArch:     ( '', None, ' TestBoxes.sOs, TestBoxes.sCpuArch', '', '' ),
-              ksResultsSortByTestBoxOs:         ( '', None, ' TestBoxes.sOs', ''  ),
-              ksResultsSortByTestBoxOsVersion:  ( '', None, ' TestBoxes.sOs, TestBoxes.sOsVersion DESC', '', '' ),
-              ksResultsSortByTestBoxArch:       ( '', None, ' TestBoxes.sCpuArch', ''  ),
-              ksResultsSortByTestBoxCpuVendor:  ( '', None, ' TestBoxes.sCpuVendor', ''  ),
-              ksResultsSortByTestBoxCpuName:    ( '', None, ' TestBoxes.sCpuVendor, TestBoxes.sCpuName', '', '' ),
+            ', TestBoxesWithStrings',
+            'TestBoxesWithStrings.idSchedGroup',
+            ' AND TestSets.idGenTestBox = TestBoxesWithStrings.idGenTestBox',
+            {
+
+              ksResultsSortByTestBoxName: (
+                  # Sorting tables.
+                  '',
+                  # Sorting table join(s).
+                  None,
+                  # Start of ORDER BY statement.
+                  ' TestBoxesWithStrings.sName DESC',
+                  # Extra columns to fetch for the above ORDER BY to work in a SELECT DISTINCT statement.
+                  '',
+                  # Columns for the GROUP BY
+                  '' ),
+              ksResultsSortByTestBoxOsArch:     ( '', None, ' TestBoxesWithStrings.sOs, TestBoxesWithStrings.sCpuArch', '', '' ),
+              ksResultsSortByTestBoxOs:         ( '', None, ' TestBoxesWithStrings.sOs', '', ''  ),
+              ksResultsSortByTestBoxOsVersion:  ( '', None, ' TestBoxesWithStrings.sOs, TestBoxesWithStrings.sOsVersion DESC',
+                                                  '', '' ),
+              ksResultsSortByTestBoxArch:       ( '', None, ' TestBoxesWithStrings.sCpuArch', '', ''  ),
+              ksResultsSortByTestBoxCpuVendor:  ( '', None, ' TestBoxesWithStrings.sCpuVendor', '', ''  ),
+              ksResultsSortByTestBoxCpuName:    ( '', None, ' TestBoxesWithStrings.sCpuVendor, TestBoxesWithStrings.sCpuName',
+                                                  '', '' ),
               ksResultsSortByTestBoxCpuRev: (
-                  '', None,  ' TestBoxes.sCpuVendor, TestBoxes.lCpuRevision DESC', ', TestBoxes.lCpuRevision', '' ),
+                  '',
+                  None,
+                  ' TestBoxesWithStrings.sCpuVendor, TestBoxesWithStrings.lCpuRevision DESC',
+                  ', TestBoxesWithStrings.lCpuRevision',
+                  ', TestBoxesWithStrings.lCpuRevision' ),
               ksResultsSortByTestBoxCpuFeatures: (
-                  ' TestBoxes.fCpuHwVirt DESC, TestBoxes.fCpuNestedPaging DESC, TestBoxes.fCpu64BitGuest DESC, '
-                  + 'TestBoxes.cCpus DESC',
-                  ', TestBoxes.cCpus',
+                  '',
+                  None,
+                  ' TestBoxesWithStrings.fCpuHwVirt DESC, TestBoxesWithStrings.fCpuNestedPaging DESC, '
+                  +'TestBoxesWithStrings.fCpu64BitGuest DESC, TestBoxesWithStrings.cCpus DESC',
+                  '',
                   '' ), }
         ),
     };
@@ -883,17 +909,17 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       Builds.idBuild,\n' \
                   '       Builds.sVersion,\n' \
                   '       Builds.iRevision,\n' \
-                  '       TestBoxes.sOs,\n' \
-                  '       TestBoxes.sOsVersion,\n' \
-                  '       TestBoxes.sCpuArch,\n' \
-                  '       TestBoxes.sCpuVendor,\n' \
-                  '       TestBoxes.sCpuName,\n' \
-                  '       TestBoxes.cCpus,\n' \
-                  '       TestBoxes.fCpuHwVirt,\n' \
-                  '       TestBoxes.fCpuNestedPaging,\n' \
-                  '       TestBoxes.fCpu64BitGuest,\n' \
-                  '       TestBoxes.idTestBox,\n' \
-                  '       TestBoxes.sName,\n' \
+                  '       TestBoxesWithStrings.sOs,\n' \
+                  '       TestBoxesWithStrings.sOsVersion,\n' \
+                  '       TestBoxesWithStrings.sCpuArch,\n' \
+                  '       TestBoxesWithStrings.sCpuVendor,\n' \
+                  '       TestBoxesWithStrings.sCpuName,\n' \
+                  '       TestBoxesWithStrings.cCpus,\n' \
+                  '       TestBoxesWithStrings.fCpuHwVirt,\n' \
+                  '       TestBoxesWithStrings.fCpuNestedPaging,\n' \
+                  '       TestBoxesWithStrings.fCpu64BitGuest,\n' \
+                  '       TestBoxesWithStrings.idTestBox,\n' \
+                  '       TestBoxesWithStrings.sName,\n' \
                   '       TestResults.tsCreated,\n' \
                   '       COALESCE(TestResults.tsElapsed, CURRENT_TIMESTAMP - TestResults.tsCreated) AS tsElapsedTestResult,\n' \
                   '       TestSets.enmStatus,\n' \
@@ -912,7 +938,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       (TestSets.tsDone IS NULL) SortRunningFirst' + sSortColumns + '\n' \
                   'FROM   BuildCategories,\n' \
                   '       Builds,\n' \
-                  '       TestBoxes,\n' \
+                  '       TestBoxesWithStrings,\n' \
                   '       TestResults,\n' \
                   '       TestCases,\n' \
                   '       TestCaseArgs,\n' \
@@ -969,7 +995,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '   AND Builds.tsExpire            > TestSets.tsCreated\n' \
                   '   AND Builds.tsEffective        <= TestSets.tsCreated\n' \
                   '   AND Builds.idBuildCategory     = BuildCategories.idBuildCategory\n' \
-                  '   AND TestSets.idGenTestBox      = TestBoxes.idGenTestBox\n' \
+                  '   AND TestSets.idGenTestBox      = TestBoxesWithStrings.idGenTestBox\n' \
                   '   AND TestSets.idGenTestCase     = TestCases.idGenTestCase\n' \
                   '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n';
         sQuery += 'GROUP BY TestSets.idTestSet,\n' \
@@ -981,17 +1007,17 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '         Builds.idBuild,\n' \
                   '         Builds.sVersion,\n' \
                   '         Builds.iRevision,\n' \
-                  '         TestBoxes.sOs,\n' \
-                  '         TestBoxes.sOsVersion,\n' \
-                  '         TestBoxes.sCpuArch,\n' \
-                  '         TestBoxes.sCpuVendor,\n' \
-                  '         TestBoxes.sCpuName,\n' \
-                  '         TestBoxes.cCpus,\n' \
-                  '         TestBoxes.fCpuHwVirt,\n' \
-                  '         TestBoxes.fCpuNestedPaging,\n' \
-                  '         TestBoxes.fCpu64BitGuest,\n' \
-                  '         TestBoxes.idTestBox,\n' \
-                  '         TestBoxes.sName,\n' \
+                  '         TestBoxesWithStrings.sOs,\n' \
+                  '         TestBoxesWithStrings.sOsVersion,\n' \
+                  '         TestBoxesWithStrings.sCpuArch,\n' \
+                  '         TestBoxesWithStrings.sCpuVendor,\n' \
+                  '         TestBoxesWithStrings.sCpuName,\n' \
+                  '         TestBoxesWithStrings.cCpus,\n' \
+                  '         TestBoxesWithStrings.fCpuHwVirt,\n' \
+                  '         TestBoxesWithStrings.fCpuNestedPaging,\n' \
+                  '         TestBoxesWithStrings.fCpu64BitGuest,\n' \
+                  '         TestBoxesWithStrings.idTestBox,\n' \
+                  '         TestBoxesWithStrings.sName,\n' \
                   '         TestResults.tsCreated,\n' \
                   '         tsElapsedTestResult,\n' \
                   '         TestSets.enmStatus,\n' \
@@ -1006,7 +1032,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '         SortRunningFirst' + sSortGroupBy + '\n';
         sQuery += 'ORDER BY ';
         if sSortOrderBy is not None:
-            sQuery += sSortOrderBy + ',\n       ';
+            sQuery += sSortOrderBy.replace('TestBoxes.', 'TestBoxesWithStrings.') + ',\n       ';
         sQuery += '(TestSets.tsDone IS NULL) DESC, TestSets.idTestSet DESC\n';
 
         #
@@ -1153,16 +1179,16 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         found in all test results.
         """
 
-        self._oDb.execute('SELECT TestBoxes.*\n'
-                          'FROM   TestBoxes,\n'
+        self._oDb.execute('SELECT TestBoxesWithStrings.*\n'
+                          'FROM   TestBoxesWithStrings,\n'
                           '       ( SELECT idTestBox         AS idTestBox,\n'
                           '                MAX(idGenTestBox) AS idGenTestBox\n'
                           '         FROM   TestSets\n'
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           '         GROUP BY idTestBox\n'
                           '       ) AS TestBoxIDs\n'
-                          'WHERE  TestBoxes.idGenTestBox = TestBoxIDs.idGenTestBox\n'
-                          'ORDER BY TestBoxes.sName\n' );
+                          'WHERE  TestBoxesWithStrings.idGenTestBox = TestBoxIDs.idGenTestBox\n'
+                          'ORDER BY TestBoxesWithStrings.sName\n' );
         aoRet = []
         for aoRow in self._oDb.fetchAll():
             aoRet.append(TestBoxData().initFromDbRow(aoRow));

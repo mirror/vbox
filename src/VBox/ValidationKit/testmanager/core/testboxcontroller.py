@@ -362,6 +362,7 @@ class TestBoxController(object): # pylint: disable=R0903
         fCpuNestedPaging    = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_HAS_NESTED_PAGING);
         fCpu64BitGuest      = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_HAS_64_BIT_GUEST, fDefValue = True);
         fChipsetIoMmu       = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_HAS_IOMMU);
+        fRawMode            = self._getBoolParam(  constants.tbreq.SIGNON_PARAM_WITH_RAW_MODE, fDefValue = None);
         cMbMemory           = self._getLongParam(  constants.tbreq.SIGNON_PARAM_MEM_SIZE,     8, 1073741823); # 8MB..1PB
         cMbScratch          = self._getLongParam(  constants.tbreq.SIGNON_PARAM_SCRATCH_SIZE, 0, 1073741823); # 0..1PB
         sReport             = self._getStringParam(constants.tbreq.SIGNON_PARAM_REPORT, fStrip = True, sDefValue = '');   # new
@@ -394,7 +395,7 @@ class TestBoxController(object): # pylint: disable=R0903
         #
         # Update the row in TestBoxes if something changed.
         #
-        if oTestBox.cMbScratch != 0:
+        if oTestBox.cMbScratch is not None and oTestBox.cMbScratch != 0:
             cPctScratchDiff = (cMbScratch - oTestBox.cMbScratch) * 100 / oTestBox.cMbScratch;
         else:
             cPctScratchDiff = 100;
@@ -412,6 +413,7 @@ class TestBoxController(object): # pylint: disable=R0903
           or fCpuNestedPaging   != oTestBox.fCpuNestedPaging \
           or fCpu64BitGuest     != oTestBox.fCpu64BitGuest \
           or fChipsetIoMmu      != oTestBox.fChipsetIoMmu \
+          or fRawMode           != oTestBox.fRawMode \
           or cMbMemory          != oTestBox.cMbMemory \
           or abs(cPctScratchDiff) >= min(4 + cMbScratch / 10240, 12) \
           or sReport            != oTestBox.sReport \
@@ -431,6 +433,7 @@ class TestBoxController(object): # pylint: disable=R0903
                                          fCpuNestedPaging  = fCpuNestedPaging,
                                          fCpu64BitGuest    = fCpu64BitGuest,
                                          fChipsetIoMmu     = fChipsetIoMmu,
+                                         fRawMode          = fRawMode,
                                          cMbMemory         = cMbMemory,
                                          cMbScratch        = cMbScratch,
                                          sReport           = sReport,

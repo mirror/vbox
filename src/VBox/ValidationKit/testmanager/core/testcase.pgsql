@@ -206,6 +206,7 @@ CREATE OR REPLACE FUNCTION TestCaseLogic_delEntry(a_uidAuthor INTEGER, a_idTestC
             PERFORM TestCaseLogic_historizeEntry(a_idTestCase, v_tsEffective);
             v_Row.tsEffective   := v_tsEffective;
             v_Row.tsExpire      := CURRENT_TIMESTAMP;
+            v_Row.uidAuthor     := a_uidAuthor;
             SELECT NEXTVAL('TestCaseGenIdSeq') INTO v_Row.idGenTestCase;
             INSERT INTO TestCases VALUES (v_Row.*);
         ELSE

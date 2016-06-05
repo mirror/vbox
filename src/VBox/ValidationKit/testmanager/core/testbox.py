@@ -33,8 +33,9 @@ __version__ = "$Revision$"
 import unittest;
 
 # Validation Kit imports.
-from testmanager.core.base  import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase, TMInFligthCollision, \
-                                   TMInvalidData, TMTooManyRows, TMRowNotFound, ChangeLogEntry, AttributeChangeEntry;
+from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMInFligthCollision, \
+                                           TMInvalidData, TMTooManyRows, TMRowNotFound, ChangeLogEntry, AttributeChangeEntry;
+from testmanager.core.useraccount   import UserAccountLogic;
 
 
 # pylint: disable=C0103
@@ -95,6 +96,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
     ksParam_enmLomKind          = 'TestBox_enmLomKind';
     ksParam_ipLom               = 'TestBox_ipLom';
     ksParam_pctScaleTimeout     = 'TestBox_pctScaleTimeout';
+    ksParam_sComment            = 'TestBox_sComment';
     ksParam_sOs                 = 'TestBox_sOs';
     ksParam_sOsVersion          = 'TestBox_sOsVersion';
     ksParam_sCpuVendor          = 'TestBox_sCpuVendor';
@@ -106,6 +108,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
     ksParam_fCpuNestedPaging    = 'TestBox_fCpuNestedPaging';
     ksParam_fCpu64BitGuest      = 'TestBox_fCpu64BitGuest';
     ksParam_fChipsetIoMmu       = 'TestBox_fChipsetIoMmu';
+    ksParam_fRawMode            = 'TestBox_fRawMode';
     ksParam_cMbMemory           = 'TestBox_cMbMemory';
     ksParam_cMbScratch          = 'TestBox_cMbScratch';
     ksParam_sReport             = 'TestBox_sReport';
@@ -113,16 +116,22 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
     ksParam_iPythonHexVersion   = 'TestBox_iPythonHexVersion';
     ksParam_enmPendingCmd       = 'TestBox_enmPendingCmd';
 
+    kasInternalAttributes       = [ 'idStrDescription', 'idStrComment', 'idStrOs', 'idStrOsVersion', 'idStrCpuVendor',
+                                    'idStrCpuArch', 'idStrCpuName', 'idStrReport', ];
     kasAllowNullAttributes      = ['idTestBox', 'tsEffective', 'tsExpire', 'uidAuthor', 'idGenTestBox', 'sDescription',
-                                   'ipLom', 'sOs', 'sOsVersion', 'sCpuVendor', 'sCpuArch', 'sCpuName', 'lCpuRevision', 'cCpus',
-                                   'fCpuHwVirt', 'fCpuNestedPaging', 'fCpu64BitGuest', 'fChipsetIoMmu', 'cMbMemory',
-                                   'cMbScratch', 'sReport', 'iTestBoxScriptRev', 'iPythonHexVersion' ];
+                                   'ipLom', 'sComment', 'sOs', 'sOsVersion', 'sCpuVendor', 'sCpuArch', 'sCpuName',
+                                   'lCpuRevision', 'cCpus', 'fCpuHwVirt', 'fCpuNestedPaging', 'fCpu64BitGuest', 'fChipsetIoMmu',
+                                   'fRawMode', 'cMbMemory', 'cMbScratch', 'sReport', 'iTestBoxScriptRev', 'iPythonHexVersion',
+                                  ] + kasInternalAttributes;
+
     kasValidValues_enmLomKind   = kasLomKindValues;
     kasValidValues_enmPendingCmd = kasTestBoxCmdValues;
     kiMin_pctScaleTimeout       =    11;
     kiMax_pctScaleTimeout       = 19999;
     kcchMax_sReport             = 65535;
 
+
+    kcDbColumns                 = 41; # including the 7 string joins columns
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -139,36 +148,47 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         self.ip                  = None;
         self.uuidSystem          = None;
         self.sName               = None;
-        self.sDescription        = None;
+        self.idStrDescription    = None;
         self.idSchedGroup        = 1;
         self.fEnabled            = False;
         self.enmLomKind          = self.ksLomKind_None;
         self.ipLom               = None;
         self.pctScaleTimeout     = 100;
-        self.sOs                 = None;
-        self.sOsVersion          = None;
-        self.sCpuVendor          = None;
-        self.sCpuArch            = None;
-        self.sCpuName            = None;
+        self.idStrComment        = None;
+        self.idStrOs             = None;
+        self.idStrOsVersion      = None;
+        self.idStrCpuVendor      = None;
+        self.idStrCpuArch        = None;
+        self.idStrCpuName        = None;
         self.lCpuRevision        = None;
         self.cCpus               = 1;
         self.fCpuHwVirt          = False;
         self.fCpuNestedPaging    = False;
         self.fCpu64BitGuest      = False;
         self.fChipsetIoMmu       = False;
+        self.fRawMode            = None;
         self.cMbMemory           = 1;
         self.cMbScratch          = 0;
-        self.sReport             = None;
+        self.idStrReport         = None;
         self.iTestBoxScriptRev   = 0;
         self.iPythonHexVersion   = 0;
         self.enmPendingCmd       = self.ksTestBoxCmd_None;
+        # String table values.
+        self.sDescription        = None;
+        self.sComment            = None;
+        self.sOs                 = None;
+        self.sOsVersion          = None;
+        self.sCpuVendor          = None;
+        self.sCpuArch            = None;
+        self.sCpuName            = None;
+        self.sReport             = None;
 
     def initFromDbRow(self, aoRow):
         """
         Internal worker for initFromDbWithId and initFromDbWithGenId as well as
-        from TestBoxLogic.  Expecting a SELECT * FROM TestBoxes result.
+        from TestBoxLogic.  Expecting the result from a query like this:
+            SELECT TestBoxesWithStrings.* FROM TestBoxesWithStrings
         """
-
         if aoRow is None:
             raise TMRowNotFound('TestBox not found.');
 
@@ -180,29 +200,43 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         self.ip                  = aoRow[5];
         self.uuidSystem          = aoRow[6];
         self.sName               = aoRow[7];
-        self.sDescription        = aoRow[8];
+        self.idStrDescription    = aoRow[8];
         self.idSchedGroup        = aoRow[9];
         self.fEnabled            = aoRow[10];
         self.enmLomKind          = aoRow[11];
         self.ipLom               = aoRow[12];
         self.pctScaleTimeout     = aoRow[13];
-        self.sOs                 = aoRow[14];
-        self.sOsVersion          = aoRow[15];
-        self.sCpuVendor          = aoRow[16];
-        self.sCpuArch            = aoRow[17];
-        self.sCpuName            = aoRow[18];
-        self.lCpuRevision        = aoRow[19];
-        self.cCpus               = aoRow[20];
-        self.fCpuHwVirt          = aoRow[21];
-        self.fCpuNestedPaging    = aoRow[22];
-        self.fCpu64BitGuest      = aoRow[23];
-        self.fChipsetIoMmu       = aoRow[24];
-        self.cMbMemory           = aoRow[25];
-        self.cMbScratch          = aoRow[26];
-        self.sReport             = aoRow[27];
-        self.iTestBoxScriptRev   = aoRow[28];
-        self.iPythonHexVersion   = aoRow[29];
-        self.enmPendingCmd       = aoRow[30];
+        self.idStrComment        = aoRow[14];
+        self.idStrOs             = aoRow[15];
+        self.idStrOsVersion      = aoRow[16];
+        self.idStrCpuVendor      = aoRow[17];
+        self.idStrCpuArch        = aoRow[18];
+        self.idStrCpuName        = aoRow[19];
+        self.lCpuRevision        = aoRow[20];
+        self.cCpus               = aoRow[21];
+        self.fCpuHwVirt          = aoRow[22];
+        self.fCpuNestedPaging    = aoRow[23];
+        self.fCpu64BitGuest      = aoRow[24];
+        self.fChipsetIoMmu       = aoRow[25];
+        self.fRawMode            = aoRow[26];
+        self.cMbMemory           = aoRow[27];
+        self.cMbScratch          = aoRow[28];
+        self.idStrReport         = aoRow[29];
+        self.iTestBoxScriptRev   = aoRow[30];
+        self.iPythonHexVersion   = aoRow[31];
+        self.enmPendingCmd       = aoRow[32];
+
+        # String table values.
+        if len(aoRow) > 32:
+            self.sDescription    = aoRow[33];
+            self.sComment        = aoRow[34];
+            self.sOs             = aoRow[35];
+            self.sOsVersion      = aoRow[36];
+            self.sCpuVendor      = aoRow[37];
+            self.sCpuArch        = aoRow[38];
+            self.sCpuName        = aoRow[39];
+            self.sReport         = aoRow[40];
+
         return self;
 
     def initFromDbWithId(self, oDb, idTestBox, tsNow = None, sPeriodBack = None):
@@ -210,8 +244,8 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         Initialize the object from the database.
         """
         oDb.execute(self.formatSimpleNowAndPeriodQuery(oDb,
-                                                       'SELECT *\n'
-                                                       'FROM   TestBoxes\n'
+                                                       'SELECT TestBoxesWithStrings.*\n'
+                                                       'FROM   TestBoxesWithStrings\n'
                                                        'WHERE  idTestBox    = %s\n'
                                                        , ( idTestBox, ), tsNow, sPeriodBack));
         aoRow = oDb.fetchOne()
@@ -223,8 +257,8 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         """
         Initialize the object from the database.
         """
-        oDb.execute('SELECT *\n'
-                    'FROM   TestBoxes\n'
+        oDb.execute('SELECT TestBoxesWithStrings.*\n'
+                    'FROM   TestBoxesWithStrings\n'
                     'WHERE  idGenTestBox = %s\n'
                     , (idGenTestBox, ) );
         return self.initFromDbRow(oDb.fetchOne());
@@ -424,10 +458,10 @@ class TestBoxLogic(ModelLogicBase):
         """
         Tries to fetch a testbox by its UUID alone.
         """
-        self._oDb.execute('SELECT   *\n'
-                          'FROM     TestBoxes\n'
+        self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
+                          'FROM     TestBoxesWithStrings\n'
                           'WHERE    uuidSystem = %s\n'
-                          '     AND tsExpire = \'infinity\'::timestamp\n'
+                          '     AND tsExpire   = \'infinity\'::timestamp\n'
                           'ORDER BY tsEffective DESC\n',
                           (sTestBoxUuid,));
         if self._oDb.getRowCount() == 0:
@@ -442,42 +476,50 @@ class TestBoxLogic(ModelLogicBase):
         """
         Fetches testboxes for listing.
 
-        Returns an array (list) of TestBoxData items, empty list if none. The
-        TestBoxData instances have an extra oStatus member that is either None or
-        a TestBoxStatusData instance, and a member tsCurrent holding
-        CURRENT_TIMESTAMP.
+        Returns an array (list) of TestBoxDataForListing items, empty list if none.
+        The TestBoxDataForListing instances are just TestBoxData with two extra
+        members, an extra oStatus member that is either None or a TestBoxStatusData
+        instance, and a member tsCurrent holding CURRENT_TIMESTAMP.
 
         Raises exception on error.
         """
+        class TestBoxDataForListing(TestBoxData):
+            """ We add two members for the listing. """
+            def __init__(self):
+                TestBoxData.__init__(self);
+                self.tsCurrent = None;  # CURRENT_TIMESTAMP
+                self.oStatus   = None;  # TestBoxStatusData
+
         from testmanager.core.testboxstatus import TestBoxStatusData;
 
         if tsNow is None:
-            self._oDb.execute('SELECT   TestBoxes.*, TestBoxStatuses.*\n'
-                              'FROM     TestBoxes\n'
-                              'LEFT OUTER JOIN TestBoxStatuses ON (\n'
-                              '         TestBoxStatuses.idTestBox = TestBoxes.idTestBox )\n'
-                              'WHERE    tsExpire = \'infinity\'::TIMESTAMP\n'
-                              'ORDER BY sName\n'
+            self._oDb.execute('SELECT   TestBoxesWithStrings.*,\n'
+                              '         TestBoxStatuses.*\n'
+                              'FROM     TestBoxesWithStrings\n'
+                              '         LEFT OUTER JOIN TestBoxStatuses\n'
+                              '                      ON TestBoxStatuses.idTestBox = TestBoxesWithStrings.idTestBox\n'
+                              'WHERE    TestBoxesWithStrings.tsExpire = \'infinity\'::TIMESTAMP\n'
+                              'ORDER BY TestBoxesWithStrings.sName\n'
                               'LIMIT %s OFFSET %s\n'
                               , (cMaxRows, iStart,));
         else:
-            self._oDb.execute('SELECT   TestBoxes.*, TestBoxStatuses.*\n'
-                              'FROM     TestBoxes\n'
-                              'LEFT OUTER JOIN TestBoxStatuses ON (\n'
-                              '         TestBoxStatuses.idTestBox = TestBoxes.idTestBox )\n'
+            self._oDb.execute('SELECT   TestBoxesWithStrings.*,\n'
+                              '         TestBoxStatuses.*\n'
+                              'FROM     TestBoxesWithStrings\n'
+                              '         LEFT OUTER JOIN TestBoxStatuses\n'
+                              '                      ON TestBoxStatuses.idTestBox = TestBoxesWithStrings.idTestBox\n'
                               'WHERE    tsExpire     > %s\n'
                               '     AND tsEffective <= %s\n'
-                              'ORDER BY sName\n'
+                              'ORDER BY TestBoxesWithStrings.sName\n'
                               'LIMIT %s OFFSET %s\n'
-                              , (tsNow, tsNow, cMaxRows, iStart,));
+                              , ( tsNow, tsNow, cMaxRows, iStart,));
 
         aoRows = [];
         for aoOne in self._oDb.fetchAll():
-            oTestBox = TestBoxData().initFromDbRow(aoOne);
-            oTestBox.tsCurrent = self._oDb.getCurrentTimestamp();                  # pylint: disable=W0201
-            oTestBox.oStatus   = None;                                             # pylint: disable=W0201
-            if aoOne[31] is not None:
-                oTestBox.oStatus = TestBoxStatusData().initFromDbRow(aoOne[31:]);  # pylint: disable=W0201
+            oTestBox = TestBoxDataForListing().initFromDbRow(aoOne);
+            oTestBox.tsCurrent = self._oDb.getCurrentTimestamp();
+            if aoOne[TestBoxData.kcDbColumns] is not None:
+                oTestBox.oStatus = TestBoxStatusData().initFromDbRow(aoOne[TestBoxData.kcDbColumns:]);
             aoRows.append(oTestBox);
         return aoRows;
 
@@ -493,43 +535,40 @@ class TestBoxLogic(ModelLogicBase):
         if tsNow is None:
             tsNow = self._oDb.getCurrentTimestamp();
 
-        self._oDb.execute('SELECT   TestBoxes.*, Users.sUsername\n'
-                          'FROM     TestBoxes\n'
-                          'LEFT OUTER JOIN Users \n'
-                          '     ON (    TestBoxes.uidAuthor = Users.uid\n'
-                          '         AND Users.tsEffective <= TestBoxes.tsEffective\n'
-                          '         AND Users.tsExpire    >  TestBoxes.tsEffective)\n'
-                          'WHERE    TestBoxes.tsEffective <= %s\n'
-                          '     AND TestBoxes.idTestBox = %s\n'
-                          'ORDER BY TestBoxes.tsExpire DESC\n'
+        self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
+                          'FROM     TestBoxesWithStrings\n'
+                          'WHERE    TestBoxesWithStrings.tsEffective <= %s\n'
+                          '     AND TestBoxesWithStrings.idTestBox    = %s\n'
+                          'ORDER BY TestBoxesWithStrings.tsExpire DESC\n'
                           'LIMIT %s OFFSET %s\n'
                           , (tsNow, idTestBox, cMaxRows + 1, iStart,));
 
         aoRows = [];
-        for _ in range(self._oDb.getRowCount()):
-            oRow = self._oDb.fetchOne();
-            aoRows.append([TestBoxData().initFromDbRow(oRow), oRow[-1],]);
+        for aoDbRow in self._oDb.fetchAll():
+            aoRows.append(TestBoxData().initFromDbRow(aoDbRow));
 
         # Calculate the changes.
         aoEntries = [];
-        for i in range(0, len(aoRows) - 1):
-            (oNew, sAuthor) = aoRows[i];
-            (oOld, _      ) = aoRows[i + 1];
+        for i in xrange(0, len(aoRows) - 1):
+            oNew      = aoRows[i];
+            oOld      = aoRows[i + 1];
             aoChanges = [];
             for sAttr in oNew.getDataAttributes():
-                if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor']:
+                if sAttr not in [ 'tsEffective', 'tsExpire', 'uidAuthor', ]:
                     oOldAttr = getattr(oOld, sAttr);
                     oNewAttr = getattr(oNew, sAttr);
                     if oOldAttr != oNewAttr:
                         aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
-            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, sAuthor, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
+            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
 
         # If we're at the end of the log, add the initial entry.
         if len(aoRows) <= cMaxRows and len(aoRows) > 0:
-            (oNew, sAuthor) = aoRows[-1];
-            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, aoRows[-1][1], oNew.tsEffective, oNew.tsExpire, oNew, None, []));
+            oNew = aoRows[-1];
+            aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, None, []));
 
+        UserAccountLogic(self._oDb).resolveChangeLogAuthors(aoEntries);
         return (aoEntries, len(aoRows) > cMaxRows);
+
 
     def addEntry(self, oData, uidAuthor, fCommit = False):
         """
@@ -541,105 +580,23 @@ class TestBoxLogic(ModelLogicBase):
         if len(dDataErrors) > 0:
             raise TMInvalidData('Invalid data passed to create(): %s' % (dDataErrors,));
 
-        self._oDb.execute('INSERT INTO TestBoxes (\n'
-                          '         idTestBox,\n'
-                          '         tsEffective,\n'
-                          '         tsExpire,\n'
-                          '         uidAuthor,\n'
-                          '         idGenTestBox,\n'
-                          '         ip,\n'
-                          '         uuidSystem,\n'
-                          '         sName,\n'
-                          '         sDescription,\n'
-                          '         idSchedGroup,\n'
-                          '         fEnabled,\n'
-                          '         enmLomKind,\n'
-                          '         ipLom,\n'
-                          '         pctScaleTimeout,\n'
-                          '         sOs,\n'
-                          '         sOsVersion,\n'
-                          '         sCpuVendor,\n'
-                          '         sCpuArch,\n'
-                          '         sCpuName,\n'
-                          '         lCpuRevision,\n'
-                          '         cCpus,\n'
-                          '         fCpuHwVirt,\n'
-                          '         fCpuNestedPaging,\n'
-                          '         fCpu64BitGuest,\n'
-                          '         fChipsetIoMmu,\n'
-                          '         cMbMemory,\n'
-                          '         cMbScratch,\n'
-                          '         sReport,\n'
-                          '         iTestBoxScriptRev,\n'
-                          '         iPythonHexVersion,\n'
-                          '         enmPendingCmd\n'
-                          '         )'
-                          'VALUES (\n'
-                          '         DEFAULT,\n'
-                          '         CURRENT_TIMESTAMP,\n'
-                          '         DEFAULT,\n'
-                          '         %s,\n'          # uidAuthor
-                          '         DEFAULT,\n'
-                          '         %s,\n'          # ip
-                          '         %s,\n'          # uuidSystem
-                          '         %s,\n'          # sName
-                          '         %s,\n'          # sDescription
-                          '         %s,\n'          # idSchedGroup
-                          '         %s,\n'          # fEnabled
-                          '         %s,\n'          # enmLomKind
-                          '         %s,\n'          # ipLom
-                          '         %s,\n'          # pctScaleTimeout
-                          '         %s,\n'          # sOs
-                          '         %s,\n'          # sOsVersion
-                          '         %s,\n'          # sCpuVendor
-                          '         %s,\n'          # sCpuArch
-                          '         %s,\n'          # sCpuName
-                          '         %s,\n'          # lCpuRevision
-                          '         %s,\n'          # cCpus
-                          '         %s,\n'          # fCpuHwVirt
-                          '         %s,\n'          # fCpuNestedPaging
-                          '         %s,\n'          # fCpu64BitGuest
-                          '         %s,\n'          # fChipsetIoMmu
-                          '         %s,\n'          # cMbMemory
-                          '         %s,\n'          # cMbScratch
-                          '         %s,\n'          # sReport
-                          '         %s,\n'          # iTestBoxScriptRev
-                          '         %s,\n'          # iPythonHexVersion
-                          '         %s\n'           # enmPendingCmd
-                          '         )\n'
-                          'RETURNING idTestBox, idGenTestBox, tsEffective'
-                          , (uidAuthor,
-                             oData.ip,
-                             oData.uuidSystem,
-                             oData.sName,
-                             oData.sDescription,
-                             oData.idSchedGroup,
-                             oData.fEnabled,
-                             oData.enmLomKind,
-                             oData.ipLom,
-                             oData.pctScaleTimeout,
-                             oData.sOs,
-                             oData.sOsVersion,
-                             oData.sCpuVendor,
-                             oData.sCpuArch,
-                             oData.sCpuName,
-                             oData.lCpuRevision,
-                             oData.cCpus,
-                             oData.fCpuHwVirt,
-                             oData.fCpuNestedPaging,
-                             oData.fCpu64BitGuest,
-                             oData.fChipsetIoMmu,
-                             oData.cMbMemory,
-                             oData.cMbScratch,
-                             oData.sReport,
-                             oData.iTestBoxScriptRev,
-                             oData.iPythonHexVersion,
-                             oData.enmPendingCmd
-                             )
-                          );
-        oRow = self._oDb.fetchOne();
+        self._oDb.callProc('TestBoxLogic_addEntry'
+                           , ( uidAuthor,
+                               oData.ip,            # Should we allow setting the IP?
+                               oData.uuidSystem,
+                               oData.sName,
+                               oData.sDescription,
+                               oData.idSchedGroup,
+                               oData.fEnabled,
+                               oData.enmLomKind,
+                               oData.ipLom,
+                               oData.pctScaleTimeout,
+                               oData.sComment,
+                               oData.enmPendingCmd, ) );
+        aoRow = self._oDb.fetchOne();
         self._oDb.maybeCommit(fCommit);
-        return (oRow[0], oRow[1], oRow[2]);
+        return (aoRow[0], aoRow[1], aoRow[2]);
+
 
     def editEntry(self, oData, uidAuthor, fCommit = False):
         """
@@ -651,335 +608,77 @@ class TestBoxLogic(ModelLogicBase):
         if len(dDataErrors) > 0:
             raise TMInvalidData('Invalid data passed to create(): %s' % (dDataErrors,));
 
-        ## @todo check if the data changed.
+        self._oDb.callProc('TestBoxLogic_editEntry'
+                           , ( uidAuthor,
+                               oData.idTestBox,
+                               oData.ip,            # Should we allow setting the IP?
+                               oData.uuidSystem,
+                               oData.sName,
+                               oData.sDescription,
+                               oData.idSchedGroup,
+                               oData.fEnabled,
+                               oData.enmLomKind,
+                               oData.ipLom,
+                               oData.pctScaleTimeout,
+                               oData.sComment,
+                               oData.enmPendingCmd, ));
+        aoRow = self._oDb.fetchOne();
+        self._oDb.maybeCommit(fCommit);
+        return (aoRow[0], aoRow[1]);
 
-        self._oDb.execute('UPDATE ONLY TestBoxes\n'
-                          'SET      tsExpire = CURRENT_TIMESTAMP\n'
-                          'WHERE    idGenTestBox = %s\n'
-                          '     AND tsExpire = \'infinity\'::timestamp\n'
-                          'RETURNING tsExpire\n',
-                          (oData.idGenTestBox,));
-        try:
-            tsEffective = self._oDb.fetchOne()[0];
 
-            # Would be easier to do this using an insert or update hook, I think. Much easier.
+    def removeEntry(self, uidAuthor, idTestBox, fCascade = False, fCommit = False):
+        """
+        Delete user account
+        """
+        self._oDb.callProc('TestBoxLogic_removeEntry'
+                           , ( uidAuthor, idTestBox, fCascade,));
+        self._oDb.maybeCommit(fCommit);
+        return True;
 
-            ##
-            ## @todo The table is growing too fast.  Rows are too long.  Mixing data from here and there.  Split it and
-            ##       rethink storage and update strategy!
-            ##
-
-            self._oDb.execute('INSERT INTO TestBoxes (\n'
-                              '         idGenTestBox,\n'
-                              '         idTestBox,\n'
-                              '         tsEffective,\n'
-                              '         uidAuthor,\n'
-                              '         ip,\n'
-                              '         uuidSystem,\n'
-                              '         sName,\n'
-                              '         sDescription,\n'
-                              '         idSchedGroup,\n'
-                              '         fEnabled,\n'
-                              '         enmLomKind,\n'
-                              '         ipLom,\n'
-                              '         pctScaleTimeout,\n'
-                              '         sOs,\n'
-                              '         sOsVersion,\n'
-                              '         sCpuVendor,\n'
-                              '         sCpuArch,\n'
-                              '         sCpuName,\n'
-                              '         lCpuRevision,\n'
-                              '         cCpus,\n'
-                              '         fCpuHwVirt,\n'
-                              '         fCpuNestedPaging,\n'
-                              '         fCpu64BitGuest,\n'
-                              '         fChipsetIoMmu,\n'
-                              '         cMbMemory,\n'
-                              '         cMbScratch,\n'
-                              '         sReport,\n'
-                              '         iTestBoxScriptRev,\n'
-                              '         iPythonHexVersion,\n'
-                              '         enmPendingCmd\n'
-                              '         )\n'
-                              'SELECT   NEXTVAL(\'TestBoxGenIdSeq\'),\n'
-                              '         idTestBox,\n'
-                              '         %s,\n'          # tsEffective
-                              '         %s,\n'          # uidAuthor
-                              '         %s,\n'          # ip
-                              '         %s,\n'          # uuidSystem
-                              '         %s,\n'          # sName
-                              '         %s,\n'          # sDescription
-                              '         %s,\n'          # idSchedGroup
-                              '         %s,\n'          # fEnabled
-                              '         %s,\n'          # enmLomKind
-                              '         %s,\n'          # ipLom
-                              '         %s,\n'          # pctScaleTimeout
-                              '         sOs,\n'
-                              '         sOsVersion,\n'
-                              '         sCpuVendor,\n'
-                              '         sCpuArch,\n'
-                              '         sCpuName,\n'
-                              '         lCpuRevision,\n'
-                              '         cCpus,\n'
-                              '         fCpuHwVirt,\n'
-                              '         fCpuNestedPaging,\n'
-                              '         fCpu64BitGuest,\n'
-                              '         fChipsetIoMmu,\n'
-                              '         cMbMemory,\n'
-                              '         cMbScratch,\n'
-                              '         sReport,\n'
-                              '         iTestBoxScriptRev,\n'
-                              '         iPythonHexVersion,\n'
-                              '         %s\n'           # enmPendingCmd
-                              'FROM     TestBoxes\n'
-                              'WHERE    idGenTestBox = %s\n'
-                              'RETURNING idGenTestBox, tsEffective'
-                              , (tsEffective,
-                                 uidAuthor,
-                                 oData.ip,
-                                 oData.uuidSystem,
-                                 oData.sName,
-                                 oData.sDescription,
-                                 oData.idSchedGroup,
-                                 oData.fEnabled,
-                                 oData.enmLomKind,
-                                 oData.ipLom,
-                                 oData.pctScaleTimeout,
-                                 oData.enmPendingCmd,
-                                 oData.idGenTestBox,
-                              ));
-            aRow = self._oDb.fetchOne();
-            if aRow is None:
-                raise TMExceptionBase('Insert failed? oRow=None');
-            idGenTestBox = aRow[0];
-            tsEffective  = aRow[1];
-            self._oDb.maybeCommit(fCommit);
-        except:
-            self._oDb.rollback();
-            raise;
-
-        return (idGenTestBox, tsEffective);
 
     def updateOnSignOn(self, idTestBox, idGenTestBox, sTestBoxAddr, sOs, sOsVersion, # pylint: disable=R0913,R0914
                        sCpuVendor, sCpuArch, sCpuName, lCpuRevision, cCpus, fCpuHwVirt, fCpuNestedPaging, fCpu64BitGuest,
-                       fChipsetIoMmu, cMbMemory, cMbScratch, sReport, iTestBoxScriptRev, iPythonHexVersion):
+                       fChipsetIoMmu, fRawMode, cMbMemory, cMbScratch, sReport, iTestBoxScriptRev, iPythonHexVersion):
         """
         Update the testbox attributes automatically on behalf of the testbox script.
         Returns the new generation id on success, raises an exception on failure.
         """
-        try:
-            # Would be easier to do this using an insert or update hook, I think. Much easier.
-            self._oDb.execute('UPDATE ONLY TestBoxes\n'
-                              'SET      tsExpire = CURRENT_TIMESTAMP\n'
-                              'WHERE    idGenTestBox = %s\n'
-                              '     AND tsExpire = \'infinity\'::timestamp\n'
-                              'RETURNING tsExpire\n',
-                              (idGenTestBox,));
-            tsEffective = self._oDb.fetchOne()[0];
+        _ = idGenTestBox;
+        self._oDb.callProc('TestBoxLogic_updateOnSignOn'
+                           , ( idTestBox,
+                               sTestBoxAddr,
+                               sOs,
+                               sOsVersion,
+                               sCpuVendor,
+                               sCpuArch,
+                               sCpuName,
+                               lCpuRevision,
+                               cCpus,
+                               fCpuHwVirt,
+                               fCpuNestedPaging,
+                               fCpu64BitGuest,
+                               fChipsetIoMmu,
+                               fRawMode,
+                               cMbMemory,
+                               cMbScratch,
+                               sReport,
+                               iTestBoxScriptRev,
+                               iPythonHexVersion,));
+        return self._oDb.fetchOne()[0];
 
-            self._oDb.execute('INSERT INTO TestBoxes (\n'
-                              '         idGenTestBox,\n'
-                              '         idTestBox,\n'
-                              '         tsEffective,\n'
-                              '         uidAuthor,\n'
-                              '         ip,\n'
-                              '         uuidSystem,\n'
-                              '         sName,\n'
-                              '         sDescription,\n'
-                              '         idSchedGroup,\n'
-                              '         fEnabled,\n'
-                              '         enmLomKind,\n'
-                              '         ipLom,\n'
-                              '         pctScaleTimeout,\n'
-                              '         sOs,\n'
-                              '         sOsVersion,\n'
-                              '         sCpuVendor,\n'
-                              '         sCpuArch,\n'
-                              '         sCpuName,\n'
-                              '         lCpuRevision,\n'
-                              '         cCpus,\n'
-                              '         fCpuHwVirt,\n'
-                              '         fCpuNestedPaging,\n'
-                              '         fCpu64BitGuest,\n'
-                              '         fChipsetIoMmu,\n'
-                              '         cMbMemory,\n'
-                              '         cMbScratch,\n'
-                              '         sReport,\n'
-                              '         iTestBoxScriptRev,\n'
-                              '         iPythonHexVersion,\n'
-                              '         enmPendingCmd\n'
-                              '         )\n'
-                              'SELECT   NEXTVAL(\'TestBoxGenIdSeq\'),\n'
-                              '         %s,\n'
-                              '         %s,\n'
-                              '         NULL,\n'            # uidAuthor
-                              '         %s,\n'
-                              '         uuidSystem,\n'
-                              '         sName,\n'
-                              '         sDescription,\n'
-                              '         idSchedGroup,\n'
-                              '         fEnabled,\n'
-                              '         enmLomKind,\n'
-                              '         ipLom,\n'
-                              '         pctScaleTimeout,\n'
-                              '         %s,\n'              # sOs
-                              '         %s,\n'              # sOsVersion
-                              '         %s,\n'              # sCpuVendor
-                              '         %s,\n'              # sCpuArch
-                              '         %s,\n'              # sCpuName
-                              '         %s,\n'              # lCpuRevision
-                              '         %s,\n'              # cCpus
-                              '         %s,\n'              # fCpuHwVirt
-                              '         %s,\n'              # fCpuNestedPaging
-                              '         %s,\n'              # fCpu64BitGuest
-                              '         %s,\n'              # fChipsetIoMmu
-                              '         %s,\n'              # cMbMemory
-                              '         %s,\n'              # cMbScratch
-                              '         %s,\n'              # sReport
-                              '         %s,\n'              # iTestBoxScriptRev
-                              '         %s,\n'              # iPythonHexVersion
-                              '         enmPendingCmd\n'
-                              'FROM     TestBoxes\n'
-                              'WHERE    idGenTestBox = %s\n'
-                              'RETURNING idGenTestBox'
-                              , (idTestBox,
-                                 tsEffective,
-                                 sTestBoxAddr,
-                                 sOs,
-                                 sOsVersion,
-                                 sCpuVendor,
-                                 sCpuArch,
-                                 sCpuName,
-                                 lCpuRevision,
-                                 cCpus,
-                                 fCpuHwVirt,
-                                 fCpuNestedPaging,
-                                 fCpu64BitGuest,
-                                 fChipsetIoMmu,
-                                 cMbMemory,
-                                 cMbScratch,
-                                 sReport,
-                                 iTestBoxScriptRev,
-                                 iPythonHexVersion,
-                                 idGenTestBox,
-                              ));
-            idGenTestBox = self._oDb.fetchOne()[0];
-            self._oDb.commit();
-        except:
-            self._oDb.rollback();
-            raise;
 
-        return idGenTestBox;
-
-    def setCommand(self, idTestBox, sOldCommand, sNewCommand, uidAuthor = None, fCommit = False, sComment = None,
-                   fNoRollbackOnInFlightCollision = False):
+    def setCommand(self, idTestBox, sOldCommand, sNewCommand, uidAuthor = None, fCommit = False, sComment = None):
         """
         Sets or resets the pending command on a testbox.
         Returns (idGenTestBox, tsEffective) of the new row.
         """
-        _ = sComment;
-        try:
-            # Would be easier to do this using an insert or update hook, I think. Much easier.
-            self._oDb.execute('UPDATE ONLY TestBoxes\n'
-                              'SET      tsExpire = CURRENT_TIMESTAMP\n'
-                              'WHERE    idTestBox = %s\n'
-                              '     AND tsExpire = \'infinity\'::timestamp\n'
-                              '     AND enmPendingCmd = %s\n'
-                              'RETURNING tsExpire\n',
-                              (idTestBox, sOldCommand,));
-            if self._oDb.getRowCount() == 0:
-                raise TMInFligthCollision();
-            tsEffective = self._oDb.fetchOne()[0];
-
-            self._oDb.execute('INSERT INTO TestBoxes (\n'
-                              '         idGenTestBox,\n'
-                              '         idTestBox,\n'
-                              '         tsEffective,\n'
-                              '         uidAuthor,\n'
-                              '         ip,\n'
-                              '         uuidSystem,\n'
-                              '         sName,\n'
-                              '         sDescription,\n'
-                              '         idSchedGroup,\n'
-                              '         fEnabled,\n'
-                              '         enmLomKind,\n'
-                              '         ipLom,\n'
-                              '         pctScaleTimeout,\n'
-                              '         sOs,\n'
-                              '         sOsVersion,\n'
-                              '         sCpuVendor,\n'
-                              '         sCpuArch,\n'
-                              '         sCpuName,\n'
-                              '         lCpuRevision,\n'
-                              '         cCpus,\n'
-                              '         fCpuHwVirt,\n'
-                              '         fCpuNestedPaging,\n'
-                              '         fCpu64BitGuest,\n'
-                              '         fChipsetIoMmu,\n'
-                              '         cMbMemory,\n'
-                              '         cMbScratch,\n'
-                              '         sReport,\n'
-                              '         iTestBoxScriptRev,\n'
-                              '         iPythonHexVersion,\n'
-                              '         enmPendingCmd\n'
-                              '         )\n'
-                              'SELECT   NEXTVAL(\'TestBoxGenIdSeq\'),\n'
-                              '         %s,\n'      # idTestBox
-                              '         %s,\n'      # tsEffective
-                              '         %s,\n'      # uidAuthor
-                              '         ip,\n'
-                              '         uuidSystem,\n'
-                              '         sName,\n'
-                              '         sDescription,\n'
-                              '         idSchedGroup,\n'
-                              '         fEnabled,\n'
-                              '         enmLomKind,\n'
-                              '         ipLom,\n'
-                              '         pctScaleTimeout,\n'
-                              '         sOs,\n'
-                              '         sOsVersion,\n'
-                              '         sCpuVendor,\n'
-                              '         sCpuArch,\n'
-                              '         sCpuName,\n'
-                              '         lCpuRevision,\n'
-                              '         cCpus,\n'
-                              '         fCpuHwVirt,\n'
-                              '         fCpuNestedPaging,\n'
-                              '         fCpu64BitGuest,\n'
-                              '         fChipsetIoMmu,\n'
-                              '         cMbMemory,\n'
-                              '         cMbScratch,\n'
-                              '         sReport,\n'
-                              '         iTestBoxScriptRev,\n'
-                              '         iPythonHexVersion,\n'
-                              '         %s\n'       # enmPendingCmd
-                              'FROM     TestBoxes\n'
-                              'WHERE    idTestBox = %s\n'
-                              '     AND tsExpire  = %s\n'
-                              '     AND enmPendingCmd = %s\n'
-                              'RETURNING idGenTestBox'
-                              , (idTestBox,
-                                 tsEffective,
-                                 uidAuthor,
-                                 sNewCommand,
-                                 idTestBox,
-                                 tsEffective,
-                                 sOldCommand,
-                              ));
-            idGenTestBox = self._oDb.fetchOne()[0];
-            if fCommit is True:
-                self._oDb.commit();
-
-        except TMInFligthCollision: # This is pretty stupid, but don't want to touch testboxcontroller.py now.
-            if not fNoRollbackOnInFlightCollision:
-                self._oDb.rollback();
-            raise;
-        except:
-            self._oDb.rollback();
-            raise;
-
-        return (idGenTestBox, tsEffective);
-
+        ## @todo throw TMInFligthCollision again...
+        self._oDb.callProc('TestBoxLogic_setCommand'
+                           , ( uidAuthor, idTestBox, sOldCommand, sNewCommand, sComment,));
+        aoRow = self._oDb.fetchOne();
+        self._oDb.maybeCommit(fCommit);
+        return (aoRow[0], aoRow[1]);
 
 
     def getAll(self):
@@ -987,7 +686,7 @@ class TestBoxLogic(ModelLogicBase):
         Retrieve list of all registered Test Box records from DB.
         """
         self._oDb.execute('SELECT   *\n'
-                          'FROM     TestBoxes\n'
+                          'FROM     TestBoxesWithStrings\n'
                           'WHERE    tsExpire=\'infinity\'::timestamp;')
 
         aaoRows = self._oDb.fetchAll()
@@ -995,37 +694,6 @@ class TestBoxLogic(ModelLogicBase):
         for aoRow in aaoRows:
             aoRet.append(TestBoxData().initFromDbRow(aoRow))
         return aoRet
-
-    def _historize(self, idTestBox, uidAuthor, tsExpire = None):
-        """ Historizes the current entry. """
-        if tsExpire is None:
-            self._oDb.execute('UPDATE TestBoxes\n'
-                              'SET    tsExpire   = CURRENT_TIMESTAMP,\n'
-                              '       uidAuthor  = %s\n'
-                              'WHERE  idTestBox  = %s\n'
-                              '   AND tsExpire = \'infinity\'::TIMESTAMP\n'
-                              , (uidAuthor, idTestBox,));
-        else:
-            self._oDb.execute('UPDATE TestBoxes\n'
-                              'SET    tsExpire   = %s,\n'
-                              '       uidAuthor  = %s\n'
-                              'WHERE  idTestBox  = %s\n'
-                              '   AND tsExpire = \'infinity\'::TIMESTAMP\n'
-                              , (uidAuthor, tsExpire, idTestBox,));
-        return True;
-
-
-    def removeEntry(self, uidAuthor, idTestBox, fCascade = False, fCommit=False):
-        """
-        Delete user account
-        """
-        _ = fCascade;
-
-        fRc = self._historize(idTestBox, uidAuthor, None);
-        if fRc:
-            self._oDb.maybeCommit(fCommit);
-
-        return fRc
 
 
     def cachedLookup(self, idTestBox):
@@ -1040,14 +708,14 @@ class TestBoxLogic(ModelLogicBase):
             self.dCache = self._oDb.getCache('TestBoxData');
         oEntry = self.dCache.get(idTestBox, None);
         if oEntry is None:
-            self._oDb.execute('SELECT   *\n'
-                              'FROM     TestBoxes\n'
+            self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
+                              'FROM     TestBoxesWithStrings\n'
                               'WHERE    idTestBox  = %s\n'
                               '     AND tsExpire   = \'infinity\'::TIMESTAMP\n'
                               , (idTestBox, ));
             if self._oDb.getRowCount() == 0:
                 # Maybe it was deleted, try get the last entry.
-                self._oDb.execute('SELECT   *\n'
+                self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
                                   'FROM     TestBoxes\n'
                                   'WHERE    idTestBox = %s\n'
                                   'ORDER BY tsExpire DESC\n'
@@ -1095,12 +763,11 @@ class TestBoxLogic(ModelLogicBase):
         """
         Issues a reboot command for the given test box.
         Return True on succes, False on in-flight collision.
-        May raise DB exception with rollback on other trouble.
+        May raise DB exception on other trouble.
         """
         try:
             self.setCommand(idTestBox, sOldCommand, TestBoxData.ksTestBoxCmd_Reboot,
-                            uidAuthor = uidAuthor, fCommit = fCommit, sComment = sComment,
-                            fNoRollbackOnInFlightCollision = True);
+                            uidAuthor = uidAuthor, fCommit = fCommit, sComment = sComment);
         except TMInFligthCollision:
             return False;
         except:

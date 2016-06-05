@@ -166,13 +166,13 @@ class WuiHlpForm(object):
                          u'      </li>\n'
                          % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(unicode(sValue)), sPostHtml ));
 
-    def addWideText(self, sName, sValue, sLabel, sExtraAttribs = ''):
+    def addWideText(self, sName, sValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a wide text input."""
-        return self.addText(sName, sValue, sLabel, 'wide', sExtraAttribs);
+        return self.addText(sName, sValue, sLabel, 'wide', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addWideTextRO(self, sName, sValue, sLabel, sExtraAttribs = ''):
+    def addWideTextRO(self, sName, sValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a wide read-only text input."""
-        return self.addTextRO(sName, sValue, sLabel, 'wide', sExtraAttribs);
+        return self.addTextRO(sName, sValue, sLabel, 'wide', sExtraAttribs, sPostHtml = sPostHtml);
 
     def _adjustMultilineTextAttribs(self, sExtraAttribs, sValue):
         """ Internal helper for setting good default sizes for textarea based on content."""
@@ -217,33 +217,33 @@ class WuiHlpForm(object):
                          % ( escapeAttr(sName), escapeAttr(sName), self._adjustMultilineTextAttribs(sExtraAttribs, sNewValue),
                              escapeElem(sNewValue)))
 
-    def addInt(self, sName, iValue, sLabel, sExtraAttribs = ''):
+    def addInt(self, sName, iValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds an integer input."""
-        return self.addText(sName, unicode(iValue), sLabel, 'int', sExtraAttribs);
+        return self.addText(sName, unicode(iValue), sLabel, 'int', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addIntRO(self, sName, iValue, sLabel, sExtraAttribs = ''):
+    def addIntRO(self, sName, iValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds an integer input."""
-        return self.addTextRO(sName, unicode(iValue), sLabel, 'int', sExtraAttribs);
+        return self.addTextRO(sName, unicode(iValue), sLabel, 'int', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addLong(self, sName, lValue, sLabel, sExtraAttribs = ''):
+    def addLong(self, sName, lValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a long input."""
-        return self.addText(sName, unicode(lValue), sLabel, 'long', sExtraAttribs);
+        return self.addText(sName, unicode(lValue), sLabel, 'long', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addLongRO(self, sName, lValue, sLabel, sExtraAttribs = ''):
+    def addLongRO(self, sName, lValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a long input."""
-        return self.addTextRO(sName, unicode(lValue), sLabel, 'long', sExtraAttribs);
+        return self.addTextRO(sName, unicode(lValue), sLabel, 'long', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addUuid(self, sName, uuidValue, sLabel, sExtraAttribs = ''):
+    def addUuid(self, sName, uuidValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds an UUID input."""
-        return self.addText(sName, unicode(uuidValue), sLabel, 'uuid', sExtraAttribs);
+        return self.addText(sName, unicode(uuidValue), sLabel, 'uuid', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addUuidRO(self, sName, uuidValue, sLabel, sExtraAttribs = ''):
+    def addUuidRO(self, sName, uuidValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a read-only UUID input."""
-        return self.addTextRO(sName, unicode(uuidValue), sLabel, 'uuid', sExtraAttribs);
+        return self.addTextRO(sName, unicode(uuidValue), sLabel, 'uuid', sExtraAttribs, sPostHtml = sPostHtml);
 
-    def addTimestampRO(self, sName, sTimestamp, sLabel, sExtraAttribs = ''):
+    def addTimestampRO(self, sName, sTimestamp, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a read-only database string timstamp input."""
-        return self.addTextRO(sName, sTimestamp, sLabel, 'timestamp', sExtraAttribs);
+        return self.addTextRO(sName, sTimestamp, sLabel, 'timestamp', sExtraAttribs, sPostHtml = sPostHtml);
 
 
     #

@@ -36,7 +36,7 @@ endif
 
 GENERATED_FILES = TestManagerDatabaseComments.pgsql
 PSQL := $(firstword $(which $(foreach pgver, 95 94 93 92,psql$(pgver)) ) psql)
-PSQL_OPTS = -U postgres
+PSQL_OPTS = -U postgres --set=ON_ERROR_STOP=1
 
 all: $(GENERATED_FILES)
 
@@ -53,22 +53,26 @@ load-testmanager-db: \
 		TestManagerDatabaseComments.pgsql \
 		../core/useraccount.pgsql \
 		../core/testcase.pgsql \
+		../core/testbox.pgsql \
 		../core/globalresource.pgsql
 	@kmk_builtin_echo "Creating testmanager database: For script verification only!"
 	$(PSQL) $(PSQL_OPTS) -f TestManagerDatabaseInit.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f TestManagerDatabaseComments.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/useraccount.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/testcase.pgsql
+	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/testbox.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/globalresource.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f TestManagerDatabaseDefaultUserAccounts.pgsql
 
 reload-testmanager-db-dunctions: \
 		../core/useraccount.pgsql \
 		../core/testcase.pgsql \
+		../core/testbox.pgsql \
 		../core/globalresource.pgsql
 	@kmk_builtin_echo "Reloading testmanager database functions"
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/useraccount.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/testcase.pgsql
+	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/testbox.pgsql
 	$(PSQL) $(PSQL_OPTS) -d testmanager -f ../core/globalresource.pgsql
 
 # Only for prettier graphs:

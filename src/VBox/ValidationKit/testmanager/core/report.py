@@ -1197,8 +1197,8 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
         aoRet = [];
         if len(asIdGenTestBoxes) > 0:
             self._oDb.execute('SELECT   *\n'
-                              'FROM     TestBoxes\n'
-                              'WHERE    idGenTestBox in (' + ','.join(asIdGenTestBoxes) + ')\n'
+                              'FROM     TestBoxesWithStrings\n'
+                              'WHERE    idGenTestBox IN (' + ','.join(asIdGenTestBoxes) + ')\n'
                               'ORDER BY sName');
             for _ in range(self._oDb.getRowCount()):
                 aoRet.append(TestBoxData().initFromDbRow(self._oDb.fetchOne()));

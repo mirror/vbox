@@ -33,7 +33,7 @@ __version__ = "$Revision$"
 import socket;
 
 # Validation Kit imports.
-from common                             import utils;
+from common                             import utils, webutils;
 from testmanager.webui.wuicontentbase   import WuiContentBase, WuiListContentWithActionBase, WuiFormContentBase, WuiLinkBase, \
                                                WuiSvnLink, WuiTmLink, WuiSpanText, WuiRawHtml;
 from testmanager.core.db                import TMDatabaseConnection;
@@ -97,7 +97,7 @@ class WuiTestBox(WuiFormContentBase):
         oForm.addTimestampRO(TestBoxData.ksParam_tsExpire,          oData.tsExpire, 'Expires (excl)');
         oForm.addIntRO(      TestBoxData.ksParam_uidAuthor,         oData.uidAuthor, 'Changed by UID');
 
-        oForm.addText(       TestBoxData.ksParam_ip,                oData.ip, 'TestBox IP Address');
+        oForm.addText(       TestBoxData.ksParam_ip,                oData.ip, 'TestBox IP Address'); ## make read only??
         oForm.addUuid(       TestBoxData.ksParam_uuidSystem,        oData.uuidSystem, 'TestBox System/Firmware UUID');
         oForm.addText(       TestBoxData.ksParam_sName,             oData.sName, 'TestBox Name');
         oForm.addText(       TestBoxData.ksParam_sDescription,      oData.sDescription, 'TestBox Description');
@@ -134,21 +134,18 @@ class WuiTestBox(WuiFormContentBase):
         oForm.addLongRO(     TestBoxData.ksParam_cMbScratch,        oData.cMbScratch, 'Available scratch space (MB)');
         oForm.addIntRO(      TestBoxData.ksParam_iTestBoxScriptRev, oData.iTestBoxScriptRev,
                              'TestBox Script SVN revision');
-        # Later:
-        #if not self.isAttributeNull(''):
-        #    sHexVer = '%s.%s.%.%s' % (oData.iPythonHexVersion >> 24, (oData.iPythonHexVersion >> 16) & 0xff,
-        #                             (oData.iPythonHexVersion >> 8) & 0xff, oData.iPythonHexVersion & 0xff);
-        #else:
-        #    sHexVer = str(oData.iPythonHexVersion);
-
+        sHexVer = oData.formatPythonVersion();
         oForm.addIntRO(      TestBoxData.ksParam_iPythonHexVersion, oData.iPythonHexVersion,
-                             'Python version (hex)');
+                             'Python version (hex)', sPostHtml = webutils.escapeElem(sHexVer));
+
         if self._sMode == WuiFormContentBase.ksMode_Edit:
             oForm.addComboBox(TestBoxData.ksParam_enmPendingCmd,    oData.enmPendingCmd, 'Pending command',
                               TestBoxData.kaoTestBoxCmdDescs);
         else:
             oForm.addComboBoxRO(TestBoxData.ksParam_enmPendingCmd,  oData.enmPendingCmd, 'Pending command',
                                 TestBoxData.kaoTestBoxCmdDescs);
+
+        oForm.addMultilineText(TestBoxData.ksParam_sComment,        oData.sComment, 'Comment');
 
         if self._sMode != WuiFormContentBase.ksMode_Show:
             oForm.addSubmit('Create TestBox' if self._sMode == WuiFormContentBase.ksMode_Add else 'Change TestBox');
@@ -177,13 +174,13 @@ class WuiTestBoxList(WuiListContentWithActionBase):
     def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
         WuiListContentWithActionBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                               sTitle = 'TestBoxes', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp);
-        self._asColumnHeaders.extend([ 'Name', 'LOM', 'Status',
-                                       'Cmd', 'Script', 'Python', 'Group',
+        self._asColumnHeaders.extend([ 'Name', 'LOM', 'Status', 'Cmd',
+                                       'Note', 'Script', 'Python', 'Group',
                                        'OS', 'CPU', 'Features', 'CPUs', 'RAM', 'Scratch',
                                        'Actions' ]);
-        self._asColumnAttribs.extend([ 'align="center"', 'align="center"', 'align="center"',
+        self._asColumnAttribs.extend([ 'align="center"', 'align="center"', 'align="center"', 'align="center"'
                                        'align="center"', 'align="center"', 'align="center"', 'align="center"',
-                                       '', '', '', 'align="right"', 'align="right"', 'align="right"',
+                                       '', '', '', 'align="left"', 'align="right"', 'align="right"', 'align="right"',
                                        'align="center"' ]);
         self._aoActions     = list(self.kasTestBoxActionDescs);
         self._aoSchedGroups = SchedGroupLogic(self._oDisp.getDb()).fetchOrderedByName();
@@ -236,6 +233,15 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                                      TestSetData.ksParam_idTestSet: oEntry.oStatus.idTestSet, },
                                    sTitle = '#%u' % (oEntry.oStatus.idTestSet,),
                                    fBracketed = False);
+        # Comment
+        oComment = None;
+        if oEntry.sComment is not None:
+            sComment = oEntry.sComment.strip();
+            if len(sComment) > 64:
+                oComment = WuiRawHtml('<span title="%s">%s...</span>'
+                                      % (webutils.escapeAttr(sComment), webutils.escapeElem(sComment[:60]),));
+            elif len(sComment) > 0:
+                oComment = WuiRawHtml(webutils.escapeElem(sComment));
 
         # Group link.
         oGroup = self._dSchedGroups.get(oEntry.idSchedGroup);
@@ -335,6 +341,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                      oSeen,
                   ],
                  oEntry.enmPendingCmd,
+                 oComment,
                  WuiSvnLink(oEntry.iTestBoxScriptRev),
                  oEntry.formatPythonVersion(),
                  oGroupLink,
