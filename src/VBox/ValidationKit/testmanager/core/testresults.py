@@ -936,13 +936,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '       array_agg(TestResultFailures.tsEffective     ORDER BY TestResultFailures.idTestResult),\n' \
                   '       array_agg(TestResultFailures.sComment        ORDER BY TestResultFailures.idTestResult),\n' \
                   '       (TestSets.tsDone IS NULL) SortRunningFirst' + sSortColumns + '\n' \
-                  'FROM   BuildCategories,\n' \
-                  '       Builds,\n' \
-                  '       TestBoxesWithStrings,\n' \
-                  '       TestResults,\n' \
-                  '       TestCases,\n' \
-                  '       TestCaseArgs,\n' \
-                  '       (  SELECT TestSets.idTestSet AS idTestSet,\n' \
+                  'FROM   (  SELECT TestSets.idTestSet AS idTestSet,\n' \
                   '                 TestSets.tsDone AS tsDone,\n' \
                   '                 TestSets.tsCreated AS tsCreated,\n' \
                   '                 TestSets.enmStatus AS enmStatus,\n' \
@@ -979,23 +973,30 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                   '          LIMIT %s OFFSET %s\n' % (cMaxRows, iStart,);
 
         sQuery += '       ) AS TestSets\n' \
+                  '            INNER JOIN TestBoxesWithStrings\n' \
+                  '                    ON TestSets.idGenTestBox     = TestBoxesWithStrings.idGenTestBox' \
                   '       LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
                   '                    ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild\n' \
                   '       LEFT OUTER JOIN TestResultFailures\n' \
                   '                    ON     TestSets.idTestSet          = TestResultFailures.idTestSet\n' \
-                  '                       AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP\n';
+                  '                       AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP';
         if sSortOrderBy is not None and sSortOrderBy.find('FailureReason') >= 0:
             sQuery += '\n' \
                       '       LEFT OUTER JOIN FailureReasons\n' \
                       '                    ON     TestResultFailures.idFailureReason = FailureReasons.idFailureReason\n' \
-                      '                       AND FailureReasons.tsExpire            = \'infinity\'::TIMESTAMP\n';
+                      '                       AND FailureReasons.tsExpire            = \'infinity\'::TIMESTAMP';
+        sQuery += ',\n' \
+                  '       BuildCategories,\n' \
+                  '       Builds,\n' \
+                  '       TestResults,\n' \
+                  '       TestCases,\n' \
+                  '       TestCaseArgs\n';
         sQuery += 'WHERE  TestSets.idTestSet         = TestResults.idTestSet\n' \
                   '   AND TestResults.idTestResultParent is NULL\n' \
                   '   AND TestSets.idBuild           = Builds.idBuild\n' \
                   '   AND Builds.tsExpire            > TestSets.tsCreated\n' \
                   '   AND Builds.tsEffective        <= TestSets.tsCreated\n' \
                   '   AND Builds.idBuildCategory     = BuildCategories.idBuildCategory\n' \
-                  '   AND TestSets.idGenTestBox      = TestBoxesWithStrings.idGenTestBox\n' \
                   '   AND TestSets.idGenTestCase     = TestCases.idGenTestCase\n' \
                   '   AND TestSets.idGenTestCaseArgs = TestCaseArgs.idGenTestCaseArgs\n';
         sQuery += 'GROUP BY TestSets.idTestSet,\n' \
@@ -1180,14 +1181,14 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         """
 
         self._oDb.execute('SELECT TestBoxesWithStrings.*\n'
-                          'FROM   TestBoxesWithStrings,\n'
-                          '       ( SELECT idTestBox         AS idTestBox,\n'
+                          'FROM   ( SELECT idTestBox         AS idTestBox,\n'
                           '                MAX(idGenTestBox) AS idGenTestBox\n'
                           '         FROM   TestSets\n'
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           '         GROUP BY idTestBox\n'
                           '       ) AS TestBoxIDs\n'
-                          'WHERE  TestBoxesWithStrings.idGenTestBox = TestBoxIDs.idGenTestBox\n'
+                          '       INNER JOIN TestBoxesWithStrings\n'
+                          '               ON TestBoxesWithStrings.idGenTestBox = TestBoxIDs.idGenTestBox\n'
                           'ORDER BY TestBoxesWithStrings.sName\n' );
         aoRet = []
         for aoRow in self._oDb.fetchAll():
@@ -1201,14 +1202,13 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         """
 
         self._oDb.execute('SELECT TestCases.*\n'
-                          'FROM   TestCases,\n'
-                          '       ( SELECT idTestCase         AS idTestCase,\n'
+                          'FROM   ( SELECT idTestCase         AS idTestCase,\n'
                           '                MAX(idGenTestCase) AS idGenTestCase\n'
                           '         FROM   TestSets\n'
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           '         GROUP BY idTestCase\n'
                           '       ) AS TestCasesIDs\n'
-                          'WHERE  TestCases.idGenTestCase = TestCasesIDs.idGenTestCase\n'
+                          '       INNER JOIN TestCases ON TestCases.idGenTestCase = TestCasesIDs.idGenTestCase\n'
                           'ORDER BY TestCases.sName\n' );
         aoRet = [];
         for aoRow in self._oDb.fetchAll():
@@ -1222,8 +1222,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         """
 
         self._oDb.execute('SELECT SchedGroups.*\n'
-                          'FROM   SchedGroups,\n'
-                          '       ( SELECT TestBoxes.idSchedGroup  AS idSchedGroup,\n'
+                          'FROM   ( SELECT TestBoxes.idSchedGroup  AS idSchedGroup,\n'
                           '                MAX(TestSets.tsCreated) AS tsNow\n'
                           '         FROM   TestSets,\n'
                           '                TestBoxes\n'
@@ -1231,9 +1230,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '            AND ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '         ') +
                           '         GROUP BY idSchedGroup\n'
                           '       ) AS SchedGroupIDs\n'
-                          'WHERE  SchedGroups.idSchedGroup = SchedGroupIDs.idSchedGroup\n'
-                          '   AND SchedGroups.tsExpire     > SchedGroupIDs.tsNow\n'
-                          '   AND SchedGroups.tsEffective <= SchedGroupIDs.tsNow\n'
+                          '       INNER JOIN SchedGroups\n'
+                          '               ON SchedGroups.idSchedGroup = SchedGroupIDs.idSchedGroup\n'
+                          '              AND SchedGroups.tsExpire     > SchedGroupIDs.tsNow\n'
+                          '              AND SchedGroups.tsEffective <= SchedGroupIDs.tsNow\n'
                           'ORDER BY SchedGroups.sName\n' );
         aoRet = []
         for aoRow in self._oDb.fetchAll():
