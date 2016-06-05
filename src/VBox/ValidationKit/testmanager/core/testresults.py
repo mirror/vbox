@@ -1033,6 +1033,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'SELECT tsCreated + tsElapsed\n'
                           'FROM   TestResults\n'
                           'WHERE  idTestSet = %s\n'
+                          '   AND tsElapsed IS NOT NULL\n'
                           ') UNION (\n'
                           'SELECT TestResultFiles.tsCreated\n'
                           'FROM   TestResultFiles\n'
