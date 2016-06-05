@@ -269,6 +269,9 @@ DROP TABLE OldTestSets;
 
 \prompt "Update python files while everything is locked. Hurry!"  dummy
 
+-- Grant access to the new table.
+GRANT ALL PRIVILEGES ON TABLE TestSets TO testmanager;
+
 COMMIT;
 
 \d TestSets;
