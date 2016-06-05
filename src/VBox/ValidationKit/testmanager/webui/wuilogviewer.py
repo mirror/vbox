@@ -134,7 +134,7 @@ class WuiLogViewer(WuiContentBase):
             if iCurTs < len(aoTimestamps):
                 oTsZulu = db.dbTimestampToZuluDatetime(aoTimestamps[iCurTs]);
                 return (oTsZulu.strftime('%H:%M:%S.%f'), oTsZulu.strftime('%H_%M_%S_%f'));
-            return '~~|~~|~~|~~~~~~'; # ASCII chars with high values. Limit hits.
+            return ('~~|~~|~~|~~~~~~', '~~|~~|~~|~~~~~~'); # ASCII chars with high values. Limit hits.
 
         def isCurLineAtOrAfterCurTs():
             """ Checks if the current line starts with a timestamp that is after the current one. """
