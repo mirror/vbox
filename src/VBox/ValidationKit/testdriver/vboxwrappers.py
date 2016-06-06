@@ -1439,7 +1439,7 @@ class SessionWrapper(TdTaskBase):
             sHostName = ''
             try:
                 sHostName = socket.getfqdn()
-                if not '.' in sHostName:
+                if '.' not in sHostName:
                     # somewhat misconfigured system, needs expensive approach to guessing FQDN
                     for aAI in socket.getaddrinfo(sHostName, None):
                         sName, _ = socket.getnameinfo(aAI[4], 0)
@@ -2399,6 +2399,35 @@ class SessionWrapper(TdTaskBase):
                     reporter.logXcpt('Unable to get the guest OS (%s) kernel log' % (sOsDetected,));
         return sOsKernelLog;
 
+    def queryDbgInfo(self, sItem, sArg = '', sDefault = None):
+        """
+        Simple wrapper around IMachineDebugger::info.
+
+        Returns string on success, sDefault on failure (logged).
+        """
+        try:
+            return self.o.console.debugger.info(sItem, sArg);
+        except:
+            reporter.logXcpt('Unable to query "%s" with arg "%s"' % (sItem, sArg,));
+        return sDefault;
+
+    def queryDbgInfoVgaText(self, sArg = 'all'):
+        """
+        Tries to get the 'info vgatext' output, provided we're in next mode.
+
+        Returns string containing text on success.
+        Returns None on failure or not text mode.
+        """
+        sVgaText = None;
+        try:
+            sVgaText = self.o.console.debugger.info('vgatext', sArg);
+            if sVgaText == 'Not in text mode!':
+                sVgaText = None;
+        except:
+            reporter.logXcpt('Unable to query vgatext with arg "%s"' % (sArg,));
+        return sVgaText;
+
+
     #
     # Other methods.
     #
@@ -2546,7 +2575,7 @@ class SessionWrapper(TdTaskBase):
         # If the VM is configured with a NAT interface, connect to local host.
         fReversedSetup = False;
         fUseNatForTxs  = False;
-        if sIpAddr == None:
+        if sIpAddr is None:
             try:
                 oNic = self.oVM.getNetworkAdapter(0);
                 if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:

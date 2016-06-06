@@ -718,6 +718,8 @@ class TestBoxController(object): # pylint: disable=R0903
                           'crash/dump/svc',
                           'crash/report/client',
                           'crash/dump/client',
+                          'info/collection',
+                          'info/vgatext',
                           'misc/other',
                           'screenshot/failure',
                           'screenshot/success',

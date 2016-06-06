@@ -405,6 +405,8 @@ class TestResultFileData(ModelDataBase):
     ksKind_CrashDumpSvc         = 'crash/dump/svc';
     ksKind_CrashReportClient    = 'crash/report/client';
     ksKind_CrashDumpClient      = 'crash/dump/client';
+    ksKind_InfoCollection       = 'info/collection';
+    ksKind_InfoVgaText          = 'info/vgatext';
     ksKind_MiscOther            = 'misc/other';
     ksKind_ScreenshotFailure    = 'screenshot/failure';
     ksKind_ScreenshotSuccesss   = 'screenshot/success';
