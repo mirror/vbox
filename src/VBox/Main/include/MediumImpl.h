@@ -316,6 +316,11 @@ private:
     HRESULT i_getFilterProperties(std::vector<com::Utf8Str> &aReturnNames,
                                   std::vector<com::Utf8Str> &aReturnValues);
 
+    HRESULT i_preparationForMoving(const Utf8Str &aLocation);
+    bool    i_isMoveOperation(const ComObjPtr<Medium> &pTarget) const;
+    bool    i_resetMoveOperationData();
+    Utf8Str i_getNewLocationForMoving() const;
+
     static DECLCALLBACK(void) i_vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                             const char *pszFormat, va_list va);
     static DECLCALLBACK(bool) i_vdConfigAreKeysValid(void *pvUser,
@@ -359,6 +364,7 @@ private:
     class CreateBaseTask;
     class CreateDiffTask;
     class CloneTask;
+    class MoveTask;
     class CompactTask;
     class ResizeTask;
     class ResetTask;
@@ -371,6 +377,7 @@ private:
     friend class CreateBaseTask;
     friend class CreateDiffTask;
     friend class CloneTask;
+    friend class MoveTask;
     friend class CompactTask;
     friend class ResizeTask;
     friend class ResetTask;
@@ -387,6 +394,7 @@ private:
     HRESULT i_taskCreateDiffHandler(Medium::CreateDiffTask &task);
     HRESULT i_taskMergeHandler(Medium::MergeTask &task);
     HRESULT i_taskCloneHandler(Medium::CloneTask &task);
+    HRESULT i_taskMoveHandler(Medium::MoveTask &task);
     HRESULT i_taskDeleteHandler(Medium::DeleteTask &task);
     HRESULT i_taskResetHandler(Medium::ResetTask &task);
     HRESULT i_taskCompactHandler(Medium::CompactTask &task);

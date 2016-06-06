@@ -107,7 +107,8 @@ struct Medium::Data
           uOpenFlagsDef(VD_OPEN_FLAGS_IGNORE_FLUSH),
           numCreateDiffTasks(0),
           vdDiskIfaces(NULL),
-          vdImageIfaces(NULL)
+          vdImageIfaces(NULL),
+          fMoveThisMedium(false)
     { }
 
     /** weak VirtualBox parent */
@@ -180,6 +181,12 @@ struct Medium::Data
 
     PVDINTERFACE vdDiskIfaces;
     PVDINTERFACE vdImageIfaces;
+
+    /** Flag if the medium is going to move to a new
+     *  location. */
+    bool fMoveThisMedium;
+    /** new location path  */
+    Utf8Str strNewLocationFull;
 };
 
 typedef struct VDSOCKETINT
@@ -402,6 +409,37 @@ private:
     AutoCaller mParentCaller;
     bool mfKeepSourceMediumLockList;
     bool mfKeepTargetMediumLockList;
+};
+
+class Medium::MoveTask : public Medium::Task
+{
+public:
+    MoveTask(Medium *aMedium,
+              Progress *aProgress,
+              MediumVariant_T aVariant,
+              MediumLockList *aMediumLockList,
+              bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
+          mpMediumLockList(aMediumLockList),
+          mVariant(aVariant),
+          mfKeepMediumLockList(fKeepMediumLockList)
+    {
+        AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
+    }
+
+    ~MoveTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+    }
+
+    MediumLockList *mpMediumLockList;
+    MediumVariant_T mVariant;
+
+private:
+    virtual HRESULT handler();
+
+    bool mfKeepMediumLockList;
 };
 
 class Medium::CompactTask : public Medium::Task
@@ -853,6 +891,14 @@ HRESULT Medium::CreateDiffTask::handler()
 HRESULT Medium::CloneTask::handler()
 {
     return mMedium->i_taskCloneHandler(*this);
+}
+
+/**
+ * Implementation code for the "move" task.
+ */
+HRESULT Medium::MoveTask::handler()
+{
+    return mMedium->i_taskMoveHandler(*this);
 }
 
 /**
@@ -2898,10 +2944,14 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
 
 HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aProgress)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    NOREF(aLocation);
-    NOREF(aProgress);
 
+    ComObjPtr<Medium> pParent;
+    ComObjPtr<Progress> pProgress;
+    HRESULT rc = S_OK;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
     /// @todo NEWMEDIA for file names, add the default extension if no extension
     /// is present (using the information from the VD backend which also implies
     /// that one more parameter should be passed to setLocation() requesting
@@ -2911,7 +2961,129 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
     /// the global registry (and local registries of portable VMs referring to
     /// this medium), this will also require to add the mRegistered flag to data
 
-    ReturnComNotImplemented();
+        // locking: we need the tree lock first because we access parent pointers
+        // and we need to write-lock the media involved
+        uint32_t    cHandles    = 2;
+        LockHandle* pHandles[2] = { &m->pVirtualBox->i_getMediaTreeLockHandle(),
+                                    this->lockHandle() };
+
+        AutoWriteLock alock(cHandles,
+                            pHandles
+                            COMMA_LOCKVAL_SRC_POS);
+
+        /* Set needed variables for "moving" procedure. It'll be used later in separate thread task */
+        rc = i_preparationForMoving(aLocation);
+        if (FAILED(rc))
+        {
+            rc = setError(VERR_NO_CHANGE,
+                       tr("Medium '%s' is already in the correct location"),
+                       i_getLocationFull().c_str());
+            return rc;
+        }
+
+        /* Check VMs which have this medium attached to*/
+        std::vector<com::Guid> aMachineIds;
+        rc = getMachineIds(aMachineIds);
+        std::vector<com::Guid>::const_iterator currMachineID = aMachineIds.begin();
+        std::vector<com::Guid>::const_iterator lastMachineID = aMachineIds.end();
+
+        while(currMachineID != lastMachineID)
+        {
+            Guid id(*currMachineID);
+            ComObjPtr<Machine> aMachine;
+
+            alock.release();
+            rc = m->pVirtualBox->i_findMachine(id, false, true, &aMachine);
+            alock.acquire();
+
+            if (SUCCEEDED(rc))
+            {
+                MachineState_T aState;
+                ComObjPtr<SessionMachine> sm;
+                ComPtr<IInternalSessionControl> ctl;
+
+                alock.release();
+                bool ses = aMachine->i_isSessionOpenVM(sm, &ctl);
+                alock.acquire();
+
+                if (ses)
+                {
+                    rc = setError(VERR_VM_UNEXPECTED_VM_STATE,
+                                  tr("At least VM '%s' to whom this medium '%s' attached has the opened session now. "
+                                     "Stop all needed VM before set a new location."),
+                                  id.toString().c_str(),
+                                  i_getLocationFull().c_str());
+                    throw rc;
+                }
+            }
+            ++currMachineID;
+        }
+
+        /* Build the source lock list. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        alock.release();
+        rc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                    this /* pToLockWrite */,
+                                    true /* fMediumLockWriteAll */,
+                                    NULL,
+                                    *pMediumLockList);
+        alock.acquire();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to create medium lock list for '%s'"),
+                           i_getLocationFull().c_str());
+        }
+        alock.release();
+        rc = pMediumLockList->Lock();
+        alock.acquire();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock media '%s'"),
+                           i_getLocationFull().c_str());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Moving medium '%s'"), m->strLocationFull.c_str()).raw(),
+                             TRUE /* aCancelable */);
+
+        /* Do the disk moving. */
+        if(SUCCEEDED(rc))
+        {
+            ULONG mediumVariantFlags = i_getVariant();
+
+            /* setup task object to carry out the operation asynchronously */
+            pTask = new Medium::MoveTask(this, pProgress,
+                                         (MediumVariant_T)mediumVariantFlags,
+                                         pMediumLockList);
+            rc = pTask->rc();
+            AssertComRC(rc);
+            if (FAILED(rc))
+                throw rc;
+        }
+
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        rc = i_startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress.asOutParam());
+    }
+    else 
+    {
+        if (pTask != NULL)
+            delete pTask;
+    }
+
+    return rc;
 }
 
 HRESULT Medium::compact(ComPtr<IProgress> &aProgress)
@@ -6098,6 +6270,50 @@ HRESULT Medium::i_getFilterProperties(std::vector<com::Utf8Str> &aReturnNames,
     return hrc;
 }
 
+/**
+ * Preparation to move this medium to a new location
+ *
+ * @param aLocation Location of the storage unit. If the location is a FS-path,
+ *                  then it can be relative to the VirtualBox home directory.
+ *
+ * @note Must be called from under this object's write lock.
+ */
+HRESULT Medium::i_preparationForMoving(const Utf8Str &aLocation)
+{
+    HRESULT rc = E_FAIL;
+
+    if (i_getLocationFull() != aLocation)
+    {
+        m->strNewLocationFull = aLocation;
+        m->fMoveThisMedium = true;
+        rc = S_OK;
+    }
+
+    return rc;
+}
+
+/**
+ * Checking whether current operation "moving" or not
+ */
+bool Medium::i_isMoveOperation(const ComObjPtr<Medium> &aTarget) const
+{
+    return (this == aTarget && m->fMoveThisMedium == true) ? true:false;
+}
+
+bool Medium::i_resetMoveOperationData()
+{
+    m->strNewLocationFull.setNull();
+    m->fMoveThisMedium = false;
+    return true;
+}
+
+Utf8Str Medium::i_getNewLocationForMoving() const
+{
+    if(m->fMoveThisMedium == true)
+        return m->strNewLocationFull;
+    else
+        return Utf8Str();
+}
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Private methods
@@ -8219,6 +8435,8 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
     try
     {
         if (!pParent.isNull())
+        {
+
             if (pParent->i_getDepth() >= SETTINGS_MEDIUM_DEPTH_MAX)
             {
                 AutoReadLock plock(pParent COMMA_LOCKVAL_SRC_POS);
@@ -8226,6 +8444,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                tr("Cannot clone image for medium '%s', because it exceeds the medium tree depth limit. Please merge some images which you no longer need"),
                                pParent->m->strLocationFull.c_str());
             }
+        }
 
         /* Lock all in {parent,child} order. The lock is also used as a
          * signal from the task initiator (which releases it only after
@@ -8514,6 +8733,168 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
      * that we get a deadlock in Appliance::Import when Medium::Close
      * is called & the source chain is released at the same time. */
     task.mpSourceMediumLockList->Clear();
+
+    return mrc;
+}
+
+/**
+ * Implementation code for the "move" task.
+ *
+ * This only gets started from Medium::SetLocation() and always 
+ * runs asynchronously.
+ *
+ * @param task
+ * @return
+ */
+HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
+{
+
+    HRESULT rcOut = S_OK;
+
+    /* pTarget is equal "this" in our case */
+    const ComObjPtr<Medium> &pTarget = task.mMedium;
+
+    uint64_t size = 0, logicalSize = 0;
+    MediumVariant_T variant = MediumVariant_Standard;
+
+    /*
+     * it's exactly moving, not cloning
+     */
+    if (!i_isMoveOperation(pTarget))
+    {
+        HRESULT rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Wrong preconditions for moving the medium %s"),
+                              pTarget->m->strLocationFull.c_str());
+        return rc;
+    }
+
+    try
+    {
+        /* Lock all in {parent,child} order. The lock is also used as a
+         * signal from the task initiator (which releases it only after
+         * RTThreadCreate()) that we can start the job. */
+
+        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /* Open all media in the source chain. */
+            MediumLockList::Base::const_iterator sourceListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator sourceListEnd =
+                task.mpMediumLockList->GetEnd();
+            for (MediumLockList::Base::const_iterator it = sourceListBegin;
+                 it != sourceListEnd;
+                 ++it)
+            {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                /* sanity check */
+                Assert(pMedium->m->state == MediumState_LockedWrite);
+
+                vrc = VDOpen(hdd,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_NORMAL,
+                             pMedium->m->vdImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not open the medium storage unit '%s'%s"),
+                                   pMedium->m->strLocationFull.c_str(),
+                                   i_vdError(vrc).c_str());
+            }
+
+            /* we can directly use pTarget->m->"variables" but for better reading we use local copies */
+            Guid targetId = pTarget->m->id;
+            Utf8Str targetFormat(pTarget->m->strFormat);
+            uint64_t targetCapabilities = pTarget->m->formatObj->i_getCapabilities();
+
+            /*
+             * change target location
+             * m->strNewLocationFull has been set already together with m->fMoveThisMedium in
+             * i_preparationForMoving()
+             */
+            Utf8Str targetLocation = i_getNewLocationForMoving();
+
+            /* unlock before the potentially lengthy operation */
+            thisLock.release();
+
+            /* ensure the target directory exists */
+            if (targetCapabilities & MediumFormatCapabilities_File)
+            {
+                HRESULT rc = VirtualBox::i_ensureFilePathExists(targetLocation,
+                                                                !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
+                if (FAILED(rc))
+                    throw rc;
+            }
+
+            try
+            {
+                vrc = VDCopy(hdd,
+                             VD_LAST_IMAGE,
+                             hdd,
+                             targetFormat.c_str(),
+                             targetLocation.c_str(),
+                             true /* fMoveByRename */,
+                             0 /* cbSize */,
+                             VD_IMAGE_FLAGS_NONE,
+                             targetId.raw(),
+                             VD_OPEN_FLAGS_NORMAL,
+                             NULL /* pVDIfsOperation */,
+                             NULL,
+                             NULL);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not move medium '%s'%s"),
+                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                size = VDGetFileSize(hdd, VD_LAST_IMAGE);
+                logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
+                unsigned uImageFlags;
+                vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
+                if (RT_SUCCESS(vrc))
+                    variant = (MediumVariant_T)uImageFlags;
+
+                /*
+                 * set current location, because VDCopy\VDCopyEx doesn't do it.
+                 * also reset moving flag
+                 */
+                i_resetMoveOperationData();
+                m->strLocationFull = targetLocation;
+
+            }
+            catch (HRESULT aRC) { rcOut = aRC; }
+
+        }
+        catch (HRESULT aRC) { rcOut = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rcOut = aRC; }
+
+    ErrorInfoKeeper eik;
+    MultiResult mrc(rcOut);
+
+    // now, at the end of this task (always asynchronous), save the settings
+    if (SUCCEEDED(mrc))
+    {
+        // save the settings
+        i_markRegistriesModified();
+        /* collect multiple errors */
+        eik.restore();
+        m->pVirtualBox->i_saveModifiedRegistries();
+        eik.fetch();
+    }
+
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the source chain. */
+
+    task.mpMediumLockList->Clear();
 
     return mrc;
 }
