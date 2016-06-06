@@ -220,6 +220,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	$(if $(NOQT),,install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor)
 	$(if $(NOQT),,cp $(archdir)/icons/128x128/virtualbox.png \
 	   $(prefix)/usr/share/pixmaps/virtualbox.png)
+	$(if $(NOQT),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	$(if $(NOQT),,cd $(archdir)/icons; for i in *; do \
         for j in $$i/virtualbox.*; do \
 	        if [ -f $$j ]; then \
@@ -280,6 +281,13 @@ else
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 endif
 	mv $(archdir) $(prefix)/usr/lib/$(package)
+	if [ -f $(prefix)/usr/lib/$(package)/libQt5CoreVBox.so.5 ]; then \
+	    chrpath --keepgoing --replace /usr/lib/$(package) \
+	        $(prefix)/usr/lib/$(package)/*.so.5; \
+	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so; \
+	    echo "[Paths]" > $(prefix)/usr/lib/$(package)/qt.conf; \
+	    echo "Plugins = /usr/lib/$(package)/plugins" >> $(prefix)/usr/lib/$(package)/qt.conf; \
+	fi
 	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
 	    cd $(builddir)/bin/sdk/installer && \
 	    python ./vboxapisetup.py install --root $(prefix)

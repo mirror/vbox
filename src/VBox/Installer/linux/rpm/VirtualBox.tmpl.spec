@@ -84,6 +84,7 @@ mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
 mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
+mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp icons/128x128/virtualbox.png $RPM_BUILD_ROOT/usr/share/pixmaps/virtualbox.png
 cd icons
   for i in *; do
@@ -164,6 +165,13 @@ rm *.debug
 mv *.debug $RPM_BUILD_ROOT/usr/lib/debug/usr/lib/virtualbox
 %endif
 mv * $RPM_BUILD_ROOT/usr/lib/virtualbox
+if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/libQt5CoreVBox.so.5 ]; then
+  chrpath --keepgoing --replace /usr/lib/virtualbox \
+    $RPM_BUILD_ROOT/usr/lib/virtualbox/*.so.5 \
+    $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/platforms/*.so
+  echo "[Paths]" > $RPM_BUILD_ROOT/usr/lib/virtualbox/qt.conf
+  echo "Plugins = /usr/lib/virtualbox/plugins" >> $RPM_BUILD_ROOT/usr/lib/virtualbox/qt.conf
+fi
 ln -s ../VBoxVMM.so $RPM_BUILD_ROOT/usr/lib/virtualbox/components/VBoxVMM.so
 for i in VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetNAT VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
