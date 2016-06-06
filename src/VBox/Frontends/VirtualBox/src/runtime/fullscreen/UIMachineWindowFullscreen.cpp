@@ -68,7 +68,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
         if (isMinimized())
         {
             /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar)
+            if (m_pMiniToolBar && m_pMiniToolBar->isVisible())
             {
                 /* Hide mini-toolbar: */
                 m_pMiniToolBar->hide();
@@ -78,7 +78,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
         else
         {
             /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar)
+            if (m_pMiniToolBar && !m_pMiniToolBar->isVisible())
             {
                 /* Show mini-toolbar in full-screen mode: */
                 m_pMiniToolBar->showFullScreen();
