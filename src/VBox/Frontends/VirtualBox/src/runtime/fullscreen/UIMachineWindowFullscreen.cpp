@@ -88,7 +88,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
     /* Call to base-class: */
-    QMainWindow::changeEvent(pChangeEvent);
+    UIMachineWindow::changeEvent(pChangeEvent);
 }
 
 #ifdef VBOX_WS_MAC
