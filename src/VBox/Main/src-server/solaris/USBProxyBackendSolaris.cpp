@@ -88,7 +88,7 @@ int USBProxyBackendSolaris::init(USBProxyService *aUsbProxyService, const com::U
     rc = USBLibInit();
     if (RT_FAILURE(rc))
     {
-        RTSemEventDestroy(mNotifyEventSem);
+        /* mNotifyEventSem will be destroyed in uninit */
         return rc;
     }
 
