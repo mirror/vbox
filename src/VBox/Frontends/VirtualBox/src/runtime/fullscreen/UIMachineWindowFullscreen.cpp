@@ -61,7 +61,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
 {
     /* Overriding changeEvent for controlling mini-tool bar visibilty.
      * Hiding tool-bar when machine-window is minimized and show it in full-screen: */
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     if (pChangeEvent->type() == QEvent::WindowStateChange)
     {
         /* If machine-window is in minimized mode: */
@@ -85,7 +85,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
             }
         }
     }
-#endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
     /* Call to base-class: */
     QMainWindow::changeEvent(pChangeEvent);
