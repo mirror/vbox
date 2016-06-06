@@ -165,7 +165,7 @@ class TestBoxStatusLogic(ModelLogicBase):
         not found.  May throw an exception on database error.
         """
         self._oDb.execute('SELECT   TestBoxStatuses.*,\n'
-                          '         TestBoxesWithStrings.*,\n'
+                          '         TestBoxesWithStrings.*\n'
                           'FROM     TestBoxStatuses,\n'
                           '         TestBoxesWithStrings\n'
                           'WHERE    TestBoxStatuses.idTestBox       = %s\n'
@@ -173,11 +173,10 @@ class TestBoxStatusLogic(ModelLogicBase):
                           '     AND TestBoxesWithStrings.tsExpire   = \'infinity\'::TIMESTAMP\n'
                           '     AND TestBoxesWithStrings.uuidSystem = %s\n'
                           '     AND TestBoxesWithStrings.ip         = %s\n'
-                          , (idTestBox,
-                             idTestBox,
-                             sTestBoxUuid,
-                             sTestBoxAddr,
-                          ));
+                          , ( idTestBox,
+                              idTestBox,
+                              sTestBoxUuid,
+                              sTestBoxAddr,) );
         cRows = self._oDb.getRowCount();
         if cRows != 1:
             if cRows != 0:
@@ -201,9 +200,9 @@ class TestBoxStatusLogic(ModelLogicBase):
                           'VALUES ( %s,\n'
                           '         %s,\n'
                           '         \'idle\'::TestBoxState_T,\n'
-                          '         NULL,\n',
-                          '         0)\n',
-                          (idTestBox, idGenTestBox) );
+                          '         NULL,\n'
+                          '         0)\n'
+                          , (idTestBox, idGenTestBox) );
         self._oDb.maybeCommit(fCommit);
         return True;
 

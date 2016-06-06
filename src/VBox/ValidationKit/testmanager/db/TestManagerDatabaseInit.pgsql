@@ -549,7 +549,7 @@ CREATE TABLE TestGroupMembers (
 
     --- Test case scheduling priority.
     -- Higher number causes the test case to be run more frequently.
-    -- @sa SchedGroupMembers.iSchedPriority
+    -- @sa SchedGroupMembers.iSchedPriority, TestBoxesInSchedGroups.iSchedPriority
     -- @todo Not sure we want to keep this...
     iSchedPriority      INTEGER     DEFAULT 16  CHECK (iSchedPriority >= 0 AND iSchedPriority < 32)  NOT NULL,
 
@@ -665,9 +665,9 @@ CREATE TABLE SchedGroupMembers (
     -- Non-unique foreign key: Users(uid)
     uidAuthor           INTEGER     NOT NULL,
 
-    --- The scheduling priority if the test group.
+    --- The scheduling priority of the test group.
     -- Higher number causes the test case to be run more frequently.
-    -- @sa TestGroupMembers.iSchedPriority
+    -- @sa TestGroupMembers.iSchedPriority, TestBoxesInSchedGroups.iSchedPriority
     iSchedPriority      INTEGER     DEFAULT 16 CHECK (iSchedPriority >= 0 AND iSchedPriority < 32)  NOT NULL,
     --- When during the week this group is allowed to start running, NULL means
     -- there are no constraints.
@@ -823,11 +823,6 @@ CREATE TABLE TestBoxes (
     -- Intended for describing the box as well as making other relevant notes.
     idStrDescription    INTEGER     REFERENCES TestBoxStrTab(idStr)  DEFAULT NULL,
 
-    --- Reference to the scheduling group that this testbox is a member of.
-    -- Non-unique foreign key: SchedGroups(idSchedGroup)
-    -- A testbox is always part of a group, the default one nothing else.
-    idSchedGroup        INTEGER     DEFAULT 1  NOT NULL,
-
     --- Indicates whether this testbox is enabled.
     -- A testbox gets disabled when we're doing maintenance, debugging a issue
     -- that happens only on that testbox, or some similar stuff.  This is an
@@ -926,6 +921,39 @@ CREATE VIEW TestBoxesWithStrings AS
             LEFT OUTER JOIN TestBoxStrTab Str7 ON idStrCpuName     = Str7.idStr
             LEFT OUTER JOIN TestBoxStrTab Str8 ON idStrReport      = Str8.idStr;
 
+
+--- @table TestBoxesInSchedGroups
+-- N:M relationship between test boxes and scheduling groups.
+--
+-- We associate a priority with this relationship.
+--
+-- @remarks This table stores history.  Never update or delete anything.  The
+--          equivalent of deleting is done by setting the 'tsExpire' field to
+--          current_timestamp.  To select the currently valid entries use
+--          tsExpire = TIMESTAMP WITH TIME ZONE 'infinity'.
+--
+CREATE TABLE TestBoxesInSchedGroups (
+    --- TestBox ID.
+    -- Non-unique foreign key: TestBoxes(idTestBox).
+    idTestBox           INTEGER     NOT NULL,
+    --- Scheduling ID.
+    -- Non-unique foreign key: SchedGroups(idSchedGroup).
+    idSchedGroup        INTEGER     NOT NULL,
+    --- When this row starts taking effect (inclusive).
+    tsEffective         TIMESTAMP WITH TIME ZONE  DEFAULT current_timestamp  NOT NULL,
+    --- When this row stops being tsEffective (exclusive).
+    tsExpire            TIMESTAMP WITH TIME ZONE  DEFAULT TIMESTAMP WITH TIME ZONE 'infinity'  NOT NULL,
+    --- The user id of the one who created/modified this entry.
+    -- Non-unique foreign key: Users(uid)
+    uidAuthor           INTEGER     NOT NULL,
+
+    --- The scheduling priority of the scheduling group for the test box.
+    -- Higher number causes the scheduling group to be serviced more frequently.
+    -- @sa TestGroupMembers.iSchedPriority, SchedGroups.iSchedPriority
+    iSchedPriority      INTEGER     DEFAULT 16 CHECK (iSchedPriority >= 0 AND iSchedPriority < 32)  NOT NULL,
+
+    PRIMARY KEY (idTestBox, idSchedGroup, tsExpire)
+);
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -1770,7 +1798,10 @@ CREATE TABLE TestBoxStatuses (
     --- The current state.
     enmState            TestBoxState_T DEFAULT 'idle'::TestBoxState_T  NOT NULL,
     --- Reference to the test set
-    idTestSet           INTEGER     REFERENCES TestSets(idTestSet)
+    idTestSet           INTEGER     REFERENCES TestSets(idTestSet),
+    --- Interal work item number.
+    -- This is used to pick and prioritize between multiple scheduling groups.
+    iWorkItem           INTEGER     DEFAULT 0  NOT NULL
 );
 
 
