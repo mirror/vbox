@@ -98,7 +98,7 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     if (RT_UNLIKELY(!GIMIsEnabled(pVM)))
         return VERR_GIM_NOT_ENABLED;
 
-    STAM_COUNTER_INC(&pVM->gim.s.StatHypercalls);
+    STAM_REL_COUNTER_INC(&pVM->gim.s.StatHypercalls);
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
