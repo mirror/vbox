@@ -1059,7 +1059,7 @@ class TestBoxLogic(ModelLogicBase):
         if oTestBox.fEnabled:
             oTestBox.fEnabled = False;
             if sComment is not None:
-                _ = sComment; # oTestBox.sComment = sComment;
+                oTestBox.sComment = sComment;
             self.editEntry(oTestBox, uidAuthor = uidAuthor, fCommit = fCommit);
         return None;
 
