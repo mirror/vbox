@@ -623,7 +623,7 @@ struct AudioAdapter
 {
     AudioAdapter();
 
-    bool areDefaultSettings() const;
+    bool areDefaultSettings(SettingsVersion_T sv) const;
 
     bool operator==(const AudioAdapter &a) const;
 
