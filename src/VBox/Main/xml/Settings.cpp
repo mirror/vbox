@@ -5895,7 +5895,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             /* Only write out the setting for non-default AC'97 codec
              * and leave the rest alone.
              */
-    #if 0
+#if 0
             case AudioCodecType_SB16:
                 pcszCodec = "SB16";
                 break;
@@ -5905,7 +5905,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             case AudioCodecType_STAC9700:
                 pcszCodec = "STAC9700";
                 break;
-    #endif
+#endif
             case AudioCodecType_AD1980:
                 pcszCodec = "AD1980";
                 break;
@@ -5931,7 +5931,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
         pelmAudio->setAttribute("driver", pcszDriver);
 
-        if (hw.audioAdapter.fEnabled)
+        if (hw.audioAdapter.fEnabled || m->sv <= SettingsVersion_v1_14)
             pelmAudio->setAttribute("enabled", hw.audioAdapter.fEnabled);
 
         if (m->sv >= SettingsVersion_v1_15 && hw.audioAdapter.properties.size() > 0)
