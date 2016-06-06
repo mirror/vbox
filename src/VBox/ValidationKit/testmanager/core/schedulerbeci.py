@@ -2,7 +2,7 @@
 # $Id$
 
 """
-Test Manager - Best-Effort-Continous-Itegration (BECI) scheduler.
+Test Manager - Best-Effort-Continuous-Integration (BECI) scheduler.
 """
 
 __copyright__ = \
@@ -35,7 +35,7 @@ from testmanager.core.schedulerbase  import SchedulerBase, SchedQueueData;
 
 class SchdulerBeci(SchedulerBase): # pylint: disable=R0903
     """
-    The best-effort-continous-itegration scheduler, BECI for short.
+    The best-effort-continuous-integration scheduler, BECI for short.
     """
 
     def __init__(self, oDb, oSchedGrpData, iVerbosity, tsSecStart):

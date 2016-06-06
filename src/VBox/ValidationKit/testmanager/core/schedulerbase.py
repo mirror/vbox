@@ -513,7 +513,7 @@ class SchedulerBase(object):
         Returns scheduler child class instance.  May raise exception if
         the input is invalid.
         """
-        if oSchedGrpData.enmScheduler == SchedGroupData.ksScheduler_BestEffortContinousItegration:
+        if oSchedGrpData.enmScheduler == SchedGroupData.ksScheduler_BestEffortContinuousIntegration:
             from testmanager.core.schedulerbeci import SchdulerBeci;
             oScheduler = SchdulerBeci(oDb, oSchedGrpData, iVerbosity, tsSecStart);
         else:

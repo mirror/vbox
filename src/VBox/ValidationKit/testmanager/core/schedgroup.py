@@ -153,7 +153,7 @@ class SchedGroupData(ModelDataBase):
 
     ## @name TestBoxState_T
     # @{
-    ksScheduler_BestEffortContinousItegration   = 'bestEffortContinousItegration';
+    ksScheduler_BestEffortContinuousIntegration = 'bestEffortContinousItegration'; # sic*2
     ksScheduler_Reserved                        = 'reserved';
     ## @}
 
@@ -174,14 +174,14 @@ class SchedGroupData(ModelDataBase):
 
     kasAllowNullAttributes      = ['idSchedGroup', 'tsEffective', 'tsExpire', 'uidAuthor', 'sDescription',
                                    'idBuildSrc', 'idBuildSrcTestSuite', 'sComment' ];
-    kasValidValues_enmScheduler = [ksScheduler_BestEffortContinousItegration, ];
+    kasValidValues_enmScheduler = [ ksScheduler_BestEffortContinuousIntegration, ];
 
     kcDbColumns                 = 11;
 
     # Scheduler types
     kasSchedulerDesc            = \
     [
-        ( ksScheduler_BestEffortContinousItegration,  'Best-Effort-Continous-Itegration (BECI) scheduler.', ''),
+        ( ksScheduler_BestEffortContinuousIntegration,  'Best-Effort-Continuous-Integration (BECI) scheduler.', ''),
     ]
 
     def __init__(self):
@@ -198,7 +198,7 @@ class SchedGroupData(ModelDataBase):
         self.sName                   = None;
         self.sDescription            = None;
         self.fEnabled                = None;
-        self.enmScheduler            = SchedGroupData.ksScheduler_BestEffortContinousItegration;
+        self.enmScheduler            = SchedGroupData.ksScheduler_BestEffortContinuousIntegration;
         self.idBuildSrc              = None;
         self.idBuildSrcTestSuite     = None;
         self.sComment                = None;
