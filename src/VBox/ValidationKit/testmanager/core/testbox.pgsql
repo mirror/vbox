@@ -25,6 +25,52 @@
 --
 
 
+--
+-- Old type signatures.
+--
+DROP FUNCTION IF EXISTS TestBoxLogic_addEntry(a_uidAuthor            INTEGER,
+                                                 a_ip                   inet,
+                                                 a_uuidSystem           uuid,
+                                                 a_sName                TEXT,
+                                                 a_sDescription         TEXT,
+                                                 a_idSchedGroup         INTEGER,
+                                                 a_fEnabled             BOOLEAN,
+                                                 a_enmLomKind           LomKind_T,
+                                                 a_ipLom                inet,
+                                                 a_pctScaleTimeout      INTEGER,  -- Actually smallint, but default typing fun.
+                                                 a_sComment             TEXT,
+                                                 a_enmPendingCmd        TestBoxCmd_T,
+                                                 OUT r_idTestBox        INTEGER,
+                                                 OUT r_idGenTestBox     INTEGER,
+                                                 OUT r_tsEffective      TIMESTAMP WITH TIME ZONE);
+DROP FUNCTION IF EXISTS TestBoxLogic_editEntry(a_uidAuthor           INTEGER,
+                                                  a_idTestBox           INTEGER,
+                                                  a_ip                  inet,
+                                                  a_uuidSystem          uuid,
+                                                  a_sName               TEXT,
+                                                  a_sDescription        TEXT,
+                                                  a_idSchedGroup        INTEGER,
+                                                  a_fEnabled            BOOLEAN,
+                                                  a_enmLomKind          LomKind_T,
+                                                  a_ipLom               inet,
+                                                  a_pctScaleTimeout     INTEGER, -- Actually smallint, but default typing fun.
+                                                  a_sComment            TEXT,
+                                                  a_enmPendingCmd       TestBoxCmd_T,
+                                                  OUT r_idGenTestBox    INTEGER,
+                                                  OUT r_tsEffective     TIMESTAMP WITH TIME ZONE);
+DROP FUNCTION IF EXISTS TestBoxLogic_removeEntry(INTEGER, INTEGER, BOOLEAN);
+DROP FUNCTION IF EXISTS TestBoxLogic_addGroupEntry(a_uidAuthor           INTEGER,
+                                                   a_idTestBox           INTEGER,
+                                                   a_idSchedGroup        INTEGER,
+                                                   a_iSchedPriority      INTEGER,
+                                                   OUT r_tsEffective     TIMESTAMP WITH TIME ZONE);
+DROP FUNCTION IF EXISTS    TestBoxLogic_editGroupEntry(a_uidAuthor          INTEGER,
+                                                       a_idTestBox          INTEGER,
+                                                       a_idSchedGroup       INTEGER,
+                                                       a_iSchedPriority     INTEGER,
+                                                       OUT r_tsEffective    INTEGER);
+
+
 ---
 -- Checks if the test box name is unique, ignoring a_idTestCaseIgnore.
 -- Raises exception if duplicates are found.
@@ -49,6 +95,54 @@ $$ LANGUAGE plpgsql;
 
 
 ---
+-- Checks that the given scheduling group exists.
+-- Raises exception if it doesn't.
+--
+-- @internal
+--
+CREATE OR REPLACE FUNCTION TestBoxLogic_checkSchedGroupExists(a_idSchedGroup INTEGER)
+    RETURNS VOID AS $$
+    DECLARE
+        v_cRows INTEGER;
+    BEGIN
+        SELECT  COUNT(*) INTO v_cRows
+        FROM    SchedGroups
+        WHERE   idSchedGroup = a_idSchedGroup
+            AND tsExpire     =  'infinity'::TIMESTAMP;
+        IF v_cRows <> 1 THEN
+            IF v_cRows = 0 THEN
+                RAISE EXCEPTION 'Scheduling group with ID % was not found', a_idSchedGroup;
+            END IF;
+            RAISE EXCEPTION 'Integrity error in SchedGroups: % current rows with idSchedGroup=%', v_cRows, a_idSchedGroup;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+---
+-- Checks that the given testbxo + scheduling group pair does not currently exists.
+-- Raises exception if it does.
+--
+-- @internal
+--
+CREATE OR REPLACE FUNCTION TestBoxLogic_checkTestBoxNotInSchedGroup(a_idTestBox INTEGER, a_idSchedGroup INTEGER)
+    RETURNS VOID AS $$
+    DECLARE
+        v_cRows INTEGER;
+    BEGIN
+        SELECT  COUNT(*) INTO v_cRows
+        FROM    TestBoxesInSchedGroups
+        WHERE   idTestBox    = a_idTestBox
+            AND idSchedGroup = a_idSchedGroup
+            AND tsExpire     =  'infinity'::TIMESTAMP;
+        IF v_cRows <> 0 THEN
+            RAISE EXCEPTION 'TestBox % is already a member of scheduling group %', a_idTestBox, a_idSchedGroup;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+---
 -- Historize a row.
 -- @internal
 --
@@ -67,6 +161,34 @@ CREATE OR REPLACE FUNCTION TestBoxLogic_historizeEntry(a_idGenTestBox INTEGER, a
                 RAISE EXCEPTION 'Test box generation ID % is no longer valid', a_idGenTestBox;
             END IF;
             RAISE EXCEPTION 'Integrity error in TestBoxes: % current rows with idGenTestBox=%', v_cUpdatedRows, a_idGenTestBox;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+---
+-- Historize a in-scheduling-group row.
+-- @internal
+--
+CREATE OR REPLACE FUNCTION TestBoxLogic_historizeGroupEntry(a_idTestBox INTEGER,
+                                                            a_idSchedGroup INTEGER,
+                                                            a_tsExpire TIMESTAMP WITH TIME ZONE)
+    RETURNS VOID AS $$
+    DECLARE
+        v_cUpdatedRows INTEGER;
+    BEGIN
+        UPDATE  TestBoxesInSchedGroups
+          SET   tsExpire        = a_tsExpire
+          WHERE idTestBox       = a_idTestBox
+            AND idSchedGroup    = a_idSchedGroup
+            AND tsExpire        = 'infinity'::TIMESTAMP;
+        GET DIAGNOSTICS v_cUpdatedRows = ROW_COUNT;
+        IF v_cUpdatedRows <> 1 THEN
+            IF v_cUpdatedRows = 0 THEN
+                RAISE EXCEPTION 'TestBox ID % / SchedGroup ID % is no longer a valid combination', a_idTestBox, a_idSchedGroup;
+            END IF;
+            RAISE EXCEPTION 'Integrity error in TestBoxesInSchedGroups: % current rows for % / %',
+                v_cUpdatedRows, a_idTestBox, a_idSchedGroup;
         END IF;
     END;
 $$ LANGUAGE plpgsql;
@@ -110,7 +232,6 @@ CREATE OR REPLACE function TestBoxLogic_addEntry(a_uidAuthor            INTEGER,
                                                  a_uuidSystem           uuid,
                                                  a_sName                TEXT,
                                                  a_sDescription         TEXT,
-                                                 a_idSchedGroup         INTEGER,
                                                  a_fEnabled             BOOLEAN,
                                                  a_enmLomKind           LomKind_T,
                                                  a_ipLom                inet,
@@ -137,29 +258,56 @@ CREATE OR REPLACE function TestBoxLogic_addEntry(a_uidAuthor            INTEGER,
                     uuidSystem,          -- 4
                     sName,               -- 5
                     idStrDescription,    -- 6
-                    idSchedGroup,        -- 7
-                    fEnabled,            -- 8
-                    enmLomKind,          -- 9
-                    ipLom,               -- 10
-                    pctScaleTimeout,     -- 11
-                    idStrComment,        -- 12
-                    enmPendingCmd )      -- 13
+                    fEnabled,            -- 7
+                    enmLomKind,          -- 8
+                    ipLom,               -- 9
+                    pctScaleTimeout,     -- 10
+                    idStrComment,        -- 11
+                    enmPendingCmd )      -- 12
             VALUES (CURRENT_TIMESTAMP,   -- 1
                     a_uidAuthor,         -- 2
                     a_ip,                -- 3
                     a_uuidSystem,        -- 4
                     a_sName,             -- 5
                     v_idStrDescription,  -- 6
-                    a_idSchedGroup,      -- 7
-                    a_fEnabled,          -- 8
-                    a_enmLomKind,        -- 9
-                    a_ipLom,             -- 10
-                    a_pctScaleTimeout,   -- 11
-                    v_idStrComment,      -- 12
-                    a_enmPendingCmd )    -- 13
+                    a_fEnabled,          -- 7
+                    a_enmLomKind,        -- 8
+                    a_ipLom,             -- 9
+                    a_pctScaleTimeout,   -- 10
+                    v_idStrComment,      -- 11
+                    a_enmPendingCmd )    -- 12
             RETURNING idTestBox, idGenTestBox, tsEffective INTO r_idTestBox, r_idGenTestBox, r_tsEffective;
     END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE function TestBoxLogic_addGroupEntry(a_uidAuthor           INTEGER,
+                                                      a_idTestBox           INTEGER,
+                                                      a_idSchedGroup        INTEGER,
+                                                      a_iSchedPriority      INTEGER,
+                                                      OUT r_tsEffective     TIMESTAMP WITH TIME ZONE
+                                                      ) AS $$
+    BEGIN
+        PERFORM TestBoxLogic_checkSchedGroupExists(a_idSchedGroup);
+        PERFORM TestBoxLogic_checkTestBoxNotInSchedGroup(a_idTestBox, a_idSchedGroup);
+
+        INSERT INTO TestBoxesInSchedGroups (
+                    idTestBox,
+                    idSchedGroup,
+                    tsEffective,
+                    tsExpire,
+                    uidAuthor,
+                    iSchedPriority)
+            VALUES (a_idTestBox,
+                    a_idSchedGroup,
+                    CURRENT_TIMESTAMP,
+                    'infinity'::TIMESTAMP,
+                    a_uidAuthor,
+                    a_iSchedPriority)
+            RETURNING tsEffective INTO r_tsEffective;
+    END;
+$$ LANGUAGE plpgsql;
+
 
 ---
 -- Only adds the user settable parts of the row, i.e. not what TestBoxLogic_updateOnSignOn touches.
@@ -170,7 +318,6 @@ CREATE OR REPLACE function TestBoxLogic_editEntry(a_uidAuthor           INTEGER,
                                                   a_uuidSystem          uuid,
                                                   a_sName               TEXT,
                                                   a_sDescription        TEXT,
-                                                  a_idSchedGroup        INTEGER,
                                                   a_fEnabled            BOOLEAN,
                                                   a_enmLomKind          LomKind_T,
                                                   a_ipLom               inet,
@@ -203,7 +350,6 @@ CREATE OR REPLACE function TestBoxLogic_editEntry(a_uidAuthor           INTEGER,
         v_Row.uuidSystem        := a_uuidSystem;
         v_Row.sName             := a_sName;
         v_Row.idStrDescription  := v_idStrDescription;
-        v_Row.idSchedGroup      := a_idSchedGroup;
         v_Row.fEnabled          := a_fEnabled;
         v_Row.enmLomKind        := a_enmLomKind;
         v_Row.ipLom             := a_ipLom;
@@ -224,7 +370,40 @@ CREATE OR REPLACE function TestBoxLogic_editEntry(a_uidAuthor           INTEGER,
 $$ LANGUAGE plpgsql;
 
 
-DROP FUNCTION IF EXISTS TestBoxLogic_removeEntry(INTEGER, INTEGER, BOOLEAN);
+CREATE OR REPLACE function TestBoxLogic_editGroupEntry(a_uidAuthor          INTEGER,
+                                                       a_idTestBox          INTEGER,
+                                                       a_idSchedGroup       INTEGER,
+                                                       a_iSchedPriority     INTEGER,
+                                                       OUT r_tsEffective    TIMESTAMP WITH TIME ZONE
+                                                       ) AS $$
+    DECLARE
+        v_Row               TestBoxesInSchedGroups%ROWTYPE;
+        v_idStrDescription  INTEGER;
+        v_idStrComment      INTEGER;
+    BEGIN
+        PERFORM TestBoxLogic_checkSchedGroupExists(a_idSchedGroup);
+
+        -- Fetch and historize the current row - there must be one.
+        UPDATE      TestBoxesInSchedGroups
+            SET     tsExpire     = CURRENT_TIMESTAMP
+            WHERE   idTestBox    = a_idTestBox
+                AND idSchedGroup = a_idSchedGroup
+                AND tsExpire     = 'infinity'::TIMESTAMP
+            RETURNING * INTO STRICT v_Row;
+
+        -- Modify the row with the new data.
+        v_Row.uidAuthor         := a_uidAuthor;
+        v_Row.iSchedPriority    := a_iSchedPriority;
+        v_Row.tsEffective       := v_Row.tsExpire;
+        r_tsEffective           := v_Row.tsExpire;
+        v_Row.tsExpire          := 'infinity'::TIMESTAMP;
+
+        -- Insert the modified row.
+        INSERT INTO TestBoxesInSchedGroups VALUES (v_Row.*);
+    END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION TestBoxLogic_removeEntry(a_uidAuthor INTEGER, a_idTestBox INTEGER, a_fCascade BOOLEAN)
     RETURNS VOID AS $$
     DECLARE
@@ -241,6 +420,14 @@ CREATE OR REPLACE FUNCTION TestBoxLogic_removeEntry(a_uidAuthor INTEGER, a_idTes
         ELSE
             RAISE EXCEPTION 'CASCADE test box deletion is not implemented';
         END IF;
+
+        --
+        -- Delete all current groups, skipping history since we're also deleting the testbox.
+        --
+        UPDATE      TestBoxesInSchedGroups
+            SET     tsExpire = CURRENT_TIMESTAMP
+            WHERE   idTestBox   = a_idTestBox
+                AND tsExpire    = 'infinity'::TIMESTAMP;
 
         --
         -- To preserve the information about who deleted the record, we try to
@@ -270,6 +457,45 @@ CREATE OR REPLACE FUNCTION TestBoxLogic_removeEntry(a_uidAuthor INTEGER, a_idTes
             RAISE EXCEPTION 'Test box with ID % does not currently exist', a_idTestBox;
         WHEN TOO_MANY_ROWS THEN
             RAISE EXCEPTION 'Integrity error in TestBoxes: Too many current rows for %', a_idTestBox;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION TestBoxLogic_removeGroupEntry(a_uidAuthor INTEGER, a_idTestBox INTEGER, a_idSchedGroup INTEGER)
+    RETURNS VOID AS $$
+    DECLARE
+        v_Row           TestBoxesInSchedGroups%ROWTYPE;
+        v_tsEffective   TIMESTAMP WITH TIME ZONE;
+    BEGIN
+        --
+        -- To preserve the information about who deleted the record, we try to
+        -- add a dummy record which expires immediately.  I say try because of
+        -- the primary key, we must let the new record be valid for 1 us. :-(
+        --
+        SELECT  * INTO STRICT v_Row
+        FROM    TestBoxesInSchedGroups
+        WHERE   idTestBox    = a_idTestBox
+            AND idSchedGroup = a_idSchedGroup
+            AND tsExpire     = 'infinity'::TIMESTAMP;
+
+        v_tsEffective := CURRENT_TIMESTAMP - INTERVAL '1 microsecond';
+        IF v_Row.tsEffective < v_tsEffective THEN
+            PERFORM TestBoxLogic_historizeGroupEntry(a_idTestBox, a_idSchedGroup, v_tsEffective);
+
+            v_Row.tsEffective   := v_tsEffective;
+            v_Row.tsExpire      := CURRENT_TIMESTAMP;
+            v_Row.uidAuthor     := a_uidAuthor;
+            INSERT INTO TestBoxesInSchedGroups VALUES (v_Row.*);
+        ELSE
+            PERFORM TestBoxLogic_historizeGroupEntry(a_idTestBox, a_idSchedGroup, CURRENT_TIMESTAMP);
+        END IF;
+
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE EXCEPTION 'TestBox #% does is not currently a member of scheduling group #%', a_idTestBox, a_idSchedGroup;
+        WHEN TOO_MANY_ROWS THEN
+            RAISE EXCEPTION 'Integrity error in TestBoxesInSchedGroups: Too many current rows for % / %',
+                a_idTestBox, a_idSchedGroup;
     END;
 $$ LANGUAGE plpgsql;
 

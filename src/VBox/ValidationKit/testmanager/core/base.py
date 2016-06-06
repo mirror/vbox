@@ -412,8 +412,9 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
 
         Child classes can override to do special parameter conversion jobs.
         """
-        sPrefix = self.getHungarianPrefix(sAttr);
+        sPrefix       = self.getHungarianPrefix(sAttr);
         asValidValues = getattr(self, 'kasValidValues_' + sAttr, None);
+        fAllowNull    = sAttr in getattr(self, 'kasAllowNullAttributes', list());
         if fStrict:
             if sPrefix == 'f':
                 # HACK ALERT! Checkboxes are only present when checked, so we always have to provide a default.
@@ -422,13 +423,13 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
                 # HACK ALERT! Lists are not present if empty.
                 oNewValue = oDisp.getListOfStrParams(sParam, []);
             else:
-                oNewValue = oDisp.getStringParam(sParam, asValidValues, None);
+                oNewValue = oDisp.getStringParam(sParam, asValidValues, None, fAllowNull = fAllowNull);
         else:
             if sPrefix[0] == 'a':
                 oNewValue = oDisp.getListOfStrParams(sParam, []);
             else:
                 assert oValue is not None, 'sAttr=%s' % (sAttr,);
-                oNewValue = oDisp.getStringParam(sParam, asValidValues, oValue);
+                oNewValue = oDisp.getStringParam(sParam, asValidValues, oValue, fAllowNull = fAllowNull);
         return oNewValue;
 
     def initFromParams(self, oDisp, fStrict = True):
@@ -1052,9 +1053,9 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         def __init__(self, oDisp, sAttrFmt):
             self.oDisp    = oDisp;
             self.sAttrFmt = sAttrFmt;
-        def getStringParam(self, sName, asValidValues = None, sDefault = None):
+        def getStringParam(self, sName, asValidValues = None, sDefault = None, fAllowNull = False):
             """See WuiDispatcherBase.getStringParam."""
-            return self.oDisp.getStringParam(self.sAttrFmt % (sName,), asValidValues, sDefault);
+            return self.oDisp.getStringParam(self.sAttrFmt % (sName,), asValidValues, sDefault, fAllowNull = fAllowNull);
         def getListOfStrParams(self, sName, asDefaults = None):
             """See WuiDispatcherBase.getListOfStrParams."""
             return self.oDisp.getListOfStrParams(self.sAttrFmt % (sName,), asDefaults);
@@ -1132,8 +1133,8 @@ class ModelDataBaseTestCase(unittest.TestCase):
 
     def testInitFromParams(self):
         class DummyDisp(object):
-            def getStringParam(self, sName, asValidValues = None, sDefault = None):
-                _ = sName; _ = asValidValues;
+            def getStringParam(self, sName, asValidValues = None, sDefault = None, fAllowNull = False):
+                _ = sName; _ = asValidValues; _ = fAllowNull;
                 return sDefault;
             def getListOfStrParams(self, sName, asDefaults = None):
                 _ = sName;

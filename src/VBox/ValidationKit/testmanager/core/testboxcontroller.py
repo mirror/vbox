@@ -570,7 +570,7 @@ class TestBoxController(object): # pylint: disable=R0903
         if fIdle \
           and oTestBoxData.fEnabled \
           and oStatusData.enmState == TestBoxStatusData.ksTestBoxState_Idle: # (paranoia)
-            dResponse = SchedulerBase.scheduleNewTask(oDb, oTestBoxData, self._oSrvGlue.getBaseUrl());
+            dResponse = SchedulerBase.scheduleNewTask(oDb, oTestBoxData, oStatusData.iWorkItem, self._oSrvGlue.getBaseUrl());
             if dResponse is not None:
                 return self._writeResponse(dResponse);
 

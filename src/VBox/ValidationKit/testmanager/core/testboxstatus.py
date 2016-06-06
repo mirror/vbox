@@ -61,6 +61,7 @@ class TestBoxStatusData(ModelDataBase):
     ksParam_tsUpdated           = 'TestBoxStatus_tsUpdated';
     ksParam_enmState            = 'TestBoxStatus_enmState';
     ksParam_idTestSet           = 'TestBoxStatus_idTestSet';
+    ksParam_iWorkItem           = 'TestBoxStatus_iWorkItem';
 
     kasAllowNullAttributes      = ['idTestSet', ];
     kasValidValues_enmState     = \
@@ -70,6 +71,8 @@ class TestBoxStatusData(ModelDataBase):
         ksTestBoxState_Rebooting,               ksTestBoxState_Upgrading,   ksTestBoxState_UpgradingAndRebooting,
         ksTestBoxState_DoingSpecialCmd,
     ];
+
+    kcDbColumns                 = 6;
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -83,6 +86,7 @@ class TestBoxStatusData(ModelDataBase):
         self.tsUpdated           = None;
         self.enmState            = self.ksTestBoxState_Idle;
         self.idTestSet           = None;
+        self.iWorkItem           = None;
 
     def initFromDbRow(self, aoRow):
         """
@@ -98,6 +102,7 @@ class TestBoxStatusData(ModelDataBase):
         self.tsUpdated           = aoRow[2];
         self.enmState            = aoRow[3];
         self.idTestSet           = aoRow[4];
+        self.iWorkItem           = aoRow[5];
         return self;
 
     def initFromDbWithId(self, oDb, idTestBox):
@@ -160,30 +165,14 @@ class TestBoxStatusLogic(ModelLogicBase):
         not found.  May throw an exception on database error.
         """
         self._oDb.execute('SELECT   TestBoxStatuses.*,\n'
-                          '         TestBoxes.*,\n'
-                          '         Str1.sValue,\n'
-                          '         Str2.sValue,\n'
-                          '         Str3.sValue,\n'
-                          '         Str4.sValue,\n'
-                          '         Str5.sValue,\n'
-                          '         Str6.sValue,\n'
-                          '         Str7.sValue,\n'
-                          '         Str8.sValue\n'
+                          '         TestBoxesWithStrings.*,\n'
                           'FROM     TestBoxStatuses,\n'
-                          '         TestBoxes\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str1 ON idStrDescription = Str1.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str2 ON idStrComment     = Str2.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str3 ON idStrOs          = Str3.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str4 ON idStrOsVersion   = Str4.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str5 ON idStrCpuVendor   = Str5.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str6 ON idStrCpuArch     = Str6.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str7 ON idStrCpuName     = Str7.idStr\n'
-                          '         LEFT OUTER JOIN TestBoxStrTab Str8 ON idStrReport      = Str8.idStr\n'
-                          'WHERE    TestBoxStatuses.idTestBox = %s\n'
-                          '     AND TestBoxes.idTestBox  = %s\n'
-                          '     AND TestBoxes.tsExpire   = \'infinity\'::TIMESTAMP\n'
-                          '     AND TestBoxes.uuidSystem = %s\n'
-                          '     AND TestBoxes.ip         = %s\n'
+                          '         TestBoxesWithStrings\n'
+                          'WHERE    TestBoxStatuses.idTestBox       = %s\n'
+                          '     AND TestBoxesWithStrings.idTestBox  = %s\n'
+                          '     AND TestBoxesWithStrings.tsExpire   = \'infinity\'::TIMESTAMP\n'
+                          '     AND TestBoxesWithStrings.uuidSystem = %s\n'
+                          '     AND TestBoxesWithStrings.ip         = %s\n'
                           , (idTestBox,
                              idTestBox,
                              sTestBoxUuid,
@@ -195,7 +184,8 @@ class TestBoxStatusLogic(ModelLogicBase):
                 raise TMTooManyRows('tryFetchStatusForCommandReq got %s rows for idTestBox=%s' % (cRows, idTestBox));
             return (None, None);
         aoRow = self._oDb.fetchOne();
-        return (TestBoxStatusData().initFromDbRow(aoRow[0:5]), TestBoxData().initFromDbRow(aoRow[5:]));
+        return (TestBoxStatusData().initFromDbRow(aoRow[:TestBoxStatusData.kcDbColumns]),
+                TestBoxData().initFromDbRow(aoRow[TestBoxStatusData.kcDbColumns:]));
 
 
     def insertIdleStatus(self, idTestBox, idGenTestBox, fCommit = False):
@@ -206,11 +196,13 @@ class TestBoxStatusLogic(ModelLogicBase):
                           '         idTestBox,\n'
                           '         idGenTestBox,\n'
                           '         enmState,\n'
-                          '         idTestSet)\n'
+                          '         idTestSet,\n'
+                          '         iWorkItem)\n'
                           'VALUES ( %s,\n'
                           '         %s,\n'
                           '         \'idle\'::TestBoxState_T,\n'
-                          '         NULL)\n',
+                          '         NULL,\n',
+                          '         0)\n',
                           (idTestBox, idGenTestBox) );
         self._oDb.maybeCommit(fCommit);
         return True;
@@ -250,6 +242,17 @@ class TestBoxStatusLogic(ModelLogicBase):
                           '                       FROM   TestSets\n'
                           '                       WHERE  idTestSetGangLeader = %s)\n'
                           , (sNewState, idTestSetGangLeader,) );
+        self._oDb.maybeCommit(fCommit);
+        return True;
+
+    def updateWorkItem(self, idTestBox, iWorkItem, fCommit = False):
+        """
+        Updates the testbox state.
+        """
+        self._oDb.execute('UPDATE   TestBoxStatuses\n'
+                          'SET      iWorkItem = %s\n'
+                          'WHERE    idTestBox = %s\n'
+                          , ( iWorkItem, idTestBox,));
         self._oDb.maybeCommit(fCommit);
         return True;
 

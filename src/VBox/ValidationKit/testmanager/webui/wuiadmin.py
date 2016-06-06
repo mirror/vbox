@@ -525,33 +525,33 @@ class WuiAdmin(WuiDispatcherBase):
 
     def _actionTestBoxAdd(self):
         """ Action wrapper. """
-        from testmanager.core.testbox                  import TestBoxData;
+        from testmanager.core.testbox                  import TestBoxDataEx;
         from testmanager.webui.wuiadmintestbox         import WuiTestBox;
-        return self._actionGenericFormAdd(TestBoxData, WuiTestBox);
+        return self._actionGenericFormAdd(TestBoxDataEx, WuiTestBox);
 
     def _actionTestBoxAddPost(self):
         """ Action wrapper. """
-        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.core.testbox                  import TestBoxDataEx, TestBoxLogic;
         from testmanager.webui.wuiadmintestbox         import WuiTestBox;
-        return self._actionGenericFormAddPost(TestBoxData, TestBoxLogic, WuiTestBox, self.ksActionTestBoxList);
+        return self._actionGenericFormAddPost(TestBoxDataEx, TestBoxLogic, WuiTestBox, self.ksActionTestBoxList);
 
     def _actionTestBoxDetails(self):
         """ Action wrapper. """
-        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.core.testbox                  import TestBoxDataEx, TestBoxLogic;
         from testmanager.webui.wuiadmintestbox         import WuiTestBox;
-        return self._actionGenericFormDetails(TestBoxData, TestBoxLogic, WuiTestBox, 'idTestBox', 'idGenTestBox');
+        return self._actionGenericFormDetails(TestBoxDataEx, TestBoxLogic, WuiTestBox, 'idTestBox', 'idGenTestBox');
 
     def _actionTestBoxEdit(self):
         """ Action wrapper. """
-        from testmanager.core.testbox                  import TestBoxData;
+        from testmanager.core.testbox                  import TestBoxDataEx;
         from testmanager.webui.wuiadmintestbox         import WuiTestBox;
-        return self._actionGenericFormEdit(TestBoxData, WuiTestBox, TestBoxData.ksParam_idTestBox);
+        return self._actionGenericFormEdit(TestBoxDataEx, WuiTestBox, TestBoxDataEx.ksParam_idTestBox);
 
     def _actionTestBoxEditPost(self):
         """ Action wrapper. """
-        from testmanager.core.testbox                  import TestBoxData, TestBoxLogic;
+        from testmanager.core.testbox                  import TestBoxDataEx, TestBoxLogic;
         from testmanager.webui.wuiadmintestbox         import WuiTestBox;
-        return self._actionGenericFormEditPost(TestBoxData, TestBoxLogic,WuiTestBox, self.ksActionTestBoxList);
+        return self._actionGenericFormEditPost(TestBoxDataEx, TestBoxLogic,WuiTestBox, self.ksActionTestBoxList);
 
     def _actionTestBoxRemovePost(self):
         """ Action wrapper. """

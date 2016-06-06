@@ -43,7 +43,7 @@ from testmanager.core.buildsource       import BuildSourceData, BuildSourceLogic
 from testmanager.core.globalresource    import GlobalResourceLogic;
 from testmanager.core.schedgroup        import SchedGroupData, SchedGroupLogic;
 from testmanager.core.systemlog         import SystemLogData, SystemLogLogic;
-from testmanager.core.testbox           import TestBoxData;
+from testmanager.core.testbox           import TestBoxData, TestBoxDataEx;
 from testmanager.core.testboxstatus     import TestBoxStatusData, TestBoxStatusLogic;
 from testmanager.core.testcase          import TestCaseLogic;
 from testmanager.core.testcaseargs      import TestCaseArgsDataEx, TestCaseArgsLogic;
@@ -782,7 +782,7 @@ class SchedulerBase(object):
         #
         # Instantiate the specified scheduler and let it do the rest.
         #
-        oSchedGrpData = SchedGroupData().initFromDbWithId(oDb, oTestBox.idSchedGroup, oTestSet.tsCreated);
+        oSchedGrpData = SchedGroupData().initFromDbWithId(oDb, oTestSet.idSchedGroup, oTestSet.tsCreated);
         assert oSchedGrpData.fEnabled   is True;
         assert oSchedGrpData.idBuildSrc is not None;
         oScheduler = SchedulerBase._instantiate(oDb, oSchedGrpData, iVerbosity);
@@ -837,9 +837,11 @@ class SchedulerBase(object):
 
 
     def _createTestSet(self, oTask, oTestEx, oTestBoxData, oBuild, oValidationKitBuild, tsNow):
+        # type: (SchedQueueData, TestCaseArgsDataEx, TestBoxData, BuildDataEx, BuildDataEx, datetime.datetime) -> int
         """
         Creates a test set for using the given data.
         Will not commit, someone up the callstack will that later on.
+
         Returns the test set ID, may raise an exception on database error.
         """
         # Lazy bird doesn't want to write testset.py and does it all here.
@@ -917,7 +919,7 @@ class SchedulerBase(object):
                               oValidationKitBuild.idBuild if oValidationKitBuild is not None else None,
                               oTestBoxData.idGenTestBox,
                               oTestBoxData.idTestBox,
-                              oTestBoxData.idSchedGroup,
+                              oTask.idSchedGroup,
                               oTask.idTestGroup,
                               oTestEx.oTestCase.idGenTestCase,
                               oTestEx.oTestCase.idTestCase,
@@ -1288,44 +1290,102 @@ class SchedulerBase(object):
         return None;
 
     @staticmethod
-    def scheduleNewTask(oDb, oTestBoxData, sBaseUrl, iVerbosity = 0):
+    def _pickSchedGroup(oTestBoxDataEx, iWorkItem):
         """
-        Schedules a new task.
+        Picks the next scheduling group for the given testbox.
         """
+        if len(oTestBoxDataEx.aoInSchedGroups) == 1:
+            oSchedGroup = oTestBoxDataEx.aoInSchedGroups[0].oSchedGroup;
+            if oSchedGroup.fEnabled and oSchedGroup.idBuildSrc is not None:
+                return (oSchedGroup, 0);
+
+        elif len(oTestBoxDataEx.aoInSchedGroups) > 0:
+            # Construct priority table of currently enabled scheduling groups.
+            aaoList1 = [];
+            for oInGroup in oTestBoxDataEx.aoInSchedGroups:
+                oSchedGroup = oInGroup.oSchedGroup;
+                if oSchedGroup.fEnabled and oSchedGroup.idBuildSrc is not None:
+                    iSchedPriority = oInGroup.iSchedPriority;
+                    if iSchedPriority > 31:     # paranoia
+                        iSchedPriority = 31;
+                    elif iSchedPriority < 0:    # paranoia
+                        iSchedPriority = 0;
+
+                    for iSchedPriority in xrange(min(iSchedPriority, len(aaoList1))):
+                        aaoList1[iSchedPriority].append(oSchedGroup);
+                    while len(aaoList1) <= iSchedPriority:
+                        aaoList1.append([oSchedGroup,]);
+
+            # Flatten it into a single list, mixing the priorities a little so it doesn't
+            # take forever before low priority stuff is executed.
+            aoFlat = [];
+            iLo    = 0;
+            iHi    = len(aaoList1) - 1;
+            while iHi >= iLo:
+                aoFlat += aaoList1[iHi];
+                if iLo < iHi:
+                    aoFlat += aaoList1[iLo];
+                iLo += 1;
+                iHi -= 1;
+
+            # Pick the next one.
+            iWorkItem += 1;
+            if iWorkItem >= len(aoFlat):
+                iWorkItem = 0;
+            if iWorkItem < len(aoFlat):
+                return (aoFlat[iWorkItem], iWorkItem);
+
+        # No active group.
+        return (None, 0);
+
+    @staticmethod
+    def scheduleNewTask(oDb, oTestBoxData, iWorkItem, sBaseUrl, iVerbosity = 0):
+        # type: (TMDatabaseConnection, TestBoxData, int, str, int) -> None
+        """
+        Schedules a new task for a testbox.
+        """
+        oTBStatusLogic = TestBoxStatusLogic(oDb);
+
         try:
             #
             # To avoid concurrency issues in SchedQueues we lock all the rows
             # related to our scheduling queue.  Also, since this is a very
             # expensive operation we lock the testbox status row to fend of
-            # repeated retires by fault testbox script.
+            # repeated retires by faulty testbox scripts.
             #
             tsSecStart = utils.timestampSecond();
             oDb.rollback();
             oDb.begin();
             oDb.execute('SELECT idTestBox FROM TestBoxStatuses WHERE idTestBox = %s FOR UPDATE NOWAIT'
                         % (oTestBoxData.idTestBox,));
-            oDb.execute('SELECT idSchedGroup FROM SchedQueues WHERE idSchedGroup = %s FOR UPDATE'
-                        % (oTestBoxData.idSchedGroup,));
+            oDb.execute('SELECT SchedQueues.idSchedGroup\n'
+                        '  FROM SchedQueues, TestBoxesInSchedGroups\n'
+                        'WHERE  TestBoxesInSchedGroups.idTestBox    = %s\n'
+                        '   AND TestBoxesInSchedGroups.tsExpire     = \'infinity\'::TIMESTAMP\n'
+                        '   AND TestBoxesInSchedGroups.idSchedGroup = SchedQueues.idSchedGroup\n'
+                        ' FOR UPDATE'
+                        % (oTestBoxData.idTestBox,));
 
             # We need the current timestamp.
             tsNow = oDb.getCurrentTimestamp();
 
-            # Re-read the testbox data ...
-            oTestBoxDataCur = TestBoxData().initFromDbWithId(oDb, oTestBoxData.idTestBox, tsNow);
-            if    oTestBoxDataCur.fEnabled \
-              and oTestBoxDataCur.idGenTestBox == oTestBoxData.idGenTestBox \
-              and oTestBoxDataCur.idSchedGroup == oTestBoxData.idSchedGroup: # (paranoia wrt idSchedGroup)
+            # Re-read the testbox data with scheduling group relations.
+            oTestBoxDataEx = TestBoxDataEx().initFromDbWithId(oDb, oTestBoxData.idTestBox, tsNow);
+            if    oTestBoxDataEx.fEnabled \
+              and oTestBoxDataEx.idGenTestBox == oTestBoxData.idGenTestBox:
 
-                # ... and schedule group data.
-                oSchedGrpData = SchedGroupData().initFromDbWithId(oDb, oTestBoxDataCur.idSchedGroup, tsNow);
-                if oSchedGrpData.fEnabled  and  oSchedGrpData.idBuildSrc is not None:
+                # Now, pick the scheduling group.
+                (oSchedGroup, iWorkItem) = SchedulerBase._pickSchedGroup(oTestBoxDataEx, iWorkItem);
+                if oSchedGroup is not None:
+                    assert oSchedGroup.fEnabled and oSchedGroup.idBuildSrc is not None;
 
                     #
                     # Instantiate the specified scheduler and let it do the rest.
                     #
-                    oScheduler = SchedulerBase._instantiate(oDb, oSchedGrpData, iVerbosity, tsSecStart);
-                    dResponse = oScheduler.scheduleNewTaskWorker(oTestBoxDataCur, tsNow, sBaseUrl);
+                    oScheduler = SchedulerBase._instantiate(oDb, oSchedGroup, iVerbosity, tsSecStart);
+                    dResponse = oScheduler.scheduleNewTaskWorker(oTestBoxDataEx, tsNow, sBaseUrl);
                     if dResponse is not None:
+                        oTBStatusLogic.updateWorkItem(oTestBoxDataEx.idTestBox, iWorkItem);
                         oDb.commit();
                         return dResponse;
         except:

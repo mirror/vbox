@@ -38,7 +38,7 @@ from testmanager.webui.wuicontentbase   import WuiContentBase, WuiListContentWit
                                                WuiSvnLink, WuiTmLink, WuiSpanText, WuiRawHtml;
 from testmanager.core.db                import TMDatabaseConnection;
 from testmanager.core.schedgroup        import SchedGroupLogic, SchedGroupData;
-from testmanager.core.testbox           import TestBoxData;
+from testmanager.core.testbox           import TestBoxData, TestBoxDataEx;
 from testmanager.core.testset           import TestSetData;
 from testmanager.core.db                import isDbTimestampInfinity;
 
@@ -101,17 +101,34 @@ class WuiTestBox(WuiFormContentBase):
         oForm.addUuid(       TestBoxData.ksParam_uuidSystem,        oData.uuidSystem, 'TestBox System/Firmware UUID');
         oForm.addText(       TestBoxData.ksParam_sName,             oData.sName, 'TestBox Name');
         oForm.addText(       TestBoxData.ksParam_sDescription,      oData.sDescription, 'TestBox Description');
-        oForm.addComboBox(   TestBoxData.ksParam_idSchedGroup,      oData.idSchedGroup, 'Scheduling Group',
-                             SchedGroupLogic(TMDatabaseConnection()).getSchedGroupsForCombo());
         oForm.addCheckBox(   TestBoxData.ksParam_fEnabled,          oData.fEnabled, 'Enabled');
         oForm.addComboBox(   TestBoxData.ksParam_enmLomKind,        oData.enmLomKind, 'Lights-out-management',
                              TestBoxData.kaoLomKindDescs);
         oForm.addText(       TestBoxData.ksParam_ipLom,             oData.ipLom, 'Lights-out-management IP Address');
         oForm.addInt(        TestBoxData.ksParam_pctScaleTimeout,   oData.pctScaleTimeout, 'Timeout scale factor (%)');
 
-        ## @todo Pretty format the read-only fields and use hidden fields for
-        #        passing the actual values. (Yes, we need the values so we can
-        #        display the form correctly on input error.)
+        oForm.addListOfSchedGroupsForTestBox(TestBoxDataEx.ksParam_aoInSchedGroups,
+                                             oData.aoInSchedGroups,
+                                             SchedGroupLogic(TMDatabaseConnection()).fetchOrderedByName(),
+                                             'Scheduling Group');
+        # Command, comment and submit button.
+        if self._sMode == WuiFormContentBase.ksMode_Edit:
+            oForm.addComboBox(TestBoxData.ksParam_enmPendingCmd,    oData.enmPendingCmd, 'Pending command',
+                              TestBoxData.kaoTestBoxCmdDescs);
+        else:
+            oForm.addComboBoxRO(TestBoxData.ksParam_enmPendingCmd,  oData.enmPendingCmd, 'Pending command',
+                                TestBoxData.kaoTestBoxCmdDescs);
+        oForm.addMultilineText(TestBoxData.ksParam_sComment,        oData.sComment, 'Comment');
+        if self._sMode != WuiFormContentBase.ksMode_Show:
+            oForm.addSubmit('Create TestBox' if self._sMode == WuiFormContentBase.ksMode_Add else 'Change TestBox');
+
+        return True;
+
+
+    def _generatePostFormContent(self, oData):
+        from testmanager.webui.wuihlpform import WuiHlpForm;
+
+        oForm = WuiHlpForm('testbox-machine-settable', '', fReadOnly = True);
         oForm.addTextRO(     TestBoxData.ksParam_sOs,               oData.sOs, 'TestBox OS');
         oForm.addTextRO(     TestBoxData.ksParam_sOsVersion,        oData.sOsVersion, 'TestBox OS version');
         oForm.addTextRO(     TestBoxData.ksParam_sCpuArch,          oData.sCpuArch, 'TestBox OS kernel architecture');
@@ -137,20 +154,8 @@ class WuiTestBox(WuiFormContentBase):
         sHexVer = oData.formatPythonVersion();
         oForm.addIntRO(      TestBoxData.ksParam_iPythonHexVersion, oData.iPythonHexVersion,
                              'Python version (hex)', sPostHtml = webutils.escapeElem(sHexVer));
+        return [('Machine Only Settables', oForm.finalize()),];
 
-        if self._sMode == WuiFormContentBase.ksMode_Edit:
-            oForm.addComboBox(TestBoxData.ksParam_enmPendingCmd,    oData.enmPendingCmd, 'Pending command',
-                              TestBoxData.kaoTestBoxCmdDescs);
-        else:
-            oForm.addComboBoxRO(TestBoxData.ksParam_enmPendingCmd,  oData.enmPendingCmd, 'Pending command',
-                                TestBoxData.kaoTestBoxCmdDescs);
-
-        oForm.addMultilineText(TestBoxData.ksParam_sComment,        oData.sComment, 'Comment');
-
-        if self._sMode != WuiFormContentBase.ksMode_Show:
-            oForm.addSubmit('Create TestBox' if self._sMode == WuiFormContentBase.ksMode_Add else 'Change TestBox');
-
-        return True;
 
 
 class WuiTestBoxList(WuiListContentWithActionBase):
@@ -172,6 +177,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
     ];
 
     def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+        # type: (list[TestBoxDataForListing], int, int, datetime.datetime, ignore, WuiAdmin) -> None
         WuiListContentWithActionBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                               sTitle = 'TestBoxes', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp);
         self._asColumnHeaders.extend([ 'Name', 'LOM', 'Status', 'Cmd',
@@ -236,14 +242,15 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         # Comment
         oComment = self._formatCommentCell(oEntry.sComment);
 
-        # Group link.
-        oGroup = self._dSchedGroups.get(oEntry.idSchedGroup);
-        oGroupLink = WuiTmLink(oGroup.sName if oGroup is not None else str(oEntry.idSchedGroup),
-                               WuiAdmin.ksScriptName,
-                               { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupEdit,
-                                 SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup, },
-                               sTitle = '#%u' % (oEntry.idSchedGroup,),
-                               fBracketed = False);
+        # Group links.
+        aoGroups = [];
+        for oInGroup in oEntry.aoInSchedGroups:
+            oSchedGroup = oInGroup.oSchedGroup;
+            aoGroups.append(WuiTmLink(oSchedGroup.sName, WuiAdmin.ksScriptName,
+                                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupEdit,
+                                        SchedGroupData.ksParam_idSchedGroup: oSchedGroup.idSchedGroup, },
+                                      sTitle = '#%u' % (oSchedGroup.idSchedGroup,),
+                                      fBracketed = len(oEntry.aoInSchedGroups) > 1));
 
         # Reformat the OS version to take less space.
         aoOs = [ 'N/A' ];
@@ -337,7 +344,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                  oComment,
                  WuiSvnLink(oEntry.iTestBoxScriptRev),
                  oEntry.formatPythonVersion(),
-                 oGroupLink,
+                 aoGroups,
                  aoOs,
                  oCpu,
                  sFeatures,

@@ -315,7 +315,7 @@ class WuiDispatcherBase(object):
     # Parameter handling.
     #
 
-    def getStringParam(self, sName, asValidValues = None, sDefault = None):
+    def getStringParam(self, sName, asValidValues = None, sDefault = None, fAllowNull = False):
         """
         Gets a string parameter.
         Raises exception if not found and sDefault is None.
@@ -327,7 +327,7 @@ class WuiDispatcherBase(object):
             if isinstance(sValue, list):
                 raise WuiException('%s parameter "%s" is given multiple times: "%s"' % (self._sAction, sName, sValue));
             sValue = sValue.strip();
-        elif sDefault is None:
+        elif sDefault is None and fAllowNull is not True:
             raise WuiException('%s is missing parameters: "%s"' % (self._sAction, sName,));
         else:
             sValue = sDefault;

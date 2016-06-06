@@ -762,8 +762,8 @@ class WuiHlpForm(object):
         """
         For WuiAdminSchedGroup.
         """
-        if self._fReadOnly:
-            fReadOnly = True;
+        if fReadOnly is None or self._fReadOnly:
+            fReadOnly = self._fReadOnly;
         assert len(aoSchedGroupMembers) <= len(aoAllTestGroups);
         self._addLabel(sName, sLabel);
         if len(aoAllTestGroups) == 0:
@@ -855,6 +855,93 @@ class WuiHlpForm(object):
             self._add(u'  </tr>\n');
         return self._add(u' </tbody>\n'
                          u'</table>\n');
+
+    def addListOfSchedGroupsForTestBox(self, sName, aoInSchedGroups, aoAllSchedGroups, sLabel,  # pylint: disable=R0914
+                                       fReadOnly = None):
+        # type: (str, TestBoxInSchedGroupDataEx, SchedGroupData, str, bool) -> str
+        """
+        For WuiTestGroup.
+        """
+        from testmanager.core.testbox import TestBoxInSchedGroupData, TestBoxDataEx;
+
+        if fReadOnly is None or self._fReadOnly:
+            fReadOnly = self._fReadOnly;
+        assert len(aoInSchedGroups) <= len(aoAllSchedGroups);
+
+        # Only show selected groups in read-only mode.
+        if fReadOnly:
+            aoAllSchedGroups = [oCur.oSchedGroup for oCur in aoInSchedGroups]
+
+        self._addLabel(sName, sLabel);
+        if len(aoAllSchedGroups) == 0:
+            return self._add('<li>No scheduling groups available.</li>\n')
+
+        # Add special parameter with all the scheduling group IDs in the form.
+        self._add(u'<input name="%s" type="hidden" value="%s">\n'
+                  % ( TestBoxDataEx.ksParam_aidSchedGroups,
+                      ','.join([unicode(oSchedGroup.idSchedGroup) for oSchedGroup in aoAllSchedGroups]), ));
+
+        # Table header.
+        self._add(u'<table class="tmformtbl">\n'
+                  u' <thead>\n'
+                  u'  <tr>\n'
+                  u'    <th rowspan="2"></th>\n'
+                  u'    <th rowspan="2">Schedulding Grooup</th>\n'
+                  u'    <th rowspan="2">Priority [0..31]</th>\n'
+                  u'  </tr>\n'
+                  u' </thead>\n'
+                  u' <tbody>\n'
+                  );
+
+        # Table body.
+        if self._fReadOnly:
+            fReadOnly = True;
+        sCheckBoxAttr = ' readonly onclick="return false" onkeydown="return false"' if fReadOnly else '';
+
+        oDefMember = TestBoxInSchedGroupData();
+        aoInSchedGroups = list(aoInSchedGroups); # Copy it so we can pop.
+        for iSchedGroup, oSchedGroup in enumerate(aoAllSchedGroups):
+
+            # Is it a member?
+            oMember = None;
+            for i, _ in enumerate(aoInSchedGroups):
+                if aoInSchedGroups[i].idSchedGroup == oSchedGroup.idSchedGroup:
+                    oMember = aoInSchedGroups.pop(i);
+                    break;
+
+            # Start on the rows...
+            sPrefix = u'%s[%d]' % (sName, oSchedGroup.idSchedGroup,);
+            self._add(u'  <tr class="%s">\n'
+                      u'    <td>\n'
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # idSchedGroup
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # idTestBox
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # tsExpire
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # tsEffective
+                      u'      <input name="%s[%s]" type="hidden" value="%s">\n' # uidAuthor
+                      u'      <input name="%s" type="checkbox"%s%s value="%d" class="tmform-checkbox" title="#%d - %s">\n' #(list)
+                      u'    </td>\n'
+                      % ( 'tmodd' if iSchedGroup & 1 else 'tmeven',
+                          sPrefix, TestBoxInSchedGroupData.ksParam_idSchedGroup,  oSchedGroup.idSchedGroup,
+                          sPrefix, TestBoxInSchedGroupData.ksParam_idTestBox,   -1 if oMember is None else oMember.idTestBox,
+                          sPrefix, TestBoxInSchedGroupData.ksParam_tsExpire,    '' if oMember is None else oMember.tsExpire,
+                          sPrefix, TestBoxInSchedGroupData.ksParam_tsEffective, '' if oMember is None else oMember.tsEffective,
+                          sPrefix, TestBoxInSchedGroupData.ksParam_uidAuthor,   '' if oMember is None else oMember.uidAuthor,
+                          TestBoxDataEx.ksParam_aoInSchedGroups, '' if oMember is None else ' checked', sCheckBoxAttr,
+                          oSchedGroup.idSchedGroup, oSchedGroup.idSchedGroup, escapeElem(oSchedGroup.sName),
+                          ));
+            self._add(u'    <td align="left">%s</td>\n' % ( escapeElem(oSchedGroup.sName), ));
+
+            self._add(u'    <td align="center">\n'
+                      u'      <input name="%s[%s]" type="text" value="%s" style="max-width:3em;" %s>\n'
+                      u'    </td>\n'
+                      % ( sPrefix, TestBoxInSchedGroupData.ksParam_iSchedPriority,
+                          (oMember if oMember is not None else oDefMember).iSchedPriority,
+                          ' readonly class="tmform-input-readonly"' if fReadOnly else '', ));
+            self._add(u'  </tr>\n');
+
+        return self._add(u' </tbody>\n'
+                         u'</table>\n');
+
 
     #
     # Buttons.

@@ -258,13 +258,13 @@ class SchedGroupDataEx(SchedGroupData):
 
     def __init__(self):
         SchedGroupData.__init__(self);
-        self.aoMembers          = [];   # SchedGroupMemberDataEx.
+        self.aoMembers          = [];       # type: SchedGroupMemberDataEx
 
         # Two build sources for convenience sake.
-        self.oBuildSrc          = None;
-        self.oBuildSrcValidationKit = None;
+        self.oBuildSrc          = None;     # type: TestBoxData
+        self.oBuildSrcValidationKit = None; # type: TestBoxData
         # List of test boxes that uses this group for convenience.
-        self.aoTestBoxes        = None;
+        self.aoTestBoxes        = None;     # type: list[TestBoxData]
 
     def _initExtraMembersFromDb(self, oDb, tsNow = None, sPeriodBack = None):
         """
@@ -293,50 +293,29 @@ class SchedGroupDataEx(SchedGroupData):
         #
         # Test Boxes.
         #
-        ## @todo sPeriodBack!
-        if tsNow is None:
-            oDb.execute('SELECT *\n'
-                        'FROM   TestBoxesWithStrings\n'
-                        'WHERE  TestBoxesWithStrings.idSchedGroup = %s\n'
-                        '   AND TestBoxesWithStrings.tsExpire     = \'infinity\'::TIMESTAMP\n'
-                        'ORDER BY TestBoxesWithStrings.sName, TestBoxesWithStrings.idTestBox\n'
-                        , (self.idSchedGroup,));
-        else:
-            oDb.execute('SELECT *\n'
-                        'FROM   TestBoxesWithStrings\n'
-                        'WHERE  TestBoxesWithStrings.idSchedGroup = %s\n'
-                        '   AND TestBoxesWithStrings.tsExpire     > %s\n'
-                        '   AND TestBoxesWithStrings.tsEffective  <= %s\n'
-                        'ORDER BY TestBoxesWithStrings.sName, TestBoxesWithStrings.idTestBox\n'
-                        , (self.idSchedGroup, tsNow, tsNow, tsNow, tsNow));
+        oDb.execute('SELECT TestBoxesWithStrings.*\n'
+                    'FROM   TestBoxesWithStrings,\n'
+                    '       TestBoxesInSchedGroups\n'
+                    'WHERE  TestBoxesInSchedGroups.idSchedGroup = %s\n'
+                    + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'TestBoxesInSchedGroups.') +
+                    '   AND TestBoxesWithStrings.idTestBox      = TestBoxesInSchedGroups.idTestBox\n'
+                    + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'TestBoxesWithStrings.') +
+                    'ORDER BY TestBoxesWithStrings.sName, TestBoxesWithStrings.idTestBox\n'
+                    , (self.idSchedGroup,));
         for aoRow in oDb.fetchAll():
             self.aoTestBoxes.append(TestBoxData().initFromDbRow(aoRow));
 
         #
         # Test groups.
         #
-        ## @todo sPeriodBack!
-        if tsNow is None:
-            oDb.execute('SELECT SchedGroupMembers.*, TestGroups.*\n'
-                        'FROM   SchedGroupMembers\n'
-                        'LEFT OUTER JOIN TestGroups ON (SchedGroupMembers.idTestGroup = TestGroups.idTestGroup)\n'
-                        'WHERE  SchedGroupMembers.idSchedGroup = %s\n'
-                        '   AND SchedGroupMembers.tsExpire     = \'infinity\'::TIMESTAMP\n'
-                        '   AND TestGroups.tsExpire            = \'infinity\'::TIMESTAMP\n'
-                        'ORDER BY SchedGroupMembers.idTestGroupPreReq, SchedGroupMembers.idTestGroup\n'
-                        , (self.idSchedGroup,));
-        else:
-            oDb.execute('SELECT SchedGroupMembers.*, TestGroups.*\n'
-                        'FROM   SchedGroupMembers\n'
-                        'LEFT OUTER JOIN TestGroups ON (SchedGroupMembers.idTestGroup = TestGroups.idTestGroup)\n'
-                        'WHERE  SchedGroupMembers.idSchedGroup = %s\n'
-                        '   AND SchedGroupMembers.tsExpire     > %s\n'
-                        '   AND SchedGroupMembers.tsEffective <= %s\n'
-                        '   AND TestGroups.tsExpire            > %s\n'
-                        '   AND TestGroups.tsEffective        <= %s\n'
-                        'ORDER BY SchedGroupMembers.idTestGroupPreReq, SchedGroupMembers.idTestGroup\n'
-                        , (self.idSchedGroup, tsNow, tsNow, tsNow, tsNow));
-
+        oDb.execute('SELECT SchedGroupMembers.*, TestGroups.*\n'
+                    'FROM   SchedGroupMembers\n'
+                    'LEFT OUTER JOIN TestGroups ON (SchedGroupMembers.idTestGroup = TestGroups.idTestGroup)\n'
+                    'WHERE  SchedGroupMembers.idSchedGroup = %s\n'
+                    + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'SchedGroupMembers.')
+                    + self.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix = 'TestGroups.') +
+                    'ORDER BY SchedGroupMembers.idTestGroupPreReq, SchedGroupMembers.idTestGroup\n'
+                    , (self.idSchedGroup,));
         for aoRow in oDb.fetchAll():
             self.aoMembers.append(SchedGroupMemberDataEx().initFromDbRow(aoRow));
         return self;

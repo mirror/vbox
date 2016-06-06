@@ -100,6 +100,13 @@ def dbTimestampPythonNow():
     """
     return dbTimestampToZuluDatetime(datetime.datetime.utcnow());
 
+def dbTimestampMinusOneTick(oValue):
+    """
+    Returns a new timestamp that's one tick before the given one.
+    """
+    oValue = dbTimestampToZuluDatetime(oValue);
+    return oValue - datetime.timedelta(microseconds = 1);
+
 def isDbInterval(oValue):
     """
     Checks if oValue is a DB interval object.

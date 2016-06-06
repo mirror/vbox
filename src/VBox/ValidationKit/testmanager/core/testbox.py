@@ -30,12 +30,79 @@ __version__ = "$Revision$"
 
 
 # Standard python imports.
+import copy;
 import unittest;
 
 # Validation Kit imports.
+from testmanager.core               import db;
 from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMInFligthCollision, \
-                                           TMInvalidData, TMTooManyRows, TMRowNotFound, ChangeLogEntry, AttributeChangeEntry;
+                                           TMInvalidData, TMTooManyRows, TMRowNotFound, \
+                                           ChangeLogEntry, AttributeChangeEntry;
 from testmanager.core.useraccount   import UserAccountLogic;
+
+
+class TestBoxInSchedGroupData(ModelDataBase):
+    """
+    TestBox in SchedGroup data.
+    """
+
+    ksParam_idTestBox           = 'TestBoxInSchedGroup_idTestBox';
+    ksParam_idSchedGroup        = 'TestBoxInSchedGroup_idSchedGroup';
+    ksParam_tsEffective         = 'TestBoxInSchedGroup_tsEffective';
+    ksParam_tsExpire            = 'TestBoxInSchedGroup_tsExpire';
+    ksParam_uidAuthor           = 'TestBoxInSchedGroup_uidAuthor';
+    ksParam_iSchedPriority      = 'TestBoxInSchedGroup_iSchedPriority';
+
+    kasAllowNullAttributes      = [ 'idTestBox', 'tsEffective', 'tsExpire', 'uidAuthor', ]
+
+    kiMin_iSchedPriority        = 0;
+    kiMax_iSchedPriority        = 32;
+
+    kcDbColumns                 = 6;
+
+    def __init__(self):
+        ModelDataBase.__init__(self);
+        self.idTestBox          = None;
+        self.idSchedGroup       = None;
+        self.tsEffective        = None;
+        self.tsExpire           = None;
+        self.uidAuthor          = None;
+        self.iSchedPriority     = 16;
+
+    def initFromDbRow(self, aoRow):
+        """
+        Expecting the result from a query like this:
+            SELECT * FROM TestBoxesInSchedGroups
+        """
+        if aoRow is None:
+            raise TMRowNotFound('TestBox/SchedGroup not found.');
+
+        self.idTestBox          = aoRow[0];
+        self.idSchedGroup       = aoRow[1];
+        self.tsEffective        = aoRow[2];
+        self.tsExpire           = aoRow[3];
+        self.uidAuthor          = aoRow[4];
+        self.iSchedPriority     = aoRow[5];
+
+        return self;
+
+class TestBoxInSchedGroupDataEx(TestBoxInSchedGroupData):
+    """
+    Extended version of TestBoxInSchedGroupData that contains the scheduling group.
+    """
+
+    def __init__(self):
+        TestBoxInSchedGroupData.__init__(self);
+        self.oSchedGroup        = None; # type: SchedGroupData
+
+    def initFromDbRowEx(self, aoRow, oDb, tsNow = None, sPeriodBack = None):
+        """
+        Extended version of initFromDbRow that fills in the rest from the database.
+        """
+        from testmanager.core.schedgroup import SchedGroupData;
+        self.initFromDbRow(aoRow);
+        self.oSchedGroup        = SchedGroupData().initFromDbWithId(oDb, self.idSchedGroup, tsNow, sPeriodBack);
+        return self;
 
 
 # pylint: disable=C0103
@@ -91,7 +158,6 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
     ksParam_uuidSystem          = 'TestBox_uuidSystem';
     ksParam_sName               = 'TestBox_sName';
     ksParam_sDescription        = 'TestBox_sDescription';
-    ksParam_idSchedGroup        = 'TestBox_idSchedGroup';
     ksParam_fEnabled            = 'TestBox_fEnabled';
     ksParam_enmLomKind          = 'TestBox_enmLomKind';
     ksParam_ipLom               = 'TestBox_ipLom';
@@ -118,11 +184,11 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
 
     kasInternalAttributes       = [ 'idStrDescription', 'idStrComment', 'idStrOs', 'idStrOsVersion', 'idStrCpuVendor',
                                     'idStrCpuArch', 'idStrCpuName', 'idStrReport', ];
+    kasMachineSettableOnly      = [ 'sOs', 'sOsVersion', 'sCpuVendor', 'sCpuArch', 'sCpuName', 'lCpuRevision', 'cCpus',
+                                    'fCpuHwVirt', 'fCpuNestedPaging', 'fCpu64BitGuest', 'fChipsetIoMmu', 'fRawMode',
+                                    'cMbMemory', 'cMbScratch', 'sReport', 'iTestBoxScriptRev', 'iPythonHexVersion', ];
     kasAllowNullAttributes      = ['idTestBox', 'tsEffective', 'tsExpire', 'uidAuthor', 'idGenTestBox', 'sDescription',
-                                   'ipLom', 'sComment', 'sOs', 'sOsVersion', 'sCpuVendor', 'sCpuArch', 'sCpuName',
-                                   'lCpuRevision', 'cCpus', 'fCpuHwVirt', 'fCpuNestedPaging', 'fCpu64BitGuest', 'fChipsetIoMmu',
-                                   'fRawMode', 'cMbMemory', 'cMbScratch', 'sReport', 'iTestBoxScriptRev', 'iPythonHexVersion',
-                                  ] + kasInternalAttributes;
+                                   'ipLom', 'sComment', ] + kasMachineSettableOnly + kasInternalAttributes;
 
     kasValidValues_enmLomKind   = kasLomKindValues;
     kasValidValues_enmPendingCmd = kasTestBoxCmdValues;
@@ -130,8 +196,8 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
     kiMax_pctScaleTimeout       = 19999;
     kcchMax_sReport             = 65535;
 
+    kcDbColumns                 = 40; # including the 7 string joins columns
 
-    kcDbColumns                 = 41; # including the 7 string joins columns
 
     def __init__(self):
         ModelDataBase.__init__(self);
@@ -149,7 +215,6 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         self.uuidSystem          = None;
         self.sName               = None;
         self.idStrDescription    = None;
-        self.idSchedGroup        = 1;
         self.fEnabled            = False;
         self.enmLomKind          = self.ksLomKind_None;
         self.ipLom               = None;
@@ -201,41 +266,40 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         self.uuidSystem          = aoRow[6];
         self.sName               = aoRow[7];
         self.idStrDescription    = aoRow[8];
-        self.idSchedGroup        = aoRow[9];
-        self.fEnabled            = aoRow[10];
-        self.enmLomKind          = aoRow[11];
-        self.ipLom               = aoRow[12];
-        self.pctScaleTimeout     = aoRow[13];
-        self.idStrComment        = aoRow[14];
-        self.idStrOs             = aoRow[15];
-        self.idStrOsVersion      = aoRow[16];
-        self.idStrCpuVendor      = aoRow[17];
-        self.idStrCpuArch        = aoRow[18];
-        self.idStrCpuName        = aoRow[19];
-        self.lCpuRevision        = aoRow[20];
-        self.cCpus               = aoRow[21];
-        self.fCpuHwVirt          = aoRow[22];
-        self.fCpuNestedPaging    = aoRow[23];
-        self.fCpu64BitGuest      = aoRow[24];
-        self.fChipsetIoMmu       = aoRow[25];
-        self.fRawMode            = aoRow[26];
-        self.cMbMemory           = aoRow[27];
-        self.cMbScratch          = aoRow[28];
-        self.idStrReport         = aoRow[29];
-        self.iTestBoxScriptRev   = aoRow[30];
-        self.iPythonHexVersion   = aoRow[31];
-        self.enmPendingCmd       = aoRow[32];
+        self.fEnabled            = aoRow[9];
+        self.enmLomKind          = aoRow[10];
+        self.ipLom               = aoRow[11];
+        self.pctScaleTimeout     = aoRow[12];
+        self.idStrComment        = aoRow[13];
+        self.idStrOs             = aoRow[14];
+        self.idStrOsVersion      = aoRow[15];
+        self.idStrCpuVendor      = aoRow[16];
+        self.idStrCpuArch        = aoRow[17];
+        self.idStrCpuName        = aoRow[18];
+        self.lCpuRevision        = aoRow[19];
+        self.cCpus               = aoRow[20];
+        self.fCpuHwVirt          = aoRow[21];
+        self.fCpuNestedPaging    = aoRow[22];
+        self.fCpu64BitGuest      = aoRow[23];
+        self.fChipsetIoMmu       = aoRow[24];
+        self.fRawMode            = aoRow[25];
+        self.cMbMemory           = aoRow[26];
+        self.cMbScratch          = aoRow[27];
+        self.idStrReport         = aoRow[28];
+        self.iTestBoxScriptRev   = aoRow[29];
+        self.iPythonHexVersion   = aoRow[30];
+        self.enmPendingCmd       = aoRow[31];
 
         # String table values.
         if len(aoRow) > 32:
-            self.sDescription    = aoRow[33];
-            self.sComment        = aoRow[34];
-            self.sOs             = aoRow[35];
-            self.sOsVersion      = aoRow[36];
-            self.sCpuVendor      = aoRow[37];
-            self.sCpuArch        = aoRow[38];
-            self.sCpuName        = aoRow[39];
-            self.sReport         = aoRow[40];
+            self.sDescription    = aoRow[32];
+            self.sComment        = aoRow[33];
+            self.sOs             = aoRow[34];
+            self.sOsVersion      = aoRow[35];
+            self.sCpuVendor      = aoRow[36];
+            self.sCpuArch        = aoRow[37];
+            self.sCpuName        = aoRow[38];
+            self.sReport         = aoRow[39];
 
         return self;
 
@@ -253,10 +317,11 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
             raise TMRowNotFound('idTestBox=%s not found (tsNow=%s sPeriodBack=%s)' % (idTestBox, tsNow, sPeriodBack,));
         return self.initFromDbRow(aoRow);
 
-    def initFromDbWithGenId(self, oDb, idGenTestBox):
+    def initFromDbWithGenId(self, oDb, idGenTestBox, tsNow = None):
         """
         Initialize the object from the database.
         """
+        _ = tsNow;                      # Only useful for extended data classes.
         oDb.execute('SELECT TestBoxesWithStrings.*\n'
                     'FROM   TestBoxesWithStrings\n'
                     'WHERE  idGenTestBox = %s\n'
@@ -443,6 +508,129 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         return self.sCpuVendor;
 
 
+class TestBoxDataEx(TestBoxData):
+    """
+    TestBox data.
+    """
+
+    ksParam_aoInSchedGroups = 'TestBox_aoInSchedGroups';
+
+    # Use [] instead of None.
+    kasAltArrayNull = [ 'aoInSchedGroups', ];
+
+    ## Helper parameter containing the comma separated list with the IDs of
+    #  potential members found in the parameters.
+    ksParam_aidSchedGroups = 'TestBoxDataEx_aidSchedGroups';
+
+    def __init__(self):
+        TestBoxData.__init__(self);
+        self.aoInSchedGroups        = [];   # type: list[TestBoxInSchedGroupData]
+
+    def _initExtraMembersFromDb(self, oDb, tsNow = None, sPeriodBack = None):
+        """
+        Worker shared by the initFromDb* methods.
+        Returns self.  Raises exception if no row or database error.
+        """
+        oDb.execute(self.formatSimpleNowAndPeriodQuery(oDb,
+                                                       'SELECT  *\n'
+                                                       'FROM    TestBoxesInSchedGroups\n'
+                                                       'WHERE   idTestBox = %s\n'
+                                                       , (self.idTestBox,), tsNow, sPeriodBack)
+                    + 'ORDER BY idSchedGroup\n' );
+        self.aoInSchedGroups = [];
+        for aoRow in oDb.fetchAll():
+            self.aoInSchedGroups.append(TestBoxInSchedGroupDataEx().initFromDbRowEx(aoRow, oDb, tsNow, sPeriodBack));
+        return self;
+
+    def initFromDbRowEx(self, aoRow, oDb, tsNow = None):
+        """
+        Reinitialize from a SELECT * FROM TestBoxesWithStrings row.  Will query the
+        necessary additional data from oDb using tsNow.
+        Returns self.  Raises exception if no row or database error.
+        """
+        TestBoxData.initFromDbRow(self, aoRow);
+        return self._initExtraMembersFromDb(oDb, tsNow);
+
+    def initFromDbWithId(self, oDb, idTestBox, tsNow = None, sPeriodBack = None):
+        """
+        Initialize the object from the database.
+        """
+        TestBoxData.initFromDbWithId(self, oDb, idTestBox, tsNow, sPeriodBack);
+        return self._initExtraMembersFromDb(oDb, tsNow, sPeriodBack);
+
+    def initFromDbWithGenId(self, oDb, idGenTestBox, tsNow = None):
+        """
+        Initialize the object from the database.
+        """
+        TestBoxData.initFromDbWithGenId(self, oDb, idGenTestBox);
+        if tsNow is None and not oDb.isTsInfinity(self.tsExpire):
+            tsNow = self.tsEffective;
+        return self._initExtraMembersFromDb(oDb, tsNow);
+
+    def getAttributeParamNullValues(self, sAttr): # Necessary?
+        if sAttr in ['aoInSchedGroups', ]:
+            return [[], ''];
+        return TestBoxData.getAttributeParamNullValues(self, sAttr);
+
+    def convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict):
+        """
+        For dealing with the in-scheduling-group list.
+        """
+        if sAttr != 'aoInSchedGroups':
+            return TestBoxData.convertParamToAttribute(self, sAttr, sParam, oValue, oDisp, fStrict);
+
+        aoNewValues = [];
+        aidSelected = oDisp.getListOfIntParams(sParam, iMin = 1, iMax = 0x7ffffffe, aiDefaults = []);
+        asIds       = oDisp.getStringParam(self.ksParam_aidSchedGroups, sDefault = '').split(',');
+        for idSchedGroup in asIds:
+            try:    idSchedGroup = int(idSchedGroup);
+            except: pass;
+            oDispWrapper = self.DispWrapper(oDisp, '%s[%s][%%s]' % (TestBoxDataEx.ksParam_aoInSchedGroups, idSchedGroup,))
+            oMember = TestBoxInSchedGroupData().initFromParams(oDispWrapper, fStrict = False);
+            if idSchedGroup in aidSelected:
+                aoNewValues.append(oMember);
+        return aoNewValues;
+
+    def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb): # pylint: disable=R0914
+        """
+        Validate special arrays and requirement expressions.
+
+        Some special needs for the in-scheduling-group list.
+        """
+        if sAttr != 'aoInSchedGroups':
+            return TestBoxData._validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb);
+
+        asErrors = [];
+        aoNewValues = [];
+
+        # Note! We'll be returning an error dictionary instead of an string here.
+        dErrors = {};
+
+        for iInGrp, oInSchedGroup in enumerate(self.aoInSchedGroups):
+            oInSchedGroup = copy.copy(oInSchedGroup);
+            oInSchedGroup.idTestBox = self.idTestBox;
+            dCurErrors = oInSchedGroup.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
+            if len(dCurErrors) == 0:
+                pass; ## @todo figure out the ID?
+            else:
+                asErrors = [];
+                for sKey in dCurErrors:
+                    asErrors.append('%s: %s' % (sKey[len('TestBoxInSchedGroup_'):], dCurErrors[sKey]));
+                dErrors[iInGrp] = '<br>\n'.join(asErrors)
+            aoNewValues.append(oInSchedGroup);
+
+        for iInGrp, oInSchedGroup in enumerate(self.aoInSchedGroups):
+            for iInGrp2 in xrange(iInGrp + 1, len(self.aoInSchedGroups)):
+                if self.aoInSchedGroups[iInGrp2].idSchedGroup == oInSchedGroup.idSchedGroup:
+                    sMsg = 'Duplicate scheduling group #%s".' % (oInSchedGroup.idSchedGroup,);
+                    if iInGrp in dErrors:   dErrors[iInGrp]  += '<br>\n' + sMsg;
+                    else:                   dErrors[iInGrp]   = sMsg;
+                    if iInGrp2 in dErrors:  dErrors[iInGrp2] += '<br>\n' + sMsg;
+                    else:                   dErrors[iInGrp2]  = sMsg;
+                    break;
+
+        return (aoNewValues, dErrors if len(dErrors) > 0 else None);
+
 
 class TestBoxLogic(ModelLogicBase):
     """
@@ -483,12 +671,12 @@ class TestBoxLogic(ModelLogicBase):
 
         Raises exception on error.
         """
-        class TestBoxDataForListing(TestBoxData):
+        class TestBoxDataForListing(TestBoxDataEx):
             """ We add two members for the listing. """
             def __init__(self):
-                TestBoxData.__init__(self);
+                TestBoxDataEx.__init__(self);
                 self.tsCurrent = None;  # CURRENT_TIMESTAMP
-                self.oStatus   = None;  # TestBoxStatusData
+                self.oStatus   = None;  # type: TestBoxStatusData
 
         from testmanager.core.testboxstatus import TestBoxStatusData;
 
@@ -516,7 +704,7 @@ class TestBoxLogic(ModelLogicBase):
 
         aoRows = [];
         for aoOne in self._oDb.fetchAll():
-            oTestBox = TestBoxDataForListing().initFromDbRow(aoOne);
+            oTestBox = TestBoxDataForListing().initFromDbRowEx(aoOne, self._oDb, tsNow);
             oTestBox.tsCurrent = self._oDb.getCurrentTimestamp();
             if aoOne[TestBoxData.kcDbColumns] is not None:
                 oTestBox.oStatus = TestBoxStatusData().initFromDbRow(aoOne[TestBoxData.kcDbColumns:]);
@@ -531,6 +719,8 @@ class TestBoxLogic(ModelLogicBase):
         there are more entries.
         Raises exception on error.
         """
+
+        ## @todo calc changes to scheduler group!
 
         if tsNow is None:
             tsNow = self._oDb.getCurrentTimestamp();
@@ -569,33 +759,67 @@ class TestBoxLogic(ModelLogicBase):
         UserAccountLogic(self._oDb).resolveChangeLogAuthors(aoEntries);
         return (aoEntries, len(aoRows) > cMaxRows);
 
+    def _validateAndConvertData(self, oData, enmValidateFor):
+        # type: (TestBoxDataEx, str) -> None
+        """
+        Helper for addEntry and editEntry that validates the scheduling group IDs in
+        addtion to what's covered by the default validateAndConvert of the data object.
+
+        Raises exception on invalid input.
+        """
+        dDataErrors = oData.validateAndConvert(self._oDb, enmValidateFor);
+        if len(dDataErrors) > 0:
+            raise TMInvalidData('TestBoxLogic.addEntry: %s' % (dDataErrors,));
+        if len(oData.aoInSchedGroups):
+            sSchedGrps = ', '.join('(%s)' % oCur.idSchedGroup for oCur in oData.aoInSchedGroups);
+            self._oDb.execute('SELECT   SchedGroupIDs.idSchedGroup\n'
+                              'FROM     (VALUES ' + sSchedGrps + ' ) AS SchedGroupIDs(idSchedGroup)\n'
+                              '         LEFT OUTER JOIN SchedGroups\n'
+                              '                      ON     SchedGroupIDs.idSchedGroup = SchedGroups.idSchedGroup\n'
+                              '                         AND SchedGroups.tsExpire = \'infinity\'::TIMESTAMP\n'
+                              'WHERE    SchedGroups.idSchedGroup IS NULL\n');
+            aaoRows = self._oDb.fetchAll();
+            if len(aaoRows) > 0:
+                raise TMInvalidData('TestBoxLogic.addEntry missing scheduling groups: %s'
+                                    % (', '.join(str(aoRow[0]) for aoRow in aaoRows),));
+        return None;
 
     def addEntry(self, oData, uidAuthor, fCommit = False):
+        # type: (TestBoxDataEx, int, bool) -> (int, int, datetime.datetime)
         """
         Creates a testbox in the database.
         Returns the testbox ID, testbox generation ID and effective timestamp
         of the created testbox on success.  Throws error on failure.
         """
-        dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
-        if len(dDataErrors) > 0:
-            raise TMInvalidData('Invalid data passed to create(): %s' % (dDataErrors,));
 
+        #
+        # Validate. Extra work because of missing foreign key (due to history).
+        #
+        self._validateAndConvertData(oData, oData.ksValidateFor_Add);
+
+        #
+        # Do it.
+        #
         self._oDb.callProc('TestBoxLogic_addEntry'
                            , ( uidAuthor,
                                oData.ip,            # Should we allow setting the IP?
                                oData.uuidSystem,
                                oData.sName,
                                oData.sDescription,
-                               oData.idSchedGroup,
                                oData.fEnabled,
                                oData.enmLomKind,
                                oData.ipLom,
                                oData.pctScaleTimeout,
                                oData.sComment,
                                oData.enmPendingCmd, ) );
-        aoRow = self._oDb.fetchOne();
+        (idTestBox, idGenTestBox, tsEffective) = self._oDb.fetchOne();
+
+        for oInSchedGrp in oData.aoInSchedGroups:
+            self._oDb.callProc('TestBoxLogic_addGroupEntry',
+                               ( uidAuthor, idTestBox, oInSchedGrp.idSchedGroup, oInSchedGrp.iSchedPriority,) );
+
         self._oDb.maybeCommit(fCommit);
-        return (aoRow[0], aoRow[1], aoRow[2]);
+        return (idTestBox, idGenTestBox, tsEffective);
 
 
     def editEntry(self, oData, uidAuthor, fCommit = False):
@@ -604,32 +828,75 @@ class TestBoxLogic(ModelLogicBase):
         Returns the new generation ID and effective date.
         """
 
-        dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dDataErrors) > 0:
-            raise TMInvalidData('Invalid data passed to create(): %s' % (dDataErrors,));
+        #
+        # Validate.
+        #
+        self._validateAndConvertData(oData, oData.ksValidateFor_Edit);
 
-        self._oDb.callProc('TestBoxLogic_editEntry'
-                           , ( uidAuthor,
-                               oData.idTestBox,
-                               oData.ip,            # Should we allow setting the IP?
-                               oData.uuidSystem,
-                               oData.sName,
-                               oData.sDescription,
-                               oData.idSchedGroup,
-                               oData.fEnabled,
-                               oData.enmLomKind,
-                               oData.ipLom,
-                               oData.pctScaleTimeout,
-                               oData.sComment,
-                               oData.enmPendingCmd, ));
-        aoRow = self._oDb.fetchOne();
+        #
+        # Get current data.
+        #
+        oOldData = TestBoxDataEx().initFromDbWithId(self._oDb, oData.idTestBox);
+
+        #
+        # Do it.
+        #
+        if not oData.isEqualEx(oOldData, [ 'tsEffective', 'tsExpire', 'uidAuthor', 'aoInSchedGroups', ]
+                                         + TestBoxData.kasMachineSettableOnly ):
+            self._oDb.callProc('TestBoxLogic_editEntry'
+                               , ( uidAuthor,
+                                   oData.idTestBox,
+                                   oData.ip,            # Should we allow setting the IP?
+                                   oData.uuidSystem,
+                                   oData.sName,
+                                   oData.sDescription,
+                                   oData.fEnabled,
+                                   oData.enmLomKind,
+                                   oData.ipLom,
+                                   oData.pctScaleTimeout,
+                                   oData.sComment,
+                                   oData.enmPendingCmd, ));
+            (idGenTestBox, tsEffective) = self._oDb.fetchOne();
+        else:
+            idGenTestBox = oOldData.idGenTestBox;
+            tsEffective  = oOldData.tsEffective;
+
+        # Calc in-group changes.
+        aoRemoved = list(oOldData.aoInSchedGroups);
+        aoNew     = [];
+        aoUpdated = [];
+        for oNewInGroup in oData.aoInSchedGroups:
+            oOldInGroup = None;
+            for iCur, oCur in enumerate(aoRemoved):
+                if oCur.idSchedGroup == oNewInGroup.idSchedGroup:
+                    oOldInGroup = aoRemoved.pop(iCur);
+                    break;
+            if oOldInGroup is None:
+                aoNew.append(oNewInGroup);
+            elif oNewInGroup.iSchedPriority != oOldInGroup.iSchedPriority:
+                aoUpdated.append(oNewInGroup);
+
+        # Remove in-groups.
+        for oInGroup in aoRemoved:
+            self._oDb.callProc('TestBoxLogic_removeGroupEntry', (uidAuthor, oData.idTestBox, oInGroup.idSchedGroup, ));
+
+        # Add new ones.
+        for oInGroup in aoNew:
+            self._oDb.callProc('TestBoxLogic_addGroupEntry',
+                               ( uidAuthor, oData.idTestBox, oInGroup.idSchedGroup, oInGroup.iSchedPriority, ) );
+
+        # Edit existing ones.
+        for oInGroup in aoUpdated:
+            self._oDb.callProc('TestBoxLogic_editGroupEntry',
+                               ( uidAuthor, oData.idTestBox, oInGroup.idSchedGroup, oInGroup.iSchedPriority, ) );
+
         self._oDb.maybeCommit(fCommit);
-        return (aoRow[0], aoRow[1]);
+        return (idGenTestBox, tsEffective);
 
 
     def removeEntry(self, uidAuthor, idTestBox, fCascade = False, fCommit = False):
         """
-        Delete user account
+        Delete test box and scheduling group associations.
         """
         self._oDb.callProc('TestBoxLogic_removeEntry'
                            , ( uidAuthor, idTestBox, fCascade,));
@@ -697,17 +964,19 @@ class TestBoxLogic(ModelLogicBase):
 
 
     def cachedLookup(self, idTestBox):
+        # type: (int) -> TestBoxDataEx
         """
         Looks up the most recent TestBoxData object for idTestBox via
         an object cache.
 
-        Returns a shared TestBoxData object.  None if not found.
+        Returns a shared TestBoxDataEx object.  None if not found.
         Raises exception on DB error.
         """
         if self.dCache is None:
             self.dCache = self._oDb.getCache('TestBoxData');
         oEntry = self.dCache.get(idTestBox, None);
         if oEntry is None:
+            fNeedNow = False;
             self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
                               'FROM     TestBoxesWithStrings\n'
                               'WHERE    idTestBox  = %s\n'
@@ -721,12 +990,17 @@ class TestBoxLogic(ModelLogicBase):
                                   'ORDER BY tsExpire DESC\n'
                                   'LIMIT 1\n'
                                   , (idTestBox, ));
+                fNeedNow = True;
             elif self._oDb.getRowCount() > 1:
                 raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idTestBox));
 
             if self._oDb.getRowCount() == 1:
                 aaoRow = self._oDb.fetchOne();
-                oEntry = TestBoxData().initFromDbRow(aaoRow);
+                if not fNeedNow:
+                    oEntry = TestBoxDataEx().initFromDbRowEx(aaoRow, self._oDb);
+                else:
+                    oEntry = TestBoxDataEx().initFromDbRow(aaoRow);
+                    oEntry.initFromDbRowEx(aaoRow, self._oDb, tsNow = db.dbTimestampMinusOneTick(oEntry.tsExpire));
                 self.dCache[idTestBox] = oEntry;
         return oEntry;
 
