@@ -4706,6 +4706,9 @@ void VBoxGlobal::showUI()
             return QApplication::quit();
         }
 
+        /* Create/show selector-window: */
+        UISelectorWindow::create();
+
 #ifdef VBOX_BLEEDING_EDGE
         /* Show EXPERIMENTAL BUILD warning: */
         msgCenter().showExperimentalBuildWarning();
@@ -4718,9 +4721,6 @@ void VBoxGlobal::showUI()
             msgCenter().showBetaBuildWarning();
 # endif /* !DEBUG */
 #endif /* !VBOX_BLEEDING_EDGE */
-
-        /* Create/show selector-window: */
-        UISelectorWindow::create();
     }
     /* Show Runtime UI: */
     else
