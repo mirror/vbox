@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Enable call gate emulation. */
-#define IEM_IMPLEMENTS_CALLGATE
-
 /** @name Misc Helpers
  * @{
  */
