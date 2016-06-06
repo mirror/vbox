@@ -710,6 +710,32 @@ class TestSetLogic(ModelLogicBase):
             aoRet.append(TestSetData().initFromDbRow(aoRow));
         return aoRet;
 
+    def isTestBoxExecutingToRapidly(self, idTestBox):
+        """
+        Checks whether the specified test box is executing tests too rapidly.
+
+        The parameters defining too rapid execution are defined in config.py.
+
+        Returns True if it does, False if it doesn't.
+        May raise database problems.
+        """
+
+        self._oDb.execute('(\n'
+                          'SELECT   tsCreated\n'
+                          'FROM     TestSets\n'
+                          'WHERE    idTestBox = %s\n'
+                          '     AND tsCreated >= (CURRENT_TIMESTAMP - interval \'%s seconds\')\n'
+                          ') UNION (\n'
+                          'SELECT   tsCreated\n'
+                          'FROM     TestSets\n'
+                          'WHERE    idTestBox = %s\n'
+                          '     AND tsCreated >= (CURRENT_TIMESTAMP - interval \'%s seconds\')\n'
+                          '     AND enmStatus >= \'failure\'\n'
+                          ')'
+                          , ( idTestBox, config.g_kcSecMinSinceLastTask,
+                              idTestBox, config.g_kcSecMinSinceLastFailedTask, ));
+        return self._oDb.getRowCount() > 0;
+
 
     #
     # The virtual test sheriff interface.

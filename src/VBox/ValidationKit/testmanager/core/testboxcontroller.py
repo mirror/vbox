@@ -567,8 +567,9 @@ class TestBoxController(object): # pylint: disable=R0903
         #
         # If idling and enabled try schedule a new task.
         #
-        if fIdle \
+        if    fIdle \
           and oTestBoxData.fEnabled \
+          and not TestSetLogic(oDb).isTestBoxExecutingToRapidly(oTestBoxData.idTestBox) \
           and oStatusData.enmState == TestBoxStatusData.ksTestBoxState_Idle: # (paranoia)
             dResponse = SchedulerBase.scheduleNewTask(oDb, oTestBoxData, oStatusData.iWorkItem, self._oSrvGlue.getBaseUrl());
             if dResponse is not None:

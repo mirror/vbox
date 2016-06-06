@@ -7,7 +7,7 @@ Test Manager Configuration.
 
 __copyright__ = \
 """
-Copyright (C) 2012-2015 Oracle Corporation
+Copyright (C) 2012-2016 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -92,10 +92,20 @@ g_ksBuildBinRootFile    = 'builds.txt'
 ## @}
 
 
+## @name Scheduling parameters
+## @{
+
 ## The time to wait for a gang to gather (in seconds).
-g_kcSecGangGathering    = 600;
+g_kcSecGangGathering                    = 600;
 ## The max time allowed to spend looking for a new task (in seconds).
-g_kcSecMaxNewTask       = 60;
+g_kcSecMaxNewTask                       = 60;
+## Minimum time since last task started.
+g_kcSecMinSinceLastTask                 = 120; # (2 min)
+## Minimum time since last failed task.
+g_kcSecMinSinceLastFailedTask           = 180; # (3 min)
+
+## @}
+
 
 
 ## @name Test result limits.
