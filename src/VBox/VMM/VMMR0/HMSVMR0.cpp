@@ -5155,18 +5155,20 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
 #ifndef HMSVM_ALWAYS_TRAP_TASK_SWITCH
     Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 #endif
 
-    /* Check if this task-switch occurred while delivery an event through the guest IDT. */
+    /* Check if this task-switch occurred while delivering an event through the guest IDT. */
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (   !(pVmcb->ctrl.u64ExitInfo2 & (SVM_EXIT2_TASK_SWITCH_IRET | SVM_EXIT2_TASK_SWITCH_JMP))
-        && pVCpu->hm.s.Event.fPending)  /** @todo fPending cannot be 'true', see hmR0SvmInjectPendingEvent(). See @bugref{7362}.*/
+        && pVCpu->hm.s.Event.fPending)  /**  Can happen with exceptions/NMI. See @bugref{8411}.*/
     {
         /*
-         * AMD-V does not provide us with the original exception but we have it in u64IntInfo since we
-         * injected the event during VM-entry.
+         * AMD-V provides us with the exception which caused the TS; we collect
+         * the information in the call to hmR0SvmCheckExitDueToEventDelivery.
          */
         Log4(("hmR0SvmExitTaskSwitch: TS occurred during event delivery.\n"));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);
