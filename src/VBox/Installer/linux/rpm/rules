@@ -66,7 +66,7 @@ vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; 
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
 builddir := $(current)/rpm/builddir
 rpmlib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
-arch     := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "i386"; fi)
+chrarch  := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "x86"; fi)
 verfile  := $(builddir)/version-generated.mk
 ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
 -include $(vboxroot)/SVN_REVISION
@@ -240,7 +240,7 @@ binary: rpm/build-stamp
 	    -e "s|%WEBSVC%|$(if $(NOWEBSVC),false,true)|g" \
 	    rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
-	cp ../../../../tools/linux.$(arch)/bin/chrpath rpm/$(rpmname)
+	cp ../../../../tools/linux.$(chrarch)/bin/chrpath rpm/$(rpmname)
 	tar -cf rpm/VirtualBox.tar -C rpm $(rpmname)
 	rm -f rpmbuild/RPMS/*/VirtualBox*rpm
 	rm -f rpmbuild/SPECS/*
