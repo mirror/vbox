@@ -883,7 +883,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDRC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
   VBoxDDRC_INCS           = build
   VBoxDDRC_SOURCES        = \
-  	Audio/DevIchHda.cpp \
+  	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp \
   	Bus/DevPCI.cpp \
   	Bus/DevPciIch9.cpp \
   	Bus/MsiCommon.cpp \
@@ -1060,7 +1060,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_SDKS.win 	  = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VBoxDDR0_SOURCES        = \
  	build/VBoxDDR0.cpp \
- 	Audio/DevIchHda.cpp \
+ 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp \
  	Bus/DevPCI.cpp \
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
