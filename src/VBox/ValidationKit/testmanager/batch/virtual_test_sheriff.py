@@ -382,6 +382,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VERR_TRPM_DONT_PANIC                 = ( 'Guru Meditations',  'VERR_TRPM_DONT_PANIC' );
     ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED          = ( 'Guru Meditations',  'VERR_PGM_PHYS_PAGE_RESERVED' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
+    ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
+    ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
     ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
@@ -604,18 +606,27 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         return False;
 
 
-    ## Thing we search a main or VM log for to figure out why something went bust.
+    ## Things we search a main or VM log for to figure out why something went bust.
     katSimpleMainAndVmLogReasons = [
-        # ( Whether to stop on hit, needle, reason tuple ),
-        ( False, 'GuruMeditation',                                  ktReason_Guru_Generic ),
-        ( False, 'Guru Meditation',                                 ktReason_Guru_Generic ),
-        ( True,  'VERR_IEM_INSTR_NOT_IMPLEMENTED',                  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED ),
-        ( True,  'VERR_IEM_ASPECT_NOT_IMPLEMENTED',                 ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED ),
-        ( True,  'VERR_TRPM_DONT_PANIC',                            ktReason_Guru_VERR_TRPM_DONT_PANIC ),
-        ( True,  'VERR_PGM_PHYS_PAGE_RESERVED',                     ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED ),
-        ( True,  'VINF_EM_TRIPLE_FAULT',                            ktReason_Guru_VINF_EM_TRIPLE_FAULT ),
-        ( False, 'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))',
-                                                                    ktReason_XPCOM_NS_ERROR_CALL_FAILED ),
+        # ( Whether to stop on hit, reason tuple, needle text. )
+        ( False, ktReason_Guru_Generic,                           'GuruMeditation' ),
+        ( False, ktReason_Guru_Generic,                           'Guru Meditation' ),
+        ( True,  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED,    'VERR_IEM_INSTR_NOT_IMPLEMENTED' ),
+        ( True,  ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED,   'VERR_IEM_ASPECT_NOT_IMPLEMENTED' ),
+        ( True,  ktReason_Guru_VERR_TRPM_DONT_PANIC,              'VERR_TRPM_DONT_PANIC' ),
+        ( True,  ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED,       'VERR_PGM_PHYS_PAGE_RESERVED' ),
+        ( True,  ktReason_Guru_VINF_EM_TRIPLE_FAULT,              'VINF_EM_TRIPLE_FAULT' ),
+        ( True,  ktReason_Networking_Nonexistent_host_nic,
+          'rc=E_FAIL text="Nonexistent host networking interface, name \'eth0\' (VERR_INTERNAL_ERROR)"' ),
+        ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
+          'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
+    ];
+
+    ## Things we search the _RIGHT_ _STRIPPED_ vgatext for.
+    katSimpleVgaTextReasons = [
+        # ( Whether to stop on hit, reason tuple, needle text. )
+        ( True,  ktReason_Panic_MP_BIOS_IO_APIC,
+          "..MP-BIOS bug: 8254 timer not connected to IO-APIC\n\n" ),
     ];
 
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
@@ -627,13 +638,17 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             """
             Investigates the current set of VM related logs.
             """
-            self.dprint('investigateLogSet: %u chars result log, %u chars VM log, %u chars kernel log'
+            self.dprint('investigateLogSet: lengths: result log %u, VM log %u, kernel log %u, vga text %u, info text %u'
                         % ( len(sResultLog) if sResultLog is not None else 0,
                             len(sVMLog)     if sVMLog is not None else 0,
-                            len(sKrnlLog)   if sKrnlLog is not None else 0), );
+                            len(sKrnlLog)   if sKrnlLog is not None else 0,
+                            len(sVgaText)   if sVgaText is not None else 0,
+                            len(sInfoText)  if sInfoText is not None else 0, ));
             #self.dprint('main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint('vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
             #self.dprint('krnl.log<<<\n%s\n<<<\n' % (sKrnlLog,));
+            #self.dprint('vgatext.txt<<<\n%s\n<<<\n' % (sVgaText,));
+            #self.dprint('info.txt<<<\n%s\n<<<\n' % (sInfoText,));
 
             # TODO: more
 
@@ -666,12 +681,22 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             # Loop thru the simple stuff.
             #
             fFoundSomething = False;
-            for fStopOnHit, sNeedle, tReason in self.katSimpleMainAndVmLogReasons:
+            for fStopOnHit, tReason, sNeedle in self.katSimpleMainAndVmLogReasons:
                 if sResultLog.find(sNeedle) > 0 or sVMLog.find(sNeedle) > 0:
                     oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
                     if fStopOnHit:
                         return True;
                     fFoundSomething = True;
+
+            # Continue with vga text.
+            if sVgaText is not None and len(sVgaText) > 0:
+                for fStopOnHit, tReason, sNeedle in self.katSimpleVgaTextReasons:
+                    if sVgaText.find(sNeedle) > 0:
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                        if fStopOnHit:
+                            return True;
+                        fFoundSomething = True;
+            _ = sInfoText;
 
             #
             # Check for repeated reboots...
@@ -685,19 +710,28 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
         #
         # Check if we got any VM or/and kernel logs.  Treat them as sets in
-        # case we run multiple VMs here.
+        # case we run multiple VMs here (this is of course ASSUMING they
+        # appear in the order that terminateVmBySession uploads them).
         #
-        sVMLog   = None;
-        sKrnlLog = None;
+        sVMLog    = None;
+        sKrnlLog  = None;
+        sVgaText  = None;
+        sInfoText = None;
         for oFile in oFailedResult.aoFiles:
             if oFile.sKind == TestResultFileData.ksKind_LogReleaseVm:
                 if sVMLog is not None:
                     if investigateLogSet() is True:
                         return True;
-                sKrnlLog = None;
-                sVMLog   = oCaseFile.getLogFile(oFile);
+                sKrnlLog  = None;
+                sVgaText  = None;
+                sInfoText = None;
+                sVMLog    = oCaseFile.getLogFile(oFile);
             elif oFile.sKind == TestResultFileData.ksKind_LogGuestKernel:
-                sKrnlLog = oCaseFile.getLogFile(oFile);
+                sKrnlLog  = oCaseFile.getLogFile(oFile);
+            elif oFile.sKind == TestResultFileData.ksKind_InfoVgaText:
+                sVgaText  = ''.join([sLine.rstrip() for sLine in oCaseFile.getLogFile(oFile).split('\n')]);
+            elif oFile.sKind == TestResultFileData.ksKind_InfoCollection:
+                sInfoText = oCaseFile.getLogFile(oFile);
         if sVMLog is not None and investigateLogSet() is True:
             return True;
 
