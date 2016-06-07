@@ -729,7 +729,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif oFile.sKind == TestResultFileData.ksKind_LogGuestKernel:
                 sKrnlLog  = oCaseFile.getLogFile(oFile);
             elif oFile.sKind == TestResultFileData.ksKind_InfoVgaText:
-                sVgaText  = ''.join([sLine.rstrip() for sLine in oCaseFile.getLogFile(oFile).split('\n')]);
+                sVgaText  = '\n'.join([sLine.rstrip() for sLine in oCaseFile.getLogFile(oFile).split('\n')]);
             elif oFile.sKind == TestResultFileData.ksKind_InfoCollection:
                 sInfoText = oCaseFile.getLogFile(oFile);
         if sVMLog is not None and investigateLogSet() is True:
