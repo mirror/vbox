@@ -1340,10 +1340,11 @@ static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId,
         winEr = ERROR_GEN_FAILURE;
     }
 
+/*  The code below was commented out because VBOXESC_UPDATEMODES should not cause (un)plugging virtual displays.
     winEr =  vboxDispIfWaitDisplayDataInited(pOp);
     if (winEr != NO_ERROR)
         WARN(("VBoxTray: (WDDM) Failed vboxDispIfWaitDisplayDataInited winEr %d\n", winEr));
-
+*/
     return winEr;
 }
 
@@ -1378,7 +1379,9 @@ static DWORD vboxDispIfWddmResizeDisplayVista(DEVMODE *paDeviceModes, DISPLAY_DE
 
 static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
+    LogFunc((" ENTER"));
     DWORD winEr;
+
     if (pIf->enmMode > VBOXDISPIF_MODE_WDDM)
     {
         winEr = vboxDispIfWddmResizeDisplay(pIf, iChangedMode, fEnable, paDisplayDevices, paDeviceModes, cDevModes);
@@ -1391,6 +1394,8 @@ static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, 
         if (winEr != NO_ERROR)
             WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmResizeDisplayVista winEr %d\n", winEr));
     }
+
+    LogFunc((" LEAVE"));
     return winEr;
 }
 
@@ -1398,7 +1403,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 {
     DWORD winEr = NO_ERROR;
 
-    Log(("VBoxTray: vboxDispIfResizeModesWDDM iChanged %d cDevModes %d\n", iChangedMode, cDevModes));
+    Log(("VBoxTray: vboxDispIfResizeModesWDDM iChanged %d cDevModes %d fEnable %d fExtDispSup %d\n", iChangedMode, cDevModes, fEnable, fExtDispSup));
     VBoxRrRetryStop();
 
     VBOXDISPIF_OP Op;
@@ -1429,14 +1434,21 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
             VidPnData.aTargets[cElements].iSource = -1;
     }
 
-    D3DKMT_INVALIDATEACTIVEVIDPN DdiData = {0};
+/*  The pfnD3DKMTInvalidateActiveVidPn was deprecated since Win7 and causes deadlocks since Win10 TH2.
+    Instead, the VidPn Manager can replace an old VidPn as soon as SetDisplayConfig or ChangeDisplaySettingsEx will try to set a new display mode.
+    On Vista D3DKMTInvalidateActiveVidPn is still required. TBD: Get rid of it. */  
+    if (Op.pIf->enmMode < VBOXDISPIF_MODE_WDDM_W7)
+    {
+        D3DKMT_INVALIDATEACTIVEVIDPN DdiData = {0};
 
-    DdiData.hAdapter = Op.Adapter.hAdapter;
-    DdiData.pPrivateDriverData = &VidPnData;
-    DdiData.PrivateDriverDataSize = sizeof (VidPnData);
+        DdiData.hAdapter = Op.Adapter.hAdapter;
+        DdiData.pPrivateDriverData = &VidPnData;
+        DdiData.PrivateDriverDataSize = sizeof (VidPnData);
 
-    NTSTATUS Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
-    LogFunc(("InvalidateActiveVidPn 0x%08x\n", Status));
+        NTSTATUS Status;
+        Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
+        LogFunc(("D3DKMTInvalidateActiveVidPn returned %d)\n", Status));
+    }
 
     /* Resize displays always to keep the display layout because
      * "the D3DKMTInvalidateActiveVidPn function always resets a multimonitor desktop to the default configuration".
@@ -1450,7 +1462,10 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
             RTRECTSIZE Size;
             Size.cx = paDeviceModes[iChangedMode].dmPelsWidth;
             Size.cy = paDeviceModes[iChangedMode].dmPelsHeight;
+            LogFunc(("Calling vboxDispIfUpdateModesWDDM to change target %d mode to (%d x %d)\n", iChangedMode, Size.cx, Size.cy));
             winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
+            LogFunc(("vboxDispIfUpdateModesWDDM returned %d\n", winEr));
+
             if (winEr != NO_ERROR)
                 WARN(("vboxDispIfUpdateModesWDDM failed %d\n", winEr));
         }
@@ -1459,10 +1474,12 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
         {
             winEr = vboxDispIfResizePerform(pIf, i, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
+            LogFunc(("vboxDispIfResizePerform returned %d\n", winEr));
+
             if (winEr == ERROR_RETRY)
             {
                 VBoxRrRetrySchedule(pIf, i, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
-                /* just pretend everything is fine so far */
+
                 winEr = NO_ERROR;
             }
         }

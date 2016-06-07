@@ -5080,7 +5080,7 @@ DxgkDdiIsSupportedVidPn(
         return Status;
     }
 
-    LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
+    LOGF(("LEAVE, isSupported(%d), context(0x%x)", pIsSupportedVidPnArg->IsVidPnSupported, hAdapter));
 
     return STATUS_SUCCESS;
 }
