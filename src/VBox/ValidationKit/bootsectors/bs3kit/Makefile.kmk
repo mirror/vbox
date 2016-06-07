@@ -382,7 +382,8 @@ LIBRARIES += bs3kit-pp32
 bs3kit-pp32_TEMPLATE = VBoxBS3KitImg32
 bs3kit-pp32_INSTTYPE = none
 bs3kit-pp32_DEFS     = TMPL_MODE=BS3_MODE_PP32
-bs3kit-pp32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
+bs3kit-pp32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-first-init-all-pp32.asm
 
 # The 16-bit BS3Kit library for 32-bit paged protected kernel+tss.
 LIBRARIES += bs3kit-pp32_16

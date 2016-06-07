@@ -55,11 +55,68 @@ typedef CPUDECODE1TST BS3_FAR *PCPUDECODE1TST;
 #define P_RZ  X86_OP_PRF_REPZ
 #define P_RN  X86_OP_PRF_REPNZ
 
+#define RM_EAX_EAX          ((3 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xAX))
+#define RM_EAX_DEREF_EBX    ((0 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xBX))
+
+#define F_486   0
+#define F_SSE2  1
+#define F_SSE3  2
+#define F_SSE42 4
+#define F_MOVBE 80
 
 CPUDECODE1TST const g_aSimpleTests[] =
 {
-    {  0,  2, 2,  { 0x0f, 0x38, } },
-    {  0,  3, 3,  { P_LK, 0x0f, 0x38, } },
+    /*
+     *  fFlags, cbUd, cbOpcodes, abOpcodes
+     */
+#if 1
+    /* Using currently undefined 0x0f 0x38 sequences. */
+    {        0,  2,   3,         { 0x0f, 0x38, RM_EAX_EAX, } },
+    {        0,  2+1, 3+1,       { P_LK, 0x0f, 0x38, RM_EAX_EAX, } },
+    {        0,  2+1, 3+1,       { P_RN, 0x0f, 0x38, RM_EAX_EAX, } },
+    {        0,  2+1, 3+1,       { P_RZ, 0x0f, 0x38, RM_EAX_EAX, } },
+    {        0,  2+2, 3+2, { P_LK, P_LK, 0x0f, 0x38, RM_EAX_EAX, } },
+#endif
+#if 1
+    /* The XADD instruction has empty lines for 66, f3 and f2 prefixes.
+       AMD doesn't do anything special for XADD Ev,Gv as the intel table would indicate. */
+    {    F_486,   99,  3,             { 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  4,       { P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  4,       { P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  5, { P_OZ, P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  5, { P_RN, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  4,       { P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  5, { P_OZ, P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486,   99,  5, { P_RZ, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+#endif
+#if 1
+    /* The movnti instruction is confined to the unprefixed lined in the intel manuals. Check how the other lines work. */
+    {   F_SSE2,    3,  3,             { 0x0f, 0xc3, RM_EAX_EAX, } },        /* invalid - reg,reg */
+    {   F_SSE2,   99,  3,             { 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },
+    {   F_SSE2,    4,  4,       { P_OZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2,    4,  4,       { P_RN, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2,    4,  4,       { P_RZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2,    4,  4,       { P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2,    5,  5, { P_RZ, P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+#endif
+    /* The lddqu instruction requires a 0xf2 prefix, intel only lists 0x66 and empty
+       prefix for it.  Check what they really mean by that*/
+    {   F_SSE3,    4,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_EAX, } },          /* invalid - reg, reg  */
+    {   F_SSE3,   99,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,   99,  5,      { P_RZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,    3,  3,      {             0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,    4,  4,      {       P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,    4,  4,      {       P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,    4,  4,      {       P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,    5,  5,      { P_RZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,   99,  5,      { P_RZ, P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } }, // AMD,why?
+    {   F_SSE3,    5,  5,      { P_RZ, P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,   99,  5,      { P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,   99,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,    5,  5,      { P_LK, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,   99,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3,   99,  6,{ P_OZ, P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+/** @todo crc32 / movbe  */
 };
 
 void DecodeEdgeTest(void)
@@ -67,22 +124,63 @@ void DecodeEdgeTest(void)
     /*
      * Allocate and initialize a page pair
      */
-    uint8_t BS3_FAR *pbPages  = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
+    uint8_t BS3_FAR *pbPages;
+    pbPages  = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
     if (pbPages)
     {
         unsigned        i;
         BS3REGCTX       Ctx;
         BS3TRAPFRAME    TrapFrame;
 
-//BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
+        Bs3MemZero(&Ctx, sizeof(Ctx));
+        Bs3MemZero(&TrapFrame, sizeof(TrapFrame));
+
+        ASMSetCR0((ASMGetCR0() & ~(X86_CR0_EM | X86_CR0_TS)) | X86_CR0_MP);
+        ASMSetCR4(ASMGetCR4() | X86_CR4_OSFXSR);
+
+        Bs3RegCtxSaveEx(&Ctx, BS3_MODE_CODE_32, 512);
+        Ctx.rbx.u64 = (uintptr_t)pbPages;
 
         for (i = 0; i < RT_ELEMENTS(g_aSimpleTests); i++)
         {
-            unsigned off = g_aSimpleTests[i].cbOpcodes;
-            while (off-- > 0)
+            unsigned cb = g_aSimpleTests[i].cbOpcodes;
+            while (cb >= 1)
             {
-                Bs3MemCpy(&pbPages[X86_PAGE_SIZE - off], &g_aSimpleTests[i].abOpcodes[0], off);
-
+                uint8_t BS3_FAR *pbRip = &pbPages[X86_PAGE_SIZE - cb];
+                Bs3MemCpy(pbRip, &g_aSimpleTests[i].abOpcodes[0], cb);
+                Bs3RegCtxSetRipCsFromFlat(&Ctx, (uintptr_t)pbRip);
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+#if 0
+                Bs3TestPrintf("\ni=%d cb=%#x (cbUd=%#x cbOpcodes=%#x)\n", i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes);
+                Bs3TrapPrintFrame(&TrapFrame);
+#endif
+                if (cb >= g_aSimpleTests[i].cbUd)
+                {
+                    if (TrapFrame.bXcpt != X86_XCPT_UD)
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #UD got %#x\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes, TrapFrame.bXcpt);
+                }
+                else if (cb < g_aSimpleTests[i].cbOpcodes)
+                {
+                    if (TrapFrame.bXcpt != X86_XCPT_PF)
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF (on) got %#x\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes, TrapFrame.bXcpt);
+                    else if (TrapFrame.Ctx.rip.u32 != (uintptr_t)pbRip)
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF rip of %p (on) got %#RX32\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
+                                       pbRip, TrapFrame.Ctx.rip.u32);
+                }
+                else
+                {
+                    if (TrapFrame.bXcpt != X86_XCPT_PF)
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF (after) got %#x\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes, TrapFrame.bXcpt);
+                    else if (TrapFrame.Ctx.rip.u32 != (uintptr_t)&pbPages[X86_PAGE_SIZE])
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF rip of %p (after) got %#RX32\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
+                                       &pbPages[X86_PAGE_SIZE], TrapFrame.Ctx.rip.u32);
+                }
+                cb--;
             }
         }
 
@@ -99,13 +197,15 @@ void DecodeEdgeTest(void)
 }
 
 
-BS3_DECL(void) Main_pe32()
+BS3_DECL(void) Main_pp32()
 {
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
-//    Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
+    DecodeEdgeTest();
 
     Bs3TestTerm();
+
+    //for (;;) ASMHalt();
 }
 

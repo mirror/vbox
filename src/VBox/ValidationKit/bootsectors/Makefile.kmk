@@ -276,7 +276,7 @@ bs3-cpu-decoding-1_INCS  = .
 bs3-cpu-decoding-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
 bs3-cpu-decoding-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
 bs3-cpu-decoding-1_SOURCES = \
-	bs3kit/bs3-first-init-all-pe32.asm \
+	bs3kit/bs3-first-init-all-pp32.asm \
 	bs3-cpu-decoding-1.c32 \
 	bs3-cpu-decoding-1-asm.asm
 #       bs3kit/bs3-cmn-instantiate.c16 \
