@@ -336,7 +336,8 @@ LIBRARIES += bs3kit-pe32
 bs3kit-pe32_TEMPLATE = VBoxBS3KitImg32
 bs3kit-pe32_INSTTYPE = none
 bs3kit-pe32_DEFS     = TMPL_MODE=BS3_MODE_PE32
-bs3kit-pe32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES)
+bs3kit-pe32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-first-init-all-pe32.asm
 
 # The 16-bit BS3Kit library for 32-bit protected kernel+tss.
 LIBRARIES += bs3kit-pe32_16
