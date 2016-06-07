@@ -3004,11 +3004,29 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                      */
                     destMediumPath = sourceMediumPath.stripFilename().append('/').append(destMediumFileName);
                 }
+                else
+                {
+                    /* set the target extension like on the source. Permission to convert is prohibited */
+                    Utf8Str suffix = i_getFormat();
 
-                /* set the target extension like on the source. Permission to convert is prohibited */
-                Utf8Str suffix = i_getFormat();
-                suffix.toLower();
-                destMediumPath.stripSuffix().append('.').append(suffix);
+                    if (suffix.compare("RAW", Utf8Str::CaseInsensitive) == 0)
+                    {
+                        if(i_getDeviceType() == DeviceType_DVD)
+                        {
+                            suffix = "iso";
+                        }
+                        else
+                        {
+                            rc = setError(VERR_NOT_A_FILE,
+                                   tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
+                                   i_getLocationFull().c_str());
+                            throw rc;
+                        }
+                    }
+
+                    suffix.toLower();
+                    destMediumPath.stripSuffix().append('.').append(suffix);
+                }
             }
 
             if (i_isMediumFormatFile())
