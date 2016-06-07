@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-fpustate-1, 16-bit C code.
+ * BS3Kit - bs3-cpu-decoding-1, 32-bit C code.
  */
 
 /*
@@ -31,6 +31,73 @@
 #include <bs3kit.h>
 #include <iprt/asm-amd64-x86.h>
 
+/**
+ * Simple test.
+ */
+typedef struct CPUDECODE1TST
+{
+    uint8_t fFlags;
+    uint8_t cbUd;
+    uint8_t cbOpcodes;
+    uint8_t abOpcodes[21];
+} CPUDECODE1TST;
+typedef CPUDECODE1TST BS3_FAR *PCPUDECODE1TST;
+
+#define P_CS  X86_OP_PRF_CS
+#define P_SS  X86_OP_PRF_SS
+#define P_DS  X86_OP_PRF_DS
+#define P_ES  X86_OP_PRF_ES
+#define P_FS  X86_OP_PRF_FS
+#define P_GS  X86_OP_PRF_GS
+#define P_OZ  X86_OP_PRF_SIZE_OP
+#define P_AZ  X86_OP_PRF_SIZE_ADDR
+#define P_LK  X86_OP_PRF_LOCK
+#define P_RZ  X86_OP_PRF_REPZ
+#define P_RN  X86_OP_PRF_REPNZ
+
+
+CPUDECODE1TST const g_aSimpleTests[] =
+{
+    {  0,  2, 2,  { 0x0f, 0x38, } },
+    {  0,  3, 3,  { P_LK, 0x0f, 0x38, } },
+};
+
+void DecodeEdgeTest(void)
+{
+    /*
+     * Allocate and initialize a page pair
+     */
+    uint8_t BS3_FAR *pbPages  = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
+    if (pbPages)
+    {
+        unsigned        i;
+        BS3REGCTX       Ctx;
+        BS3TRAPFRAME    TrapFrame;
+        bs3kit.h
+//BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
+
+        for (i = 0; i < RT_ELEMENTS(g_aSimpleTests); i++)
+        {
+            unsigned off = g_aSimpleTests[i].cbOpcodes;
+            while (off-- > 0)
+            {
+                Bs3MemCpy(&pbPages[X86_PAGE_SIZE - off], &g_aSimpleTests[i].abOpcodes[0], off);
+
+            }
+        }
+
+        Bs3MemGuardedTestPageFree(pbPages);
+    }
+    else
+        Bs3TestFailed("Failed to allocate two pages!\n");
+
+    /*
+     * Test instruction sequences.
+     */
+
+
+}
+
 
 BS3_DECL(void) Main_pe32()
 {
@@ -41,5 +108,4 @@ BS3_DECL(void) Main_pe32()
 
     Bs3TestTerm();
 }
-
 

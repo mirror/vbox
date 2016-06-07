@@ -270,23 +270,23 @@ bs3-fpustate-1-template.o:: \
 	$$(bs3-fpustate-1_0_OUTDIR)/bs3-fpustate-1-asm.o16
 
 # CPU instruction decoding experiments.
-#MISCBINS += bs3-cpu-decode-1
-bs3-cpu-decode-1_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-decode-1_INCS  = .
-bs3-cpu-decode-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-decode-1-template.c
-bs3-cpu-decode-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-decode-1-template.c
-bs3-cpu-decode-1_SOURCES = \
-	bs3kit/bs3-first-rm.asm \
-	bs3-cpu-decode-1.c32 \
-       bs3kit/bs3-cmn-instantiate.c16 \
-       bs3kit/bs3-cmn-instantiate.c32 \
-       bs3kit/bs3-cmn-instantiate.c64 \
-	bs3-cpu-decode-1-asm.asm
-bs3-cpu-decode-1-template.o:: \
-	$$(bs3-cpu-decode-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
-	$$(bs3-cpu-decode-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-	$$(bs3-cpu-decode-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
-	$$(bs3-cpu-decode-1_0_OUTDIR)/bs3-cpu-decode-1-asm.o16
+MISCBINS += bs3-cpu-decoding-1
+bs3-cpu-decoding-1_TEMPLATE = VBoxBS3KitImg
+bs3-cpu-decoding-1_INCS  = .
+bs3-cpu-decoding-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
+bs3-cpu-decoding-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-decoding-1-template.c
+bs3-cpu-decoding-1_SOURCES = \
+	bs3kit/bs3-first-init-all-pe32.asm \
+	bs3-cpu-decoding-1.c32 \
+	bs3-cpu-decoding-1-asm.asm
+#       bs3kit/bs3-cmn-instantiate.c16 \
+#       bs3kit/bs3-cmn-instantiate.c32 \
+#       bs3kit/bs3-cmn-instantiate.c64
+#bs3-cpu-decoding-1-template.o:: \
+#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
+#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
+#	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3-cpu-decoding-1-asm.o16
 
 endif # VBOX_WITH_BS3KIT
 
