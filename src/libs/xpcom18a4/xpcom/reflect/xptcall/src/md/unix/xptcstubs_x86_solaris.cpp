@@ -49,7 +49,7 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32 methodIndex, PRUint32* args)
     nsXPTCMiniVariant paramBuffer[PARAM_BUFFER_COUNT];
     nsXPTCMiniVariant* dispatchParams = NULL;
     nsIInterfaceInfo* iface_info = NULL;
-    const nsXPTMethodInfo* info;
+    const nsXPTMethodInfo* info = NULL;
     PRUint8 paramCount;
     PRUint8 i;
     nsresult result = NS_ERROR_FAILURE;

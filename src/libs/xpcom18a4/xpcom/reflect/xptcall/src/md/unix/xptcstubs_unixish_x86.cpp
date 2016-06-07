@@ -49,7 +49,7 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32 methodIndex, PRUint32* args)
     nsXPTCMiniVariant paramBuffer[PARAM_BUFFER_COUNT];
     nsXPTCMiniVariant* dispatchParams = NULL;
     nsIInterfaceInfo* iface_info = NULL;
-    const nsXPTMethodInfo* info;
+    const nsXPTMethodInfo* info = NULL;
     PRUint8 paramCount;
     PRUint8 i;
     nsresult result = NS_ERROR_FAILURE;
@@ -58,9 +58,13 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32 methodIndex, PRUint32* args)
 
     self->GetInterfaceInfo(&iface_info);
     NS_ASSERTION(iface_info,"no interface info");
+    if (!iface_info)
+        return NS_ERROR_UNEXPECTED;
 
     iface_info->GetMethodInfo(PRUint16(methodIndex), &info);
-    NS_ASSERTION(info,"no interface info");
+    NS_ASSERTION(info,"no method info");
+    if (!info)
+        return NS_ERROR_UNEXPECTED;
 
     paramCount = info->GetParamCount();
 
@@ -70,6 +74,8 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32 methodIndex, PRUint32* args)
     else
         dispatchParams = paramBuffer;
     NS_ASSERTION(dispatchParams,"no place for params");
+    if (!dispatchParams)
+        return NS_ERROR_OUT_OF_MEMORY;
 
     PRUint32* ap = args;
     for(i = 0; i < paramCount; i++, ap++)
