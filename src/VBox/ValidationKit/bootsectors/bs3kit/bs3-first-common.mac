@@ -264,7 +264,8 @@ BS3_BEGIN_SYSTEM16
 
 
 ;
-; Switch back to the 16-bit code segment.
+; Switch back to the 16-bit code segment and the startup code.
 ;
 BS3_BEGIN_TEXT16
+BS3_GLOBAL_NAME_EX Bs3KitEntryPoint, function, 0
 

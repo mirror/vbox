@@ -34,8 +34,7 @@
 extern NAME(Bs3InitAll_rm)
 extern NAME(Bs3SwitchToPE32_rm)
 
-
-EXTERN Main_rm
+;; Entry point.
         push    word 0                  ; zero return address.
         push    word 0                  ; zero caller BP
         mov     bp, sp
