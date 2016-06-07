@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
 /** DBGCORECOREDESCRIPTOR::u32Magic. */
 #define DBGFCORE_MAGIC          UINT32_C(0xc01ac0de)
 /** DBGCORECOREDESCRIPTOR::u32FmtVersion. */
-#define DBGFCORE_FMT_VERSION    UINT32_C(0x00010003)
+#define DBGFCORE_FMT_VERSION    UINT32_C(0x00010004)
 
 /**
  * An x86 segment selector.
@@ -100,6 +100,7 @@ typedef struct DBGFCORECPU
     uint64_t            rip;
     uint64_t            rsp;
     uint64_t            rbp;
+    uint64_t            rflags;
     DBGFCORESEL         cs;
     DBGFCORESEL         ds;
     DBGFCORESEL         es;

@@ -344,6 +344,7 @@ static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
     pDbgfCpu->rip             = pCtx->rip;
     pDbgfCpu->rsp             = pCtx->rsp;
     pDbgfCpu->rbp             = pCtx->rbp;
+    pDbgfCpu->rflags          = pCtx->rflags.u;
     DBGFCOPYSEL(pDbgfCpu->cs, pCtx->cs);
     DBGFCOPYSEL(pDbgfCpu->ds, pCtx->ds);
     DBGFCOPYSEL(pDbgfCpu->es, pCtx->es);
