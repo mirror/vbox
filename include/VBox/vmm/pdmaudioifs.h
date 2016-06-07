@@ -172,7 +172,9 @@ typedef enum PDMAUDIOSTREAMLAYOUT
     PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED,
     /** Interleaved access, where the data can be
      *  mixed together with data of other audio streams. */
-    PDMAUDIOSTREAMLAYOUT_INTERLEAVED
+    PDMAUDIOSTREAMLAYOUT_INTERLEAVED,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOSTREAMLAYOUT_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMLAYOUT, *PPDMAUDIOSTREAMLAYOUT;
 
 /** No stream channel data flags defined. */
@@ -715,13 +717,22 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamSetVolume, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOVOLUME pVol));
 
     /**
-     * Plays (transfers) all available audio samples of a an output stream via the connected host backend.
+     * Plays (transfers) available audio samples via the host backend. Only works with output streams.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
      * @param   pcSamplesPlayed      Number of samples played. Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed));
+
+    /**
+     * Captures (transfers) available audio samples from the host backend. Only works with input streams.
+     *
+     * @returns VBox status code.
+     * @param   pInterface           Pointer to the interface structure containing the called function pointer.
+     * @param   pcSamplesCaptured    Number of samples captured. Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesCaptured));
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCALLBACK paCallbacks, size_t cCallbacks));
@@ -731,7 +742,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "9C097435-3276-4D88-A49A-A4FE671D86F8"
+#define PDMIAUDIOCONNECTOR_IID                  "D1B6465D-E3DD-455B-9E05-FB6D56F7D472"
 
 
 

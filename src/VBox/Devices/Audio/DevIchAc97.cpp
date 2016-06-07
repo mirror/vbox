@@ -45,12 +45,19 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-#ifdef DEBUG
-//#define DEBUG_LUN
-# ifdef DEBUG_LUN
-#  define DEBUG_LUN_NUM 1
+#ifdef DEBUG_andy
+/*
+ * AC97_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
+ * to a file on the host. Be sure to adjust AC97_DEBUG_DUMP_PCM_DATA_PATH
+ * to your needs before using this!
+ */
+# define AC97_DEBUG_DUMP_PCM_DATA
+# ifdef RT_OS_WINDOWS
+#  define AC97_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
+# else
+#  define AC97_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
 # endif
-#endif /* DEBUG */
+#endif /* DEBUG_andy */
 
 #define AC97_SSM_VERSION 1
 
@@ -75,9 +82,9 @@
 
 #define CR_IOCE  RT_BIT(4)         /* rw,   Interrupt On Completion Enable. */
 #define CR_FEIE  RT_BIT(3)         /* rw    FIFO Error Interrupt Enable. */
-#define CR_LVBIE RT_BIT(2)         /* rw    */
-#define CR_RR    RT_BIT(1)         /* rw */
-#define CR_RPBM  RT_BIT(0)         /* rw */
+#define CR_LVBIE RT_BIT(2)         /* rw    Last Valid Buffer Interrupt Enable. */
+#define CR_RR    RT_BIT(1)         /* rw    Reset Registers. */
+#define CR_RPBM  RT_BIT(0)         /* rw    Run/Pause Bus Master. */
 #define CR_VALID_MASK (RT_BIT(5) - 1)
 #define CR_DONT_CLEAR_MASK (CR_IOCE | CR_FEIE | CR_LVBIE)
 
@@ -262,7 +269,7 @@ typedef struct AC97BMREGS
     uint8_t  civ;               /** ro 0, Current index value. */
     uint8_t  lvi;               /** rw 0, Last valid index. */
     uint16_t sr;                /** rw 1, Status register. */
-    uint16_t picb;              /** ro 0, Position in current buffer. */
+    uint16_t picb;              /** ro 0, Position in current buffer (in samples). */
     uint8_t  piv;               /** ro 0, Prefetched index value. */
     uint8_t  cr;                /** rw 0, Control register. */
     int      bd_valid;          /** Whether current BDLE is initialized or not. */
@@ -422,7 +429,7 @@ static void ichac97TimerMaybeStart(PAC97STATE pThis);
 static void ichac97TimerMaybeStop(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif
-static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbElapsed);
+static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream);
 
 static void ichac97WarmReset(PAC97STATE pThis)
 {
@@ -531,7 +538,7 @@ static bool ichac97StreamIsActive(PAC97STATE pThis, PAC97STREAM pStream)
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    bool fActive = AudioMixerSinkHasData(ichac97IndexToSink(pThis, pStream->u8Strm));
+    bool fActive = AudioMixerSinkGetStatus(ichac97IndexToSink(pThis, pStream->u8Strm));
 
     LogFlowFunc(("SD=%RU8, fActive=%RTbool\n", pStream->u8Strm, fActive));
     return fActive;
@@ -1144,11 +1151,11 @@ static int ichac97MixerReset(PAC97STATE pThis)
  * @param   cbMax
  * @param   pcbWritten
  */
-static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbMax, uint32_t *pcbWritten)
+static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertReturn(cbMax,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbToWrite,  VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
     PPDMDEVINS  pDevIns = ICHAC97STATE_2_DEVINS(pThis);
@@ -1157,9 +1164,9 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbM
     uint32_t    addr           = pRegs->bd.addr;
     uint32_t    cbWrittenTotal = 0;
 
-    Log3Func(("PICB=%RU16, cbMax=%RU32\n", pRegs->picb, cbMax));
+    Log3Func(("PICB=%RU16, cbMax=%RU32\n", pRegs->picb, cbToWrite));
 
-    uint32_t cbToWrite = RT_MIN((uint32_t)(pRegs->picb << 1), cbMax); /** @todo r=andy Assumes 16bit sample size. */
+    cbToWrite = RT_MIN((uint32_t)(pRegs->picb << 1), cbToWrite); /** @todo r=andy Assumes 16bit sample size. */
     if (!cbToWrite)
     {
         if (pcbWritten)
@@ -1169,7 +1176,7 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbM
 
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pReg=%p, cbMax=%RU32, cbToWrite=%RU32\n", pRegs, cbMax, cbToWrite));
+    LogFlowFunc(("pRegs=%p, cbMax=%RU32, cbToWrite=%RU32\n", pRegs, cbToWrite, cbToWrite));
 
     Assert(pStream->State.offFIFOW <= pStream->State.cbFIFOW);
     uint32_t  cbFIFOW  = pStream->State.cbFIFOW - pStream->State.offFIFOW;
@@ -1181,9 +1188,9 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbM
         cbToRead = RT_MIN(cbToWrite, cbFIFOW);
         PDMDevHlpPhysRead(pDevIns, addr, pu8FIFOW, cbToRead); /** @todo r=andy Check rc? */
 
-#if defined (RT_OS_LINUX) && defined(DEBUG_andy)
+#ifdef AC97_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, "/tmp/ac97WriteAudio.pcm",
+        RTFileOpen(&fh, AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97WriteAudio.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, pu8FIFOW, cbToRead, NULL);
         RTFileClose(fh);
@@ -1233,13 +1240,15 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbM
 
 static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 {
+    LogFlowFunc(("cbElapsed=%RU32\n", cbElapsed));
+
     if (!(pThis->bup_flag & BUP_SET))
     {
         if (pThis->bup_flag & BUP_LAST)
         {
             unsigned int i;
             uint32_t *p = (uint32_t*)pThis->silence;
-            for (i = 0; i < sizeof(pThis->silence) / 4; i++)
+            for (i = 0; i < sizeof(pThis->silence) / 4; i++) /** @todo r=andy Assumes 16-bit samples, stereo. */
                 *p++ = pThis->last_samp;
         }
         else
@@ -1268,11 +1277,11 @@ static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
     }
 }
 
-static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbMax, uint32_t *pcbRead)
+static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertReturn(cbMax,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbToRead,   VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
     PPDMDEVINS pDevIns = ICHAC97STATE_2_DEVINS(pThis);
@@ -1284,8 +1293,9 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbMa
     AssertPtr(pSink);
 
     uint32_t cbRead   = 0;
-    uint32_t cbToRead = RT_MIN((uint32_t)(pRegs->picb << 1),
-                               RT_MIN(pStream->State.cbFIFOW, cbMax)); /** @todo r=andy Assumes 16bit samples. */
+
+    cbToRead = RT_MIN((uint32_t)(pRegs->picb << 1),
+                      RT_MIN(pStream->State.cbFIFOW, cbToRead)); /** @todo r=andy Assumes 16bit samples. */
 
     if (!cbToRead)
     {
@@ -1364,30 +1374,32 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTS;
     uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
+    LogFlowFuncEnter();
+
     /* Update current time timestamp. */
     pThis->uTimerTS = cTicksNow;
 
-    LogFlowFuncEnter();
+    /* Flag indicating whether to kick the timer again for a
+     * new data processing round. */
+    bool fKickTimer = false;
 
-    uint32_t cbLineIn;
-    AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, pThis->cTimerTicks, cTicksPerSec, &cbLineIn);
-    if (cbLineIn)
-        ichac97TransferAudio(pThis, &pThis->StreamLineIn, cbLineIn);
+    AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, pThis->cTimerTicks, cTicksPerSec);
+    ichac97TransferAudio(pThis, &pThis->StreamLineIn);
 
-    uint32_t cbMicIn;
-    AudioMixerSinkTimerUpdate(pThis->pSinkMicIn , pThis->cTimerTicks, cTicksPerSec, &cbMicIn);
-    if (cbMicIn)
-        ichac97TransferAudio(pThis, &pThis->StreamMicIn, cbMicIn);
+    fKickTimer = AudioMixerSinkGetStatus(pThis->pSinkLineIn) & AUDMIXSINK_STS_DIRTY;
 
-    uint32_t cbOut;
-    AudioMixerSinkTimerUpdate(pThis->pSinkOutput, pThis->cTimerTicks, cTicksPerSec, &cbOut);
-    if (cbOut)
-        ichac97TransferAudio(pThis, &pThis->StreamOut, cbOut);
+    AudioMixerSinkTimerUpdate(pThis->pSinkMicIn , pThis->cTimerTicks, cTicksPerSec);
+    ichac97TransferAudio(pThis, &pThis->StreamMicIn);
+
+    fKickTimer = AudioMixerSinkGetStatus(pThis->pSinkMicIn) & AUDMIXSINK_STS_DIRTY;
+
+    AudioMixerSinkTimerUpdate(pThis->pSinkOutput, pThis->cTimerTicks, cTicksPerSec);
+    ichac97TransferAudio(pThis, &pThis->StreamOut);
+
+    fKickTimer = AudioMixerSinkGetStatus(pThis->pSinkOutput) & AUDMIXSINK_STS_DIRTY;
 
     if (   ASMAtomicReadBool(&pThis->fTimerActive)
-        || AudioMixerSinkHasData(pThis->pSinkLineIn)
-        || AudioMixerSinkHasData(pThis->pSinkMicIn)
-        || AudioMixerSinkHasData(pThis->pSinkOutput))
+        || fKickTimer)
     {
         /* Kick the timer again. */
         uint64_t cTicks = pThis->cTimerTicks;
@@ -1400,20 +1412,20 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
 #endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
-static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbElapsed)
+static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
 {
-    Log3Func(("SD=%RU8, cbElapsed=%RU32\n", pStream->u8Strm , cbElapsed));
+    Log3Func(("SD=%RU8\n", pStream->u8Strm));
 
     PAC97BMREGS pRegs = &pStream->Regs;
 
     if (pRegs->sr & SR_DCH) /* Controller halted? */
     {
-        if (pRegs->cr & CR_RPBM)
+        if (pRegs->cr & CR_RPBM) /* Bus master operation starts. */
         {
             switch (pStream->u8Strm)
             {
                 case PO_INDEX:
-                    ichac97WriteBUP(pThis, cbElapsed);
+                    ichac97WriteBUP(pThis, (uint32_t)(pRegs->picb << 1));
                     break;
 
                 default:
@@ -1431,7 +1443,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
     int rc = VINF_SUCCESS;
     uint32_t cbWrittenTotal = 0;
 
-    while (cbElapsed >> 1) /** @todo r=andy This assumes (hardcodes) 16bit sample size.*/
+    do
     {
         if (!pRegs->bd_valid)
         {
@@ -1445,7 +1457,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
                          pRegs->civ, pRegs->bd.addr, pRegs->bd.ctl_len));
             if (pRegs->civ == pRegs->lvi)
             {
-                pRegs->sr |= SR_DCH; /* CELV? */
+                pRegs->sr |= SR_DCH; /** @todo r=andy Also set CELV? */
                 pThis->bup_flag = 0;
 
                 rc = VINF_EOF;
@@ -1460,19 +1472,19 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
             continue;
         }
 
-        uint32_t cbTransferred;
+        uint32_t cbToTransfer, cbTransferred;
         switch (pStream->u8Strm)
         {
             case PO_INDEX:
             {
-                rc = ichac97WriteAudio(pThis, pStream, cbElapsed, &cbTransferred);
+                cbToTransfer = (uint32_t)(pRegs->picb << 1);
+
+                rc = ichac97WriteAudio(pThis, pStream, cbToTransfer, &cbTransferred);
                 if (   RT_SUCCESS(rc)
                     && cbTransferred)
                 {
                     cbWrittenTotal += cbTransferred;
-                    Assert(cbElapsed >= cbTransferred);
-                    cbElapsed      -= cbTransferred;
-                    Assert((cbTransferred & 1) == 0);    /* Else the following shift won't work */
+                    Assert((cbTransferred & 1) == 0); /* Else the following shift won't work */
                     pRegs->picb    -= (cbTransferred >> 1); /** @todo r=andy Assumes 16bit samples. */
                 }
                 break;
@@ -1481,13 +1493,13 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
             case PI_INDEX:
             case MC_INDEX:
             {
-                rc = ichac97ReadAudio(pThis, pStream, cbElapsed, &cbTransferred);
+                cbToTransfer = (uint32_t)(pRegs->picb << 1);
+
+                rc = ichac97ReadAudio(pThis, pStream, cbToTransfer, &cbTransferred);
                 if (   RT_SUCCESS(rc)
                     && cbTransferred)
                 {
-                    Assert(cbElapsed >= cbTransferred);
-                    cbElapsed   -= cbTransferred;
-                    Assert((cbTransferred & 1) == 0);    /* Else the following shift won't work */
+                    Assert((cbTransferred & 1) == 0); /* Else the following shift won't work */
                     pRegs->picb -= (cbTransferred >> 1); /** @todo r=andy Assumes 16bit samples. */
                 }
                 break;
@@ -1531,12 +1543,10 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
             ichac97StreamUpdateStatus(pThis, pStream, new_sr);
         }
 
-        if (   RT_FAILURE(rc)
-            || rc == VINF_EOF) /* All data processed? */
-        {
+        if (rc == VINF_EOF) /* All data processed? */
             break;
-        }
-    }
+
+    } while (RT_SUCCESS(rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1548,7 +1558,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
 static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
                                                uint32_t *pu32Val, unsigned cbVal)
 {
-    PAC97STATE pThis    = (PAC97STATE)pvUser;
+    PAC97STATE pThis = (PAC97STATE)pvUser;
 
     /* Get the index of the NABMBAR port. */
     const uint32_t uPortIdx = Port - pThis->IOPortBase[1];

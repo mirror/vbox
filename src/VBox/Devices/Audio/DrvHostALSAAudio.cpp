@@ -93,6 +93,8 @@ typedef struct ALSAAUDIOSTREAMOUT
     snd_pcm_t          *phPCM;
     void               *pvBuf;
     size_t              cbBuf;
+    /** Minimum samples required for ALSA to play data. */
+    uint32_t            cSamplesMin;
 } ALSAAUDIOSTREAMOUT, *PALSAAUDIOSTREAMOUT;
 
 /* latency = period_size * periods / (rate * bytes_per_frame) */
@@ -170,12 +172,17 @@ typedef struct DRVHOSTALSAAUDIO
 
 typedef struct ALSAAUDIOSTREAMCFG
 {
-    unsigned int freq;
-    snd_pcm_format_t fmt;
-    int nchannels;
-    unsigned long buffer_size;
-    unsigned long period_size;
-    snd_pcm_uframes_t samples;
+    unsigned int        freq;
+    /** PCM sound format. */
+    snd_pcm_format_t    fmt;
+    /** PCM data access type. */
+    snd_pcm_access_t    access;
+    /** Whether resampling should be performed by alsalib or not. */
+    int                 resample;
+    int                 nchannels;
+    unsigned long       buffer_size;
+    unsigned long       period_size;
+    snd_pcm_uframes_t   samples;
 } ALSAAUDIOSTREAMCFG, *PALSAAUDIOSTREAMCFG;
 
 
@@ -347,6 +354,15 @@ static int alsaStreamSetThreshold(snd_pcm_t *phPCM, snd_pcm_uframes_t threshold)
             break;
         }
 
+        err = snd_pcm_sw_params_set_avail_min(phPCM, pSWParms, 512);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Failed to set available minimum to %ld: %s\n",
+                    threshold, snd_strerror(err)));
+            rc = VERR_ACCESS_DENIED;
+            break;
+        }
+
         err = snd_pcm_sw_params(phPCM, pSWParms);
         if (err < 0)
         {
@@ -384,6 +400,197 @@ static int alsaStreamClose(snd_pcm_t **pphPCM)
 
     return rc;
 }
+
+#if 0 /* After Beta. */
+static int alsaSetHWParams(snd_pcm_t *phPCM, PALSAAUDIOSTREAMCFG pCfg)
+{
+    int rc;
+    snd_pcm_hw_params_t *pParams = NULL;
+
+    do
+    {
+        snd_pcm_hw_params_alloca(&pParams);
+        if (!pParams)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        unsigned int rrate;
+        snd_pcm_uframes_t size;
+        int dir;
+
+        /* choose all parameters */
+        int err = snd_pcm_hw_params_any(phPCM, pParams);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Broken configuration for playback: no configurations available: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* set hardware resampling */
+        err = snd_pcm_hw_params_set_rate_resample(phPCM, pParams, pCfg->resample);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Resampling setup failed for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* set the interleaved read/write format */
+        err = snd_pcm_hw_params_set_access(phPCM, pParams, pCfg->access);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Access type not available for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* set the sample format */
+        err = snd_pcm_hw_params_set_format(phPCM, pParams, pCfg->fmt);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Sample format not available for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* set the count of channels */
+        err = snd_pcm_hw_params_set_channels(phPCM, pParams, pCfg->nchannels);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Channels count (%d) not available for playbacks: %s\n", pCfg->nchannels, snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* set the stream rate */
+        rrate = pCfg->freq;
+        err = snd_pcm_hw_params_set_rate_near(phPCM, pParams, &rrate, 0);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Rate %uHz not available for playback: %s\n", pCfg->freq, snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        if (rrate != pCfg->freq)
+        {
+            LogRel(("ALSA: Rate doesn't match (requested %iHz, get %uHz)\n", pCfg->freq, err));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* set the buffer time */
+        err = snd_pcm_hw_params_set_buffer_time_near(phPCM, pParams, &pCfg->buffer_time, &dir);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to set buffer time %i for playback: %s\n", buffer_time, snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        err = snd_pcm_hw_params_get_buffer_size(pParams, &size);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to get buffer size for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        buffer_size = size;
+        /* set the period time */
+        err = snd_pcm_hw_params_set_period_time_near(phPCM, pParams, &period_time, &dir);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to set period time %i for playback: %s\n", period_time, snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        err = snd_pcm_hw_params_get_period_size(pParams, &size, &dir);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to get period size for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        period_size = size;
+        /* write the parameters to device */
+        err = snd_pcm_hw_params(phPCM, pParams);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to set hw params for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+
+        rc = VINF_SUCCESS;
+
+    } while (0);
+
+    if (pParams)
+    {
+        snd_pcm_hw_params_free(pParams);
+        pParams = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+static int alsaSetSWParams(snd_pcm_t *phPCM, PALSAAUDIOCFG pCfg)
+{
+    int rc;
+    snd_pcm_sw_params_t *pParams = NULL;
+
+    do
+    {
+        snd_pcm_sw_params_alloca(&pParams);
+        if (!pParams)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        /* get the current swparams */
+        int err = snd_pcm_sw_params_current(phPCM, pParams);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to determine current swparams for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* start the transfer when the buffer is almost full: */
+        /* (buffer_size / avail_min) * avail_min */
+        err = snd_pcm_sw_params_set_start_threshold(phPCM, pParams, (buffer_size / period_size) * period_size);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to set start threshold mode for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* allow the transfer when at least period_size samples can be processed */
+        /* or disable this mechanism when period event is enabled (aka interrupt like style processing) */
+        err = snd_pcm_sw_params_set_avail_min(phPCM, pParams, period_size);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to set avail min for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+        /* write the parameters to the playback device */
+        err = snd_pcm_sw_params(phPCM, pParams);
+        if (err < 0)
+        {
+            LogRel(("ALSA: Unable to set sw params for playback: %s\n", snd_strerror(err)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+            break;
+        }
+
+        rc = VINF_SUCCESS;
+
+    } while (0);
+
+    if (pParams)
+    {
+        snd_pcm_sw_params_free(pParams);
+        pParams = NULL;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif
 
 static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREAMCFG pCfgObt, snd_pcm_t **pphPCM)
 {
@@ -612,6 +819,8 @@ static int alsaStreamOpen(bool fIn, PALSAAUDIOSTREAMCFG pCfgReq, PALSAAUDIOSTREA
             rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
+
+        LogFunc(("Buffer sample size is: %RU32\n", obt_buffer_size));
 
         snd_pcm_uframes_t obt_period_size;
         int dir = 0;
@@ -982,7 +1191,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
                     {
                         case 0:
                         {
-                            LogFunc(("Failed to write %RI32 frames\n", cRead));
+                            LogFunc(("Failed to write %RU32 samples\n", cRead));
                             rc = VERR_ACCESS_DENIED;
                             break;
                         }
@@ -1148,7 +1357,7 @@ static int alsaCreateStreamOut(PPDMIHOSTAUDIO pInterface,
         pThisStream->phPCM       = phPCM;
 
         if (pcSamples)
-            *pcSamples = obt.samples;
+            *pcSamples = obt.samples * 4;
     }
     while (0);
 
@@ -1444,11 +1653,11 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostALSAAudioStreamGetStatus(PPDMIHOSTAU
 
         snd_pcm_sframes_t cAvail;
         int rc2 = alsaStreamGetAvail(pStreamOut->phPCM, &cAvail);
-        if (   RT_SUCCESS(rc2)
-            && cAvail >= 1024) /** @todo !!! HACK ALERT !!! Use bufsize. */
+        if (RT_SUCCESS(rc2))
         {
             LogFlowFunc(("cAvail=%ld\n", cAvail));
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+            if (cAvail >= pStreamOut->cSamplesMin)
+                strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
         }
     }
 

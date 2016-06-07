@@ -266,7 +266,7 @@
  */
 #define CODEC_AMP_NUM_STEPS                                0x7F
 /** The initial gain offset (and when doing a node reset). */
-#define CODEC_AMP_OFF_INITIAL                              0x40
+#define CODEC_AMP_OFF_INITIAL                              0x7F
 /** The amplifier's gain step size. */
 #define CODEC_AMP_STEP_SIZE                                0x2
 
@@ -927,9 +927,9 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
             /* Default input amplifier capabilities. */
             pNode->node.au32F00_param[0x0D] = CODEC_MAKE_F00_0D(CODEC_AMP_CAP_MUTE,
-                                                                0 /* Step size */,
+                                                                CODEC_AMP_STEP_SIZE,
                                                                 CODEC_AMP_NUM_STEPS,
-                                                                0 /* Initial offset */);
+                                                                CODEC_AMP_OFF_INITIAL);
             /* Default output amplifier capabilities. */
             pNode->node.au32F00_param[0x12] = CODEC_MAKE_F00_12(CODEC_AMP_CAP_MUTE,
                                                                 CODEC_AMP_STEP_SIZE,
@@ -1002,7 +1002,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
             pNode->adc.u32F03_param = RT_BIT(0);
             pNode->adc.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3); /* PS-Act: D3 Set: D3 */
 
-            pNode->adc.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 13, 0)
+            pNode->adc.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 0xD, 0)
                                                | CODEC_F00_09_CAP_POWER_CTRL
                                                | CODEC_F00_09_CAP_CONNECTION_LIST
                                                | CODEC_F00_09_CAP_PROC_WIDGET
@@ -1061,7 +1061,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
          */
         case STAC9220_NID_PIN_HEADPHONE0: /* Port A: Headphone in/out (front). */
         {
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(false /*fPresent*/, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0 /*fPresent*/, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
@@ -1086,7 +1086,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
         case STAC9220_NID_PIN_B: /* Port B: Rear CLFE (Center / Subwoofer). */
         {
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /*fPresent*/, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1 /*fPresent*/, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
@@ -1110,7 +1110,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
         case STAC9220_NID_PIN_C: /* Rear Speaker. */
         {
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /*fPresent*/, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1 /*fPresent*/, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
@@ -1134,7 +1134,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
 
         case STAC9220_NID_PIN_HEADPHONE1: /* Also known as PIN_D. */
         {
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(false /*fPresent*/, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1 /*fPresent*/, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0xC] = CODEC_MAKE_F00_0C(0x17)
                                                 | CODEC_F00_0C_CAP_INPUT
