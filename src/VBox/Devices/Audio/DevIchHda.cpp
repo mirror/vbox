@@ -6010,8 +6010,10 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                     }
                 }
                 else
-                    AssertReleaseMsgFailed(("Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n",
-                                            pDrv->uLUN, rc2));
+                {
+                    LogRel(("HDA: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
+                    fWarn = true;
+                }
 
                 if (fWarn)
                 {

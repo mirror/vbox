@@ -2698,8 +2698,10 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                     }
                 }
                 else
-                    AssertReleaseMsgFailed(("Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n",
-                                            pDrv->uLUN, rc2));
+                {
+                    LogRel(("AC97: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
+                    fWarn = true;
+                }
 
                 if (fWarn)
                 {
