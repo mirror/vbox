@@ -39,7 +39,10 @@ __version__ = "$Revision$"
 # Standard python imports
 import sys;
 import os;
+import hashlib;
+import StringIO;
 from optparse import OptionParser;
+from PIL import Image;
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
@@ -181,6 +184,33 @@ class VirtualTestSheriffCaseFile(object):
         else:
             self.oSheriff.vprint('Error opening the "%s" log file: %s' % (oFile.sFile, oSizeOrError,));
         return sContent;
+
+    def getScreenshotSha256(self, oFile):
+        """
+        Tries to read the given screenshot file, uncompress it, and do SHA-2
+        on the raw pixels.
+        Returns SHA-2 digest string on success, None on failure.
+        """
+        (oFile, _, _) = self.oTestSet.openFile(oFile.sFile, 'rb');
+        try:
+            abImageFile = oFile.read();
+        except Exception as oXcpt:
+            self.oSheriff.vprint('Error reading the "%s" image file: %s' % (oFile.sFile, oXcpt,))
+        else:
+            try:
+                oImage = Image.open(StringIO.StringIO(abImageFile));
+            except Exception as oXcpt:
+                self.oSheriff.vprint('Error opening the "%s" image bytes using PIL.Image.open: %s' % (oFile.sFile, oXcpt,))
+            else:
+                try:
+                    oHash = hashlib.sha256();
+                    oHash.update(oImage.tostring());
+                except Exception as oXcpt:
+                    self.oSheriff.vprint('Error hashing the uncompressed image bytes for "%s": %s' % (oFile.sFile, oXcpt,))
+                else:
+                    return oHash.hexdigest();
+        return None;
+
 
 
     def isSingleTestFailure(self):
@@ -376,6 +406,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
     ## @name Failure reasons we know.
     ## @{
+    ktReason_BSOD_Recovery                             = ( 'BSOD',              'Recovery' );
     ktReason_Guru_Generic                              = ( 'Guru Meditations',  'Generic Guru Meditation' );
     ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations',  'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
     ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations',  'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
@@ -629,6 +660,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           "..MP-BIOS bug: 8254 timer not connected to IO-APIC\n\n" ),
     ];
 
+    ## Mapping screenshot/failure SHA-256 hashes to failure reasons.
+    katSimpleScreenshotHashReasons = [
+        # ( Whether to stop on hit, reason tuple, lowercased sha-256 of PIL.Image.tostring output )
+        ( True,  ktReason_BSOD_Recovery,                    '576f8e38d62b311cac7e3dc3436a0d0b9bd8cfd7fa9c43aafa95631520a45eac' ),
+    ];
+
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
         """
         Investigates a failed VM run.
@@ -698,6 +735,15 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                         fFoundSomething = True;
             _ = sInfoText;
 
+            # Continue with screen hashes.
+            if sScreenHash is not None:
+                for fStopOnHit, tReason, sHash in self.katSimpleScreenshotHashReasons:
+                    if sScreenHash == sHash:
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                        if fStopOnHit:
+                            return True;
+                        fFoundSomething = True;
+
             #
             # Check for repeated reboots...
             #
@@ -713,25 +759,32 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # case we run multiple VMs here (this is of course ASSUMING they
         # appear in the order that terminateVmBySession uploads them).
         #
-        sVMLog    = None;
-        sKrnlLog  = None;
-        sVgaText  = None;
-        sInfoText = None;
+        sVMLog      = None;
+        sScreenHash = None;
+        sKrnlLog    = None;
+        sVgaText    = None;
+        sInfoText   = None;
         for oFile in oFailedResult.aoFiles:
             if oFile.sKind == TestResultFileData.ksKind_LogReleaseVm:
                 if sVMLog is not None:
                     if investigateLogSet() is True:
                         return True;
-                sKrnlLog  = None;
-                sVgaText  = None;
-                sInfoText = None;
-                sVMLog    = oCaseFile.getLogFile(oFile);
+                sKrnlLog    = None;
+                sScreenHash = None;
+                sVgaText    = None;
+                sInfoText   = None;
+                sVMLog      = oCaseFile.getLogFile(oFile);
             elif oFile.sKind == TestResultFileData.ksKind_LogGuestKernel:
                 sKrnlLog  = oCaseFile.getLogFile(oFile);
             elif oFile.sKind == TestResultFileData.ksKind_InfoVgaText:
                 sVgaText  = '\n'.join([sLine.rstrip() for sLine in oCaseFile.getLogFile(oFile).split('\n')]);
             elif oFile.sKind == TestResultFileData.ksKind_InfoCollection:
                 sInfoText = oCaseFile.getLogFile(oFile);
+            elif oFile.sKind == TestResultFileData.ksKind_ScreenshotFailure:
+                sScreenHash = oCaseFile.getScreenshotSha256(oFile);
+                if sScreenHash is not None:
+                    sScreenHash = sScreenHash.tolower();
+                    self.vprint('%s  %s' % ( sScreenHash, oFile.sFile,));
         if sVMLog is not None and investigateLogSet() is True:
             return True;
 
