@@ -2971,14 +2971,70 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                             pHandles
                             COMMA_LOCKVAL_SRC_POS);
 
-        /* Set needed variables for "moving" procedure. It'll be used later in separate thread task */
-        rc = i_preparationForMoving(aLocation);
-        if (FAILED(rc))
+        /* play with locations */
         {
-            rc = setError(VERR_NO_CHANGE,
-                       tr("Medium '%s' is already in the correct location"),
-                       i_getLocationFull().c_str());
-            return rc;
+            /*get source path and filename */
+            Utf8Str sourceMediumPath = i_getLocationFull();
+            Utf8Str sourceMediumFileName = i_getName();
+
+            if (aLocation.isEmpty())
+            {
+                rc = setError(VERR_PATH_ZERO_LENGTH,
+                           tr("Medium '%s' can't be moved. Destination path is empty."),
+                           i_getLocationFull().c_str());
+                throw rc;
+            }
+
+            /*extract destination path and filename */
+            Utf8Str destMediumPath(aLocation);
+            Utf8Str destMediumFileName(destMediumPath);
+            destMediumFileName.stripPath();
+
+            if (destMediumFileName.isEmpty())
+            {
+                /* case when a target name is absent */
+                destMediumPath.append(sourceMediumFileName);
+            }
+            else
+            {
+                if (destMediumPath.equals(destMediumFileName))
+                {
+                    /* the passed target path consist of only a filename without directory
+                     * next move medium within the source directory with the passed new name
+                     */
+                    destMediumPath = sourceMediumPath.stripFilename().append('/').append(destMediumFileName);
+                }
+
+                /* set the target extension like on the source. Permission to convert is prohibited */
+                Utf8Str suffix = i_getFormat();
+                suffix.toLower();
+                destMediumPath.stripSuffix().append('.').append(suffix);
+            }
+
+            if (i_isMediumFormatFile())
+            {
+                /* Check path for a new file object */
+                rc = VirtualBox::i_ensureFilePathExists(destMediumPath, true);
+                if (FAILED(rc))
+                    throw rc;
+            }
+            else
+            {
+                rc = setError(VERR_NOT_A_FILE,
+                           tr("Medium '%s' isn't a file object. \"Move\" operation isn't supported."),
+                           i_getLocationFull().c_str());
+                throw rc;
+            }
+
+            /* Set needed variables for "moving" procedure. It'll be used later in separate thread task */
+            rc = i_preparationForMoving(destMediumPath);
+            if (FAILED(rc))
+            {
+                rc = setError(VERR_NO_CHANGE,
+                           tr("Medium '%s' is already in the correct location"),
+                           i_getLocationFull().c_str());
+                throw rc;
+            }
         }
 
         /* Check VMs which have this medium attached to*/
@@ -2987,7 +3043,7 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
         std::vector<com::Guid>::const_iterator currMachineID = aMachineIds.begin();
         std::vector<com::Guid>::const_iterator lastMachineID = aMachineIds.end();
 
-        while(currMachineID != lastMachineID)
+        while (currMachineID != lastMachineID)
         {
             Guid id(*currMachineID);
             ComObjPtr<Machine> aMachine;
@@ -3053,7 +3109,7 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                              TRUE /* aCancelable */);
 
         /* Do the disk moving. */
-        if(SUCCEEDED(rc))
+        if (SUCCEEDED(rc))
         {
             ULONG mediumVariantFlags = i_getVariant();
 
