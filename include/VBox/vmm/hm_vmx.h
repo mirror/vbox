@@ -980,6 +980,9 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_TPR_BELOW_THRESHOLD                            43
 /** 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
 #define VMX_EXIT_APIC_ACCESS                                    44
+/** 45 Virtualized EOI. EOI virtualization was performed for a virtual interrupt
+whose vector indexed a bit set in the EOI-exit bitmap. */
+#define VMX_EXIT_VIRTUALIZED_EOI                                45
 /** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT, SGDT, or SIDT. */
 #define VMX_EXIT_XDTR_ACCESS                                    46
 /** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR, SLDT, or STR. */
@@ -1008,13 +1011,13 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_INVPCID                                        58
 /** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
 #define VMX_EXIT_VMFUNC                                         59
-/** 60 ??? */
-#define VMX_EXIT_RESERVED_60                                    60
+/** 60 ENCLS. Guest software attempted to execute ENCLS. */
+#define VMX_EXIT_ENCLS                                          60
 /** 61 - RDSEED - Guest software attempted to executed RDSEED and exiting was
  * enabled. */
 #define VMX_EXIT_RDSEED                                         61
-/** 62 ??? */
-#define VMX_EXIT_RESERVED_62                                    62
+/** 62 - Page-modification log full. */
+#define VMX_EXIT_PML_FULL                                       62
 /** 63 - XSAVES - Guest software attempted to executed XSAVES and exiting was
  * enabled (XSAVES/XRSTORS was enabled too, of course). */
 #define VMX_EXIT_XSAVES                                         63
