@@ -2569,7 +2569,6 @@ class TestDriver(base.TestDriver):                                              
                                  ('cpumguest', 'verbose all'),
                                  ('cpumguestinstr', 'symbol all'),
                                  ('pic', ''),
-                                 ('apic', ''),
                                  ('ioapic', ''),
                                  ('pit', ''),
                                  ('phys', ''),
@@ -2577,7 +2576,7 @@ class TestDriver(base.TestDriver):                                              
                                  ('timers', ''),
                                  ('guestgdt', ''),
                                  ('ldtguest', ''),
-                                ]:
+                                ]: # ('apic', ''), - asserts, wtf?
                 sThis = oSession.queryDbgInfo(sInfo, sArg);
                 if sThis is not None and len(sThis) > 0:
                     if sThis[-1] != '\n':
