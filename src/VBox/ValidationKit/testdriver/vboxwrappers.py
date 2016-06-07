@@ -2421,7 +2421,7 @@ class SessionWrapper(TdTaskBase):
         sVgaText = None;
         try:
             sVgaText = self.o.console.debugger.info('vgatext', sArg);
-            if sVgaText == 'Not in text mode!':
+            if sVgaText.startswith('Not in text mode!'):
                 sVgaText = None;
         except:
             reporter.logXcpt('Unable to query vgatext with arg "%s"' % (sArg,));
