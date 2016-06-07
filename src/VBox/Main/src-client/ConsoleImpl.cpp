@@ -5223,8 +5223,10 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                             // we have to restart the server.
                             mConsoleVRDPServer->Stop();
 
-                            if (RT_FAILURE(mConsoleVRDPServer->Launch()))
-                                rc = E_FAIL;
+                            int vrc = mConsoleVRDPServer->Launch();
+                            if (RT_FAILURE(vrc))
+                                rc = setError(E_FAIL,
+                                              tr("Could not start the VRDP server (%Rrc)"), vrc);
                             else
                                 mConsoleVRDPServer->EnableConnections();
                         }
