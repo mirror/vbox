@@ -212,10 +212,10 @@ HRESULT ParallelPort::setEnabled(BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->fEnabled != !!aEnabled)
+    if (m->bd->fEnabled != RT_BOOL(aEnabled))
     {
         m->bd.backup();
-        m->bd->fEnabled = !!aEnabled;
+        m->bd->fEnabled = RT_BOOL(aEnabled);
 
         m->fModified = true;
         // leave the lock before informing callbacks

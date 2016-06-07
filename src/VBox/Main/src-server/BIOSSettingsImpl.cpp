@@ -203,7 +203,7 @@ HRESULT BIOSSettings::setLogoFadeIn(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fLogoFadeIn = !!enable;
+    m->bd->fLogoFadeIn = RT_BOOL(enable);
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -232,7 +232,7 @@ HRESULT BIOSSettings::setLogoFadeOut(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fLogoFadeOut = !!enable;
+    m->bd->fLogoFadeOut = RT_BOOL(enable);
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -348,7 +348,7 @@ HRESULT BIOSSettings::setACPIEnabled(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fACPIEnabled = !!enable;
+    m->bd->fACPIEnabled = RT_BOOL(enable);
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -378,7 +378,7 @@ HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
 
     m->bd.backup();
 
-    m->bd->fIOAPICEnabled = !!aIOAPICEnabled;
+    m->bd->fIOAPICEnabled = RT_BOOL(aIOAPICEnabled);
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
     m->pMachine->i_setModified(Machine::IsModified_BIOS);
@@ -435,7 +435,7 @@ HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fPXEDebugEnabled = !!enable;
+    m->bd->fPXEDebugEnabled = RT_BOOL(enable);
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -505,7 +505,7 @@ HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
-    *m->bd.data() = data;
+    m->bd.assignCopy(&data);
 
     return S_OK;
 }
