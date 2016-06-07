@@ -63,12 +63,6 @@
 
 #define AC97_TIMER_HZ 50
 
-#ifdef VBOX
-# define SOFT_VOLUME /** @todo Get rid of this crap. */
-#else
-# define SOFT_VOLUME
-#endif
-
 /** @todo Use AC97_ prefixes! */
 #define SR_FIFOE RT_BIT(4)          /* rwc, FIFO error. */
 #define SR_BCIS  RT_BIT(3)          /* rwc, Buffer completion interrupt status. */
@@ -978,7 +972,6 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL m
 
     int rc;
 
-#ifdef SOFT_VOLUME
     if (pThis->pMixer) /* Device can be in reset state, so no mixer available. */
     {
         PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
@@ -1006,13 +999,7 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL m
         }
     }
     else
-        rc = VERR_NOT_SUPPORTED;
-
-    if (RT_FAILURE(rc))
-        return rc;
-#else
-    rc = VINF_SUCCESS;
-#endif /* SOFT_VOLUME */
+        rc = VINF_SUCCESS;
 
     rvol = VOL_MASK - ((VOL_MASK * rvol) / 255);
     lvol = VOL_MASK - ((VOL_MASK * lvol) / 255);
@@ -1031,6 +1018,9 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL m
         val |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
 
     ichac97MixerSet(pThis, index, val);
+
+    if (RT_FAILURE(rc))
+        LogFlowFunc(("Failed with %Rrc\n", rc));
 
     return rc;
 }
