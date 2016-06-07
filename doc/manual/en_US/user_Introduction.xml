@@ -476,7 +476,7 @@
             1.4.</para>
           </footnote>). Among others, this includes:<itemizedlist>
             <listitem>
-              <para>Ubuntu 10.04 to 15.04</para>
+              <para>Ubuntu 10.04 to 16.04</para>
             </listitem>
 
             <listitem>
@@ -492,7 +492,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core / Fedora 6 to 22</para>
+              <para>Fedora Core / Fedora 6 to 24</para>
             </listitem>
 
             <listitem>
@@ -500,12 +500,9 @@
             </listitem>
 
             <listitem>
-              <para>openSUSE 11.4, 12.1, 12.2, 13.1</para>
+              <para>openSUSE 11.4 to 13.2</para>
             </listitem>
 
-            <listitem>
-              <para>Mandriva 2011</para>
-            </listitem>
           </itemizedlist></para>
 
         <para>It should be possible to use VirtualBox on most systems based on
