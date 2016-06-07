@@ -783,7 +783,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif oFile.sKind == TestResultFileData.ksKind_ScreenshotFailure:
                 sScreenHash = oCaseFile.getScreenshotSha256(oFile);
                 if sScreenHash is not None:
-                    sScreenHash = sScreenHash.tolower();
+                    sScreenHash = sScreenHash.lower();
                     self.vprint('%s  %s' % ( sScreenHash, oFile.sFile,));
         if sVMLog is not None and investigateLogSet() is True:
             return True;
