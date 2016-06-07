@@ -73,7 +73,7 @@ void DecodeEdgeTest(void)
         unsigned        i;
         BS3REGCTX       Ctx;
         BS3TRAPFRAME    TrapFrame;
-        bs3kit.h
+
 //BS3_CMN_PROTO_STUB(void, Bs3TrapSetJmpAndRestore,(PCBS3REGCTX pCtxRestore, PBS3TRAPFRAME pTrapFrame));
 
         for (i = 0; i < RT_ELEMENTS(g_aSimpleTests); i++)
