@@ -478,7 +478,6 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTAT
     if (RT_UNLIKELY(!pKvm->fTrapXcptUD))
         return VERR_GIM_IPE_3;
 
-    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (!pDis)
     {
         unsigned    cbInstr;
