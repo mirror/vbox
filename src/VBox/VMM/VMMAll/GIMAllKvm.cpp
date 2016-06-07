@@ -41,14 +41,24 @@
 /**
  * Handles the KVM hypercall.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the guest-CPU context.
  *
- * @thread  EMT.
+ * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(VBOXSTRICTRC) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    STAM_REL_COUNTER_INC(&pVM->gim.s.StatHypercalls);
+
     /*
      * Get the hypercall operation and arguments.
      */
@@ -75,20 +85,20 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
      * Verify that guest ring-0 is the one making the hypercall.
      */
     uint32_t uCpl = CPUMGetGuestCPL(pVCpu);
-    if (uCpl)
+    if (RT_UNLIKELY(uCpl))
     {
         pCtx->rax = KVM_HYPERCALL_RET_EPERM & uAndMask;
-        return VINF_SUCCESS;
+        return VERR_GIM_HYPERCALL_ACCESS_DENIED;
     }
 
     /*
      * Do the work.
      */
+    int rc = VINF_SUCCESS;
     switch (uHyperOp)
     {
         case KVM_HYPERCALL_OP_KICK_CPU:
         {
-            PVM pVM = pVCpu->CTX_SUFF(pVM);
             if (uHyperArg1 < pVM->cCpus)
             {
                 PVMCPU pVCpuTarget = &pVM->aCpus[uHyperArg1];   /** ASSUMES pVCpu index == ApicId of the VCPU. */
@@ -100,13 +110,18 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                  */
                 GVMMR0SchedWakeUpEx(pVM, pVCpuTarget->idCpu, false /* fTakeUsedLock */);
 #elif defined(IN_RING3)
-                int rc2 = SUPR3CallVMMR0(pVM->pVMR0, pVCpuTarget->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL);
+                int rc2 = SUPR3CallVMMR0(pVM->pVMR0, pVCpuTarget->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL /* pvArg */);
                 AssertRC(rc2);
 #elif defined(IN_RC)
                 /* Nothing to do for raw-mode, shouldn't really be used by raw-mode guests anyway. */
                 Assert(pVM->cCpus == 1);
 #endif
                 uHyperRet = KVM_HYPERCALL_RET_SUCCESS;
+            }
+            else
+            {
+                /* Shouldn't ever happen! If it does, throw a guru, as otherwise it'll lead to deadlocks in the guest anyway! */
+                rc = VERR_GIM_HYPERCALL_FAILED;
             }
             break;
         }
@@ -123,7 +138,7 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
      * Place the result in rax/eax.
      */
     pCtx->rax = uHyperRet & uAndMask;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -348,83 +363,138 @@ VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVMCPU pVCpu)
 
 
 /**
- * Exception handler for \#UD.
+ * Checks the currently disassembled instrunction and executes the hypercall if
+ * it's a hypercall instruction.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
- *                      Optional, can be NULL.
  *
- * @thread  EMT.
+ * @thread  EMT(pVCpu).
+ *
+ * @todo    Make this function static when @bugref{7270#c168} is addressed.
  */
-VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
+VMM_INT_DECL(VBOXSTRICTRC) gimKvmExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
 {
+    Assert(pVCpu);
+    Assert(pCtx);
+    Assert(pDis);
+    VMCPU_ASSERT_EMT(pVCpu);
+
     /*
-     * If we didn't ask for #UD to be trapped, bail.
+     * If the instruction at RIP is the Intel VMCALL instruction or
+     * the AMD VMMCALL instruction handle it as a hypercall.
+     *
+     * Linux/KVM guests always uses the Intel VMCALL instruction but we patch
+     * it to the host-native one whenever we encounter it so subsequent calls
+     * will not require disassembly (when coming from HM).
      */
-    PVM     pVM  = pVCpu->CTX_SUFF(pVM);
-    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
-    if (RT_UNLIKELY(!pVM->gim.s.u.Kvm.fTrapXcptUD))
-        return VERR_GIM_OPERATION_FAILED;
-
-    int rc = VINF_SUCCESS;
-    if (!pDis)
+    if (   pDis->pCurInstr->uOpcode == OP_VMCALL
+        || pDis->pCurInstr->uOpcode == OP_VMMCALL)
     {
         /*
-         * Disassemble the instruction at RIP to figure out if it's the Intel VMCALL instruction
-         * or the AMD VMMCALL instruction and if so, handle it as a hypercall.
+         * Perform the hypercall.
+         *
+         * For HM, we can simply resume guest execution without performing the hypercall now and
+         * do it on the next VMCALL/VMMCALL exit handler on the patched instruction.
+         *
+         * For raw-mode we need to do this now anyway. So we do it here regardless with an added
+         * advantage is that it saves one world-switch for the HM case.
          */
-        DISCPUSTATE Dis;
-        rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL /* pcbInstr */);
-        pDis = &Dis;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Patch the instruction to so we don't have to spend time disassembling it each time.
-         * Makes sense only for HM as with raw-mode we will be getting a #UD regardless.
-         */
-        if (   pDis->pCurInstr->uOpcode == OP_VMCALL
-            || pDis->pCurInstr->uOpcode == OP_VMMCALL)
+        VBOXSTRICTRC rcStrict = gimKvmHypercall(pVCpu, pCtx);
+        if (rcStrict == VINF_SUCCESS)
         {
             /*
-             * Make sure guest ring-0 is the one making the hypercall.
+             * Patch the instruction to so we don't have to spend time disassembling it each time.
+             * Makes sense only for HM as with raw-mode we will be getting a #UD regardless.
              */
-            if (CPUMGetGuestCPL(pVCpu))
-                return VERR_GIM_HYPERCALL_ACCESS_DENIED;
-
+            PVM      pVM  = pVCpu->CTX_SUFF(pVM);
+            PCGIMKVM pKvm = &pVM->gim.s.u.Kvm;
             if (   pDis->pCurInstr->uOpcode != pKvm->uOpCodeNative
                 && HMIsEnabled(pVM))
             {
+                /** @todo r=ramshankar: we probably should be doing this in an
+                 *        EMT rendezvous and using proper AVL-tree patching to
+                 *        keep track at RIP so that non-patched VMCALL's still
+                 *        produce \#UD. */
                 uint8_t abHypercall[3];
                 size_t  cbWritten = 0;
-                rc = VMMPatchHypercall(pVM, &abHypercall, sizeof(abHypercall), &cbWritten);
+                int rc = VMMPatchHypercall(pVM, &abHypercall, sizeof(abHypercall), &cbWritten);
                 AssertRC(rc);
                 Assert(sizeof(abHypercall) == pDis->cbInstr);
                 Assert(sizeof(abHypercall) == cbWritten);
 
                 rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, &abHypercall, sizeof(abHypercall));
-            }
+                AssertRC(rc);
 
-            /*
-             * Update RIP and perform the hypercall.
-             *
-             * For HM, we can simply resume guest execution without performing the hypercall now and
-             * do it on the next VMCALL/VMMCALL exit handler on the patched instruction.
-             *
-             * For raw-mode we need to do this now anyway. So we do it here regardless with an added
-             * advantage is that it saves one world-switch for the HM case.
-             */
-            if (RT_SUCCESS(rc))
-            {
-                pCtx->rip += pDis->cbInstr;
-                rc = gimKvmHypercall(pVCpu, pCtx);
+                /** @todo Add stats for patching. */
             }
         }
         else
-            rc = VERR_GIM_OPERATION_FAILED;
+        {
+            /* The KVM provider doesn't have any concept of continuing hypercalls. */
+            Assert(rcStrict != VINF_GIM_HYPERCALL_CONTINUING);
+#ifdef IN_RING3
+            Assert(rcStrict != VINF_GIM_R3_HYPERCALL);
+#endif
+        }
+        return rcStrict;
     }
-    return rc;
+
+    return VERR_GIM_INVALID_HYPERCALL_INSTR;
+}
+
+
+/**
+ * Exception handler for \#UD.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ * @retval  VERR_GIM_INVALID_HYPERCALL_INSTR instruction at RIP is not a valid
+ *          hypercall instruction.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pDis        Pointer to the disassembled instruction state at RIP.
+ *                      Optional, can be NULL.
+ * @param   pcbInstr    Where to store the instruction length of the hypercall
+ *                      instruction. Optional, can be NULL.
+ *
+ * @thread  EMT(pVCpu).
+ */
+VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * If we didn't ask for #UD to be trapped, bail.
+     */
+    PVM      pVM  = pVCpu->CTX_SUFF(pVM);
+    PCGIMKVM pKvm = &pVM->gim.s.u.Kvm;
+    if (RT_UNLIKELY(!pKvm->fTrapXcptUD))
+        return VERR_GIM_IPE_3;
+
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    if (!pDis)
+    {
+        unsigned    cbInstr;
+        DISCPUSTATE Dis;
+        int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbInstr);
+        if (RT_SUCCESS(rc))
+        {
+            if (pcbInstr)
+                *pcbInstr = (uint8_t)cbInstr;
+            return gimKvmExecHypercallInstr(pVCpu, pCtx, &Dis);
+        }
+
+        Log(("GIM: KVM: Failed to disassemble instruction at CS:RIP=%04x:%08RX64. rc=%Rrc\n", pCtx->cs.Sel, pCtx->rip, rc));
+        return rc;
+    }
+
+    return gimKvmExecHypercallInstr(pVCpu, pCtx, pDis);
 }
 

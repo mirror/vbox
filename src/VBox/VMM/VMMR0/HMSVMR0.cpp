@@ -4125,7 +4125,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                     Log4(("IDT: Contributory #PF idCpu=%u uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
                 }
 #endif
-                
+
                 if (   uIdtVector == X86_XCPT_BP
                     || uIdtVector == X86_XCPT_OF)
                 {
@@ -5197,25 +5197,37 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
         return VINF_SUCCESS;
     }
-    else if (rc == VERR_NOT_FOUND)
+
+    if (rc == VERR_NOT_FOUND)
     {
         if (pVCpu->hm.s.fHypercallsEnabled)
         {
-            hmR0SvmUpdateRip(pVCpu, pCtx, 3);
+            VBOXSTRICTRC rcStrict = GIMHypercall(pVCpu, pCtx);
+            if (RT_SUCCESS(VBOXSTRICTRC_VAL(rcStrict)))
+            {
+                if (rcStrict == VINF_SUCCESS)
+                    hmR0SvmUpdateRip(pVCpu, pCtx, 3 /* cbInstr */);
+                else
+                    Assert(   rcStrict == VINF_GIM_HYPERCALL_CONTINUING
+                           || rcStrict == VINF_GIM_R3_HYPERCALL);
 
-            /** @todo pre-increment RIP before hypercall will break when we have to implement
-             *  continuing hypercalls (e.g. Hyper-V). */
-            rc = GIMHypercall(pVCpu, pCtx);
-            /* If the hypercall changes anything other than guest general-purpose registers,
-               we would need to reload the guest changed bits here before VM-entry. */
-            return rc;
+                /* If the hypercall changes anything other than guest's general-purpose registers,
+                   we would need to reload the guest changed bits here before VM-entry. */
+            }
+            rc = VBOXSTRICTRC_VAL(rcStrict);
         }
         else
             Log4(("hmR0SvmExitVmmCall: Hypercalls not enabled\n"));
     }
 
-    hmR0SvmSetPendingXcptUD(pVCpu);
-    return VINF_SUCCESS;
+    /* If hypercalls are disabled or the hypercall failed for some reason, raise #UD and continue. */
+    if (RT_FAILURE(rc))
+    {
+        hmR0SvmSetPendingXcptUD(pVCpu);
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 
@@ -5422,8 +5434,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6). Conditional
- * \#VMEXIT.
+ * \#VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6).
+ * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -5431,13 +5443,33 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
+    int rc = VERR_SVM_UNEXPECTED_XCPT_EXIT;
     if (pVCpu->hm.s.fGIMTrapXcptUD)
-        GIMXcptUD(pVCpu, pCtx, NULL /* pDis */);
-    else
+    {
+        uint8_t cbInstr = 0;
+        VBOXSTRICTRC rcStrict = GIMXcptUD(pVCpu, pCtx, NULL /* pDis */, &cbInstr);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            hmR0SvmUpdateRip(pVCpu, pCtx, cbInstr);
+            rc = VINF_SUCCESS;
+        }
+        else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
+            rc = VINF_SUCCESS;
+        else if (rcStrict == VINF_GIM_R3_HYPERCALL)
+            rc = VINF_GIM_R3_HYPERCALL;
+        else
+            Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+    }
+
+    /* If the GIM #UD exception handler didn't succeed for some reason or wasn't needed, raise #UD. */
+    if (RT_FAILURE(rc))
+    {
         hmR0SvmSetPendingXcptUD(pVCpu);
+        rc = VINF_SUCCESS;
+    }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 

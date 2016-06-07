@@ -2714,6 +2714,10 @@
 #define VERR_GIM_NO_DEBUG_CONNECTION                (-6315)
 /** Return to ring-3 to perform the hypercall there. */
 #define VINF_GIM_R3_HYPERCALL                       6316
+/** Continuing hypercall at the same RIP, continue guest execution. */
+#define VINF_GIM_HYPERCALL_CONTINUING               6317
+/** Instruction that triggers the hypercall is invalid/unrecognized. */
+#define VERR_GIM_INVALID_HYPERCALL_INSTR            (-6318)
 /** @} */
 
 

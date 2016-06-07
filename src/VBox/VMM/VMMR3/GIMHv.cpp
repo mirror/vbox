@@ -1711,6 +1711,8 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, int *prcHv)
         LogRelMax(10, ("GIM: HyperV: HvPostDebugData failed to update guest memory. rc=%Rrc\n", rc));
         rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
     }
+    else
+        Assert(rc == VINF_SUCCESS);
 
     *prcHv = rcHv;
     return rc;
@@ -1790,6 +1792,8 @@ VMMR3_INT_DECL(int) gimR3HvHypercallRetrieveDebugData(PVM pVM, int *prcHv)
         LogRelMax(10, ("GIM: HyperV: HvRetrieveDebugData failed to update guest memory. rc=%Rrc\n", rc));
         rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
     }
+    else
+        Assert(rc == VINF_SUCCESS);
 
     *prcHv = rcHv;
     return rc;

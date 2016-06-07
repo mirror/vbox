@@ -642,10 +642,21 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         else if (GIMShouldTrapXcptUD(pVCpu))
         {
             LogFlow(("TRPMGCTrap06Handler: -> GIMXcptUD\n"));
-            rc = GIMXcptUD(pVCpu, CPUMCTX_FROM_CORE(pRegFrame), &Cpu);
-            if (RT_FAILURE(rc))
+            VBOXSTRICTRC rcStrict = GIMXcptUD(pVCpu, CPUMCTX_FROM_CORE(pRegFrame), &Cpu, NULL /* pcbInstr */);
+            if (rcStrict == VINF_SUCCESS)
             {
-                LogFlow(("TRPMGCTrap06Handler: -> GIMXcptUD -> VINF_EM_RAW_EMULATE_INSTR\n"));
+                /* The interrupt inhibition wrt to EIP will be handled by trpmGCExitTrap() below. */
+                pRegFrame->eip += Cpu.cbInstr;
+                Assert(Cpu.cbInstr);
+            }
+            else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
+                rc = VINF_SUCCESS;
+            else if (rcStrict == VINF_GIM_R3_HYPERCALL)
+                rc = VINF_GIM_R3_HYPERCALL;
+            else
+            {
+                Assert(RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+                LogFlow(("TRPMGCTrap06Handler: GIMXcptUD returns %Rrc -> VINF_EM_RAW_EMULATE_INSTR\n", rc));
                 rc = VINF_EM_RAW_EMULATE_INSTR;
             }
         }

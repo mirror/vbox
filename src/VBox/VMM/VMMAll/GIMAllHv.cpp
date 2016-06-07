@@ -125,21 +125,35 @@ static int gimHvReadSlowHypercallParamsInOut(PVM pVM, PCPUMCTX pCtx, bool fIs64B
 /**
  * Handles all Hyper-V hypercalls.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ * @retval  VERR_GIM_HYPERCALLS_NOT_ENABLED hypercalls are disabled by the
+ *          guest.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ * @retval  VERR_GIM_HYPERCALL_MEMORY_READ_FAILED hypercall failed while reading
+ *          memory.
+ * @retval  VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED hypercall failed while
+ *          writing memory.
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the guest-CPU context.
  *
- * @thread  EMT.
+ * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
+
 #ifndef IN_RING3
     return VINF_GIM_R3_HYPERCALL;
 #else
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    STAM_REL_COUNTER_INC(&pVM->gim.s.StatHypercalls);
 
     /*
-     * Verify that hypercalls are enabled.
+     * Verify that hypercalls are enabled by the guest.
      */
     if (!gimHvAreHypercallsEnabled(pVCpu))
         return VERR_GIM_HYPERCALLS_NOT_ENABLED;
@@ -974,61 +988,92 @@ VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 
 
 /**
+ * Checks the currently disassembled instrunction and executes the hypercall if
+ * it's a hypercall instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pDis        Pointer to the disassembled instruction state at RIP.
+ *
+ * @thread  EMT(pVCpu).
+ *
+ * @todo    Make this function static when @bugref{7270#c168} is addressed.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) gimHvExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
+{
+    Assert(pVCpu);
+    Assert(pCtx);
+    Assert(pDis);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    CPUMCPUVENDOR const enmGuestCpuVendor = CPUMGetGuestCpuVendor(pVM);
+    if (   (   pDis->pCurInstr->uOpcode == OP_VMCALL
+            && (   enmGuestCpuVendor == CPUMCPUVENDOR_INTEL
+                || enmGuestCpuVendor == CPUMCPUVENDOR_VIA))
+        || (   pDis->pCurInstr->uOpcode == OP_VMMCALL
+            && enmGuestCpuVendor == CPUMCPUVENDOR_AMD))
+    {
+        return gimHvHypercall(pVCpu, pCtx);
+    }
+
+    return VERR_GIM_INVALID_HYPERCALL_INSTR;
+}
+
+
+/**
  * Exception handler for \#UD.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ * @retval  VINF_GIM_HYPERCALL_CONTINUING continue hypercall without updating
+ *          RIP.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ * @retval  VERR_GIM_INVALID_HYPERCALL_INSTR instruction at RIP is not a valid
+ *          hypercall instruction.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
  *                      Optional, can be NULL.
+ * @param   pcbInstr    Where to store the instruction length of the hypercall
+ *                      instruction. Optional, can be NULL.
  *
- * @thread  EMT.
+ * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(int) gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
+
     /*
      * If we didn't ask for #UD to be trapped, bail.
      */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (!gimHvShouldTrapXcptUD(pVCpu))
-        return VERR_GIM_OPERATION_FAILED;
+        return VERR_GIM_IPE_1;
 
-    int rc = VINF_SUCCESS;
     if (!pDis)
     {
         /*
          * Disassemble the instruction at RIP to figure out if it's the Intel VMCALL instruction
          * or the AMD VMMCALL instruction and if so, handle it as a hypercall.
          */
+        unsigned    cbInstr;
         DISCPUSTATE Dis;
-        rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL /* pcbInstr */);
-        pDis = &Dis;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        CPUMCPUVENDOR enmGuestCpuVendor = CPUMGetGuestCpuVendor(pVM);
-        if (   (   pDis->pCurInstr->uOpcode == OP_VMCALL
-                && (   enmGuestCpuVendor == CPUMCPUVENDOR_INTEL
-                    || enmGuestCpuVendor == CPUMCPUVENDOR_VIA))
-            || (   pDis->pCurInstr->uOpcode == OP_VMMCALL
-                && enmGuestCpuVendor == CPUMCPUVENDOR_AMD))
+        int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, &Dis, &cbInstr);
+        if (RT_SUCCESS(rc))
         {
-            /*
-             * Make sure guest ring-0 is the one making the hypercall.
-             */
-            if (CPUMGetGuestCPL(pVCpu))
-                return VERR_GIM_HYPERCALL_ACCESS_DENIED;
-
-            /*
-             * Update RIP and perform the hypercall.
-             */
-            /** @todo pre-incrementing of RIP will break when we implement continuing hypercalls. */
-            pCtx->rip += pDis->cbInstr;
-            rc = gimHvHypercall(pVCpu, pCtx);
+            if (pcbInstr)
+                *pcbInstr = (uint8_t)cbInstr;
+            return gimHvExecHypercallInstr(pVCpu, pCtx, &Dis);
         }
-        else
-            rc = VERR_GIM_OPERATION_FAILED;
+
+        Log(("GIM: HyperV: Failed to disassemble instruction at CS:RIP=%04x:%08RX64. rc=%Rrc\n", pCtx->cs.Sel, pCtx->rip, rc));
+        return rc;
     }
-    return rc;
+
+    return gimHvExecHypercallInstr(pVCpu, pCtx, pDis);
 }
 

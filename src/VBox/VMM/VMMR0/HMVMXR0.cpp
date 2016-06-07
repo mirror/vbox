@@ -11440,6 +11440,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
+    VBOXSTRICTRC rcStrict = VERR_VMX_IPE_3;
     if (pVCpu->hm.s.fHypercallsEnabled)
     {
 #if 0
@@ -11448,26 +11449,35 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         /* Aggressive state sync. for now. */
         int rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
         rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* For long-mode checks in gimKvmHypercall(). */
-#endif
-        rc     |= hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc, rc);
+#endif
 
-        /** @todo pre-increment RIP before hypercall will break when we have to implement
-         *  continuing hypercalls (e.g. Hyper-V). */
-        /** @todo r=bird: GIMHypercall will probably have to be able to return
-         *        informational status codes, so it should be made VBOXSTRICTRC. Not
-         *        doing that now because the status code handling isn't clean (i.e.
-         *        if you use RT_SUCCESS(rc) on the result of something, you don't
-         *        return rc in the success case, you return VINF_SUCCESS). */
-        rc = GIMHypercall(pVCpu, pMixedCtx);
-        /* If the hypercall changes anything other than guest general-purpose registers,
+        /* Perform the hypercall. */
+        rcStrict = GIMHypercall(pVCpu, pMixedCtx);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
+            AssertRCReturn(rc, rc);
+        }
+        else
+            Assert(   rcStrict == VINF_GIM_R3_HYPERCALL
+                   || rcStrict == VINF_GIM_HYPERCALL_CONTINUING
+                   || RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+
+        /* If the hypercall changes anything other than guest's general-purpose registers,
            we would need to reload the guest changed bits here before VM-entry. */
-        return rc;
+    }
+    else
+        Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
+
+    /* If hypercalls are disabled or the hypercall failed for some reason, raise #UD and continue. */
+    if (RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)))
+    {
+        hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
+        rcStrict = VINF_SUCCESS;
     }
 
-    Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
-    hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
-    return VINF_SUCCESS;
+    return rcStrict;
 }
 
 

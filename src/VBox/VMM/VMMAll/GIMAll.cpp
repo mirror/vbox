@@ -22,6 +22,8 @@
 #define LOG_GROUP LOG_GROUP_GIM
 #include "GIMInternal.h"
 #include <VBox/err.h>
+#include <VBox/dis.h>       /* For DISCPUSTATE */
+#include <VBox/vmm/em.h>    /* For EMInterpretDisasCurrent */
 #include <VBox/vmm/vm.h>
 
 /* Include all the providers. */
@@ -84,13 +86,24 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
 /**
  * Implements a GIM hypercall with the provider configured for the VM.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ * @retval  VERR_GIM_HYPERCALLS_NOT_AVAILABLE hypercalls unavailable.
+ * @retval  VERR_GIM_NOT_ENABLED GIM is not enabled (shouldn't really happen)
+ * @retval  VERR_GIM_HYPERCALL_MEMORY_READ_FAILED hypercall failed while reading
+ *          memory.
+ * @retval  VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED hypercall failed while
+ *          writing memory.
+ *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @thread  EMT.
  */
-VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(VBOXSTRICTRC) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -98,7 +111,6 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     if (RT_UNLIKELY(!GIMIsEnabled(pVM)))
         return VERR_GIM_NOT_ENABLED;
 
-    STAM_REL_COUNTER_INC(&pVM->gim.s.StatHypercalls);
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
@@ -111,6 +123,53 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertMsgFailed(("GIMHypercall: for provider %u not available/implemented\n", pVM->gim.s.enmProviderId));
             return VERR_GIM_HYPERCALLS_NOT_AVAILABLE;
     }
+}
+
+
+/**
+ * Disassembles the current instruction at RIP and if it's a hypercall
+ * instruction, performs the hypercall.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pcbInstr    Where to store the disassembled instruction length.
+ *                      Optional, can be NULL.
+ *
+ * @todo    This interface should disappear when IEM/REM execution engines
+ *          handle VMCALL/VMMCALL instrunctions to call into GIM when
+ *          required. See @bugref{7270#c168}.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) GIMExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t *pcbInstr)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    if (RT_UNLIKELY(!GIMIsEnabled(pVM)))
+        return VERR_GIM_NOT_ENABLED;
+
+    unsigned    cbInstr;
+    DISCPUSTATE Dis;
+    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbInstr);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbInstr)
+            *pcbInstr = (uint8_t)cbInstr;
+        switch (pVM->gim.s.enmProviderId)
+        {
+            case GIMPROVIDERID_HYPERV:
+                return gimHvExecHypercallInstr(pVCpu, pCtx, &Dis);
+
+            case GIMPROVIDERID_KVM:
+                return gimKvmExecHypercallInstr(pVCpu, pCtx, &Dis);
+
+            default:
+                AssertMsgFailed(("GIMExecHypercallInstr: for provider %u not available/implemented\n", pVM->gim.s.enmProviderId));
+                return VERR_GIM_HYPERCALLS_NOT_AVAILABLE;
+        }
+    }
+
+    Log(("GIM: GIMExecHypercallInstr: Failed to disassemble CS:RIP=%04x:%08RX64. rc=%Rrc\n", pCtx->cs.Sel, pCtx->rip, rc));
+    return rc;
 }
 
 
@@ -176,23 +235,40 @@ VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVMCPU pVCpu)
 /**
  * Exception handler for \#UD when requested by the GIM provider.
  *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_R3_HYPERCALL restart the hypercall from ring-3.
+ * @retval  VINF_GIM_HYPERCALL_CONTINUING continue hypercall without updating
+ *          RIP.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ * @retval  VERR_GIM_INVALID_HYPERCALL_INSTR instruction at RIP is not a valid
+ *          hypercall instruction.
+ *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
- *                      Optional, can be NULL.
+ *                      If NULL is passed, it implies the disassembly of the
+ *                      the instruction at RIP is the responsibility of the
+ *                      GIM provider.
+ * @param   pcbInstr    Where to store the instruction length of the hypercall
+ *                      instruction. Optional, can be NULL.
+ *
+ * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(int) GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
+VMM_INT_DECL(VBOXSTRICTRC) GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(GIMIsEnabled(pVM));
+    Assert(pDis || pcbInstr);
 
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_KVM:
-            return gimKvmXcptUD(pVCpu, pCtx, pDis);
+            return gimKvmXcptUD(pVCpu, pCtx, pDis, pcbInstr);
 
         case GIMPROVIDERID_HYPERV:
-            return gimHvXcptUD(pVCpu, pCtx, pDis);
+            return gimHvXcptUD(pVCpu, pCtx, pDis, pcbInstr);
 
         default:
             return VERR_GIM_OPERATION_FAILED;
