@@ -939,7 +939,7 @@ host path or identifier</screen>
     <sect2>
       <title>Mac OS X hosts</title>
 
-      <para>OS X version 10.7 or newer is required.</para>
+      <para>OS X version 10.9 or newer is required.</para>
 
       <para>When the webcam device is detached from the host, the emulated webcam device
       remains attached to the guest and must be manually detached using the

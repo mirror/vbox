@@ -789,7 +789,7 @@
         installation (VirtualBox ships the most important ones for each
         platform<footnote>
             <para>On On Mac OS X only the Python versions bundled with the OS
-            are officially supported. This means 2.6 and 2.7 for 10.8 and later.</para>
+            are officially supported. This means 2.6 and 2.7 for 10.9 and later.</para>
           </footnote>). On Windows, you can use the Main API from Python if the
           Win32 extensions package for Python<footnote>
             <para>See <ulink
