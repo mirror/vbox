@@ -1452,13 +1452,21 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** Enables VMFUNC instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC                         RT_BIT(13)
 /** Enables VMCS shadowing. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_VMCS_SHADOWING                 RT_BIT_64(14)
+#define VMX_VMCS_CTRL_PROC_EXEC2_VMCS_SHADOWING                 RT_BIT(14)
+/** Enables ENCLS VM-exits. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_ENCLS_EXIT                     RT_BIT(15)
 /** VM-exit when executing RDSEED. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT                    RT_BIT_64(16)
+#define VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT                    RT_BIT(16)
+/** Enables page-modification logging. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_PML                            RT_BIT(17)
 /** Controls whether EPT-violations may cause \#VE instead of exits. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE                         RT_BIT_64(18)
+#define VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE                         RT_BIT(18)
+/** Conceal VMX non-root operation from Intel processor trace (PT). */
+#define VMX_VMCS_CTRL_PROC_EXEC2_CONCEAL_FROM_PT                RT_BIT(19)
 /** Enables XSAVES/XRSTORS instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_XSAVES                         RT_BIT_64(20)
+#define VMX_VMCS_CTRL_PROC_EXEC2_XSAVES_XRSTORS                 RT_BIT(20)
+/** Use TSC scaling. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_TSC_SCALING                    RT_BIT(25)
 
 /** @} */
 
