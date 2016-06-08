@@ -35,15 +35,17 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** The current APIC saved state version. */
-#define APIC_SAVED_STATE_VERSION             4
+#define APIC_SAVED_STATE_VERSION                  5
+/** VirtualBox 5.1 beta2 - pre fActiveLintX. */
+#define APIC_SAVED_STATE_VERSION_VBOX_51_BETA2    4
 /** The saved state version used by VirtualBox 5.0 and
  *  earlier.  */
-#define APIC_SAVED_STATE_VERSION_VBOX_50     3
+#define APIC_SAVED_STATE_VERSION_VBOX_50          3
 /** The saved state version used by VirtualBox v3 and earlier.
  * This does not include the config.  */
-#define APIC_SAVED_STATE_VERSION_VBOX_30     2
+#define APIC_SAVED_STATE_VERSION_VBOX_30          2
 /** Some ancient version... */
-#define APIC_SAVED_STATE_VERSION_ANCIENT     1
+#define APIC_SAVED_STATE_VERSION_ANCIENT          1
 
 
 /*********************************************************************************************************************************
@@ -824,6 +826,7 @@ static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersi
     switch (uVersion)
     {
         case APIC_SAVED_STATE_VERSION:
+        case APIC_SAVED_STATE_VERSION_VBOX_51_BETA2:
         {
             /* The auxiliary state. */
             LogRel(("APIC%u: uApicBaseMsr             = %#RX64\n", pVCpu->idCpu, pApicCpu->uApicBaseMsr));
@@ -841,6 +844,10 @@ static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersi
             /* The PIBs. */
             LogRel(("APIC%u: Edge PIB : %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), pApicCpu->pvApicPibR3));
             LogRel(("APIC%u: Level PIB: %.*Rhxs\n", pVCpu->idCpu, sizeof(APICPIB), &pApicCpu->ApicPibLevel));
+
+            /* The LINT0, LINT1 interrupt line active states. */
+            LogRel(("APIC%u: fActiveLint0             = %RTbool\n", pVCpu->idCpu, pApicCpu->fActiveLint0));
+            LogRel(("APIC%u: fActiveLint1             = %RTbool\n", pVCpu->idCpu, pApicCpu->fActiveLint1));
 
             /* The APIC page. */
             LogRel(("APIC%u: APIC page: %.*Rhxs\n", pVCpu->idCpu, sizeof(XAPICPAGE), pApicCpu->pvApicPageR3));
@@ -1116,6 +1123,10 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutU64(pSSM, pApicCpu->u64TimerInitial);
         TMR3TimerSave(pApicCpu->pTimerR3, pSSM);
 
+        /* Save the LINT0, LINT1 interrupt line states. */
+        SSMR3PutBool(pSSM, pApicCpu->fActiveLint0);
+        SSMR3PutBool(pSSM, pApicCpu->fActiveLint1);
+
 #if defined(APIC_FUZZY_SSM_COMPAT_TEST) || defined(DEBUG_ramshankar)
         apicR3DumpState(pVCpu, "Saved state", APIC_SAVED_STATE_VERSION);
 #endif
@@ -1146,6 +1157,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 
     /* Weed out invalid versions. */
     if (   uVersion != APIC_SAVED_STATE_VERSION
+        && uVersion != APIC_SAVED_STATE_VERSION_VBOX_51_BETA2
         && uVersion != APIC_SAVED_STATE_VERSION_VBOX_50
         && uVersion != APIC_SAVED_STATE_VERSION_VBOX_30
         && uVersion != APIC_SAVED_STATE_VERSION_ANCIENT)
@@ -1169,7 +1181,8 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
-        if (uVersion == APIC_SAVED_STATE_VERSION)
+        if (   uVersion == APIC_SAVED_STATE_VERSION
+            || uVersion == APIC_SAVED_STATE_VERSION_VBOX_51_BETA2)
         {
             /* Load the auxiliary data. */
             SSMR3GetU64(pSSM, (uint64_t *)&pApicCpu->uApicBaseMsr);
@@ -1192,6 +1205,13 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 uint32_t const uInitialCount = pXApicPage->timer_icr.u32InitialCount;
                 uint8_t const  uTimerShift   = apicGetTimerShift(pXApicPage);
                 apicHintTimerFreq(pApicCpu, uInitialCount, uTimerShift);
+            }
+
+            /* Load the LINT0, LINT1 interrupt line states. */
+            if (uVersion > APIC_SAVED_STATE_VERSION_VBOX_51_BETA2)
+            {
+                SSMR3GetBool(pSSM, (bool *)&pApicCpu->fActiveLint0);
+                SSMR3GetBool(pSSM, (bool *)&pApicCpu->fActiveLint1);
             }
         }
         else
