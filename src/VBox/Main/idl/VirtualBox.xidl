@@ -16764,7 +16764,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="92d9349f-59fd-4eb1-b565-1ba51beb1c9c"
+    uuid="02326f63-bcb3-4481-96e0-30d1c2ee97f6"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     reservedMethods="4" reservedAttributes="2"
@@ -16780,6 +16780,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       IFramebuffer interface. Examples of the output target are a window on
       the host computer or an RDP session's display on a remote computer.
     </desc>
+
+    <attribute name="guestScreenLayout" type="IGuestScreenInfo" safearray="yes" readonly="yes">
+      <desc>
+        Layout of the guest screens.
+      </desc>
+    </attribute>
 
     <method name="getScreenResolution">
       <desc>
@@ -17083,13 +17089,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
          Notify OpenGL HGCM host service about HiDPI monitor scaling policy change.
       </desc>
       <param name="fUnscaledHiDPI" type="boolean" dir="in"/>
-    </method>
-
-    <method name="queryScreenLayout">
-      <desc>
-        Queries layout of the guest screens.
-      </desc>
-      <param name="guestScreenInfo" type="IGuestScreenInfo" safearray="yes" dir="return"/>
     </method>
 
     <method name="setScreenLayout">
