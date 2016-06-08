@@ -189,13 +189,6 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                                        '', '', '', 'align="left"', 'align="right"', 'align="right"', 'align="right"',
                                        'align="center"' ]);
         self._aoActions     = list(self.kasTestBoxActionDescs);
-        self._aoSchedGroups = SchedGroupLogic(self._oDisp.getDb()).fetchOrderedByName();
-        self._dSchedGroups  = dict();
-        for oSchedGroup in self._aoSchedGroups:
-            self._aoActions.append([ 'setgroup-%u' % (oSchedGroup.idSchedGroup,),
-                                     'Migrate to group %s (#%u)' % (oSchedGroup.sName, oSchedGroup.idSchedGroup,),
-                                     oSchedGroup.sDescription ]);
-            self._dSchedGroups[oSchedGroup.idSchedGroup] = oSchedGroup;
         self._sAction       = oDisp.ksActionTestBoxListPost;
         self._sCheckboxName = TestBoxData.ksParam_idTestBox;
 

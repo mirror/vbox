@@ -505,16 +505,10 @@ class WuiAdmin(WuiDispatcherBase):
                     if oTestBox.fEnabled != fEnable:
                         oTestBox.fEnabled = fEnable;
                         oLogic.editEntry(oTestBox, self._oCurUser.uid, fCommit = False);
-            elif sListAction == 'setgroup':
-                for oTestBox in aoTestBoxes:
-                    if oTestBox.idSchedGroup != idAction:
-                        oTestBox.idSchedGroup = idAction;
-                        oLogic.editEntry(oTestBox, self._oCurUser.uid, fCommit = False);
             else:
                 for oTestBox in aoTestBoxes:
                     if oTestBox.enmPendingCmd != sListAction:
-                        oTestBox.enmPendingCmd = sListAction;
-                        oLogic.editEntry(oTestBox, self._oCurUser.uid, fCommit = False);
+                        oLogic.setCommand(idTestBox, oTestBox.enmPendingCmd, sListAction, self._oCurUser.uid, fCommit = False);
             self._oDb.commit();
 
         # Re-display the list.
