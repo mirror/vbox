@@ -36,8 +36,10 @@ testboxscript_TEMPLATE = VBoxValidationKitR3
 testboxscript_INST = $(INST_TESTBOXSCRIPT)testboxscript/
 testboxscript_EXEC_SOURCES = \
 	testboxscript.py \
-	testboxscript_real.py \
+	$(testboxscript_0_OUTDIR)/testboxscript_real.py \
 	setup.sh
+$(call VBOX_EDIT_VERSION_RULE_FN,testboxscript,testboxscript_real.py)
+
 testboxscript_SOURCES = \
 	testboxcommand.py \
 	testboxcommons.py \
