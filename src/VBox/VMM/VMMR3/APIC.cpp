@@ -404,11 +404,14 @@ static void apicR3DbgInfoPib(PCAPICPIB pApicPib, PCDBGFINFOHLP pHlp)
 /**
  * Dumps basic APIC state.
  *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pHlp    The debug output helper.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pHlp        The info helpers.
+ * @param   pszArgs     Arguments, ignored.
  */
-static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
+static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
+    PVMCPU       pVCpu       = VMMGetCpu(pVM); AssertFatalMsg(pVCpu, ("Invalid EMT thread. pVCpu=%p\n", pVCpu));
     PCAPICCPU    pApicCpu    = VMCPU_TO_APICCPU(pVCpu);
     PCXAPICPAGE  pXApicPage  = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
@@ -498,7 +501,7 @@ static void apicR3DbgInfoBasic(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pHlp    The debug output helper.
  */
-static void apicR3DbgInfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
+static void apicR3InfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 {
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     uint32_t const uLvtTimer = pXApicPage->lvt_timer.all.u32LvtTimer;
@@ -513,16 +516,19 @@ static void apicR3DbgInfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 
 
 /**
- * Dumps APIC Local Vector Table (LVT) state.
+ * Dumps APIC Local Vector Table (LVT) information.
  *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pHlp    The debug output helper.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pHlp        The info helpers.
+ * @param   pszArgs     Arguments, ignored.
  */
-static void apicR3DbgInfoLvt(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
+static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
+    PVMCPU      pVCpu      = VMMGetCpu(pVM); AssertFatalMsg(pVCpu, ("Invalid EMT thread. pVCpu=%p\n", pVCpu));
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
 
-    apicR3DbgInfoLvtTimer(pVCpu, pHlp);
+    apicR3InfoLvtTimer(pVCpu, pHlp);
 
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     uint32_t const uLvtThermal = pXApicPage->lvt_thermal.all.u32LvtThermal;
@@ -581,13 +587,16 @@ static void apicR3DbgInfoLvt(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 
 
 /**
- * Dumps APIC Timer state.
+ * Dumps the APIC timer information.
  *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pHlp    The debug output helper.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pHlp        The info helpers.
+ * @param   pszArgs     Arguments, ignored.
  */
-static void apicR3DbgInfoTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
+static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
+    PVMCPU      pVCpu      = VMMGetCpu(pVM); AssertFatalMsg(pVCpu, ("Invalid EMT thread. pVCpu=%p\n", pVCpu));
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
 
@@ -599,28 +608,7 @@ static void apicR3DbgInfoTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "  Timer initial TS = %#RU64\n", pApicCpu->u64TimerInitial);
     pHlp->pfnPrintf(pHlp, "\n");
 
-    apicR3DbgInfoLvtTimer(pVCpu, pHlp);
-}
-
-
-/**
- * @callback_method_impl{FNDBGFHANDLERDEV,
- *      Dumps the APIC state according to given argument for debugging purposes.}
- */
-static DECLCALLBACK(void) apicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
-{
-    PVM       pVM   = PDMDevHlpGetVM(pDevIns);
-    PVMCPU    pVCpu = VMMGetCpu(pVM);
-    Assert(pVCpu);
-
-    if (pszArgs == NULL || !*pszArgs || !strcmp(pszArgs, "basic"))
-        apicR3DbgInfoBasic(pVCpu, pHlp);
-    else if (!strcmp(pszArgs, "lvt"))
-        apicR3DbgInfoLvt(pVCpu, pHlp);
-    else if (!strcmp(pszArgs, "timer"))
-        apicR3DbgInfoTimer(pVCpu, pHlp);
-    else
-        pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'lvt', 'timer'\n");
+    apicR3InfoLvtTimer(pVCpu, pHlp);
 }
 
 
@@ -1643,10 +1631,15 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return rc;
 
     /*
-     * Register debugger info callback.
+     * Register debugger info callbacks.
+     *
+     * We use separate callbacks rather than arguments so they can also be
+     * dumped in an automated fashion while collecting crash diagnostics and
+     * not just used during live debugging via the VM debugger.
      */
-    rc = PDMDevHlpDBGFInfoRegister(pDevIns, "apic", "Display local APIC state for current CPU. Recognizes "
-                                                    "'basic', 'lvt', 'timer' as arguments, defaults to 'basic'.", apicR3DbgInfo);
+    rc  = DBGFR3InfoRegisterInternalEx(pVM, "apic",      "Dumps APIC basic information.", apicR3Info,      DBGFINFO_FLAGS_RUN_ON_EMT);
+    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apiclvt",   "Dumps APIC LVT information.",   apicR3InfoLvt,   DBGFINFO_FLAGS_RUN_ON_EMT);
+    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apictimer", "Dumps APIC timer information.", apicR3InfoTimer, DBGFINFO_FLAGS_RUN_ON_EMT);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_STATISTICS
