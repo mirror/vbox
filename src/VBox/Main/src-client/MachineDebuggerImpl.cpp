@@ -1349,7 +1349,108 @@ HRESULT MachineDebugger::setRegisters(ULONG aCpuId, const std::vector<com::Utf8S
 
 HRESULT MachineDebugger::dumpGuestStack(ULONG aCpuId, com::Utf8Str &aStack)
 {
-    ReturnComNotImplemented();
+    /*
+     * The prologue.
+     */
+    LogFlowThisFunc(("\n"));
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (SUCCEEDED(hrc))
+    {
+        PCDBGFSTACKFRAME pFirstFrame;
+
+        int vrc = DBGFR3StackWalkBegin(ptrVM.rawUVM(), aCpuId, DBGFCODETYPE_GUEST, &pFirstFrame);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Print header.
+             */
+            try
+            {
+                uint32_t fBitFlags = 0;
+                for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
+                     pFrame;
+                     pFrame = DBGFR3StackWalkNext(pFrame))
+                {
+                    uint32_t const fCurBitFlags = pFrame->fFlags & (DBGFSTACKFRAME_FLAGS_16BIT | DBGFSTACKFRAME_FLAGS_32BIT | DBGFSTACKFRAME_FLAGS_64BIT);
+                    if (fCurBitFlags & DBGFSTACKFRAME_FLAGS_16BIT)
+                    {
+                        if (fCurBitFlags != fBitFlags)
+                            aStack.append("SS:BP     Ret SS:BP Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
+                        aStack.append(Utf8StrFmt("%04RX16:%04RX16 %04RX16:%04RX16 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                                 pFrame->AddrFrame.Sel,
+                                                 (uint16_t)pFrame->AddrFrame.off,
+                                                 pFrame->AddrReturnFrame.Sel,
+                                                 (uint16_t)pFrame->AddrReturnFrame.off,
+                                                 (uint32_t)pFrame->AddrReturnPC.Sel,
+                                                 (uint32_t)pFrame->AddrReturnPC.off,
+                                                 pFrame->Args.au32[0],
+                                                 pFrame->Args.au32[1],
+                                                 pFrame->Args.au32[2],
+                                                 pFrame->Args.au32[3]));
+                    }
+                    else if (fCurBitFlags & DBGFSTACKFRAME_FLAGS_32BIT)
+                    {
+                        if (fCurBitFlags != fBitFlags)
+                            aStack.append("EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
+                        aStack.append(Utf8StrFmt("%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                                 (uint32_t)pFrame->AddrFrame.off,
+                                                 (uint32_t)pFrame->AddrReturnFrame.off,
+                                                 (uint32_t)pFrame->AddrReturnPC.Sel,
+                                                 (uint32_t)pFrame->AddrReturnPC.off,
+                                                 pFrame->Args.au32[0],
+                                                 pFrame->Args.au32[1],
+                                                 pFrame->Args.au32[2],
+                                                 pFrame->Args.au32[3]));
+                    }
+                    else if (fCurBitFlags & DBGFSTACKFRAME_FLAGS_64BIT)
+                    {
+                        if (fCurBitFlags != fBitFlags)
+                            aStack.append("RBP              Ret SS:RBP            Ret RIP          CS:RIP / Symbol [line]\n");
+                        aStack.append(Utf8StrFmt("%016RX64 %04RX16:%016RX64 %016RX64",
+                                                 (uint64_t)pFrame->AddrFrame.off,
+                                                 pFrame->AddrReturnFrame.Sel,
+                                                 (uint64_t)pFrame->AddrReturnFrame.off,
+                                                 (uint64_t)pFrame->AddrReturnPC.off));
+                    }
+
+                    if (!pFrame->pSymPC)
+                        aStack.append(Utf8StrFmt(fCurBitFlags & DBGFSTACKFRAME_FLAGS_64BIT
+                                                 ? " %RTsel:%016RGv"
+                                                 : fCurBitFlags & DBGFSTACKFRAME_FLAGS_32BIT
+                                                 ? " %RTsel:%08RGv"
+                                                 : " %RTsel:%04RGv"
+                                                 , pFrame->AddrPC.Sel, pFrame->AddrPC.off));
+                    else
+                    {
+                        RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value; /** @todo this isn't 100% correct for segmented stuff. */
+                        if (offDisp > 0)
+                            aStack.append(Utf8StrFmt(" %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp));
+                        else if (offDisp < 0)
+                            aStack.append(Utf8StrFmt(" %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp));
+                        else
+                            aStack.append(Utf8StrFmt(" %s", pFrame->pSymPC->szName));
+                    }
+                    if (pFrame->pLinePC)
+                        aStack.append(Utf8StrFmt(" [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo));
+                    aStack.append(Utf8StrFmt("\n"));
+
+                    fBitFlags = fCurBitFlags;
+                }
+            }
+            catch (std::bad_alloc)
+            {
+                hrc = E_OUTOFMEMORY;
+            }
+
+            DBGFR3StackWalkEnd(pFirstFrame);
+        }
+        else
+            hrc = setError(E_FAIL, tr("DBGFR3StackWalkBegin failed with %Rrc"), vrc);
+    }
+
+    return hrc;
 }
 
 /**
