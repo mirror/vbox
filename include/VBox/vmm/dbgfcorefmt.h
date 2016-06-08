@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
 /** DBGCORECOREDESCRIPTOR::u32Magic. */
 #define DBGFCORE_MAGIC          UINT32_C(0xc01ac0de)
 /** DBGCORECOREDESCRIPTOR::u32FmtVersion. */
-#define DBGFCORE_FMT_VERSION    UINT32_C(0x00010004)
+#define DBGFCORE_FMT_VERSION    UINT32_C(0x00010005)
 
 /**
  * An x86 segment selector.
@@ -116,7 +116,7 @@ typedef struct DBGFCORECPU
     DBGFCOREXDTR        idtr;
     VBOXX86SEL          ldtr;
     VBOXX86SEL          tr;
-    union
+    struct
     {
         uint64_t        cs;
         uint64_t        eip;
