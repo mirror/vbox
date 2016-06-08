@@ -161,6 +161,7 @@ static uint64_t g_au64LnxKernelAddresses[] =
     UINT64_C(0xffffffff80200000)
 };
 
+static const uint8_t g_abLinuxVersion[] = "Linux version ";
 
 /**
  * Disassembles a simple getter returning the value for it.
@@ -307,26 +308,150 @@ static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RT
 }
 
 /**
- * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
+ * Returns whether the log buffer is a simple ascii buffer or a record based implementation
+ * based on the kernel version found.
+ *
+ * @returns Flag whether the log buffer is the simple ascii buffer.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
  */
-static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                                            char *pszBuf, size_t cbBuf, size_t *pcbActual)
+static bool dbgDiggerLinuxLogBufferIsAsciiBuffer(PDBGDIGGERLINUX pThis, PUVM pUVM)
 {
-    PDBGDIGGERLINUX pData = RT_FROM_MEMBER(pThis, DBGDIGGERLINUX, IDmesg);
+    char szTmp[128];
+    char const *pszVer = &szTmp[sizeof(g_abLinuxVersion) - 1];
 
-    if (cMessages < 1)
-        return VERR_INVALID_PARAMETER;
+    RT_ZERO(szTmp);
+    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, szTmp, sizeof(szTmp) - 1);
+    if (    RT_SUCCESS(rc)
+        &&  RTStrVersionCompare(pszVer, "3.4") == -1)
+        return true;
+
+    return false;
+}
+
+/**
+ * Worker to get at the kernel log for pre 3.4 kernels where the log buffer was just a char buffer.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The Linux digger data.
+ * @param   pUVM        The VM user mdoe handle.
+ * @param   hMod        The debug module handle.
+ * @param   fFlags      Flags reserved for future use, MBZ.
+ * @param   cMessages   The number of messages to retrieve, counting from the
+ *                      end of the log (i.e. like tail), use UINT32_MAX for all.
+ * @param   pszBuf      The output buffer.
+ * @param   cbBuf       The buffer size.
+ * @param   pcbActual   Where to store the number of bytes actually returned,
+ *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
+ *                      holds the necessary buffer size.  Optional.
+ */
+static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+                                             uint32_t fFlags, uint32_t cMessages,
+                                             char *pszBuf, size_t cbBuf, size_t *pcbActual)
+{
+    int rc = VINF_SUCCESS;
+    RTGCPTR  GCPtrLogBuf;
+    uint32_t cbLogBuf;
+
+    struct { void *pvVar; size_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
+    {
+        { &GCPtrLogBuf, sizeof(GCPtrLogBuf),    pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t),   "log_buf" },
+        { &cbLogBuf,    sizeof(cbLogBuf),       sizeof(cbLogBuf),                                      "log_buf_len" },
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(aSymbols); i++)
+    {
+        RTDBGSYMBOL SymInfo;
+        rc = RTDbgModSymbolByName(hMod, aSymbols[i].pszSymbol, &SymInfo);
+        if (RT_SUCCESS(rc))
+        {
+            RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
+            Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
+            DBGFADDRESS Addr;
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                               DBGFR3AddrFromFlat(pUVM, &Addr, (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr),
+                               aSymbols[i].pvVar,  aSymbols[i].cbGuest);
+            if (RT_SUCCESS(rc))
+                continue;
+            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
+        }
+        else
+            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
+        rc = VERR_NOT_FOUND;
+        break;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
-     * Resolve the symbols we need and read their values.
+     * Check if the values make sense.
      */
-    RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
-    RTDBGMOD hMod;
-    int rc = RTDbgAsModuleByName(hAs, "vmlinux", 0, &hMod);
-    if (RT_FAILURE(rc))
+    if (pThis->f64Bit ? !LNX64_VALID_ADDRESS(GCPtrLogBuf) : !LNX32_VALID_ADDRESS(GCPtrLogBuf))
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
         return VERR_NOT_FOUND;
-    RTDbgAsRelease(hAs);
+    }
+    if (   cbLogBuf < 4096
+        || !RT_IS_POWER_OF_TWO(cbLogBuf)
+        || cbLogBuf > 16*_1M)
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf_len' value %#x is not valid.\n", cbLogBuf));
+        return VERR_NOT_FOUND;
+    }
 
+    /*
+     * Read the whole log buffer.
+     */
+    uint8_t *pbLogBuf = (uint8_t *)RTMemAlloc(cbLogBuf);
+    if (!pbLogBuf)
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Failed to allocate %#x bytes for log buffer\n", cbLogBuf));
+        return VERR_NO_MEMORY;
+    }
+    DBGFADDRESS Addr;
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
+    if (RT_FAILURE(rc))
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
+             cbLogBuf, Addr.FlatPtr, rc));
+        RTMemFree(pbLogBuf);
+        return VERR_NOT_FOUND;
+    }
+
+    /** @todo: Try to parse where the single messages start to make use of cMessages. */
+    memcpy(&pszBuf[0], pbLogBuf, RT_MIN(cbBuf, cbLogBuf));
+
+    /* Done with the buffer. */
+    RTMemFree(pbLogBuf);
+
+    /* Set return size value. */
+    if (pcbActual)
+        *pcbActual = RT_MIN(cbBuf, cbLogBuf);
+
+    return cbBuf <= cbLogBuf ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
+}
+
+/**
+ * Worker to get at the kernel log for post 3.4 kernels where the log buffer contains records.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The Linux digger data.
+ * @param   pUVM        The VM user mdoe handle.
+ * @param   hMod        The debug module handle.
+ * @param   fFlags      Flags reserved for future use, MBZ.
+ * @param   cMessages   The number of messages to retrieve, counting from the
+ *                      end of the log (i.e. like tail), use UINT32_MAX for all.
+ * @param   pszBuf      The output buffer.
+ * @param   cbBuf       The buffer size.
+ * @param   pcbActual   Where to store the number of bytes actually returned,
+ *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
+ *                      holds the necessary buffer size.  Optional.
+ */
+static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+                                               uint32_t fFlags, uint32_t cMessages,
+                                               char *pszBuf, size_t cbBuf, size_t *pcbActual)
+{
+    int rc = VINF_SUCCESS;
     RTGCPTR  GCPtrLogBuf;
     uint32_t cbLogBuf;
     uint32_t idxFirst;
@@ -334,7 +459,7 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
 
     struct { void *pvVar; size_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
     {
-        { &GCPtrLogBuf, sizeof(GCPtrLogBuf),    pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t),   "log_buf" },
+        { &GCPtrLogBuf, sizeof(GCPtrLogBuf),    pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t),   "log_buf" },
         { &cbLogBuf,    sizeof(cbLogBuf),       sizeof(cbLogBuf),                                      "log_buf_len" },
         { &idxFirst,    sizeof(idxFirst),       sizeof(idxFirst),                                      "log_first_idx" },
         { &idxNext,     sizeof(idxNext),        sizeof(idxNext),                                       "log_next_idx" },
@@ -349,7 +474,7 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
             Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
             DBGFADDRESS Addr;
             rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
-                               DBGFR3AddrFromFlat(pUVM, &Addr, (RTGCPTR)SymInfo.Value + pData->AddrKernelBase.FlatPtr),
+                               DBGFR3AddrFromFlat(pUVM, &Addr, (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr),
                                aSymbols[i].pvVar,  aSymbols[i].cbGuest);
             if (RT_SUCCESS(rc))
                 continue;
@@ -371,11 +496,7 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
     {
         idxFirst = 0;
         idxNext = 0;
-        rc = dbgDiggerLinuxQueryLogBufferPtrs(pData, pUVM, hMod, &GCPtrLogBuf, &cbLogBuf);
-
-        /* Release the module in any case. */
-        RTDbgModRelease(hMod);
-
+        rc = dbgDiggerLinuxQueryLogBufferPtrs(pThis, pUVM, hMod, &GCPtrLogBuf, &cbLogBuf);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -383,7 +504,7 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
     /*
      * Check if the values make sense.
      */
-    if (pData->f64Bit ? !LNX64_VALID_ADDRESS(GCPtrLogBuf) : !LNX32_VALID_ADDRESS(GCPtrLogBuf))
+    if (pThis->f64Bit ? !LNX64_VALID_ADDRESS(GCPtrLogBuf) : !LNX32_VALID_ADDRESS(GCPtrLogBuf))
     {
         Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
         return VERR_NOT_FOUND;
@@ -542,15 +663,64 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
     if (pcbActual)
         *pcbActual = offDst;
 
+    if (offDst <= cbBuf)
+        return VINF_SUCCESS;
+    else
+        return VERR_BUFFER_OVERFLOW;
+}
+
+/**
+ * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
+ */
+static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
+                                                            char *pszBuf, size_t cbBuf, size_t *pcbActual)
+{
+    PDBGDIGGERLINUX pData = RT_FROM_MEMBER(pThis, DBGDIGGERLINUX, IDmesg);
+
+    if (cMessages < 1)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Resolve the symbols we need and read their values.
+     */
+    RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGMOD hMod;
+    int rc = RTDbgAsModuleByName(hAs, "vmlinux", 0, &hMod);
+    if (RT_FAILURE(rc))
+        return VERR_NOT_FOUND;
+    RTDbgAsRelease(hAs);
+
+    size_t cbActual;
+    /*
+     * Check whether the kernel log buffer is a simple char buffer or the newer
+     * record based implementation.
+     * The record based implementation was presumably introduced with kernel 3.4,
+     * see: http://thread.gmane.org/gmane.linux.kernel/1284184
+     */
+    if (dbgDiggerLinuxLogBufferIsAsciiBuffer(pData, pUVM))
+        rc = dbgDiggerLinuxLogBufferQueryAscii(pData, pUVM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
+    else
+        rc = dbgDiggerLinuxLogBufferQueryRecords(pData, pUVM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
+
+    /* Release the module in any case. */
+    RTDbgModRelease(hMod);
+
+    if (RT_FAILURE(rc) && rc != VERR_BUFFER_OVERFLOW)
+        return rc;
+
+    if (pcbActual)
+        *pcbActual = cbActual;
+
     /*
      * All VBox strings are UTF-8 and bad things may in theory happen if we
      * pass bad UTF-8 to code which assumes it's all valid.  So, we enforce
      * UTF-8 upon the guest kernel messages here even if they (probably) have
      * no defined code set in reality.
      */
-    if (offDst <= cbBuf)
+    if (   RT_SUCCESS(rc)
+        && cbActual <= cbBuf)
     {
-        pszBuf[offDst - 1] = '\0';
+        pszBuf[cbActual - 1] = '\0';
         RTStrPurgeEncoding(pszBuf);
         return VINF_SUCCESS;
     }
@@ -1329,13 +1499,12 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
         DBGFADDRESS KernelAddr;
         DBGFR3AddrFromFlat(pUVM, &KernelAddr, g_au64LnxKernelAddresses[i]);
         DBGFADDRESS HitAddr;
-        static const uint8_t s_abLinuxVersion[] = "Linux version ";
         int rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, LNX_MAX_KERNEL_SIZE, 1,
-                               s_abLinuxVersion, sizeof(s_abLinuxVersion) - 1, &HitAddr);
+                               g_abLinuxVersion, sizeof(g_abLinuxVersion) - 1, &HitAddr);
         if (RT_SUCCESS(rc))
         {
             char szTmp[128];
-            char const *pszX = &szTmp[sizeof(s_abLinuxVersion) - 1];
+            char const *pszX = &szTmp[sizeof(g_abLinuxVersion) - 1];
             rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
             if (    RT_SUCCESS(rc)
                 &&  (   (   pszX[0] == '2'  /* 2.x.y with x in {0..6} */
