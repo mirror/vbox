@@ -1556,7 +1556,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
                                  * Extract the UDP payload and pass it to the debugger and record the guest IP address.
                                  *
                                  * Hyper-V sends UDP debugger packets with source and destination port as 0 except in the
-                                 * aformentioned buggy case. The buggy packet case requires us to remember the ports and
+                                 * aforementioned buggy case. The buggy packet case requires us to remember the ports and
                                  * reply to them, otherwise the guest won't receive the replies we sent with port 0.
                                  */
                                 uint32_t const cbFrameHdr = sizeof(RTNETETHERHDR) + cbIpHdr + sizeof(RTNETUDP);

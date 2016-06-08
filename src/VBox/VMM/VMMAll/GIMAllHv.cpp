@@ -988,7 +988,7 @@ VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 
 
 /**
- * Checks the currently disassembled instrunction and executes the hypercall if
+ * Checks the currently disassembled instruction and executes the hypercall if
  * it's a hypercall instruction.
  *
  * @returns Strict VBox status code.
