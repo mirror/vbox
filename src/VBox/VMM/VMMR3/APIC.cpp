@@ -576,7 +576,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
         const char          *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
         const uint8_t        uVector           = XAPIC_LVT_GET_VECTOR(uLvtTimer);
 
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
                         "Timer",
                         pszTimerMode,
                         uMask,
@@ -600,7 +600,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
         const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
         const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtThermal);
 
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
                         "Thermal",
                         pszNotApplicable, /* Timer mode */
                         uMask,
@@ -624,7 +624,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
         const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
         const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtPerf);
 
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
                         "Perf",
                         pszNotApplicable, /* Timer mode */
                         uMask,
@@ -677,7 +677,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
             const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
             const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtLint);
 
-            pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %u   %8s    %4s     %6s    %u (%#x)\n",
+            pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %u   %8s    %4s     %6s    %3u (%#x)\n",
                             pszLint,
                             pszNotApplicable, /* Timer mode */
                             uMask,
@@ -701,7 +701,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
         const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
         const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtError);
 
-        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %3u (%#x)\n",
                         "Error",
                         pszNotApplicable, /* Timer mode */
                         uMask,
