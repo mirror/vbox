@@ -898,12 +898,17 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Register info handlers and registers with the debugger facility.
      */
-    DBGFR3InfoRegisterInternal(pVM, "cpum",             "Displays the all the cpu states.",         &cpumR3InfoAll);
-    DBGFR3InfoRegisterInternal(pVM, "cpumguest",        "Displays the guest cpu state.",            &cpumR3InfoGuest);
-    DBGFR3InfoRegisterInternal(pVM, "cpumhyper",        "Displays the hypervisor cpu state.",       &cpumR3InfoHyper);
-    DBGFR3InfoRegisterInternal(pVM, "cpumhost",         "Displays the host cpu state.",             &cpumR3InfoHost);
-    DBGFR3InfoRegisterInternal(pVM, "cpuid",            "Displays the guest cpuid leaves.",         &cpumR3CpuIdInfo);
-    DBGFR3InfoRegisterInternal(pVM, "cpumguestinstr",   "Displays the current guest instruction.",  &cpumR3InfoGuestInstr);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpum",             "Displays the all the cpu states.",
+                                 &cpumR3InfoAll, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpumguest",        "Displays the guest cpu state.",
+                                 &cpumR3InfoGuest, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpumhyper",        "Displays the hypervisor cpu state.",
+                                 &cpumR3InfoHyper, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpumhost",         "Displays the host cpu state.",
+                                 &cpumR3InfoHost, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpumguestinstr",   "Displays the current guest instruction.",
+                                 &cpumR3InfoGuestInstr, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternal(  pVM, "cpuid",            "Displays the guest cpuid leaves.",         &cpumR3CpuIdInfo);
 
     rc = cpumR3DbgInit(pVM);
     if (RT_FAILURE(rc))
@@ -2069,7 +2074,6 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
 
-    /* @todo SMP support! */
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = &pVM->aCpus[0];
@@ -2092,7 +2096,6 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
 {
     NOREF(pszArgs);
 
-    /** @todo SMP support! */
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = &pVM->aCpus[0];
@@ -2113,11 +2116,12 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
  */
 static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
     CPUMDUMPTYPE enmType;
     const char *pszComment;
-    /* @todo SMP */
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Hypervisor CPUM state: %s\n", pszComment);
     cpumR3InfoOne(pVM, &pVCpu->cpum.s.Hyper, CPUMCTX2CORE(&pVCpu->cpum.s.Hyper), pHlp, enmType, ".");
@@ -2139,11 +2143,14 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Host CPUM state: %s\n", pszComment);
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+    PCPUMHOSTCTX pCtx = &pVCpu->cpum.s.Host;
+
     /*
      * Format the EFLAGS.
      */
-    /* @todo SMP */
-    PCPUMHOSTCTX pCtx = &pVM->aCpus[0].cpum.s.Host;
 #if HC_ARCH_BITS == 32
     uint32_t efl = pCtx->eflags.u32;
 #else

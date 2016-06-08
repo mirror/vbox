@@ -939,6 +939,8 @@ typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
  * @{ */
 /** The handler must run on the EMT. */
 #define DBGFINFO_FLAGS_RUN_ON_EMT       RT_BIT(0)
+/** Call on all EMTs when a specific isn't specified. */
+#define DBGFINFO_FLAGS_ALL_EMTS         RT_BIT(1)
 /** @} */
 
 VMMR3_INT_DECL(int) DBGFR3InfoRegisterDevice(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler, PPDMDEVINS pDevIns);

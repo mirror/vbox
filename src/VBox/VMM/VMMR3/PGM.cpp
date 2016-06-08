@@ -1501,10 +1501,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         /*
          * Info & statistics
          */
-        DBGFR3InfoRegisterInternal(pVM, "mode",
-                                   "Shows the current paging mode. "
-                                   "Recognizes 'all', 'guest', 'shadow' and 'host' as arguments, defaulting to 'all' if nothing is given.",
-                                   pgmR3InfoMode);
+        DBGFR3InfoRegisterInternalEx(pVM, "mode",
+                                     "Shows the current paging mode. "
+                                     "Recognizes 'all', 'guest', 'shadow' and 'host' as arguments, defaulting to 'all' if nothing is given.",
+                                     pgmR3InfoMode,
+                                     DBGFINFO_FLAGS_ALL_EMTS);
         DBGFR3InfoRegisterInternal(pVM, "pgmcr3",
                                    "Dumps all the entries in the top level paging table. No arguments.",
                                    pgmR3InfoCr3);
@@ -2745,14 +2746,18 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
             fHost = true;
     }
 
-    /** @todo SMP support! */
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+
     /* print info. */
     if (fGuest)
-        pHlp->pfnPrintf(pHlp, "Guest paging mode:  %s (changed %RU64 times), A20 %s (changed %RU64 times)\n",
-                        PGMGetModeName(pVM->aCpus[0].pgm.s.enmGuestMode), pVM->aCpus[0].pgm.s.cGuestModeChanges.c,
-                        pVM->aCpus[0].pgm.s.fA20Enabled ? "enabled" : "disabled", pVM->aCpus[0].pgm.s.cA20Changes.c);
+        pHlp->pfnPrintf(pHlp, "Guest paging mode (VCPU #%u):  %s (changed %RU64 times), A20 %s (changed %RU64 times)\n",
+                        pVCpu->idCpu, PGMGetModeName(pVCpu->pgm.s.enmGuestMode), pVCpu->pgm.s.cGuestModeChanges.c,
+                        pVCpu->pgm.s.fA20Enabled ? "enabled" : "disabled", pVCpu->pgm.s.cA20Changes.c);
     if (fShadow)
-        pHlp->pfnPrintf(pHlp, "Shadow paging mode: %s\n", PGMGetModeName(pVM->aCpus[0].pgm.s.enmShadowMode));
+        pHlp->pfnPrintf(pHlp, "Shadow paging mode (VCPU #%u): %s\n", pVCpu->idCpu, PGMGetModeName(pVCpu->pgm.s.enmShadowMode));
     if (fHost)
     {
         const char *psz;
@@ -2771,7 +2776,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
             case SUPPAGINGMODE_AMD64_GLOBAL_NX:     psz = "AMD64+G+NX"; break;
             default:                                psz = "unknown"; break;
         }
-        pHlp->pfnPrintf(pHlp, "Host paging mode:   %s\n", psz);
+        pHlp->pfnPrintf(pHlp, "Host paging mode:              %s\n", psz);
     }
 }
 

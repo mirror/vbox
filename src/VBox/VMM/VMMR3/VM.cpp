@@ -2312,57 +2312,17 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
          */
         if (enmVMState != VMSTATE_GURU_MEDITATION)
         {
-            /** @todo SMP support? */
             /** @todo make the state dumping at VMR3PowerOff optional. */
             bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
             RTLogRelPrintf("****************** Guest state at power off ******************\n");
-            DBGFR3Info(pVM->pUVM, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
+            DBGFR3InfoEx(pVM->pUVM, 0, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
-            DBGFR3Info(pVM->pUVM, "mode", NULL, DBGFR3InfoLogRelHlp());
+            DBGFR3InfoEx(pVM->pUVM, 0, "mode", NULL, DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
             DBGFR3Info(pVM->pUVM, "activetimers", NULL, DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
             DBGFR3Info(pVM->pUVM, "gdt", NULL, DBGFR3InfoLogRelHlp());
             /** @todo dump guest call stack. */
-#if 1 // "temporary" while debugging #1589
-            RTLogRelPrintf("***\n");
-            uint32_t esp = CPUMGetGuestESP(pVCpu);
-            if (    CPUMGetGuestSS(pVCpu) == 0
-                &&  esp < _64K)
-            {
-                uint8_t abBuf[PAGE_SIZE];
-                RTLogRelPrintf("***\n"
-                               "ss:sp=0000:%04x ", esp);
-                uint32_t Start = esp & ~(uint32_t)63;
-                int rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, Start, 0x100);
-                if (RT_SUCCESS(rc))
-                    RTLogRelPrintf("0000:%04x TO 0000:%04x:\n"
-                                   "%.*Rhxd\n",
-                                   Start, Start + 0x100 - 1,
-                                   0x100, abBuf);
-                else
-                    RTLogRelPrintf("rc=%Rrc\n", rc);
-
-                /* grub ... */
-                if (esp < 0x2000 && esp > 0x1fc0)
-                {
-                    rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, 0x8000, 0x800);
-                    if (RT_SUCCESS(rc))
-                        RTLogRelPrintf("0000:8000 TO 0000:87ff:\n"
-                                       "%.*Rhxd\n",
-                                       0x800, abBuf);
-                }
-                /* microsoft cdrom hang ... */
-                if (true)
-                {
-                    rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, 0x8000, 0x200);
-                    if (RT_SUCCESS(rc))
-                        RTLogRelPrintf("2000:0000 TO 2000:01ff:\n"
-                                       "%.*Rhxd\n",
-                                       0x200, abBuf);
-                }
-            }
-#endif
             RTLogRelSetBuffering(fOldBuffered);
             RTLogRelPrintf("************** End of Guest state at power off ***************\n");
         }
