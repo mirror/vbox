@@ -883,7 +883,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDRC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
   VBoxDDRC_INCS           = build
   VBoxDDRC_SOURCES        = \
-  	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp \
   	Bus/DevPCI.cpp \
   	Bus/DevPciIch9.cpp \
   	Bus/MsiCommon.cpp \
@@ -904,6 +903,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Serial/DevSerial.cpp \
   	Parallel/DevParallel.cpp \
   	VMMDev/VMMDevTesting.cpp
+
+  VBoxDDRC_DEFS         += $(if $(VBOX_WITH_AUDIO_STABLE),VBOX_WITH_AUDIO_STABLE,)
+  VBoxDDRC_SOURCES      += \
+ 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
 
   ifdef VBOX_WITH_E1000
    VBoxDDRC_DEFS        += VBOX_WITH_E1000
@@ -1060,7 +1063,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_SDKS.win 	  = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VBoxDDR0_SOURCES        = \
  	build/VBoxDDR0.cpp \
- 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp \
  	Bus/DevPCI.cpp \
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
@@ -1081,11 +1083,14 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Serial/DevSerial.cpp \
  	Parallel/DevParallel.cpp \
  	VMMDev/VMMDevTesting.cpp \
- 	\
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
 
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
+
+ VBoxDDR0_DEFS          += $(if $(VBOX_WITH_AUDIO_STABLE),VBOX_WITH_AUDIO_STABLE,)
+ VBoxDDR0_SOURCES       += \
+ 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
