@@ -162,6 +162,10 @@ static void apicR3InitIpi(PVMCPU pVCpu)
     /*
      * See Intel spec. 10.4.7.3 "Local APIC State After an INIT Reset (Wait-for-SIPI State)"
      * and AMD spec 16.3.2 "APIC Registers".
+     *
+     * The reason we don't simply zero out the entire APIC page and only set the non-zero members
+     * is because there are some registers that are not touched by the INIT IPI (e.g. version)
+     * operation and this function is only a subset of the reset operation.
      */
     RT_ZERO(pXApicPage->irr);
     RT_ZERO(pXApicPage->irr);
