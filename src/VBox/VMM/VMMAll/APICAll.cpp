@@ -1141,6 +1141,9 @@ static uint8_t apicGetPpr(PVMCPU pVCpu)
      * With virtualized APIC registers or with TPR virtualization, the hardware may
      * update ISR/TPR transparently. We thus re-calculate the PPR which may be out of sync.
      * See Intel spec. 29.2.2 "Virtual-Interrupt Delivery".
+     *
+     * In all other instances, whenever the TPR or ISR changes, we need to update the PPR
+     * as well (e.g. like we do manually in apicR3InitIpi and by calling apicUpdatePpr).
      */
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (pApic->fVirtApicRegsEnabled)        /** @todo re-think this */
