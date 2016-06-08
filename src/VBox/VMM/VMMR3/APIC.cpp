@@ -411,7 +411,10 @@ static void apicR3DbgInfoPib(PCAPICPIB pApicPib, PCDBGFINFOHLP pHlp)
 static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     NOREF(pszArgs);
-    PVMCPU       pVCpu       = VMMGetCpu(pVM); AssertFatalMsg(pVCpu, ("Invalid EMT thread. pVCpu=%p\n", pVCpu));
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
     PCAPICCPU    pApicCpu    = VMCPU_TO_APICCPU(pVCpu);
     PCXAPICPAGE  pXApicPage  = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
@@ -511,7 +514,6 @@ static void apicR3InfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtTimer));
     pHlp->pfnPrintf(pHlp, "  Timer Mode       = %#x (%s)\n", pXApicPage->lvt_timer.u.u2TimerMode,
                     apicGetTimerModeName((XAPICTIMERMODE)pXApicPage->lvt_timer.u.u2TimerMode));
-    pHlp->pfnPrintf(pHlp, "\n");
 }
 
 
@@ -525,64 +527,192 @@ static void apicR3InfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     NOREF(pszArgs);
-    PVMCPU      pVCpu      = VMMGetCpu(pVM); AssertFatalMsg(pVCpu, ("Invalid EMT thread. pVCpu=%p\n", pVCpu));
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
 
-    apicR3InfoLvtTimer(pVCpu, pHlp);
+    /*
+     * Delivery modes available in the LVT entries. They're different (more reserved stuff) from the
+     * ICR delivery modes and hence we don't use apicGetDeliveryMode but mostly because we want small,
+     * fixed-length strings to fit our formatting needs here.
+     */
+    static const char * const s_apszLvtDeliveryModes[] =
+    {
+        "Fixed ",
+        "Rsvd  ",
+        "SMI   ",
+        "Rsvd  ",
+        "NMI   ",
+        "INIT  ",
+        "Rsvd  ",
+        "ExtINT"
+    };
+    /* Delivery Status. */
+    static const char * const s_apszLvtDeliveryStatus[] =
+    {
+        "Idle",
+        "Pend"
+    };
+    const char *pszNotApplicable = "";
+
+    pHlp->pfnPrintf(pHlp, "APIC Local Vector Table (LVT):\n");
+    pHlp->pfnPrintf(pHlp, "lvt     timermode  mask  trigger  rirr  polarity  dlvr_st  dlvr_mode   vector\n");
+    /* Timer. */
+    {
+        /* Timer modes. */
+        static const char * const s_apszLvtTimerModes[] =
+        {
+            "One-shot ",
+            "Periodic ",
+            "TSC-dline"
+        };
+        const uint32_t       uLvtTimer         = pXApicPage->lvt_timer.all.u32LvtTimer;
+        const XAPICTIMERMODE enmTimerMode      = XAPIC_LVT_GET_TIMER_MODE(uLvtTimer);
+        const char          *pszTimerMode      = s_apszLvtTimerModes[enmTimerMode];
+        const uint8_t        uMask             = XAPIC_LVT_IS_MASKED(uLvtTimer);
+        const uint8_t        uDeliveryStatus   = uLvtTimer & XAPIC_LVT_DELIVERY_STATUS;
+        const char          *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
+        const uint8_t        uVector           = XAPIC_LVT_GET_VECTOR(uLvtTimer);
+
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+                        "Timer",
+                        pszTimerMode,
+                        uMask,
+                        pszNotApplicable, /* TriggerMode */
+                        pszNotApplicable, /* Remote IRR */
+                        pszNotApplicable, /* Polarity */
+                        pszDeliveryStatus,
+                        pszNotApplicable, /* Delivery Mode */
+                        uVector,
+                        uVector);
+    }
 
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
-    uint32_t const uLvtThermal = pXApicPage->lvt_thermal.all.u32LvtThermal;
-    pHlp->pfnPrintf(pHlp, "LVT Thermal        = %#RX32)\n",  uLvtThermal);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_thermal.u.u8Vector,
-                    pXApicPage->lvt_thermal.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery Mode    = %#x (%s)\n", pXApicPage->lvt_thermal.u.u3DeliveryMode,
-                    apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->lvt_thermal.u.u3DeliveryMode));
-    pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_thermal.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtThermal));
-    pHlp->pfnPrintf(pHlp, "\n");
+    /* Thermal sensor. */
+    {
+        uint32_t const uLvtThermal = pXApicPage->lvt_thermal.all.u32LvtThermal;
+        const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtThermal);
+        const uint8_t           uDeliveryStatus   = uLvtThermal & XAPIC_LVT_DELIVERY_STATUS;
+        const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
+        const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtThermal);
+        const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
+        const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtThermal);
+
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+                        "Thermal",
+                        pszNotApplicable, /* Timer mode */
+                        uMask,
+                        pszNotApplicable, /* TriggerMode */
+                        pszNotApplicable, /* Remote IRR */
+                        pszNotApplicable, /* Polarity */
+                        pszDeliveryStatus,
+                        pszDeliveryMode,
+                        uVector,
+                        uVector);
+    }
 #endif
 
-    uint32_t const uLvtPerf = pXApicPage->lvt_perf.all.u32LvtPerf;
-    pHlp->pfnPrintf(pHlp, "LVT Perf           = %#RX32\n",   uLvtPerf);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_perf.u.u8Vector, pXApicPage->lvt_perf.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery Mode    = %#x (%s)\n", pXApicPage->lvt_perf.u.u3DeliveryMode,
-                    apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->lvt_perf.u.u3DeliveryMode));
-    pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_perf.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtPerf));
-    pHlp->pfnPrintf(pHlp, "\n");
+    /* Performance Monitor Counters. */
+    {
+        uint32_t const uLvtPerf = pXApicPage->lvt_thermal.all.u32LvtThermal;
+        const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtPerf);
+        const uint8_t           uDeliveryStatus   = uLvtPerf & XAPIC_LVT_DELIVERY_STATUS;
+        const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
+        const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtPerf);
+        const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
+        const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtPerf);
 
-    uint32_t const uLvtLint0 = pXApicPage->lvt_lint0.all.u32LvtLint0;
-    pHlp->pfnPrintf(pHlp, "LVT LINT0          = %#RX32\n",   uLvtLint0);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_lint0.u.u8Vector, pXApicPage->lvt_lint0.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery Mode    = %#x (%s)\n", pXApicPage->lvt_lint0.u.u3DeliveryMode,
-                    apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->lvt_lint0.u.u3DeliveryMode));
-    pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_lint0.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Pin polarity     = %u\n",       pXApicPage->lvt_lint0.u.u1IntrPolarity);
-    pHlp->pfnPrintf(pHlp, "  Remote IRR       = %u\n",       pXApicPage->lvt_lint0.u.u1RemoteIrr);
-    pHlp->pfnPrintf(pHlp, "  Trigger Mode     = %u (%s)\n",  pXApicPage->lvt_lint0.u.u1TriggerMode,
-                    apicGetTriggerModeName((XAPICTRIGGERMODE)pXApicPage->lvt_lint0.u.u1TriggerMode));
-    pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtLint0));
-    pHlp->pfnPrintf(pHlp, "\n");
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+                        "Perf",
+                        pszNotApplicable, /* Timer mode */
+                        uMask,
+                        pszNotApplicable, /* TriggerMode */
+                        pszNotApplicable, /* Remote IRR */
+                        pszNotApplicable, /* Polarity */
+                        pszDeliveryStatus,
+                        pszDeliveryMode,
+                        uVector,
+                        uVector);
+    }
 
-    uint32_t const uLvtLint1 = pXApicPage->lvt_lint1.all.u32LvtLint1;
-    pHlp->pfnPrintf(pHlp, "LVT LINT1          = %#RX32\n",   uLvtLint1);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_lint1.u.u8Vector, pXApicPage->lvt_lint1.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery Mode    = %#x (%s)\n", pXApicPage->lvt_lint1.u.u3DeliveryMode,
-                    apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->lvt_lint1.u.u3DeliveryMode));
-    pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_lint1.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Pin polarity     = %u\n",       pXApicPage->lvt_lint1.u.u1IntrPolarity);
-    pHlp->pfnPrintf(pHlp, "  Remote IRR       = %u\n",       pXApicPage->lvt_lint1.u.u1RemoteIrr);
-    pHlp->pfnPrintf(pHlp, "  Trigger Mode     = %u (%s)\n",  pXApicPage->lvt_lint1.u.u1TriggerMode,
-                    apicGetTriggerModeName((XAPICTRIGGERMODE)pXApicPage->lvt_lint1.u.u1TriggerMode));
-    pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtLint1));
-    pHlp->pfnPrintf(pHlp, "\n");
+    /* LINT0, LINT1. */
+    {
+        /* LINTx name. */
+        static const char * const s_apszLvtLint[] =
+        {
+            "LINT0",
+            "LINT1"
+        };
+        /* Trigger mode. */
+        static const char * const s_apszLvtTriggerModes[] =
+        {
+            "Edge ",
+            "Level"
+        };
+        /* Polarity. */
+        static const char * const s_apszLvtPolarity[] =
+        {
+            "ActiveHi",
+            "ActiveLo"
+        };
 
-    uint32_t const uLvtError = pXApicPage->lvt_error.all.u32LvtError;
-    pHlp->pfnPrintf(pHlp, "LVT Error          = %#RX32\n",   uLvtError);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_error.u.u8Vector, pXApicPage->lvt_error.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_error.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtError));
-    pHlp->pfnPrintf(pHlp, "\n");
+        uint32_t aLvtLint[2];
+        aLvtLint[0] = pXApicPage->lvt_lint0.all.u32LvtLint0;
+        aLvtLint[1] = pXApicPage->lvt_lint1.all.u32LvtLint1;
+        for (size_t i = 0; i < RT_ELEMENTS(aLvtLint); i++)
+        {
+            uint32_t const uLvtLint = aLvtLint[i];
+            const char             *pszLint           = s_apszLvtLint[i];
+            const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtLint);
+            const XAPICTRIGGERMODE  enmTriggerMode    = XAPIC_LVT_GET_TRIGGER_MODE(uLvtLint);
+            const char             *pszTriggerMode    = s_apszLvtTriggerModes[enmTriggerMode];
+            const uint8_t           uRemoteIrr        = XAPIC_LVT_GET_REMOTE_IRR(uLvtLint);
+            const uint8_t           uPolarity         = XAPIC_LVT_GET_POLARITY(uLvtLint);
+            const char             *pszPolarity       = s_apszLvtPolarity[uPolarity];
+            const uint8_t           uDeliveryStatus   = uLvtLint & XAPIC_LVT_DELIVERY_STATUS;
+            const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
+            const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtLint);
+            const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
+            const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtLint);
+
+            pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %u   %8s    %4s     %6s    %u (%#x)\n",
+                            pszLint,
+                            pszNotApplicable, /* Timer mode */
+                            uMask,
+                            pszTriggerMode,
+                            uRemoteIrr,
+                            pszPolarity,
+                            pszDeliveryStatus,
+                            pszDeliveryMode,
+                            uVector,
+                            uVector);
+        }
+    }
+
+    /* Error. */
+    {
+        uint32_t const uLvtError = pXApicPage->lvt_thermal.all.u32LvtThermal;
+        const uint8_t           uMask             = XAPIC_LVT_IS_MASKED(uLvtError);
+        const uint8_t           uDeliveryStatus   = uLvtError & XAPIC_LVT_DELIVERY_STATUS;
+        const char             *pszDeliveryStatus = s_apszLvtDeliveryStatus[uDeliveryStatus];
+        const XAPICDELIVERYMODE enmDeliveryMode   = XAPIC_LVT_GET_DELIVERY_MODE(uLvtError);
+        const char             *pszDeliveryMode   = s_apszLvtDeliveryModes[enmDeliveryMode];
+        const uint8_t           uVector           = XAPIC_LVT_GET_VECTOR(uLvtError);
+
+        pHlp->pfnPrintf(pHlp, "%-7s  %9s  %u     %5s     %1s   %8s    %4s     %6s    %u (%#x)\n",
+                        "Error",
+                        pszNotApplicable, /* Timer mode */
+                        uMask,
+                        pszNotApplicable, /* TriggerMode */
+                        pszNotApplicable, /* Remote IRR */
+                        pszNotApplicable, /* Polarity */
+                        pszDeliveryStatus,
+                        pszDeliveryMode,
+                        uVector,
+                        uVector);
+    }
 }
 
 
@@ -596,7 +726,10 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     NOREF(pszArgs);
-    PVMCPU      pVCpu      = VMMGetCpu(pVM); AssertFatalMsg(pVCpu, ("Invalid EMT thread. pVCpu=%p\n", pVCpu));
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
 
@@ -606,8 +739,6 @@ static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp, "  DCR              = %#RX32\n", pXApicPage->timer_dcr.all.u32DivideValue);
     pHlp->pfnPrintf(pHlp, "    Timer shift    = %#x\n",    apicGetTimerShift(pXApicPage));
     pHlp->pfnPrintf(pHlp, "  Timer initial TS = %#RU64\n", pApicCpu->u64TimerInitial);
-    pHlp->pfnPrintf(pHlp, "\n");
-
     apicR3InfoLvtTimer(pVCpu, pHlp);
 }
 
@@ -1637,9 +1768,9 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * dumped in an automated fashion while collecting crash diagnostics and
      * not just used during live debugging via the VM debugger.
      */
-    rc  = DBGFR3InfoRegisterInternalEx(pVM, "apic",      "Dumps APIC basic information.", apicR3Info,      DBGFINFO_FLAGS_RUN_ON_EMT);
-    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apiclvt",   "Dumps APIC LVT information.",   apicR3InfoLvt,   DBGFINFO_FLAGS_RUN_ON_EMT);
-    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apictimer", "Dumps APIC timer information.", apicR3InfoTimer, DBGFINFO_FLAGS_RUN_ON_EMT);
+    rc  = DBGFR3InfoRegisterInternalEx(pVM, "apic",      "Dumps APIC basic information.", apicR3Info,      DBGFINFO_FLAGS_ALL_EMTS);
+    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apiclvt",   "Dumps APIC LVT information.",   apicR3InfoLvt,   DBGFINFO_FLAGS_ALL_EMTS);
+    rc |= DBGFR3InfoRegisterInternalEx(pVM, "apictimer", "Dumps APIC timer information.", apicR3InfoTimer, DBGFINFO_FLAGS_ALL_EMTS);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_STATISTICS
