@@ -68,7 +68,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
         if (isMinimized())
         {
             /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar && m_pMiniToolBar->isVisible())
+            if (m_pMiniToolBar)
             {
                 /* Hide mini-toolbar: */
                 m_pMiniToolBar->hide();
@@ -78,7 +78,7 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
         else
         {
             /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar && !m_pMiniToolBar->isVisible())
+            if (m_pMiniToolBar)
             {
                 /* Show mini-toolbar in full-screen mode: */
                 m_pMiniToolBar->showFullScreen();
@@ -352,17 +352,6 @@ void UIMachineWindowFullscreen::placeOnScreen()
     const QRect workingArea = vboxGlobal().screenGeometry(iHostScreen);
 
 #if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-# if defined(VBOX_WS_WIN) && QT_VERSION >= 0x050000
-    /* On Windows you can't just resize/move Qt5 QWidget to required host-screen
-     * because for simple normal QWidget maximum possible window size is limited
-     * by the available geometry and Qt5 bumps it out to the main host-screen in
-     * such case, need to tell window it will be full-screen without showing it. */
-    setWindowState(Qt::WindowFullScreen);
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-        m_pMiniToolBar->setWindowState(Qt::WindowFullScreen);
-# endif /* VBOX_WS_WIN && QT_VERSION >= 0x050000 */
-
     /* Set appropriate geometry for window: */
     resize(workingArea.size());
     move(workingArea.topLeft());
