@@ -10399,7 +10399,6 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             data.pciAttachments.push_back(hpda);
         }
 
-
         // guest properties
         data.llGuestProperties.clear();
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -10851,7 +10850,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
             alock.acquire();
             if (FAILED(rc)) throw rc;
 
-            /* actual lock list update is done in Medium::commitMedia */
+            /* actual lock list update is done in Machine::i_commitMedia */
 
             rc = diff->i_addBackReference(mData->mUuid);
             AssertComRCThrowRC(rc);
@@ -11252,10 +11251,10 @@ HRESULT Machine::i_detachDevice(MediumAttachment *pAttach,
 
     if (!oldmedium.isNull())
     {
-        // if this is from a snapshot, do not defer detachment to commitMedia()
+        // if this is from a snapshot, do not defer detachment to i_commitMedia()
         if (pSnapshot)
             oldmedium->i_removeBackReference(mData->mUuid, pSnapshot->i_getId());
-        // else if non-hard disk media, do not defer detachment to commitMedia() either
+        // else if non-hard disk media, do not defer detachment to i_commitMedia() either
         else if (mediumType != DeviceType_HardDisk)
             oldmedium->i_removeBackReference(mData->mUuid);
     }
