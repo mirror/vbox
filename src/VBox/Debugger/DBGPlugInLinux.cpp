@@ -1410,19 +1410,18 @@ static bool dbgDiggerLinuxIsLikelyNameFragment(PUVM pUVM, PCDBGFADDRESS pHitAddr
     return false;
 }
 
-
 /**
- * @copydoc DBGFOSREG::pfnInit
+ * Tries to find and load the kernel symbol table with the given needle.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pabNeedle           The needle to use for searching.
+ * @param   cbNeedle            Size of the needle in bytes.
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
+static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, uint8_t const *pabNeedle, size_t cbNeedle)
 {
-    PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
-    Assert(!pThis->fValid);
-
-    /*
-     * Assume 64-bit kernels all live way beyond 32-bit address space.
-     */
-    pThis->f64Bit = pThis->AddrLinuxBanner.FlatPtr > UINT32_MAX;
+    int rc = VINF_SUCCESS;
 
     /*
      * Go looking for the kallsyms table.  If it's there, it will be somewhere
@@ -1432,20 +1431,19 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
     uint32_t    cbLeft  = LNX_MAX_KERNEL_SIZE;
     while (cbLeft > 4096)
     {
-        static const uint8_t s_abNeedle[] = "kobj";
         DBGFADDRESS          HitAddr;
-        int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
-                               s_abNeedle, sizeof(s_abNeedle) - 1, &HitAddr);
+        rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
+                           pabNeedle, cbNeedle, &HitAddr);
         if (RT_FAILURE(rc))
             break;
-        if (dbgDiggerLinuxIsLikelyNameFragment(pUVM, &HitAddr, s_abNeedle, sizeof(s_abNeedle) - 1))
+        if (dbgDiggerLinuxIsLikelyNameFragment(pUVM, &HitAddr, pabNeedle, cbNeedle))
         {
             /* There will be another hit near by. */
             DBGFR3AddrAdd(&HitAddr, 1);
             rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, LNX_MAX_KALLSYMS_NAMES_SIZE, 1 /*uAlign*/,
-                               s_abNeedle, sizeof(s_abNeedle) - 1, &HitAddr);
+                               pabNeedle, cbNeedle, &HitAddr);
             if (   RT_SUCCESS(rc)
-                && dbgDiggerLinuxIsLikelyNameFragment(pUVM, &HitAddr, s_abNeedle, sizeof(s_abNeedle) - 1))
+                && dbgDiggerLinuxIsLikelyNameFragment(pUVM, &HitAddr, pabNeedle, cbNeedle))
             {
                 /*
                  * We've got a very likely candidate for a location inside kallsyms_names.
@@ -1467,7 +1465,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
         /*
          * Advance.
          */
-        RTGCUINTPTR cbDistance = HitAddr.FlatPtr - CurAddr.FlatPtr + sizeof(s_abNeedle) - 1;
+        RTGCUINTPTR cbDistance = HitAddr.FlatPtr - CurAddr.FlatPtr + cbNeedle;
         if (RT_UNLIKELY(cbDistance >= cbLeft))
         {
             Log(("dbgDiggerLinuxInit: Failed to find kallsyms\n"));
@@ -1476,6 +1474,30 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
         cbLeft -= cbDistance;
         DBGFR3AddrAdd(&CurAddr, cbDistance);
 
+    }
+
+    return rc;
+}
+/**
+ * @copydoc DBGFOSREG::pfnInit
+ */
+static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
+{
+    PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
+    Assert(!pThis->fValid);
+
+    /*
+     * Assume 64-bit kernels all live way beyond 32-bit address space.
+     */
+    pThis->f64Bit = pThis->AddrLinuxBanner.FlatPtr > UINT32_MAX;
+
+    static const uint8_t s_abNeedle[] = "kobj";
+    int rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedle, sizeof(s_abNeedle) - 1);
+    if (RT_FAILURE(rc))
+    {
+        /* Try alternate needle (seen on older x86 Linux kernels). */
+        static const uint8_t s_abNeedleAlt[] = "kobjec";
+        dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedleAlt, sizeof(s_abNeedleAlt) - 1);
     }
 
     pThis->fValid = true;
