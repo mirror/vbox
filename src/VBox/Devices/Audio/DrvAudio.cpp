@@ -1269,11 +1269,17 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
 
     if (RT_FAILURE(rc))
     {
-        drvAudioStreamDestroyInternal(pThis, pGstStrm);
-        pGstStrm = NULL;
+        if (pGstStrm)
+        {
+            drvAudioStreamDestroyInternal(pThis, pGstStrm);
+            pGstStrm = NULL;
+        }
 
-        drvAudioStreamDestroyInternal(pThis, pHstStrm);
-        pHstStrm = NULL;
+        if (pHstStrm)
+        {
+            drvAudioStreamDestroyInternal(pThis, pHstStrm);
+            pHstStrm = NULL;
+        }
     }
     else
     {
