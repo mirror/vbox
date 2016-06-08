@@ -425,7 +425,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Register info handlers.
      */
     rc = DBGFR3InfoRegisterInternalEx(pVM, "exithistory", "Dumps the HM VM-exit history.", hmR3InfoExitHistory,
-                                      DBGFINFO_FLAGS_RUN_ON_EMT);
+                                      DBGFINFO_FLAGS_ALL_EMTS);
     AssertRCReturn(rc, rc);
 
     /*
@@ -3514,8 +3514,10 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
  */
 static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    Assert(pVCpu);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
 
     if (HMIsEnabled(pVM))
     {
