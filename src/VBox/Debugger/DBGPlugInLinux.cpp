@@ -419,16 +419,17 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
     }
 
     /** @todo: Try to parse where the single messages start to make use of cMessages. */
-    memcpy(&pszBuf[0], pbLogBuf, RT_MIN(cbBuf, cbLogBuf));
+    size_t cchLength = RTStrNLen((const char *)pbLogBuf, cbLogBuf);
+    memcpy(&pszBuf[0], pbLogBuf, RT_MIN(cbBuf, cchLength));
 
     /* Done with the buffer. */
     RTMemFree(pbLogBuf);
 
     /* Set return size value. */
     if (pcbActual)
-        *pcbActual = RT_MIN(cbBuf, cbLogBuf);
+        *pcbActual = RT_MIN(cbBuf, cchLength);
 
-    return cbBuf <= cbLogBuf ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
+    return cbBuf <= cchLength ? VERR_BUFFER_OVERFLOW : VINF_SUCCESS;
 }
 
 /**
