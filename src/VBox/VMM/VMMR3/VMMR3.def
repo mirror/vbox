@@ -133,6 +133,9 @@ EXPORTS
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll
     DBGFR3PlugInUnloadAll
+    DBGFR3StackWalkBegin
+    DBGFR3StackWalkNext
+    DBGFR3StackWalkEnd
 
     EMR3QueryExecutionPolicy
     EMR3SetExecutionPolicy
