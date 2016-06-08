@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -601,6 +601,7 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     ULONG ulValue;
     LONG64 i64Value;
     BOOL fValue;
+    const char *psz;
 
     pVirtualBox->COMGETTER(APIVersion)(str.asOutParam());
     RTPrintf("API version:                     %ls\n", str.raw());
@@ -699,6 +700,22 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Log history count:               %u\n", ulValue);
     systemProperties->COMGETTER(DefaultFrontend)(str.asOutParam());
     RTPrintf("Default frontend:                %ls\n", str.raw());
+    AudioDriverType_T enmAudio;
+    systemProperties->COMGETTER(DefaultAudioDriver)(&enmAudio);
+    switch (enmAudio)
+    {
+        case AudioDriverType_Null:          psz = "Null";           break;
+        case AudioDriverType_WinMM:         psz = "WinMM";          break;
+        case AudioDriverType_OSS:           psz = "OSS";            break;
+        case AudioDriverType_ALSA:          psz = "ALSA";           break;
+        case AudioDriverType_DirectSound:   psz = "DirectSound";    break;
+        case AudioDriverType_CoreAudio:     psz = "CoreAudio";      break;
+        case AudioDriverType_MMPM:          psz = "MMPM";           break;
+        case AudioDriverType_Pulse:         psz = "Pulse";          break;
+        case AudioDriverType_SolAudio:      psz = "SolAudio";       break;
+        default:                            psz = "Unknown";
+    }
+    RTPrintf("Default audio driver:            %s\n", psz);
     systemProperties->COMGETTER(AutostartDatabasePath)(str.asOutParam());
     RTPrintf("Autostart database path:         %ls\n", str.raw());
     systemProperties->COMGETTER(DefaultAdditionsISO)(str.asOutParam());
