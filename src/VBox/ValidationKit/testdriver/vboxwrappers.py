@@ -2460,6 +2460,7 @@ class SessionWrapper(TdTaskBase):
         else:
             try:
                 sOsDetected = self.o.console.debugger.detectOS();
+                _ = sOsDetected;
             except:
                 reporter.logXcpt('Failed to detect the guest OS');
 
