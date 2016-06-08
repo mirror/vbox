@@ -22,6 +22,11 @@
 /* Qt includes: */
 # include <QMenu>
 # include <QTimer>
+# ifdef VBOX_WS_WIN
+#  if QT_VERSION >= 0x050000
+#   include <QWindow>
+#  endif /* QT_VERSION >= 0x050000 */
+# endif /* VBOX_WS_WIN */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -388,16 +393,30 @@ void UIMachineWindowFullscreen::placeOnScreen()
 
 #elif defined(VBOX_WS_WIN)
 
-    /* Set appropriate geometry for window: */
+# if QT_VERSION >= 0x050000
+    /* Map window onto required screen: */
+    windowHandle()->setScreen(qApp->screens().at(iHostScreen));
+# endif /* QT_VERSION >= 0x050000 */
+    /* Set appropriate window size: */
     resize(workingArea.size());
+# if QT_VERSION < 0x050000
+    /* Move window onto required screen: */
     move(workingArea.topLeft());
+# endif /* QT_VERSION < 0x050000 */
 
     /* If there is a mini-toolbar: */
     if (m_pMiniToolBar)
     {
-        /* Set appropriate geometry for mini-toolbar: */
+# if QT_VERSION >= 0x050000
+        /* Map mini-toolbar onto required screen: */
+        m_pMiniToolBar->windowHandle()->setScreen(qApp->screens().at(iHostScreen));
+# endif /* QT_VERSION >= 0x050000 */
+        /* Set appropriate mini-toolbar size: */
         m_pMiniToolBar->resize(workingArea.size());
+# if QT_VERSION < 0x050000
+        /* Move mini-toolbar onto required screen: */
         m_pMiniToolBar->move(workingArea.topLeft());
+# endif /* QT_VERSION < 0x050000 */
     }
 
 #elif defined(VBOX_WS_X11)
