@@ -160,8 +160,12 @@
 #define XAPIC_LVT_GET_TRIGGER_MODE(a_Lvt)    (XAPICTRIGGERMODE)(((a_Lvt) >> 15) & UINT32_C(1))
 /** LVT - Remote IRR. */
 #define XAPIC_LVT_REMOTE_IRR                 RT_BIT(14)
+/** LVT - Gets the Remote IRR. */
+#define XAPIC_LVT_GET_REMOTE_IRR(a_Lvt)      (((a_Lvt) >> 14) & 1)
 /** LVT - Interrupt Input Pin Polarity. */
-#define XAPIC_LVT_INTR_INPUT_PIN_POLARITY    RT_BIT(13)
+#define XAPIC_LVT_POLARITY                   RT_BIT(13)
+/** LVT - Gets the Interrupt Input Pin Polarity. */
+#define XAPIC_LVT_GET_POLARITY(a_Lvt)        (((a_Lvt) >> 13) & 1)
 /** LVT - Valid bits common to all LVTs. */
 #define XAPIC_LVT_COMMON_VALID               (XAPIC_LVT_VECTOR | XAPIC_LVT_DELIVERY_STATUS | XAPIC_LVT_MASK)
 /** LVT CMCI - Valid bits. */
@@ -174,7 +178,7 @@
 #define XAPIC_LVT_PERF_VALID                 (XAPIC_LVT_COMMON_VALID | XAPIC_LVT_DELIVERY_MODE)
 /** LVT LINTx - Valid bits. */
 #define XAPIC_LVT_LINT_VALID                 (  XAPIC_LVT_COMMON_VALID | XAPIC_LVT_DELIVERY_MODE | XAPIC_LVT_DELIVERY_STATUS \
-                                              | XAPIC_LVT_INTR_INPUT_PIN_POLARITY | XAPIC_LVT_REMOTE_IRR | XAPIC_LVT_TRIGGER_MODE)
+                                              | XAPIC_LVT_POLARITY | XAPIC_LVT_REMOTE_IRR | XAPIC_LVT_TRIGGER_MODE)
 /** LVT Error - Valid bits. */
 #define XAPIC_LVT_ERROR_VALID                (XAPIC_LVT_COMMON_VALID)
 
