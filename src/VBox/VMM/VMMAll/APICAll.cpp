@@ -2318,7 +2318,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
 #endif
                     if (!fActive)
                     {
-                        ASMAtomicWriteBool(pfActiveLine, false);
+                        ASMAtomicCmpXchgBool(pfActiveLine, false, true);
                         break;
                     }
 
