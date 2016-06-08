@@ -563,7 +563,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     };
     const char *pszNotApplicable = "";
 
-    pHlp->pfnPrintf(pHlp, "APIC Local Vector Table (LVT):\n");
+    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC Local Vector Table (LVT):\n", pVCpu->idCpu);
     pHlp->pfnPrintf(pHlp, "lvt     timermode  mask  trigger  rirr  polarity  dlvr_st  dlvr_mode   vector\n");
     /* Timer. */
     {
@@ -739,7 +739,7 @@ static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
 
-    pHlp->pfnPrintf(pHlp, "Local APIC timer:\n");
+    pHlp->pfnPrintf(pHlp, "VCPU[%u] Local APIC timer:\n", pVCpu->idCpu);
     pHlp->pfnPrintf(pHlp, "  ICR              = %#RX32\n", pXApicPage->timer_icr.u32InitialCount);
     pHlp->pfnPrintf(pHlp, "  CCR              = %#RX32\n", pXApicPage->timer_ccr.u32CurrentCount);
     pHlp->pfnPrintf(pHlp, "  DCR              = %#RX32\n", pXApicPage->timer_dcr.all.u32DivideValue);
