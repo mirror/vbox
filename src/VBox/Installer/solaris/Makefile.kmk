@@ -250,6 +250,7 @@ SOLARIS_COMMON.SRC     := $(PATH_STAGE_BIN)
 SOLARIS_COMMON.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox
 SOLARIS_COMMON = \
 	LICENSE
+
 ## @def SOLARIS_COMMON_EXES
 # List of executable script (and VBoxISAExec) files that are copied directly from INST_BIN to /opt/VirtualBox/.
 SOLARIS_FILE_LIST_VARS += SOLARIS_COMMON_EXES
@@ -265,7 +266,7 @@ SOLARIS_COMMON_EXES = \
 # List of INST_BIN shared libraries that should be copied into /opt/VirtualBox/ and stripped.
 SOLARIS_FILE_LIST_VARS += SOLARIS_COMMON_STRIP_BINS
 SOLARIS_COMMON_STRIP_BINS.SUBDIRS := yes
-SOLARIS_COMMON_STRIP_BINS.STRIP   := no
+SOLARIS_COMMON_STRIP_BINS.STRIP   := yes
 SOLARIS_COMMON_STRIP_BINS.MODE    := 0644
 SOLARIS_COMMON_STRIP_BINS.SRC     := $(PATH_STAGE_BIN)
 SOLARIS_COMMON_STRIP_BINS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/
@@ -566,6 +567,8 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
 		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL),$(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
+		$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6, $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib))) \
+		\
 		$(foreach var, $(SOLARIS_FILE_LIST_VARS),$(foreach file, $($(var)), $($(var).SRC)/$(file))) \
 		\
 		$(foreach size, $(VBOX_SI_ICON_SIZES), $(foreach type, $(VBOX_SI_ICON_TYPES) \
@@ -582,6 +585,9 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	$(MKDIR) -p -m 0755 -- $(sort $(VBOX_PATH_SI_SCRATCH_PKG)/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/ \
+		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/legacy \
+		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/ \
+		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/legacy/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/i86pc/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/i86pc/kernel/ \
@@ -636,8 +642,12 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	,$(NLTAB)$(LN_SYMLINK) ../VBoxGuestAdditions.iso $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/,)
 
 	$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL) \
-	,$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
+	,$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/libSDL-1.2.so.0,)
+
+	$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6 \
+		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib) \
+		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib)))
 
 	$(if-expr defined(VBOX_WITH_EFIFW_PACKING) \
 	,$(LN_SYMLINK) ../VBoxEFI32.fd ../VBoxEFI64.fd	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/,)

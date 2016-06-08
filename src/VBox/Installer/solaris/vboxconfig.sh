@@ -1150,7 +1150,7 @@ cleanup_install()
     stop_process "VBoxNetDHCP"
     stop_process "VBoxNetNAT"
 
-   # Stop VBoxSVC quickly using SIGUSR1
+    # Stop VBoxSVC quickly using SIGUSR1
     procname="VBoxSVC"
     procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
     if test ! -z "$procpid" && test "$procpid" -ge 0; then
@@ -1181,6 +1181,9 @@ cleanup_install()
             exit 1
         fi
     fi
+
+    # remove the S10 legacy library links
+    for l in `find /opt/VirtualBox -name "lib*" -type l`; do rm $l; done
 }
 
 
@@ -1247,6 +1250,18 @@ postinstall()
             else
                 subprint "Skipped for targetted installs."
             fi
+        fi
+
+        # Install the S10 legacy library links if necessary
+        if ldd /opt/VirtualBox/amd64/VBoxRT-x86.so | grep "not found" > /dev/null; then
+            for lib in `ls -1 /opt/VirtualBox/legacy/`; do
+                ln -sf legacy/$lib /opt/VirtualBox/$lib
+            done
+        fi
+        if ldd /opt/VirtualBox/amd64/VBoxRT.so | grep "not found" > /dev/null; then
+            for lib in `ls -1 /opt/VirtualBox/amd64/legacy/`; do
+                ln -sf legacy/$lib /opt/VirtualBox/amd64/$lib
+            done
         fi
 
         # Install python bindings for non-remote installs
