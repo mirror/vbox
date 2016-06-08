@@ -350,20 +350,10 @@ void UIMachineWindowFullscreen::placeOnScreen()
     const int iHostScreen = qobject_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
     const QRect workingArea = vboxGlobal().screenGeometry(iHostScreen);
+    Q_UNUSED(workingArea);
 
-#if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    /* Set appropriate geometry for window: */
-    resize(workingArea.size());
-    move(workingArea.topLeft());
+#if defined(VBOX_WS_MAC)
 
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-        /* Set appropriate geometry for mini-toolbar: */
-        m_pMiniToolBar->resize(workingArea.size());
-        m_pMiniToolBar->move(workingArea.topLeft());
-    }
-#elif defined(VBOX_WS_MAC)
     /* Make sure this window has fullscreen logic: */
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
     AssertPtrReturnVoid(pFullscreenLogic);
@@ -395,7 +385,40 @@ void UIMachineWindowFullscreen::placeOnScreen()
         geo.moveCenter(workingArea.center());
         setGeometry(geo);
     }
-#endif /* VBOX_WS_MAC */
+
+#elif defined(VBOX_WS_WIN)
+
+    /* Set appropriate geometry for window: */
+    resize(workingArea.size());
+    move(workingArea.topLeft());
+
+    /* If there is a mini-toolbar: */
+    if (m_pMiniToolBar)
+    {
+        /* Set appropriate geometry for mini-toolbar: */
+        m_pMiniToolBar->resize(workingArea.size());
+        m_pMiniToolBar->move(workingArea.topLeft());
+    }
+
+#elif defined(VBOX_WS_X11)
+
+    /* Set appropriate geometry for window: */
+    resize(workingArea.size());
+    move(workingArea.topLeft());
+
+    /* If there is a mini-toolbar: */
+    if (m_pMiniToolBar)
+    {
+        /* Set appropriate geometry for mini-toolbar: */
+        m_pMiniToolBar->resize(workingArea.size());
+        m_pMiniToolBar->move(workingArea.topLeft());
+    }
+
+#else
+
+# warning "port me"
+
+#endif
 }
 
 void UIMachineWindowFullscreen::showInNecessaryMode()
