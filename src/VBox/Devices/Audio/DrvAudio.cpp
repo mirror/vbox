@@ -956,12 +956,24 @@ static DECLCALLBACK(int) drvAudioCallback(PPDMIAUDIOCONNECTOR pInterface, PDMAUD
 }
 #endif
 
-static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
+/**
+ * Initializes the host backend and queries its initial configuration.
+ * If the host backend fails, VERR_AUDIO_BACKEND_INIT_FAILED will be returned.
+ *
+ * Note: As this routine is called when attaching to the device LUN in the
+ *       device emulation, we either check for success or VERR_AUDIO_BACKEND_INIT_FAILED.
+ *       Everything else is considered as fatal and must be handled separately in
+ *       the device emulation!
+ *
+ * @return  IPRT status code.
+ * @param   pThis               Driver instance to be called.
+ * @param   pCfgHandle          CFGM configuration handle to use for this driver.
+ */
+static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
 {
     /* pCfgHandle is optional. */
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-
     NOREF(pCfgHandle);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
@@ -969,16 +981,16 @@ static int drvAudioHostInit(PCFGMNODE pCfgHandle, PDRVAUDIO pThis)
     int rc = pThis->pHostDrvAudio->pfnInit(pThis->pHostDrvAudio);
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("Initialization of lower driver failed with rc=%Rrc\n", rc));
-        return rc;
+        LogRel(("Audio: Initialization of host backend failed with %Rrc\n", rc));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     /* Get the configuration data from backend. */
     rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("Getting backend configuration failed with rc=%Rrc\n", rc));
-        return rc;
+        LogRel(("Audio: Getting host backend configuration failed with %Rrc\n", rc));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
     pThis->cStreamsFreeIn  = 0;
@@ -1039,7 +1051,7 @@ static DECLCALLBACK(int) drvAudioInit(PCFGMNODE pCfgHandle, PPDMDRVINS pDrvIns)
      * If everything went well, initialize the lower driver.
      */
     if (RT_SUCCESS(rc))
-        rc = drvAudioHostInit(pCfgHandle, pThis);
+        rc = drvAudioHostInit(pThis, pCfgHandle);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
