@@ -1212,6 +1212,21 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
         {
             apicClearVectorInReg(&pXApicPage->tmr, uVector);
             apicBusBroadcastEoi(pVCpu, uVector);
+
+            /*
+             * Clear the remote IRR bit for level-triggered, fixed mode LINT0 interrupt.
+             * The LINT1 pin does not support level-triggered interrupts.
+             * See Intel spec. 10.5.1 "Local Vector Table".
+             */
+            uint32_t const uLvtLint0 = pXApicPage->lvt_lint0.all.u32LvtLint0;
+            if (   XAPIC_LVT_GET_REMOTE_IRR(uLvtLint0)
+                && XAPIC_LVT_GET_VECTOR(uLvtLint0) == uVector
+                && XAPIC_LVT_GET_DELIVERY_MODE(uLvtLint0) == XAPICDELIVERYMODE_FIXED)
+            {
+                ASMAtomicAndU32((volatile uint32_t *)&pXApicPage->lvt_lint0.all.u32LvtLint0, ~XAPIC_LVT_REMOTE_IRR);
+                Log2(("APIC%u: apicSetEoi: Cleared remote-IRR for LINT0. uVector=%#x\n", pVCpu->idCpu, uVector));
+            }
+
             Log2(("APIC%u: apicSetEoi: Cleared level triggered interrupt from TMR. uVector=%#x\n", pVCpu->idCpu, uVector));
         }
 
@@ -2291,6 +2306,22 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
                 }
                 case XAPICDELIVERYMODE_FIXED:
                 {
+                    PAPICCPU       pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+                    uint8_t const  uVector  = XAPIC_LVT_GET_VECTOR(uLvt);
+                    bool           fActive  = RT_BOOL(u8Level & 1);
+                    bool volatile *pfActiveLine = u8Pin == 0 ? &pApicCpu->fActiveLint0 : &pApicCpu->fActiveLint1;
+                    /** @todo Polarity is busted elsewhere, we need to fix that
+                     *        first. See @bugref{8386#c7}. */
+#if 0
+                    uint8_t const u8Polarity = XAPIC_LVT_GET_POLARITY(uLvt);
+                    fActive ^= u8Polarity; */
+#endif
+                    if (!fActive)
+                    {
+                        ASMAtomicWriteBool(pfActiveLine, false);
+                        break;
+                    }
+
                     /* Level-sensitive interrupts are not supported for LINT1. See Intel spec. 10.5.1 "Local Vector Table". */
                     if (offLvt == XAPIC_OFF_LVT_LINT1)
                         enmTriggerMode = XAPICTRIGGERMODE_EDGE;
@@ -2298,8 +2329,41 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
                               delivery mode is selected; the Pentium 4, Intel Xeon, and P6 family processors will always
                               use level-sensitive triggering, regardless if edge-sensitive triggering is selected."
                               means. */
-                    /* fallthru */
+
+                    bool fSendIntr;
+                    if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
+                    {
+                        /* Recognize and send the interrupt only on an edge transition. */
+                        fSendIntr = ASMAtomicCmpXchgBool(pfActiveLine, true, false);
+                    }
+                    else
+                    {
+                        /* For level-triggered interrupts, redundant interrupts are not a problem. */
+                        Assert(enmTriggerMode == XAPICTRIGGERMODE_LEVEL);
+                        ASMAtomicCmpXchgBool(pfActiveLine, true, false);
+
+                        /* Only when the remote IRR isn't set, set it and send the interrupt. */
+                        if (!(pXApicPage->lvt_lint0.all.u32LvtLint0 & XAPIC_LVT_REMOTE_IRR))
+                        {
+                            Assert(offLvt == XAPIC_OFF_LVT_LINT0);
+                            ASMAtomicOrU32((volatile uint32_t *)&pXApicPage->lvt_lint0.all.u32LvtLint0, XAPIC_LVT_REMOTE_IRR);
+                            fSendIntr = true;
+                        }
+                        else
+                            fSendIntr = false;
+                    }
+
+                    if (fSendIntr)
+                    {
+                        VMCPUSET DestCpuSet;
+                        VMCPUSET_EMPTY(&DestCpuSet);
+                        VMCPUSET_ADD(&DestCpuSet, pVCpu->idCpu);
+                        rcStrict = apicSendIntr(pVCpu->CTX_SUFF(pVM), pVCpu, uVector, enmTriggerMode, enmDeliveryMode,
+                                                &DestCpuSet, rcRZ);
+                    }
+                    break;
                 }
+
                 case XAPICDELIVERYMODE_SMI:
                 case XAPICDELIVERYMODE_NMI:
                 {

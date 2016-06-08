@@ -1285,6 +1285,12 @@ typedef struct APICCPU
     RTRCPTR                     RCPtrAlignment1;
     /** The APIC PIB for level-sensitive interrupts. */
     APICPIB                     ApicPibLevel;
+    /** Whether the LINT0 interrupt line is active. */
+    bool volatile               fActiveLint0;
+    /** Whether the LINT1 interrupt line is active. */
+    bool volatile               fActiveLint1;
+    /** Alignment padding. */
+    uint8_t                     auAlignment0[6];
     /** @} */
 
     /** @name The APIC timer.

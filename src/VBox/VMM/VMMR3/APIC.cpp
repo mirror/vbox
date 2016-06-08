@@ -216,6 +216,10 @@ static void apicR3InitIpi(PVMCPU pVCpu)
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     RT_BZERO(&pApicCpu->ApicPibLevel, sizeof(APICPIB));
     RT_BZERO(pApicCpu->pvApicPibR3,   sizeof(APICPIB));
+
+    /* Clear the interrupt line states for LINT0 and LINT1 pins. */
+    pApicCpu->fActiveLint0 = false;
+    pApicCpu->fActiveLint1 = false;
 }
 
 
