@@ -827,7 +827,7 @@ class TestBoxLogic(ModelLogicBase):
         """
         Data edit update, web UI is the primary user.
 
-        oData is either TestBoxDataEx or TestBoxData.  The latter is for enabling 
+        oData is either TestBoxDataEx or TestBoxData.  The latter is for enabling
         Returns the new generation ID and effective date.
         """
 
