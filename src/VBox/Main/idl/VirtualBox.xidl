@@ -16698,7 +16698,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="GuestMonitorStatus"
-    uuid="a0001cb1-97c9-496d-82bc-616c19a9e212"
+    uuid="6b8d3f71-39cb-459e-a916-48917ed43e19"
+    wsmap="managed"
     >
     <desc>
       The current status of the guest display.
@@ -16715,11 +16716,55 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The guest monitor is enabled in the guest.
       </desc>
     </const>
+
+    <const name="Blank" value="2">
+      <desc>
+        The guest monitor is enabled in the guest but should display nothing.
+      </desc>
+    </const>
+  </enum>
+
+  <enum
+    name="ScreenLayoutMode"
+    uuid="9a982f4f-b815-4802-8539-d0b46435a7b7"
+    wsmap="managed"
+    >
+    <desc>
+      How IDisplay::setScreenLayout method should work.
+    </desc>
+
+    <const name="Apply" value="0">
+      <desc>
+        If the guest is already at desired mode then the API might avoid setting the mode.
+      </desc>
+    </const>
+
+    <const name="Reset" value="1">
+      <desc>
+        Always set the new mode even if the guest is already at desired mode.
+      </desc>
+    </const>
   </enum>
 
   <interface
+    name="IGuestScreenInfo" extends="$unknown"
+    uuid="5f99cd4d-bbd2-49ba-b24d-4b5b42fb4c3a"
+    wsmap="managed"
+    >
+    <attribute name="screenId" type="unsigned long" readonly="yes"/>
+    <attribute name="guestMonitorStatus" type="GuestMonitorStatus" readonly="yes"/>
+    <attribute name="primary" type="boolean" readonly="yes"/>
+    <attribute name="origin" type="boolean" readonly="yes"/>
+    <attribute name="originX" type="long" readonly="yes"/>
+    <attribute name="originY" type="long" readonly="yes"/>
+    <attribute name="width" type="unsigned long" readonly="yes"/>
+    <attribute name="height" type="unsigned long" readonly="yes"/>
+    <attribute name="bitsPerPixel" type="unsigned long" readonly="yes"/>
+  </interface>
+
+  <interface
     name="IDisplay" extends="$unknown"
-    uuid="7303a66d-433b-25a4-f9a8-fcadf87e0c2a"
+    uuid="92d9349f-59fd-4eb1-b565-1ba51beb1c9c"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     reservedMethods="4" reservedAttributes="2"
@@ -17038,6 +17083,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
          Notify OpenGL HGCM host service about HiDPI monitor scaling policy change.
       </desc>
       <param name="fUnscaledHiDPI" type="boolean" dir="in"/>
+    </method>
+
+    <method name="queryScreenLayout">
+      <desc>
+        Queries layout of the guest screens.
+      </desc>
+      <param name="guestScreenInfo" type="IGuestScreenInfo" safearray="yes" dir="return"/>
+    </method>
+
+    <method name="setScreenLayout">
+      <desc>
+        Set video modes for the guest screens.
+      </desc>
+      <param name="screenLayoutMode" type="ScreenLayoutMode" dir="in"/>
+      <param name="guestScreenInfo" type="IGuestScreenInfo" safearray="yes" dir="in"/>
     </method>
 
   </interface>

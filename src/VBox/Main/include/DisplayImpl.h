@@ -271,6 +271,9 @@ private:
                                             ULONG aScaleFactorWMultiplied,
                                             ULONG aScaleFactorHMultiplied);
     virtual HRESULT notifyHiDPIOutputPolicyChange(BOOL fUnscaledHiDPI);
+    virtual HRESULT queryScreenLayout(std::vector<ComPtr<IGuestScreenInfo> > &aGuestScreenInfo);
+    virtual HRESULT setScreenLayout(ScreenLayoutMode_T aScreenLayoutMode,
+                                    const std::vector<ComPtr<IGuestScreenInfo> > &aGuestScreenInfo);
 
     // Wrapped IEventListener properties
 
