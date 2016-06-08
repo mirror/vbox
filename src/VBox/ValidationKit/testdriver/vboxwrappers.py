@@ -1525,6 +1525,20 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def getCpuCount(self):
+        """
+        Returns the number of CPUs.
+        Returns the number of CPUs on success and 0 on failure. Error information is logged.
+        """
+        cCpus = 0;
+        try:
+            cCpus = self.o.machine.CPUCount;
+        except:
+            reporter.errorXcpt('failed to get the CPU count of "%s"' % (self.sName,));
+
+        self.oTstDrv.processPendingEvents();
+        return cCpus;
+
     def ensureControllerAttached(self, sController):
         """
         Makes sure the specified controller is attached to the VM, attaching it
@@ -2426,6 +2440,36 @@ class SessionWrapper(TdTaskBase):
         except:
             reporter.logXcpt('Unable to query vgatext with arg "%s"' % (sArg,));
         return sVgaText;
+
+    def queryDbgGuestStack(self, iCpu = 0):
+        """
+        Returns the guest stack for the given VCPU.
+
+        Returns string containing the guest stack for the selected VCPU on success.
+        Returns None on failure.
+        """
+
+        #
+        # Load all plugins first and try to detect the OS so we can
+        # get nicer stack traces.
+        #
+        try:
+            self.o.console.debugger.loadPlugIn('all');
+        except:
+            reporter.logXcpt('Unable to load debugger plugins');
+        else:
+            try:
+                sOsDetected = self.o.console.debugger.detectOS();
+            except:
+                reporter.logXcpt('Failed to detect the guest OS');
+
+        sGuestStack = None;
+        try:
+            sGuestStack = self.o.console.debugger.dumpGuestStack(iCpu);
+        except:
+            reporter.logXcpt('Unable to query guest stack for CPU %s' % (iCpu, ));
+
+        return sGuestStack;
 
 
     #

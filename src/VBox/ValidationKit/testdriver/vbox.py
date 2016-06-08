@@ -2564,6 +2564,18 @@ class TestDriver(base.TestDriver):                                              
         # Various infos (do after kernel because of symbols).
         asMiscInfos = [];
         if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+            # Dump the guest stack for all CPUs.
+            cCpus = oSession.getCpuCount();
+            if cCpus > 0:
+                for iCpu in xrange(0, cCpus):
+                    sThis = oSession.queryDbgGuestStack(iCpu);
+                    if sThis is not None and len(sThis) > 0:
+                        asMiscInfos += [
+                            '================ start guest stack VCPU %s ================\n' % (iCpu,),
+                            sThis,
+                            '================ end guest stack VCPU %s ==================\n' % (iCpu,),
+                        ];
+
             for sInfo, sArg in [ ('mode', 'all'),
                                  ('fflags', ''),
                                  ('cpumguest', 'verbose all'),
