@@ -335,6 +335,7 @@ private:
     HRESULT clearAllDiskEncryptionPasswords();
 
     void notifyNatDnsChange(PUVM pUVM, const char *pszDevice, ULONG ulInstanceMax);
+    Utf8Str VRDPServerErrorToMsg(int vrc);
 
     /**
      *  Base template for AutoVMCaller and SafeVMPtr. Template arguments

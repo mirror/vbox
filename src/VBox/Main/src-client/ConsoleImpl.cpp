@@ -5172,6 +5172,45 @@ HRESULT Console::i_onDnDModeChange(DnDMode_T aDnDMode)
 }
 
 /**
+ * Check the return code of mConsoleVRDPServer->Launch. LogRel() the error reason and
+ * return an error message appropriate for setError().
+ */
+Utf8Str Console::VRDPServerErrorToMsg(int vrc)
+{
+    Utf8Str errMsg;
+    if (vrc == VERR_NET_ADDRESS_IN_USE)
+    {
+        Bstr bstr;
+        mVRDEServer->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
+        errMsg = Utf8StrFmt(tr("VirtualBox Remote Desktop Extension server can't bind to the port(s): %s"),
+                                Utf8Str(bstr).c_str());
+        LogRel(("VRDE: Warning: failed to launch VRDE server (%Rrc): '%s'\n", vrc, errMsg.c_str()));
+    }
+    else if (vrc == VINF_NOT_SUPPORTED)
+    {
+        /* This means that the VRDE is not installed. */
+        LogRel(("VRDE: VirtualBox Remote Desktop Extension is not available.\n"));
+        errMsg = Utf8Str("VirtualBox Remote Desktop Extension is not available");
+    }
+    else if (RT_FAILURE(vrc))
+    {
+        /* Fail if the server is installed but can't start. */
+        switch (vrc)
+        {
+            case VERR_FILE_NOT_FOUND:
+                errMsg = Utf8StrFmt(tr("Could not find the VirtualBox Remote Desktop Extension library."));
+                break;
+            default:
+                errMsg = Utf8StrFmt(tr("Failed to launch the Remote Desktop Extension server (%Rrc)"), vrc);
+                break;
+        }
+        LogRel(("VRDE: Failed: (%Rrc): %s\n", vrc, errMsg.c_str()));
+    }
+
+    return errMsg;
+}
+
+/**
  * Called by IInternalSessionControl::OnVRDEServerChange().
  *
  * @note Locks this object for writing.
@@ -5224,9 +5263,9 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                             mConsoleVRDPServer->Stop();
 
                             int vrc = mConsoleVRDPServer->Launch();
-                            if (RT_FAILURE(vrc))
-                                rc = setError(E_FAIL,
-                                              tr("Could not start the VRDP server (%Rrc)"), vrc);
+                            Utf8Str errMsg = VRDPServerErrorToMsg(vrc);
+                            if (vrc != VINF_SUCCESS)
+                                rc = setError(E_FAIL, errMsg.c_str());
                             else
                                 mConsoleVRDPServer->EnableConnections();
                         }
@@ -5253,6 +5292,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
         fireVRDEServerChangedEvent(mEventSource);
     }
 
+    LogRel(("RETURN %Rhrc\n", rc));
     return rc;
 }
 
@@ -9557,42 +9597,10 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
         vrc = server->Launch();
         alock.acquire();
 
-        if (vrc == VERR_NET_ADDRESS_IN_USE)
-        {
-            Utf8Str errMsg;
-            Bstr bstr;
-            pConsole->mVRDEServer->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
-            Utf8Str ports = bstr;
-            errMsg = Utf8StrFmt(tr("VirtualBox Remote Desktop Extension server can't bind to the port: %s"),
-                                ports.c_str());
-            LogRel(("VRDE: Warning: failed to launch VRDE server (%Rrc): '%s'\n",
-                    vrc, errMsg.c_str()));
-        }
-        else if (vrc == VINF_NOT_SUPPORTED)
-        {
-            /* This means that the VRDE is not installed. */
-            LogRel(("VRDE: VirtualBox Remote Desktop Extension is not available.\n"));
-        }
-        else if (RT_FAILURE(vrc))
-        {
-            /* Fail, if the server is installed but can't start. */
-            Utf8Str errMsg;
-            switch (vrc)
-            {
-                case VERR_FILE_NOT_FOUND:
-                {
-                    /* VRDE library file is missing. */
-                    errMsg = Utf8StrFmt(tr("Could not find the VirtualBox Remote Desktop Extension library."));
-                    break;
-                }
-                default:
-                    errMsg = Utf8StrFmt(tr("Failed to launch Remote Desktop Extension server (%Rrc)"),
-                                        vrc);
-            }
-            LogRel(("VRDE: Failed: (%Rrc), error message: '%s'\n",
-                     vrc, errMsg.c_str()));
+        Utf8Str errMsg = pConsole->VRDPServerErrorToMsg(vrc);
+        if (   RT_FAILURE(vrc)
+            && vrc != VERR_NET_ADDRESS_IN_USE) /* this is not fatal */
             throw i_setErrorStatic(E_FAIL, errMsg.c_str());
-        }
 
         ComPtr<IMachine> pMachine = pConsole->i_machine();
         ULONG cCpus = 1;
@@ -9854,8 +9862,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                  * appropriate error message themselves.
                  */
                 AssertMsgFailed(("Missing error message during powerup for status code %Rrc\n", vrc));
-                task->mErrorMsg = Utf8StrFmt(tr("Failed to start VM execution (%Rrc)"),
-                                             vrc);
+                task->mErrorMsg = Utf8StrFmt(tr("Failed to start VM execution (%Rrc)"), vrc);
             }
 
             /* Set the error message as the COM error.
