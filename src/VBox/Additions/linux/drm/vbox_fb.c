@@ -68,6 +68,7 @@
 #include <drm/drm_crtc_helper.h>
 #include "vbox_drv.h"
 
+#define VBOX_DIRTY_DELAY (HZ / 30)
 /**
  * Tell the host about dirty rectangles to update.
  */
@@ -160,6 +161,38 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
 
     vbox_bo_unreserve(bo);
 }
+
+static void vbox_deferred_io(struct fb_info *info,
+                             struct list_head *pagelist)
+{
+        struct vbox_fbdev *fbdev = info->par;
+        unsigned long start, end, min, max;
+        struct page *page;
+        int y1, y2;
+
+        min = ULONG_MAX;
+        max = 0;
+        list_for_each_entry(page, pagelist, lru) {
+                start = page->index << PAGE_SHIFT;
+                end = start + PAGE_SIZE - 1;
+                min = min(min, start);
+                max = max(max, end);
+        }
+
+        if (min < max) {
+                y1 = min / info->fix.line_length;
+                y2 = (max / info->fix.line_length) + 1;
+                printk(KERN_INFO "%s: Calling dirty update: 0, %d, %d, %d\n",
+                       __func__, y1, info->var.xres, y2 - y1 - 1);
+                vbox_dirty_update(fbdev, 0, y1, info->var.xres, y2 - y1 - 1);
+        }
+}
+
+static struct fb_deferred_io vbox_defio =
+{
+        .delay          = VBOX_DIRTY_DELAY,
+        .deferred_io    = vbox_deferred_io,
+};
 
 static void vbox_fillrect(struct fb_info *info,
              const struct fb_fillrect *rect)
@@ -322,6 +355,9 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 
     info->screen_base = sysram;
     info->screen_size = size;
+
+    info->fbdefio = &vbox_defio;
+    fb_deferred_io_init(info);
 
     info->pixmap.flags = FB_PIXMAP_SYSTEM;
 
