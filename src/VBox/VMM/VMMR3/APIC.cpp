@@ -1680,7 +1680,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
 
             /* Insert all MSR ranges of the x2APIC. */
-            LogRel(("APIC: Registering x2APIC MSR ranges\n"));
             for (size_t i = 0; i < RT_ELEMENTS(g_aMsrRanges_x2Apic); i++)
             {
                 rc = CPUMR3MsrRangesInsert(pVM, &g_aMsrRanges_x2Apic[i]);
