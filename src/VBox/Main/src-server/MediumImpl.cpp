@@ -2990,6 +2990,23 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
             Utf8Str destMediumFileName(destMediumPath);
             destMediumFileName.stripPath();
 
+            Utf8Str suffix(destMediumFileName);
+            suffix.stripSuffix();//for small trick, see next condition
+
+            if(suffix.equals(destMediumFileName) && !destMediumFileName.isEmpty())
+            {
+                /*
+                 * small trick. This case means target path has no filename at the end
+                 * it will look like "/path/to/new/location"
+                 * there is no backslash in the end
+                 * and there is no filename with extension(suffix) in the end
+                 * In this case just set destMediumFileName to NULL and 
+                 * and add '/' in the end of path.destMediumPath
+                 */
+                destMediumFileName.setNull();
+                destMediumPath.append(RTPATH_SLASH);
+            }
+
             if (destMediumFileName.isEmpty())
             {
                 /* case when a target name is absent */
@@ -3002,12 +3019,12 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                     /* the passed target path consist of only a filename without directory
                      * next move medium within the source directory with the passed new name
                      */
-                    destMediumPath = sourceMediumPath.stripFilename().append('/').append(destMediumFileName);
+                    destMediumPath = sourceMediumPath.stripFilename().append(RTPATH_SLASH).append(destMediumFileName);
                 }
                 else
                 {
                     /* set the target extension like on the source. Permission to convert is prohibited */
-                    Utf8Str suffix = i_getFormat();
+                    suffix = i_getFormat();
 
                     if (suffix.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                     {
