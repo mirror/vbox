@@ -1987,7 +1987,7 @@ static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, 
     /* default to the non-prefixed table. */
     PCDISOPCODE pOpcode = &g_aTwoByteMapX86[pDis->bOpCode];
 
-    /* Handle opcode table extensions that rely on the address, repe or repne prefix byte.  */
+    /* Handle opcode table extensions that rely on the opsize, repe or repne prefix byte.  */
     /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
     if (pDis->bLastPrefix)
     {
