@@ -13423,6 +13423,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     Log4(("#PF: rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
     {
+#if 0
         /* Successfully synced shadow pages tables or emulated an MMIO instruction. */
         /** @todo this isn't quite right, what if guest does lgdt with some MMIO
          *        memory? We don't update the whole state here... */
@@ -13430,6 +13431,14 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                             | HM_CHANGED_GUEST_RSP
                             | HM_CHANGED_GUEST_RFLAGS
                             | HM_CHANGED_VMX_GUEST_APIC_STATE);
+#else
+        /* This is typically a shadow page table sync or a MMIO instruction. But we
+        /* may have emulated something like LTR or a far jump. Any part of the CPU
+         * context may have changed.
+         */
+        /** @todo take advantage of CPUM changed flags instead of brute forcing. */
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+#endif
         TRPMResetTrap(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
         return rc;
