@@ -3342,6 +3342,7 @@ void UIMachineSettingsStorage::onMouseClicked (QMouseEvent *aEvent)
 
 void UIMachineSettingsStorage::addControllerWrapper (const QString &aName, KStorageBus aBus, KStorageControllerType aType)
 {
+#ifdef RT_STRICT
     QModelIndex index = mTwStorageTree->currentIndex();
     switch (aBus)
     {
@@ -3369,6 +3370,7 @@ void UIMachineSettingsStorage::addControllerWrapper (const QString &aName, KStor
         default:
             break;
     }
+#endif
 
     mStorageModel->addController (aName, aBus, aType);
     emit storageChanged();
