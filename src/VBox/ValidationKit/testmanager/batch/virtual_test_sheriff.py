@@ -407,6 +407,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ## @name Failure reasons we know.
     ## @{
     ktReason_BSOD_Recovery                             = ( 'BSOD',              'Recovery' );
+    ktReason_BSOD_Automatic_Repair                     = ( 'BSOD',              'Automatic Repair' );
     ktReason_Guru_Generic                              = ( 'Guru Meditations',  'Generic Guru Meditation' );
     ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED       = ( 'Guru Meditations',  'VERR_IEM_INSTR_NOT_IMPLEMENTED' );
     ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations',  'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
@@ -664,6 +665,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     katSimpleScreenshotHashReasons = [
         # ( Whether to stop on hit, reason tuple, lowercased sha-256 of PIL.Image.tostring output )
         ( True,  ktReason_BSOD_Recovery,                    '576f8e38d62b311cac7e3dc3436a0d0b9bd8cfd7fa9c43aafa95631520a45eac' ),
+        ( True,  ktReason_BSOD_Recovery,                    'c6a72076cc619937a7a39cfe9915b36d94cee0d4e3ce5ce061485792dcee2749' ),
     ];
 
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
