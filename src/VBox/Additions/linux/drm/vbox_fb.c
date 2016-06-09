@@ -162,6 +162,7 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
     vbox_bo_unreserve(bo);
 }
 
+#ifdef CONFIG_FB_DEFERRED_IO
 static void vbox_deferred_io(struct fb_info *info,
                              struct list_head *pagelist)
 {
@@ -193,6 +194,7 @@ static struct fb_deferred_io vbox_defio =
         .delay          = VBOX_DIRTY_DELAY,
         .deferred_io    = vbox_deferred_io,
 };
+#endif
 
 static void vbox_fillrect(struct fb_info *info,
              const struct fb_fillrect *rect)
@@ -356,8 +358,10 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     info->screen_base = sysram;
     info->screen_size = size;
 
+#ifdef CONFIG_FB_DEFERRED_IO
     info->fbdefio = &vbox_defio;
     fb_deferred_io_init(info);
+#endif
 
     info->pixmap.flags = FB_PIXMAP_SYSTEM;
 
