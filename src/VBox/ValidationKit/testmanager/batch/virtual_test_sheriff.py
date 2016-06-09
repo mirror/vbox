@@ -413,6 +413,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED      = ( 'Guru Meditations',  'VERR_IEM_ASPECT_NOT_IMPLEMENTED' );
     ktReason_Guru_VERR_TRPM_DONT_PANIC                 = ( 'Guru Meditations',  'VERR_TRPM_DONT_PANIC' );
     ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED          = ( 'Guru Meditations',  'VERR_PGM_PHYS_PAGE_RESERVED' );
+    ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE         = ( 'Guru Meditations',  'VERR_VMX_INVALID_GUEST_STATE' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
@@ -647,6 +648,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED,   'VERR_IEM_ASPECT_NOT_IMPLEMENTED' ),
         ( True,  ktReason_Guru_VERR_TRPM_DONT_PANIC,              'VERR_TRPM_DONT_PANIC' ),
         ( True,  ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED,       'VERR_PGM_PHYS_PAGE_RESERVED' ),
+        ( True,  ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE,      'VERR_VMX_INVALID_GUEST_STATE' ),
         ( True,  ktReason_Guru_VINF_EM_TRIPLE_FAULT,              'VINF_EM_TRIPLE_FAULT' ),
         ( True,  ktReason_Networking_Nonexistent_host_nic,
           'rc=E_FAIL text="Nonexistent host networking interface, name \'eth0\' (VERR_INTERNAL_ERROR)"' ),
