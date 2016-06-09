@@ -3534,6 +3534,9 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
          * Start making changes.
          */
 
+        /* Set the new CPL so that stack accesses use it. */
+        pIemCpu->uCpl = uNewCpl;
+
         /* Create the stack frame. */
         RTPTRUNION uStackFrame;
         rcStrict = iemMemMap(pIemCpu, &uStackFrame.pv, cbStackFrame, UINT8_MAX,
@@ -3546,7 +3549,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             if (fFlags & IEM_XCPT_FLAGS_ERR)
                 *uStackFrame.pu32++ = uErr;
             uStackFrame.pu32[0] = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pCtx->eip + cbInstr : pCtx->eip;
-            uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
+            uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | (pCtx->ss.Sel & X86_SEL_RPL);
             uStackFrame.pu32[2] = fEfl;
             uStackFrame.pu32[3] = pCtx->esp;
             uStackFrame.pu32[4] = pCtx->ss.Sel;
@@ -3564,7 +3567,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             if (fFlags & IEM_XCPT_FLAGS_ERR)
                 *uStackFrame.pu16++ = uErr;
             uStackFrame.pu16[0] = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pCtx->ip + cbInstr : pCtx->ip;
-            uStackFrame.pu16[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
+            uStackFrame.pu16[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | (pCtx->ss.Sel & X86_SEL_RPL);
             uStackFrame.pu16[2] = fEfl;
             uStackFrame.pu16[3] = pCtx->sp;
             uStackFrame.pu16[4] = pCtx->ss.Sel;
