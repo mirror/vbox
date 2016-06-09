@@ -874,7 +874,7 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PP
     {
         size_t cbBuf = AudioMixBufSizeBytes(&pStream->MixBuf);
 
-        uint32_t cLive = AudioMixBufAvail(&pStream->MixBuf);
+        uint32_t cLive = AudioMixBufLive(&pStream->MixBuf);
         uint32_t cToRead;
 
 #ifndef RT_OS_L4

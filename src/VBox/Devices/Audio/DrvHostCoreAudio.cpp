@@ -1560,18 +1560,19 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
     /* Not much else to do here. */
 
-    uint32_t cLive = AudioMixBufAvail(&pStream->MixBuf);;
-    if (!cLive) /* Not samples to play? Bail out. */
+    uint32_t cLive = AudioMixBufLive(&pStream->MixBuf);
+    if (!cLive) /* Not live samples to play? Bail out. */
     {
         if (pcSamplesPlayed)
             *pcSamplesPlayed = 0;
         return VINF_SUCCESS;
     }
 
+    size_t cbLive  = AUDIOMIXBUF_S2B(&pStream->MixBuf, cLive);
+
     uint32_t cbReadTotal = 0;
-    uint32_t cAvail = AudioMixBufAvail(&pStream->MixBuf);
-    size_t cbAvail  = AUDIOMIXBUF_S2B(&pStream->MixBuf, cAvail);
-    size_t cbToRead = RT_MIN(cbAvail, RTCircBufFree(pStreamOut->pBuf));
+
+    size_t cbToRead = RT_MIN(cbLive, RTCircBufFree(pStreamOut->pBuf));
     LogFlowFunc(("cbToRead=%zu\n", cbToRead));
 
     while (cbToRead)

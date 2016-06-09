@@ -771,6 +771,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
         cbAvail += (pStrm->cbPeekBuf - pStrm->offPeekBuf);
     }
 
+    LogFlowFunc(("cbAvail=%zu\n", cbAvail));
+
     if (!cbAvail) /* No data? Bail out. */
     {
         if (pcSamplesCaptured)
@@ -852,9 +854,9 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
     if (RT_SUCCESS(rc))
     {
         uint32_t cProcessed = 0;
-        if (cWrittenTotal)
+      /*  if (cWrittenTotal)
             rc = AudioMixBufMixToParent(&pStream->MixBuf, cWrittenTotal,
-                                        &cProcessed);
+                                        &cProcessed);*/
 
         if (pcSamplesCaptured)
             *pcSamplesCaptured = cWrittenTotal;
@@ -1423,24 +1425,18 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostPulseAudioStreamGetStatus(PPDMIHOSTA
     if (   pa_context_get_state(pThis->pContext) == PA_CONTEXT_READY
         && pa_stream_get_state(pStrm->pPAStream) == PA_STREAM_READY)
     {
-        size_t cbSize;
-
         if (pStream->enmDir == PDMAUDIODIR_IN)
         {
-            cbSize = pa_stream_readable_size(pStrm->pPAStream);
-
-            if (cbSize)
-                strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
+            strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
         }
         else
         {
-            cbSize = pa_stream_writable_size(pStrm->pPAStream);
+            size_t cbSize = pa_stream_writable_size(pStrm->pPAStream);
+            LogFlowFunc(("cbSize=%zu\n", cbSize));
 
             if (cbSize >= pStrm->BufAttr.minreq)
                 strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
         }
-
-        LogFlowFunc(("cbSize=%zu\n", cbSize));
     }
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);

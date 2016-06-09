@@ -54,6 +54,7 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink);
 static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster);
 static void audioMixerSinkRemoveAllStreamsInternal(PAUDMIXSINK pSink);
 static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
+static void audioMixerSinkReset(PAUDMIXSINK pSink);
 static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink);
 
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
@@ -77,7 +78,6 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
         if (RT_SUCCESS(rc))
         {
             pSink->pParent  = pMixer;
-            pSink->cStreams = 0;
             pSink->enmDir   = enmDir;
             RTListInit(&pSink->lstStreams);
 
@@ -478,6 +478,10 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     else if (enmSinkCmd == AUDMIXSINKCMD_DISABLE)
         pSink->fStatus &= ~AUDMIXSINK_STS_RUNNING;
 
+    /* Not running anymore? Reset. */
+    if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
+        audioMixerSinkReset(pSink);
+
     LogFlowFunc(("[%s]: enmCmd=%ld, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pSink->fStatus, rc));
     return rc;
 }
@@ -527,6 +531,48 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
 
     RTMemFree(pSink);
     pSink = NULL;
+}
+
+/**
+ * Returns the amount of bytes ready to be read from a sink since the last call
+ * to AudioMixerSinkUpdate().
+ *
+ * @returns Amount of bytes ready to be read from the sink.
+ * @param   pSink           Sink to return number of available samples for.
+ */
+uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, 0);
+
+    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT, ("Can't read from a non-input sink\n"));
+
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
+    LogFlowFunc(("[%s]: cbReadable=%RU32\n", pSink->pszName, pSink->In.cbReadable));
+    return pSink->In.cbReadable;
+#endif
+}
+
+/**
+ * Returns the amount of bytes ready to be written to a sink since the last call
+ * to AudioMixerSinkUpdate().
+ *
+ * @returns Amount of bytes ready to be written to the sink.
+ * @param   pSink           Sink to return number of available samples for.
+ */
+uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
+{
+    AssertPtrReturn(pSink, 0);
+
+    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT, ("Can't write to a non-output sink\n"));
+
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
+    LogFlowFunc(("[%s]: cbWritable=%RU32\n", pSink->pszName, pSink->Out.cbWritable));
+    return pSink->Out.cbWritable;
+#endif
 }
 
 /**
@@ -720,6 +766,36 @@ static void audioMixerSinkRemoveAllStreamsInternal(PAUDMIXSINK pSink)
 }
 
 /**
+ * Resets the sink's state.
+ *
+ * @param   pSink       Sink to reset.
+ */
+static void audioMixerSinkReset(PAUDMIXSINK pSink)
+{
+    if (!pSink)
+        return;
+
+    LogFunc(("%s\n", pSink->pszName));
+
+    if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+    {
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+        AudioMixBufReset(&pSink->MixBuf);
+#else
+        pSink->In.cbReadable = 0;
+#endif
+    }
+    else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+    {
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+        AudioMixBufReset(&pSink->MixBuf);
+#else
+        pSink->Out.cbWritable = 0;
+#endif
+    }
+}
+
+/**
  * Removes all attached streams from a given sink.
  *
  * @param pSink         Sink to remove attached streams from.
@@ -791,18 +867,6 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
     return audioMixerSinkUpdateVolume(pSink, &pSink->pParent->VolMaster);
 }
 
-void AudioMixerSinkTimerUpdate(PAUDMIXSINK pSink, uint64_t cTimerTicks, uint64_t cTicksElapsed)
-{
-    AssertPtrReturnVoid(pSink);
-
-    /* Note: cTimerTicks / cTicksElapsed = Hz elapsed. */
-
-    LogFlowFunc(("[%s]: cTimerTicks=%RU64, cTicksElapsed=%RU64 -> %zuHz\n",
-                 pSink->pszName, cTimerTicks, cTicksElapsed, cTimerTicks / cTicksElapsed));
-
-    audioMixerSinkUpdateInternal(pSink);
-}
-
 static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
@@ -811,43 +875,80 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
     Log3Func(("[%s]\n", pSink->pszName));
 
+    /* Update last updated timestamp. */
+    pSink->tsLastUpdatedNS = RTTimeNanoTS();
+
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        PPDMAUDIOSTREAM pStream = pMixStream->pStream;
+        PPDMAUDIOSTREAM pStream   = pMixStream->pStream;
         AssertPtr(pStream);
+
+        PPDMIAUDIOCONNECTOR pConn = pMixStream->pConn;
+        AssertPtr(pConn);
 
         uint32_t cPlayed   = 0;
         uint32_t cCaptured = 0;
 
-        int rc2 = pMixStream->pConn->pfnStreamIterate(pMixStream->pConn, pStream);
+        int rc2 = pConn->pfnStreamIterate(pConn, pStream);
         if (RT_SUCCESS(rc2))
         {
-            if (pStream->enmDir == PDMAUDIODIR_IN)
+            if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
             {
-                rc = pMixStream->pConn->pfnStreamCapture(pMixStream->pConn, pMixStream->pStream, &cCaptured);
+                rc = pConn->pfnStreamCapture(pConn, pMixStream->pStream, &cCaptured);
                 if (RT_FAILURE(rc2))
                 {
-                    LogFlowFunc(("%s: Failed capture stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
+                    LogFlowFunc(("%s: Failed capturing stream '%s', rc=%Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
                     if (RT_SUCCESS(rc))
                         rc = rc2;
+                    continue;
                 }
 
                 if (cCaptured)
                     pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
             }
-            else if (pStream->enmDir == PDMAUDIODIR_OUT)
+            else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
             {
-                rc2 = pMixStream->pConn->pfnStreamPlay(pMixStream->pConn, pMixStream->pStream, &cPlayed);
+                rc2 = pConn->pfnStreamPlay(pConn, pMixStream->pStream, NULL /* cPlayed */);
                 if (RT_FAILURE(rc2))
                 {
-                    LogFlowFunc(("%s: Failed playing stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
+                    LogFlowFunc(("%s: Failed playing stream '%s', rc=%Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
                     if (RT_SUCCESS(rc))
                         rc = rc2;
+                    continue;
                 }
             }
             else
+            {
                 AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+                continue;
+            }
+
+            rc2 = pConn->pfnStreamIterate(pConn, pStream);
+            if (RT_FAILURE(rc2))
+            {
+                LogFlowFunc(("%s: Failed re-iterating stream '%s', rc=%Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+                continue;
+            }
+
+            if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+            {
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
+                pSink->In.cbReadable = pConn->pfnStreamGetReadable(pConn, pMixStream->pStream);
+#endif
+            }
+            else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+            {
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
+                pSink->Out.cbWritable = pConn->pfnStreamGetWritable(pConn, pMixStream->pStream);
+#endif
+            }
         }
 
         Log3Func(("\t%s: cPlayed=%RU32, cCaptured=%RU32\n", pMixStream->pStream->szName, cPlayed, cCaptured));
@@ -861,6 +962,19 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
 {
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+
+    uint64_t tsElapsed = RTTimeNanoTS() - pSink->tsLastUpdatedNS;
+
+    /*
+     * Note: Hz elapsed     = cTicksElapsed / cTimerTicks
+     *       Bytes / second = Sample rate (Hz) * Audio channels * Bytes per sample
+     */
+//    uint32_t cSamples = (int)((pSink->PCMProps.cChannels * cTicksElapsed * pSink->PCMProps.uHz + cTimerTicks) / cTimerTicks / pSink->PCMProps.cChannels);
+
+//    LogFlowFunc(("[%s]: cTimerTicks=%RU64, cTicksElapsed=%RU64\n", pSink->pszName, cTimerTicks, cTicksElapsed));
+//    LogFlowFunc(("\t%zuHz elapsed, %RU32 samples (%RU32 bytes)\n", cTicksElapsed / cTimerTicks, cSamples, cSamples << 1));
+
     return audioMixerSinkUpdateInternal(pSink);
 }
 

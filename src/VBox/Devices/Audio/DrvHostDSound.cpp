@@ -256,6 +256,9 @@ static int dsoundGetPosOut(PDRVHOSTDSOUND   pThis,
 {
     AssertPtrReturn(pThis,         VERR_INVALID_POINTER);
     AssertPtrReturn(pDSoundStream, VERR_INVALID_POINTER);
+    /* pdwBuffer is optional. */
+    /* pdwFree is optional. */
+    /* pdwPlayPos is optional. */
 
     LPDIRECTSOUNDBUFFER8 pDSB = pDSoundStream->pDSB;
     if (!pDSB)
@@ -304,7 +307,8 @@ static int dsoundGetPosOut(PDRVHOSTDSOUND   pThis,
             *pdwPlayPos = cbPlayPos;
     }
 
-    LogFlowFuncLeaveRC(rc);
+    if (RT_FAILURE(rc))
+        LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1539,8 +1543,8 @@ static DECLCALLBACK(int) drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDM
             break;
         cbFree     -= cbSample;
 
-        uint32_t csLive = AudioMixBufAvail(&pStream->MixBuf);
-        uint32_t cbLive = AUDIOMIXBUF_S2B(&pStream->MixBuf, csLive);
+        uint32_t cLive  = AudioMixBufLive(&pStream->MixBuf);
+        uint32_t cbLive = AUDIOMIXBUF_S2B(&pStream->MixBuf, cLive);
 
         /* Do not write more than available space in the DirectSound playback buffer. */
         cbLive = RT_MIN(cbFree, cbLive);
@@ -2236,7 +2240,18 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO
     {
         PDSOUNDSTREAMOUT pDSoundStream = (PDSOUNDSTREAMOUT)pStream;
         if (pDSoundStream->fEnabled)
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED | PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+        {
+            strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED;
+
+            DWORD cbFree;
+            int rc = dsoundGetPosOut(pThis, pDSoundStream, NULL /* cbBuffer */, &cbFree, NULL /* cbPlayPos */);
+            if (   RT_SUCCESS(rc)
+                && cbFree)
+            {
+                LogFlowFunc(("cbFree=%ld\n", cbFree));
+                strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+            }
+        }
     }
 
     return strmSts;

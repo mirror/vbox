@@ -159,7 +159,8 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
     PNULLAUDIOSTREAMOUT pNullStream = (PNULLAUDIOSTREAMOUT)pStream;
 
     /* Consume as many samples as would be played at the current frequency since last call. */
-    uint32_t csLive          = AudioMixBufAvail(&pStream->MixBuf);
+    uint32_t cLive           = AudioMixBufLive(&pStream->MixBuf);
+
     uint64_t u64TicksNow     = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
     uint64_t u64TicksElapsed = u64TicksNow  - pNullStream->u64TicksLast;
     uint64_t u64TicksFreq    = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
@@ -174,8 +175,8 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
     uint64_t cSamplesPlayed = (2 * u64TicksElapsed * pStream->Props.uHz + u64TicksFreq) / u64TicksFreq / 2;
 
     /* Don't play more than available. */
-    if (cSamplesPlayed > csLive)
-        cSamplesPlayed = csLive;
+    if (cSamplesPlayed > cLive)
+        cSamplesPlayed = cLive;
 
     cSamplesPlayed = RT_MIN(cSamplesPlayed, pNullStream->csPlayBuffer);
 

@@ -173,6 +173,9 @@ typedef enum PDMAUDIOSTREAMLAYOUT
     /** Interleaved access, where the data can be
      *  mixed together with data of other audio streams. */
     PDMAUDIOSTREAMLAYOUT_INTERLEAVED,
+    /** Complex layout, which does not fit into the
+     *  interleaved / non-interleaved layouts. */
+    PDMAUDIOSTREAMLAYOUT_COMPLEX,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMLAYOUT_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMLAYOUT, *PPDMAUDIOSTREAMLAYOUT;
@@ -502,19 +505,28 @@ typedef enum PDMAUDIOSTREAMCTX
     PDMAUDIOSTREAMCTX_GUEST
 } PDMAUDIOSTREAMCTX;
 
+/**
+ * Structure for keeping audio input stream specifics.
+ * Do not use directly. Instead, use PDMAUDIOSTREAM.
+ */
 typedef struct PDMAUDIOSTREAMIN
 {
-
 } PDMAUDIOSTREAMIN, *PPDMAUDIOSTREAMIN;
 
+/**
+ * Structure for keeping audio output stream specifics.
+ * Do not use directly. Instead, use PDMAUDIOSTREAM.
+ */
 typedef struct PDMAUDIOSTREAMOUT
 {
-
 } PDMAUDIOSTREAMOUT, *PPDMAUDIOSTREAMOUT;
 
 struct PDMAUDIOSTREAM;
 typedef PDMAUDIOSTREAM *PPDMAUDIOSTREAM;
 
+/**
+ * Structure for maintaining an nput/output audio stream.
+ */
 typedef struct PDMAUDIOSTREAM
 {
     /** List node. */
@@ -537,11 +549,12 @@ typedef struct PDMAUDIOSTREAM
     PDMAUDIODIR            enmDir;
     /** Context of this stream. */
     PDMAUDIOSTREAMCTX      enmCtx;
-    typedef union
+    /** Union for input/output specifics. */
+    union
     {
         PDMAUDIOSTREAMIN   In;
         PDMAUDIOSTREAMOUT  Out;
-    } InOut;
+    };
 } PDMAUDIOSTREAM, *PPDMAUDIOSTREAM;
 
 /** Pointer to a audio connector interface. */
@@ -698,7 +711,25 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
-     * Retrieves the status of a specific audio stream.
+     * Returns the number of readable data (in bytes) of a specific audio input stream.
+     *
+     * @returns Number of readable data (in bytes).
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pStream         Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetReadable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+
+    /**
+     * Returns the number of writable data (in bytes) of a specific audio output stream.
+     *
+     * @returns Number of writable data (in bytes).
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pStream         Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+
+    /**
+     * Returns the status of a specific audio stream.
      *
      * @returns Audio stream status
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -742,7 +773,7 @@ typedef struct PDMIAUDIOCONNECTOR
 } PDMIAUDIOCONNECTOR;
 
 /** PDMIAUDIOCONNECTOR interface ID. */
-#define PDMIAUDIOCONNECTOR_IID                  "D1B6465D-E3DD-455B-9E05-FB6D56F7D472"
+#define PDMIAUDIOCONNECTOR_IID                  "C850CCE0-C5F4-42AB-BFC5-BACB41A8284D"
 
 
 

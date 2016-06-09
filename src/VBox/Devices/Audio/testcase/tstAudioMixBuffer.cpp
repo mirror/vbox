@@ -230,19 +230,19 @@ static int tstParentChild(RTTEST hTest)
         RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteAt(&child1, 0, &samples, sizeof(samples), &written));
         RTTESTI_CHECK_MSG_BREAK(written == cSamplesChild1, ("Child1: Expected %RU32 written samples, got %RU32\n", cSamplesChild1, written));
         RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufMixToParent(&child1, written, &mixed));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufMixed(&child1) == mixed, ("Child1: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufMixed(&child1), mixed));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child1) == AUDIOMIXBUF_S2S_RATIO(&parent, mixed), ("Child1: Expected %RU32 used samples, got %RU32\n", AudioMixBufMixed(&child1), AUDIOMIXBUF_S2S_RATIO(&parent, mixed)));
+        RTTESTI_CHECK_MSG_BREAK(AudioMixBufLive(&child1) == mixed, ("Child1: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufLive(&child1), mixed));
+        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child1) == AUDIOMIXBUF_S2S_RATIO(&parent, mixed), ("Child1: Expected %RU32 used samples, got %RU32\n", AudioMixBufLive(&child1), AUDIOMIXBUF_S2S_RATIO(&parent, mixed)));
         RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&parent) == 0, ("Parent: Expected 0 used samples, got %RU32\n", AudioMixBufUsed(&parent)));
 
         RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteAt(&child2, 0, &samples, sizeof(samples), &written));
         RTTESTI_CHECK_MSG_BREAK(written == cSamplesChild2, ("Child2: Expected %RU32 written samples, got %RU32\n", cSamplesChild2, written));
         RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufMixToParent(&child2, written, &mixed));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufMixed(&child2) == mixed, ("Child2: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufMixed(&child2), AudioMixBufUsed(&parent)));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child2) == AUDIOMIXBUF_S2S_RATIO(&parent, mixed), ("Child2: Expected %RU32 used samples, got %RU32\n", AudioMixBufMixed(&child2), AUDIOMIXBUF_S2S_RATIO(&parent, mixed)));
+        RTTESTI_CHECK_MSG_BREAK(AudioMixBufLive(&child2) == mixed, ("Child2: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufLive(&child2), AudioMixBufUsed(&parent)));
+        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child2) == AUDIOMIXBUF_S2S_RATIO(&parent, mixed), ("Child2: Expected %RU32 used samples, got %RU32\n", AudioMixBufLive(&child2), AUDIOMIXBUF_S2S_RATIO(&parent, mixed)));
         RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&parent) == 0, ("Parent2: Expected 0 used samples, got %RU32\n", AudioMixBufUsed(&parent)));
     }
 
-    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufMixed(&child1) + AudioMixBufMixed(&child2));
+    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufLive(&child1) + AudioMixBufLive(&child2));
 
     for (;;)
     {
@@ -253,8 +253,8 @@ static int tstParentChild(RTTEST hTest)
     }
 
     RTTESTI_CHECK(AudioMixBufUsed(&parent) == 0);
-    RTTESTI_CHECK(AudioMixBufMixed(&child1) == 0);
-    RTTESTI_CHECK(AudioMixBufMixed(&child2) == 0);
+    RTTESTI_CHECK(AudioMixBufLive(&child1) == 0);
+    RTTESTI_CHECK(AudioMixBufLive(&child2) == 0);
 
     AudioMixBufDestroy(&parent);
     AudioMixBufDestroy(&child1);
@@ -337,9 +337,9 @@ static int tstConversion8(RTTEST hTest)
     RTTESTI_CHECK_MSG(written == cSamplesChild, ("Child: Expected %RU32 written samples, got %RU32\n", cSamplesChild, written));
     RTTESTI_CHECK_RC_OK(AudioMixBufMixToParent(&child, written, &mixed));
     temp = AudioMixBufUsed(&parent);
-    RTTESTI_CHECK_MSG(AudioMixBufMixed(&child) == temp, ("Child: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufMixed(&child), temp));
+    RTTESTI_CHECK_MSG(AudioMixBufLive(&child) == temp, ("Child: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufLive(&child), temp));
 
-    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufMixed(&child));
+    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufLive(&child));
 
     for (;;)
     {
@@ -365,7 +365,7 @@ static int tstConversion8(RTTEST hTest)
     }
 
     RTTESTI_CHECK(AudioMixBufUsed(&parent) == 0);
-    RTTESTI_CHECK(AudioMixBufMixed(&child) == 0);
+    RTTESTI_CHECK(AudioMixBufLive(&child)  == 0);
 
     AudioMixBufDestroy(&parent);
     AudioMixBufDestroy(&child);
@@ -440,9 +440,9 @@ static int tstConversion16(RTTEST hTest)
     RTTESTI_CHECK_MSG(written == cSamplesChild, ("Child: Expected %RU32 written samples, got %RU32\n", cSamplesChild, written));
     RTTESTI_CHECK_RC_OK(AudioMixBufMixToParent(&child, written, &mixed));
     temp = AudioMixBufUsed(&parent);
-    RTTESTI_CHECK_MSG(AudioMixBufMixed(&child) == temp, ("Child: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufMixed(&child), temp));
+    RTTESTI_CHECK_MSG(AudioMixBufLive(&child) == temp, ("Child: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufLive(&child), temp));
 
-    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufMixed(&child));
+    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufLive(&child));
 
     for (;;)
     {
@@ -467,7 +467,7 @@ static int tstConversion16(RTTEST hTest)
     }
 
     RTTESTI_CHECK(AudioMixBufUsed(&parent) == 0);
-    RTTESTI_CHECK(AudioMixBufMixed(&child) == 0);
+    RTTESTI_CHECK(AudioMixBufLive(&child)  == 0);
 
     AudioMixBufDestroy(&parent);
     AudioMixBufDestroy(&child);

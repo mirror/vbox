@@ -190,26 +190,6 @@ int AudioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
 }
 
 /**
- * Returns available number of samples for processing.
- *
- * @return  uint32_t                Number of samples available for reading.
- * @param   pMixBuf                 Mixing buffer to return value for.
- */
-uint32_t AudioMixBufAvail(PPDMAUDIOMIXBUF pMixBuf)
-{
-    AssertPtrReturn(pMixBuf, 0);
-
-    uint32_t cAvail;
-    if (pMixBuf->pParent) /* Is this a child buffer? */
-        cAvail = pMixBuf->cMixed;
-    else
-        cAvail = pMixBuf->cUsed;
-
-    Assert(cAvail <= pMixBuf->cSamples);
-    return cAvail;
-}
-
-/**
  * Clears the entire sample buffer.
  *
  * @param   pMixBuf                 Mixing buffer to clear.
@@ -326,23 +306,26 @@ uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
-    uint32_t cSamplesFree;
+    uint32_t cSamples, cSamplesFree;
     if (pMixBuf->pParent)
     {
         /*
          * As a linked child buffer we want to know how many samples
          * already have been consumed by the parent.
          */
-        Assert(pMixBuf->cMixed <= pMixBuf->pParent->cSamples);
-        cSamplesFree = pMixBuf->pParent->cSamples - pMixBuf->cMixed;
+        cSamples = pMixBuf->pParent->cSamples;
+
+        Assert(pMixBuf->cMixed <= cSamples);
+        cSamplesFree = cSamples - pMixBuf->cMixed;
     }
     else /* As a parent. */
     {
-        Assert(pMixBuf->cSamples >= pMixBuf->cUsed);
+        cSamples     = pMixBuf->cSamples;
+        Assert(cSamples >= pMixBuf->cUsed);
         cSamplesFree = pMixBuf->cSamples - pMixBuf->cUsed;
     }
 
-    AUDMIXBUF_LOG(("%s: cSamplesFree=%RU32\n", pMixBuf->pszName, cSamplesFree));
+    AUDMIXBUF_LOG(("%s: %RU32 of %RU32\n", pMixBuf->pszName, cSamplesFree, cSamples));
     return cSamplesFree;
 }
 
@@ -919,22 +902,32 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
 }
 
 /**
- * Returns the number of audio samples mixed (processed) by
- * the parent mixing buffer.
+ * Returns number of available live samples.
  *
- * @return  uint32_t                Number of audio samples mixed (processed).
- * @param   pMixBuf                 Mixing buffer to return number from.
+ * @return  uint32_t                Number of live samples available.
+ * @param   pMixBuf                 Mixing buffer to return value for.
  */
-uint32_t AudioMixBufMixed(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
-    AssertMsgReturn(VALID_PTR(pMixBuf->pParent),
-                              ("Buffer is not linked to a parent buffer\n"),
-                              0);
+    uint32_t cSamples, cAvail;
+    if (pMixBuf->pParent) /* Is this a child buffer? */
+    {
+        /* Use the sample count from the parent, as
+         * pMixBuf->cMixed specifies the sample count
+         * in parent samples. */
+        cSamples = pMixBuf->pParent->cSamples;
+        cAvail   = pMixBuf->cMixed;
+    }
+    else
+    {
+        cSamples = pMixBuf->cSamples;
+        cAvail   = pMixBuf->cUsed;
+    }
 
-    AUDMIXBUF_LOG(("%s: cMixed=%RU32\n", pMixBuf->pszName, pMixBuf->cMixed));
-    return pMixBuf->cMixed;
+    Assert(cAvail <= cSamples);
+    return cAvail;
 }
 
 /**
@@ -943,10 +936,10 @@ uint32_t AudioMixBufMixed(PPDMAUDIOMIXBUF pMixBuf)
  * @return  IPRT status code.
  * @param   pDst                    Destination mixing buffer.
  * @param   pSrc                    Source mixing buffer.
- * @param   cSamples                Number of source audio samples to mix.
+ * @param   cSrcSamples             Number of source audio samples to mix.
  * @param   pcProcessed             Number of audio samples successfully mixed.
  */
-static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t cSamples, uint32_t *pcProcessed)
+static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t cSrcSamples, uint32_t *pcProcessed)
 {
     AssertPtrReturn(pDst,  VERR_INVALID_POINTER);
     AssertPtrReturn(pSrc,  VERR_INVALID_POINTER);
@@ -968,7 +961,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 
     Assert(pSrc->cUsed >= pDst->cMixed);
 
-    uint32_t cSrcAvail  = RT_MIN(cSamples, pSrc->cUsed - pDst->cMixed);
+    uint32_t cSrcAvail  = RT_MIN(cSrcSamples, pSrc->cUsed - pDst->cMixed);
     uint32_t offSrcRead = pSrc->offRead;
     uint32_t cDstMixed  = pSrc->cMixed;
 
@@ -984,7 +977,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
         return VINF_SUCCESS;
     }
 
-    AUDMIXBUF_LOG(("cSamples=%RU32, cSrcAvail=%RU32 -> cDstAvail=%RU32\n", cSamples,  cSrcAvail, cDstAvail));
+    AUDMIXBUF_LOG(("cSrcSamples=%RU32, cSrcAvail=%RU32 -> cDstAvail=%RU32\n", cSrcSamples,  cSrcAvail, cDstAvail));
 
 #ifdef DEBUG
     audioMixBufDbgPrintInternal(pDst);
@@ -1093,7 +1086,8 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
  *
  * @return  IPRT status code.
  * @param   pMixBuf                 Mixing buffer to mix samples down to parent.
- * @param   cSamples                Number of audio samples to mix down.
+ * @param   cSamples                Number of audio samples of specified mixing buffer to to mix
+ *                                  to its attached parent mixing buffer (if any).
  * @param   pcProcessed             Number of audio samples successfully processed. Optional.
  */
 int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,

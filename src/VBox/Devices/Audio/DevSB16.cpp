@@ -1784,7 +1784,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
     pThis->uTimerTSIO = cTicksNow;
 
-    bool fIsPlaying = false;
+    bool     fIsPlaying = false;
+    uint32_t cbWritable = UINT32_MAX;
 
     LogFlowFuncEnter();
 
@@ -1795,22 +1796,38 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         if (!pStream)
             continue;
 
-        int rc2 = pDrv->pConnector->pfnStreamIterate(pDrv->pConnector, pStream);
+        PPDMIAUDIOCONNECTOR pConn = pDrv->pConnector;
+        if (!pConn)
+            continue;
+
+        int rc2 = pConn->pfnStreamIterate(pConn, pStream);
         if (RT_SUCCESS(rc2))
         {
             if (pStream->enmDir == PDMAUDIODIR_IN)
             {
-                /** @todo Implement this! */
+                /** @todo Implement recording! */
             }
             else
             {
-                rc2 = pDrv->pConnector->pfnStreamPlay(pDrv->pConnector, pStream, NULL /* cPlayed */);
+                rc2 = pConn->pfnStreamPlay(pConn, pStream, NULL /* cPlayed */);
                 if (RT_FAILURE(rc2))
+                {
                     LogFlowFunc(("%s: Failed playing stream, rc=%Rrc\n", pStream->szName, rc2));
+                    continue;
+                }
+
+                rc2 = pConn->pfnStreamIterate(pConn, pStream);
+                if (RT_FAILURE(rc2))
+                {
+                    LogFlowFunc(("%s: Failed re-iterating stream, rc=%Rrc\n", pStream->szName, rc2));
+                    continue;
+                }
+
+                cbWritable = RT_MIN(pConn->pfnStreamGetWritable(pConn, pStream), cbWritable);
             }
         }
 
-        PDMAUDIOSTRMSTS strmSts = pDrv->pConnector->pfnStreamGetStatus(pDrv->pConnector, pStream);
+        PDMAUDIOSTRMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
         fIsPlaying |= (   (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
                        || (strmSts & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE));
 
@@ -1820,8 +1837,11 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     if (   ASMAtomicReadBool(&pThis->fTimerActive)
         || fIsPlaying)
     {
-        /* Schedule the next transfer. */
-        PDMDevHlpDMASchedule(pThis->pDevInsR3);
+        if (cbWritable)
+        {
+            /* Schedule the next transfer. */
+            PDMDevHlpDMASchedule(pThis->pDevInsR3);
+        }
 
         /* Kick the timer again. */
         uint64_t cTicks = pThis->cTimerTicksIO;

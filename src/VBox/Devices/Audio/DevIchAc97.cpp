@@ -423,7 +423,7 @@ static void ichac97TimerMaybeStart(PAC97STATE pThis);
 static void ichac97TimerMaybeStop(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif
-static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream);
+static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcess, uint32_t *pcbProcessed);
 
 static void ichac97WarmReset(PAC97STATE pThis)
 {
@@ -529,10 +529,11 @@ static void ichac97StreamUpdateStatus(PAC97STATE pThis, PAC97STREAM pStream, uin
 
 static bool ichac97StreamIsActive(PAC97STATE pThis, PAC97STREAM pStream)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   false);
+    AssertPtrReturn(pStream, false);
 
-    bool fActive = AudioMixerSinkGetStatus(ichac97IndexToSink(pThis, pStream->u8Strm));
+    PAUDMIXSINK pSink = ichac97IndexToSink(pThis, pStream->u8Strm);
+    bool fActive = RT_BOOL(AudioMixerSinkGetStatus(pSink) & AUDMIXSINK_STS_RUNNING);
 
     LogFlowFunc(("SD=%RU8, fActive=%RTbool\n", pStream->u8Strm, fActive));
     return fActive;
@@ -1320,13 +1321,13 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbTo
 
 static void ichac97TimerMaybeStart(PAC97STATE pThis)
 {
-    LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
-
     if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
         return;
 
     if (!pThis->pTimer)
         return;
+
+    LogFlowFunc(("Starting timer\n"));
 
     /* Set timer flag. */
     ASMAtomicXchgBool(&pThis->fTimerActive, true);
@@ -1340,13 +1341,13 @@ static void ichac97TimerMaybeStart(PAC97STATE pThis)
 
 static void ichac97TimerMaybeStop(PAC97STATE pThis)
 {
-    LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
-
     if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
         return;
 
     if (!pThis->pTimer)
         return;
+
+    LogFlowFunc(("Stopping timer\n"));
 
     /* Set timer flag. */
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
@@ -1373,20 +1374,40 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
      * new data processing round. */
     bool fKickTimer = false;
 
-    AudioMixerSinkTimerUpdate(pThis->pSinkLineIn, pThis->cTimerTicks, cTicksPerSec);
-    ichac97TransferAudio(pThis, &pThis->StreamLineIn);
+    uint32_t cbToProcess;
 
-    fKickTimer = AudioMixerSinkGetStatus(pThis->pSinkLineIn) & AUDMIXSINK_STS_DIRTY;
+    int rc = AudioMixerSinkUpdate(pThis->pSinkLineIn);
+    if (RT_SUCCESS(rc))
+    {
+        cbToProcess = AudioMixerSinkGetReadable(pThis->pSinkLineIn);
+        if (cbToProcess)
+        {
+            rc = ichac97TransferAudio(pThis, &pThis->StreamLineIn, cbToProcess, NULL /* pcbProcessed */);
+            fKickTimer |= RT_SUCCESS(rc);
+        }
+    }
 
-    AudioMixerSinkTimerUpdate(pThis->pSinkMicIn , pThis->cTimerTicks, cTicksPerSec);
-    ichac97TransferAudio(pThis, &pThis->StreamMicIn);
+    rc = AudioMixerSinkUpdate(pThis->pSinkMicIn);
+    if (RT_SUCCESS(rc))
+    {
+        cbToProcess = AudioMixerSinkGetReadable(pThis->pSinkMicIn);
+        if (cbToProcess)
+        {
+            rc = ichac97TransferAudio(pThis, &pThis->StreamMicIn, cbToProcess, NULL /* pcbProcessed */);
+            fKickTimer |= RT_SUCCESS(rc);
+        }
+    }
 
-    fKickTimer = AudioMixerSinkGetStatus(pThis->pSinkMicIn) & AUDMIXSINK_STS_DIRTY;
-
-    AudioMixerSinkTimerUpdate(pThis->pSinkOutput, pThis->cTimerTicks, cTicksPerSec);
-    ichac97TransferAudio(pThis, &pThis->StreamOut);
-
-    fKickTimer = AudioMixerSinkGetStatus(pThis->pSinkOutput) & AUDMIXSINK_STS_DIRTY;
+    rc = AudioMixerSinkUpdate(pThis->pSinkOutput);
+    if (RT_SUCCESS(rc))
+    {
+        cbToProcess = AudioMixerSinkGetReadable(pThis->pSinkOutput);
+        if (cbToProcess)
+        {
+            rc = ichac97TransferAudio(pThis, &pThis->StreamOut, cbToProcess, NULL /* pcbProcessed */);
+            fKickTimer |= RT_SUCCESS(rc);
+        }
+    }
 
     if (   ASMAtomicReadBool(&pThis->fTimerActive)
         || fKickTimer)
@@ -1402,8 +1423,12 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
 #endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
-static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
+static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcess, uint32_t *pcbProcessed)
 {
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    /* pcbProcessed is optional. */
+
     Log3Func(("SD=%RU8\n", pStream->u8Strm));
 
     PAC97BMREGS pRegs = &pStream->Regs;
@@ -1415,7 +1440,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
             switch (pStream->u8Strm)
             {
                 case PO_INDEX:
-                    ichac97WriteBUP(pThis, (uint32_t)(pRegs->picb << 1));
+                    ichac97WriteBUP(pThis, cbToProcess);
                     break;
 
                 default:
@@ -1423,17 +1448,25 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
             }
         }
 
+        if (pcbProcessed)
+            *pcbProcessed = 0;
         return VINF_SUCCESS;
     }
 
     /* BCIS flag still set? Skip iteration. */
     if (pRegs->sr & SR_BCIS)
+    {
+        if (pcbProcessed)
+            *pcbProcessed = 0;
         return VINF_SUCCESS;
+    }
 
     int rc = VINF_SUCCESS;
-    uint32_t cbWrittenTotal = 0;
 
-    do
+    uint32_t cbLeft  = cbToProcess;
+    uint32_t cbTotal = 0;
+
+    while (cbLeft)
     {
         if (!pRegs->bd_valid)
         {
@@ -1473,9 +1506,11 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
                 if (   RT_SUCCESS(rc)
                     && cbTransferred)
                 {
-                    cbWrittenTotal += cbTransferred;
+                    cbTotal     += cbTransferred;
+                    Assert(cbLeft >= cbTransferred);
+                    cbLeft      -= cbTransferred;
                     Assert((cbTransferred & 1) == 0); /* Else the following shift won't work */
-                    pRegs->picb    -= (cbTransferred >> 1); /** @todo r=andy Assumes 16bit samples. */
+                    pRegs->picb -= (cbTransferred >> 1); /** @todo r=andy Assumes 16bit samples. */
                 }
                 break;
             }
@@ -1489,6 +1524,9 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
                 if (   RT_SUCCESS(rc)
                     && cbTransferred)
                 {
+                    cbTotal     += cbTransferred;
+                    Assert(cbLeft >= cbTransferred);
+                    cbLeft      -= cbTransferred;
                     Assert((cbTransferred & 1) == 0); /* Else the following shift won't work */
                     pRegs->picb -= (cbTransferred >> 1); /** @todo r=andy Assumes 16bit samples. */
                 }
@@ -1501,8 +1539,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
                 break;
         }
 
-        Log3Func(("PICB=%RU16 (%#x), cbTransferred=%RU32 (%zu samples), cbWrittenTotal=%RU32\n",
-                  pRegs->picb, pRegs->picb, cbTransferred, (cbTransferred >> 1), cbWrittenTotal));
+        LogFlowFunc(("[SD%RU8]: %RU32 / %RU32, rc=%Rrc\n", pStream->u8Strm, cbTotal, cbToProcess, rc));
 
         if (!pRegs->picb)
         {
@@ -1535,8 +1572,13 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream)
 
         if (rc == VINF_EOF) /* All data processed? */
             break;
+    }
 
-    } while (RT_SUCCESS(rc));
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbProcessed)
+            *pcbProcessed = cbTotal;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

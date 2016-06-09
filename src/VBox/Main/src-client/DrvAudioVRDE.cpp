@@ -253,7 +253,8 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface,
     PVRDESTREAMOUT pVRDEStrmOut = (PVRDESTREAMOUT)pStream;
     AssertPtrReturn(pVRDEStrmOut, VERR_INVALID_POINTER);
 
-    uint32_t live = AudioMixBufAvail(&pStream->MixBuf);
+    uint32_t cLive = AudioMixBufLive(&pStream->MixBuf);
+
     uint64_t now = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
     uint64_t ticks = now  - pVRDEStrmOut->old_ticks;
     uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
@@ -262,8 +263,8 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface,
     uint32_t cSamplesPlayed = (int)((2 * ticks * pStream->Props.uHz + ticks_per_second) / ticks_per_second / 2);
 
     /* Don't play more than available. */
-    if (cSamplesPlayed > live)
-        cSamplesPlayed = live;
+    if (cSamplesPlayed > cLive)
+        cSamplesPlayed = cLive;
 
     /* Remember when samples were consumed. */
     pVRDEStrmOut->old_ticks = now;
