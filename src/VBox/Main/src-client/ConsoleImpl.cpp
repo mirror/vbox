@@ -5292,7 +5292,6 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
         fireVRDEServerChangedEvent(mEventSource);
     }
 
-    LogRel(("RETURN %Rhrc\n", rc));
     return rc;
 }
 
