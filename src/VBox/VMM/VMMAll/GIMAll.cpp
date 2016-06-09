@@ -20,11 +20,13 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
-#include "GIMInternal.h"
-#include <VBox/err.h>
-#include <VBox/dis.h>       /* For DISCPUSTATE */
+#include <VBox/vmm/gim.h>
 #include <VBox/vmm/em.h>    /* For EMInterpretDisasCurrent */
+#include "GIMInternal.h"
 #include <VBox/vmm/vm.h>
+
+#include <VBox/dis.h>       /* For DISCPUSTATE */
+#include <VBox/err.h>
 
 /* Include all the providers. */
 #include "GIMHvInternal.h"

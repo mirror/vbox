@@ -20,13 +20,13 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
-#include "GIMInternal.h"
-#include "GIMKvmInternal.h"
-
-#include <VBox/err.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/tm.h>
+#include "GIMInternal.h"
+#include "GIMKvmInternal.h"
 #include <VBox/vmm/vm.h>
+
+#include <VBox/err.h>
 
 #include <iprt/spinlock.h>
 

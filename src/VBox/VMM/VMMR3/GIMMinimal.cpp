@@ -20,17 +20,17 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
+#include <VBox/vmm/gim.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/pdmapi.h>
 #include "GIMInternal.h"
+#include <VBox/vmm/vm.h>
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
-
-#include <VBox/vmm/cpum.h>
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/tm.h>
-#include <VBox/vmm/pdmapi.h>
 
 
 /*********************************************************************************************************************************

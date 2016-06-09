@@ -20,7 +20,16 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
+#include <VBox/vmm/gim.h>
+#include <VBox/vmm/cpum.h>
+#include <VBox/vmm/hm.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/ssm.h>
 #include "GIMInternal.h"
+#include <VBox/vmm/vm.h>
+
+#include <VBox/disopcode.h>
+#include <VBox/version.h>
 
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
@@ -29,13 +38,6 @@
 #include <iprt/mem.h>
 #include <iprt/spinlock.h>
 
-#include <VBox/vmm/cpum.h>
-#include <VBox/disopcode.h>
-#include <VBox/vmm/ssm.h>
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/hm.h>
-#include <VBox/vmm/pdmapi.h>
-#include <VBox/version.h>
 
 
 /*********************************************************************************************************************************

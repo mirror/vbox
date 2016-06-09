@@ -20,11 +20,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
+#include <VBox/vmm/gim.h>
 #include "GIMInternal.h"
 #include "GIMHvInternal.h"
+#include <VBox/vmm/vm.h>
 
 #include <VBox/err.h>
-#include <VBox/vmm/vm.h>
 
 
 /**

@@ -50,12 +50,14 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
-#include <VBox/log.h>
-#include "GIMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pdmdev.h>
+#include "GIMInternal.h"
+#include <VBox/vmm/vm.h>
+
+#include <VBox/log.h>
 
 #include <iprt/err.h>
 #include <iprt/semaphore.h>
