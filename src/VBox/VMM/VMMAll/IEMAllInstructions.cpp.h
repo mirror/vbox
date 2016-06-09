@@ -1512,6 +1512,7 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
     /* Quick hack. Need to restructure all of this later some time. */
     if (pIemCpu->fPrefixes == 0)
     {
+        IEMOP_MNEMONIC("movups Wps,Vps");
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
         {
@@ -1557,8 +1558,63 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
 
 /** Opcode 0x0f 0x12. */
 FNIEMOP_STUB(iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__movddup_Vq_Wq); //NEXT
+
+
 /** Opcode 0x0f 0x13. */
-FNIEMOP_STUB(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq); //NEXT
+FNIEMOP_DEF(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq)
+{
+    /* Quick hack. Need to restructure all of this later some time. */
+    if (pIemCpu->fPrefixes == IEM_OP_PRF_SIZE_OP)
+    {
+        IEMOP_MNEMONIC("movlpd Mq,Vq");
+        uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+        if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        {
+#if 0
+            /*
+             * Register, register.
+             */
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_LOCAL(uint64_t,                  uSrc);
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+            IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+            IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+            IEM_MC_STORE_XREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, uSrc);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+#else
+            return IEMOP_RAISE_INVALID_OPCODE();
+#endif
+        }
+        else
+        {
+            /*
+             * Memory, register.
+             */
+            IEM_MC_BEGIN(0, 2);
+            IEM_MC_LOCAL(uint64_t,                  uSrc);
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ - yes it generally is! */
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+            IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+            IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+            IEM_MC_STORE_MEM_U64(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        return VINF_SUCCESS;
+    }
+
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
+
+
 /** Opcode 0x0f 0x14. */
 FNIEMOP_STUB(iemOp_unpckhlps_Vps_Wq__unpcklpd_Vpd_Wq);
 /** Opcode 0x0f 0x15. */
