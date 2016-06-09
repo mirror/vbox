@@ -1804,7 +1804,7 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
         /*
-         * Register, memory.
+         * memory, register.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
@@ -1818,8 +1818,8 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
             IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
         IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
 
-        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
-        IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, uSrc);
+        IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+        IEM_MC_STORE_MEM_U128_ALIGN_SSE(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
