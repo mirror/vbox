@@ -692,6 +692,31 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
         Log(("nvramWriteVariableOpAdd: Too many variabled.\n"));
     }
 
+    /*
+     * Log the value of bugcheck variables.
+     */
+    if (   (   pThis->NVRAM.VarOpBuf.cbValue == 4
+            || pThis->NVRAM.VarOpBuf.cbValue == 8)
+        && (   strcmp(pThis->NVRAM.VarOpBuf.szName, "BugCheckCode") == 0
+            || strcmp(pThis->NVRAM.VarOpBuf.szName, "BugCheckParameter0") == 0
+            || strcmp(pThis->NVRAM.VarOpBuf.szName, "BugCheckParameter1") == 0
+            || strcmp(pThis->NVRAM.VarOpBuf.szName, "BugCheckParameter2") == 0
+            || strcmp(pThis->NVRAM.VarOpBuf.szName, "BugCheckParameter3") == 0
+            || strcmp(pThis->NVRAM.VarOpBuf.szName, "BugCheckProgress")   == 0 ) )
+    {
+        if (pThis->NVRAM.VarOpBuf.cbValue == 4)
+            LogRel(("EFI: %RTuuid::'%s' = %#010RX32\n", &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName,
+                    RT_MAKE_U32_FROM_U8(pThis->NVRAM.VarOpBuf.abValue[0], pThis->NVRAM.VarOpBuf.abValue[1],
+                                        pThis->NVRAM.VarOpBuf.abValue[2], pThis->NVRAM.VarOpBuf.abValue[3])));
+        else
+            LogRel(("EFI: %RTuuid::'%s' = %#018RX64\n", &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName,
+                    RT_MAKE_U64_FROM_U8(pThis->NVRAM.VarOpBuf.abValue[0], pThis->NVRAM.VarOpBuf.abValue[1],
+                                        pThis->NVRAM.VarOpBuf.abValue[2], pThis->NVRAM.VarOpBuf.abValue[3],
+                                        pThis->NVRAM.VarOpBuf.abValue[4], pThis->NVRAM.VarOpBuf.abValue[5],
+                                        pThis->NVRAM.VarOpBuf.abValue[6], pThis->NVRAM.VarOpBuf.abValue[7])));
+    }
+
+
     LogFunc(("cVariables=%u u32Status=%#x\n", pThis->NVRAM.cVariables, pThis->NVRAM.u32Status));
     return VINF_SUCCESS;
 }
