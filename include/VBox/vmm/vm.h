@@ -323,7 +323,7 @@ typedef struct VMCPU
  *
  *
  * Available VMCPU bits:
- *      10, 11, 14, 15, 31
+ *      11, 14, 15, 31
  *
  * @todo If we run low on VMCPU, we may consider merging the SELM bits
  *
@@ -406,10 +406,13 @@ typedef struct VMCPU
 /** This action forces the VM to update APIC's asynchronously arrived
  *  interrupts as pending interrupts. */
 #define VMCPU_FF_UPDATE_APIC                RT_BIT_32(VMCPU_FF_UPDATE_APIC_BIT)
-
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VMCPU_FF_REQUEST                    RT_BIT_32(9)
+/** Pending DBGF event (alternative to passing VINF_EM_DBG_EVENT around).  */
+#define VMCPU_FF_DBGF                       RT_BIT_32(VMCPU_FF_DBGF_BIT)
+/** The bit number for VMCPU_FF_DBGF. */
+#define VMCPU_FF_DBGF_BIT                   10
 /** This action forces the VM to service any pending updates to CR3 (used only
  *  by HM). */
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_32(12)
@@ -467,73 +470,72 @@ typedef struct VMCPU
 #endif /* VBOX_WITH_RAW_MODE */
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
-#define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_EXTERNAL_SUSPENDED_MASK           (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS )
 /** Externally VMCPU forced actions. Used to quit the idle/wait loop. */
-#define VMCPU_FF_EXTERNAL_SUSPENDED_MASK        (VMCPU_FF_REQUEST)
+#define VMCPU_FF_EXTERNAL_SUSPENDED_MASK        (  VMCPU_FF_REQUEST  | VMCPU_FF_DBGF )
 
 /** Externally forced VM actions. Used to quit the idle/wait loop. */
-#define VM_FF_EXTERNAL_HALTED_MASK              (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST \
-                                                 | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_EXTERNAL_HALTED_MASK              (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF    | VM_FF_REQUEST \
+                                                 | VM_FF_PDM_QUEUES     | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS )
 /** Externally forced VMCPU actions. Used to quit the idle/wait loop. */
 #define VMCPU_FF_EXTERNAL_HALTED_MASK           (  VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
-                                                 | VMCPU_FF_REQUEST     | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI \
-                                                 | VMCPU_FF_UNHALT      | VMCPU_FF_TIMER)
+                                                 | VMCPU_FF_REQUEST     | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI \
+                                                 | VMCPU_FF_UNHALT      | VMCPU_FF_TIMER          | VMCPU_FF_DBGF )
 
 /** High priority VM pre-execution actions. */
-#define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_TM_VIRTUAL_SYNC \
-                                                 | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
-                                                 | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF                 | VM_FF_TM_VIRTUAL_SYNC \
+                                                 | VM_FF_DEBUG_SUSPEND  | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
+                                                 | VM_FF_EMT_RENDEZVOUS )
 /** High priority VMCPU pre-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
-                                                 | VMCPU_FF_UPDATE_APIC \
+#define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
+                                                 | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF \
                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
-                                                 | VMCPU_FF_INHIBIT_INTERRUPTS \
                                                  | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
                                                                     | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0 ) )
 
 /** High priority VM pre raw-mode execution mask. */
-#define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK        (VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)
+#define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK        (  VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY )
 /** High priority VMCPU pre raw-mode execution mask. */
 #define VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK     (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
                                                  | VMCPU_FF_INHIBIT_INTERRUPTS \
-                                                 | VM_WHEN_RAW_MODE( VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
+                                                 | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
                                                                     | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0) )
 
 /** High priority post-execution actions. */
-#define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PGM_NO_MEMORY)
+#define VM_FF_HIGH_PRIORITY_POST_MASK           (  VM_FF_PGM_NO_MEMORY )
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT  | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
                                                  | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES \
-                                                 | VMCPU_FF_IEM | VMCPU_FF_IOM )
+                                                 | VMCPU_FF_IEM           | VMCPU_FF_IOM )
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
-                                                 | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
+                                                 | VM_FF_PGM_NO_MEMORY  | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU post-execution actions. */
-#define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0)
+#define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      ( VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0) | VMCPU_FF_DBGF )
 
 /** Normal priority VM actions. */
-#define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY \
-                                                 | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST            | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA \
+                                                 | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU actions. */
-#define VMCPU_FF_NORMAL_PRIORITY_MASK           (VMCPU_FF_REQUEST | VMCPU_FF_UNHALT)
+#define VMCPU_FF_NORMAL_PRIORITY_MASK           (  VMCPU_FF_REQUEST | VMCPU_FF_UNHALT )
 
 /** Flags to clear before resuming guest execution. */
-#define VMCPU_FF_RESUME_GUEST_MASK              (VMCPU_FF_TO_R3)
+#define VMCPU_FF_RESUME_GUEST_MASK              (  VMCPU_FF_TO_R3 )
 
 
 /** VM flags that cause the REP[|NE|E] STRINS loops to yield immediately. */
-#define VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK    (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
-                                                 | VM_FF_EMT_RENDEZVOUS | VM_FF_RESET | VM_FF_PGM_POOL_FLUSH_PENDING )
+#define VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK    (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES   | VM_FF_PGM_NO_MEMORY \
+                                                 | VM_FF_EMT_RENDEZVOUS  | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_RESET)
 /** VM flags that cause the REP[|NE|E] STRINS loops to yield. */
 #define VM_FF_YIELD_REPSTR_MASK                 (  VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK \
                                                  | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_DBGF | VM_FF_DEBUG_SUSPEND )
 /** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield immediately. */
 #ifdef IN_RING3
-# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK ( VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL )
+# define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK ( VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_DBGF )
 #else
 # define VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK (  VMCPU_FF_TO_R3 | VMCPU_FF_IEM | VMCPU_FF_IOM | VMCPU_FF_PGM_SYNC_CR3 \
-                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL )
+                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_DBGF )
 #endif
 /** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield, interrupts
  *  enabled. */
@@ -556,7 +558,7 @@ typedef struct VMCPU
 /** High priority ring-0 VM pre HM-mode execution mask. */
 #define VM_FF_HP_R0_PRE_HM_MASK                 (VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
 /** High priority ring-0 VMCPU pre HM-mode execution mask. */
-#define VMCPU_FF_HP_R0_PRE_HM_MASK              ( VMCPU_FF_HM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 \
+#define VMCPU_FF_HP_R0_PRE_HM_MASK              (  VMCPU_FF_HM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 \
                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_REQUEST)
 /** High priority ring-0 VM pre HM-mode execution mask, single stepping. */
 #define VM_FF_HP_R0_PRE_HM_STEP_MASK            (VM_FF_HP_R0_PRE_HM_MASK & ~(  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PDM_QUEUES  \

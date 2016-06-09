@@ -152,7 +152,8 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
              * We check for state changes in addition to status codes when
              * servicing requests. (Look after the ifs.)
              */
-            PVM pVM = pUVM->pVM;
+            PVM    pVM   = pUVM->pVM;
+            PVMCPU pVCpu = pUVCpu->pVCpu;
             enmBefore = pVM->enmVMState;
             if (pUVM->vm.s.fTerminateEMT)
             {
@@ -181,12 +182,13 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu, false /*fPriorityOnly*/);
                 Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %s -> %s\n", pUVCpu->idCpu, rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
-            else if (VM_FF_IS_SET(pVM, VM_FF_DBGF))
+            else if (   VM_FF_IS_SET(pVM, VM_FF_DBGF)
+                     || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_DBGF))
             {
                 /*
                  * Service the debugger request.
                  */
-                rc = DBGFR3VMMForcedAction(pVM);
+                rc = DBGFR3VMMForcedAction(pVM, pVCpu);
                 Log(("vmR3EmulationThread: Dbg rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_RESET))

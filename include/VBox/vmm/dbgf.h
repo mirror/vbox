@@ -410,6 +410,10 @@ typedef enum DBGFEVENTTYPE
      * @todo not yet implemented.  */
     DBGFEVENT_MEMORY_ROM_WRITE,
 
+    /** Windows guest reported BSOD via hyperv MSRs. */
+    DBGFEVENT_BSOD_MSR,
+    /** Windows guest reported BSOD via EFI variables. */
+    DBGFEVENT_BSOD_EFI,
 
     /** End of valid event values. */
     DBGFEVENT_END,
@@ -523,7 +527,7 @@ VMMR3_INT_DECL(int)     DBGFR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     DBGFR3Term(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3PowerOff(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-VMMR3_INT_DECL(int)     DBGFR3VMMForcedAction(PVM pVM);
+VMMR3_INT_DECL(int)     DBGFR3VMMForcedAction(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(VBOXSTRICTRC)    DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
 VMMR3DECL(int)          DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine,

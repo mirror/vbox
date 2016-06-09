@@ -298,7 +298,8 @@ DECLINLINE(bool) dbgfEventIsGenericWithArgEnabled(PVM pVM, DBGFEVENTTYPE enmEven
  *
  * @returns Strict VBox status code.
  * @retval  VINF_EM_DBG_EVENT if the event was raised and the caller should
- *          return ASAP to the debugger (via EM).
+ *          return ASAP to the debugger (via EM).  We set VMCPU_FF_DBGF so, it
+ *          is okay not to pass this along in some situations  .
  * @retval  VINF_SUCCESS if the event was disabled or ignored.
  *
  * @param   pVM                 The cross context VM structure.
@@ -369,6 +370,7 @@ VMM_INT_DECL(VBOXSTRICTRC) DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEV
         pVCpu->dbgf.s.aEvents[i].Event.u.Generic.uArg   = uEventArg;
         pVCpu->dbgf.s.cEvents = i + 1;
 
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_DBGF);
         return VINF_EM_DBG_EVENT;
     }
 

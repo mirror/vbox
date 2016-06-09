@@ -894,101 +894,98 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
         /*
          * Process the result.
          */
-        do
+        switch (VBOXSTRICTRC_VAL(rc))
         {
-            switch (VBOXSTRICTRC_VAL(rc))
-            {
-                /*
-                 * Continue the debugging loop.
-                 */
-                case VINF_EM_DBG_STEP:
-                case VINF_EM_DBG_STOP:
-                case VINF_EM_DBG_EVENT:
-                case VINF_EM_DBG_STEPPED:
-                case VINF_EM_DBG_BREAKPOINT:
-                case VINF_EM_DBG_HYPER_STEPPED:
-                case VINF_EM_DBG_HYPER_BREAKPOINT:
-                case VINF_EM_DBG_HYPER_ASSERTION:
-                    break;
+            /*
+             * Continue the debugging loop.
+             */
+            case VINF_EM_DBG_STEP:
+            case VINF_EM_DBG_STOP:
+            case VINF_EM_DBG_EVENT:
+            case VINF_EM_DBG_STEPPED:
+            case VINF_EM_DBG_BREAKPOINT:
+            case VINF_EM_DBG_HYPER_STEPPED:
+            case VINF_EM_DBG_HYPER_BREAKPOINT:
+            case VINF_EM_DBG_HYPER_ASSERTION:
+                break;
 
-                /*
-                 * Resuming execution (in some form) has to be done here if we got
-                 * a hypervisor debug event.
-                 */
-                case VINF_SUCCESS:
-                case VINF_EM_RESUME:
-                case VINF_EM_SUSPEND:
-                case VINF_EM_RESCHEDULE:
-                case VINF_EM_RESCHEDULE_RAW:
-                case VINF_EM_RESCHEDULE_REM:
-                case VINF_EM_HALT:
-                    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
-                    {
+            /*
+             * Resuming execution (in some form) has to be done here if we got
+             * a hypervisor debug event.
+             */
+            case VINF_SUCCESS:
+            case VINF_EM_RESUME:
+            case VINF_EM_SUSPEND:
+            case VINF_EM_RESCHEDULE:
+            case VINF_EM_RESCHEDULE_RAW:
+            case VINF_EM_RESCHEDULE_REM:
+            case VINF_EM_HALT:
+                if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
+                {
 #ifdef VBOX_WITH_RAW_MODE
-                        rc = emR3RawResumeHyper(pVM, pVCpu);
-                        if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
-                            continue;
+                    rc = emR3RawResumeHyper(pVM, pVCpu);
+                    if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
+                        continue;
 #else
-                        AssertLogRelMsgFailedReturn(("Not implemented\n"), VERR_EM_INTERNAL_ERROR);
+                    AssertLogRelMsgFailedReturn(("Not implemented\n"), VERR_EM_INTERNAL_ERROR);
 #endif
-                    }
-                    if (rc == VINF_SUCCESS)
-                        rc = VINF_EM_RESCHEDULE;
-                    return rc;
+                }
+                if (rc == VINF_SUCCESS)
+                    rc = VINF_EM_RESCHEDULE;
+                return rc;
 
-                /*
-                 * The debugger isn't attached.
-                 * We'll simply turn the thing off since that's the easiest thing to do.
-                 */
-                case VERR_DBGF_NOT_ATTACHED:
-                    switch (VBOXSTRICTRC_VAL(rcLast))
-                    {
-                        case VINF_EM_DBG_HYPER_STEPPED:
-                        case VINF_EM_DBG_HYPER_BREAKPOINT:
-                        case VINF_EM_DBG_HYPER_ASSERTION:
-                        case VERR_TRPM_PANIC:
-                        case VERR_TRPM_DONT_PANIC:
-                        case VERR_VMM_RING0_ASSERTION:
-                        case VERR_VMM_HYPER_CR3_MISMATCH:
-                        case VERR_VMM_RING3_CALL_DISABLED:
-                            return rcLast;
-                    }
-                    return VINF_EM_OFF;
+            /*
+             * The debugger isn't attached.
+             * We'll simply turn the thing off since that's the easiest thing to do.
+             */
+            case VERR_DBGF_NOT_ATTACHED:
+                switch (VBOXSTRICTRC_VAL(rcLast))
+                {
+                    case VINF_EM_DBG_HYPER_STEPPED:
+                    case VINF_EM_DBG_HYPER_BREAKPOINT:
+                    case VINF_EM_DBG_HYPER_ASSERTION:
+                    case VERR_TRPM_PANIC:
+                    case VERR_TRPM_DONT_PANIC:
+                    case VERR_VMM_RING0_ASSERTION:
+                    case VERR_VMM_HYPER_CR3_MISMATCH:
+                    case VERR_VMM_RING3_CALL_DISABLED:
+                        return rcLast;
+                }
+                return VINF_EM_OFF;
 
-                /*
-                 * Status codes terminating the VM in one or another sense.
-                 */
-                case VINF_EM_TERMINATE:
-                case VINF_EM_OFF:
-                case VINF_EM_RESET:
-                case VINF_EM_NO_MEMORY:
-                case VINF_EM_RAW_STALE_SELECTOR:
-                case VINF_EM_RAW_IRET_TRAP:
-                case VERR_TRPM_PANIC:
-                case VERR_TRPM_DONT_PANIC:
-                case VERR_IEM_INSTR_NOT_IMPLEMENTED:
-                case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
-                case VERR_VMM_RING0_ASSERTION:
-                case VERR_VMM_HYPER_CR3_MISMATCH:
-                case VERR_VMM_RING3_CALL_DISABLED:
-                case VERR_INTERNAL_ERROR:
-                case VERR_INTERNAL_ERROR_2:
-                case VERR_INTERNAL_ERROR_3:
-                case VERR_INTERNAL_ERROR_4:
-                case VERR_INTERNAL_ERROR_5:
-                case VERR_IPE_UNEXPECTED_STATUS:
-                case VERR_IPE_UNEXPECTED_INFO_STATUS:
-                case VERR_IPE_UNEXPECTED_ERROR_STATUS:
-                    return rc;
+            /*
+             * Status codes terminating the VM in one or another sense.
+             */
+            case VINF_EM_TERMINATE:
+            case VINF_EM_OFF:
+            case VINF_EM_RESET:
+            case VINF_EM_NO_MEMORY:
+            case VINF_EM_RAW_STALE_SELECTOR:
+            case VINF_EM_RAW_IRET_TRAP:
+            case VERR_TRPM_PANIC:
+            case VERR_TRPM_DONT_PANIC:
+            case VERR_IEM_INSTR_NOT_IMPLEMENTED:
+            case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
+            case VERR_VMM_RING0_ASSERTION:
+            case VERR_VMM_HYPER_CR3_MISMATCH:
+            case VERR_VMM_RING3_CALL_DISABLED:
+            case VERR_INTERNAL_ERROR:
+            case VERR_INTERNAL_ERROR_2:
+            case VERR_INTERNAL_ERROR_3:
+            case VERR_INTERNAL_ERROR_4:
+            case VERR_INTERNAL_ERROR_5:
+            case VERR_IPE_UNEXPECTED_STATUS:
+            case VERR_IPE_UNEXPECTED_INFO_STATUS:
+            case VERR_IPE_UNEXPECTED_ERROR_STATUS:
+                return rc;
 
-                /*
-                 * The rest is unexpected, and will keep us here.
-                 */
-                default:
-                    AssertMsgFailed(("Unexpected rc %Rrc!\n", VBOXSTRICTRC_VAL(rc)));
-                    break;
-            }
-        } while (false);
+            /*
+             * The rest is unexpected, and will keep us here.
+             */
+            default:
+                AssertMsgFailed(("Unexpected rc %Rrc!\n", VBOXSTRICTRC_VAL(rc)));
+                break;
+        }
     } /* debug for ever */
 }
 
@@ -1714,9 +1711,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Debugger Facility polling.
          */
-        if (VM_FF_IS_PENDING(pVM, VM_FF_DBGF))
+        if (   VM_FF_IS_PENDING(pVM, VM_FF_DBGF)
+            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_DBGF) )
         {
-            rc2 = DBGFR3VMMForcedAction(pVM);
+            rc2 = DBGFR3VMMForcedAction(pVM, pVCpu);
             UPDATE_RC();
         }
 
@@ -1759,7 +1757,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /* check that we got them all  */
         AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
-        AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0));
+        AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == (VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0) | VMCPU_FF_DBGF));
     }
 
     /*
@@ -1998,9 +1996,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Debugger Facility request.
          */
-        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_DBGF, VM_FF_PGM_NO_MEMORY))
+        if (   (   VM_FF_IS_PENDING(pVM, VM_FF_DBGF)
+                || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_DBGF) )
+            && !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY) )
         {
-            rc2 = DBGFR3VMMForcedAction(pVM);
+            rc2 = DBGFR3VMMForcedAction(pVM, pVCpu);
             UPDATE_RC();
         }
 
@@ -2083,7 +2083,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /* check that we got them all  */
         AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
-        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_INHIBIT_INTERRUPTS | VM_WHEN_RAW_MODE(VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0)));
+        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_INHIBIT_INTERRUPTS | VM_WHEN_RAW_MODE(VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_DBGF, 0)));
     }
 
 #undef UPDATE_RC

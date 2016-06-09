@@ -1125,11 +1125,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         {
             /* Get guest page flags. */
             uint64_t fPageGst;
-            rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, NULL);
-            if (RT_SUCCESS(rc))
+            int rc2 = PGMGstGetPage(pVCpu, pvFault, &fPageGst, NULL);
+            if (RT_SUCCESS(rc2))
             {
-                uint64_t fPageShw;
-                rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
+                uint64_t fPageShw = 0;
+                rc2 = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
 
                 /*
                  * Compare page flags.
@@ -1142,8 +1142,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                                  == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US))
                               && (fPageShw & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW
                               && (fPageGst & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_US),
-                          ("Page flags mismatch! pvFault=%RGv uErr=%x GCPhys=%RGp fPageShw=%RX64 fPageGst=%RX64\n",
-                           pvFault, (uint32_t)uErr, GCPhys, fPageShw, fPageGst));
+                          ("Page flags mismatch! pvFault=%RGv uErr=%x GCPhys=%RGp fPageShw=%RX64 fPageGst=%RX64 rc=%d\n",
+                           pvFault, (uint32_t)uErr, GCPhys, fPageShw, fPageGst, rc));
             }
             else
                 AssertMsgFailed(("PGMGstGetPage rc=%Rrc\n", rc));

@@ -393,22 +393,23 @@ bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
 
 /**
  * Forced action callback.
- * The VMM will call this from it's main loop when VM_FF_DBGF is set.
  *
- * The function checks and executes pending commands from the debugger.
+ * The VMM will call this from it's main loop when either VM_FF_DBGF or
+ * VMCPU_FF_DBGF are set.
+ *
+ * The function checks for and executes pending commands from the debugger.
+ * Then it checks for pending debug events and serves these.
  *
  * @returns VINF_SUCCESS normally.
  * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happened.
  * @param   pVM         The cross context VM structure.
  */
-VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
+VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM, PVMCPU pVCpu)
 {
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_DBGF))
     {
-        PVMCPU pVCpu = VMMGetCpu(pVM);
-
         /*
          * Command pending? Process it.
          */
@@ -417,12 +418,30 @@ VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
             bool            fResumeExecution;
             DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
             DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
-            rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+            rcStrict = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
             if (!fResumeExecution)
-                rc = dbgfR3VMMWait(pVM);
+                rcStrict = dbgfR3VMMWait(pVM);
         }
     }
-    return rc;
+
+    /*
+     * Dispatch pending events.
+     */
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_DBGF))
+    {
+        if (   pVCpu->dbgf.s.cEvents > 0
+            && pVCpu->dbgf.s.aEvents[pVCpu->dbgf.s.cEvents - 1].enmState == DBGFEVENTSTATE_CURRENT)
+        {
+            VBOXSTRICTRC rcStrict2 = DBGFR3EventHandlePending(pVM, pVCpu);
+            if (   rcStrict2 != VINF_SUCCESS
+                && (   rcStrict == VINF_SUCCESS
+                    || RT_FAILURE(rcStrict2)
+                    || rcStrict2 < rcStrict) ) /** @todo oversimplified? */
+                rcStrict = rcStrict2;
+        }
+    }
+
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -553,6 +572,7 @@ static int dbgfR3SendEvent(PVM pVM)
 VMMR3_INT_DECL(VBOXSTRICTRC) DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_DBGF);
 
     /*
      * Check that we've got an event first.
@@ -566,7 +586,10 @@ VMMR3_INT_DECL(VBOXSTRICTRC) DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu)
      */
     int rc = dbgfR3EventPrologue(pVM, pEvent->enmType);
     if (RT_FAILURE(rc))
+    {
+        /** @todo drop them events?   */
         return rc;
+    }
 
 /** @todo SMP + debugger speaker logic  */
     /*
