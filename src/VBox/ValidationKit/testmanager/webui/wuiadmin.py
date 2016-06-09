@@ -508,7 +508,8 @@ class WuiAdmin(WuiDispatcherBase):
             else:
                 for oTestBox in aoTestBoxes:
                     if oTestBox.enmPendingCmd != sListAction:
-                        oLogic.setCommand(idTestBox, oTestBox.enmPendingCmd, sListAction, self._oCurUser.uid, fCommit = False);
+                        oLogic.setCommand(oTestBox.idTestBox, oTestBox.enmPendingCmd, sListAction, self._oCurUser.uid,
+                                          fCommit = False);
             self._oDb.commit();
 
         # Re-display the list.
