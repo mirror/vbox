@@ -243,7 +243,25 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
         }
     }
 
-    memcpy (paRects, paNewRects, sizeof (RECTL) * nRects);
+    /* Primary rectangle must remain at 0,0. */
+    int32_t iOffsetX = paNewRects[uPrimary].left;
+    int32_t iOffsetY = paNewRects[uPrimary].top;
+    for (iRect = 0; iRect < nRects; iRect++)
+    {
+        paRects[iRect].left   = paNewRects[iRect].left   - iOffsetX;
+        paRects[iRect].right  = paNewRects[iRect].right  - iOffsetX;
+        paRects[iRect].top    = paNewRects[iRect].top    - iOffsetY;
+        paRects[iRect].bottom = paNewRects[iRect].bottom - iOffsetY;
+        DDCLOG((" [%d]: %d,%d %dx%d -> %d,%d %dx%d%s\n",
+                iRect,
+                paRects[iRect].left, paRects[iRect].top,
+                paRects[iRect].right - paRects[iRect].left,
+                paRects[iRect].bottom - paRects[iRect].top,
+                paNewRects[iRect].left, paNewRects[iRect].top,
+                paNewRects[iRect].right - paNewRects[iRect].left,
+                paNewRects[iRect].bottom - paNewRects[iRect].top,
+                iRect == uPrimary? " <- primary": ""));
+    }
     return;
 }
 

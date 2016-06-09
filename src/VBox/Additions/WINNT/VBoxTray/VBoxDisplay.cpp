@@ -459,6 +459,7 @@ DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
     }
 
     *pNumDevices = DevNum;
+    *pDevPrimaryNum = DevPrimaryNum;
 
     return NO_ERROR;
 }
