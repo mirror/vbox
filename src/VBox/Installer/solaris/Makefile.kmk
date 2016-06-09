@@ -565,9 +565,10 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		\
 		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_WITH_QTGUI_V5),$(VBOX_PATH_QT)/bin/qtconfig,) \
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
-		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL),$(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
+		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL), $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
-		$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6, $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib))) \
+		$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6, \
+			$(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib)))) \
 		\
 		$(foreach var, $(SOLARIS_FILE_LIST_VARS),$(foreach file, $($(var)), $($(var).SRC)/$(file))) \
 		\
@@ -585,9 +586,9 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	$(MKDIR) -p -m 0755 -- $(sort $(VBOX_PATH_SI_SCRATCH_PKG)/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/ \
-		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/legacy \
+		$(if-$(VBOX_OSE),,$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/legacy/) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/ \
-		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/legacy/ \
+		$(if $(VBOX_OSE),,$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/legacy/) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/i86pc/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/i86pc/kernel/ \
@@ -645,9 +646,9 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	,$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/libSDL-1.2.so.0,)
 
-	$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6 \
+	$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6 \
 		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib) \
-		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib)))
+		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib))))
 
 	$(if-expr defined(VBOX_WITH_EFIFW_PACKING) \
 	,$(LN_SYMLINK) ../VBoxEFI32.fd ../VBoxEFI64.fd	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/,)

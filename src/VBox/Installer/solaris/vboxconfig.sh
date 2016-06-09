@@ -1253,15 +1253,17 @@ postinstall()
         fi
 
         # Install the S10 legacy library links if necessary
-        if ldd /opt/VirtualBox/amd64/VBoxRT-x86.so | grep "not found" > /dev/null; then
-            for lib in `ls -1 /opt/VirtualBox/legacy/`; do
-                ln -sf legacy/$lib /opt/VirtualBox/$lib
-            done
-        fi
-        if ldd /opt/VirtualBox/amd64/VBoxRT.so | grep "not found" > /dev/null; then
-            for lib in `ls -1 /opt/VirtualBox/amd64/legacy/`; do
-                ln -sf legacy/$lib /opt/VirtualBox/amd64/$lib
-            done
+        if -d /opt/VirtualBox/legacy/; then
+            if ldd /opt/VirtualBox/amd64/VBoxRT-x86.so | grep "not found" > /dev/null; then
+                for lib in `ls -1 /opt/VirtualBox/legacy/`; do
+                    ln -sf legacy/$lib /opt/VirtualBox/$lib
+                done
+            fi
+            if ldd /opt/VirtualBox/amd64/VBoxRT.so | grep "not found" > /dev/null; then
+                for lib in `ls -1 /opt/VirtualBox/amd64/legacy/`; do
+                    ln -sf legacy/$lib /opt/VirtualBox/amd64/$lib
+                done
+            fi
         fi
 
         # Install python bindings for non-remote installs
