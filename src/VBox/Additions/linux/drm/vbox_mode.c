@@ -224,6 +224,8 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
         if (ret)
             DRM_ERROR("failed to kmap fbcon\n");
+        else
+            vbox_fbdev_set_base(vbox, gpu_addr);
     }
     vbox_bo_unreserve(bo);
 

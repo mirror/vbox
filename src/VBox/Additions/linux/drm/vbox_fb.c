@@ -451,3 +451,11 @@ void vbox_fbdev_set_suspend(struct drm_device *dev, int state)
 
     fb_set_suspend(vbox->fbdev->helper.fbdev, state);
 }
+
+void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
+{
+        vbox->fbdev->helper.fbdev->fix.smem_start =
+                vbox->fbdev->helper.fbdev->apertures->ranges[0].base +
+                gpu_addr;
+        vbox->fbdev->helper.fbdev->fix.smem_len = vbox->vram_size - gpu_addr;
+}
