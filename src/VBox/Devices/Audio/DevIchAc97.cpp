@@ -1401,7 +1401,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     rc = AudioMixerSinkUpdate(pThis->pSinkOutput);
     if (RT_SUCCESS(rc))
     {
-        cbToProcess = AudioMixerSinkGetReadable(pThis->pSinkOutput);
+        cbToProcess = AudioMixerSinkGetWritable(pThis->pSinkOutput);
         if (cbToProcess)
         {
             rc = ichac97TransferAudio(pThis, &pThis->StreamOut, cbToProcess, NULL /* pcbProcessed */);
