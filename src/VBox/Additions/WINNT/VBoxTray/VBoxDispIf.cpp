@@ -1457,7 +1457,12 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     {
         winEr = NO_ERROR;
 
-        if (i == iChangedMode && fEnable)
+        /* Whether the current display should be enabled. */
+        BOOL fCurrentEnable = i == iChangedMode?
+                                 fEnable:
+                                 RT_BOOL(paDisplayDevices[i].StateFlags & DISPLAY_DEVICE_ACTIVE);
+
+        if (i == iChangedMode && fCurrentEnable)
         {
             RTRECTSIZE Size;
             Size.cx = paDeviceModes[iChangedMode].dmPelsWidth;
@@ -1472,13 +1477,13 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 
         if (winEr == NO_ERROR)
         {
-            winEr = vboxDispIfResizePerform(pIf, i, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+            winEr = vboxDispIfResizePerform(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
             LogFunc(("vboxDispIfResizePerform returned %d\n", winEr));
 
             if (winEr == ERROR_RETRY)
             {
-                VBoxRrRetrySchedule(pIf, i, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+                VBoxRrRetrySchedule(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
                 winEr = NO_ERROR;
             }
