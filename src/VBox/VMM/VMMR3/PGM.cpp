@@ -2602,8 +2602,8 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     }
 
 #ifdef DEBUG
-    DBGFR3_INFO_LOG(pVM, "mappings", NULL);
-    DBGFR3_INFO_LOG(pVM, "handlers", "all nostat");
+    DBGFR3_INFO_LOG_SAFE(pVM, "mappings", NULL);
+    DBGFR3_INFO_LOG_SAFE(pVM, "handlers", "all nostat");
 #endif
 
     /*

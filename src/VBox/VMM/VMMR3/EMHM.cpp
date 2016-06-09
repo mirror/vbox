@@ -184,7 +184,7 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
     if (pszPrefix)
     {
-        DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
+        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", pszPrefix);
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
     }
 #endif

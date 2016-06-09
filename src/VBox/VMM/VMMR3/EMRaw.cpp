@@ -280,7 +280,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
      */
     if (pszPrefix)
     {
-        DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
+        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", pszPrefix);
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
     }
 #endif /* LOG_ENABLED */
@@ -579,7 +579,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
     }
 
 #ifdef LOG_ENABLED
-    DBGFR3_INFO_LOG(pVM, "cpumguest", "Guest trap");
+    DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "Guest trap");
     DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Guest trap");
 
     /* Get guest page information. */
@@ -715,7 +715,7 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
     if (u8TrapNo != 1)
     {
 #ifdef LOG_ENABLED
-        DBGFR3_INFO_LOG(pVM, "cpumguest", "Trap in patch code");
+        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "Trap in patch code");
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Patch code");
 
         DISCPUSTATE Cpu;
@@ -869,7 +869,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
         if (PATMR3IsInsidePatchJump(pVM, pCtx->eip, NULL))
         {
 #ifdef LOG_ENABLED
-            DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
+            DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "PRIV");
 #endif
             AssertMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08x\n", pCtx->eip));
             return VERR_EM_RAW_PATCH_CONFLICT;
@@ -883,7 +883,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
-                DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
+                DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "PRIV");
 #endif
                 DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Patched privileged instruction");
                 return VINF_SUCCESS;
@@ -894,7 +894,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #ifdef LOG_ENABLED
     if (!PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
-        DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
+        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "PRIV");
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Privileged instr");
     }
 #endif
@@ -1034,7 +1034,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #ifdef LOG_ENABLED
                     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
                     {
-                        DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
+                        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "PRIV");
                         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Privileged instr");
                     }
 #endif

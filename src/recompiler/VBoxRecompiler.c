@@ -4080,7 +4080,7 @@ bool remR3DisasInstr(CPUX86State *env, int f32BitCode, char *pszPrefix)
      * Log registers if requested.
      */
     if (fLog2)
-        DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
+        DBGFR3_INFO_LOG(pVM, env->pVCpu, "cpumguest", pszPrefix);
 
     /*
      * Disassemble to log.

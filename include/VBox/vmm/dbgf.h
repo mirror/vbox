@@ -966,18 +966,43 @@ VMMR3_INT_DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const ch
 /** @def DBGFR3_INFO_LOG
  * Display a piece of info writing to the log if enabled.
  *
+ * This is for execution on EMTs and will only show the items on the calling
+ * EMT.  This is to avoid deadlocking against other CPUs if a rendezvous is
+ * initiated in parallel to this call.  (Besides, nobody really wants or need
+ * info for the other EMTs when using this macro.)
+ *
  * @param   a_pVM       The shared VM handle.
+ * @param   a_pVCpu     The cross context per CPU structure of the calling EMT.
  * @param   a_pszName   The identifier of the info to display.
  * @param   a_pszArgs   Arguments to the info handler.
  */
 #ifdef LOG_ENABLED
-# define DBGFR3_INFO_LOG(a_pVM, a_pszName, a_pszArgs) \
+# define DBGFR3_INFO_LOG(a_pVM, a_pVCpu, a_pszName, a_pszArgs) \
+    do { \
+        if (LogIsEnabled()) \
+            DBGFR3InfoEx((a_pVM)->pUVM, (a_pVCpu)->idCpu, a_pszName, a_pszArgs, NULL); \
+    } while (0)
+#else
+# define DBGFR3_INFO_LOG(a_pVM, a_pVCpu, a_pszName, a_pszArgs) do { } while (0)
+#endif
+
+/** @def DBGFR3_INFO_LOG_SAFE
+ * Display a piece of info (rendezvous safe) writing to the log if enabled.
+ *
+ * @param   a_pVM       The shared VM handle.
+ * @param   a_pszName   The identifier of the info to display.
+ * @param   a_pszArgs   Arguments to the info handler.
+ *
+ * @remarks Use DBGFR3_INFO_LOG where ever possible!
+ */
+#ifdef LOG_ENABLED
+# define DBGFR3_INFO_LOG_SAFE(a_pVM, a_pszName, a_pszArgs) \
     do { \
         if (LogIsEnabled()) \
             DBGFR3Info((a_pVM)->pUVM, a_pszName, a_pszArgs, NULL); \
     } while (0)
 #else
-# define DBGFR3_INFO_LOG(a_pVM, a_pszName, a_pszArgs) do { } while (0)
+# define DBGFR3_INFO_LOG_SAFE(a_pVM, a_pszName, a_pszArgs) do { } while (0)
 #endif
 
 /**

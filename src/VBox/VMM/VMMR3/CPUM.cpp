@@ -2564,7 +2564,7 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
     LogRel(("************************* CPUID dump ************************\n"));
     DBGFR3Info(pVM->pUVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
-    DBGFR3_INFO_LOG(pVM, "cpuid", "verbose"); /* macro */
+    DBGFR3_INFO_LOG_SAFE(pVM, "cpuid", "verbose"); /* macro */
     RTLogRelSetBuffering(fOldBuffered);
     LogRel(("******************** End of CPUID dump **********************\n"));
 }
