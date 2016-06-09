@@ -3877,6 +3877,8 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
     /*
      * Start making changes.
      */
+    /* Set the new CPL so that stack accesses use it. */
+    pIemCpu->uCpl = uNewCpl;
 
     /* Create the stack frame. */
     uint32_t   cbStackFrame = sizeof(uint64_t) * (5 + !!(fFlags & IEM_XCPT_FLAGS_ERR));
