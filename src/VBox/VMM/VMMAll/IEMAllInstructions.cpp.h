@@ -1504,8 +1504,57 @@ FNIEMOP_DEF(iemOp_3Dnow)
 
 /** Opcode 0x0f 0x10. */
 FNIEMOP_STUB(iemOp_movups_Vps_Wps__movupd_Vpd_Wpd__movss_Vss_Wss__movsd_Vsd_Wsd);
+
+
 /** Opcode 0x0f 0x11. */
-FNIEMOP_STUB(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd);
+FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
+{
+    /* Quick hack. Need to restructure all of this later some time. */
+    if (pIemCpu->fPrefixes == 0)
+    {
+        uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+        if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        {
+            /*
+             * Register, register.
+             */
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
+            IEM_MC_BEGIN(0, 0);
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+            IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB,
+                                  ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            /*
+             * Memory, register.
+             */
+            IEM_MC_BEGIN(0, 2);
+            IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ - yes it generally is! */
+            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+            IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+            IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+            IEM_MC_STORE_MEM_U128(pIemCpu->iEffSeg, GCPtrEffSrc, uSrc);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        return VINF_SUCCESS;
+    }
+
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
+
+
 /** Opcode 0x0f 0x12. */
 FNIEMOP_STUB(iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__movddup_Vq_Wq); //NEXT
 /** Opcode 0x0f 0x13. */
