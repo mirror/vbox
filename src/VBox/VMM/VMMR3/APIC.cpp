@@ -47,10 +47,39 @@
 /** Some ancient version... */
 #define APIC_SAVED_STATE_VERSION_ANCIENT          1
 
+#ifdef VBOX_WITH_STATISTICS
+# define X2APIC_MSRRANGE(a_uFirst, a_uLast, a_szName) \
+    { (a_uFirst), (a_uLast), kCpumMsrRdFn_Ia32X2ApicN, kCpumMsrWrFn_Ia32X2ApicN, 0, 0, 0, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
+#else
+# define X2APIC_MSRRANGE(a_uFirst, a_uLast, a_szName) \
+    { (a_uFirst), (a_uLast), kCpumMsrRdFn_Ia32X2ApicN, kCpumMsrWrFn_Ia32X2ApicN, 0, 0, 0, 0, 0, a_szName }
+#endif
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/**
+ * Array of MSR ranges supported by the x2APIC.
+ */
+static CPUMMSRRANGE const g_aMsrRanges_x2Apic[] =
+{
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_ID,        MSR_IA32_X2APIC_VERSION,   "x2APIC range 0"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_VERSION,   MSR_IA32_X2APIC_TPR,       "x2APIC range 1"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_TPR,       MSR_IA32_X2APIC_TPR,       "x2APIC range 2"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_PPR,       MSR_IA32_X2APIC_EOI,       "x2APIC range 3"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_LDR,       MSR_IA32_X2APIC_LDR,       "x2APIC range 4"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_SVR,       MSR_IA32_X2APIC_SVR,       "x2APIC range 5"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_ISR0,      MSR_IA32_X2APIC_ISR7,      "x2APIC range 7"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_TMR0,      MSR_IA32_X2APIC_TMR7,      "x2APIC range 8"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_IRR0,      MSR_IA32_X2APIC_IRR7,      "x2APIC range 8"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_ESR,       MSR_IA32_X2APIC_ESR,       "x2APIC range 9"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_LVT_CMCI,  MSR_IA32_X2APIC_ICR,       "x2APIC range 10"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_LVT_TIMER, MSR_IA32_X2APIC_TIMER_CCR, "x2APIC range 11"),
+    X2APIC_MSRRANGE(MSR_IA32_X2APIC_TIMER_DCR, MSR_IA32_X2APIC_SELF_IPI,  "x2APIC range 12")
+};
+#undef X2APIC_MSRRANGE
+
 /** Saved state field descriptors for XAPICPAGE. */
 static const SSMFIELD g_aXApicPageFields[] =
 {
@@ -1646,9 +1675,19 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         }
 
         case APICMODE_X2APIC:
+        {
             pApic->enmOriginalMode = enmOriginalMode;
             CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
+
+            /* Insert all MSR ranges of the x2APIC. */
+            LogRel(("APIC: Registering x2APIC MSR ranges\n"));
+            for (size_t i = 0; i < RT_ELEMENTS(g_aMsrRanges_x2Apic); i++)
+            {
+                rc = CPUMR3MsrRangesInsert(pVM, &g_aMsrRanges_x2Apic[i]);
+                AssertLogRelRCReturn(rc, rc);
+            }
             break;
+        }
 
         case APICMODE_XAPIC:
             pApic->enmOriginalMode = enmOriginalMode;
