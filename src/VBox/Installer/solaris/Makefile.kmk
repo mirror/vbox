@@ -586,7 +586,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	$(MKDIR) -p -m 0755 -- $(sort $(VBOX_PATH_SI_SCRATCH_PKG)/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/ \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/ \
-		$(if-$(VBOX_OSE),,$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/legacy/) \
+		$(if $(VBOX_OSE),,$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/legacy/) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/ \
 		$(if $(VBOX_OSE),,$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/amd64/legacy/) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/platform/ \
