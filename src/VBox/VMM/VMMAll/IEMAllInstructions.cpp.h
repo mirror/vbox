@@ -1507,7 +1507,7 @@ FNIEMOP_STUB(iemOp_movups_Vps_Wps__movupd_Vpd_Wpd__movss_Vss_Wss__movsd_Vsd_Wsd)
 
 
 /** Opcode 0x0f 0x11. */
-#if 0 /* something is causing regressions, disabling temporarily. */
+#if 1 /* something is causing regressions, disabling temporarily. */
 FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
 {
     /* Quick hack. Need to restructure all of this later some time. */
@@ -1565,7 +1565,7 @@ FNIEMOP_STUB(iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__mo
 
 
 /** Opcode 0x0f 0x13. */
-#if 0 /* something is causing regressions (probably not this one), disabling temporarily. */
+#if 1 /* something is causing regressions (probably not this one), disabling temporarily. */
 FNIEMOP_DEF(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq)
 {
     /* Quick hack. Need to restructure all of this later some time. */
