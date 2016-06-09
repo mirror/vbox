@@ -3535,6 +3535,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
          */
 
         /* Set the new CPL so that stack accesses use it. */
+        uint8_t const uOldCpl = pIemCpu->uCpl;
         pIemCpu->uCpl = uNewCpl;
 
         /* Create the stack frame. */
@@ -3549,7 +3550,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             if (fFlags & IEM_XCPT_FLAGS_ERR)
                 *uStackFrame.pu32++ = uErr;
             uStackFrame.pu32[0] = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pCtx->eip + cbInstr : pCtx->eip;
-            uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | (pCtx->ss.Sel & X86_SEL_RPL);
+            uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | uOldCpl;
             uStackFrame.pu32[2] = fEfl;
             uStackFrame.pu32[3] = pCtx->esp;
             uStackFrame.pu32[4] = pCtx->ss.Sel;
@@ -3567,7 +3568,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             if (fFlags & IEM_XCPT_FLAGS_ERR)
                 *uStackFrame.pu16++ = uErr;
             uStackFrame.pu16[0] = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pCtx->ip + cbInstr : pCtx->ip;
-            uStackFrame.pu16[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | (pCtx->ss.Sel & X86_SEL_RPL);
+            uStackFrame.pu16[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | uOldCpl;
             uStackFrame.pu16[2] = fEfl;
             uStackFrame.pu16[3] = pCtx->sp;
             uStackFrame.pu16[4] = pCtx->ss.Sel;
@@ -3623,7 +3624,6 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
             pCtx->sp            = (uint16_t)(uNewEsp - cbStackFrame);
         else
             pCtx->rsp           = uNewEsp - cbStackFrame;
-        pIemCpu->uCpl           = uNewCpl;
 
         if (fEfl & X86_EFL_VM)
         {
@@ -3878,6 +3878,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
      * Start making changes.
      */
     /* Set the new CPL so that stack accesses use it. */
+    uint8_t const uOldCpl = pIemCpu->uCpl;
     pIemCpu->uCpl = uNewCpl;
 
     /* Create the stack frame. */
@@ -3892,7 +3893,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
     if (fFlags & IEM_XCPT_FLAGS_ERR)
         *uStackFrame.pu64++ = uErr;
     uStackFrame.pu64[0] = fFlags & IEM_XCPT_FLAGS_T_SOFT_INT ? pCtx->rip + cbInstr : pCtx->rip;
-    uStackFrame.pu64[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl; /* CPL paranoia */
+    uStackFrame.pu64[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | uOldCpl; /* CPL paranoia */
     uStackFrame.pu64[2] = fEfl;
     uStackFrame.pu64[3] = pCtx->rsp;
     uStackFrame.pu64[4] = pCtx->ss.Sel;
@@ -3917,7 +3918,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
      */
     /** @todo research/testcase: Figure out what VT-x and AMD-V loads into the
      *        hidden registers when interrupting 32-bit or 16-bit code! */
-    if (uNewCpl != pIemCpu->uCpl)
+    if (uNewCpl != uOldCpl)
     {
         pCtx->ss.Sel        = 0 | uNewCpl;
         pCtx->ss.ValidSel   = 0 | uNewCpl;
@@ -3934,7 +3935,6 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
     pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
     pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
     pCtx->rip           = uNewRip;
-    pIemCpu->uCpl       = uNewCpl;
 
     fEfl &= ~fEflToClear;
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
