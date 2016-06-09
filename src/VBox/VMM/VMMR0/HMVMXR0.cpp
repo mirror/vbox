@@ -13433,7 +13433,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                             | HM_CHANGED_VMX_GUEST_APIC_STATE);
 #else
         /* This is typically a shadow page table sync or a MMIO instruction. But we
-        /* may have emulated something like LTR or a far jump. Any part of the CPU
+         * may have emulated something like LTR or a far jump. Any part of the CPU
          * context may have changed.
          */
         /** @todo take advantage of CPUM changed flags instead of brute forcing. */
