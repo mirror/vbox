@@ -277,6 +277,229 @@ static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUV
 }
 
 /**
+ * Try to get at the log buffer starting address and size by disassembling emit_log_char.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The VM handle.
+ * @param   hMod                The module to use.
+ * @param   pGCPtrLogBuf        Where to store the log buffer pointer on success.
+ * @param   pcbLogBuf           Where to store the size of the log buffer on success.
+ */
+static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+                                                 RTGCPTR *pGCPtrLogBuf, uint32_t *pcbLogBuf)
+{
+    int rc = VINF_SUCCESS;
+
+    /**
+     * We disassemble emit_log_char to get at the log buffer address and size.
+     * This is used in case the symbols are not exported in kallsyms.
+     *
+     * This is what it typically looks like:
+     * vmlinux!emit_log_char:
+     * %00000000c01204a1 56                      push esi
+     * %00000000c01204a2 8b 35 d0 1c 34 c0       mov esi, dword [0c0341cd0h]
+     * %00000000c01204a8 53                      push ebx
+     * %00000000c01204a9 8b 1d 74 3b 3e c0       mov ebx, dword [0c03e3b74h]
+     * %00000000c01204af 8b 0d d8 1c 34 c0       mov ecx, dword [0c0341cd8h]
+     * %00000000c01204b5 8d 56 ff                lea edx, [esi-001h]
+     * %00000000c01204b8 21 da                   and edx, ebx
+     * %00000000c01204ba 88 04 11                mov byte [ecx+edx], al
+     * %00000000c01204bd 8d 53 01                lea edx, [ebx+001h]
+     * %00000000c01204c0 89 d0                   mov eax, edx
+     * [...]
+     */
+    RTDBGSYMBOL SymInfo;
+    rc = RTDbgModSymbolByName(hMod, "emit_log_char", &SymInfo);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do the diassembling. Disassemble until a ret instruction is encountered
+         * or a limit is reached (don't want to disassemble for too long as the getter
+         * should be short). Certain instructions found are ignored (push, nop, etc.).
+         */
+        unsigned cInstrDisassembled = 0;
+        uint32_t offInstr = 0;
+        bool fRet = false;
+        DISSTATE DisState;
+        unsigned idxAddressesUsed = 0;
+        struct { size_t cb; RTGCPTR GCPtrOrigSrc; } aAddresses[5];
+        RT_ZERO(DisState);
+        RT_ZERO(aAddresses);
+
+        do
+        {
+            DBGFADDRESS Addr;
+            RTGCPTR GCPtrCur = (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr + offInstr;
+            DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrCur);
+
+            /* Prefetch the instruction. */
+            uint8_t abInstr[32];
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &abInstr[0], sizeof(abInstr));
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t cbInstr = 0;
+
+                rc = DISInstr(&abInstr[0], pThis->f64Bit ? DISCPUMODE_64BIT : DISCPUMODE_32BIT, &DisState, &cbInstr);
+                if (RT_SUCCESS(rc))
+                {
+                    switch (DisState.pCurInstr->uOpcode)
+                    {
+                        case OP_PUSH:
+                        case OP_POP:
+                        case OP_NOP:
+                        case OP_LEA:
+                        case OP_AND:
+                        case OP_CBW:
+                            break;
+                        case OP_RETN:
+                            /* emit_log_char returned, abort disassembling. */
+                            rc = VERR_NOT_FOUND;
+                            fRet = true;
+                            break;
+                        case OP_MOV:
+                        case OP_MOVSXD:
+                            /*
+                             * If a mov is encountered writing to memory with al (or dil for amd64) being the source the
+                             * character is stored and we can infer the base address and size of the log buffer from
+                             * the source addresses.
+                             */
+                            if (   (DisState.Param2.fUse & DISUSE_REG_GEN8)
+                                && (   (DisState.Param2.Base.idxGenReg == DISGREG_AL && !pThis->f64Bit)
+                                    || (DisState.Param2.Base.idxGenReg == DISGREG_DIL && pThis->f64Bit))
+                                && DISUSE_IS_EFFECTIVE_ADDR(DisState.Param1.fUse))
+                            {
+                                RTGCPTR GCPtrLogBuf = 0;
+                                size_t cbLogBuf = 0;
+
+                                /*
+                                 * We can stop disassembling now and inspect all registers, look for a valid kernel address first.
+                                 * Only one of the accessed registers should hold a valid kernel address.
+                                 * For the log size look for the biggest non kernel address.
+                                 */
+                                for (unsigned i = 0; i < idxAddressesUsed; i++)
+                                {
+                                    DBGFADDRESS AddrVal;
+                                    union { uint8_t abVal[8]; uint32_t u32Val; uint64_t u64Val; } Val;
+
+                                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                       DBGFR3AddrFromFlat(pUVM, &AddrVal, aAddresses[i].GCPtrOrigSrc),
+                                                       &Val.abVal[0], aAddresses[i].cb);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        if (pThis->f64Bit && aAddresses[i].cb == sizeof(uint64_t))
+                                        {
+                                            if (LNX64_VALID_ADDRESS(Val.u64Val))
+                                            {
+                                                if (GCPtrLogBuf == 0)
+                                                    GCPtrLogBuf = Val.u64Val;
+                                                else
+                                                {
+                                                    rc = VERR_NOT_FOUND;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            AssertMsgBreakStmt(aAddresses[i].cb == sizeof(uint32_t),
+                                                               ("Invalid value size\n"), rc = VERR_INVALID_STATE);
+
+                                            /* Might be a kernel address or a size indicator. */
+                                            if (!pThis->f64Bit && LNX32_VALID_ADDRESS(Val.u32Val))
+                                            {
+                                                if (GCPtrLogBuf == 0)
+                                                    GCPtrLogBuf = Val.u32Val;
+                                                else
+                                                {
+                                                    rc = VERR_NOT_FOUND;
+                                                    break;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                /*
+                                                 * The highest value will be the log buffer because the other
+                                                 * accessed variables are indexes into the buffer and hence
+                                                 * always smaller than the size.
+                                                 */
+                                                if (cbLogBuf < Val.u32Val)
+                                                    cbLogBuf = Val.u32Val;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (   RT_SUCCESS(rc)
+                                    && GCPtrLogBuf != 0
+                                    && cbLogBuf != 0)
+                                {
+                                    *pGCPtrLogBuf = GCPtrLogBuf;
+                                    *pcbLogBuf = cbLogBuf;
+                                }
+                                else if (RT_SUCCESS(rc))
+                                    rc = VERR_NOT_FOUND;
+
+                                fRet = true;
+                                break;
+                            }
+                            else
+                            {
+                                /*
+                                 * In case of a memory to register move store the destination register index and the
+                                 * source address in the relation table for later processing.
+                                 */
+                                if (   (DisState.Param1.fUse & (DISUSE_BASE | DISUSE_REG_GEN32 | DISUSE_REG_GEN64))
+                                    && (DisState.Param2.cb == sizeof(uint32_t) || DisState.Param2.cb == sizeof(uint64_t))
+                                    && (DisState.Param2.fUse & (DISUSE_RIPDISPLACEMENT32|DISUSE_DISPLACEMENT32|DISUSE_DISPLACEMENT64)))
+                                {
+                                    RTGCPTR GCPtrVal = 0;
+
+                                    if (DisState.Param2.fUse & DISUSE_RIPDISPLACEMENT32)
+                                        GCPtrVal = GCPtrCur + DisState.Param2.uDisp.i32 + cbInstr;
+                                    else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT32)
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u32;
+                                    else if (DisState.Param2.fUse & DISUSE_DISPLACEMENT64)
+                                        GCPtrVal = (RTGCPTR)DisState.Param2.uDisp.u64;
+                                    else
+                                        AssertMsgFailedBreakStmt(("Invalid displacement\n"), rc = VERR_INVALID_STATE);
+
+                                    if (idxAddressesUsed < RT_ELEMENTS(aAddresses))
+                                    {
+                                        /* movsxd reads always 32bits. */
+                                        if (DisState.pCurInstr->uOpcode == OP_MOVSXD)
+                                            aAddresses[idxAddressesUsed].cb = sizeof(uint32_t);
+                                        else
+                                            aAddresses[idxAddressesUsed].cb = DisState.Param2.cb;
+                                        aAddresses[idxAddressesUsed].GCPtrOrigSrc = GCPtrVal;
+                                        idxAddressesUsed++;
+                                    }
+                                    else
+                                    {
+                                        rc = VERR_INVALID_PARAMETER;
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            /* All other instructions will cause an error for now (playing safe here). */
+                            rc = VERR_INVALID_PARAMETER;
+                            break;
+                    }
+                    cInstrDisassembled++;
+                    offInstr += cbInstr;
+                }
+            }
+        } while (   RT_SUCCESS(rc)
+                 && cInstrDisassembled < 20
+                 && !fRet);
+    }
+
+    return rc;
+}
+
+/**
  * Try to get at the log buffer starting address and size by disassembling some exposed helpers.
  *
  * @returns VBox status code.
@@ -380,8 +603,18 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
         break;
     }
 
-    if (RT_FAILURE(rc))
-        return rc;
+    /*
+     * Some kernels don't expose the variables in kallsyms so we have to try disassemble
+     * some public helpers to get at the addresses.
+     *
+     * @todo: Maybe cache those values so we don't have to do the heavy work every time?
+     */
+    if (rc == VERR_NOT_FOUND)
+    {
+        rc = dbgDiggerLinuxQueryAsciiLogBufferPtrs(pThis, pUVM, hMod, &GCPtrLogBuf, &cbLogBuf);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /*
      * Check if the values make sense.
