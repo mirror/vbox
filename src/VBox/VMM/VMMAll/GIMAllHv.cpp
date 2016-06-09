@@ -727,7 +727,6 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                 LogRel(("GIM: HyperV: Guest indicates a fatal condition! P0=%#RX64 P1=%#RX64 P2=%#RX64 P3=%#RX64 P4=%#RX64\n",
                         pHv->uCrashP0Msr, pHv->uCrashP1Msr, pHv->uCrashP2Msr, pHv->uCrashP3Msr, pHv->uCrashP4Msr));
 
-                PVM pVM = pVCpu->CTX_SUFF(pVM);
                 if (DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_BSOD_MSR))
                     DBGFEventGenericWithArg(pVM, pVCpu, DBGFEVENT_BSOD_MSR, pHv->uCrashP0Msr, DBGFEVENTCTX_OTHER);
                 /* (Do not try pass VINF_EM_DBG_EVENT, doesn't work from here!) */
