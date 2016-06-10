@@ -5658,8 +5658,6 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint3
     pVCpu->hm.s.Event.u32ErrCode        = u32ErrCode;
     pVCpu->hm.s.Event.cbInstr           = cbInstr;
     pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
-
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -5818,6 +5816,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
                 }
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF. See hmR0VmxExitXcptPF(). */
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
                 hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */,  u32ErrCode, pMixedCtx->cr2);
                 rcStrict = VINF_SUCCESS;
@@ -5829,6 +5828,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
 
             case VMXREFLECTXCPT_DF:
             {
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
                 hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
                 rcStrict = VINF_HM_DOUBLE_FAULT;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
@@ -6912,7 +6912,6 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
          u32IntInfo, enmTrpmEvent, cbInstr, uErrCode, GCPtrFaultAddress));
 
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, uErrCode, GCPtrFaultAddress);
-    STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -11167,6 +11166,22 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
             /* no break */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
         {
+            /*
+             * If there's any exception caused as a result of event injection, go back to
+             * the interpreter. The page-fault case is complicated and we manually handle
+             * any currently pending event in hmR0VmxExitXcptPF. Nested #ACs are already
+             * handled in hmR0VmxCheckExitDueToEventDelivery.
+             */
+            if (!pVCpu->hm.s.Event.fPending)
+            { /* likely */ }
+            else if (   uVector != X86_XCPT_PF
+                     && uVector != X86_XCPT_AC)
+            {
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+                rc = VERR_EM_INTERPRETER;
+                break;
+            }
+
             switch (uVector)
             {
                 case X86_XCPT_PF: rc = hmR0VmxExitXcptPF(pVCpu, pMixedCtx, pVmxTransient);      break;
@@ -12519,10 +12534,19 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccess);
+
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
     if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
-    { /* likely */ }
+    {
+        /* For some crazy guest, if an event delivery causes an APIC-access VM-exit, go to instruction emulation. */
+        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+            return VERR_EM_INTERPRETER;
+        }
+    }
     else
     {
         if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
@@ -12585,7 +12609,6 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
             break;
     }
 
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccess);
     if (rcStrict2 != VINF_SUCCESS)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchApicAccessToR3);
     return rcStrict2;
@@ -12692,7 +12715,15 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
     if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
-    { /* likely */ }
+    {
+        /* If event delivery causes an EPT misconfig (MMIO), go back to instruction emulation as otherwise
+           injecting the original pending event would most likely cause the same EPT misconfig VM-exit. */
+        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+            return VERR_EM_INTERPRETER;
+        }
+    }
     else
     {
         if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
@@ -12750,7 +12781,11 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
     if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
-    { /* likely */ }
+    {
+        /* In the unlikely case that the EPT violation happened as a result of delivering an event, log it. */
+        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+            Log4(("EPT violation with an event pending u64IntInfo=%#RX64\n", pVCpu->hm.s.Event.u64IntInfo));
+    }
     else
     {
         if (rcStrict1 == VINF_HM_DOUBLE_FAULT)

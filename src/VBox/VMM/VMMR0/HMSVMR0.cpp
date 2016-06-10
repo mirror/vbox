@@ -2268,8 +2268,8 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
 
     /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
        and if we're injecting an event we should have a TRPM trap pending. */
-    AssertMsg(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
-    AssertMsg(rcExit != VINF_EM_RAW_EMULATE_INSTR || !TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
+    AssertMsg(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT ||  TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
+    AssertMsg(rcExit != VINF_EM_RAW_EMULATE_INSTR     || !TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
 
     /* Sync. the necessary state for going back to ring-3. */
     hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
@@ -2365,8 +2365,6 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
 
     Log4(("hmR0SvmSetPendingEvent: u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u,
           pEvent->n.u8Vector, (uint8_t)pEvent->n.u3Type, !!pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
-
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -2460,7 +2458,6 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
           !!Event.n.u1ErrorCodeValid, Event.n.u32ErrorCode));
 
     hmR0SvmSetPendingEvent(pVCpu, &Event, GCPtrFaultAddress);
-    STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -4197,6 +4194,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
                 Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
                 hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, 0 /* GCPtrFaultAddress */);
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
@@ -4207,6 +4205,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 
             case SVMREFLECTXCPT_DF:
             {
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
                 hmR0SvmSetPendingXcptDF(pVCpu);
                 rc = VINF_HM_DOUBLE_FAULT;
                 break;
@@ -5107,6 +5106,11 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     Assert((u32ErrCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) != X86_TRAP_PF_RSVD);
     if ((u32ErrCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) == (X86_TRAP_PF_RSVD | X86_TRAP_PF_P))
     {
+        /* If event delivery causes an MMIO #NPF, go back to instruction emulation as
+           otherwise injecting the original pending event would most likely cause the same MMIO #NPF. */
+        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+            return VERR_EM_INTERPRETER;
+
         VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
                                                          u32ErrCode);
         rc = VBOXSTRICTRC_VAL(rc2);
@@ -5188,9 +5192,7 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
 #endif
 
     /* Check if this task-switch occurred while delivering an event through the guest IDT. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    if (   !(pVmcb->ctrl.u64ExitInfo2 & (SVM_EXIT2_TASK_SWITCH_IRET | SVM_EXIT2_TASK_SWITCH_JMP))
-        && pVCpu->hm.s.Event.fPending)  /**  Can happen with exceptions/NMI. See @bugref{8411}.*/
+    if (pVCpu->hm.s.Event.fPending)  /* Can happen with exceptions/NMI. See @bugref{8411}. */
     {
         /*
          * AMD-V provides us with the exception which caused the TS; we collect
@@ -5415,7 +5417,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+    /* Paranoia; Ensure we cannot be called as a result of event delivery. */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);
 
     /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
     VMMRZCallRing3Disable(pVCpu);
@@ -5467,7 +5471,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+    /* Paranoia; Ensure we cannot be called as a result of event delivery. */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);
 
     int rc = VERR_SVM_UNEXPECTED_XCPT_EXIT;
     if (pVCpu->hm.s.fGIMTrapXcptUD)
@@ -5508,7 +5514,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+    /* Paranoia; Ensure we cannot be called as a result of event delivery. */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
 
@@ -5543,7 +5551,13 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
+    /* If this #DB is the result of delivering an event, go back to the interpreter. */
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+    if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+        return VERR_EM_INTERPRETER;
+    }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 

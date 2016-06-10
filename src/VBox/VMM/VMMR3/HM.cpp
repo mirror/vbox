@@ -896,7 +896,8 @@ static int hmR3InitCPU(PVM pVM)
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatInjectInterrupt,        "/HM/CPU%d/EventInject/Interrupt", "Injected an external interrupt into the guest.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatInjectXcpt,             "/HM/CPU%d/EventInject/Trap", "Injected an exception into the guest.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatInjectPendingReflect,   "/HM/CPU%d/EventInject/PendingReflect", "Reflecting an exception back to the guest.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatInjectPendingReflect,   "/HM/CPU%d/EventInject/PendingReflect", "Reflecting an exception (or #DF) caused due to event injection.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatInjectPendingInterpret, "/HM/CPU%d/EventInject/PendingInterpret", "Falling to interpreter for handling exception caused due to event injection.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPage,              "/HM/CPU%d/Flush/Page", "Invalidating a guest page on all guest CPUs.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPageManual,        "/HM/CPU%d/Flush/Page/Virt", "Invalidating a guest page using guest-virtual address.");
