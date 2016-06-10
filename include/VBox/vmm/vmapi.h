@@ -436,6 +436,7 @@ VMMR3DECL(VMSTATE)      VMR3GetStateU(PUVM pUVM);
 VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState);
 VMMR3DECL(int)          VMR3AtStateRegister(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
 VMMR3DECL(int)          VMR3AtStateDeregister(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
+VMMR3_INT_DECL(bool)    VMR3SetGuruMeditation(PVM pVM);
 VMMR3_INT_DECL(bool)    VMR3TeleportedAndNotFullyResumedYet(PVM pVM);
 VMMR3DECL(int)          VMR3AtErrorRegister(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
 VMMR3DECL(int)          VMR3AtErrorDeregister(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);

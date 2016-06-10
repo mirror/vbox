@@ -236,8 +236,6 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
             {
                 rc = EMR3ExecuteVM(pVM, pVCpu);
                 Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
-                if (EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION)
-                    vmR3SetGuruMeditation(pVM);
             }
         }
 

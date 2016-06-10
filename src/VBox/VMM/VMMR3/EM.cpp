@@ -1694,6 +1694,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             {
                 case VMSTATE_FATAL_ERROR:
                 case VMSTATE_FATAL_ERROR_LS:
+                case VMSTATE_GURU_MEDITATION:
+                case VMSTATE_GURU_MEDITATION_LS:
                     Log2(("emR3ForcedActions: %s -> VINF_EM_SUSPEND\n", VMGetStateName(enmState) ));
                     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
                     return VINF_EM_SUSPEND;
@@ -2035,6 +2037,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             {
                 case VMSTATE_FATAL_ERROR:
                 case VMSTATE_FATAL_ERROR_LS:
+                case VMSTATE_GURU_MEDITATION:
+                case VMSTATE_GURU_MEDITATION_LS:
                     Log2(("emR3ForcedActions: %s -> VINF_EM_SUSPEND\n", VMGetStateName(enmState) ));
                     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
                     return VINF_EM_SUSPEND;
@@ -2654,6 +2658,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         {
                             /* switch to guru meditation mode */
                             pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                            VMR3SetGuruMeditation(pVM); /* This notifies the other EMTs. */
                             VMMR3FatalDump(pVM, pVCpu, rc);
                         }
                         Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(enmOldState)));
@@ -2671,6 +2676,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_GURU_MEDITATION:
                 {
                     TMR3NotifySuspend(pVM, pVCpu);
+                    VMR3SetGuruMeditation(pVM); /* This notifies the other EMTs. */
                     VMMR3FatalDump(pVM, pVCpu, rc);
                     emR3Debug(pVM, pVCpu, rc);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
@@ -2700,6 +2706,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
          */
         Log(("EMR3ExecuteVM: returns %Rrc because of longjmp / fatal error; (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
         TMR3NotifySuspend(pVM, pVCpu);
+        VMR3SetGuruMeditation(pVM); /* This notifies the other EMTs. */
         VMMR3FatalDump(pVM, pVCpu, rc);
         emR3Debug(pVM, pVCpu, rc);
         STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
