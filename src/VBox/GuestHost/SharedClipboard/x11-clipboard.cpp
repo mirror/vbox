@@ -468,7 +468,7 @@ static CLIPX11FORMAT clipGetHtmlFormatFromTargets(CLIPBACKEND *pCtx,
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format) == VBOX_SHARED_CLIPBOARD_FMT_HTML)
-                    && enmBestHtmlTarget < clipRealFormatForX11Format(format))
+                && enmBestHtmlTarget < clipRealFormatForX11Format(format))
             {
                 enmBestHtmlTarget = clipRealFormatForX11Format(format);
                 bestHTMLFormat = format;
@@ -1192,7 +1192,7 @@ static int clipWinTxtToUtf8ForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
  * @param  piFormatReturn  where to store the bit width (8, 16, 32) of the
  *                         data we are returning
  */
-static int clipWinHTMLToUtf8ForX11CB(Display *pDisplay, const char* pszSrc,
+static int clipWinHTMLToUtf8ForX11CB(Display *pDisplay, const char *pszSrc,
                                     size_t cbSrc, Atom *atomTarget,
                                     Atom *atomTypeReturn,
                                     XtPointer *pValReturn,
@@ -1608,53 +1608,62 @@ static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
 * @param  pcbDest    On success, where to store the number of bytes written.
 *                    Undefined otherwise.  Optional
 */
-int  clipUTF16ToWinHTML(RTUTF16* buffer, size_t cb, char **output, uint32_t *outsz)
+int  clipUTF16ToWinHTML(RTUTF16 *pwcBuf, size_t cb, char **ppszOut, uint32_t *pcOut)
 {
-    Assert(buffer);
+    Assert(pwcBuf);
     Assert(cb);
-    Assert(output);
-    Assert(outsz);
+    Assert(ppszOut);
+    Assert(pcOut);
 
+    if (cb % 2)
+        return VERR_INVALID_PARAMETER;
+    size_t cwc = cb / 2;
     size_t i = 0;
-    RTUTF16* p = buffer;
-    char* result = NULL;
-    size_t resultLen = 0;
-    LogRelFlowFunc(("clipUTF16ToWinHTML src= %ls cb=%d i=%i, %x %x\n", buffer, cb, i, output, outsz));
-    while (i != cb / 2)
+    RTUTF16 *pwc = pwcBuf;
+    char *pchRes = NULL;
+    size_t cRes = 0;
+    LogRelFlowFunc(("clipUTF16ToWinHTML src= %ls cb=%d i=%i, %x %x\n", pwcBuf, cb, i, ppszOut, pcOut));
+    while (i < cwc)
     {
         /* find  zero symbol (end of string) */
-        for (; i < cb / 2 && buffer[i] != 0; i++);
-        LogRelFlowFunc(("skipped nulls i=%d cb/2=%d\n", i, cb / 2));
+        for (; i < cwc && pwcBuf[i] != 0; i++)
+            ;
+        LogRelFlowFunc(("skipped nulls i=%d cwc=%d\n", i, cwc));
 
         /* convert found string */
-        char* cTmp = NULL;
-        size_t sz = 0;
-        int rc = RTUtf16ToUtf8Ex(p, cb / 2, &cTmp, p - buffer, &sz);
-        LogRelFlowFunc(("utf16toutf8 src= %ls res=%s i=%i\n", p, cTmp, i));
-        if (!RT_SUCCESS(rc))
+        char *psz = NULL;
+        size_t cch = 0;
+        int rc = RTUtf16ToUtf8Ex(pwc, cwc, &psz, pwc - pwcBuf, &cch);
+        LogRelFlowFunc(("utf16toutf8 src= %ls res=%s i=%i\n", pwc, psz, i));
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(pchRes);
             return rc;
+        }
 
         /* append new substring */
-        result = (char*)RTMemRealloc(result, resultLen + sz + 1);
-        if (result == NULL)
+        char *pchNew = (char*)RTMemRealloc(pchRes, cRes + cch + 1);
+        if (!pchNew)
         {
-            RTStrFree(cTmp);
-            cTmp = NULL;
+            RTMemFree(pchRes);
+            RTStrFree(psz);
             return VERR_NO_MEMORY;
         }
-        memcpy(result + resultLen, cTmp, sz + 1);
-        LogRelFlowFunc(("Temp result res=%s\n", result + resultLen));
+        pchRes = pchNew;
+        memcpy(pchRes + cRes, psz, cch + 1);
+        LogRelFlowFunc(("Temp result res=%s\n", pchRes + cRes));
 
         /* remove temporary buffer */
-        RTStrFree(cTmp);
-        resultLen += sz + 1;
+        RTStrFree(psz);
+        cRes += cch + 1;
         /* skip zero symbols */
-        for (; i < cb / 2 && buffer[i] == 0; i++);
+        for (; i < cwc && pwcBuf[i] == 0; i++)
+            ;
         /* remember start of string */
-        p += i;
+        pwc += i;
     }
-    *output = result;
-    *outsz = resultLen;
+    *ppszOut = pchRes;
+    *pcOut = cRes;
 
     return VINF_SUCCESS;
 }
