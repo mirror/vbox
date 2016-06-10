@@ -2996,15 +2996,28 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
             if(suffix.equals(destMediumFileName) && !destMediumFileName.isEmpty())
             {
                 /*
-                 * small trick. This case means target path has no filename at the end
-                 * it will look like "/path/to/new/location"
+                 * small trick. This case means target path has no filename at the end.
+                 * it will look like "/path/to/new/location" or just "newname"
                  * there is no backslash in the end
-                 * and there is no filename with extension(suffix) in the end
-                 * In this case just set destMediumFileName to NULL and 
-                 * and add '/' in the end of path.destMediumPath
+                 * or there is no filename with extension(suffix) in the end
                  */
-                destMediumFileName.setNull();
-                destMediumPath.append(RTPATH_SLASH);
+
+                /* case when new path contains only "newname", no path, no extension */
+                if (destMediumPath.equals(destMediumFileName))
+                {
+                    Utf8Str localSuffix = RTPathSuffix(sourceMediumFileName.c_str());
+                    destMediumFileName.append(localSuffix);
+                    destMediumPath = destMediumFileName;
+                }
+                /* case when new path looks like "/path/to/new/location"
+                 * In this case just set destMediumFileName to NULL and 
+                 * and add '/' in the end of path.destMediumPath 
+                 */ 
+                else
+                {
+                    destMediumFileName.setNull();
+                    destMediumPath.append(RTPATH_SLASH);
+                }
             }
 
             if (destMediumFileName.isEmpty())
