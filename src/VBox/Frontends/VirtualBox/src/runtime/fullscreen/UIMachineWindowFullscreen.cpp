@@ -59,41 +59,8 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
 #ifdef VBOX_WS_MAC
     , m_fIsInFullscreenTransition(false)
 #endif /* VBOX_WS_MAC */
+    , m_fWasMinimized(false)
 {
-}
-
-void UIMachineWindowFullscreen::changeEvent(QEvent *pChangeEvent)
-{
-    /* Overriding changeEvent for controlling mini-tool bar visibilty.
-     * Hiding tool-bar when machine-window is minimized and show it in full-screen: */
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    if (pChangeEvent->type() == QEvent::WindowStateChange)
-    {
-        /* If machine-window is in minimized mode: */
-        if (isMinimized())
-        {
-            /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar)
-            {
-                /* Hide mini-toolbar: */
-                m_pMiniToolBar->hide();
-            }
-        }
-        /* If machine-window is in full-screen mode: */
-        else
-        {
-            /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar)
-            {
-                /* Show mini-toolbar in full-screen mode: */
-                m_pMiniToolBar->showFullScreen();
-            }
-        }
-    }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
-    /* Call to base-class: */
-    UIMachineWindow::changeEvent(pChangeEvent);
 }
 
 #ifdef VBOX_WS_MAC
@@ -450,8 +417,19 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
-        /* Hide window: */
+        /* Remember whether the window was minimized: */
+        if (isMinimized())
+            m_fWasMinimized = true;
+        /* Hide window and reset it's state to NONE: */
+        setWindowState(Qt::WindowNoState);
         hide();
+        /* If there is mini-toolbar: */
+        if (m_pMiniToolBar)
+        {
+            /* Hide mini-toolbar and reset it's state to NONE: */
+            m_pMiniToolBar->setWindowState(Qt::WindowNoState);
+            m_pMiniToolBar->hide();
+        }
     }
     else
     {
@@ -488,16 +466,19 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             showFullScreen();
         }
 #elif defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-        /* If machine-window is in minimized mode: */
-        if (isMinimized())
+        /* If there is mini-toolbar: */
+        if (m_pMiniToolBar)
         {
-            /* Show window in minimized mode: */
-            showMinimized();
+            /* Show mini-toolbar: */
+            m_pMiniToolBar->showFullScreen();
         }
-        else
+        /* Show window: */
+        showFullScreen();
+        /* Restore minimized state if necessary: */
+        if (m_fWasMinimized)
         {
-            /* Show window in fullscreen mode: */
-            showFullScreen();
+            m_fWasMinimized = false;
+            showMinimized();
         }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
