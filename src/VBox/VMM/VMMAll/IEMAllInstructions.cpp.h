@@ -1507,7 +1507,6 @@ FNIEMOP_STUB(iemOp_movups_Vps_Wps__movupd_Vpd_Wpd__movss_Vss_Wss__movsd_Vsd_Wsd)
 
 
 /** Opcode 0x0f 0x11. */
-#if 1 /* something is causing regressions, disabling temporarily. */
 FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
 {
     /* Quick hack. Need to restructure all of this later some time. */
@@ -1555,9 +1554,6 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
     IEMOP_BITCH_ABOUT_STUB();
     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
-#else
-FNIEMOP_STUB(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd);
-#endif
 
 
 /** Opcode 0x0f 0x12. */
@@ -1565,7 +1561,6 @@ FNIEMOP_STUB(iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__mo
 
 
 /** Opcode 0x0f 0x13. */
-#if 1 /* something is causing regressions (probably not this one), disabling temporarily. */
 FNIEMOP_DEF(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq)
 {
     /* Quick hack. Need to restructure all of this later some time. */
@@ -1618,9 +1613,6 @@ FNIEMOP_DEF(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq)
     IEMOP_BITCH_ABOUT_STUB();
     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
-#else
-FNIEMOP_STUB(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq);
-#endif
 
 
 /** Opcode 0x0f 0x14. */
@@ -1909,7 +1901,6 @@ FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd
 
 
 /** Opcode 0x0f 0x2b. */
-#if 1 //ndef VBOX_WITH_REM /** @todo figure out why some/all of these instructions is upsetting things */
 FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntps mr,r" : "movntpd mr,r");
@@ -1942,9 +1933,6 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd);
-#endif
 
 
 /** Opcode 0x0f 0x2c. */
@@ -6587,7 +6575,6 @@ FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib__cmppd_Vpd_Wpd_Ib__cmpss_Vss_Wss_Ib__cmpsd_V
 
 
 /** Opcode 0x0f 0xc3. */
-#if 1 //ndef VBOX_WITH_REM /** @todo figure out why some/all of these instructions is upsetting things */
 FNIEMOP_DEF(iemOp_movnti_My_Gy)
 {
     IEMOP_MNEMONIC("movnti My,Gy");
@@ -6640,9 +6627,6 @@ FNIEMOP_DEF(iemOp_movnti_My_Gy)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movnti_My_Gy); // solaris 10 uses this in hat_pte_zero().
-#endif
 
 
 /** Opcode 0x0f 0xc4. */
@@ -6982,7 +6966,6 @@ FNIEMOP_STUB(iemOp_cvttpd2dq_Vdq_Wdp__cvtdq2pd_Vdq_Wpd__cvtpd2dq_Vdq_Wpd);
 
 
 /** Opcode 0x0f 0xe7. */
-#if 1 //ndef VBOX_WITH_REM /** @todo figure out why some/all of these instructions is upsetting things */
 FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
 {
     IEMOP_MNEMONIC(!(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? "movntq mr,r" : "movntdq mr,r");
@@ -7039,9 +7022,6 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
         return IEMOP_RAISE_INVALID_OPCODE();
     return VINF_SUCCESS;
 }
-#else
-FNIEMOP_STUB(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq);
-#endif
 
 
 /** Opcode 0x0f 0xe8. */
