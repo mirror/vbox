@@ -1215,10 +1215,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD2RC_TEMPLATE       = VBoxRc
   VBoxDD2RC_INCS           = build
   VBoxDD2RC_SOURCES        = \
-  	PC/DevIoApic.cpp
-  ifndef VBOX_WITH_NEW_APIC
-   VBoxDD2RC_SOURCES += PC/DevAPIC.cpp
-  endif
+   	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic.cpp) \
+   	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp)
   if1of ($(VBOX_LDR_FMT32), pe lx)
    VBoxDD2RC_LIBS          = \
    	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
@@ -1236,10 +1234,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2R0_INCS           = build
  VBoxDD2R0_SOURCES        = \
  	build/VBoxDD2R0.cpp \
- 	PC/DevIoApic.cpp
- ifndef VBOX_WITH_NEW_APIC
-  VBoxDD2R0_SOURCES += PC/DevAPIC.cpp
- endif
+ 	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic.cpp)
+ 	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp)
  if1of ($(VBOX_LDR_FMT), pe lx)
   VBoxDD2R0_LIBS          = \
   	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
