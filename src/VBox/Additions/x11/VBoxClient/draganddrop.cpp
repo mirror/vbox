@@ -3231,7 +3231,11 @@ void DragAndDropService::cleanup(void)
 
     if (m_hX11Thread != NIL_RTTHREAD)
     {
+#if 0
         rc2 = RTThreadWait(m_hX11Thread, 30 * 1000 /* 30s timeout */, &rcThread);
+#else
+        rc2 = RTThreadWait(m_hX11Thread, 200 /* 200ms timeout */, &rcThread);
+#endif
         if (RT_SUCCESS(rc2))
             rc2 = rcThread;
 
