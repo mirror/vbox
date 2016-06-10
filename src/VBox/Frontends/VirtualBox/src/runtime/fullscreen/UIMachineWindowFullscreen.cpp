@@ -423,6 +423,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         /* Hide window and reset it's state to NONE: */
         setWindowState(Qt::WindowNoState);
         hide();
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
         /* If there is mini-toolbar: */
         if (m_pMiniToolBar)
         {
@@ -430,6 +431,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             m_pMiniToolBar->setWindowState(Qt::WindowNoState);
             m_pMiniToolBar->hide();
         }
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     }
     else
     {
