@@ -2314,10 +2314,10 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
         {
             /** @todo make the state dumping at VMR3PowerOff optional. */
             bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
-            RTLogRelPrintf("****************** Guest state at power off ******************\n");
-            DBGFR3InfoEx(pVM->pUVM, 0, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
+            RTLogRelPrintf("****************** Guest state at power off for VCpu %u ******************\n", pVCpu->idCpu);
+            DBGFR3InfoEx(pVM->pUVM, pVCpu->idCpu, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
-            DBGFR3InfoEx(pVM->pUVM, 0, "mode", NULL, DBGFR3InfoLogRelHlp());
+            DBGFR3InfoEx(pVM->pUVM, pVCpu->idCpu, "mode", NULL, DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
             DBGFR3Info(pVM->pUVM, "activetimers", NULL, DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
@@ -2343,6 +2343,19 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
             vmR3SetStateLocked(pVM, pUVM, VMSTATE_OFF,    VMSTATE_POWERING_OFF, false /*fSetRatherThanClearFF*/);
         RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
     }
+    else if (enmVMState != VMSTATE_GURU_MEDITATION)
+    {
+        /** @todo make the state dumping at VMR3PowerOff optional. */
+        bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
+        RTLogRelPrintf("****************** Guest state at power off for VCpu %u ******************\n", pVCpu->idCpu);
+        DBGFR3InfoEx(pVM->pUVM, pVCpu->idCpu, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
+        RTLogRelPrintf("***\n");
+        DBGFR3InfoEx(pVM->pUVM, pVCpu->idCpu, "mode", NULL, DBGFR3InfoLogRelHlp());
+        RTLogRelPrintf("***\n");
+        RTLogRelSetBuffering(fOldBuffered);
+        RTLogRelPrintf("************** End of Guest state at power off for VCpu %u ***************\n", pVCpu->idCpu);
+    }
+
     return VINF_EM_OFF;
 }
 
@@ -2868,14 +2881,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3HardReset(PVM pVM, PVMCPU pVCpu, void *pvU
         TMR3Reset(pVM);
         EMR3Reset(pVM);
         HMR3Reset(pVM);                 /* This must come *after* PATM, CSAM, CPUM, SELM and TRPM. */
-
-#ifdef LOG_ENABLED
-        /*
-         * Debug logging.
-         */
-        RTLogPrintf("\n\nThe VM was reset:\n");
-        DBGFR3Info(pVM->pUVM, "cpum", "verbose", NULL);
-#endif
 
         /*
          * Do memory setup.
