@@ -1215,7 +1215,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD2RC_TEMPLATE       = VBoxRc
   VBoxDD2RC_INCS           = build
   VBoxDD2RC_SOURCES        = \
-   	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic.cpp) \
+   	PC/DevIoApic.cpp \
    	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp)
   if1of ($(VBOX_LDR_FMT32), pe lx)
    VBoxDD2RC_LIBS          = \
