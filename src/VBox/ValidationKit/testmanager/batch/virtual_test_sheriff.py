@@ -415,6 +415,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED          = ( 'Guru Meditations',  'VERR_PGM_PHYS_PAGE_RESERVED' );
     ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE         = ( 'Guru Meditations',  'VERR_VMX_INVALID_GUEST_STATE' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
+    ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
@@ -642,16 +643,17 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ## Things we search a main or VM log for to figure out why something went bust.
     katSimpleMainAndVmLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
-        ( False, ktReason_Guru_Generic,                           'GuruMeditation' ),
-        ( False, ktReason_Guru_Generic,                           'Guru Meditation' ),
-        ( True,  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED,    'VERR_IEM_INSTR_NOT_IMPLEMENTED' ),
-        ( True,  ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED,   'VERR_IEM_ASPECT_NOT_IMPLEMENTED' ),
-        ( True,  ktReason_Guru_VERR_TRPM_DONT_PANIC,              'VERR_TRPM_DONT_PANIC' ),
-        ( True,  ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED,       'VERR_PGM_PHYS_PAGE_RESERVED' ),
-        ( True,  ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE,      'VERR_VMX_INVALID_GUEST_STATE' ),
-        ( True,  ktReason_Guru_VINF_EM_TRIPLE_FAULT,              'VINF_EM_TRIPLE_FAULT' ),
+        ( False, ktReason_Guru_Generic,                             'GuruMeditation' ),
+        ( False, ktReason_Guru_Generic,                             'Guru Meditation' ),
+        ( True,  ktReason_Guru_VERR_IEM_INSTR_NOT_IMPLEMENTED,      'VERR_IEM_INSTR_NOT_IMPLEMENTED' ),
+        ( True,  ktReason_Guru_VERR_IEM_ASPECT_NOT_IMPLEMENTED,     'VERR_IEM_ASPECT_NOT_IMPLEMENTED' ),
+        ( True,  ktReason_Guru_VERR_TRPM_DONT_PANIC,                'VERR_TRPM_DONT_PANIC' ),
+        ( True,  ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED,         'VERR_PGM_PHYS_PAGE_RESERVED' ),
+        ( True,  ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE,        'VERR_VMX_INVALID_GUEST_STATE' ),
+        ( True,  ktReason_Guru_VINF_EM_TRIPLE_FAULT,                'VINF_EM_TRIPLE_FAULT' ),
         ( True,  ktReason_Networking_Nonexistent_host_nic,
           'rc=E_FAIL text="Nonexistent host networking interface, name \'eth0\' (VERR_INTERNAL_ERROR)"' ),
+        ( True,  ktReason_Host_Reboot_OSX_Watchdog_Timeout,         ': "OSX Watchdog Timeout: ' ),
         ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
     ];
