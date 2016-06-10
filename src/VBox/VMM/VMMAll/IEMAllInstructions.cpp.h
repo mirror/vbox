@@ -1510,7 +1510,8 @@ FNIEMOP_STUB(iemOp_movups_Vps_Wps__movupd_Vpd_Wpd__movss_Vss_Wss__movsd_Vsd_Wsd)
 FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
 {
     /* Quick hack. Need to restructure all of this later some time. */
-    if (pIemCpu->fPrefixes == 0)
+    uint8_t const fRelevantPrefix = pIemCpu->fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ);
+    if (fRelevantPrefix == 0)
     {
         IEMOP_MNEMONIC("movups Wps,Vps");
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1549,7 +1550,7 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
             IEM_MC_END();
         }
     }
-    else if (pIemCpu->fPrefixes == IEM_OP_PRF_REPNZ)
+    else if (fRelevantPrefix == IEM_OP_PRF_REPNZ)
     {
         IEMOP_MNEMONIC("movsd Wsd,Vsd");
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
