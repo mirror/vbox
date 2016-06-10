@@ -3260,9 +3260,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                  *        and VMX_VMCS_CTRL_ENTRY_INSTR_LENGTH from the VMCS. */
                 break;
 
+            /* The guru will dump the HM error and exit history. Nothing extra to report for these errors. */
             case VERR_VMX_INVALID_VMXON_PTR:
-                break;
-
             case VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO:
             case VERR_VMX_INVALID_GUEST_STATE:
             case VERR_VMX_UNEXPECTED_EXIT:
@@ -3271,19 +3270,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
             case VERR_SVM_UNEXPECTED_PATCH_TYPE:
             case VERR_SVM_UNEXPECTED_XCPT_EXIT:
             case VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE:
-            {
-                LogRel(("HM: CPU[%u] HM error         %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
-                LogRel(("HM: CPU[%u] idxExitHistoryFree    %u\n", i, pVCpu->hm.s.idxExitHistoryFree));
-                unsigned const idxLast = pVCpu->hm.s.idxExitHistoryFree > 0 ?
-                                                                            pVCpu->hm.s.idxExitHistoryFree - 1 :
-                                                                            RT_ELEMENTS(pVCpu->hm.s.auExitHistory) - 1;
-                for (unsigned k = 0; k < RT_ELEMENTS(pVCpu->hm.s.auExitHistory); k++)
-                {
-                    LogRel(("HM: CPU[%u] auExitHistory[%2u]   = %#x (%u) %s\n", i, k, pVCpu->hm.s.auExitHistory[k],
-                            pVCpu->hm.s.auExitHistory[k], idxLast == k ? "<-- Last" : ""));
-                }
                 break;
-            }
         }
     }
 
@@ -3555,6 +3542,7 @@ static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
             pHlp->pfnPrintf(pHlp, "  auExitHistory[%2u] = 0x%04x  %s %s\n", i, uExit, pszExit,
                             idxLast == i ? "<-- Latest exit" : "");
         }
+        pHlp->pfnPrintf(pHlp, "HM error = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");

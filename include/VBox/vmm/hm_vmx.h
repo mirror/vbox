@@ -151,35 +151,35 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
  * @{
  */
 /** Unsupported pin-based VM-execution controls combo. */
-#define VMX_UFC_CTRL_PIN_EXEC                                   0
+#define VMX_UFC_CTRL_PIN_EXEC                                   1
 /** Unsupported processor-based VM-execution controls combo. */
-#define VMX_UFC_CTRL_PROC_EXEC                                  1
+#define VMX_UFC_CTRL_PROC_EXEC                                  2
 /** Unsupported move debug register VM-exit combo. */
-#define VMX_UFC_CTRL_PROC_MOV_DRX_EXIT                          2
+#define VMX_UFC_CTRL_PROC_MOV_DRX_EXIT                          3
 /** Unsupported VM-entry controls combo. */
-#define VMX_UFC_CTRL_ENTRY                                      3
+#define VMX_UFC_CTRL_ENTRY                                      4
 /** Unsupported VM-exit controls combo. */
-#define VMX_UFC_CTRL_EXIT                                       4
+#define VMX_UFC_CTRL_EXIT                                       5
 /** MSR storage capacity of the VMCS autoload/store area is not sufficient
  *  for storing host MSRs. */
-#define VMX_UFC_INSUFFICIENT_HOST_MSR_STORAGE                   5
+#define VMX_UFC_INSUFFICIENT_HOST_MSR_STORAGE                   6
 /** MSR storage capacity of the VMCS autoload/store area is not sufficient
  *  for storing guest MSRs. */
-#define VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE                  6
+#define VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE                  7
 /** Invalid VMCS size. */
-#define VMX_UFC_INVALID_VMCS_SIZE                               7
+#define VMX_UFC_INVALID_VMCS_SIZE                               8
 /** Unsupported secondary processor-based VM-execution controls combo. */
-#define VMX_UFC_CTRL_PROC_EXEC2                                 8
+#define VMX_UFC_CTRL_PROC_EXEC2                                 9
 /** Invalid unrestricted-guest execution controls combo. */
-#define VMX_UFC_INVALID_UX_COMBO                                9
+#define VMX_UFC_INVALID_UX_COMBO                                10
 /** EPT flush type not supported. */
-#define VMX_UFC_EPT_FLUSH_TYPE_UNSUPPORTED                      10
+#define VMX_UFC_EPT_FLUSH_TYPE_UNSUPPORTED                      11
 /** EPT paging structure memory type is not write-back. */
-#define VMX_UFC_EPT_MEM_TYPE_NOT_WB                             11
+#define VMX_UFC_EPT_MEM_TYPE_NOT_WB                             12
 /** EPT requires INVEPT instr. support but it's not available. */
-#define VMX_UFC_EPT_INVEPT_UNAVAILABLE                          12
+#define VMX_UFC_EPT_INVEPT_UNAVAILABLE                          13
 /** EPT requires page-walk length of 4. */
-#define VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED                13
+#define VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED                14
 /** @} */
 
 /** @name VMX HM-error codes for VERR_VMX_INVALID_GUEST_STATE.
@@ -187,257 +187,257 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
  * @{
  */
 /** An error occurred while checking invalid-guest-state. */
-#define VMX_IGS_ERROR                                           0
+#define VMX_IGS_ERROR                                           500
 /** The invalid guest-state checks did not find any reason why. */
-#define VMX_IGS_REASON_NOT_FOUND                                1
+#define VMX_IGS_REASON_NOT_FOUND                                501
 /** CR0 fixed1 bits invalid. */
-#define VMX_IGS_CR0_FIXED1                                      2
+#define VMX_IGS_CR0_FIXED1                                      502
 /** CR0 fixed0 bits invalid. */
-#define VMX_IGS_CR0_FIXED0                                      3
+#define VMX_IGS_CR0_FIXED0                                      503
 /** CR0.PE and CR0.PE invalid VT-x/host combination. */
-#define VMX_IGS_CR0_PG_PE_COMBO                                 4
+#define VMX_IGS_CR0_PG_PE_COMBO                                 504
 /** CR4 fixed1 bits invalid. */
-#define VMX_IGS_CR4_FIXED1                                      5
+#define VMX_IGS_CR4_FIXED1                                      505
 /** CR4 fixed0 bits invalid. */
-#define VMX_IGS_CR4_FIXED0                                      6
+#define VMX_IGS_CR4_FIXED0                                      506
 /** Reserved bits in VMCS' DEBUGCTL MSR field not set to 0 when
  *  VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG is used. */
-#define VMX_IGS_DEBUGCTL_MSR_RESERVED                           7
+#define VMX_IGS_DEBUGCTL_MSR_RESERVED                           507
 /** CR0.PG not set for long-mode when not using unrestricted guest. */
-#define VMX_IGS_CR0_PG_LONGMODE                                 8
+#define VMX_IGS_CR0_PG_LONGMODE                                 508
 /** CR4.PAE not set for long-mode guest when not using unrestricted guest. */
-#define VMX_IGS_CR4_PAE_LONGMODE                                9
+#define VMX_IGS_CR4_PAE_LONGMODE                                509
 /** CR4.PCIDE set for 32-bit guest. */
-#define VMX_IGS_CR4_PCIDE                                       10
+#define VMX_IGS_CR4_PCIDE                                       510
 /** VMCS' DR7 reserved bits not set to 0. */
-#define VMX_IGS_DR7_RESERVED                                    11
+#define VMX_IGS_DR7_RESERVED                                    511
 /** VMCS' PERF_GLOBAL MSR reserved bits not set to 0. */
-#define VMX_IGS_PERF_GLOBAL_MSR_RESERVED                        12
+#define VMX_IGS_PERF_GLOBAL_MSR_RESERVED                        512
 /** VMCS' EFER MSR reserved bits not set to 0. */
-#define VMX_IGS_EFER_MSR_RESERVED                               13
+#define VMX_IGS_EFER_MSR_RESERVED                               513
 /** VMCS' EFER MSR.LMA does not match the IA32e mode guest control. */
-#define VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH                    14
+#define VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH                    514
 /** VMCS' EFER MSR.LMA does not match EFER.LME of the guest when using paging
  *  without unrestricted guest. */
-#define VMX_IGS_EFER_LMA_LME_MISMATCH                           15
+#define VMX_IGS_EFER_LMA_LME_MISMATCH                           515
 /** CS.Attr.P bit invalid. */
-#define VMX_IGS_CS_ATTR_P_INVALID                               16
+#define VMX_IGS_CS_ATTR_P_INVALID                               516
 /** CS.Attr reserved bits not set to 0.  */
-#define VMX_IGS_CS_ATTR_RESERVED                                17
+#define VMX_IGS_CS_ATTR_RESERVED                                517
 /** CS.Attr.G bit invalid. */
-#define VMX_IGS_CS_ATTR_G_INVALID                               18
+#define VMX_IGS_CS_ATTR_G_INVALID                               518
 /** CS is unusable. */
-#define VMX_IGS_CS_ATTR_UNUSABLE                                19
+#define VMX_IGS_CS_ATTR_UNUSABLE                                519
 /** CS and SS DPL unequal. */
-#define VMX_IGS_CS_SS_ATTR_DPL_UNEQUAL                          20
+#define VMX_IGS_CS_SS_ATTR_DPL_UNEQUAL                          520
 /** CS and SS DPL mismatch. */
-#define VMX_IGS_CS_SS_ATTR_DPL_MISMATCH                         21
+#define VMX_IGS_CS_SS_ATTR_DPL_MISMATCH                         521
 /** CS Attr.Type invalid. */
-#define VMX_IGS_CS_ATTR_TYPE_INVALID                            22
+#define VMX_IGS_CS_ATTR_TYPE_INVALID                            522
 /** CS and SS RPL unequal. */
-#define VMX_IGS_SS_CS_RPL_UNEQUAL                               23
+#define VMX_IGS_SS_CS_RPL_UNEQUAL                               523
 /** SS.Attr.DPL and SS RPL unequal. */
-#define VMX_IGS_SS_ATTR_DPL_RPL_UNEQUAL                         24
+#define VMX_IGS_SS_ATTR_DPL_RPL_UNEQUAL                         524
 /** SS.Attr.DPL invalid for segment type. */
-#define VMX_IGS_SS_ATTR_DPL_INVALID                             25
+#define VMX_IGS_SS_ATTR_DPL_INVALID                             525
 /** SS.Attr.Type invalid. */
-#define VMX_IGS_SS_ATTR_TYPE_INVALID                            26
+#define VMX_IGS_SS_ATTR_TYPE_INVALID                            526
 /** SS.Attr.P bit invalid. */
-#define VMX_IGS_SS_ATTR_P_INVALID                               27
+#define VMX_IGS_SS_ATTR_P_INVALID                               527
 /** SS.Attr reserved bits not set to 0. */
-#define VMX_IGS_SS_ATTR_RESERVED                                28
+#define VMX_IGS_SS_ATTR_RESERVED                                528
 /** SS.Attr.G bit invalid. */
-#define VMX_IGS_SS_ATTR_G_INVALID                               29
+#define VMX_IGS_SS_ATTR_G_INVALID                               529
 /** DS.Attr.A bit invalid. */
-#define VMX_IGS_DS_ATTR_A_INVALID                               30
+#define VMX_IGS_DS_ATTR_A_INVALID                               530
 /** DS.Attr.P bit invalid. */
-#define VMX_IGS_DS_ATTR_P_INVALID                               31
+#define VMX_IGS_DS_ATTR_P_INVALID                               531
 /** DS.Attr.DPL and DS RPL unequal. */
-#define VMX_IGS_DS_ATTR_DPL_RPL_UNEQUAL                         32
+#define VMX_IGS_DS_ATTR_DPL_RPL_UNEQUAL                         532
 /** DS.Attr reserved bits not set to 0. */
-#define VMX_IGS_DS_ATTR_RESERVED                                33
+#define VMX_IGS_DS_ATTR_RESERVED                                533
 /** DS.Attr.G bit invalid. */
-#define VMX_IGS_DS_ATTR_G_INVALID                               34
+#define VMX_IGS_DS_ATTR_G_INVALID                               534
 /** DS.Attr.Type invalid. */
-#define VMX_IGS_DS_ATTR_TYPE_INVALID                            35
+#define VMX_IGS_DS_ATTR_TYPE_INVALID                            535
 /** ES.Attr.A bit invalid. */
-#define VMX_IGS_ES_ATTR_A_INVALID                               36
+#define VMX_IGS_ES_ATTR_A_INVALID                               536
 /** ES.Attr.P bit invalid. */
-#define VMX_IGS_ES_ATTR_P_INVALID                               37
+#define VMX_IGS_ES_ATTR_P_INVALID                               537
 /** ES.Attr.DPL and DS RPL unequal. */
-#define VMX_IGS_ES_ATTR_DPL_RPL_UNEQUAL                         38
+#define VMX_IGS_ES_ATTR_DPL_RPL_UNEQUAL                         538
 /** ES.Attr reserved bits not set to 0. */
-#define VMX_IGS_ES_ATTR_RESERVED                                39
+#define VMX_IGS_ES_ATTR_RESERVED                                539
 /** ES.Attr.G bit invalid. */
-#define VMX_IGS_ES_ATTR_G_INVALID                               40
+#define VMX_IGS_ES_ATTR_G_INVALID                               540
 /** ES.Attr.Type invalid. */
-#define VMX_IGS_ES_ATTR_TYPE_INVALID                            41
+#define VMX_IGS_ES_ATTR_TYPE_INVALID                            541
 /** FS.Attr.A bit invalid. */
-#define VMX_IGS_FS_ATTR_A_INVALID                               42
+#define VMX_IGS_FS_ATTR_A_INVALID                               542
 /** FS.Attr.P bit invalid. */
-#define VMX_IGS_FS_ATTR_P_INVALID                               43
+#define VMX_IGS_FS_ATTR_P_INVALID                               543
 /** FS.Attr.DPL and DS RPL unequal. */
-#define VMX_IGS_FS_ATTR_DPL_RPL_UNEQUAL                         44
+#define VMX_IGS_FS_ATTR_DPL_RPL_UNEQUAL                         544
 /** FS.Attr reserved bits not set to 0. */
-#define VMX_IGS_FS_ATTR_RESERVED                                45
+#define VMX_IGS_FS_ATTR_RESERVED                                545
 /** FS.Attr.G bit invalid. */
-#define VMX_IGS_FS_ATTR_G_INVALID                               46
+#define VMX_IGS_FS_ATTR_G_INVALID                               546
 /** FS.Attr.Type invalid. */
-#define VMX_IGS_FS_ATTR_TYPE_INVALID                            47
+#define VMX_IGS_FS_ATTR_TYPE_INVALID                            547
 /** GS.Attr.A bit invalid. */
-#define VMX_IGS_GS_ATTR_A_INVALID                               48
+#define VMX_IGS_GS_ATTR_A_INVALID                               548
 /** GS.Attr.P bit invalid. */
-#define VMX_IGS_GS_ATTR_P_INVALID                               49
+#define VMX_IGS_GS_ATTR_P_INVALID                               549
 /** GS.Attr.DPL and DS RPL unequal. */
-#define VMX_IGS_GS_ATTR_DPL_RPL_UNEQUAL                         50
+#define VMX_IGS_GS_ATTR_DPL_RPL_UNEQUAL                         550
 /** GS.Attr reserved bits not set to 0. */
-#define VMX_IGS_GS_ATTR_RESERVED                                51
+#define VMX_IGS_GS_ATTR_RESERVED                                551
 /** GS.Attr.G bit invalid. */
-#define VMX_IGS_GS_ATTR_G_INVALID                               52
+#define VMX_IGS_GS_ATTR_G_INVALID                               552
 /** GS.Attr.Type invalid. */
-#define VMX_IGS_GS_ATTR_TYPE_INVALID                            53
+#define VMX_IGS_GS_ATTR_TYPE_INVALID                            553
 /** V86 mode CS.Base invalid. */
-#define VMX_IGS_V86_CS_BASE_INVALID                             54
+#define VMX_IGS_V86_CS_BASE_INVALID                             554
 /** V86 mode CS.Limit invalid. */
-#define VMX_IGS_V86_CS_LIMIT_INVALID                            55
+#define VMX_IGS_V86_CS_LIMIT_INVALID                            555
 /** V86 mode CS.Attr invalid. */
-#define VMX_IGS_V86_CS_ATTR_INVALID                             56
+#define VMX_IGS_V86_CS_ATTR_INVALID                             556
 /** V86 mode SS.Base invalid. */
-#define VMX_IGS_V86_SS_BASE_INVALID                             57
+#define VMX_IGS_V86_SS_BASE_INVALID                             557
 /** V86 mode SS.Limit invalid. */
-#define VMX_IGS_V86_SS_LIMIT_INVALID                            58
+#define VMX_IGS_V86_SS_LIMIT_INVALID                            558
 /** V86 mode SS.Attr invalid. */
-#define VMX_IGS_V86_SS_ATTR_INVALID                             59
+#define VMX_IGS_V86_SS_ATTR_INVALID                             559
 /** V86 mode DS.Base invalid. */
-#define VMX_IGS_V86_DS_BASE_INVALID                             60
+#define VMX_IGS_V86_DS_BASE_INVALID                             560
 /** V86 mode DS.Limit invalid. */
-#define VMX_IGS_V86_DS_LIMIT_INVALID                            61
+#define VMX_IGS_V86_DS_LIMIT_INVALID                            561
 /** V86 mode DS.Attr invalid. */
-#define VMX_IGS_V86_DS_ATTR_INVALID                             62
+#define VMX_IGS_V86_DS_ATTR_INVALID                             562
 /** V86 mode ES.Base invalid. */
-#define VMX_IGS_V86_ES_BASE_INVALID                             63
+#define VMX_IGS_V86_ES_BASE_INVALID                             563
 /** V86 mode ES.Limit invalid. */
-#define VMX_IGS_V86_ES_LIMIT_INVALID                            64
+#define VMX_IGS_V86_ES_LIMIT_INVALID                            564
 /** V86 mode ES.Attr invalid. */
-#define VMX_IGS_V86_ES_ATTR_INVALID                             65
+#define VMX_IGS_V86_ES_ATTR_INVALID                             565
 /** V86 mode FS.Base invalid. */
-#define VMX_IGS_V86_FS_BASE_INVALID                             66
+#define VMX_IGS_V86_FS_BASE_INVALID                             566
 /** V86 mode FS.Limit invalid. */
-#define VMX_IGS_V86_FS_LIMIT_INVALID                            67
+#define VMX_IGS_V86_FS_LIMIT_INVALID                            567
 /** V86 mode FS.Attr invalid. */
-#define VMX_IGS_V86_FS_ATTR_INVALID                             68
+#define VMX_IGS_V86_FS_ATTR_INVALID                             568
 /** V86 mode GS.Base invalid. */
-#define VMX_IGS_V86_GS_BASE_INVALID                             69
+#define VMX_IGS_V86_GS_BASE_INVALID                             569
 /** V86 mode GS.Limit invalid. */
-#define VMX_IGS_V86_GS_LIMIT_INVALID                            70
+#define VMX_IGS_V86_GS_LIMIT_INVALID                            570
 /** V86 mode GS.Attr invalid. */
-#define VMX_IGS_V86_GS_ATTR_INVALID                             71
+#define VMX_IGS_V86_GS_ATTR_INVALID                             571
 /** Longmode CS.Base invalid. */
-#define VMX_IGS_LONGMODE_CS_BASE_INVALID                        72
+#define VMX_IGS_LONGMODE_CS_BASE_INVALID                        572
 /** Longmode SS.Base invalid. */
-#define VMX_IGS_LONGMODE_SS_BASE_INVALID                        73
+#define VMX_IGS_LONGMODE_SS_BASE_INVALID                        573
 /** Longmode DS.Base invalid. */
-#define VMX_IGS_LONGMODE_DS_BASE_INVALID                        74
+#define VMX_IGS_LONGMODE_DS_BASE_INVALID                        574
 /** Longmode ES.Base invalid. */
-#define VMX_IGS_LONGMODE_ES_BASE_INVALID                        75
+#define VMX_IGS_LONGMODE_ES_BASE_INVALID                        575
 /** SYSENTER ESP is not canonical. */
-#define VMX_IGS_SYSENTER_ESP_NOT_CANONICAL                      76
+#define VMX_IGS_SYSENTER_ESP_NOT_CANONICAL                      576
 /** SYSENTER EIP is not canonical. */
-#define VMX_IGS_SYSENTER_EIP_NOT_CANONICAL                      77
+#define VMX_IGS_SYSENTER_EIP_NOT_CANONICAL                      577
 /** PAT MSR invalid. */
-#define VMX_IGS_PAT_MSR_INVALID                                 78
+#define VMX_IGS_PAT_MSR_INVALID                                 578
 /** PAT MSR reserved bits not set to 0. */
-#define VMX_IGS_PAT_MSR_RESERVED                                79
+#define VMX_IGS_PAT_MSR_RESERVED                                579
 /** GDTR.Base is not canonical. */
-#define VMX_IGS_GDTR_BASE_NOT_CANONICAL                         80
+#define VMX_IGS_GDTR_BASE_NOT_CANONICAL                         580
 /** IDTR.Base is not canonical. */
-#define VMX_IGS_IDTR_BASE_NOT_CANONICAL                         81
+#define VMX_IGS_IDTR_BASE_NOT_CANONICAL                         581
 /** GDTR.Limit invalid. */
-#define VMX_IGS_GDTR_LIMIT_INVALID                              82
+#define VMX_IGS_GDTR_LIMIT_INVALID                              582
 /** IDTR.Limit invalid. */
-#define VMX_IGS_IDTR_LIMIT_INVALID                              83
+#define VMX_IGS_IDTR_LIMIT_INVALID                              583
 /** Longmode RIP is invalid. */
-#define VMX_IGS_LONGMODE_RIP_INVALID                            84
+#define VMX_IGS_LONGMODE_RIP_INVALID                            584
 /** RFLAGS reserved bits not set to 0. */
-#define VMX_IGS_RFLAGS_RESERVED                                 85
+#define VMX_IGS_RFLAGS_RESERVED                                 585
 /** RFLAGS RA1 reserved bits not set to 1. */
-#define VMX_IGS_RFLAGS_RESERVED1                                86
+#define VMX_IGS_RFLAGS_RESERVED1                                586
 /** RFLAGS.VM (V86 mode) invalid. */
-#define VMX_IGS_RFLAGS_VM_INVALID                               87
+#define VMX_IGS_RFLAGS_VM_INVALID                               587
 /** RFLAGS.IF invalid. */
-#define VMX_IGS_RFLAGS_IF_INVALID                               88
+#define VMX_IGS_RFLAGS_IF_INVALID                               588
 /** Activity state invalid. */
-#define VMX_IGS_ACTIVITY_STATE_INVALID                          89
+#define VMX_IGS_ACTIVITY_STATE_INVALID                          589
 /** Activity state HLT invalid when SS.Attr.DPL is not zero. */
-#define VMX_IGS_ACTIVITY_STATE_HLT_INVALID                      90
+#define VMX_IGS_ACTIVITY_STATE_HLT_INVALID                      590
 /** Activity state ACTIVE invalid when block-by-STI or MOV SS. */
-#define VMX_IGS_ACTIVITY_STATE_ACTIVE_INVALID                   91
+#define VMX_IGS_ACTIVITY_STATE_ACTIVE_INVALID                   591
 /** Activity state SIPI WAIT invalid. */
-#define VMX_IGS_ACTIVITY_STATE_SIPI_WAIT_INVALID                92
+#define VMX_IGS_ACTIVITY_STATE_SIPI_WAIT_INVALID                592
 /** Interruptibility state reserved bits not set to 0. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_RESERVED                 93
+#define VMX_IGS_INTERRUPTIBILITY_STATE_RESERVED                 593
 /** Interruptibility state cannot be block-by-STI -and- MOV SS. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_STI_MOVSS_INVALID        94
+#define VMX_IGS_INTERRUPTIBILITY_STATE_STI_MOVSS_INVALID        594
 /** Interruptibility state block-by-STI invalid for EFLAGS. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID          95
+#define VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID          595
 /** Interruptibility state invalid while trying to deliver external
  *  interrupt. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_EXT_INT_INVALID          96
+#define VMX_IGS_INTERRUPTIBILITY_STATE_EXT_INT_INVALID          596
 /** Interruptibility state block-by-MOVSS invalid while trying to deliver an
  *  NMI. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_MOVSS_INVALID            97
+#define VMX_IGS_INTERRUPTIBILITY_STATE_MOVSS_INVALID            597
 /** Interruptibility state block-by-SMI invalid when CPU is not in SMM. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_SMI_INVALID              98
+#define VMX_IGS_INTERRUPTIBILITY_STATE_SMI_INVALID              598
 /** Interruptibility state block-by-SMI invalid when trying to enter SMM. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID          99
+#define VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID          599
 /** Interruptibility state block-by-STI (maybe) invalid when trying to
  *  deliver an NMI. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_STI_INVALID              100
+#define VMX_IGS_INTERRUPTIBILITY_STATE_STI_INVALID              600
 /** Interruptibility state block-by-NMI invalid when virtual-NMIs control is
  *  active. */
-#define VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID              101
+#define VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID              601
 /** Pending debug exceptions reserved bits not set to 0. */
-#define VMX_IGS_PENDING_DEBUG_RESERVED                          102
+#define VMX_IGS_PENDING_DEBUG_RESERVED                          602
 /** Longmode pending debug exceptions reserved bits not set to 0. */
-#define VMX_IGS_LONGMODE_PENDING_DEBUG_RESERVED                 103
+#define VMX_IGS_LONGMODE_PENDING_DEBUG_RESERVED                 603
 /** Pending debug exceptions.BS bit is not set when it should be. */
-#define VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_SET                   104
+#define VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_SET                   604
 /** Pending debug exceptions.BS bit is not clear when it should be. */
-#define VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_CLEAR                 105
+#define VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_CLEAR                 605
 /** VMCS link pointer reserved bits not set to 0. */
-#define VMX_IGS_VMCS_LINK_PTR_RESERVED                          106
+#define VMX_IGS_VMCS_LINK_PTR_RESERVED                          606
 /** TR cannot index into LDT, TI bit MBZ. */
-#define VMX_IGS_TR_TI_INVALID                                   107
+#define VMX_IGS_TR_TI_INVALID                                   607
 /** LDTR cannot index into LDT. TI bit MBZ. */
-#define VMX_IGS_LDTR_TI_INVALID                                 108
+#define VMX_IGS_LDTR_TI_INVALID                                 608
 /** TR.Base is not canonical. */
-#define VMX_IGS_TR_BASE_NOT_CANONICAL                           109
+#define VMX_IGS_TR_BASE_NOT_CANONICAL                           609
 /** FS.Base is not canonical. */
-#define VMX_IGS_FS_BASE_NOT_CANONICAL                           110
+#define VMX_IGS_FS_BASE_NOT_CANONICAL                           610
 /** GS.Base is not canonical. */
-#define VMX_IGS_GS_BASE_NOT_CANONICAL                           111
+#define VMX_IGS_GS_BASE_NOT_CANONICAL                           611
 /** LDTR.Base is not canonical. */
-#define VMX_IGS_LDTR_BASE_NOT_CANONICAL                         112
+#define VMX_IGS_LDTR_BASE_NOT_CANONICAL                         612
 /** TR is unusable. */
-#define VMX_IGS_TR_ATTR_UNUSABLE                                113
+#define VMX_IGS_TR_ATTR_UNUSABLE                                613
 /** TR.Attr.S bit invalid. */
-#define VMX_IGS_TR_ATTR_S_INVALID                               114
+#define VMX_IGS_TR_ATTR_S_INVALID                               614
 /** TR is not present. */
-#define VMX_IGS_TR_ATTR_P_INVALID                               115
+#define VMX_IGS_TR_ATTR_P_INVALID                               615
 /** TR.Attr reserved bits not set to 0. */
-#define VMX_IGS_TR_ATTR_RESERVED                                116
+#define VMX_IGS_TR_ATTR_RESERVED                                616
 /** TR.Attr.G bit invalid. */
-#define VMX_IGS_TR_ATTR_G_INVALID                               117
+#define VMX_IGS_TR_ATTR_G_INVALID                               617
 /** Longmode TR.Attr.Type invalid. */
-#define VMX_IGS_LONGMODE_TR_ATTR_TYPE_INVALID                   118
+#define VMX_IGS_LONGMODE_TR_ATTR_TYPE_INVALID                   618
 /** TR.Attr.Type invalid. */
-#define VMX_IGS_TR_ATTR_TYPE_INVALID                            119
+#define VMX_IGS_TR_ATTR_TYPE_INVALID                            619
 /** CS.Attr.S invalid. */
-#define VMX_IGS_CS_ATTR_S_INVALID                               120
+#define VMX_IGS_CS_ATTR_S_INVALID                               620
 /** CS.Attr.DPL invalid. */
-#define VMX_IGS_CS_ATTR_DPL_INVALID                             121
+#define VMX_IGS_CS_ATTR_DPL_INVALID                             621
 /** PAE PDPTE reserved bits not set to 0. */
-#define VMX_IGS_PAE_PDPTE_RESERVED                              123
+#define VMX_IGS_PAE_PDPTE_RESERVED                              623
 /** @} */
 
 /** @name VMX VMCS-Read cache indices.
