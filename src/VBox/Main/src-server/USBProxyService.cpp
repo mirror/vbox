@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -744,7 +744,7 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
          ++it)
     {
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
-        const HostUSBDeviceFilter::Data &data = (*it)->i_getData();
+        const HostUSBDeviceFilter::BackupableUSBDeviceFilterData &data = (*it)->i_getData();
         if (aDevice->i_isMatch(data))
         {
             USBDeviceFilterAction_T action = USBDeviceFilterAction_Null;

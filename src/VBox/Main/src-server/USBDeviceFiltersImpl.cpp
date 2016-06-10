@@ -379,7 +379,7 @@ HRESULT USBDeviceFilters::insertDeviceFilter(ULONG aPosition,
     pFilter->mInList = true;
 
     /* notify the proxy (only when it makes sense) */
-    if (pFilter->i_getData().mActive && Global::IsOnline(adep.machineState())
+    if (pFilter->i_getData().mData.fActive && Global::IsOnline(adep.machineState())
         && pFilter->i_getData().mRemote.isMatch(false))
     {
         USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
@@ -445,7 +445,7 @@ HRESULT USBDeviceFilters::removeDeviceFilter(ULONG aPosition,
 
 
     /* notify the proxy (only when it makes sense) */
-    if (pFilter->i_getData().mActive && Global::IsOnline(adep.machineState())
+    if (pFilter->i_getData().mData.fActive && Global::IsOnline(adep.machineState())
         && pFilter->i_getData().mRemote.isMatch(false))
     {
         USBProxyService *pProxySvc = m->pHost->i_usbProxyService();
@@ -541,13 +541,13 @@ HRESULT USBDeviceFilters::i_saveSettings(settings::USB &data)
          ++it)
     {
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
-        const USBDeviceFilter::Data &filterData = (*it)->i_getData();
+        const USBDeviceFilter::BackupableUSBDeviceFilterData &filterData = (*it)->i_getData();
 
         Bstr str;
 
         settings::USBDeviceFilter f;
-        f.strName = filterData.mName;
-        f.fActive = !!filterData.mActive;
+        f.strName = filterData.mData.strName;
+        f.fActive = !!filterData.mData.fActive;
         (*it)->COMGETTER(VendorId)(str.asOutParam());
         f.strVendorId = str;
         (*it)->COMGETTER(ProductId)(str.asOutParam());
@@ -563,7 +563,7 @@ HRESULT USBDeviceFilters::i_saveSettings(settings::USB &data)
         (*it)->COMGETTER(Port)(str.asOutParam());
         f.strPort = str;
         f.strRemote = filterData.mRemote.string();
-        f.ulMaskedInterfaces = filterData.mMaskedIfs;
+        f.ulMaskedInterfaces = filterData.mData.ulMaskedInterfaces;
 
         data.llDeviceFilters.push_back(f);
     }
@@ -600,7 +600,7 @@ void USBDeviceFilters::i_rollback()
                 backedList->end())
             {
                 /* notify the proxy (only when it makes sense) */
-                if ((*it)->i_getData().mActive &&
+                if ((*it)->i_getData().mData.fActive &&
                     Global::IsOnline(adep.machineState())
                     && (*it)->i_getData().mRemote.isMatch(false))
                 {
@@ -626,7 +626,7 @@ void USBDeviceFilters::i_rollback()
                     m->llDeviceFilters->end())
                 {
                     /* notify the proxy (only when necessary) */
-                    if ((*it)->i_getData().mActive
+                    if ((*it)->i_getData().mData.fActive
                             && (*it)->i_getData().mRemote.isMatch(false))
                     {
                         USBDeviceFilter *pFilter = *it; /* resolve ambiguity */
@@ -838,7 +838,7 @@ HRESULT USBDeviceFilters::i_onDeviceFilterChange(USBDeviceFilter *aFilter,
             if (aFilter->i_getData().mRemote.isMatch(false))
             {
                 /* insert/remove the filter from the proxy */
-                if (aFilter->i_getData().mActive)
+                if (aFilter->i_getData().mData.fActive)
                 {
                     ComAssertRet(aFilter->i_getId() == NULL, E_FAIL);
                     aFilter->i_getId() = pProxySvc->insertFilter(&aFilter->i_getData().mUSBFilter);
@@ -853,7 +853,7 @@ HRESULT USBDeviceFilters::i_onDeviceFilterChange(USBDeviceFilter *aFilter,
         }
         else
         {
-            if (aFilter->i_getData().mActive)
+            if (aFilter->i_getData().mData.fActive)
             {
                 /* update the filter in the proxy */
                 ComAssertRet(aFilter->i_getId() != NULL, E_FAIL);
@@ -896,7 +896,7 @@ bool USBDeviceFilters::i_hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevi
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
         if (aDevice->i_isMatch((*it)->i_getData()))
         {
-            *aMaskedIfs = (*it)->i_getData().mMaskedIfs;
+            *aMaskedIfs = (*it)->i_getData().mData.ulMaskedInterfaces;
             return true;
         }
     }
@@ -994,9 +994,9 @@ bool USBDeviceFilters::i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaske
          ++it)
     {
         AutoWriteLock filterLock(*it COMMA_LOCKVAL_SRC_POS);
-        const USBDeviceFilter::Data &aData = (*it)->i_getData();
+        const USBDeviceFilter::BackupableUSBDeviceFilterData &aData = (*it)->i_getData();
 
-        if (!aData.mActive)
+        if (!aData.mData.fActive)
             continue;
         if (!aData.mRemote.isMatch(remote))
             continue;
@@ -1004,7 +1004,7 @@ bool USBDeviceFilters::i_hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaske
             continue;
 
         match = true;
-        *aMaskedIfs = aData.mMaskedIfs;
+        *aMaskedIfs = aData.mData.ulMaskedInterfaces;
         break;
     }
 
@@ -1040,7 +1040,7 @@ HRESULT USBDeviceFilters::i_notifyProxy(bool aInsertFilters)
         USBDeviceFilter *pFilter = *it; /* resolve ambiguity (for ComPtr below) */
 
         /* notify the proxy (only if the filter is active) */
-        if (   pFilter->i_getData().mActive
+        if (   pFilter->i_getData().mData.fActive
             && pFilter->i_getData().mRemote.isMatch(false) /* and if the filter is NOT remote */
            )
         {

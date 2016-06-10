@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -215,7 +215,7 @@ public:
     bool i_wasActuallyDetached();
     void i_onPhysicalDetached();
 
-    bool i_isMatch(const USBDeviceFilter::Data &aData);
+    bool i_isMatch(const USBDeviceFilter::BackupableUSBDeviceFilterData &aData);
     int i_compare(PCUSBDEVICE aDev2);
     static int i_compare(PCUSBDEVICE aDev1, PCUSBDEVICE aDev2, bool aIsAwaitingReAttach = false);
 
