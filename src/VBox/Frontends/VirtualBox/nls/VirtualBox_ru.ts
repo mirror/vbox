@@ -7395,7 +7395,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation>Шифрован ключём с ИД:</translation>
+        <translation>Шифрован ключом с ИД:</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
@@ -9888,11 +9888,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</source>
-        <translation>Не удалось задать глобальной внутренней переменной VirtualBox с ключём &lt;i&gt;%1&lt;/i&gt; значение &lt;i&gt;{%2}&lt;/i&gt;.</translation>
+        <translation>Не удалось задать глобальной внутренней переменной VirtualBox с ключом &lt;i&gt;%1&lt;/i&gt; значение &lt;i&gt;{%2}&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation>Не удалось задать внутренней переменной машины &lt;i&gt;%2&lt;/i&gt; с ключём &lt;i&gt;%1&lt;/i&gt; значение &lt;i&gt;{%3}&lt;/i&gt;.</translation>
+        <translation>Не удалось задать внутренней переменной машины &lt;i&gt;%2&lt;/i&gt; с ключом &lt;i&gt;%1&lt;/i&gt; значение &lt;i&gt;{%3}&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
@@ -15592,7 +15592,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation>Шифрован ключём с ИД:</translation>
+        <translation>Шифрован ключом с ИД:</translation>
     </message>
 </context>
 <context>
