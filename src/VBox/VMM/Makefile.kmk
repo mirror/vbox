@@ -163,6 +163,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/DBGFReg.cpp \
 	VMMR3/DBGFStack.cpp \
 	VMMR3/DBGFR3Trace.cpp \
+	VMMR3/DBGFR3Type.cpp \
 	VMMR3/EM.cpp \
 	VMMR3/EMR3Dbg.cpp \
 	$(if $(VBOX_WITH_RAW_MODE),VMMR3/EMRaw.cpp) \

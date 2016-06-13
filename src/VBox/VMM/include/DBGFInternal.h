@@ -413,6 +413,15 @@ typedef struct DBGFUSERPERVM
     /** List of registered info handlers. */
     R3PTRTYPE(PDBGFINFO)        pInfoFirst;
 
+    /** The type database lock. */
+    RTSEMRW                     hTypeDbLock;
+    /** String space for looking up types.  (Protected by hTypeDbLock.) */
+    R3PTRTYPE(RTSTRSPACE)       TypeSpace;
+    /** For early initialization by . */
+    bool volatile               fTypeDbInitialized;
+    /** Alignment padding. */
+    bool                        afAlignment3[3];
+
 } DBGFUSERPERVM;
 typedef DBGFUSERPERVM *PDBGFUSERPERVM;
 typedef DBGFUSERPERVM const *PCDBGFUSERPERVM;
@@ -442,6 +451,8 @@ void dbgfR3RegTerm(PUVM pUVM);
 int  dbgfR3TraceInit(PVM pVM);
 void dbgfR3TraceRelocate(PVM pVM);
 void dbgfR3TraceTerm(PVM pVM);
+DECLHIDDEN(int)  dbgfR3TypeInit(PUVM pUVM);
+DECLHIDDEN(void) dbgfR3TypeTerm(PUVM pUVM);
 int  dbgfR3PlugInInit(PUVM pUVM);
 void dbgfR3PlugInTerm(PUVM pUVM);
 

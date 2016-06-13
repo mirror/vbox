@@ -2239,8 +2239,204 @@ VMMR3DECL(void) DBGFR3PlugInLoadAll(PUVM pUVM);
 VMMR3DECL(void) DBGFR3PlugInUnloadAll(PUVM pUVM);
 
 /** @} */
-#endif /* IN_RING3 */
 
+/** @defgroup grp_dbgf_types        The DBGF type system Interface.
+ * @{
+ */
+
+/** A few forward declarations. */
+/** Pointer to a type registration structure. */
+typedef struct DBGFTYPEREG *PDBGFTYPEREG;
+/** Pointer to a const type registration structure. */
+typedef const struct DBGFTYPEREG *PCDBGFTYPEREG;
+/** Pointer to a typed buffer. */
+typedef struct DBGFTYPEVAL *PDBGFTYPEVAL;
+
+/**
+ * DBGF built-in types.
+ */
+typedef enum DBGFTYPEBUILTIN
+{
+    /** The usual invalid first value. */
+    DBGFTYPEBUILTIN_INVALID,
+    /** Unsigned 8bit integer. */
+    DBGFTYPEBUILTIN_UINT8,
+    /** Signed 8bit integer. */
+    DBGFTYPEBUILTIN_INT8,
+    /** Unsigned 16bit integer. */
+    DBGFTYPEBUILTIN_UINT16,
+    /** Signed 16bit integer. */
+    DBGFTYPEBUILTIN_INT16,
+    /** Unsigned 32bit integer. */
+    DBGFTYPEBUILTIN_UINT32,
+    /** Signed 32bit integer. */
+    DBGFTYPEBUILTIN_INT32,
+    /** Unsigned 64bit integer. */
+    DBGFTYPEBUILTIN_UINT64,
+    /** Signed 64bit integer. */
+    DBGFTYPEBUILTIN_INT64,
+    /** 32bit Guest pointer */
+    DBGFTYPEBUILTIN_PTR32,
+    /** 64bit Guest pointer */
+    DBGFTYPEBUILTIN_PTR64,
+    /** Guest pointer - size depends on the guest bitness */
+    DBGFTYPEBUILTIN_PTR,
+    /** Type indicating a size, like size_t this can have different sizes
+     * on 32bit and 64bit systems */
+    DBGFTYPEBUILTIN_SIZE,
+    /** 32bit float. */
+    DBGFTYPEBUILTIN_FLOAT32,
+    /** 64bit float (also known as double). */
+    DBGFTYPEBUILTIN_FLOAT64,
+    /** Compund types like structs and unions. */
+    DBGFTYPEBUILTIN_COMPOUND,
+    /** The usual 32-bit hack. */
+    DBGFTYPEBUILTIN_32BIT_HACK = 0x7fffffff
+} DBGFTYPEBUILTIN;
+/** Pointer to a built-in type. */
+typedef DBGFTYPEBUILTIN *PDBGFTYPEBUILTIN;
+/** Pointer to a const built-in type. */
+typedef const DBGFTYPEBUILTIN *PCDBGFTYPEBUILTIN;
+
+/**
+ * DBGF type value buffer.
+ */
+typedef union DBGFTYPEVALBUF
+{
+    uint8_t          u8;
+    int8_t           i8;
+    uint16_t         u16;
+    int16_t          i16;
+    uint32_t         u32;
+    int32_t          i32;
+    uint64_t         u64;
+    int64_t          i64;
+    float            f32;
+    double           f64;
+    RTGCPTR          GCPtr;
+    /** For embedded structs. */
+    PDBGFTYPEVAL     pVal;
+} DBGFTYPEVALBUF;
+/** Pointer to a value. */
+typedef DBGFTYPEVALBUF *PDBGFTYPEVALBUF;
+
+/**
+ * DBGF type value entry.
+ */
+typedef struct DBGFTYPEVALENTRY
+{
+    /** DBGF built-in type. */
+    DBGFTYPEBUILTIN      enmType;
+    /** Number of entries, for arrays this can be > 1. */
+    uint32_t             cEntries;
+    /** Value buffer, depends on whether this is an array. */
+    union
+    {
+        /** Single value. */
+        DBGFTYPEVALBUF   Val;
+        /** Pointer to the array of values. */
+        PDBGFTYPEVALBUF  pVal;
+    } Buf;
+} DBGFTYPEVALENTRY;
+/** Pointer to a type value entry. */
+typedef DBGFTYPEVALENTRY *PDBGFTYPEVALENTRY;
+/** Pointer to a const type value entry. */
+typedef const DBGFTYPEVALENTRY *PCDBGFTYPEVALENTRY;
+
+/**
+ * DBGF typed value.
+ */
+typedef struct DBGFTYPEVAL
+{
+    /** Pointer to the registration structure for this type. */
+    PCDBGFTYPEREG        pTypeReg;
+    /** Number of value entries. */
+    uint32_t             cEntries;
+    /** Variable sized array of value entries. */
+    DBGFTYPEVALENTRY     aEntries[1];
+} DBGFTYPEVAL;
+
+/**
+ * DBGF type variant.
+ */
+typedef enum DBGFTYPEVARIANT
+{
+    /** The usual invalid first value. */
+    DBGFTYPEVARIANT_INVALID,
+    /** A struct. */
+    DBGFTYPEVARIANT_STRUCT,
+    /** Union. */
+    DBGFTYPEVARIANT_UNION,
+    /** Alias for an existing type. */
+    DBGFTYPEVARIANT_ALIAS,
+    /** The usual 32-bit hack. */
+    DBGFTYPEVARIANT_32BIT_HACK = 0x7fffffff
+} DBGFTYPEVARIANT;
+
+/** @name DBGFTYPEREGMEMBER Flags.
+ * @{ */
+/** The member is an array with a fixed size. */
+# define DBGFTYPEREGMEMBER_F_ARRAY   RT_BIT_32(0)
+/** The member denotes a pointer. */
+# define DBGFTYPEREGMEMBER_F_POINTER RT_BIT_32(1)
+/** @} */
+
+/**
+ * DBGF type member.
+ */
+typedef struct DBGFTYPEREGMEMBER
+{
+    /** Name of the member. */
+    const char          *pszName;
+    /** Flags for this member, see DBGFTYPEREGMEMBER_F_XXX. */
+    uint32_t             fFlags;
+    /** Type identifier. */
+    const char          *pszType;
+    /** The number of elements in the array, only valid for arrays. */
+    uint32_t             cElements;
+} DBGFTYPEREGMEMBER;
+/** Pointer to a member. */
+typedef DBGFTYPEREGMEMBER *PDBGFTYPEREGMEMBER;
+/** Pointer to a const member. */
+typedef const DBGFTYPEREGMEMBER *PCDBGFTYPEREGMEMBER;
+
+/** @name DBGFTYPEREG Flags.
+ * @{ */
+/** The type is a packed structure. */
+# define DBGFTYPEREG_F_PACKED        RT_BIT_32(0)
+/** @} */
+
+/**
+ * New type registration structure.
+ */
+typedef struct DBGFTYPEREG
+{
+    /** Name of the type. */
+    const char          *pszType;
+    /** The type variant. */
+    DBGFTYPEVARIANT      enmVariant;
+    /** Some registration flags, see DBGFTYPEREG_F_XXX. */
+    uint32_t             fFlags;
+    /** Number of members this type has, only valid for structs or unions. */
+    uint32_t             cMembers;
+    /** Pointer to the member fields, only valid for structs or unions. */
+    PCDBGFTYPEREGMEMBER  paMembers;
+    /** Name of the aliased type for aliases. */
+    const char          *pszAliasedType;
+} DBGFTYPEREG;
+
+VMMR3DECL(int) DBGFR3TypeRegister(  PUVM pUVM, uint32_t cTypes, PCDBGFTYPEREG paTypes);
+VMMR3DECL(int) DBGFR3TypeDeregister(PUVM pUVM, const char *pszType);
+VMMR3DECL(int) DBGFR3TypeQueryReg(  PUVM pUVM, const char *pszType, PCDBGFTYPEREG *ppTypeReg);
+
+VMMR3DECL(int) DBGFR3TypeQuerySize( PUVM pUVM, const char *pszType, size_t *pcbType);
+VMMR3DECL(int) DBGFR3TypeSetSize(   PUVM pUVM, const char *pszType, size_t cbType);
+VMMR3DECL(int) DBGFR3TypeQueryValByType(PUVM pUVM, PCDBGFADDRESS pAddress, const char *pszType,
+                                        PDBGFTYPEVAL *ppVal);
+VMMR3DECL(void) DBGFR3TypeValFree(PDBGFTYPEVAL pVal);
+
+/** @} */
+#endif /* IN_RING3 */
 
 /** @} */
 
