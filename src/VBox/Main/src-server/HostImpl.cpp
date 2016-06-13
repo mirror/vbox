@@ -1790,11 +1790,13 @@ HRESULT Host::i_saveSettings(settings::Host &data)
         pFilter->i_saveSettings(f);
         data.llUSBDeviceFilters.push_back(f);
     }
+    
+    return m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
 #else
     NOREF(data);
+    return S_OK;
 #endif /* VBOX_WITH_USB */
 
-    return m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
 }
 
 /**
