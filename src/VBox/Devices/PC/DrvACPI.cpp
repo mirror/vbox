@@ -233,9 +233,9 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
  * @copydoc PDMIACPICONNECTOR::pfnQueryBatteryStatus
  */
 static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface, bool *pfPresent,
-        PPDMACPIBATCAPACITY penmRemainingCapacity,
-        PPDMACPIBATSTATE penmBatteryState,
-        uint32_t *pu32PresentRate)
+                                                   PPDMACPIBATCAPACITY penmRemainingCapacity,
+                                                   PPDMACPIBATSTATE penmBatteryState,
+                                                   uint32_t *pu32PresentRate)
 {
     /* default return values for all architectures */
     *pfPresent              = false;   /* no battery present */
@@ -533,9 +533,12 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         bool       fCharging = false;           /* one or more batteries charging */
         bool       fDischarging = false;        /* one or more batteries discharging */
         bool       fCritical = false;           /* one or more batteries in critical state */
+        bool       fDataChanged;                /* if battery status data changed during last poll */
         int32_t    maxCapacityTotal = 0;        /* total capacity of all batteries */
         int32_t    currentCapacityTotal = 0;    /* total current capacity of all batteries */
         int32_t    presentRateTotal = 0;        /* total present (dis)charging rate of all batts */
+        PDMACPIBATCAPACITY enmBatteryRemainingCapacity; /* total remaining capacity of vbox batt */
+        uint32_t u32BatteryPresentRate;         /* total present (dis)charging rate of vbox batt */
 
         int rc = RTDirOpen(&pDir, "/sys/class/power_supply/");
         if (RT_SUCCESS(rc))
@@ -855,8 +858,6 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
         /* atomic update of the state */
         RTCritSectEnter(&pThis->CritSect);
-        pThis->enmPowerSource = enmPowerSource;
-        pThis->fBatteryPresent = fBatteryPresent;
 
         /* charging/discharging bits are mutual exclusive */
         uint32_t uBs = PDM_ACPI_BAT_STATE_CHARGED;
@@ -866,7 +867,6 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
             uBs = PDM_ACPI_BAT_STATE_CHARGING;
         if (fCritical)
             uBs |= PDM_ACPI_BAT_STATE_CRITICAL;
-        pThis->enmBatteryState = (PDMACPIBATSTATE)uBs;
 
         if (maxCapacityTotal > 0 && currentCapacityTotal > 0)
         {
@@ -874,21 +874,45 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                 presentRateTotal = -presentRateTotal;
 
             /* calculate the percentage */
-            pThis->enmBatteryRemainingCapacity =
+
+            enmBatteryRemainingCapacity =
                                  (PDMACPIBATCAPACITY)( (  (float)currentCapacityTotal
                                                         / (float)maxCapacityTotal)
                                                       * PDM_ACPI_BAT_CAPACITY_MAX);
-            pThis->u32BatteryPresentRate =
+            u32BatteryPresentRate =
                                  (uint32_t)((  (float)presentRateTotal
                                              / (float)maxCapacityTotal) * 1000);
         }
         else
         {
             /* unknown capacity / state */
-            pThis->enmBatteryRemainingCapacity = PDM_ACPI_BAT_CAPACITY_UNKNOWN;
-            pThis->u32BatteryPresentRate = ~0;
+            enmBatteryRemainingCapacity = PDM_ACPI_BAT_CAPACITY_UNKNOWN;
+            u32BatteryPresentRate = ~0;
         }
+
+        if (   pThis->enmPowerSource  == enmPowerSource
+            && pThis->fBatteryPresent == fBatteryPresent
+            && pThis->enmBatteryState == (PDMACPIBATSTATE) uBs
+            && pThis->enmBatteryRemainingCapacity == enmBatteryRemainingCapacity
+            && pThis->u32BatteryPresentRate == u32BatteryPresentRate)
+        {
+            fDataChanged = false;
+        }
+        else
+        {
+            fDataChanged = true;
+
+            pThis->enmPowerSource = enmPowerSource;
+            pThis->fBatteryPresent = fBatteryPresent;
+            pThis->enmBatteryState = (PDMACPIBATSTATE)uBs;
+            pThis->enmBatteryRemainingCapacity = enmBatteryRemainingCapacity;
+            pThis->u32BatteryPresentRate = u32BatteryPresentRate;
+        }
+
         RTCritSectLeave(&pThis->CritSect);
+
+        if (fDataChanged)
+            pThis->pPort->pfnBatteryStatusChangeEvent(pThis->pPort);
 
         /* wait a bit (e.g. Ubuntu/GNOME polls every 30 seconds) */
         ASMAtomicWriteBool(&pThis->fDontPokePoller, true);

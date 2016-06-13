@@ -1468,6 +1468,15 @@ typedef struct PDMIACPIPORT
      *                          the called function pointer.
      */
     DECLR3CALLBACKMEMBER(int, pfnMonitorHotPlugEvent,(PPDMIACPIPORT pInterface));
+
+    /**
+     * Send a battery status change event.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing
+     *                          the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnBatteryStatusChangeEvent,(PPDMIACPIPORT pInterface));
 } PDMIACPIPORT;
 /** PDMIACPIPORT interface ID. */
 #define PDMIACPIPORT_IID                        "d64233e3-7bb0-4ef1-a313-2bcfafbe6260"
@@ -1504,7 +1513,7 @@ typedef struct PDMIACPICONNECTOR
                                                      PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
 } PDMIACPICONNECTOR;
 /** PDMIACPICONNECTOR interface ID. */
-#define PDMIACPICONNECTOR_IID                   "5f14bf8d-1edf-4e3a-a1e1-cca9fd08e359"
+#define PDMIACPICONNECTOR_IID                   "19c7de73-5ae0-4841-a106-21825f43b206"
 
 
 /** Pointer to a VMMDevice port interface. */

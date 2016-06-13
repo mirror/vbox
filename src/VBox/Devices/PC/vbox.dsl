@@ -1361,12 +1361,16 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                 Scope (\_GPE)
                 {
                     // GPE bit 0 handler
-                    // GPE.0 must be set and SCI raised when
-                    // battery info changed and _BIF must be
-                    // re-evaluated
-                    Method (_L00, 0, NotSerialized)
+                    // GPE.0 must be set and SCI raised when battery info
+                    // changed. Do NOT re-evaluate _BIF (battery info, never
+                    // changes) but DO re-evaluate _BST (dynamic state). Also
+                    // re-evaluate the AC adapter status.
+                    Method (_L00, 0, NotSerialized).
                     {
-                            Notify (\_SB.PCI0.BAT0, 0x81)
+                        // _BST must be re-evaluated (battery state)
+                        Notify (\_SB.PCI0.BAT0, 0x80)
+                        // _PSR must be re-evaluated (AC adapter status)
+                        Notify (\_SB.PCI0.AC, 0x80)
                     }
                 }
 
