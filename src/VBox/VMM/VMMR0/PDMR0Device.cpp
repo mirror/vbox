@@ -617,9 +617,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_BusBroadcastEoi(PPDMDEVINS pDevIns, uint8
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi));
-        pdmLock(pVM);
         pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Vector);
-        pdmUnlock(pVM);
     }
 #endif
 }
@@ -742,6 +740,9 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
 static DECLCALLBACK(int) pdmR0IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_WITH_NEW_IOAPIC
+    AssertFailed();
+#endif
     return pdmLockEx(pDevIns->Internal.s.pVMR0, rc);
 }
 
@@ -750,6 +751,9 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_WITH_NEW_IOAPIC
+    AssertFailed();
+#endif
     pdmUnlock(pDevIns->Internal.s.pVMR0);
 }
 
@@ -797,9 +801,13 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 
     if (pVM->pdm.s.IoApic.pDevInsR0)
     {
+#ifdef VBOX_WITH_NEW_IOAPIC
+        pVM->pdm.s.IoApic.pfnSetIrqR0(pVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
+#else
         pdmLock(pVM);
         pVM->pdm.s.IoApic.pfnSetIrqR0(pVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
         pdmUnlock(pVM);
+#endif
     }
     else if (pVM->pdm.s.IoApic.pDevInsR3)
     {
@@ -829,14 +837,16 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
     PVM pVM = pDevIns->Internal.s.pVMR0;
     if (pVM->pdm.s.IoApic.pDevInsR0)
     {
+#ifdef VBOX_WITH_NEW_IOAPIC
+        pVM->pdm.s.IoApic.pfnSendMsiR0(pVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
+#else
         pdmLock(pVM);
         pVM->pdm.s.IoApic.pfnSendMsiR0(pVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
         pdmUnlock(pVM);
+#endif
     }
     else
-    {
         AssertFatalMsgFailed(("Lazy bastards!"));
-    }
 }
 
 

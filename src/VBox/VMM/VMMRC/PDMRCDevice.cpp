@@ -572,9 +572,7 @@ static DECLCALLBACK(void) pdmRCApicHlp_BusBroadcastEoi(PPDMDEVINS pDevIns, uint8
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi));
-        pdmLock(pVM);
         pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Vector);
-        pdmUnlock(pVM);
     }
 #endif
 }
@@ -697,6 +695,9 @@ static DECLCALLBACK(int) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
 static DECLCALLBACK(int) pdmRCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_WITH_NEW_IOAPIC
+    AssertFailed();
+#endif
     return pdmLockEx(pDevIns->Internal.s.pVMRC, rc);
 }
 
@@ -705,6 +706,9 @@ static DECLCALLBACK(int) pdmRCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 static DECLCALLBACK(void) pdmRCIoApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_WITH_NEW_IOAPIC
+    AssertFailed();
+#endif
     pdmUnlock(pDevIns->Internal.s.pVMRC);
 }
 
@@ -752,9 +756,13 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 
     if (pVM->pdm.s.IoApic.pDevInsRC)
     {
+#ifdef VBOX_WITH_NEW_IOAPIC
+        pVM->pdm.s.IoApic.pfnSetIrqRC(pVM->pdm.s.IoApic.pDevInsRC, iIrq, iLevel, uTagSrc);
+#else
         pdmLock(pVM);
         pVM->pdm.s.IoApic.pfnSetIrqRC(pVM->pdm.s.IoApic.pDevInsRC, iIrq, iLevel, uTagSrc);
         pdmUnlock(pVM);
+#endif
     }
     else if (pVM->pdm.s.IoApic.pDevInsR3)
     {
@@ -785,14 +793,16 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
 
     if (pVM->pdm.s.IoApic.pDevInsRC)
     {
+#ifdef VBOX_WITH_NEW_IOAPIC
+        pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCPhys, uValue, uTagSrc);
+#else
         pdmLock(pVM);
         pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCPhys, uValue, uTagSrc);
         pdmUnlock(pVM);
+#endif
     }
     else
-    {
         AssertFatalMsgFailed(("Lazy bastarts!"));
-    }
 }
 
 
