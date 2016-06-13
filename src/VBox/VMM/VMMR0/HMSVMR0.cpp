@@ -4676,7 +4676,8 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);     /* RIP updated by EMInterpretInstruction(). */
             else
-                AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: WrMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
+                AssertMsg(   rc == VERR_EM_INTERPRETER
+                          || rc == VINF_CPUM_R3_MSR_WRITE, ("hmR0SvmExitMsr: WrMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
         }
 
         if (rc == VINF_SUCCESS)
