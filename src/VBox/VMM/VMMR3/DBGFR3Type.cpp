@@ -94,7 +94,6 @@ typedef struct DBGFTYPE
 /** Pointer to a DBGF type. */
 typedef DBGFTYPE *PDBGFTYPE;
 
-
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -590,6 +589,7 @@ static int dbgfR3TypeParseEntry(PUVM pUVM, PCDBGFTYPEREGMEMBER pMember, PDBGFTYP
 
         pValEntry->Buf.pVal = pValBuf;
         pValEntry->cEntries = cValBufs;
+        pValEntry->cbType   = pTypeMember->cbType;
     }
 
     if (RT_SUCCESS(rc))
@@ -656,6 +656,10 @@ static int dbgfR3TypeParseEntry(PUVM pUVM, PCDBGFTYPEREGMEMBER pMember, PDBGFTYP
                         pvVal = &pValBuf->GCPtr;
                         cbThisParsed = pTypeMember->cbType;
                         break;
+                    case DBGFTYPEBUILTIN_SIZE:
+                        pvVal = &pValBuf->size;
+                        cbThisParsed = pTypeMember->cbType;
+                        break;
                     case DBGFTYPEBUILTIN_FLOAT32:
                     case DBGFTYPEBUILTIN_FLOAT64:
                     case DBGFTYPEBUILTIN_COMPOUND:
@@ -675,6 +679,7 @@ static int dbgfR3TypeParseEntry(PUVM pUVM, PCDBGFTYPEREGMEMBER pMember, PDBGFTYP
             }
 
             pValBuf++;
+
             cbParsed += cbThisParsed;
             pbBuf    += cbThisParsed;
             cbBuf    -= cbThisParsed;
@@ -740,6 +745,91 @@ static int dbgfR3TypeParseBufferByType(PUVM pUVM, PDBGFTYPE pType, uint8_t *pbBu
     }
     else
         rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/**
+ * Dumps one level of a typed value.
+ *
+ * @returns VBox status code.
+ * @param   pVal                The value to dump.
+ * @param   iLvl                The current level.
+ * @param   cLvlMax             The maximum level.
+ * @param   pfnDump             The dumper callback.
+ * @param   pvUser              The opaque user data to pass to the dumper callback.
+ */
+static int dbgfR3TypeValDump(PDBGFTYPEVAL pVal, uint32_t iLvl, uint32_t cLvlMax,
+                             PFNDBGFR3TYPEVALDUMP pfnDump, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    PCDBGFTYPEREG pType = pVal->pTypeReg;
+
+    for (uint32_t i = 0; i < pVal->cEntries && rc == VINF_SUCCESS; i++)
+    {
+        PCDBGFTYPEREGMEMBER pTypeMember = &pType->paMembers[i];
+        PDBGFTYPEVALENTRY pValEntry = &pVal->aEntries[i];
+        PDBGFTYPEVALBUF pValBuf = pValEntry->cEntries > 1 ? pValEntry->Buf.pVal : &pValEntry->Buf.Val;
+
+        rc = pfnDump(0 /* off */, pTypeMember->pszName, iLvl, pValEntry->enmType, pValEntry->cbType,
+                     pValBuf, pValEntry->cEntries, pvUser);
+        if (   rc == VINF_SUCCESS
+            && pValEntry->enmType == DBGFTYPEBUILTIN_COMPOUND
+            && iLvl < cLvlMax)
+        {
+            /* Print embedded structs. */
+            for (uint32_t iValBuf = 0; iValBuf < pValEntry->cEntries && rc == VINF_SUCCESS; iValBuf++)
+                rc = dbgfR3TypeValDump(pValBuf[iValBuf].pVal, iLvl + 1, cLvlMax, pfnDump, pvUser);
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Dumps one level of a type.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pVal                The value to dump.
+ * @param   iLvl                The current level.
+ * @param   cLvlMax             The maximum level.
+ * @param   pfnDump             The dumper callback.
+ * @param   pvUser              The opaque user data to pass to the dumper callback.
+ */
+static int dbgfR3TypeDump(PUVM pUVM, PDBGFTYPE pType, uint32_t iLvl, uint32_t cLvlMax,
+                          PFNDBGFR3TYPEDUMP pfnDump, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    PCDBGFTYPEREG pTypeReg = pType->pReg;
+
+    switch (pTypeReg->enmVariant)
+    {
+        case DBGFTYPEVARIANT_ALIAS:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+        case DBGFTYPEVARIANT_STRUCT:
+        case DBGFTYPEVARIANT_UNION:
+            for (uint32_t i = 0; i < pTypeReg->cMembers && rc == VINF_SUCCESS; i++)
+            {
+                PCDBGFTYPEREGMEMBER pTypeMember = &pTypeReg->paMembers[i];
+                PDBGFTYPE pTypeResolved = dbgfR3TypeLookup(pUVM, pTypeMember->pszType);
+
+                rc = pfnDump(0 /* off */, pTypeMember->pszName, iLvl, pTypeMember->pszType,
+                             pTypeMember->fFlags, pTypeMember->cElements, pvUser);
+                if (   rc == VINF_SUCCESS
+                    && pTypeResolved->pReg
+                    && iLvl < cLvlMax)
+                {
+                    /* Print embedded structs. */
+                    rc = dbgfR3TypeDump(pUVM, pTypeResolved, iLvl + 1, cLvlMax, pfnDump, pvUser);
+                }
+            }
+            break;
+        default:
+            AssertMsgFailed(("Invalid type variant: %u\n", pTypeReg->enmVariant));
+            rc = VERR_INVALID_STATE;
+    }
 
     return rc;
 }
@@ -842,8 +932,15 @@ VMMR3DECL(int) DBGFR3TypeDeregister(PUVM pUVM, const char *pszType)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(pszType, VERR_INVALID_POINTER);
 
-    DBGF_TYPE_DB_LOCK_WRITE(pUVM);
     int rc = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fTypeDbInitialized)
+    {
+        rc = dbgfR3TypeInit(pUVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    DBGF_TYPE_DB_LOCK_WRITE(pUVM);
     PDBGFTYPE pType = dbgfR3TypeLookup(pUVM, pszType);
     if (pType)
     {
@@ -876,8 +973,15 @@ VMMR3DECL(int) DBGFR3TypeQueryReg(PUVM pUVM, const char *pszType, PCDBGFTYPEREG 
     AssertPtrReturn(pszType, VERR_INVALID_POINTER);
     AssertPtrReturn(ppTypeReg, VERR_INVALID_POINTER);
 
-    DBGF_TYPE_DB_LOCK_READ(pUVM);
     int rc = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fTypeDbInitialized)
+    {
+        rc = dbgfR3TypeInit(pUVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    DBGF_TYPE_DB_LOCK_READ(pUVM);
     PDBGFTYPE pType = dbgfR3TypeLookup(pUVM, pszType);
     if (pType)
         *ppTypeReg = pType->pReg;
@@ -885,6 +989,7 @@ VMMR3DECL(int) DBGFR3TypeQueryReg(PUVM pUVM, const char *pszType, PCDBGFTYPEREG 
         rc = VERR_NOT_FOUND;
     DBGF_TYPE_DB_UNLOCK_READ(pUVM);
 
+    LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -904,8 +1009,15 @@ VMMR3DECL(int) DBGFR3TypeQuerySize(PUVM pUVM, const char *pszType, size_t *pcbTy
     AssertPtrReturn(pszType, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbType, VERR_INVALID_POINTER);
 
-    DBGF_TYPE_DB_LOCK_READ(pUVM);
     int rc = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fTypeDbInitialized)
+    {
+        rc = dbgfR3TypeInit(pUVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    DBGF_TYPE_DB_LOCK_READ(pUVM);
     PDBGFTYPE pType = dbgfR3TypeLookup(pUVM, pszType);
     if (pType)
         *pcbType = pType->cbType;
@@ -913,6 +1025,7 @@ VMMR3DECL(int) DBGFR3TypeQuerySize(PUVM pUVM, const char *pszType, size_t *pcbTy
         rc = VERR_NOT_FOUND;
     DBGF_TYPE_DB_UNLOCK_READ(pUVM);
 
+    LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -936,8 +1049,15 @@ VMMR3DECL(int) DBGFR3TypeSetSize(PUVM pUVM, const char *pszType, size_t cbType)
     AssertPtrReturn(pszType, VERR_INVALID_POINTER);
     AssertReturn(cbType > 0, VERR_INVALID_PARAMETER);
 
-    DBGF_TYPE_DB_LOCK_WRITE(pUVM);
     int rc = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fTypeDbInitialized)
+    {
+        rc = dbgfR3TypeInit(pUVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    DBGF_TYPE_DB_LOCK_WRITE(pUVM);
     PDBGFTYPE pType = dbgfR3TypeLookup(pUVM, pszType);
     if (pType)
     {
@@ -958,6 +1078,47 @@ VMMR3DECL(int) DBGFR3TypeSetSize(PUVM pUVM, const char *pszType, size_t cbType)
         rc = VERR_NOT_FOUND;
     DBGF_TYPE_DB_UNLOCK_WRITE(pUVM);
 
+    LogFlowFunc(("-> rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Dumps the type information of the given type.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pszType             The type identifier.
+ * @param   fFlags              Flags to control the dumping (reserved, MBZ).
+ * @param   cLvlMax             Maximum levels to nest.
+ * @param   pfnDump             The dumper callback.
+ * @param   pvUser              Opaque user data.
+ */
+VMMR3DECL(int) DBGFR3TypeDumpEx(PUVM pUVM, const char *pszType, uint32_t fFlags,
+                                uint32_t cLvlMax, PFNDBGFR3TYPEDUMP pfnDump, void *pvUser)
+{
+    LogFlowFunc(("pUVM=%#p pszType=%s fFlags=%#x cLvlMax=%u pfnDump=%#p pvUser=%#p\n",
+                 pUVM, pszType, fFlags, cLvlMax, pfnDump, pvUser));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pszType, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnDump, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fTypeDbInitialized)
+    {
+        rc = dbgfR3TypeInit(pUVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    DBGF_TYPE_DB_LOCK_READ(pUVM);
+    PDBGFTYPE pType = dbgfR3TypeLookup(pUVM, pszType);
+    if (pType)
+        rc = dbgfR3TypeDump(pUVM, pType, 0 /* iLvl */, cLvlMax, pfnDump, pvUser);
+    else
+        rc = VERR_NOT_FOUND;
+    DBGF_TYPE_DB_UNLOCK_READ(pUVM);
+
+    LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -982,8 +1143,15 @@ VMMR3DECL(int) DBGFR3TypeQueryValByType(PUVM pUVM, PCDBGFADDRESS pAddress, const
     AssertPtrReturn(pszType, VERR_INVALID_POINTER);
     AssertPtrReturn(ppVal, VERR_INVALID_POINTER);
 
-    DBGF_TYPE_DB_LOCK_READ(pUVM);
     int rc = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fTypeDbInitialized)
+    {
+        rc = dbgfR3TypeInit(pUVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    DBGF_TYPE_DB_LOCK_READ(pUVM);
     PDBGFTYPE pType = dbgfR3TypeLookup(pUVM, pszType);
     if (pType)
     {
@@ -1008,6 +1176,7 @@ VMMR3DECL(int) DBGFR3TypeQueryValByType(PUVM pUVM, PCDBGFADDRESS pAddress, const
         rc = VERR_NOT_FOUND;
     DBGF_TYPE_DB_UNLOCK_READ(pUVM);
 
+    LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1036,5 +1205,41 @@ VMMR3DECL(void) DBGFR3TypeValFree(PDBGFTYPEVAL pVal)
     }
 
     MMR3HeapFree(pVal);
+}
+
+/**
+ * Reads the guest memory with the given type and dumps the content of the type.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pAddress            The address to start reading from.
+ * @param   pszType             The type identifier.
+ * @param   fFlags              Flags for tweaking (reserved, must be zero).
+ * @param   cLvlMax             Maximum number of levels to expand embedded structs.
+ * @param   pfnDump             The dumper callback.
+ * @param   pvUser              The opaque user data to pass to the callback.
+ */
+VMMR3DECL(int) DBGFR3TypeValDumpEx(PUVM pUVM, PCDBGFADDRESS pAddress, const char *pszType, uint32_t fFlags,
+                                   uint32_t cLvlMax, FNDBGFR3TYPEVALDUMP pfnDump, void *pvUser)
+{
+    LogFlowFunc(("pUVM=%#p pAddress=%#p pszType=%s fFlags=%#x pfnDump=%#p pvUser=%#p\n",
+                 pUVM, pAddress, pszType, fFlags,pfnDump, pvUser));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pAddress, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszType, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnDump, VERR_INVALID_POINTER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(cLvlMax >= 1, VERR_INVALID_PARAMETER);
+
+    PDBGFTYPEVAL pVal = NULL;
+    int rc = DBGFR3TypeQueryValByType(pUVM, pAddress, pszType, &pVal);
+    if (RT_SUCCESS(rc))
+    {
+        rc = dbgfR3TypeValDump(pVal, 0 /* iLvl */, cLvlMax, pfnDump, pvUser);
+        DBGFR3TypeValFree(pVal);
+    }
+
+    LogFlowFunc(("-> rc=%Rrc\n", rc));
+    return rc;
 }
 

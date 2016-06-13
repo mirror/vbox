@@ -2313,6 +2313,7 @@ typedef union DBGFTYPEVALBUF
     int64_t          i64;
     float            f32;
     double           f64;
+    uint64_t         size; /* For the built-in size_t which can be either 32-bit or 64-bit. */
     RTGCPTR          GCPtr;
     /** For embedded structs. */
     PDBGFTYPEVAL     pVal;
@@ -2327,6 +2328,8 @@ typedef struct DBGFTYPEVALENTRY
 {
     /** DBGF built-in type. */
     DBGFTYPEBUILTIN      enmType;
+    /** Size of the type. */
+    size_t              cbType;
     /** Number of entries, for arrays this can be > 1. */
     uint32_t             cEntries;
     /** Value buffer, depends on whether this is an array. */
@@ -2425,15 +2428,59 @@ typedef struct DBGFTYPEREG
     const char          *pszAliasedType;
 } DBGFTYPEREG;
 
+/**
+ * DBGF typed value dumper callback.
+ *
+ * @returns VBox status code. Any non VINF_SUCCESS status code will abort the dumping.
+ *
+ * @param   off             The byte offset of the entry from the start of the type.
+ * @param   pszField        The name of the field for the value.
+ * @param   iLvl            The current level.
+ * @param   enmType         The type enum.
+ * @param   cbType          Size of the type.
+ * @param   pValBuf         Pointer to the value buffer.
+ * @param   cValBufs        Number of value buffers (for arrays).
+ * @param   pvUser          Opaque user data.
+ */
+typedef DECLCALLBACK(int) FNDBGFR3TYPEVALDUMP(uint32_t off, const char *pszField, uint32_t iLvl,
+                                              DBGFTYPEBUILTIN enmType, size_t cbType,
+                                              PDBGFTYPEVALBUF pValBuf, uint32_t cValBufs,
+                                              void *pvUser);
+/** Pointer to a FNDBGFR3TYPEVALDUMP. */
+typedef FNDBGFR3TYPEVALDUMP *PFNDBGFR3TYPEVALDUMP;
+
+/**
+ * DBGF type information dumper callback.
+ *
+ * @returns VBox status code. Any non VINF_SUCCESS status code will abort the dumping.
+ *
+ * @param   off             The byte offset of the entry from the start of the type.
+ * @param   pszField        The name of the field for the value.
+ * @param   iLvl            The current level.
+ * @param   pszType         The type of the field.
+ * @param   fTypeFlags      Flags for this type, see DBGFTYPEREGMEMBER_F_XXX.
+ * @param   cElements       Number of for the field ( > 0 for arrays).
+ * @param   pvUser          Opaque user data.
+ */
+typedef DECLCALLBACK(int) FNDBGFR3TYPEDUMP(uint32_t off, const char *pszField, uint32_t iLvl,
+                                           const char *pszType, uint32_t fTypeFlags,
+                                           uint32_t cElements, void *pvUser);
+/** Pointer to a FNDBGFR3TYPEDUMP. */
+typedef FNDBGFR3TYPEDUMP *PFNDBGFR3TYPEDUMP;
+
 VMMR3DECL(int) DBGFR3TypeRegister(  PUVM pUVM, uint32_t cTypes, PCDBGFTYPEREG paTypes);
 VMMR3DECL(int) DBGFR3TypeDeregister(PUVM pUVM, const char *pszType);
 VMMR3DECL(int) DBGFR3TypeQueryReg(  PUVM pUVM, const char *pszType, PCDBGFTYPEREG *ppTypeReg);
 
 VMMR3DECL(int) DBGFR3TypeQuerySize( PUVM pUVM, const char *pszType, size_t *pcbType);
 VMMR3DECL(int) DBGFR3TypeSetSize(   PUVM pUVM, const char *pszType, size_t cbType);
+VMMR3DECL(int) DBGFR3TypeDumpEx(    PUVM pUVM, const char *pszType, uint32_t fFlags,
+                                    uint32_t cLvlMax, PFNDBGFR3TYPEDUMP pfnDump, void *pvUser);
 VMMR3DECL(int) DBGFR3TypeQueryValByType(PUVM pUVM, PCDBGFADDRESS pAddress, const char *pszType,
                                         PDBGFTYPEVAL *ppVal);
 VMMR3DECL(void) DBGFR3TypeValFree(PDBGFTYPEVAL pVal);
+VMMR3DECL(int)  DBGFR3TypeValDumpEx(PUVM pUVM, PCDBGFADDRESS pAddress, const char *pszType, uint32_t fFlags,
+                                    uint32_t cLvlMax, FNDBGFR3TYPEVALDUMP pfnDump, void *pvUser);
 
 /** @} */
 #endif /* IN_RING3 */

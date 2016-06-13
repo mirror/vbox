@@ -136,6 +136,15 @@ EXPORTS
     DBGFR3StackWalkBegin
     DBGFR3StackWalkNext
     DBGFR3StackWalkEnd
+    DBGFR3TypeDeregister
+    DBGFR3TypeDumpEx
+    DBGFR3TypeQueryReg
+    DBGFR3TypeQuerySize
+    DBGFR3TypeQueryValByType
+    DBGFR3TypeRegister
+    DBGFR3TypeSetSize
+    DBGFR3TypeValFree
+    DBGFR3TypeValDumpEx
 
     EMR3QueryExecutionPolicy
     EMR3SetExecutionPolicy
@@ -307,6 +316,7 @@ EXPORTS
     TMR3TimerSetCritSect
     TMR3TimerLoad
     TMR3TimerSave
+    TMR3TimerSkip
     TMR3TimerDestroy
     TMTimerFromMicro
     TMTimerFromMilli
