@@ -2283,7 +2283,11 @@ void UIActionPoolRuntime::updateConfiguration()
     }
 
     /* Recache extension-pack related action restrictions: */
+#if VBOX_WITH_EXTPACK
     CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+#else
+    CExtPack extPack;
+#endif
     bool fExtensionPackOperationsAllowed = !extPack.isNull() && extPack.GetUsable();
     if (!fExtensionPackOperationsAllowed)
     {
