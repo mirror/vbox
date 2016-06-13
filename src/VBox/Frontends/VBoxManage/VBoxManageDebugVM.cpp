@@ -712,6 +712,48 @@ static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * Handles the dumpgueststack sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_DumpGuestStack(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    ULONG                       idCpu = 0;
+
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                idCpu = ValueUnion.u32;
+                break;
+
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+
+    com::Bstr bstrGuestStack;
+    CHECK_ERROR2I_RET(pDebugger, DumpGuestStack(idCpu, bstrGuestStack.asOutParam()),
+                      RTEXITCODE_FAILURE);
+
+    RTPrintf("%ls\n", bstrGuestStack.raw());
+
+    return RTEXITCODE_SUCCESS;
+}
+
 RTEXITCODE handleDebugVM(HandlerArg *pArgs)
 {
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
@@ -807,6 +849,11 @@ RTEXITCODE handleDebugVM(HandlerArg *pArgs)
                 {
                     setCurrentSubcommand(HELP_SCOPE_DEBUGVM_STATISTICS);
                     rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
+                }
+                else if (!strcmp(pszSubCmd, "dumpgueststack"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_DUMPGUESTSTACK);
+                    rcExit = handleDebugVM_DumpGuestStack(pArgs, ptrDebugger);
                 }
                 else
                     errorUnknownSubcommand(pszSubCmd);
