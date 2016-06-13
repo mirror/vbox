@@ -74,13 +74,15 @@ typedef struct AUDMIXSTREAM
 #define AUDMIXSINK_STS_NONE                  0
 /** The sink is active and running. */
 #define AUDMIXSINK_STS_RUNNING               RT_BIT(0)
+/** The sink is in a pending disable state. */
+#define AUDMIXSINK_STS_PENDING_DISABLE       RT_BIT(1)
 /** Dirty flag.
  *  For output sinks this means that there is data in the
  *  sink which has not been played yet.
  *  For input sinks this means that there is data in the
  *  sink which has been recorded but not transferred to the
  *  destination yet. */
-#define AUDMIXSINK_STS_DIRTY                 RT_BIT(1)
+#define AUDMIXSINK_STS_DIRTY                 RT_BIT(2)
 
 /**
  * Audio mixer sink direction.

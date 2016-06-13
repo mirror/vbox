@@ -4131,7 +4131,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         if (cbToProcess)
         {
             rc = hdaTransfer(pThis, pStreamLineIn, cbToProcess, NULL /* pcbProcessed */);
-            fKickTimer = RT_SUCCESS(rc);
+            fKickTimer |= RT_SUCCESS(rc);
         }
     }
 
@@ -4143,7 +4143,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         if (cbToProcess)
         {
             rc = hdaTransfer(pThis, pStreamMicIn, cbToProcess, NULL /* pcbProcessed */);
-            fKickTimer = RT_SUCCESS(rc);
+            fKickTimer |= RT_SUCCESS(rc);
         }
     }
 #endif
@@ -4175,7 +4175,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         if (cbToProcess)
         {
             rc = hdaTransfer(pThis, pStreamFront, cbToProcess, NULL /* pcbProcessed */);
-            fKickTimer = RT_SUCCESS(rc);
+            fKickTimer |= RT_SUCCESS(rc);
         }
     }
 
@@ -4263,7 +4263,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
     if (RT_FAILURE(rc))
         return rc;
 
-    Log3Func(("[SD%RU8] fActive=%RTbool\n", pStream->u8SD, pStream->State.fActive));
+    Log3Func(("[SD%RU8] fActive=%RTbool, cbToProcess=%RU32\n", pStream->u8SD, pStream->State.fActive, cbToProcess));
 
     /* Stop request received? */
     if (   !pStream->State.fActive

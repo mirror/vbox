@@ -582,6 +582,9 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 
     int rc;
 
+    /* Whether to try closing a pending to close stream. */
+    bool fTryClosePending = false;
+
     do
     {
         uint32_t cSamplesMixed = 0;
@@ -608,6 +611,10 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
                     LogFlowFunc(("[%s] %RU32 captured samples mixed\n", pHstStream->szName, cSamplesMixed));
                 }
             }
+            else
+            {
+                fTryClosePending = true;
+            }
         }
         else if (pHstStream->enmDir == PDMAUDIODIR_OUT)
         {
@@ -629,27 +636,30 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 
             LogFlowFunc(("[%s] %RU32 live samples\n", pHstStream->szName, cSamplesLive));
 
-            if (!cSamplesLive) /* No live samples at the moment? */
+            if (!cSamplesLive) /* No live samples (anymore)? */
             {
-                /* Has the host stream marked as disabled but there still were guest streams relying
-                 * on it? Check if the stream now can be closed and do so, if possible. */
-                if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE)
-                {
-                    LogFunc(("[%s] Closing pending stream\n", pHstStream->szName));
-                    rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
-                    }
-                    else
-                        LogFunc(("%s: Backend vetoed against closing output stream, rc=%Rrc\n", pHstStream->szName, rc));
-                }
-
-                break;
+                fTryClosePending = true;
             }
         }
         else
             AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+        if (fTryClosePending)
+        {
+            /* Has the host stream marked as disabled but there still were guest streams relying
+             * on it? Check if the stream now can be closed and do so, if possible. */
+            if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE)
+            {
+                LogFunc(("[%s] Closing pending stream\n", pHstStream->szName));
+                rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
+                if (RT_SUCCESS(rc))
+                {
+                    pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
+                }
+                else
+                    LogFunc(("%s: Backend vetoed against closing output stream, rc=%Rrc\n", pHstStream->szName, rc));
+            }
+        }
 
     } while (0);
 
@@ -1384,18 +1394,19 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
         return 0;
     }
 
-    uint32_t cbReadable = 0;
+    uint32_t cReadable = 0;
 
     PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
     if (pGstStream)
-        cbReadable = AudioMixBufLive(&pGstStream->MixBuf);
+        cReadable = AudioMixBufLive(&pGstStream->MixBuf);
 
-    LogFlowFunc(("[%s] cbReadable=%RU32\n", pHstStream->szName, cbReadable));
+    LogFlowFunc(("[%s] cbReadable=%RU32\n", pHstStream->szName, cReadable));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
-    return cbReadable;
+    /* Return bytes instead of audio samples. */
+    return AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadable);
 }
 
 static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
@@ -1421,17 +1432,18 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
 
     PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
 
-    uint32_t cbWritable = 0;
+    uint32_t cWritable = 0;
 
     if (AudioMixBufLive(&pHstStream->MixBuf) == 0)
-        cbWritable = AudioMixBufFreeBytes(&pGstStream->MixBuf);
+        cWritable = AudioMixBufFreeBytes(&pGstStream->MixBuf);
 
-    LogFlowFunc(("[%s] cWritable=%RU32\n", pHstStream->szName, cbWritable));
+    LogFlowFunc(("[%s] cWritable=%RU32\n", pHstStream->szName, cWritable));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
-    return cbWritable;
+    /* Return bytes instead of audio samples. */
+    return AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritable);
 }
 
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)

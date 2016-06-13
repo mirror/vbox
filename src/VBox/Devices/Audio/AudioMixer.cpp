@@ -426,8 +426,11 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     }
     else if (pMixStream)
     {
-        RTStrFree(pMixStream->pszName);
-        pMixStream->pszName = NULL;
+        if (pMixStream->pszName)
+        {
+            RTStrFree(pMixStream->pszName);
+            pMixStream->pszName = NULL;
+        }
 
         RTMemFree(pMixStream);
         pMixStream = NULL;
@@ -470,13 +473,16 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         /* Keep going. Flag? */
     }
 
-    /* Remove dirty bit in any case. */
-    pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
-
     if (enmSinkCmd == AUDMIXSINKCMD_ENABLE)
+    {
         pSink->fStatus |= AUDMIXSINK_STS_RUNNING;
+    }
     else if (enmSinkCmd == AUDMIXSINKCMD_DISABLE)
-        pSink->fStatus &= ~AUDMIXSINK_STS_RUNNING;
+    {
+        /* Set the sink in a pending disable state first.
+         * The final status (disabled) will be set in the sink's iteration. */
+        pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+    }
 
     /* Not running anymore? Reset. */
     if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
@@ -793,6 +799,9 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink)
         pSink->Out.cbWritable = 0;
 #endif
     }
+
+    /* Reset status. */
+    pSink->fStatus = AUDMIXSINK_STS_NONE;
 }
 
 /**
@@ -873,13 +882,20 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
     int rc = VINF_SUCCESS;
 
-    Log3Func(("[%s]\n", pSink->pszName));
+    Log3Func(("[%s] fStatus=0x%x\n", pSink->pszName, pSink->fStatus));
+
+    /* Sink disabled? Take a shortcut. */
+    if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
+        return rc;
+
+    /* Number of detected disabled streams of this sink. */
+    uint8_t cStreamsDisabled = 0;
 
     /* Update last updated timestamp. */
     pSink->tsLastUpdatedNS = RTTimeNanoTS();
 
-    PAUDMIXSTREAM pMixStream;
-    RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+    PAUDMIXSTREAM pMixStream, pMixStreamNext;
+    RTListForEachSafe(&pSink->lstStreams, pMixStream, pMixStreamNext, AUDMIXSTREAM, Node)
     {
         PPDMAUDIOSTREAM pStream   = pMixStream->pStream;
         AssertPtr(pStream);
@@ -933,6 +949,15 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                 continue;
             }
 
+            PDMAUDIOSTRMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pMixStream->pStream);
+
+            /* Is the stream not enabled and also is not in a pending disable state anymore? */
+            if (   !(strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
+                && !(strmSts & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE))
+            {
+                cStreamsDisabled++;
+            }
+
             if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
             {
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
@@ -952,6 +977,13 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         }
 
         Log3Func(("\t%s: cPlayed=%RU32, cCaptured=%RU32\n", pMixStream->pStream->szName, cPlayed, cCaptured));
+    }
+
+    /* All streams disabled and the sink is in pending disable mode? */
+    if (   cStreamsDisabled == pSink->cStreams
+        && (pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
+    {
+        audioMixerSinkReset(pSink);
     }
 
     if (RT_FAILURE(rc))
@@ -1072,9 +1104,9 @@ int AudioMixerStreamCtl(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint
     AssertPtrReturn(pMixStream, VERR_INVALID_POINTER);
     /** @todo Validate fCtl. */
 
-    int rc = pMixStream->pConn->pfnStreamControl(pMixStream->pConn, pMixStream->pStream, enmCmd);
+    LogFlowFunc(("[%s] enmCmd=%ld\n", pMixStream->pszName, enmCmd));
 
-    return rc;
+    return pMixStream->pConn->pfnStreamControl(pMixStream->pConn, pMixStream->pStream, enmCmd);
 }
 
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pMixStream)
