@@ -60,6 +60,8 @@ static FNDBGCCMD dbgcCmdDumpPageHierarchy;
 static FNDBGCCMD dbgcCmdDumpPageTable;
 static FNDBGCCMD dbgcCmdDumpPageTableBoth;
 static FNDBGCCMD dbgcCmdDumpTSS;
+static FNDBGCCMD dbgcCmdDumpTypeInfo;
+static FNDBGCCMD dbgcCmdDumpTypedVal;
 static FNDBGCCMD dbgcCmdEditMem;
 static FNDBGCCMD dbgcCmdGo;
 static FNDBGCCMD dbgcCmdListModules;
@@ -201,6 +203,25 @@ static const DBGCVARDESC    g_aArgDumpTSS[] =
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "tss",          "TSS selector number." },
     {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "tss:ign|addr", "TSS address. If the selector is a TSS selector, the offset will be ignored." }
+};
+
+
+/** 'dti' arguments. */
+static const DBGCVARDESC    g_aArgDumpTypeInfo[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "type",         "The type to dump" },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "levels",       "How many levels to dump the type information" }
+};
+
+
+/** 'dtv' arguments. */
+static const DBGCVARDESC    g_aArgDumpTypedVal[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "type",         "The type to use" },
+    {  1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address to start dumping from." },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "levels",       "How many levels to dump" }
 };
 
 
@@ -350,6 +371,8 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "dt16",       0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the 16-bit task state segment (TSS)." },
     { "dt32",       0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the 32-bit task state segment (TSS)." },
     { "dt64",       0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the 64-bit task state segment (TSS)." },
+    { "dti",        1,        2,        &g_aArgDumpTypeInfo[0],RT_ELEMENTS(g_aArgDumpTypeInfo), 0,   dbgcCmdDumpTypeInfo,"<type> [levels]",      "Dump type information." },
+    { "dtv",        2,        3,        &g_aArgDumpTypedVal[0],RT_ELEMENTS(g_aArgDumpTypedVal), 0,   dbgcCmdDumpTypedVal,"<type> <addr> [levels]", "Dump a memory buffer using the information in the given type." },
     { "dw",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
     /** @todo add 'e', 'ea str', 'eza str', 'eu str' and 'ezu str'. See also
      *        dbgcCmdSearchMem and its dbgcVarsToBytes usage. */
@@ -3664,6 +3687,189 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @callback_method_impl{FNDBGFR3TYPEDUMP, The 'dti' command dumper callback.}
+ */
+static DECLCALLBACK(int) dbgcCmdDumpTypeInfoCallback(uint32_t off, const char *pszField, uint32_t iLvl,
+                                                     const char *pszType, uint32_t fTypeFlags,
+                                                     uint32_t cElements, void *pvUser)
+{
+    PDBGCCMDHLP pCmdHlp = (PDBGCCMDHLP)pvUser;
+
+    /* Pad with spaces to match the level. */
+    for (uint32_t i = 0; i < iLvl; i++);
+        DBGCCmdHlpPrintf(pCmdHlp, "    ");
+
+    size_t cbWritten = 0;
+    DBGCCmdHlpPrintfEx(pCmdHlp, &cbWritten, "+0x%04x %s", off, pszField);
+    while (cbWritten < 32)
+    {
+        /* Fill with spaces to get proper aligning. */
+        DBGCCmdHlpPrintf(pCmdHlp, " ");
+        cbWritten++;
+    }
+
+    DBGCCmdHlpPrintf(pCmdHlp, ": ");
+    if (fTypeFlags & DBGFTYPEREGMEMBER_F_ARRAY)
+        DBGCCmdHlpPrintf(pCmdHlp, "[%u] ", cElements);
+    if (fTypeFlags & DBGFTYPEREGMEMBER_F_POINTER)
+        DBGCCmdHlpPrintf(pCmdHlp, "Ptr ");
+    DBGCCmdHlpPrintf(pCmdHlp, "%s\n", pszType);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'dti' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdDumpTypeInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    int   rc;
+
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType == DBGCVAR_TYPE_STRING);
+    if (cArgs == 2)
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[1].enmType == DBGCVAR_TYPE_NUMBER);
+
+    uint32_t cLvlMax = cArgs == 2 ? (uint32_t)paArgs[1].u.u64Number : UINT32_MAX;
+    return DBGFR3TypeDumpEx(pUVM, paArgs[0].u.pszString, 0 /* fFlags */, cLvlMax,
+                            dbgcCmdDumpTypeInfoCallback, pCmdHlp);
+}
+
+
+static void dbgcCmdDumpTypedValCallbackBuiltin(PDBGCCMDHLP pCmdHlp, DBGFTYPEBUILTIN enmType, size_t cbType,
+                                               PDBGFTYPEVALBUF pValBuf)
+{
+    switch (enmType)
+    {
+        case DBGFTYPEBUILTIN_UINT8:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RU8", pValBuf->u8);
+            break;
+        case DBGFTYPEBUILTIN_INT8:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RI8", pValBuf->i8);
+            break;
+        case DBGFTYPEBUILTIN_UINT16:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RU16", pValBuf->u16);
+            break;
+        case DBGFTYPEBUILTIN_INT16:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RI16", pValBuf->i16);
+            break;
+        case DBGFTYPEBUILTIN_UINT32:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RU32", pValBuf->u32);
+            break;
+        case DBGFTYPEBUILTIN_INT32:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RI32", pValBuf->i32);
+            break;
+        case DBGFTYPEBUILTIN_UINT64:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RU64", pValBuf->u64);
+            break;
+        case DBGFTYPEBUILTIN_INT64:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RI64", pValBuf->i64);
+            break;
+        case DBGFTYPEBUILTIN_PTR32:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RX32", pValBuf->GCPtr);
+            break;
+        case DBGFTYPEBUILTIN_PTR64:
+            DBGCCmdHlpPrintf(pCmdHlp, "%RX64", pValBuf->GCPtr);
+            break;
+        case DBGFTYPEBUILTIN_PTR:
+            if (cbType == sizeof(uint32_t))
+                DBGCCmdHlpPrintf(pCmdHlp, "%RX32", pValBuf->GCPtr);
+            else if (cbType == sizeof(uint64_t))
+                DBGCCmdHlpPrintf(pCmdHlp, "%RX64", pValBuf->GCPtr);
+            else
+                DBGCCmdHlpPrintf(pCmdHlp, "<Unsupported pointer width %u>", cbType);
+            break;
+        case DBGFTYPEBUILTIN_SIZE:
+            if (cbType == sizeof(uint32_t))
+                DBGCCmdHlpPrintf(pCmdHlp, "%RU32", pValBuf->size);
+            else if (cbType == sizeof(uint64_t))
+                DBGCCmdHlpPrintf(pCmdHlp, "%RU64", pValBuf->size);
+            else
+                DBGCCmdHlpPrintf(pCmdHlp, "<Unsupported size width %u>", cbType);
+            break;
+        case DBGFTYPEBUILTIN_FLOAT32:
+        case DBGFTYPEBUILTIN_FLOAT64:
+        case DBGFTYPEBUILTIN_COMPOUND:
+        default:
+            AssertMsgFailed(("Invalid built-in type: %d\n", enmType));
+    }
+}
+
+/**
+ * @callback_method_impl{FNDBGFR3TYPEDUMP, The 'dtv' command dumper callback.}
+ */
+static DECLCALLBACK(int) dbgcCmdDumpTypedValCallback(uint32_t off, const char *pszField, uint32_t iLvl,
+                                                     DBGFTYPEBUILTIN enmType, size_t cbType,
+                                                     PDBGFTYPEVALBUF pValBuf, uint32_t cValBufs,
+                                                     void *pvUser)
+{
+    PDBGCCMDHLP pCmdHlp = (PDBGCCMDHLP)pvUser;
+
+    /* Pad with spaces to match the level. */
+    for (uint32_t i = 0; i < iLvl; i++);
+        DBGCCmdHlpPrintf(pCmdHlp, "    ");
+
+    size_t cbWritten = 0;
+    DBGCCmdHlpPrintfEx(pCmdHlp, &cbWritten, "+0x%04x %s", off, pszField);
+    while (cbWritten < 32)
+    {
+        /* Fill with spaces to get proper aligning. */
+        DBGCCmdHlpPrintf(pCmdHlp, " ");
+        cbWritten++;
+    }
+
+    DBGCCmdHlpPrintf(pCmdHlp, ": ");
+    if (cValBufs > 1)
+        DBGCCmdHlpPrintf(pCmdHlp, "[%u] [ ", cValBufs);
+
+    for (uint32_t i = 0; i < cValBufs; i++)
+    {
+        dbgcCmdDumpTypedValCallbackBuiltin(pCmdHlp, enmType, cbType, pValBuf);
+        if (i < cValBufs - 1)
+            DBGCCmdHlpPrintf(pCmdHlp, " , ");
+        pValBuf++;
+    }
+
+    if (cValBufs > 1)
+        DBGCCmdHlpPrintf(pCmdHlp, " ]");
+    DBGCCmdHlpPrintf(pCmdHlp, "\n");
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'dtv' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdDumpTypedVal(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    int   rc;
+
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 2 || cArgs == 3);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType == DBGCVAR_TYPE_STRING);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISGCPOINTER(paArgs[1].enmType));
+    if (cArgs == 3)
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[2].enmType == DBGCVAR_TYPE_NUMBER);
+
+    /*
+     * Make DBGF address and fix the range.
+     */
+    DBGFADDRESS Address;
+    rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[1], &Address);
+    if (RT_FAILURE(rc))
+        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "VarToDbgfAddr(,%Dv,)\n", &paArgs[1]);
+
+    uint32_t cLvlMax = cArgs == 3 ? (uint32_t)paArgs[2].u.u64Number : UINT32_MAX;
+    return DBGFR3TypeValDumpEx(pUVM, &Address, paArgs[0].u.pszString, 0 /* fFlags */, cLvlMax,
+                            dbgcCmdDumpTypedValCallback, pCmdHlp);
+}
 
 /**
  * @callback_method_impl{FNDBGCCMD, The 'm' command.}
