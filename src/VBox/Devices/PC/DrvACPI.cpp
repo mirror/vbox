@@ -643,7 +643,9 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                                     }
                                     RTStrmClose(pStrmStatus);
                                 }
-                                rc = POWER_OPEN(&pStrmStatus, "current_now");
+                                rc = POWER_OPEN(&pStrmStatus, "power_now");
+                                if (RT_FAILURE(rc))
+                                    rc = POWER_OPEN(&pStrmStatus, "current_now");
                                 if (RT_SUCCESS(rc))
                                 {
                                     rc = RTStrmGetLine(pStrmStatus, szLine, sizeof(szLine));
