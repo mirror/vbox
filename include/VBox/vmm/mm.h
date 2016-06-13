@@ -74,6 +74,7 @@ typedef enum MMTAG
     MM_TAG_DBGF_STACK,
     MM_TAG_DBGF_SYMBOL,
     MM_TAG_DBGF_SYMBOL_DUP,
+    MM_TAG_DBGF_TYPE,
 
     MM_TAG_EM,
 
