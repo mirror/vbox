@@ -16698,7 +16698,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="GuestMonitorStatus"
-    uuid="a0001cb1-97c9-496d-82bc-616c19a9e212"
+    uuid="6b8d3f71-39cb-459e-a916-48917ed43e19"
     wsmap="managed"
     >
     <desc>
@@ -16764,10 +16764,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="7303a66d-433b-25a4-f9a8-fcadf87e0c2a"
+    uuid="02326f63-bcb3-4481-96e0-30d1c2ee97f6"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
-    reservedMethods="3" reservedAttributes="1"
+    reservedMethods="4" reservedAttributes="2"
     >
     <desc>
       The IDisplay interface represents the virtual machine's display.
