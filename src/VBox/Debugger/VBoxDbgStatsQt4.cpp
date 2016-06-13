@@ -1532,7 +1532,12 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
                 size_t const cchCompare = RT_MIN(pNode->papChildren[i]->cchName, cchSubName);
                 iDiff = memcmp(pszSubName, pNode->papChildren[i]->pszName, cchCompare);
                 if (!iDiff)
+                {
                     iDiff = cchSubName == cchCompare ? 0 : cchSubName > cchCompare ? 1 : -1;
+                    /* For cases when exisiting node name is same as new node name with additional characters. */
+                    if (!iDiff)
+                        iDiff = cchSubName == pNode->papChildren[i]->cchName ? 0 : cchSubName > pNode->papChildren[i]->cchName ? 1 : -1;
+                }
                 if (iDiff > 0)
                 {
                     iStart = i + 1;
