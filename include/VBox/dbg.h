@@ -708,6 +708,28 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, 
     return rc;
 }
 
+/**
+ * Command helper for writing formatted text to the debug console.
+ *
+ * @returns VBox status.
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pcbWritten  Where to store the amount of written characters on success.
+ * @param   pszFormat   The format string.  This may use all IPRT extensions as
+ *                      well as the debugger ones.
+ * @param   ...         Arguments specified in the format string.
+ */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) DBGCCmdHlpPrintfEx(PDBGCCMDHLP pCmdHlp, size_t *pcbWritten,
+                                                             const char *pszFormat, ...)
+{
+    va_list va;
+    int     rc;
+
+    va_start(va, pszFormat);
+    rc = pCmdHlp->pfnPrintfV(pCmdHlp, pcbWritten, pszFormat, va);
+    va_end(va);
+
+    return rc;
+}
 
 /**
  * @copydoc DBGCCMDHLP::pfnStrPrintf
