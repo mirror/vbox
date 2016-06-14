@@ -41,13 +41,16 @@ endif
 #
 # The VBOX_WITH_BS3KIT feature requires NASM 2.12 and either MSVC or gcc
 # with ms_abi function attribute (gcc v4.4+, MSVC default).
+# Some 32-bit gcc compilers come without 64-bit support (e.g. EL5).
 #
 if defined(VBOX_WITH_OPEN_WATCOM)
  if1of ($(KBUILD_TARGET), win)
   VBOX_WITH_BS3KIT = 1
  else if $(VBOX_GCC_VERSION_CC) >= 40400 # ms_abi was added in 4.4
   if1of ($(KBUILD_TARGET), linux)
-   VBOX_WITH_BS3KIT = 1
+   ifneq ($(VBOX_GCC_m64),)
+    VBOX_WITH_BS3KIT = 1
+   endif
   endif
  endif
  ifdef VBOX_WITH_BS3KIT
