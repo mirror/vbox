@@ -2543,6 +2543,16 @@ RT_C_DECLS_END
 #define VERR_URI_NOT_FILE_SCHEME                    (-24610)
 /** @} */
 
+/** @name RTJson status codes.
+ * @{ */
+/** The called method does not work with the value type of the given JSON value. */
+#define VERR_JSON_VALUE_INVALID_TYPE                (-24700)
+/** The iterator reached the end. */
+#define VERR_JSON_ITERATOR_END                      (-24701)
+/** The JSON document is malformed. */
+#define VERR_JSON_MALFORMED                         (-24702)
+/** @} */
+
 /* SED-END */
 
 /** @} */

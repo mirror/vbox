@@ -458,6 +458,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
+	common/misc/json.cpp \
 	common/misc/lockvalidator.cpp \
 	common/misc/message.cpp \
 	common/misc/once.cpp \
