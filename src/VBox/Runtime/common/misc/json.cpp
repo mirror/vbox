@@ -46,11 +46,11 @@
 typedef struct RTJSONPOS
 {
     /** Line in the source. */
-    unsigned       iLine;
+    size_t         iLine;
     /** Current start character .*/
-    unsigned       iChStart;
+    size_t         iChStart;
     /** Current end character. */
-    unsigned       iChEnd;
+    size_t         iChEnd;
 } RTJSONPOS;
 /** Pointer to a position. */
 typedef RTJSONPOS *PRTJSONPOS;
@@ -532,7 +532,7 @@ static int rtJsonTokenizerReadNextToken(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKE
         rc = pToken->enmClass == RTJSONTOKENCLASS_VALUE_SEPARATOR;
     else
     {
-        pToken->enmClass == RTJSONTOKENCLASS_INVALID;
+        pToken->enmClass = RTJSONTOKENCLASS_INVALID;
         rc = VERR_JSON_MALFORMED;
     }
 
