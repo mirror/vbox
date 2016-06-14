@@ -770,7 +770,10 @@ static int coreAudioInitIn(PPDMAUDIOSTREAM pStream, uint32_t *pcSamples)
         }
     }
     else
-        LogRel(("CoreAudio: Unable to determine input device name (%RI32)\n", err));
+    {
+        /* This is not fatal, can happen for some Macs. */
+        LogRel2(("CoreAudio: Unable to determine input device name (%RI32)\n", err));
+    }
 
     /* Get the default frames buffer size, so that we can setup our internal buffers. */
     UInt32 cFrames;
@@ -780,7 +783,9 @@ static int coreAudioInitIn(PPDMAUDIOSTREAM pStream, uint32_t *pcSamples)
     err = AudioObjectGetPropertyData(pStreamIn->deviceID, &propAdr, 0, NULL, &uSize, &cFrames);
     if (err != noErr)
     {
-        LogRel(("CoreAudio: Failed to determine frame buffer size of the audio input device (%RI32)\n", err));
+        /* Can happen if no input device is available by default. Happens on some Macs,
+         * so don't log this by default to not scare people. */
+        LogRel2(("CoreAudio: Failed to determine frame buffer size of the audio input device (%RI32)\n", err));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
@@ -1703,7 +1708,7 @@ static DECLCALLBACK(int) coreAudioControlStreamOut(PPDMIHOSTAUDIO pInterface, PP
 }
 
 static int coreAudioControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
-                                     PDMAUDIOSTREAMCMD enmStreamCmd)
+                                    PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN)pStream;
 
@@ -1783,8 +1788,8 @@ static int coreAudioDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM p
 {
     PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN) pStream;
 
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTCOREAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
+    PPDMDRVINS pDrvIns       = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTCOREAUDIO  pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
 
     LogFlowFuncEnter();
 
@@ -2168,7 +2173,15 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAU
     NOREF(pInterface);
     NOREF(pStream);
 
-    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
+    PDMAUDIOSTRMSTS strmSts =   PDMAUDIOSTRMSTS_FLAG_INITIALIZED
+                              | PDMAUDIOSTRMSTS_FLAG_ENABLED;
+
+    if (pStream->enmDir == PDMAUDIODIR_IN)
+        strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
+    else
+        strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+
+    return strmSts;
 }
 
 static DECLCALLBACK(int) drvHostCoreAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
@@ -2189,8 +2202,9 @@ static DECLCALLBACK(void) drvHostCoreAudioShutdown(PPDMIHOSTAUDIO pInterface)
 
 static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTCOREAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
+    PPDMDRVINS pDrvIns       = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTCOREAUDIO  pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
+
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
 
