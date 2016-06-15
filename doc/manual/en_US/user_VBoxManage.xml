@@ -331,7 +331,6 @@ Config file:     /home/username/.config/VirtualBox/Machines/Windows XP/Windows X
 Memory size:     512MB
 VRAM size:       12MB
 Number of CPUs:  2
-Synthetic Cpu:   off
 Boot menu mode:  message and menu
 Boot Device (1): DVD
 Boot Device (2): HardDisk
@@ -543,13 +542,6 @@ IOAPIC:          on
             <para><computeroutput>--longmode on|off</computeroutput>: This
             enables/disables long mode (see <xref
             linkend="settings-processor" />).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>--synthcpu on|off</computeroutput>: This
-            setting determines whether VirtualBox will expose a synthetic CPU
-            to the guest to allow live migration between host systems that
-            differ significantly.</para>
           </listitem>
 
           <listitem>
