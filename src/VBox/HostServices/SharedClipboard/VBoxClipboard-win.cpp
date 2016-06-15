@@ -985,19 +985,19 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
 
     if (cb > 0)
     {
-        char* result = NULL;
+        char* pszResult = NULL;
         size_t cch;
 
         if(u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML && 
             !IsWindowsHTML((const char*)pv))
         {
             /* check that this is not already CF_HTML */
-            int rc = ConvertMimeToCFHTML((const char*)pv, cb, &result, &cch);
+            int rc = ConvertMimeToCFHTML((const char*)pv, cb, &pszResult, &cch);
             if (RT_SUCCESS(rc))
             {
-                if (result != NULL && cch != 0)
+                if (pszResult != NULL && cch != 0)
                 {
-                    pClient->data.pv = result;
+                    pClient->data.pv = pszResult;
                     pClient->data.cb = cch;
                     pClient->data.u32Format = u32Format;
                 }
@@ -1031,7 +1031,7 @@ StartHtml = 105(constant)
 StartFragment = 143(constant)
 EndFragment  = Header length + fragment length - 40(ending length)
 */
-char strFormatSample[] =
+const char pcszFormatSample[] =
     "Version:1.0\r\n"
     "StartHTML:000000101\r\n"
     "EndHTML:%09d\r\n" // END HTML = Header length + fragment lengh 
@@ -1050,26 +1050,26 @@ char strFormatSample[] =
 * @value - extracted value of CF_HTML field
 * returns RC result code
 */
-int GetHeaderValue(const char *src, const char *option, size_t *value)
+int GetHeaderValue(const char *pcszSrc, const char *pcszOption, size_t *pcValue)
 {
-    size_t optionLenght;
+    size_t cOptionLenght = 0;
     int rc = VERR_INVALID_PARAMETER;
 
-    Assert(src);
-    Assert(option);
+    Assert(pcszSrc);
+    Assert(pcszOption);
 
-    char* optionValue = RTStrStr(src, option);
-    if (optionValue)
+    char* pcszOptionValue = RTStrStr(pcszSrc, pcszOption);
+    if (pcszOptionValue)
     {
-        rc = RTStrNLenEx(option, RTSTR_MAX, &optionLenght);
-        Assert(optionLenght);
+        rc = RTStrNLenEx(pcszOption, RTSTR_MAX, &cOptionLenght);
+        Assert(cOptionLenght);
         if (RT_SUCCESS(rc))
         {
             int32_t tmpValue;
-            rc = RTStrToInt32Ex(optionValue + optionLenght, NULL, 10, &tmpValue);
+            rc = RTStrToInt32Ex(pcszOptionValue + cOptionLenght, NULL, 10, &tmpValue);
             if (RT_SUCCESS(rc))
             {
-                *value = tmpValue;
+                *pcValue = tmpValue;
                 rc = VINF_SUCCESS;
             }
         }
@@ -1081,10 +1081,10 @@ int GetHeaderValue(const char *src, const char *option, size_t *value)
  * Check that the source string contains CF_HTML struct
  * returns true if the @source string is in CF_HTML format
  */
-bool IsWindowsHTML(const char *source)
+bool IsWindowsHTML(const char *pcszSource)
 {
-    return RTStrStr(source, "Version:") != NULL
-        && RTStrStr(source, "StartHTML:") != NULL;
+    return RTStrStr(pcszSource, "Version:") != NULL
+        && RTStrStr(pcszSource, "StartHTML:") != NULL;
 }
 
 
@@ -1096,40 +1096,40 @@ bool IsWindowsHTML(const char *source)
 * It allocates the buffer needed for storing converted fragment 
 * Allocated buffer should be destroyed by RTMemFree after usage
 */
-int ConvertCFHtmlToMime(const char *source, const uint32_t cch, char **output, size_t *pcch)
+int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszOutput, size_t *pcCh)
 {
     char* result = NULL;
 
-    Assert(source);
+    Assert(pcszSource);
     Assert(cch);
-    Assert(output);
-    Assert(pcch);
+    Assert(ppszOutput);
+    Assert(pcCh);
 
-    size_t startOffset, endOffset;
-    int rc = GetHeaderValue(source, "StartFragment:", &startOffset);
+    size_t cStartOffset, cEndOffset;
+    int rc = GetHeaderValue(pcszSource, "StartFragment:", &cStartOffset);
     if (!RT_SUCCESS(rc))
     {
         LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected StartFragment. rc = %Rrc.\n", rc));
         return VERR_INVALID_PARAMETER;
     }
-    rc = GetHeaderValue(source, "EndFragment:", &endOffset);
+    rc = GetHeaderValue(pcszSource, "EndFragment:", &cEndOffset);
     if (!RT_SUCCESS(rc))
     {
         LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc.\n", rc));
         return VERR_INVALID_PARAMETER;
     }
-    if (startOffset > 0 && endOffset > 0 && endOffset > startOffset)
+    if (cStartOffset > 0 && cEndOffset > 0 && cEndOffset > cStartOffset)
     {
-        size_t substrlen = endOffset - startOffset;
-        result = (char*)RTMemAlloc(substrlen + 1);
+        size_t cSubstrlen = cEndOffset - cStartOffset;
+        result = (char*)RTMemAlloc(cSubstrlen + 1);
         if (result)
         {
-            RT_BZERO(result, substrlen + 1);
-            rc = RTStrCopyEx(result, substrlen + 1, source + startOffset, substrlen);
+            RT_BZERO(result, cSubstrlen + 1);
+            rc = RTStrCopyEx(result, cSubstrlen + 1, pcszSource + cStartOffset, cSubstrlen);
             if (RT_SUCCESS(rc))
             {
-                *output = result;
-                *pcch = substrlen + 1;
+                *ppszOutput = result;
+                *pcCh = cSubstrlen + 1;
             }
             else
             {
@@ -1165,20 +1165,20 @@ return VINF_SUCCESS;
 * @note: output buffer should be free using RTMemFree()
 * @note: Everything inside of fragment can be UTF8. Windows allows it. Everything in header should be Latin1.
 */
-int ConvertMimeToCFHTML(const char *source, size_t cb, char **output, size_t *pcch)
+int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pcszOutput, size_t *pcCh)
 {
-    Assert(output);
-    Assert(pcch);
-    Assert(source);
+    Assert(pcszOutput);
+    Assert(pcCh);
+    Assert(pcszSource);
     Assert(cb);
 
-    size_t fragmentLength = 0;
+    size_t cFragmentLength = 0;
 
-    char* buf = (char*)source;
+    char* pszBuf = (char*)pcszSource;
     
     /* construct CF_HTML formatted string */
-    char* result = NULL;
-    int rc = RTStrNLenEx(buf, RTSTR_MAX, &fragmentLength);
+    char* pszResult = NULL;
+    int rc = RTStrNLenEx(pszBuf, RTSTR_MAX, &cFragmentLength);
     if (!RT_SUCCESS(rc))
     {
         LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc.\n"));
@@ -1186,43 +1186,43 @@ int ConvertMimeToCFHTML(const char *source, size_t cb, char **output, size_t *pc
     }
 
     /* caluclate parameters of CF_HTML header */
-    size_t headerLength = (sizeof(strFormatSample) - 1) + 8;
-    size_t endHtml = headerLength + fragmentLength;
-    size_t endFragment = headerLength + fragmentLength - 38;
-    result = (char*)RTMemAlloc(endHtml + 1);
-    if (result == NULL)
+    size_t cHeaderLength = (sizeof(pcszFormatSample) - 1) + 8;
+    size_t cEndHtml = cHeaderLength + cFragmentLength;
+    size_t cEndFragment = cHeaderLength + cFragmentLength - 38;
+    pszResult = (char*)RTMemAlloc(cEndHtml + 1);
+    if (pszResult == NULL)
     {
         LogRelFlowFunc(("Error: Cannot allocate memory for result buffer. rc = %Rrc.\n"));
         return VERR_NO_MEMORY;
     }
 
     /* format result CF_HTML string */
-    rc = RTStrPrintf(result, endHtml + 1, strFormatSample, endHtml, endFragment, buf);
+    rc = RTStrPrintf(pszResult, cEndHtml + 1, pcszFormatSample, cEndHtml, cEndFragment, pszBuf);
     if (rc == -1)
     {
         LogRelFlowFunc(("Error: cannot construct CF_HTML. rc = %Rrc.\n"));
         return VERR_CANT_CREATE;
     }
-    Assert(endHtml == rc);
+    Assert(cEndHtml == rc);
 
 #ifdef DEBUG
     {
         /*Control calculations. check consistency.*/
-        const char strStartFragment[] = "<!--StartFragment-->";
-        const char strEndFragment[] = "<!--EndFragment-->";
+        const char pcszStartFragment[] = "<!--StartFragment-->";
+        const char pcszEndFragment[] = "<!--EndFragment-->";
 
         /* check 'StartFragment:' value */
-        const char* realStartFragment = RTStrStr(result, strStartFragment);
-        Assert((realStartFragment + sizeof(strStartFragment) - 1) - result == 137);//141);
+        const char* pcszRealStartFragment = RTStrStr(pszResult, pcszStartFragment);
+        Assert((pcszRealStartFragment + sizeof(pcszStartFragment) - 1) - pszResult == 137);//141);
 
         /* check 'EndFragment:' value */
-        const char* realEndFragment = RTStrStr(result, strEndFragment);
-        Assert((realEndFragment - result) == endFragment);
+        const char* pcszRealEndFragment = RTStrStr(pszResult, pcszEndFragment);
+        Assert((pcszRealEndFragment - pszResult) == cEndFragment);
     }
 #endif
 
-    *output = result;
-    *pcch = rc+1;
+    *pcszOutput = pszResult;
+    *pcCh = rc+1;
 
     return VINF_SUCCESS;
 }

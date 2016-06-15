@@ -1783,9 +1783,34 @@ static void clipConvertX11CB(void *pClientData, void *pvSrc, unsigned cbSrc)
                 */
                 pvDest = NULL;
                 cbDest = 0;
-                rc = clipUTF16ToWinHTML((RTUTF16*)pvSrc, cbSrc,
-                    (char**)&pvDest, &cbDest);
-                LogRelFlowFunc(("Source unicode %ls, cbSrc = %d\n", pvSrc, cbSrc));
+                /* Some applications sends data in utf16, some in itf8, 
+                 * without indication it in MIME.
+                 * But in case of utf16, at least an OpenOffice adds Byte Order Mark - 0xfeff 
+                 * at start of clipboard data
+                 */
+                if( *(PRTUTF16)pvSrc == 0xfeff )
+                {
+                    LogRelFlowFunc((" \n"));
+                    rc = clipUTF16ToWinHTML((RTUTF16*)pvSrc, cbSrc,
+                        (char**)&pvDest, &cbDest);
+                }
+                else
+                {
+                   pvDest = RTMemAlloc(cbSrc);
+                   if(pvDest)
+                   {
+                        memcpy(pvDest, pvSrc, cbSrc);
+                        cbDest = cbSrc;
+                   }
+                   else
+                   {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                   }
+                }
+                                      
+                LogRelFlowFunc(("Source unicode %ls, cbSrc = %d\n, Byte Order Mark = %hx", 
+                                pvSrc, cbSrc, ((PRTUTF16)pvSrc)[0]));
                 LogRelFlowFunc(("converted to win unicode %s, cbDest = %d, rc = %Rrc\n", pvDest, cbDest, rc));
                 rc = VINF_SUCCESS;
                 break;
