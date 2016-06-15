@@ -2066,7 +2066,7 @@ static void apicR3InfoBasic(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHL
 {
     uint64_t u64;
 
-    pHlp->pfnPrintf(pHlp, "Local APIC at %08llx:\n", pApic->apicbase);
+    pHlp->pfnPrintf(pHlp, "CPU%u: Local APIC at %08llx:\n", pApic->phys_id, pApic->apicbase);
     u64 = apicR3InfoReadReg(pDev, pApic, 0x2);
     pHlp->pfnPrintf(pHlp, "  LAPIC ID  : %08llx\n", u64);
     pHlp->pfnPrintf(pHlp, "    APIC ID = %02llx\n", (u64 >> 24) & 0xff);
@@ -2166,7 +2166,11 @@ static void apicR3InfoTimer(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHL
 static DECLCALLBACK(void) apicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     APICDeviceInfo  *pDev  = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    APICState       *pApic = apicGetStateByCurEmt(pDev);
+    PVM              pVM   = PDMDevHlpGetVM(pDevIns);
+    VMCPUID          idCpu = VMMGetCpuId(pVM);
+    if (idCpu == NIL_VMCPUID)  /* Don't crash if we're not on EMT, just assume EMT0 for now. */
+        idCpu = 0;
+    APICState       *pApic = apicGetStateById(pDev, idCpu);
 
     if (pszArgs == NULL || !*pszArgs || !strcmp(pszArgs, "basic"))
         apicR3InfoBasic(pDev, pApic, pHlp);
