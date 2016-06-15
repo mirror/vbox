@@ -34,6 +34,7 @@
 #include <iprt/ctype.h>
 #include <iprt/json.h>
 #include <iprt/mem.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 
 /*********************************************************************************************************************************
@@ -123,12 +124,37 @@ typedef RTJSONTOKEN *PRTJSONTOKEN;
 typedef const RTJSONTOKEN *PCRTJSONTOKEN;
 
 /**
+ * Tokenizer read input callback.
+ *
+ * @returns IPRT status code.
+ * @param   pvUser          Opaque user data for the callee.
+ * @param   offInput        Start offset from the start of the input stream to read from.
+ * @param   pvBuf           Where to store the read data.
+ * @param   cbBuf           How much to read.
+ * @param   pcbRead         Where to store the amount of data read on succcess.
+ */
+typedef DECLCALLBACK(int) FNRTJSONTOKENIZERREAD(void *pvUser, uint32_t offInput, void *pvBuf, size_t cbBuf,
+                                                size_t *pcbRead);
+/** Pointer to a tokenizer read buffer callback. */
+typedef FNRTJSONTOKENIZERREAD *PFNRTJSONTOKENIZERREAD;
+
+/**
  * Tokenizer state.
  */
 typedef struct RTJSONTOKENIZER
 {
-    /** Char buffer to read from. */
-    const char              *pszInput;
+    /** Read callback. */
+    PFNRTJSONTOKENIZERREAD  pfnRead;
+    /** Opaque user data. */
+    void                    *pvUser;
+    /** Current offset into the input stream. */
+    uint32_t                offInput;
+    /** Number of valid bytes in the input buffer. */
+    size_t                  cbBuf;
+    /* Current offset into the input buffer. */
+    uint32_t                offBuf;
+    /** Input cache buffer. */
+    char                    achBuf[512];
     /** Current position into the input stream. */
     RTJSONPOS               Pos;
     /** Token 1. */
@@ -204,12 +230,92 @@ typedef struct RTJSONITINT
 /** Pointer to the internal JSON iterator instance. */
 typedef RTJSONITINT *PRTJSONITINT;
 
+/**
+ * Passing arguments for the read callbacks.
+ */
+typedef struct RTJSONREADERARGS
+{
+    /** Buffer/File size  */
+    size_t                  cbData;
+    /** Data specific for one callback. */
+    union
+    {
+        PRTSTREAM           hStream;
+        const uint8_t       *pbBuf;
+    } u;
+} RTJSONREADERARGS;
+/** Pointer to a readers argument. */
+typedef RTJSONREADERARGS *PRTJSONREADERARGS;
+
 /*********************************************************************************************************************************
 *   Global variables                                                                                                             *
 *********************************************************************************************************************************/
 
 static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken,
                             PRTJSONVALINT *ppJsonVal, PRTERRINFO pErrInfo);
+
+/**
+ * Fill the input buffer from the input stream.
+ *
+ * @returns IPRT status code.
+ * @param   pTokenizer      The tokenizer state.
+ */
+static int rtJsonTokenizerRead(PRTJSONTOKENIZER pTokenizer)
+{
+    size_t cbRead = 0;
+    int rc = pTokenizer->pfnRead(pTokenizer->pvUser, pTokenizer->offInput, &pTokenizer->achBuf[0],
+                                 sizeof(pTokenizer->achBuf), &cbRead);
+    if (RT_SUCCESS(rc))
+    {
+        pTokenizer->cbBuf    = cbRead;
+        pTokenizer->offInput += cbRead;
+        pTokenizer->offBuf   = 0;
+        /* Validate UTF-8 encoding. */
+        rc = RTStrValidateEncodingEx(&pTokenizer->achBuf[0], cbRead, 0 /* fFlags */);
+        /* If we read less than requested we reached the end and fill the remainder with terminators. */
+        if (cbRead < sizeof(pTokenizer->achBuf))
+            memset(&pTokenizer->achBuf[cbRead], 0, sizeof(pTokenizer->achBuf) - cbRead);
+    }
+
+    return rc;
+}
+
+/**
+ * Skips the given amount of characters in the input stream.
+ *
+ * @returns IPRT status code.
+ * @param   pTokenizer      The tokenizer state.
+ * @param   cchSkip         The amount of characters to skip.
+ */
+static int rtJsonTokenizerSkip(PRTJSONTOKENIZER pTokenizer, unsigned cchSkip)
+{
+    int rc = VINF_SUCCESS;
+
+    /*
+     * In case we reached the end of the stream don't even attempt to read new data.
+     * Safety precaution for possible bugs in the parser causing out of bounds reads 
+     */
+    if (pTokenizer->achBuf[pTokenizer->offBuf] == '\0')
+        return rc;
+
+    while (   cchSkip > 0
+           && pTokenizer->offBuf < pTokenizer->cbBuf
+           && RT_SUCCESS(rc))
+    {
+        unsigned cchThisSkip = RT_MIN(cchSkip, pTokenizer->cbBuf - pTokenizer->offBuf);
+
+        pTokenizer->offBuf += cchThisSkip;
+        /* Read new data if required and we didn't reach the end yet. */
+        if (   pTokenizer->offBuf == pTokenizer->cbBuf
+            && pTokenizer->cbBuf == sizeof(pTokenizer->achBuf))
+            rc = rtJsonTokenizerRead(pTokenizer);
+
+        cchSkip -= cchThisSkip;
+    }
+
+    return rc;
+}
+
 
 /**
  * Returns whether the tokenizer reached the end of the stream.
@@ -220,7 +326,7 @@ static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken,
  */
 DECLINLINE(bool) rtJsonTokenizerIsEos(PRTJSONTOKENIZER pTokenizer)
 {
-    return *pTokenizer->pszInput == '\0';
+    return pTokenizer->achBuf[pTokenizer->offBuf] == '\0';
 }
 
 /**
@@ -231,7 +337,7 @@ DECLINLINE(bool) rtJsonTokenizerIsEos(PRTJSONTOKENIZER pTokenizer)
  */
 DECLINLINE(void) rtJsonTokenizerSkipCh(PRTJSONTOKENIZER pTokenizer)
 {
-    pTokenizer->pszInput++;
+    rtJsonTokenizerSkip(pTokenizer, 1);
     pTokenizer->Pos.iChStart++;
     pTokenizer->Pos.iChEnd++;
 }
@@ -246,7 +352,7 @@ DECLINLINE(char) rtJsonTokenizerPeekCh(PRTJSONTOKENIZER pTokenizer)
 {
     return   rtJsonTokenizerIsEos(pTokenizer)
            ? '\0'
-           : *(pTokenizer->pszInput + 1);
+           : pTokenizer->achBuf[pTokenizer->offBuf + 1]; /** @todo: Read out of bounds */
 }
 
 /**
@@ -263,7 +369,7 @@ DECLINLINE(char) rtJsonTokenizerGetCh(PRTJSONTOKENIZER pTokenizer)
     if (rtJsonTokenizerIsEos(pTokenizer))
         ch = '\0';
     else
-        ch = *pTokenizer->pszInput;
+        ch = pTokenizer->achBuf[pTokenizer->offBuf];
 
     return ch;
 }
@@ -276,7 +382,7 @@ DECLINLINE(char) rtJsonTokenizerGetCh(PRTJSONTOKENIZER pTokenizer)
  */
 DECLINLINE(void) rtJsonTokenizerNewLine(PRTJSONTOKENIZER pTokenizer, unsigned cSkip)
 {
-    pTokenizer->pszInput += cSkip;
+    rtJsonTokenizerSkip(pTokenizer, cSkip);
     pTokenizer->Pos.iLine++;
     pTokenizer->Pos.iChStart = 1;
     pTokenizer->Pos.iChEnd   = 1;
@@ -383,20 +489,34 @@ static int rtJsonTokenizerGetNumber(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
 {
     unsigned uBase = 10;
     char *pszNext = NULL;
+    size_t cchNum = 0;
+    char aszTmp[128]; /* Everything larger is not possible to display in signed 64bit. */
+    RT_ZERO(aszTmp);
 
-    Assert(RT_C_IS_DIGIT(rtJsonTokenizerGetCh(pTokenizer)));
-
-    /* Let RTStrToInt64Ex() do all the work, looks compliant. */
     pToken->enmClass = RTJSONTOKENCLASS_NUMBER;
-    int rc = RTStrToInt64Ex(pTokenizer->pszInput, &pszNext, 0, &pToken->Class.Number.i64Num);
-    Assert(RT_SUCCESS(rc) || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES);
-    /** @todo: Handle number to big, throw a warning */
 
-    unsigned cchNumber = pszNext - pTokenizer->pszInput;
-    for (unsigned i = 0; i < cchNumber; i++)
+    char ch = rtJsonTokenizerGetCh(pTokenizer);
+    while (   RT_C_IS_DIGIT(ch)
+           && cchNum < sizeof(aszTmp) - 1)
+    {
+        aszTmp[cchNum] = ch;
+        cchNum++;
         rtJsonTokenizerSkipCh(pTokenizer);
+        ch = rtJsonTokenizerGetCh(pTokenizer);
+    }
 
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    if (RT_C_IS_DIGIT(ch) && cchNum == sizeof(aszTmp) - 1)
+        rc = VERR_NUMBER_TOO_BIG;
+    else
+    {
+        rc = RTStrToInt64Ex(&aszTmp[0], NULL, 0, &pToken->Class.Number.i64Num);
+        Assert(RT_SUCCESS(rc) || rc == VWRN_NUMBER_TOO_BIG);
+        if (rc == VWRN_NUMBER_TOO_BIG)
+            rc = VERR_NUMBER_TOO_BIG;
+    }
+
+    return rc;
 }
 
 /**
@@ -421,7 +541,8 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
 
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     while (   ch != '\"'
-           && ch != '\0')
+           && ch != '\0'
+           && cchStr < sizeof(aszTmp) - 1)
     {
         if (ch == '\\')
         {
@@ -544,18 +665,30 @@ static int rtJsonTokenizerReadNextToken(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKE
  *
  * @returns IPRT status code.
  * @param   pTokenizer      The tokenizer state to initialize.
- * @param   pszInput        The input to create the tokenizer for.
+ * @param   pfnRead         Read callback for the input stream.
+ * @param   pvUser          Opaque user data to pass to the callback.
  */
-static int rtJsonTokenizerInit(PRTJSONTOKENIZER pTokenizer, const char *pszInput)
+static int rtJsonTokenizerInit(PRTJSONTOKENIZER pTokenizer, PFNRTJSONTOKENIZERREAD pfnRead, void *pvUser)
 {
-    pTokenizer->pszInput     = pszInput;
+    pTokenizer->pfnRead      = pfnRead;
+    pTokenizer->pvUser       = pvUser;
+    pTokenizer->offInput     = 0;
+    pTokenizer->cbBuf        = 0;
+    pTokenizer->offBuf       = 0;
     pTokenizer->Pos.iLine    = 1;
     pTokenizer->Pos.iChStart = 1;
     pTokenizer->Pos.iChEnd   = 1;
     pTokenizer->pTokenCurr   = &pTokenizer->Token1;
     pTokenizer->pTokenNext   = &pTokenizer->Token2;
+
+    RT_ZERO(pTokenizer->achBuf);
+
+    /* Fill the input buffer. */
+    int rc = rtJsonTokenizerRead(pTokenizer);
+
     /* Fill the tokenizer with two first tokens. */
-    int rc = rtJsonTokenizerReadNextToken(pTokenizer, pTokenizer->pTokenCurr);
+    if (RT_SUCCESS(rc))
+        rc = rtJsonTokenizerReadNextToken(pTokenizer, pTokenizer->pTokenCurr);
     if (RT_SUCCESS(rc))
         rc = rtJsonTokenizerReadNextToken(pTokenizer, pTokenizer->pTokenNext);
 
@@ -845,21 +978,146 @@ static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken,
     return rc;
 }
 
+/**
+ * Entry point to parse a JSON document.
+ *
+ * @returns IPRT status code.
+ * @param   pTokenizer      The tokenizer state.
+ * @param   ppJsonVal       Where to store the root JSON value on success.
+ * @param   pErrInfo        Where to store extended error info. Optional.
+ */
+static int rtJsonParse(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT *ppJsonVal,
+                       PRTERRINFO pErrInfo)
+{
+    PRTJSONTOKEN pToken = NULL;
+    int rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
+    if (RT_SUCCESS(rc))
+        rc = rtJsonParseValue(pTokenizer, pToken, ppJsonVal, pErrInfo);
+
+    return rc;
+}
+
+/**
+ * Read callback for RTJsonParseFromBuf().
+ */
+static DECLCALLBACK(int) rtJsonTokenizerParseFromBuf(void *pvUser, uint32_t offInput,
+                                                     void *pvBuf, size_t cbBuf,
+                                                     size_t *pcbRead)
+{
+    PRTJSONREADERARGS pArgs = (PRTJSONREADERARGS)pvUser;
+    size_t cbLeft = offInput < pArgs->cbData ? pArgs->cbData - offInput : 0;
+
+    if (cbLeft)
+        memcpy(pvBuf, &pArgs->u.pbBuf[offInput], RT_MIN(cbLeft, cbBuf));
+
+    *pcbRead = RT_MIN(cbLeft, cbBuf);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Read callback for RTJsonParseFromString().
+ */
+static DECLCALLBACK(int) rtJsonTokenizerParseFromString(void *pvUser, uint32_t offInput,
+                                                        void *pvBuf, size_t cbBuf,
+                                                        size_t *pcbRead)
+{
+    const char *pszStr = (const char *)pvUser;
+    size_t cchStr = strlen(pszStr) + 1; /* Include zero terminator. */
+    size_t cbLeft = offInput < cchStr ? cchStr - offInput : 0;
+
+    if (cbLeft)
+        memcpy(pvBuf, &pszStr[offInput], RT_MIN(cbLeft, cbBuf));
+
+    *pcbRead = RT_MIN(cbLeft, cbBuf);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Read callback for RTJsonParseFromFile().
+ */
+static DECLCALLBACK(int) rtJsonTokenizerParseFromFile(void *pvUser, uint32_t offInput,
+                                                      void *pvBuf, size_t cbBuf,
+                                                      size_t *pcbRead)
+{
+    int rc = VINF_SUCCESS;
+    PRTJSONREADERARGS pArgs = (PRTJSONREADERARGS)pvUser;
+    size_t cbRead = 0;
+
+    rc = RTStrmReadEx(pArgs->u.hStream, pvBuf, cbBuf, &cbRead);
+    if (RT_SUCCESS(rc))
+        *pcbRead = cbRead;
+
+    return rc;
+}
 
 RTDECL(int) RTJsonParseFromBuf(PRTJSONVAL phJsonVal, const uint8_t *pbBuf, size_t cbBuf,
                                PRTERRINFO pErrInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
+    AssertPtrReturn(pbBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf > 0, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    RTJSONREADERARGS Args;
+    RTJSONTOKENIZER Tokenizer;
+
+    Args.cbData  = cbBuf;
+    Args.u.pbBuf = pbBuf;
+
+    rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromBuf, &Args);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtJsonParse(&Tokenizer, phJsonVal, pErrInfo);
+        rtJsonTokenizerDestroy(&Tokenizer);
+    }
+
+    return rc;
 }
 
 RTDECL(int) RTJsonParseFromString(PRTJSONVAL phJsonVal, const char *pszStr, PRTERRINFO pErrInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszStr, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    RTJSONTOKENIZER Tokenizer;
+
+    rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromString, (void *)pszStr);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtJsonParse(&Tokenizer, phJsonVal, pErrInfo);
+        rtJsonTokenizerDestroy(&Tokenizer);
+    }
+
+    return rc;
 }
 
 RTDECL(int) RTJsonParseFromFile(PRTJSONVAL phJsonVal, const char *pszFilename, PRTERRINFO pErrInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    RTJSONREADERARGS Args;
+
+    Args.cbData  = 0;
+    rc = RTStrmOpen(pszFilename, "r", &Args.u.hStream);
+    if (RT_SUCCESS(rc))
+    {
+        RTJSONTOKENIZER Tokenizer;
+
+        rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromFile, &Args);
+        if (RT_SUCCESS(rc))
+        {
+            rc = rtJsonParse(&Tokenizer, phJsonVal, pErrInfo);
+            rtJsonTokenizerDestroy(&Tokenizer);
+        }
+        RTStrmClose(Args.u.hStream);
+    }
+
+    return rc;
 }
 
 RTDECL(uint32_t) RTJsonValueRetain(RTJSONVAL hJsonVal)
