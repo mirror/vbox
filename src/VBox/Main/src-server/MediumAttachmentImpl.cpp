@@ -129,9 +129,9 @@ HRESULT MediumAttachment::init(Machine *aParent,
     m->bd->pMedium = aMedium;
     m->bd->mData.strBwGroup = strBandwidthGroup;
     unconst(m->bd->strControllerName) = aControllerName;
-    m->bd->mData.lPort   = aPort;
+    m->bd->mData.lPort = aPort;
     m->bd->mData.lDevice = aDevice;
-    m->bd->mData.deviceType    = aType;
+    m->bd->mData.deviceType = aType;
 
     m->bd->mData.fPassThrough = aPassthrough;
     m->bd->mData.fTempEject = aTempEject;
@@ -144,13 +144,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
     autoInitSpan.setSucceeded();
 
     /* Construct a short log name for this attachment. */
-    Utf8Str ctlName(aControllerName);
-    const char *psz = strpbrk(ctlName.c_str(), " \t:-");
-    mLogName = Utf8StrFmt("MA%p[%.*s:%u:%u:%s%s]",
-                          this,
-                          psz ? psz - ctlName.c_str() : 4, ctlName.c_str(),
-                          aPort, aDevice, Global::stringifyDeviceType(aType),
-                          m->bd->fImplicit ? ":I" : "");
+    i_updateLogName();
 
     LogFlowThisFunc(("LEAVE - %s\n", i_getLogName()));
     return S_OK;
@@ -166,6 +160,7 @@ HRESULT MediumAttachment::initCopy(Machine *aParent, MediumAttachment *aThat)
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet(aParent && aThat, E_INVALIDARG);
+    Assert(!aParent->i_isSnapshotMachine());
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -183,6 +178,10 @@ HRESULT MediumAttachment::initCopy(Machine *aParent, MediumAttachment *aThat)
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
+    /* Construct a short log name for this attachment. */
+    i_updateLogName();
+
+    LogFlowThisFunc(("LEAVE - %s\n", i_getLogName()));
     return S_OK;
 }
 
@@ -398,7 +397,7 @@ void MediumAttachment::i_commit()
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -415,7 +414,11 @@ bool MediumAttachment::i_isImplicit() const
 
 void MediumAttachment::i_setImplicit(bool aImplicit)
 {
+    Assert(!m->pMachine->i_isSnapshotMachine());
     m->bd->fImplicit = aImplicit;
+
+    /* Construct a short log name for this attachment. */
+    i_updateLogName();
 }
 
 const ComObjPtr<Medium>& MediumAttachment::i_getMedium() const
@@ -489,9 +492,13 @@ bool MediumAttachment::i_matches(const Utf8Str &aControllerName, LONG aPort, LON
 void MediumAttachment::i_updateName(const Utf8Str &aName)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     unconst(m->bd->strControllerName) = aName;
+
+    /* Construct a short log name for this attachment. */
+    i_updateLogName();
 }
 
 /**
@@ -501,6 +508,7 @@ void MediumAttachment::i_updateName(const Utf8Str &aName)
 void MediumAttachment::i_updateMedium(const ComObjPtr<Medium> &aMedium)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->pMedium = aMedium;
@@ -512,6 +520,7 @@ void MediumAttachment::i_updateMedium(const ComObjPtr<Medium> &aMedium)
 void MediumAttachment::i_updatePassthrough(bool aPassthrough)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->mData.fPassThrough = aPassthrough;
@@ -521,6 +530,7 @@ void MediumAttachment::i_updatePassthrough(bool aPassthrough)
 void MediumAttachment::i_updateTempEject(bool aTempEject)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->mData.fTempEject = aTempEject;
@@ -530,6 +540,7 @@ void MediumAttachment::i_updateTempEject(bool aTempEject)
 void MediumAttachment::i_updateEjected()
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->fIsEjected = true;
 }
@@ -538,6 +549,7 @@ void MediumAttachment::i_updateEjected()
 void MediumAttachment::i_updateNonRotational(bool aNonRotational)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->mData.fNonRotational = aNonRotational;
@@ -547,6 +559,7 @@ void MediumAttachment::i_updateNonRotational(bool aNonRotational)
 void MediumAttachment::i_updateDiscard(bool aDiscard)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->mData.fDiscard = aDiscard;
@@ -556,6 +569,7 @@ void MediumAttachment::i_updateDiscard(bool aDiscard)
 void MediumAttachment::i_updateHotPluggable(bool aHotPluggable)
 {
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->mData.fHotPluggable = aHotPluggable;
@@ -565,6 +579,7 @@ void MediumAttachment::i_updateBandwidthGroup(const Utf8Str &aBandwidthGroup)
 {
     LogFlowThisFuncEnter();
     Assert(isWriteLockOnCurrentThread());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     m->bd.backup();
     m->bd->mData.strBwGroup = aBandwidthGroup;
@@ -577,7 +592,8 @@ void MediumAttachment::i_updateParentMachine(Machine * const pMachine)
     LogFlowThisFunc(("ENTER - %s\n", i_getLogName()));
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
+    Assert(!m->pMachine->i_isSnapshotMachine());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -586,3 +602,13 @@ void MediumAttachment::i_updateParentMachine(Machine * const pMachine)
     LogFlowThisFunc(("LEAVE - %s\n", i_getLogName()));
 }
 
+void MediumAttachment::i_updateLogName()
+{
+    const char *pszName = m->bd->strControllerName.c_str();
+    const char *pszEndNick = strpbrk(pszName, " \t:-");
+    mLogName = Utf8StrFmt("MA%p[%.*s:%u:%u:%s%s]",
+                          this,
+                          pszEndNick ? pszEndNick - pszName : 4, pszName,
+                          m->bd->mData.lPort, m->bd->mData.lDevice, Global::stringifyDeviceType(m->bd->mData.deviceType),
+                          m->bd->fImplicit ? ":I" : "");
+}

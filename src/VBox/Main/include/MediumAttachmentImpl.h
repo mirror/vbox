@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,8 +100,11 @@ public:
     /** Must be called from under this object's write lock. */
     void i_updateHotPluggable(bool aHotPluggable);
 
+    /** Construct a unique and somewhat descriptive name for logging. */
+    void i_updateLogName(void);
+
     /** Get a unique and somewhat descriptive name for logging. */
-    const char* i_getLogName(void) const { return mLogName.c_str(); }
+    const char *i_getLogName(void) const { return mLogName.c_str(); }
 
 private:
 
