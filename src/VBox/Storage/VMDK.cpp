@@ -5351,9 +5351,9 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
         goto out;
     }
 
-    /* Check size. Maximum 2TB-64K for sparse images, otherwise unlimited. */
+    /* Check size. Maximum 256TB-64K for sparse images, otherwise unlimited. */
     if (    !cbSize
-        ||  (!(uImageFlags & VD_IMAGE_FLAGS_FIXED) && cbSize >= _1T * 2 - _64K))
+        ||  (!(uImageFlags & VD_IMAGE_FLAGS_FIXED) && cbSize >= _1T * 256 - _64K))
     {
         rc = VERR_VD_INVALID_SIZE;
         goto out;
