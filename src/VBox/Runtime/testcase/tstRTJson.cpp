@@ -32,40 +32,44 @@
 
 #include <iprt/test.h>
 
-
-int main()
+/**
+ * Some basic tests to detect malformed JSON.
+ */
+static void tstBasic(RTTEST hTest)
 {
-    RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTJson", &hTest);
-    if (rc)
-        return rc;
-    RTTestBanner(hTest);
-
-    RTTestSub(hTest, "RTJsonParseFromString");
+    RTTestSub(hTest, "Basic valid/malformed tests");
     static struct
     {
         const char *pszJson;
         int         iRcResult;
     } const aTests[] =
     {
-        { "",           VERR_JSON_MALFORMED },
-        { ",",          VERR_JSON_MALFORMED },
-        { ":",          VERR_JSON_MALFORMED },
-        { "null",       VINF_SUCCESS },
-        { "true",       VINF_SUCCESS },
-        { "false",      VINF_SUCCESS },
-        { "100",        VINF_SUCCESS },
-        { "\"test\"",   VINF_SUCCESS },
-        { "{ }",        VINF_SUCCESS },
-        { "[ ]",        VINF_SUCCESS },
+        { "",              VERR_JSON_MALFORMED },
+        { ",",             VERR_JSON_MALFORMED },
+        { ":",             VERR_JSON_MALFORMED },
+        { "   \n\t{",      VERR_JSON_MALFORMED },
+        { "}",             VERR_JSON_MALFORMED },
+        { "[",             VERR_JSON_MALFORMED },
+        { "]",             VERR_JSON_MALFORMED },
+        { "[ \"test\" : ", VERR_JSON_MALFORMED },
+        { "null",          VINF_SUCCESS },
+        { "true",          VINF_SUCCESS },
+        { "false",         VINF_SUCCESS },
+        { "100",           VINF_SUCCESS },
+        { "\"test\"",      VINF_SUCCESS },
+        { "{ }",           VINF_SUCCESS },
+        { "[ ]",           VINF_SUCCESS },
+        { "[ 100, 200 ]",  VINF_SUCCESS },
+        { "{ \"1\": 1 }",  VINF_SUCCESS },
+        { "{ \"1\": 1, \"2\": 2 }", VINF_SUCCESS }
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
         RTJSONVAL hJsonVal = NIL_RTJSONVAL;
-        rc = RTJsonParseFromString(&hJsonVal, aTests[iTest].pszJson, NULL);
+        int rc = RTJsonParseFromString(&hJsonVal, aTests[iTest].pszJson, NULL);
         if (rc != aTests[iTest].iRcResult)
-            RTTestIFailed("RTJsonParseFromString() failed, expected %Rrc got %Rrc\n",
-                          aTests[iTest].iRcResult, rc);
+            RTTestIFailed("RTJsonParseFromString() for \"%s\" failed, expected %Rrc got %Rrc\n",
+                          aTests[iTest].pszJson, aTests[iTest].iRcResult, rc);
         if (RT_SUCCESS(rc))
         {
             if (hJsonVal != NIL_RTJSONVAL)
@@ -76,6 +80,26 @@ int main()
         else if (hJsonVal != NIL_RTJSONVAL)
             RTTestIFailed("RTJsonParseFromString() failed but a JSON value was returned\n");
     }
+}
+
+/**
+ * Test that the parser returns the correct values for a valid JSON.
+ */
+static void tstCorrectness(RTTEST hTest)
+{
+
+}
+
+int main()
+{
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstRTJson", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
+
+    tstBasic(hTest);
+    tstCorrectness(hTest);
 
     /*
      * Summary.

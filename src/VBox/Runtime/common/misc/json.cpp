@@ -876,9 +876,12 @@ static int rtJsonParseArray(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal,
         }
 
         /* Skip value separator and continue with next token. */
-        if (rtJsonTokenizerConsumeIfMatched(pTokenizer, RTJSONTOKENCLASS_VALUE_SEPARATOR))
-            rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
-        else
+        bool fSkippedSep = rtJsonTokenizerConsumeIfMatched(pTokenizer, RTJSONTOKENCLASS_VALUE_SEPARATOR);
+        rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
+
+        if (   RT_SUCCESS(rc)
+            && !fSkippedSep
+            && pToken->enmClass != RTJSONTOKENCLASS_END_ARRAY)
             rc = VERR_JSON_MALFORMED;
     }
 
@@ -946,15 +949,24 @@ static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal
                         rc = VERR_NO_MEMORY;
                         break;
                     }
+
+                    papValues = papValuesNew;
+                    papszNames = papszNamesNew;
                 }
 
-                Assert(cMembers < cMembers);
+                Assert(cMembers < cMembersMax);
                 papszNames[cMembers] = pszName;
                 papValues[cMembers] = pVal;
                 cMembers++;
 
-                /* Next token. */
+                /* Skip value separator and continue with next token. */
+                bool fSkippedSep = rtJsonTokenizerConsumeIfMatched(pTokenizer, RTJSONTOKENCLASS_VALUE_SEPARATOR);
                 rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
+
+                if (   RT_SUCCESS(rc)
+                    && !fSkippedSep
+                    && pToken->enmClass != RTJSONTOKENCLASS_END_OBJECT)
+                    rc = VERR_JSON_MALFORMED;
             }
         }
         else
