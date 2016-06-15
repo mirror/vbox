@@ -133,7 +133,7 @@ typedef const RTJSONTOKEN *PCRTJSONTOKEN;
  * @param   cbBuf           How much to read.
  * @param   pcbRead         Where to store the amount of data read on succcess.
  */
-typedef DECLCALLBACK(int) FNRTJSONTOKENIZERREAD(void *pvUser, uint32_t offInput, void *pvBuf, size_t cbBuf,
+typedef DECLCALLBACK(int) FNRTJSONTOKENIZERREAD(void *pvUser, size_t offInput, void *pvBuf, size_t cbBuf,
                                                 size_t *pcbRead);
 /** Pointer to a tokenizer read buffer callback. */
 typedef FNRTJSONTOKENIZERREAD *PFNRTJSONTOKENIZERREAD;
@@ -152,7 +152,7 @@ typedef struct RTJSONTOKENIZER
     /** Number of valid bytes in the input buffer. */
     size_t                  cbBuf;
     /* Current offset into the input buffer. */
-    uint32_t                offBuf;
+    size_t                  offBuf;
     /** Input cache buffer. */
     char                    achBuf[512];
     /** Current position into the input stream. */
@@ -287,7 +287,7 @@ static int rtJsonTokenizerRead(PRTJSONTOKENIZER pTokenizer)
  * @param   pTokenizer      The tokenizer state.
  * @param   cchSkip         The amount of characters to skip.
  */
-static int rtJsonTokenizerSkip(PRTJSONTOKENIZER pTokenizer, unsigned cchSkip)
+static int rtJsonTokenizerSkip(PRTJSONTOKENIZER pTokenizer, size_t cchSkip)
 {
     int rc = VINF_SUCCESS;
 
@@ -1000,7 +1000,7 @@ static int rtJsonParse(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT *ppJsonVal,
 /**
  * Read callback for RTJsonParseFromBuf().
  */
-static DECLCALLBACK(int) rtJsonTokenizerParseFromBuf(void *pvUser, uint32_t offInput,
+static DECLCALLBACK(int) rtJsonTokenizerParseFromBuf(void *pvUser, size_t offInput,
                                                      void *pvBuf, size_t cbBuf,
                                                      size_t *pcbRead)
 {
@@ -1018,7 +1018,7 @@ static DECLCALLBACK(int) rtJsonTokenizerParseFromBuf(void *pvUser, uint32_t offI
 /**
  * Read callback for RTJsonParseFromString().
  */
-static DECLCALLBACK(int) rtJsonTokenizerParseFromString(void *pvUser, uint32_t offInput,
+static DECLCALLBACK(int) rtJsonTokenizerParseFromString(void *pvUser, size_t offInput,
                                                         void *pvBuf, size_t cbBuf,
                                                         size_t *pcbRead)
 {
@@ -1037,7 +1037,7 @@ static DECLCALLBACK(int) rtJsonTokenizerParseFromString(void *pvUser, uint32_t o
 /**
  * Read callback for RTJsonParseFromFile().
  */
-static DECLCALLBACK(int) rtJsonTokenizerParseFromFile(void *pvUser, uint32_t offInput,
+static DECLCALLBACK(int) rtJsonTokenizerParseFromFile(void *pvUser, size_t offInput,
                                                       void *pvBuf, size_t cbBuf,
                                                       size_t *pcbRead)
 {
