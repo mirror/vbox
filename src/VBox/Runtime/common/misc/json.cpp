@@ -640,17 +640,35 @@ static int rtJsonTokenizerReadNextToken(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKE
     else if (ch == '\0')
         rc = rtJsonTokenizerGetEos(pTokenizer, pToken);
     else if (ch == '{')
-        rc = pToken->enmClass == RTJSONTOKENCLASS_BEGIN_OBJECT;
+    {
+        pToken->enmClass = RTJSONTOKENCLASS_BEGIN_OBJECT;
+        rtJsonTokenizerSkipCh(pTokenizer);
+    }
     else if (ch == '}')
-        rc = pToken->enmClass == RTJSONTOKENCLASS_END_OBJECT;
+    {
+        pToken->enmClass = RTJSONTOKENCLASS_END_OBJECT;
+        rtJsonTokenizerSkipCh(pTokenizer);
+    }
     else if (ch == '[')
-        rc = pToken->enmClass == RTJSONTOKENCLASS_BEGIN_ARRAY;
+    {
+        pToken->enmClass = RTJSONTOKENCLASS_BEGIN_ARRAY;
+        rtJsonTokenizerSkipCh(pTokenizer);
+    }
     else if (ch == ']')
-        rc = pToken->enmClass == RTJSONTOKENCLASS_END_ARRAY;
+    {
+        pToken->enmClass = RTJSONTOKENCLASS_END_ARRAY;
+        rtJsonTokenizerSkipCh(pTokenizer);
+    }
     else if (ch == ':')
-        rc = pToken->enmClass == RTJSONTOKENCLASS_NAME_SEPARATOR;
+    {
+        pToken->enmClass = RTJSONTOKENCLASS_NAME_SEPARATOR;
+        rtJsonTokenizerSkipCh(pTokenizer);
+    }
     else if (ch == ',')
-        rc = pToken->enmClass == RTJSONTOKENCLASS_VALUE_SEPARATOR;
+    {
+        pToken->enmClass = RTJSONTOKENCLASS_VALUE_SEPARATOR;
+        rtJsonTokenizerSkipCh(pTokenizer);
+    }
     else
     {
         pToken->enmClass = RTJSONTOKENCLASS_INVALID;
@@ -774,10 +792,13 @@ static void rtJsonValDestroy(PRTJSONVALINT pThis)
                 RTStrFree(pThis->Type.Object.papszNames[i]);
                 RTJsonValueRelease(pThis->Type.Object.papValues[i]);
             }
+            RTMemFree(pThis->Type.Object.papszNames);
+            RTMemFree(pThis->Type.Object.papValues);
             break;
         case RTJSONVALTYPE_ARRAY:
             for (unsigned i = 0; i < pThis->Type.Array.cItems; i++)
                 RTJsonValueRelease(pThis->Type.Array.papItems[i]);
+            RTMemFree(pThis->Type.Array.papItems);
             break;
         case RTJSONVALTYPE_STRING:
             RTStrFree(pThis->Type.String.pszStr);
@@ -825,29 +846,59 @@ static int rtJsonParseArray(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal,
     int rc = VINF_SUCCESS;
     PRTJSONTOKEN pToken = NULL;
     uint32_t cItems = 0;
+    uint32_t cItemsMax = 0;
+    PRTJSONVALINT *papItems = NULL;
 
     rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
     while (   RT_SUCCESS(rc)
-           && pToken->enmClass != RTJSONTOKENCLASS_END_ARRAY)
+           && pToken->enmClass != RTJSONTOKENCLASS_END_ARRAY
+           && pToken->enmClass != RTJSONTOKENCLASS_EOS)
     {
         PRTJSONVALINT pVal = NULL;
         rc = rtJsonParseValue(pTokenizer, pToken, &pVal, pErrInfo);
         if (RT_SUCCESS(rc))
         {
+            if (cItems == cItemsMax)
+            {
+                cItemsMax += 10;
+                PRTJSONVALINT *papItemsNew = (PRTJSONVALINT *)RTMemRealloc(papItems, cItemsMax * sizeof(PRTJSONVALINT));
+                if (RT_UNLIKELY(!papItemsNew))
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+                papItems = papItemsNew;
+            }
+
+            Assert(cItems < cItemsMax);
+            papItems[cItems] = pVal;
             cItems++;
-            /** @todo: Add value to array. */
         }
 
-        /* Next token. */
-        rtJsonTokenizerConsume(pTokenizer);
-        rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
+        /* Skip value separator and continue with next token. */
+        if (rtJsonTokenizerConsumeIfMatched(pTokenizer, RTJSONTOKENCLASS_VALUE_SEPARATOR))
+            rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
+        else
+            rc = VERR_JSON_MALFORMED;
     }
 
     if (RT_SUCCESS(rc))
     {
-        Assert(pToken->enmClass == RTJSONTOKENCLASS_END_ARRAY);
-        rtJsonTokenizerConsume(pTokenizer);
-        pJsonVal->Type.Array.cItems = cItems;
+        if (pToken->enmClass == RTJSONTOKENCLASS_END_ARRAY)
+        {
+            rtJsonTokenizerConsume(pTokenizer);
+            pJsonVal->Type.Array.cItems = cItems;
+            pJsonVal->Type.Array.papItems = papItems;
+        }
+        else
+            rc = VERR_JSON_MALFORMED;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        for (uint32_t i = 0; i < cItems; i++)
+            RTJsonValueRelease(papItems[i]);
+        RTMemFree(papItems);
     }
 
     return rc;
@@ -866,6 +917,9 @@ static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal
     int rc = VINF_SUCCESS;
     PRTJSONTOKEN pToken = NULL;
     uint32_t cMembers = 0;
+    uint32_t cMembersMax = 0;
+    PRTJSONVALINT *papValues = NULL;
+    char **papszNames = NULL;
 
     rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
     while (   RT_SUCCESS(rc)
@@ -882,11 +936,24 @@ static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal
                 rc = rtJsonParseValue(pTokenizer, pToken, &pVal, pErrInfo);
             if (RT_SUCCESS(rc))
             {
+                if (cMembers == cMembersMax)
+                {
+                    cMembersMax += 10;
+                    PRTJSONVALINT *papValuesNew = (PRTJSONVALINT *)RTMemRealloc(papValues, cMembersMax * sizeof(PRTJSONVALINT));
+                    char **papszNamesNew =  (char **)RTMemRealloc(papValues, cMembersMax * sizeof(char *));
+                    if (RT_UNLIKELY(!papValuesNew || !papszNamesNew))
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                }
+
+                Assert(cMembers < cMembers);
+                papszNames[cMembers] = pszName;
+                papValues[cMembers] = pVal;
                 cMembers++;
-                /** @todo: Add name/value pair to object. */
 
                 /* Next token. */
-                rtJsonTokenizerConsume(pTokenizer);
                 rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
             }
         }
@@ -900,9 +967,22 @@ static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal
         {
             rtJsonTokenizerConsume(pTokenizer);
             pJsonVal->Type.Object.cMembers = cMembers;
+            pJsonVal->Type.Object.papValues = papValues;
+            pJsonVal->Type.Object.papszNames = papszNames;
         }
         else
             rc = VERR_JSON_MALFORMED;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        for (uint32_t i = 0; i < cMembers; i++)
+        {
+            RTJsonValueRelease(papValues[i]);
+            RTStrFree(papszNames[i]);
+        }
+        RTMemFree(papValues);
+        RTMemFree(papszNames);
     }
 
     return rc;
@@ -926,11 +1006,13 @@ static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken,
     switch (pToken->enmClass)
     {
         case RTJSONTOKENCLASS_BEGIN_ARRAY:
+            rtJsonTokenizerConsume(pTokenizer);
             pVal = rtJsonValueCreate(RTJSONVALTYPE_ARRAY);
             if (RT_LIKELY(pVal))
                 rc = rtJsonParseArray(pTokenizer, pVal, pErrInfo);
             break;
         case RTJSONTOKENCLASS_BEGIN_OBJECT:
+            rtJsonTokenizerConsume(pTokenizer);
             pVal = rtJsonValueCreate(RTJSONVALTYPE_OBJECT);
             if (RT_LIKELY(pVal))
                 rc = rtJsonParseObject(pTokenizer, pVal, pErrInfo);
@@ -939,19 +1021,24 @@ static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken,
             pVal = rtJsonValueCreate(RTJSONVALTYPE_STRING);
             if (RT_LIKELY(pVal))
                 pVal->Type.String.pszStr = pToken->Class.String.pszStr;
+            rtJsonTokenizerConsume(pTokenizer);
             break;
         case RTJSONTOKENCLASS_NUMBER:
             pVal = rtJsonValueCreate(RTJSONVALTYPE_NUMBER);
             if (RT_LIKELY(pVal))
                 pVal->Type.Number.i64Num = pToken->Class.Number.i64Num;
+            rtJsonTokenizerConsume(pTokenizer);
             break;
         case RTJSONTOKENCLASS_NULL:
+            rtJsonTokenizerConsume(pTokenizer);
             pVal = rtJsonValueCreate(RTJSONVALTYPE_NULL);
             break;
         case RTJSONTOKENCLASS_FALSE:
+            rtJsonTokenizerConsume(pTokenizer);
             pVal = rtJsonValueCreate(RTJSONVALTYPE_FALSE);
             break;
         case RTJSONTOKENCLASS_TRUE:
+            rtJsonTokenizerConsume(pTokenizer);
             pVal = rtJsonValueCreate(RTJSONVALTYPE_TRUE);
             break;
         case RTJSONTOKENCLASS_END_ARRAY:

@@ -145,7 +145,8 @@ PROGRAMS += \
 	tstRTUri \
 	tstVector \
 	tstRTVfs \
-	tstRTZip
+	tstRTZip \
+	tstRTJson
 
 PROGRAMS.win += \
 	tstRTCritSectW32 \
@@ -700,6 +701,8 @@ tstVector_SOURCES = tstVector.cpp
 tstRTZip_TEMPLATE = VBOXR3TSTEXE
 tstRTZip_SOURCES = tstRTZip.cpp
 
+tstRTJson_TEMPLATE = VBOXR3TSTEXE
+tstRTJson_SOURCES = tstRTJson.cpp
 
 #
 # Ring-0 testcases.
