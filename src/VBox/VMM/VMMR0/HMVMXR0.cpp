@@ -3314,7 +3314,10 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
         Log4(("Load[%RU32]: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n", pVCpu->idCpu));
 #else
-        if (CPUMIsGuestInLongModeEx(pMixedCtx))
+        Assert(   pVCpu->hm.s.vmx.pfnStartVM == VMXR0SwitcherStartVM64
+               || pVCpu->hm.s.vmx.pfnStartVM == VMXR0StartVM32);
+        /* Set the host address-space size based on the switcher, not guest state. See @bugref{8432}. */
+        if (pVCpu->hm.s.vmx.pfnStartVM == VMXR0SwitcherStartVM64)
         {
             /* The switcher returns to long mode, EFER is managed by the switcher. */
             val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
@@ -4845,6 +4848,10 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                                  | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
             }
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
+
+            /* Mark that we've switched to 64-bit handler, we can't safely switch back to 32-bit for
+               the rest of the VM run (until VM reset). See @bugref{8432#c7}. */
+            pVCpu->hm.s.vmx.fSwitchedTo64on32 = true;
         }
 #else
         /* 64-bit host. */
@@ -4855,16 +4862,27 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         /* Guest is not in long mode, use the 32-bit handler. */
 #if HC_ARCH_BITS == 32
-        if (   pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32
-            && pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
+        if (    pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32
+            && !pVCpu->hm.s.vmx.fSwitchedTo64on32   /* If set, guest mode change does not imply switcher change. */
+            &&  pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
         {
             /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
             AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_VMX_EXIT_CTLS
                                              | HM_CHANGED_VMX_ENTRY_CTLS
                                              | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
         }
-#endif
+# ifdef VBOX_ENABLE_64_BITS_GUESTS
+        /* Keep using the 64-bit switcher even though we're in 32-bit because of bad Intel design. See @bugref{8432#c7}. */
+        if (!pVCpu->hm.s.vmx.fSwitchedTo64on32)
+            pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+        else
+            Assert(pVCpu->hm.s.vmx.pfnStartVM == VMXR0SwitcherStartVM64);
+# else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+# endif
+#else
+        pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+#endif
     }
     Assert(pVCpu->hm.s.vmx.pfnStartVM);
     return VINF_SUCCESS;

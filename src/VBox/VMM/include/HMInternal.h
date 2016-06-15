@@ -808,7 +808,10 @@ typedef struct HMCPU
 
         /** Set if guest was executing in real mode (extra checks). */
         bool                        fWasInRealMode;
-        uint8_t                     u8Alignment1[7];
+        /** Set if guest switched to 64-bit mode on a 32-bit host. */
+        bool                        fSwitchedTo64on32;
+
+        uint8_t                     u8Alignment1[6];
     } vmx;
 
     struct
