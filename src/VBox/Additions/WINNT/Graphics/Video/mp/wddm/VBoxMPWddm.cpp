@@ -1111,7 +1111,7 @@ NTSTATUS DxgkDdiStartDevice(
                 {
                     pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
                     pDevExt->fCmdVbvaEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
-# if 1
+# if 0
                     pDevExt->fComplexTopologiesEnabled = pDevExt->fCmdVbvaEnabled;
 # else
                     pDevExt->fComplexTopologiesEnabled = FALSE;
