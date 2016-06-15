@@ -1788,7 +1788,7 @@ static void clipConvertX11CB(void *pClientData, void *pvSrc, unsigned cbSrc)
                  * But in case of utf16, at least an OpenOffice adds Byte Order Mark - 0xfeff 
                  * at start of clipboard data
                  */
-                if( *(PRTUTF16)pvSrc == 0xfeff )
+                if( cbSrc >= sizeof(RTUTF16) && *(PRTUTF16)pvSrc == 0xfeff )
                 {
                     LogRelFlowFunc((" \n"));
                     rc = clipUTF16ToWinHTML((RTUTF16*)pvSrc, cbSrc,
