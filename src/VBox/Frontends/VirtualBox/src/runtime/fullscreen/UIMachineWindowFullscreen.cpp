@@ -336,8 +336,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* Resize window to the appropriate size on Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         resize(workingArea.size());
-    /* Resize window to the appropriate size on ML and next
-     * only if that screen has no own user-space: */
+    /* Resize window to the appropriate size on ML and next if it's screen has no own user-space: */
     else if (!pFullscreenLogic->screensHaveSeparateSpaces() && m_uScreenId != 0)
         resize(workingArea.size());
     else
@@ -350,7 +349,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
             const UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(m_uScreenId);
             geo = QRect(QPoint(0, 0), QSize(pFrameBuffer->width(), pFrameBuffer->height()).boundedTo(workingArea.size()));
         }
-        /* If frame-buffer size is null => use default size: */
+        /* If normal geometry still null => use default size: */
         if (geo.isNull())
             geo = QRect(QPoint(0, 0), QSize(800, 600).boundedTo(workingArea.size()));
         /* Move window to the center of working-area: */
@@ -428,19 +427,11 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
 
-        /* ML and next using native stuff, so we can call for simple show(),
-         * Lion and previous using Qt stuff, so we should call for showFullScreen(): */
-        const bool fSupportsNativeFullScreen = vboxGlobal().osRelease() > MacOSXRelease_Lion;
-        if (fSupportsNativeFullScreen)
-        {
-            /* Show window in normal mode: */
+        /* Simple show() for ML and next, showFullScreen() otherwise: */
+        if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
             show();
-        }
         else
-        {
-            /* Show window in fullscreen mode: */
             showFullScreen();
-        }
 
         /* Adjust machine-view size if necessary: */
         adjustMachineViewSize();
