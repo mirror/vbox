@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2015 Oracle Corporation
+ * Copyright (C) 2004-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -210,6 +210,18 @@ public:
 
     class MaybeQuitEvent : public NativeEvent
     {
+    public:
+        MaybeQuitEvent() :
+            m_fSignal(false)
+        {
+        }
+
+        MaybeQuitEvent(bool fSignal) :
+            m_fSignal(fSignal)
+        {
+        }
+
+    private:
         /* called on the main thread */
         void *handler()
         {
@@ -233,7 +245,7 @@ public:
 
             if (count == 0)
             {
-                if (gAutoShutdown)
+                if (gAutoShutdown || m_fSignal)
                 {
                     Assert(sInstance == NULL);
                     LogFlowFunc(("Terminating the server process...\n"));
@@ -256,6 +268,8 @@ public:
             LogFlowFuncLeave();
             return NULL;
         }
+
+        bool m_fSignal;
     };
 
     static DECLCALLBACK(void) ShutdownTimer(RTTIMERLR hTimerLR, void *pvUser, uint64_t /*iTick*/)
@@ -271,7 +285,7 @@ public:
         AssertReturnVoid(q);
 
         /* post a quit event to the main queue */
-        MaybeQuitEvent *ev = new MaybeQuitEvent();
+        MaybeQuitEvent *ev = new MaybeQuitEvent(false /* fSignal */);
         if (!q->postEvent(ev))
             delete ev;
 
@@ -515,7 +529,8 @@ static void signal_handler(int sig)
         {
             if (gAllowSigUsrQuit)
             {
-                VirtualBoxClassFactory::MaybeQuitEvent *ev = new VirtualBoxClassFactory::MaybeQuitEvent();
+                /* terminate the server process if it is idle */
+                VirtualBoxClassFactory::MaybeQuitEvent *ev = new VirtualBoxClassFactory::MaybeQuitEvent(true /* fSignal */);
                 if (!q->postEvent(ev))
                     delete ev;
             }
