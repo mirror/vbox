@@ -384,28 +384,31 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %s, %RU8 channels, %RU32Hz)\n",
                  pSink->pszName, fFlags, pCfg->enmDir, DrvAudioHlpAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
 
-    PDMAUDIOSTREAMCFG CfgSink;
-    int rc = DrvAudioHlpPCMPropsToStreamCfg(&pSink->PCMProps, &CfgSink);
+    /*
+     * Initialize the host-side configuration for the stream to be created.
+     * Always use the sink's PCM audio format as the host side when creating a stream for it.
+     */
+    PDMAUDIOSTREAMCFG CfgHost;
+    int rc = DrvAudioHlpPCMPropsToStreamCfg(&pSink->PCMProps, &CfgHost);
     AssertRCReturn(rc, rc);
 
     /* Apply the sink's direction for the configuration to use to
      * create the stream. */
     if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
     {
-        CfgSink.DestSource.Source = PDMAUDIORECSOURCE_UNKNOWN;
-        CfgSink.enmDir            = PDMAUDIODIR_IN;
+        CfgHost.DestSource.Source = pCfg->DestSource.Source;
+        CfgHost.enmDir            = PDMAUDIODIR_IN;
     }
     else
     {
-        CfgSink.DestSource.Dest = PDMAUDIOPLAYBACKDEST_UNKNOWN;
-        CfgSink.enmDir          = PDMAUDIODIR_OUT;
+        CfgHost.DestSource.Dest = pCfg->DestSource.Dest;
+        CfgHost.enmDir          = PDMAUDIODIR_OUT;
     }
 
-    RTStrPrintf(CfgSink.szName, sizeof(CfgSink.szName), "%s", pCfg->szName);
+    RTStrPrintf(CfgHost.szName, sizeof(CfgHost.szName), "%s", pCfg->szName);
 
-    /* Always use the sink's PCM audio format as the host side when creating a stream for it. */
     PPDMAUDIOSTREAM pStream;
-    rc = pConn->pfnStreamCreate(pConn, &CfgSink, pCfg, &pStream);
+    rc = pConn->pfnStreamCreate(pConn, &CfgHost, pCfg, &pStream);
     if (RT_SUCCESS(rc))
     {
         /* Save the audio stream pointer to this mixing stream. */
@@ -1060,7 +1063,6 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 
     LogFlowFunc(("%s: enmOp=%ld, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
 
-    uint32_t cPlayed;
     uint32_t cbProcessed;
 
     PAUDMIXSTREAM pMixStream;
@@ -1178,7 +1180,7 @@ bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
     }
 
     bool fIsActive =
-        (pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED);
+        RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED);
 
     return fIsActive;
 }

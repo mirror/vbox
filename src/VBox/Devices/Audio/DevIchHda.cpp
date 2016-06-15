@@ -2686,14 +2686,10 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
         if (fUseFront)
         {
-            if (!RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front"))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
-
+            RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front");
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
             pCfg->cChannels       = 2;
+
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_FRONT);
             if (RT_SUCCESS(rc))
                 rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
@@ -2703,14 +2699,10 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         if (   RT_SUCCESS(rc)
             && (fUseCenter || fUseLFE))
         {
-            if (!RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE"))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
-
+            RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE");
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
             pCfg->cChannels       = (fUseCenter && fUseLFE) ? 2 : 1;
+
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_CENTER_LFE);
             if (RT_SUCCESS(rc))
                 rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
@@ -2719,14 +2711,10 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         if (   RT_SUCCESS(rc)
             && fUseRear)
         {
-            if (!RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear"))
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
-
+            RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear");
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_REAR;
             pCfg->cChannels       = 2;
+
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_REAR);
             if (RT_SUCCESS(rc))
                 rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
@@ -2811,6 +2799,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 # error "Implement me!"
 #else
             strmCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
+            RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Line In");
 #endif
             break;
 
@@ -3786,10 +3775,12 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
         int rc2 = VINF_SUCCESS;
-        PHDAMIXERSTREAM pStream;
+        PHDAMIXERSTREAM pStream = NULL;
 
         if (pCfg->enmDir == PDMAUDIODIR_IN)
         {
+            LogFunc(("enmRecSource=%ld\n", pCfg->DestSource.Source));
+
             switch (pCfg->DestSource.Source)
             {
                 case PDMAUDIORECSOURCE_LINE:
@@ -3807,6 +3798,8 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
         }
         else if (pCfg->enmDir == PDMAUDIODIR_OUT)
         {
+            LogFunc(("enmPlaybackDest=%ld\n", pCfg->DestSource.Dest));
+
             switch (pCfg->DestSource.Dest)
             {
                 case PDMAUDIOPLAYBACKDEST_FRONT:
@@ -3830,6 +3823,8 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
 
         if (RT_SUCCESS(rc2))
         {
+            AssertPtr(pStream);
+
             AudioMixerSinkRemoveStream(pSink->pMixSink, pStream->pMixStrm);
 
             AudioMixerStreamDestroy(pStream->pMixStrm);

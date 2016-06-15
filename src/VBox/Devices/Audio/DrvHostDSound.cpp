@@ -893,14 +893,23 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
     AssertPtrReturn(pThis, NULL);
     AssertPtrReturn(pDSoundStream, NULL);
 
-    LPCGUID pGUID = pThis->cfg.pGuidCapture;
+    int rc = VINF_SUCCESS;
 
+    LPCGUID pGUID = pThis->cfg.pGuidCapture;
     if (!pGUID)
     {
-        PDSOUNDDEV  pDev = NULL;
+        PDSOUNDDEV pDev = NULL;
 
         switch (pDSoundStream->enmRecSource)
         {
+            case PDMAUDIORECSOURCE_LINE:
+                /*
+                 * At the moment we're only supporting line-in in the HDA emulation,
+                 * and line-in + mic-in in the AC'97 emulation both are expected
+                 * to use the host's mic-in as well.
+                 *
+                 * So the fall through here is intentional for now.
+                 */
             case PDMAUDIORECSOURCE_MIC:
             {
                 RTListForEach(&pThis->lstDevInput, pDev, DSOUNDDEV, Node)
@@ -908,32 +917,45 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
                     if (RTStrIStr(pDev->pszName, "Mic")) /** @todo what is with non en_us windows versions? */
                         break;
                 }
+
                 if (RTListNodeIsDummy(&pThis->lstDevInput, pDev, DSOUNDDEV, Node))
-                    pDev = NULL;    /* Found nothing. */
+                    pDev = NULL; /* Found nothing. */
 
                 break;
             }
 
-            case PDMAUDIORECSOURCE_LINE:
             default:
-                /* Try opening the default device (NULL). */
+                AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
                 break;
         }
 
-        if (pDev)
+        if (   RT_SUCCESS(rc)
+            && pDev)
         {
-            DSLOG(("DSound: Guest \"%s\" is using host \"%s\"\n",
+            DSLOG(("DSound: Guest source '%s' is using host recording device '%s'\n",
                    DrvAudioHlpRecSrcToStr(pDSoundStream->enmRecSource), pDev->pszName));
 
             pGUID = &pDev->Guid;
         }
     }
 
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("DSound: Selecting recording device failed with %Rrc\n", rc));
+        return NULL;
+    }
+
     char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
+
     /* This always has to be in the release log. */
-    LogRel(("DSound: Guest \"%s\" is using host device with GUID: %s\n",
+    LogRel(("DSound: Guest source '%s' is using host recording device with GUID '%s'\n",
             DrvAudioHlpRecSrcToStr(pDSoundStream->enmRecSource), pszGUID ? pszGUID: "{?}"));
-    RTStrFree(pszGUID);
+
+    if (pszGUID)
+    {
+        RTStrFree(pszGUID);
+        pszGUID = NULL;
+    }
 
     return pGUID;
 }
@@ -1422,7 +1444,7 @@ static int dsoundCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 
     LogFlowFunc(("pStream=%p, pCfg=%p\n", pStream, pCfg));
 
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDRVHOSTDSOUND   pThis         = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAMOUT pDSoundStream = (PDSOUNDSTREAMOUT)pStream;
 
     pDSoundStream->streamCfg = *pCfg;
@@ -1662,13 +1684,13 @@ static DECLCALLBACK(int) drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDM
 
 static int dsoundDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDRVHOSTDSOUND   pThis         = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAMOUT pDSoundStream = (PDSOUNDSTREAMOUT)pStream;
 
     directSoundPlayClose(pThis, pDSoundStream);
 
-    pDSoundStream->cbPlayWritePos = 0;
-    pDSoundStream->fRestartPlayback = true;
+    pDSoundStream->cbPlayWritePos       = 0;
+    pDSoundStream->fRestartPlayback     = true;
     pDSoundStream->csPlaybackBufferSize = 0;
 
     RT_ZERO(pDSoundStream->streamCfg);
@@ -1679,14 +1701,16 @@ static int dsoundDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pSt
 static int dsoundCreateStreamIn(PPDMIHOSTAUDIO pInterface,
                                 PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
 {
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
+
+    PDRVHOSTDSOUND  pThis         = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAMIN pDSoundStream = (PDSOUNDSTREAMIN)pStream;
 
-    LogFlowFunc(("pStream=%p, pAudioSettings=%p, enmRecSource=%ld\n",
-                 pStream, pCfg, pCfg->DestSource.Source));
+    LogFlowFunc(("pStream=%p, pCfg=%p, enmRecSource=%ld\n", pStream, pCfg, pCfg->DestSource.Source));
 
-    pDSoundStream->streamCfg = *pCfg;
-    pDSoundStream->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+    memcpy(&pDSoundStream->streamCfg, pCfg, sizeof(PDMAUDIOSTREAMCFG));
 
     /** @todo caller should already init Props? */
     int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pStream->Props);
@@ -1719,7 +1743,7 @@ static int dsoundControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
                                  PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
     LogFlowFunc(("pStream=%p, enmStreamCmd=%ld\n", pStream, enmStreamCmd));
 
@@ -1820,9 +1844,6 @@ static DECLCALLBACK(int) drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, P
         if (csCaptured == 0)
             break;
 
-        /* Using as an intermediate not circular buffer. */
-        AudioMixBufReset(&pStream->MixBuf);
-
         /* Get number of free samples in the mix buffer and check that is has free space */
         uint32_t csMixFree = AudioMixBufFree(&pStream->MixBuf);
         if (csMixFree == 0)
@@ -1858,8 +1879,7 @@ static DECLCALLBACK(int) drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, P
         uint32_t csWritten;
         if (pv1 && len1)
         {
-            rc = AudioMixBufWriteAt(&pStream->MixBuf, 0 /* offWrite */,
-                                    pv1, cb1, &csWritten);
+            rc = AudioMixBufWriteCirc(&pStream->MixBuf, pv1, cb1, &csWritten);
             if (RT_SUCCESS(rc))
                 csWrittenTotal += csWritten;
         }
@@ -1868,8 +1888,7 @@ static DECLCALLBACK(int) drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, P
             && csWrittenTotal == len1
             && pv2 && len2)
         {
-            rc = AudioMixBufWriteAt(&pStream->MixBuf, csWrittenTotal,
-                                    pv2, cb2, &csWritten);
+            rc = AudioMixBufWriteCirc(&pStream->MixBuf, pv2, cb2, &csWritten);
             if (RT_SUCCESS(rc))
                 csWrittenTotal += csWritten;
         }
