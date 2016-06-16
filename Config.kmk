@@ -220,7 +220,7 @@ VBOX_BUILD_PUBLISHER =
 # Note! The BETA[n],ALPHA[n],RC[n] indicators should be inserted before the
 #       publisher so that RTStrVersionCompare have a chance of comparing
 #       prerelease from different publishers correctly.
-VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)_BETA2$(VBOX_BUILD_PUBLISHER)
+VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)_BETA3$(VBOX_BUILD_PUBLISHER)
 # Just the BETA[n],ALPHA[n],RC[n] indicators. Set to empty string for release.
 VBOX_VERSION_PRERELEASE =
 
@@ -230,11 +230,11 @@ ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
   # Decide whether to use the stable (5.0) audio code or not.
 endif
 ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
-# export VBOX_ADDITIONS_SH_MODE     = release
-# export VBOX_DOCUMENTATION_SH_MODE = release
-# export VBOX_EFI_SH_MODE           = release
-# export VBOX_EXTPACKS_SH_MODE      = release
-# VBOX_WITH_AUDIO_STABLE           := 1
+ export VBOX_ADDITIONS_SH_MODE     = release
+ export VBOX_DOCUMENTATION_SH_MODE = release
+ export VBOX_EFI_SH_MODE           = release
+ export VBOX_EXTPACKS_SH_MODE      = release
+ VBOX_WITH_AUDIO_STABLE           := 1
 endif
 
 # Some info on the vendor
