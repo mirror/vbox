@@ -53,7 +53,7 @@ static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_li
     return VINF_SUCCESS;
 }
 
-static int tstFill(const char *pszFilename, const char *pszFormat, uint64_t cbDisk, uint64_t cbFill)
+static int tstFill(const char *pszFilename, const char *pszFormat, bool fStreamOptimized, uint64_t cbDisk, uint64_t cbFill)
 {
     int rc;
     PVBOXHDD pVD = NULL;
@@ -99,8 +99,8 @@ static int tstFill(const char *pszFilename, const char *pszFormat, uint64_t cbDi
     CHECK("VDCreate()");
 
     rc = VDCreateBase(pVD, pszFormat, pszFilename, cbDisk,
-                      VD_IMAGE_FLAGS_NONE, "Test image",
-                      &PCHS, &LCHS, NULL, VD_OPEN_FLAGS_NORMAL,
+                      fStreamOptimized ? VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED : VD_IMAGE_FLAGS_NONE,
+                      "Test image", &PCHS, &LCHS, NULL, VD_OPEN_FLAGS_NORMAL,
                       NULL, NULL);
     CHECK("VDCreateBase()");
 
@@ -142,16 +142,18 @@ static void printUsage(void)
              "--fill-size <size in MB>    How much to fill\n"
              "--filename <filename>       Filename of the image\n"
              "--format <VDI|VMDK|...>     Format to use\n"
+             "--streamoptimized           Use the stream optimized format\n"
              "--help                      Show this text\n");
 }
 
 static const RTGETOPTDEF g_aOptions[] =
 {
-    { "--disk-size",   's', RTGETOPT_REQ_UINT64 },
-    { "--fill-size",   'f', RTGETOPT_REQ_UINT64 },
-    { "--filename",    'p', RTGETOPT_REQ_STRING },
-    { "--format",      't', RTGETOPT_REQ_STRING },
-    { "--help",        'h', RTGETOPT_REQ_NOTHING }
+    { "--disk-size",       's', RTGETOPT_REQ_UINT64 },
+    { "--fill-size",       'f', RTGETOPT_REQ_UINT64 },
+    { "--filename",        'p', RTGETOPT_REQ_STRING },
+    { "--format",          't', RTGETOPT_REQ_STRING },
+    { "--streamoptimized", 'r', RTGETOPT_REQ_NOTHING },
+    { "--help",            'h', RTGETOPT_REQ_NOTHING }
 };
 
 int main(int argc, char *argv[])
@@ -165,6 +167,7 @@ int main(int argc, char *argv[])
     uint64_t cbFill = 0;
     const char *pszFilename = NULL;
     const char *pszFormat = NULL;
+    bool fStreamOptimized = false;
 
     rc = VDInit();
     if (RT_FAILURE(rc))
@@ -190,6 +193,9 @@ int main(int argc, char *argv[])
             case 't':
                 pszFormat = ValueUnion.psz;
                 break;
+            case 'r':
+                fStreamOptimized = true;
+                break;
             case 'h':
             default:
                 printUsage();
@@ -212,7 +218,7 @@ int main(int argc, char *argv[])
 
     RTRandAdvSeed(g_hRand, 0x12345678);
 
-    rc = tstFill(pszFilename, pszFormat, cbDisk, cbFill);
+    rc = tstFill(pszFilename, pszFormat, fStreamOptimized, cbDisk, cbFill);
     if (RT_FAILURE(rc))
         RTPrintf("tstVDFill: Filling disk failed! rc=%Rrc\n", rc);
 
