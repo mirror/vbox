@@ -2315,7 +2315,7 @@ static int coreAudioCreateStreamIn(PDRVHOSTCOREAUDIO pThis,
             AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultInputDevice, kAudioObjectPropertyScopeGlobal,
                                                    kAudioObjectPropertyElementMaster };
             err = AudioObjectAddPropertyListener(kAudioObjectSystemObject, &propAdr,
-                                                 coreAudioDefaultDeviceChanged, (void *)pStreamIn);
+                                                 coreAudioDefaultDeviceChanged, &pStreamIn->cbCtx);
             /* Not fatal. */
             if (RT_LIKELY(err == noErr))
             {
@@ -2329,7 +2329,7 @@ static int coreAudioCreateStreamIn(PDRVHOSTCOREAUDIO pThis,
         AudioObjectPropertyAddress propAdr = { kAudioDevicePropertyDeviceIsAlive, kAudioObjectPropertyScopeGlobal,
                                                kAudioObjectPropertyElementMaster };
         err = AudioObjectAddPropertyListener(pStreamIn->deviceID, &propAdr, drvHostCoreAudioDeviceStateChanged,
-                                             (void *)&pStreamIn->cbCtx);
+                                             &pStreamIn->cbCtx);
         /* Not fatal. */
         if (RT_LIKELY(err == noErr))
         {
@@ -2391,7 +2391,7 @@ static int coreAudioCreateStreamOut(PDRVHOSTCOREAUDIO pThis,
             AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal,
                                                    kAudioObjectPropertyElementMaster };
             err = AudioObjectAddPropertyListener(kAudioObjectSystemObject, &propAdr,
-                                                 coreAudioDefaultDeviceChanged, (void *)pStreamOut);
+                                                 coreAudioDefaultDeviceChanged, &pStreamOut->cbCtx);
             /* Not fatal. */
             if (RT_LIKELY(err == noErr))
             {
@@ -2401,12 +2401,11 @@ static int coreAudioCreateStreamOut(PDRVHOSTCOREAUDIO pThis,
                 LogRel(("CoreAudio: Failed to add the default playback device changed listener (%RI32)\n", err));
         }
 
-
         /* Register callback for being notified if the device stops being alive. */
         AudioObjectPropertyAddress propAdr = { kAudioDevicePropertyDeviceIsAlive, kAudioObjectPropertyScopeGlobal,
                                                kAudioObjectPropertyElementMaster };
         err = AudioObjectAddPropertyListener(pStreamOut->deviceID, &propAdr, drvHostCoreAudioDeviceStateChanged,
-                                             (void *)&pStreamOut->cbCtx);
+                                             &pStreamOut->cbCtx);
         /* Not fatal. */
         if (RT_LIKELY(err == noErr))
         {
