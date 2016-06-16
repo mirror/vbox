@@ -8442,8 +8442,8 @@ static VBOXSTRICTRC hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX
         { /* likely */}
         else
         {
-            AssertLogRelMsgFailedReturn(("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestRip failed! rc=%Rrc\n",
-                                         VBOXSTRICTRC_VAL(rcStrict)), rcStrict);
+            AssertMsgFailedReturn(("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestRip failed! rc=%Rrc\n",
+                                   VBOXSTRICTRC_VAL(rcStrict)), rcStrict);
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadMinimal);
     }
@@ -8454,8 +8454,8 @@ static VBOXSTRICTRC hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX
         { /* likely */}
         else
         {
-            AssertLogRelMsg(rcStrict == VINF_EM_RESCHEDULE_REM,
-                            ("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestState failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            AssertMsg(rcStrict == VINF_EM_RESCHEDULE_REM,
+                      ("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestState failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
