@@ -1191,7 +1191,7 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
     {
         case Qt::DisplayRole:
         {
-            return tr("Network Statistics", "details report");
+            return tr("Storage Statistics", "details report");
         }
         break;
 
