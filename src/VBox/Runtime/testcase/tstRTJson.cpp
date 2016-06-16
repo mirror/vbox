@@ -29,8 +29,21 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/json.h>
-
+#include <iprt/string.h>
 #include <iprt/test.h>
+
+static const char *g_pszJson =
+    "{\n"
+    "    \"number\": 100,\n"
+    "    \"string\": \"test\",\n"
+    "    \"array\": [1, 2, 3, 4, 5, \"6\"],\n"
+    "    \"subobject\":\n"
+    "        {\n"
+    "            \"false\": false,\n"
+    "            \"true\": true,\n"
+    "            \"null\": null\n"
+    "        }\n"
+    "}\n";
 
 /**
  * Some basic tests to detect malformed JSON.
@@ -68,17 +81,164 @@ static void tstBasic(RTTEST hTest)
         RTJSONVAL hJsonVal = NIL_RTJSONVAL;
         int rc = RTJsonParseFromString(&hJsonVal, aTests[iTest].pszJson, NULL);
         if (rc != aTests[iTest].iRcResult)
-            RTTestIFailed("RTJsonParseFromString() for \"%s\" failed, expected %Rrc got %Rrc\n",
-                          aTests[iTest].pszJson, aTests[iTest].iRcResult, rc);
+            RTTestFailed(hTest, "RTJsonParseFromString() for \"%s\" failed, expected %Rrc got %Rrc\n",
+                         aTests[iTest].pszJson, aTests[iTest].iRcResult, rc);
         if (RT_SUCCESS(rc))
         {
             if (hJsonVal != NIL_RTJSONVAL)
                 RTJsonValueRelease(hJsonVal);
             else
-                RTTestIFailed("RTJsonParseFromString() returned success but no value\n");
+                RTTestFailed(hTest, "RTJsonParseFromString() returned success but no value\n");
         }
         else if (hJsonVal != NIL_RTJSONVAL)
-            RTTestIFailed("RTJsonParseFromString() failed but a JSON value was returned\n");
+            RTTestFailed(hTest, "RTJsonParseFromString() failed but a JSON value was returned\n");
+    }
+}
+
+/**
+ * Checks that methods not indended for the given type return the correct error.
+ */
+static void tstCorrectnessRcForInvalidType(RTTEST hTest, RTJSONVAL hJsonVal, RTJSONVALTYPE enmType)
+{
+#if 0 /* Enable manually or it will assert all over the place for debug builds. */
+    if (   enmType != RTJSONVALTYPE_OBJECT
+        && enmType != RTJSONVALTYPE_ARRAY)
+    {
+        /* The iterator API should return errors. */
+        RTJSONIT hJsonIt = NIL_RTJSONIT;
+        RTTEST_CHECK_RC(hTest, RTJsonIteratorBegin(hJsonVal, &hJsonIt), VERR_JSON_VALUE_INVALID_TYPE);
+    }
+
+    if (enmType != RTJSONVALTYPE_ARRAY)
+    {
+        /* The Array access methods should return errors. */
+        uint32_t cItems = 0;
+        RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
+        RTTEST_CHECK(hTest, RTJsonValueGetArraySize(hJsonVal) == 0);
+        RTTEST_CHECK_RC(hTest, RTJsonValueGetArraySizeEx(hJsonVal, &cItems), VERR_JSON_VALUE_INVALID_TYPE);
+        RTTEST_CHECK_RC(hTest, RTJsonValueGetByIndex(hJsonVal, 0, &hJsonValItem), VERR_JSON_VALUE_INVALID_TYPE);
+    }
+
+    if (enmType != RTJSONVALTYPE_OBJECT)
+    {
+        /* The object access methods should return errors. */
+        RTJSONVAL hJsonValMember = NIL_RTJSONVAL;
+        RTTEST_CHECK_RC(hTest, RTJsonValueGetByName(hJsonVal, "test", &hJsonValMember), VERR_JSON_VALUE_INVALID_TYPE);
+    }
+
+    if (enmType != RTJSONVALTYPE_NUMBER)
+    {
+        int64_t i64Num = 0;
+        RTTEST_CHECK_RC(hTest, RTJsonValueGetNumber(hJsonVal, &i64Num), VERR_JSON_VALUE_INVALID_TYPE);
+    }
+
+    if (enmType != RTJSONVALTYPE_STRING)
+    {
+        const char *psz = NULL;
+        RTTEST_CHECK(hTest, RTJsonValueGetString(hJsonVal) == NULL);
+        RTTEST_CHECK_RC(hTest, RTJsonValueGetStringEx(hJsonVal, &psz), VERR_JSON_VALUE_INVALID_TYPE);
+    }
+#endif
+}
+
+/**
+ * Tests the array accessors.
+ */
+static void tstArray(RTTEST hTest, RTJSONVAL hJsonVal)
+{
+    uint32_t cItems = 0;
+    RTTEST_CHECK(hTest, RTJsonValueGetArraySize(hJsonVal) == 6);
+    RTTEST_CHECK_RC_OK(hTest, RTJsonValueGetArraySizeEx(hJsonVal, &cItems));
+
+    for (uint32_t i = 1; i <= 5; i++)
+    {
+        int64_t i64Num = 0;
+        RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
+        RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetByIndex(hJsonVal, i - 1, &hJsonValItem));
+        RTTEST_CHECK(hTest, RTJsonValueGetType(hJsonValItem) == RTJSONVALTYPE_NUMBER);
+        RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetNumber(hJsonValItem, &i64Num));
+        RTTEST_CHECK(hTest, i64Num == (int64_t)i);
+        RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonValItem) == 1);
+    }
+
+    /* Last should be string. */
+    const char *pszStr = NULL;
+    RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
+    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetByIndex(hJsonVal, 5, &hJsonValItem));
+    RTTEST_CHECK(hTest, RTJsonValueGetType(hJsonValItem) == RTJSONVALTYPE_STRING);
+    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetStringEx(hJsonValItem, &pszStr));
+    RTTEST_CHECK(hTest, RTJsonValueGetString(hJsonValItem) == pszStr);
+    RTTEST_CHECK(hTest, strcmp(pszStr, "6") == 0);
+    RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonValItem) == 1);
+}
+
+/**
+ * Tests the iterator API for the given JSON array or object value.
+ */
+static void tstIterator(RTTEST hTest, RTJSONVAL hJsonVal)
+{
+    RTJSONIT hJsonIt = NIL_RTJSONIT;
+    int rc = RTJsonIteratorBegin(hJsonVal, &hJsonIt);
+    RTTEST_CHECK(hTest, RT_SUCCESS(rc));
+    if (RT_SUCCESS(rc))
+    {
+        const char *pszName = NULL;
+        RTJSONVAL hJsonValMember = NIL_RTJSONVAL;
+        rc = RTJsonIteratorGetValue(hJsonIt, &hJsonValMember, &pszName);
+        RTTEST_CHECK(hTest, RT_SUCCESS(rc));
+        RTTEST_CHECK(hTest, pszName != NULL);
+        RTTEST_CHECK(hTest, hJsonValMember != NIL_RTJSONVAL);
+        while (RT_SUCCESS(rc))
+        {
+            RTJSONVALTYPE enmTypeMember = RTJsonValueGetType(hJsonValMember);
+            tstCorrectnessRcForInvalidType(hTest, hJsonValMember, enmTypeMember);
+
+            switch (enmTypeMember)
+            {
+                case RTJSONVALTYPE_OBJECT:
+                    RTTEST_CHECK(hTest, strcmp(pszName, "subobject") == 0);
+                    tstIterator(hTest, hJsonValMember);
+                    break;
+                case RTJSONVALTYPE_ARRAY:
+                    RTTEST_CHECK(hTest, strcmp(pszName, "array") == 0);
+                    tstArray(hTest, hJsonValMember);
+                    break;
+                case RTJSONVALTYPE_STRING:
+                {
+                    RTTEST_CHECK(hTest, strcmp(pszName, "string") == 0);
+                    const char *pszStr = NULL;
+                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueGetStringEx(hJsonValMember, &pszStr));
+                    RTTEST_CHECK(hTest, strcmp(pszStr, "test") == 0);
+                    break;
+                }
+                case RTJSONVALTYPE_NUMBER:
+                {
+                    RTTEST_CHECK(hTest, strcmp(pszName, "number") == 0);
+                    int64_t i64Num = 0;
+                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueGetNumber(hJsonValMember, &i64Num));
+                    RTTEST_CHECK(hTest, i64Num == 100);
+                    break;
+                }
+                case RTJSONVALTYPE_NULL:
+                    RTTEST_CHECK(hTest, strcmp(pszName, "null") == 0);
+                    break;
+                case RTJSONVALTYPE_TRUE:
+                    RTTEST_CHECK(hTest, strcmp(pszName, "true") == 0);
+                    break;
+                case RTJSONVALTYPE_FALSE:
+                    RTTEST_CHECK(hTest, strcmp(pszName, "false") == 0);
+                    break;
+                default:
+                    RTTestFailed(hTest, "Invalid JSON value type %u returned\n", enmTypeMember);
+            }
+
+            RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonValMember) == 1);
+            rc = RTJsonIteratorNext(hJsonIt);
+            RTTEST_CHECK(hTest, rc == VINF_SUCCESS || rc == VERR_JSON_ITERATOR_END);
+            if (RT_SUCCESS(rc))
+                RTTEST_CHECK_RC_OK(hTest, RTJsonIteratorGetValue(hJsonIt, &hJsonValMember, &pszName));
+        }
+        RTJsonIteratorFree(hJsonIt);
     }
 }
 
@@ -87,7 +247,26 @@ static void tstBasic(RTTEST hTest)
  */
 static void tstCorrectness(RTTEST hTest)
 {
+    RTTestSub(hTest, "Correctness");
 
+    RTJSONVAL hJsonVal = NIL_RTJSONVAL;
+    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonParseFromString(&hJsonVal, g_pszJson, NULL));
+
+    if (hJsonVal != NIL_RTJSONVAL)
+    {
+        RTJSONVALTYPE enmType = RTJsonValueGetType(hJsonVal);
+        if (enmType == RTJSONVALTYPE_OBJECT)
+        {
+            /* Excercise the other non object APIs to return VERR_JSON_VALUE_INVALID_TYPE. */
+            tstCorrectnessRcForInvalidType(hTest, hJsonVal, enmType);
+            tstIterator(hTest, hJsonVal);
+        }
+        else
+            RTTestFailed(hTest, "RTJsonParseFromString() returned an invalid JSON value, expected OBJECT got %u\n", enmType);
+        RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonVal) == 0);
+    }
+    else
+        RTTestFailed(hTest, "RTJsonParseFromString() returned success but no value\n");
 }
 
 int main()

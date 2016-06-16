@@ -1411,7 +1411,8 @@ RTDECL(int) RTJsonIteratorNext(RTJSONIT hJsonIt)
     {
         if (pIt->idxCur < pThis->Type.Array.cItems)
             pIt->idxCur++;
-        else
+
+        if (pIt->idxCur == pThis->Type.Object.cMembers)
             rc = VERR_JSON_ITERATOR_END;
     }
     else
@@ -1420,7 +1421,8 @@ RTDECL(int) RTJsonIteratorNext(RTJSONIT hJsonIt)
 
         if (pIt->idxCur < pThis->Type.Object.cMembers)
             pIt->idxCur++;
-        else
+
+        if (pIt->idxCur == pThis->Type.Object.cMembers)
             rc = VERR_JSON_ITERATOR_END;
     }
 
