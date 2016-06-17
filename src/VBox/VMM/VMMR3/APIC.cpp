@@ -469,7 +469,7 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC:\n", pVCpu->idCpu);
     pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64)\n", uBaseMsr,
                     MSR_IA32_APICBASE_GET_ADDR(uBaseMsr));
-    pHlp->pfnPrintf(pHlp, "  Mode                          = %#x (%s)\n", enmMode, apicGetModeName(enmMode));
+    pHlp->pfnPrintf(pHlp, "  Mode                          = %u (%s)\n", enmMode, apicGetModeName(enmMode));
     if (fX2ApicMode)
     {
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pX2ApicPage->id.u32ApicId,
