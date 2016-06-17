@@ -1307,6 +1307,60 @@ RTDECL(int) RTJsonValueGetByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSO
     return rc;
 }
 
+RTDECL(int) RTJsonValueGetNumberByName(RTJSONVAL hJsonVal, const char *pszName, int64_t *pi64Num)
+{
+    RTJSONVAL hJsonValNum = NIL_RTJSONVAL;
+    int rc = RTJsonValueGetByName(hJsonVal, pszName, &hJsonValNum);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTJsonValueGetNumber(hJsonValNum, pi64Num);
+        RTJsonValueRelease(hJsonValNum);
+    }
+
+    return rc;
+}
+
+RTDECL(int) RTJsonValueGetStringByName(RTJSONVAL hJsonVal, const char *pszName, char **ppszStr)
+{
+    RTJSONVAL hJsonValStr = NIL_RTJSONVAL;
+    int rc = RTJsonValueGetByName(hJsonVal, pszName, &hJsonValStr);
+    if (RT_SUCCESS(rc))
+    {
+        const char *pszStr = NULL;
+        rc = RTJsonValueGetStringEx(hJsonValStr, &pszStr);
+        if (RT_SUCCESS(rc))
+        {
+            *ppszStr = RTStrDup(pszStr);
+            if (!*ppszStr)
+                rc = VERR_NO_STR_MEMORY;
+        }
+        RTJsonValueRelease(hJsonValStr);
+    }
+
+    return rc;
+}
+
+RTDECL(int) RTJsonValueGetBooleanByName(RTJSONVAL hJsonVal, const char *pszName, bool *pfBoolean)
+{
+    AssertPtrReturn(pfBoolean, VERR_INVALID_POINTER);
+
+    RTJSONVAL hJsonValBool = NIL_RTJSONVAL;
+    int rc = RTJsonValueGetByName(hJsonVal, pszName, &hJsonValBool);
+    if (RT_SUCCESS(rc))
+    {
+        RTJSONVALTYPE enmType = RTJsonValueGetType(hJsonValBool);
+        if (enmType == RTJSONVALTYPE_TRUE)
+            *pfBoolean = true;
+        else if (enmType == RTJSONVALTYPE_FALSE)
+            *pfBoolean = false;
+        else
+            rc = VERR_JSON_VALUE_INVALID_TYPE;
+        RTJsonValueRelease(hJsonValBool);
+    }
+
+    return rc;
+}
+
 RTDECL(uint32_t) RTJsonValueGetArraySize(RTJSONVAL hJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
