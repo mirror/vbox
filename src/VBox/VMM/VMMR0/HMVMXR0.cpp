@@ -1472,9 +1472,9 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
     /*
      * Note: If you're adding MSRs here, make sure to update the MSR-bitmap permissions in hmR0VmxSetupProcCtls().
      */
-    Assert(!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST));
     if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST))
     {
+        Assert(!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST));  /* Guest MSRs better not be loaded now. */
 #if HC_ARCH_BITS == 64
         if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
         {
@@ -2908,9 +2908,17 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     /*
      * If we've executed guest code using VT-x, the host-state bits will be messed up. We
      * should -not- save the messed up state without restoring the original host-state. See @bugref{7240}.
+     *
+     * This apparently can happen (most likely the FPU changes), deal with it rather than asserting.
      */
-    AssertMsgReturn(!(pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED),
-                    ("Re-saving host-state after executing guest code without leaving VT-x!\n"), VERR_WRONG_ORDER);
+    if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
+        && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
+    {
+        Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hm.s.vmx.fRestoreHostFlags,
+                  pVCpu->idCpu));
+        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+    }
+    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 #endif
 
     /*
@@ -2927,9 +2935,6 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     RTSEL uSelFS = 0;
     RTSEL uSelGS = 0;
 #endif
-
-    /* Recalculate which host-state bits need to be manually restored. */
-    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 
     /*
      * Host CS and SS segment registers.
