@@ -11388,7 +11388,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -11414,7 +11414,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);                /** @todo review if CR4 is really required by EM. */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
     AssertRCReturn(rc, rc);
 
@@ -11444,8 +11444,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitRdpmc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
-    rc    |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);    /** @todo review if CR0 is really required by EM. */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -12523,8 +12523,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
         }
     }
 
-    /** @todo Emulate task switch someday, currently just going back to ring-3 for
-     *        emulation. */
+    /* Fall back to the interpreter to emulate the task-switch. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);
     return VERR_EM_INTERPRETER;
 }
@@ -13485,9 +13484,9 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                             | HM_CHANGED_GUEST_RFLAGS
                             | HM_CHANGED_VMX_GUEST_APIC_STATE);
 #else
-        /* This is typically a shadow page table sync or a MMIO instruction. But we
-         * may have emulated something like LTR or a far jump. Any part of the CPU
-         * context may have changed.
+        /*
+         * This is typically a shadow page table sync or a MMIO instruction. But we may have
+         * emulated something like LTR or a far jump. Any part of the CPU context may have changed.
          */
         /** @todo take advantage of CPUM changed flags instead of brute forcing. */
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
