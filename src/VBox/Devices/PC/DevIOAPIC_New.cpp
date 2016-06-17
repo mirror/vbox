@@ -937,22 +937,22 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "I/O APIC at %#010x:\n", IOAPIC_MMIO_BASE_PHYSADDR);
 
     uint32_t const uId = ioapicGetId(pThis);
-    pHlp->pfnPrintf(pHlp, "  ID        = %#RX32\n", uId);
+    pHlp->pfnPrintf(pHlp, "  ID                      = %#RX32\n", uId);
     pHlp->pfnPrintf(pHlp, "    ID                      = %#x\n",     IOAPIC_ID_GET_ID(uId));
 
     uint32_t const uVer = ioapicGetVersion();
-    pHlp->pfnPrintf(pHlp, "  Version   = %#RX32\n",  uVer);
+    pHlp->pfnPrintf(pHlp, "  Version                 = %#RX32\n",  uVer);
     pHlp->pfnPrintf(pHlp, "    Version                 = %#x\n",     IOAPIC_VER_GET_VER(uVer));
     pHlp->pfnPrintf(pHlp, "    Pin Assert Reg. Support = %RTbool\n", IOAPIC_VER_HAS_PRQ(uVer));
     pHlp->pfnPrintf(pHlp, "    Max. Redirection Entry  = %u\n",      IOAPIC_VER_GET_MRE(uVer));
 
 #if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
     uint32_t const uArb = ioapicGetArb();
-    pHlp->pfnPrintf(pHlp, "  Arb       = %#RX32\n", uArb);
-    pHlp->pfnPrintf(pHlp, "    Arb ID                  = %#x\n",     IOAPIC_ARB_GET_ID(uArb));
+    pHlp->pfnPrintf(pHlp, "  Arbitration             = %#RX32\n", uArb);
+    pHlp->pfnPrintf(pHlp, "    Arbitration ID          = %#x\n",     IOAPIC_ARB_GET_ID(uArb));
 #endif
 
-    pHlp->pfnPrintf(pHlp, "  Current index             = %#x\n",     ioapicGetIndex(pThis));
+    pHlp->pfnPrintf(pHlp, "  Current index           = %#x\n",     ioapicGetIndex(pThis));
 
     pHlp->pfnPrintf(pHlp, "  I/O Redirection Table and IRR:\n");
     pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask irr trigger rirr polar dlvr_st dlvr_mode vector\n");

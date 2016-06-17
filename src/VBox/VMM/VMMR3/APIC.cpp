@@ -466,7 +466,7 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     APICMODE const enmMode   = apicGetMode(uBaseMsr);
     bool const   fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu);
 
-    pHlp->pfnPrintf(pHlp, "VCPU[%u] APIC:\n", pVCpu->idCpu);
+    pHlp->pfnPrintf(pHlp, "APIC%u:\n", pVCpu->idCpu);
     pHlp->pfnPrintf(pHlp, "  APIC Base MSR                 = %#RX64 (Addr=%#RX64)\n", uBaseMsr,
                     MSR_IA32_APICBASE_GET_ADDR(uBaseMsr));
     pHlp->pfnPrintf(pHlp, "  Mode                          = %u (%s)\n", enmMode, apicGetModeName(enmMode));
@@ -478,33 +478,33 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     else
         pHlp->pfnPrintf(pHlp, "  APIC ID                       = %u (%#x)\n", pXApicPage->id.u8ApicId, pXApicPage->id.u8ApicId);
     pHlp->pfnPrintf(pHlp, "  Version                       = %#x\n",      pXApicPage->version.all.u32Version);
-    pHlp->pfnPrintf(pHlp, "    APIC Version                = %#x\n",      pXApicPage->version.u.u8Version);
-    pHlp->pfnPrintf(pHlp, "    Max LVT entry index (0..N)  = %u\n",       pXApicPage->version.u.u8MaxLvtEntry);
-    pHlp->pfnPrintf(pHlp, "    EOI Broadcast supression    = %RTbool\n",  pXApicPage->version.u.fEoiBroadcastSupression);
+    pHlp->pfnPrintf(pHlp, "    APIC Version                  = %#x\n",      pXApicPage->version.u.u8Version);
+    pHlp->pfnPrintf(pHlp, "    Max LVT entry index (0..N)    = %u\n",       pXApicPage->version.u.u8MaxLvtEntry);
+    pHlp->pfnPrintf(pHlp, "    EOI Broadcast supression      = %RTbool\n",  pXApicPage->version.u.fEoiBroadcastSupression);
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  APR                           = %u (%#x)\n", pXApicPage->apr.u8Apr, pXApicPage->apr.u8Apr);
     pHlp->pfnPrintf(pHlp, "  TPR                           = %u (%#x)\n", pXApicPage->tpr.u8Tpr, pXApicPage->tpr.u8Tpr);
-    pHlp->pfnPrintf(pHlp, "    Task-priority class         = %#x\n",      XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr));
-    pHlp->pfnPrintf(pHlp, "    Task-priority subclass      = %#x\n",      XAPIC_TPR_GET_TP_SUBCLASS(pXApicPage->tpr.u8Tpr));
+    pHlp->pfnPrintf(pHlp, "    Task-priority class           = %#x\n",      XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr));
+    pHlp->pfnPrintf(pHlp, "    Task-priority subclass        = %#x\n",      XAPIC_TPR_GET_TP_SUBCLASS(pXApicPage->tpr.u8Tpr));
     pHlp->pfnPrintf(pHlp, "  PPR                           = %u (%#x)\n", pXApicPage->ppr.u8Ppr, pXApicPage->ppr.u8Ppr);
-    pHlp->pfnPrintf(pHlp, "    Processor-priority class    = %#x\n",      XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr));
-    pHlp->pfnPrintf(pHlp, "    Processor-priority subclass = %#x\n",      XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
+    pHlp->pfnPrintf(pHlp, "    Processor-priority class      = %#x\n",      XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr));
+    pHlp->pfnPrintf(pHlp, "    Processor-priority subclass   = %#x\n",      XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  RRD                           = %u (%#x)\n", pXApicPage->rrd.u32Rrd, pXApicPage->rrd.u32Rrd);
     pHlp->pfnPrintf(pHlp, "  LDR                           = %#x\n",      pXApicPage->ldr.all.u32Ldr);
-    pHlp->pfnPrintf(pHlp, "    Logical APIC ID             = %#x\n",      fX2ApicMode ? pX2ApicPage->ldr.u32LogicalApicId
+    pHlp->pfnPrintf(pHlp, "    Logical APIC ID               = %#x\n",      fX2ApicMode ? pX2ApicPage->ldr.u32LogicalApicId
                                                                           : pXApicPage->ldr.u.u8LogicalApicId);
     if (!fX2ApicMode)
     {
         pHlp->pfnPrintf(pHlp, "  DFR                           = %#x\n",  pXApicPage->dfr.all.u32Dfr);
-        pHlp->pfnPrintf(pHlp, "    Model                       = %#x (%s)\n", pXApicPage->dfr.u.u4Model,
+        pHlp->pfnPrintf(pHlp, "    Model                         = %#x (%s)\n", pXApicPage->dfr.u.u4Model,
                         apicGetDestFormatName((XAPICDESTFORMAT)pXApicPage->dfr.u.u4Model));
     }
-    pHlp->pfnPrintf(pHlp, "  SVR\n");
-    pHlp->pfnPrintf(pHlp, "    Vector                      = %u (%#x)\n", pXApicPage->svr.u.u8SpuriousVector,
+    pHlp->pfnPrintf(pHlp, "  SVR                           = %#x\n", pXApicPage->svr.all.u32Svr);
+    pHlp->pfnPrintf(pHlp, "    Vector                        = %u (%#x)\n", pXApicPage->svr.u.u8SpuriousVector,
                                                                           pXApicPage->svr.u.u8SpuriousVector);
-    pHlp->pfnPrintf(pHlp, "    Software Enabled            = %RTbool\n",  RT_BOOL(pXApicPage->svr.u.fApicSoftwareEnable));
-    pHlp->pfnPrintf(pHlp, "    Supress EOI broadcast       = %RTbool\n",  RT_BOOL(pXApicPage->svr.u.fSupressEoiBroadcast));
+    pHlp->pfnPrintf(pHlp, "    Software Enabled              = %RTbool\n",  RT_BOOL(pXApicPage->svr.u.fApicSoftwareEnable));
+    pHlp->pfnPrintf(pHlp, "    Supress EOI broadcast         = %RTbool\n",  RT_BOOL(pXApicPage->svr.u.fSupressEoiBroadcast));
     pHlp->pfnPrintf(pHlp, "  ISR\n");
     apicR3DbgInfo256BitReg(&pXApicPage->isr, pHlp);
     pHlp->pfnPrintf(pHlp, "  TMR\n");
@@ -517,26 +517,26 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     apicR3DbgInfoPib(&pApicCpu->ApicPibLevel, pHlp);
     pHlp->pfnPrintf(pHlp, "  ESR Internal                  = %#x\n",      pApicCpu->uEsrInternal);
     pHlp->pfnPrintf(pHlp, "  ESR                           = %#x\n",      pXApicPage->esr.all.u32Errors);
-    pHlp->pfnPrintf(pHlp, "    Redirectable IPI            = %RTbool\n",  pXApicPage->esr.u.fRedirectableIpi);
-    pHlp->pfnPrintf(pHlp, "    Send Illegal Vector         = %RTbool\n",  pXApicPage->esr.u.fSendIllegalVector);
-    pHlp->pfnPrintf(pHlp, "    Recv Illegal Vector         = %RTbool\n",  pXApicPage->esr.u.fRcvdIllegalVector);
-    pHlp->pfnPrintf(pHlp, "    Illegal Register Address    = %RTbool\n",  pXApicPage->esr.u.fIllegalRegAddr);
+    pHlp->pfnPrintf(pHlp, "    Redirectable IPI              = %RTbool\n",  pXApicPage->esr.u.fRedirectableIpi);
+    pHlp->pfnPrintf(pHlp, "    Send Illegal Vector           = %RTbool\n",  pXApicPage->esr.u.fSendIllegalVector);
+    pHlp->pfnPrintf(pHlp, "    Recv Illegal Vector           = %RTbool\n",  pXApicPage->esr.u.fRcvdIllegalVector);
+    pHlp->pfnPrintf(pHlp, "    Illegal Register Address      = %RTbool\n",  pXApicPage->esr.u.fIllegalRegAddr);
     pHlp->pfnPrintf(pHlp, "  ICR Low                       = %#x\n",      pXApicPage->icr_lo.all.u32IcrLo);
-    pHlp->pfnPrintf(pHlp, "    Vector                      = %u (%#x)\n", pXApicPage->icr_lo.u.u8Vector,
-                                                                          pXApicPage->icr_lo.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "    Delivery Mode               = %#x (%s)\n", pXApicPage->icr_lo.u.u3DeliveryMode,
+    pHlp->pfnPrintf(pHlp, "    Vector                        = %u (%#x)\n", pXApicPage->icr_lo.u.u8Vector,
+                                                                            pXApicPage->icr_lo.u.u8Vector);
+    pHlp->pfnPrintf(pHlp, "    Delivery Mode                 = %#x (%s)\n", pXApicPage->icr_lo.u.u3DeliveryMode,
                     apicGetDeliveryModeName((XAPICDELIVERYMODE)pXApicPage->icr_lo.u.u3DeliveryMode));
-    pHlp->pfnPrintf(pHlp, "    Destination Mode            = %#x (%s)\n", pXApicPage->icr_lo.u.u1DestMode,
+    pHlp->pfnPrintf(pHlp, "    Destination Mode              = %#x (%s)\n", pXApicPage->icr_lo.u.u1DestMode,
                     apicGetDestModeName((XAPICDESTMODE)pXApicPage->icr_lo.u.u1DestMode));
     if (!fX2ApicMode)
-        pHlp->pfnPrintf(pHlp, "    Delivery Status             = %u\n",       pXApicPage->icr_lo.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "    Level                       = %u\n",       pXApicPage->icr_lo.u.u1Level);
-    pHlp->pfnPrintf(pHlp, "    Trigger Mode                = %u (%s)\n",  pXApicPage->icr_lo.u.u1TriggerMode,
+        pHlp->pfnPrintf(pHlp, "    Delivery Status               = %u\n",       pXApicPage->icr_lo.u.u1DeliveryStatus);
+    pHlp->pfnPrintf(pHlp, "    Level                         = %u\n",       pXApicPage->icr_lo.u.u1Level);
+    pHlp->pfnPrintf(pHlp, "    Trigger Mode                  = %u (%s)\n",  pXApicPage->icr_lo.u.u1TriggerMode,
                     apicGetTriggerModeName((XAPICTRIGGERMODE)pXApicPage->icr_lo.u.u1TriggerMode));
-    pHlp->pfnPrintf(pHlp, "    Destination shorthand       = %#x (%s)\n", pXApicPage->icr_lo.u.u2DestShorthand,
+    pHlp->pfnPrintf(pHlp, "    Destination shorthand         = %#x (%s)\n", pXApicPage->icr_lo.u.u2DestShorthand,
                     apicGetDestShorthandName((XAPICDESTSHORTHAND)pXApicPage->icr_lo.u.u2DestShorthand));
     pHlp->pfnPrintf(pHlp, "  ICR High                      = %#x\n",      pXApicPage->icr_hi.all.u32IcrHi);
-    pHlp->pfnPrintf(pHlp, "    Destination field/mask      = %#x\n",      fX2ApicMode ? pX2ApicPage->icr_hi.u32IcrHi
+    pHlp->pfnPrintf(pHlp, "    Destination field/mask        = %#x\n",      fX2ApicMode ? pX2ApicPage->icr_hi.u32IcrHi
                                                                           : pXApicPage->icr_hi.u.u8Dest);
 }
 
@@ -552,10 +552,10 @@ static void apicR3InfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     uint32_t const uLvtTimer = pXApicPage->lvt_timer.all.u32LvtTimer;
     pHlp->pfnPrintf(pHlp, "LVT Timer          = %#RX32\n",   uLvtTimer);
-    pHlp->pfnPrintf(pHlp, "  Vector           = %u (%#x)\n", pXApicPage->lvt_timer.u.u8Vector, pXApicPage->lvt_timer.u.u8Vector);
-    pHlp->pfnPrintf(pHlp, "  Delivery status  = %u\n",       pXApicPage->lvt_timer.u.u1DeliveryStatus);
-    pHlp->pfnPrintf(pHlp, "  Masked           = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtTimer));
-    pHlp->pfnPrintf(pHlp, "  Timer Mode       = %#x (%s)\n", pXApicPage->lvt_timer.u.u2TimerMode,
+    pHlp->pfnPrintf(pHlp, "  Vector             = %u (%#x)\n", pXApicPage->lvt_timer.u.u8Vector, pXApicPage->lvt_timer.u.u8Vector);
+    pHlp->pfnPrintf(pHlp, "  Delivery status    = %u\n",       pXApicPage->lvt_timer.u.u1DeliveryStatus);
+    pHlp->pfnPrintf(pHlp, "  Masked             = %RTbool\n",  XAPIC_LVT_IS_MASKED(uLvtTimer));
+    pHlp->pfnPrintf(pHlp, "  Timer Mode         = %#x (%s)\n", pXApicPage->lvt_timer.u.u2TimerMode,
                     apicGetTimerModeName((XAPICTIMERMODE)pXApicPage->lvt_timer.u.u2TimerMode));
 }
 
