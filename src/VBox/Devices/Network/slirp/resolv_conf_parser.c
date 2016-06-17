@@ -473,7 +473,7 @@ static char *getToken(char *psz, char **ppszSavePtr)
             return NULL;
     }
 
-    while (*psz && *psz == ' ' && *psz == '\t')
+    while (*psz == ' ' || *psz == '\t')
         ++psz;
 
     if (*psz == '\0')
