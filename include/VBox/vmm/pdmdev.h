@@ -1404,11 +1404,11 @@ typedef struct PDMAPICHLPRC
     /**
      * Broadcasts an EOI for an interrupt vector to the I/O APICs.
      *
-     * @returns Ring-0 pointer to the critical section.
+     * @returns VBox status code.
      * @param   pDevIns         The APIC device instance.
      * @param   u8Vector        The interrupt vector.
      */
-    DECLRCCALLBACKMEMBER(void, pfnBusBroadcastEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLRCCALLBACKMEMBER(int, pfnBusBroadcastEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /**
      * Calculates an IRQ tag for a timer, IPI or similar event.
@@ -1460,7 +1460,7 @@ typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
 /** Current PDMAPICHLPRC version number. */
-#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 3, 0)
+#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 4, 0)
 
 
 /**
@@ -1492,11 +1492,11 @@ typedef struct PDMAPICHLPR0
     /**
      * Broadcasts an EOI for an interrupt vector to the I/O APICs.
      *
-     * @returns Ring-0 pointer to the critical section.
+     * @returns VBox status code.
      * @param   pDevIns         The APIC device instance.
      * @param   u8Vector        The interrupt vector.
      */
-    DECLR0CALLBACKMEMBER(void, pfnBusBroadcastEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLR0CALLBACKMEMBER(int, pfnBusBroadcastEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /**
      * Calculates an IRQ tag for a timer, IPI or similar event.
@@ -1548,7 +1548,7 @@ typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
-#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 3, 0)
+#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 4, 0)
 
 /**
  * APIC R3 helpers.
@@ -1579,11 +1579,11 @@ typedef struct PDMAPICHLPR3
     /**
      * Broadcasts an EOI for an interrupt vector to the I/O APICs.
      *
-     * @returns Ring-0 pointer to the critical section.
+     * @returns VBox status code.
      * @param   pDevIns         The APIC device instance.
      * @param   u8Vector        The interrupt vector.
      */
-    DECLR3CALLBACKMEMBER(void, pfnBusBroadcastEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLR3CALLBACKMEMBER(int, pfnBusBroadcastEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /**
      * Calculates an IRQ tag for a timer, IPI or similar event.
@@ -1682,7 +1682,7 @@ typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
-#define PDM_APICHLPR3_VERSION                   PDM_VERSION_MAKE(0xfff3, 3, 0)
+#define PDM_APICHLPR3_VERSION                   PDM_VERSION_MAKE(0xfff3, 4, 0)
 
 
 /**
@@ -1730,11 +1730,12 @@ typedef struct PDMIOAPICREG
     /**
      * Set the EOI for an interrupt vector.
      *
+     * @returns VBox status code.
      * @param   pDevIns         Device instance of the I/O APIC.
      * @param   u8Vector        The vector.
      * @remarks Caller enters the PDM critical section
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
+    DECLR3CALLBACKMEMBER(int, pfnSetEoiR3,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** The name of the RC SetEoi entry point. */
     const char         *pszSetEoiRC;
@@ -1746,7 +1747,7 @@ typedef struct PDMIOAPICREG
 typedef PDMIOAPICREG *PPDMIOAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 4, 0)
+#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 5, 0)
 
 
 /**

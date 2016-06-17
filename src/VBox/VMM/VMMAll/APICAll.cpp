@@ -470,11 +470,11 @@ DECLINLINE(void) apicWriteRaw32(PXAPICPAGE pXApicPage, uint16_t offReg, uint32_t
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uVector         The interrupt vector corresponding to the EOI.
  */
-DECLINLINE(void) apicBusBroadcastEoi(PVMCPU pVCpu, uint8_t uVector)
+DECLINLINE(int) apicBusBroadcastEoi(PVMCPU pVCpu, uint8_t uVector)
 {
     PVM      pVM      = pVCpu->CTX_SUFF(pVM);
     PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
-    pApicDev->CTX_SUFF(pApicHlp)->pfnBusBroadcastEoi(pApicDev->CTX_SUFF(pDevIns), uVector);
+    return pApicDev->CTX_SUFF(pApicHlp)->pfnBusBroadcastEoi(pApicDev->CTX_SUFF(pDevIns), uVector);
 }
 
 
@@ -1201,17 +1201,32 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
     int isrv = apicGetHighestSetBitInReg(&pXApicPage->isr, -1 /* rcNotFound */);
     if (isrv >= 0)
     {
+        /*
+         * Broadcast the EOI to the I/O APIC(s).
+         *
+         * We'll handle the EOI broadcast first as there is tiny chance we get rescheduled to
+         * ring-3 due to contention on the I/O APIC lock. This way we don't mess with the rest
+         * of the APIC state and simply restart the EOI write operation from ring-3.
+         */
         Assert(isrv <= (int)UINT8_MAX);
-        uint8_t const uVector = isrv;
-        apicClearVectorInReg(&pXApicPage->isr, uVector);
-        apicUpdatePpr(pVCpu);
-        Log2(("APIC%u: apicSetEoi: Cleared interrupt from ISR. uVector=%#x\n", pVCpu->idCpu, uVector));
-
-        bool fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
+        uint8_t const uVector      = isrv;
+        bool const fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
         if (fLevelTriggered)
         {
+            int rc = apicBusBroadcastEoi(pVCpu, uVector);
+            if (rc == VINF_SUCCESS)
+            { /* likely */ }
+            else
+                return XAPIC_IN_X2APIC_MODE(pVCpu) ? VINF_CPUM_R3_MSR_WRITE : VINF_IOM_R3_MMIO_WRITE;
+
+            /*
+             * Clear the vector from the TMR.
+             *
+             * The broadcast to I/O APIC can re-trigger new interrupts to arrive via the bus. However,
+             * APICUpdatePendingInterrupts() which updates TMR can only be done from EMT which we
+             * currently are on, so no possibility of concurrent updates.
+             */
             apicClearVectorInReg(&pXApicPage->tmr, uVector);
-            apicBusBroadcastEoi(pVCpu, uVector);
 
             /*
              * Clear the remote IRR bit for level-triggered, fixed mode LINT0 interrupt.
@@ -1230,6 +1245,12 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
             Log2(("APIC%u: apicSetEoi: Cleared level triggered interrupt from TMR. uVector=%#x\n", pVCpu->idCpu, uVector));
         }
 
+        /*
+         * Mark interrupt as serviced, update the PPR and signal pending interrupts.
+         */
+        Log2(("APIC%u: apicSetEoi: Clearing interrupt from ISR. uVector=%#x\n", pVCpu->idCpu, uVector));
+        apicClearVectorInReg(&pXApicPage->isr, uVector);
+        apicUpdatePpr(pVCpu);
         apicSignalNextPendingIntr(pVCpu);
     }
 
