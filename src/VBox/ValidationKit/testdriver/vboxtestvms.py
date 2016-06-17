@@ -323,7 +323,7 @@ class TestVm(object):
                         fRc = fRc and oSession.enableNestedPaging(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
                         if cCpus > 1:
-                            fRc = fRc and oSession.enableIoApic(true);
+                            fRc = fRc and oSession.enableIoApic(True);
 
                         if sParavirtMode is not None and oSession.fpApiVer >= 5.0:
                             adParavirtProviders = {
