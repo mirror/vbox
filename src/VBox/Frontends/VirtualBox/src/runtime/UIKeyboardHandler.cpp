@@ -268,6 +268,27 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
     if (m_fIsKeyboardCaptured)
         return;
 
+#ifdef VBOX_WS_X11
+# if QT_VERSION >= 0x050000
+    /* Due to X11 async nature we may have lost the focus already by the time we get the focus
+     * notification, so we do a sanity check that we still have it. If we don't have the focus
+     * and grab the keyboard now that will cause focus change which we want to avoid. This change
+     * potentially leads to a loop where two windows are continually responding to outdated focus events. */
+    const xcb_get_input_focus_cookie_t xcbRequestCookie = xcb_get_input_focus(QX11Info::connection());
+    xcb_get_input_focus_reply_t *pReply = xcb_get_input_focus_reply(QX11Info::connection(), xcbRequestCookie, NULL);
+    WId actualWinId = 0;
+    if (pReply)
+    {
+        actualWinId = pReply->focus;
+        free(pReply);
+    }
+    else
+        LogRel(("GUI: UIKeyboardHandler::captureKeyboard: XCB error on acquiring focus information detected!\n"));
+    if (m_windows.value(uScreenId)->winId() != actualWinId)
+        return;
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
+
     /* If such view exists: */
     if (m_views.contains(uScreenId))
     {
