@@ -4135,7 +4135,7 @@
 
     <attribute name="IOAPICEnabled" type="boolean">
       <desc>
-        IO APIC support flag. If set, VirtualBox will provide an IO APIC
+        I/O-APIC support flag. If set, VirtualBox will provide an I/O-APIC
         and support IRQs above 15.
       </desc>
     </attribute>
@@ -9785,7 +9785,7 @@ and "VAR" for unsetting. -->
     </attribute>
 
     <attribute name="recommendedIOAPIC" type="boolean" readonly="yes">
-      <desc>Returns @c true if IO APIC recommended for this OS type.</desc>
+      <desc>Returns @c true if I/O-APIC recommended for this OS type.</desc>
     </attribute>
 
     <attribute name="recommendedVirtEx" type="boolean" readonly="yes">
@@ -9882,6 +9882,10 @@ and "VAR" for unsetting. -->
 
     <attribute name="recommendedTFReset" type="boolean" readonly="yes">
       <desc>Returns @c true if using VCPU reset on triple fault is recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedX2APIC" type="boolean" readonly="yes">
+      <desc>Returns @c true if X2APIC is recommended for this OS type.</desc>
     </attribute>
 
   </interface>

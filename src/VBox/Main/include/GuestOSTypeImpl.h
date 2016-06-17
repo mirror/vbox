@@ -41,6 +41,7 @@ public:
     const Bstr &i_id() const { return mID; }
     bool i_is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
     bool i_recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
+    bool i_recommendedX2APIC() const { return !!(mOSHint & VBOXOSHINT_X2APIC); }
     bool i_recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
     bool i_recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
     NetworkAdapterType_T i_networkAdapterType() const { return mNetworkAdapterType; }
@@ -79,6 +80,7 @@ private:
     HRESULT getRecommendedUSB(BOOL *aRecommendedUSB);
     HRESULT getRecommendedUSB3(BOOL *aRecommendedUSB3);
     HRESULT getRecommendedTFReset(BOOL *aRecommendedTFReset);
+    HRESULT getRecommendedX2APIC(BOOL *aRecommendedX2APIC);
 
 
     const Bstr mFamilyID;

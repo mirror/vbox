@@ -358,6 +358,9 @@ HRESULT Machine::init(VirtualBox *aParent,
             /* Let the OS type select 64-bit ness. */
             mHWData->mLongMode = aOsType->i_is64Bit()
                                ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
+
+            /* Let the OS type enable the X2APIC */
+            mHWData->mX2APIC = aOsType->i_recommendedX2APIC();
         }
 
         /* Apply parallel port defaults */
