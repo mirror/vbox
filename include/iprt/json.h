@@ -173,7 +173,7 @@ RTDECL(int) RTJsonValueGetNumber(RTJSONVAL hJsonVal, int64_t *pi64Num);
  *
  * @returns IPRT status code.
  * @retval VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object.
- * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
+ * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   phJsonVal       Where to store the handle to the JSON value on success.
@@ -186,7 +186,7 @@ RTDECL(int) RTJsonValueGetByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSO
  * @returns IPRT status code.
  * @retval VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object or the name does not point to
  *         a number value.
- * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
+ * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   pi64Num         Where to store the number on success.
@@ -199,7 +199,7 @@ RTDECL(int) RTJsonValueGetNumberByName(RTJSONVAL hJsonVal, const char *pszName, 
  * @returns IPRT status code.
  * @retval VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object or the name does not point to
  *         a string value.
- * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
+ * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   ppszStr         Where to store the pointer to the string on success. Must be freed with
@@ -213,7 +213,7 @@ RTDECL(int) RTJsonValueGetStringByName(RTJSONVAL hJsonVal, const char *pszName, 
  * @returns IPRT status code.
  * @retval VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an object or the name does not point to
  *         a true/false value.
- * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
+ * @retval VERR_NOT_FOUND if the name is not known for this JSON object.
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   pfBoolean       Where to store the boolean value on success.
