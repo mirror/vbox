@@ -284,9 +284,17 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
     {
         uApicBaseMsr |= MSR_IA32_APICBASE_EN;
 
+        /*
+         * While coming out of a reset the APIC is enabled and in xAPIC mode. If software had previously
+         * disabled the APIC (which results in the CPUID bit being cleared as well) we re-enable it here.
+         * See Intel spec. 10.12.5.1 "x2APIC States".
+         */
         /** @todo CPUID bits needs to be done on a per-VCPU basis! */
-        CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
-        LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
+        if (!CPUMGetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC))
+        {
+            LogRel(("APIC%u: Resetting mode to xAPIC\n", pVCpu->idCpu));
+            CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
+        }
     }
 
     /* Commit. */
