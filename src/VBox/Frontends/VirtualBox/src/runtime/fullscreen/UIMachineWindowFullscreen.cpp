@@ -318,17 +318,17 @@ void UIMachineWindowFullscreen::cleanupVisualState()
 
 void UIMachineWindowFullscreen::placeOnScreen()
 {
+    /* Make sure this window has fullscreen logic: */
+    UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+    AssertPtrReturnVoid(pFullscreenLogic);
+
     /* Get corresponding host-screen: */
-    const int iHostScreen = qobject_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
+    const int iHostScreen = pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
     const QRect workingArea = vboxGlobal().screenGeometry(iHostScreen);
     Q_UNUSED(workingArea);
 
 #if defined(VBOX_WS_MAC)
-
-    /* Make sure this window has fullscreen logic: */
-    UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
-    AssertPtrReturnVoid(pFullscreenLogic);
 
     /* Move window to the appropriate position: */
     move(workingArea.topLeft());
@@ -386,6 +386,22 @@ void UIMachineWindowFullscreen::placeOnScreen()
     }
 
 #elif defined(VBOX_WS_X11)
+
+    /* Determine whether we should use the native full-screen mode: */
+    const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+                                      !gEDataManager->legacyFullscreenModeRequested();
+    if (fUseNativeFullScreen)
+    {
+        /* Tell recent window managers which host-screen this window should be mapped to: */
+        VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+
+        /* If there is a mini-toolbar: */
+        if (m_pMiniToolBar)
+        {
+            /* Tell recent window managers which host-screen this mini-toolbar should be mapped to: */
+            VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+        }
+    }
 
     /* Set appropriate geometry for window: */
     resize(workingArea.size());
@@ -525,15 +541,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         if (isMinimized() && isVisible())
             return;
 
-        /* If WM doesn't support native stuff, we need to call for placeOnScreen(): */
-        const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
-                                          !gEDataManager->legacyFullscreenModeRequested();
-        if (!fUseNativeFullScreen)
-        {
-            /* Make sure window have appropriate geometry: */
-            placeOnScreen();
-        }
-
         /* Show window: */
         showFullScreen();
 
@@ -544,25 +551,14 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             m_pMiniToolBar->showFullScreen();
         }
 
+        /* Make sure window have appropriate geometry: */
+        placeOnScreen();
+
         /* Restore minimized state if necessary: */
         if (m_fWasMinimized)
         {
             m_fWasMinimized = false;
             showMinimized();
-        }
-
-        /* If WM supports native stuff, we need to map window to corresponding host-screen. */
-        if (fUseNativeFullScreen)
-        {
-            /* Tell recent window managers which host-screen this window should be mapped to: */
-            VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
-
-            /* If there is a mini-toolbar: */
-            if (m_pMiniToolBar)
-            {
-                /* Tell recent window managers which host-screen this mini-toolbar should be mapped to: */
-                VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
-            }
         }
 
         /* Adjust machine-view size if necessary: */
