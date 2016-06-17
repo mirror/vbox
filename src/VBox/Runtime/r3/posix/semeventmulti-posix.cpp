@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -141,44 +141,37 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
                 /*
                  * Create the semaphore.
                  */
-                pthread_mutexattr_t MutexAttr;
-                rc = pthread_mutexattr_init(&MutexAttr);
+                rc = pthread_mutex_init(&pThis->Mutex, NULL);
                 if (!rc)
                 {
-                    rc = pthread_mutex_init(&pThis->Mutex, &MutexAttr);
-                    if (!rc)
-                    {
-                        pthread_mutexattr_destroy(&MutexAttr);
-                        pthread_condattr_destroy(&CondAttr);
+                    pthread_condattr_destroy(&CondAttr);
 
-                        ASMAtomicXchgU32(&pThis->u32State, EVENTMULTI_STATE_NOT_SIGNALED);
-                        ASMAtomicXchgU32(&pThis->cWaiters, 0);
+                    ASMAtomicXchgU32(&pThis->u32State, EVENTMULTI_STATE_NOT_SIGNALED);
+                    ASMAtomicXchgU32(&pThis->cWaiters, 0);
 #ifdef RTSEMEVENTMULTI_STRICT
-                        if (!pszNameFmt)
-                        {
-                            static uint32_t volatile s_iSemEventMultiAnon = 0;
-                            RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                                         true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
-                                                         "RTSemEventMulti-%u", ASMAtomicIncU32(&s_iSemEventMultiAnon) - 1);
-                        }
-                        else
-                        {
-                            va_list va;
-                            va_start(va, pszNameFmt);
-                            RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                                          true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
-                                                          pszNameFmt, va);
-                            va_end(va);
-                        }
-                        pThis->fEverHadSignallers = false;
+                    if (!pszNameFmt)
+                    {
+                        static uint32_t volatile s_iSemEventMultiAnon = 0;
+                        RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                     true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                                     "RTSemEventMulti-%u", ASMAtomicIncU32(&s_iSemEventMultiAnon) - 1);
+                    }
+                    else
+                    {
+                        va_list va;
+                        va_start(va, pszNameFmt);
+                        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                      true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                                      pszNameFmt, va);
+                        va_end(va);
+                    }
+                    pThis->fEverHadSignallers = false;
 #endif
 
-                        *phEventMultiSem = pThis;
-                        return VINF_SUCCESS;
-                    }
-
-                    pthread_mutexattr_destroy(&MutexAttr);
+                    *phEventMultiSem = pThis;
+                    return VINF_SUCCESS;
                 }
+
                 pthread_cond_destroy(&pThis->Cond);
             }
             pthread_condattr_destroy(&CondAttr);

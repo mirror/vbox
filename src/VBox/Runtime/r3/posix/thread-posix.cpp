@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -361,6 +361,7 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
                 rc = pthread_create(&ThreadId, &ThreadAttr, rtThreadNativeMain, pThread);
                 if (!rc)
                 {
+                    pthread_attr_destroy(&ThreadAttr);
                     *pNativeThread = (uintptr_t)ThreadId;
                     return VINF_SUCCESS;
                 }

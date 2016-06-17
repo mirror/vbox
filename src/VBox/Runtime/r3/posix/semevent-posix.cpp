@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -120,58 +120,42 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
         /*
          * Create the condition variable.
          */
-        pthread_condattr_t CondAttr;
-        rc = pthread_condattr_init(&CondAttr);
+        rc = pthread_cond_init(&pThis->Cond, NULL);
         if (!rc)
         {
-            rc = pthread_cond_init(&pThis->Cond, &CondAttr);
+            /*
+             * Create the semaphore.
+             */
+            rc = pthread_mutex_init(&pThis->Mutex, NULL);
             if (!rc)
             {
-                /*
-                 * Create the semaphore.
-                 */
-                pthread_mutexattr_t MutexAttr;
-                rc = pthread_mutexattr_init(&MutexAttr);
-                if (!rc)
-                {
-                    rc = pthread_mutex_init(&pThis->Mutex, &MutexAttr);
-                    if (!rc)
-                    {
-                        pthread_mutexattr_destroy(&MutexAttr);
-                        pthread_condattr_destroy(&CondAttr);
-
-                        ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
-                        ASMAtomicWriteU32(&pThis->cWaiters, 0);
-                        pThis->fFlags = fFlags;
+                ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
+                ASMAtomicWriteU32(&pThis->cWaiters, 0);
+                pThis->fFlags = fFlags;
 #ifdef RTSEMEVENT_STRICT
-                        if (!pszNameFmt)
-                        {
-                            static uint32_t volatile s_iSemEventAnon = 0;
-                            RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                                         true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
-                                                         "RTSemEvent-%u", ASMAtomicIncU32(&s_iSemEventAnon) - 1);
-                        }
-                        else
-                        {
-                            va_list va;
-                            va_start(va, pszNameFmt);
-                            RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                                          true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
-                                                          pszNameFmt, va);
-                            va_end(va);
-                        }
-                        pThis->fEverHadSignallers = false;
+                if (!pszNameFmt)
+                {
+                    static uint32_t volatile s_iSemEventAnon = 0;
+                    RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                 true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
+                                                 "RTSemEvent-%u", ASMAtomicIncU32(&s_iSemEventAnon) - 1);
+                }
+                else
+                {
+                    va_list va;
+                    va_start(va, pszNameFmt);
+                    RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                  true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
+                                                  pszNameFmt, va);
+                    va_end(va);
+                }
+                pThis->fEverHadSignallers = false;
 #endif
 
-                        *phEventSem = pThis;
-                        return VINF_SUCCESS;
-                    }
-
-                    pthread_mutexattr_destroy(&MutexAttr);
-                }
-                pthread_cond_destroy(&pThis->Cond);
+                *phEventSem = pThis;
+                return VINF_SUCCESS;
             }
-            pthread_condattr_destroy(&CondAttr);
+            pthread_cond_destroy(&pThis->Cond);
         }
 
         rc = RTErrConvertFromErrno(rc);

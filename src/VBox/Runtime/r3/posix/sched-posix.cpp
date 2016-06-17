@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -393,6 +393,7 @@ static int rtSchedCreateThread(void *(*pfnThread)(void *pvArg), void *pvArg)
                 rc = pthread_create(&Thread, &ThreadAttr, pfnThread, pvArg);
                 if (!rc)
                 {
+                    pthread_attr_destroy(&ThreadAttr);
                     /*
                      * Wait for the thread to finish.
                      */
