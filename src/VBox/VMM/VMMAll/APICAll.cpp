@@ -1572,14 +1572,14 @@ void apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimer
  * @param   offReg          The offset of the register being read.
  * @param   puValue         Where to store the register value.
  */
-static int apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, uint32_t *puValue)
+DECLINLINE(VBOXSTRICTRC) apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, uint32_t *puValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(offReg <= XAPIC_OFF_MAX_VALID);
 
-    PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    uint32_t   uValue = 0;
-    int        rc = VINF_SUCCESS;
+    PXAPICPAGE   pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
+    uint32_t     uValue = 0;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (offReg)
     {
         case XAPIC_OFF_ID:
@@ -1628,7 +1628,7 @@ static int apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, ui
         case XAPIC_OFF_TIMER_CCR:
         {
             Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
-            rc = VBOXSTRICTRC_VAL(apicGetTimerCcr(pVCpu, VINF_IOM_R3_MMIO_READ, &uValue));
+            rc = apicGetTimerCcr(pVCpu, VINF_IOM_R3_MMIO_READ, &uValue);
             break;
         }
 
@@ -1646,7 +1646,8 @@ static int apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, ui
         default:
         {
             Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
-            rc = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "VCPU[%u]: offReg=%#RX16\n", pVCpu->idCpu, offReg);
+            rc = PDMDevHlpDBGFStop(pApicDev->CTX_SUFF(pDevIns), RT_SRC_POS, "VCPU[%u]: offReg=%#RX16\n", pVCpu->idCpu,
+                                          offReg);
             apicSetError(pVCpu, XAPIC_ESR_ILLEGAL_REG_ADDRESS);
             break;
         }
@@ -1666,7 +1667,7 @@ static int apicReadRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, ui
  * @param   offReg          The offset of the register being written.
  * @param   uValue          The register value.
  */
-static VBOXSTRICTRC apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, uint32_t uValue)
+DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint16_t offReg, uint32_t uValue)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(offReg <= XAPIC_OFF_MAX_VALID);
@@ -2534,7 +2535,7 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioRead));
 
-    int rc = apicReadRegister(pApicDev, pVCpu, offReg, &uValue);
+    int rc = VBOXSTRICTRC_VAL(apicReadRegister(pApicDev, pVCpu, offReg, &uValue));
     *(uint32_t *)pv = uValue;
 
     Log2(("APIC%u: APICReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
