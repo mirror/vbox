@@ -9757,7 +9757,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="03cd409d-20f5-43f9-8de1-4a129620990b"
+    uuid="b1336a0a-2546-4d99-8cff-8efb130cfa9d"
     wsmap="struct"
     reservedAttributes="15"
     >
