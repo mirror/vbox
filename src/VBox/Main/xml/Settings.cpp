@@ -6099,7 +6099,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    /** @todo In the future (6.0?) place the storage controllers under <Hardware>, because
+    /** @todo In the future (6.0?) place the storage controllers under \<Hardware\>, because
      * this is where it always should've been. What else than hardware are they? */
     xml::ElementNode &elmStorageParent = (m->sv > SettingsVersion_Future) ? *pelmHardware : elmParent;
     buildStorageControllersXML(elmStorageParent,
