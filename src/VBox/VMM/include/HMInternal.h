@@ -335,6 +335,41 @@ typedef struct
 /** Pointer to HMTPRPATCH. */
 typedef HMTPRPATCH *PHMTPRPATCH;
 
+
+/**
+ * Makes a HMEXITSTAT::uKey value from a program counter and an exit code.
+ *
+ * @returns 64-bit key
+ * @param   a_uPC           The RIP + CS.BASE value of the exit.
+ * @param   a_uExit         The exit code.
+ * @todo    Add CPL?
+ */
+#define HMEXITSTAT_MAKE_KEY(a_uPC, a_uExit) (((a_uPC) & UINT64_C(0x0000ffffffffffff)) | (uint64_t)(a_uExit) << 48)
+
+typedef struct HMEXITINFO
+{
+    /** See HMEXITSTAT_MAKE_KEY(). */
+    uint64_t                uKey;
+    /** Number of recent hits (depreciates with time). */
+    uint32_t volatile       cHits;
+    /** The age + lock. */
+    uint16_t volatile       uAge;
+    /** Action or action table index. */
+    uint16_t                iAction;
+} HMEXITINFO;
+AssertCompileSize(HMEXITINFO, 16); /* Lots of these guys, so don't add any unnecessary stuff! */
+
+typedef struct HMEXITHISTORY
+{
+    /** The exit timestamp. */
+    uint64_t                uTscExit;
+    /** The index of the corresponding HMEXITINFO entry.
+     * UINT32_MAX if none (too many collisions, race, whatever). */
+    uint32_t                iExitInfo;
+    /** Figure out later, needed for padding now. */
+    uint32_t                uSomeClueOrSomething;
+} HMEXITHISTORY;
+
 /**
  * Switcher function, HC to the special 64-bit RC.
  *
