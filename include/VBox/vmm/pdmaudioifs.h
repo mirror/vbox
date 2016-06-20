@@ -478,8 +478,13 @@ typedef uint32_t PDMAUDIOSTRMSTS;
 #define PDMAUDIOSTRMSTS_FLAG_DATA_READABLE   RT_BIT_32(4)
 /** Data can be written to the stream. */
 #define PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE   RT_BIT_32(5)
+/** Whether this stream is in re-initialization phase.
+ *  All other bits remain untouched to be able to restore
+ *  the stream's state after the re-initialization bas been
+ *  finished. */
+#define PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT  RT_BIT_32(6)
 /** Validation mask. */
-#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000003F)
+#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000007F)
 
 /**
  * Enumeration presenting a backend's current status.
@@ -540,7 +545,10 @@ typedef struct PDMAUDIOSTREAM
      *  destroyed if the reference count is reaching 0. */
     uint32_t               cRefs;
     /** PCM properties. */
+    /** @todo Deprecated; remove. Use member Cfg instead. */
     PDMPCMPROPS            Props;
+    /** The stream's audio configuration. */
+    PDMAUDIOSTREAMCFG      Cfg;
     /** Stream status flag. */
     PDMAUDIOSTRMSTS        fStatus;
     /** This stream's mixing buffer. */
