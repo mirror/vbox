@@ -433,7 +433,7 @@ static void apicR3DbgInfoPib(PCAPICPIB pApicPib, PCDBGFINFOHLP pHlp)
 /**
  * Dumps basic APIC state.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -549,7 +549,7 @@ static void apicR3InfoLvtTimer(PVMCPU pVCpu, PCDBGFINFOHLP pHlp)
 /**
  * Dumps APIC Local Vector Table (LVT) information.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
@@ -748,7 +748,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 /**
  * Dumps the APIC timer information.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helpers.
  * @param   pszArgs     Arguments, ignored.
  */
