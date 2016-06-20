@@ -928,7 +928,7 @@ static int apicR3LoadVMData(PVM pVM, PSSMHANDLE pSSM)
     uint32_t uSavedMaxApicMode;
     rc = SSMR3GetU32(pSSM, &uSavedMaxApicMode);
     AssertRCReturn(rc, rc);
-    if (uSavedMaxApicMode != pApic->enmMaxMode)
+    if (uSavedMaxApicMode != (uint32_t)pApic->enmMaxMode)
         return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%u config=%u"),
                                 uSavedMaxApicMode, pApic->enmMaxMode);
     return VINF_SUCCESS;
