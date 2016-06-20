@@ -597,11 +597,11 @@ class ListenerRecord
 {
 private:
     ComPtr<IEventListener>        mListener;
-    BOOL                          mActive;
+    BOOL const                    mActive;
     EventSource                  *mOwner;
 
     RTSEMEVENT                    mQEvent;
-    int32_t volatile              mWaitCnt;
+    int32_t volatile              mQEventBusyCnt;
     RTCRITSECT                    mcsQLock;
     PassiveQueue                  mQueue;
     int32_t volatile              mRefCnt;
@@ -748,7 +748,7 @@ ListenerRecord::ListenerRecord(IEventListener *aListener,
                                com::SafeArray<VBoxEventType_T> &aInterested,
                                BOOL aActive,
                                EventSource *aOwner) :
-    mActive(aActive), mOwner(aOwner), mWaitCnt(0), mRefCnt(0)
+    mActive(aActive), mOwner(aOwner), mQEventBusyCnt(0), mRefCnt(0)
 {
     mListener = aListener;
     EventMap *aEvMap = &aOwner->m->mEvMap;
@@ -858,24 +858,32 @@ HRESULT ListenerRecord::enqueue(IEvent *aEvent)
     // and events keep coming, or queue is oversized we shall unregister this listener.
     uint64_t sinceRead = RTTimeMilliTS() - mLastRead;
     size_t queueSize = mQueue.size();
-    if ((queueSize > 1000) || ((queueSize > 500) && (sinceRead > 60 * 1000)))
+    if (queueSize > 1000 || (queueSize > 500 && sinceRead > 60 * 1000))
     {
         ::RTCritSectLeave(&mcsQLock);
         return E_ABORT;
     }
 
 
+    RTSEMEVENT hEvt = mQEvent;
     if (queueSize != 0 && mQueue.back() == aEvent)
         /* if same event is being pushed multiple times - it's reusable event and
            we don't really need multiple instances of it in the queue */
-        (void)aEvent;
-    else
+        hEvt = NIL_RTSEMEVENT;
+    else if (hEvt != NIL_RTSEMEVENT) /* don't bother queuing after shutdown */
+    {
         mQueue.push_back(aEvent);
+        ASMAtomicIncS32(&mQEventBusyCnt);
+    }
 
     ::RTCritSectLeave(&mcsQLock);
 
-    // notify waiters
-    ::RTSemEventSignal(mQEvent);
+    // notify waiters unless we've been shut down.
+    if (hEvt != NIL_RTSEMEVENT)
+    {
+        ::RTSemEventSignal(hEvt);
+        ASMAtomicDecS32(&mQEventBusyCnt);
+    }
 
     return S_OK;
 }
@@ -894,36 +902,38 @@ HRESULT ListenerRecord::dequeue(IEvent **aEvent,
 
     mLastRead = RTTimeMilliTS();
 
-    if (mQueue.empty())
+    /*
+     * If waiting both desired and necessary, then try grab the event
+     * semaphore and mark it busy.  If it's NIL we've been shut down already.
+     */
+    if (aTimeout != 0 && mQueue.empty())
     {
-        ::RTCritSectLeave(&mcsQLock);
-        // Speed up common case
-        if (aTimeout == 0)
+        RTSEMEVENT hEvt = mQEvent;
+        if (hEvt != NIL_RTSEMEVENT)
         {
-            *aEvent = NULL;
-            return S_OK;
+            ASMAtomicIncS32(&mQEventBusyCnt);
+            ::RTCritSectLeave(&mcsQLock);
+
+            // release lock while waiting, listener will not go away due to above holder
+            aAlock.release();
+
+            ::RTSemEventWait(hEvt, aTimeout);
+            ASMAtomicDecS32(&mQEventBusyCnt);
+
+            // reacquire lock
+            aAlock.acquire();
+            ::RTCritSectEnter(&mcsQLock);
         }
-        // release lock while waiting, listener will not go away due to above holder
-        aAlock.release();
-
-        // In order to safely shutdown, count all waiting threads here.
-        ASMAtomicIncS32(&mWaitCnt);
-        ::RTSemEventWait(mQEvent, aTimeout);
-        ASMAtomicDecS32(&mWaitCnt);
-
-        // reacquire lock
-        aAlock.acquire();
-        ::RTCritSectEnter(&mcsQLock);
     }
+
     if (mQueue.empty())
-    {
         *aEvent = NULL;
-    }
     else
     {
         mQueue.front().queryInterfaceTo(aEvent);
         mQueue.pop_front();
     }
+
     ::RTCritSectLeave(&mcsQLock);
     return S_OK;
 }
@@ -944,26 +954,38 @@ void ListenerRecord::shutdown()
 {
     if (mQEvent != NIL_RTSEMEVENT)
     {
-        RTSEMEVENT tmp = mQEvent;
+        /* Grab the event semaphore.  Must do this while owning the CS or we'll
+           be racing user wanting to use the handle. */
+        ::RTCritSectEnter(&mcsQLock);
+        RTSEMEVENT hEvt = mQEvent;
         mQEvent = NIL_RTSEMEVENT;
+        ::RTCritSectLeave(&mcsQLock);
 
-        /* On Darwin it is known that RTSemEventDestroy() returns 0 while
-         * corresponding thread remains to be blocked after that. In order to prevent
-         * undesireble freeze on shutdown, this workaround is used. */
-        Log(("Wait for %d waiters to release.\n", ASMAtomicReadS32(&mWaitCnt)));
-        while (ASMAtomicReadS32(&mWaitCnt) > 0)
+        /*
+         * Signal waiters and wait for them and any other signallers to stop using the sempahore.
+         *
+         * Note! RTSemEventDestroy does not necessarily guarantee that waiting threads are
+         *       out of RTSemEventWait or even woken up when it returns.  Darwin is (or was?)
+         *       an example of this, the result was undesirable freezes on shutdown.
+         */
+        int32_t cBusy = ASMAtomicReadS32(&mQEventBusyCnt);
+        if (cBusy > 0)
         {
-            ::RTSemEventSignal(tmp);
+            Log(("Wait for %d waiters+signalers to release.\n", cBusy));
+            while (cBusy-- > 0)
+                ::RTSemEventSignal(hEvt);
 
-            /* Are we already done? */
-            if (ASMAtomicReadS32(&mWaitCnt) == 0)
-                break;
-
-            RTThreadSleep(10);
+            for (uint32_t cLoops = 0;; cLoops++)
+            {
+                RTThreadSleep(RT_MIN(8, cLoops));
+                if (ASMAtomicReadS32(&mQEventBusyCnt) <= 0)
+                    break;
+                ::RTSemEventSignal(hEvt); /* (Technically unnecessary, but just in case.) */
+            }
+            Log(("All waiters+signalers just released the lock.\n"));
         }
-        Log(("All waiters just released the lock.\n"));
 
-        ::RTSemEventDestroy(tmp);
+        ::RTSemEventDestroy(hEvt);
     }
 }
 
