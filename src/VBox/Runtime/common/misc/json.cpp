@@ -379,6 +379,7 @@ DECLINLINE(char) rtJsonTokenizerGetCh(PRTJSONTOKENIZER pTokenizer)
  *
  * @returns nothing.
  * @param   pTokenizer      The tokenizer state.
+ * @param   cSkip           Amount of characters to skip making up the new line.
  */
 DECLINLINE(void) rtJsonTokenizerNewLine(PRTJSONTOKENIZER pTokenizer, unsigned cSkip)
 {
@@ -757,7 +758,7 @@ static void rtJsonTokenizerConsume(PRTJSONTOKENIZER pTokenizer)
  * Consumes the current token if it matches the given class returning an indicator.
  *
  * @returns true if the class matched and the token was consumed.
- * @param   false otherwise.
+ * @retval  false otherwise.
  * @param   pTokenizer      The tokenizer state.
  * @param   enmClass        The token class to match against.
  */
@@ -838,7 +839,7 @@ static PRTJSONVALINT rtJsonValueCreate(RTJSONVALTYPE enmType)
  *
  * @returns IPRT status code.
  * @param   pTokenizer      The tokenizer to use.
- * @param   pVal            The JSON array value to fill in.
+ * @param   pJsonVal        The JSON array value to fill in.
  * @param   pErrInfo        Where to store extended error info. Optional.
  */
 static int rtJsonParseArray(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal, PRTERRINFO pErrInfo)
@@ -912,7 +913,7 @@ static int rtJsonParseArray(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal,
  *
  * @returns IPRT status code.
  * @param   pTokenizer      The tokenizer to use.
- * @param   pVal            The JSON object value to fill in.
+ * @param   pJsonVal        The JSON object value to fill in.
  * @param   pErrInfo        Where to store extended error info. Optional.
  */
 static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal, PRTERRINFO pErrInfo)
