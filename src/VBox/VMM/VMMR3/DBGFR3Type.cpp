@@ -20,6 +20,13 @@
  *
  * The type management system is intended to ease retrieval of values from
  * structures in the guest OS without having to take care of the size of pointers.
+ *
+ * @todo r=bird: We need to join this up with modules and address spaces.  It
+ *       cannot be standalone like this.  Also, it must be comming from IPRT as
+ *       there is no point in duplicating code (been there, done that with
+ *       symbols and debug info already).  This unfortunately means we need to
+ *       find some common way of abstracting DWARF and Codeview type info so we
+ *       can extend those debug info parsers to make type information available.
  */
 
 
@@ -71,10 +78,10 @@
         AssertRC(rcSem); \
     } while (0)
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /**
  * DBGF registered type.
  */
@@ -94,12 +101,13 @@ typedef struct DBGFTYPE
 /** Pointer to a DBGF type. */
 typedef DBGFTYPE *PDBGFTYPE;
 
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-
 static int dbgfR3TypeParseBufferByType(PUVM pUVM, PDBGFTYPE pType, uint8_t *pbBuf, size_t cbBuf,
                                        PDBGFTYPEVAL *ppVal, size_t *pcbParsed);
+
 
 /**
  * Looks up a type by the identifier.
@@ -113,6 +121,7 @@ static PDBGFTYPE dbgfR3TypeLookup(PUVM pUVM, const char *pszType)
     PRTSTRSPACE pTypeSpace = &pUVM->dbgf.s.TypeSpace;
     return (PDBGFTYPE)RTStrSpaceGet(pTypeSpace, pszType);
 }
+
 
 /**
  * Calculate the size of the given type.
@@ -179,6 +188,7 @@ static int dbgfR3TypeCalcSize(PUVM pUVM, PDBGFTYPE pType, bool fCalcNested)
                     pType->cbType = cbType;
                 break;
             }
+
             case DBGFTYPEVARIANT_UNION:
             {
                 /* Get size of the biggest member and use that one. */
@@ -226,6 +236,7 @@ static int dbgfR3TypeCalcSize(PUVM pUVM, PDBGFTYPE pType, bool fCalcNested)
                     pType->cbType = cbType;
                 break;
             }
+
             case DBGFTYPEVARIANT_ALIAS:
             {
                 /* Get the size of the alias. */
@@ -243,14 +254,15 @@ static int dbgfR3TypeCalcSize(PUVM pUVM, PDBGFTYPE pType, bool fCalcNested)
                     rc = VERR_INVALID_STATE;
                 break;
             }
+
             default:
-                AssertMsgFailedBreakStmt(("Invalid type variant: %d", pType->pReg->enmVariant),
-                                         rc = VERR_INVALID_STATE);
+                AssertMsgFailedReturn(("Invalid type variant: %d", pType->pReg->enmVariant), VERR_INVALID_STATE);
         }
     }
 
     return rc;
 }
+
 
 /**
  * Callback for clearing the size of all non built-in types.
@@ -270,6 +282,7 @@ static DECLCALLBACK(int) dbgfR3TypeTraverseClearSize(PRTSTRSPACECORE pStr, void 
     return VINF_SUCCESS;
 }
 
+
 /**
  * Callback for calculating the size of all non built-in types.
  *
@@ -287,6 +300,7 @@ static DECLCALLBACK(int) dbgfR3TypeTraverseCalcSize(PRTSTRSPACECORE pStr, void *
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * Recalculate the sizes of all registered non builtin types.
@@ -427,6 +441,7 @@ static int dbgfR3TypeUpdateRefCnts(PUVM pUVM, PCDBGFTYPEREG pReg, bool fRetain)
     return rc;
 }
 
+
 /**
  * Registers a single type in the database.
  *
@@ -483,6 +498,7 @@ static int dbgfR3TypeRegister(PUVM pUVM, PCDBGFTYPEREG pReg)
     return rc;
 }
 
+
 /**
  * Registers a new built-in type 
  *
@@ -522,6 +538,7 @@ static int dbgfR3TypeRegisterBuiltin(PUVM pUVM, DBGFTYPEBUILTIN enmTypeBuiltin,
     return rc;
 }
 
+
 /**
  * Registers builtin types.
  *
@@ -556,6 +573,7 @@ static int dbgfTypeRegisterBuiltinTypes(PUVM pUVM)
 
     return rc;
 }
+
 
 /**
  * Parses a single entry for a given type and assigns the value from the byte buffer
@@ -699,6 +717,7 @@ static int dbgfR3TypeParseEntry(PUVM pUVM, PCDBGFTYPEREGMEMBER pMember, PDBGFTYP
     return rc;
 }
 
+
 /**
  * Parses the given byte buffer and returns the value based no the type information.
  *
@@ -749,6 +768,7 @@ static int dbgfR3TypeParseBufferByType(PUVM pUVM, PDBGFTYPE pType, uint8_t *pbBu
     return rc;
 }
 
+
 /**
  * Dumps one level of a typed value.
  *
@@ -785,6 +805,7 @@ static int dbgfR3TypeValDump(PDBGFTYPEVAL pVal, uint32_t iLvl, uint32_t cLvlMax,
 
     return rc;
 }
+
 
 /**
  * Dumps one level of a type.
@@ -834,6 +855,7 @@ static int dbgfR3TypeDump(PUVM pUVM, PDBGFTYPE pType, uint32_t iLvl, uint32_t cL
     return rc;
 }
 
+
 /**
  * Initializes the type database.
  *
@@ -860,6 +882,7 @@ DECLHIDDEN(int)  dbgfR3TypeInit(PUVM pUVM)
     return rc;
 }
 
+
 /**
  * Terminates the type database.
  *
@@ -871,6 +894,7 @@ DECLHIDDEN(void) dbgfR3TypeTerm(PUVM pUVM)
     pUVM->dbgf.s.hTypeDbLock = NIL_RTSEMRW;
     pUVM->dbgf.s.fTypeDbInitialized = false;
 }
+
 
 /**
  * Registers a new type for lookup.
@@ -918,6 +942,7 @@ VMMR3DECL(int) DBGFR3TypeRegister(PUVM pUVM, uint32_t cTypes, PCDBGFTYPEREG paTy
     return rc;
 }
 
+
 /**
  * Deregisters a previously registered type.
  *
@@ -958,6 +983,7 @@ VMMR3DECL(int) DBGFR3TypeDeregister(PUVM pUVM, const char *pszType)
     return rc;
 }
 
+
 /**
  * Return the type registration structure for the given type identifier.
  *
@@ -992,6 +1018,7 @@ VMMR3DECL(int) DBGFR3TypeQueryReg(PUVM pUVM, const char *pszType, PCDBGFTYPEREG 
     LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
+
 
 /**
  * Queries the size a given type would occupy in memory.
@@ -1028,6 +1055,7 @@ VMMR3DECL(int) DBGFR3TypeQuerySize(PUVM pUVM, const char *pszType, size_t *pcbTy
     LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
+
 
 /**
  * Sets the size of the given type in bytes.
@@ -1082,6 +1110,7 @@ VMMR3DECL(int) DBGFR3TypeSetSize(PUVM pUVM, const char *pszType, size_t cbType)
     return rc;
 }
 
+
 /**
  * Dumps the type information of the given type.
  *
@@ -1121,6 +1150,7 @@ VMMR3DECL(int) DBGFR3TypeDumpEx(PUVM pUVM, const char *pszType, uint32_t fFlags,
     LogFlowFunc(("-> rc=%Rrc\n", rc));
     return rc;
 }
+
 
 /**
  * Returns the value of a memory buffer at the given address formatted for the given
@@ -1180,6 +1210,7 @@ VMMR3DECL(int) DBGFR3TypeQueryValByType(PUVM pUVM, PCDBGFADDRESS pAddress, const
     return rc;
 }
 
+
 /**
  * Frees all acquired resources of a value previously obtained with
  * DBGFR3TypeQueryValByType().
@@ -1206,6 +1237,7 @@ VMMR3DECL(void) DBGFR3TypeValFree(PDBGFTYPEVAL pVal)
 
     MMR3HeapFree(pVal);
 }
+
 
 /**
  * Reads the guest memory with the given type and dumps the content of the type.

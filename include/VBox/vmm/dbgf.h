@@ -2188,15 +2188,16 @@ VMMR3DECL(int)      DBGFR3CoreWrite(PUVM pUVM, const char *pszFilename, bool fRe
 
 
 #ifdef IN_RING3
+
 /** @defgroup grp_dbgf_plug_in      The DBGF Plug-in Interface
  * @{
  */
 
 /** The plug-in module name prefix. */
-#define DBGF_PLUG_IN_PREFIX         "DbgPlugIn"
+# define DBGF_PLUG_IN_PREFIX        "DbgPlugIn"
 
 /** The name of the plug-in entry point (FNDBGFPLUGIN) */
-#define DBGF_PLUG_IN_ENTRYPOINT     "DbgPlugInEntry"
+# define DBGF_PLUG_IN_ENTRYPOINT    "DbgPlugInEntry"
 
 /**
  * DBGF plug-in operations.
@@ -2239,6 +2240,7 @@ VMMR3DECL(void) DBGFR3PlugInLoadAll(PUVM pUVM);
 VMMR3DECL(void) DBGFR3PlugInUnloadAll(PUVM pUVM);
 
 /** @} */
+
 
 /** @defgroup grp_dbgf_types        The DBGF type system Interface.
  * @{
@@ -2327,18 +2329,18 @@ typedef DBGFTYPEVALBUF *PDBGFTYPEVALBUF;
 typedef struct DBGFTYPEVALENTRY
 {
     /** DBGF built-in type. */
-    DBGFTYPEBUILTIN      enmType;
+    DBGFTYPEBUILTIN     enmType;
     /** Size of the type. */
     size_t              cbType;
     /** Number of entries, for arrays this can be > 1. */
-    uint32_t             cEntries;
+    uint32_t            cEntries;
     /** Value buffer, depends on whether this is an array. */
     union
     {
         /** Single value. */
-        DBGFTYPEVALBUF   Val;
+        DBGFTYPEVALBUF  Val;
         /** Pointer to the array of values. */
-        PDBGFTYPEVALBUF  pVal;
+        PDBGFTYPEVALBUF pVal;
     } Buf;
 } DBGFTYPEVALENTRY;
 /** Pointer to a type value entry. */
@@ -2352,11 +2354,11 @@ typedef const DBGFTYPEVALENTRY *PCDBGFTYPEVALENTRY;
 typedef struct DBGFTYPEVAL
 {
     /** Pointer to the registration structure for this type. */
-    PCDBGFTYPEREG        pTypeReg;
+    PCDBGFTYPEREG       pTypeReg;
     /** Number of value entries. */
-    uint32_t             cEntries;
+    uint32_t            cEntries;
     /** Variable sized array of value entries. */
-    DBGFTYPEVALENTRY     aEntries[1];
+    DBGFTYPEVALENTRY    aEntries[1];
 } DBGFTYPEVAL;
 
 /**
@@ -2390,13 +2392,13 @@ typedef enum DBGFTYPEVARIANT
 typedef struct DBGFTYPEREGMEMBER
 {
     /** Name of the member. */
-    const char          *pszName;
+    const char         *pszName;
     /** Flags for this member, see DBGFTYPEREGMEMBER_F_XXX. */
-    uint32_t             fFlags;
+    uint32_t            fFlags;
     /** Type identifier. */
-    const char          *pszType;
+    const char         *pszType;
     /** The number of elements in the array, only valid for arrays. */
-    uint32_t             cElements;
+    uint32_t            cElements;
 } DBGFTYPEREGMEMBER;
 /** Pointer to a member. */
 typedef DBGFTYPEREGMEMBER *PDBGFTYPEREGMEMBER;
@@ -2415,17 +2417,17 @@ typedef const DBGFTYPEREGMEMBER *PCDBGFTYPEREGMEMBER;
 typedef struct DBGFTYPEREG
 {
     /** Name of the type. */
-    const char          *pszType;
+    const char         *pszType;
     /** The type variant. */
-    DBGFTYPEVARIANT      enmVariant;
+    DBGFTYPEVARIANT     enmVariant;
     /** Some registration flags, see DBGFTYPEREG_F_XXX. */
-    uint32_t             fFlags;
+    uint32_t            fFlags;
     /** Number of members this type has, only valid for structs or unions. */
-    uint32_t             cMembers;
+    uint32_t            cMembers;
     /** Pointer to the member fields, only valid for structs or unions. */
-    PCDBGFTYPEREGMEMBER  paMembers;
+    PCDBGFTYPEREGMEMBER paMembers;
     /** Name of the aliased type for aliases. */
-    const char          *pszAliasedType;
+    const char         *pszAliasedType;
 } DBGFTYPEREG;
 
 /**
@@ -2483,6 +2485,7 @@ VMMR3DECL(int)  DBGFR3TypeValDumpEx(PUVM pUVM, PCDBGFADDRESS pAddress, const cha
                                     uint32_t cLvlMax, FNDBGFR3TYPEVALDUMP pfnDump, void *pvUser);
 
 /** @} */
+
 #endif /* IN_RING3 */
 
 /** @} */
