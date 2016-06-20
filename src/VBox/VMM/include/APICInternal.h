@@ -1229,8 +1229,8 @@ typedef struct APIC
     bool                        fRZEnabled;
     /** Alignment padding. */
     bool                        afAlignment0[7];
-    /** The original APIC mode from CFGM. */
-    APICMODE                    enmOriginalMode;
+    /** The max supported APIC mode from CFGM.  */
+    PDMAPICMODE                 enmMaxMode;
     /** @} */
 } APIC;
 /** Pointer to APIC VM instance data. */
@@ -1379,6 +1379,20 @@ typedef APICCPU const *PCAPICCPU;
 AssertCompileMemberAlignment(APICCPU, uApicBaseMsr, 8);
 
 /**
+ * APIC operating modes as returned by apicGetMode().
+ *
+ * The values match hardware states.
+ * See Intel spec. 10.12.1 "Detecting and Enabling x2APIC Mode".
+ */
+typedef enum APICMODE
+{
+    APICMODE_DISABLED = 0,
+    APICMODE_INVALID,
+    APICMODE_XAPIC,
+    APICMODE_X2APIC
+} APICMODE;
+
+/**
  * Gets the timer shift value.
  *
  * @returns The timer shift value.
@@ -1422,7 +1436,6 @@ VMMDECL(int)            APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_
 VMM_INT_DECL(void)      APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode);
 VMM_INT_DECL(void)      APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount);
 VMM_INT_DECL(void)      APICStopTimer(PVMCPU pVCpu);
-VMM_INT_DECL(void)      APICUpdateCpuIdForMode(PVM pVM, APICMODE enmMode);
 
 RT_C_DECLS_END
 

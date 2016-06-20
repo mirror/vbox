@@ -656,7 +656,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) apicSetBase(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64
                  * an IA-32 processor without an on-chip APIC. The CPUID feature flag for the
                  * APIC (see Section 10.4.2, 'Presence of the Local APIC') is also set to 0."
                  */
-                pDev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, PDMAPICMODE_NONE);
+                CPUMSetGuestCpuIdPerCpuApicFeature(PDMDevHlpGetVMCPU(pDevIns), false);
                 break;
             }
             case PDMAPICMODE_APIC:
@@ -2297,7 +2297,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
     }
 
     LogRel(("APIC: Re-activating Local APIC\n"));
-    pDev->pApicHlpR3->pfnChangeFeature(pDev->pDevInsR3, pDev->enmMode);
+    CPUMSetGuestCpuIdPerCpuApicFeature(PDMDevHlpGetVMCPU(pDevIns), true);
 
     APIC_UNLOCK(pDev);
     TMTimerUnlock(pDev->paLapicsR3[0].pTimerR3);
@@ -2483,10 +2483,10 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pDev->pCritSectR3 = pDev->pApicHlpR3->pfnGetR3CritSect(pDevIns);
 
     /*
-     * The CPUID feature bit.
+     * The global CPUID feature bit(s).
      */
     LogRel(("APIC: Activating Local APIC\n"));
-    pDev->pApicHlpR3->pfnChangeFeature(pDevIns, pDev->enmMode);
+    pDev->pApicHlpR3->pfnSetFeatureLevel(pDevIns, pDev->enmMode);
 
     /*
      * Register the MMIO range.

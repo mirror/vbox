@@ -329,7 +329,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     /*
      * Expose HVP (Hypervisor Present) bit to the guest.
      */
-    CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
 
     /*
      * Modify the standard hypervisor leaves for Hyper-V.

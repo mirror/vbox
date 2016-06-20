@@ -23,6 +23,7 @@
 %include "CPUMInternal.mac"
 %include "VBox/vmm/vm.mac"
 %include "VMMRC.mac"
+%include "iprt/x86.mac"
 
 
 ;*******************************************************************************
@@ -68,7 +69,7 @@ BEGINPROC_EXPORTED CPUMPatchHlpCpuId
 cpuid_lookup_leaf:
     ; Find the middle element
     mov     ebx, edx
-cpuid_lookup_leaf_ebx_loeaded:
+cpuid_lookup_leaf_ebx_loaded:
     sub     ebx, ecx
     shr     ebx, 1 + CPUMCPUIDLEAF_SIZE_LOG2
     shl     ebx, CPUMCPUIDLEAF_SIZE_LOG2
@@ -82,7 +83,7 @@ cpuid_lookup_leaf_ebx_loeaded:
 cpuid_lookup_split_down:
     cmp     ecx, ebx                    ; start == middle? if so, we failed.
     mov     edx, ebx                    ; end = middle;
-    jne     cpuid_lookup_leaf_ebx_loeaded
+    jne     cpuid_lookup_leaf_ebx_loaded
     jmp     cpuid_unknown
 
     ; The leaf is at or after ebx.
@@ -178,9 +179,11 @@ cpuid_unknown_passthru:
     jmp     cpuid_done
 
     ;
-    ; Normal return.
+    ; Normal return unless flags (we ignore APIC_ID as we only have a single CPU with ID 0).
     ;
 cpuid_fetch:
+    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_CONTAINS_APIC | CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE
+    jnz     cpuid_fetch_with_flags
     mov     edx, [ss:ebx + CPUMCPUIDLEAF.uEdx]
     mov     ecx, [ss:ebx + CPUMCPUIDLEAF.uEcx]
     mov     eax, [ss:ebx + CPUMCPUIDLEAF.uEax]
@@ -190,5 +193,43 @@ cpuid_done:
     pop     edi
     add     esp, 12
     ret
+
+
+    ;
+    ; Need to adjust the result according to VCpu state.
+    ;
+    ; APIC:    CPUID[0x00000001].EDX[9]  &= pVCpu->cpum.s.fCpuIdApicFeatureVisible;
+    ;          CPUID[0x80000001].EDX[9]  &= pVCpu->cpum.s.fCpuIdApicFeatureVisible;
+    ;
+    ; OSXSAVE: CPUID[0x00000001].ECX[27]  = CR4.OSXSAVE;
+    ;
+cpuid_fetch_with_flags:
+    mov     edx, [ss:ebx + CPUMCPUIDLEAF.uEdx]
+    mov     ecx, [ss:ebx + CPUMCPUIDLEAF.uEcx]
+
+    mov     eax, [ss:edi + VM.offVMCPU]
+
+    ; APIC
+    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_CONTAINS_APIC
+    jz      cpuid_fetch_with_flags_done_apic
+    test    byte [ss:edi + eax + VMCPU.cpum + CPUMCPU.fCpuIdApicFeatureVisible], 0ffh
+    jnz     cpuid_fetch_with_flags_done_apic
+    and     edx, ~X86_CPUID_FEATURE_EDX_APIC
+cpuid_fetch_with_flags_done_apic:
+
+    ; OSXSAVE
+    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE
+    jz      cpuid_fetch_with_flags_done_osxsave
+    and     ecx, ~X86_CPUID_FEATURE_ECX_OSXSAVE
+    test    dword [ss:edi + eax + VMCPU.cpum + CPUMCPU.Guest.cr4], X86_CR4_OSXSAVE
+    jz      cpuid_fetch_with_flags_done_osxsave
+    or      ecx, X86_CPUID_FEATURE_ECX_OSXSAVE
+cpuid_fetch_with_flags_done_osxsave:
+
+    ; Load the two remaining registers and jump to the common normal exit.
+    mov     eax, [ss:ebx + CPUMCPUIDLEAF.uEax]
+    mov     ebx, [ss:ebx + CPUMCPUIDLEAF.uEbx]
+    jmp     cpuid_done
+
 ENDPROC CPUMPatchHlpCpuId
 

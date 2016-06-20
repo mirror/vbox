@@ -453,7 +453,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_AES       RT_BIT_32(25)
 /** ECX Bit 26 - XSAVE instruction. */
 #define X86_CPUID_FEATURE_ECX_XSAVE     RT_BIT_32(26)
-/** ECX Bit 27 - OSXSAVE instruction. */
+/** ECX Bit 27 - Copy of CR4.OSXSAVE. */
 #define X86_CPUID_FEATURE_ECX_OSXSAVE   RT_BIT_32(27)
 /** ECX Bit 28 - AVX. */
 #define X86_CPUID_FEATURE_ECX_AVX       RT_BIT_32(28)

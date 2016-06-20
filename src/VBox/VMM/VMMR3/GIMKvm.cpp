@@ -120,7 +120,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
     /*
      * Expose HVP (Hypervisor Present) bit to the guest.
      */
-    CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
 
     /*
      * Modify the standard hypervisor leaves for KVM.

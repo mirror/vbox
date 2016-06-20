@@ -1380,7 +1380,7 @@
     GEN_CHECK_OFF(APIC, pvApicPibR3);
     GEN_CHECK_OFF(APIC, pvApicPibRC);
     GEN_CHECK_OFF(APIC, cbApicPib);
-    GEN_CHECK_OFF(APIC, enmOriginalMode);
+    GEN_CHECK_OFF(APIC, enmMaxMode);
     GEN_CHECK_OFF(APICCPU, pvApicPageR0);
     GEN_CHECK_OFF(APICCPU, pvApicPageR3);
     GEN_CHECK_OFF(APICCPU, pvApicPageRC);

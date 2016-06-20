@@ -4453,6 +4453,11 @@ static int produceCpuIdArray(const char *pszNameC, const char *pszCpuDesc)
                 vbCpuRepPrintf(" | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID");
                 fFlags &= ~CPUMCPUIDLEAF_F_CONTAINS_APIC_ID;
             }
+            if (paLeaves[i].fFlags & CPUMCPUIDLEAF_F_CONTAINS_APIC)
+            {
+                vbCpuRepPrintf(" | CPUMCPUIDLEAF_F_CONTAINS_APIC");
+                fFlags &= ~CPUMCPUIDLEAF_F_CONTAINS_APIC;
+            }
             if (fFlags)
             {
                 RTMemFree(paLeaves);

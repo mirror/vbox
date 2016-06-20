@@ -310,40 +310,29 @@ static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_
 }
 
 
-/** @interface_method_impl{PDMAPICHLPR3,pfnChangeFeature} */
-static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICMODE enmMode)
+/** @interface_method_impl{PDMAPICHLPR3,pfnSetFeatureLevel} */
+static DECLCALLBACK(void) pdmR3ApicHlp_SetFeatureLevel(PPDMDEVINS pDevIns, PDMAPICMODE enmMode)
 {
-#ifdef VBOX_WITH_NEW_APIC
-    /*
-     * The old code is also most likely incorrect with regards to changing the CPUID bits,
-     * see @bugref{8245#c32}.
-     *
-     * The new code should directly invoke APICUpdateCpuIdForMode() instead of using this
-     * indirect helper.
-     */
-    AssertMsgFailed(("pdmR3ApicHlp_ChangeFeature unsupported in VBOX_WITH_NEW_APIC!"));
-#else
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3ApicHlp_ChangeFeature: caller='%s'/%d: mode=%d\n",
+    LogFlow(("pdmR3ApicHlp_SetFeatureLevel: caller='%s'/%d: mode=%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance, (int)enmMode));
     switch (enmMode)
     {
         case PDMAPICMODE_NONE:
-            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
-            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
+            CPUMR3ClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
+            CPUMR3ClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
             break;
         case PDMAPICMODE_APIC:
-            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
-            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
+            CPUMR3ClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
+            CPUMR3SetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
             break;
         case PDMAPICMODE_X2APIC:
-            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
-            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
+            CPUMR3SetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_APIC);
+            CPUMR3SetGuestCpuIdFeature(pDevIns->Internal.s.pVMR3, CPUMCPUIDFEATURE_X2APIC);
             break;
         default:
             AssertMsgFailed(("Unknown APIC mode: %d\n", (int)enmMode));
     }
-#endif
 }
 
 /** @interface_method_impl{PDMAPICHLPR3,pfnGetCpuId} */
@@ -452,7 +441,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     pdmR3ApicHlp_ClearInterruptFF,
     pdmR3ApicHlp_BusBroadcastEoi,
     pdmR3ApicHlp_CalcIrqTag,
-    pdmR3ApicHlp_ChangeFeature,
+    pdmR3ApicHlp_SetFeatureLevel,
     pdmR3ApicHlp_GetCpuId,
     pdmR3ApicHlp_SendStartupIpi,
     pdmR3ApicHlp_SendInitIpi,

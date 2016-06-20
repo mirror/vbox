@@ -2067,19 +2067,16 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
     }
 
     /* Don't allow enabling xAPIC/x2APIC if the VM is configured with the APIC disabled. */
-    if (pApic->enmOriginalMode == APICMODE_DISABLED)
+    if (pApic->enmMaxMode == PDMAPICMODE_NONE)
     {
         LogRel(("APIC%u: Disallowing APIC base MSR write as the VM is configured with APIC disabled!\n",
-               pVCpu->idCpu));
+                pVCpu->idCpu));
         return apicMsrAccessError(pVCpu, MSR_IA32_APICBASE, APICMSRACCESS_WRITE_DISALLOWED_CONFIG);
     }
 
     /*
      * Act on state transition.
      */
-    /** @todo We need to update the CPUID according to the state, which we
-     *        currently don't do as CPUMSetGuestCpuIdFeature() is setting
-     *        per-VM CPUID bits while we need per-VCPU specific bits. */
     if (enmNewMode != enmOldMode)
     {
         switch (enmNewMode)
@@ -2098,7 +2095,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  */
                 APICR3Reset(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD);
-                CPUMClearGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
+                CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, false /*fVisible*/);
                 LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
                 break;
             }
@@ -2112,14 +2109,14 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                 }
 
                 uBaseMsr |= MSR_IA32_APICBASE_EN;
-                CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
+                CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, true /*fVisible*/);
                 LogRel(("APIC%u: Switched mode to xAPIC\n", pVCpu->idCpu));
                 break;
             }
 
             case APICMODE_X2APIC:
             {
-                if (pApic->enmOriginalMode != APICMODE_X2APIC)
+                if (pApic->enmMaxMode != PDMAPICMODE_X2APIC)
                 {
                     LogRel(("APIC%u: Disallowing transition to x2APIC mode as the VM is configured with the x2APIC disabled!\n",
                             pVCpu->idCpu));

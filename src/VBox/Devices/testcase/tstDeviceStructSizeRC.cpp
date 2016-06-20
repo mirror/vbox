@@ -762,7 +762,7 @@ int main()
     GEN_CHECK_OFF(APIC, fSupportsTscDeadline);
     GEN_CHECK_OFF(APIC, fIoApicPresent);
     GEN_CHECK_OFF(APIC, fRZEnabled);
-    GEN_CHECK_OFF(APIC, enmOriginalMode);
+    GEN_CHECK_OFF(APIC, enmMaxMode);
 
     GEN_CHECK_SIZE(APICCPU);
     GEN_CHECK_OFF(APICCPU, pvApicPageR0);

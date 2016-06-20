@@ -646,31 +646,6 @@ static DECLCALLBACK(uint32_t) pdmR0ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_
 }
 
 
-/** @interface_method_impl{PDMAPICHLPR0,pfnChangeFeature} */
-static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICMODE enmMode)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR0ApicHlp_ChangeFeature: caller=%p/%d: mode=%d\n", pDevIns, pDevIns->iInstance, (int)enmMode));
-    switch (enmMode)
-    {
-        case PDMAPICMODE_NONE:
-            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
-            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_X2APIC);
-            break;
-        case PDMAPICMODE_APIC:
-            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
-            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_X2APIC);
-            break;
-        case PDMAPICMODE_X2APIC:
-            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_X2APIC);
-            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
-            break;
-        default:
-            AssertMsgFailed(("Unknown APIC mode: %d\n", (int)enmMode));
-    }
-}
-
-
 /** @interface_method_impl{PDMAPICHLPR0,pfnLock} */
 static DECLCALLBACK(int) pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
@@ -705,7 +680,6 @@ extern DECLEXPORT(const PDMAPICHLPR0) g_pdmR0ApicHlp =
     pdmR0ApicHlp_ClearInterruptFF,
     pdmR0ApicHlp_BusBroadcastEoi,
     pdmR0ApicHlp_CalcIrqTag,
-    pdmR0ApicHlp_ChangeFeature,
     pdmR0ApicHlp_Lock,
     pdmR0ApicHlp_Unlock,
     pdmR0ApicHlp_GetCpuId,

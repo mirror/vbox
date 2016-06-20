@@ -1273,7 +1273,7 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pCtx == CPUMQueryGuestCtxPtr(pVCpu));
     uint32_t uCR4 = CPUMGetGuestCR4(pVCpu);
 
-    if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
+    if (!pVM->cpum.ro.GuestFeatures.fRdTscP)
     {
         AssertFailed();
         return VERR_EM_INTERPRETER; /* genuine #UD */

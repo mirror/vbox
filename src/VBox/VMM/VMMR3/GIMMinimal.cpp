@@ -51,7 +51,7 @@ VMMR3_INT_DECL(int) gimR3MinimalInit(PVM pVM)
     /*
      * Enable the Hypervisor Present.
      */
-    CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
+    CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
 
     return VINF_SUCCESS;
 }

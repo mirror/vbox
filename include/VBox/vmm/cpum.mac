@@ -50,7 +50,11 @@ struc CPUMCPUIDLEAF
     .uEdx               resd    1
     .fFlags             resd    1
 endstruc
-%define CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES RT_BIT_32(0)
+%define CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES    RT_BIT_32(0)
+%define CPUMCPUIDLEAF_F_CONTAINS_APIC_ID            RT_BIT_32(1)
+%define CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE            RT_BIT_32(2)
+%define CPUMCPUIDLEAF_F_CONTAINS_APIC               RT_BIT_32(3)
+
 
 ;;
 ; For the default CPUID leaf value.

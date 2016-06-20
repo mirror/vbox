@@ -493,9 +493,13 @@ typedef struct CPUMCPU
     bool                    fRawEntered;
     /** Have we entered the recompiler? */
     bool                    fRemEntered;
+    /** Whether the X86_CPUID_FEATURE_EDX_APIC and X86_CPUID_AMD_FEATURE_EDX_APIC
+     *  (?) bits are visible or not.  (The APIC is responsible for setting this
+     *  when loading state, so we won't save it.) */
+    bool                    fCpuIdApicFeatureVisible;
 
     /** Align the next member on a 64-bit boundrary. */
-    uint8_t                 abPadding2[64 - 16 - (HC_ARCH_BITS == 64 ? 8 : 4) - 4 - 1 - 2];
+    uint8_t                 abPadding2[64 - 16 - (HC_ARCH_BITS == 64 ? 8 : 4) - 4 - 1 - 3];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */

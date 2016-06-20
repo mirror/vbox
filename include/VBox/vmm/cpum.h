@@ -45,7 +45,11 @@ RT_C_DECLS_BEGIN
 typedef enum CPUMCPUIDFEATURE
 {
     CPUMCPUIDFEATURE_INVALID = 0,
-    /** The APIC feature bit. (Std+Ext) */
+    /** The APIC feature bit. (Std+Ext)
+     * Note! There is a per-cpu flag for masking this CPUID feature bit when the
+     *       APICBASE.ENABLED bit is zero.  So, this feature is only set/cleared
+     *       at VM construction time like all the others.  This didn't used to be
+     *       that way, this is new with 5.1. */
     CPUMCPUIDFEATURE_APIC,
     /** The sysenter/sysexit feature bit. (Std) */
     CPUMCPUIDFEATURE_SEP,
@@ -69,8 +73,6 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_HVP,
     /** The MWait Extensions bits (Std) */
     CPUMCPUIDFEATURE_MWAIT_EXTS,
-    /** The CR4.OSXSAVE bit CPUID mirroring, only use from CPUMSetGuestCR4. */
-    CPUMCPUIDFEATURE_OSXSAVE,
     /** 32bit hackishness. */
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
@@ -326,8 +328,10 @@ typedef CPUMCPUIDLEAF const *PCCPUMCPUIDLEAF;
 #define CPUMCPUIDLEAF_F_CONTAINS_APIC_ID            RT_BIT_32(1)
 /** The leaf contains an OSXSAVE which needs individual handling on each CPU. */
 #define CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE            RT_BIT_32(2)
+/** The leaf contains an APIC feature bit which is tied to APICBASE.EN. */
+#define CPUMCPUIDLEAF_F_CONTAINS_APIC               RT_BIT_32(3)
 /** Mask of the valid flags. */
-#define CPUMCPUIDLEAF_F_VALID_MASK                  UINT32_C(0x7)
+#define CPUMCPUIDLEAF_F_VALID_MASK                  UINT32_C(0xf)
 /** @} */
 
 /**
@@ -1112,9 +1116,10 @@ VMMDECL(int)        CPUMSetGuestFS(PVMCPU pVCpu, uint16_t fs);
 VMMDECL(int)        CPUMSetGuestGS(PVMCPU pVCpu, uint16_t gs);
 VMMDECL(int)        CPUMSetGuestSS(PVMCPU pVCpu, uint16_t ss);
 VMMDECL(void)       CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val);
-VMMDECL(void)       CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
-VMMDECL(void)       CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
-VMMDECL(bool)       CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMR3_INT_DECL(bool) CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMM_INT_DECL(bool)  CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible);
 VMMDECL(void)       CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg);

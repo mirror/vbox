@@ -261,12 +261,12 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
     /* Construct. */
     PAPICCPU pApicCpu     = VMCPU_TO_APICCPU(pVCpu);
     PAPIC    pApic        = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
-    uint64_t uApicBaseMsr = MSR_IA32_APICBASE_ADDR;;
+    uint64_t uApicBaseMsr = MSR_IA32_APICBASE_ADDR;
     if (pVCpu->idCpu == 0)
         uApicBaseMsr |= MSR_IA32_APICBASE_BSP;
 
-    /* If the VM was configured with disabled mode, don't enable xAPIC mode. */
-    if (pApic->enmOriginalMode != APICMODE_DISABLED)
+    /* If the VM was configured with no APIC, don't enable xAPIC mode, obviously. */
+    if (pApic->enmMaxMode != PDMAPICMODE_NONE)
     {
         uApicBaseMsr |= MSR_IA32_APICBASE_EN;
 
@@ -275,12 +275,8 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
          * disabled the APIC (which results in the CPUID bit being cleared as well) we re-enable it here.
          * See Intel spec. 10.12.5.1 "x2APIC States".
          */
-        /** @todo CPUID bits needs to be done on a per-VCPU basis! */
-        if (!CPUMGetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC))
-        {
+        if (CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, true /*fVisible*/) == false)
             LogRel(("APIC%u: Resetting mode to xAPIC\n", pVCpu->idCpu));
-            CPUMSetGuestCpuIdFeature(pVCpu->CTX_SUFF(pVM), CPUMCPUIDFEATURE_APIC);
-        }
     }
 
     /* Commit. */
@@ -772,47 +768,8 @@ static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 }
 
 
-/**
- * Converts legacy PDMAPICMODE to the new APICMODE enum.
- *
- * @returns The new APIC mode.
- * @param   enmLegacyMode       The legacy mode to convert.
- */
-static APICMODE apicR3ConvertFromLegacyApicMode(PDMAPICMODE enmLegacyMode)
-{
-    switch (enmLegacyMode)
-    {
-        case PDMAPICMODE_NONE:      return APICMODE_DISABLED;
-        case PDMAPICMODE_APIC:      return APICMODE_XAPIC;
-        case PDMAPICMODE_X2APIC:    return APICMODE_X2APIC;
-        case PDMAPICMODE_INVALID:   return APICMODE_INVALID;
-        default:                    break;
-    }
-    return (APICMODE)enmLegacyMode;
-}
-
-
-/**
- * Converts the new APICMODE enum to the legacy PDMAPICMODE enum.
- *
- * @returns The legacy APIC mode.
- * @param   enmMode       The APIC mode to convert.
- */
-static PDMAPICMODE apicR3ConvertToLegacyApicMode(APICMODE enmMode)
-{
-    switch (enmMode)
-    {
-        case APICMODE_DISABLED:  return PDMAPICMODE_NONE;
-        case APICMODE_XAPIC:     return PDMAPICMODE_APIC;
-        case APICMODE_X2APIC:    return PDMAPICMODE_X2APIC;
-        case APICMODE_INVALID:   return PDMAPICMODE_INVALID;
-        default:                 break;
-    }
-    return (PDMAPICMODE)enmMode;
-}
-
-
 #ifdef APIC_FUZZY_SSM_COMPAT_TEST
+
 /**
  * Reads a 32-bit register at a specified offset.
  *
@@ -922,8 +879,8 @@ static void apicR3DumpState(PVMCPU pVCpu, const char *pszPrefix, uint32_t uVersi
         }
     }
 }
-#endif  /* APIC_FUZZY_SSM_COMPAT_TEST */
 
+#endif  /* APIC_FUZZY_SSM_COMPAT_TEST */
 
 /**
  * Worker for saving per-VM APIC data.
@@ -937,7 +894,7 @@ static int apicR3SaveVMData(PVM pVM, PSSMHANDLE pSSM)
     PAPIC pApic = VM_TO_APIC(pVM);
     SSMR3PutU32(pSSM,  pVM->cCpus);
     SSMR3PutBool(pSSM, pApic->fIoApicPresent);
-    return SSMR3PutU32(pSSM, apicR3ConvertToLegacyApicMode(pApic->enmOriginalMode));
+    return SSMR3PutU32(pSSM, pApic->enmMaxMode);
 }
 
 
@@ -967,15 +924,13 @@ static int apicR3LoadVMData(PVM pVM, PSSMHANDLE pSSM)
         return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fIoApicPresent: saved=%RTbool config=%RTbool"),
                                 fIoApicPresent, pApic->fIoApicPresent);
 
-    /* Load and verify configured APIC mode. */
-    uint32_t uLegacyApicMode;
-    rc = SSMR3GetU32(pSSM, &uLegacyApicMode);
+    /* Load and verify configured max APIC mode. */
+    uint32_t uSavedMaxApicMode;
+    rc = SSMR3GetU32(pSSM, &uSavedMaxApicMode);
     AssertRCReturn(rc, rc);
-    APICMODE const enmApicMode = apicR3ConvertFromLegacyApicMode((PDMAPICMODE)uLegacyApicMode);
-    if (enmApicMode != pApic->enmOriginalMode)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%u (%u) config=%u (%u)"),
-                                uLegacyApicMode, enmApicMode, apicR3ConvertToLegacyApicMode(pApic->enmOriginalMode),
-                                pApic->enmOriginalMode);
+    if (uSavedMaxApicMode != pApic->enmMaxMode)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - uApicMode: saved=%u config=%u"),
+                                uSavedMaxApicMode, pApic->enmMaxMode);
     return VINF_SUCCESS;
 }
 
@@ -1204,6 +1159,9 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
+        /** @todo r=bird: This is reckless saved state version handling that will break as soon as APIC_SAVED_STATE_VERSION
+         * is bumped the next time.  You should test: uVersion > APIC_SAVED_STATE_VERSION_VBOX_50
+         * or alternativly always name the new version and do the test: uVersion >= APIC_SAVED_STATE_VERSION_VBOX_51_BETA2 */
         if (   uVersion == APIC_SAVED_STATE_VERSION
             || uVersion == APIC_SAVED_STATE_VERSION_VBOX_51_BETA2)
         {
@@ -1242,6 +1200,13 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             rc = apicR3LoadLegacyVCpuData(pVM, pVCpu, pSSM, uVersion);
             AssertRCReturn(rc, rc);
         }
+
+        /*
+         * Check that we're still good wrt restored data, then tell CPUM about the current CPUID[1].EDX[9] visibility.
+         */
+        rc = SSMR3HandleGetStatus(pSSM);
+        AssertRCReturn(rc, rc);
+        CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, RT_BOOL(pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN));
 
 #if defined(APIC_FUZZY_SSM_COMPAT_TEST) || defined(DEBUG_ramshankar)
         apicR3DumpState(pVCpu, "Loaded state", uVersion);
@@ -1628,6 +1593,17 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PAPIC    pApic    = VM_TO_APIC(pVM);
 
     /*
+     * Init the data.
+     */
+    pApicDev->pDevInsR3 = pDevIns;
+    pApicDev->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pApicDev->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+
+    pApic->pApicDevR0   = PDMINS_2_DATA_R0PTR(pDevIns);
+    pApic->pApicDevR3   = (PAPICDEV)PDMINS_2_DATA_R3PTR(pDevIns);
+    pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
+
+    /*
      * Validate APIC settings.
      */
     if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
@@ -1645,62 +1621,26 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &pApic->fIoApicPresent, true);
     AssertLogRelRCReturn(rc, rc);
 
-    uint8_t uOriginalMode;
-    rc = CFGMR3QueryU8Def(pCfg, "Mode", &uOriginalMode, APICMODE_XAPIC);
+    /* Max APIC feature level. */
+    uint8_t uMaxMode;
+    rc = CFGMR3QueryU8Def(pCfg, "Mode", &uMaxMode, PDMAPICMODE_APIC);
     AssertLogRelRCReturn(rc, rc);
-
-    /* Validate APIC modes. */
-    APICMODE const enmOriginalMode = (APICMODE)uOriginalMode;
-    switch (enmOriginalMode)
+    switch ((PDMAPICMODE)uMaxMode)
     {
-        case APICMODE_DISABLED:
-        {
+        case PDMAPICMODE_NONE:
+#if 1
             /** @todo permanently disabling the APIC won't really work (needs
              *        fixing in HM, CPUM, PDM and possibly other places). See
              *        @bugref{8353}. */
-#if 0
-            pApic->enmOriginalMode = enmOriginalMode;
-            CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
-            CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
-            break;
-#else
-            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode 'disabled' is not supported yet.");
+            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode 'none' is not supported yet.");
 #endif
-        }
-
-        case APICMODE_X2APIC:
-        {
-            pApic->enmOriginalMode = enmOriginalMode;
-            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
-
-            /* Insert the MSR range of the x2APIC. */
-            rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
-            AssertLogRelRCReturn(rc, rc);
+        case PDMAPICMODE_APIC:
+        case PDMAPICMODE_X2APIC:
             break;
-        }
-
-        case APICMODE_XAPIC:
-            pApic->enmOriginalMode = enmOriginalMode;
-            /* The CPUID bit will be updated in apicR3ResetBaseMsr(). */
-            break;
-
         default:
-            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode %#x unknown.", uOriginalMode);
+            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode %d unknown.", uMaxMode);
     }
-
-    /*
-     * Initialize the APIC state.
-     */
-    pApicDev->pDevInsR3 = pDevIns;
-    pApicDev->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pApicDev->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    pApic->pApicDevR0   = PDMINS_2_DATA_R0PTR(pDevIns);
-    pApic->pApicDevR3   = (PAPICDEV)PDMINS_2_DATA_R3PTR(pDevIns);
-    pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
-
-    rc = apicR3InitState(pVM);
-    AssertRCReturn(rc, rc);
+    pApic->enmMaxMode = (PDMAPICMODE)uMaxMode;
 
     /*
      * Disable automatic PDM locking for this device.
@@ -1709,7 +1649,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /*
-     * Register the APIC.
+     * Register the APIC with PDM.
      */
     PDMAPICREG ApicReg;
     RT_ZERO(ApicReg);
@@ -1757,6 +1697,23 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg, &pApicDev->pApicHlpR3);
     AssertLogRelRCReturn(rc, rc);
     pApicDev->pCritSectR3 = pApicDev->pApicHlpR3->pfnGetR3CritSect(pDevIns);
+
+    /*
+     * Initialize the APIC state.
+     */
+    /* First insert the MSR range of the x2APIC if enabled. */
+    if (pApic->enmMaxMode == PDMAPICMODE_X2APIC)
+    {
+        rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
+        AssertLogRelRCReturn(rc, rc);
+    }
+
+    /* Tell CPUM about the APIC feature level so it can adjust APICBASE MSR GP mask and CPUID bits. */
+    pApicDev->pApicHlpR3->pfnSetFeatureLevel(pDevIns, pApic->enmMaxMode);
+
+    /* Initialize the state. */
+    rc = apicR3InitState(pVM);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the MMIO range.

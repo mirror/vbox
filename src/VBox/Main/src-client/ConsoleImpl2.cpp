@@ -1602,11 +1602,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
             InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
-            APICMODE enmAPICMode = APICMODE_XAPIC;
+            PDMAPICMODE enmAPICMode = PDMAPICMODE_APIC;
             if (fEnableX2APIC)
-                enmAPICMode = APICMODE_X2APIC;
+                enmAPICMode = PDMAPICMODE_X2APIC;
             else if (!fEnableAPIC)
-                enmAPICMode = APICMODE_DISABLED;
+                enmAPICMode = PDMAPICMODE_NONE;
             InsertConfigInteger(pCfg,  "Mode", enmAPICMode);
             InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
 
