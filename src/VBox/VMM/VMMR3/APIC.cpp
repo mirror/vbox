@@ -470,10 +470,10 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  APR                           = %u (%#x)\n", pXApicPage->apr.u8Apr, pXApicPage->apr.u8Apr);
     pHlp->pfnPrintf(pHlp, "  TPR                           = %u (%#x)\n", pXApicPage->tpr.u8Tpr, pXApicPage->tpr.u8Tpr);
-    pHlp->pfnPrintf(pHlp, "    Task-priority class           = %#x\n",      XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr));
+    pHlp->pfnPrintf(pHlp, "    Task-priority class           = %#x\n",      XAPIC_TPR_GET_TP(pXApicPage->tpr.u8Tpr) >> 4);
     pHlp->pfnPrintf(pHlp, "    Task-priority subclass        = %#x\n",      XAPIC_TPR_GET_TP_SUBCLASS(pXApicPage->tpr.u8Tpr));
     pHlp->pfnPrintf(pHlp, "  PPR                           = %u (%#x)\n", pXApicPage->ppr.u8Ppr, pXApicPage->ppr.u8Ppr);
-    pHlp->pfnPrintf(pHlp, "    Processor-priority class      = %#x\n",      XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr));
+    pHlp->pfnPrintf(pHlp, "    Processor-priority class      = %#x\n",      XAPIC_PPR_GET_PP(pXApicPage->ppr.u8Ppr) >> 4);
     pHlp->pfnPrintf(pHlp, "    Processor-priority subclass   = %#x\n",      XAPIC_PPR_GET_PP_SUBCLASS(pXApicPage->ppr.u8Ppr));
     if (!fX2ApicMode)
         pHlp->pfnPrintf(pHlp, "  RRD                           = %u (%#x)\n", pXApicPage->rrd.u32Rrd, pXApicPage->rrd.u32Rrd);
