@@ -361,9 +361,9 @@ DECLINLINE(const char *) hmSvmGetSpecialExitReasonDesc(uint16_t uExit)
 /** @def HMVMX_REPORT_MSR_CAPABILITY
  * Reports MSR feature capability.
  *
- * @param   msrcap          Mask of MSR feature bits.
+ * @param   msrcaps         Mask of MSR feature bits.
  * @param   strdesc         The description string to report.
- * @param   featflag        Mask of the feature to report.
+ * @param   cap             Mask of the feature to report.
  */
 #define HMVMX_REPORT_MSR_CAPABILITY(msrcaps, strdesc, cap) \
     do { \
