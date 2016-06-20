@@ -2390,7 +2390,10 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
                             ich9pciGetWord(pPciDev, VBOX_PCI_VENDOR_ID), ich9pciGetWord(pPciDev, VBOX_PCI_DEVICE_ID)
                             );
             if (ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN) != 0)
+            {
                 pHlp->pfnPrintf(pHlp, " IRQ%d", ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE));
+                pHlp->pfnPrintf(pHlp, " (INTA#->IRQ%d)", 0x10 + ich9pciSlot2ApicIrq(iDev >> 3, 0));
+            }
             pHlp->pfnPrintf(pHlp, "\n");
 
             if (pciDevIsMsiCapable(pPciDev) || pciDevIsMsixCapable(pPciDev))

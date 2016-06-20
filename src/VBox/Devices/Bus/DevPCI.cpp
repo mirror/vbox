@@ -1985,7 +1985,10 @@ static void pciR3BusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRe
                             pciDevIsMsixCapable(pPciDev) ? " MSI-X" : ""
                             );
             if (PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN) != 0)
+            {
                 pHlp->pfnPrintf(pHlp, " IRQ%d", PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE));
+                pHlp->pfnPrintf(pHlp, " (INTA#->IRQ%d)", 0x10 + pci_slot_get_apic_pirq(iDev, 0));
+            }
 
             pHlp->pfnPrintf(pHlp, "\n");
 
