@@ -428,7 +428,7 @@ VMMR3DECL(int) GIMR3GetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup)
  *                              Optional, can be NULL.
  * @thread  EMT.
  */
-VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead, PFNGIMDEBUGBUFREADCOMPLETED pfnReadComplete)
+VMMR3_INT_DECL(int) gimR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead, PFNGIMDEBUGBUFREADCOMPLETED pfnReadComplete)
 {
     PGIMDEBUG pDbg = pVM->gim.s.pDbgR3;
     if (pDbg)
@@ -465,7 +465,7 @@ VMMR3_INT_DECL(int) GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead, PFNGI
  *                      the number of bytes written.
  * @thread  EMT.
  */
-VMMR3_INT_DECL(int) GIMR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite)
+VMMR3_INT_DECL(int) gimR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite)
 {
     PGIMDEBUG pDbg = pVM->gim.s.pDbgR3;
     if (pDbg)
@@ -520,6 +520,26 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
 
 
 /**
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      Write access handler for mapped MMIO2 pages.  Currently ignores writes.}
+ *
+ * @todo In the future we might want to let the GIM provider decide what the
+ *       handler should do (like throwing \#GP faults).
+ */
+static DECLCALLBACK(VBOXSTRICTRC) gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf,
+                                                         size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin,
+                                                         void *pvUser)
+{
+    /*
+     * Ignore writes to the mapped MMIO2 page.
+     */
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+    return VINF_SUCCESS;        /** @todo Hyper-V says we should \#GP(0) fault for writes to the Hypercall and TSC page. */
+}
+
+
+#if 0
+/**
  * Unmaps a registered MMIO2 region in the guest address space and removes any
  * access handlers for it.
  *
@@ -527,7 +547,7 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
  * @param   pVM         The cross context VM structure.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
-VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
+VMMR3_INT_DECL(int) gimR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
 {
     AssertPtr(pVM);
     AssertPtr(pRegion);
@@ -547,25 +567,6 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
         }
     }
     return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{FNPGMPHYSHANDLER,
- *      Write access handler for mapped MMIO2 pages.  Currently ignores writes.}
- *
- * @todo In the future we might want to let the GIM provider decide what the
- *       handler should do (like throwing \#GP faults).
- */
-static DECLCALLBACK(VBOXSTRICTRC)
-gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                       PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    /*
-     * Ignore writes to the mapped MMIO2 page.
-     */
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    return VINF_SUCCESS;        /** @todo Hyper-V says we should \#GP(0) fault for writes to the Hypercall and TSC page. */
 }
 
 
@@ -643,7 +644,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
     return rc;
 }
 
-#if 0
+
 /**
  * Registers the physical handler for the registered and mapped MMIO2 region.
  *
@@ -651,7 +652,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
  * @param   pVM         The cross context VM structure.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
-VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion)
+VMMR3_INT_DECL(int) gimR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion)
 {
     AssertPtr(pRegion);
     AssertReturn(pRegion->fRegistered, VERR_GIM_IPE_2);
@@ -674,7 +675,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION p
  * @param   pVM         The cross context VM structure.
  * @param   pRegion     Pointer to the GIM MMIO2 region.
  */
-VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion)
+VMMR3_INT_DECL(int) gimR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion)
 {
     return PGMHandlerPhysicalDeregister(pVM, pRegion->GCPhysPage);
 }

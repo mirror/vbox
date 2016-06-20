@@ -529,7 +529,7 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     {
         PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[i];
 #if 0
-        GIMR3Mmio2Unmap(pVM, pRegion);
+        gimR3Mmio2Unmap(pVM, pRegion);
 #else
         pRegion->fMapped    = false;
         pRegion->GCPhysPage = NIL_RTGCPHYS;
@@ -909,7 +909,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
      *        @bugref{7532}. Instead of the overlay style mapping, we just
      *               rewrite guest memory directly. */
 #if 0
-    rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysTscPage);
+    rc = gimR3Mmio2Map(pVM, pRegion, GCPhysTscPage);
     if (RT_SUCCESS(rc))
     {
         Assert(pRegion->GCPhysPage == GCPhysTscPage);
@@ -941,7 +941,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
         return VINF_SUCCESS;
     }
     else
-        LogRelFunc(("GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
+        LogRelFunc(("gimR3Mmio2Map failed. rc=%Rrc\n", rc));
     return VERR_GIM_OPERATION_FAILED;
 #else
     AssertReturn(pRegion->cbRegion == PAGE_SIZE, VERR_GIM_IPE_2);
@@ -996,7 +996,7 @@ VMMR3_INT_DECL(int) gimR3HvDisableTscPage(PVM pVM)
     if (pRegion->fMapped)
     {
 #if 0
-        GIMR3Mmio2Unmap(pVM, pRegion);
+        gimR3Mmio2Unmap(pVM, pRegion);
         Assert(!pRegion->fMapped);
 #else
         pRegion->fMapped = false;
@@ -1022,7 +1022,7 @@ VMMR3_INT_DECL(int) gimR3HvDisableHypercallPage(PVM pVM)
     if (pRegion->fMapped)
     {
 #if 0
-        GIMR3Mmio2Unmap(pVM, pRegion);
+        gimR3Mmio2Unmap(pVM, pRegion);
         Assert(!pRegion->fMapped);
 #else
         pRegion->fMapped = false;
@@ -1071,7 +1071,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
      *        @bugref{7532}. Instead of the overlay style mapping, we just
      *               rewrite guest memory directly. */
 #if 0
-    int rc = GIMR3Mmio2Map(pVM, pRegion, GCPhysHypercallPage);
+    int rc = gimR3Mmio2Map(pVM, pRegion, GCPhysHypercallPage);
     if (RT_SUCCESS(rc))
     {
         Assert(pRegion->GCPhysPage == GCPhysHypercallPage);
@@ -1103,10 +1103,10 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
             LogRel(("GIM: HyperV: VMMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
         }
 
-        GIMR3Mmio2Unmap(pVM, pRegion);
+        gimR3Mmio2Unmap(pVM, pRegion);
     }
 
-    LogRel(("GIM: HyperV: GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
+    LogRel(("GIM: HyperV: gimR3Mmio2Map failed. rc=%Rrc\n", rc));
     return rc;
 #else
     AssertReturn(pRegion->cbRegion == PAGE_SIZE, VERR_GIM_IPE_3);
@@ -1255,7 +1255,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
          * Read the raw debug data.
          */
         size_t cbReallyRead = cbRead;
-        rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead, gimR3HvDebugBufReadCompleted);
+        rc = gimR3DebugRead(pVM, pvBuf, &cbReallyRead, gimR3HvDebugBufReadCompleted);
         *pcbRead = (uint32_t)cbReallyRead;
     }
     else
@@ -1270,7 +1270,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint3
             case GIMHVDEBUGREPLY_UDP:
             {
                 size_t cbReallyRead = cbRead;
-                rc = GIMR3DebugRead(pVM, pvBuf, &cbReallyRead, gimR3HvDebugBufReadCompleted);
+                rc = gimR3DebugRead(pVM, pvBuf, &cbReallyRead, gimR3HvDebugBufReadCompleted);
                 if (   RT_SUCCESS(rc)
                     && cbReallyRead > 0)
                 {
@@ -1633,7 +1633,7 @@ VMMR3_INT_DECL(int) gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, u
     {
         AssertCompile(sizeof(size_t) >= sizeof(uint32_t));
         size_t cbWriteBuf = cbWrite;
-        int rc = GIMR3DebugWrite(pVM, pbData, &cbWriteBuf);
+        int rc = gimR3DebugWrite(pVM, pbData, &cbWriteBuf);
         if (   RT_SUCCESS(rc)
             && cbWriteBuf == cbWrite)
             *pcbWritten = (uint32_t)cbWriteBuf;

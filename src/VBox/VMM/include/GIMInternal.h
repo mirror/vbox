@@ -101,13 +101,15 @@ typedef DECLCALLBACK(void) FNGIMDEBUGBUFREADCOMPLETED(PVM pVM);
 typedef FNGIMDEBUGBUFREADCOMPLETED *PFNGIMDEBUGBUFREADCOMPLETED;
 
 #ifdef IN_RING3
-VMMR3_INT_DECL(int)           GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion);
-VMMR3_INT_DECL(int)           GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhysRegion);
-VMMR3_INT_DECL(int)           GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion);
-VMMR3_INT_DECL(int)           GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion);
+#if 0
+VMMR3_INT_DECL(int)           gimR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion);
+VMMR3_INT_DECL(int)           gimR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCPhysRegion);
+VMMR3_INT_DECL(int)           gimR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION pRegion);
+VMMR3_INT_DECL(int)           gimR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION pRegion);
+#endif
 
-VMMR3_INT_DECL(int)           GIMR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead, PFNGIMDEBUGBUFREADCOMPLETED pfnReadComplete);
-VMMR3_INT_DECL(int)           GIMR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite);
+VMMR3_INT_DECL(int)           gimR3DebugRead(PVM pVM, void *pvRead, size_t *pcbRead, PFNGIMDEBUGBUFREADCOMPLETED pfnReadComplete);
+VMMR3_INT_DECL(int)           gimR3DebugWrite(PVM pVM, void *pvWrite, size_t *pcbWrite);
 #endif /* IN_RING3 */
 
 /** @} */
