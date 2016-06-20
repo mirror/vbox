@@ -812,7 +812,7 @@ static int dbgfR3TypeValDump(PDBGFTYPEVAL pVal, uint32_t iLvl, uint32_t cLvlMax,
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
- * @param   pVal                The value to dump.
+ * @param   pType               The type to dump.
  * @param   iLvl                The current level.
  * @param   cLvlMax             The maximum level.
  * @param   pfnDump             The dumper callback.
@@ -947,8 +947,8 @@ VMMR3DECL(int) DBGFR3TypeRegister(PUVM pUVM, uint32_t cTypes, PCDBGFTYPEREG paTy
  * Deregisters a previously registered type.
  *
  * @returns VBox status code.
- * @param   VERR_NOT_FOUND if the type is not known.
- * @param   VERR_RESOURCE_IN_USE if the type is used by another type.
+ * @retval  VERR_NOT_FOUND if the type is not known.
+ * @retval  VERR_RESOURCE_IN_USE if the type is used by another type.
  * @param   pUVM                The user mode VM handle.
  * @param   pszType             The type identifier to deregister.
  */
