@@ -1220,8 +1220,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 bool         fGimHvDebug = false;
                 com::Utf8Str strGimHvVendor;
-                bool         fGimHvVsIf;
-                bool         fGimHvHypercallIf;
+                bool         fGimHvVsIf = false;
+                bool         fGimHvHypercallIf = false;
 
                 size_t       uPos = 0;
                 com::Utf8Str strDebugOptions = strParavirtDebug;
