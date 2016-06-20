@@ -70,7 +70,7 @@ RT_C_DECLS_BEGIN
  *          the I/O is done.  Currently, we don't implement these
  *          kind of breakpoints.
  */
-#if IN_RING3
+#ifdef IN_RING3
 # define IOM_SUCCESS(rc)   (   (rc) == VINF_SUCCESS \
                              || (   (rc) <= VINF_EM_LAST \
                                  && (rc) != VINF_EM_RESCHEDULE_REM \
