@@ -664,10 +664,10 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
     procInfo.mFlags      = ProcessCreateFlag_Hidden;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
 
-    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-
     try
     {
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
+
         /* Construct arguments. */
         if (uFlags)
         {
@@ -830,10 +830,9 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
 
-    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-
     try
     {
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         if (fDirectory)
             procInfo.mArguments.push_back(Utf8Str("-d"));
@@ -852,13 +851,14 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
 
     /** @todo Use an internal HGCM command for this operation, since
      *        we now can run in a user-dedicated session. */
-    int guestRc; GuestCtrlStreamObjects stdOut;
+    int guestRc;
+    GuestCtrlStreamObjects stdOut;
     if (RT_SUCCESS(vrc))
         vrc = GuestProcessTool::i_runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
                                         &guestRc);
-    if (   RT_SUCCESS(vrc)
-        && RT_SUCCESS(guestRc))
+
+    if (!GuestProcess::i_isGuestError(vrc))
     {
         GuestFsObjData objData;
         if (!stdOut.empty())
@@ -871,16 +871,17 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
             }
         }
         else
-            vrc = VERR_NO_DATA;
+            vrc = VERR_BROKEN_PIPE;
 
         if (RT_SUCCESS(vrc))
             strName = objData.mName;
     }
-
-    if (pGuestRc)
+    else if (pGuestRc)
+    {
         *pGuestRc = guestRc;
+    }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
     return vrc;
 }
 
@@ -1236,10 +1237,9 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
 
-    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-
     try
     {
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
         procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
@@ -1386,13 +1386,14 @@ int GuestSession::i_fileQuerySizeInternal(const Utf8Str &strPath, bool fFollowSy
 }
 
 /**
- * <Someone write documentation, pretty please!>
+ * Queries information of a file system object (file, directory, ...).
  *
- * @param   pGuestRc        Optional.  Will be set to VINF_SUCCESS,
- *                          VERR_NOT_EQUAL or VERR_INVALID_STATE if the
- *                          process completed.  May probably be set to a lot of
- *                          other things.  Not sure if these things are related
- *                          to the process we ran or what, really.  :-(
+ * @return  IPRT status code.
+ * @param   strPath             Path to file system object to query information for.
+ * @param   fFollowSymlinks     Whether to follow symbolic links or not.
+ * @param   objData             Where to return the file system object data, if found.
+ * @param   pGuestRc            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
+ *                              Any other return code indicates some host side error.
  */
 int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc)
 {
@@ -1405,11 +1406,9 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
     procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
 
-    procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
-
     try
     {
-        /* Construct arguments. */
+        procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         if (fFollowSymlinks)
             procInfo.mArguments.push_back(Utf8Str("-L"));
@@ -1427,18 +1426,25 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
         vrc = GuestProcessTool::i_runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
                                         &guestRc);
-    if (   RT_SUCCESS(vrc)
-        && RT_SUCCESS(guestRc))
+
+    if (!GuestProcess::i_isGuestError(vrc))
     {
         if (!stdOut.empty())
+        {
             vrc = objData.FromStat(stdOut.at(0));
+            if (RT_FAILURE(vrc))
+            {
+                guestRc = vrc;
+                vrc = VERR_GSTCTL_GUEST_ERROR;
+            }
+        }
         else
-            vrc = VERR_NO_DATA;
+            vrc = VERR_BROKEN_PIPE;
     }
-
-    if (   vrc == VERR_GSTCTL_GUEST_ERROR
-        && pGuestRc)
+    else if (pGuestRc)
+    {
         *pGuestRc = guestRc;
+    }
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
     return vrc;
@@ -3174,29 +3180,25 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
 
 HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymlinks, LONG64 *aSize)
 {
-    LogFlowThisFuncEnter();
-
-    if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No file to query size for specified"));
+    if (aPath.isEmpty())
+        return setError(E_INVALIDARG, tr("No path specified"));
 
     HRESULT hr = S_OK;
 
     int64_t llSize; int guestRc;
     int vrc = i_fileQuerySizeInternal(aPath, aFollowSymlinks != FALSE,  &llSize, &guestRc);
     if (RT_SUCCESS(vrc))
+    {
         *aSize = llSize;
+    }
     else
     {
-        switch (vrc)
+        if (GuestProcess::i_isGuestError(vrc))
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, guestRc);
-                break;
-
-            default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), vrc);
-               break;
+            hr = GuestProcess::i_setErrorExternal(this, guestRc);
         }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), vrc);
     }
 
     return hr;
@@ -3204,107 +3206,115 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
 
 HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-    LogFlowThisFuncEnter();
+    if (aPath.isEmpty())
+        return setError(E_INVALIDARG, tr("No path specified"));
+
+    LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
 
     HRESULT hrc = S_OK;
+
     *aExists = false;
-    if (RT_LIKELY(aPath.isNotEmpty()))
+
+    GuestFsObjData objData;
+    int rcGuest;
+    int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
+    if (RT_SUCCESS(vrc))
     {
-        GuestFsObjData objData;
-        int rcGuest;
-        int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
-        if (RT_SUCCESS(vrc))
-            *aExists = TRUE;
-        else if (   vrc == VERR_NOT_A_FILE
-                 || vrc == VERR_PATH_NOT_FOUND
-                 || vrc == VERR_FILE_NOT_FOUND
-                 || vrc == VERR_INVALID_NAME)
-            hrc = S_OK; /* Ignore these vrc values. */
-        else if (vrc == VERR_GSTCTL_GUEST_ERROR) /** @todo What _is_ rcGuest, really? Stuff like VERR_NOT_A_FILE too?? */
-            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+        *aExists = TRUE;
+    }
+    else
+    {
+        if (GuestProcess::i_isGuestError(vrc))
+        {
+            if (   rcGuest == VERR_NOT_A_FILE
+                || rcGuest == VERR_PATH_NOT_FOUND
+                || rcGuest == VERR_FILE_NOT_FOUND
+                || rcGuest == VERR_INVALID_NAME)
+            {
+                hrc = S_OK; /* Ignore these vrc values. */
+            }
+            else
+                hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+        }
         else
             hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
-    /* else: If the file name is empty, there is no way it can exists. So, don't
-       be a tedious and return E_INVALIDARG, simply return FALSE. */
-    LogFlowThisFuncLeave();
+
     return hrc;
 }
 
 HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlinks, ComPtr<IGuestFsObjInfo> &aInfo)
 {
-    LogFlowThisFuncEnter();
+    if (aPath.isEmpty())
+        return setError(E_INVALIDARG, tr("No path specified"));
+
+    LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
 
     HRESULT hrc = S_OK;
-    if (RT_LIKELY(aPath.isNotEmpty()))
+
+    GuestFsObjData Info; int guestRc;
+    int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, Info, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
-        GuestFsObjData Info;
-        int rcGuest;
-        int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, Info, &rcGuest);
-        if (RT_SUCCESS(vrc))
+        ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
+        hrc = ptrFsObjInfo.createObject();
+        if (SUCCEEDED(hrc))
         {
-            ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
-            hrc = ptrFsObjInfo.createObject();
-            if (SUCCEEDED(hrc))
-            {
-                vrc = ptrFsObjInfo->init(Info);
-                if (RT_SUCCESS(vrc))
-                    hrc = ptrFsObjInfo.queryInterfaceTo(aInfo.asOutParam());
-                else
-                    hrc = setErrorVrc(vrc);
-            }
+            vrc = ptrFsObjInfo->init(Info);
+            if (RT_SUCCESS(vrc))
+                hrc = ptrFsObjInfo.queryInterfaceTo(aInfo.asOutParam());
+            else
+                hrc = setErrorVrc(vrc);
         }
-        else if (vrc == VERR_GSTCTL_GUEST_ERROR)
-            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+    }
+    else
+    {
+        if (GuestProcess::i_isGuestError(vrc))
+        {
+            hrc = GuestProcess::i_setErrorExternal(this, guestRc);
+        }
         else
             hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
-    else
-            hrc = setError(E_INVALIDARG, tr("the path parameter must not be empty/NULL"));
-    LogFlowThisFuncLeave();
+
     return hrc;
 }
 
 HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
 {
-    LogFlowThisFuncEnter();
-
     if (RT_UNLIKELY(aPath.isEmpty()))
-        return setError(E_INVALIDARG, tr("Empty path specified"));
+        return setError(E_INVALIDARG, tr("No path specified"));
 
-    HRESULT hr = S_OK;
+    LogFlowThisFunc(("aPath=%s\n", aPath.c_str()));
+
+    HRESULT hrc = S_OK;
 
     int guestRc;
     int vrc = i_fileRemoveInternal(aPath, &guestRc);
     if (RT_FAILURE(vrc))
     {
-        switch (vrc)
+        if (GuestProcess::i_isGuestError(vrc))
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, guestRc);
-                break;
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Removing file \"%s\" failed: %Rrc"),
-                              aPath.c_str(), vrc);
-                break;
+            hrc = GuestProcess::i_setErrorExternal(this, guestRc);
         }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Removing file \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
                                   const com::Utf8Str &aDestination,
                                   const std::vector<FsObjRenameFlag_T> &aFlags)
 {
-    LogFlowThisFuncEnter();
-
     if (RT_UNLIKELY(aSource.isEmpty()))
         return setError(E_INVALIDARG, tr("No source path specified"));
 
     if (RT_UNLIKELY(aDestination.isEmpty()))
         return setError(E_INVALIDARG, tr("No destination path specified"));
+
+    LogFlowThisFunc(("aSource=%s, aDestination=%s\n", aSource.c_str(), aDestination.c_str()));
 
     HRESULT hr = i_isReadyExternal();
     if (FAILED(hr))
