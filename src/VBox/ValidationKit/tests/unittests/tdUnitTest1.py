@@ -198,7 +198,8 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstOpenUSBDev': '',       # Not a useful testcase.
         'testcase/tstX86-1': '',            # Really more guest side.
         'testcase/tstX86-FpuSaveRestore': '', # Experiments, could be useful for the guest not the host.
-        'tstAsmStructsRC': '',              # Testcase run during build time (fails to find libstdc++.so.6 on some Solaris testboxes)
+        'tstAsmStructsRC': '',              # Testcase run during build time (fails to find libstdc++.so.6 on some
+                                            # Solaris testboxes).
     };
 
     # Suffix exclude list.
