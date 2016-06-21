@@ -291,7 +291,7 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   fResetApicBaseMsr   Whether to reset the APIC base MSR.
  */
-VMMR3_INT_DECL(void) APICR3Reset(PVMCPU pVCpu, bool fResetApicBaseMsr)
+VMMR3_INT_DECL(void) apicR3ResetEx(PVMCPU pVCpu, bool fResetApicBaseMsr)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
@@ -1245,7 +1245,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     {
         uint8_t uVector = XAPIC_LVT_GET_VECTOR(uLvtTimer);
         Log2(("APIC%u: apicR3TimerCallback: Raising timer interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
-        APICPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
+        apicPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
     }
 
     XAPICTIMERMODE enmTimerMode = XAPIC_LVT_GET_TIMER_MODE(uLvtTimer);
@@ -1259,7 +1259,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
             if (uInitialCount)
             {
                 Log2(("APIC%u: apicR3TimerCallback: Re-arming timer. uInitialCount=%#RX32\n", pVCpu->idCpu, uInitialCount));
-                APICStartTimer(pVCpu, uInitialCount);
+                apicStartTimer(pVCpu, uInitialCount);
             }
             break;
         }
@@ -1300,10 +1300,10 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         if (TMTimerIsActive(pApicCpu->pTimerR3))
             TMTimerStop(pApicCpu->pTimerR3);
 
-        APICR3Reset(pVCpuDest, true /* fResetApicBaseMsr */);
+        apicR3ResetEx(pVCpuDest, true /* fResetApicBaseMsr */);
 
         /* Clear the interrupt pending force flag. */
-        APICClearInterruptFF(pVCpuDest, PDMAPICIRQ_HARDWARE);
+        apicClearInterruptFF(pVCpuDest, PDMAPICIRQ_HARDWARE);
     }
 }
 
@@ -1504,7 +1504,7 @@ static int apicR3InitState(PVM pVM)
 
                 /* Initialize the virtual-APIC state. */
                 RT_BZERO(pApicCpu->pvApicPageR3, pApicCpu->cbApicPage);
-                APICR3Reset(pVCpu, true /* fResetApicBaseMsr */);
+                apicR3ResetEx(pVCpu, true /* fResetApicBaseMsr */);
 
 #ifdef DEBUG_ramshankar
                 Assert(pApicCpu->pvApicPibR3 != NIL_RTR3PTR);
@@ -1654,16 +1654,16 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PDMAPICREG ApicReg;
     RT_ZERO(ApicReg);
     ApicReg.u32Version              = PDM_APICREG_VERSION;
-    ApicReg.pfnGetInterruptR3       = APICGetInterrupt;
-    ApicReg.pfnSetBaseMsrR3         = APICSetBaseMsr;
-    ApicReg.pfnGetBaseMsrR3         = APICGetBaseMsr;
-    ApicReg.pfnSetTprR3             = APICSetTpr;
-    ApicReg.pfnGetTprR3             = APICGetTpr;
-    ApicReg.pfnWriteMsrR3           = APICWriteMsr;
-    ApicReg.pfnReadMsrR3            = APICReadMsr;
-    ApicReg.pfnBusDeliverR3         = APICBusDeliver;
-    ApicReg.pfnLocalInterruptR3     = APICLocalInterrupt;
-    ApicReg.pfnGetTimerFreqR3       = APICGetTimerFreq;
+    ApicReg.pfnGetInterruptR3       = apicGetInterrupt;
+    ApicReg.pfnSetBaseMsrR3         = apicSetBaseMsr;
+    ApicReg.pfnGetBaseMsrR3         = apicGetBaseMsr;
+    ApicReg.pfnSetTprR3             = apicSetTpr;
+    ApicReg.pfnGetTprR3             = apicGetTpr;
+    ApicReg.pfnWriteMsrR3           = apicWriteMsr;
+    ApicReg.pfnReadMsrR3            = apicReadMsr;
+    ApicReg.pfnBusDeliverR3         = apicBusDeliver;
+    ApicReg.pfnLocalInterruptR3     = apicLocalInterrupt;
+    ApicReg.pfnGetTimerFreqR3       = apicGetTimerFreq;
 
     /*
      * We always require R0 functionality (e.g. APICGetTpr() called by HMR0 VT-x/AMD-V code).
@@ -1671,27 +1671,27 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * to ring-3. We still need other handlers like APICGetTpr() in ring-0 for now.
      */
     {
-        ApicReg.pszGetInterruptRC   = "APICGetInterrupt";
-        ApicReg.pszSetBaseMsrRC     = "APICSetBaseMsr";
-        ApicReg.pszGetBaseMsrRC     = "APICGetBaseMsr";
-        ApicReg.pszSetTprRC         = "APICSetTpr";
-        ApicReg.pszGetTprRC         = "APICGetTpr";
-        ApicReg.pszWriteMsrRC       = "APICWriteMsr";
-        ApicReg.pszReadMsrRC        = "APICReadMsr";
-        ApicReg.pszBusDeliverRC     = "APICBusDeliver";
-        ApicReg.pszLocalInterruptRC = "APICLocalInterrupt";
-        ApicReg.pszGetTimerFreqRC   = "APICGetTimerFreq";
+        ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
+        ApicReg.pszSetBaseMsrRC     = "apicSetBaseMsr";
+        ApicReg.pszGetBaseMsrRC     = "apicGetBaseMsr";
+        ApicReg.pszSetTprRC         = "apicSetTpr";
+        ApicReg.pszGetTprRC         = "apicGetTpr";
+        ApicReg.pszWriteMsrRC       = "apicWriteMsr";
+        ApicReg.pszReadMsrRC        = "apicReadMsr";
+        ApicReg.pszBusDeliverRC     = "apicBusDeliver";
+        ApicReg.pszLocalInterruptRC = "apicLocalInterrupt";
+        ApicReg.pszGetTimerFreqRC   = "apicGetTimerFreq";
 
-        ApicReg.pszGetInterruptR0   = "APICGetInterrupt";
-        ApicReg.pszSetBaseMsrR0     = "APICSetBaseMsr";
-        ApicReg.pszGetBaseMsrR0     = "APICGetBaseMsr";
-        ApicReg.pszSetTprR0         = "APICSetTpr";
-        ApicReg.pszGetTprR0         = "APICGetTpr";
-        ApicReg.pszWriteMsrR0       = "APICWriteMsr";
-        ApicReg.pszReadMsrR0        = "APICReadMsr";
-        ApicReg.pszBusDeliverR0     = "APICBusDeliver";
-        ApicReg.pszLocalInterruptR0 = "APICLocalInterrupt";
-        ApicReg.pszGetTimerFreqR0   = "APICGetTimerFreq";
+        ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
+        ApicReg.pszSetBaseMsrR0     = "apicSetBaseMsr";
+        ApicReg.pszGetBaseMsrR0     = "apicGetBaseMsr";
+        ApicReg.pszSetTprR0         = "apicSetTpr";
+        ApicReg.pszGetTprR0         = "apicGetTpr";
+        ApicReg.pszWriteMsrR0       = "apicWriteMsr";
+        ApicReg.pszReadMsrR0        = "apicReadMsr";
+        ApicReg.pszBusDeliverR0     = "apicBusDeliver";
+        ApicReg.pszLocalInterruptR0 = "apicLocalInterrupt";
+        ApicReg.pszGetTimerFreqR0   = "apicGetTimerFreq";
     }
 
     rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg, &pApicDev->pApicHlpR3);
@@ -1723,7 +1723,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NULL /* pvUser */,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
-                               APICWriteMmio, APICReadMmio, "APIC");
+                               apicWriteMmio, apicReadMmio, "APIC");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1732,14 +1732,14 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
         pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
         rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NIL_RTRCPTR /*pvUser*/,
-                                     "APICWriteMmio", "APICReadMmio");
+                                     "apicWriteMmio", "apicReadMmio");
         if (RT_FAILURE(rc))
             return rc;
 
         pApicDev->pApicHlpR0  = pApicDev->pApicHlpR3->pfnGetR0Helpers(pDevIns);
         pApicDev->pCritSectR0 = pApicDev->pApicHlpR3->pfnGetR0CritSect(pDevIns);
         rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NIL_RTR0PTR /*pvUser*/,
-                                     "APICWriteMmio", "APICReadMmio");
+                                     "apicWriteMmio", "apicReadMmio");
         if (RT_FAILURE(rc))
             return rc;
     }

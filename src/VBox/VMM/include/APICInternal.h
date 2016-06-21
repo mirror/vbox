@@ -1407,35 +1407,39 @@ DECLINLINE(uint8_t) apicGetTimerShift(PCXAPICPAGE pXApicPage)
 
 RT_C_DECLS_BEGIN
 
-const char             *apicGetModeName(APICMODE enmMode);
-const char             *apicGetDestFormatName(XAPICDESTFORMAT enmDestFormat);
-const char             *apicGetDeliveryModeName(XAPICDELIVERYMODE enmDeliveryMode);
-const char             *apicGetDestModeName(XAPICDESTMODE enmDestMode);
-const char             *apicGetTriggerModeName(XAPICTRIGGERMODE enmTriggerMode);
-const char             *apicGetDestShorthandName(XAPICDESTSHORTHAND enmDestShorthand);
-const char             *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode);
-void                    apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift);
-APICMODE                apicGetMode(uint64_t uApicBaseMsr);
+const char                 *apicGetModeName(APICMODE enmMode);
+const char                 *apicGetDestFormatName(XAPICDESTFORMAT enmDestFormat);
+const char                 *apicGetDeliveryModeName(XAPICDELIVERYMODE enmDeliveryMode);
+const char                 *apicGetDestModeName(XAPICDESTMODE enmDestMode);
+const char                 *apicGetTriggerModeName(XAPICTRIGGERMODE enmTriggerMode);
+const char                 *apicGetDestShorthandName(XAPICDESTSHORTHAND enmDestShorthand);
+const char                 *apicGetTimerModeName(XAPICTIMERMODE enmTimerMode);
+void                        apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimerShift);
+APICMODE                    apicGetMode(uint64_t uApicBaseMsr);
 
-VMMDECL(uint64_t)       APICGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu);
-VMMDECL(VBOXSTRICTRC)   APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t uBase);
-VMMDECL(uint8_t)        APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr);
-VMMDECL(void)           APICSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr);
-VMMDECL(uint64_t)       APICGetTimerFreq(PPDMDEVINS pDevIns);
-VMMDECL(int)            APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-VMMDECL(int)            APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
-VMMDECL(VBOXSTRICTRC)   APICReadMsr(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Val);
-VMMDECL(VBOXSTRICTRC)   APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Val);
-VMMDECL(int)            APICGetInterrupt(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint8_t *puVector, uint32_t *puTagSrc);
-VMMDECL(void)           APICSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
-VMMDECL(void)           APICClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
-VMMDECL(VBOXSTRICTRC)   APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
-VMMDECL(int)            APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode,
-                                       uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
+DECLCALLBACK(uint64_t)      apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu);
+DECLCALLBACK(VBOXSTRICTRC)  apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t uBase);
+DECLCALLBACK(uint8_t)       apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr);
+DECLCALLBACK(void)          apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr);
+DECLCALLBACK(uint64_t)      apicGetTimerFreq(PPDMDEVINS pDevIns);
+DECLCALLBACK(int)           apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+DECLCALLBACK(int)           apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
+DECLCALLBACK(VBOXSTRICTRC)  apicReadMsr(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Val);
+DECLCALLBACK(VBOXSTRICTRC)  apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Val);
+DECLCALLBACK(int)           apicGetInterrupt(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint8_t *puVector, uint32_t *puTagSrc);
+DECLCALLBACK(VBOXSTRICTRC)  apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
+DECLCALLBACK(int)           apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode,
+                                           uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
 
-VMM_INT_DECL(void)      APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode);
-VMM_INT_DECL(void)      APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount);
-VMM_INT_DECL(void)      APICStopTimer(PVMCPU pVCpu);
+VMM_INT_DECL(void)          apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode);
+VMM_INT_DECL(void)          apicStartTimer(PVMCPU pVCpu, uint32_t uInitialCount);
+VMM_INT_DECL(void)          apicStopTimer(PVMCPU pVCpu);
+VMM_INT_DECL(void)          apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
+VMM_INT_DECL(void)          apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
+
+#ifdef IN_RING3
+VMMR3_INT_DECL(void)        apicR3ResetEx(PVMCPU pVCpu, bool fResetApicBaseMsr);
+#endif
 
 RT_C_DECLS_END
 

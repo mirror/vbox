@@ -528,7 +528,7 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
                 ||  XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
             {
                 Log2(("APIC%u: apicSignalNextPendingIntr: Signaling pending interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
-                APICSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+                apicSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
             else
             {
@@ -540,7 +540,7 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
     else
     {
         Log2(("APIC%u: apicSignalNextPendingIntr: APIC software-disabled, clearing pending interrupt\n", pVCpu->idCpu));
-        APICClearInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
+        apicClearInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
     }
 }
 
@@ -613,7 +613,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             {
                 if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
                     && apicIsEnabled(&pVM->aCpus[idCpu]))
-                    APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+                    apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             }
             break;
         }
@@ -623,7 +623,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             VMCPUID const idCpu = VMCPUSET_FIND_FIRST_PRESENT(pDestCpuSet);
             if (   idCpu < pVM->cCpus
                 && apicIsEnabled(&pVM->aCpus[idCpu]))
-                APICPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+                apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             else
                 Log2(("APIC: apicSendIntr: No CPU found for lowest-priority delivery mode!\n"));
             break;
@@ -636,7 +636,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
                 {
                     Log2(("APIC: apicSendIntr: Raising SMI on VCPU%u\n", idCpu));
-                    APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_SMI);
+                    apicSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_SMI);
                 }
             }
             break;
@@ -650,7 +650,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
                     && apicIsEnabled(&pVM->aCpus[idCpu]))
                 {
                     Log2(("APIC: apicSendIntr: Raising NMI on VCPU%u\n", idCpu));
-                    APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_NMI);
+                    apicSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_NMI);
                 }
             }
             break;
@@ -695,7 +695,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
                 if (VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu))
                 {
                     Log2(("APIC: apicSendIntr: Raising EXTINT on VCPU%u\n", idCpu));
-                    APICSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_EXTINT);
+                    apicSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_EXTINT);
                 }
             break;
         }
@@ -1418,9 +1418,9 @@ static VBOXSTRICTRC apicSetTimerIcr(PVMCPU pVCpu, int rcBusy, uint32_t uInitialC
         pXApicPage->timer_icr.u32InitialCount = uInitialCount;
         pXApicPage->timer_ccr.u32CurrentCount = uInitialCount;
         if (uInitialCount)
-            APICStartTimer(pVCpu, uInitialCount);
+            apicStartTimer(pVCpu, uInitialCount);
         else
-            APICStopTimer(pVCpu);
+            apicStopTimer(pVCpu);
         TMTimerUnlock(pTimer);
     }
     return rc;
@@ -1792,7 +1792,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
 /**
  * @interface_method_impl{PDMAPICREG,pfnReadMsrR3}
  */
-VMMDECL(VBOXSTRICTRC) APICReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
+VMM_INT_DECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     /*
      * Validate.
@@ -1899,7 +1899,7 @@ VMMDECL(VBOXSTRICTRC) APICReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32
 /**
  * @interface_method_impl{PDMAPICREG,pfnWriteMsrR3}
  */
-VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
+VMM_INT_DECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     /*
      * Validate.
@@ -1989,7 +1989,7 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
             case MSR_IA32_X2APIC_SELF_IPI:
             {
                 uint8_t const uVector = XAPIC_SELF_IPI_GET_VECTOR(u32Value);
-                APICPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
+                apicPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
                 rcStrict = VINF_SUCCESS;
                 break;
             }
@@ -2036,7 +2036,7 @@ VMMDECL(VBOXSTRICTRC) APICWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u3
 /**
  * @interface_method_impl{PDMAPICREG,pfnSetBaseMsrR3}
  */
-VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
+VMMDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
 {
     Assert(pVCpu);
     NOREF(pDevIns);
@@ -2093,7 +2093,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  * at the end of this function rather than touching it in APICR3Reset. This means we also
                  * need to update the CPUID leaf ourselves.
                  */
-                APICR3Reset(pVCpu, false /* fResetApicBaseMsr */);
+                apicR3ResetEx(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD);
                 CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, false /*fVisible*/);
                 LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
@@ -2173,7 +2173,7 @@ VMMDECL(VBOXSTRICTRC) APICSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetBaseMsrR3}
  */
-VMMDECL(uint64_t) APICGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
@@ -2185,7 +2185,7 @@ VMMDECL(uint64_t) APICGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 /**
  * @interface_method_impl{PDMAPICREG,pfnSetTprR3}
  */
-VMMDECL(void) APICSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
+VMM_INT_DECL(void) apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
 {
     apicSetTpr(pVCpu, u8Tpr);
 }
@@ -2217,7 +2217,7 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetTprR3}
  */
-VMMDECL(uint8_t) APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
+VMMDECL(uint8_t) apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
@@ -2238,7 +2238,7 @@ VMMDECL(uint8_t) APICGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, u
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetTimerFreqR3}
  */
-VMMDECL(uint64_t) APICGetTimerFreq(PPDMDEVINS pDevIns)
+VMM_INT_DECL(uint64_t) apicGetTimerFreq(PPDMDEVINS pDevIns)
 {
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PVMCPU   pVCpu    = &pVM->aCpus[0];
@@ -2252,7 +2252,7 @@ VMMDECL(uint64_t) APICGetTimerFreq(PPDMDEVINS pDevIns)
  * @interface_method_impl{PDMAPICREG,pfnBusDeliverR3}
  * @remarks This is a private interface between the IOAPIC and the APIC.
  */
-VMMDECL(int) APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
+VMM_INT_DECL(int) apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                             uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc)
 {
     NOREF(uPolarity);
@@ -2286,7 +2286,7 @@ VMMDECL(int) APICBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode
  * @interface_method_impl{PDMAPICREG,pfnLocalInterruptR3}
  * @remarks This is a private interface between the PIC and the APIC.
  */
-VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
+VMM_INT_DECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
 {
     NOREF(pDevIns);
     AssertReturn(u8Pin <= 1, VERR_INVALID_PARAMETER);
@@ -2400,9 +2400,9 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
                     Log2(("APIC%u: APICLocalInterrupt: %s ExtINT through LINT%u\n", pVCpu->idCpu,
                           u8Level ? "Raising" : "Lowering", u8Pin));
                     if (u8Level)
-                        APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+                        apicSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
                     else
-                        APICClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+                        apicClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
                     break;
                 }
 
@@ -2428,15 +2428,15 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
             Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, %s INTR\n", pVCpu->idCpu,
                   u8Level ? "raising" : "lowering"));
             if (u8Level)
-                APICSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+                apicSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
             else
-                APICClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
+                apicClearInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
         }
         else
         {
             /* LINT1 behaves as NMI. */
             Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, raising NMI\n", pVCpu->idCpu));
-            APICSetInterruptFF(pVCpu, PDMAPICIRQ_NMI);
+            apicSetInterruptFF(pVCpu, PDMAPICIRQ_NMI);
         }
     }
 
@@ -2447,7 +2447,7 @@ VMMDECL(VBOXSTRICTRC) APICLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetInterruptR3}
  */
-VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
+VMM_INT_DECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pu8Vector);
@@ -2519,7 +2519,7 @@ VMMDECL(int) APICGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vect
 /**
  * @callback_method_impl{FNIOMMMIOREAD}
  */
-VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+VMM_INT_DECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
@@ -2543,7 +2543,7 @@ VMMDECL(int) APICReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr,
 /**
  * @callback_method_impl{FNIOMMMIOWRITE}
  */
-VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+VMM_INT_DECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
@@ -2556,7 +2556,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioWrite));
 
-    Log2(("APIC%u: APICWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    Log2(("APIC%u: apicWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
 
     int rc = VBOXSTRICTRC_VAL(apicWriteRegister(pApicDev, pVCpu, offReg, uValue));
     return rc;
@@ -2569,7 +2569,7 @@ VMMDECL(int) APICWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmType         The IRQ type.
  */
-VMMDECL(void) APICSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
+VMM_INT_DECL(void) apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
     PVM      pVM      = pVCpu->CTX_SUFF(pVM);
     PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
@@ -2583,7 +2583,7 @@ VMMDECL(void) APICSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmType         The IRQ type.
  */
-VMMDECL(void) APICClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
+VMM_INT_DECL(void) apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
     PVM      pVM      = pVCpu->CTX_SUFF(pVM);
     PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
@@ -2605,7 +2605,7 @@ VMMDECL(void) APICClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
  *
  * @thread  Any.
  */
-VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode)
+VMM_INT_DECL(void) apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode)
 {
     Assert(pVCpu);
     Assert(uVector > XAPIC_ILLEGAL_VECTOR_END);
@@ -2641,7 +2641,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                     if (!fAlreadySet)
                     {
                         Log2(("APIC: APICPostInterrupt: Setting UPDATE_APIC FF for edge-triggered intr. uVector=%#x\n", uVector));
-                        APICSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
+                        apicSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
                     }
                 }
             }
@@ -2656,7 +2656,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
                 if (!fAlreadySet)
                 {
                     Log2(("APIC: APICPostInterrupt: Setting UPDATE_APIC FF for level-triggered intr. uVector=%#x\n", uVector));
-                    APICSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
+                    apicSetInterruptFF(pVCpu, PDMAPICIRQ_UPDATE_PENDING);
                 }
             }
         }
@@ -2682,7 +2682,7 @@ VMM_INT_DECL(void) APICPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
  *                          0.
  * @thread  Any.
  */
-VMM_INT_DECL(void) APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount)
+VMM_INT_DECL(void) apicStartTimer(PVMCPU pVCpu, uint32_t uInitialCount)
 {
     Assert(pVCpu);
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
@@ -2714,7 +2714,7 @@ VMM_INT_DECL(void) APICStartTimer(PVMCPU pVCpu, uint32_t uInitialCount)
  * @param   pVCpu               The cross context virtual CPU structure.
  * @thread  Any.
  */
-VMM_INT_DECL(void) APICStopTimer(PVMCPU pVCpu)
+VMM_INT_DECL(void) apicStopTimer(PVMCPU pVCpu)
 {
     Assert(pVCpu);
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
