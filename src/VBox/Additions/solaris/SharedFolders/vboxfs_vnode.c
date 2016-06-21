@@ -997,17 +997,7 @@ sffs_read(
 	if (vp->v_type != VREG)
 		return (EINVAL);
 	if (uio->uio_loffset >= MAXOFFSET_T)
-	{
-		/** @todo r=ramshankar: this is busted, kthread_t->t_procp has different
-		 *  	  offsets between S10 and S11. Fix ASAP. */
-		/* Raise psignal if the limit is exceeded. */
-		proc_t *p = ttoproc(curthread);
-		mutex_enter(&p->p_lock);
-		(void) rctl_action(rctlproc_legacy[RLIMIT_FSIZE], p->p_rctls,
-			p, RCA_UNSAFE_SIGINFO);
-		mutex_exit(&p->p_lock);
-		return (EFBIG);
-	}
+		return (0);
 	if (uio->uio_loffset < 0)
 		return (EINVAL);
 	total = uio->uio_resid;
@@ -1098,14 +1088,6 @@ sffs_write(
 		limit = MAXOFFSET_T;
 
 	if (uiop->uio_loffset >= limit) {
-		/** @todo r=ramshankar: this is busted, kthread_t->t_procp has different
-		 *  	  offsets between S10 and S11. Fix ASAP. */
-		/* Raise psignal if the limit is exceeded. */
-		proc_t *p = ttoproc(curthread);
-		mutex_enter(&p->p_lock);
-		(void) rctl_action(rctlproc_legacy[RLIMIT_FSIZE], p->p_rctls,
-		    p, RCA_UNSAFE_SIGINFO);
-		mutex_exit(&p->p_lock);
 		mutex_exit(&sffs_lock);
 		return (EFBIG);
 	}
