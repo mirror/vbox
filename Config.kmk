@@ -1450,7 +1450,7 @@ ifndef VBOX_GCC_TOOL
   VBOX_GCC_TOOL := GXX3PLAIN
  else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_GCC_TOOL := GXX3PLAIN
-  VBOX_GCC32_TOOL := GXX3PLAIN
+  VBOX_GCC32_TOOL := GCC3PLAIN
   ifeq ($(KBUILD_HOST),solaris)
    TOOL_GXX3PLAIN_LD_SYSMOD ?= /usr/ccs/bin/ld
   endif
@@ -1471,7 +1471,7 @@ ifndef VBOX_GCC32_TOOL
  else ifeq ($(KBUILD_TARGET),win)
   VBOX_GCC32_TOOL := MINGW32
  else
-  VBOX_GCC32_TOOL := GXX32
+  VBOX_GCC32_TOOL := GCC32
  endif
 endif
 
