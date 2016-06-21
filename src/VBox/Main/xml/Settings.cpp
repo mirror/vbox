@@ -2332,7 +2332,7 @@ bool NAT::operator==(const NAT &n) const
  */
 NetworkAdapter::NetworkAdapter() :
     ulSlot(0),
-    type(NetworkAdapterType_Am79C973),
+    type(NetworkAdapterType_Am79C970A), // default for old VMs, for new ones it's Am79C973
     fEnabled(false),
     fCableConnected(false), // default for old VMs, for new ones it's true
     ulLineSpeed(0),
@@ -2362,11 +2362,10 @@ bool NetworkAdapter::areDefaultSettings(SettingsVersion_T sv) const
     // setting if it's at the default value and thus must get it right.
     return !fEnabled
         && strMACAddress.isEmpty()
-        && (   (sv >= SettingsVersion_v1_16 && fCableConnected)
-            || (sv < SettingsVersion_v1_16 && !fCableConnected))
+        && (   (sv >= SettingsVersion_v1_16 && fCableConnected && type == NetworkAdapterType_Am79C973)
+            || (sv < SettingsVersion_v1_16 && !fCableConnected && type == NetworkAdapterType_Am79C970A))
         && ulLineSpeed == 0
         && enmPromiscModePolicy == NetworkAdapterPromiscModePolicy_Deny
-        && type == NetworkAdapterType_Am79C973
         && mode == NetworkAttachmentType_Null
         && nat.areDefaultSettings()
         && strBridgedName.isEmpty()
@@ -3285,9 +3284,10 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
 
         if (m->sv >= SettingsVersion_v1_16)
         {
-            /* Starting with VirtualBox 5.1 the default is true, before it was
-             * false. This needs to matched by NetworkAdapter.areDefaultSettings(). */
+            /* Starting with VirtualBox 5.1 the default is cable connected and
+             * PCnet-FAST III. Needs to match NetworkAdapter.areDefaultSettings(). */
             nic.fCableConnected = true;
+            nic.type = NetworkAdapterType_Am79C973;
         }
 
         if (!pelmAdapter->getAttributeValue("slot", nic.ulSlot))
@@ -5737,7 +5737,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 if (pszPolicy)
                     pelmAdapter->setAttribute("promiscuousModePolicy", pszPolicy);
 
-                if (nic.type != NetworkAdapterType_Am79C973)
+                if (   (m->sv >= SettingsVersion_v1_16 && nic.type != NetworkAdapterType_Am79C973)
+                    || (m->sv < SettingsVersion_v1_16 && nic.type != NetworkAdapterType_Am79C970A))
                 {
                     const char *pcszType;
                     switch (nic.type)
