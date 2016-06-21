@@ -23,6 +23,7 @@
 #include <VBox/param.h>
 #include <iprt/alloca.h>
 #include <iprt/initterm.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/test.h>
@@ -99,6 +100,21 @@ DECLCALLBACK(int) tst2(intptr_t i, intptr_t i2)
 }
 
 
+DECLCALLBACK(DECL_NO_INLINE(RT_NOTHING, int)) stackRandom(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu)
+{
+#if 0
+    uint32_t            cbRand  = RTRandU32Ex(1, 64);
+#else
+    uint32_t            cbRand  = 1;
+#endif
+    uint8_t volatile   *pabFuzz = (uint8_t volatile *)alloca(cbRand);
+    memset((void *)pabFuzz, 0xfa, cbRand);
+    int rc = vmmR0CallRing3SetJmp(pJmpBuf, pfn, pVM, pVCpu);
+    memset((void *)pabFuzz, 0xaf, cbRand);
+    return rc;
+}
+
+
 void tst(int iFrom, int iTo, int iInc)
 {
 #ifdef VMM_R0_SWITCH_STACK
@@ -116,7 +132,7 @@ void tst(int iFrom, int iTo, int iInc)
 
     for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
     {
-        int rc = vmmR0CallRing3SetJmp(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)(uintptr_t)i, 0);
+        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)(uintptr_t)i, 0);
         RTTESTI_CHECK_MSG_RETV(rc == 0 || rc == 42, ("i=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x\n", i, rc, g_cbFoo, g_cbFooUsed));
 
 #ifdef VMM_R0_SWITCH_STACK
