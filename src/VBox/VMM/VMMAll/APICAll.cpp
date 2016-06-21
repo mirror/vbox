@@ -1792,7 +1792,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
 /**
  * @interface_method_impl{PDMAPICREG,pfnReadMsrR3}
  */
-DECLCALLBACK(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
+APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     /*
      * Validate.
@@ -1899,7 +1899,7 @@ DECLCALLBACK(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_
 /**
  * @interface_method_impl{PDMAPICREG,pfnWriteMsrR3}
  */
-DECLCALLBACK(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
+APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     /*
      * Validate.
@@ -2036,7 +2036,7 @@ DECLCALLBACK(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32
 /**
  * @interface_method_impl{PDMAPICREG,pfnSetBaseMsrR3}
  */
-DECLCALLBACK(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
+APICBOTHCBDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
 {
     Assert(pVCpu);
     NOREF(pDevIns);
@@ -2173,7 +2173,7 @@ DECLCALLBACK(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetBaseMsrR3}
  */
-DECLCALLBACK(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
+APICBOTHCBDECL(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
@@ -2185,7 +2185,7 @@ DECLCALLBACK(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 /**
  * @interface_method_impl{PDMAPICREG,pfnSetTprR3}
  */
-DECLCALLBACK(void) apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
+APICBOTHCBDECL(void) apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
 {
     apicSetTpr(pVCpu, u8Tpr);
 }
@@ -2217,7 +2217,7 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetTprR3}
  */
-DECLCALLBACK(uint8_t) apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
+APICBOTHCBDECL(uint8_t) apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
@@ -2238,7 +2238,7 @@ DECLCALLBACK(uint8_t) apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPendi
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetTimerFreqR3}
  */
-DECLCALLBACK(uint64_t) apicGetTimerFreq(PPDMDEVINS pDevIns)
+APICBOTHCBDECL(uint64_t) apicGetTimerFreq(PPDMDEVINS pDevIns)
 {
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PVMCPU   pVCpu    = &pVM->aCpus[0];
@@ -2252,7 +2252,7 @@ DECLCALLBACK(uint64_t) apicGetTimerFreq(PPDMDEVINS pDevIns)
  * @interface_method_impl{PDMAPICREG,pfnBusDeliverR3}
  * @remarks This is a private interface between the IOAPIC and the APIC.
  */
-DECLCALLBACK(int) apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
+APICBOTHCBDECL(int) apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                             uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc)
 {
     NOREF(uPolarity);
@@ -2286,7 +2286,7 @@ DECLCALLBACK(int) apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDes
  * @interface_method_impl{PDMAPICREG,pfnLocalInterruptR3}
  * @remarks This is a private interface between the PIC and the APIC.
  */
-DECLCALLBACK(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
+APICBOTHCBDECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
 {
     NOREF(pDevIns);
     AssertReturn(u8Pin <= 1, VERR_INVALID_PARAMETER);
@@ -2447,7 +2447,7 @@ DECLCALLBACK(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, 
 /**
  * @interface_method_impl{PDMAPICREG,pfnGetInterruptR3}
  */
-DECLCALLBACK(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
+APICBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pu8Vector);
@@ -2519,7 +2519,7 @@ DECLCALLBACK(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu
 /**
  * @callback_method_impl{FNIOMMMIOREAD}
  */
-DECLCALLBACK(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+APICBOTHCBDECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
@@ -2543,7 +2543,7 @@ DECLCALLBACK(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 /**
  * @callback_method_impl{FNIOMMMIOWRITE}
  */
-DECLCALLBACK(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+APICBOTHCBDECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
