@@ -684,15 +684,16 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
 
     /* XXX: wtf are we setting so_faddr/so_fport here? */
     so->so_fport = addr.sin_port;
+#if 0
     /* The original check was completely broken, as the commented out
      * if statement was always true (INADDR_ANY=0). */
-    /* if (addr.sin_addr.s_addr == 0 || addr.sin_addr.s_addr == loopback_addr.s_addr) */
     /* @todo: vvl - alias_addr should be set (if required)
      * later by liabalias module.
      */
-    if (1 == 0)                 /* always use the else part */
+    if (addr.sin_addr.s_addr == 0 || addr.sin_addr.s_addr == loopback_addr.s_addr)
         so->so_faddr = alias_addr;
     else
+#endif
         so->so_faddr = addr.sin_addr;
 
     so->so_lport = lport;
