@@ -568,6 +568,7 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
     STAM_COUNTER_INC(&pThis->CTX_SUFF(StatSetEoi));
     LogFlow(("IOAPIC: ioapicSetEoi: u8Vector=%#x (%u)\n", u8Vector, u8Vector));
 
+    bool fRemoteIrrCleared = false;
     int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_MMIO_WRITE);
     if (rc == VINF_SUCCESS)
     {
@@ -576,6 +577,7 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
             uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
             if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
             {
+                fRemoteIrrCleared = true;
                 pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
                 Log2(("IOAPIC: ioapicSetEoi: Cleared remote IRR, idxRte=%u vector=%#x (%u)\n", idxRte, u8Vector, u8Vector));
 
@@ -589,6 +591,7 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
         }
 
         PDMCritSectLeave(&pThis->CritSect);
+        AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
     }
     else
         STAM_COUNTER_INC(&pThis->StatEoiContention);
