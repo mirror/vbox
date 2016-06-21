@@ -402,7 +402,6 @@ static int
 respond(struct response *res)
 {
     struct dnsmsg_header *pHdr;
-    size_t mlen;
     size_t off;
     size_t qname;
     uint16_t qtype, qclass;
