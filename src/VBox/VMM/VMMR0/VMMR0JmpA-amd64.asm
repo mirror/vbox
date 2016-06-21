@@ -30,6 +30,12 @@
 %define RESUME_MAGIC    07eadf00dh
 %define STACK_PADDING   0eeeeeeeeeeeeeeeeh
 
+;; Workaround for linux 4.6 fast/slow syscall stack depth difference.
+%ifdef VMM_R0_SWITCH_STACK
+ %define STACK_FUZZ_SIZE 0
+%else
+ %define STACK_FUZZ_SIZE 128
+%endif
 
 
 BEGINCODE
@@ -56,11 +62,11 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     push    rbp
     mov     rbp, rsp
  %ifdef ASM_CALL64_MSC
-    sub     rsp, 30h
+    sub     rsp, 30h + STACK_FUZZ_SIZE  ; (10h is used by resume (??), 20h for callee spill area)
     mov     r11, rdx                    ; pfn
     mov     rdx, rcx                    ; pJmpBuf;
  %else
-    sub     rsp, 10h
+    sub     rsp, 10h + STACK_FUZZ_SIZE  ; (10h is used by resume (??))
     mov     r8, rdx                     ; pvUser1 (save it like MSC)
     mov     r9, rcx                     ; pvUser2 (save it like MSC)
     mov     r11, rsi                    ; pfn
@@ -71,15 +77,18 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     [xDX + VMMR0JMPBUF.rsi], rsi
     mov     [xDX + VMMR0JMPBUF.rdi], rdi
  %endif
-    mov     r10, [rbp]
-    mov     [xDX + VMMR0JMPBUF.rbp], r10
+    mov     [xDX + VMMR0JMPBUF.rbp], rbp
     mov     [xDX + VMMR0JMPBUF.r12], r12
     mov     [xDX + VMMR0JMPBUF.r13], r13
     mov     [xDX + VMMR0JMPBUF.r14], r14
     mov     [xDX + VMMR0JMPBUF.r15], r15
-    mov     xAX, [rbp + 8]
+    mov     xAX, [rbp + 8]              ; (not really necessary, except for validity check)
     mov     [xDX + VMMR0JMPBUF.rip], xAX
-    lea     r10, [rbp + 10h]            ; (used in resume)
+ %ifdef ASM_CALL64_MSC
+    lea     r10, [rsp + 20h]            ; must save the spill area
+ %else
+    lea     r10, [rsp]
+ %endif
     mov     [xDX + VMMR0JMPBUF.rsp], r10
  %ifdef RT_OS_WINDOWS
     movdqa  [xDX + VMMR0JMPBUF.xmm6], xmm6
@@ -139,7 +148,7 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
  %endif
 
     ;
-    ; Return like in the long jump but clear eip, no short cuts here.
+    ; Return like in the long jump but clear eip, no shortcuts here.
     ;
 .proper_return:
 %ifdef RT_OS_WINDOWS
@@ -164,12 +173,12 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     r14, [xDX + VMMR0JMPBUF.r14]
     mov     r15, [xDX + VMMR0JMPBUF.r15]
     mov     rbp, [xDX + VMMR0JMPBUF.rbp]
-    mov     xCX, [xDX + VMMR0JMPBUF.rip]
     and     qword [xDX + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
     mov     rsp, [xDX + VMMR0JMPBUF.rsp]
     push    qword [xDX + VMMR0JMPBUF.rflags]
     popf
-    jmp     xCX
+    leave
+    ret
 
 .entry_error:
     mov     eax, VERR_VMM_SET_JMP_ERROR
@@ -202,19 +211,24 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     ; Resume VMMRZCallRing3 the call.
     ;
 .resume:
-    ; Sanity checks.
- %ifdef VMM_R0_SWITCH_STACK
-    ;; @todo amd64/switch/resume sanity.
- %else  ; !VMM_R0_SWITCH_STACK
-    cmp     r10, [xDX + VMMR0JMPBUF.SpCheck]
-    jne     .bad
+ %ifndef VMM_R0_SWITCH_STACK
+    ; Sanity checks incoming stack, applying fuzz if needed.
+    sub     r10, [xDX + VMMR0JMPBUF.SpCheck]
+    jz      .resume_stack_checked_out
+    add     r10, STACK_FUZZ_SIZE        ; plus/minus STACK_FUZZ_SIZE is fine.
+    cmp     r10, STACK_FUZZ_SIZE * 2
+    ja      .bad
 
+    mov     r10, [xDX + VMMR0JMPBUF.SpCheck]
+    mov     [xDX + VMMR0JMPBUF.rsp], r10 ; Must be update in case of another long jump (used for save calc).
+
+.resume_stack_checked_out:
     mov     ecx, [xDX + VMMR0JMPBUF.cbSavedStack]
     cmp     rcx, VMM_STACK_SIZE
     ja      .bad
-    test    rcx, 3
+    test    rcx, 7
     jnz     .bad
-    mov     rdi, [xDX + VMMR0JMPBUF.rsp]
+    mov     rdi, [xDX + VMMR0JMPBUF.SpCheck]
     sub     rdi, [xDX + VMMR0JMPBUF.SpResume]
     cmp     rcx, rdi
     jne     .bad
@@ -394,11 +408,11 @@ BEGINPROC vmmR0CallRing3LongJmp
     mov     r14, [xDX + VMMR0JMPBUF.r14]
     mov     r15, [xDX + VMMR0JMPBUF.r15]
     mov     rbp, [xDX + VMMR0JMPBUF.rbp]
-    mov     rcx, [xDX + VMMR0JMPBUF.rip]
     mov     rsp, [xDX + VMMR0JMPBUF.rsp]
     push    qword [xDX + VMMR0JMPBUF.rflags]
     popf
-    jmp     rcx
+    leave
+    ret
 
     ;
     ; Failure
