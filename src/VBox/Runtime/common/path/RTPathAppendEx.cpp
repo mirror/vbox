@@ -146,7 +146,7 @@ RTDECL(int) RTPathAppendEx(char *pszPath, size_t cbPathDst, const char *pszAppen
             {
                 if ((size_t)(pszPathEnd - pszPath) + 1 + cchAppend >= cbPathDst)
                     return VERR_BUFFER_OVERFLOW;
-                *pszPathEnd++ = '/';
+                *pszPathEnd++ = RTPATH_SLASH;
             }
         }
         else
