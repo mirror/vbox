@@ -36,6 +36,7 @@ typedef unsigned long long u64;
 typedef __uint32_t u32;
 typedef __uint16_t u16;
 typedef __uint8_t u8;
+# include <limits.h> /* for INT_MAX */
 # include <linux/ethtool.h>
 # include <linux/sockios.h>
 #endif
