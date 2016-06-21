@@ -1348,10 +1348,10 @@ typedef struct APICCPU
 
     /** Profiling of APICUpdatePendingInterrupts().  */
     STAMPROFILE                 StatUpdatePendingIntrs;
-    /** Profiling of APICPostInterrupt().  */
+    /** Profiling of apicPostInterrupt().  */
     STAMPROFILE                 StatPostIntr;
     /** Number of times an interrupt is already pending in
-     *  APICPostInterrupts().*/
+     *  apicPostInterrupts().*/
     STAMCOUNTER                 StatPostIntrAlreadyPending;
     /** Number of times the timer callback is invoked. */
     STAMCOUNTER                 StatTimerCallback;
@@ -1361,9 +1361,9 @@ typedef struct APICCPU
     STAMCOUNTER                 StatTprRead;
     /** Number of times the EOI is written. */
     STAMCOUNTER                 StatEoiWrite;
-    /** Number of times TPR masks an interrupt in APICGetInterrupt(). */
+    /** Number of times TPR masks an interrupt in apicGetInterrupt(). */
     STAMCOUNTER                 StatMaskedByTpr;
-    /** Number of times PPR masks an interrupt in APICGetInterrupt(). */
+    /** Number of times PPR masks an interrupt in apicGetInterrupt(). */
     STAMCOUNTER                 StatMaskedByPpr;
     /** Number of times the timer ICR is written. */
     STAMCOUNTER                 StatTimerIcrWrite;
@@ -1438,7 +1438,7 @@ VMM_INT_DECL(void)          apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 VMM_INT_DECL(void)          apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
 
 #ifdef IN_RING3
-VMMR3_INT_DECL(void)        apicR3ResetEx(PVMCPU pVCpu, bool fResetApicBaseMsr);
+VMMR3_INT_DECL(void)        apicR3ResetCpu(PVMCPU pVCpu, bool fResetApicBaseMsr);
 #endif
 
 RT_C_DECLS_END

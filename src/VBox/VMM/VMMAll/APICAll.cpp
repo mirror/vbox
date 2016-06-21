@@ -2090,10 +2090,10 @@ VMMDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t 
                  * See Intel spec. 10.4.3 "Enabling or Disabling the Local APIC".
                  *
                  * We'll also manually manage the APIC base MSR here. We want a single-point of commit
-                 * at the end of this function rather than touching it in APICR3Reset. This means we also
+                 * at the end of this function rather than updating it in apicR3ResetCpu. This means we also
                  * need to update the CPUID leaf ourselves.
                  */
-                apicR3ResetEx(pVCpu, false /* fResetApicBaseMsr */);
+                apicR3ResetCpu(pVCpu, false /* fResetApicBaseMsr */);
                 uBaseMsr &= ~(MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD);
                 CPUMSetGuestCpuIdPerCpuApicFeature(pVCpu, false /*fVisible*/);
                 LogRel(("APIC%u: Switched mode to disabled\n", pVCpu->idCpu));
@@ -2397,7 +2397,7 @@ VMM_INT_DECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, 
 
                 case XAPICDELIVERYMODE_EXTINT:
                 {
-                    Log2(("APIC%u: APICLocalInterrupt: %s ExtINT through LINT%u\n", pVCpu->idCpu,
+                    Log2(("APIC%u: apicLocalInterrupt: %s ExtINT through LINT%u\n", pVCpu->idCpu,
                           u8Level ? "Raising" : "Lowering", u8Pin));
                     if (u8Level)
                         apicSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
@@ -2425,7 +2425,7 @@ VMM_INT_DECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, 
         if (u8Pin == 0)
         {
             /* LINT0 behaves as an external interrupt pin. */
-            Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, %s INTR\n", pVCpu->idCpu,
+            Log2(("APIC%u: apicLocalInterrupt: APIC hardware-disabled, %s INTR\n", pVCpu->idCpu,
                   u8Level ? "raising" : "lowering"));
             if (u8Level)
                 apicSetInterruptFF(pVCpu, PDMAPICIRQ_EXTINT);
@@ -2435,7 +2435,7 @@ VMM_INT_DECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, 
         else
         {
             /* LINT1 behaves as NMI. */
-            Log2(("APIC%u: APICLocalInterrupt: APIC hardware-disabled, raising NMI\n", pVCpu->idCpu));
+            Log2(("APIC%u: apicLocalInterrupt: APIC hardware-disabled, raising NMI\n", pVCpu->idCpu));
             apicSetInterruptFF(pVCpu, PDMAPICIRQ_NMI);
         }
     }
@@ -2453,7 +2453,7 @@ VMM_INT_DECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu
     Assert(pu8Vector);
     NOREF(pu32TagSrc);
 
-    LogFlow(("APIC%u: APICGetInterrupt:\n", pVCpu->idCpu));
+    LogFlow(("APIC%u: apicGetInterrupt:\n", pVCpu->idCpu));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     bool const fApicHwEnabled = apicIsEnabled(pVCpu);
@@ -2474,7 +2474,7 @@ VMM_INT_DECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu
             if (   uTpr > 0
                 && XAPIC_TPR_GET_TP(uVector) <= XAPIC_TPR_GET_TP(uTpr))
             {
-                Log2(("APIC%u: APICGetInterrupt: Interrupt masked. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
+                Log2(("APIC%u: apicGetInterrupt: Interrupt masked. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
                       uVector, uTpr, pXApicPage->svr.u.u8SpuriousVector));
                 *pu8Vector = uVector;
                 STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByTpr);
@@ -2495,22 +2495,22 @@ VMM_INT_DECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu
                 apicUpdatePpr(pVCpu);
                 apicSignalNextPendingIntr(pVCpu);
 
-                Log2(("APIC%u: APICGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
+                Log2(("APIC%u: apicGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 *pu8Vector = uVector;
                 return VINF_SUCCESS;
             }
             else
             {
                 STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByPpr);
-                Log2(("APIC%u: APICGetInterrupt: Interrupt's priority is not higher than the PPR. uVector=%#x PPR=%#x\n",
+                Log2(("APIC%u: apicGetInterrupt: Interrupt's priority is not higher than the PPR. uVector=%#x PPR=%#x\n",
                       pVCpu->idCpu, uVector, uPpr));
             }
         }
         else
-            Log2(("APIC%u: APICGetInterrupt: No pending bits in IRR\n", pVCpu->idCpu));
+            Log2(("APIC%u: apicGetInterrupt: No pending bits in IRR\n", pVCpu->idCpu));
     }
     else
-        Log2(("APIC%u: APICGetInterrupt: APIC %s disabled\n", pVCpu->idCpu, !fApicHwEnabled ? "hardware" : "software"));
+        Log2(("APIC%u: apicGetInterrupt: APIC %s disabled\n", pVCpu->idCpu, !fApicHwEnabled ? "hardware" : "software"));
 
     return VERR_APIC_INTR_NOT_PENDING;
 }
@@ -2535,7 +2535,7 @@ VMM_INT_DECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     int rc = VBOXSTRICTRC_VAL(apicReadRegister(pApicDev, pVCpu, offReg, &uValue));
     *(uint32_t *)pv = uValue;
 
-    Log2(("APIC%u: APICReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
+    Log2(("APIC%u: apicReadMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
     return rc;
 }
 
@@ -2693,7 +2693,7 @@ VMM_INT_DECL(void) apicStartTimer(PVMCPU pVCpu, uint32_t uInitialCount)
     uint8_t  const uTimerShift  = apicGetTimerShift(pXApicPage);
     uint64_t const cTicksToNext = (uint64_t)uInitialCount << uTimerShift;
 
-    Log2(("APIC%u: APICStartTimer: uInitialCount=%#RX32 uTimerShift=%u cTicksToNext=%RU64\n", pVCpu->idCpu, uInitialCount,
+    Log2(("APIC%u: apicStartTimer: uInitialCount=%#RX32 uTimerShift=%u cTicksToNext=%RU64\n", pVCpu->idCpu, uInitialCount,
           uTimerShift, cTicksToNext));
 
     /*
@@ -2720,7 +2720,7 @@ VMM_INT_DECL(void) apicStopTimer(PVMCPU pVCpu)
     PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     Assert(TMTimerIsLockOwner(pApicCpu->CTX_SUFF(pTimer)));
 
-    Log2(("APIC%u: APICStopTimer\n", pVCpu->idCpu));
+    Log2(("APIC%u: apicStopTimer\n", pVCpu->idCpu));
 
     PTMTIMER pTimer = pApicCpu->CTX_SUFF(pTimer);
     TMTimerStop(pTimer);    /* This will reset the hint, no need to explicitly call TMTimerSetFrequencyHint(). */

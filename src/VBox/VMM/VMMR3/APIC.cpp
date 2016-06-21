@@ -291,11 +291,11 @@ static void apicR3ResetBaseMsr(PVMCPU pVCpu)
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   fResetApicBaseMsr   Whether to reset the APIC base MSR.
  */
-VMMR3_INT_DECL(void) apicR3ResetEx(PVMCPU pVCpu, bool fResetApicBaseMsr)
+VMMR3_INT_DECL(void) apicR3ResetCpu(PVMCPU pVCpu, bool fResetApicBaseMsr)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
-    LogFlow(("APIC%u: APICR3Reset: fResetApicBaseMsr=%RTbool\n", pVCpu->idCpu, fResetApicBaseMsr));
+    LogFlow(("APIC%u: apicR3ResetCpu: fResetApicBaseMsr=%RTbool\n", pVCpu->idCpu, fResetApicBaseMsr));
 
 #ifdef VBOX_STRICT
     /* Verify that the initial APIC ID reported via CPUID matches our VMCPU ID assumption. */
@@ -1300,7 +1300,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         if (TMTimerIsActive(pApicCpu->pTimerR3))
             TMTimerStop(pApicCpu->pTimerR3);
 
-        apicR3ResetEx(pVCpuDest, true /* fResetApicBaseMsr */);
+        apicR3ResetCpu(pVCpuDest, true /* fResetApicBaseMsr */);
 
         /* Clear the interrupt pending force flag. */
         apicClearInterruptFF(pVCpuDest, PDMAPICIRQ_HARDWARE);
@@ -1504,7 +1504,7 @@ static int apicR3InitState(PVM pVM)
 
                 /* Initialize the virtual-APIC state. */
                 RT_BZERO(pApicCpu->pvApicPageR3, pApicCpu->cbApicPage);
-                apicR3ResetEx(pVCpu, true /* fResetApicBaseMsr */);
+                apicR3ResetCpu(pVCpu, true /* fResetApicBaseMsr */);
 
 #ifdef DEBUG_ramshankar
                 Assert(pApicCpu->pvApicPibR3 != NIL_RTR3PTR);
@@ -1666,9 +1666,9 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     ApicReg.pfnGetTimerFreqR3       = apicGetTimerFreq;
 
     /*
-     * We always require R0 functionality (e.g. APICGetTpr() called by HMR0 VT-x/AMD-V code).
+     * We always require R0 functionality (e.g. apicGetTpr() called by HMR0 VT-x/AMD-V code).
      * Hence, 'fRZEnabled' strictly only applies to MMIO and MSR read/write handlers returning
-     * to ring-3. We still need other handlers like APICGetTpr() in ring-0 for now.
+     * to ring-3. We still need other handlers like apicGetTpr() in ring-0 for now.
      */
     {
         ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
@@ -1836,9 +1836,9 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         APIC_REG_COUNTER(&pApicCpu->StatTprWrite,      "Number of TPR writes.", "/Devices/APIC/%u/TprWrite");
         APIC_REG_COUNTER(&pApicCpu->StatTprRead,       "Number of TPR reads.",  "/Devices/APIC/%u/TprRead");
         APIC_REG_COUNTER(&pApicCpu->StatEoiWrite,      "Number of EOI writes.", "/Devices/APIC/%u/EoiWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatMaskedByTpr,   "Number of times TPR masks an interrupt in APICGetInterrupt.",
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByTpr,   "Number of times TPR masks an interrupt in apicGetInterrupt.",
                          "/Devices/APIC/%u/MaskedByTpr");
-        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "Number of times PPR masks an interrupt in APICGetInterrupt.",
+        APIC_REG_COUNTER(&pApicCpu->StatMaskedByPpr,   "Number of times PPR masks an interrupt in apicGetInterrupt.",
                          "/Devices/APIC/%u/MaskedByPpr");
         APIC_REG_COUNTER(&pApicCpu->StatTimerIcrWrite, "Number of times the timer ICR is written.",
                          "/Devices/APIC/%u/TimerIcrWrite");
