@@ -2566,7 +2566,7 @@ class TestDriver(base.TestDriver):                                              
         if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
             # Dump the guest stack for all CPUs.
             cCpus = oSession.getCpuCount();
-            if cCpus > 1024: # disable for now
+            if cCpus > 0:
                 for iCpu in xrange(0, cCpus):
                     sThis = oSession.queryDbgGuestStack(iCpu);
                     if sThis is not None and len(sThis) > 0:
