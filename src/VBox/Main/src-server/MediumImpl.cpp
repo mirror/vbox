@@ -6401,7 +6401,7 @@ HRESULT Medium::i_preparationForMoving(const Utf8Str &aLocation)
  */
 bool Medium::i_isMoveOperation(const ComObjPtr<Medium> &aTarget) const
 {
-    return (this == aTarget && m->fMoveThisMedium == true) ? true:false;
+    return (m->fMoveThisMedium == true) ? true:false;
 }
 
 bool Medium::i_resetMoveOperationData()
