@@ -4158,9 +4158,7 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
                 };
                 int rc = CPUMR3MsrRangesInsert(pVM, &s_ApicBase);
                 AssertLogRelRC(rc);
-RTLogPrintf("XXXX: CPUMCPUIDFEATURE_APIC !!!\n");
             }
-else RTLogPrintf("XXXX: CPUMCPUIDFEATURE_APIC Gp=%RX64 Ign=%RX64\n", pMsrRange->fWrGpMask, pMsrRange->fWrIgnMask);
 
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled xAPIC\n"));
             break;
