@@ -577,8 +577,8 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
             uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
             if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
             {
-                fRemoteIrrCleared = true;
                 pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
+                fRemoteIrrCleared = true;
                 Log2(("IOAPIC: ioapicSetEoi: Cleared remote IRR, idxRte=%u vector=%#x (%u)\n", idxRte, u8Vector, u8Vector));
 
                 /*
