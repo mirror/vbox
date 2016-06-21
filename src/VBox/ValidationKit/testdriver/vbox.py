@@ -2587,9 +2587,11 @@ class TestDriver(base.TestDriver):                                              
                                  ('phys', ''),
                                  ('clocks', ''),
                                  ('timers', ''),
-                                 ('guestgdt', ''),
+                                 ('gdtguest', ''),
                                  ('ldtguest', ''),
                                 ]:
+                if sInfo in ['apic',] and self.fpApiVer < 5.1: # asserts and burns
+                    continue;
                 sThis = oSession.queryDbgInfo(sInfo, sArg);
                 if sThis is not None and len(sThis) > 0:
                     if sThis[-1] != '\n':
