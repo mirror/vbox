@@ -446,7 +446,7 @@ check_gcc()
              -o \( $cc_maj -eq 5 -a $cc_min -gt 9 \) \
              -o \( $cc_maj -eq 6 -a $cc_min -gt 1 \) \
              -o $cc_maj -gt 6 ]; then
-        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<10, gcc 5.x with x<10 or gcc 6.x with x<2"
+        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 3.x with x>1 or gcc 4.x, gcc 5.x or gcc 6.x"
         fail really
       else
         log_success "found version $cc_ver"
