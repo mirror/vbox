@@ -45,7 +45,7 @@ import traceback
 from common import utils;
 
 ## test reporter instance
-g_oReporter = None;
+g_oReporter = None;                     # type: ReporterBase
 g_sReporterName = None;
 g_oLock = threading.Lock();
 
@@ -1557,7 +1557,7 @@ def _InitReporterModule():
     if g_sReporterName == "local":
         g_oReporter = LocalReporter();
     elif g_sReporterName == "remote":
-        g_oReporter = RemoteReporter();
+        g_oReporter = RemoteReporter(); # Correct, but still plain stupid. pylint: disable=redefined-variable-type
     else:
         print >> sys.stderr, os.path.basename(__file__) + ": Unknown TESTBOX_REPORTER value: '" + g_sReporterName + "'";
         raise Exception("Unknown TESTBOX_REPORTER value '" + g_sReporterName + "'");

@@ -64,7 +64,7 @@ def stringRes(rc, sExpect):
     return 'FAILED';
 
 def main(asArgs): # pylint: disable=C0111,R0914,R0915
-    cMsTimeout      = 30*1000;
+    cMsTimeout      = long(30*1000);
     sAddress        = 'localhost';
     uPort           = None;
     fReversedSetup  = False;
