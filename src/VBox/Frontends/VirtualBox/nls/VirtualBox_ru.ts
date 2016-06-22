@@ -5962,7 +5962,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>А&amp;лгоритм шифирования:</translation>
+        <translation>А&amp;лгоритм шифрования:</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
