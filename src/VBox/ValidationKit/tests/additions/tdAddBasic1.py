@@ -161,7 +161,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Tests installing the guest additions
         """
         if oTestVm.isWindows():
-            fRc = self.testWindowsInstallAdditions(oSession, oTxsSession, oTestVm);
+            (fRc, oTxsSession) = self.testWindowsInstallAdditions(oSession, oTxsSession, oTestVm);
         else:
             reporter.error('Guest Additions installation not implemented for %s yet! (%s)' % \
                            (oTestVm.sKind, oTestVm.sVmName));

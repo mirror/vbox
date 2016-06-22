@@ -408,7 +408,7 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
     """
     def __init__(self, aoSteps = None, enmUser = None):
         tdTestGuestCtrlBase.__init__(self);
-        assert enmUser == None; # For later.
+        assert enmUser is None; # For later.
         self.enmUser = enmUser;
         self.aoSteps = aoSteps if aoSteps is not None else [];
 
@@ -419,7 +419,7 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
         #
         # Create a session.
         #
-        assert self.enmUser == None; # For later.
+        assert self.enmUser is None; # For later.
         self.oCreds = tdCtxCreds(oTestVm = oTestVm);
         self.setEnvironment(oVmSession, oTxsSession, oTestVm);
         reporter.log2('%s: %s steps' % (sMsgPrefix, len(self.aoSteps),));
@@ -964,106 +964,106 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Do the testing.
         reporter.testStart('Session Basics');
         fSkip = 'session_basic' not in self.asTests;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlSession(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Session Environment');
         fSkip = 'session_env' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlSessionEnvironment(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Session File References');
         fSkip = 'session_file_ref' not in self.asTests;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlSessionFileRefs(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         ## @todo Implement this.
         #reporter.testStart('Session Directory References');
         #fSkip = 'session_dir_ref' not in self.asTests;
-        #if fSkip == False:
+        #if fSkip is False:
         #    fRc, oTxsSession = self.testGuestCtrlSessionDirRefs(oSession, oTxsSession, oTestVm);
         #reporter.testDone(fSkip);
 
         reporter.testStart('Session Process References');
         fSkip = 'session_proc_ref' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlSessionProcRefs(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Execution');
         fSkip = 'exec_basic' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlExec(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Execution Error Levels');
         fSkip = 'exec_errorlevel' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlExecErrorLevel(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Execution Timeouts');
         fSkip = 'exec_timeout' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlExecTimeout(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Creating directories');
         fSkip = 'dir_create' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlDirCreate(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Creating temporary directories');
         fSkip = 'dir_create_temp' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlDirCreateTemp(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Reading directories');
         fSkip = 'dir_read' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlDirRead(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         # FIXME: Failing test.
         # reporter.testStart('Copy to guest');
         # fSkip = 'copy_to' not in self.asTests or fRc is False;
-        # if fSkip == False:
+        # if fSkip is False:
         #     fRc, oTxsSession = self.testGuestCtrlCopyTo(oSession, oTxsSession, oTestVm);
         # reporter.testDone(fSkip);
 
         reporter.testStart('Copy from guest');
         fSkip = 'copy_from' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlCopyFrom(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Removing files');
         fSkip = 'file_remove' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlFileRemove(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Querying file information (stat)');
         fSkip = 'file_stat' not in self.asTests or fRc is False;
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlFileStat(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         # FIXME: Failing tests.
         # reporter.testStart('File read');
         # fSkip = 'file_read' not in self.asTests or fRc is False;
-        # if fSkip == False:
+        # if fSkip is False:
         #     fRc, oTxsSession = self.testGuestCtrlFileRead(oSession, oTxsSession, oTestVm);
         # reporter.testDone(fSkip);
 
         # reporter.testStart('File write');
         # fSkip = 'file_write' not in self.asTests or fRc is False;
-        # if fSkip == False:
+        # if fSkip is False:
         #     fRc, oTxsSession = self.testGuestCtrlFileWrite(oSession, oTxsSession, oTestVm);
         # reporter.testDone(fSkip);
 
@@ -1071,7 +1071,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fSkip = 'update_additions' not in self.asTests or fRc is False;
         # Skip test for updating Guest Additions if we run on a too old (Windows) guest.
         fSkip = oTestVm.sKind in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003');
-        if fSkip == False:
+        if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlUpdateAdditions(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
