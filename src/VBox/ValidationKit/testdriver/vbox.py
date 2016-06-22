@@ -225,7 +225,7 @@ class ComError(object):
             if sAttr[0].isupper():
                 oAttr = getattr(oNativeComErrorClass, sAttr);
                 setattr(ComError, sAttr, oAttr);
-                if type(oAttr) is int:
+                if isinstance(oAttr, int):
                     ComError.dDecimalToConst[oAttr] = sAttr;
 
         # Install mappings to the other platform.
@@ -651,7 +651,6 @@ class ConsoleEventHandlerBase(EventHandlerBase):
     def onShowWindow(self):
         reporter.log2('onShowWindow/%s' % (self.sName));
         return None;
-
     # pylint: enable=C0111,R0913,W0613
 
     def handleEvent(self, oEvt):
@@ -837,8 +836,8 @@ class TestDriver(base.TestDriver):                                              
         if self.oBuild is not None:
             return True;
 
-        # Try dev build first since that's where I'll be using it first..
-        if True:
+        # Try dev build first since that's where I'll be using it first...
+        if True is True:
             try:
                 self.oBuild = Build(self, None);
                 return True;
@@ -909,7 +908,7 @@ class TestDriver(base.TestDriver):                                              
         # Do the searching.
         #
         sCandidate = None;
-        for i in range(len(asCandidates)):
+        for i, _ in enumerate(asCandidates):
             sCandidate = asCandidates[i];
             if os.path.isfile(os.path.join(sCandidate, 'VBoxValidationKit.iso')):
                 break;
@@ -1553,9 +1552,10 @@ class TestDriver(base.TestDriver):                                              
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--vrdp-base-port" takes an argument');
             try:    self.uVrdpBasePort = int(asArgs[iArg]);
-            except: raise base.InvalidOption('The "--vrdp-base-port" value "%s" is not a valid integer', asArgs[iArg]);
+            except: raise base.InvalidOption('The "--vrdp-base-port" value "%s" is not a valid integer' % (asArgs[iArg],));
             if self.uVrdpBasePort <= 0 or self.uVrdpBasePort >= 65530:
-                raise base.InvalidOption('The "--vrdp-base-port" value "%s" is not in the valid range (1..65530)', asArgs[iArg]);
+                raise base.InvalidOption('The "--vrdp-base-port" value "%s" is not in the valid range (1..65530)'
+                                         % (asArgs[iArg],));
         elif asArgs[iArg] == '--vbox-default-bridged-nic':
             iArg += 1;
             if iArg >= len(asArgs):

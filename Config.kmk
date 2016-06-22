@@ -1826,7 +1826,9 @@ endif
 #   C0413:wrong-import-position - Import "YYYYY XXXXX" should be placed at the top of the module.
 #         * False positives due to __copyright__, __version__, probably.
 #   E0012:bad-option-value - Bad option value XXXXX.
-#         * Newere pylint doesn't grok older warning disables in sources (e.g. W0142 in db.py). Wonderful!
+#         * Newer pylint doesn't grok older warning disables in sources (e.g. W0142 in db.py). Wonderful!
+#   I0012:locally-enabled - Locally enabling XXXXX.
+#         * We temporarily disable stuff and then renabled it. Very tedious.
 #
 # Note! Yes, --max-branchs is a typo, but not by me.
 #
@@ -1885,7 +1887,7 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10100,--disable=C0326,) \
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10201,--disable=C0330 --disable=W0123,) \
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10201 && $(VBOX_PYLIN_VERSION) < 10500,--disable=bad-option-value,) \
-       $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--disable=C0413 --disable=E0012,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--disable=C0413 --disable=E0012 --disable=locally-enabled,) \
 	--disable=W0301,W0511,W0603,W0702,W0703,C0321,R0201,I0011 \
 	--ignored-classes=testdriver.vboxcon \
 
