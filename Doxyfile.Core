@@ -534,6 +534,7 @@ PREDEFINED             =  \
 # decl and calling conventions.
 PREDEFINED += \
     "DECLINLINE(type)=inline type" \
+    APICBOTHCBDECL(type)=type \
     DECL_FORCE_INLINE(type)=DECLINLINE(type) \
     DECL_NO_INLINE(type)=type \
     DECLCALLBACK(type)=type \

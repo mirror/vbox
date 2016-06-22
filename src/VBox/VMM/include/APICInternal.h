@@ -1412,11 +1412,7 @@ RT_C_DECLS_BEGIN
  * Macro for declaring a callback which is static in HC and exported in GC.
  */
 #if defined(IN_RC) || defined(IN_RING0)
-# ifdef __cplusplus
-#  define APICBOTHCBDECL(type)   extern "C" DECLEXPORT(type)
-# else
-#  define APICBOTHCBDECL(type)   DECLEXPORT(type)
-# endif
+# define APICBOTHCBDECL(type)    DECLEXPORT(type)
 #else
 # define APICBOTHCBDECL(type)    DECLCALLBACK(type)
 #endif
