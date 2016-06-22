@@ -69,16 +69,6 @@ else
     GROUP=vboxusers
     DEVICE_MODE=0660
 fi
-VERSION=`cat "${MODULE_SRC}/vboxdrv/version-generated.h" \
-       | sed -n 's/#define\s*VBOX_VERSION_STRING\s*"\(.*\)"/\1/p'`
-IOC_VERSION=`cat "${MODULE_SRC}/vboxdrv/SUPDrvIOC.h" \
-           | sed -n 's/#define\s*SUPDRV_IOC_VERSION\s*\(.*\)/\1/p'`
-MODINFO_VERSION=`modinfo vboxdrv 2>/dev/null | grep "^version:"`
-if expr "${MODINFO_VERSION}" : ".*${IOC_VERSION}" > /dev/null; then
-    MODULE_BUILT=yes
-else
-    MODULE_BUILT=
-fi
 
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
@@ -114,9 +104,6 @@ running()
 {
     lsmod | grep -q "$1[^_-]"
 }
-
-test -z "${MODINFO_VERSION}" || expr "${MODINFO_VERSION}" : ".*${VERSION}" > /dev/null || \
-    failure "Different version of VirtualBox services running. Please uninstall and try again"
 
 ## Output the vboxdrv part of our udev rule.  This is redirected to the right file.
 udev_write_vboxdrv() {
@@ -244,11 +231,6 @@ install_device_node_setup() {
 
 start()
 {
-    if test -z "${MODULE_BUILT}"; then
-        test -z "${MODINFO_VERSION}" || stop || \
-            failure "Cannot stop incompatible services version"
-        setup
-    fi
     begin_msg "Starting VirtualBox services" console
     # Create udev rule and USB device nodes.
     ## todo Wouldn't it make more sense to install the rule to /lib/udev?  This
@@ -261,9 +243,15 @@ start()
         failure "Running VirtualBox in a Xen environment is not supported"
     fi
     if ! running vboxdrv; then
-        rm -f $DEVICE || failure "Cannot remove $DEVICE"
-        $MODPROBE vboxdrv > /dev/null 2>&1 || \
-            failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
+        if ! rm -f $DEVICE; then
+            failure "Cannot remove $DEVICE"
+        fi
+        if ! $MODPROBE vboxdrv > /dev/null 2>&1; then
+            setup
+            if ! $MODPROBE vboxdrv > /dev/null 2>&1; then
+                failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
+            fi
+        fi
         sleep .2
     fi
     # ensure the character special exists
