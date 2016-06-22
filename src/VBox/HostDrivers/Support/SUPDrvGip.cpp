@@ -3595,7 +3595,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
     {
         ASMNopPause();
         if (   ASMAtomicReadBool(&pArgs->fAbortSetup)
-            || !RTMpIsCpuOnline(fIsMaster ? pGipCpuWorker->idCpu : pGipCpuWorker->idCpu) )
+            || !RTMpIsCpuOnline(fIsMaster ? pGipCpuWorker->idCpu : pGipCpuMaster->idCpu) )
             return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, false /*fTimeout*/);
         if (   (iTry++ & 0xff) == 0
             && ASMReadTSC() - MySync.uTscStart > pArgs->cMaxTscTicks)
@@ -3724,7 +3724,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
     {
         iTry++;
         if (   iTry == 0
-            && !RTMpIsCpuOnline(fIsMaster ? pGipCpuWorker->idCpu : pGipCpuWorker->idCpu))
+            && !RTMpIsCpuOnline(fIsMaster ? pGipCpuWorker->idCpu : pGipCpuMaster->idCpu))
             break; /* this really shouldn't happen. */
         TSCDELTA_DBG_CHECK_LOOP();
         ASMNopPause();
