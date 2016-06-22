@@ -226,7 +226,7 @@ static int dbgfR3PlugInTryLoad(PDBGFPLUGIN pPlugIn, const char *pszModule, PRTER
         rc = RTLdrGetSymbol(pPlugIn->hLdrMod, DBGF_PLUG_IN_ENTRYPOINT, (void **)&pPlugIn->pfnEntry);
         if (RT_SUCCESS(rc))
         {
-            LogRel(("DBGF: Loaded Plug-In '%s' (%s).\n", pPlugIn->szName, pszModule));
+            LogRel(("DBGF: Loaded Plug-In '%s' (%s)\n", pPlugIn->szName, pszModule));
             return VINF_SUCCESS;
         }
 
