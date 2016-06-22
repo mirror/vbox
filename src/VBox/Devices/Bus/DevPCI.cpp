@@ -1923,7 +1923,7 @@ static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
-static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     NOREF(pszArgs);
@@ -1939,6 +1939,21 @@ static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
             pHlp->pfnPrintf(pHlp, "PIRQ%c disabled\n", 'A' + i);
         else
             pHlp->pfnPrintf(pHlp, "PIRQ%c -> IRQ%d\n", 'A' + i, irq_map & 0xf);
+    }
+}
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    NOREF(pszArgs);
+
+    pHlp->pfnPrintf(pHlp, "PCI I/O APIC IRQ levels:\n");
+    for (int i = 0; i < PCI_APIC_IRQ_PINS; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->pci_apic_irq_levels[i]);
     }
 }
 
@@ -2269,7 +2284,8 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpDBGFInfoRegister(pDevIns, "pci",
                               "Display PCI bus status. Recognizes 'basic' or 'verbose' as arguments, defaults to 'basic'.",
                               pciR3Info);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ routing state. (no arguments)", pciR3IrqInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ state. (no arguments)", pciR3IrqInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "irqroute", "Display PCI IRQ routing. (no arguments)", pciR3IrqRouteInfo);
 
     return VINF_SUCCESS;
 }
