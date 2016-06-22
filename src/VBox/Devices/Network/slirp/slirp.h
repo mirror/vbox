@@ -529,7 +529,7 @@ static inline struct mbuf *slirpDnsMbufAlloc(PNATState pData)
 
 DECLINLINE(bool) slirpIsWideCasting(PNATState pData, uint32_t u32Addr)
 {
-    bool fWideCasting = false;
+    bool fWideCasting;
     LogFlowFunc(("Enter: u32Addr:%RTnaipv4\n", u32Addr));
     fWideCasting =  (   u32Addr == INADDR_BROADCAST
                     || (u32Addr & RT_H2N_U32_C(~pData->netmask)) == RT_H2N_U32_C(~pData->netmask));
