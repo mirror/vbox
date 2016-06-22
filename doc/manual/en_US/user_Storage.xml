@@ -392,7 +392,28 @@
         detach it from a virtual machine if it is currently attached to one as
         a virtual hard disk.</para>
       </listitem>
+
+     <listitem>
+        <para><emphasis role="bold">copy</emphasis> a virtual hard disk, to 
+        another one - target type can be different, options are - VDI, VHD or VMDK.</para>
+     </listitem>
+
+     <listitem>
+        <para><emphasis role="bold">modify</emphasis> the attributes of the 
+        disk image file - available options are : Normal, Immutable,
+        Writethrough, Shareable, Multi-attach.</para>
+     </listitem>
+
+     <listitem>
+        <para><emphasis role="bold">refresh</emphasis> the values for the displayed     
+        attributes of the disk image currently selected in the window.</para>
+     </listitem>
+    
     </itemizedlist>
+
+    <para>These commands are accessible once a medium has been selected either by selecting 
+    from the options shown at the top of the window, or by right-clicking the medium
+    and selecting from the options shown on the drop-down menu.<\para>
 
     <para>Starting with version 4.0, to <emphasis role="bold">create new disk
     images,</emphasis> please use the "Storage" page in a virtual machine's
