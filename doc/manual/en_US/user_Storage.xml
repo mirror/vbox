@@ -413,7 +413,7 @@
 
     <para>These commands are accessible once a medium has been selected either by selecting 
     from the options shown at the top of the window, or by right-clicking the medium
-    and selecting from the options shown on the drop-down menu.<\para>
+    and selecting from the options shown on the drop-down menu.</para>
 
     <para>Starting with version 4.0, to <emphasis role="bold">create new disk
     images,</emphasis> please use the "Storage" page in a virtual machine's
