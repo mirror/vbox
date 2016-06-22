@@ -650,9 +650,10 @@
     into VirtualBox to manage IP addresses for the internal network. Please
     see <xref linkend="vboxmanage-dhcpserver" /> for details.</para>
 
-    <para>As a security measure, the Linux implementation of internal
+    <para>As a security measure, by default, the Linux implementation of internal
     networking only allows VMs running under the same user ID to establish an
-    internal network.</para>
+    internal network. However, it is possible to create a shared 
+    internal networking interface, accessible by users with different UUIds.</para>
   </sect1>
 
   <sect1 id="network_hostonly">
