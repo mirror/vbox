@@ -34,18 +34,18 @@ import shutil;
 import sys;
 import unittest;
 
-# Validation Kit imports.
-from common import utils;
-
 # Python 3 hacks:
 if sys.version_info[0] < 3:
-    from urllib         import urlopen      as urllib_urlopen;
     from urllib2        import quote        as urllib_quote;
     from urllib         import urlencode    as urllib_urlencode;
+    from urllib         import urlopen      as urllib_urlopen;
 else:
     from urllib.parse   import quote        as urllib_quote;        # pylint: disable=F0401,E0611
     from urllib.parse   import urlencode    as urllib_urlencode;    # pylint: disable=F0401,E0611
     from urllib.request import urlopen      as urllib_urlopen;      # pylint: disable=F0401,E0611
+
+# Validation Kit imports.
+from common import utils;
 
 
 def escapeElem(sText):
