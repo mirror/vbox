@@ -92,7 +92,7 @@ class TestBoxScriptWrapper(object): # pylint: disable=R0903
 
         # Look for --pidfile <name> and write a pid file.
         sPidFile = None;
-        for i in range(len(asArgs)):
+        for i, _ in enumerate(asArgs):
             if asArgs[i] == '--pidfile' and i + 1 < len(asArgs):
                 sPidFile = asArgs[i + 1];
                 break;

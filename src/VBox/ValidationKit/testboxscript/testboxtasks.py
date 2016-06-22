@@ -121,7 +121,7 @@ class TestBoxBaseTask(object):
         Returns True if we should terminate, False if not.
         """
         self._lock();
-        fShouldTerminate = self._fShouldTerminate == True;
+        fShouldTerminate = self._fShouldTerminate is True;
         self._unlock();
         return fShouldTerminate;
 
