@@ -292,7 +292,7 @@ class TransportBase(object):
         Remarks: cb is always a multiple of 16.
         """
         _ = cb; _ = cMsTimeout; _ = fNoDataOk;
-        return False;
+        return None;
 
     def isConnectionOk(self):
         """
