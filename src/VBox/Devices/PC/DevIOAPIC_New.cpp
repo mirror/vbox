@@ -292,7 +292,7 @@ DECLINLINE(uint32_t) ioapicGetArb(void)
  */
 DECLINLINE(uint32_t) ioapicGetVersion(void)
 {
-    uint32_t uValue = RT_MAKE_U32(IOAPIC_VERSION, IOAPIC_MAX_REDIR_ENTRIES);
+    uint32_t uValue = RT_MAKE_U32(0x11, IOAPIC_MAX_REDIR_ENTRIES);
     Log2(("IOAPIC: ioapicGetVersion: returns %#RX32\n", uValue));
     return uValue;
 }
@@ -863,7 +863,8 @@ static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, 
 static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     PCIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
-    pValue->u64 = ioapicGetRedirTableEntry(pThis, pDesc->offRegister);
+    Assert(pDesc->offRegister < RT_ELEMENTS(pThis->au64RedirTable));
+    pValue->u64 = pThis->au64RedirTable[pDesc->offRegister];
     return VINF_SUCCESS;
 }
 
@@ -871,7 +872,10 @@ static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, 
 static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     PIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
-    return ioapicSetRedirTableEntry(pThis, pDesc->offRegister, pValue->u64);
+    /* No locks, no checks, just do it. */
+    Assert(pDesc->offRegister < RT_ELEMENTS(pThis->au64RedirTable));
+    pThis->au64RedirTable[pDesc->offRegister] = pValue->u64;
+    return VINF_SUCCESS;
 }
 
 /** IOREDTBLn sub fields. */
