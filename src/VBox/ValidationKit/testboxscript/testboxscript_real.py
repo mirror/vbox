@@ -695,7 +695,6 @@ class TestBoxScript(object):
                 if os.path.exists(sFullName):
                     raise Exception('Still exists after deletion, weird.');
             except Exception, oXcpt:
-                # pylint: disable=too-many-boolean-expressions
                 if    fUseTheForce is True \
                   and utils.getHostOs() not in ['win', 'os2'] \
                   and len(sFullName) >= 8 \

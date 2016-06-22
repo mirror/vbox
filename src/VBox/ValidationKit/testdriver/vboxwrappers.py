@@ -487,7 +487,7 @@ class ProgressWrapper(TdTaskBase):
         Queries everything that is stable and easy to get at and checks that
         they don't throw errors.
         """
-        if True:
+        if True is True:
             try:
                 iPct        = self.o.operationPercent;
                 sDesc       = self.o.description;
@@ -1449,9 +1449,9 @@ class SessionWrapper(TdTaskBase):
 
                 sHostIP = socket.gethostbyname(sHostName)
                 abHostIP = socket.inet_aton(sHostIP)
-                if ord(abHostIP[0]) == 127 \
-                    or ord(abHostIP[0]) == 169 and ord(abHostIP[1]) == 254 \
-                    or ord(abHostIP[0]) == 192 and ord(abHostIP[1]) == 168 and ord(abHostIP[2]) == 56:
+                if   ord(abHostIP[0]) == 127 \
+                  or (ord(abHostIP[0]) == 169 and ord(abHostIP[1]) == 254) \
+                  or (ord(abHostIP[0]) == 192 and ord(abHostIP[1]) == 168 and ord(abHostIP[2]) == 56):
                     reporter.log('warning: host IP for "%s" is %s, most likely not unique.' % (sHostName, sHostIP))
             except:
                 reporter.errorXcpt('failed to determine the host IP for "%s".' % (sHostName,))
