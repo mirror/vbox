@@ -231,10 +231,7 @@ class tdAutostartOsLinux(tdAutostartOs):
                                  '/opt/VirtualBox/VBoxManage', sUser, ('list', 'runningvms'),
                                  '/dev/null', oStdOut, '/dev/null', '/dev/null');
 
-        if fRc is True and oStdOut.sVmRunning == sVmName:
-            fRc = True;
-        else:
-            fRc = False;
+        fRc = fRc is True and oStdOut.sVmRunning == sVmName;
 
         return fRc;
 
@@ -401,10 +398,7 @@ class tdAutostartOsSolaris(tdAutostartOs):
                                  '/opt/VirtualBox/VBoxManage', sUser, ('list', 'runningvms'),
                                  '/dev/null', oStdOut, '/dev/null', '/dev/null');
 
-        if fRc is True and oStdOut.sVmRunning == sVmName:
-            fRc = True;
-        else:
-            fRc = False;
+        fRc = fRc is True and oStdOut.sVmRunning == sVmName;
 
         return fRc;
 
@@ -574,12 +568,11 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         """
         reporter.testStart('Autostart ' + sVmName);
 
-        oGuestOsHlp = None;
-
+        oGuestOsHlp = None;             # type: tdAutostartOs
         if sVmName == self.ksOsLinux:
             oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir);
         elif sVmName == self.ksOsSolaris:
-            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir);
+            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir);   # annoying - pylint: disable=redefined-variable-type
         elif sVmName == self.ksOsDarwin:
             oGuestOsHlp = tdAutostartOsDarwin(self.sTestBuildDir);
         elif sVmName == self.ksOsWindows:

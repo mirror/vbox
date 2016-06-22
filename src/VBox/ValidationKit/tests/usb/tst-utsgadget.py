@@ -63,7 +63,7 @@ def stringRes(rc, sExpect):
     return 'FAILED';
 
 def main(asArgs): # pylint: disable=C0111,R0914,R0915
-    cMsTimeout      = 30*1000;
+    cMsTimeout      = long(30*1000);
     sAddress        = 'localhost';
     uPort           = None;
     fStdTests       = True;
@@ -96,10 +96,7 @@ def main(asArgs): # pylint: disable=C0111,R0914,R0915
         return 1;
 
     if fStdTests:
-        if oGadget.getUsbIpPort() is not None:
-            rc = True;
-        else:
-            rc = False;
+        rc = oGadget.getUsbIpPort() is not None;
         print '%s: getUsbIpPort() -> %s' % (boolRes(rc), oGadget.getUsbIpPort());
 
         rc = oGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest);
