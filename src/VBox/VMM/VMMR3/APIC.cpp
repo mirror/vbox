@@ -1796,7 +1796,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertRCReturn(rc, rc); \
     } while(0)
 
-    bool const fHasRC = !HMIsEnabled(pVM);
+    bool const fHasRC = HMIsRawModeCtxNeeded(pVM);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU   pVCpu     = &pVM->aCpus[idCpu];

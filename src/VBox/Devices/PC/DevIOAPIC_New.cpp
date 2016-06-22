@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_IOAPIC
 #include <VBox/log.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/msi.h>
 #include <VBox/vmm/pdmdev.h>
 
@@ -867,8 +868,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, 
 }
 
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
-static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue,
-                                                         PCDBGFREGVAL pfMask)
+static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     PIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
     return ioapicSetRedirTableEntry(pThis, pDesc->offRegister, pValue->u64);
@@ -1240,6 +1240,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Statistics.
      */
+    bool fHasRC = HMIsRawModeCtxNeeded(PDMDevHlpGetVM(pDevIns));
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR0,  STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioReadR0",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R0.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR0, STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioWriteR0", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in R0.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR0,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/SetIrqR0",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R0.");
@@ -1250,10 +1251,13 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR3,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/SetIrqR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiR3,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/SetEoiR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in R3.");
 
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRC,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/MmioReadRC",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in RC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRC, STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/MmioWriteRC", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in RC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRC,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/SetIrqRC",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in RC.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiRC,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/SetEoiRC",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in RC.");
+    if (fHasRC)
+    {
+        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRC,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/MmioReadRC",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in RC.");
+        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRC, STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/MmioWriteRC", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in RC.");
+        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRC,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/SetIrqRC",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in RC.");
+        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiRC,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/SetEoiRC",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in RC.");
+    }
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantEdgeIntr,   STAMTYPE_COUNTER, "/Devices/IOAPIC/RedundantEdgeIntr",   STAMUNIT_OCCURENCES, "Number of redundant edge-triggered interrupts (no IRR change).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantLevelIntr,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RedundantLevelIntr",  STAMUNIT_OCCURENCES, "Number of redundant level-triggered interrupts (no IRR change).");
