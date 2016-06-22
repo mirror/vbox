@@ -477,8 +477,6 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
  */
 void slirp_link_up(PNATState pData)
 {
-    struct arp_cache_entry *ac;
-
     if (link_up == 1)
         return;
 
@@ -493,8 +491,6 @@ void slirp_link_up(PNATState pData)
  */
 void slirp_link_down(PNATState pData)
 {
-    struct port_forward_rule *rule;
-
     if (link_up == 0)
         return;
 
