@@ -5356,7 +5356,7 @@ HRESULT Medium::i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
                  * media are used by a running VM.
                  */
                 bool fMergeIntoThis = cbMediumThis > cbMediumOther;
-                fMergeForward = fMergeIntoThis ^ fThisParent;
+                fMergeForward = fMergeIntoThis != fThisParent;
             }
         }
     }
