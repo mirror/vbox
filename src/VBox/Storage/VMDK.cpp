@@ -3084,8 +3084,24 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             &&  (int64_t)pExtent->uSectorGD - pExtent->uDescriptorSector >= 4
             &&  (!pExtent->uSectorRGD || (int64_t)pExtent->uSectorRGD - pExtent->uDescriptorSector >= 4))
         {
+            uint64_t cDescriptorSectorsOld = pExtent->cDescriptorSectors;
+
             pExtent->cDescriptorSectors = 4;
-            pExtent->fMetaDirty = true;
+            /*
+             * Update the on disk number now to make sure we don't introduce inconsistencies
+             * in case of stream optimized images from VMware where the descriptor is just
+             * one sector big (the binary header is not written to disk for complete
+             * stream optimized images in vmdkFlushImage()).
+             */
+            uint64_t u64DescSizeNew = RT_H2LE_U64(pExtent->cDescriptorSectors);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pFile->pStorage, RT_OFFSETOF(SparseExtentHeader, descriptorSize),
+                                        &u64DescSizeNew, sizeof(u64DescSizeNew));
+            if (RT_FAILURE(rc))
+            {
+                LogFlowFunc(("Increasing the descriptor size failed with %Rrc\n", rc));
+                /* Restore the old size and carry on. */
+                pExtent->cDescriptorSectors = cDescriptorSectorsOld;
+            }
         }
         /* Read the descriptor from the extent. */
         pExtent->pDescData = (char *)RTMemAllocZ(VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
