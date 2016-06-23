@@ -1935,8 +1935,6 @@ const USBPROXYBACK g_USBProxyDeviceHost =
  *  mode: c
  *  c-file-style: "bsd"
  *  c-basic-offset: 4
- *  tab-width: 4
- *  indent-tabs-mode: s
  * End:
  */
 
