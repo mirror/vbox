@@ -75,6 +75,11 @@ private slots:
     void sltExitNativeFullscreen(UIMachineWindow *pMachineWindow);
 #endif /* RT_OS_DARWIN */
 
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+    /** Performs window minimization the tricky way. */
+    void sltShowMinimized();
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
 private:
 
     /** Prepare visual-state routine. */
@@ -100,6 +105,13 @@ private:
     /** Common update routine. */
     void updateAppearanceOf(int iElement);
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
+#ifdef VBOX_WS_X11
+# if QT_VERSION >= 0x050000
+    /** Handles @a pEvent about state change. */
+    void changeEvent(QEvent *pEvent);
+# endif /* QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WS_WIN
 # if QT_VERSION >= 0x050000
