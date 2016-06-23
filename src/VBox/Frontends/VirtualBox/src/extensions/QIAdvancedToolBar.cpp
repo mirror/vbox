@@ -60,7 +60,7 @@ private:
     void mousePressEvent(QMouseEvent *pEvent)
     {
         /* Ignore event if button is in 'checked' state: */
-        if (m_fIgnoreMousePressIfChecked & isChecked())
+        if (m_fIgnoreMousePressIfChecked && isChecked())
             return;
         /* Call to base-class: */
         QToolButton::mousePressEvent(pEvent);
