@@ -93,7 +93,7 @@
     </message>
 </context>
 <context>
-    <name>QIArrowSplitter</name>
+    <name>QIArrowButtonPress</name>
     <message>
         <source>&amp;Back</source>
         <translation>ថយ​ក្រោយ​</translation>

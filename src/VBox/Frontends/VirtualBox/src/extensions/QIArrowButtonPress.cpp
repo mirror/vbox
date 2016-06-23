@@ -42,8 +42,8 @@ void QIArrowButtonPress::retranslateUi()
     /* Retranslate: */
     switch (m_buttonType)
     {
-        case ButtonType_Back: setText(QApplication::translate("QIArrowSplitter", "&Back")); break;
-        case ButtonType_Next: setText(QApplication::translate("QIArrowSplitter", "&Next")); break;
+        case ButtonType_Back: setText(tr("&Back")); break;
+        case ButtonType_Next: setText(tr("&Next")); break;
         default: break;
     }
 }

@@ -40,8 +40,7 @@ public:
 
 protected:
 
-    /** Retranslation routine.
-      * @todo Fix translation context. */
+    /** Retranslation routine. */
     virtual void retranslateUi();
 
     /** Key-press-event handler. */

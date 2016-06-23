@@ -108,7 +108,7 @@
     </message>
 </context>
 <context>
-    <name>QIArrowSplitter</name>
+    <name>QIArrowButtonPress</name>
     <message>
         <location filename="../src/extensions/QIArrowButtonPress.cpp" line="+45"/>
         <source>&amp;Back</source>
