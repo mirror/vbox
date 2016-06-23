@@ -75,6 +75,11 @@
 #define DEBUG_IOAPIC
 #define IOAPIC_NUM_PINS                 0x18
 
+/** The old code (this file) */
+#define IOAPIC_SAVED_STATE_VERSION_VBOX_50      1
+/** The new code (DevIOAPIC_New). We need to be able to load this SSM as well. */
+#define IOAPIC_SAVED_STATE_VERSION_NEW_CODE     2
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -700,8 +705,13 @@ static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
-    if (uVersion != 1)
+    if (   uVersion != IOAPIC_SAVED_STATE_VERSION_VBOX_50
+        && uVersion != IOAPIC_SAVED_STATE_VERSION_NEW_CODE)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    uint32_t ignore;
+    if (uVersion == IOAPIC_SAVED_STATE_VERSION_NEW_CODE)
+        SSMR3GetU32(pSSM, &ignore);
 
     SSMR3GetU8(pSSM, &pThis->id);
     SSMR3GetU8(pSSM, &pThis->ioregsel);
@@ -830,7 +840,8 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertRCReturn(rc, rc);
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* version */, sizeof(*pThis), ioapicSaveExec, ioapicLoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, IOAPIC_SAVED_STATE_VERSION_VBOX_50, sizeof(*pThis),
+                              ioapicSaveExec, ioapicLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
