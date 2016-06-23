@@ -469,15 +469,17 @@ static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uVa
         uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
         if (!(uIndex & 1))
         {
-            uint32_t const u32RteNewLo    = uValue & RT_LO_U32(IOAPIC_RTE_VALID_WRITE_MASK);
-            uint64_t const u64RteHi       = u64Rte & UINT64_C(0xffffffff00000000);
-            pThis->au64RedirTable[idxRte] = u64RteHi | u32RteNewLo;
+            uint32_t const u32RtePreserveLo = RT_LO_U32(u64Rte) & ~RT_LO_U32(IOAPIC_RTE_VALID_WRITE_MASK);
+            uint32_t const u32RteNewLo      = (uValue & RT_LO_U32(IOAPIC_RTE_VALID_WRITE_MASK)) | u32RtePreserveLo;
+            uint64_t const u64RteHi         = u64Rte & UINT64_C(0xffffffff00000000);
+            pThis->au64RedirTable[idxRte]   = u64RteHi | u32RteNewLo;
         }
         else
         {
-            uint32_t const u32RteLo       = RT_LO_U32(u64Rte);
-            uint64_t const u64RteNewHi    = (uint64_t)(uValue & RT_HI_U32(IOAPIC_RTE_VALID_WRITE_MASK)) << 32;
-            pThis->au64RedirTable[idxRte] = u64RteNewHi | u32RteLo;
+            uint32_t const u32RtePreserveHi = RT_HI_U32(u64Rte) & ~RT_HI_U32(IOAPIC_RTE_VALID_WRITE_MASK);
+            uint32_t const u32RteLo         = RT_LO_U32(u64Rte);
+            uint64_t const u64RteNewHi      = ((uint64_t)(uValue & RT_HI_U32(IOAPIC_RTE_VALID_WRITE_MASK)) << 32) | u32RtePreserveHi;
+            pThis->au64RedirTable[idxRte]   = u64RteNewHi | u32RteLo;
         }
 
         /*
