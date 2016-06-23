@@ -56,7 +56,7 @@ void BIOSCALL int14_function(pusha_regs_t regs, uint16_t es, uint16_t ds, volati
         switch (regs.u.r8.ah) {
         case 0:
             outb(addr+3, inb(addr+3) | 0x80);
-            if (regs.u.r8.al & 0xE0 == 0) {
+            if ((regs.u.r8.al & 0xE0) == 0) {
                 outb(addr, 0x17);
                 outb(addr+1, 0x04);
             } else {
