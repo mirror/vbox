@@ -315,7 +315,7 @@ class tdUnitTest1(vbox.TestDriver):
         #
         # We need a VBox install (/ build) to test.
         #
-        if False is False:
+        if False is True:
             if not self.importVBoxApi():
                 reporter.error('Unabled to import the VBox Python API.')
                 return False
