@@ -1829,7 +1829,7 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
     }
 #endif
 
-    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrRead));
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMsrRead));
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (RT_LIKELY(XAPIC_IN_X2APIC_MODE(pVCpu)))
@@ -1935,7 +1935,7 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
     }
 #endif
 
-    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMsrWrite));
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMsrWrite));
 
     /*
      * In x2APIC mode, we need to raise #GP(0) for writes to reserved bits, unlike MMIO
@@ -2551,7 +2551,7 @@ APICBOTHCBDECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     uint16_t offReg   = GCPhysAddr & 0xff0;
     uint32_t uValue   = 0;
 
-    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioRead));
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMmioRead));
 
     int rc = VBOXSTRICTRC_VAL(apicReadRegister(pApicDev, pVCpu, offReg, &uValue));
     *(uint32_t *)pv = uValue;
@@ -2575,7 +2575,7 @@ APICBOTHCBDECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     uint16_t offReg   = GCPhysAddr & 0xff0;
     uint32_t uValue   = *(uint32_t *)pv;
 
-    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF(StatMmioWrite));
+    STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMmioWrite));
 
     Log2(("APIC%u: apicWriteMmio: offReg=%#RX16 uValue=%#RX32\n", pVCpu->idCpu, offReg, uValue));
 

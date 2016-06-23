@@ -784,18 +784,14 @@ int main()
     GEN_CHECK_OFF(APICCPU, uHintedTimerInitialCount);
     GEN_CHECK_OFF(APICCPU, uHintedTimerShift);
 # ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(APICCPU, StatMmioReadR0);
+    GEN_CHECK_OFF(APICCPU, StatMmioReadRZ);
     GEN_CHECK_OFF(APICCPU, StatMmioReadR3);
-    GEN_CHECK_OFF(APICCPU, StatMmioReadRC);
-    GEN_CHECK_OFF(APICCPU, StatMmioWriteR0);
+    GEN_CHECK_OFF(APICCPU, StatMmioWriteRZ);
     GEN_CHECK_OFF(APICCPU, StatMmioWriteR3);
-    GEN_CHECK_OFF(APICCPU, StatMmioWriteRC);
-    GEN_CHECK_OFF(APICCPU, StatMsrReadR0);
+    GEN_CHECK_OFF(APICCPU, StatMsrReadRZ);
     GEN_CHECK_OFF(APICCPU, StatMsrReadR3);
-    GEN_CHECK_OFF(APICCPU, StatMsrReadRC);
-    GEN_CHECK_OFF(APICCPU, StatMsrWriteR0);
+    GEN_CHECK_OFF(APICCPU, StatMsrWriteRZ);
     GEN_CHECK_OFF(APICCPU, StatMsrWriteR3);
-    GEN_CHECK_OFF(APICCPU, StatMsrWriteRC);
     GEN_CHECK_OFF(APICCPU, StatUpdatePendingIntrs);
     GEN_CHECK_OFF(APICCPU, StatPostIntr);
     GEN_CHECK_OFF(APICCPU, StatPostIntrAlreadyPending);

@@ -1796,29 +1796,20 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertRCReturn(rc, rc); \
     } while(0)
 
-    bool const fHasRC = !HMIsEnabledNotMacro(pVM);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU   pVCpu     = &pVM->aCpus[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpu);
 
-        APIC_REG_COUNTER(&pApicCpu->StatMmioReadR0,  "Number of APIC MMIO reads in R0.",  "/Devices/APIC/%u/R0/MmioRead");
-        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR0, "Number of APIC MMIO writes in R0.", "/Devices/APIC/%u/R0/MmioWrite");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrReadR0,   "Number of APIC MSR reads in R0.",   "/Devices/APIC/%u/R0/MsrRead");
-        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR0,  "Number of APIC MSR writes in R0.",  "/Devices/APIC/%u/R0/MsrWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioReadRZ,  "Number of APIC MMIO reads in RZ.",  "/Devices/APIC/%u/RZ/MmioRead");
+        APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRZ, "Number of APIC MMIO writes in RZ.", "/Devices/APIC/%u/RZ/MmioWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrReadRZ,   "Number of APIC MSR reads in RZ.",   "/Devices/APIC/%u/RZ/MsrRead");
+        APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRZ,  "Number of APIC MSR writes in RZ.",  "/Devices/APIC/%u/RZ/MsrWrite");
 
         APIC_REG_COUNTER(&pApicCpu->StatMmioReadR3,  "Number of APIC MMIO reads in R3.",  "/Devices/APIC/%u/R3/MmioReadR3");
         APIC_REG_COUNTER(&pApicCpu->StatMmioWriteR3, "Number of APIC MMIO writes in R3.", "/Devices/APIC/%u/R3/MmioWriteR3");
         APIC_REG_COUNTER(&pApicCpu->StatMsrReadR3,   "Number of APIC MSR reads in R3.",   "/Devices/APIC/%u/R3/MsrReadR3");
         APIC_REG_COUNTER(&pApicCpu->StatMsrWriteR3,  "Number of APIC MSR writes in R3.",  "/Devices/APIC/%u/R3/MsrWriteR3");
-
-        if (fHasRC)
-        {
-            APIC_REG_COUNTER(&pApicCpu->StatMmioReadRC,  "Number of APIC MMIO reads in RC.",  "/Devices/APIC/%u/RC/MmioRead");
-            APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRC, "Number of APIC MMIO writes in RC.", "/Devices/APIC/%u/RC/MmioWrite");
-            APIC_REG_COUNTER(&pApicCpu->StatMsrReadRC,   "Number of APIC MSR reads in RC.",   "/Devices/APIC/%u/RC/MsrRead");
-            APIC_REG_COUNTER(&pApicCpu->StatMsrWriteRC,  "Number of APIC MSR writes in RC.",  "/Devices/APIC/%u/RC/MsrWrite");
-        }
 
         APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs, "Profiling of APICUpdatePendingInterrupts",
                           "/PROF/CPU%d/APIC/UpdatePendingInterrupts");
