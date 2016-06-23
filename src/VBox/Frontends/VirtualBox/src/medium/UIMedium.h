@@ -257,7 +257,7 @@ public:
     /** Returns whether this medium is hidden.
       * @note The medium is considered 'hidden' if it has corresponding
       *       medium property or is connected to 'hidden' VMs only. */
-    bool isHidden() const { return m_fHidden | m_fUsedByHiddenMachinesOnly; }
+    bool isHidden() const { return m_fHidden || m_fUsedByHiddenMachinesOnly; }
 
     /** Returns whether this medium is read-only
       * (either because it is Immutable or because it has child hard drives).
