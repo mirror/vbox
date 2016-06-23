@@ -466,8 +466,11 @@ static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uVa
     if (rc == VINF_SUCCESS)
     {
         /*
-         * Write the low or high 32-bit value into the specified 64-bit RTE register.
-         * Update only the valid, writable bits.
+         * Write the low or high 32-bit value into the specified 64-bit RTE register,
+         * update only the valid, writable bits.
+         *
+         * We need to preserve the read-only bits as it can have dire consequences
+         * otherwise, see @bugref{8386#c24}.
          */
         uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
         if (!(uIndex & 1))
