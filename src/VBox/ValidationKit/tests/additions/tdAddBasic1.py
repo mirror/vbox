@@ -312,9 +312,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             return False;
         reporter.log('IGuest::additionsRunLevel=%s' % (iLevel,));
 
-        ## @todo We really need that wait!!
-        #if iLevel != eExpectedRunLevel:
-        #    reporter.error('Expected runlevel %d, found %d instead' % (eExpectedRunLevel, iLevel));
+        if iLevel != eExpectedRunLevel:
+            pass; ## @todo We really need that wait!!
+            #reporter.error('Expected runlevel %d, found %d instead' % (eExpectedRunLevel, iLevel));
         return True;
 
 
