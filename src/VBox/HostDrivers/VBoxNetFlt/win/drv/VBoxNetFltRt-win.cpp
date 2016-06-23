@@ -1507,7 +1507,7 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PVBOXNETFLTINS pNetFlt, P
     PNDIS_PACKET pPacket;
 
     Assert(pSG->aSegs[0].pv);
-    Assert(pSG->cbTotal >= sizeof(VBOXNETFLT_PACKET_ETHEADER_SIZE));
+    Assert(pSG->cbTotal >= VBOXNETFLT_PACKET_ETHEADER_SIZE);
 
 /** @todo Hrmpf, how can we fix this assumption?  I fear this'll cause data
  *        corruption and maybe even BSODs ... */
