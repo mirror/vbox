@@ -884,18 +884,14 @@ int main()
     GEN_CHECK_OFF(IOAPIC, au64RedirTable);
     GEN_CHECK_OFF(IOAPIC, uIrr);
 # ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(IOAPIC, StatMmioReadR0);
+    GEN_CHECK_OFF(IOAPIC, StatMmioReadRZ);
     GEN_CHECK_OFF(IOAPIC, StatMmioReadR3);
-    GEN_CHECK_OFF(IOAPIC, StatMmioReadRC);
-    GEN_CHECK_OFF(IOAPIC, StatMmioWriteR0);
+    GEN_CHECK_OFF(IOAPIC, StatMmioWriteRZ);
     GEN_CHECK_OFF(IOAPIC, StatMmioWriteR3);
-    GEN_CHECK_OFF(IOAPIC, StatMmioWriteRC);
-    GEN_CHECK_OFF(IOAPIC, StatSetIrqR0);
+    GEN_CHECK_OFF(IOAPIC, StatSetIrqRZ);
     GEN_CHECK_OFF(IOAPIC, StatSetIrqR3);
-    GEN_CHECK_OFF(IOAPIC, StatSetIrqRC);
-    GEN_CHECK_OFF(IOAPIC, StatSetEoiR0);
+    GEN_CHECK_OFF(IOAPIC, StatSetEoiRZ);
     GEN_CHECK_OFF(IOAPIC, StatSetEoiR3);
-    GEN_CHECK_OFF(IOAPIC, StatSetEoiRC);
 # endif
 #else
     /* PC/DevIoApic.cpp */

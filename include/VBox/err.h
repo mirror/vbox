@@ -2764,6 +2764,8 @@
 #define VERR_APIC_INTR_NOT_PENDING                  (-6700)
 /** Pending interrupt is masked by TPR. */
 #define VERR_APIC_INTR_MASKED_BY_TPR                (-6701)
+/** APIC did not accept the interrupt. */
+#define VERR_APIC_INTR_DISCARDED                    (-6702)
 /** @} */
 
 /* SED-END */

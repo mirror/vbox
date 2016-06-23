@@ -223,33 +223,25 @@ typedef struct IOAPIC
     PDMCRITSECT             CritSect;
 
 #ifdef VBOX_WITH_STATISTICS
-    /** Number of MMIO reads in R0. */
-    STAMCOUNTER             StatMmioReadR0;
+    /** Number of MMIO reads in RZ. */
+    STAMCOUNTER             StatMmioReadRZ;
     /** Number of MMIO reads in R3. */
     STAMCOUNTER             StatMmioReadR3;
-    /** Number of MMIO reads in RC. */
-    STAMCOUNTER             StatMmioReadRC;
 
-    /** Number of MMIO writes in R0. */
-    STAMCOUNTER             StatMmioWriteR0;
+    /** Number of MMIO writes in RZ. */
+    STAMCOUNTER             StatMmioWriteRZ;
     /** Number of MMIO writes in R3. */
     STAMCOUNTER             StatMmioWriteR3;
-    /** Number of MMIO writes in RC. */
-    STAMCOUNTER             StatMmioWriteRC;
 
-    /** Number of SetIrq calls in R0. */
-    STAMCOUNTER             StatSetIrqR0;
+    /** Number of SetIrq calls in RZ. */
+    STAMCOUNTER             StatSetIrqRZ;
     /** Number of SetIrq calls in R3. */
     STAMCOUNTER             StatSetIrqR3;
-    /** Number of SetIrq calls in RC. */
-    STAMCOUNTER             StatSetIrqRC;
 
-    /** Number of SetEoi calls in R0. */
-    STAMCOUNTER             StatSetEoiR0;
+    /** Number of SetEoi calls in RZ. */
+    STAMCOUNTER             StatSetEoiRZ;
     /** Number of SetEoi calls in R3. */
     STAMCOUNTER             StatSetEoiR3;
-    /** Number of SetEoi calls in RC. */
-    STAMCOUNTER             StatSetEoiRC;
 
     /** Number of redundant edge-triggered interrupts. */
     STAMCOUNTER             StatRedundantEdgeIntr;
@@ -261,6 +253,11 @@ typedef struct IOAPIC
     STAMCOUNTER             StatEoiContention;
     /** Number of returns to ring-3 due to Set RTE lock contention. */
     STAMCOUNTER             StatSetRteContention;
+    /** Number of level-triggered interrupts dispatched to the local APIC(s). */
+    STAMCOUNTER             StatLevelIrqSent;
+    /** Number of EOIs received for level-triggered interrupts from the local
+     *  APIC(s). */
+    STAMCOUNTER             StatEoiReceived;
 #endif
 } IOAPIC;
 /** Pointer to IOAPIC data. */
@@ -405,7 +402,11 @@ static void ioapicSignalIntrForRte(PIOAPIC pThis, uint8_t idxRte)
                                                                 u8TriggerMode,
                                                                 u32TagSrc);
         /* Can't reschedule to R3. */
-        Assert(rc == VINF_SUCCESS);
+        Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
+#ifdef DEBUG_ramshankar
+        if (rc == VERR_APIC_INTR_DISCARDED)
+            AssertMsgFailed(("APIC: Interrupt discarded u8Vector=%#x (%u) u64Rte=%#RX64\n", u8Vector, u8Vector, u64Rte));
+#endif
 
         /*
          * For level-triggered interrupts, we set the remote IRR bit to indicate
@@ -416,10 +417,12 @@ static void ioapicSignalIntrForRte(PIOAPIC pThis, uint8_t idxRte)
          * The device will explicitly transition to inactive state via the
          * ioapicSetIrq() callback.
          */
-        if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL)
+        if (   u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL
+            && rc == VINF_SUCCESS)
         {
             Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
             pThis->au64RedirTable[idxRte] |= IOAPIC_RTE_REMOTE_IRR;
+            STAM_COUNTER_INC(&pThis->StatLevelIrqSent);
         }
     }
 }
@@ -478,7 +481,7 @@ static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uVa
         {
             uint32_t const u32RtePreserveHi = RT_HI_U32(u64Rte) & ~RT_HI_U32(IOAPIC_RTE_VALID_WRITE_MASK);
             uint32_t const u32RteLo         = RT_LO_U32(u64Rte);
-            uint64_t const u64RteNewHi      = ((uint64_t)(uValue & RT_HI_U32(IOAPIC_RTE_VALID_WRITE_MASK)) << 32) | u32RtePreserveHi;
+            uint64_t const u64RteNewHi      = ((uint64_t)((uValue & RT_HI_U32(IOAPIC_RTE_VALID_WRITE_MASK)) | u32RtePreserveHi) << 32);
             pThis->au64RedirTable[idxRte]   = u64RteNewHi | u32RteLo;
         }
 
@@ -568,7 +571,7 @@ static int ioapicSetData(PIOAPIC pThis, uint32_t uValue)
 PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 {
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
-    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatSetEoi));
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetEoi));
     LogFlow(("IOAPIC: ioapicSetEoi: u8Vector=%#x (%u)\n", u8Vector, u8Vector));
 
     bool fRemoteIrrCleared = false;
@@ -580,8 +583,10 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
             uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
             if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
             {
+                Assert(IOAPIC_RTE_GET_REMOTE_IRR(u64Rte));
                 pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
                 fRemoteIrrCleared = true;
+                STAM_COUNTER_INC(&pThis->StatEoiReceived);
                 Log2(("IOAPIC: ioapicSetEoi: Cleared remote IRR, idxRte=%u vector=%#x (%u)\n", idxRte, u8Vector, u8Vector));
 
                 /*
@@ -611,7 +616,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
 
-    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatSetIrq));
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetIrq));
 
     if (RT_LIKELY(iIrq >= 0 && iIrq < (int)RT_ELEMENTS(pThis->au64RedirTable)))
     {
@@ -737,7 +742,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t 
                                                             u8TriggerMode,
                                                             uTagSrc);
     /* Can't reschedule to R3. */
-    Assert(rc == VINF_SUCCESS);
+    Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
 }
 
 
@@ -747,7 +752,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t 
 PDMBOTHCBDECL(int) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
-    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatMmioRead));
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioRead));
 
     int       rc      = VINF_SUCCESS;
     uint32_t *puValue = (uint32_t *)pv;
@@ -780,7 +785,7 @@ PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 {
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
 
-    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatMmioWrite));
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioWrite));
 
     Assert(!(GCPhysAddr & 3));
     Assert(cb == 4);
@@ -1246,24 +1251,15 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Statistics.
      */
-    bool fHasRC = !HMIsEnabledNotMacro(PDMDevHlpGetVM(pDevIns));
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR0,  STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioReadR0",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R0.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR0, STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/MmioWriteR0", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in R0.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR0,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/SetIrqR0",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R0.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiR0,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R0/SetEoiR0",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in R0.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/MmioReadRZ",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/MmioWriteRZ", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRZ,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/SetIrqRZ",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in RZ.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiRZ,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RZ/SetEoiRZ",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in RZ.");
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/MmioReadR3",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in R3");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/MmioWriteR3", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqR3,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/SetIrqR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiR3,    STAMTYPE_COUNTER, "/Devices/IOAPIC/R3/SetEoiR3",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in R3.");
-
-    if (fHasRC)
-    {
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRC,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/MmioReadRC",  STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO reads in RC.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRC, STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/MmioWriteRC", STAMUNIT_OCCURENCES, "Number of IOAPIC MMIO writes in RC.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetIrqRC,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/SetIrqRC",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetIrq calls in RC.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetEoiRC,    STAMTYPE_COUNTER, "/Devices/IOAPIC/RC/SetEoiRC",    STAMUNIT_OCCURENCES, "Number of IOAPIC SetEoi calls in RC.");
-    }
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantEdgeIntr,   STAMTYPE_COUNTER, "/Devices/IOAPIC/RedundantEdgeIntr",   STAMUNIT_OCCURENCES, "Number of redundant edge-triggered interrupts (no IRR change).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRedundantLevelIntr,  STAMTYPE_COUNTER, "/Devices/IOAPIC/RedundantLevelIntr",  STAMUNIT_OCCURENCES, "Number of redundant level-triggered interrupts (no IRR change).");
@@ -1271,6 +1267,9 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiContention,    STAMTYPE_COUNTER, "/Devices/IOAPIC/Contention/SetEoi", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during EOI writes causing trips to R3.");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatSetRteContention, STAMTYPE_COUNTER, "/Devices/IOAPIC/Contention/SetRte", STAMUNIT_OCCURENCES, "Number of times the critsect is busy during RTE writes causing trips to R3.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "/Devices/IOAPIC/LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "/Devices/IOAPIC/LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
 #endif
 
     /*
