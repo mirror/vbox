@@ -1699,7 +1699,7 @@ static CGEventRef darwinCarbonCallback(CGEventTapProxy unused, CGEventType unuse
     bool         fNum  = (bool)(fMask & NX_NUMERICPADMASK);
     CGKeyCode    key   = CGEventGetIntegerValueField(pEventRef, kCGKeyboardEventKeycode);
 
-    VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pData; AssertReturn(pHidState, pEventRef);
+    VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pData;
     AssertReturn(pHidState, pEventRef);
 
     if (RT_FAILURE(RTSemMutexRequest(pHidState->fifoEventQueueLock, RT_INDEFINITE_WAIT)))
