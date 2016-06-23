@@ -293,46 +293,39 @@ $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
  endif # win x11
 endif # VBOX_WITH_QTGUI_V5
 
-#
-# For building the combined package, just get the additions .ISO
-# once for amd64 to prevent version inconsistences. In all other
-# cases we get the .ISO per target architecture.
-#
-ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
- ifdef VBOX_WITH_COMBINED_PACKAGE
-  ifeq ($(KBUILD_TARGET_ARCH),amd64)
-   INSTALLS += buildserver-additions
-  endif
- else
-  INSTALLS += buildserver-additions
- endif
 
 #
-# Install additions iso from the build server.
-# The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
-# been added to kBuild.
+# Install additions iso from the build server if configured to do so.
 #
-buildserver-additions_INST = $(INST_ADDITIONS_ISO)
-buildserver-additions_MODE = 0644
-buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
-buildserver-additions_CLEANS = \
-	$(buildserver-additions_0_OUTDIR)/unpacked.ts \
-	$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip \
-	$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip.tmp \
-	$(PATH_TARGET)/VBoxGuestAdditions.iso
+# Note! For building the combined package, just get the additions .ISO
+#       once for amd64 to prevent version inconsistences. In all other
+#       cases we get the .ISO per target architecture.
+#
+if  defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
+ && (   !defined(VBOX_WITH_COMBINED_PACKAGE) \
+     || "$(KBUILD_TARGET_ARCH)" == "amd64" )
+ INSTALLS += buildserver-additions
+ buildserver-additions_INST = $(INST_ADDITIONS_ISO)
+ buildserver-additions_MODE = 0644
+ buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
+ buildserver-additions_CLEANS = \
+        $(buildserver-additions_0_OUTDIR)/unpacked.ts \
+        $(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip \
+        $(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip.tmp \
+        $(PATH_TARGET)/VBoxGuestAdditions.iso
 
-$$(buildserver-additions_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VBoxGuestAdditions.iso: \
-		$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip
+ $$(buildserver-additions_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VBoxGuestAdditions.iso: \
+ 		$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip
 	$(call MSG_L1,Unpacking additions archive)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
 	$(APPEND) -t $@ "done"
 
-$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
+ $$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
 	$(RM) -f -- "$@" "$@.tmp"
 	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename "$@.tmp"
 	$(MV) -f -- "$@.tmp" "$@"
 
-endif # VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
+endif # VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER unless win.x86+combined
 
 
 #
