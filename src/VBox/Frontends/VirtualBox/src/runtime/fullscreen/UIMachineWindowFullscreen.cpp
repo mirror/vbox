@@ -210,6 +210,14 @@ void UIMachineWindowFullscreen::sltShowMinimized()
     /* Minimize window and reset it's state to NONE: */
     setWindowState(Qt::WindowNoState);
     windowHandle()->showMinimized();
+
+    /* If there is mini-toolbar: */
+    if (m_pMiniToolBar)
+    {
+        /* Hide mini-toolbar and reset it's state to NONE: */
+        m_pMiniToolBar->setWindowState(Qt::WindowNoState);
+        m_pMiniToolBar->hide();
+    }
 #  endif /* VBOX_WS_X11 */
 # endif /* QT_VERSION >= 0x050000 */
 }
