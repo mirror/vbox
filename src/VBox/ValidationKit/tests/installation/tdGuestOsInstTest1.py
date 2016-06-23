@@ -326,7 +326,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         Extend standard options set
         """
 
-        if False is False:
+        if False is True:
             pass;
         elif asArgs[iArg] == '--ioapic':
             for oTestVm in self.oTestVmSet.aoTestVms:
