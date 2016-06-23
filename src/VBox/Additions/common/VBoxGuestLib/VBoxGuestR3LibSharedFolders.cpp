@@ -316,7 +316,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMountPrefix(char **ppszPrefix)
 VBGLR3DECL(int) VbglR3SharedFolderGetMountDir(char **ppszDir)
 {
     AssertPtrReturn(ppszDir, VERR_INVALID_POINTER);
-    int rc;
+    int rc = VERR_NOT_FOUND;
 #ifdef VBOX_WITH_GUEST_PROPS
     HGCMCLIENTID idClientGuestProp;
     rc = VbglR3GuestPropConnect(&idClientGuestProp);
