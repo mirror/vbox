@@ -225,7 +225,6 @@ void sys_mbox_free(sys_mbox_t *pvMbox)
     struct sys_mbox *mbox = NULL;
     Assert(pvMbox && *pvMbox);
     mbox = (struct sys_mbox*)*pvMbox;
-    Assert(pvMbox != NULL && pvMbox != NULL);
     LWIPMutexDestroy((mbox)->mutex);
     RTSemEventMultiDestroy((mbox)->nonempty);
     RTSemEventMultiDestroy((mbox)->nonfull);
