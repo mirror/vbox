@@ -532,7 +532,8 @@ void UIMiniToolBar::sltHoverLeave()
     if (m_fHovered)
     {
         m_fHovered = false;
-        emit sigHoverLeave();
+        if (m_fAutoHide)
+            emit sigHoverLeave();
     }
 }
 
@@ -649,7 +650,7 @@ void UIMiniToolBar::enterEvent(QEvent*)
         m_pHoverLeaveTimer->stop();
 
     /* Start the hover-enter timer: */
-    if (m_fAutoHide && m_pHoverEnterTimer)
+    if (m_pHoverEnterTimer)
         m_pHoverEnterTimer->start();
 }
 
