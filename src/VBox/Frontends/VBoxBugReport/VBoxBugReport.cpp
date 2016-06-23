@@ -249,7 +249,10 @@ BugReportCommand::BugReportCommand(const char *pszTitle, const char *pszExec, ..
     do
     {
         if (cArgs >= RT_ELEMENTS(m_papszArgs))
+        {
+            va_end(va);
             throw RTCError(com::Utf8StrFmt("Too many arguments (%u > %u)\n", cArgs+1, RT_ELEMENTS(m_papszArgs)));
+        }
         pszArg = va_arg(va, const char *);
         m_papszArgs[cArgs++] = pszArg ? RTStrDup(pszArg) : NULL;
     } while (pszArg);
