@@ -3698,7 +3698,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTypeInfoCallback(uint32_t off, const char *p
     PDBGCCMDHLP pCmdHlp = (PDBGCCMDHLP)pvUser;
 
     /* Pad with spaces to match the level. */
-    for (uint32_t i = 0; i < iLvl; i++);
+    for (uint32_t i = 0; i < iLvl; i++)
         DBGCCmdHlpPrintf(pCmdHlp, "    ");
 
     size_t cbWritten = 0;
@@ -3811,7 +3811,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTypedValCallback(uint32_t off, const char *p
     PDBGCCMDHLP pCmdHlp = (PDBGCCMDHLP)pvUser;
 
     /* Pad with spaces to match the level. */
-    for (uint32_t i = 0; i < iLvl; i++);
+    for (uint32_t i = 0; i < iLvl; i++)
         DBGCCmdHlpPrintf(pCmdHlp, "    ");
 
     size_t cbWritten = 0;
