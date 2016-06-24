@@ -1785,7 +1785,7 @@ static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
         return VINF_SUCCESS;
     }
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     if (pStream->pMixSink) /* Stream attached to a sink? */
     {
