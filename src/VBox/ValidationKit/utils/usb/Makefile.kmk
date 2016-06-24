@@ -43,7 +43,6 @@ UsbTestService_DEFS = \
 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
 UsbTestService_SOURCES = \
 	UsbTestService.cpp \
-	UsbTestServiceCfg.cpp \
 	UsbTestServiceGadgetCfg.cpp \
 	UsbTestServiceGadgetClassTest.cpp \
 	UsbTestServiceGadgetHost.cpp \
