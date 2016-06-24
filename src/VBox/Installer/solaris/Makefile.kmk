@@ -580,7 +580,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 			$(PATH_S10LIBS.$(arch))/$(lib)))) \
 		\
 		$(if $(VBOX_OSE),,$(foreach arch, amd64, $(foreach lib, libxcb.so.1 libX11-xcb.so.1 libX11.so.4 libGL.so, \
-			$(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib)))) \
+			$(PATH_S10LIBS.$(arch))/$(lib)))) \
 		\
 		$(foreach var, $(SOLARIS_FILE_LIST_VARS),$(foreach file, $($(var)), $($(var).SRC)/$(file))) \
 		\
@@ -663,7 +663,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib))))
 
 	$(if $(VBOX_OSE),,$(foreach arch, amd64, $(foreach lib, libxcb.so.1 libX11-xcb.so.1 libX11.so.4 libGL.so \
-		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib) \
+		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_S10LIBS.$(arch))/$(lib) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib))))
 
 	$(if-expr defined(VBOX_WITH_EFIFW_PACKING) \
