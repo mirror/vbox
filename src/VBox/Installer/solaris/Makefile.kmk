@@ -570,6 +570,9 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6, \
 			$(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib)))) \
 		\
+		$(if $(VBOX_OSE),,$(foreach arch, amd64, $(foreach lib, libxcb.so.1 libX11-xcb.so.1 libX11.so.4 libGL.so, \
+			$(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib)))) \
+		\
 		$(foreach var, $(SOLARIS_FILE_LIST_VARS),$(foreach file, $($(var)), $($(var).SRC)/$(file))) \
 		\
 		$(foreach size, $(VBOX_SI_ICON_SIZES), $(foreach type, $(VBOX_SI_ICON_TYPES) \
@@ -647,6 +650,10 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/libSDL-1.2.so.0,)
 
 	$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6 \
+		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib) \
+		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib))))
+
+	$(if $(VBOX_OSE),,$(foreach arch, amd64, $(foreach lib, libxcb.so.1 libX11-xcb.so.1 libX11.so.4 libGL.so \
 		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib))))
 
