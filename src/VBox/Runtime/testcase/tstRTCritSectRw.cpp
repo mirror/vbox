@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/lockvalidator.h>
+#include <iprt/mp.h>
 #include <iprt/rand.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
@@ -453,6 +454,7 @@ int main(int argc, char **argv)
 
     if (Test1())
     {
+        RTCPUID cCores = RTMpGetOnlineCoreCount();
         if (argc == 1)
         {
             TestNegative();
@@ -465,25 +467,35 @@ int main(int argc, char **argv)
             Test4(     10,       1,            5,   true,  false);
             Test4(     10,      10,           10,  false,  false);
 
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "benchmarking...\n");
-            for (unsigned cThreads = 1; cThreads < 32; cThreads++)
+            if (cCores > 1)
+            {
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "benchmarking (%u CPU cores)...\n", cCores);
+                for (unsigned cThreads = 1; cThreads < 32; cThreads++)
                 Test4(cThreads,  2,            1,  false,   true);
+            }
+            else
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "skipping benchmarking (only %u core available)\n", cCores);
 
             /** @todo add a testcase where some stuff times out. */
         }
         else
         {
-            /*    threads, seconds, writePercent,  yield,  quiet */
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "benchmarking...\n");
-            Test4(      1,       3,            1,  false,   true);
-            Test4(      1,       3,            1,  false,   true);
-            Test4(      1,       3,            1,  false,   true);
-            Test4(      2,       3,            1,  false,   true);
-            Test4(      2,       3,            1,  false,   true);
-            Test4(      2,       3,            1,  false,   true);
-            Test4(      3,       3,            1,  false,   true);
-            Test4(      3,       3,            1,  false,   true);
-            Test4(      3,       3,            1,  false,   true);
+            if (cCores > 1)
+            {
+                /*    threads, seconds, writePercent,  yield,  quiet */
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "benchmarking (%u CPU cores)...\n", cCores);
+                Test4(      1,       3,            1,  false,   true);
+                Test4(      1,       3,            1,  false,   true);
+                Test4(      1,       3,            1,  false,   true);
+                Test4(      2,       3,            1,  false,   true);
+                Test4(      2,       3,            1,  false,   true);
+                Test4(      2,       3,            1,  false,   true);
+                Test4(      3,       3,            1,  false,   true);
+                Test4(      3,       3,            1,  false,   true);
+                Test4(      3,       3,            1,  false,   true);
+            }
+            else
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "skipping benchmarking (only %u core available)\n", cCores);
         }
     }
 
