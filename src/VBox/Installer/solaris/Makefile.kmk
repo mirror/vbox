@@ -551,6 +551,15 @@ endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
+PATH_S10LIBS.x86 := $(sort $(wildcard $(PATH_DEVTOOLS)/solaris.x86/s10libs/v*))
+ifneq ($(PATH_S10LIBS.x86),)
+ PATH_S10LIBS.x86 := $(call lastword,$(PATH_S10LIBS.x86))
+endif
+PATH_S10LIBS.amd64 := $(sort $(wildcard $(PATH_DEVTOOLS)/solaris.amd64/s10libs/v*))
+ifneq ($(PATH_S10LIBS.amd64),)
+ PATH_S10LIBS.amd64 := $(call lastword,$(PATH_S10LIBS.amd64))
+endif
+
 #
 # Creates the System V style installer package.
 #
@@ -568,7 +577,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL), $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
 		$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6, \
-			$(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib)))) \
+			$(PATH_S10LIBS.$(arch))/$(lib)))) \
 		\
 		$(if $(VBOX_OSE),,$(foreach arch, amd64, $(foreach lib, libxcb.so.1 libX11-xcb.so.1 libX11.so.4 libGL.so, \
 			$(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib)))) \
@@ -650,7 +659,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/libSDL-1.2.so.0,)
 
 	$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6 \
-		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS)/solaris.$(arch)/s10libs/$(lib) \
+		,$(NLTAB)$(INSTALL) -s -m 0644 $(PATH_S10LIBS.$(arch))/$(lib) \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(if-expr $(arch) == "amd64",amd64/,)legacy/$(lib))))
 
 	$(if $(VBOX_OSE),,$(foreach arch, amd64, $(foreach lib, libxcb.so.1 libX11-xcb.so.1 libX11.so.4 libGL.so \
