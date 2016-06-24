@@ -1755,7 +1755,7 @@ static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
                     bool fSucceeded;
 
                     Assert(pUrbLnx->pSplitHead);
-                    Assert((pKUrb->endpoint & 0x80) && (!pKUrb->flags & USBDEVFS_URB_SHORT_NOT_OK));
+                    Assert((pKUrb->endpoint & 0x80) && !(pKUrb->flags & USBDEVFS_URB_SHORT_NOT_OK));
                     PUSBPROXYURBLNX pNew = usbProxyLinuxSplitURBFragment(pProxyDev, pUrbLnx->pSplitHead, pUrbLnx);
                     if (!pNew)
                     {
