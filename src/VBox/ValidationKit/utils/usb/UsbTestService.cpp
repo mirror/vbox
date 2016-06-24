@@ -1278,7 +1278,7 @@ static int utsInit(void)
             else
                 RTMsgError("Creating global critical section failed with %Rrc\n", rc);
 
-            utsConfigAstDestroy(g_pCfgAst);
+            RTJsonValueRelease(g_hCfgJson);
         }
         else
             RTMsgError("Initializing the platform failed with %Rrc\n", rc);
