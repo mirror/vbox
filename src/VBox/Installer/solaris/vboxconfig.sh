@@ -1254,12 +1254,12 @@ postinstall()
 
         # Install the S10 legacy library links if necessary
         if test -d /opt/VirtualBox/legacy/; then
-            if test "$HOST_OS_MAJORVERSION" -eq 10; then
+            if ldd /opt/VirtualBox/amd64/VBoxRT-x86.so | grep "not found" > /dev/null; then
                 for lib in `ls -1 /opt/VirtualBox/legacy/`; do
                     ln -sf legacy/$lib /opt/VirtualBox/$lib
                 done
             fi
-            if test "$HOST_OS_MAJORVERSION" -eq 10; then
+            if ldd /opt/VirtualBox/amd64/VBoxRT.so | grep "not found" > /dev/null; then
                 for lib in `ls -1 /opt/VirtualBox/amd64/legacy/`; do
                     ln -sf legacy/$lib /opt/VirtualBox/amd64/$lib
                 done
