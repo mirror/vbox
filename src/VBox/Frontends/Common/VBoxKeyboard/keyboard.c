@@ -246,7 +246,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, unsigned min_keycode,
         }
       }
     }
-    LOG_KB_2(("Matches=%d, seq=%d\n", match, seq));
+    LOG_KB_2(("Matches=%u, seq=%u\n", match, seq));
     if (   (match > max_score)
         || ((match == max_score) && (seq > max_seq))
        ) {
@@ -257,7 +257,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, unsigned min_keycode,
     }
   }
   /* we're done, report results if necessary */
-  LOG_KB_1(("Detected layout is \"%s\", matches=%d, seq=%d\n",
+  LOG_KB_1(("Detected layout is \"%s\", matches=%u, seq=%u\n",
         main_key_tab[kbd_layout].comment, max_score, max_seq));
   return kbd_layout;
 }
@@ -379,7 +379,7 @@ X11DRV_InitKeyboardByLayout(Display *display)
                 if ((shifted > 32) && (shifted < 127)) {
                     str[1] = shifted;
                 }
-                LOG_KB_1(("Warning - keycode %d, keysym \"%s\" (0x%x 0x%x) was matched to scancode %d\n",
+                LOG_KB_1(("Warning - keycode %d, keysym \"%s\" (0x%x 0x%x) was matched to scancode %u\n",
                              keyc, str, unshifted, shifted, scan));
               }
             }
@@ -397,7 +397,7 @@ X11DRV_InitKeyboardByLayout(Display *display)
             ++entries;
         }
     }
-    LOG_KB_1(("Finished mapping keyboard, matches=%d, entries=%d (excluding 102nd key)\n", matches, entries));
+    LOG_KB_1(("Finished mapping keyboard, matches=%u, entries=%u (excluding 102nd key)\n", matches, entries));
     if (matches != entries)
     {
         return 0;
