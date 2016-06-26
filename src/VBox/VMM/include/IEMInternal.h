@@ -254,7 +254,7 @@ typedef struct IEMCPU
     /** Indicates that we're interpreting patch code - RC only! */
     bool                    fInPatchCode;
     /** Explicit alignment padding. */
-    bool                    afAlignment0[2];
+    bool                    afAlignment0[2+4];
 
     /** The flags of the current exception / interrupt. */
     uint32_t                fCurXcpt;
