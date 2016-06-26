@@ -522,6 +522,14 @@ FNIEMOP_DEF(iemOp_Invalid)
 }
 
 
+/** Invalid with RM byte . */
+FNIEMOPRM_DEF(iemOp_InvalidWithRM)
+{
+    IEMOP_MNEMONIC("InvalidWithRM");
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 
 /** @name ..... opcodes.
  *
@@ -537,7 +545,7 @@ FNIEMOP_DEF(iemOp_Invalid)
  */
 
 /** Opcode 0x0f 0x00 /0. */
-FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
+FNIEMOPRM_DEF(iemOp_Grp6_sldt)
 {
     IEMOP_MNEMONIC("sldt Rv/Mw");
     IEMOP_HLP_MIN_286();
@@ -595,7 +603,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_sldt, uint8_t, bRm)
 
 
 /** Opcode 0x0f 0x00 /1. */
-FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
+FNIEMOPRM_DEF(iemOp_Grp6_str)
 {
     IEMOP_MNEMONIC("str Rv/Mw");
     IEMOP_HLP_MIN_286();
@@ -653,7 +661,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_str, uint8_t, bRm)
 
 
 /** Opcode 0x0f 0x00 /2. */
-FNIEMOP_DEF_1(iemOp_Grp6_lldt, uint8_t, bRm)
+FNIEMOPRM_DEF(iemOp_Grp6_lldt)
 {
     IEMOP_MNEMONIC("lldt Ew");
     IEMOP_HLP_MIN_286();
@@ -685,7 +693,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_lldt, uint8_t, bRm)
 
 
 /** Opcode 0x0f 0x00 /3. */
-FNIEMOP_DEF_1(iemOp_Grp6_ltr, uint8_t, bRm)
+FNIEMOPRM_DEF(iemOp_Grp6_ltr)
 {
     IEMOP_MNEMONIC("ltr Ew");
     IEMOP_HLP_MIN_286();
@@ -749,7 +757,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp6VerX, uint8_t, bRm, bool, fWrite)
 
 
 /** Opcode 0x0f 0x00 /4. */
-FNIEMOP_DEF_1(iemOp_Grp6_verr, uint8_t, bRm)
+FNIEMOPRM_DEF(iemOp_Grp6_verr)
 {
     IEMOP_MNEMONIC("verr Ew");
     IEMOP_HLP_MIN_286();
@@ -758,7 +766,7 @@ FNIEMOP_DEF_1(iemOp_Grp6_verr, uint8_t, bRm)
 
 
 /** Opcode 0x0f 0x00 /5. */
-FNIEMOP_DEF_1(iemOp_Grp6_verw, uint8_t, bRm)
+FNIEMOPRM_DEF(iemOp_Grp6_verw)
 {
     IEMOP_MNEMONIC("verr Ew");
     IEMOP_HLP_MIN_286();
@@ -766,23 +774,26 @@ FNIEMOP_DEF_1(iemOp_Grp6_verw, uint8_t, bRm)
 }
 
 
+/**
+ * Group 6 jump table.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup6[8] =
+{
+    iemOp_Grp6_sldt,
+    iemOp_Grp6_str,
+    iemOp_Grp6_lldt,
+    iemOp_Grp6_ltr,
+    iemOp_Grp6_verr,
+    iemOp_Grp6_verw,
+    iemOp_InvalidWithRM,
+    iemOp_InvalidWithRM
+};
+
 /** Opcode 0x0f 0x00. */
 FNIEMOP_DEF(iemOp_Grp6)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-    {
-        case 0: return FNIEMOP_CALL_1(iemOp_Grp6_sldt, bRm);
-        case 1: return FNIEMOP_CALL_1(iemOp_Grp6_str,  bRm);
-        case 2: return FNIEMOP_CALL_1(iemOp_Grp6_lldt, bRm);
-        case 3: return FNIEMOP_CALL_1(iemOp_Grp6_ltr,  bRm);
-        case 4: return FNIEMOP_CALL_1(iemOp_Grp6_verr, bRm);
-        case 5: return FNIEMOP_CALL_1(iemOp_Grp6_verw, bRm);
-        case 6: return IEMOP_RAISE_INVALID_OPCODE();
-        case 7: return IEMOP_RAISE_INVALID_OPCODE();
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
-
+    return FNIEMOP_CALL_1(g_apfnGroup6[(bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK], bRm);
 }
 
 
@@ -7125,7 +7136,7 @@ FNIEMOP_STUB(iemOp_paddw_Pq_Qq__paddw_Vdq_Wdq);
 FNIEMOP_STUB(iemOp_paddd_Pq_Qq__paddd_Vdq_Wdq);
 
 
-const PFNIEMOP g_apfnTwoByteMap[256] =
+IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[256] =
 {
     /* 0x00 */  iemOp_Grp6,
     /* 0x01 */  iemOp_Grp7,
@@ -14348,7 +14359,7 @@ FNIEMOP_DEF(iemOp_fcos)
 
 
 /** Used by iemOp_EscF1. */
-static const PFNIEMOP g_apfnEscF1_E0toFF[32] =
+IEM_STATIC const PFNIEMOP g_apfnEscF1_E0toFF[32] =
 {
     /* 0xe0 */  iemOp_fchs,
     /* 0xe1 */  iemOp_fabs,

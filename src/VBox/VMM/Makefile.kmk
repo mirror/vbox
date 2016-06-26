@@ -331,6 +331,10 @@ VMMR3/SSM.cpp_DEFS +=	\
 # endif
 #endif
 
+if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
+ VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+endif
+
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
 
 
@@ -542,6 +546,10 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  VMMRC/VMMRCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMRCDeps.cpp to .c
 
  $(call VBOX_SET_VER_INFO_RC,VMMRC,VirtualBox VMM - raw-mode context parts) # Version info / description.
+
+ if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
+  VMMRC_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ endif
 endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
 
 
@@ -676,7 +684,12 @@ ifndef VBOX_ONLY_EXTPACKS
  endif
 
  $(call VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.
+
+ if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
+  VMMR0_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ endif
 endif # !VBOX_ONLY_EXTPACKS
+
 
 
 ifndef VBOX_ONLY_EXTPACKS
