@@ -5287,23 +5287,34 @@ IEM_STATIC void iemRegAddToRipAndClearRF(PIEMCPU pIemCpu, uint8_t cbInstr)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
-    pCtx->eflags.Bits.u1RF = 0;
-
-    /* NB: Must be kept in sync with HM (xxxAdvanceGuestRip). */
+#if ARCH_BITS >= 64
+    AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
+    static uint64_t const s_aRipMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_MAX };
+    Assert(pCtx->rip <= s_aRipMasks[pIemCpu->enmCpuMode]);
+    pCtx->rip += cbInstr;
+    pCtx->rip &= s_aRipMasks[pIemCpu->enmCpuMode];
+#else
     switch (pIemCpu->enmCpuMode)
     {
-        /** @todo investigate if EIP or RIP is really incremented. */
         case IEMMODE_16BIT:
+            Assert(pCtx->rip <= UINT16_MAX);
+            pCtx->ip += cbInstr;
+            break;
+
         case IEMMODE_32BIT:
-            pCtx->eip += cbInstr;
             Assert(pCtx->rip <= UINT32_MAX);
+            pCtx->eip += cbInstr;
             break;
 
         case IEMMODE_64BIT:
             pCtx->rip += cbInstr;
             break;
+
         default: AssertFailed();
     }
+#endif
+
+    pCtx->eflags.Bits.u1RF = 0;
 }
 
 
