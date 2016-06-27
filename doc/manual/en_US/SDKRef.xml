@@ -3917,9 +3917,9 @@ AuthResult AUTHCALL AuthEntry(
       <title>Incompatible API changes with version 5.x</title>
 
       <itemizedlist>
-        <listitem><para><link linkend="ProcessCreateFlag__NoProfile">ProcessCreateFlag::NoProfile</link>
-          has been renamed to <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>,
-          whereas the semantics also has been changed: <link linkend="ProcessCreateFlag__NoProfile">ProcessCreateFlag::NoProfile</link>
+        <listitem><para>ProcessCreateFlag::NoProfile has been renamed to
+          <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>,
+          whereas the semantics also has been changed: ProcessCreateFlag::NoProfile
           explicitly <emphasis role="bold">did not</emphasis> utilize the guest user's profile data,
           which in turn <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>
           explicitly <emphasis role="bold">does now</emphasis>.</para>
