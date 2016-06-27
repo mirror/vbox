@@ -652,7 +652,11 @@ static RTCRDIGESTDESC const g_rtCrDigestOpenSslDesc =
     NULL,
     RTDIGESTTYPE_UNKNOWN,
     EVP_MAX_MD_SIZE,
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
     0,
+# else
+    sizeof(EVP_MD_CTX),
+# endif
     0,
 # if OPENSSL_VERSION_NUMBER >= 0x10100000
     rtCrDigestOsslEvp_New,
