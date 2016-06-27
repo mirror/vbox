@@ -74,7 +74,9 @@
               <para>This package contains Python scripting support for the
               VirtualBox API (see <xref linkend="VirtualBoxAPI" />). For this
               to work, an already working Windows Python installation on the
-              system is required. Note that Python version &ge; 2.6 required.<footnote>
+              system is required.
+                <note><para>Python version &ge; 2.6 is required. Since VirtualBox 5.1 Python 3 is also supported.</para></note>
+                <footnote>
                   <para>See, for example, <ulink
                   url="http://www.python.org/download/windows/">http://www.python.org/download/windows/</ulink>.</para>
                 </footnote></para>
@@ -152,7 +154,9 @@
             <glossterm>VBoxPython</glossterm>
 
             <glossdef>
-              <para>Python support. Note that Python version &ge; 2.6 required.</para>
+              <para>Python support.
+                <note><para>Python version &ge; 2.6 is required. Since VirtualBox 5.1 Python 3 is also supported.</para></note>
+              </para>
             </glossdef>
           </glossentry>
         </glosslist>For example, to only install USB support along with the
