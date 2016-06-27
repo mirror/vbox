@@ -190,7 +190,7 @@ int main(int argc, char **argv)
                 fclose(pFile);
             }
             else
-                fprintf(stderr, "error: fopen('%s','r'): %d\n", argv[i][1], errno);
+                fprintf(stderr, "error: fopen('%s','r'): %d\n", &argv[i][1], errno);
         }
         else
             load(argv[i]);
