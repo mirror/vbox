@@ -330,7 +330,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      "                              run [common-options]\n"
                      "                              [--exe <path to executable>] [--timeout <msec>]\n"
                      "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                     "                              [--ignore-operhaned-processes] [--no-profile]\n"
+                     "                              [--ignore-operhaned-processes] [--profile]\n"
                      "                              [--no-wait-stdout|--wait-stdout]\n"
                      "                              [--no-wait-stderr|--wait-stderr]\n"
                      "                              [--dos2unix] [--unix2dos]\n"
@@ -341,7 +341,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      "                              start [common-options]\n"
                      "                              [--exe <path to executable>] [--timeout <msec>]\n"
                      "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                     "                              [--ignore-operhaned-processes] [--no-profile]\n"
+                     "                              [--ignore-operhaned-processes] [--profile]\n"
                      "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
                      "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYFROM)
@@ -1312,7 +1312,8 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     enum kGstCtrlRunOpt
     {
         kGstCtrlRunOpt_IgnoreOrphanedProcesses = 1000,
-        kGstCtrlRunOpt_NoProfile,
+        kGstCtrlRunOpt_NoProfile, /** @todo Deprecated and will be removed soon; use kGstCtrlRunOpt_Profile instead, if needed. */
+        kGstCtrlRunOpt_Profile,
         kGstCtrlRunOpt_Dos2Unix,
         kGstCtrlRunOpt_Unix2Dos,
         kGstCtrlRunOpt_WaitForStdOut,
@@ -1328,7 +1329,8 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
         { "--ignore-operhaned-processes",   kGstCtrlRunOpt_IgnoreOrphanedProcesses,   RTGETOPT_REQ_NOTHING },
-        { "--no-profile",                   kGstCtrlRunOpt_NoProfile,                 RTGETOPT_REQ_NOTHING },
+        { "--no-profile",                   kGstCtrlRunOpt_NoProfile,                 RTGETOPT_REQ_NOTHING }, /** @todo Deprecated. */
+        { "--profile"                       kGstCtrlRunOpt_Profile,                   RTGETOPT_REQ_NOTHING },
         /* run only: 6 - options */
         { "--dos2unix",                     kGstCtrlRunOpt_Dos2Unix,                  RTGETOPT_REQ_NOTHING },
         { "--unix2dos",                     kGstCtrlRunOpt_Unix2Dos,                  RTGETOPT_REQ_NOTHING },
@@ -1386,7 +1388,12 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                     break;
 
                 case kGstCtrlRunOpt_NoProfile:
-                    aCreateFlags.push_back(ProcessCreateFlag_NoProfile);
+                    /** @todo Deprecated, will be removed. */
+                    RTPrintf("Warning: Deprecated option \"--no-profile\" specified\n");
+                    break;
+
+                case kGstCtrlRunOpt_Profile:
+                    aCreateFlags.push_back(ProcessCreateFlag_Profile);
                     break;
 
                 case 'e':

@@ -1930,7 +1930,7 @@ int GuestSession::i_processCreateExInternal(GuestProcessStartupInfo &procInfo, C
         if (   !(procInfo.mFlags & ProcessCreateFlag_IgnoreOrphanedProcesses)
             && !(procInfo.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
             && !(procInfo.mFlags & ProcessCreateFlag_Hidden)
-            && !(procInfo.mFlags & ProcessCreateFlag_NoProfile)
+            && !(procInfo.mFlags & ProcessCreateFlag_Profile)
             && !(procInfo.mFlags & ProcessCreateFlag_WaitForStdOut)
             && !(procInfo.mFlags & ProcessCreateFlag_WaitForStdErr))
         {

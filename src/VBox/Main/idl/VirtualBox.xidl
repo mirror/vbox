@@ -10565,12 +10565,12 @@ and "VAR" for unsetting. -->
 
   <enum
     name="ProcessCreateFlag"
-    uuid="be8c8dbd-4a76-e9ac-20df-468e86edf383"
+    uuid="C544CD2B-F02D-4886-9901-71C523DB8DC5"
     >
     <desc>
       Guest process execution flags.
       <note>The values are passed to the guest additions, so its not possible
-            to change (move) or reuse values.here.  See EXECUTEPROCESSFLAG_XXX
+            to change (move) or reuse values.here. See EXECUTEPROCESSFLAG_XXX
             in GuestControlSvc.h.</note>
     </desc>
 
@@ -10587,8 +10587,8 @@ and "VAR" for unsetting. -->
     <const name="Hidden"                    value="4">
       <desc>Do not show the started process according to the guest OS guidelines.</desc>
     </const>
-    <const name="NoProfile"                 value="8">
-      <desc>Do not use the user's profile data when exeuting a process. Only available for Windows guests.</desc>
+    <const name="Profile"                   value="8">
+      <desc>Utilize the user's profile data when exeuting a process. Only available for Windows guests at the moment.</desc>
     </const>
     <const name="WaitForStdOut"             value="16">
       <desc>The guest process waits until all data from stdout is read out.</desc>
