@@ -1308,11 +1308,11 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU8Slow(PIEMCPU pIemCpu,
  */
 DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PIEMCPU pIemCpu, uint8_t *pu8)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_LIKELY(offOpcode < pIemCpu->cbOpcode))
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode < pIemCpu->cbOpcode))
     {
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 1;
         *pu8 = pIemCpu->abOpcode[offOpcode];
-        pIemCpu->offOpcode = offOpcode + 1;
         return VINF_SUCCESS;
     }
     return iemOpcodeGetNextU8Slow(pIemCpu, pu8);
@@ -1321,11 +1321,10 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PIEMCPU pIemCpu, uint8_t *pu8)
 #else  /* IEM_WITH_SETJMP */
 
 /**
- * Deals with the problematic cases that iemOpcodeGetNextU8 doesn't like.
+ * Deals with the problematic cases that iemOpcodeGetNextU8Jmp doesn't like, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode byte.
  * @param   pIemCpu             The IEM state.
- * @param   pb                  Where to return the opcode byte.
  */
 DECL_NO_INLINE(IEM_STATIC, uint8_t) iemOpcodeGetNextU8SlowJmp(PIEMCPU pIemCpu)
 {
@@ -1337,15 +1336,14 @@ DECL_NO_INLINE(IEM_STATIC, uint8_t) iemOpcodeGetNextU8SlowJmp(PIEMCPU pIemCpu)
 
 
 /**
- * Fetches the next opcode byte.
+ * Fetches the next opcode byte, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode byte.
  * @param   pIemCpu             The IEM state.
- * @param   pu8                 Where to return the opcode byte.
  */
 DECLINLINE(uint8_t) iemOpcodeGetNextU8Jmp(PIEMCPU pIemCpu)
 {
-    unsigned offOpcode = pIemCpu->offOpcode;
+    uintptr_t offOpcode = pIemCpu->offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode < pIemCpu->cbOpcode))
     {
         pIemCpu->offOpcode = (uint8_t)offOpcode + 1;
@@ -1624,23 +1622,23 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU16Slow(PIEMCPU pIemCpu
  */
 DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PIEMCPU pIemCpu, uint16_t *pu16)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode + 2 > pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU16Slow(pIemCpu, pu16);
-
-    *pu16 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
-    pIemCpu->offOpcode = offOpcode + 2;
-    return VINF_SUCCESS;
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode + 2 <= pIemCpu->cbOpcode))
+    {
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 2;
+        *pu16 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+        return VINF_SUCCESS;
+    }
+    return iemOpcodeGetNextU16Slow(pIemCpu, pu16);
 }
 
 #else  /* IEM_WITH_SETJMP */
 
 /**
- * Deals with the problematic cases that iemOpcodeGetNextU16 doesn't like.
+ * Deals with the problematic cases that iemOpcodeGetNextU16Jmp doesn't like, longjmp on error
  *
- * @returns Strict VBox status code.
+ * @returns The opcode word.
  * @param   pIemCpu             The IEM state.
- * @param   pu16                Where to return the opcode word.
  */
 DECL_NO_INLINE(IEM_STATIC, uint16_t) iemOpcodeGetNextU16SlowJmp(PIEMCPU pIemCpu)
 {
@@ -1656,20 +1654,20 @@ DECL_NO_INLINE(IEM_STATIC, uint16_t) iemOpcodeGetNextU16SlowJmp(PIEMCPU pIemCpu)
 
 
 /**
- * Fetches the next opcode word.
+ * Fetches the next opcode word, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode word.
  * @param   pIemCpu             The IEM state.
- * @param   pu16                Where to return the opcode word.
  */
 DECLINLINE(uint16_t) iemOpcodeGetNextU16Jmp(PIEMCPU pIemCpu)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode + 2 > pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU16SlowJmp(pIemCpu);
-
-    pIemCpu->offOpcode = offOpcode + 2;
-    return RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode + 2 <= pIemCpu->cbOpcode))
+    {
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 2;
+        return RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+    }
+    return iemOpcodeGetNextU16SlowJmp(pIemCpu);
 }
 
 #endif /* IEM_WITH_SETJMP */
@@ -1891,26 +1889,26 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU32Slow(PIEMCPU pIemCpu
  */
 DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PIEMCPU pIemCpu, uint32_t *pu32)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode + 4 > pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU32Slow(pIemCpu, pu32);
-
-    *pu32 = RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                                pIemCpu->abOpcode[offOpcode + 1],
-                                pIemCpu->abOpcode[offOpcode + 2],
-                                pIemCpu->abOpcode[offOpcode + 3]);
-    pIemCpu->offOpcode = offOpcode + 4;
-    return VINF_SUCCESS;
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode + 4 <= pIemCpu->cbOpcode))
+    {
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 4;
+        *pu32 = RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                    pIemCpu->abOpcode[offOpcode + 1],
+                                    pIemCpu->abOpcode[offOpcode + 2],
+                                    pIemCpu->abOpcode[offOpcode + 3]);
+        return VINF_SUCCESS;
+    }
+    return iemOpcodeGetNextU32Slow(pIemCpu, pu32);
 }
 
 #else  /* !IEM_WITH_SETJMP */
 
 /**
- * Deals with the problematic cases that iemOpcodeGetNextU32 doesn't like.
+ * Deals with the problematic cases that iemOpcodeGetNextU32Jmp doesn't like, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode dword.
  * @param   pIemCpu             The IEM state.
- * @param   pu32                Where to return the opcode dword.
  */
 DECL_NO_INLINE(IEM_STATIC, uint32_t) iemOpcodeGetNextU32SlowJmp(PIEMCPU pIemCpu)
 {
@@ -1929,23 +1927,23 @@ DECL_NO_INLINE(IEM_STATIC, uint32_t) iemOpcodeGetNextU32SlowJmp(PIEMCPU pIemCpu)
 
 
 /**
- * Fetches the next opcode dword.
+ * Fetches the next opcode dword, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode dword.
  * @param   pIemCpu             The IEM state.
- * @param   pu32                Where to return the opcode double word.
  */
 DECLINLINE(uint32_t) iemOpcodeGetNextU32Jmp(PIEMCPU pIemCpu)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode + 4 > pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU32SlowJmp(pIemCpu);
-
-    pIemCpu->offOpcode = offOpcode + 4;
-    return RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                               pIemCpu->abOpcode[offOpcode + 1],
-                               pIemCpu->abOpcode[offOpcode + 2],
-                               pIemCpu->abOpcode[offOpcode + 3]);
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode + 4 <= pIemCpu->cbOpcode))
+    {
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 4;
+        return RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                   pIemCpu->abOpcode[offOpcode + 1],
+                                   pIemCpu->abOpcode[offOpcode + 2],
+                                   pIemCpu->abOpcode[offOpcode + 3]);
+    }
+    return iemOpcodeGetNextU32SlowJmp(pIemCpu);
 }
 
 #endif /* !IEM_WITH_SETJMP */
@@ -2184,30 +2182,30 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU64Slow(PIEMCPU pIemCpu
  */
 DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PIEMCPU pIemCpu, uint64_t *pu64)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode + 8 > pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU64Slow(pIemCpu, pu64);
-
-    *pu64 = RT_MAKE_U64_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                                pIemCpu->abOpcode[offOpcode + 1],
-                                pIemCpu->abOpcode[offOpcode + 2],
-                                pIemCpu->abOpcode[offOpcode + 3],
-                                pIemCpu->abOpcode[offOpcode + 4],
-                                pIemCpu->abOpcode[offOpcode + 5],
-                                pIemCpu->abOpcode[offOpcode + 6],
-                                pIemCpu->abOpcode[offOpcode + 7]);
-    pIemCpu->offOpcode = offOpcode + 8;
-    return VINF_SUCCESS;
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode + 8 <= pIemCpu->cbOpcode))
+    {
+        *pu64 = RT_MAKE_U64_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                    pIemCpu->abOpcode[offOpcode + 1],
+                                    pIemCpu->abOpcode[offOpcode + 2],
+                                    pIemCpu->abOpcode[offOpcode + 3],
+                                    pIemCpu->abOpcode[offOpcode + 4],
+                                    pIemCpu->abOpcode[offOpcode + 5],
+                                    pIemCpu->abOpcode[offOpcode + 6],
+                                    pIemCpu->abOpcode[offOpcode + 7]);
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 8;
+        return VINF_SUCCESS;
+    }
+    return iemOpcodeGetNextU64Slow(pIemCpu, pu64);
 }
 
 #else  /* IEM_WITH_SETJMP */
 
 /**
- * Deals with the problematic cases that iemOpcodeGetNextU64 doesn't like.
+ * Deals with the problematic cases that iemOpcodeGetNextU64Jmp doesn't like, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode qword.
  * @param   pIemCpu             The IEM state.
- * @param   pu64                Where to return the opcode qword.
  */
 DECL_NO_INLINE(IEM_STATIC, uint64_t) iemOpcodeGetNextU64SlowJmp(PIEMCPU pIemCpu)
 {
@@ -2230,27 +2228,27 @@ DECL_NO_INLINE(IEM_STATIC, uint64_t) iemOpcodeGetNextU64SlowJmp(PIEMCPU pIemCpu)
 
 
 /**
- * Fetches the next opcode qword.
+ * Fetches the next opcode qword, longjmp on error.
  *
- * @returns Strict VBox status code.
+ * @returns The opcode qword.
  * @param   pIemCpu             The IEM state.
- * @param   pu64                Where to return the opcode qword.
  */
 DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PIEMCPU pIemCpu)
 {
-    uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode + 8 > pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU64SlowJmp(pIemCpu);
-
-    pIemCpu->offOpcode = offOpcode + 8;
-    return RT_MAKE_U64_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                               pIemCpu->abOpcode[offOpcode + 1],
-                               pIemCpu->abOpcode[offOpcode + 2],
-                               pIemCpu->abOpcode[offOpcode + 3],
-                               pIemCpu->abOpcode[offOpcode + 4],
-                               pIemCpu->abOpcode[offOpcode + 5],
-                               pIemCpu->abOpcode[offOpcode + 6],
-                               pIemCpu->abOpcode[offOpcode + 7]);
+    uintptr_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_LIKELY((uint8_t)offOpcode + 8 <= pIemCpu->cbOpcode))
+    {
+        pIemCpu->offOpcode = (uint8_t)offOpcode + 8;
+        return RT_MAKE_U64_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                   pIemCpu->abOpcode[offOpcode + 1],
+                                   pIemCpu->abOpcode[offOpcode + 2],
+                                   pIemCpu->abOpcode[offOpcode + 3],
+                                   pIemCpu->abOpcode[offOpcode + 4],
+                                   pIemCpu->abOpcode[offOpcode + 5],
+                                   pIemCpu->abOpcode[offOpcode + 6],
+                                   pIemCpu->abOpcode[offOpcode + 7]);
+    }
+    return iemOpcodeGetNextU64SlowJmp(pIemCpu);
 }
 
 #endif /* IEM_WITH_SETJMP */

@@ -783,18 +783,18 @@ endif
 #
 # Always optimize the interpreter.
 #
-ifn1of ($(USERNAME),bird)
-if1of ($(KBUILD_TARGET), win)
- # -noover is recognized despite the statement saying otherwise. It silences these warnings:
- # cl : Command line warning D9025 : overriding '/Od' with '/O2'
- # cl : Command line warning D9025 : overriding '/Oy-' with '/Oy'
- VMMAll/IEMAll.cpp_CXXFLAGS += -noover -O2xy
-else
- VMMAll/IEMAll.cpp_CXXFLAGS += -O2
- #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-align-functions -fno-align-jumps -fno-align-loops # Saves a few of percents, not worth it.
- #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-reorder-blocks    # Saves one or two percent ... never mind.
- VMMAll/IEMAll.cpp_CXXFLAGS += -fomit-frame-pointer # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
-endif
+if $(USERNAME) != "bird" || "$(KBUILD_TYPE)" != "release" || "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
+ if1of ($(KBUILD_TARGET), win)
+  # -noover is recognized despite the statement saying otherwise. It silences these warnings:
+  # cl : Command line warning D9025 : overriding '/Od' with '/O2'
+  # cl : Command line warning D9025 : overriding '/Oy-' with '/Oy'
+  VMMAll/IEMAll.cpp_CXXFLAGS += -noover -O2xy
+ else
+  VMMAll/IEMAll.cpp_CXXFLAGS += -O2
+  #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-align-functions -fno-align-jumps -fno-align-loops # Saves a few of percents, not worth it.
+  #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-reorder-blocks    # Saves one or two percent ... never mind.
+  VMMAll/IEMAll.cpp_CXXFLAGS += -fomit-frame-pointer # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
+ endif
 endif # bird wants good stacks
 
 
