@@ -1506,7 +1506,7 @@ delete_entry(const char *path,
   node_baton_t *pb = parent_baton;
   edit_baton_t *eb = pb->edit_baton;
 #ifdef VBOX
-  svn_boolean_t prev_process;
+  svn_boolean_t prev_process = FALSE;
   svn_boolean_t ignore_everything;
 #endif /* VBOX */
 
