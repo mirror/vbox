@@ -5287,33 +5287,22 @@ IEM_STATIC void iemRegAddToRipAndClearRF(PIEMCPU pIemCpu, uint8_t cbInstr)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
-#if ARCH_BITS >= 64
+    pCtx->eflags.Bits.u1RF = 0;
+
     AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
+#if ARCH_BITS >= 64
     static uint64_t const s_aRipMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_MAX };
     Assert(pCtx->rip <= s_aRipMasks[(unsigned)pIemCpu->enmCpuMode]);
     pCtx->rip = (pCtx->rip + cbInstr) & s_aRipMasks[(unsigned)pIemCpu->enmCpuMode];
 #else
-    switch (pIemCpu->enmCpuMode)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+        pCtx->rip += cbInstr;
+    else
     {
-        case IEMMODE_16BIT:
-            Assert(pCtx->rip <= UINT16_MAX);
-            pCtx->ip += cbInstr;
-            break;
-
-        case IEMMODE_32BIT:
-            Assert(pCtx->rip <= UINT32_MAX);
-            pCtx->eip += cbInstr;
-            break;
-
-        case IEMMODE_64BIT:
-            pCtx->rip += cbInstr;
-            break;
-
-        default: AssertFailed();
+        static uint32_t const s_aEipMasks[] = { UINT32_C(0xffff), UINT32_MAX };
+        pCtx->eip = (pCtx->eip + cbInstr) & s_aEipMasks[(unsigned)pIemCpu->enmCpuMode];
     }
 #endif
-
-    pCtx->eflags.Bits.u1RF = 0;
 }
 
 
