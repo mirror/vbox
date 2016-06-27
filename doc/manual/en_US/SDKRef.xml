@@ -3921,7 +3921,7 @@ AuthResult AUTHCALL AuthEntry(
           has been renamed to <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>,
           whereas the semantics also has been changed: <link linkend="ProcessCreateFlag__NoProfile">ProcessCreateFlag::NoProfile</link>
           explicitly <emphasis role="bold">did not</emphasis> utilize the guest user's profile data,
-          which in turn <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::NoProfile</link>
+          which in turn <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>
           explicitly <emphasis role="bold">does now</emphasis>.</para>
         </listitem>
       </itemizedlist>

@@ -1330,7 +1330,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
         { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
         { "--ignore-operhaned-processes",   kGstCtrlRunOpt_IgnoreOrphanedProcesses,   RTGETOPT_REQ_NOTHING },
         { "--no-profile",                   kGstCtrlRunOpt_NoProfile,                 RTGETOPT_REQ_NOTHING }, /** @todo Deprecated. */
-        { "--profile"                       kGstCtrlRunOpt_Profile,                   RTGETOPT_REQ_NOTHING },
+        { "--profile",                      kGstCtrlRunOpt_Profile,                   RTGETOPT_REQ_NOTHING },
         /* run only: 6 - options */
         { "--dos2unix",                     kGstCtrlRunOpt_Dos2Unix,                  RTGETOPT_REQ_NOTHING },
         { "--unix2dos",                     kGstCtrlRunOpt_Unix2Dos,                  RTGETOPT_REQ_NOTHING },
