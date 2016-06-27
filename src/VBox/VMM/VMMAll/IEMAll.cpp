@@ -5290,9 +5290,8 @@ IEM_STATIC void iemRegAddToRipAndClearRF(PIEMCPU pIemCpu, uint8_t cbInstr)
 #if ARCH_BITS >= 64
     AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
     static uint64_t const s_aRipMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_MAX };
-    Assert(pCtx->rip <= s_aRipMasks[pIemCpu->enmCpuMode]);
-    pCtx->rip += cbInstr;
-    pCtx->rip &= s_aRipMasks[pIemCpu->enmCpuMode];
+    Assert(pCtx->rip <= s_aRipMasks[(unsigned)pIemCpu->enmCpuMode]);
+    pCtx->rip = (pCtx->rip + cbInstr) & s_aRipMasks[(unsigned)pIemCpu->enmCpuMode];
 #else
     switch (pIemCpu->enmCpuMode)
     {
