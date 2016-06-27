@@ -609,7 +609,7 @@ driCreateConfigs(GLenum fb_format, GLenum fb_type,
 	 index = 5;
 	 break;
       default:
-	 fprintf( stderr, "[%s:%u] Unknown framebuffer type 0x%04x.\n",
+	 fprintf( stderr, "[%s:%d] Unknown framebuffer type 0x%04x.\n",
                __FUNCTION__, __LINE__, fb_type );
 	 return NULL;
    }
@@ -639,7 +639,7 @@ driCreateConfigs(GLenum fb_format, GLenum fb_type,
          break;
 
       default:
-         fprintf( stderr, "[%s:%u] Unknown framebuffer format 0x%04x.\n",
+         fprintf( stderr, "[%s:%d] Unknown framebuffer format 0x%04x.\n",
                __FUNCTION__, __LINE__, fb_format );
          return NULL;
    }
