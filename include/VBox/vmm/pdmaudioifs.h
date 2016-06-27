@@ -322,12 +322,21 @@ typedef struct PDMPCMPROPS
 typedef struct PDMAUDIOVOLUME
 {
     /** Set to @c true if this stream is muted, @c false if not. */
-    bool                   fMuted;
-    /** Left channel volume. */
-    uint32_t               uLeft;
-    /** Right channel volume. */
-    uint32_t               uRight;
+    bool    fMuted;
+    /** Left channel volume.
+     *  Range is from [0 ... 255], whereas 0 specifies
+     *  the most silent and 255 the loudest value. */
+    uint8_t uLeft;
+    /** Right channel volume.
+     *  Range is from [0 ... 255], whereas 0 specifies
+     *  the most silent and 255 the loudest value. */
+    uint8_t uRight;
 } PDMAUDIOVOLUME, *PPDMAUDIOVOLUME;
+
+/** Defines the minimum volume allowed. */
+#define PDMAUDIO_VOLUME_MIN     (0)
+/** Defines the maximum volume allowed. */
+#define PDMAUDIO_VOLUME_MAX     (255)
 
 /**
  * Structure for holding rate processing information
@@ -353,17 +362,40 @@ typedef struct PDMAUDIOSTRMRATE
 } PDMAUDIOSTRMRATE, *PPDMAUDIOSTRMRATE;
 
 /**
+ * Structure for holding mixing buffer volume parameters.
+ * The volume values are in fixed point style and must
+ * be converted to/from before using with e.g. PDMAUDIOVOLUME.
+ */
+typedef struct PDMAUDMIXBUFVOL
+{
+    /** Set to @c true if this stream is muted, @c false if not. */
+    bool    fMuted;
+    /** Left volume to apply during conversion. Pass 0
+     *  to convert the original values. May not apply to
+     *  all conversion functions. */
+    uint32_t uLeft;
+    /** Right volume to apply during conversion. Pass 0
+     *  to convert the original values. May not apply to
+     *  all conversion functions. */
+    uint32_t uRight;
+} PDMAUDMIXBUFVOL, *PPDMAUDMIXBUFVOL;
+
+/**
  * Structure for holding sample conversion parameters for
  * the audioMixBufConvFromXXX / audioMixBufConvToXXX macros.
  */
 typedef struct PDMAUDMIXBUFCONVOPTS
 {
     /** Number of audio samples to convert. */
-    uint32_t       cSamples;
-    /** Volume to apply during conversion. Pass 0
-     *  to convert the original values. May not apply to
-     *  all conversion functions. */
-    PDMAUDIOVOLUME Volume;
+    uint32_t        cSamples;
+    union
+    {
+        struct
+        {
+            /** Volume to use for conversion. */
+            PDMAUDMIXBUFVOL Volume;
+        } From;
+    };
 } PDMAUDMIXBUFCONVOPTS;
 /** Pointer to conversion parameters for the audio mixer.   */
 typedef PDMAUDMIXBUFCONVOPTS *PPDMAUDMIXBUFCONVOPTS;
@@ -434,8 +466,8 @@ typedef struct PDMAUDIOMIXBUF
     RTLISTANCHOR              lstChildren;
     /** Intermediate structure for buffer conversion tasks. */
     PPDMAUDIOSTRMRATE         pRate;
-    /** Current volume used for mixing. */
-    PDMAUDIOVOLUME            Volume;
+    /** Internal representation of current volume used for mixing. */
+    PDMAUDMIXBUFVOL           Volume;
     /** This buffer's audio format. */
     PDMAUDIOMIXBUFFMT         AudioFmt;
     /** Standard conversion-to function for set AudioFmt. */

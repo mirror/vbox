@@ -119,7 +119,7 @@
 #define GS_VALID_MASK (RT_BIT(18) - 1)
 #define GS_WCLEAR_MASK (GS_RCS|GS_S1R1|GS_S0R1|GS_GSCI)
 
-/** @name Buffer Descriptor
+/** @name Buffer Descriptor (BD).
  * @{ */
 #define BD_IOC RT_BIT(31)          /**< Interrupt on Completion. */
 #define BD_BUP RT_BIT(30)          /**< Buffer Underrun Policy. */
@@ -127,14 +127,24 @@
 #define BD_MAX_LEN_MASK 0xFFFE
 /** @} */
 
-/** @name Extended Audio Status and Control Register
+/** @name Extended Audio Status and Control Register (EACS).
  * @{ */
 #define EACS_VRA 1                 /**< Variable Rate Audio (4.2.1.1). */
 #define EACS_VRM 8                 /**< Variable Rate Mic Audio (4.2.1.1). */
 /** @} */
 
-#define VOL_MASK 0x1f
-#define MUTE_SHIFT 15
+/** @name Baseline Audio Register Set (BARS).
+ * @{ */
+#define AC97_BARS_VOL_MASK              0x1f   /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_VOL_STEPS             31     /**< Volume steps for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_VOL_MUTE_SHIFT        15     /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
+
+#define AC97_BARS_VOL_MASTER_MASK       0x3f   /**< Master volume mask for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_VOL_MASTER_STEPS      63     /**< Master volume steps for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_VOL_MASTER_MUTE_SHIFT 15     /**< Master Mute bit shift for the Baseline Audio Register Set (5.7.2). */
+
+#define AC97_VOL_MAX_STEPS              63
+/** @} */
 
 #define REC_MASK 7
 enum
@@ -636,29 +646,29 @@ static int ichac97StreamsInit(PAC97STATE pThis)
     return VINF_SUCCESS;
 }
 
-static void ichac97MixerSet(PAC97STATE pThis, uint32_t u8Idx, uint16_t v)
+static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
 {
-    if (u8Idx + 2 > sizeof(pThis->mixer_data))
+    if (size_t(uMixerIdx + 2) > sizeof(pThis->mixer_data))
     {
-        AssertMsgFailed(("Index %RU8 out of bounds(%zu)\n", u8Idx, sizeof(pThis->mixer_data)));
+        AssertMsgFailed(("Index %RU8 out of bounds(%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)));
         return;
     }
 
-    pThis->mixer_data[u8Idx + 0] = RT_LO_U8(v);
-    pThis->mixer_data[u8Idx + 1] = RT_HI_U8(v);
+    pThis->mixer_data[uMixerIdx + 0] = RT_LO_U8(uVal);
+    pThis->mixer_data[uMixerIdx + 1] = RT_HI_U8(uVal);
 }
 
-static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t u8Idx)
+static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx)
 {
     uint16_t uVal;
 
-    if (u8Idx + 2 > sizeof(pThis->mixer_data))
+    if (size_t(uMixerIdx + 2) > sizeof(pThis->mixer_data))
     {
-        AssertMsgFailed(("Index %RU8 out of bounds (%zu)\n", u8Idx, sizeof(pThis->mixer_data)));
+        AssertMsgFailed(("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)));
         uVal = UINT16_MAX;
     }
     else
-        uVal = RT_MAKE_U16(pThis->mixer_data[u8Idx + 0], pThis->mixer_data[u8Idx + 1]);
+        uVal = RT_MAKE_U16(pThis->mixer_data[uMixerIdx + 0], pThis->mixer_data[uMixerIdx + 1]);
 
     return uVal;
 }
@@ -952,51 +962,110 @@ static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStrm)
     pStrm->State.offFIFOW = 0;
 }
 
-static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL mt, uint32_t val)
+static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL enmMixerCtl, uint32_t uVal)
 {
-    int mute = (val >> MUTE_SHIFT) & 1;
-    uint8_t rvol = val & VOL_MASK;
-    uint8_t lvol = (val >> 8) & VOL_MASK;
+#ifdef DEBUG
+    uint32_t uValMaster = ichac97MixerGet(pThis, AC97_Master_Volume_Mute);
 
-    /* For the master volume, 0 corresponds to 0dB gain. But for the other
-     * volume controls, 0 corresponds to +12dB and 8 to 0dB. */
-    if (mt != PDMAUDIOMIXERCTL_VOLUME)
+    bool    fMasterMuted = (uValMaster >> AC97_BARS_VOL_MASTER_MUTE_SHIFT) & 1;
+    uint8_t lMasterAtt   = (uValMaster >> 8) & AC97_BARS_VOL_MASTER_MASK;
+    uint8_t rMasterAtt   = uValMaster & AC97_BARS_VOL_MASTER_MASK;
+
+    Assert(lMasterAtt <= AC97_VOL_MAX_STEPS);
+    Assert(rMasterAtt <= AC97_VOL_MAX_STEPS);
+
+    LogFlowFunc(("lMasterAtt=%RU8, rMasterAtt=%RU8, fMasterMuted=%RTbool\n", lMasterAtt, rMasterAtt, fMasterMuted));
+#endif
+
+    bool    fCntlMuted;
+    uint8_t lCntlAtt, rCntlAtt;
+
+    uint8_t uSteps;
+
+    /*
+     * From AC'97 SoundMax Codec AD1981A/AD1981B:
+     * "Because AC '97 defines 6-bit volume registers, to maintain compatibility whenever the
+     *  D5 or D13 bits are set to 1, their respective lower five volume bits are automatically
+     *  set to 1 by the Codec logic. On readback, all lower 5 bits will read ones whenever
+     *  these bits are set to 1."
+     *
+     * Linux ALSA depends on this behavior.
+     */
+    if (uVal & RT_BIT(5))
+        uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
+    if (uVal & RT_BIT(13))
+        uVal |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
+
+    /* For the master volume, 0 corresponds to 0dB attenuation, each step
+     * corresponds to -1.5dB. */
+    if (index == AC97_Master_Volume_Mute)
     {
+        fCntlMuted = (uVal >> AC97_BARS_VOL_MASTER_MUTE_SHIFT) & 1;
+        lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASTER_MASK;
+        rCntlAtt   = uVal & AC97_BARS_VOL_MASTER_MASK;
+
+        uSteps = PDMAUDIO_VOLUME_MAX / AC97_BARS_VOL_MASTER_STEPS;
+    }
+    /* For other volume controls:
+     * - 0 - 7 corresponds to +12dB, in 1.5dB steps.
+     * - 8     corresponds to 0dB gain (unchanged).
+     * - 9 - X corresponds to -1.5dB steps. */
+    else
+    {
+        fCntlMuted = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
+        lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASK;
+        rCntlAtt   = uVal & AC97_BARS_VOL_MASK;
+
+        Assert(lCntlAtt <= AC97_VOL_MAX_STEPS);
+        Assert(rCntlAtt <= AC97_VOL_MAX_STEPS);
+
+#ifndef VBOX_WITH_AC97_GAIN_SUPPORT
         /* NB: Currently there is no gain support, only attenuation. */
-        lvol = lvol < 8 ? 0 : lvol - 8;
-        rvol = rvol < 8 ? 0 : rvol - 8;
+        lCntlAtt = lCntlAtt <= 8 ? 0 : lCntlAtt - 8;
+        rCntlAtt = rCntlAtt <= 8 ? 0 : rCntlAtt - 8;
+#endif
+        uSteps = PDMAUDIO_VOLUME_MAX / AC97_BARS_VOL_STEPS;
     }
 
-    /* AC'97 has 1.5dB steps; we use 0.375dB steps. */
-    rvol = 255 - rvol * 4;
-    lvol = 255 - lvol * 4;
+    LogFunc(("index=0x%x, uVal=%RU32, enmMixerCtl=%RU32\n", index, uVal, enmMixerCtl));
 
-    LogFunc(("mt=%ld, val=%RX32, mute=%RTbool\n", mt, val, RT_BOOL(mute)));
+    LogFunc(("lAtt=%RU8, rAtt=%RU8 ", lCntlAtt, rCntlAtt));
+
+    /*
+     * AC'97 volume controls have 31 steps, each -1.5dB => -40,5dB attenuation total.
+     *
+     * In contrast, we're internally using 255 (PDMAUDIO_VOLUME_MAX) steps, each -0.375dB,
+     * where 0 corresponds to -96dB and 255 corresponds to 0dB (unchanged).
+     */
+    uint8_t lVol = PDMAUDIO_VOLUME_MAX - RT_MIN((lCntlAtt * 4 /* dB resolution */ * uSteps /* steps */), PDMAUDIO_VOLUME_MAX);
+    uint8_t rVol = PDMAUDIO_VOLUME_MAX - RT_MIN((rCntlAtt * 4 /* dB resolution */ * uSteps /* steps */), PDMAUDIO_VOLUME_MAX);
+
+    Log(("-> fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n", fCntlMuted, lVol, rVol));
 
     int rc;
 
     if (pThis->pMixer) /* Device can be in reset state, so no mixer available. */
     {
-        PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
-        switch (mt)
+        PDMAUDIOVOLUME Vol = { fCntlMuted, lVol, rVol };
+        switch (enmMixerCtl)
         {
             case PDMAUDIOMIXERCTL_VOLUME:
-                rc = AudioMixerSetMasterVolume(pThis->pMixer, &vol);
+                rc = AudioMixerSetMasterVolume(pThis->pMixer,    &Vol);
                 break;
-
             case PDMAUDIOMIXERCTL_FRONT:
-                rc = AudioMixerSinkSetVolume(pThis->pSinkOutput, &vol);
+                rc = AudioMixerSinkSetVolume(pThis->pSinkOutput, &Vol);
                 break;
 
             case PDMAUDIOMIXERCTL_MIC_IN:
-                rc = AudioMixerSinkSetVolume(pThis->pSinkMicIn, &vol);
+                rc = AudioMixerSinkSetVolume(pThis->pSinkMicIn,  &Vol);
                 break;
 
             case PDMAUDIOMIXERCTL_LINE_IN:
-                rc = AudioMixerSinkSetVolume(pThis->pSinkLineIn, &vol);
+                rc = AudioMixerSinkSetVolume(pThis->pSinkLineIn, &Vol);
                 break;
 
             default:
+                AssertFailed();
                 rc = VERR_NOT_SUPPORTED;
                 break;
         }
@@ -1004,23 +1073,7 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL m
     else
         rc = VINF_SUCCESS;
 
-    rvol = VOL_MASK - ((VOL_MASK * rvol) / 255);
-    lvol = VOL_MASK - ((VOL_MASK * lvol) / 255);
-
-    /*
-     * From AC'97 SoundMax Codec AD1981A: "Because AC '97 defines 6-bit volume registers, to
-     * maintain compatibility whenever the D5 or D13 bits are set to `1,' their respective
-     * lower five volume bits are automatically set to `1' by the Codec logic. On readback,
-     * all lower 5 bits will read ones whenever these bits are set to `1.'"
-     *
-     *  Linux ALSA depends on this behavior.
-     */
-    if (val & RT_BIT(5))
-        val |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
-    if (val & RT_BIT(13))
-        val |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
-
-    ichac97MixerSet(pThis, index, val);
+    ichac97MixerSet(pThis, index, uVal);
 
     if (RT_FAILURE(rc))
         LogFlowFunc(("Failed with %Rrc\n", rc));
@@ -1109,7 +1162,7 @@ static int ichac97MixerReset(PAC97STATE pThis)
     if (pThis->uCodecModel == Codec_AD1980)
     {
         /* Analog Devices 1980 (AD1980) */
-        ichac97MixerSet(pThis, AC97_Reset                   , 0x0010);    /* Headphones. */
+        ichac97MixerSet(pThis, AC97_Reset                   , 0x0010); /* Headphones. */
         ichac97MixerSet(pThis, AC97_Vendor_ID1              , 0x4144);
         ichac97MixerSet(pThis, AC97_Vendor_ID2              , 0x5370);
         ichac97MixerSet(pThis, AC97_Headphone_Volume_Mute   , 0x8000);
@@ -1128,9 +1181,10 @@ static int ichac97MixerReset(PAC97STATE pThis)
     }
     ichac97RecordSelect(pThis, 0);
 
-    ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME,  0x8000);
-    ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,   0x8808);
-    ichac97MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN, 0x8808);
+    ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME, 0x8000);
+    ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,         0x8808);
+    ichac97MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN,       0x8808);
+    ichac97MixerSetVolume(pThis, AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN,        0x8808);
 
     return VINF_SUCCESS;
 }
@@ -1963,15 +2017,21 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     break;
                 case AC97_Master_Volume_Mute:
                     if (pThis->uCodecModel == Codec_AD1980)
+                    {
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AD_MISC_LOSEL)
-                            break;  /* Register controls surround (rear), do nothing. */
+                            break; /* Register controls surround (rear), do nothing. */
+                    }
                     ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32Val);
                     break;
                 case AC97_Headphone_Volume_Mute:
                     if (pThis->uCodecModel == Codec_AD1980)
+                    {
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AD_MISC_HPSEL)
+                        {
                             /* Register controls PCM (front) outputs. */
                             ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32Val);
+                        }
+                    }
                     break;
                 case AC97_PCM_Out_Volume_Mute:
                     ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_FRONT, u32Val);
@@ -2214,6 +2274,7 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     V_(AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME);
     V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT);
     V_(AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN);
+    V_(AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN);
 # undef V_
     if (pThis->uCodecModel == Codec_AD1980)
         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AD_MISC_HPSEL)

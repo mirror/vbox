@@ -180,6 +180,8 @@ typedef struct AUDMIXSINK
     /** The volume of this sink. The volume always will
      *  be combined with the mixer's master volume. */
     PDMAUDIOVOLUME          Volume;
+    /** The volume of this sink, combined with the last set  master volume. */
+    PDMAUDIOVOLUME          VolumeCombined;
     /** Timestamp (in ns) since last update. */
     uint64_t                tsLastUpdatedNS;
 } AUDMIXSINK, *PAUDMIXSINK;

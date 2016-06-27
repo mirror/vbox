@@ -69,7 +69,7 @@ DECLINLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf);
  * 0 .. 255 range. This represents 0 to -96dB attenuation where an input
  * value of 0 corresponds to -96dB and 255 corresponds to 0dB (unchanged).
  *
- * Each step thus correspons to 96 / 256 or 0.375dB. Every 6dB (16 steps)
+ * Each step thus corresponds to 96 / 256 or 0.375dB. Every 6dB (16 steps)
  * represents doubling the sample value.
  *
  * For internal use, the volume control needs to be converted to a 16-bit
@@ -407,13 +407,11 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         _aType const *pSrc = (_aType const *)pvSrc; \
         uint32_t cSamples = RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
         AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
-                             pOpts->cSamples, sizeof(_aType), pOpts->Volume.uLeft, pOpts->Volume.uRight)); \
+                             pOpts->cSamples, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
-            AUDMIXBUF_MACRO_LOG(("l=%#5RI16 (0x%x), r=%#5RI16 (0x%x)", paDst, *pSrc, *pSrc, *(pSrc + 1), *(pSrc + 1))); \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft ) >> AUDIOMIXBUF_VOL_SHIFT; \
-            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
-            AUDMIXBUF_MACRO_LOG((" -> l=%#10RI64, r=%#10RI64\n", paDst->i64LSample, paDst->i64RSample)); \
+            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->From.Volume.uLeft ) >> AUDIOMIXBUF_VOL_SHIFT; \
+            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
             paDst++; \
         } \
         \
@@ -426,12 +424,11 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         _aType const *pSrc = (_aType const *)pvSrc; \
         const uint32_t cSamples = RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
         AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
-                             cSamples, sizeof(_aType), pOpts->Volume.uLeft >> 14, pOpts->Volume.uRight)); \
+                             cSamples, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->Volume.uLeft)  >> AUDIOMIXBUF_VOL_SHIFT; \
-            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
-            AUDMIXBUF_MACRO_LOG(("%#5RI16 (0x%x) -> l=%#10RI64, r=%#10RI64\n", *pSrc, *pSrc, paDst->i64LSample, paDst->i64RSample)); \
+            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->From.Volume.uLeft)  >> AUDIOMIXBUF_VOL_SHIFT; \
+            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
             pSrc++; \
             paDst++; \
         } \
@@ -713,6 +710,30 @@ static PFNPDMAUDIOMIXBUFCONVTO audioMixBufConvToLookup(PDMAUDIOMIXBUFFMT enmFmt)
     }
 
     return NULL;
+}
+
+/**
+ * Converts a PDM audio volume to an internal mixing buffer volume.
+ *
+ * @returns IPRT status code.
+ * @param   pVolDst                 Where to store the converted mixing buffer volume.
+ * @param   pVolSrc                 Volume to convert.
+ */
+static int audioMixBufConvVol(PPDMAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
+{
+    if (!pVolSrc->fMuted) /* Only change/convert the volume value if we're not muted. */
+    {
+        uint8_t uVolL = pVolSrc->uLeft  & 0xFF;
+        uint8_t uVolR = pVolSrc->uRight & 0xFF;
+
+        /** @todo Ensure that the input is in the correct range/initialized! */
+        pVolDst->uLeft  = s_aVolumeConv[uVolL] * (AUDIOMIXBUF_VOL_0DB >> 16);
+        pVolDst->uRight = s_aVolumeConv[uVolR] * (AUDIOMIXBUF_VOL_0DB >> 16);
+    }
+
+    pVolDst->fMuted = pVolSrc->fMuted;
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1277,18 +1298,21 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc;
     if (cToProcess)
     {
-        PFNPDMAUDIOMIXBUFCONVTO pfnConv;
+        PFNPDMAUDIOMIXBUFCONVTO pfnConvTo = NULL;
         if (pMixBuf->AudioFmt != enmFmt)
-            pfnConv = audioMixBufConvToLookup(enmFmt);
+            pfnConvTo = audioMixBufConvToLookup(enmFmt);
         else
-            pfnConv = pMixBuf->pfnConvTo;
+            pfnConvTo = pMixBuf->pfnConvTo;
 
-        if (pfnConv)
+        if (pfnConvTo)
         {
-            PDMAUDMIXBUFCONVOPTS convOpts = { cToProcess, pMixBuf->Volume };
+            PDMAUDMIXBUFCONVOPTS convOpts;
+            RT_ZERO(convOpts);
+            /* Note: No volume handling/conversion done in the conversion-to macros (yet). */
 
-            AssertPtr(pfnConv);
-            pfnConv(pvBuf, pMixBuf->pSamples + offSamples, &convOpts);
+            convOpts.cSamples = cToProcess;
+
+            pfnConvTo(pvBuf, pMixBuf->pSamples + offSamples, &convOpts);
 
 #ifdef DEBUG
             AudioMixBufDbgPrint(pMixBuf);
@@ -1296,7 +1320,10 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
             rc = VINF_SUCCESS;
         }
         else
+        {
+            AssertFailed();
             rc = VERR_NOT_SUPPORTED;
+        }
     }
     else
         rc = VINF_SUCCESS;
@@ -1347,7 +1374,11 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     /* pcbRead is optional. */
 
     if (!cbBuf)
+    {
+        if (pcRead)
+            *pcRead = 0;
         return VINF_SUCCESS;
+    }
 
     uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), pMixBuf->cUsed);
 
@@ -1364,9 +1395,17 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VINF_SUCCESS;
     }
 
-    PFNPDMAUDIOMIXBUFCONVTO pfnConv = audioMixBufConvToLookup(enmFmt);
-    if (!pfnConv) /* Audio format not supported. */
+    PFNPDMAUDIOMIXBUFCONVTO pfnConvTo = NULL;
+    if (pMixBuf->AudioFmt != enmFmt)
+        pfnConvTo = audioMixBufConvToLookup(enmFmt);
+    else
+        pfnConvTo = pMixBuf->pfnConvTo;
+
+    if (!pfnConvTo) /* Audio format not supported. */
+    {
+        AssertFailed();
         return VERR_NOT_SUPPORTED;
+    }
 
     PPDMAUDIOSAMPLE pSamplesSrc1 = pMixBuf->pSamples + pMixBuf->offRead;
     uint32_t cLenSrc1 = cToRead;
@@ -1390,16 +1429,19 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     }
 
     PDMAUDMIXBUFCONVOPTS convOpts;
-    convOpts.Volume = pMixBuf->Volume;
+    RT_ZERO(convOpts);
+    /* Note: No volume handling/conversion done in the conversion-to macros (yet). */
 
     /* Anything to do at all? */
     int rc = VINF_SUCCESS;
     if (cLenSrc1)
     {
+        AssertPtr(pSamplesSrc1);
+
         convOpts.cSamples = cLenSrc1;
 
         AUDMIXBUF_LOG(("P1: offRead=%RU32, cToRead=%RU32\n", pMixBuf->offRead, cLenSrc1));
-        pfnConv(pvBuf, pSamplesSrc1, &convOpts);
+        pfnConvTo(pvBuf, pSamplesSrc1, &convOpts);
     }
 
     /* Second part present? */
@@ -1412,7 +1454,7 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
         AUDMIXBUF_LOG(("P2: cToRead=%RU32, offWrite=%RU32 (%zu bytes)\n", cLenSrc2, cLenSrc1,
                        AUDIOMIXBUF_S2B(pMixBuf, cLenSrc1)));
-        pfnConv((uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenSrc1), pSamplesSrc2, &convOpts);
+        pfnConvTo((uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenSrc1), pSamplesSrc2, &convOpts);
     }
 
     if (RT_SUCCESS(rc))
@@ -1473,14 +1515,10 @@ void AudioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
     AssertPtrReturnVoid(pMixBuf);
     AssertPtrReturnVoid(pVol);
 
-    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight));
+    LogFlowFunc(("%s: lVol=%RU8, rVol=%RU8, fMuted=%RTbool\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted));
 
-    pMixBuf->Volume.fMuted = pVol->fMuted;
-    /** @todo Ensure that the input is in the correct range/initialized! */
-    pMixBuf->Volume.uLeft  = s_aVolumeConv[pVol->uLeft  & 0xFF] * (AUDIOMIXBUF_VOL_0DB >> 16);
-    pMixBuf->Volume.uRight = s_aVolumeConv[pVol->uRight & 0xFF] * (AUDIOMIXBUF_VOL_0DB >> 16);
-
-    LogFlowFunc(("\t-> lVol=%#RX32, rVol=%#RX32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
+    int rc2 = audioMixBufConvVol(&pMixBuf->Volume /* Dest */, pVol /* Source */);
+    AssertRC(rc2);
 }
 
 /**
@@ -1636,24 +1674,38 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     /*
      * Pick the conversion function and do the conversion.
      */
-    PFNPDMAUDIOMIXBUFCONVFROM pfnConv;
-    if (pMixBuf->AudioFmt != enmFmt)
-        pfnConv = audioMixBufConvFromLookup(enmFmt);
+    PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
+    if (!pMixBuf->Volume.fMuted)
+    {
+        if (pMixBuf->AudioFmt != enmFmt)
+            pfnConvFrom = audioMixBufConvFromLookup(enmFmt);
+        else
+            pfnConvFrom = pMixBuf->pfnConvFrom;
+    }
     else
-        pfnConv = pMixBuf->Volume.fMuted ? &audioMixBufConvFromSilence : pMixBuf->pfnConvFrom;
+        pfnConvFrom = &audioMixBufConvFromSilence;
 
     uint32_t cWritten;
-    if (   pfnConv
+    if (   pfnConvFrom
         && cToWrite)
     {
-        PDMAUDMIXBUFCONVOPTS convOpts = { cToWrite, pMixBuf->Volume };
-        cWritten = pfnConv(pMixBuf->pSamples + offSamples, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), &convOpts);
+        PDMAUDMIXBUFCONVOPTS convOpts;
+
+        convOpts.cSamples           = cToWrite;
+        convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
+        convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
+        convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
+
+        cWritten = pfnConvFrom(pMixBuf->pSamples + offSamples, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), &convOpts);
     }
     else
     {
         cWritten = 0;
-        if (!pfnConv)
+        if (!pfnConvFrom)
+        {
+            AssertFailed();
             rc = VERR_NOT_SUPPORTED;
+        }
     }
 
 #ifdef DEBUG
@@ -1732,16 +1784,22 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VINF_BUFFER_OVERFLOW;
     }
 
-    PFNPDMAUDIOMIXBUFCONVFROM pfnCnvFrm;
-    if (pMixBuf->AudioFmt != enmFmt)
-        pfnCnvFrm = audioMixBufConvFromLookup(enmFmt);
+    PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
+    if (!pMixBuf->Volume.fMuted)
+    {
+        if (pMixBuf->AudioFmt != enmFmt)
+            pfnConvFrom = audioMixBufConvFromLookup(enmFmt);
+        else
+            pfnConvFrom = pMixBuf->pfnConvFrom;
+    }
     else
-        pfnCnvFrm = pMixBuf->Volume.fMuted ? &audioMixBufConvFromSilence : pMixBuf->pfnConvFrom;
+        pfnConvFrom = &audioMixBufConvFromSilence;
 
-    if (!pfnCnvFrm)
+    if (!pfnConvFrom)
+    {
+        AssertFailed();
         return VERR_NOT_SUPPORTED;
-
-    int rc = VINF_SUCCESS; /** @todo Move this down to where you actually need it and you'll get somewhat nice code! */
+    }
 
     uint32_t cToWrite = AUDIOMIXBUF_B2S(pMixBuf, cbBuf);
     AssertMsg(cToWrite, ("cToWrite is 0 (cbBuf=%zu)\n", cbBuf));
@@ -1781,13 +1839,17 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     uint32_t cWrittenTotal = 0;
 
     PDMAUDMIXBUFCONVOPTS convOpts;
-    convOpts.Volume = pMixBuf->Volume;
+    convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
+    convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
+    convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
+
+    LogFlowFunc(("ASDF %RU32 %RU32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 
     /* Anything to do at all? */
     if (cLenDst1)
     {
         convOpts.cSamples = cLenDst1;
-        cWrittenTotal = pfnCnvFrm(pSamplesDst1, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), &convOpts);
+        cWrittenTotal = pfnConvFrom(pSamplesDst1, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), &convOpts);
         Assert(cWrittenTotal == cLenDst1);
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
@@ -1796,16 +1858,15 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     }
 
     /* Second part present? */
-    if (   RT_LIKELY(RT_SUCCESS(rc)) /** @todo r=bird: RT_SUCCESS implies RT_LIKELY for at least 10 years now. besides, it's actually always VINF_SUCCESS at this point. */
-        && cLenDst2)
+    if (cLenDst2)
     {
         AssertPtr(pSamplesDst2);
 
         convOpts.cSamples = cLenDst2;
-        cWrittenTotal += pfnCnvFrm(pSamplesDst2,
-                                   (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenDst1),
-                                   cbBuf - AUDIOMIXBUF_S2B(pMixBuf, cLenDst1),
-                                   &convOpts);
+        cWrittenTotal += pfnConvFrom(pSamplesDst2,
+                                     (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenDst1),
+                                     cbBuf - AUDIOMIXBUF_S2B(pMixBuf, cLenDst1),
+                                     &convOpts);
         Assert(cWrittenTotal == cLenDst1 + cLenDst2);
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
@@ -1818,22 +1879,21 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     RTFileClose(fh);
 #endif
 
-    if (RT_SUCCESS(rc))
+    pMixBuf->offWrite = (pMixBuf->offWrite + cWrittenTotal) % pMixBuf->cSamples;
+    pMixBuf->cUsed   += cWrittenTotal;
+
+    int rc = VINF_SUCCESS;
+
+    if (pMixBuf->cUsed > pMixBuf->cSamples)
     {
-        pMixBuf->offWrite = (pMixBuf->offWrite + cWrittenTotal) % pMixBuf->cSamples;
-        pMixBuf->cUsed   += cWrittenTotal;
+        AUDMIXBUF_LOG(("Warning: %RU32 unprocessed samples overwritten\n", pMixBuf->cUsed - pMixBuf->cSamples));
+        pMixBuf->cUsed = pMixBuf->cSamples;
 
-        if (pMixBuf->cUsed > pMixBuf->cSamples)
-        {
-            AUDMIXBUF_LOG(("Warning: %RU32 unprocessed samples overwritten\n", pMixBuf->cUsed - pMixBuf->cSamples));
-            pMixBuf->cUsed = pMixBuf->cSamples;
-
-            rc = VINF_BUFFER_OVERFLOW;
-        }
-
-        if (pcWritten)
-            *pcWritten = cWrittenTotal;
+        rc = VINF_BUFFER_OVERFLOW;
     }
+
+    if (pcWritten)
+        *pcWritten = cWrittenTotal;
 
 #ifdef DEBUG
     audioMixBufDbgPrintInternal(pMixBuf);
@@ -1842,7 +1902,6 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     AUDMIXBUF_LOG(("offWrite=%RU32, cLenDst1=%RU32, cLenDst2=%RU32, cTotal=%RU32 (%zu bytes), rc=%Rrc\n",
                    pMixBuf->offWrite, cLenDst1, cLenDst2, cLenDst1 + cLenDst2,
                    AUDIOMIXBUF_S2B(pMixBuf, cLenDst1 + cLenDst2), rc));
-
     return rc;
 }
 
