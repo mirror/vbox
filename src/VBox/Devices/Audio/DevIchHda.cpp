@@ -3724,7 +3724,7 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
 
     switch (enmMixerCtl)
     {
-        case PDMAUDIOMIXERCTL_VOLUME:
+        case PDMAUDIOMIXERCTL_VOLUME_MASTER:
             /* Fall through is intentional. */
         case PDMAUDIOMIXERCTL_FRONT:
             pSink = &pThis->SinkFront;

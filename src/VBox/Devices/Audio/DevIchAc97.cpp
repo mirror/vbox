@@ -1049,7 +1049,7 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
         PDMAUDIOVOLUME Vol = { fCntlMuted, lVol, rVol };
         switch (enmMixerCtl)
         {
-            case PDMAUDIOMIXERCTL_VOLUME:
+            case PDMAUDIOMIXERCTL_VOLUME_MASTER:
                 rc = AudioMixerSetMasterVolume(pThis->pMixer,    &Vol);
                 break;
             case PDMAUDIOMIXERCTL_FRONT:
@@ -1181,7 +1181,7 @@ static int ichac97MixerReset(PAC97STATE pThis)
     }
     ichac97RecordSelect(pThis, 0);
 
-    ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME, 0x8000);
+    ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME_MASTER, 0x8000);
     ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,         0x8808);
     ichac97MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN,       0x8808);
     ichac97MixerSetVolume(pThis, AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN,        0x8808);
@@ -2021,7 +2021,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AD_MISC_LOSEL)
                             break; /* Register controls surround (rear), do nothing. */
                     }
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32Val);
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
                     break;
                 case AC97_Headphone_Volume_Mute:
                     if (pThis->uCodecModel == Codec_AD1980)
@@ -2029,7 +2029,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AD_MISC_HPSEL)
                         {
                             /* Register controls PCM (front) outputs. */
-                            ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32Val);
+                            ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
                         }
                     }
                     break;
@@ -2271,14 +2271,14 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
 
     ichac97RecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
 # define V_(a, b) ichac97MixerSetVolume(pThis, a, b, ichac97MixerGet(pThis, a))
-    V_(AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME);
+    V_(AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME_MASTER);
     V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT);
     V_(AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN);
     V_(AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN);
 # undef V_
     if (pThis->uCodecModel == Codec_AD1980)
         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AD_MISC_HPSEL)
-            ichac97MixerSetVolume(pThis, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME,
+            ichac97MixerSetVolume(pThis, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME_MASTER,
                              ichac97MixerGet(pThis, AC97_Headphone_Volume_Mute));
 
     int rc = ichac97StreamsInit(pThis);

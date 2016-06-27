@@ -1538,7 +1538,7 @@ static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCT
     uint8_t iDir;
     switch (enmMixerCtl)
     {
-        case PDMAUDIOMIXERCTL_VOLUME:
+        case PDMAUDIOMIXERCTL_VOLUME_MASTER:
         case PDMAUDIOMIXERCTL_FRONT:
             iDir = AMPLIFIER_OUT;
             break;
@@ -3009,7 +3009,7 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
 
     switch (enmMixerCtl)
     {
-        case PDMAUDIOMIXERCTL_VOLUME:
+        case PDMAUDIOMIXERCTL_VOLUME_MASTER:
         case PDMAUDIOMIXERCTL_FRONT:
 #ifdef VBOX_WITH_HDA_51_SURROUND
         case PDMAUDIOMIXERCTL_CENTER_LFE:
