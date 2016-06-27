@@ -43,6 +43,10 @@
       </listitem>
 
       <listitem>
+        <para>Audio: added support for master volume controls in the AC'97 emulation</para>
+      </listitem>
+
+      <listitem>
         <para>Audio: various bugfixes and infrastructure improvements</para>
       </listitem>-->
 
