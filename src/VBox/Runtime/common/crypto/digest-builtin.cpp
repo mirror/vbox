@@ -86,6 +86,8 @@ static RTCRDIGESTDESC const g_rtCrDigestMd2Desc =
     RTMD2_HASH_SIZE,
     sizeof(RTMD2CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestMd2_Update,
     rtCrDigestMd2_Final,
     rtCrDigestMd2_Init,
@@ -138,6 +140,8 @@ static RTCRDIGESTDESC const g_rtCrDigestMd5Desc =
     RTMD5_HASH_SIZE,
     sizeof(RTMD5CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestMd5_Update,
     rtCrDigestMd5_Final,
     rtCrDigestMd5_Init,
@@ -190,6 +194,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha1Desc =
     RTSHA1_HASH_SIZE,
     sizeof(RTSHA1CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha1_Update,
     rtCrDigestSha1_Final,
     rtCrDigestSha1_Init,
@@ -241,6 +247,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha256Desc =
     RTSHA256_HASH_SIZE,
     sizeof(RTSHA256CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha256_Update,
     rtCrDigestSha256_Final,
     rtCrDigestSha256_Init,
@@ -292,6 +300,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512Desc =
     RTSHA512_HASH_SIZE,
     sizeof(RTSHA512CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha512_Update,
     rtCrDigestSha512_Final,
     rtCrDigestSha512_Init,
@@ -343,6 +353,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha224Desc =
     RTSHA224_HASH_SIZE,
     sizeof(RTSHA224CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha224_Update,
     rtCrDigestSha224_Final,
     rtCrDigestSha224_Init,
@@ -394,6 +406,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha384Desc =
     RTSHA384_HASH_SIZE,
     sizeof(RTSHA384CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha384_Update,
     rtCrDigestSha384_Final,
     rtCrDigestSha384_Init,
@@ -445,6 +459,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512t224Desc =
     RTSHA512T224_HASH_SIZE,
     sizeof(RTSHA512T224CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha512t224_Update,
     rtCrDigestSha512t224_Final,
     rtCrDigestSha512t224_Init,
@@ -497,6 +513,8 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512t256Desc =
     RTSHA512T256_HASH_SIZE,
     sizeof(RTSHA512T256CONTEXT),
     0,
+    NULL,
+    NULL,
     rtCrDigestSha512t256_Update,
     rtCrDigestSha512t256_Final,
     rtCrDigestSha512t256_Init,
@@ -533,13 +551,26 @@ static PCRTCRDIGESTDESC const g_apDigestOps[] =
 /*
  * OpenSSL EVP.
  */
+    
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
+/** @impl_interface_method{RTCRDIGESTDESC::pfnNew} */
+static DECLCALLBACK(void*) rtCrDigestOsslEvp_New(void)
+{
+    return EVP_MD_CTX_new();
+}
+
+static DECLCALLBACK(void) rtCrDigestOsslEvp_Free(void *pvState)
+{
+    EVP_MD_CTX_free((EVP_MD_CTX*)pvState);
+}
+
+# endif
 
 /** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
 static DECLCALLBACK(void) rtCrDigestOsslEvp_Update(void *pvState, const void *pvData, size_t cbData)
 {
     EVP_DigestUpdate((EVP_MD_CTX *)pvState, pvData, cbData);
 }
-
 
 /** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
 static DECLCALLBACK(void) rtCrDigestOsslEvp_Final(void *pvState, uint8_t *pbHash)
@@ -557,7 +588,11 @@ static DECLCALLBACK(int) rtCrDigestOsslEvp_Init(void *pvState, void *pvOpaque, b
     if (fReInit)
     {
         pEvpType = EVP_MD_CTX_md(pThis);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
+        EVP_MD_CTX_reset(pThis);
+# else
         EVP_MD_CTX_cleanup(pThis);
+# endif
     }
 
     AssertPtrReturn(pEvpType, VERR_INVALID_PARAMETER);
@@ -572,7 +607,11 @@ static DECLCALLBACK(int) rtCrDigestOsslEvp_Init(void *pvState, void *pvOpaque, b
 static DECLCALLBACK(void) rtCrDigestOsslEvp_Delete(void *pvState)
 {
     EVP_MD_CTX *pThis = (EVP_MD_CTX *)pvState;
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
+    EVP_MD_CTX_reset(pThis);
+# else
     EVP_MD_CTX_cleanup(pThis);
+# endif
 }
 
 
@@ -613,8 +652,15 @@ static RTCRDIGESTDESC const g_rtCrDigestOpenSslDesc =
     NULL,
     RTDIGESTTYPE_UNKNOWN,
     EVP_MAX_MD_SIZE,
-    sizeof(EVP_MD_CTX),
     0,
+    0,
+# if OPENSSL_VERSION_NUMBER >= 0x10100000
+    rtCrDigestOsslEvp_New,
+    rtCrDigestOsslEvp_Free,
+# else
+    NULL,
+    NULL,
+# endif
     rtCrDigestOsslEvp_Update,
     rtCrDigestOsslEvp_Final,
     rtCrDigestOsslEvp_Init,

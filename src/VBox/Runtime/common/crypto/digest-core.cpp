@@ -59,9 +59,14 @@ typedef struct RTCRDIGESTINT
     uint32_t            uState;
     /** The number of bytes consumed. */
     uint64_t            cbConsumed;
+    /** Pointer to the data specific to the message digest algorithm. Points
+     * either to &abState[0] or to memory allocated with pDesc->pfnNew. */
+    void               *pvState;
     /** Opaque data specific to the message digest algorithm, size given by
-     * RTCRDIGESTDESC::cbState.  This is followed by space for the final hash at
-     * offHash with size RTCRDIGESTDESC::cbHash. */
+     * RTCRDIGESTDESC::cbState.  This is followed by space for the final hash
+     * at offHash with size RTCRDIGESTDESC::cbHash.  The data specific to the
+     * message digest algorithm can also be 0. In this case, pDesc->pfnNew()
+     * and pDesc->pfnFree() must not be NULL. */
     uint8_t             abState[1];
 } RTCRDIGESTINT;
 /** Pointer to a message digest instance. */
@@ -88,22 +93,35 @@ RTDECL(int) RTCrDigestCreate(PRTCRDIGEST phDigest, PCRTCRDIGESTDESC pDesc, void 
     AssertPtrReturn(pDesc, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    uint32_t offHash = RT_ALIGN_32(pDesc->cbState, 8);
+    uint32_t const offHash = RT_ALIGN_32(pDesc->cbState, 8);
+    AssertReturn(pDesc->pfnNew || offHash, VERR_INVALID_PARAMETER);
+    AssertReturn(!pDesc->pfnNew || (pDesc->pfnFree && pDesc->pfnInit && pDesc->pfnClone), VERR_INVALID_PARAMETER);
     PRTCRDIGESTINT pThis = (PRTCRDIGESTINT)RTMemAllocZ(RT_OFFSETOF(RTCRDIGESTINT, abState[offHash + pDesc->cbHash]));
     if (pThis)
     {
-        pThis->u32Magic = RTCRDIGESTINT_MAGIC;
-        pThis->cRefs    = 1;
-        pThis->offHash  = offHash;
-        pThis->pDesc    = pDesc;
-        pThis->uState   = RTCRDIGEST_STATE_READY;
-        if (pDesc->pfnInit)
-            rc = pDesc->pfnInit(pThis->abState, pvOpaque, false /*fReInit*/);
-        if (RT_SUCCESS(rc))
+        if (pDesc->pfnNew)
+            pThis->pvState = pDesc->pfnNew();
+        else
+            pThis->pvState = &pThis->abState[0];
+        if (pThis->pvState)
         {
-            *phDigest = pThis;
-            return VINF_SUCCESS;
+            pThis->u32Magic = RTCRDIGESTINT_MAGIC;
+            pThis->cRefs    = 1;
+            pThis->offHash  = offHash;
+            pThis->pDesc    = pDesc;
+            pThis->uState   = RTCRDIGEST_STATE_READY;
+            if (pDesc->pfnInit)
+                rc = pDesc->pfnInit(pThis->pvState, pvOpaque, false /*fReInit*/);
+            if (RT_SUCCESS(rc))
+            {
+                *phDigest = pThis;
+                return VINF_SUCCESS;
+            }
+            if (pDesc->pfnFree)
+                pDesc->pfnFree(pThis->pvState);
         }
+        else
+            rc = VERR_NO_MEMORY;
         pThis->u32Magic = 0;
         RTMemFree(pThis);
     }
@@ -124,22 +142,36 @@ RTDECL(int) RTCrDigestClone(PRTCRDIGEST phDigest, RTCRDIGEST hSrc)
     PRTCRDIGESTINT pThis = (PRTCRDIGESTINT)RTMemAllocZ(RT_OFFSETOF(RTCRDIGESTINT, abState[offHash + hSrc->pDesc->cbHash]));
     if (pThis)
     {
-        pThis->u32Magic = RTCRDIGESTINT_MAGIC;
-        pThis->cRefs    = 1;
-        pThis->offHash  = offHash;
-        pThis->pDesc    = hSrc->pDesc;
-        if (hSrc->pDesc->pfnClone)
-            rc = hSrc->pDesc->pfnClone(pThis->abState, hSrc->abState);
+        if (hSrc->pDesc->pfnNew)
+            pThis->pvState = hSrc->pDesc->pfnNew();
         else
-            memcpy(pThis->abState, hSrc->abState, offHash);
-        memcpy(&pThis->abState[offHash], &hSrc->abState[offHash], hSrc->pDesc->cbHash);
-        pThis->uState = hSrc->uState;
-
-        if (RT_SUCCESS(rc))
+            pThis->pvState = &pThis->abState[0];
+        if (pThis->pvState)
         {
-            *phDigest = pThis;
-            return VINF_SUCCESS;
+            pThis->u32Magic = RTCRDIGESTINT_MAGIC;
+            pThis->cRefs    = 1;
+            pThis->offHash  = offHash;
+            pThis->pDesc    = hSrc->pDesc;
+            if (hSrc->pDesc->pfnClone)
+                rc = hSrc->pDesc->pfnClone(pThis->pvState, hSrc->pvState);
+            else
+            {
+                Assert(!hSrc->pDesc->pfnNew);
+                memcpy(pThis->pvState, hSrc->pvState, offHash);
+            }
+            memcpy(&pThis->abState[offHash], &hSrc->abState[offHash], hSrc->pDesc->cbHash);
+            pThis->uState = hSrc->uState;
+
+            if (RT_SUCCESS(rc))
+            {
+                *phDigest = pThis;
+                return VINF_SUCCESS;
+            }
+            if (hSrc->pDesc->pfnFree)
+                hSrc->pDesc->pfnFree(pThis->pvState);
         }
+        else
+            rc = VERR_NO_MEMORY;
         pThis->u32Magic = 0;
         RTMemFree(pThis);
     }
@@ -161,13 +193,16 @@ RTDECL(int) RTCrDigestReset(RTCRDIGEST hDigest)
     int rc = VINF_SUCCESS;
     if (pThis->pDesc->pfnInit)
     {
-        rc = pThis->pDesc->pfnInit(pThis->abState, NULL, true /*fReInit*/);
+        rc = pThis->pDesc->pfnInit(pThis->pvState, NULL, true /*fReInit*/);
         if (RT_FAILURE(rc))
             pThis->uState = RTCRDIGEST_STATE_BUSTED;
         RT_BZERO(&pThis->abState[pThis->offHash], pThis->pDesc->cbHash);
     }
     else
-        RT_BZERO(pThis->abState, pThis->offHash + pThis->pDesc->cbHash);
+    {
+        Assert(!pThis->pDesc->pfnNew);
+        RT_BZERO(pThis->pvState, pThis->offHash + pThis->pDesc->cbHash);
+    }
     return rc;
 }
 
@@ -197,7 +232,9 @@ RTDECL(uint32_t) RTCrDigestRelease(RTCRDIGEST hDigest)
     {
         pThis->u32Magic = ~RTCRDIGESTINT_MAGIC;
         if (pThis->pDesc->pfnDelete)
-            pThis->pDesc->pfnDelete(pThis->abState);
+            pThis->pDesc->pfnDelete(pThis->pvState);
+        if (pThis->pDesc->pfnFree)
+            pThis->pDesc->pfnFree(pThis->pvState);
         RTMemFree(pThis);
     }
     Assert(cRefs < 64);
@@ -212,7 +249,7 @@ RTDECL(int) RTCrDigestUpdate(RTCRDIGEST hDigest, void const *pvData, size_t cbDa
     AssertReturn(pThis->u32Magic == RTCRDIGESTINT_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uState == RTCRDIGEST_STATE_READY, VERR_INVALID_STATE);
 
-    pThis->pDesc->pfnUpdate(pThis->abState, pvData, cbData);
+    pThis->pDesc->pfnUpdate(pThis->pvState, pvData, cbData);
     pThis->cbConsumed += cbData;
     return VINF_SUCCESS;
 }
@@ -231,7 +268,7 @@ RTDECL(int) RTCrDigestFinal(RTCRDIGEST hDigest, void *pvHash, size_t cbHash)
      */
     if (pThis->uState == RTCRDIGEST_STATE_READY)
     {
-        pThis->pDesc->pfnFinal(pThis->abState, &pThis->abState[pThis->offHash]);
+        pThis->pDesc->pfnFinal(pThis->pvState, &pThis->abState[pThis->offHash]);
         pThis->uState = RTCRDIGEST_STATE_FINAL;
     }
     else
@@ -244,7 +281,7 @@ RTDECL(int) RTCrDigestFinal(RTCRDIGEST hDigest, void *pvHash, size_t cbHash)
     {
         uint32_t cbNeeded = pThis->pDesc->cbHash;
         if (pThis->pDesc->pfnGetHashSize)
-            cbNeeded = pThis->pDesc->pfnGetHashSize(pThis->abState);
+            cbNeeded = pThis->pDesc->pfnGetHashSize(pThis->pvState);
         Assert(cbNeeded > 0);
 
         if (cbNeeded == cbHash)
@@ -299,7 +336,7 @@ RTDECL(uint32_t) RTCrDigestGetHashSize(RTCRDIGEST hDigest)
     AssertReturn(pThis->u32Magic == RTCRDIGESTINT_MAGIC, 0);
     if (pThis->pDesc->pfnGetHashSize)
     {
-        uint32_t cbHash = pThis->pDesc->pfnGetHashSize(pThis->abState);
+        uint32_t cbHash = pThis->pDesc->pfnGetHashSize(pThis->pvState);
         Assert(cbHash <= pThis->pDesc->cbHash);
         return cbHash;
     }
@@ -333,7 +370,7 @@ RTDECL(RTDIGESTTYPE) RTCrDigestGetType(RTCRDIGEST hDigest)
 
     RTDIGESTTYPE enmType = pThis->pDesc->enmType;
     if (pThis->pDesc->pfnGetDigestType)
-        enmType = pThis->pDesc->pfnGetDigestType(pThis->abState);
+        enmType = pThis->pDesc->pfnGetDigestType(pThis->pvState);
     return enmType;
 }
 

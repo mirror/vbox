@@ -60,6 +60,18 @@ typedef struct RTCRDIGESTDESC
     uint32_t            uReserved;
 
     /**
+     * Allocates the digest data.
+     */
+    DECLCALLBACKMEMBER(void *, pfnNew)(void);
+    
+    /**
+     * Frees the digest data.
+     *
+     * @param   pvState     The opaque message digest state.
+     */
+    DECLCALLBACKMEMBER(void, pfnFree)(void *pvState);
+
+    /**
      * Updates the digest with more data.
      *
      * @param   pvState     The opaque message digest state.
