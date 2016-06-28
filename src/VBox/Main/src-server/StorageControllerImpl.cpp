@@ -36,9 +36,6 @@
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
-//
-//
-DEFINE_EMPTY_CTOR_DTOR(StorageController)
 
 struct StorageController::Data
 {
@@ -62,6 +59,8 @@ struct StorageController::Data
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR(StorageController)
 
 HRESULT StorageController::FinalConstruct()
 {
