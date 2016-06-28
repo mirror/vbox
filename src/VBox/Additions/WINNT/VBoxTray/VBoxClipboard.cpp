@@ -658,6 +658,17 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             }
         } break;
 
+        case WM_DESTROY:
+        {
+            vboxClipboardRemoveFromCBChain(pCtx);
+            if (pCtx->timerRefresh)
+                KillTimer(pCtx->hwnd, 0);
+            /* 
+             * don't need to call PostQuitMessage cause
+             * the VBoxTray already finished a message loop 
+             */
+        } break;
+
         default:
         {
             rc = DefWindowProc(hwnd, msg, wParam, lParam);
@@ -731,10 +742,6 @@ static void vboxClipboardDestroy(PVBOXCLIPBOARDCONTEXT pCtx)
 
     if (pCtx->hwnd)
     {
-        vboxClipboardRemoveFromCBChain(pCtx);
-        if (pCtx->timerRefresh)
-            KillTimer(pCtx->hwnd, 0);
-
         DestroyWindow(pCtx->hwnd);
         pCtx->hwnd = NULL;
     }

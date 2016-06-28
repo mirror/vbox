@@ -53,10 +53,8 @@ HostPowerServiceWin::~HostPowerServiceWin()
     {
         Log(("HostPowerServiceWin::!HostPowerServiceWin: destroy window %x\n", mHwnd));
 
-        /* Is this allowed from another thread? */
-        SetWindowLongPtr(mHwnd, 0, 0);
         /* Poke the thread out of the event loop and wait for it to clean up. */
-        PostMessage(mHwnd, WM_QUIT, 0, 0);
+        PostMessage(mHwnd, WM_CLOSE, 0, 0);
         RTThreadWait(mThread, 5000, NULL);
         mThread = NIL_RTTHREAD;
     }
@@ -116,25 +114,21 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread(RTTHREAD ThreadSelf, v
 
             MSG msg;
             BOOL fRet;
-            while ((fRet = GetMessage(&msg, NULL, 0, 0)) != 0)
+            while ((fRet = GetMessage(&msg, NULL, 0, 0)) > 0)
             {
-                if (fRet != -1)
-                {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
-                }
-                else
-                {
-                    // handle the error and possibly exit
-                    break;
-                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
             }
+            /*
+            * Window procedure can return error,
+            * but this is exceptional situation
+            * that should be identified in testing
+            */
+            Assert(fRet >= 0);
         }
     }
 
     Log(("HostPowerServiceWin::NotificationThread: exit thread\n"));
-    if (hwnd)
-        DestroyWindow(hwnd);
 
     if (atomWindowClass != 0)
     {
@@ -212,6 +206,14 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
             }
             return TRUE;
         }
+
+        case WM_DESTROY:
+        {
+            /* moved here. it can't work across theads */
+            SetWindowLongPtr(hwnd, 0, 0);
+            PostQuitMessage(0);
+            return 0;
+        } 
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);

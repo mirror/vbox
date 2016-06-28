@@ -61,7 +61,6 @@ struct _VBOXCLIPBOARDCONTEXT
     bool     fCBChainPingInProcess;
 
     RTTHREAD thread;
-    bool volatile fTerminate;
 
     HANDLE hRenderEvent;
 
@@ -648,9 +647,14 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             }
         } break;
 
-        case WM_CLOSE:
+        case WM_DESTROY:
         {
-            /* Do nothing. Ignore the message. */
+            /* MS recommends to remove from Clipboard chain in this callback */
+            Assert(pCtx->hwnd);
+            removeFromCBChain(pCtx);
+            if (pCtx->timerRefresh)
+                KillTimer(pCtx->hwnd, 0);
+            PostQuitMessage(0);
         } break;
 
         default:
@@ -715,23 +719,23 @@ DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD ThreadSelf, void *pInstance)
                 pCtx->timerRefresh = SetTimer(pCtx->hwnd, 0, 10 * 1000, NULL);
 
             MSG msg;
-            while (GetMessage(&msg, NULL, 0, 0) && !pCtx->fTerminate)
+            BOOL msgret = 0;
+            while ((msgret = GetMessage(&msg, NULL, 0, 0)) > 0)
             {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
+            /* 
+            * Window procedure can return error, 
+            * but this is exceptional situation 
+            * that should be identified in testing
+            */
+            Assert(msgret >= 0);
+            Log(("VBoxClipboardThread Message loop finished. GetMessage returned %d, message id: %d \n", msgret, msg.message));
         }
     }
 
-    if (pCtx->hwnd)
-    {
-        removeFromCBChain(pCtx);
-        if (pCtx->timerRefresh)
-            KillTimer(pCtx->hwnd, 0);
-
-        DestroyWindow (pCtx->hwnd);
-        pCtx->hwnd = NULL;
-    }
+    pCtx->hwnd = NULL;
 
     if (atomWindowClass != 0)
     {
@@ -771,12 +775,9 @@ void vboxClipboardDestroy (void)
 {
     Log(("vboxClipboardDestroy\n"));
 
-    /* Set the termination flag and ping the window thread. */
-    ASMAtomicWriteBool (&g_ctx.fTerminate, true);
-
     if (g_ctx.hwnd)
     {
-        PostMessage (g_ctx.hwnd, WM_CLOSE, 0, 0);
+        int rc = PostMessage (g_ctx.hwnd, WM_CLOSE, 0, 0);
     }
 
     CloseHandle (g_ctx.hRenderEvent);
