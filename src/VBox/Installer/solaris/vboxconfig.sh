@@ -1181,9 +1181,6 @@ cleanup_install()
             exit 1
         fi
     fi
-
-    # remove the S10 legacy library links
-    for l in `find /opt/VirtualBox -name "lib*" -type l`; do rm $l; done
 }
 
 
@@ -1192,6 +1189,20 @@ cleanup_install()
 postinstall()
 {
     infoprint "Detected Solaris $HOST_OS_MAJORVERSION Version $HOST_OS_MINORVERSION"
+
+    # Install the S10 legacy library links.
+    # We do this early so that when we invoke services or other VirtualBox processes, the dependent libraries are resolved.
+    if test -d "/opt/VirtualBox/legacy/"; then
+        if test "$HOST_OS_MAJORVERSION" -eq 10; then
+            for lib in `ls -1 /opt/VirtualBox/legacy/`; do
+	       /usr/sbin/installf -c none $PKGINST /opt/VirtualBox/$lib=legacy/$lib s 
+            done        
+            for lib in `ls -1 /opt/VirtualBox/amd64/legacy/`; do
+                /usr/sbin/installf -c none $PKGINST /opt/VirtualBox/amd64/$lib=legacy/$lib s 
+            done
+        fi
+    fi
+
     infoprint "Loading VirtualBox kernel modules..."
     install_drivers
 
@@ -1249,20 +1260,6 @@ postinstall()
                 /usr/bin/update-desktop-database -q 2>/dev/null
             else
                 subprint "Skipped for targetted installs."
-            fi
-        fi
-
-        # Install the S10 legacy library links if necessary
-        if test -d /opt/VirtualBox/legacy/; then
-            if ldd /opt/VirtualBox/amd64/VBoxRT-x86.so | grep "not found" > /dev/null; then
-                for lib in `ls -1 /opt/VirtualBox/legacy/`; do
-                    ln -sf legacy/$lib /opt/VirtualBox/$lib
-                done
-            fi
-            if ldd /opt/VirtualBox/amd64/VBoxRT.so | grep "not found" > /dev/null; then
-                for lib in `ls -1 /opt/VirtualBox/amd64/legacy/`; do
-                    ln -sf legacy/$lib /opt/VirtualBox/amd64/$lib
-                done
             fi
         fi
 
