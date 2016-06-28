@@ -1228,8 +1228,11 @@ static LRESULT CALLBACK usbLibWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
                 usbLibOnDeviceChange();
             }
             break;
-        case WM_DESTROY:
-            return 0;
+         case WM_DESTROY:
+            {
+                PostQuitMessage(0);
+                return 0;
+            }
     }
     return DefWindowProc (hwnd, uMsg, wParam, lParam);
 }
@@ -1282,16 +1285,13 @@ static DWORD WINAPI usbLibMsgThreadProc(__in LPVOID lpParameter)
          * The message pump.
          */
         MSG msg;
-        while (GetMessage(&msg, NULL, 0, 0))
+        BOOL fRet;
+        while ((fRet = GetMessage(&msg, NULL, 0, 0)) > 0)
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-
-        /*
-         * Clean up.
-         */
-        DestroyWindow(g_VBoxUsbGlobal.hWnd);
+        Assert(fRet >= 0);
     }
 
     if (atomWindowClass != NULL)
@@ -1553,7 +1553,7 @@ USBLIB_DECL(int) USBLibTerm(void)
 
     BOOL bRc;
 #ifdef VBOX_USB_USE_DEVICE_NOTIFICATION
-    bRc = PostMessage(g_VBoxUsbGlobal.hWnd, WM_QUIT, 0, 0);
+    bRc = PostMessage(g_VBoxUsbGlobal.hWnd, WM_CLOSE, 0, 0);
     AssertMsg(bRc, ("PostMessage for hWnd failed winEr(%d)\n", GetLastError()));
 
     if (g_VBoxUsbGlobal.hThread != NULL)
