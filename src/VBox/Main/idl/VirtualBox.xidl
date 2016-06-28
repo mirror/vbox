@@ -7782,7 +7782,7 @@ and "VAR" for unsetting. -->
         media are created for all normal media of the machine.
 
         If the given snapshot is an online snapshot, the machine will go to
-        the <link to="MachineState_Saved"> saved state</link>, so that the
+        the <link to="MachineState_Saved">saved state</link>, so that the
         next time it is powered on, the execution state will be restored
         from the state of the snapshot.
 
@@ -9353,7 +9353,7 @@ and "VAR" for unsetting. -->
       <desc>
         Indicates whether VirtualBox was built with raw-mode support.
 
-        When this reads as False, the <link to="HWVirtExPropertyType::Enabled"/>
+        When this reads as False, the <link to="HWVirtExPropertyType_Enabled"/>
         setting will be ignored and assumed to be True.
       </desc>
     </attribute>
@@ -11457,7 +11457,7 @@ and "VAR" for unsetting. -->
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>The path to the target directory (in the guest).  Unless the
-          <link to="DirectoryCopyFlags::CopyIntoExisting"/> flag is given, the
+          <link to="DirectoryCopyFlags_CopyIntoExisting"/> flag is given, the
           directory shall not already exist.  Guest path style.</desc>
       </param>
       <param name="flags" type="DirectoryCopyFlags" dir="in" safearray="yes">
@@ -11482,7 +11482,7 @@ and "VAR" for unsetting. -->
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the directory on the host.  Unless the
-          <link to="DirectoryCopyFlags::CopyIntoExisting"/> flag is given, the
+          <link to="DirectoryCopyFlags_CopyIntoExisting"/> flag is given, the
           directory shall not already exist.  Host path style.</desc>
       </param>
       <param name="flags" type="DirectoryCopyFlags" dir="in" safearray="yes">
@@ -11507,7 +11507,7 @@ and "VAR" for unsetting. -->
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the file in the guest. Unless the
-          <link to="DirectoryCopyFlags::CopyIntoExisting"/> flag is given, the
+          <link to="DirectoryCopyFlags_CopyIntoExisting"/> flag is given, the
           directory shall not already exist.  Guest style path.</desc>
       </param>
       <param name="flags" type="DirectoryCopyFlags" dir="in" safearray="yes">
@@ -11686,7 +11686,7 @@ and "VAR" for unsetting. -->
       </param>
       <param name="flags" type="DirectoryRemoveRecFlag" dir="in" safearray="yes">
         <desc>Zero or more <link to="DirectoryRemoveRecFlag"/> flags.
-          <note>WARNING! SPECIFYING <link to="DirectoryRemoveRecFlag::ContentAndDir"/> IS
+          <note>WARNING! SPECIFYING <link to="DirectoryRemoveRecFlag_ContentAndDir"/> IS
              MANDATORY AT THE MOMENT!!</note>
         </desc>
       </param>
@@ -11776,7 +11776,7 @@ and "VAR" for unsetting. -->
         Copies a file from one guest location to another.
 
         <note>Will overwrite the destination file unless
-          <link to="FileCopyFlag::NoReplace"/> is specified.</note>
+          <link to="FileCopyFlag_NoReplace"/> is specified.</note>
 
         <result name="E_NOTIMPL">
           Not yet implemented.
@@ -11802,7 +11802,7 @@ and "VAR" for unsetting. -->
         Copies a file from the guest to the host.
 
         <note>Will overwrite the destination file unless
-          <link to="FileCopyFlag::NoReplace"/> is specified.</note>
+          <link to="FileCopyFlag_NoReplace"/> is specified.</note>
 
         <result name="VBOX_E_IPRT_ERROR">
           Error starting the copy operation.
@@ -11829,7 +11829,7 @@ and "VAR" for unsetting. -->
         Copies a file from the host to the guest.
 
         <note>Will overwrite the destination file unless
-          <link to="FileCopyFlag::NoReplace"/> is specified.</note>
+          <link to="FileCopyFlag_NoReplace"/> is specified.</note>
 
         <result name="VBOX_E_IPRT_ERROR">
           Error starting the copy operation.
@@ -11993,7 +11993,7 @@ and "VAR" for unsetting. -->
         <desc>The file sharing mode in the guest. This parameter is currently
           ignore for all guest OSes.  It will in the future be implemented for
           Windows, OS/2 and maybe Solaris guests only, the others will ignore it.
-          Use <link to="FileSharingMode::All"/>.
+          Use <link to="FileSharingMode_All"/>.
         </desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
@@ -12777,8 +12777,8 @@ and "VAR" for unsetting. -->
 
         The file current position always applies to the <link to="IFile::read"/>
         method, which updates it upon return.  Same goes for the <link to="IFile::write"/>
-        method except when <link to="IFile::accessMode"/> is <link to="FileAccessMode::AppendOnly"/>
-        or <link to="FileAccessMode::AppendRead"/>, where it will always write
+        method except when <link to="IFile::accessMode"/> is <link to="FileAccessMode_AppendOnly"/>
+        or <link to="FileAccessMode_AppendRead"/>, where it will always write
         to the end of the file and will leave this attribute unchanged.
 
         The <link to="IFile::seek"/> is used to change this attribute without
@@ -12901,8 +12901,8 @@ and "VAR" for unsetting. -->
 
         The file current position always applies to the <link to="IFile::read"/>
         method.  Same for the <link to="IFile::write"/> method it except when
-        the <link to="IFile::accessMode"/> is <link to="FileAccessMode::AppendOnly"/>
-        or <link to="FileAccessMode::AppendRead"/>.
+        the <link to="IFile::accessMode"/> is <link to="FileAccessMode_AppendOnly"/>
+        or <link to="FileAccessMode_AppendRead"/>.
       </desc>
       <param name="offset" type="long long" dir="in">
         <desc>Offset to seek relative to the position specified by @a whence.</desc>
@@ -16885,9 +16885,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           The Y origin of the guest screen.
         </desc>
       </param>
-      <param name="width" type="unsigned long" dir="in"/>
-      <param name="height" type="unsigned long" dir="in"/>
-      <param name="bitsPerPixel" type="unsigned long" dir="in"/>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>
+          The width of the guest screen.
+        </desc>
+      </param> 
+      <param name="height" type="unsigned long" dir="in">
+        <desc>
+          The height of the guest screen.
+        </desc>
+      </param> 
+      <param name="bitsPerPixel" type="unsigned long" dir="in">
+        <desc>
+          The number of bits per pixel of the guest screen.
+        </desc>
+      </param> 
     </method>
 
     <method name="setSeamlessMode">
