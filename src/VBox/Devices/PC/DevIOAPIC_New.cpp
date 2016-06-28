@@ -616,6 +616,12 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
  */
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
 {
+#define IOAPIC_ASSERT_IRQ(a_idxRte, a_PinMask)       do { \
+        pThis->au32TagSrc[(a_idxRte)] = !pThis->au32TagSrc[(a_idxRte)] ? uTagSrc : RT_BIT_32(31); \
+        pThis->uIrr |= a_PinMask; \
+        ioapicSignalIntrForRte(pThis, (a_idxRte)); \
+    } while (0)
+
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
 
@@ -645,66 +651,57 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
             return;
         }
 
-        /*
-         * If the device is flip-flopping the interrupt line, there's no need to
-         * set and unset the IRR.
-         */
         bool const     fFlipFlop = ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP);
         uint32_t const uPrevIrr  = pThis->uIrr & uPinMask;
-        if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE)
+        if (!fFlipFlop)
         {
-            /*
-             * For edge-triggered interrupts, we need to act only on an edge transition.
-             * See ICH9 spec. 13.5.7 "REDIR_TBL: Redirection Table (LPC I/F-D31:F0)"
-             */
-            if (!uPrevIrr)
+            if (u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE)
             {
-                if (!fFlipFlop)
-                    pThis->uIrr |= uPinMask;
-
-                if (!pThis->au32TagSrc[idxRte])
-                    pThis->au32TagSrc[idxRte] = uTagSrc;
+                /*
+                 * For edge-triggered interrupts, we need to act only on a low to high edge transition.
+                 * See ICH9 spec. 13.5.7 "REDIR_TBL: Redirection Table (LPC I/F-D31:F0)".
+                 */
+                if (!uPrevIrr)
+                    IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
                 else
-                    pThis->au32TagSrc[idxRte] = RT_BIT_32(31);
-
-                ioapicSignalIntrForRte(pThis, idxRte);
+                {
+                    STAM_COUNTER_INC(&pThis->StatRedundantEdgeIntr);
+                    Log2(("IOAPIC: Redundant edge-triggered interrupt %#x (%u)\n", idxRte, idxRte));
+                }
             }
             else
             {
-                STAM_COUNTER_INC(&pThis->StatRedundantEdgeIntr);
-                Log2(("IOAPIC: Redundant edge-triggered interrupt %#x (%u)\n", idxRte, idxRte));
+                Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
+
+                /*
+                 * For level-triggered interrupts, redundant interrupts are not a problem
+                 * and will eventually be delivered anyway after an EOI, but our PDM devices
+                 * should not typically call us with no change to the level.
+                 */
+                if (!uPrevIrr)
+                { /* likely */ }
+                else
+                {
+                    STAM_COUNTER_INC(&pThis->StatRedundantLevelIntr);
+                    Log2(("IOAPIC: Redundant level-triggered interrupt %#x (%u)\n", idxRte, idxRte));
+                }
+
+                IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
             }
         }
         else
         {
-            Assert(u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_LEVEL);
-
             /*
-             * For level-triggered interrupts, redundant interrupts are not a problem
-             * and will eventually be delivered anyway after an EOI, but our PDM devices
-             * should not typically call us with no change to the level.
+             * The device is flip-flopping the interrupt line, which implies we should de-assert
+             * and assert the interrupt line. The interrupt line is left in the asserted state
+             * after a flip-flop request.
              */
-            if (!uPrevIrr)
-            { /* likely */ }
-            else
-            {
-                STAM_COUNTER_INC(&pThis->StatRedundantLevelIntr);
-                Log2(("IOAPIC: Redundant level-triggered interrupt %#x (%u)\n", idxRte, idxRte));
-            }
-
-            if (!fFlipFlop)
-                pThis->uIrr |= uPinMask;
-
-            if (!pThis->au32TagSrc[idxRte])
-                pThis->au32TagSrc[idxRte] = uTagSrc;
-            else
-                pThis->au32TagSrc[idxRte] = RT_BIT_32(31);
-
-            ioapicSignalIntrForRte(pThis, idxRte);
+            IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
         }
 
         PDMCritSectLeave(&pThis->CritSect);
     }
+#undef IOAPIC_ASSERT_IRQ
 }
 
 
