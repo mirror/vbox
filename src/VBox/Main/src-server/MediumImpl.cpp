@@ -3010,9 +3010,9 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                     destMediumPath = destMediumFileName;
                 }
                 /* case when new path looks like "/path/to/new/location"
-                 * In this case just set destMediumFileName to NULL and 
-                 * and add '/' in the end of path.destMediumPath 
-                 */ 
+                 * In this case just set destMediumFileName to NULL and
+                 * and add '/' in the end of path.destMediumPath
+                 */
                 else
                 {
                     destMediumFileName.setNull();
@@ -3102,7 +3102,6 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
 
             if (SUCCEEDED(rc))
             {
-                MachineState_T aState;
                 ComObjPtr<SessionMachine> sm;
                 ComPtr<IInternalSessionControl> ctl;
 
@@ -3181,7 +3180,7 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
-    else 
+    else
     {
         if (pTask != NULL)
             delete pTask;
@@ -8844,7 +8843,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
 /**
  * Implementation code for the "move" task.
  *
- * This only gets started from Medium::SetLocation() and always 
+ * This only gets started from Medium::SetLocation() and always
  * runs asynchronously.
  *
  * @param task
