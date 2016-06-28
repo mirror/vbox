@@ -580,7 +580,7 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
 	$(VBOXWEBSERVICE_WSDL)=>vboxwebService.wsdl
 
  INSTALLS += vboxwebinst_webtest
- vboxwebinst_webtest_INST = $(INST_SDK)bindings/webservice
+ vboxwebinst_webtest_INST = $(INST_SDK)bindings/webservice/
  vboxwebinst_webtest_MODE = a+r,u+w
  vboxwebinst_webtest_SOURCES = \
 	$(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl=>xsl/websrv-wsdl2gsoapH.xsl \
