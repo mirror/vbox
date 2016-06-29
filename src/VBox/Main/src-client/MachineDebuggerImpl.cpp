@@ -1358,14 +1358,33 @@ HRESULT MachineDebugger::dumpGuestStack(ULONG aCpuId, com::Utf8Str &aStack)
     HRESULT hrc = ptrVM.rc();
     if (SUCCEEDED(hrc))
     {
-        /* Suspend the VM first or we risk deadlocks or inconsistent guest stacks. */
-        alock.release();
-        int vrc = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_USER);
-        alock.acquire(); 
+        /*
+         * There is currently a problem with the windows diggers and SMP, where
+         * guest driver memory is being read from CPU zero in order to ensure that
+         * we've got a consisten virtual memory view.  If one of the other CPUs
+         * initiates a rendezvous while we're unwinding the stack and trying to
+         * read guest driver memory, we will deadlock.
+         *
+         * So, check the VM state and maybe suspend the VM before we continue.
+         */
+        int  vrc     = VINF_SUCCESS;
+        bool fPaused = false;
+        if (aCpuId != 0)
+        {
+            VMSTATE enmVmState = VMR3GetStateU(ptrVM.rawUVM());
+            if (   enmVmState == VMSTATE_RUNNING
+                || enmVmState == VMSTATE_RUNNING_LS
+                || enmVmState == VMSTATE_RUNNING_FT)
+            {
+                alock.release();
+                vrc = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_USER);
+                alock.acquire();
+                fPaused = RT_SUCCESS(vrc);
+            }
+        }
         if (RT_SUCCESS(vrc))
         {
             PCDBGFSTACKFRAME pFirstFrame;
-
             vrc = DBGFR3StackWalkBegin(ptrVM.rawUVM(), aCpuId, DBGFCODETYPE_GUEST, &pFirstFrame);
             if (RT_SUCCESS(vrc))
             {
@@ -1455,9 +1474,14 @@ HRESULT MachineDebugger::dumpGuestStack(ULONG aCpuId, com::Utf8Str &aStack)
             else
                 hrc = setError(E_FAIL, tr("DBGFR3StackWalkBegin failed with %Rrc"), vrc);
 
-            alock.release();
-            VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_USER);
-            alock.acquire();
+            /*
+             * Resume the VM if we suspended it.
+             */
+            if (fPaused)
+            {
+                alock.release();
+                VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_USER);
+            }
         }
         else
             hrc = setError(E_FAIL, tr("Suspending the VM failed with %Rrc\n"), vrc);
