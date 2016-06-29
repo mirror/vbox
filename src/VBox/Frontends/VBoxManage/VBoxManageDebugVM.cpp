@@ -27,6 +27,7 @@
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
 
+#include <VBox/types.h>
 #include <iprt/ctype.h>
 #include <VBox/err.h>
 #include <iprt/getopt.h>
@@ -639,6 +640,77 @@ static RTEXITCODE handleDebugVM_Show(HandlerArg *pArgs, IMachineDebugger *pDebug
 }
 
 /**
+ * Handles the stack sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_Stack(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    /*
+     * Parse arguments.
+     */
+    VMCPUID                     idCpu = VMCPUID_ALL;
+
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                idCpu = ValueUnion.u32;
+                break;
+
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Dump stack.
+     */
+    com::Bstr bstrGuestStack;
+    if (idCpu != VMCPUID_ALL)
+    {
+        /* Single CPU */
+        CHECK_ERROR2I_RET(pDebugger, DumpGuestStack(idCpu, bstrGuestStack.asOutParam()), RTEXITCODE_FAILURE);
+        RTPrintf("%ls\n", bstrGuestStack.raw());
+    }
+    else
+    {
+        /* All CPUs. */
+        ComPtr<IMachine> ptrMachine;
+        CHECK_ERROR2I_RET(pArgs->session, COMGETTER(Machine)(ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
+        ULONG cCpus;
+        CHECK_ERROR2I_RET(ptrMachine, COMGETTER(CPUCount)(&cCpus), RTEXITCODE_FAILURE);
+
+        for (idCpu = 0; idCpu < (VMCPUID)cCpus; idCpu++)
+        {
+            CHECK_ERROR2I_RET(pDebugger, DumpGuestStack(idCpu, bstrGuestStack.asOutParam()), RTEXITCODE_FAILURE);
+            if (cCpus > 1)
+            {
+                if (idCpu > 0)
+                    RTPrintf("\n");
+                RTPrintf("====================== CPU #%u ======================\n", idCpu);
+            }
+            RTPrintf("%ls\n", bstrGuestStack.raw());
+        }
+    }
+
+
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
  * Handles the statistics sub-command.
  *
  * @returns Suitable exit code.
@@ -712,48 +784,6 @@ static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *
     return RTEXITCODE_SUCCESS;
 }
 
-/**
- * Handles the dumpgueststack sub-command.
- *
- * @returns Suitable exit code.
- * @param   pArgs               The handler arguments.
- * @param   pDebugger           Pointer to the debugger interface.
- */
-static RTEXITCODE handleDebugVM_DumpGuestStack(HandlerArg *pArgs, IMachineDebugger *pDebugger)
-{
-    ULONG                       idCpu = 0;
-
-    RTGETOPTSTATE               GetState;
-    RTGETOPTUNION               ValueUnion;
-    static const RTGETOPTDEF    s_aOptions[] =
-    {
-        { "--cpu", 'c', RTGETOPT_REQ_UINT32 },
-    };
-    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
-
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            case 'c':
-                idCpu = ValueUnion.u32;
-                break;
-
-            default:
-                return errorGetOpt(rc, &ValueUnion);
-        }
-    }
-
-    com::Bstr bstrGuestStack;
-    CHECK_ERROR2I_RET(pDebugger, DumpGuestStack(idCpu, bstrGuestStack.asOutParam()),
-                      RTEXITCODE_FAILURE);
-
-    RTPrintf("%ls\n", bstrGuestStack.raw());
-
-    return RTEXITCODE_SUCCESS;
-}
-
 RTEXITCODE handleDebugVM(HandlerArg *pArgs)
 {
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
@@ -770,16 +800,16 @@ RTEXITCODE handleDebugVM(HandlerArg *pArgs)
     /*
      * Get the associated console and machine debugger.
      */
-    HRESULT rc;
+    HRESULT hrc;
     ComPtr<IConsole> ptrConsole;
-    CHECK_ERROR(pArgs->session, COMGETTER(Console)(ptrConsole.asOutParam()));
-    if (SUCCEEDED(rc))
+    CHECK_ERROR2(hrc, pArgs->session, COMGETTER(Console)(ptrConsole.asOutParam()));
+    if (SUCCEEDED(hrc))
     {
         if (ptrConsole.isNotNull())
         {
             ComPtr<IMachineDebugger> ptrDebugger;
-            CHECK_ERROR(ptrConsole, COMGETTER(Debugger)(ptrDebugger.asOutParam()));
-            if (SUCCEEDED(rc))
+            CHECK_ERROR2(hrc, ptrConsole, COMGETTER(Debugger)(ptrDebugger.asOutParam()));
+            if (SUCCEEDED(hrc))
             {
                 /*
                  * String switch on the sub-command.
@@ -845,15 +875,15 @@ RTEXITCODE handleDebugVM(HandlerArg *pArgs)
                     setCurrentSubcommand(HELP_SCOPE_DEBUGVM_SHOW);
                     rcExit = handleDebugVM_Show(pArgs, ptrDebugger);
                 }
+                else if (!strcmp(pszSubCmd, "stack"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_STACK);
+                    rcExit = handleDebugVM_Stack(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "statistics"))
                 {
                     setCurrentSubcommand(HELP_SCOPE_DEBUGVM_STATISTICS);
                     rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
-                }
-                else if (!strcmp(pszSubCmd, "dumpgueststack"))
-                {
-                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_DUMPGUESTSTACK);
-                    rcExit = handleDebugVM_DumpGuestStack(pArgs, ptrDebugger);
                 }
                 else
                     errorUnknownSubcommand(pszSubCmd);

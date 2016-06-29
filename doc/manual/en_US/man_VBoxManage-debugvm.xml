@@ -38,12 +38,6 @@
       <arg choice="plain">dumpvmcore</arg>
       <arg>--filename=<replaceable>name</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-debugvm-dumpgueststack">
-      <command>VBoxManage debugvm</command>
-      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-      <arg choice="plain">dumpgueststack</arg>
-      <arg>--cpu=<replaceable>id</replaceable></arg>
-    </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-info">
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
@@ -113,6 +107,12 @@
       <arg choice="plain">show</arg>
       <group><arg>--human-readable</arg><arg>--sh-export</arg><arg>--sh-eval</arg><arg>--cmd-set</arg></group>
       <arg rep="repeat"><replaceable>settings-item</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-stack">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">stack</arg>
+      <arg>--cpu=<replaceable>id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-statistics">
       <command>VBoxManage debugvm</command>
@@ -563,6 +563,22 @@
               <listitem><para>log-settings - alias for both debug and release log settings.</para></listitem>
             </itemizedlist>
           </listitem>
+        </varlistentry>
+      </variablelist>
+
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-stack">
+      <title>debugvm stack</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Unwinds the guest CPU stacks to the best of our ability.  For Windows
+        guest it is recommended to first run the <command>osdetect</command> command.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--cpu <replaceable>id</replaceable></option></term>
+          <listitem><para>Selects a single guest CPU to display the stack for.  The default is all CPUs.</para> </listitem>
         </varlistentry>
       </variablelist>
 
