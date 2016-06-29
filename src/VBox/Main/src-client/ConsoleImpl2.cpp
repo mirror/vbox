@@ -3312,7 +3312,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     /*
      * Register VM runtime error handler.
      */
-    rc2 = VMR3AtRuntimeErrorRegister(pUVM, Console::i_setVMRuntimeErrorCallback, this);
+    rc2 = VMR3AtRuntimeErrorRegister(pUVM, Console::i_atVMRuntimeErrorCallback, this);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
@@ -3706,11 +3706,11 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
 /**
  * Ellipsis to va_list wrapper for calling setVMRuntimeErrorCallback.
  */
-void Console::i_setVMRuntimeErrorCallbackF(uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+void Console::i_atVMRuntimeErrorCallbackF(uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    i_setVMRuntimeErrorCallback(NULL, this, fFlags, pszErrorId, pszFormat, va);
+    i_atVMRuntimeErrorCallback(NULL, this, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
 }
 
@@ -3984,7 +3984,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
-                    i_setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
+                    i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
                             N_("The medium '%ls' has a logical size of %RU64%s "
                             "but the file system the medium is located on seems "
                             "to be FAT(32) which cannot handle files bigger than 4GB.\n"
@@ -4015,7 +4015,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                             const char *pszUnitMax;
                             uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
                             uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
-                            i_setVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
+                            i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
                                     N_("The medium '%ls' has a logical size of %RU64%s "
                                     "but the file system the medium is located on can "
                                     "only handle files up to %RU64%s in theory.\n"
@@ -4038,7 +4038,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
-                    i_setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
+                    i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
 #ifdef RT_OS_WINDOWS
                             N_("The snapshot folder of this VM '%ls' seems to be located on "
                             "a FAT(32) file system. The logical size of the medium '%ls' "
@@ -4079,7 +4079,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                     if (   enmFsTypeFile == RTFSTYPE_EXT4
                         || enmFsTypeFile == RTFSTYPE_XFS)
                     {
-                        i_setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
+                        i_atVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the medium '%ls' for this VM "
                                    "is located on an %s partition. There is a known Linux "
@@ -4096,7 +4096,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                                 || enmFsTypeSnap == RTFSTYPE_XFS)
                              && !mfSnapshotFolderExt4WarningShown)
                     {
-                        i_setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
+                        i_atVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the snapshot folder for this VM "
                                    "is located on an %s partition. There is a known Linux "
@@ -4330,11 +4330,11 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 {
                     Bstr loc;
                     hrc = pMedium->COMGETTER(Location)(loc.asOutParam());                   H();
-                    i_setVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
-                                                 "The image file '%ls' is inaccessible and is being ignored. "
-                                                 "Please select a different image file for the virtual %s drive.",
-                                                 loc.raw(),
-                                                 enmType == DeviceType_DVD ? "DVD" : "floppy");
+                    i_atVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
+                                                "The image file '%ls' is inaccessible and is being ignored. "
+                                                "Please select a different image file for the virtual %s drive.",
+                                                loc.raw(),
+                                                enmType == DeviceType_DVD ? "DVD" : "floppy");
                     pMedium = NULL;
                 }
             }
@@ -5110,7 +5110,7 @@ int Console::i_configNetwork(const char *pszDevice,
                         RTStrCopy(Req.ifr_name, sizeof(Req.ifr_name), pszBridgedIfName);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
-                                i_setVMRuntimeErrorCallbackF(0, "BridgedInterfaceDown",
+                                i_atVMRuntimeErrorCallbackF(0, "BridgedInterfaceDown",
                                      N_("Bridged interface %s is down. Guest will not be able to use this interface"),
                                      pszBridgedIfName);
 

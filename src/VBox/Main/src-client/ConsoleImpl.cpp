@@ -8029,8 +8029,7 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
     {
         rc = rc2;
         if (online)
-            i_setVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
-                                         N_("Broken shared folder!"));
+            i_atVMRuntimeErrorCallbackF(0, "BrokenSharedFolder", N_("Broken shared folder!"));
     }
 
     LogFlowThisFunc(("Leaving\n"));
@@ -9236,7 +9235,8 @@ Console::i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS
 }
 
 /**
- * VM runtime error callback function.
+ * VM runtime error callback function (FNVMATRUNTIMEERROR).
+ *
  * See VMSetRuntimeError for the detailed description of parameters.
  *
  * @param   pUVM            The user mode VM handle.  Ignored, so passing NULL
@@ -9249,9 +9249,8 @@ Console::i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS
  * @thread EMT.
  */
 /* static */ DECLCALLBACK(void)
-Console::i_setVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
-                                     const char *pszErrorId,
-                                     const char *pszFormat, va_list va)
+Console::i_atVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
+                                    const char *pszErrorId, const char *pszFormat, va_list va)
 {
     bool const fFatal = !!(fFlags & VMSETRTERR_FLAGS_FATAL);
     LogFlowFuncEnter();
@@ -9678,7 +9677,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                         if (FAILED(rc))
                         {
                             ErrorInfoKeeper eik;
-                            pConsole->i_setVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
+                            pConsole->i_atVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
                                    N_("The shared folder '%s' could not be set up: %ls.\n"
                                       "The shared folder setup will not be complete. It is recommended to power down the virtual "
                                       "machine and fix the shared folder settings while the machine is not running"),

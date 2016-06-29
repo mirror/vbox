@@ -735,9 +735,9 @@ private:
     static DECLCALLBACK(void)   i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                                             const char *pszErrorFmt, va_list va);
 
-    void                        i_setVMRuntimeErrorCallbackF(uint32_t fFatal, const char *pszErrorId, const char *pszFormat, ...);
-    static DECLCALLBACK(void)   i_setVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFatal,
-                                                            const char *pszErrorId, const char *pszFormat, va_list va);
+    void                        i_atVMRuntimeErrorCallbackF(uint32_t fFatal, const char *pszErrorId, const char *pszFormat, ...);
+    static DECLCALLBACK(void)   i_atVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFatal,
+                                                           const char *pszErrorId, const char *pszFormat, va_list va);
 
     HRESULT                     i_captureUSBDevices(PUVM pUVM);
     void                        i_detachAllUSBDevices(bool aDone);
