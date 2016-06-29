@@ -135,7 +135,7 @@ $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_PATH_DIST)/VirtualBox-*-r*.dmg)
 	@# Populate the image with uninstaller, readme, picture, and .VolumeIcon.icns. (TODO)
 	$(INSTALL) $(VBOX_PATH_DI_SRC)/DiskImage/VirtualBox_Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_NOT_OSX_105)
+ifdef VBOX_SIGNING_MODE
 	$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox_Uninstall.tool,org.virtualbox.dmg.uninstaller)
 endif
 ifeq (1,1)
@@ -537,11 +537,6 @@ VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
 	,Frameworks/$(qtmod).framework/Versions/Current=>$(VBOX_QT_VERSION_MAJOR) )
-ifndef VBOX_NOT_OSX_105
-VBOX_DI_VBAPP_SYMLINKS += $(foreach qtmod, $(VBOX_QT_MOD_NAMES) \
-	,Frameworks/$(qtmod).framework/$(qtmod)=>Versions/$(VBOX_QT_VERSION_MAJOR)/$(qtmod) \
-	 Frameworks/$(qtmod).framework/Resources=>Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/ )
-endif
 
 ifdef VBOX_WITH_PYTHON
  # Python XPCOM glue
@@ -746,7 +741,6 @@ ifdef VBOX_SIGNING_MODE
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(dylib),org.virtualbox.app.macos.$(notdir $(dylib))) )
 	$(foreach bin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
- ifdef VBOX_NOT_OSX_105 ## @todo Move as much stuff out of MacOS/ as possible!!
 	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS)\
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
 	$(foreach bin, $(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS)) \
@@ -769,12 +763,6 @@ ifdef VBOX_SIGNING_MODE
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app,,)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,--deep)
- else
-	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) \
-		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
-	$(foreach bin, $(VBOX_DI_VBAPP_PROGS) \
-		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
- endif
 endif
 	@# Set the correct owner and set the set-user-ID-on-execution bit on the relevant executables.
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
@@ -812,7 +800,7 @@ endif
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /Applications/ \
 		--ownership preserve \
-		$(if-expr defined(VBOX_NOT_OSX_105),--preserve-xattr,) \
+		--preserve-xattr \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 	@# Cleanup
