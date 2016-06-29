@@ -527,9 +527,14 @@ static int rtldrPEGetBitsNoImportsNorFixups(PRTLDRMODPE pModPe, void *pvBits)
          */
         PIMAGE_SECTION_HEADER pSH = pModPe->paSections;
         for (unsigned cLeft = pModPe->cSections; cLeft > 0; cLeft--, pSH++)
-            if (pSH->SizeOfRawData && pSH->Misc.VirtualSize)
+            if (   pSH->SizeOfRawData
+                && pSH->Misc.VirtualSize
+                && !(pSH->Characteristics & IMAGE_SCN_TYPE_NOLOAD))
             {
-                rc = pReader->pfnRead(pReader, (uint8_t *)pvBits + pSH->VirtualAddress, pSH->SizeOfRawData, pSH->PointerToRawData);
+                uint32_t const cbToRead = RT_MIN(pSH->SizeOfRawData, pModPe->cbImage - pSH->VirtualAddress);
+                Assert(pSH->VirtualAddress <= pModPe->cbImage);
+
+                rc = pReader->pfnRead(pReader, (uint8_t *)pvBits + pSH->VirtualAddress, cbToRead, pSH->PointerToRawData);
                 if (RT_FAILURE(rc))
                 {
                     Log(("rtldrPE: %s: Reading %#x bytes at offset %#x failed, %Rrc - section #%d '%.*s'!!!\n",
@@ -1652,7 +1657,7 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
         }
         else
         {
-            SegInfo.LinkAddress = pSh->VirtualAddress + pModPe->uImageBase ;
+            SegInfo.LinkAddress = pSh->VirtualAddress + pModPe->uImageBase;
             SegInfo.RVA         = pSh->VirtualAddress;
             SegInfo.cbMapped    = RT_ALIGN(SegInfo.cb, SegInfo.Alignment);
             if (i + 1 < pModPe->cSections && !(pSh[1].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
