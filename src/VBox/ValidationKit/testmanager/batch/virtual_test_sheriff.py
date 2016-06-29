@@ -278,7 +278,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         """
         print 'error: %s' % (sText,);
         if self.oLogFile is not None:
-            self.oLogFile.write(u'error: %s\n' % (sText,));
+            self.oLogFile.write((u'error: %s\n' % (sText,)).encode('utf-8'));
         return 1;
 
     def dprint(self, sText):
@@ -289,7 +289,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             if not self.oConfig.fQuiet:
                 print 'debug: %s' % (sText, );
             if self.oLogFile is not None:
-                self.oLogFile.write(u'debug: %s\n' % (sText,));
+                self.oLogFile.write((u'debug: %s\n' % (sText,)).encode('utf-8'));
         return 0;
 
     def vprint(self, sText):
@@ -299,7 +299,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         if not self.oConfig.fQuiet:
             print 'info: %s' % (sText,);
         if self.oLogFile is not None:
-            self.oLogFile.write(u'info: %s\n' % (sText,));
+            self.oLogFile.write((u'info: %s\n' % (sText,)).encode('utf-8'));
         return 0;
 
 
