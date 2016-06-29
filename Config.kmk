@@ -449,8 +449,6 @@ endif
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_PAM = 1
 endif
-# Disable WINMM support for Windows (not implemented).
-VBOX_WITH_WINMM =
 # Enable internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enable vmsvga (svga2) graphics device variant, 2D part
