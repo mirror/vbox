@@ -572,8 +572,9 @@
       <title>debugvm stack</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        Unwinds the guest CPU stacks to the best of our ability.  For Windows
-        guest it is recommended to first run the <command>osdetect</command> command.
+        Unwinds the guest CPU stacks to the best of our ability.  It is
+        recommended to first run the <command>osdetect</command> command, as this
+        gives both symbols and perhaps unwind information.
       </para>
       <variablelist>
         <varlistentry>
