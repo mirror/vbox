@@ -4431,7 +4431,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             uint64_t cbHostRamAvail = 0;
             int rc2 = RTSystemQueryAvailableRam(&cbHostRamAvail);
             if (RT_SUCCESS(rc2))
-                LogRel(("Host RAM: %RU64MB available\n", cbHostRamAvail));
+                LogRel(("Host RAM: %RU64MB available\n", cbHostRamAvail / _1M));
             else
                 LogRel(("Cannot determine the amount of available host memory\n"));
         }
