@@ -4426,6 +4426,16 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             }
         }
 
+        if (rc == VERR_NO_MEMORY)
+        {
+            uint64_t cbHostRamAvail = 0;
+            int rc2 = RTSystemQueryAvailableRam(&cbHostRamAvail);
+            if (RT_SUCCESS(rc2))
+                LogRel(("Host RAM: %RU64MB available\n", cbHostRamAvail));
+            else
+                LogRel(("Cannot determine the amount of available host memory\n"));
+        }
+
         /* Set the FFs and adjust rc. */
         VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
         VM_FF_SET(pVM, VM_FF_PGM_NO_MEMORY);
