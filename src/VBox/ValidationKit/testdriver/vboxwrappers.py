@@ -637,7 +637,12 @@ class SessionWrapper(TdTaskBase):
 
         This method returns False while the VM is online and running normally.
         """
-        fRc = self.__pollTask();
+
+        # Call super to check if the task was signalled by runtime error or similar,
+        # if not then check the VM state via __pollTask.
+        fRc = super(SessionWrapper, self).pollTask(fLocked);
+        if not fRc:
+            fRc = self.__pollTask();
 
         # HACK ALERT: Lazily try registering the console event handler if
         #             we're not ready.
