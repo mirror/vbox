@@ -2550,6 +2550,19 @@ class TestDriver(base.TestDriver):                                              
         oSession.getPid();
 
         #
+        # Pause the VM if we're going to take any screenshots or dig into the
+        # guest.  Failures are quitely ignored.
+        #
+        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+            try:
+                if oSession.oVM.state in [ vboxcon.MachineState_Running,
+                                           vboxcon.MachineState_LiveSnapshotting,
+                                           vboxcon.MachineState_Teleporting ]:
+                    oSession.o.console.pause();
+            except:
+                reporter.logXcpt();
+
+        #
         # Take Screenshot and upload it (see below) to Test Manager if appropriate/requested.
         #
         sLastScreenshotPath = None;
