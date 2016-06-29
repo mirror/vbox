@@ -522,7 +522,7 @@
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--cpu <replaceable>id</replaceable></option></term>
+          <term><option>--cpu=<replaceable>id</replaceable></option></term>
           <listitem><para>Selects the CPU register set when specifying just a
             CPU register (3rd and 4th form).  The default is 0.</para>
           </listitem>
@@ -578,7 +578,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--cpu <replaceable>id</replaceable></option></term>
+          <term><option>--cpu=<replaceable>id</replaceable></option></term>
           <listitem><para>Selects a single guest CPU to display the stack for.  The default is all CPUs.</para> </listitem>
         </varlistentry>
       </variablelist>
