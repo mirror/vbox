@@ -783,7 +783,7 @@ endif
 #
 # Always optimize the interpreter.
 #
-if $(USERNAME) != "bird" || "$(KBUILD_TYPE)" != "release" || "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
+if $(USERNAME) != "bird" || "$(KBUILD_TYPE)" == "release" #|| "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
  if1of ($(KBUILD_TARGET), win)
   # -noover is recognized despite the statement saying otherwise. It silences these warnings:
   # cl : Command line warning D9025 : overriding '/Od' with '/O2'

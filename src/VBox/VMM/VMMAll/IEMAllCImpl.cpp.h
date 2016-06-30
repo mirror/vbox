@@ -758,6 +758,9 @@ IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
 
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 }
 
@@ -781,6 +784,9 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
 
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 }
 
@@ -822,6 +828,9 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
 
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 }
 
@@ -845,6 +854,9 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
 
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 }
 
@@ -869,6 +881,9 @@ IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
 
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 }
 
@@ -892,6 +907,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -1624,6 +1643,9 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
         }
     }
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 #endif
 }
@@ -1846,6 +1868,10 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     pCtx->eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -2065,6 +2091,10 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     pCtx->eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -2465,6 +2495,9 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             iemRegAddToRsp(pIemCpu, pCtx, cbPop);
         pCtx->eflags.Bits.u1RF = 0;
     }
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
     return VINF_SUCCESS;
 }
 
@@ -2535,6 +2568,9 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     pCtx->rip = NewRip.u;
     pCtx->rsp = NewRsp.u;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
 
     return VINF_SUCCESS;
 }
@@ -2856,6 +2892,9 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     Assert(uNewFlags & X86_EFL_1);
     IEMMISC_SET_EFL(pIemCpu, pCtx, uNewFlags);
 
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -2931,6 +2970,9 @@ IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uin
     pCtx->rip      = (uint16_t)uNewEip;
     pCtx->rsp      = uNewEsp; /** @todo check this out! */
     pIemCpu->uCpl  = 3;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
 
     return VINF_SUCCESS;
 }
@@ -3363,6 +3405,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->rsp           = uNewRsp;
         /* Done! */
     }
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -3660,6 +3706,9 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         iemHlpAdjustSelectorForNewCpl(pIemCpu, uNewCpl, &pCtx->gs);
     }
 
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -3784,6 +3833,9 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     pCtx->ss.u32Limit   = UINT32_MAX;
     pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
 
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -3884,6 +3936,9 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
     pCtx->ss.Attr.u    |= (3 << X86DESCATTR_DPL_SHIFT);
     /** @todo Testcase: verify that SS.u1Long and SS.u1DefBig are left unchanged
      *        on sysret. */
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
 
     return VINF_SUCCESS;
 }

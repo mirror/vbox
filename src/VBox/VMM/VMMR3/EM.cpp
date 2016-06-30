@@ -1144,7 +1144,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_WITH_REM
             rc = REMR3Run(pVM, pVCpu);
 #else
-            rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu));
+            rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, NULL /*pcInstructions*/));
 #endif
             STAM_PROFILE_STOP(&pVCpu->em.s.StatREMExec, c);
         }
@@ -1297,19 +1297,19 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
      */
     while (pVCpu->em.s.cIemThenRemInstructions < 1024)
     {
-        VBOXSTRICTRC rcStrict = IEMExecLots(pVCpu);
+        uint32_t     cInstructions;
+        VBOXSTRICTRC rcStrict = IEMExecLots(pVCpu, &cInstructions);
+        pVCpu->em.s.cIemThenRemInstructions += cInstructions;
         if (rcStrict != VINF_SUCCESS)
         {
             if (   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                 || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
                 break;
 
-            pVCpu->em.s.cIemThenRemInstructions++;
             Log(("emR3ExecuteIemThenRem: returns %Rrc after %u instructions\n",
                  VBOXSTRICTRC_VAL(rcStrict), pVCpu->em.s.cIemThenRemInstructions));
             return rcStrict;
         }
-        pVCpu->em.s.cIemThenRemInstructions++;
 
         EMSTATE enmNewState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
         if (enmNewState != EMSTATE_REM && enmNewState != EMSTATE_IEM_THEN_REM)
@@ -2543,7 +2543,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         rc = VINF_SUCCESS;
                     else if (rc == VERR_EM_CANNOT_EXEC_GUEST)
 #endif
-                        rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu));
+                        rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, NULL /*pcInstructions*/));
                     if (pVM->em.s.fIemExecutesAll)
                     {
                         Assert(rc != VINF_EM_RESCHEDULE_REM);

@@ -108,7 +108,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
 VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,
                                                                       const void *pvOpcodeBytes, size_t cbOpcodeBytes,
                                                                       uint32_t *pcbWritten);
-VMMDECL(VBOXSTRICTRC)       IEMExecLots(PVMCPU pVCpu);
+VMMDECL(VBOXSTRICTRC)       IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions);
 VMMDECL(VBOXSTRICTRC)       IEMInjectTrpmEvent(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2,
                                           uint8_t cbInstr);

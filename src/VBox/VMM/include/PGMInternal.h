@@ -1779,7 +1779,7 @@ typedef struct PGMCHUNKR3MAP *PPGMCHUNKR3MAP;
 typedef PPGMCHUNKR3MAP *PPPGMCHUNKR3MAP;
 
 /**
- * Ring-3 tracking structore for an allocation chunk ring-3 mapping.
+ * Ring-3 tracking structure for an allocation chunk ring-3 mapping.
  *
  * The primary tree (Core) uses the chunk id as key.
  */

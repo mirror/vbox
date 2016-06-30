@@ -895,6 +895,8 @@ DECLINLINE(void) iemUninitExec(PIEMCPU pIemCpu)
 /**
  * Initializes the decoder state.
  *
+ * iemReInitDecoder is mostly a copy of this function.
+ *
  * @param   pIemCpu             The per CPU IEM state.
  * @param   fBypassHandlers     Whether to bypass access handlers.
  */
@@ -973,6 +975,99 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     }
 #endif
 }
+
+
+/**
+ * Reinitializes the decoder state 2nd+ loop of IEMExecLots.
+ *
+ * This is mostly a copy of iemInitDecoder.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   pIemCpu             The per CPU IEM state.
+ */
+DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu, PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
+
+#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ds));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->fs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->gs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ldtr));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->tr));
+#endif
+
+    pIemCpu->uCpl               = CPUMGetGuestCPL(pVCpu);   /** @todo this should be updated during execution! */
+#ifdef IEM_VERIFICATION_MODE_FULL
+    if (pIemCpu->uInjectCpl != UINT8_MAX)
+        pIemCpu->uCpl           = pIemCpu->uInjectCpl;
+#endif
+    IEMMODE enmMode = iemCalcCpuMode(pCtx);
+    pIemCpu->enmCpuMode         = enmMode;                  /** @todo this should be updated during execution! */
+    pIemCpu->enmDefAddrMode     = enmMode;  /** @todo check if this is correct... */
+    pIemCpu->enmEffAddrMode     = enmMode;
+    if (enmMode != IEMMODE_64BIT)
+    {
+        pIemCpu->enmDefOpSize   = enmMode;  /** @todo check if this is correct... */
+        pIemCpu->enmEffOpSize   = enmMode;
+    }
+    else
+    {
+        pIemCpu->enmDefOpSize   = IEMMODE_32BIT;
+        pIemCpu->enmEffOpSize   = IEMMODE_32BIT;
+    }
+    pIemCpu->fPrefixes          = 0;
+    pIemCpu->uRexReg            = 0;
+    pIemCpu->uRexB              = 0;
+    pIemCpu->uRexIndex          = 0;
+    pIemCpu->iEffSeg            = X86_SREG_DS;
+    if (pIemCpu->cbOpcode > pIemCpu->offOpcode) /* No need to check RIP here because branch instructions will update cbOpcode.  */
+    {
+        pIemCpu->cbOpcode      -= pIemCpu->offOpcode;
+        memmove(&pIemCpu->abOpcode[0], &pIemCpu->abOpcode[pIemCpu->offOpcode], pIemCpu->cbOpcode);
+    }
+    else
+        pIemCpu->cbOpcode       = 0;
+    pIemCpu->offOpcode          = 0;
+    Assert(pIemCpu->cActiveMappings == 0);
+    pIemCpu->iNextMapping       = 0;
+    Assert(pIemCpu->rcPassUp   == VINF_SUCCESS);
+    Assert(pIemCpu->fBypassHandlers == false);
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    if (!pIemCpu->fInPatchCode)
+    { /* likely */ }
+    else
+    {
+        pIemCpu->fInPatchCode   = pIemCpu->uCpl == 0
+                               && pCtx->cs.u64Base == 0
+                               && pCtx->cs.u32Limit == UINT32_MAX
+                               && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
+        if (!pIemCpu->fInPatchCode)
+            CPUMRawLeave(pVCpu, VINF_SUCCESS);
+    }
+#endif
+
+#ifdef DBGFTRACE_ENABLED
+    switch (enmMode)
+    {
+        case IEMMODE_64BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I64/%u %08llx", pIemCpu->uCpl, pCtx->rip);
+            break;
+        case IEMMODE_32BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I32/%u %04x:%08x", pIemCpu->uCpl, pCtx->cs.Sel, pCtx->eip);
+            break;
+        case IEMMODE_16BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I16/%u %04x:%04x", pIemCpu->uCpl, pCtx->cs.Sel, pCtx->eip);
+            break;
+    }
+#endif
+}
+
 
 
 /**
@@ -1752,7 +1847,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PIEMCPU pIemCpu, uint32_t *pu3
             return rcStrict2; \
     } while (0)
 #else
-# define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) (*(a_pu32) = (int16_t)iemOpcodeGetNextU16Jmp(pIemCpu))
+# define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) (*(a_pu32) = iemOpcodeGetNextU16Jmp(pIemCpu))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -1815,7 +1910,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PIEMCPU pIemCpu, uint64_t *pu6
             return rcStrict2; \
     } while (0)
 #else
-# define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64)  (*(a_pu64) = (int16_t)iemOpcodeGetNextU16Jmp(pIemCpu))
+# define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64)  (*(a_pu64) = iemOpcodeGetNextU16Jmp(pIemCpu))
 #endif
 
 
@@ -2034,7 +2129,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PIEMCPU pIemCpu, uint64_t *pu6
             return rcStrict2; \
     } while (0)
 #else
-# define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) (*(a_pu64) = (int32_t)iemOpcodeGetNextU32Jmp(pIemCpu))
+# define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) (*(a_pu64) = iemOpcodeGetNextU32Jmp(pIemCpu))
 #endif
 
 
@@ -4269,6 +4364,11 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
 #endif
 
     /*
+     * Flush prefetch buffer
+     */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
+    /*
      * Perform the V8086 IOPL check and upgrade the fault without nesting.
      */
     if (   pCtx->eflags.Bits.u1VM
@@ -4373,6 +4473,9 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
         rcStrict = iemRaiseXcptOrIntInLongMode( pIemCpu, pCtx, cbInstr, u8Vector, fFlags, uErr, uCr2);
     else
         rcStrict = iemRaiseXcptOrIntInProtMode( pIemCpu, pCtx, cbInstr, u8Vector, fFlags, uErr, uCr2);
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
 
     /*
      * Unwind.
@@ -5090,6 +5193,10 @@ IEM_STATIC VBOXSTRICTRC iemRegRipRelativeJumpS8(PIEMCPU pIemCpu, int8_t offNextI
     }
 
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -5116,6 +5223,9 @@ IEM_STATIC VBOXSTRICTRC iemRegRipRelativeJumpS16(PIEMCPU pIemCpu, int16_t offNex
     /** @todo Test 16-bit jump in 64-bit mode. possible?  */
     pCtx->rip = uNewIp;
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
 
     return VINF_SUCCESS;
 }
@@ -5155,6 +5265,10 @@ IEM_STATIC VBOXSTRICTRC iemRegRipRelativeJumpS32(PIEMCPU pIemCpu, int32_t offNex
         pCtx->rip = uNewRip;
     }
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -5210,6 +5324,10 @@ IEM_STATIC VBOXSTRICTRC iemRegRipJump(PIEMCPU pIemCpu, uint64_t uNewRip)
     }
 
     pCtx->eflags.Bits.u1RF = 0;
+
+    /* Flush the prefetch buffer. */
+    pIemCpu->cbOpcode = pIemCpu->offOpcode;
+
     return VINF_SUCCESS;
 }
 
@@ -9420,7 +9538,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel
 #define IEM_MC_SET_RIP_U16(a_u16NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pIemCpu), (a_u16NewIP)))
 #define IEM_MC_SET_RIP_U32(a_u32NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pIemCpu), (a_u32NewIP)))
 #define IEM_MC_SET_RIP_U64(a_u64NewIP)                  IEM_MC_RETURN_ON_FAILURE(iemRegRipJump((pIemCpu), (a_u64NewIP)))
-
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pIemCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \
@@ -12366,6 +12483,8 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PIEMCPU pIemCpu, VBOXS
  * The actual code execution bits of IEMExecOne, IEMExecOneEx, and
  * IEMExecOneWithPrefetchedByPC.
  *
+ * Similar code is found in IEMExecLots.
+ *
  * @return  Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pIemCpu     The IEM per CPU data.
@@ -12384,6 +12503,8 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
         uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
         rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
     }
+    else
+        pIemCpu->cLongJumps++;
     pIemCpu->CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
 #else
     uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
@@ -12392,7 +12513,10 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
     if (rcStrict == VINF_SUCCESS)
         pIemCpu->cInstructions++;
     if (pIemCpu->cActiveMappings > 0)
+    {
+        Assert(rcStrict != VINF_SUCCESS);
         iemMemRollback(pIemCpu);
+    }
 //#ifdef DEBUG
 //    AssertMsg(pIemCpu->offOpcode == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", pIemCpu->offOpcode, cbInstr));
 //#endif
@@ -12417,6 +12541,8 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
                 uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
                 rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
             }
+            else
+                pIemCpu->cLongJumps++;
             pIemCpu->CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
 #else
             IEM_OPCODE_GET_NEXT_U8(&b);
@@ -12425,7 +12551,10 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
             if (rcStrict == VINF_SUCCESS)
                 pIemCpu->cInstructions++;
             if (pIemCpu->cActiveMappings > 0)
+            {
+                Assert(rcStrict != VINF_SUCCESS);
                 iemMemRollback(pIemCpu);
+            }
         }
         EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
     }
@@ -12670,14 +12799,15 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVC
 }
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
+VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 {
-    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PIEMCPU         pIemCpu              = &pVCpu->iem.s;
+    uint32_t const  cInstructionsAtStart = pIemCpu->cInstructions;
 
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     /*
-     * See if there is an interrupt pending in TRPM and inject it if we can.
+     * See if there is an interrupt pending in TRPM, inject it if we can.
      */
-#if !defined(IEM_VERIFICATION_MODE_FULL) || !defined(IN_RING3)
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 # ifdef IEM_VERIFICATION_MODE_FULL
     pIemCpu->uInjectCpl = UINT8_MAX;
@@ -12695,17 +12825,13 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
     }
-#else
-    iemExecVerificationModeSetup(pIemCpu);
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-#endif
 
     /*
      * Log the state.
      */
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     iemLogCurInstr(pVCpu, pCtx, true);
-#endif
+# endif
 
     /*
      * Do the decoding and emulation.
@@ -12714,23 +12840,133 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
 
-#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     /*
      * Assert some sanity.
      */
     rcStrict = iemExecVerificationModeCheck(pIemCpu, rcStrict);
-#endif
+
+    /*
+     * Log and return.
+     */
+    if (rcStrict != VINF_SUCCESS)
+        LogFlow(("IEMExecLots: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
+                 pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
+    if (pcInstructions)
+        *pcInstructions = pIemCpu->cInstructions - cInstructionsAtStart;
+    return rcStrict;
+
+#else  /* Not verification mode */
+
+    /*
+     * See if there is an interrupt pending in TRPM, inject it if we can.
+     */
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+# ifdef IEM_VERIFICATION_MODE_FULL
+    pIemCpu->uInjectCpl = UINT8_MAX;
+# endif
+    if (   pCtx->eflags.Bits.u1IF
+        && TRPMHasTrap(pVCpu)
+        && EMGetInhibitInterruptsPC(pVCpu) != pCtx->rip)
+    {
+        uint8_t     u8TrapNo;
+        TRPMEVENT   enmType;
+        RTGCUINT    uErrCode;
+        RTGCPTR     uCr2;
+        int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
+        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            TRPMResetTrap(pVCpu);
+    }
+
+    /*
+     * Initial decoder init w/ prefetch, then setup setjmp.
+     */
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
+    if (rcStrict == VINF_SUCCESS)
+    {
+# ifdef IEM_WITH_SETJMP
+        jmp_buf         JmpBuf;
+        jmp_buf        *pSavedJmpBuf = pIemCpu->CTX_SUFF(pJmpBuf);
+        pIemCpu->CTX_SUFF(pJmpBuf)   = &JmpBuf;
+        pIemCpu->cActiveMappings     = 0;
+        if ((rcStrict = setjmp(JmpBuf)) == 0)
+# endif
+        {
+            /*
+             * The run loop.  We limit ourselves to 2048 instructions right now.
+             */
+            PVM         pVM    = pVCpu->CTX_SUFF(pVM);
+            uint32_t    cInstr = 2048;
+            for (;;)
+            {
+                /*
+                 * Log the state.
+                 */
+# ifdef LOG_ENABLED
+                iemLogCurInstr(pVCpu, pCtx, true);
+# endif
+
+                /*
+                 * Do the decoding and emulation.
+                 */
+                uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+                rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+                if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+                {
+                    Assert(pIemCpu->cActiveMappings == 0);
+                    pIemCpu->cInstructions++;
+                    if (RT_LIKELY(pIemCpu->rcPassUp == VINF_SUCCESS))
+                    {
+                        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_INHIBIT_INTERRUPTS)
+                                      && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
+                                      && cInstr-- > 0 ))
+                        {
+                            iemReInitDecoder(pVCpu, pIemCpu);
+                            continue;
+                        }
+                    }
+                }
+                else if (pIemCpu->cActiveMappings > 0) /** @todo This should only happen when rcStrict != VINF_SUCCESS! */
+                    iemMemRollback(pIemCpu);
+                rcStrict = iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+                break;
+            }
+        }
+# ifdef IEM_WITH_SETJMP
+        else
+        {
+            if (pIemCpu->cActiveMappings > 0)
+                iemMemRollback(pIemCpu);
+            pIemCpu->cLongJumps++;
+        }
+# endif
+
+        /*
+         * Assert hidden register sanity (also done in iemInitDecoder and iemReInitDecoder).
+         */
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->cs));
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ss));
+# if defined(IEM_VERIFICATION_MODE_FULL)
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->es));
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ds));
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->fs));
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->gs));
+# endif
+    }
 
     /*
      * Maybe re-enter raw-mode and log.
      */
-#ifdef IN_RC
+# ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pIemCpu->CTX_SUFF(pCtx), rcStrict);
-#endif
+# endif
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecLots: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
                  pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
+    if (pcInstructions)
+        *pcInstructions = pIemCpu->cInstructions - cInstructionsAtStart;
     return rcStrict;
+#endif /* Not verification mode */
 }
 
 

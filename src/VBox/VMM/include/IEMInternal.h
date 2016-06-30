@@ -296,6 +296,9 @@ typedef struct IEMCPU
     uint32_t                cRetPassUpStatus;
     /** Number of times RZ left with instruction commit pending for ring-3. */
     uint32_t                cPendingCommit;
+    /** Number of long jumps. */
+    uint32_t                cLongJumps;
+    uint32_t                uPadding; /**< Alignment padding. */
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The Number of I/O port reads that has been performed. */
     uint32_t                cIOReads;
