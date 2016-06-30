@@ -762,6 +762,9 @@ class SessionConsoleEventHandler(ConsoleEventHandlerBase):
         if oSession is not None: # paranoia
             if sErrId == 'HostMemoryLow':
                 oSession.signalHostMemoryLow();
+                if sys.platform == 'win32':
+                    from testdriver import winbase;
+                    winbase.logMemoryStats();
             oSession.signalTask();
         self.oVBoxMgr.interruptWaitEvents();
 
