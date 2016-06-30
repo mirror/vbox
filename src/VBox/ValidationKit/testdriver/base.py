@@ -513,9 +513,10 @@ class TdTaskBase(object):
                 if cMsWait > 1000:
                     cMsWait = 1000;
                 try:
-                    self.oCv.wait(cMsWait / 1000)
+                    self.oCv.wait(cMsWait / 1000.0);
                 except:
                     pass;
+                reporter.doPollWork();
                 fState = self.pollTask(True);
 
         self.unlockTask();

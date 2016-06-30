@@ -285,6 +285,17 @@ class ReporterBase(object):
             self.testDone(False, sCaller);
         return False;
 
+    #
+    # Misc.
+    #
+
+    def doPollWork(self):
+        """
+        Check if any pending stuff expired and needs doing.
+        """
+        return None;
+
+
 
 
 class LocalReporter(ReporterBase):
@@ -924,6 +935,13 @@ class RemoteReporter(ReporterBase):
         g_oLock.release();
         return None;
 
+    def doPollWork(self):
+        if len(self._asXml) > 0:
+            g_oLock.acquire();
+            self._xmlFlushIfNecessary();
+            g_oLock.release();
+        return None;
+
 
 #
 # Helpers
@@ -1354,6 +1372,14 @@ def getErrorCount():
     cErrors = g_oReporter.cErrors;
     g_oLock.release();
     return cErrors;
+
+def doPollWork():
+    """
+    This can be called from wait loops and similar to make the reporter call
+    home with pending XML and such.
+    """
+    g_oReporter.doPollWork();
+    return None;
 
 
 #
