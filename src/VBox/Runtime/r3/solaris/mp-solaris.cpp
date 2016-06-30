@@ -91,28 +91,37 @@ static int rtMpSolarisGetCoreIds(void)
 {
     for (RTCPUID idCpu = 0; idCpu < g_capCpuInfo; idCpu++)
     {
-        if (kstat_read(g_pKsCtl, g_papCpuInfo[idCpu], 0) != -1)
+        /*
+         * It is possible that the number of cores don't match the maximum number
+         * of cores possible on the system. Hence check if we have a valid cpu_info
+         * object. We don't want to break out if it's NULL, the array may be sparse
+         * in theory, see @bugref{8469}.
+         */
+        if (g_papCpuInfo[idCpu])
         {
-            /* Strands/Hyperthreads share the same core ID. */
-            uint64_t u64CoreId  = rtMpSolarisGetCoreId(idCpu);
-            bool     fAddedCore = false;
-            for (RTCPUID i = 0; i < g_cCores; i++)
+            if (kstat_read(g_pKsCtl, g_papCpuInfo[idCpu], 0) != -1)
             {
-                if (g_pu64CoreIds[i] == u64CoreId)
+                /* Strands/Hyperthreads share the same core ID. */
+                uint64_t u64CoreId  = rtMpSolarisGetCoreId(idCpu);
+                bool     fAddedCore = false;
+                for (RTCPUID i = 0; i < g_cCores; i++)
                 {
-                    fAddedCore = true;
-                    break;
+                    if (g_pu64CoreIds[i] == u64CoreId)
+                    {
+                        fAddedCore = true;
+                        break;
+                    }
+                }
+
+                if (!fAddedCore)
+                {
+                    g_pu64CoreIds[g_cCores] = u64CoreId;
+                    ++g_cCores;
                 }
             }
-
-            if (!fAddedCore)
-            {
-                g_pu64CoreIds[g_cCores] = u64CoreId;
-                ++g_cCores;
-            }
+            else
+                return VERR_INTERNAL_ERROR_2;
         }
-        else
-            return VERR_INTERNAL_ERROR_2;
     }
 
     return VINF_SUCCESS;
@@ -137,46 +146,51 @@ static DECLCALLBACK(int) rtMpSolarisOnce(void *pvUser)
     if (g_pKsCtl)
     {
         g_capCpuInfo = RTMpGetCount();
-        g_papCpuInfo = (kstat_t **)RTMemAllocZ(g_capCpuInfo * sizeof(kstat_t *));
-        if (g_papCpuInfo)
+        if (RT_LIKELY(g_capCpuInfo > 0))
         {
-            g_cu64CoreIds = g_capCpuInfo;
-            g_pu64CoreIds = (uint64_t *)RTMemAllocZ(g_cu64CoreIds * sizeof(uint64_t));
-            if (g_pu64CoreIds)
+            g_papCpuInfo = (kstat_t **)RTMemAllocZ(g_capCpuInfo * sizeof(kstat_t *));
+            if (g_papCpuInfo)
             {
-                rc = RTCritSectInit(&g_MpSolarisCritSect);
-                if (RT_SUCCESS(rc))
+                g_cu64CoreIds = g_capCpuInfo;
+                g_pu64CoreIds = (uint64_t *)RTMemAllocZ(g_cu64CoreIds * sizeof(uint64_t));
+                if (g_pu64CoreIds)
                 {
-                    RTCPUID i = 0;
-                    for (kstat_t *pKsp = g_pKsCtl->kc_chain; pKsp != NULL; pKsp = pKsp->ks_next)
+                    rc = RTCritSectInit(&g_MpSolarisCritSect);
+                    if (RT_SUCCESS(rc))
                     {
-                        if (!RTStrCmp(pKsp->ks_module, "cpu_info"))
+                        RTCPUID i = 0;
+                        for (kstat_t *pKsp = g_pKsCtl->kc_chain; pKsp != NULL; pKsp = pKsp->ks_next)
                         {
-                            AssertBreak(i < g_capCpuInfo);
-                            g_papCpuInfo[i++] = pKsp;
-                            /** @todo ks_instance == cpu_id (/usr/src/uts/common/os/cpu.c)? Check this and fix it ASAP. */
+                            if (!RTStrCmp(pKsp->ks_module, "cpu_info"))
+                            {
+                                AssertBreak(i < g_capCpuInfo);
+                                g_papCpuInfo[i++] = pKsp;
+                                /** @todo ks_instance == cpu_id (/usr/src/uts/common/os/cpu.c)? Check this and fix it ASAP. */
+                            }
                         }
+
+                        rc = rtMpSolarisGetCoreIds();
+                        if (RT_SUCCESS(rc))
+                            return VINF_SUCCESS;
+                        else
+                            Log(("rtMpSolarisGetCoreIds failed. rc=%Rrc\n", rc));
                     }
 
-                    rc = rtMpSolarisGetCoreIds();
-                    if (RT_SUCCESS(rc))
-                        return VINF_SUCCESS;
-                    else
-                        Log(("rtMpSolarisGetCoreIds failed. rc=%Rrc\n", rc));
+                    RTMemFree(g_pu64CoreIds);
+                    g_pu64CoreIds = NULL;
                 }
+                else
+                    rc = VERR_NO_MEMORY;
 
-                RTMemFree(g_pu64CoreIds);
-                g_pu64CoreIds = NULL;
+                /* bail out, we failed. */
+                RTMemFree(g_papCpuInfo);
+                g_papCpuInfo = NULL;
             }
             else
                 rc = VERR_NO_MEMORY;
-
-            /* bail out, we failed. */
-            RTMemFree(g_papCpuInfo);
-            g_papCpuInfo = NULL;
         }
         else
-            rc = VERR_NO_MEMORY;
+            rc = VERR_CPU_IPE_1;
         kstat_close(g_pKsCtl);
         g_pKsCtl = NULL;
     }
