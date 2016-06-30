@@ -203,7 +203,7 @@ typedef enum ATACMD
 #define ATAPI_INQUIRY_REVISION_LENGTH    4
 
 
-#if defined(DEBUG) && defined(IN_RING3)
+#if defined(LOG_ENABLED) && defined(IN_RING3)
 const char * ATACmdText(uint8_t uCmd);
 #endif
 
