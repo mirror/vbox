@@ -17,6 +17,7 @@
 
 
 #include <iprt/assert.h>
+#include <iprt/log.h>
 #include <iprt/types.h>
 #include <iprt/string.h>
 #include <VBox/scsi.h>
