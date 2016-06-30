@@ -923,7 +923,6 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
     LPARAM lParam
 )
 {
-    /* TODO: AM need to check that the thread retrieves these events */
     switch(uMsg)
     {
         case WM_DISPLAYCHANGE:
