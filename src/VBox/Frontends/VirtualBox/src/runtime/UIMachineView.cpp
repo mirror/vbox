@@ -1908,8 +1908,10 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
         /* Watch for key-events: */
         case XCB_KEY_PRESS:
         case XCB_KEY_RELEASE:
+        case XCB_BUTTON_PRESS:
         {
-            /* Delegate key-event handling to the keyboard-handler: */
+            /* Delegate key-event handling to the keyboard-handler and let it
+             * filter out button presses out of the view windows: */
             return machineLogic()->keyboardHandler()->nativeEventPostprocessor(pMessage, screenId());
         }
         default:
