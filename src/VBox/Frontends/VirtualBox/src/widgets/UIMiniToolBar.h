@@ -114,6 +114,13 @@ private slots:
     /** Notifies listeners about we stole window activation. */
     void sltNotifyAboutWindowActivationStolen() { emit sigNotifyAboutWindowActivationStolen(); }
 
+    /** Hides window. */
+    void sltHide();
+    /** Shows and adjusts window according to parent. */
+    void sltShow();
+    /** Adjusts window according to parent. */
+    void sltAdjust();
+
 private:
 
     /** Prepare routine. */

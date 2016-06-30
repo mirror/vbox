@@ -29,12 +29,19 @@
 # include <QToolButton>
 # include <QStateMachine>
 # include <QPainter>
+# include <QDesktopWidget>
+# ifdef VBOX_WS_WIN
+#  include <QWindow>
+# endif /* VBOX_WS_WIN */
 
 /* GUI includes: */
 # include "UIMiniToolBar.h"
 # include "UIAnimationFramework.h"
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
+# ifdef VBOX_WS_X11
+#  include "UIExtraDataManager.h"
+# endif /* VBOX_WS_X11 */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -554,11 +561,118 @@ void UIMiniToolBar::sltHoverLeave()
     }
 }
 
+void UIMiniToolBar::sltHide()
+{
+    LogRel2(("GUI: UIMiniToolBar::sltHide\n"));
+
+#if defined(VBOX_WS_MAC)
+
+    // Nothing
+
+#elif defined(VBOX_WS_WIN)
+
+    /* Reset window state to NONE and hide it: */
+    setWindowState(Qt::WindowNoState);
+    hide();
+
+#elif defined(VBOX_WS_X11)
+
+    /* Just hide window: */
+    hide();
+
+#else
+
+# warning "port me"
+
+#endif
+}
+
+void UIMiniToolBar::sltShow()
+{
+    LogRel2(("GUI: UIMiniToolBar::sltShow\n"));
+
+#if defined(VBOX_WS_MAC)
+
+    // Nothing
+
+#elif defined(VBOX_WS_WIN)
+
+    /* Adjust window before showing full-screen: */
+    sltAdjust();
+    showFullScreen();
+
+#elif defined(VBOX_WS_X11)
+
+    /* Show window full-screen before adjusting: */
+    showFullScreen();
+    sltAdjust();
+
+#else
+
+# warning "port me"
+
+#endif
+}
+
+void UIMiniToolBar::sltAdjust()
+{
+    LogRel2(("GUI: UIMiniToolBar::sltAdjust\n"));
+
+    /* Get corresponding host-screen: */
+    const int iHostScreen = QApplication::desktop()->screenNumber(parentWidget());
+    Q_UNUSED(iHostScreen);
+    /* And corresponding working area: */
+    const QRect workingArea = vboxGlobal().screenGeometry(iHostScreen);
+    Q_UNUSED(workingArea);
+
+#if defined(VBOX_WS_MAC)
+
+    // Nothing
+
+#elif defined(VBOX_WS_WIN)
+
+# if QT_VERSION >= 0x050000
+    /* Map window onto required screen: */
+    Assert(iHostScreen < qApp->screens().size());
+    windowHandle()->setScreen(qApp->screens().at(iHostScreen));
+# endif /* QT_VERSION >= 0x050000 */
+    /* Set appropriate window size: */
+    resize(workingArea.size());
+# if QT_VERSION < 0x050000
+    /* Move window onto required screen: */
+    move(workingArea.topLeft());
+# endif /* QT_VERSION < 0x050000 */
+
+#elif defined(VBOX_WS_X11)
+
+    /* Determine whether we should use the native full-screen mode: */
+    const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+                                      !gEDataManager->legacyFullscreenModeRequested();
+    if (fUseNativeFullScreen)
+    {
+        /* Tell recent window managers which host-screen this window should be mapped to: */
+        VBoxGlobal::setFullScreenMonitorX11(this, iHostScreen);
+    }
+
+    /* Set appropriate window geometry: */
+    resize(workingArea.size());
+    move(workingArea.topLeft());
+
+    /* Re-apply the full-screen state lost on above move(): */
+    setWindowState(Qt::WindowFullScreen);
+
+#else
+
+# warning "port me"
+
+#endif
+}
+
 void UIMiniToolBar::prepare()
 {
-    /* Install own event-filter
-     * to handle window activation stealing: */
+    /* Install event-filters: */
     installEventFilter(this);
+    parent()->installEventFilter(this);
 
 #if   defined(VBOX_WS_WIN)
     /* No background until first paint-event: */
@@ -716,6 +830,53 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
         }
 #endif /* VBOX_WS_X11 */
+    }
+
+    /* If that's parent window event: */
+    if (pWatched == parent())
+    {
+        switch (pEvent->type())
+        {
+            case QEvent::Hide:
+            {
+                /* Asynchronously call for sltHide(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent hide event\n"));
+                QMetaObject::invokeMethod(this, "sltHide", Qt::QueuedConnection);
+                break;
+            }
+            case QEvent::Show:
+            {
+                /* Asynchronously call for sltShow(): */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent show event\n"));
+                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
+                break;
+            }
+            case QEvent::Move:
+            case QEvent::Resize:
+            {
+                /* Skip if parent or we are invisible: */
+                if (   !parentWidget()->isVisible()
+                    || !isVisible())
+                    break;
+
+#if   defined(VBOX_WS_MAC)
+                // Nothing
+#elif defined(VBOX_WS_WIN)
+                /* Asynchronously call for sltShow() to adjust and expose both: */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move/resize event\n"));
+                QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
+#elif defined(VBOX_WS_X11)
+                /* Asynchronously call for just sltAdjust() because it's enough: */
+                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move/resize event\n"));
+                QMetaObject::invokeMethod(this, "sltAdjust", Qt::QueuedConnection);
+#else
+# warning "port me"
+#endif
+                break;
+            }
+            default:
+                break;
+        }
     }
 
     /* Call to base-class: */

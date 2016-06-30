@@ -362,21 +362,6 @@ void UIMachineWindowFullscreen::placeOnScreen()
     move(workingArea.topLeft());
 # endif /* QT_VERSION < 0x050000 */
 
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-# if QT_VERSION >= 0x050000
-        /* Map mini-toolbar onto required screen: */
-        m_pMiniToolBar->windowHandle()->setScreen(qApp->screens().at(iHostScreen));
-# endif /* QT_VERSION >= 0x050000 */
-        /* Set appropriate mini-toolbar size: */
-        m_pMiniToolBar->resize(workingArea.size());
-# if QT_VERSION < 0x050000
-        /* Move mini-toolbar onto required screen: */
-        m_pMiniToolBar->move(workingArea.topLeft());
-# endif /* QT_VERSION < 0x050000 */
-    }
-
 #elif defined(VBOX_WS_X11)
 
     /* Determine whether we should use the native full-screen mode: */
@@ -386,26 +371,11 @@ void UIMachineWindowFullscreen::placeOnScreen()
     {
         /* Tell recent window managers which host-screen this window should be mapped to: */
         VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
-
-        /* If there is a mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Tell recent window managers which host-screen this mini-toolbar should be mapped to: */
-            VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
-        }
     }
 
-    /* Set appropriate geometry for window: */
+    /* Set appropriate window geometry: */
     resize(workingArea.size());
     move(workingArea.topLeft());
-
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-        /* Set appropriate geometry for mini-toolbar: */
-        m_pMiniToolBar->resize(workingArea.size());
-        m_pMiniToolBar->move(workingArea.topLeft());
-    }
 
 #else
 
@@ -461,14 +431,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         /* Hide window and reset it's state to NONE: */
         setWindowState(Qt::WindowNoState);
         hide();
-
-        /* If there is mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Hide mini-toolbar and reset it's state to NONE: */
-            m_pMiniToolBar->setWindowState(Qt::WindowNoState);
-            m_pMiniToolBar->hide();
-        }
     }
     /* If window should be shown and mapped to some host-screen: */
     else
@@ -479,13 +441,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
-
-        /* If there is mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Show mini-toolbar: */
-            m_pMiniToolBar->showFullScreen();
-        }
 
         /* Show window: */
         showFullScreen();
@@ -517,14 +472,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         /* Hide window and reset it's state to NONE: */
         setWindowState(Qt::WindowNoState);
         hide();
-
-        /* If there is mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Hide mini-toolbar and reset it's state to NONE: */
-            m_pMiniToolBar->setWindowState(Qt::WindowNoState);
-            m_pMiniToolBar->hide();
-        }
     }
     /* If window should be shown and mapped to some host-screen: */
     else
@@ -535,13 +482,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 
         /* Show window: */
         showFullScreen();
-
-        /* If there is mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Show mini-toolbar: */
-            m_pMiniToolBar->showFullScreen();
-        }
 
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
