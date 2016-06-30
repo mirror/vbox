@@ -2648,34 +2648,35 @@ class TestDriver(base.TestDriver):                                              
 
         # Check if the VM has terminated by it self before powering it off.
         fClose = True;
-        fRc = oSession.pollTask();
-        if fRc is not True:
+        fRc    = True;
+        if oSession.needsPoweringOff():
             reporter.log('terminateVmBySession: powering off "%s"...' % (oSession.sName,));
             fRc = oSession.powerOff(fFudgeOnFailure = False);
-        if fRc is not True:
-            # power off failed, try terminate it in a nice manner.
-            fRc = False;
-            uPid = oSession.getPid();
-            if uPid is not None:
-                reporter.error('terminateVmBySession: Terminating PID %u (VM %s)' % (uPid, oSession.sName));
-                fClose = base.processTerminate(uPid);
-                if fClose is True:
-                    self.waitOnDirectSessionClose(oSession.oVM, 5000);
-                    fClose = oSession.waitForTask(1000);
-
-                if fClose is not True:
-                    # Being nice failed...
-                    reporter.error('terminateVmBySession: Termination failed, trying to kill PID %u (VM %s) instead' \
-                                   % (uPid, oSession.sName));
-                    fClose = base.processKill(uPid);
+            if fRc is not True:
+                # power off failed, try terminate it in a nice manner.
+                fRc = False;
+                uPid = oSession.getPid();
+                if uPid is not None:
+                    reporter.error('terminateVmBySession: Terminating PID %u (VM %s)' % (uPid, oSession.sName));
+                    fClose = base.processTerminate(uPid);
                     if fClose is True:
                         self.waitOnDirectSessionClose(oSession.oVM, 5000);
                         fClose = oSession.waitForTask(1000);
+
                     if fClose is not True:
-                        reporter.error('terminateVmBySession: Failed to kill PID %u (VM %s)' % (uPid, oSession.sName));
+                        # Being nice failed...
+                        reporter.error('terminateVmBySession: Termination failed, trying to kill PID %u (VM %s) instead' \
+                                       % (uPid, oSession.sName));
+                        fClose = base.processKill(uPid);
+                        if fClose is True:
+                            self.waitOnDirectSessionClose(oSession.oVM, 5000);
+                            fClose = oSession.waitForTask(1000);
+                        if fClose is not True:
+                            reporter.error('terminateVmBySession: Failed to kill PID %u (VM %s)' % (uPid, oSession.sName));
 
         # The final steps.
         if fClose is True:
+            reporter.log('terminateVmBySession: closing session "%s"...' % (oSession.sName,));
             oSession.close();
             self.waitOnDirectSessionClose(oSession.oVM, 10000);
             try:
