@@ -865,6 +865,12 @@ static int dmgFreeImage(PDMGIMAGE pThis, bool fDelete)
             pThis->pvDecompExtent = NULL;
             pThis->cbDecompExtent = 0;
         }
+
+        if (pThis->paExtents)
+        {
+            RTMemFree(pThis->paExtents);
+            pThis->paExtents = NULL;
+        }
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
