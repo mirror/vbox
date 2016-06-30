@@ -2601,13 +2601,13 @@ class SessionWrapper(TdTaskBase):
 
         # Now for the hardened windows startup log.
         try:
-            sLogFile = os.path.join(self.oVM.logFolder, 'VBoxStartup.log');
+            sLogFile = os.path.join(self.oVM.logFolder, 'VBoxHardening.log');
         except:
             reporter.logXcpt();
             fRc = False;
         else:
             if os.path.isfile(sLogFile):
-                reporter.addLogFile(sLogFile, 'log/release/vm', '%s startup log' % (self.sName, ),
+                reporter.addLogFile(sLogFile, 'log/release/vm', '%s hardening log' % (self.sName, ),
                                     sAltName = '%s-%s' % (self.sName, os.path.basename(sLogFile),));
 
         # Now for the debug log.
