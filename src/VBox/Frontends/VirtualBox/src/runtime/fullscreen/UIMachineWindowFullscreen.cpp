@@ -22,11 +22,11 @@
 /* Qt includes: */
 # include <QMenu>
 # include <QTimer>
-# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+# ifdef VBOX_WS_WIN
 #  if QT_VERSION >= 0x050000
 #   include <QWindow>
 #  endif /* QT_VERSION >= 0x050000 */
-# endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+# endif /* VBOX_WS_WIN */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -196,33 +196,6 @@ void UIMachineWindowFullscreen::sltExitNativeFullscreen(UIMachineWindow *pMachin
 }
 #endif /* VBOX_WS_MAC */
 
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-void UIMachineWindowFullscreen::sltShowMinimized()
-{
-# if QT_VERSION < 0x050000
-    /* Minimize window: */
-    showMinimized();
-# else /* QT_VERSION >= 0x050000 */
-#  if defined(VBOX_WS_WIN)
-    /* Minimize window: */
-    showMinimized();
-#  else /* VBOX_WS_X11 */
-    /* Minimize window and reset it's state to NONE: */
-    setWindowState(Qt::WindowNoState);
-    windowHandle()->showMinimized();
-
-    /* If there is mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-        /* Hide mini-toolbar and reset it's state to NONE: */
-        m_pMiniToolBar->setWindowState(Qt::WindowNoState);
-        m_pMiniToolBar->hide();
-    }
-#  endif /* VBOX_WS_X11 */
-# endif /* QT_VERSION >= 0x050000 */
-}
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
 void UIMachineWindowFullscreen::prepareVisualState()
 {
     /* Call to base-class: */
@@ -285,7 +258,7 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
         /* Configure mini-toolbar: */
         m_pMiniToolBar->addMenus(actionPool()->menus());
         connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()),
-                this, SLOT(sltShowMinimized()), Qt::QueuedConnection);
+                this, SLOT(showMinimized()), Qt::QueuedConnection);
         connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
                 actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
         connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
@@ -627,28 +600,6 @@ void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
     }
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
-#ifdef VBOX_WS_X11
-# if QT_VERSION >= 0x050000
-void UIMachineWindowFullscreen::changeEvent(QEvent *pEvent)
-{
-    /* Depending on event type: */
-    switch (pEvent->type())
-    {
-        case QEvent::WindowStateChange:
-        {
-            /* Restore necessary mode view on changing state from Minimized to None: */
-            QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
-            if (pChangeEvent->oldState() == Qt::WindowMinimized && windowState() == Qt::WindowNoState)
-                showInNecessaryMode();
-            break;
-        }
-    }
-    /* Call to base-class: */
-    UIMachineWindow::changeEvent(pEvent);
-}
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WS_WIN
 # if QT_VERSION >= 0x050000
