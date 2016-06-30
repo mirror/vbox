@@ -25,6 +25,9 @@
 # include <QDateTime>
 # include <QDir>
 # include <QFileDialog>
+#if defined(RT_OS_SOLARIS)
+#  include <QFontDatabase>
+# endif
 # include <QKeyEvent>
 # include <QLabel>
 # include <QScrollBar>
@@ -1176,8 +1179,13 @@ QTextEdit* UIVMLogViewer::createLogPage(const QString &strName)
         AssertPtrReturn(pLogViewer, 0);
         {
             /* Configure Log-Viewer: */
+#if defined(RT_OS_SOLARIS)
+            /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
+            QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+#else
             QFont font = pLogViewer->currentFont();
             font.setFamily("Courier New,courier");
+#endif
             pLogViewer->setFont(font);
             pLogViewer->setWordWrapMode(QTextOption::NoWrap);
             pLogViewer->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
