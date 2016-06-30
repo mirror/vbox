@@ -25,7 +25,7 @@
 # include <QDateTime>
 # include <QDir>
 # include <QFileDialog>
-#if defined(RT_OS_SOLARIS)
+# if defined(RT_OS_SOLARIS)
 #  include <QFontDatabase>
 # endif
 # include <QKeyEvent>
