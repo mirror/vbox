@@ -466,33 +466,35 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
 {
     bool fSentRESEND = false;
 
-    /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
+    /* Send a dummy modifier sequence to prevent the guest OS from recognizing
      * a single key click (for ex., Alt) and performing an unwanted action
      * (for ex., activating the menu) when we release all pressed keys below.
-     * Note, that it's just a guess that sending RESEND will give the desired
-     * effect :), but at least it works with NT and W2k guests. */
+     * This is just a work-around and is likely to fail in some cases.  We are
+     * not aware of any ideal solution.  Historically we sent an 0xFE scan code,
+     * but this is a real key release code on Brazilian keyboards. */
     for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
     {
-        if (m_pressedKeys[i] & IsKeyPressed)
+        if ((m_pressedKeys[i] & IsKeyPressed) || (m_pressedKeys[i] & IsExtKeyPressed))
         {
             if (!fSentRESEND)
             {
-                keyboard().PutScancode(0xFE);
+                LONG aCodes[] = { 0x1D,  0x2A, 0x38, 0x9D, 0xAA, 0xB8 };
+                QVector <LONG> codes(RT_ELEMENTS(aCodes));
+                for (unsigned i = 0; i < RT_ELEMENTS(aCodes); ++i)
+                    codes[i] = aCodes[i];
+                keyboard().PutScancodes(codes);
+                m_pressedKeys[0x1D] = m_pressedKeys[0x2A] = m_pressedKeys[0x38] = 0;
                 fSentRESEND = true;
             }
-            keyboard().PutScancode(i | 0x80);
-        }
-        else if (m_pressedKeys[i] & IsExtKeyPressed)
-        {
-            if (!fSentRESEND)
+            if (m_pressedKeys[i] & IsKeyPressed)
+                keyboard().PutScancode(i | 0x80);
+            else
             {
-                keyboard().PutScancode(0xFE);
-                fSentRESEND = true;
+                QVector <LONG> codes(2);
+                codes[0] = 0xE0;
+                codes[1] = i | 0x80;
+                keyboard().PutScancodes(codes);
             }
-            QVector <LONG> codes(2);
-            codes[0] = 0xE0;
-            codes[1] = i | 0x80;
-            keyboard().PutScancodes(codes);
         }
         m_pressedKeys[i] = 0;
     }
