@@ -415,9 +415,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VERR_PGM_PHYS_PAGE_RESERVED          = ( 'Guru Meditations',  'VERR_PGM_PHYS_PAGE_RESERVED' );
     ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE         = ( 'Guru Meditations',  'VERR_VMX_INVALID_GUEST_STATE' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
+    ktReason_Host_HostMemoryLow                        = ( 'Host',              'HostMemoryLow' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
-    ktReason_TestBox_VERR_NO_MEMORY                    = ( 'TestBox',           'VERR_NO_MEMORY' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
+    ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
@@ -659,8 +660,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_Reboot_OSX_Watchdog_Timeout,         ': "OSX Watchdog Timeout: ' ),
         ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
-        ( True,  ktReason_TestBox_VERR_NO_MEMORY,                   'HostMemoryLow' ),
-        ( True,  ktReason_TestBox_VERR_NO_MEMORY,                   'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
+        ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
+        ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
     ];
 
     ## Things we search the _RIGHT_ _STRIPPED_ vgatext for.
@@ -668,6 +669,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( True,  ktReason_Panic_MP_BIOS_IO_APIC,
           "..MP-BIOS bug: 8254 timer not connected to IO-APIC\n\n" ),
+        ( True,  ktReason_OSInstall_GRUB_hang,
+          "-----\nGRUB Loading stage2..\n\n\n\n" ),
     ];
 
     ## Mapping screenshot/failure SHA-256 hashes to failure reasons.
@@ -855,12 +858,15 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     oCaseFile.noteReason(self.ktReason_XPCOM_VBoxSVC_Hang);
                 return self.caseClosed(oCaseFile);
 
-
-
             # Look for heap corruption without visible hang.
             if   sMainLog.find('*** glibc detected *** /') > 0 \
               or sMainLog.find("-1073740940") > 0: # STATUS_HEAP_CORRUPTION / 0xc0000374
                 oCaseFile.noteReason(self.ktReason_Unknown_Heap_Corruption);
+                return self.caseClosed(oCaseFile);
+
+            # Out of memory w/ timeout.
+            if sMainLog.find('sErrId=HostMemoryLow') > 0:
+                oCaseFile.noteReason(self.ktReason_Host_HostMemoryLow);
                 return self.caseClosed(oCaseFile);
 
         #
@@ -871,17 +877,23 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             sResultLog = TestSetData.extractLogSectionElapsed(sMainLog, oFailedResult.tsCreated, oFailedResult.tsElapsed);
             if oFailedResult.sName == 'Installing VirtualBox':
                 self.vprint('TODO: Installation failure');
+
             elif oFailedResult.sName == 'Uninstalling VirtualBox':
                 self.vprint('TODO: Uninstallation failure');
+
             elif self.isResultFromVMRun(oFailedResult, sResultLog):
                 self.investigateVMResult(oCaseFile, oFailedResult, sResultLog);
+
             elif sResultLog.find('Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_XPCOM_NS_ERROR_CALL_FAILED, oFailedResult.idTestResult);
+
             elif sResultLog.find('The machine is not mutable (state is ') > 0:
                 self.vprint('Ignoring "machine not mutable" error as it is probably due to an earlier problem');
                 oCaseFile.noteReasonForId(self.ktHarmless, oFailedResult.idTestResult);
+
             elif sResultLog.find('** error: no action was specified') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_Ignore_Buggy_Test_Driver, oFailedResult.idTestResult);
+
             else:
                 self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
                 self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
@@ -927,19 +939,24 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             if oTestSet.enmStatus == TestSetData.ksTestStatus_BadTestBox:
                 self.dprint(u'investigateBadTestBox is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateBadTestBox(oCaseFile);
+
             elif oCaseFile.isVBoxUnitTest():
                 self.dprint(u'investigateVBoxUnitTest is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateVBoxUnitTest(oCaseFile);
+
             elif oCaseFile.isVBoxInstallTest():
                 self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+
             elif oCaseFile.isVBoxSmokeTest():
                 self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = False);
+
             else:
                 self.vprint(u'reasoningFailures: Unable to classify test set: %s' % (oCaseFile.sLongName,));
                 fRc = False;
             cGot += fRc is True;
+
         self.vprint(u'reasoningFailures: Got %u out of %u' % (cGot, len(aoTestSets), ));
         return 0;
 
