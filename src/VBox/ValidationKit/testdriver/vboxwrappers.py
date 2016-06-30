@@ -537,6 +537,7 @@ class SessionWrapper(TdTaskBase):
         self.sLogFile               = sLogFile;
         self.oConsoleEventHandler   = None;
         self.uPid                   = None;
+        self.fHostMemoryLow         = False;    # see signalHostMemoryLow; read-only for outsiders.
 
         try:
             self.sName              = oSession.machine.name;
@@ -707,6 +708,17 @@ class SessionWrapper(TdTaskBase):
         if self.oConsoleEventHandler is not None:
             self.oConsoleEventHandler.unregister();
             self.oConsoleEventHandler = None;
+
+
+    def signalHostMemoryLow(self):
+        """
+        Used by a runtime error event handler to indicate that we're low on memory.
+        Signals the task.
+        """
+        self.fHostMemoryLow = True;
+        self.signalTask();
+        return True;
+
 
     def assertPoweredOff(self):
         """

@@ -760,6 +760,8 @@ class SessionConsoleEventHandler(ConsoleEventHandlerBase):
         reporter.log('onRuntimeError/%s: fFatal=%d sErrId=%s sMessage=%s' % (self.sName, fFatal, sErrId, sMessage));
         oSession = self.oSession;
         if oSession is not None: # paranoia
+            if sErrId == 'HostMemoryLow':
+                oSession.signalHostMemoryLow();
             oSession.signalTask();
         self.oVBoxMgr.interruptWaitEvents();
 
@@ -2550,78 +2552,83 @@ class TestDriver(base.TestDriver):                                              
         oSession.getPid();
 
         #
-        # Pause the VM if we're going to take any screenshots or dig into the
-        # guest.  Failures are quitely ignored.
-        #
-        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
-            try:
-                if oSession.oVM.state in [ vboxcon.MachineState_Running,
-                                           vboxcon.MachineState_LiveSnapshotting,
-                                           vboxcon.MachineState_Teleporting ]:
-                    oSession.o.console.pause();
-            except:
-                reporter.logXcpt();
-
-        #
-        # Take Screenshot and upload it (see below) to Test Manager if appropriate/requested.
+        # If the host is out of memory, just skip all the info collection as it
+        # requires memory too and seems to wedge.
         #
         sLastScreenshotPath = None;
-        if fTakeScreenshot is True  or  self.fAlwaysUploadScreenshots  or  reporter.testErrorCount() > 0:
-            sLastScreenshotPath = os.path.join(self.sScratchPath, "LastScreenshot-%s.png" % oSession.sName);
-            fRc = oSession.takeScreenshot(sLastScreenshotPath);
-            if fRc is not True:
-                sLastScreenshotPath = None;
+        sOsKernelLog        = None;
+        sVgaText            = None;
+        asMiscInfos         = [];
+        if not oSession.fHostMemoryLow:
+            #
+            # Pause the VM if we're going to take any screenshots or dig into the
+            # guest.  Failures are quitely ignored.
+            #
+            if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+                try:
+                    if oSession.oVM.state in [ vboxcon.MachineState_Running,
+                                               vboxcon.MachineState_LiveSnapshotting,
+                                               vboxcon.MachineState_Teleporting ]:
+                        oSession.o.console.pause();
+                except:
+                    reporter.logXcpt();
 
-        # Query the OS kernel log from the debugger if appropriate/requested.
-        sOsKernelLog = None;
-        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
-            sOsKernelLog = oSession.queryOsKernelLog();
+            #
+            # Take Screenshot and upload it (see below) to Test Manager if appropriate/requested.
+            #
+            if fTakeScreenshot is True  or  self.fAlwaysUploadScreenshots  or  reporter.testErrorCount() > 0:
+                sLastScreenshotPath = os.path.join(self.sScratchPath, "LastScreenshot-%s.png" % oSession.sName);
+                fRc = oSession.takeScreenshot(sLastScreenshotPath);
+                if fRc is not True:
+                    sLastScreenshotPath = None;
 
-        # Do "info vgatext all" separately.
-        sVgaText = None;
-        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
-            sVgaText = oSession.queryDbgInfoVgaText();
+            # Query the OS kernel log from the debugger if appropriate/requested.
+            if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+                sOsKernelLog = oSession.queryOsKernelLog();
 
-        # Various infos (do after kernel because of symbols).
-        asMiscInfos = [];
-        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
-            # Dump the guest stack for all CPUs.
-            cCpus = oSession.getCpuCount();
-            if cCpus > 0:
-                for iCpu in xrange(0, cCpus):
-                    sThis = oSession.queryDbgGuestStack(iCpu);
+            # Do "info vgatext all" separately.
+            if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+                sVgaText = oSession.queryDbgInfoVgaText();
+
+            # Various infos (do after kernel because of symbols).
+            if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+                # Dump the guest stack for all CPUs.
+                cCpus = oSession.getCpuCount();
+                if cCpus > 0:
+                    for iCpu in xrange(0, cCpus):
+                        sThis = oSession.queryDbgGuestStack(iCpu);
+                        if sThis is not None and len(sThis) > 0:
+                            asMiscInfos += [
+                                '================ start guest stack VCPU %s ================\n' % (iCpu,),
+                                sThis,
+                                '================ end guest stack VCPU %s ==================\n' % (iCpu,),
+                            ];
+
+                for sInfo, sArg in [ ('mode', 'all'),
+                                     ('fflags', ''),
+                                     ('cpumguest', 'verbose all'),
+                                     ('cpumguestinstr', 'symbol all'),
+                                     ('pic', ''),
+                                     ('apic', ''),
+                                     ('ioapic', ''),
+                                     ('pit', ''),
+                                     ('phys', ''),
+                                     ('clocks', ''),
+                                     ('timers', ''),
+                                     ('gdtguest', ''),
+                                     ('ldtguest', ''),
+                                    ]:
+                    if sInfo in ['apic',] and self.fpApiVer < 5.1: # asserts and burns
+                        continue;
+                    sThis = oSession.queryDbgInfo(sInfo, sArg);
                     if sThis is not None and len(sThis) > 0:
+                        if sThis[-1] != '\n':
+                            sThis += '\n';
                         asMiscInfos += [
-                            '================ start guest stack VCPU %s ================\n' % (iCpu,),
+                            '================ start %s %s ================\n' % (sInfo, sArg),
                             sThis,
-                            '================ end guest stack VCPU %s ==================\n' % (iCpu,),
+                            '================ end %s %s ==================\n' % (sInfo, sArg),
                         ];
-
-            for sInfo, sArg in [ ('mode', 'all'),
-                                 ('fflags', ''),
-                                 ('cpumguest', 'verbose all'),
-                                 ('cpumguestinstr', 'symbol all'),
-                                 ('pic', ''),
-                                 ('apic', ''),
-                                 ('ioapic', ''),
-                                 ('pit', ''),
-                                 ('phys', ''),
-                                 ('clocks', ''),
-                                 ('timers', ''),
-                                 ('gdtguest', ''),
-                                 ('ldtguest', ''),
-                                ]:
-                if sInfo in ['apic',] and self.fpApiVer < 5.1: # asserts and burns
-                    continue;
-                sThis = oSession.queryDbgInfo(sInfo, sArg);
-                if sThis is not None and len(sThis) > 0:
-                    if sThis[-1] != '\n':
-                        sThis += '\n';
-                    asMiscInfos += [
-                        '================ start %s %s ================\n' % (sInfo, sArg),
-                        sThis,
-                        '================ end %s %s ==================\n' % (sInfo, sArg),
-                    ];
 
         #
         # Terminate the VM
