@@ -54,54 +54,47 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
         return 1;
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    PRTUNICP puszPath1;
-    int rc = RTStrToUni(pszPath1, &puszPath1);
-    if (RT_FAILURE(rc))
-        return -1;
-    PRTUNICP puszPath2;
-    rc = RTStrToUni(pszPath2, &puszPath2);
-    if (RT_FAILURE(rc))
-    {
-        RTUniFree(puszPath1);
-        return 1;
-    }
-
-    int iDiff = 0;
-    PRTUNICP puszTmpPath1 = puszPath1;
-    PRTUNICP puszTmpPath2 = puszPath2;
     for (;;)
     {
-        register RTUNICP uc1 = *puszTmpPath1;
-        register RTUNICP uc2 = *puszTmpPath2;
-        if (uc1 != uc2)
+        RTUNICP uc1;
+        int rc = RTStrGetCpEx(&pszPath1, &uc1);
+        if (RT_SUCCESS(rc))
         {
-            if (uc1 == '\\')
-                uc1 = '/';
-            else
-                uc1 = RTUniCpToUpper(uc1);
-            if (uc2 == '\\')
-                uc2 = '/';
-            else
-                uc2 = RTUniCpToUpper(uc2);
-            if (uc1 != uc2)
+            RTUNICP uc2;
+            rc = RTStrGetCpEx(&pszPath2, &uc2);
+            if (RT_SUCCESS(rc))
             {
-                iDiff = uc1 > uc2 ? 1 : -1; /* (overflow/underflow paranoia) */
-                if (fLimit && uc2 == '\0')
-                    iDiff = 0;
-                break;
+                if (uc1 == uc2)
+                {
+                    if (uc1)
+                    { /* likely */ }
+                    else
+                        return 0;
+                }
+                else
+                {
+                    if (uc1 == '\\')
+                        uc1 = '/';
+                    else
+                        uc1 = RTUniCpToUpper(uc1);
+                    if (uc2 == '\\')
+                        uc2 = '/';
+                    else
+                        uc2 = RTUniCpToUpper(uc2);
+                    if (uc1 != uc2)
+                    {
+                        if (fLimit && uc2 == '\0')
+                            return 0;
+                        return uc1 > uc2 ? 1 : -1; /* (overflow/underflow paranoia) */
+                    }
+                }
             }
+            else
+                return 1;
         }
-        if (!uc1)
-            break;
-        puszTmpPath1++;
-        puszTmpPath2++;
-
+        else
+            return -1;
     }
-
-    RTUniFree(puszPath2);
-    RTUniFree(puszPath1);
-    return iDiff;
-
 #else
     if (!fLimit)
         return strcmp(pszPath1, pszPath2);
