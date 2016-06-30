@@ -1630,7 +1630,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
  *  result codes
 -->
 <xsl:template match="result">
-  <xsl:value-of select="concat('#define ',@name,' ',@value)"/>
+  <xsl:value-of select="concat('#define ',@name,' ((HRESULT)',@value, ')')"/>
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 

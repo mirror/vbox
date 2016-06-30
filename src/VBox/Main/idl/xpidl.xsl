@@ -167,7 +167,7 @@
  *  result codes
 -->
 <xsl:template match="result">
-  <xsl:value-of select="concat('#define ',@name,' ',@value)"/>
+  <xsl:value-of select="concat('#define ',@name,' ((nsresult)',@value, ')')"/>
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 

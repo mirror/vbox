@@ -168,7 +168,7 @@
 -->
 <xsl:template match="result">
   <xsl:text>cpp_quote("</xsl:text>
-  <xsl:value-of select="concat('#define ',@name,' ',@value)"/>
+  <xsl:value-of select="concat('#define ',@name,' ((HRESULT)',@value, ')')"/>
   <xsl:text>")&#x0A;</xsl:text>
 </xsl:template>
 
