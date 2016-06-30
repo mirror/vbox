@@ -449,7 +449,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         if (m_fWasMinimized)
         {
             m_fWasMinimized = false;
-            showMinimized();
+            QMetaObject::invokeMethod(this, "showMinimized", Qt::QueuedConnection);
         }
 
         /* Adjust machine-view size if necessary: */
@@ -493,7 +493,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         if (m_fWasMinimized)
         {
             m_fWasMinimized = false;
-            showMinimized();
+            QMetaObject::invokeMethod(this, "showMinimized", Qt::QueuedConnection);
         }
 
         /* Adjust machine-view size if necessary: */
