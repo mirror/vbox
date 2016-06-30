@@ -923,6 +923,7 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
     LPARAM lParam
 )
 {
+    /* TODO: AM need to check that the thread retrieves these events */
     switch(uMsg)
     {
         case WM_DISPLAYCHANGE:
@@ -941,12 +942,6 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
             }
             break;
         }
-        case WM_CLOSE:
-            LogFunc(("got WM_CLOSE for hwnd(0x%x)", hwnd));
-            return 0;
-        case WM_DESTROY:
-            LogFunc(("got WM_DESTROY for hwnd(0x%x)", hwnd));
-            return 0;
         case WM_NCHITTEST:
             LogFunc(("got WM_NCHITTEST for hwnd(0x%x)\n", hwnd));
             return HTNOWHERE;
@@ -1050,11 +1045,25 @@ HRESULT vboxRrRun()
 
     HRESULT hr = S_FALSE;
 
+    /* Create the thread message queue*/
     PeekMessage(&Msg,
             NULL /* HWND hWnd */,
             WM_USER /* UINT wMsgFilterMin */,
             WM_USER /* UINT wMsgFilterMax */,
             PM_NOREMOVE);
+    
+    /* 
+    * Send signal that message queue is ready.
+    * From this moment only the thread is ready to receive messages.
+    */
+    BOOL bRc = SetEvent(pMon->hEvent);
+    if (!bRc)
+    {
+        DWORD winErr = GetLastError();
+        WARN_FUNC(("SetEvent failed, winErr = (%d)", winErr));
+        HRESULT tmpHr = HRESULT_FROM_WIN32(winErr);
+        Assert(tmpHr != S_OK);
+    }
 
     do
     {
@@ -1064,15 +1073,7 @@ HRESULT vboxRrRun()
             0 /*UINT wMsgFilterMax*/
             );
 
-        if(!bResult) /* WM_QUIT was posted */
-        {
-            hr = S_FALSE;
-            Log(("VBoxTray: GetMessage returned FALSE\n"));
-            VBoxRrRetryStop();
-            break;
-        }
-
-        if(bResult == -1) /* error occurred */
+        if (bResult == -1) /* error occurred */
         {
             DWORD winEr = GetLastError();
             hr = HRESULT_FROM_WIN32(winEr);
@@ -1086,6 +1087,14 @@ HRESULT vboxRrRun()
             break;
         }
 
+        if(!bResult) /* WM_QUIT was posted */
+        {
+            hr = S_FALSE;
+            Log(("VBoxTray: GetMessage returned FALSE\n"));
+            VBoxRrRetryStop();
+            break;
+        }
+        
         switch (Msg.message)
         {
             case WM_VBOXRR_INIT_QUIT:
@@ -1107,17 +1116,6 @@ HRESULT vboxRrRun()
 
 static DWORD WINAPI vboxRrRunnerThread(void *pvUser)
 {
-    PVBOXRR pMon = &g_VBoxRr;
-
-    BOOL bRc = SetEvent(pMon->hEvent);
-    if (!bRc)
-    {
-        DWORD winErr = GetLastError();
-        WARN_FUNC(("SetEvent failed, winErr = (%d)", winErr));
-        HRESULT tmpHr = HRESULT_FROM_WIN32(winErr);
-        Assert(tmpHr != S_OK);
-    }
-
     HRESULT hr = vboxRrWndInit();
     Assert(hr == S_OK);
     if (hr == S_OK)
