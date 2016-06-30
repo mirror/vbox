@@ -2348,13 +2348,13 @@ class TestDriver(base.TestDriver):                                              
         """
         fRc = True;
         try:
-            sLogFile = os.path.join(oVM.logFolder, 'VBoxStartup.log');
+            sLogFile = os.path.join(oVM.logFolder, 'VBoxHardening.log');
         except:
             reporter.logXcpt();
             fRc = False;
         else:
             if os.path.isfile(sLogFile):
-                reporter.addLogFile(sLogFile, 'log/release/vm', '%s startup log' % (sVmName, ),
+                reporter.addLogFile(sLogFile, 'log/release/vm', '%s hardening log' % (sVmName, ),
                                     sAltName = '%s-%s' % (sVmName, os.path.basename(sLogFile),));
         return fRc;
 
