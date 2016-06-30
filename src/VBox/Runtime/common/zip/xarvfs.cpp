@@ -1750,10 +1750,9 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     }
 
     if (phVfsObj)
-    {
-        RTVfsObjRetain(hVfsObj);
         *phVfsObj = hVfsObj;
-    }
+    else
+        RTVfsObjRelease(hVfsObj);
 
     if (penmType)
         *penmType = enmType;
