@@ -265,14 +265,6 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                 actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
         connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutWindowActivationStolen()),
                 this, SLOT(sltRevokeWindowActivation()), Qt::QueuedConnection);
-# ifdef VBOX_WS_X11
-        // WORKAROUND:
-        // Due to Unity bug we want native full-screen flag to be set
-        // for mini-toolbar _before_ trying to show it in full-screen mode.
-        // That significantly improves of chances to have required geometry.
-        if (vboxGlobal().typeOfWindowManager() == X11WMType_Compiz)
-            vboxGlobal().setFullScreenFlag(m_pMiniToolBar);
-# endif /* VBOX_WS_X11 */
     }
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
