@@ -213,7 +213,9 @@ def getHostOsVersion():
                      "9": "Mavericks",
                      "10": "Yosemite",
                      "11": "El Capitan",
-                     "12": "Fuji" }
+                     "12": "Sierra",
+                     "13": "Unknown 13",
+                     "14": "Unknown 14", }
         sVersion += ' / OS X ' + sOsxVersion + ' (' + codenames[sOsxVersion.split('.')[1]] + ')'
 
     return sVersion;
@@ -928,8 +930,8 @@ def _winInitPerfCounter():
     uFrequency = ctypes.c_ulonglong(0);
     if ctypes.windll.kernel32.QueryPerformanceFrequency(ctypes.byref(uFrequency)):
         if uFrequency.value >= 1000:
-            print 'uFrequency = %s' % (uFrequency,);
-            print 'type(uFrequency) = %s' % (type(uFrequency),);
+            #print 'uFrequency = %s' % (uFrequency,);
+            #print 'type(uFrequency) = %s' % (type(uFrequency),);
             g_fpWinPerfCounterFreq = float(uFrequency.value);
 
             # Check that querying the counter works too.
