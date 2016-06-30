@@ -486,6 +486,9 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
 
+        /* Restore full-screen state after placeOnScreen() call: */
+        setWindowState(Qt::WindowFullScreen);
+
         /* Restore minimized state if necessary: */
         if (m_fWasMinimized)
         {
