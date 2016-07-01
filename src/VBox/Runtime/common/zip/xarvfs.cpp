@@ -1453,6 +1453,14 @@ static DECLCALLBACK(int) rtZipXarFss_Close(void *pvThis)
     RTVfsFileRelease(pThis->hVfsFile);
     pThis->hVfsFile = NIL_RTVFSFILE;
 
+    if (pThis->XarReader.pDoc)
+        delete pThis->XarReader.pDoc;
+    pThis->XarReader.pDoc = NULL;
+    /* The other XarReader fields only point to elements within pDoc. */
+    pThis->XarReader.pToc = NULL;
+    pThis->XarReader.cCurDepth = 0;
+    pThis->XarReader.pCurFile = NULL;
+
     return VINF_SUCCESS;
 }
 
