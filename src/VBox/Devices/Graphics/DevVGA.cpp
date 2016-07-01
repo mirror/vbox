@@ -3052,16 +3052,29 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
 # if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM)
                 if (u32 == HGSMIOFFSET_VOID)
                 {
-                    PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
-                    HGSMIClearHostGuestFlags(pThis->pHGSMI,
-                                             HGSMIHOSTFLAGS_IRQ
+                    PDMCritSectEnter(&pThis->critSectIRQ, VERR_SEM_BUSY);
+
+                    if (pThis->fu32PendingGuestFlags == 0)
+                    {
+                        PDMDevHlpPCISetIrqNoWait(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
+                        HGSMIClearHostGuestFlags(pThis->pHGSMI,
+                                                 HGSMIHOSTFLAGS_IRQ
 #  ifdef VBOX_VDMA_WITH_WATCHDOG
-                                             | HGSMIHOSTFLAGS_WATCHDOG
+                                                 | HGSMIHOSTFLAGS_WATCHDOG
 #  endif
-                                             | HGSMIHOSTFLAGS_VSYNC
-                                             | HGSMIHOSTFLAGS_HOTPLUG
-                                             | HGSMIHOSTFLAGS_CURSOR_CAPABILITIES
-                                             );
+                                                 | HGSMIHOSTFLAGS_VSYNC
+                                                 | HGSMIHOSTFLAGS_HOTPLUG
+                                                 | HGSMIHOSTFLAGS_CURSOR_CAPABILITIES
+                                                );
+                    }
+                    else
+                    {
+                        HGSMISetHostGuestFlags(pThis->pHGSMI, HGSMIHOSTFLAGS_IRQ | pThis->fu32PendingGuestFlags);
+                        pThis->fu32PendingGuestFlags = 0;
+                        /* Keep the IRQ unchanged. */
+                    }
+
+                    PDMCritSectLeave(&pThis->critSectIRQ);
                 }
                 else
 # endif
@@ -5940,6 +5953,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         pThis->pszLogoFile = NULL;
     }
 
+    PDMR3CritSectDelete(&pThis->critSectIRQ);
     PDMR3CritSectDelete(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -6169,6 +6183,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "VGA#%u", iInstance);
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->critSectIRQ, RT_SRC_POS, "VGA#%u_IRQ", iInstance);
     AssertRCReturn(rc, rc);
 
     /*

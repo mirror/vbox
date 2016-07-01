@@ -2591,7 +2591,7 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
             case VBVAEXHOST_DATA_TYPE_CMD:
                 vboxVDMACrCmdProcess(pVdma, pCmd, cbCmd);
                 VBoxVBVAExHPDataCompleteCmd(pCmdVbva, cbCmd);
-                VBVARaiseIrqNoWait(pVGAState, 0);
+                VBVARaiseIrq(pVGAState, 0);
                 break;
             case VBVAEXHOST_DATA_TYPE_GUESTCTL:
                 rc = vboxVDMACrGuestCtlProcess(pVdma, (VBVAEXHOSTCTL*)pCmd);

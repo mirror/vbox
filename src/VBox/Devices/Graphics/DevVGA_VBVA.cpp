@@ -2081,48 +2081,41 @@ void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags)
 {
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
 
-    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
-    HGSMISetHostGuestFlags(pVGAState->pHGSMI, HGSMIHOSTFLAGS_IRQ | fFlags);
-    PDMCritSectLeave(&pVGAState->CritSect);
+    PDMCritSectEnter(&pVGAState->critSectIRQ, VERR_SEM_BUSY);
 
-    /* Set IRQ only for a running VM.
-     * If HGSMIHOSTFLAGS_IRQ is set, then vgaR3Resume/vgaR3PowerOn will
-     * set the postponed IRQ.
-     */
-    VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
-    if (   enmVMState == VMSTATE_RUNNING
-        || enmVMState == VMSTATE_RUNNING_LS)
+    const uint32_t fu32CurrentGuestFlags = HGSMIGetHostGuestFlags(pVGAState->pHGSMI);
+    if ((fu32CurrentGuestFlags & HGSMIHOSTFLAGS_IRQ) == 0)
     {
-        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+        /* No IRQ set yet. */
+        Assert(pVGAState->fu32PendingGuestFlags == 0);
+
+        HGSMISetHostGuestFlags(pVGAState->pHGSMI, HGSMIHOSTFLAGS_IRQ | fFlags);
+
+        /* If VM is not running, the IRQ will be set in VBVAOnResume. */
+        const VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
+        if (   enmVMState == VMSTATE_RUNNING
+            || enmVMState == VMSTATE_RUNNING_LS)
+            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
     }
-}
+    else
+    {
+        /* IRQ already set, remember the new flags. */
+        pVGAState->fu32PendingGuestFlags |= HGSMIHOSTFLAGS_IRQ | fFlags;
+    }
 
-static DECLCALLBACK(int) vbvaRaiseIrqEMT(PVGASTATE pVGAState, uint32_t fFlags)
-{
-    VBVARaiseIrq(pVGAState, fFlags);
-    return VINF_SUCCESS;
-}
-
-void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags)
-{
-    /* we can not use PDMDevHlpPCISetIrqNoWait here, because we need to set IRG host flag and raise IRQ atomically,
-     * otherwise there might be a situation, when:
-     * 1. Flag is set
-     * 2. guest issues an IRQ clean request, that cleans up the flag and the interrupt
-     * 3. IRQ is set */
-    VMR3ReqCallNoWait(PDMDevHlpGetVM(pVGAState->pDevInsR3), VMCPUID_ANY, (PFNRT)vbvaRaiseIrqEMT, 2, pVGAState, fFlags);
+    PDMCritSectLeave(&pVGAState->critSectIRQ);
 }
 
 void VBVAOnResume(PVGASTATE pThis)
 {
     PPDMDEVINS pDevIns = pThis->pDevInsR3;
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    bool fIrq = RT_BOOL(HGSMIGetHostGuestFlags(pThis->pHGSMI) & HGSMIHOSTFLAGS_IRQ);
-    PDMCritSectLeave(&pThis->CritSect);
+    PDMCritSectEnter(&pThis->critSectIRQ, VERR_SEM_BUSY);
 
-    if (fIrq)
-        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+    if (HGSMIGetHostGuestFlags(pThis->pHGSMI) & HGSMIHOSTFLAGS_IRQ)
+        PDMDevHlpPCISetIrqNoWait(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+
+    PDMCritSectLeave(&pThis->critSectIRQ);
 }
 
 static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 *pConf32)
@@ -2436,7 +2429,7 @@ static DECLCALLBACK(void) vbvaNotifyGuest (void *pvCallback)
 {
 #if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM))
     PVGASTATE pVGAState = (PVGASTATE)pvCallback;
-    VBVARaiseIrqNoWait (pVGAState, 0);
+    VBVARaiseIrq (pVGAState, 0);
 #else
     NOREF(pvCallback);
     /* Do nothing. Later the VMMDev/VGA IRQ can be used for the notification. */
@@ -2932,7 +2925,7 @@ DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterf
     pThis->fHostCursorCapabilities |= fCapabilitiesAdded;
     pThis->fHostCursorCapabilities &= ~fCapabilitiesRemoved;
     if (pThis->fGuestCaps & VBVACAPS_IRQ && pThis->fGuestCaps & VBVACAPS_DISABLE_CURSOR_INTEGRATION)
-        VBVARaiseIrqNoWait(pThis, HGSMIHOSTFLAGS_CURSOR_CAPABILITIES);
+        VBVARaiseIrq(pThis, HGSMIHOSTFLAGS_CURSOR_CAPABILITIES);
     PDMCritSectLeave(&pThis->CritSect);
 }
 

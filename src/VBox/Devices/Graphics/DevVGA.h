@@ -601,6 +601,12 @@ typedef struct VGAState {
 #  else
     uint8_t                     Padding10[14];
 #  endif
+
+    /** The critical section serializes the HGSMI IRQ setting/clearing. */
+    PDMCRITSECT                 critSectIRQ;
+    /** VBVARaiseIRQ flags which were set when the guest was still processing previous IRQ. */
+    uint32_t                    fu32PendingGuestFlags;
+    uint32_t                    Padding11;
 # endif /* VBOX_WITH_HGSMI */
 
     PDMLED Led3D;
@@ -688,7 +694,6 @@ bool VBVAIsPaused(PVGASTATE pVGAState);
 bool VBVAIsEnabled(PVGASTATE pVGAState);
 
 void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags);
-void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags);
 
 int VBVAInfoView(PVGASTATE pVGAState, const VBVAINFOVIEW *pView);
 int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen);
