@@ -381,8 +381,17 @@ class VBoxInstallerTestDriver(TestDriverBase):
         Updates _asBuildFiles.
         Returns True/False. No exceptions.
         """
+        def unpackFilter(sMember):
+            # type: (string) -> bool
+            """ Skips debug info. """
+            sLower = sMember.lower();
+            if sLower.endswith('.pdb'):
+                return False;
+            return True;
+
         asMembers = utils.unpackFile(sMaybeArchive, self.sScratchPath, reporter.log,
-                                     reporter.log if fNonFatal else reporter.error);
+                                     reporter.log if fNonFatal else reporter.error,
+                                     fnFilter = unpackFilter);
         if asMembers is None:
             return False;
         self._asBuildFiles.extend(asMembers);
