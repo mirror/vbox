@@ -59,7 +59,7 @@ void AudioAdapter::FinalRelease()
  *
  *  @param aParent  Handle of the parent object.
  */
-HRESULT AudioAdapter::init (Machine *aParent)
+HRESULT AudioAdapter::init(Machine *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -102,7 +102,7 @@ HRESULT AudioAdapter::init (Machine *aParent)
  *
  *  @note Locks @a aThat object for reading.
  */
-HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
+HRESULT AudioAdapter::init(Machine *aParent, AudioAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
@@ -115,7 +115,7 @@ HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
     unconst(mParent) = aParent;
     unconst(mPeer) = aThat;
 
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
@@ -134,7 +134,7 @@ HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
  *
  *  @note Locks @a aThat object for reading.
  */
-HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
+HRESULT AudioAdapter::initCopy(Machine *aParent, AudioAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
@@ -147,7 +147,7 @@ HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
     unconst(mParent) = aParent;
     /* mPeer is left null */
 
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
@@ -315,8 +315,8 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
                 break;
 
             default:
-                AssertMsgFailed (("Wrong audio controller type %d\n",
-                                  aAudioController));
+                AssertMsgFailed(("Wrong audio controller type %d\n",
+                                 aAudioController));
                 rc = E_FAIL;
         }
         if (rc == S_OK)
@@ -380,14 +380,14 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
         }
 
         default:
-            AssertMsgFailed (("Wrong audio controller type %d\n",
-                              mData->controllerType));
+            AssertMsgFailed(("Wrong audio controller type %d\n",
+                             mData->controllerType));
             rc = E_FAIL;
     }
 
     if (!SUCCEEDED(rc))
         return setError(rc,
-                        tr ("Invalid audio codec type %d"),
+                        tr("Invalid audio codec type %d"),
                         aAudioCodec);
 
     if (mData->codecType != aAudioCodec)
@@ -534,11 +534,11 @@ void AudioAdapter::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller peerCaller (mPeer);
-    AssertComRCReturnVoid (peerCaller.rc());
+    AutoCaller peerCaller(mPeer);
+    AssertComRCReturnVoid(peerCaller.rc());
 
     /* lock both for writing since we modify both (mPeer is "master" so locked
      * first) */
@@ -561,15 +561,15 @@ void AudioAdapter::i_commit()
  */
 void AudioAdapter::i_copyFrom(AudioAdapter *aThat)
 {
-    AssertReturnVoid (aThat != NULL);
+    AssertReturnVoid(aThat != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (aThat);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
