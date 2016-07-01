@@ -572,6 +572,10 @@ typedef struct ISCSIIMAGE
     bool                fHostIP;
     /** Flag whether to dump malformed packets in the release log. */
     bool                fDumpMalformedPackets;
+    /** Flag whtether the target is readonly. */
+    bool                fTargetReadOnly;
+    /** Flag whether to retry the connection before processing new requests. */
+    bool                fTryReconnect;
 
     /** Head of request queue */
     PISCSICMD           pScsiReqQueue;
@@ -3435,6 +3439,13 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     case ISCSICMDTYPE_REQ:
                     {
+                        if (   !iscsiIsClientConnected(pImage)
+                            && pImage->fTryReconnect)
+                        {
+                            pImage->fTryReconnect = false;
+                            iscsiReattach(pImage);
+                        }
+    
                         /* If there is no connection complete the command with an error. */
                         if (RT_LIKELY(iscsiIsClientConnected(pImage)))
                         {
@@ -4274,7 +4285,8 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     rc = iscsiCommandSync(pImage, &sr, true /* fRetry */, VERR_INVALID_STATE);
     if (RT_SUCCESS(rc))
     {
-        if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY) && data4[2] & 0x80)
+        pImage->fTargetReadOnly = !!(data4[2] & 0x80);
+        if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY) && pImage->fTargetReadOnly)
         {
             rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
@@ -5162,36 +5174,31 @@ static DECLCALLBACK(unsigned) iscsiGetOpenFlags(void *pBackendData)
 /** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
 static DECLCALLBACK(int) iscsiSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
-    LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
+    LogFlowFunc(("pBackendData=%#p uOpenFlags=%#x\n", pBackendData, uOpenFlags));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* Image must be opened and the new flags must be valid. */
-    if (!pImage || (uOpenFlags & ~(  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO
-                                   | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE
-                                   | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)))
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
+    AssertReturn(pImage && !(uOpenFlags & ~(  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO
+                                            | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE
+                                            | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)),
+                 VERR_INVALID_PARAMETER);
 
-    /* Implement this operation via reopening the image if we actually need
-     * to do something. A read/write -> readonly transition doesn't need a
-     * reopen. In the other direction we don't have the necessary information
-     * as the "disk is readonly" flag is thrown away. Can be optimized too,
-     * but it's not worth the effort at the moment. */
+    /*
+     * A read/write -> readonly transition is always possible,
+     * for the reverse direction check that the target didn't present itself
+     * as readonly during the first attach.
+     */
     if (   !(uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        && (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-    {
-        iscsiFreeImage(pImage, false);
-        rc = iscsiOpenImage(pImage, uOpenFlags);
-    }
+        && (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        && pImage->fTargetReadOnly)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
     {
         pImage->uOpenFlags = uOpenFlags;
-        rc = VINF_SUCCESS;
+        pImage->fTryReconnect = true;
     }
-out:
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
