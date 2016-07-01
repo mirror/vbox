@@ -97,6 +97,10 @@ private:
     QRegion m_maskGuest;
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
+    /** Holds whether the window was minimized before became hidden.
+      * Used to restore minimized state when the window shown again. */
+    bool m_fWasMinimized;
+
     /** Factory support. */
     friend class UIMachineWindow;
 };
