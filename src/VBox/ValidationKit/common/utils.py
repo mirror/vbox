@@ -53,6 +53,7 @@ else:
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
+    unicode = str;  # pylint: disable=redefined-builtin,invalid-name
     xrange = range; # pylint: disable=redefined-builtin,invalid-name
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
@@ -295,6 +296,86 @@ def noxcptDeleteFile(sFile, oXcptRet = False):
     except:
         oRet = oXcptRet;
     return oRet;
+
+
+def dirEnumerateTree(sDir, fnCallback, fIgnoreExceptions = True):
+    # type: (string, (string, stat) -> bool) -> bool
+    """
+    Recursively walks a directory tree, calling fnCallback for each.
+
+    fnCallback takes a full path and stat object (can be None).  It
+    returns a boolean value, False stops walking and returns immediately.
+
+    Returns True or False depending on fnCallback.
+    Returns None fIgnoreExceptions is True and an exception was raised by listdir.
+    """
+    def __worker(sCurDir):
+        """ Worker for """
+        try:
+            asNames = os.listdir(sCurDir);
+        except:
+            if not fIgnoreExceptions:
+                raise;
+            return None;
+        rc = True;
+        for sName in asNames:
+            if sName not in [ '.', '..' ]:
+                sFullName = os.path.join(sCurDir, sName);
+                try:    oStat = os.lstat(sFullName);
+                except: oStat = None;
+                if fnCallback(sFullName, oStat) is False:
+                    return False;
+                if oStat is not None and stat.S_ISDIR(oStat.st_mode):
+                    rc =  __worker(sFullName);
+                    if rc is False:
+                        break;
+        return rc;
+
+    # Ensure unicode path here so listdir also returns unicode on windows.
+    ## @todo figure out unicode stuff on non-windows.
+    if sys.platform == 'win32':
+        sDir = unicode(sDir);
+    return __worker(sDir);
+
+
+
+def formatFileMode(uMode):
+    # type: (int) -> string
+    """
+    Format a st_mode value 'ls -la' fasion.
+    Returns string.
+    """
+    if   stat.S_ISDIR(uMode):   sMode = 'd';
+    elif stat.S_ISREG(uMode):   sMode = '-';
+    elif stat.S_ISLNK(uMode):   sMode = 'l';
+    elif stat.S_ISFIFO(uMode):  sMode = 'p';
+    elif stat.S_ISCHR(uMode):   sMode = 'c';
+    elif stat.S_ISBLK(uMode):   sMode = 'b';
+    elif stat.S_ISSOCK(uMode):  sMode = 's';
+    else:                       sMode = '?';
+    ## @todo sticky bits.
+    sMode += 'r' if uMode & stat.S_IRUSR else '-';
+    sMode += 'w' if uMode & stat.S_IWUSR else '-';
+    sMode += 'x' if uMode & stat.S_IXUSR else '-';
+    sMode += 'r' if uMode & stat.S_IRGRP else '-';
+    sMode += 'w' if uMode & stat.S_IWGRP else '-';
+    sMode += 'x' if uMode & stat.S_IXGRP else '-';
+    sMode += 'r' if uMode & stat.S_IROTH else '-';
+    sMode += 'w' if uMode & stat.S_IWOTH else '-';
+    sMode += 'x' if uMode & stat.S_IXOTH else '-';
+    sMode += ' ';
+    return sMode;
+
+
+def formatFileStat(oStat):
+    # type: (stat) -> string
+    """
+    Format a stat result 'ls -la' fasion (numeric IDs).
+    Returns string.
+    """
+    return '%s %3s %4s %4s %10s %s' \
+          % (formatFileMode(oStat.st_mode), oStat.st_nlink, oStat.st_uid, oStat.st_gid, oStat.st_size,
+             time.strftime('%Y-%m-%d %H:%M', time.localtime(oStat.st_mtime)), );
 
 
 #

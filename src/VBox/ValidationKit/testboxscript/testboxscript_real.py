@@ -718,6 +718,12 @@ class TestBoxScript(object):
                     fnLog('Error deleting "%s": %s' % (sFullName, oXcpt));
                     oRc.fRc = False;
 
+        # Display files left behind.
+        def dirEnumCallback(sName, oStat):
+            """ callback for dirEnumerateTree """
+            fnLog(u'%s %s' % (utils.formatFileStat(oStat) if oStat is not None else '????????????', sName));
+        utils.dirEnumerateTree(self._oOptions.sScratchRoot, dirEnumCallback);
+
         #
         # Re-create the directories.
         #
