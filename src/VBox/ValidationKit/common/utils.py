@@ -38,11 +38,9 @@ import re;
 import stat;
 import subprocess;
 import sys;
-import tarfile;
 import time;
 import traceback;
 import unittest;
-import zipfile
 
 if sys.platform == 'win32':
     import ctypes;
@@ -55,7 +53,8 @@ else:
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int;     # pylint: disable=W0622,C0103
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 
 #
@@ -1438,62 +1437,199 @@ def chmodPlusX(sFile):
     return True;
 
 
-def unpackFile(sArchive, sDstDir, fnLog, fnError = None):
+def unpackZipFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
+    # type: (string, string, (string) -> None, (string) -> None, (string) -> bool) -> list[string]
+    """
+    Worker for unpackFile that deals with ZIP files, same function signature.
+    """
+    import zipfile
+    if fnError is None:
+        fnError = fnLog;
+
+    fnLog('Unzipping "%s" to "%s"...' % (sArchive, sDstDir));
+
+    # Open it.
+    try: oZipFile = zipfile.ZipFile(sArchive, 'r')
+    except Exception as oXcpt:
+        fnError('Error opening "%s" for unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt,));
+        return None;
+
+    # Extract all members.
+    asMembers = [];
+    try:
+        for sMember in oZipFile.namelist():
+            if fnFilter is None  or  fnFilter(sMember) is not False:
+                if sMember.endswith('/'):
+                    os.makedirs(os.path.join(sDstDir, sMember.replace('/', os.path.sep)), 0x1fd); # octal: 0775 (python 3/2)
+                else:
+                    oZipFile.extract(sMember, sDstDir);
+                asMembers.append(os.path.join(sDstDir, sMember.replace('/', os.path.sep)));
+    except Exception as oXcpt:
+        fnError('Error unpacking "%s" into "%s": %s' % (sArchive, sDstDir, oXcpt));
+        asMembers = None;
+
+    # close it.
+    try: oZipFile.close();
+    except Exception as oXcpt:
+        fnError('Error closing "%s" after unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt));
+        asMembers = None;
+
+    return asMembers;
+
+
+## Good buffer for file operations.
+g_cbGoodBufferSize = 256*1024;
+
+## The original shutil.copyfileobj.
+g_fnOriginalShCopyFileObj = None;
+
+def __myshutilcopyfileobj(fsrc, fdst, length = g_cbGoodBufferSize):
+    """ shutil.copyfileobj with different length default value (16384 is slow with python 2.7 on windows). """
+    return g_fnOriginalShCopyFileObj(fsrc, fdst, length);
+
+## Set if we've replaced tarfile.copyfileobj with __mytarfilecopyfileobj already.
+g_fTarCopyFileObjOverriddend = False;
+
+def __mytarfilecopyfileobj(src, dst, length = None, exception = OSError):
+    """ tarfile.copyfileobj with different buffer size (16384 is slow on windows). """
+    if length is None:
+        __myshutilcopyfileobj(src, dst, g_cbGoodBufferSize);
+    elif length > 0:
+        cFull, cbRemainder = divmod(length, g_cbGoodBufferSize);
+        for _ in xrange(cFull):
+            abBuffer = src.read(g_cbGoodBufferSize);
+            dst.write(abBuffer);
+            if len(abBuffer) != g_cbGoodBufferSize:
+                raise exception('unexpected end of source file');
+        if cbRemainder > 0:
+            abBuffer = src.read(cbRemainder);
+            dst.write(abBuffer);
+            if len(abBuffer) != cbRemainder:
+                raise exception('unexpected end of source file');
+
+
+def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
+    # type: (string, string, (string) -> None, (string) -> None, (string) -> bool) -> list[string]
+    """
+    Worker for unpackFile that deals with tarballs, same function signature.
+    """
+    import shutil;
+    import tarfile;
+    if fnError is None:
+        fnError = fnLog;
+
+    fnLog('Untarring "%s" to "%s"...' % (sArchive, sDstDir));
+
+    #
+    # Default buffer sizes of 16384 bytes is causing too many syscalls on Windows.
+    # 60%+ speedup for python 2.7 and 50%+ speedup for python 3.5, both on windows with PDBs.
+    # 20%+ speedup for python 2.7 and 15%+ speedup for python 3.5, both on windows skipping PDBs.
+    #
+    if True is True:
+        global g_fnOriginalShCopyFileObj;
+        if g_fnOriginalShCopyFileObj is None:
+            g_fnOriginalShCopyFileObj = shutil.copyfileobj;
+            shutil.copyfileobj = __myshutilcopyfileobj;
+        global g_fTarCopyFileObjOverriddend;
+        if g_fTarCopyFileObjOverriddend is False:
+            g_fTarCopyFileObjOverriddend = True;
+            tarfile.copyfileobj = __mytarfilecopyfileobj;
+
+    #
+    # Open it.
+    #
+    # Note! We not using 'r:*' because we cannot allow seeking compressed files!
+    #       That's how we got a 13 min unpack time for VBoxAll on windows (hardlinked pdb).
+    #
+    try: oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize);
+    except Exception as oXcpt:
+        fnError('Error opening "%s" for unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt,));
+        return None;
+
+    # Extract all members.
+    asMembers = [];
+    try:
+        for oTarInfo in oTarFile:
+            try:
+                if fnFilter is None  or  fnFilter(oTarInfo.name) is not False:
+                    if oTarInfo.islnk():
+                        # Links are trouble, especially on Windows.  We must avoid the falling that will end up seeking
+                        # in the compressed tar stream.  So, fall back on shutil.copy2 instead.
+                        sLinkFile     = os.path.join(sDstDir, oTarInfo.name.rstrip('/').replace('/', os.path.sep));
+                        sLinkTarget   = os.path.join(sDstDir, oTarInfo.linkname.rstrip('/').replace('/', os.path.sep));
+                        sParentDir    = os.path.dirname(sLinkFile);
+                        try:    os.unlink(sLinkFile);
+                        except: pass;
+                        if sParentDir is not ''  and  not os.path.exists(sParentDir):
+                            os.makedirs(sParentDir);
+                        try:    os.link(sLinkTarget, sLinkFile);
+                        except: shutil.copy2(sLinkTarget, sLinkFile);
+                    else:
+                        if oTarInfo.isdir():
+                            # Just make sure the user (we) got full access to dirs.  Don't bother getting it 100% right.
+                            oTarInfo.mode |= 0x1c0; # (octal: 0700)
+                        oTarFile.extract(oTarInfo, sDstDir);
+                    asMembers.append(os.path.join(sDstDir, oTarInfo.name.replace('/', os.path.sep)));
+            except Exception as oXcpt:
+                fnError('Error unpacking "%s" member "%s" into "%s": %s' % (sArchive, oTarInfo.name, sDstDir, oXcpt));
+                for sAttr in [ 'name', 'linkname', 'type', 'mode', 'size', 'mtime', 'uid', 'uname', 'gid', 'gname' ]:
+                    fnError('Info: %8s=%s' % (sAttr, getattr(oTarInfo, sAttr),));
+                for sFn in [ 'isdir', 'isfile', 'islnk', 'issym' ]:
+                    fnError('Info: %8s=%s' % (sFn, getattr(oTarInfo, sFn)(),));
+                asMembers = None;
+                break;
+    except Exception as oXcpt:
+        fnError('Error unpacking "%s" into "%s": %s' % (sArchive, sDstDir, oXcpt));
+        asMembers = None;
+
+    #
+    # Finally, close it.
+    #
+    try: oTarFile.close();
+    except Exception as oXcpt:
+        fnError('Error closing "%s" after unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt));
+        asMembers = None;
+
+    return asMembers;
+
+
+def unpackFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
+    # type: (string, string, (string) -> None, (string) -> None, (string) -> bool) -> list[string]
     """
     Unpacks the given file if it has a know archive extension, otherwise do
     nothing.
+
+    fnLog & fnError both take a string parameter.
+
+    fnFilter takes a member name (string) and returns True if it's included
+    and False if excluded.
 
     Returns list of the extracted files (full path) on success.
     Returns empty list if not a supported archive format.
     Returns None on failure.  Raises no exceptions.
     """
-    if fnError is None:
-        fnError = fnLog;
-
-    asMembers = [];
-
     sBaseNameLower = os.path.basename(sArchive).lower();
-    if sBaseNameLower.endswith('.zip'):
-        fnLog('Unzipping "%s" to "%s"...' % (sArchive, sDstDir));
-        try:
-            oZipFile = zipfile.ZipFile(sArchive, 'r')
-            asMembers = oZipFile.namelist();
-            for sMember in asMembers:
-                if sMember.endswith('/'):
-                    os.makedirs(os.path.join(sDstDir, sMember.replace('/', os.path.sep)), 0775);
-                else:
-                    oZipFile.extract(sMember, sDstDir);
-            oZipFile.close();
-        except Exception, oXcpt:
-            fnError('Error unpacking "%s" into "%s": %s' % (sArchive, sDstDir, oXcpt));
-            return None;
 
-    elif sBaseNameLower.endswith('.tar') \
+    #
+    # Zip file?
+    #
+    if sBaseNameLower.endswith('.zip'):
+        return unpackZipFile(sArchive, sDstDir, fnLog, fnError, fnFilter);
+
+    #
+    # Tarball?
+    #
+    if   sBaseNameLower.endswith('.tar') \
       or sBaseNameLower.endswith('.tar.gz') \
       or sBaseNameLower.endswith('.tgz') \
       or sBaseNameLower.endswith('.tar.bz2'):
-        fnLog('Untarring "%s" to "%s"...' % (sArchive, sDstDir));
-        try:
-            oTarFile = tarfile.open(sArchive, 'r:*');
-            asMembers = [oTarInfo.name for oTarInfo in oTarFile.getmembers()];
-            oTarFile.extractall(sDstDir);
-            oTarFile.close();
-        except Exception, oXcpt:
-            fnError('Error unpacking "%s" into "%s": %s' % (sArchive, sDstDir, oXcpt));
-            return None;
-
-    else:
-        fnLog('Not unpacking "%s".' % (sArchive,));
-        return [];
+        return unpackTarFile(sArchive, sDstDir, fnLog, fnError, fnFilter);
 
     #
-    # Change asMembers to local slashes and prefix with path.
+    # Cannot classify it from the name, so just return that to the caller.
     #
-    asMembersRet = [];
-    for sMember in asMembers:
-        asMembersRet.append(os.path.join(sDstDir, sMember.replace('/', os.path.sep)));
-
-    return asMembersRet;
+    fnLog('Not unpacking "%s".' % (sArchive,));
+    return [];
 
 
 def getDiskUsage(sPath):
