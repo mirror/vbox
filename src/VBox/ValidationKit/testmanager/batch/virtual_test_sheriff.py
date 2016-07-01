@@ -669,6 +669,14 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( True,  ktReason_Panic_MP_BIOS_IO_APIC,
           "..MP-BIOS bug: 8254 timer not connected to IO-APIC\n\n" ),
+        ( True,  ktReason_Panic_MP_BIOS_IO_APIC,
+          "..MP-BIOS bug: 8254 timer not connected to IO-APIC\n"
+          "...trying to set up timer (IRQ0) through the 8259A ...  failed.\n"
+          "...trying to set up timer as Virtual Wire IRQ... failed.\n"
+          "...trying to set up timer as ExtINT IRQ... failed :(.\n"
+          "Kernel panic - not syncing: IO-APIC + timer doesn't work!  Boot with apic=debug\n"
+          "and send a report.  Then try booting with the 'noapic' option\n"
+          "\n" ),
         ( True,  ktReason_OSInstall_GRUB_hang,
           "-----\nGRUB Loading stage2..\n\n\n\n" ),
     ];
