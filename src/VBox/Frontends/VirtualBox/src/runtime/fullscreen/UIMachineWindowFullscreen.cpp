@@ -438,9 +438,11 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     /* If window should be shown and mapped to some host-screen: */
     else
     {
-        /* Ignore if window is minimized and visible: */
-        if (isMinimized() && isVisible())
-            return;
+        /* Check whether window was minimized: */
+        const bool fWasMinimized = isMinimized() && isVisible();
+        /* And reset it's state in such case before exposing: */
+        if (fWasMinimized)
+            setWindowState(Qt::WindowNoState);
 
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
@@ -449,7 +451,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         showFullScreen();
 
         /* Restore minimized state if necessary: */
-        if (m_fWasMinimized)
+        if (m_fWasMinimized || fWasMinimized)
         {
             m_fWasMinimized = false;
             QMetaObject::invokeMethod(this, "showMinimized", Qt::QueuedConnection);
@@ -479,9 +481,11 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     /* If window should be shown and mapped to some host-screen: */
     else
     {
-        /* Ignore if window is minimized and visible: */
-        if (isMinimized() && isVisible())
-            return;
+        /* Check whether window was minimized: */
+        const bool fWasMinimized = isMinimized() && isVisible();
+        /* And reset it's state in such case before exposing: */
+        if (fWasMinimized)
+            setWindowState(Qt::WindowNoState);
 
         /* Show window: */
         showFullScreen();
@@ -493,7 +497,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         setWindowState(Qt::WindowFullScreen);
 
         /* Restore minimized state if necessary: */
-        if (m_fWasMinimized)
+        if (m_fWasMinimized || fWasMinimized)
         {
             m_fWasMinimized = false;
             QMetaObject::invokeMethod(this, "showMinimized", Qt::QueuedConnection);
