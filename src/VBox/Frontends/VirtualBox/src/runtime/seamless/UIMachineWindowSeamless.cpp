@@ -177,16 +177,6 @@ void UIMachineWindowSeamless::placeOnScreen()
     /* Set appropriate geometry for window: */
     resize(workingArea.size());
     move(workingArea.topLeft());
-
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    /* If there is a mini-toolbar: */
-    if (m_pMiniToolBar)
-    {
-        /* Set appropriate geometry for mini-toolbar: */
-        m_pMiniToolBar->resize(workingArea.size());
-        m_pMiniToolBar->move(workingArea.topLeft());
-    }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
@@ -199,15 +189,6 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-        /* If there is a mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Hide mini-toolbar: */
-            m_pMiniToolBar->hide();
-        }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
         /* Hide window: */
         hide();
     }
@@ -222,15 +203,6 @@ void UIMachineWindowSeamless::showInNecessaryMode()
 
         /* Show window in normal mode: */
         show();
-
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-        /* If there is a mini-toolbar: */
-        if (m_pMiniToolBar)
-        {
-            /* Show mini-toolbar in normal mode: */
-            m_pMiniToolBar->show();
-        }
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
         /* Adjust machine-view size if necessary: */
         adjustMachineViewSize();

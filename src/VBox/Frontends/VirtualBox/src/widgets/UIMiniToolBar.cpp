@@ -603,14 +603,24 @@ void UIMiniToolBar::sltShow()
 
 #elif defined(VBOX_WS_WIN)
 
-    /* Adjust window before showing full-screen: */
+    /* Adjust window: */
     sltAdjust();
-    showFullScreen();
+    /* Show window in necessary mode: */
+    switch (m_geometryType)
+    {
+        case GeometryType_Available: return show();
+        case GeometryType_Full:      return showFullScreen();
+    }
 
 #elif defined(VBOX_WS_X11)
 
-    /* Show window full-screen before adjusting: */
-    showFullScreen();
+    /* Show window in necessary mode: */
+    switch (m_geometryType)
+    {
+        case GeometryType_Available: return show();
+        case GeometryType_Full:      return showFullScreen();
+    }
+    /* Adjust window: */
     sltAdjust();
 
 #else
@@ -628,7 +638,12 @@ void UIMiniToolBar::sltAdjust()
     const int iHostScreen = QApplication::desktop()->screenNumber(parentWidget());
     Q_UNUSED(iHostScreen);
     /* And corresponding working area: */
-    const QRect workingArea = vboxGlobal().screenGeometry(iHostScreen);
+    QRect workingArea;
+    switch (m_geometryType)
+    {
+        case GeometryType_Available: workingArea = vboxGlobal().availableGeometry(iHostScreen); break;
+        case GeometryType_Full:      workingArea = vboxGlobal().screenGeometry(iHostScreen); break;
+    }
     Q_UNUSED(workingArea);
 
 #if defined(VBOX_WS_MAC)
