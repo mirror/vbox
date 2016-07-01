@@ -314,7 +314,8 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-#elif defined(VBOX_WS_X11) && QT_VERSION < 0x050000
+#elif defined(VBOX_WS_X11)
+# if QT_VERSION < 0x050000
 
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
@@ -356,16 +357,28 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
                 break;
         }
 
+# else /* QT_VERSION >= 0x050000 */
+
+        /* On X11, we are using Qt5 method to grab the keyboard.
+         * This wrapper is using xcb_grab_keyboard function which is a part of active keyboard grabbing.
+         * Active keyboard grabbing causes a problems on certain old window managers - a window cannot
+         * be moved using the mouse. So we additionally grabbing the mouse as well to detect that user
+         * is trying to click outside of internal window geometry. */
+
+        /* Use the Qt5 keyboard grabbing: */
+        m_views[uScreenId]->grabKeyboard();
+        /* And grab the mouse button (if mouse is not captured),
+         * We do not check for failure as we do not currently implement a back-up plan. */
+        if (!uisession()->isMouseCaptured())
+            xcb_grab_button_checked(QX11Info::connection(), 0, QX11Info::appRootWindow(),
+                                    XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
+                                    XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
+
+# endif /* QT_VERSION >= 0x050000 */
 #else
 
         /* On other platforms we are just praying Qt method to work: */
         m_views[uScreenId]->grabKeyboard();
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-        /* Mouse capture hack for when the keyboard is captured.  We do not
-         * check for failure as we do not currently implement a back-up plan. */
-        if (!uisession()->isMouseCaptured())
-            xcb_grab_button_checked(QX11Info::connection(), 0, QX11Info::appRootWindow(), XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
-#endif /* defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
 
 #endif
 
@@ -411,7 +424,8 @@ void UIKeyboardHandler::releaseKeyboard()
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-#elif defined(VBOX_WS_X11) && QT_VERSION < 0x050000
+#elif defined(VBOX_WS_X11)
+# if QT_VERSION < 0x050000
 
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
@@ -439,15 +453,25 @@ void UIKeyboardHandler::releaseKeyboard()
                 break;
         }
 
+# else /* QT_VERSION >= 0x050000 */
+
+        /* On X11, we are using Qt5 method to release the keyboard.
+         * This wrapper is using xcb_ungrab_keyboard function which is a part of active keyboard grabbing.
+         * Active keyboard grabbing causes a problems on certain old window managers - a window cannot
+         * be moved using the mouse. So we finally releasing additionally grabbed mouse as well to
+         * allow further user interactions. */
+
+        /* Use the Qt5 keyboard releasing: */
+        m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
+        /* And release the mouse button,
+         * We do not check for failure as we do not currently implement a back-up plan. */
+        xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_1, QX11Info::appRootWindow(), XCB_MOD_MASK_ANY);
+
+# endif /* QT_VERSION >= 0x050000 */
 #else
 
         /* On other platforms we are just praying Qt method to work: */
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-        /* Mouse capture hack for when the keyboard is captured. */
-        if (!uisession()->isMouseCaptured())
-            xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_1, QX11Info::appRootWindow(), XCB_MOD_MASK_ANY);
-#endif /* defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
 
 #endif
 
@@ -1384,29 +1408,36 @@ bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId
 
             break;
         }
-        /* If we see a mouse press outside of our views while the mouse is not
-         * captured, release the keyboard before letting the event owner see it.
-         * This is because some owners cannot deal with failures to grab the
-         * keyboard themselves (e.g. window managers dragging windows).  Only
-         * works if we have passively grabbed the mouse button. */
+        /* Watch for mouse-events: */
         case XCB_BUTTON_PRESS:
         {
-            /* Cast to XCB key-event: */
-            xcb_button_press_event_t *pButtonEvent = static_cast<xcb_button_press_event_t*>(pMessage);
-            QWidget *pWidget = qApp->widgetAt(pButtonEvent->root_x, pButtonEvent->root_y);
-
+            /* Do nothing if mouse is actively grabbed: */
             if (uisession()->isMouseCaptured())
                 break;
+
+            /* If we see a mouse press outside of our views while the mouse is not
+             * captured, release the keyboard before letting the event owner see it.
+             * This is because some owners cannot deal with failures to grab the
+             * keyboard themselves (e.g. window managers dragging windows).
+             * Only works if we have passively grabbed the mouse button. */
+
+            /* Cast to XCB key-event: */
+            xcb_button_press_event_t *pButtonEvent = static_cast<xcb_button_press_event_t*>(pMessage);
+
+            /* Detect the widget which should receive the event actually: */
+            const QWidget *pWidget = qApp->widgetAt(pButtonEvent->root_x, pButtonEvent->root_y);
             if (pWidget)
             {
-                QPoint pos = pWidget->mapFromGlobal(QPoint(pButtonEvent->root_x, pButtonEvent->root_y));
+                /* Redirect the event to corresponding widget: */
+                const QPoint pos = pWidget->mapFromGlobal(QPoint(pButtonEvent->root_x, pButtonEvent->root_y));
                 pButtonEvent->event = pWidget->effectiveWinId();
                 pButtonEvent->event_x = pos.x();
                 pButtonEvent->event_y = pos.y();
                 xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
                 break;
             }
-            m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
+            /* Release the keyboard finally: */
+            releaseKeyboard();
             xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
             break;
         }
