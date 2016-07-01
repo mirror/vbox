@@ -652,17 +652,31 @@ void UIMiniToolBar::sltAdjust()
 
 #elif defined(VBOX_WS_WIN)
 
+    switch (m_geometryType)
+    {
+        case GeometryType_Available:
+        {
+            /* Set appropriate window geometry: */
+            resize(workingArea.size());
+            move(workingArea.topLeft());
+            break;
+        }
+        case GeometryType_Full:
+        {
 # if QT_VERSION >= 0x050000
-    /* Map window onto required screen: */
-    Assert(iHostScreen < qApp->screens().size());
-    windowHandle()->setScreen(qApp->screens().at(iHostScreen));
+            /* Map window onto required screen: */
+            Assert(iHostScreen < qApp->screens().size());
+            windowHandle()->setScreen(qApp->screens().at(iHostScreen));
 # endif /* QT_VERSION >= 0x050000 */
-    /* Set appropriate window size: */
-    resize(workingArea.size());
+            /* Set appropriate window size: */
+            resize(workingArea.size());
 # if QT_VERSION < 0x050000
-    /* Move window onto required screen: */
-    move(workingArea.topLeft());
+            /* Move window onto required screen: */
+            move(workingArea.topLeft());
 # endif /* QT_VERSION < 0x050000 */
+            break;
+        }
+    }
 
 #elif defined(VBOX_WS_X11)
 
