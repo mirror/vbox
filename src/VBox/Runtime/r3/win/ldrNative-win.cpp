@@ -93,6 +93,16 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
     }
     if (RT_SUCCESS(rc))
     {
+        /* Convert slashes just to be on the safe side. */
+        for (size_t off = 0;; off++)
+        {
+            RTUTF16 wc = pwszNative[off];
+            if (wc == '/')
+                pwszNative[off] = '\\';
+            else if (!wc)
+                break;
+        }
+
         /*
          * Attempt load.
          */
