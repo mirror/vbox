@@ -227,6 +227,146 @@ typedef IEMVERIFYEVTREC *PIEMVERIFYEVTREC;
 
 
 /**
+ * IEM TLB entry.
+ *
+ * Lookup assembly:
+ * @code{.asm}
+        ; Calculate tag.
+        mov     rax, [VA]
+        shl     rax, 16
+        shr     rax, 16 + X86_PAGE_SHIFT
+        or      rax, [uTlbRevision]
+
+        ; Do indexing.
+        movzx   ecx, al
+        lea     rcx, [pTlbEntries + rcx]
+
+        ; Check tag.
+        cmp     [rcx + IEMTLBENTRY.uTag], rax
+        jne     .TlbMiss
+
+        ; Check access.
+        movsx   rax, ACCESS_FLAGS | MAPPING_R3_NOT_VALID | 0xffffff00
+        and     rax, [rcx + IEMTLBENTRY.fFlagsAndPhysRev]
+        cmp     rax, [uTlbPhysRev]
+        jne     .TlbMiss
+
+        ; Calc address and we're done.
+        mov     eax, X86_PAGE_OFFSET_MASK
+        and     eax, [VA]
+        or      rax, [rcx + IEMTLBENTRY.pMappingR3]
+    %ifdef VBOX_WITH_STATISTICS
+        inc     qword [cTlbHits]
+    %endif
+        jmp     .Done
+
+    .TlbMiss:
+        mov     r8d, ACCESS_FLAGS
+        mov     rdx, [VA]
+        mov     rcx, [pIemCpu]
+        call    iemTlbTypeMiss
+    .Done:
+
+   @endcode
+ *
+ */
+typedef struct IEMTLBENTRY
+{
+    /** The TLB entry tag.
+     * Bits 35 thru 0 are made up of the virtual address shifted right 12 bits.
+     * Bits 63 thru 36 are made up of the TLB revision (zero means invalid).
+     *
+     * The TLB lookup code uses the current TLB revision, which won't ever be zero,
+     * enabling an extremely cheap TLB invalidation most of the time.  When the TLB
+     * revision wraps around though, the tags needs to be zeroed.
+     *
+     * @note    Try use SHRD instruction?  After seeing
+     *          https://gmplib.org/~tege/x86-timing.pdf, maybe not.
+     */
+    uint64_t                uTag;
+    /** Access flags and physical TLB revision.
+     *
+     * - Bit  0 - page tables   - not executable (X86_PTE_PAE_NX).
+     * - Bit  1 - page tables   - not writable (complemented X86_PTE_RW).
+     * - Bit  2 - page tables   - not user (complemented X86_PTE_US).
+     * - Bit  3 - pgm phys/virt - not directly writable.
+     * - Bit  4 - pgm phys page - not directly readable.
+     * - Bit  5 - tlb entry     - HCPhys member not valid.
+     * - Bit  6 - page tables   - not dirty (complemented X86_PTE_D).
+     * - Bit  7 - tlb entry     - pMappingR3 member not valid.
+     * - Bits 63 thru 8 are used for the physical TLB revision number.
+     *
+     * We're using complemented bit meanings here because it makes it easy to check
+     * whether special action is required.  For instance a user mode write access
+     * would do a "TEST fFlags, (X86_PTE_RW | X86_PTE_US | X86_PTE_D)" and a
+     * non-zero result would mean special handling needed because either it wasn't
+     * writable, or it wasn't user, or the page wasn't dirty.  A user mode read
+     * access would do "TEST fFlags, X86_PTE_US"; and a kernel mode read wouldn't
+     * need to check any PTE flag.
+     */
+    uint64_t                fFlagsAndPhysRev;
+    /** The host physical page address (for raw-mode and maybe ring-0). */
+    RTHCPHYS                HCPhys;
+    /** Pointer to the ring-3 mapping. */
+    R3PTRTYPE(uint8_t *)    pMappingR3;
+#if HC_ARCH_BITS == 32
+    uint32_t                u32Padding1;
+#endif
+} IEMTLBENTRY;
+AssertCompileSize(IEMTLBENTRY, 32);
+
+
+/**
+ * An IEM TLB.
+ *
+ * We've got two of these, one for data and one for instructions.
+ */
+typedef struct IEMTLB
+{
+    /** The TLB entries.
+     * We've choosen 256 because that way we can obtain the result directly from a
+     * 8-bit register without an additional AND instruction. */
+    IEMTLBENTRY         aEntries[256];
+    /** The TLB revision.
+     * This is actually only 28 bits wide (see IEMTLBENTRY::uTag) and is incremented
+     * by adding RT_BIT_64(36) to it.  When it wraps around and becomes zero, all
+     * the tags in the TLB must be zeroed and the revision set to RT_BIT_64(36).
+     * (The revision zero indicates an invalid TLB entry.)
+     *
+     * The initial value is choosen to cause an early wraparound. */
+    uint64_t            uTlbRevision;
+    /** The TLB physical address revision - shadow of PGM variable.
+     * This is actually only 56 bits wide (see IEMTLBENTRY::fFlagsAndPhysRev) and is
+     * incremented by adding RT_BIT_64(8).  When it wraps around and becomes zero,
+     * a rendezvous is called and each CPU wipe the IEMTLBENTRY::pMappingR3,
+     * IEMTLBENTRY::HCPhys and bits 3, 4 and 8-63 in IEMTLBENTRY::fFlagsAndPhysRev.
+     *
+     * The initial value is choosen to cause an early wraparound. */
+    uint64_t volatile   uTlbPhysRev;
+
+    /* Statistics: */
+
+    /** TLB hits (VBOX_WITH_STATISTICS only). */
+    uint64_t            cTlbHits;
+    /** TLB misses. */
+    uint32_t            cTlbMisses;
+    /** TLB misses because of tag mismatch. */
+    uint32_t            cTlbMissesTag;
+    /** TLB misses because of virtual access violation. */
+    uint32_t            cTlbMissesVirtAccess;
+    /** TLB misses because of dirty bit. */
+    uint32_t            cTlbMissesDirty;
+    /** TLB misses because of MMIO */
+    uint32_t            cTlbMissesMmio;
+    /** TLB misses because of write access handlers. */
+    uint32_t            cTlbMissesWriteHandler;
+    /** Alignment padding. */
+    uint32_t            au32Padding[4];
+} IEMTLB;
+AssertCompileSizeAlignment(IEMTLB, 64);
+
+
+/**
  * The per-CPU IEM state.
  */
 typedef struct IEMCPU
