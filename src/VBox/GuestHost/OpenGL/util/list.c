@@ -291,7 +291,7 @@ int main( void )
 
 	crListClear( l );
 	printList( l );
-	fprintf( stderr, "size: %d\n", crListSize( l ) );
+	fprintf( stderr, "size: %u\n", crListSize( l ) );
 	fprintf( stderr, "is empty: %d\n", crListIsEmpty( l ) );
 
 	crListPushBack( l, "w" );
@@ -301,7 +301,7 @@ int main( void )
 
 	fprintf( stderr, "front: %s\n", ( char * ) crListFront( l ) );
 	fprintf( stderr, "back: %s\n", ( char * ) crListBack( l ) );
-	fprintf( stderr, "size: %d\n", crListSize( l ) );
+	fprintf( stderr, "size: %u\n", crListSize( l ) );
 	fprintf( stderr, "is empty: %d\n", crListIsEmpty( l ) );
 
 	crFreeList( l );
