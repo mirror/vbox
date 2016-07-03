@@ -640,7 +640,7 @@ crTCPIPSend( CRConnection *conn, void **bufp,
          */
         const int sendable_len = conn->swap ? SWAP32(len) : len;
         crTCPIPWriteExact( conn, &sendable_len, sizeof(len) );
-        if (!conn || conn->type == CR_NO_CONNECTION)
+        if (conn->type == CR_NO_CONNECTION)
             return;
         crTCPIPWriteExact( conn, start, len );
     }

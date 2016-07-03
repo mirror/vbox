@@ -265,7 +265,7 @@ static void crUDPTCPIPSend( CRConnection *conn, void **bufp,
 		 * to get fancy.  Simply write the length & the payload and
 		 * return. */
 		crTCPIPWriteExact( conn, &len_swap, sizeof(len_swap) );
-		if ( !conn || conn->type == CR_NO_CONNECTION ) return;
+		if ( conn->type == CR_NO_CONNECTION ) return;
 		crTCPIPWriteExact( conn, start, len );
 		return;
 	}
