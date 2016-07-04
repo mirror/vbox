@@ -291,7 +291,7 @@ typedef struct IEMTLBENTRY
      * - Bit  2 - page tables   - not user (complemented X86_PTE_US).
      * - Bit  3 - pgm phys/virt - not directly writable.
      * - Bit  4 - pgm phys page - not directly readable.
-     * - Bit  5 - tlb entry     - HCPhys member not valid.
+     * - Bit  5 - currently unused.
      * - Bit  6 - page tables   - not dirty (complemented X86_PTE_D).
      * - Bit  7 - tlb entry     - pMappingR3 member not valid.
      * - Bits 63 thru 8 are used for the physical TLB revision number.
@@ -305,10 +305,14 @@ typedef struct IEMTLBENTRY
      * need to check any PTE flag.
      */
     uint64_t                fFlagsAndPhysRev;
-    /** The host physical page address (for raw-mode and maybe ring-0). */
-    RTHCPHYS                HCPhys;
-    /** Pointer to the ring-3 mapping. */
+    /** The guest physical page address. */
+    uint64_t                GCPhys;
+    /** Pointer to the ring-3 mapping (possibly also valid in ring-0). */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     R3PTRTYPE(uint8_t *)    pMappingR3;
+#else
+    R3R0PTRTYPE(uint8_t *)  pMappingR3;
+#endif
 #if HC_ARCH_BITS == 32
     uint32_t                u32Padding1;
 #endif
@@ -336,10 +340,11 @@ typedef struct IEMTLB
      * The initial value is choosen to cause an early wraparound. */
     uint64_t            uTlbRevision;
     /** The TLB physical address revision - shadow of PGM variable.
+     *
      * This is actually only 56 bits wide (see IEMTLBENTRY::fFlagsAndPhysRev) and is
      * incremented by adding RT_BIT_64(8).  When it wraps around and becomes zero,
-     * a rendezvous is called and each CPU wipe the IEMTLBENTRY::pMappingR3,
-     * IEMTLBENTRY::HCPhys and bits 3, 4 and 8-63 in IEMTLBENTRY::fFlagsAndPhysRev.
+     * a rendezvous is called and each CPU wipe the IEMTLBENTRY::pMappingR3 as well
+     * as IEMTLBENTRY::fFlagsAndPhysRev bits 63 thru 8, 4, and 3.
      *
      * The initial value is choosen to cause an early wraparound. */
     uint64_t volatile   uTlbPhysRev;
@@ -360,8 +365,10 @@ typedef struct IEMTLB
     uint32_t            cTlbMissesMmio;
     /** TLB misses because of write access handlers. */
     uint32_t            cTlbMissesWriteHandler;
+    /** TLB misses because no r3(/r0) mapping. */
+    uint32_t            cTlbMissesMapping;
     /** Alignment padding. */
-    uint32_t            au32Padding[4];
+    uint32_t            au32Padding[3];
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
 
