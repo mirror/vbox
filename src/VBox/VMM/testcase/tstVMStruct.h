@@ -1448,14 +1448,18 @@
     GEN_CHECK_OFF(VM, mm);
     GEN_CHECK_OFF(VM, pdm);
     GEN_CHECK_OFF(VM, iom);
+#ifdef VBOX_WITH_RAW_MODE
     GEN_CHECK_OFF(VM, patm);
     GEN_CHECK_OFF(VM, csam);
+#endif
     GEN_CHECK_OFF(VM, em);
     GEN_CHECK_OFF(VM, tm);
     GEN_CHECK_OFF(VM, dbgf);
     GEN_CHECK_OFF(VM, ssm);
     GEN_CHECK_OFF(VM, ftm);
+#ifdef VBOX_WITH_REM
     GEN_CHECK_OFF(VM, rem);
+#endif
     GEN_CHECK_OFF(VM, gim);
     GEN_CHECK_OFF(VM, vm);
     GEN_CHECK_OFF(VM, cfgm);

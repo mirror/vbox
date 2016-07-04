@@ -1221,7 +1221,7 @@ typedef struct VM
         uint8_t     padding[512];       /* multiple of 64 */
     } ftm;
 
-//#ifdef VBOX_WITH_REM
+#ifdef VBOX_WITH_RAW_MODE
     /** PATM part. */
     union
     {
@@ -1239,7 +1239,9 @@ typedef struct VM
 # endif
         uint8_t     padding[1088];      /* multiple of 64 */
     } csam;
+#endif
 
+#ifdef VBOX_WITH_REM
     /** REM part. */
     union
     {
@@ -1248,7 +1250,7 @@ typedef struct VM
 # endif
         uint8_t     padding[0x11100];   /* multiple of 64 */
     } rem;
-//#endif
+#endif
 
     union
     {
@@ -1287,11 +1289,15 @@ typedef struct VM
     } cfgm;
 
     /** Padding for aligning the cpu array on a page boundary. */
-//#ifdef VBOX_WITH_REM
+#if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
     uint8_t         abAlignment2[3870];
-//#else
-//    uint8_t         abAlignment2[3870 + 1984];
-//#endif
+#elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[1630];
+#elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[30];
+#else
+    uint8_t         abAlignment2[1886];
+#endif
 
     /* ---- end small stuff ---- */
 

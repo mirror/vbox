@@ -163,11 +163,13 @@ struc VM
     .dbgf                   resb 2368
     .ssm                    resb 128
     .ftm                    resb 512
-;%ifdef VBOX_WITH_REM
+%ifdef VBOX_WITH_RAW_MODE
     .patm                   resb 768
     .csam                   resb 1088
+%endif
+%ifdef VBOX_WITH_REM
     .rem                    resb 0x11100
-;%endif
+%endif
     .gim                    resb 448
     .apic                   resb 128
     .vm                     resb 24

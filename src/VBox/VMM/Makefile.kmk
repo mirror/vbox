@@ -245,7 +245,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PGMAllMap.cpp \
 	VMMAll/PGMAllPhys.cpp \
 	VMMAll/PGMAllPool.cpp \
-	VMMAll/REMAll.cpp \
 	VMMAll/SELMAll.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
@@ -285,7 +284,10 @@ ifdef VBOX_WITH_NEW_APIC
  	VMMR3/APIC.cpp \
  	VMMAll/APICAll.cpp
 endif
-
+ifdef VBOX_WITH_REM
+ VBoxVMM_SOURCES += \
+	VMMAll/REMAll.cpp
+endif
 ifdef VBOX_WITH_RAW_MODE
  VBoxVMM_SOURCES.x86 += \
  	VMMSwitcher/32BitTo32Bit.asm \
@@ -516,7 +518,6 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/PGMAllMap.cpp \
  	VMMAll/PGMAllPhys.cpp \
  	VMMAll/PGMAllPool.cpp \
- 	VMMAll/REMAll.cpp \
  	VMMAll/SELMAll.cpp \
  	VMMAll/TMAll.cpp \
  	VMMAll/TMAllCpu.cpp \
@@ -537,8 +538,13 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
   VMMRC_SOURCES += $(VMMRCImp_0_OUTDIR)/VMMRC.def
  endif
  ifdef VBOX_WITH_NEW_APIC
-  VMMRC_SOURCES += VMMAll/APICAll.cpp
+  VMMRC_SOURCES += \
+  	VMMAll/APICAll.cpp
  endif 
+ ifdef VBOX_WITH_REM
+  VMMRC_SOURCES += \
+  	VMMAll/REMAll.cpp
+ endif
 
  # the very last one.
  VMMRC_SOURCES += VMMRC/VMMRC99.asm
@@ -643,7 +649,6 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/PGMAllMap.cpp \
  	VMMAll/PGMAllPhys.cpp \
  	VMMAll/PGMAllPool.cpp \
- 	VMMAll/REMAll.cpp \
  	VMMAll/SELMAll.cpp \
  	VMMAll/TMAll.cpp \
  	VMMAll/TMAllCpu.cpp \
@@ -668,6 +673,10 @@ ifndef VBOX_ONLY_EXTPACKS
  ifdef VBOX_WITH_NEW_APIC
   VMMR0_SOURCES += \
  	VMMAll/APICAll.cpp
+ endif
+ ifdef VBOX_WITH_REM
+  VMMR0_SOURCES += \
+  	VMMAll/REMAll.cpp
  endif
  VMMR0_SOURCES.amd64 = \
  	VMMR0/VMMR0JmpA-amd64.asm
