@@ -79,6 +79,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: fixed location of touch events in unscaled HiDPI mode
+          (bugs #105381, #14366)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: various bugfixes and internal cleanup</para>
       </listitem>
 
