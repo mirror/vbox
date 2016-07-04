@@ -268,8 +268,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
     if (m_fIsKeyboardCaptured)
         return;
 
-#ifdef VBOX_WS_X11
-# if QT_VERSION >= 0x050000
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
     /* Due to X11 async nature we may have lost the focus already by the time we get the focus
      * notification, so we do a sanity check that we still have it. If we don't have the focus
      * and grab the keyboard now that will cause focus change which we want to avoid. This change
@@ -286,8 +285,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         LogRel(("GUI: UIKeyboardHandler::captureKeyboard: XCB error on acquiring focus information detected!\n"));
     if (m_windows.value(uScreenId)->winId() != actualWinId)
         return;
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
     /* If such view exists: */
     if (m_views.contains(uScreenId))
@@ -365,14 +363,21 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
          * be moved using the mouse. So we additionally grabbing the mouse as well to detect that user
          * is trying to click outside of internal window geometry. */
 
-        /* Use the Qt5 keyboard grabbing: */
-        m_views[uScreenId]->grabKeyboard();
-        /* And grab the mouse button (if mouse is not captured),
+        /* Grab the mouse button (if mouse is not captured),
          * We do not check for failure as we do not currently implement a back-up plan. */
         if (!uisession()->isMouseCaptured())
             xcb_grab_button_checked(QX11Info::connection(), 0, QX11Info::appRootWindow(),
-                                    XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
-                                    XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
+                                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE, XCB_GRAB_MODE_SYNC,
+                                    XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
+        /* Delay the actual keyboard grab request if the mouse button is held down and the mouse
+         * is not captured to work around window managers which transfer the focus when the user
+         * clicks in the title bar and then try to grab the keyboard and sulk if they fail. */
+        xcb_query_pointer_cookie_t xcbRequestCookie = xcb_query_pointer(QX11Info::connection(), QX11Info::appRootWindow());
+        xcb_query_pointer_reply_t *pReply = xcb_query_pointer_reply(QX11Info::connection(), xcbRequestCookie, NULL);
+        /* And use the Qt5 keyboard grabbing finally: */
+        if (uisession()->isMouseCaptured() || !pReply || !(pReply->mask & XCB_KEY_BUT_MASK_BUTTON_1))
+            m_views[uScreenId]->grabKeyboard();
+        free(pReply);
 
 # endif /* QT_VERSION >= 0x050000 */
 #else
@@ -1439,6 +1444,15 @@ bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId
             /* Release the keyboard finally: */
             releaseKeyboard();
             xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
+            break;
+        }
+        case XCB_BUTTON_RELEASE:
+        {
+            /* If the mouse button was pressed when we captured the keyboard then we
+             * will have delayed doing the grab. Do it now on button release.
+             * This will not hurt if it is already grabbed. */
+            if (m_iKeyboardCaptureViewIndex != -1)
+                m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
             break;
         }
         default:
