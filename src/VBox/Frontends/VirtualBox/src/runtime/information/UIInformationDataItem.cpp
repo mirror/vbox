@@ -1197,7 +1197,7 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
 
         case Qt::DecorationRole:
         {
-            return QString(":/nw_16px.png");
+            return QString(":/hd_16px.png");
         }
         break;
 
