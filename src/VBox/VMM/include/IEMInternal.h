@@ -387,35 +387,75 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 
 /**
  * The per-CPU IEM state.
- *
- * @todo Re-org so most frequently accessed members are in the first 64 bytes.
  */
 typedef struct IEMCPU
 {
     /** Pointer to the CPU context - ring-3 context. */
     R3PTRTYPE(PCPUMCTX)     pCtxR3;
-    /** Pointer set jump buffer - ring-3 context. */
-    R3PTRTYPE(jmp_buf *)    pJmpBufR3;
     /** Pointer to the CPU context - ring-0 context. */
     R0PTRTYPE(PCPUMCTX)     pCtxR0;
-    /** Pointer set jump buffer - ring-0 context. */
-    R0PTRTYPE(jmp_buf *)    pJmpBufR0;
     /** Pointer to the CPU context - raw-mode context. */
     RCPTRTYPE(PCPUMCTX)     pCtxRC;
-    /** Pointer set jump buffer - raw-mode context. */
-    RCPTRTYPE(jmp_buf *)    pJmpBufRC;
 
-    /** Offset of the VMCPU structure relative to this structure (negative). */
-    int32_t                 offVMCpu;
-    /** Offset of the VM structure relative to this structure (negative). */
-    int32_t                 offVM;
+    /** Info status code that needs to be propagated to the IEM caller.
+     * This cannot be passed internally, as it would complicate all success
+     * checks within the interpreter making the code larger and almost impossible
+     * to get right.  Instead, we'll store status codes to pass on here.  Each
+     * source of these codes will perform appropriate sanity checks. */
+    int32_t                 rcPassUp;
+
+    /** The current CPU execution mode (CS). */
+    IEMMODE                 enmCpuMode;
+    /** The CPL. */
+    uint8_t                 uCpl;
 
     /** Whether to bypass access handlers or not. */
     bool                    fBypassHandlers;
     /** Indicates that we're interpreting patch code - RC only! */
     bool                    fInPatchCode;
+
+    /** @name Decoder state.
+     * @{ */
+    /** The current offset into abOpcodes. */
+    uint8_t                 offOpcode;
+    /** The size of what has currently been fetched into abOpcodes. */
+    uint8_t                 cbOpcode;
+
+    /** The effective segment register (X86_SREG_XXX). */
+    uint8_t                 iEffSeg;
+
+    /** The extra REX ModR/M register field bit (REX.R << 3). */
+    uint8_t                 uRexReg;
+    /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
+     * (REX.B << 3). */
+    uint8_t                 uRexB;
+    /** The prefix mask (IEM_OP_PRF_XXX). */
+    uint32_t                fPrefixes;
+    /** The extra REX SIB index field bit (REX.X << 3). */
+    uint8_t                 uRexIndex;
+
+    /** Offset into abOpcodes where the FPU instruction starts.
+     * Only set by the FPU escape opcodes (0xd8-0xdf) and used later on when the
+     * instruction result is committed. */
+    uint8_t                 offFpuOpcode;
+
     /** Explicit alignment padding. */
-    bool                    afAlignment0[2+4];
+    uint8_t                 abAlignment1[2];
+
+    /** The effective operand mode . */
+    IEMMODE                 enmEffOpSize;
+    /** The default addressing mode . */
+    IEMMODE                 enmDefAddrMode;
+    /** The effective addressing mode . */
+    IEMMODE                 enmEffAddrMode;
+    /** The default operand mode . */
+    IEMMODE                 enmDefOpSize;
+
+    /** The opcode bytes. */
+    uint8_t                 abOpcode[15];
+    /** Explicit alignment padding. */
+    uint8_t                 abAlignment2[HC_ARCH_BITS == 64 ? 5 : 1];
+    /** @} */
 
     /** The flags of the current exception / interrupt. */
     uint32_t                fCurXcpt;
@@ -423,18 +463,67 @@ typedef struct IEMCPU
     uint8_t                 uCurXcpt;
     /** Exception / interrupt recursion depth. */
     int8_t                  cXcptRecursions;
-    /** Explicit alignment padding. */
-    bool                    afAlignment1[1];
-    /** The CPL. */
-    uint8_t                 uCpl;
-    /** The current CPU execution mode (CS). */
-    IEMMODE                 enmCpuMode;
-    /** Info status code that needs to be propagated to the IEM caller.
-     * This cannot be passed internally, as it would complicate all success
-     * checks within the interpreter making the code larger and almost impossible
-     * to get right.  Instead, we'll store status codes to pass on here.  Each
-     * source of these codes will perform appropriate sanity checks. */
-    int32_t                 rcPassUp;
+
+    /** The number of active guest memory mappings. */
+    uint8_t                 cActiveMappings;
+    /** The next unused mapping index. */
+    uint8_t                 iNextMapping;
+    /** Records for tracking guest memory mappings. */
+    struct
+    {
+        /** The address of the mapped bytes. */
+        void               *pv;
+#if defined(IN_RC) && HC_ARCH_BITS == 64
+        uint32_t            u32Alignment3; /**< Alignment padding. */
+#endif
+        /** The access flags (IEM_ACCESS_XXX).
+         * IEM_ACCESS_INVALID if the entry is unused. */
+        uint32_t            fAccess;
+#if HC_ARCH_BITS == 64
+        uint32_t            u32Alignment4; /**< Alignment padding. */
+#endif
+    } aMemMappings[3];
+
+    /** Locking records for the mapped memory. */
+    union
+    {
+        PGMPAGEMAPLOCK      Lock;
+        uint64_t            au64Padding[2];
+    } aMemMappingLocks[3];
+
+    /** Bounce buffer info.
+     * This runs in parallel to aMemMappings. */
+    struct
+    {
+        /** The physical address of the first byte. */
+        RTGCPHYS            GCPhysFirst;
+        /** The physical address of the second page. */
+        RTGCPHYS            GCPhysSecond;
+        /** The number of bytes in the first page. */
+        uint16_t            cbFirst;
+        /** The number of bytes in the second page. */
+        uint16_t            cbSecond;
+        /** Whether it's unassigned memory. */
+        bool                fUnassigned;
+        /** Explicit alignment padding. */
+        bool                afAlignment5[3];
+    } aMemBbMappings[3];
+
+    /** Bounce buffer storage.
+     * This runs in parallel to aMemMappings and aMemBbMappings. */
+    struct
+    {
+        uint8_t             ab[512];
+    } aBounceBuffers[3];
+
+
+    /** Pointer set jump buffer - ring-3 context. */
+    R3PTRTYPE(jmp_buf *)    pJmpBufR3;
+    /** Pointer set jump buffer - ring-0 context. */
+    R0PTRTYPE(jmp_buf *)    pJmpBufR0;
+    /** Pointer set jump buffer - raw-mode context. */
+    RCPTRTYPE(jmp_buf *)    pJmpBufRC;
+
 
     /** @name Statistics
      * @{  */
@@ -495,96 +584,7 @@ typedef struct IEMCPU
     /** The physical address corresponding to abOpcodes[0]. */
     RTGCPHYS                GCPhysOpcodes;
 #endif
-    /** @}  */
-
-    /** @name Decoder state.
-     * @{ */
-
-    /** The default addressing mode . */
-    IEMMODE                 enmDefAddrMode;
-    /** The effective addressing mode . */
-    IEMMODE                 enmEffAddrMode;
-    /** The default operand mode . */
-    IEMMODE                 enmDefOpSize;
-    /** The effective operand mode . */
-    IEMMODE                 enmEffOpSize;
-
-    /** The prefix mask (IEM_OP_PRF_XXX). */
-    uint32_t                fPrefixes;
-    /** The extra REX ModR/M register field bit (REX.R << 3). */
-    uint8_t                 uRexReg;
-    /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
-     * (REX.B << 3). */
-    uint8_t                 uRexB;
-    /** The extra REX SIB index field bit (REX.X << 3). */
-    uint8_t                 uRexIndex;
-    /** The effective segment register (X86_SREG_XXX). */
-    uint8_t                 iEffSeg;
-
-    /** The current offset into abOpcodes. */
-    uint8_t                 offOpcode;
-    /** The size of what has currently been fetched into abOpcodes. */
-    uint8_t                 cbOpcode;
-    /** The opcode bytes. */
-    uint8_t                 abOpcode[15];
-    /** Offset into abOpcodes where the FPU instruction starts.
-     * Only set by the FPU escape opcodes (0xd8-0xdf) and used later on when the
-     * instruction result is committed. */
-    uint8_t                 offFpuOpcode;
-
     /** @} */
-
-    /** The number of active guest memory mappings. */
-    uint8_t                 cActiveMappings;
-    /** The next unused mapping index. */
-    uint8_t                 iNextMapping;
-    /** Records for tracking guest memory mappings. */
-    struct
-    {
-        /** The address of the mapped bytes. */
-        void               *pv;
-#if defined(IN_RC) && HC_ARCH_BITS == 64
-        uint32_t            u32Alignment3; /**< Alignment padding. */
-#endif
-        /** The access flags (IEM_ACCESS_XXX).
-         * IEM_ACCESS_INVALID if the entry is unused. */
-        uint32_t            fAccess;
-#if HC_ARCH_BITS == 64
-        uint32_t            u32Alignment4; /**< Alignment padding. */
-#endif
-    } aMemMappings[3];
-
-    /** Locking records for the mapped memory. */
-    union
-    {
-        PGMPAGEMAPLOCK      Lock;
-        uint64_t            au64Padding[2];
-    } aMemMappingLocks[3];
-
-    /** Bounce buffer info.
-     * This runs in parallel to aMemMappings. */
-    struct
-    {
-        /** The physical address of the first byte. */
-        RTGCPHYS            GCPhysFirst;
-        /** The physical address of the second page. */
-        RTGCPHYS            GCPhysSecond;
-        /** The number of bytes in the first page. */
-        uint16_t            cbFirst;
-        /** The number of bytes in the second page. */
-        uint16_t            cbSecond;
-        /** Whether it's unassigned memory. */
-        bool                fUnassigned;
-        /** Explicit alignment padding. */
-        bool                afAlignment5[3];
-    } aMemBbMappings[3];
-
-    /** Bounce buffer storage.
-     * This runs in parallel to aMemMappings and aMemBbMappings. */
-    struct
-    {
-        uint8_t             ab[512];
-    } aBounceBuffers[3];
 
     /** @name Target CPU information.
      * @{ */
@@ -604,7 +604,7 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                au32Alignment6[HC_ARCH_BITS == 64 ? 1 + 10 : 1 + 4]; /**< Alignment padding. */
+    uint32_t                au32Alignment6[HC_ARCH_BITS == 64 ? 1 + 4 + 8 : 1 + 2 + 4]; /**< Alignment padding. */
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
@@ -633,17 +633,6 @@ typedef IEMCPU *PIEMCPU;
 /** Pointer to the const per-CPU IEM state. */
 typedef IEMCPU const *PCIEMCPU;
 
-/** Converts a IEMCPU pointer to a VMCPU pointer.
- * @returns VMCPU pointer.
- * @param   a_pIemCpu       The IEM per CPU instance data.
- */
-#define IEMCPU_TO_VMCPU(a_pIemCpu)  ((PVMCPU)( (uintptr_t)(a_pIemCpu) + a_pIemCpu->offVMCpu ))
-
-/** Converts a IEMCPU pointer to a VM pointer.
- * @returns VM pointer.
- * @param   a_pIemCpu       The IEM per CPU instance data.
- */
-#define IEMCPU_TO_VM(a_pIemCpu)     ((PVM)( (uintptr_t)(a_pIemCpu) + a_pIemCpu->offVM ))
 
 /** Gets the current IEMTARGETCPU value.
  * @returns IEMTARGETCPU value.
