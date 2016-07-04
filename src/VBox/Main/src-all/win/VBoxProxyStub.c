@@ -30,6 +30,7 @@
 #include <stdio.h>
 
 #include "VirtualBox.h"
+#include <VBox/cdefs.h>                 /* for VBOX_STRICT */
 #include <VBox/log.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
@@ -1701,14 +1702,15 @@ static bool vbpsCompareUuidW(PCRTUTF16 pwszUuid1, PCRTUTF16 pwszUuid2)
  */
 DECLINLINE(bool) vbpsIsTypeLibIdToRemove(PRTUTF16 pwszTypeLibId)
 {
+    AssertCompile(RT_ELEMENTS(g_apwszTypeLibIds) == 2);
 #ifdef VBOX_STRICT
     static bool s_fDoneStrict = false;
     if (s_fDoneStrict) { }
     else
     {
         Assert(RT_ELEMENTS(g_apwszTypeLibIds) == 2);
-        Assert(g_apwszTypeLibIds[0] == '{');
-        Assert(g_apwszTypeLibIds[1] == '{');
+        Assert(g_apwszTypeLibIds[0][0] == '{');
+        Assert(g_apwszTypeLibIds[1][0] == '{');
         Assert(RT_C_IS_XDIGIT(g_apwszTypeLibIds[0][1]));
         Assert(RT_C_IS_XDIGIT(g_apwszTypeLibIds[1][1]));
         Assert(RT_C_IS_UPPER(g_apwszTypeLibIds[0][1]) || RT_C_IS_DIGIT(g_apwszTypeLibIds[0][1]));
@@ -1716,7 +1718,6 @@ DECLINLINE(bool) vbpsIsTypeLibIdToRemove(PRTUTF16 pwszTypeLibId)
         s_fDoneStrict = true;
     }
 #endif
-    AssertCompile(RT_ELEMENTS(g_apwszTypeLibIds) == 2);
 
     /*
      * Rolled out matching with inlined check of the opening braces
@@ -1752,14 +1753,15 @@ DECLINLINE(bool) vbpsIsTypeLibIdToRemove(PRTUTF16 pwszTypeLibId)
  */
 DECLINLINE(bool) vbpsIsProxyStubClsIdToRemove(PRTUTF16 pwszProxyStubId)
 {
+    AssertCompile(RT_ELEMENTS(g_apwszProxyStubClsIds) == 2);
 #ifdef VBOX_STRICT
     static bool s_fDoneStrict = false;
     if (s_fDoneStrict) { }
     else
     {
         Assert(RT_ELEMENTS(g_apwszProxyStubClsIds) == 2);
-        Assert(g_apwszProxyStubClsIds[0] == '{');
-        Assert(g_apwszProxyStubClsIds[1] == '{');
+        Assert(g_apwszProxyStubClsIds[0][0] == '{');
+        Assert(g_apwszProxyStubClsIds[1][0] == '{');
         Assert(RT_C_IS_XDIGIT(g_apwszProxyStubClsIds[0][1]));
         Assert(RT_C_IS_XDIGIT(g_apwszProxyStubClsIds[1][1]));
         Assert(RT_C_IS_UPPER(g_apwszProxyStubClsIds[0][1]) || RT_C_IS_DIGIT(g_apwszProxyStubClsIds[0][1]));
@@ -1767,7 +1769,6 @@ DECLINLINE(bool) vbpsIsProxyStubClsIdToRemove(PRTUTF16 pwszProxyStubId)
         s_fDoneStrict = true;
     }
 #endif
-    AssertCompile(RT_ELEMENTS(g_apwszProxyStubClsIds) == 2);
 
     /*
      * Rolled out matching with inlined check of the opening braces
