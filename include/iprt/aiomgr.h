@@ -30,6 +30,14 @@
 #include <iprt/types.h>
 #include <iprt/sg.h>
 
+
+RT_C_DECLS_BEGIN
+
+/** @defgroup grp_rt_aiomgr RTAioMgr - Async I/O Manager.
+ * @ingroup grp_rt
+ * @{
+ */
+
 /**
  * Completion callback.
  *
@@ -41,8 +49,6 @@
 typedef DECLCALLBACK(void) FNRTAIOMGRREQCOMPLETE(RTAIOMGRFILE hAioMgrFile, int rcReq, void *pvUser);
 /** Pointer to a completion callback. */
 typedef FNRTAIOMGRREQCOMPLETE *PFNRTAIOMGRREQCOMPLETE;
-
-RT_C_DECLS_BEGIN
 
 /**
  * Create a new async I/O manager.
@@ -148,6 +154,8 @@ RTDECL(int) RTAioMgrFileWrite(RTAIOMGRFILE hAioMgrFile, RTFOFF off,
  * @param   pvUser            Opaque user data given in the completion callback.
  */
 RTDECL(int) RTAioMgrFileFlush(RTAIOMGRFILE hAioMgrFile, void *pvUser);
+
+/** @} */
 
 RT_C_DECLS_END
 
