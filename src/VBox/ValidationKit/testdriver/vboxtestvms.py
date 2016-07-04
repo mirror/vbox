@@ -906,7 +906,7 @@ class TestVmManager(object):
 
         oTestVm = TestVm(oSet, 'tst-ubuntu-15_10-64-efi', sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
                          sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
-                         asParavirtModesSup = g_ksParavirtProviderKVM);
+                         asParavirtModesSup = [g_ksParavirtProviderKVM,]);
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-nt4sp1', sHd = '4.2/nat/nt4sp1/t-nt4sp1.vdi',
