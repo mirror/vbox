@@ -2734,6 +2734,11 @@ HRESULT Machine::getSettingsFilePath(com::Utf8Str &aSettingsFilePath)
     return S_OK;
 }
 
+HRESULT Machine::getSettingsAuxFilePath(com::Utf8Str &aSettingsFilePath)
+{
+    ReturnComNotImplemented();
+}
+
 HRESULT Machine::getSettingsModified(BOOL *aSettingsModified)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

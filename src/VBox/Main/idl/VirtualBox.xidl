@@ -4362,11 +4362,11 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="95565a66-622a-4ad0-4eed-9bb83c91c5be"
+    uuid="b2547866-a0a1-4391-8b86-6952d82efaa0"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
-    reservedMethods="8" reservedAttributes="10"
+    reservedMethods="7" reservedAttributes="10"
     >
     <!-- Note! This interface is not compatible between 5.0 and 5.1 as it had too many
                methods/attributes for midl and the reservedAttributes had to be
@@ -4839,6 +4839,12 @@
     <attribute name="settingsFilePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
       <desc>
         Full name of the file containing machine settings data.
+      </desc>
+    </attribute>
+
+    <attribute name="settingsAuxFilePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
+      <desc>
+        Full name of the file containing auxiliary machine settings data.
       </desc>
     </attribute>
 
@@ -5989,7 +5995,6 @@ and "VAR" for unsetting. -->
       <desc>Device slot in the given port.</desc>
       </param>
     </method>
-
 
     <method name="unmountMedium">
       <desc>

@@ -931,6 +931,7 @@ private:
     HRESULT getAudioAdapter(ComPtr<IAudioAdapter> &aAudioAdapter);
     HRESULT getStorageControllers(std::vector<ComPtr<IStorageController> > &aStorageControllers);
     HRESULT getSettingsFilePath(com::Utf8Str &aSettingsFilePath);
+    HRESULT getSettingsAuxFilePath(com::Utf8Str &aSettingsAuxFilePath);
     HRESULT getSettingsModified(BOOL *aSettingsModified);
     HRESULT getSessionState(SessionState_T *aSessionState);
     HRESULT getSessionType(SessionType_T *aSessionType);
