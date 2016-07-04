@@ -2343,7 +2343,7 @@ static RTEXITCODE vbcppMacroExpandDefinedOperator(PVBCPP pThis, PVBCPPMACROEXP p
     while ((ch = vbcppMacroExpandGetCh(pExp, poff)) != ~(unsigned)0)
         if (!vbcppIsCIdentifierChar(ch))
             break;
-    size_t const cchDefine = *poff - offDefine;
+    size_t const cchDefine = *poff - offDefine - 1;
 
     /*
      * Check for closing parenthesis.
