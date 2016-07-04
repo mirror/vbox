@@ -611,6 +611,11 @@ typedef struct ISCSIIMAGE
     unsigned            cCmdsWaiting;
     /** Table of commands waiting for a response from the target. */
     PISCSICMD           aCmdsWaiting[ISCSI_CMD_WAITING_ENTRIES];
+    /** Number of logins since last successful I/O.
+     * Used to catch the case where logging succeeds but
+     * processing read/write/flushes cause a disconnect.
+     */
+    volatile uint32_t   cLoginsSinceIo;
 
     /** Release log counter. */
     unsigned            cLogRelErrors;
@@ -1261,6 +1266,13 @@ static DECLCALLBACK(int) iscsiAttach(void *pvUser)
 
     Assert(pImage->state == ISCSISTATE_FREE);
 
+    /*
+     * If there were too many logins without any successful I/O just fail
+     * and assume the target is not working properly.
+     */
+    if (ASMAtomicReadU32(&pImage->cLoginsSinceIo) == 3)
+        return VERR_BROKEN_PIPE;
+
     RTSemMutexRequest(pImage->Mutex, RT_INDEFINITE_WAIT);
 
     /* Make 100% sure the connection isn't reused for a new login. */
@@ -1712,6 +1724,9 @@ out:
     else
         pImage->state = ISCSISTATE_NORMAL;
 
+    if (RT_SUCCESS(rc))
+        ASMAtomicIncU32(&pImage->cLoginsSinceIo);
+
     RTSemMutexRelease(pImage->Mutex);
 
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -2039,6 +2054,8 @@ out_release:
     RTSemMutexRelease(pImage->Mutex);
 
 out:
+    if (RT_SUCCESS(rc))
+        ASMAtomicWriteU32(&pImage->cLoginsSinceIo, 0);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -3282,22 +3299,17 @@ static void iscsiCmdComplete(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd, int rcCmd)
 }
 
 /**
- * Reattaches the to the target after an error aborting
- * pending commands and resending them.
+ * Clears all RX/TX PDU states and returns the command for the current
+ * pending TX PDU if existing.
  *
- * @param    pImage    iSCSI connection state.
+ * @returns Pointer to the iSCSI command for the current PDU transmitted or NULL
+ *          if none is waiting.
+ * @param   pImage    iSCSI connection state.
  */
-static void iscsiReattach(PISCSIIMAGE pImage)
+static PISCSICMD iscsiPDURxTxClear(PISCSIIMAGE pImage)
 {
-    int rc = VINF_SUCCESS;
     PISCSICMD pIScsiCmdHead = NULL;
-    PISCSICMD pIScsiCmd = NULL;
-    PISCSICMD pIScsiCmdCur = NULL;
     PISCSIPDUTX pIScsiPDUTx = NULL;
-
-    /* Close connection. */
-    iscsiTransportClose(pImage);
-    pImage->state = ISCSISTATE_FREE;
 
     /* Reset PDU we are receiving. */
     iscsiRecvPDUReset(pImage);
@@ -3311,8 +3323,7 @@ static void iscsiReattach(PISCSIIMAGE pImage)
         pIScsiPDUTx = pImage->pIScsiPDUTxHead;
         pImage->pIScsiPDUTxHead = pIScsiPDUTx->pNext;
 
-        pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
-
+        PISCSICMD pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
         if (pIScsiCmd)
         {
             /* Place on command list. */
@@ -3331,8 +3342,7 @@ static void iscsiReattach(PISCSIIMAGE pImage)
         pIScsiPDUTx = pImage->pIScsiPDUTxCur;
 
         pImage->pIScsiPDUTxCur = NULL;
-        pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
-
+        PISCSICMD pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
         if (pIScsiCmd)
         {
             pIScsiCmd->pNext = pIScsiCmdHead;
@@ -3341,12 +3351,29 @@ static void iscsiReattach(PISCSIIMAGE pImage)
         RTMemFree(pIScsiPDUTx);
     }
 
+    return pIScsiCmdHead;
+}
+
+/**
+ * Rests the iSCSI connection state and returns a list of iSCSI commands pending
+ * when this was called.
+ *
+ * @returns Pointer to the head of the pending iSCSI command list.
+ * @param   pImage    iSCSI connection state.
+ */
+static PISCSICMD iscsiReset(PISCSIIMAGE pImage)
+{
+    PISCSICMD pIScsiCmdHead = NULL;
+    PISCSICMD pIScsiCmdCur = NULL;
+
+    /* Clear all in flight PDUs. */
+    pIScsiCmdHead = iscsiPDURxTxClear(pImage);
+
     /*
      * Get all commands which are waiting for a response
      * They need to be resend too after a successful reconnect.
      */
-    pIScsiCmd = iscsiCmdRemoveAll(pImage);
-
+    PISCSICMD pIScsiCmd = iscsiCmdRemoveAll(pImage);
     if (pIScsiCmd)
     {
         pIScsiCmdCur = pIScsiCmd;
@@ -3361,8 +3388,26 @@ static void iscsiReattach(PISCSIIMAGE pImage)
         pIScsiCmdHead = pIScsiCmd;
     }
 
+    return pIScsiCmdHead;
+}
+
+/**
+ * Reattaches the to the target after an error aborting
+ * pending commands and resending them.
+ *
+ * @param    pImage    iSCSI connection state.
+ */
+static void iscsiReattach(PISCSIIMAGE pImage)
+{
+    /* Close connection. */
+    iscsiTransportClose(pImage);
+    pImage->state = ISCSISTATE_FREE;
+
+    /* Reset the state and get the currently pending commands. */
+    PISCSICMD pIScsiCmdHead = iscsiReset(pImage);
+
     /* Try to attach. */
-    rc = iscsiAttach(pImage);
+    int rc = iscsiAttach(pImage);
     if (RT_SUCCESS(rc))
     {
         /* Phew, we have a connection again.
@@ -3370,16 +3415,35 @@ static void iscsiReattach(PISCSIIMAGE pImage)
          */
         while (pIScsiCmdHead)
         {
-            pIScsiCmd = pIScsiCmdHead;
+            PISCSICMD pIScsiCmd = pIScsiCmdHead;
             pIScsiCmdHead = pIScsiCmdHead->pNext;
 
             pIScsiCmd->pNext = NULL;
 
             rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
-            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            /* Another error, just give up and report an error. */
+            PISCSICMD pIScsiCmd = iscsiReset(pImage);
+
+            /* Concatenate both lists together so we can abort all requests below. */
+            if (pIScsiCmd)
+            {
+                PISCSICMD pIScsiCmdCur = pIScsiCmd;
+                while (pIScsiCmdCur->pNext)
+                    pIScsiCmdCur = pIScsiCmdCur->pNext;
+
+                pIScsiCmdCur->pNext = pIScsiCmdHead;
+                pIScsiCmdHead = pIScsiCmd;
+            }
         }
     }
-    else
+
+    if (RT_FAILURE(rc))
     {
         /*
          * Still no luck, complete commands with error so the caller
@@ -3387,7 +3451,7 @@ static void iscsiReattach(PISCSIIMAGE pImage)
          */
         while (pIScsiCmdHead)
         {
-            pIScsiCmd = pIScsiCmdHead;
+            PISCSICMD pIScsiCmd = pIScsiCmdHead;
             pIScsiCmdHead = pIScsiCmdHead->pNext;
 
             iscsiCmdComplete(pImage, pIScsiCmd, VERR_BROKEN_PIPE);
@@ -3450,7 +3514,8 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                         if (RT_LIKELY(iscsiIsClientConnected(pImage)))
                         {
                             rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
-                            AssertRC(rc);
+                            if (RT_FAILURE(rc))
+                                iscsiReattach(pImage);
                         }
                         else
                             iscsiCmdComplete(pImage, pIScsiCmd, VERR_NET_CONNECTION_REFUSED);
@@ -3698,6 +3763,9 @@ static DECLCALLBACK(void) iscsiCommandAsyncComplete(PISCSIIMAGE pImage, int rcRe
     size_t cbTransfered = 0;
     PSCSIREQ pScsiReq = (PSCSIREQ)pvUser;
 
+    if (RT_SUCCESS(rcReq))
+        ASMAtomicWriteU32(&pImage->cLoginsSinceIo, 0);
+
     if (   RT_SUCCESS(rcReq)
         && pScsiReq->cbSense > 0)
     {
@@ -3893,6 +3961,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     pImage->ISID            = 0x800000000000ULL | 0x001234560000ULL;
     pImage->cISCSIRetries   = 10;
     pImage->state           = ISCSISTATE_FREE;
+    pImage->cLoginsSinceIo  = 0;
     pImage->pvRecvPDUBuf    = RTMemAlloc(ISCSI_RECV_PDU_BUFFER_SIZE);
     pImage->cbRecvPDUBuf    = ISCSI_RECV_PDU_BUFFER_SIZE;
     if (pImage->pvRecvPDUBuf == NULL)
