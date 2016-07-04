@@ -608,8 +608,8 @@ void UIMiniToolBar::sltShow()
     /* Show window in necessary mode: */
     switch (m_geometryType)
     {
-        case GeometryType_Available: return show();
-        case GeometryType_Full:      return showFullScreen();
+        case GeometryType_Available: show(); break;
+        case GeometryType_Full:      showFullScreen(); break;
     }
 
 #elif defined(VBOX_WS_X11)
@@ -617,8 +617,8 @@ void UIMiniToolBar::sltShow()
     /* Show window in necessary mode: */
     switch (m_geometryType)
     {
-        case GeometryType_Available: return show();
-        case GeometryType_Full:      return showFullScreen();
+        case GeometryType_Available: show(); break;
+        case GeometryType_Full:      showFullScreen(); break;
     }
     /* Adjust window: */
     sltAdjust();
