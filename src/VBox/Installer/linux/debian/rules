@@ -306,6 +306,8 @@ endif
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    usr/bin/VBox                        usr/bin/vboxheadless \
+	    usr/bin/VBox                        usr/bin/VBoxBugReport \
+	    usr/bin/VBox                        usr/bin/vboxbugreport \
 	    usr/bin/VBox                        usr/bin/VBoxBalloonCtrl \
 	    usr/bin/VBox                        usr/bin/vboxballoonctrl \
 	    usr/bin/VBox                        usr/bin/VBoxAutostart \

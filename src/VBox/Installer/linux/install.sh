@@ -107,6 +107,7 @@ check_previous() {
     check_binary "/usr/bin/VBoxVRDP" "$install_dir" &&
     check_binary "/usr/bin/VBoxHeadless" "$install_dir" &&
     check_binary "/usr/bin/VBoxDTrace" "$install_dir" &&
+    check_binary "/usr/bin/VBoxBugReport" "$install_dir" &&
     check_binary "/usr/bin/VBoxBalloonCtrl" "$install_dir" &&
     check_binary "/usr/bin/VBoxAutostart" "$install_dir" &&
     check_binary "/usr/bin/vboxwebsrv" "$install_dir" &&
@@ -303,6 +304,7 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxVRDP
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxHeadless
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBalloonCtrl
+    ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxBugReport
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxAutostart
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
     ln -sf $INSTALLATION_DIR/vbox-img /usr/bin/vbox-img
@@ -322,6 +324,7 @@ if [ "$ACTION" = "install" ]; then
     ln -sf VBoxManage /usr/bin/vboxmanage > /dev/null 2>&1
     ln -sf VBoxSDL /usr/bin/vboxsdl > /dev/null 2>&1
     ln -sf VBoxHeadless /usr/bin/vboxheadless > /dev/null 2>&1
+    ln -sf VBoxBugReport /usr/bin/vboxbugreport > /dev/null 2>&1
     if [ -f $INSTALLATION_DIR/VBoxDTrace ]; then
         ln -sf VBoxDTrace /usr/bin/vboxdtrace > /dev/null 2>&1
     fi

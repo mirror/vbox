@@ -514,6 +514,7 @@ SOLARIS_STRIP_BINS += \
 
 SOLARIS_STRIP_EXES += \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless) \
+	VBoxBugReport \
 	VBoxBalloonCtrl \
 	VBoxAutostart \
 	$(if $(VBOX_WITH_WEBSERVICES),vboxwebsrv) \

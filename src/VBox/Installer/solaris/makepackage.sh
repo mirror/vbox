@@ -122,6 +122,7 @@ create_hardlink VBoxAutostart
 create_hardlink vboxwebsrv
 create_hardlink VBoxZoneAccess
 create_hardlink VBoxSVC
+create_hardlink VBoxBugReport
 create_hardlink VBoxBalloonCtrl
 create_hardlink VBoxTestOGL
 create_hardlink VirtualBox

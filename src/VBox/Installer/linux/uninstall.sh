@@ -77,6 +77,7 @@ rm -f \
   /usr/bin/VBoxVRDP \
   /usr/bin/VBoxHeadless \
   /usr/bin/VBoxDTrace \
+  /usr/bin/VBoxBugReport \
   /usr/bin/VBoxBalloonCtrl \
   /usr/bin/VBoxAutostart \
   /usr/bin/VBoxNetDHCP \
@@ -97,6 +98,7 @@ rm -f \
   /usr/bin/vboxsdl \
   /usr/bin/vboxheadless \
   /usr/bin/vboxdtrace \
+  /usr/bin/vboxbugreport \
   $PREV_INSTALLATION/components/VBoxVMM.so \
   $PREV_INSTALLATION/components/VBoxREM.so \
   $PREV_INSTALLATION/components/VBoxRT.so \

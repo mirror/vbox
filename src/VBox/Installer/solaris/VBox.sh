@@ -36,6 +36,9 @@ case "$APP" in
     VBoxVRDP|VBoxHeadless|vboxheadless)
         exec "$INSTALL_DIR/VBoxHeadless" "$@"
         ;;
+    VBoxBugReport|vboxbugreport)
+        exec "$INSTALL_DIR/VBoxBugReport" "$@"
+        ;;
     VBoxBalloonCtrl|vboxballoonctrl)
         exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
         ;;

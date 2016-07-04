@@ -145,6 +145,8 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxheadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxDTrace
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxdtrace
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBugReport
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxbugreport
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBalloonCtrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxballoonctrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAutostart

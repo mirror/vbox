@@ -125,6 +125,9 @@ case "$APP" in
     VBoxBalloonCtrl|vboxballoonctrl)
         exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
         ;;
+    VBoxBugReport|vboxbugreport)
+        exec "$INSTALL_DIR/VBoxBugReport" "$@"
+        ;;
     VBoxDTrace|vboxdtrace)
         exec "$INSTALL_DIR/VBoxDTrace" "$@"
         ;;
