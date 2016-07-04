@@ -694,7 +694,8 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
             /*
              * The device is flip-flopping the interrupt line, which implies we should de-assert
              * and assert the interrupt line. The interrupt line is left in the asserted state
-             * after a flip-flop request.
+             * after a flip-flop request. The de-assert is a NOP wrts to signaling an interrupt
+             * hence just the assert is done.
              */
             IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
         }
