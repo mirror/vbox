@@ -27,6 +27,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include "../include/IEMInternal.h"
+#include <VBox/vmm/vm.h>
 
 
 /*********************************************************************************************************************************
@@ -72,17 +73,17 @@ uint128_t           g_u128Zero;
 /** @name Other stubs.
  * @{   */
 
-typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
+typedef VBOXSTRICTRC (* PFNIEMOP)(PVMCPU pVCpu);
 #define FNIEMOP_DEF(a_Name) \
-    static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu) RT_NO_THROW_DEF
+    static VBOXSTRICTRC a_Name(PVMCPU pVCpu) RT_NO_THROW_DEF
 #define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
-    static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0) RT_NO_THROW_DEF
+    static VBOXSTRICTRC a_Name(PVMCPU pVCpu, a_Type0 a_Name0) RT_NO_THROW_DEF
 #define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
-    static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW_DEF
+    static VBOXSTRICTRC a_Name(PVMCPU pVCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW_DEF
 
-typedef VBOXSTRICTRC (* PFNIEMOPRM)(PIEMCPU pIemCpu, uint8_t bRm);
+typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define FNIEMOPRM_DEF(a_Name) \
-    static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, uint8_t bRm) RT_NO_THROW_DEF
+    static VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint8_t bRm) RT_NO_THROW_DEF
 
 #define IEM_NOT_REACHED_DEFAULT_CASE_RET()                  default: return VERR_IPE_NOT_REACHED_DEFAULT_CASE
 #define IEM_RETURN_ASPECT_NOT_IMPLEMENTED()                 return IEM_RETURN_ASPECT_NOT_IMPLEMENTED
@@ -143,19 +144,19 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PIEMCPU pIemCpu, uint8_t bRm);
     typedef int ignore_semicolon
 
 
-#define FNIEMOP_CALL(a_pfn)                                 (a_pfn)(pIemCpu)
-#define FNIEMOP_CALL_1(a_pfn, a0)                           (a_pfn)(pIemCpu, a0)
-#define FNIEMOP_CALL_2(a_pfn, a0, a1)                       (a_pfn)(pIemCpu, a0, a1)
+#define FNIEMOP_CALL(a_pfn)                                 (a_pfn)(pVCpu)
+#define FNIEMOP_CALL_1(a_pfn, a0)                           (a_pfn)(pVCpu, a0)
+#define FNIEMOP_CALL_2(a_pfn, a0, a1)                       (a_pfn)(pVCpu, a0, a1)
 
-#define IEM_IS_REAL_OR_V86_MODE(a_pIemCpu)                  (g_fRandom)
-#define IEM_IS_LONG_MODE(a_pIemCpu)                         (g_fRandom)
-#define IEM_IS_REAL_MODE(a_pIemCpu)                         (g_fRandom)
-#define IEM_IS_GUEST_CPU_AMD(a_pIemCpu)                     (g_fRandom)
-#define IEM_IS_GUEST_CPU_INTEL(a_pIemCpu)                   (g_fRandom)
-#define IEM_GET_GUEST_CPU_FEATURES(a_pIemCpu)               ((PCCPUMFEATURES)(uintptr_t)42)
-#define IEM_GET_HOST_CPU_FEATURES(a_pIemCpu)                ((PCCPUMFEATURES)(uintptr_t)88)
+#define IEM_IS_REAL_OR_V86_MODE(a_pVCpu)                    (g_fRandom)
+#define IEM_IS_LONG_MODE(a_pVCpu)                           (g_fRandom)
+#define IEM_IS_REAL_MODE(a_pVCpu)                           (g_fRandom)
+#define IEM_IS_GUEST_CPU_AMD(a_pVCpu)                       (g_fRandom)
+#define IEM_IS_GUEST_CPU_INTEL(a_pVCpu)                     (g_fRandom)
+#define IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)                 ((PCCPUMFEATURES)(uintptr_t)42)
+#define IEM_GET_HOST_CPU_FEATURES(a_pVCpu)                  ((PCCPUMFEATURES)(uintptr_t)88)
 
-#define iemRecalEffOpSize(a_pIemCpu)                        do { } while (0)
+#define iemRecalEffOpSize(a_pVCpu)                          do { } while (0)
 
 IEMOPBINSIZES g_iemAImpl_add;
 IEMOPBINSIZES g_iemAImpl_adc;

@@ -85,6 +85,8 @@ typedef RCPTRTYPE(struct VM *)      PVMRC;
 
 /** Pointer to a virtual CPU structure. */
 typedef struct VMCPU *              PVMCPU;
+/** Pointer to a const virtual CPU structure. */
+typedef const struct VMCPU *        PCVMCPU;
 /** Pointer to a virtual CPU structure - Ring-3 Ptr. */
 typedef R3PTRTYPE(struct VMCPU *)   PVMCPUR3;
 /** Pointer to a virtual CPU structure - Ring-0 Ptr. */
