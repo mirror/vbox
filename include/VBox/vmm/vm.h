@@ -122,8 +122,7 @@ typedef struct VMCPU
      * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
     uint32_t volatile       iHostCpuSet;                            /* 60 / 40 */
 
-    /** Trace groups enable flags.  */
-    uint32_t                fTraceGroups;                           /* 64 / 44 */
+#if HC_ARCH_BITS == 32
     /** Align the structures below bit on a 64-byte boundary and make sure it starts
      * at the same offset in both 64-bit and 32-bit builds.
      *
@@ -132,11 +131,19 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 56 : 12+64];
-    /** State data for use by ad hoc profiling. */
-    uint32_t                uAdHoc;
-    /** Profiling samples for use by ad hoc profiling. */
-    STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 0 : 20];
+#endif
+
+    /** IEM part.
+     * @remarks This comes first as it allows the use of 8-bit immediates for the
+     *          first 64 bytes of the structure, reducing code size a wee bit. */
+    union
+    {
+#ifdef ___IEMInternal_h
+        struct IEMCPU       s;
+#endif
+        uint8_t             padding[18432];     /* multiple of 64 */
+    } iem;
 
     /** HM part. */
     union
@@ -155,15 +162,6 @@ typedef struct VMCPU
 #endif
         uint8_t             padding[1408];      /* multiple of 64 */
     } em;
-
-    /** IEM part. */
-    union
-    {
-#ifdef ___IEMInternal_h
-        struct IEMCPU       s;
-#endif
-        uint8_t             padding[3072];      /* multiple of 64 */
-    } iem;
 
     /** TRPM part. */
     union
@@ -229,23 +227,29 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } gim;
 
-#ifdef VBOX_WITH_NEW_APIC
     /** APIC part. */
     union
     {
-# ifdef ___APICInternal_h
+#ifdef ___APICInternal_h
         struct APICCPU      s;
-# endif
+#endif
         uint8_t             padding[768];      /* multiple of 64 */
     } apic;
-#endif
+
+    /*
+     * Some less frequently used global members that doesn't need to take up
+     * precious space at the head of the structure.
+     */
+
+    /** Trace groups enable flags.  */
+    uint32_t                fTraceGroups;                           /* 64 / 44 */
+    /** State data for use by ad hoc profiling. */
+    uint32_t                uAdHoc;
+    /** Profiling samples for use by ad hoc profiling. */
+    STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-#ifdef VBOX_WITH_NEW_APIC
-    uint8_t                 abAlignment2[2624];
-#else
-    uint8_t                 abAlignment2[3392];
-#endif
+    uint8_t                 abAlignment2[3704];
 
     /** PGM part. */
     union
@@ -1152,24 +1156,6 @@ typedef struct VM
         uint8_t     padding[896];       /* multiple of 64 */
     } iom;
 
-    /** PATM part. */
-    union
-    {
-#ifdef ___PATMInternal_h
-        struct PATM s;
-#endif
-        uint8_t     padding[768];       /* multiple of 64 */
-    } patm;
-
-    /** CSAM part. */
-    union
-    {
-#ifdef ___CSAMInternal_h
-        struct CSAM s;
-#endif
-        uint8_t     padding[1088];      /* multiple of 64 */
-    } csam;
-
     /** EM part. */
     union
     {
@@ -1235,14 +1221,34 @@ typedef struct VM
         uint8_t     padding[512];       /* multiple of 64 */
     } ftm;
 
+//#ifdef VBOX_WITH_REM
+    /** PATM part. */
+    union
+    {
+# ifdef ___PATMInternal_h
+        struct PATM s;
+# endif
+        uint8_t     padding[768];       /* multiple of 64 */
+    } patm;
+
+    /** CSAM part. */
+    union
+    {
+# ifdef ___CSAMInternal_h
+        struct CSAM s;
+# endif
+        uint8_t     padding[1088];      /* multiple of 64 */
+    } csam;
+
     /** REM part. */
     union
     {
-#ifdef ___REMInternal_h
+# ifdef ___REMInternal_h
         struct REM  s;
-#endif
+# endif
         uint8_t     padding[0x11100];   /* multiple of 64 */
     } rem;
+//#endif
 
     union
     {
@@ -1251,6 +1257,14 @@ typedef struct VM
 #endif
         uint8_t     padding[448];       /* multiple of 64 */
     } gim;
+
+    union
+    {
+#ifdef ___APICInternal_h
+        struct APIC s;
+#endif
+        uint8_t     padding[128];       /* multiple of 8 */
+    } apic;
 
     /* ---- begin small stuff ---- */
 
@@ -1272,22 +1286,12 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-#ifdef VBOX_WITH_NEW_APIC
-    union
-    {
-# ifdef ___APICInternal_h
-        struct APIC s;
-# endif
-        uint8_t     padding[128];       /* multiple of 8 */
-    } apic;
-#endif
-
     /** Padding for aligning the cpu array on a page boundary. */
-#ifdef VBOX_WITH_NEW_APIC
+//#ifdef VBOX_WITH_REM
     uint8_t         abAlignment2[3870];
-#else
-    uint8_t         abAlignment2[3998];
-#endif
+//#else
+//    uint8_t         abAlignment2[3870 + 1984];
+//#endif
 
     /* ---- end small stuff ---- */
 

@@ -375,6 +375,8 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 
 /**
  * The per-CPU IEM state.
+ *
+ * @todo Re-org so most frequently accessed members are in the first 64 bytes.
  */
 typedef struct IEMCPU
 {
@@ -590,7 +592,14 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                u32Alignment6; /**< Alignment padding. */
+    uint32_t                au32Alignment6[HC_ARCH_BITS == 64 ? 1 + 10 : 1 + 4]; /**< Alignment padding. */
+
+    /** Data TLB.
+     * @remarks Must be 64-byte aligned. */
+    IEMTLB                  DataTlb;
+    /** Instruction TLB.
+     * @remarks Must be 64-byte aligned. */
+    IEMTLB                  CodeTlb;
 
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The event verification records for what IEM did (LIFO). */
@@ -605,6 +614,8 @@ typedef struct IEMCPU
     R3PTRTYPE(PIEMVERIFYEVTREC)     pFreeEvtRec;
 #endif
 } IEMCPU;
+AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
+AssertCompileMemberAlignment(IEMCPU, CodeTlb, 64);
 /** Pointer to the per-CPU IEM state. */
 typedef IEMCPU *PIEMCPU;
 /** Pointer to the const per-CPU IEM state. */

@@ -240,10 +240,9 @@ int main()
 #endif
 
     PRINT_OFFSET(VMCPU, cpum);
-    CHECK_PADDING_VMCPU(64, cpum);
+    CHECK_PADDING_VMCPU(64, iem);
     CHECK_PADDING_VMCPU(64, hm);
     CHECK_PADDING_VMCPU(64, em);
-    CHECK_PADDING_VMCPU(64, iem);
     CHECK_PADDING_VMCPU(64, trpm);
     CHECK_PADDING_VMCPU(64, tm);
     CHECK_PADDING_VMCPU(64, vmm);
@@ -251,14 +250,10 @@ int main()
     CHECK_PADDING_VMCPU(64, iom);
     CHECK_PADDING_VMCPU(64, dbgf);
     CHECK_PADDING_VMCPU(64, gim);
-#ifdef VBOX_WITH_NEW_APIC
     CHECK_PADDING_VMCPU(64, apic);
-#endif
-#if 0
-    PRINT_OFFSET(VMCPU, abAlignment2);
-#endif
     PRINT_OFFSET(VMCPU, pgm);
     CHECK_PADDING_VMCPU(4096, pgm);
+    CHECK_PADDING_VMCPU(4096, cpum);
 #ifdef VBOX_WITH_STATISTICS
     PRINT_OFFSET(VMCPU, pgm.s.pStatTrap0eAttributionRC);
 #endif
@@ -289,6 +284,9 @@ int main()
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.pvApicBase, 8);
 #endif
+
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].iem.s.DataTlb, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].iem.s.CodeTlb, 64);
 
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.u64CallRing3Arg, 8);
 #if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
