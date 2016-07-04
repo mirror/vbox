@@ -319,6 +319,18 @@ typedef struct IEMTLBENTRY
 } IEMTLBENTRY;
 AssertCompileSize(IEMTLBENTRY, 32);
 
+/** @name IEMTLBE_F_XXX - TLB entry flags (IEMTLBENTRY::fFlagsAndPhysRev)
+ * @{  */
+#define IEMTLBE_F_PT_NO_EXEC        RT_BIT_64(0) /**< Page tables: Not executable. */
+#define IEMTLBE_F_PT_NO_WRITE       RT_BIT_64(1) /**< Page tables: Not writable. */
+#define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
+#define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
+#define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
+#define IEMTLBE_F_UNUSED            RT_BIT_64(5) /**< Currently unused. */
+#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
+#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
+/** @} */
+
 
 /**
  * An IEM TLB.

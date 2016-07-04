@@ -4488,6 +4488,23 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
     return rcStrict;
 }
 
+#ifdef IEM_WITH_SETJMP
+/**
+ * See iemRaiseXcptOrInt.  Will not return.
+ */
+IEM_STATIC DECL_NO_RETURN(void)
+iemRaiseXcptOrIntJmp(PIEMCPU     pIemCpu,
+                     uint8_t     cbInstr,
+                     uint8_t     u8Vector,
+                     uint32_t    fFlags,
+                     uint16_t    uErr,
+                     uint64_t    uCr2)
+{
+    VBOXSTRICTRC rcStrict = iemRaiseXcptOrInt(pIemCpu, cbInstr, u8Vector, fFlags, uErr, uCr2);
+    longjmp(*pIemCpu->CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+}
+#endif
+
 
 /** \#DE - 00.  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseDivideError(PIEMCPU pIemCpu)
@@ -4602,6 +4619,14 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseGeneralProtectionFault0(PIEMCPU
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
 
+#ifdef IEM_WITH_SETJMP
+/** \#GP(0) - 0d.  */
+DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseGeneralProtectionFault0Jmp(PIEMCPU pIemCpu)
+{
+    iemRaiseXcptOrIntJmp(pIemCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
+}
+#endif
+
 
 /** \#GP(sel) - 0d.  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseGeneralProtectionFaultBySelector(PIEMCPU pIemCpu, RTSEL Sel)
@@ -4626,6 +4651,15 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorBounds(PIEMCPU pIemCpu,
                              IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
 
+#ifdef IEM_WITH_SETJMP
+/** \#GP(sel) - 0d, longjmp.  */
+DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseSelectorBoundsJmp(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess)
+{
+    NOREF(iSegReg); NOREF(fAccess);
+    iemRaiseXcptOrIntJmp(pIemCpu, 0, iSegReg == X86_SREG_SS ? X86_XCPT_SS : X86_XCPT_GP,
+                         IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
+}
+#endif
 
 /** \#GP(sel) - 0d.  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorBoundsBySelector(PIEMCPU pIemCpu, RTSEL Sel)
@@ -4634,6 +4668,15 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorBoundsBySelector(PIEMCP
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
 
+#ifdef IEM_WITH_SETJMP
+/** \#GP(sel) - 0d, longjmp.  */
+DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseSelectorBoundsBySelectorJmp(PIEMCPU pIemCpu, RTSEL Sel)
+{
+    NOREF(Sel);
+    iemRaiseXcptOrIntJmp(pIemCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
+}
+#endif
+
 
 /** \#GP(sel) - 0d.  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorInvalidAccess(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess)
@@ -4641,6 +4684,16 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorInvalidAccess(PIEMCPU p
     NOREF(iSegReg); NOREF(fAccess);
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
+
+#ifdef IEM_WITH_SETJMP
+/** \#GP(sel) - 0d, longjmp.  */
+DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseSelectorInvalidAccessJmp(PIEMCPU pIemCpu, uint32_t iSegReg,
+                                                                                  uint32_t fAccess)
+{
+    NOREF(iSegReg); NOREF(fAccess);
+    iemRaiseXcptOrIntJmp(pIemCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
+}
+#endif
 
 
 /** \#PF(n) - 0e.  */
@@ -4946,20 +4999,19 @@ IEM_STATIC void iemOpStubMsg2(PIEMCPU pIemCpu)
 IEM_STATIC PCPUMSELREG iemSRegGetHid(PIEMCPU pIemCpu, uint8_t iSegReg)
 {
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
-    PCPUMSELREG pSReg;
-    switch (iSegReg)
-    {
-        case X86_SREG_ES: pSReg = &pCtx->es; break;
-        case X86_SREG_CS: pSReg = &pCtx->cs; break;
-        case X86_SREG_SS: pSReg = &pCtx->ss; break;
-        case X86_SREG_DS: pSReg = &pCtx->ds; break;
-        case X86_SREG_FS: pSReg = &pCtx->fs; break;
-        case X86_SREG_GS: pSReg = &pCtx->gs; break;
-        default:
-            AssertFailedReturn(NULL);
-    }
+
+    Assert(iSegReg < X86_SREG_COUNT);
+    AssertCompileAdjacentMembers(CPUMCTX, es, cs);
+    AssertCompileAdjacentMembers(CPUMCTX, cs, ss);
+    AssertCompileAdjacentMembers(CPUMCTX, ss, ds);
+    AssertCompileAdjacentMembers(CPUMCTX, ds, fs);
+    AssertCompileAdjacentMembers(CPUMCTX, fs, gs);
+    PCPUMSELREG pSReg = &pCtx->es + iSegReg;
+
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg))
+    if (RT_LIKELY(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg)))
+    { /* likely */ }
+    else
         CPUMGuestLazyLoadHiddenSelectorReg(IEMCPU_TO_VMCPU(pIemCpu), pSReg);
 #else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pSReg));
@@ -7987,6 +8039,79 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU32(PIEMCPU pIemCpu, uint32_t *pu32Dst, u
 
 
 #ifdef IEM_WITH_SETJMP
+
+IEM_STATIC RTGCPTR iemMemApplySegmentToReadJmp(PIEMCPU pIemCpu, uint8_t iSegReg, size_t cbMem, RTGCPTR GCPtrMem)
+{
+    Assert(cbMem >= 1);
+    Assert(iSegReg < X86_SREG_COUNT);
+
+    /*
+     * 64-bit mode is simpler.
+     */
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+    {
+        if (iSegReg >= X86_SREG_FS)
+        {
+            PCPUMSELREGHID pSel = iemSRegGetHid(pIemCpu, iSegReg);
+            GCPtrMem += pSel->u64Base;
+        }
+
+        if (RT_LIKELY(X86_IS_CANONICAL(GCPtrMem) && X86_IS_CANONICAL(GCPtrMem + cbMem - 1)))
+            return GCPtrMem;
+    }
+    /*
+     * 16-bit and 32-bit segmentation.
+     */
+    else
+    {
+        PCPUMSELREGHID pSel   = iemSRegGetHid(pIemCpu, iSegReg);
+        if (      (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
+               == X86DESCATTR_P /* data, expand up */
+            ||    (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ))
+               == (X86DESCATTR_P | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ) /* code, read-only */ )
+        {
+            /* expand up */
+            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
+            if (RT_LIKELY(   GCPtrLast32 > pSel->u32Limit
+                          && GCPtrLast32 > (uint32_t)GCPtrMem))
+                return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+        }
+        else if (   (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
+                 == (X86DESCATTR_P | X86_SEL_TYPE_DOWN) /* data, expand down */ )
+        {
+            /* expand down */
+            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
+            if (RT_LIKELY(   (uint32_t)GCPtrMem >  pSel->u32Limit
+                          && GCPtrLast32        <= (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff))
+                          && GCPtrLast32 > (uint32_t)GCPtrMem))
+                return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+        }
+        else
+            iemRaiseSelectorInvalidAccessJmp(pIemCpu, iSegReg, IEM_ACCESS_DATA_R);
+        iemRaiseSelectorBoundsJmp(pIemCpu, iSegReg, IEM_ACCESS_DATA_R);
+    }
+    iemRaiseGeneralProtectionFault0Jmp(pIemCpu);
+}
+
+
+/**
+ * Fetches a data dword, longjmp on error, fallback/safe version.
+ *
+ * @returns The dword
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+IEM_STATIC uint32_t iemMemFetchDataU32SafeJmp(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pIemCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    uint32_t const  u32Ret  = *pu32Src;
+    iemMemCommitAndUnmapJmp(pIemCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+    return u32Ret;
+}
+
+
 /**
  * Fetches a data dword, longjmp on error.
  *
@@ -7998,11 +8123,21 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU32(PIEMCPU pIemCpu, uint32_t *pu32Dst, u
  */
 DECL_NO_INLINE(IEM_STATIC, uint32_t) iemMemFetchDataU32Jmp(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
-    /* The lazy approach for now... */
+# ifdef IEM_WITH_DATA_TLB
+    RTGCPTR GCPtrEff = iemMemApplySegmentToReadJmp(pIemCpu, iSegReg, sizeof(uint32_t), GCPtrMem);
+    if (RT_LIKELY((GCPtrEff & X86_PAGE_OFFSET_MASK) <= X86_PAGE_SIZE - sizeof(uint32_t)))
+    {
+        /// @todo more later.
+    }
+
+    return iemMemFetchDataU32SafeJmp(pIemCpu, iSegReg, GCPtrMem);
+# else
+    /* The lazy approach. */
     uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pIemCpu, sizeof(*pu32Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
     uint32_t const  u32Ret  = *pu32Src;
     iemMemCommitAndUnmapJmp(pIemCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
     return u32Ret;
+# endif
 }
 #endif
 
