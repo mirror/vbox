@@ -911,7 +911,7 @@ class RemoteReporter(ReporterBase):
 
     def _xmlWrite(self, asText, fIndent = True):
         """XML output function for the reporter."""
-        self._writeOutput('xml-debug/%s: %s' % (len(self._asXml, asText))); # temporarily while debugging flush/poll problem.
+        self._writeOutput('xml-debug/%s: %s' % (len(self._asXml), asText)); # temporarily while debugging flush/poll problem.
         self._asXml += asText;
         self._xmlFlushIfNecessary();
         _ = fIndent; # No pretty printing, thank you.
