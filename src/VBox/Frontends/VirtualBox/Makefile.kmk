@@ -1312,7 +1312,7 @@ makeallnls:: \
 		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
 		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
-	$(QUIET)$(TOOL_QT4_LUPDATE) \
+	$(QUIET)$(if $(VBOX_WITH_QTGUI_V5),$(TOOL_QT5_LUPDATE),$(TOOL_QT4_LUPDATE)) \
 		$^ \
 		-ts \
 		$(filter-out nls/VirtualBox_en.ts,$(filter-out nls/qt_%.ts,$(VirtualBox_QT_TRANSLATIONS))) \
@@ -1324,7 +1324,7 @@ nls/VirtualBox_en.ts: \
 		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
 		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate $@)
-	$(QUIET)$(TOOL_QT4_LUPDATE) \
+	$(QUIET)$(if $(VBOX_WITH_QTGUI_V5),$(TOOL_QT5_LUPDATE),$(TOOL_QT4_LUPDATE)) \
 		$^ \
 		-ts \
 		$@
