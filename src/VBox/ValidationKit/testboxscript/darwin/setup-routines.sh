@@ -207,7 +207,7 @@ os_final_message() {
 
 Additional things to do:"
     1. Change the 'Energy Saver' options to never turn off the computer:
-       $ systemsetup -setsleep Never
+       $ systemsetup -setcomputersleep Never -setdisplaysleep 5 -setharddisksleep 15
     2. Check 'Restart automatically if the computer freezes' if available in
        the 'Energy Saver' settings.
        $ systemsetup -setrestartfreeze on

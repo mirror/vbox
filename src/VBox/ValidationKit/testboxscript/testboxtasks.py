@@ -591,9 +591,18 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
             fRc = False;
 
         #
-        # Wipe the stuff clean.
+        # Wipe the stuff clean.  On failure, delay for a total of 20 seconds while
+        # periodically retrying the cleanup.  This is a hack to work around issues
+        # on windows caused by the service in aelupsvc.dll preventing us from deleting
+        # vts_rm.exe (or rather the directory its in).  The service is called
+        # "Application Experience", which feels like a weird joke here.
         #
         fRc2 = self._oTestBoxScript.reinitScratch(fnLog = self._log);
+        cRetries = 4;
+        while fRc2 is False and cRetries > 0:
+            time.sleep(5);
+            fRc2 = self._oTestBoxScript.reinitScratch(fnLog = self._log);
+            cRetries -= 1;
 
         return fRc and fRc2;
 
