@@ -4878,7 +4878,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                              | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
         }
 # ifdef VBOX_ENABLE_64_BITS_GUESTS
-        /* Keep using the 64-bit switcher even though we're in 32-bit because of bad Intel design. See @bugref{8432#c7}. 
+        /* Keep using the 64-bit switcher even though we're in 32-bit because of bad Intel design. See @bugref{8432#c7}.
          * Except if Real-on-V86 is active, clear the 64-bit switcher flag because now we know the guest is in a sane
          * state where it's safe to use the 32-bit switcher again.
          */
@@ -4989,8 +4989,11 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 Log4(("VMX_VMCS32_CTRL_PIN_EXEC                %#RX32\n", u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);                 AssertRC(rc);
                 Log4(("VMX_VMCS32_CTRL_PROC_EXEC               %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);                AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_PROC_EXEC2              %#RX32\n", u32Val));
+                if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                {
+                    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);            AssertRC(rc);
+                    Log4(("VMX_VMCS32_CTRL_PROC_EXEC2              %#RX32\n", u32Val));
+                }
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);                     AssertRC(rc);
                 Log4(("VMX_VMCS32_CTRL_ENTRY                   %#RX32\n", u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT, &u32Val);                      AssertRC(rc);
@@ -5025,8 +5028,11 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 Log4(("VMX_VMCS_CTRL_CR4_MASK                  %#RHr\n", uHCReg));
                 rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uHCReg);           AssertRC(rc);
                 Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW           %#RHr\n", uHCReg));
-                rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);                 AssertRC(rc);
-                Log4(("VMX_VMCS64_CTRL_EPTP_FULL               %#RX64\n", u64Val));
+                if (pVM->hm.s.fNestedPaging)
+                {
+                    rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);             AssertRC(rc);
+                    Log4(("VMX_VMCS64_CTRL_EPTP_FULL               %#RX64\n", u64Val));
+                }
 
                 /* Guest bits. */
                 rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &u64Val);          AssertRC(rc);
