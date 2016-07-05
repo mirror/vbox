@@ -153,10 +153,8 @@ RTDECL(const char *) RTJsonValueGetString(RTJSONVAL hJsonVal);
  * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not a string.
  * @param   hJsonVal        The JSON value handle.
  * @param   ppszStr         Where to store the pointer to the string on success.
- * @todo r=bird: Rename to RTJsonValueQueryString as getters returns values
- *               not status codes (see guidelines).
  */
-RTDECL(int) RTJsonValueGetStringEx(RTJSONVAL hJsonVal, const char **ppszStr);
+RTDECL(int) RTJsonValueQueryString(RTJSONVAL hJsonVal, const char **ppszStr);
 
 /**
  * Returns the number from a given JSON number value.
@@ -169,12 +167,8 @@ RTDECL(int) RTJsonValueGetStringEx(RTJSONVAL hJsonVal, const char **ppszStr);
  * @note    This JSON implementation does not implement support for floating point
  *          numbers currently.  When it does, it will be in the form of a
  *          RTJsonValueQueryFloat method.
- *
- * @todo r=bird: Rename to RTJsonValueQueryInteger as getters returns values
- *               not status codes (see guidelines), and "Integer" is better for
- *               future floating point support.
  */
-RTDECL(int) RTJsonValueGetNumber(RTJSONVAL hJsonVal, int64_t *pi64Num);
+RTDECL(int) RTJsonValueQueryInteger(RTJSONVAL hJsonVal, int64_t *pi64Num);
 
 /**
  * Returns the value associated with a given name for the given JSON object value.
@@ -185,10 +179,8 @@ RTDECL(int) RTJsonValueGetNumber(RTJSONVAL hJsonVal, int64_t *pi64Num);
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   phJsonVal       Where to store the handle to the JSON value on success.
- * @todo r=bird: Rename to RTJsonValueQueryByName as getters returns
- *               values not status codes (see guidelines).
  */
-RTDECL(int) RTJsonValueGetByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSONVAL phJsonVal);
+RTDECL(int) RTJsonValueQueryByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSONVAL phJsonVal);
 
 /**
  * Returns the number of a number value associated with a given name for the given JSON object value.
@@ -200,10 +192,8 @@ RTDECL(int) RTJsonValueGetByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSO
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   pi64Num         Where to store the number on success.
- * @todo r=bird: Rename to RTJsonValueQueryNumberByName as getters returns
- *               values not status codes (see guidelines).
  */
-RTDECL(int) RTJsonValueGetNumberByName(RTJSONVAL hJsonVal, const char *pszName, int64_t *pi64Num);
+RTDECL(int) RTJsonValueQueryIntegerByName(RTJSONVAL hJsonVal, const char *pszName, int64_t *pi64Num);
 
 /**
  * Returns the string of a string value associated with a given name for the given JSON object value.
@@ -216,10 +206,8 @@ RTDECL(int) RTJsonValueGetNumberByName(RTJSONVAL hJsonVal, const char *pszName, 
  * @param   pszName         The member name of the object.
  * @param   ppszStr         Where to store the pointer to the string on success.
  *                          Must be freed with RTStrFree().
- * @todo r=bird: Rename to RTJsonValueQueryStringByName as getters returns
- *               values not status codes (see guidelines).
  */
-RTDECL(int) RTJsonValueGetStringByName(RTJSONVAL hJsonVal, const char *pszName, char **ppszStr);
+RTDECL(int) RTJsonValueQueryStringByName(RTJSONVAL hJsonVal, const char *pszName, char **ppszStr);
 
 /**
  * Returns the boolean of a true/false value associated with a given name for the given JSON object value.
@@ -231,10 +219,8 @@ RTDECL(int) RTJsonValueGetStringByName(RTJSONVAL hJsonVal, const char *pszName, 
  * @param   hJsonVal        The JSON value handle.
  * @param   pszName         The member name of the object.
  * @param   pfBoolean       Where to store the boolean value on success.
- * @todo r=bird: Rename to RTJsonValueQueryBooleanByName as getters returns
- *               values not status codes (see guidelines).
  */
-RTDECL(int) RTJsonValueGetBooleanByName(RTJSONVAL hJsonVal, const char *pszName, bool *pfBoolean);
+RTDECL(int) RTJsonValueQueryBooleanByName(RTJSONVAL hJsonVal, const char *pszName, bool *pfBoolean);
 
 /**
  * Returns the size of a given JSON array value.
@@ -252,12 +238,8 @@ RTDECL(unsigned) RTJsonValueGetArraySize(RTJSONVAL hJsonVal);
  * @retval  VERR_JSON_VALUE_INVALID_TYPE if the JSON value is not an array.
  * @param   hJsonVal        The JSON value handle.
  * @param   pcItems         Where to store the size of the JSON array value on success.
- * @todo r=bird: Rename to RTJsonValueQueryArraySize as getters returns
- *               values not status codes (see guidelines).
- *               Implementation is using 'uint32_t' not 'unsigned', goes for the
- *               other functions here.
  */
-RTDECL(int) RTJsonValueGetArraySizeEx(RTJSONVAL hJsonVal, unsigned *pcItems);
+RTDECL(int) RTJsonValueQueryArraySize(RTJSONVAL hJsonVal, unsigned *pcItems);
 
 /**
  * Returns the value for the given index of a given JSON array value.
@@ -269,10 +251,8 @@ RTDECL(int) RTJsonValueGetArraySizeEx(RTJSONVAL hJsonVal, unsigned *pcItems);
  * @param   hJsonVal        The JSON value handle.
  * @param   idx             The index to get the value from.
  * @param   phJsonVal       Where to store the handle to the JSON value on success.
- * @todo r=bird: Rename to RTJsonValueQueryByIndex as getters returns
- *               values not status codes (see guidelines).
  */
-RTDECL(int) RTJsonValueGetByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL phJsonVal);
+RTDECL(int) RTJsonValueQueryByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL phJsonVal);
 
 /**
  * Creates an iterator for a given JSON array or object value.
@@ -293,10 +273,8 @@ RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt);
  * @param   phJsonVal       Where to store the handle to the JSON value on success.
  * @param   ppszName        Where to store the object member name for an object.
  *                          NULL is returned for arrays.
- * @todo r=bird: Rename to RTJsonIteratorQueryValue as getters returns
- *               values not status codes (see guidelines).
  */
-RTDECL(int) RTJsonIteratorGetValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, const char **ppszName);
+RTDECL(int) RTJsonIteratorQueryValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, const char **ppszName);
 
 /**
  * Advances to the next element in the referenced JSON value.

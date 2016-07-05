@@ -100,7 +100,7 @@ static void tstBasic(RTTEST hTest)
  */
 static void tstCorrectnessRcForInvalidType(RTTEST hTest, RTJSONVAL hJsonVal, RTJSONVALTYPE enmType)
 {
-#if 0 /* Enable manually or it will assert all over the place for debug builds. */
+#ifndef RT_STRICT /* Enable manually if assertions are enabled or it will assert all over the place for debug builds. */
     if (   enmType != RTJSONVALTYPE_OBJECT
         && enmType != RTJSONVALTYPE_ARRAY)
     {
@@ -115,28 +115,28 @@ static void tstCorrectnessRcForInvalidType(RTTEST hTest, RTJSONVAL hJsonVal, RTJ
         uint32_t cItems = 0;
         RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
         RTTEST_CHECK(hTest, RTJsonValueGetArraySize(hJsonVal) == 0);
-        RTTEST_CHECK_RC(hTest, RTJsonValueGetArraySizeEx(hJsonVal, &cItems), VERR_JSON_VALUE_INVALID_TYPE);
-        RTTEST_CHECK_RC(hTest, RTJsonValueGetByIndex(hJsonVal, 0, &hJsonValItem), VERR_JSON_VALUE_INVALID_TYPE);
+        RTTEST_CHECK_RC(hTest, RTJsonValueQueryArraySize(hJsonVal, &cItems), VERR_JSON_VALUE_INVALID_TYPE);
+        RTTEST_CHECK_RC(hTest, RTJsonValueQueryByIndex(hJsonVal, 0, &hJsonValItem), VERR_JSON_VALUE_INVALID_TYPE);
     }
 
     if (enmType != RTJSONVALTYPE_OBJECT)
     {
         /* The object access methods should return errors. */
         RTJSONVAL hJsonValMember = NIL_RTJSONVAL;
-        RTTEST_CHECK_RC(hTest, RTJsonValueGetByName(hJsonVal, "test", &hJsonValMember), VERR_JSON_VALUE_INVALID_TYPE);
+        RTTEST_CHECK_RC(hTest, RTJsonValueQueryByName(hJsonVal, "test", &hJsonValMember), VERR_JSON_VALUE_INVALID_TYPE);
     }
 
     if (enmType != RTJSONVALTYPE_NUMBER)
     {
         int64_t i64Num = 0;
-        RTTEST_CHECK_RC(hTest, RTJsonValueGetNumber(hJsonVal, &i64Num), VERR_JSON_VALUE_INVALID_TYPE);
+        RTTEST_CHECK_RC(hTest, RTJsonValueQueryInteger(hJsonVal, &i64Num), VERR_JSON_VALUE_INVALID_TYPE);
     }
 
     if (enmType != RTJSONVALTYPE_STRING)
     {
         const char *psz = NULL;
         RTTEST_CHECK(hTest, RTJsonValueGetString(hJsonVal) == NULL);
-        RTTEST_CHECK_RC(hTest, RTJsonValueGetStringEx(hJsonVal, &psz), VERR_JSON_VALUE_INVALID_TYPE);
+        RTTEST_CHECK_RC(hTest, RTJsonValueQueryString(hJsonVal, &psz), VERR_JSON_VALUE_INVALID_TYPE);
     }
 #endif
 }
@@ -148,15 +148,16 @@ static void tstArray(RTTEST hTest, RTJSONVAL hJsonVal)
 {
     uint32_t cItems = 0;
     RTTEST_CHECK(hTest, RTJsonValueGetArraySize(hJsonVal) == 6);
-    RTTEST_CHECK_RC_OK(hTest, RTJsonValueGetArraySizeEx(hJsonVal, &cItems));
+    RTTEST_CHECK_RC_OK(hTest, RTJsonValueQueryArraySize(hJsonVal, &cItems));
+    RTTEST_CHECK(hTest, cItems == RTJsonValueGetArraySize(hJsonVal));
 
     for (uint32_t i = 1; i <= 5; i++)
     {
         int64_t i64Num = 0;
         RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
-        RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetByIndex(hJsonVal, i - 1, &hJsonValItem));
+        RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueQueryByIndex(hJsonVal, i - 1, &hJsonValItem));
         RTTEST_CHECK(hTest, RTJsonValueGetType(hJsonValItem) == RTJSONVALTYPE_NUMBER);
-        RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetNumber(hJsonValItem, &i64Num));
+        RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueQueryInteger(hJsonValItem, &i64Num));
         RTTEST_CHECK(hTest, i64Num == (int64_t)i);
         RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonValItem) == 1);
     }
@@ -164,9 +165,9 @@ static void tstArray(RTTEST hTest, RTJSONVAL hJsonVal)
     /* Last should be string. */
     const char *pszStr = NULL;
     RTJSONVAL hJsonValItem = NIL_RTJSONVAL;
-    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetByIndex(hJsonVal, 5, &hJsonValItem));
+    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueQueryByIndex(hJsonVal, 5, &hJsonValItem));
     RTTEST_CHECK(hTest, RTJsonValueGetType(hJsonValItem) == RTJSONVALTYPE_STRING);
-    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueGetStringEx(hJsonValItem, &pszStr));
+    RTTEST_CHECK_RC_OK_RETV(hTest, RTJsonValueQueryString(hJsonValItem, &pszStr));
     RTTEST_CHECK(hTest, RTJsonValueGetString(hJsonValItem) == pszStr);
     RTTEST_CHECK(hTest, strcmp(pszStr, "6") == 0);
     RTTEST_CHECK(hTest, RTJsonValueRelease(hJsonValItem) == 1);
@@ -184,7 +185,7 @@ static void tstIterator(RTTEST hTest, RTJSONVAL hJsonVal)
     {
         const char *pszName = NULL;
         RTJSONVAL hJsonValMember = NIL_RTJSONVAL;
-        rc = RTJsonIteratorGetValue(hJsonIt, &hJsonValMember, &pszName);
+        rc = RTJsonIteratorQueryValue(hJsonIt, &hJsonValMember, &pszName);
         RTTEST_CHECK(hTest, RT_SUCCESS(rc));
         RTTEST_CHECK(hTest, pszName != NULL);
         RTTEST_CHECK(hTest, hJsonValMember != NIL_RTJSONVAL);
@@ -207,7 +208,7 @@ static void tstIterator(RTTEST hTest, RTJSONVAL hJsonVal)
                 {
                     RTTEST_CHECK(hTest, strcmp(pszName, "string") == 0);
                     const char *pszStr = NULL;
-                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueGetStringEx(hJsonValMember, &pszStr));
+                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueQueryString(hJsonValMember, &pszStr));
                     RTTEST_CHECK(hTest, strcmp(pszStr, "test") == 0);
                     break;
                 }
@@ -215,7 +216,7 @@ static void tstIterator(RTTEST hTest, RTJSONVAL hJsonVal)
                 {
                     RTTEST_CHECK(hTest, strcmp(pszName, "number") == 0);
                     int64_t i64Num = 0;
-                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueGetNumber(hJsonValMember, &i64Num));
+                    RTTEST_CHECK_RC_OK(hTest, RTJsonValueQueryInteger(hJsonValMember, &i64Num));
                     RTTEST_CHECK(hTest, i64Num == 100);
                     break;
                 }
@@ -236,7 +237,7 @@ static void tstIterator(RTTEST hTest, RTJSONVAL hJsonVal)
             rc = RTJsonIteratorNext(hJsonIt);
             RTTEST_CHECK(hTest, rc == VINF_SUCCESS || rc == VERR_JSON_ITERATOR_END);
             if (RT_SUCCESS(rc))
-                RTTEST_CHECK_RC_OK(hTest, RTJsonIteratorGetValue(hJsonIt, &hJsonValMember, &pszName));
+                RTTEST_CHECK_RC_OK(hTest, RTJsonIteratorQueryValue(hJsonIt, &hJsonValMember, &pszName));
         }
         RTJsonIteratorFree(hJsonIt);
     }

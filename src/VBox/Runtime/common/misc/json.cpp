@@ -200,7 +200,7 @@ typedef struct RTJSONVALINT
         struct
         {
             /** Number of elements in the array. */
-            uint32_t        cItems;
+            unsigned        cItems;
             /** Pointer to the array of items. */
             PRTJSONVALINT   *papItems;
         } Array;
@@ -208,7 +208,7 @@ typedef struct RTJSONVALINT
         struct
         {
             /** Number of members. */
-            uint32_t        cMembers;
+            unsigned        cMembers;
             /** Pointer to the array holding the member names. */
             char            **papszNames;
             /** Pointer to the array holding the values. */
@@ -1263,7 +1263,7 @@ RTDECL(const char *) RTJsonValueGetString(RTJSONVAL hJsonVal)
     return pThis->Type.String.pszStr;
 }
 
-RTDECL(int) RTJsonValueGetStringEx(RTJSONVAL hJsonVal, const char **ppszStr)
+RTDECL(int) RTJsonValueQueryString(RTJSONVAL hJsonVal, const char **ppszStr)
 {
     PRTJSONVALINT pThis = hJsonVal;
     AssertPtrReturn(ppszStr, VERR_INVALID_POINTER);
@@ -1274,7 +1274,7 @@ RTDECL(int) RTJsonValueGetStringEx(RTJSONVAL hJsonVal, const char **ppszStr)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTJsonValueGetNumber(RTJSONVAL hJsonVal, int64_t *pi64Num)
+RTDECL(int) RTJsonValueQueryInteger(RTJSONVAL hJsonVal, int64_t *pi64Num)
 {
     PRTJSONVALINT pThis = hJsonVal;
     AssertPtrReturn(pi64Num, VERR_INVALID_POINTER);
@@ -1285,7 +1285,7 @@ RTDECL(int) RTJsonValueGetNumber(RTJSONVAL hJsonVal, int64_t *pi64Num)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTJsonValueGetByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSONVAL phJsonVal)
+RTDECL(int) RTJsonValueQueryByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSONVAL phJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -1308,27 +1308,27 @@ RTDECL(int) RTJsonValueGetByName(RTJSONVAL hJsonVal, const char *pszName, PRTJSO
     return rc;
 }
 
-RTDECL(int) RTJsonValueGetNumberByName(RTJSONVAL hJsonVal, const char *pszName, int64_t *pi64Num)
+RTDECL(int) RTJsonValueQueryIntegerByName(RTJSONVAL hJsonVal, const char *pszName, int64_t *pi64Num)
 {
     RTJSONVAL hJsonValNum = NIL_RTJSONVAL;
-    int rc = RTJsonValueGetByName(hJsonVal, pszName, &hJsonValNum);
+    int rc = RTJsonValueQueryByName(hJsonVal, pszName, &hJsonValNum);
     if (RT_SUCCESS(rc))
     {
-        rc = RTJsonValueGetNumber(hJsonValNum, pi64Num);
+        rc = RTJsonValueQueryInteger(hJsonValNum, pi64Num);
         RTJsonValueRelease(hJsonValNum);
     }
 
     return rc;
 }
 
-RTDECL(int) RTJsonValueGetStringByName(RTJSONVAL hJsonVal, const char *pszName, char **ppszStr)
+RTDECL(int) RTJsonValueQueryStringByName(RTJSONVAL hJsonVal, const char *pszName, char **ppszStr)
 {
     RTJSONVAL hJsonValStr = NIL_RTJSONVAL;
-    int rc = RTJsonValueGetByName(hJsonVal, pszName, &hJsonValStr);
+    int rc = RTJsonValueQueryByName(hJsonVal, pszName, &hJsonValStr);
     if (RT_SUCCESS(rc))
     {
         const char *pszStr = NULL;
-        rc = RTJsonValueGetStringEx(hJsonValStr, &pszStr);
+        rc = RTJsonValueQueryString(hJsonValStr, &pszStr);
         if (RT_SUCCESS(rc))
         {
             *ppszStr = RTStrDup(pszStr);
@@ -1341,12 +1341,12 @@ RTDECL(int) RTJsonValueGetStringByName(RTJSONVAL hJsonVal, const char *pszName, 
     return rc;
 }
 
-RTDECL(int) RTJsonValueGetBooleanByName(RTJSONVAL hJsonVal, const char *pszName, bool *pfBoolean)
+RTDECL(int) RTJsonValueQueryBooleanByName(RTJSONVAL hJsonVal, const char *pszName, bool *pfBoolean)
 {
     AssertPtrReturn(pfBoolean, VERR_INVALID_POINTER);
 
     RTJSONVAL hJsonValBool = NIL_RTJSONVAL;
-    int rc = RTJsonValueGetByName(hJsonVal, pszName, &hJsonValBool);
+    int rc = RTJsonValueQueryByName(hJsonVal, pszName, &hJsonValBool);
     if (RT_SUCCESS(rc))
     {
         RTJSONVALTYPE enmType = RTJsonValueGetType(hJsonValBool);
@@ -1362,7 +1362,7 @@ RTDECL(int) RTJsonValueGetBooleanByName(RTJSONVAL hJsonVal, const char *pszName,
     return rc;
 }
 
-RTDECL(uint32_t) RTJsonValueGetArraySize(RTJSONVAL hJsonVal)
+RTDECL(unsigned) RTJsonValueGetArraySize(RTJSONVAL hJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
     AssertReturn(pThis != NIL_RTJSONVAL, 0);
@@ -1371,7 +1371,7 @@ RTDECL(uint32_t) RTJsonValueGetArraySize(RTJSONVAL hJsonVal)
     return pThis->Type.Array.cItems;
 }
 
-RTDECL(int) RTJsonValueGetArraySizeEx(RTJSONVAL hJsonVal, uint32_t *pcItems)
+RTDECL(int) RTJsonValueQueryArraySize(RTJSONVAL hJsonVal, unsigned *pcItems)
 {
     PRTJSONVALINT pThis = hJsonVal;
     AssertPtrReturn(pcItems, VERR_INVALID_POINTER);
@@ -1382,7 +1382,7 @@ RTDECL(int) RTJsonValueGetArraySizeEx(RTJSONVAL hJsonVal, uint32_t *pcItems)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTJsonValueGetByIndex(RTJSONVAL hJsonVal, uint32_t idx, PRTJSONVAL phJsonVal)
+RTDECL(int) RTJsonValueQueryByIndex(RTJSONVAL hJsonVal, unsigned idx, PRTJSONVAL phJsonVal)
 {
     PRTJSONVALINT pThis = hJsonVal;
     AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
@@ -1415,7 +1415,7 @@ RTDECL(int) RTJsonIteratorBegin(RTJSONVAL hJsonVal, PRTJSONIT phJsonIt)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTJsonIteratorGetValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, const char **ppszName)
+RTDECL(int) RTJsonIteratorQueryValue(RTJSONIT hJsonIt, PRTJSONVAL phJsonVal, const char **ppszName)
 {
     PRTJSONITINT pIt = hJsonIt;
     AssertReturn(pIt != NIL_RTJSONIT, VERR_INVALID_HANDLE);
