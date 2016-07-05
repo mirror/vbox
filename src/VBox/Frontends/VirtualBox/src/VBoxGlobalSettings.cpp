@@ -60,7 +60,11 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 #else
 # warning "port me!"
 #endif
+#if defined(VBOX_WS_X11) && defined(DEBUG)
+    autoCapture = false;
+#else
     autoCapture = true;
+#endif
     guiFeatures = QString::null;
     languageId  = QString::null;
     maxGuestRes = "auto";
