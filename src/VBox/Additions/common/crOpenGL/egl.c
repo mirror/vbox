@@ -74,7 +74,7 @@ static RTONCE   g_tlsOnce = RTONCE_INITIALIZER;
 static Display *g_pDefaultDisplay = NULL;
 static RTONCE   g_defaultDisplayOnce = RTONCE_INITIALIZER;
 
-static int32_t tlsInitOnce(void *pv)
+static DECLCALLBACK(int32_t) tlsInitOnce(void *pv)
 {
     NOREF(pv);
     g_tls = RTTlsAlloc();
