@@ -102,7 +102,7 @@ static struct VBEGLTLS *getTls(void)
     return pTls;
 }
 
-static int32_t defaultDisplayInitOnce(void *pv)
+static DECLCALLBACK(int32_t) defaultDisplayInitOnce(void *pv)
 {
     NOREF(pv);
     g_pDefaultDisplay = XOpenDisplay(NULL);
