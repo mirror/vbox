@@ -30,7 +30,6 @@ __version__ = "$Revision$"
 
 # Standard Python imports.
 import os;
-import shutil;
 import sys;
 import unittest;
 
@@ -176,7 +175,7 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
         sSrcPath = os.path.join(sLocalPrefix, sUrlFile);
         fnLog('Copying "%s" to "%s"...' % (sSrcPath, sDstFile));
         try:
-            shutil.copyfile(sSrcPath, sDstFile);
+            utils.copyFileSimple(sSrcPath, sDstFile);
         except Exception, oXcpt:
             fnError('Error copying "%s" to "%s": %s' % (sSrcPath, sDstFile, oXcpt));
             return False;

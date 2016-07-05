@@ -35,7 +35,6 @@ import os
 import sys
 import re
 import subprocess
-import shutil
 
 
 # Only the main script needs to modify the path.
@@ -514,7 +513,7 @@ class tdUnitTest1(vbox.TestDriver):
         """
         reporter.log('_hardenedCopyFile: %s -> %s (mode: %o)' % (sSrc, sDst, iMode,));
         if utils.getHostOs() in [ 'win', 'os2' ]:
-            shutil.copyfile(sSrc, sDst);
+            utils.copyFileSimple(sSrc, sDst);
             os.chmod(sDst, iMode);
         else:
             fRc = self._sudoExecuteSync(['/bin/cp', sSrc, sDst]);
