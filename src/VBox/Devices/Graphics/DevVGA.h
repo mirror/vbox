@@ -587,26 +587,29 @@ typedef struct VGAState {
     uint64_t                    cbVgaBios;
     /** The name of the VGA BIOS ROM file. */
     R3PTRTYPE(char *)           pszVgaBiosFile;
+# if HC_ARCH_BITS == 32
+    uint32_t                    Padding9;
+# endif
 
 # ifdef VBOX_WITH_HGSMI
     /** Base port in the assigned PCI I/O space. */
     RTIOPORT                    IOPortBase;
 #  ifdef VBOX_WITH_WDDM
-    uint8_t                     Padding9[2];
+    uint8_t                     Padding10[2];
     /** Specifies guest driver caps, i.e. whether it can handle IRQs from the
      * adapter, the way it can handle async HGSMI command completion, etc. */
     uint32_t                    fGuestCaps;
     uint32_t                    fScanLineCfg;
     uint32_t                    fHostCursorCapabilities;
 #  else
-    uint8_t                     Padding10[14];
+    uint8_t                     Padding11[14];
 #  endif
 
     /** The critical section serializes the HGSMI IRQ setting/clearing. */
-    PDMCRITSECT                 critSectIRQ;
+    PDMCRITSECT                 CritSectIRQ;
     /** VBVARaiseIRQ flags which were set when the guest was still processing previous IRQ. */
     uint32_t                    fu32PendingGuestFlags;
-    uint32_t                    Padding11;
+    uint32_t                    Padding12;
 # endif /* VBOX_WITH_HGSMI */
 
     PDMLED Led3D;

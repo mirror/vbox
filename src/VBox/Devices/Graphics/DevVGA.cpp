@@ -3052,7 +3052,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
 # if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM)
                 if (u32 == HGSMIOFFSET_VOID)
                 {
-                    PDMCritSectEnter(&pThis->critSectIRQ, VERR_SEM_BUSY);
+                    PDMCritSectEnter(&pThis->CritSectIRQ, VERR_SEM_BUSY);
 
                     if (pThis->fu32PendingGuestFlags == 0)
                     {
@@ -3074,7 +3074,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
                         /* Keep the IRQ unchanged. */
                     }
 
-                    PDMCritSectLeave(&pThis->critSectIRQ);
+                    PDMCritSectLeave(&pThis->CritSectIRQ);
                 }
                 else
 # endif
@@ -5953,7 +5953,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         pThis->pszLogoFile = NULL;
     }
 
-    PDMR3CritSectDelete(&pThis->critSectIRQ);
+    PDMR3CritSectDelete(&pThis->CritSectIRQ);
     PDMR3CritSectDelete(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -6185,7 +6185,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->critSectIRQ, RT_SRC_POS, "VGA#%u_IRQ", iInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSectIRQ, RT_SRC_POS, "VGA#%u_IRQ", iInstance);
     AssertRCReturn(rc, rc);
 
     /*
