@@ -65,7 +65,7 @@
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
     <!-- Force NDIS5 on pre-Vista -->
-    <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[(VersionNT < 600)]]></SetProperty>
+    <SetProperty Id="NETWORKTYPE" After="LaunchConditions" Value="NDIS5"><![CDATA[(VersionNT < 600)]]></SetProperty>
 <?endif ?>
 
     <!-- Whether or not registering of known desktop shortcut for the Quick Launch Bar should be created -->
