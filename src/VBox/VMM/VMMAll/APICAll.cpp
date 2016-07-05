@@ -971,13 +971,20 @@ DECLINLINE(VBOXSTRICTRC) apicSendIpi(PVMCPU pVCpu, int rcRZ)
 #if XAPIC_HARDWARE_VERSION == XAPIC_HARDWARE_VERSION_P4
     /*
      * INIT Level De-assert is not support on Pentium 4 and Xeon processors.
+     * Apparently, this also applies to NMI, SMI, lowest-priority and fixed delivery modes,
+     * see @bugref{8245#c116}.
+     *
      * See AMD spec. 16.5 "Interprocessor Interrupts (IPI)" for a table of valid ICR combinations.
      */
-    if (RT_UNLIKELY(   enmDeliveryMode == XAPICDELIVERYMODE_INIT_LEVEL_DEASSERT
-                    && enmInitLevel    == XAPICINITLEVEL_DEASSERT
-                    && enmTriggerMode  == XAPICTRIGGERMODE_LEVEL))
+    if (   enmTriggerMode  == XAPICTRIGGERMODE_LEVEL
+        && enmInitLevel    == XAPICINITLEVEL_DEASSERT
+        && (   enmDeliveryMode == XAPICDELIVERYMODE_FIXED
+            || enmDeliveryMode == XAPICDELIVERYMODE_LOWEST_PRIO
+            || enmDeliveryMode == XAPICDELIVERYMODE_SMI
+            || enmDeliveryMode == XAPICDELIVERYMODE_NMI
+            || enmDeliveryMode == XAPICDELIVERYMODE_INIT))
     {
-        Log2(("APIC%u: INIT level de-assert unsupported, ignoring!\n", pVCpu->idCpu));
+        Log2(("APIC%u: %s level de-assert unsupported, ignoring!\n", apicGetDeliveryModeName(enmDeliveryMode), pVCpu->idCpu));
         return VINF_SUCCESS;
     }
 #else
