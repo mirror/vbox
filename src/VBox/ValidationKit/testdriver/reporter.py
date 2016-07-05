@@ -893,6 +893,8 @@ class RemoteReporter(ReporterBase):
         cSecs     = tsNow - self._secTsXmlFlush;
         cSecsLast = tsNow - self._secTsXmlLast;
         self._secTsXmlLast = tsNow;
+        self._writeOutput('xml-debug/%s: %s s since flush, %s s since poll'
+                          % (len(self._asXml), cSecs, cSecsLast,)); # temporarily while debugging flush/poll problem.
 
         # Absolute flush thresholds.
         if cSecs >= self.kcSecXmlFlushMax:
@@ -909,6 +911,7 @@ class RemoteReporter(ReporterBase):
 
     def _xmlWrite(self, asText, fIndent = True):
         """XML output function for the reporter."""
+        self._writeOutput('xml-debug/%s: %s' % (len(self._asXml, asText))); # temporarily while debugging flush/poll problem.
         self._asXml += asText;
         self._xmlFlushIfNecessary();
         _ = fIndent; # No pretty printing, thank you.
