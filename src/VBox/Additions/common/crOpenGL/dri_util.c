@@ -162,7 +162,7 @@ static int driBindContext(__DRIcontext *pcp,
 			  __DRIdrawable *pdp,
 			  __DRIdrawable *prp)
 {
-    __DRIscreenPrivate *psp = pcp->driScreenPriv;
+    __DRIscreenPrivate *psp;
 
     /*
     ** Assume error checking is done properly in glXMakeCurrent before
@@ -186,6 +186,7 @@ static int driBindContext(__DRIcontext *pcp,
     ** initialize the drawable information if has not been done before.
     */
 
+    psp = pcp->driScreenPriv;
     if (psp->dri2.enabled) {
        __driParseEvents(pcp, pdp);
        __driParseEvents(pcp, prp);
