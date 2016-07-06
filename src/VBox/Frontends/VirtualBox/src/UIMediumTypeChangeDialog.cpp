@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,33 +20,33 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QVBoxLayout>
-#include <QGroupBox>
-#include <QRadioButton>
-#include <QPushButton>
+# include <QGroupBox>
+# include <QPushButton>
+# include <QRadioButton>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIMediumTypeChangeDialog.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "QILabel.h"
-#include "QIDialogButtonBox.h"
-#include "UIConverter.h"
-#include "UIMedium.h"
+# include "UIMediumTypeChangeDialog.h"
+# include "UIMessageCenter.h"
+# include "UIConverter.h"
+# include "UIMedium.h"
+# include "VBoxGlobal.h"
+# include "QIDialogButtonBox.h"
+# include "QILabel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* Constructor: */
 UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId)
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
 #ifdef VBOX_WS_MAC
+    // TODO: Is that necessary?
     setWindowFlags(Qt::Sheet);
-#else /* VBOX_WS_MAC */
+#else /* !VBOX_WS_MAC */
     /* Enable size-grip: */
     setSizeGripEnabled(true);
-#endif /* VBOX_WS_MAC */
+#endif /* !VBOX_WS_MAC */
 
     /* Search for corresponding medium: */
     m_medium = vboxGlobal().medium(strMediumId).medium();
@@ -56,26 +56,31 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
-    /* Create description label: */
+    /* Create label: */
     m_pLabel = new QILabel(this);
+    /* Configure label: */
     m_pLabel->setWordWrap(true);
     m_pLabel->useSizeHintForWidth(450);
     m_pLabel->updateGeometry();
+    /* Add label into main layout: */
     pMainLayout->addWidget(m_pLabel);
 
     /* Create group-box: */
     m_pGroupBox = new QGroupBox(this);
+    /* Add group-box into main layout: */
     pMainLayout->addWidget(m_pGroupBox);
 
     /* Create button-box: */
     m_pButtonBox = new QIDialogButtonBox(this);
+    /* Configure button-box: */
     m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
     connect(m_pButtonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()), this, SLOT(sltAccept()));
     connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(sltReject()));
+    /* Add button-box into main layout: */
     pMainLayout->addWidget(m_pButtonBox);
 
-    /* Finally, add a stretch: */
+    /* Add a stretch to main layout: */
     pMainLayout->addStretch();
 
     /* Create radio-buttons: */
@@ -84,11 +89,10 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
     /* Retranslate: */
     retranslateUi();
 
-    /* Resize: */
+    /* Resize to minimum size: */
     resize(minimumSizeHint());
 }
 
-/* Accept finisher: */
 void UIMediumTypeChangeDialog::sltAccept()
 {
     /* Try to assign new medium type: */
@@ -100,24 +104,23 @@ void UIMediumTypeChangeDialog::sltAccept()
         msgCenter().cannotChangeMediumType(m_medium, m_oldMediumType, m_newMediumType, this);
         return;
     }
-    /* Accept dialog with parent class method: */
+
+    /* Call to base-class: */
     QIWithRetranslateUI<QIDialog>::accept();
 }
 
-/* Reject finisher: */
 void UIMediumTypeChangeDialog::sltReject()
 {
-    /* Reject dialog with parent class method: */
+    /* Call to base-class: */
     QIWithRetranslateUI<QIDialog>::reject();
 }
 
-/* Translation stuff: */
 void UIMediumTypeChangeDialog::retranslateUi()
 {
     /* Translate window title: */
     setWindowTitle(tr("Modify medium attributes"));
 
-    /* Translate description: */
+    /* Translate label: */
     m_pLabel->setText(tr("<p>You are about to change the settings of the disk image file <b>%1</b>.</p>"
                          "<p>Please choose one of the following modes and press <b>%2</b> "
                          "to proceed or <b>%3</b> otherwise.</p>")
@@ -125,7 +128,7 @@ void UIMediumTypeChangeDialog::retranslateUi()
                       .arg(VBoxGlobal::removeAccelMark(m_pButtonBox->button(QDialogButtonBox::Ok)->text()))
                       .arg(VBoxGlobal::removeAccelMark(m_pButtonBox->button(QDialogButtonBox::Cancel)->text())));
 
-    /* Translate group-box: */
+    /* Translate group-box name: */
     m_pGroupBox->setTitle(tr("Choose mode:"));
 
     /* Translate radio-buttons: */
@@ -147,18 +150,20 @@ void UIMediumTypeChangeDialog::sltValidate()
             break;
         }
     }
+
     /* Determine chosen type: */
     m_newMediumType = pCheckedButton->property("mediumType").value<KMediumType>();
+
     /* Enable/disable OK button depending on chosen type,
      * for now only the previous type is restricted, others are free to choose: */
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_oldMediumType != m_newMediumType);
 }
 
-/* Create medium-type radio-buttons: */
 void UIMediumTypeChangeDialog::createMediumTypeButtons()
 {
     /* Register required meta-type: */
     qRegisterMetaType<KMediumType>();
+
     /* Create group-box layout: */
     m_pGroupBoxLayout = new QVBoxLayout(m_pGroupBox);
     /* Populate radio-buttons: */
@@ -167,7 +172,7 @@ void UIMediumTypeChangeDialog::createMediumTypeButtons()
     createMediumTypeButton(KMediumType_Writethrough);
     createMediumTypeButton(KMediumType_Shareable);
     createMediumTypeButton(KMediumType_MultiAttach);
-    /* Make sure button reflecting previoius type is checked: */
+    /* Make sure button reflecting current type is checked: */
     QList<QRadioButton*> buttons = findChildren<QRadioButton*>();
     for (int i = 0; i < buttons.size(); ++i)
     {
@@ -182,13 +187,14 @@ void UIMediumTypeChangeDialog::createMediumTypeButtons()
     sltValidate();
 }
 
-/* Create radio-button for the passed medium-type: */
 void UIMediumTypeChangeDialog::createMediumTypeButton(KMediumType mediumType)
 {
-    /* Create corresponding radio-button: */
+    /* Create radio-button: */
     QRadioButton *pRadioButton = new QRadioButton(m_pGroupBox);
+    /* Configure radio-button: */
     connect(pRadioButton, SIGNAL(clicked()), this, SLOT(sltValidate()));
     pRadioButton->setProperty("mediumType", QVariant::fromValue(mediumType));
+    /* Add radio-button into layout: */
     m_pGroupBoxLayout->addWidget(pRadioButton);
 }
 
