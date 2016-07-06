@@ -4823,6 +4823,57 @@ static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 }
 
 
+#if HC_ARCH_BITS == 32
+# ifdef VBOX_ENABLE_64_BITS_GUESTS
+/**
+ * Check if guest state allows safe use of 32-bit switcher again.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static bool hmR0VmxIs32BitSwitcherSafe(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    bool    rc = false;
+
+    do
+    {
+        if (pMixedCtx->gdtr.pGdt & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->idtr.pIdt & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->ldtr.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->tr.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->tr.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->es.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->cs.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->ss.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->ds.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->fs.u64Base & 0xffffffff00000000)
+            break;
+        if (pMixedCtx->gs.u64Base & 0xffffffff00000000)
+            break;
+        /* All good, bases are 32-bit. */
+        rc = true;
+    } while (0);
+
+    return rc;
+}
+# endif
+#endif
+
+
 /**
  * Sets up the appropriate function to run guest code.
  *
@@ -4891,6 +4942,11 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             Assert(!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active);
             Assert(pVCpu->hm.s.vmx.pfnStartVM == VMXR0SwitcherStartVM64);
+            if (hmR0VmxIs32BitSwitcherSafe(pVCpu, pMixedCtx))
+            {
+                pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
+                pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+            }
         }
 # else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
