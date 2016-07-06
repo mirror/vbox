@@ -37,7 +37,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId)
+UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumID)
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
 #ifdef VBOX_WS_MAC
@@ -49,9 +49,9 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
 #endif /* !VBOX_WS_MAC */
 
     /* Search for corresponding medium: */
-    m_medium = vboxGlobal().medium(strMediumId).medium();
-    m_oldMediumType = m_medium.GetType();
-    m_newMediumType = m_oldMediumType;
+    m_medium = vboxGlobal().medium(strMediumID).medium();
+    m_enmMediumTypeOld = m_medium.GetType();
+    m_enmMediumTypeNew = m_enmMediumTypeOld;
 
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -83,8 +83,8 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
     /* Add a stretch to main layout: */
     pMainLayout->addStretch();
 
-    /* Create radio-buttons: */
-    createMediumTypeButtons();
+    /* Prepare radio-buttons: */
+    prepareMediumTypeButtons();
 
     /* Retranslate: */
     retranslateUi();
@@ -96,12 +96,12 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
 void UIMediumTypeChangeDialog::sltAccept()
 {
     /* Try to assign new medium type: */
-    m_medium.SetType(m_newMediumType);
+    m_medium.SetType(m_enmMediumTypeNew);
     /* Check for result: */
     if (!m_medium.isOk())
     {
         /* Show error message: */
-        msgCenter().cannotChangeMediumType(m_medium, m_oldMediumType, m_newMediumType, this);
+        msgCenter().cannotChangeMediumType(m_medium, m_enmMediumTypeOld, m_enmMediumTypeNew, this);
         return;
     }
 
@@ -152,14 +152,14 @@ void UIMediumTypeChangeDialog::sltValidate()
     }
 
     /* Determine chosen type: */
-    m_newMediumType = pCheckedButton->property("mediumType").value<KMediumType>();
+    m_enmMediumTypeNew = pCheckedButton->property("mediumType").value<KMediumType>();
 
     /* Enable/disable OK button depending on chosen type,
      * for now only the previous type is restricted, others are free to choose: */
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_oldMediumType != m_newMediumType);
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_enmMediumTypeOld != m_enmMediumTypeNew);
 }
 
-void UIMediumTypeChangeDialog::createMediumTypeButtons()
+void UIMediumTypeChangeDialog::prepareMediumTypeButtons()
 {
     /* Register required meta-type: */
     qRegisterMetaType<KMediumType>();
@@ -167,16 +167,16 @@ void UIMediumTypeChangeDialog::createMediumTypeButtons()
     /* Create group-box layout: */
     m_pGroupBoxLayout = new QVBoxLayout(m_pGroupBox);
     /* Populate radio-buttons: */
-    createMediumTypeButton(KMediumType_Normal);
-    createMediumTypeButton(KMediumType_Immutable);
-    createMediumTypeButton(KMediumType_Writethrough);
-    createMediumTypeButton(KMediumType_Shareable);
-    createMediumTypeButton(KMediumType_MultiAttach);
+    prepareMediumTypeButton(KMediumType_Normal);
+    prepareMediumTypeButton(KMediumType_Immutable);
+    prepareMediumTypeButton(KMediumType_Writethrough);
+    prepareMediumTypeButton(KMediumType_Shareable);
+    prepareMediumTypeButton(KMediumType_MultiAttach);
     /* Make sure button reflecting current type is checked: */
     QList<QRadioButton*> buttons = findChildren<QRadioButton*>();
     for (int i = 0; i < buttons.size(); ++i)
     {
-        if (buttons[i]->property("mediumType").value<KMediumType>() == m_oldMediumType)
+        if (buttons[i]->property("mediumType").value<KMediumType>() == m_enmMediumTypeOld)
         {
             buttons[i]->setChecked(true);
             buttons[i]->setFocus();
@@ -187,7 +187,7 @@ void UIMediumTypeChangeDialog::createMediumTypeButtons()
     sltValidate();
 }
 
-void UIMediumTypeChangeDialog::createMediumTypeButton(KMediumType mediumType)
+void UIMediumTypeChangeDialog::prepareMediumTypeButton(KMediumType mediumType)
 {
     /* Create radio-button: */
     QRadioButton *pRadioButton = new QRadioButton(m_pGroupBox);

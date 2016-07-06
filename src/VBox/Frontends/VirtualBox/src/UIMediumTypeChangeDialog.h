@@ -43,13 +43,13 @@ class UIMediumTypeChangeDialog : public QIWithRetranslateUI<QIDialog>
 public:
 
     /** Constructs the dialog passing @a pParent to the base-class.
-      * @param  strMediumId  Brings the ID of the medium to be modified. */
-    UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId);
+      * @param  strMediumID  Brings the ID of the medium to be modified. */
+    UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumID);
 
 protected:
 
     /** Handles translation event. */
-    void retranslateUi();
+    void retranslateUi() /* override */;
 
 protected slots:
 
@@ -64,9 +64,9 @@ protected slots:
 private:
 
     /** Prepares medium-type radio-buttons. */
-    void createMediumTypeButtons();
+    void prepareMediumTypeButtons();
     /** Prepares radio-button for the passed @a mediumType. */
-    void createMediumTypeButton(KMediumType mediumType);
+    void prepareMediumTypeButton(KMediumType mediumType);
 
     /** Holds the description label instance. */
     QILabel *m_pLabel;
@@ -80,9 +80,9 @@ private:
     /** Holds the medium instance to be modified. */
     CMedium m_medium;
     /** Holds the old medium type. */
-    KMediumType m_oldMediumType;
+    KMediumType m_enmMediumTypeOld;
     /** Holds the new medium type. */
-    KMediumType m_newMediumType;
+    KMediumType m_enmMediumTypeNew;
 };
 
 #endif /* !___UIMediumTypeChangeDialog_h___ */
