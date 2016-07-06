@@ -148,7 +148,7 @@ typedef union CPUMCTXGREG
     /** 8-bit view. */
     uint8_t             u8;
     /** 8-bit low/high view.    */
-    struct
+    RT_GCC_EXTENSION struct
     {
         /** Low byte (al, cl, dl, bl, ++). */
         uint8_t         bLo;
@@ -288,17 +288,17 @@ typedef struct CPUMCTX
         CPUMCTXGREG     aGRegs[16];
 
         /** 64-bit general purpose register view. */
-        struct /* no tag! */
+        RT_GCC_EXTENSION struct /* no tag! */
         {
             uint64_t    rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15;
         } CPUM_UNION_NAME(qw);
         /** 64-bit general purpose register view. */
-        struct /* no tag! */
+        RT_GCC_EXTENSION struct /* no tag! */
         {
             uint64_t    r0, r1, r2, r3, r4, r5, r6, r7;
         } CPUM_UNION_NAME(qw2);
         /** 32-bit general purpose register view. */
-        struct /* no tag! */
+        RT_GCC_EXTENSION struct /* no tag! */
         {
             uint32_t     eax, u32Pad00,      ecx, u32Pad01,      edx, u32Pad02,      ebx, u32Pad03,
                          esp, u32Pad04,      ebp, u32Pad05,      esi, u32Pad06,      edi, u32Pad07,
@@ -306,14 +306,14 @@ typedef struct CPUMCTX
                         r12d, u32Pad12,     r13d, u32Pad13,     r14d, u32Pad14,     r15d, u32Pad15;
         } CPUM_UNION_NAME(dw);
         /** 16-bit general purpose register view. */
-        struct /* no tag! */
+        RT_GCC_EXTENSION struct /* no tag! */
         {
             uint16_t      ax, au16Pad00[3],   cx, au16Pad01[3],   dx, au16Pad02[3],   bx, au16Pad03[3],
                           sp, au16Pad04[3],   bp, au16Pad05[3],   si, au16Pad06[3],   di, au16Pad07[3],
                          r8w, au16Pad08[3],  r9w, au16Pad09[3], r10w, au16Pad10[3], r11w, au16Pad11[3],
                         r12w, au16Pad12[3], r13w, au16Pad13[3], r14w, au16Pad14[3], r15w, au16Pad15[3];
         } CPUM_UNION_NAME(w);
-        struct /* no tag! */
+        RT_GCC_EXTENSION struct /* no tag! */
         {
             uint8_t   al, ah, abPad00[6], cl, ch, abPad01[6], dl, dh, abPad02[6], bl, bh, abPad03[6],
                          spl, abPad04[7],    bpl, abPad05[7],    sil, abPad06[7],    dil, abPad07[7],
@@ -328,7 +328,7 @@ typedef struct CPUMCTX
         /** The segment register array view, indexed by X86_SREG_XXX. */
         CPUMSELREG      aSRegs[6];
         /** The named segment register view. */
-        struct /* no tag! */
+        RT_GCC_EXTENSION struct /* no tag! */
         {
             CPUMSELREG  es, cs, ss, ds, fs, gs;
         } CPUM_UNION_NAME(n);
