@@ -2976,8 +2976,8 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * This may cause longjmps to ring-3 and may even result in rescheduling to the
  * recompiler. We must be cautious what we do here regarding committing
- * guest-state information into the the VMCB assuming we assuredly execute the
- * guest in AMD-V. If we fall back to the recompiler after updating the VMCB and
+ * guest-state information into the VMCB assuming we assuredly execute the guest
+ * in AMD-V. If we fall back to the recompiler after updating the VMCB and
  * clearing the common-state (TRPM/forceflags), we must undo those changes so
  * that the recompiler can (and should) use them when it resumes guest
  * execution. Otherwise such operations must be done when we can no longer
