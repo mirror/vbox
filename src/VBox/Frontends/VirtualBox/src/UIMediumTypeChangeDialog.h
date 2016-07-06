@@ -70,6 +70,9 @@ private:
     /** Prepares radio-button for the passed @a mediumType. */
     void prepareMediumTypeButton(KMediumType mediumType);
 
+    /** Updates the details-pane. */
+    void updateDetailsPane();
+
     /** Holds the medium ID reference. */
     const QString &m_strMediumID;
     /** Holds the medium instance to be modified. */
@@ -84,7 +87,9 @@ private:
     /** Holds the group-box instance. */
     QGroupBox *m_pGroupBox;
     /** Holds the button layout instance. */
-    QVBoxLayout *m_pGroupBoxLayout;
+    QVBoxLayout *m_pButtonLayout;
+    /** Holds the details-pane instance. */
+    QILabel *m_pDetailsPane;
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;
 };

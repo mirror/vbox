@@ -87,6 +87,9 @@ void UIMediumTypeChangeDialog::retranslateUi()
     QList<QRadioButton*> buttons = findChildren<QRadioButton*>();
     for (int i = 0; i < buttons.size(); ++i)
         buttons[i]->setText(gpConverter->toString(buttons[i]->property("mediumType").value<KMediumType>()));
+
+    /* Translate details-pane: */
+    updateDetailsPane();
 }
 
 void UIMediumTypeChangeDialog::sltValidate()
@@ -110,6 +113,9 @@ void UIMediumTypeChangeDialog::sltValidate()
     /* Enable/disable OK button depending on chosen type,
      * for now only the previous type is restricted, others are free to choose: */
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_enmMediumTypeOld != m_enmMediumTypeNew);
+
+    /* Update details-pane: */
+    updateDetailsPane();
 }
 
 void UIMediumTypeChangeDialog::prepare()
@@ -189,26 +195,60 @@ void UIMediumTypeChangeDialog::prepareMediumTypeButtons()
     qRegisterMetaType<KMediumType>();
 
     /* Create group-box layout: */
-    m_pGroupBoxLayout = new QVBoxLayout(m_pGroupBox);
-    AssertPtrReturnVoid(m_pGroupBoxLayout);
+    QHBoxLayout *pGroupBoxLayout = new QHBoxLayout(m_pGroupBox);
+    AssertPtrReturnVoid(pGroupBoxLayout);
     {
-        /* Populate radio-buttons: */
-        prepareMediumTypeButton(KMediumType_Normal);
-        prepareMediumTypeButton(KMediumType_Immutable);
-        prepareMediumTypeButton(KMediumType_Writethrough);
-        prepareMediumTypeButton(KMediumType_Shareable);
-        prepareMediumTypeButton(KMediumType_MultiAttach);
-        /* Make sure button reflecting current type is checked: */
-        QList<QRadioButton*> buttons = m_pGroupBox->findChildren<QRadioButton*>();
-        for (int i = 0; i < buttons.size(); ++i)
+        /* Create button layout: */
+        m_pButtonLayout = new QVBoxLayout;
+        AssertPtrReturnVoid(m_pButtonLayout);
         {
-            if (buttons[i]->property("mediumType").value<KMediumType>() == m_enmMediumTypeOld)
+            /* Populate radio-buttons: */
+            prepareMediumTypeButton(KMediumType_Normal);
+            prepareMediumTypeButton(KMediumType_Immutable);
+            prepareMediumTypeButton(KMediumType_Writethrough);
+            prepareMediumTypeButton(KMediumType_Shareable);
+            prepareMediumTypeButton(KMediumType_MultiAttach);
+            /* Make sure button reflecting current type is checked: */
+            QList<QRadioButton*> buttons = m_pGroupBox->findChildren<QRadioButton*>();
+            for (int i = 0; i < buttons.size(); ++i)
             {
-                buttons[i]->setChecked(true);
-                buttons[i]->setFocus();
-                break;
+                if (buttons[i]->property("mediumType").value<KMediumType>() == m_enmMediumTypeOld)
+                {
+                    buttons[i]->setChecked(true);
+                    buttons[i]->setFocus();
+                    break;
+                }
             }
+
+            /* Add stretch into button layout: */
+            m_pButtonLayout->addStretch();
         }
+        /* Add button layout into group-box layout: */
+        pGroupBoxLayout->addLayout(m_pButtonLayout);
+
+        /* Create details layout: */
+        QVBoxLayout *pDetailsLayout = new QVBoxLayout;
+        AssertPtrReturnVoid(pDetailsLayout);
+        {
+            /* Create details-pane: */
+            m_pDetailsPane = new QILabel;
+            AssertPtrReturnVoid(m_pDetailsPane);
+            {
+                /* Configure details-pane: */
+                m_pDetailsPane->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                m_pDetailsPane->setMargin(2);
+                m_pDetailsPane->setWordWrap(true);
+                m_pDetailsPane->useSizeHintForWidth(320);
+                m_pDetailsPane->updateGeometry();
+            }
+            /* Add details-pane into details layout: */
+            pDetailsLayout->addWidget(m_pDetailsPane);
+
+            /* Add stretch into details layout: */
+            pDetailsLayout->addStretch();
+        }
+        /* Add details layout into group-box layout: */
+        pGroupBoxLayout->addLayout(pDetailsLayout);
     }
 }
 
@@ -223,6 +263,35 @@ void UIMediumTypeChangeDialog::prepareMediumTypeButton(KMediumType mediumType)
         pRadioButton->setProperty("mediumType", QVariant::fromValue(mediumType));
     }
     /* Add radio-button into layout: */
-    m_pGroupBoxLayout->addWidget(pRadioButton);
+    m_pButtonLayout->addWidget(pRadioButton);
+}
+
+void UIMediumTypeChangeDialog::updateDetailsPane()
+{
+    switch (m_enmMediumTypeNew)
+    {
+        case KMediumType_Normal:
+            m_pDetailsPane->setText(tr("This type of medium is attached directly or indirectly, preserved when taking snapshots."));
+            break;
+        case KMediumType_Immutable:
+            m_pDetailsPane->setText(tr("This type of medium is attached indirectly, changes are wiped out the next time the "
+                                       "virtual machine is started."));
+            break;
+        case KMediumType_Writethrough:
+            m_pDetailsPane->setText(tr("This type of medium is attached directly, ignored when taking snapshots."));
+            break;
+        case KMediumType_Shareable:
+            m_pDetailsPane->setText(tr("This type of medium is attached directly, allowed to be used concurrently by several machines."));
+            break;
+        case KMediumType_Readonly:
+            m_pDetailsPane->setText(tr("This type of medium is attached directly, and can be used by several machines."));
+            break;
+        case KMediumType_MultiAttach:
+            m_pDetailsPane->setText(tr("This type of medium is attached indirectly, so that one base medium can be used for several "
+                                       "VMs which have their own differencing medium to store their modifications."));
+            break;
+        default:
+            break;
+    }
 }
 
