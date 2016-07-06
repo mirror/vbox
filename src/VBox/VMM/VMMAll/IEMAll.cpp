@@ -218,7 +218,7 @@ typedef IEMSELDESC *PIEMSELDESC;
  * non-volatile registers.  However, it eliminates return code checks and allows
  * for more optimal return value passing (return regs instead of stack buffer).
  */
-#if defined(DOXYGEN_RUNNING)
+#if defined(DOXYGEN_RUNNING) || defined(RT_OS_WINDOWS)
 # define IEM_WITH_SETJMP
 #endif
 
