@@ -427,6 +427,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Unknown_Heap_Corruption                   = ( 'Unknown',           'Heap corruption' );
     ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
+    ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
     ## @}
 
     ## BSOD category.
@@ -875,6 +876,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             # Out of memory w/ timeout.
             if sMainLog.find('sErrId=HostMemoryLow') > 0:
                 oCaseFile.noteReason(self.ktReason_Host_HostMemoryLow);
+                return self.caseClosed(oCaseFile);
+
+            # Stale files like vts_rm.exe (windows).
+            offEnd = sMainLog.rfind('*** The test driver exits successfully. ***');
+            if offEnd > 0 and sMainLog.find('[Error 145] The directory is not empty: ', offEnd) > 0:
+                oCaseFile.noteReason(self.ktReason_Ignore_Stale_Files);
                 return self.caseClosed(oCaseFile);
 
         #
