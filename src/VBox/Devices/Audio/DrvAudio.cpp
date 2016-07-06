@@ -362,10 +362,10 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("[%s] enmStreamCmd=%RU32\n", pStream->szName, enmStreamCmd));
-
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
     AssertPtr(pHstStream);
+
+    LogFlowFunc(("[%s] enmStreamCmd=%RU32, fStatus=0x%x\n", pHstStream->szName, enmStreamCmd, pHstStream->fStatus));
 
     AssertPtr(pThis->pHostDrvAudio);
 
@@ -403,6 +403,10 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
             case PDMAUDIOSTREAMCMD_PAUSE:
             {
+                /* Only pause if the stream is enabled. */
+                if (!(pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+                    break;
+
                 if (!(pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PAUSED))
                 {
                     rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pHstStream, PDMAUDIOSTREAMCMD_PAUSE);
@@ -414,6 +418,10 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
             case PDMAUDIOSTREAMCMD_RESUME:
             {
+                /* Only need to resume if the stream is enabled. */
+                if (!(pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+                    break;
+
                 if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PAUSED)
                 {
                     rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pHstStream, PDMAUDIOSTREAMCMD_RESUME);
