@@ -870,6 +870,7 @@ class RemoteReporter(ReporterBase):
             if len(asXml) > 0  or  fForce is True:
                 self._fXmlFlushing = True;
 
+                self._writeOutput('xml-debug/%s: flushing!'  % (len(self._asXml),)); # temporarily while debugging flush/poll
                 g_oLock.release();
                 (asXml, fIncErrors) = self._xmlDoFlush(asXml, fRetry = fRetry);
                 g_oLock.acquire();
