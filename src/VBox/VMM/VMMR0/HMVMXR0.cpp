@@ -4842,27 +4842,27 @@ static bool hmR0VmxIs32BitSwitcherSafe(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     do
     {
-        if (pMixedCtx->gdtr.pGdt & 0xffffffff00000000)
+        if (pMixedCtx->gdtr.pGdt & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->idtr.pIdt & 0xffffffff00000000)
+        if (pMixedCtx->idtr.pIdt & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->ldtr.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->ldtr.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->tr.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->tr.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->tr.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->tr.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->es.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->es.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->cs.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->cs.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->ss.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->ss.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->ds.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->ds.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->fs.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->fs.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->gs.u64Base & 0xffffffff00000000)
+        if (pMixedCtx->gs.u64Base & UINT64_C(0xffffffff00000000))
             break;
         /* All good, bases are 32-bit. */
         rc = true;
