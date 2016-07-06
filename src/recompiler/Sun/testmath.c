@@ -809,7 +809,7 @@ int main()
     test_fops(2, 3);
     test_fops(1.4, -5);
 
-    printf("cErrors=%d\n", cErrors);
+    printf("cErrors=%u\n", cErrors);
     return cErrors;
 }
 #endif
