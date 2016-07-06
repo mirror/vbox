@@ -858,7 +858,6 @@ static int pgmPoolAccessPfHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PP
      * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
      * Must do this in raw mode (!); XP boot will fail otherwise.
      */
-RTLogPrintf("pgmPoolAccessPfHandlerFlush\n");
     VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (rc2 == VINF_SUCCESS)
     { /* do nothing */ }
@@ -1025,7 +1024,6 @@ DECLINLINE(int) pgmPoolAccessPfHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPo
     /*
      * Interpret the instruction.
      */
-RTLogPrintf("pgmPoolAccessPfHandlerSimple\n");
     VBOXSTRICTRC rc = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc))
         AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc))); /* ASSUMES no complicated stuff here. */
