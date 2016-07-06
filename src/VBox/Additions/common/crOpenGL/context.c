@@ -1155,7 +1155,7 @@ GLboolean stubCtxCheckCreate(ContextInfo *context)
 GLboolean
 stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 {
-    GLboolean retVal;
+    GLboolean retVal = GL_FALSE;
 
     /*
      * Get WindowInfo and ContextInfo pointers.
