@@ -71,12 +71,12 @@ int main()
            )
         {
 #ifdef USE_CLOCK_MONOTONIC
-            printf("tv_nsec in the past: %ld.%09u < %ld.%09u - %d nsec\n",
+            printf("tv_nsec in the past: %ld.%09u < %ld.%09u - %u nsec\n",
                    (long)pCur->tv_sec,  (unsigned)pCur->tv_nsec,
                    (long)pPrev->tv_sec, (unsigned)pPrev->tv_nsec,
                    (unsigned)pPrev->tv_nsec - (unsigned)pCur->tv_nsec);
 #else
-            printf("tv_usec in the past: %ld.%06u < %ld.%06u - %d usec\n",
+            printf("tv_usec in the past: %ld.%06u < %ld.%06u - %u usec\n",
                    (long)pCur->tv_sec,  (unsigned)pCur->tv_usec,
                    (long)pPrev->tv_sec, (unsigned)pPrev->tv_usec,
                    (unsigned)pPrev->tv_usec - (unsigned)pCur->tv_usec);
