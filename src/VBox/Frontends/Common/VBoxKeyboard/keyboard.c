@@ -240,7 +240,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, unsigned min_keycode,
           if ((ckey[keyc][0] > 32) && (ckey[keyc][0] < 127)) {
               str[0] = ckey[keyc][0];
           }
-          LOG_KB_2(("Mismatch for keycode %d, keysym \"%s\" (0x%.2hx 0x%.2hx)\n",
+          LOG_KB_2(("Mismatch for keycode %u, keysym \"%s\" (0x%.2hx 0x%.2hx)\n",
                        keyc, str, ckey[keyc][0], ckey[keyc][1]));
 #endif /* DEBUG defined */
         }
