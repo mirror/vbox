@@ -661,7 +661,7 @@ class TestBoxScript(object):
         """
         return self._sTestBoxName;
 
-    def reinitScratch(self, fnLog = testboxcommons.log, fUseTheForce = None):
+    def _reinitScratch(self, fnLog, fUseTheForce):
         """
         Wipes the scratch directories and re-initializes them.
 
@@ -741,6 +741,30 @@ class TestBoxScript(object):
             self._cReinitScratchErrors += 1;
         return oRc.fRc;
 
+    def reinitScratch(self, fnLog = testboxcommons.log, fUseTheForce = None, cRetries = 0, cMsDelay = 5000):
+        """
+        Wipes the scratch directories and re-initializes them.
+
+        Will retry according to the cRetries and cMsDelay parameters.  Windows
+        forces us to apply this hack as it ships with services asynchronously
+        scanning files after they execute, thus racing us cleaning up after a
+        test.  On testboxwin3 we had frequent trouble with aelupsvc.dll keeping
+        vts_rm.exe kind of open, somehow preventing us from removing the
+        directory containing it, despite not issuing any errors deleting the
+        file itself.  The service is called "Application Experience", which
+        feels like a weird joke here.
+
+        No exceptions raise, returns success indicator instead.
+        """
+        fRc = self._reinitScratch(fnLog, fUseTheForce)
+        while fRc is False and cRetries > 0:
+            time.sleep(cMsDelay / 1000.0);
+            fnLog('reinitScratch: Retrying...');
+            fRc = self._reinitScratch(fnLog, fUseTheForce)
+            cRetries -= 1;
+        return fRc;
+
+
     def _doSignOn(self):
         """
         Worker for _maybeSignOn that does the actual signing on.
@@ -790,7 +814,7 @@ class TestBoxScript(object):
                            % (self._idTestBox, self._sTestBoxName));
 
         # Set up the scratch area.
-        self.reinitScratch(fUseTheForce = self._fFirstSignOn);
+        self.reinitScratch(fUseTheForce = self._fFirstSignOn, cRetries = 2);
 
         self._fFirstSignOn = False;
         return True;
@@ -855,7 +879,7 @@ class TestBoxScript(object):
                 oConnection.close();
 
             # Automatically reboot if scratch init fails.
-            if self._cReinitScratchErrors > 8 and self.reinitScratch() is False:
+            if self._cReinitScratchErrors > 8 and self.reinitScratch(cRetries = 3) is False:
                 testboxcommons.log('Scratch does not initialize cleanly after %d attempts, rebooting...'
                                    % ( self._cReinitScratchErrors, ));
                 self._oCommand.doReboot();

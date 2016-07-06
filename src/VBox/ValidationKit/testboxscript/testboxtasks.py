@@ -591,18 +591,9 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
             fRc = False;
 
         #
-        # Wipe the stuff clean.  On failure, delay for a total of 20 seconds while
-        # periodically retrying the cleanup.  This is a hack to work around issues
-        # on windows caused by the service in aelupsvc.dll preventing us from deleting
-        # vts_rm.exe (or rather the directory its in).  The service is called
-        # "Application Experience", which feels like a weird joke here.
+        # Wipe the stuff clean.
         #
-        fRc2 = self._oTestBoxScript.reinitScratch(fnLog = self._log);
-        cRetries = 4;
-        while fRc2 is False and cRetries > 0:
-            time.sleep(5);
-            fRc2 = self._oTestBoxScript.reinitScratch(fnLog = self._log);
-            cRetries -= 1;
+        fRc2 = self._oTestBoxScript.reinitScratch(fnLog = self._log, cRetries = 6);
 
         return fRc and fRc2;
 
@@ -911,7 +902,7 @@ class TestBoxExecTask(TestBoxTestDriverTask):
         # Clean up scratch.
         #
         if fNeedCleanUp:
-            if self._oTestBoxScript.reinitScratch(self._logInternal) is not True:
+            if self._oTestBoxScript.reinitScratch(self._logInternal, cRetries = 6) is not True:
                 self._log('post run reinitScratch failed.');
                 fRc = False;
 
