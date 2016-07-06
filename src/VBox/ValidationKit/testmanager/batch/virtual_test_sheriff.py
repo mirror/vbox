@@ -906,7 +906,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 self.vprint('Ignoring "machine not mutable" error as it is probably due to an earlier problem');
                 oCaseFile.noteReasonForId(self.ktHarmless, oFailedResult.idTestResult);
 
-            elif sResultLog.find('** error: no action was specified') > 0:
+            elif  sResultLog.find('** error: no action was specified') > 0 \
+               or sResultLog.find('(len(self._asXml, asText))'):
                 oCaseFile.noteReasonForId(self.ktReason_Ignore_Buggy_Test_Driver, oFailedResult.idTestResult);
 
             else:
