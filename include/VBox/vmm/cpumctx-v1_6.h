@@ -92,37 +92,37 @@ typedef struct CPUMCTX_VER1_6
     {
         uint32_t        edi;
         uint64_t        rdi;
-    } CPUM_UNION_NAME(rdi);
+    } CPUM_UNION_NM(rdi);
     union
     {
         uint32_t        esi;
         uint64_t        rsi;
-    } CPUM_UNION_NAME(rsi);
+    } CPUM_UNION_NM(rsi);
     union
     {
         uint32_t        ebp;
         uint64_t        rbp;
-    } CPUM_UNION_NAME(rbp);
+    } CPUM_UNION_NM(rbp);
     union
     {
         uint32_t        eax;
         uint64_t        rax;
-    } CPUM_UNION_NAME(rax);
+    } CPUM_UNION_NM(rax);
     union
     {
         uint32_t        ebx;
         uint64_t        rbx;
-    } CPUM_UNION_NAME(rbx);
+    } CPUM_UNION_NM(rbx);
     union
     {
         uint32_t        edx;
         uint64_t        rdx;
-    } CPUM_UNION_NAME(rdx);
+    } CPUM_UNION_NM(rdx);
     union
     {
         uint32_t        ecx;
         uint64_t        rcx;
-    } CPUM_UNION_NAME(rcx);
+    } CPUM_UNION_NM(rcx);
     /** @note We rely on the exact layout, because we use lss esp, [] in the
      *        switcher. */
     uint32_t        esp;
@@ -146,12 +146,12 @@ typedef struct CPUMCTX_VER1_6
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    } CPUM_UNION_NAME(rflags);
+    } CPUM_UNION_NM(rflags);
     union
     {
         uint32_t        eip;
         uint64_t        rip;
-    } CPUM_UNION_NAME(rip);
+    } CPUM_UNION_NM(rip);
 
     uint64_t            r8;
     uint64_t            r9;
