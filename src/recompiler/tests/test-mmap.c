@@ -414,9 +414,9 @@ void check_file_fixed_mmaps(void)
 		/* Make sure we get pages aligned with the pagesize.
 		   The target expects this.  */
 		fail_unless (p1 == (void *)addr);
-		fail_unless (p2 == (void *)addr + pagesize);
-		fail_unless (p3 == (void *)addr + pagesize * 2);
-		fail_unless (p4 == (void *)addr + pagesize * 3);
+		fail_unless (p2 == (void *)(addr + pagesize));
+		fail_unless (p3 == (void *)(addr + pagesize * 2));
+		fail_unless (p4 == (void *)(addr + pagesize * 3));
 
 		/* Verify that the file maps was made correctly.  */
 		fail_unless (*p1 == 0);
