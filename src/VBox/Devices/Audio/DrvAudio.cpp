@@ -1705,6 +1705,8 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
     if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_INITIALIZED)
     {
+        /* Check if the pointer to  the host audio driver is still valid.
+         * It can be NULL if we were called in drvAudioDestruct, for example. */
         if (pThis->pHostDrvAudio)
             rc = pThis->pHostDrvAudio->pfnStreamDestroy(pThis->pHostDrvAudio, pHstStream);
         if (RT_SUCCESS(rc))
@@ -1900,13 +1902,6 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     int rc2 = RTCritSectEnter(&pThis->CritSect);
     AssertRC(rc2);
 
-    PPDMAUDIOSTREAM pStream, pStreamNext;
-    RTListForEachSafe(&pThis->lstHstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
-        drvAudioStreamDestroyInternal(pThis, pStream);
-
-    RTListForEachSafe(&pThis->lstGstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
-        drvAudioStreamDestroyInternal(pThis, pStream);
-
     /*
      * Note: No calls here to the driver below us anymore,
      *       as PDM already has destroyed it.
@@ -1914,9 +1909,16 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
      *       do this in drvAudioPowerOff() instead.
      */
 
-    /* Sanity. */
-    Assert(RTListIsEmpty(&pThis->lstHstStreams));
-    Assert(RTListIsEmpty(&pThis->lstGstStreams));
+    /* Thus, NULL the pointer to the host audio driver first,
+     * so that routines like drvAudioStreamDestroyInternal() don't call the driver(s) below us anymore. */
+    pThis->pHostDrvAudio = NULL;
+
+    PPDMAUDIOSTREAM pStream, pStreamNext;
+    RTListForEachSafe(&pThis->lstHstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
+        drvAudioStreamDestroyInternal(pThis, pStream);
+
+    RTListForEachSafe(&pThis->lstGstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
+        drvAudioStreamDestroyInternal(pThis, pStream);
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
