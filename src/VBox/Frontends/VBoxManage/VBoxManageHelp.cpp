@@ -800,8 +800,9 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
         }
         if (fLinux || fSolaris)
         {
+            RTStrmPrintf(pStrm, ""
 #ifdef VBOX_WITH_OSS
-            RTStrmPrintf(pStrm, "|oss"
+                                "|oss"
 #endif
 #ifdef VBOX_WITH_ALSA
                                 "|alsa"
