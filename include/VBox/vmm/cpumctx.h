@@ -122,17 +122,29 @@ typedef struct CPUMSYSENTER
     uint64_t    esp;
 } CPUMSYSENTER;
 
-/** @def CPUM_UNION_NAME
+/** @def CPUM_UNION_NM
  * For compilers (like DTrace) that does not grok nameless unions, we have a
  * little hack to make them palatable.
  */
+/** @def CPUM_STRUCT_NM
+ * For compilers (like DTrace) that does not grok nameless structs (it is
+ * non-standard C++), we have a little hack to make them palatable.
+ */
 #ifdef VBOX_FOR_DTRACE_LIB
-# define CPUM_UNION_NAME(a_Nm)  a_Nm
+# define CPUM_UNION_NM(a_Nm)  a_Nm
+# define CPUM_STRUCT_NM(a_Nm) a_Nm
 #elif defined(VBOX_WITHOUT_UNNAMED_UNIONS)
-# define CPUM_UNION_NAME(a_Nm)  a_Nm
+# define CPUM_UNION_NM(a_Nm)  a_Nm
+# define CPUM_STRUCT_NM(a_Nm) a_Nm
 #else
-# define CPUM_UNION_NAME(a_Nm)
+# define CPUM_UNION_NM(a_Nm)
+# define CPUM_STRUCT_NM(a_Nm)
 #endif
+/** @def CPUM_UNION_STRUCT_NM
+ * Combines CPUM_UNION_NM and CPUM_STRUCT_NM to avoid hitting the right side of
+ * the screen in the compile time assertions.
+ */
+#define CPUM_UNION_STRUCT_NM(a_UnionNm, a_StructNm) CPUM_UNION_NM(a_UnionNm .) CPUM_STRUCT_NM(a_StructNm)
 
 /** A general register (union). */
 typedef union CPUMCTXGREG
@@ -154,12 +166,12 @@ typedef union CPUMCTXGREG
         uint8_t         bLo;
         /** High byte in the first word - ah, ch, dh, bh. */
         uint8_t         bHi;
-    } CPUM_UNION_NAME(s);
+    } CPUM_STRUCT_NM(s);
 } CPUMCTXGREG;
 #ifdef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMCTXGREG, 8);
-AssertCompileMemberOffset(CPUMCTXGREG, CPUM_UNION_NAME(s.) bLo, 0);
-AssertCompileMemberOffset(CPUMCTXGREG, CPUM_UNION_NAME(s.) bHi, 1);
+AssertCompileMemberOffset(CPUMCTXGREG, CPUM_STRUCT_NM(s.) bLo, 0);
+AssertCompileMemberOffset(CPUMCTXGREG, CPUM_STRUCT_NM(s.) bHi, 1);
 #endif
 
 
@@ -183,54 +195,54 @@ typedef struct CPUMCTXCORE
         uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
-    } CPUM_UNION_NAME(rax);
+    } CPUM_UNION_NM(rax);
     union
     {
         uint8_t         cl;
         uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
-    } CPUM_UNION_NAME(rcx);
+    } CPUM_UNION_NM(rcx);
     union
     {
         uint8_t         dl;
         uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
-    } CPUM_UNION_NAME(rdx);
+    } CPUM_UNION_NM(rdx);
     union
     {
         uint8_t         bl;
         uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
-    } CPUM_UNION_NAME(rbx);
+    } CPUM_UNION_NM(rbx);
     union
     {
         uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
-    } CPUM_UNION_NAME(rsp);
+    } CPUM_UNION_NM(rsp);
     union
     {
         uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
-    } CPUM_UNION_NAME(rbp);
+    } CPUM_UNION_NM(rbp);
     union
     {
         uint8_t         sil;
         uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
-    } CPUM_UNION_NAME(rsi);
+    } CPUM_UNION_NM(rsi);
     union
     {
         uint8_t         dil;
         uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
-    } CPUM_UNION_NAME(rdi);
+    } CPUM_UNION_NM(rdi);
     uint64_t            r8;
     uint64_t            r9;
     uint64_t            r10;
@@ -259,14 +271,14 @@ typedef struct CPUMCTXCORE
         uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
-    } CPUM_UNION_NAME(rip);
+    } CPUM_UNION_NM(rip);
 
     /** The flags register. */
     union
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    } CPUM_UNION_NAME(rflags);
+    } CPUM_UNION_NM(rflags);
 
 } CPUMCTXCORE;
 #pragma pack()
@@ -291,12 +303,12 @@ typedef struct CPUMCTX
         RT_GCC_EXTENSION struct /* no tag! */
         {
             uint64_t    rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15;
-        } CPUM_UNION_NAME(qw);
+        } CPUM_STRUCT_NM(qw);
         /** 64-bit general purpose register view. */
         RT_GCC_EXTENSION struct /* no tag! */
         {
             uint64_t    r0, r1, r2, r3, r4, r5, r6, r7;
-        } CPUM_UNION_NAME(qw2);
+        } CPUM_STRUCT_NM(qw2);
         /** 32-bit general purpose register view. */
         RT_GCC_EXTENSION struct /* no tag! */
         {
@@ -304,7 +316,7 @@ typedef struct CPUMCTX
                          esp, u32Pad04,      ebp, u32Pad05,      esi, u32Pad06,      edi, u32Pad07,
                          r8d, u32Pad08,      r9d, u32Pad09,     r10d, u32Pad10,     r11d, u32Pad11,
                         r12d, u32Pad12,     r13d, u32Pad13,     r14d, u32Pad14,     r15d, u32Pad15;
-        } CPUM_UNION_NAME(dw);
+        } CPUM_STRUCT_NM(dw);
         /** 16-bit general purpose register view. */
         RT_GCC_EXTENSION struct /* no tag! */
         {
@@ -312,15 +324,15 @@ typedef struct CPUMCTX
                           sp, au16Pad04[3],   bp, au16Pad05[3],   si, au16Pad06[3],   di, au16Pad07[3],
                          r8w, au16Pad08[3],  r9w, au16Pad09[3], r10w, au16Pad10[3], r11w, au16Pad11[3],
                         r12w, au16Pad12[3], r13w, au16Pad13[3], r14w, au16Pad14[3], r15w, au16Pad15[3];
-        } CPUM_UNION_NAME(w);
+        } CPUM_STRUCT_NM(w);
         RT_GCC_EXTENSION struct /* no tag! */
         {
             uint8_t   al, ah, abPad00[6], cl, ch, abPad01[6], dl, dh, abPad02[6], bl, bh, abPad03[6],
                          spl, abPad04[7],    bpl, abPad05[7],    sil, abPad06[7],    dil, abPad07[7],
                          r8l, abPad08[7],    r9l, abPad09[7],   r10l, abPad10[7],   r11l, abPad11[7],
                         r12l, abPad12[7],   r13l, abPad13[7],   r14l, abPad14[7],   r15l, abPad15[7];
-        } CPUM_UNION_NAME(b);
-    } CPUM_UNION_NAME(g);
+        } CPUM_STRUCT_NM(b);
+    } CPUM_UNION_NM(g);
 
     /** Segment registers. */
     union /* no tag! */
@@ -331,8 +343,8 @@ typedef struct CPUMCTX
         RT_GCC_EXTENSION struct /* no tag! */
         {
             CPUMSELREG  es, cs, ss, ds, fs, gs;
-        } CPUM_UNION_NAME(n);
-    } CPUM_UNION_NAME(s);
+        } CPUM_STRUCT_NM(n);
+    } CPUM_UNION_NM(s);
 
     /** The program counter. */
     union
@@ -340,14 +352,14 @@ typedef struct CPUMCTX
         uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
-    } CPUM_UNION_NAME(rip);
+    } CPUM_UNION_NM(rip);
 
     /** The flags register. */
     union
     {
         X86EFLAGS       eflags;
         X86RFLAGS       rflags;
-    } CPUM_UNION_NAME(rflags);
+    } CPUM_UNION_NM(rflags);
 
     /** @} */ /*(CPUMCTXCORE)*/
 
@@ -425,28 +437,28 @@ typedef struct CPUMCTX
 
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSizeAlignment(CPUMCTX, 64);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax,   0);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rcx,   8);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdx,  16);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbx,  24);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsp,  32);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbp,  40);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsi,  48);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdi,  56);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r8,  64);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r9,  72);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r10,  80);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r11,  88);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r12,  96);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r13, 104);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r14, 112);
-AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r15, 120);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NAME(s.n.) es, 128);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NAME(s.n.) cs, 152);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NAME(s.n.) ss, 176);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NAME(s.n.) ds, 200);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NAME(s.n.) fs, 224);
-AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NAME(s.n.) gs, 248);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rax,   0);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rcx,   8);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rdx,  16);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rbx,  24);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rsp,  32);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rbp,  40);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rsi,  48);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rdi,  56);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.)  r8,  64);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.)  r9,  72);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r10,  80);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r11,  88);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r12,  96);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r13, 104);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r14, 112);
+AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) r15, 120);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) es, 128);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) cs, 152);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ss, 176);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) ds, 200);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) fs, 224);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) gs, 248);
 AssertCompileMemberOffset(CPUMCTX,                        rip, 272);
 AssertCompileMemberOffset(CPUMCTX,                     rflags, 280);
 AssertCompileMemberOffset(CPUMCTX,                        cr0, 288);
@@ -473,87 +485,87 @@ AssertCompileMemberOffset(CPUMCTX,                  pXStateR0, 576);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateR3, HC_ARCH_BITS == 64 ? 584 : 580);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateRC, HC_ARCH_BITS == 64 ? 592 : 584);
 AssertCompileMemberOffset(CPUMCTX,                 aoffXState, HC_ARCH_BITS == 64 ? 596 : 588);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax, CPUMCTX, CPUM_UNION_NAME(g.)  aGRegs);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r0);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rcx, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r1);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdx, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r2);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbx, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r3);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsp, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r4);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbp, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r5);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsi, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r6);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdi, CPUMCTX, CPUM_UNION_NAME(g.qw2.)  r7);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax, CPUMCTX, CPUM_UNION_NAME(g.dw.)  eax);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rcx, CPUMCTX, CPUM_UNION_NAME(g.dw.)  ecx);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdx, CPUMCTX, CPUM_UNION_NAME(g.dw.)  edx);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbx, CPUMCTX, CPUM_UNION_NAME(g.dw.)  ebx);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsp, CPUMCTX, CPUM_UNION_NAME(g.dw.)  esp);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbp, CPUMCTX, CPUM_UNION_NAME(g.dw.)  ebp);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsi, CPUMCTX, CPUM_UNION_NAME(g.dw.)  esi);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdi, CPUMCTX, CPUM_UNION_NAME(g.dw.)  edi);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r8, CPUMCTX, CPUM_UNION_NAME(g.dw.)  r8d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r9, CPUMCTX, CPUM_UNION_NAME(g.dw.)  r9d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r10, CPUMCTX, CPUM_UNION_NAME(g.dw.) r10d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r11, CPUMCTX, CPUM_UNION_NAME(g.dw.) r11d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r12, CPUMCTX, CPUM_UNION_NAME(g.dw.) r12d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r13, CPUMCTX, CPUM_UNION_NAME(g.dw.) r13d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r14, CPUMCTX, CPUM_UNION_NAME(g.dw.) r14d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r15, CPUMCTX, CPUM_UNION_NAME(g.dw.) r15d);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax, CPUMCTX, CPUM_UNION_NAME(g.w.)    ax);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rcx, CPUMCTX, CPUM_UNION_NAME(g.w.)    cx);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdx, CPUMCTX, CPUM_UNION_NAME(g.w.)    dx);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbx, CPUMCTX, CPUM_UNION_NAME(g.w.)    bx);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsp, CPUMCTX, CPUM_UNION_NAME(g.w.)    sp);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbp, CPUMCTX, CPUM_UNION_NAME(g.w.)    bp);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsi, CPUMCTX, CPUM_UNION_NAME(g.w.)    si);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdi, CPUMCTX, CPUM_UNION_NAME(g.w.)    di);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r8, CPUMCTX, CPUM_UNION_NAME(g.w.)   r8w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r9, CPUMCTX, CPUM_UNION_NAME(g.w.)   r9w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r10, CPUMCTX, CPUM_UNION_NAME(g.w.)  r10w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r11, CPUMCTX, CPUM_UNION_NAME(g.w.)  r11w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r12, CPUMCTX, CPUM_UNION_NAME(g.w.)  r12w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r13, CPUMCTX, CPUM_UNION_NAME(g.w.)  r13w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r14, CPUMCTX, CPUM_UNION_NAME(g.w.)  r14w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r15, CPUMCTX, CPUM_UNION_NAME(g.w.)  r15w);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax, CPUMCTX, CPUM_UNION_NAME(g.b.)    al);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rcx, CPUMCTX, CPUM_UNION_NAME(g.b.)    cl);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdx, CPUMCTX, CPUM_UNION_NAME(g.b.)    dl);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbx, CPUMCTX, CPUM_UNION_NAME(g.b.)    bl);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsp, CPUMCTX, CPUM_UNION_NAME(g.b.)   spl);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbp, CPUMCTX, CPUM_UNION_NAME(g.b.)   bpl);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsi, CPUMCTX, CPUM_UNION_NAME(g.b.)   sil);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdi, CPUMCTX, CPUM_UNION_NAME(g.b.)   dil);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r8, CPUMCTX, CPUM_UNION_NAME(g.b.)   r8l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r9, CPUMCTX, CPUM_UNION_NAME(g.b.)   r9l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r10, CPUMCTX, CPUM_UNION_NAME(g.b.)  r10l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r11, CPUMCTX, CPUM_UNION_NAME(g.b.)  r11l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r12, CPUMCTX, CPUM_UNION_NAME(g.b.)  r12l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r13, CPUMCTX, CPUM_UNION_NAME(g.b.)  r13l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r14, CPUMCTX, CPUM_UNION_NAME(g.b.)  r14l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r15, CPUMCTX, CPUM_UNION_NAME(g.b.)  r15l);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) es,   CPUMCTX, CPUM_UNION_NAME(s.)  aSRegs);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r2);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r3);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r4);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r5);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r6);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r7);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  eax);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  ecx);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  edx);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  ebx);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  esp);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  ebp);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  esi);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  edi);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r8, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  r8d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r9, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.)  r9d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r10, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.) r10d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r11, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.) r11d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r12, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.) r12d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r13, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.) r13d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r14, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.) r14d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r15, CPUMCTX, CPUM_UNION_STRUCT_NM(g,dw.) r15d);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    ax);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    cx);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    dx);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    bx);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    sp);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    bp);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    si);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)    di);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r8, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)   r8w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r9, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)   r9w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r10, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)  r10w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r11, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)  r11w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r12, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)  r12w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r13, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)  r13w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r14, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)  r14w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r15, CPUMCTX, CPUM_UNION_STRUCT_NM(g,w.)  r15w);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)    al);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)    cl);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)    dl);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)    bl);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)   spl);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbp, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)   bpl);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)   sil);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdi, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)   dil);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r8, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)   r8l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r9, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)   r9l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r10, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)  r10l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r11, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)  r11l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r12, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)  r12l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r13, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)  r13l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r14, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)  r14l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r15, CPUMCTX, CPUM_UNION_STRUCT_NM(g,b.)  r15l);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NM(s.) CPUM_STRUCT_NM(n.) es,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs);
 # ifndef _MSC_VER
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rax, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xAX]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rcx, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xCX]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdx, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xDX]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbx, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xBX]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsp, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xSP]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rbp, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xBP]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rsi, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xSI]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) rdi, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_xDI]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r8, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x8]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.)  r9, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x9]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r10, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x10]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r11, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x11]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r12, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x12]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r13, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x13]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r14, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x14]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(g.qw.) r15, CPUMCTX, CPUM_UNION_NAME(g.) aGRegs[X86_GREG_x15]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) es,   CPUMCTX, CPUM_UNION_NAME(s.) aSRegs[X86_SREG_ES]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) cs,   CPUMCTX, CPUM_UNION_NAME(s.) aSRegs[X86_SREG_CS]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) ss,   CPUMCTX, CPUM_UNION_NAME(s.) aSRegs[X86_SREG_SS]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) ds,   CPUMCTX, CPUM_UNION_NAME(s.) aSRegs[X86_SREG_DS]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) fs,   CPUMCTX, CPUM_UNION_NAME(s.) aSRegs[X86_SREG_FS]);
-AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_NAME(s.n.) gs,   CPUMCTX, CPUM_UNION_NAME(s.) aSRegs[X86_SREG_GS]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xAX]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xCX]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdx, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xDX]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbx, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xBX]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsp, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xSP]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rbp, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xBP]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rsi, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xSI]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rdi, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_xDI]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r8, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x8]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.)  r9, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x9]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r10, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x10]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r11, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x11]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r12, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x12]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r13, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x13]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r14, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x14]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) r15, CPUMCTX, CPUM_UNION_NM(g.) aGRegs[X86_GREG_x15]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) es,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_ES]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) cs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_CS]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) ss,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_SS]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) ds,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_DS]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) fs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_FS]);
+AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_GS]);
 # endif
 
 /**
