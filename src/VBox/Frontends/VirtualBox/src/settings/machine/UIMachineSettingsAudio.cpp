@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -152,25 +152,17 @@ void UIMachineSettingsAudio::retranslateUi()
 # endif /* VBOX_WITH_WINMM */
 #endif /* Q_OS_WIN */
 
-#ifdef Q_OS_SOLARIS
-    m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_SolAudio));
-# ifdef VBOX_WITH_SOLARIS_OSS
+#ifdef VBOX_WITH_OSS
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_OSS));
-# endif /* VBOX_WITH_SOLARIS_OSS */
-#endif /* Q_OS_SOLARIS */
+#endif
 
-#if defined Q_OS_LINUX || defined Q_OS_FREEBSD
-    m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_OSS));
-# ifdef VBOX_WITH_PULSE
-    m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_Pulse));
-# endif /* VBOX_WITH_PULSE */
-#endif /* Q_OS_LINUX | Q_OS_FREEBSD */
-
-#ifdef Q_OS_LINUX
-# ifdef VBOX_WITH_ALSA
+#ifdef VBOX_WITH_ALSA
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_ALSA));
-# endif /* VBOX_WITH_ALSA */
-#endif /* Q_OS_LINUX */
+#endif
+
+#ifdef VBOX_WITH_PULSE
+    m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_Pulse));
+#endif
 
 #ifdef Q_OS_MACX
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_CoreAudio));
@@ -219,31 +211,18 @@ void UIMachineSettingsAudio::prepareComboboxes()
     m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_WinMM);
 # endif /* VBOX_WITH_WINMM */
 #endif /* Q_OS_WIN */
-
-#ifdef Q_OS_SOLARIS
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_SolAudio);
-# ifdef VBOX_WITH_SOLARIS_OSS
+#ifdef VBOX_WITH_OSS
     m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_OSS);
-# endif /* VBOX_WITH_SOLARIS_OSS */
-#endif /* Q_OS_SOLARIS */
-
-#if defined Q_OS_LINUX || defined Q_OS_FREEBSD
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_OSS);
-# ifdef VBOX_WITH_PULSE
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Pulse);
-# endif /* VBOX_WITH_PULSE */
-#endif /* Q_OS_LINUX | Q_OS_FREEBSD */
-
-#ifdef Q_OS_LINUX
-# ifdef VBOX_WITH_ALSA
+#endif
+#ifdef VBOX_WITH_ALSA
     m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_ALSA);
-# endif /* VBOX_WITH_ALSA */
-#endif /* Q_OS_LINUX */
-
+#endif /* VBOX_WITH_ALSA */
+#ifdef VBOX_WITH_PULSE
+    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Pulse);
+#endif /* VBOX_WITH_PULSE */
 #ifdef Q_OS_MACX
     m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_CoreAudio);
 #endif /* Q_OS_MACX */
-
 
     /* Prepare audio-controller combo.
      * Make sure this order corresponds the same in retranslateUi(): */

@@ -6698,14 +6698,14 @@ bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T drv)
 #ifdef RT_OS_WINDOWS
         case AudioDriverType_DirectSound:
 #endif
+#ifdef VBOX_WITH_OSS
+        case AudioDriverType_OSS:
+#endif
 #ifdef VBOX_WITH_ALSA
         case AudioDriverType_ALSA:
 #endif
 #ifdef VBOX_WITH_PULSE
         case AudioDriverType_Pulse:
-#endif
-#ifdef VBOX_WITH_OSS
-        case AudioDriverType_OSS:
 #endif
 #ifdef RT_OS_DARWIN
         case AudioDriverType_CoreAudio:
@@ -6731,10 +6731,6 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
 {
 #if defined(RT_OS_WINDOWS)
     return AudioDriverType_DirectSound;
-#elif defined(RT_OS_SOLARIS)
-# ifdef VBOX_WITH_OSS
-    return AudioDriverType_OSS;
-# endif
 #elif defined(RT_OS_LINUX)
     /* On Linux, we need to check at runtime what's actually supported. */
     static RTCLockMtx s_mtx;
@@ -6762,7 +6758,7 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
     return AudioDriverType_CoreAudio;
 #elif defined(RT_OS_OS2)
     return AudioDriverType_MMPM;
-#elif defined(RT_OS_FREEBSD)
+#else /* All other platforms. */
 # ifdef VBOX_WITH_OSS
     return AudioDriverType_OSS;
 # endif

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -121,20 +121,17 @@ extern const PDMDRVREG g_DrvHostNullAudio;
 #if defined(RT_OS_WINDOWS)
 extern const PDMDRVREG g_DrvHostDSound;
 #endif
-#if defined(RT_OS_LINUX)
-extern const PDMDRVREG g_DrvHostPulseAudio;
-extern const PDMDRVREG g_DrvHostALSAAudio;
+#ifdef VBOX_WITH_OSS
 extern const PDMDRVREG g_DrvHostOSSAudio;
+#endif
+#ifdef VBOX_WITH_ALSA
+extern const PDMDRVREG g_DrvHostALSAAudio;
+#endif
+#ifdef VBOX_WITH_PULSE
+extern const PDMDRVREG g_DrvHostPulseAudio;
 #endif
 #if defined(RT_OS_DARWIN)
 extern const PDMDRVREG g_DrvHostCoreAudio;
-#endif
-#if defined(RT_OS_SOLARIS)
-extern const PDMDRVREG g_DrvHostOSSAudio;
-extern const PDMDRVREG g_DrvHostSolAudio;
-#endif
-#if defined(RT_OS_FREEBSD)
-extern const PDMDRVREG g_DrvHostOSSAudio;
 #endif
 extern const PDMDRVREG g_DrvACPI;
 extern const PDMDRVREG g_DrvAcpiCpu;

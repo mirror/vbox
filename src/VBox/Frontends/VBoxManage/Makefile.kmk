@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2016 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,6 @@ include $(KBUILD_PATH)/subheader.kmk
 
 VBOX_COMMON_VBOXMANAGE_DEFS = \
  	$(if $(VBOX_WITH_AHCI), VBOX_WITH_AHCI) \
- 	$(if $(VBOX_WITH_ALSA), VBOX_WITH_ALSA) \
  	$(if $(VBOX_WITH_COPYTOGUEST),VBOX_WITH_COPYTOGUEST) \
  	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
  	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL) \
@@ -29,9 +28,10 @@ VBOX_COMMON_VBOXMANAGE_DEFS = \
  	$(if $(VBOX_WITH_HGCM), VBOX_WITH_HGCM) \
  	$(if $(VBOX_WITH_HOSTNETIF_API), VBOX_WITH_HOSTNETIF_API) \
  	$(if $(VBOX_WITH_NETFLT), VBOX_WITH_NETFLT) \
+	$(if $(VBOX_WITH_OSS), VBOX_WITH_OSS) \
+	$(if $(VBOX_WITH_ALSA), VBOX_WITH_ALSA) \
  	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
  	$(if $(VBOX_WITH_SCSI), VBOX_WITH_SCSI) \
- 	$(if $(VBOX_WITH_SOLARIS_OSS), VBOX_WITH_SOLARIS_OSS) \
  	$(if $(VBOX_WITH_VBOXSDL), VBOX_WITH_VBOXSDL) \
  	$(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL) \
  	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \

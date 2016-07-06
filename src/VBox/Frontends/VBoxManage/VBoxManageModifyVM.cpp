@@ -2285,58 +2285,34 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 #endif /* RT_OS_WINDOWS */
-#ifdef RT_OS_LINUX
-# ifdef VBOX_WITH_ALSA
-                else if (!RTStrICmp(ValueUnion.psz, "alsa"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-# endif
-# ifdef VBOX_WITH_PULSE
-                else if (!RTStrICmp(ValueUnion.psz, "pulse"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-# endif
-#endif /* !RT_OS_LINUX */
-#ifdef RT_OS_SOLARIS
-                else if (!RTStrICmp(ValueUnion.psz, "solaudio"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_SolAudio));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-#endif /* !RT_OS_SOLARIS */
-#ifdef RT_OS_FREEBSD
+#ifdef VBOX_WITH_OSS
                 else if (!RTStrICmp(ValueUnion.psz, "oss"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
-# ifdef VBOX_WITH_PULSE
+#endif
+#ifdef VBOX_WITH_ALSA
+                else if (!RTStrICmp(ValueUnion.psz, "alsa"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_ALSA));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
+#endif
+#ifdef VBOX_WITH_PULSE
                 else if (!RTStrICmp(ValueUnion.psz, "pulse"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_Pulse));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
-# endif
-#endif /* !RT_OS_FREEBSD */
+#endif
 #ifdef RT_OS_DARWIN
                 else if (!RTStrICmp(ValueUnion.psz, "coreaudio"))
                 {
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_CoreAudio));
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
-
 #endif /* !RT_OS_DARWIN */
-# if defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(VBOX_WITH_SOLARIS_OSS)
-                else if (!RTStrICmp(ValueUnion.psz, "oss"))
-                {
-                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
-                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
-                }
-# endif
                 else
                 {
                     errorArgument("Invalid --audio argument '%s'", ValueUnion.psz);

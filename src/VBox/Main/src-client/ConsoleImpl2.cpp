@@ -2878,6 +2878,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     break;
                 }
 #endif
+#ifdef VBOX_WITH_OSS
+                case AudioDriverType_OSS:
+                {
+                    InsertConfigString(pLunL1, "Driver", "OSSAudio");
+                    break;
+                }
+#endif
 #ifdef VBOX_WITH_ALSA
                 case AudioDriverType_ALSA:
                 {
@@ -2889,13 +2896,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 case AudioDriverType_Pulse:
                 {
                     InsertConfigString(pLunL1, "Driver", "PulseAudio");
-                    break;
-                }
-#endif
-#ifdef VBOX_WITH_OSS
-                case AudioDriverType_OSS:
-                {
-                    InsertConfigString(pLunL1, "Driver", "OSSAudio");
                     break;
                 }
 #endif
