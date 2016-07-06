@@ -139,7 +139,7 @@ void UIWizardImportAppPageBasic2::initializePage()
         else
         {
             /* Not trusted!  Must ask the user whether to continue in this case: */
-            m_enmCertText = !certificate.GetExpired() ? kCertText_SelfSignedUnverified : kCertText_SelfSignedUnverified;
+            m_enmCertText = certificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
 
             /* Translate page early: */
             retranslateUi();
