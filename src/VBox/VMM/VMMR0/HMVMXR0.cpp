@@ -4850,8 +4850,6 @@ static bool hmR0VmxIs32BitSwitcherSafe(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             break;
         if (pMixedCtx->tr.u64Base & UINT64_C(0xffffffff00000000))
             break;
-        if (pMixedCtx->tr.u64Base & UINT64_C(0xffffffff00000000))
-            break;
         if (pMixedCtx->es.u64Base & UINT64_C(0xffffffff00000000))
             break;
         if (pMixedCtx->cs.u64Base & UINT64_C(0xffffffff00000000))
