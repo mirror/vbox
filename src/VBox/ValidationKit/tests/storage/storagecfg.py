@@ -213,7 +213,7 @@ class StorageCfg(object):
     """
 
     kdStorageCfgs = {
-        'testboxstor1.de.oracle.com': ('solaris', 'c[3-9]t\dd0\Z')
+        'testboxstor1.de.oracle.com': ('solaris', r'c[3-9]t\dd0\Z')
     };
 
     def __init__(self, oExec, sHostname = None):
