@@ -79,7 +79,7 @@ struct rcp_state
     uint32_t rcps_flags;
 
     char rcps_domain_buffer[RCPS_BUFFER_SIZE];
-    char rcps_searchlist_buffer[20 /*RCPS_BUFFER_SIZE*/];
+    char rcps_searchlist_buffer[RCPS_BUFFER_SIZE];
     char rcps_nameserver_str_buffer[RCPS_MAX_NAMESERVERS * RCPS_IPVX_SIZE];
 };
 
