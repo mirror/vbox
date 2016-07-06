@@ -70,7 +70,7 @@ static void swapsyncConnect(void)
 static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
 {
     MSG msg;
-    bool bRet;
+    BOOL bRet;
 
     (void) unused;
 
