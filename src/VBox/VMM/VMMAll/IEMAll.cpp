@@ -5041,24 +5041,11 @@ IEM_STATIC PCPUMSELREG iemSRegUpdateHid(PVMCPU pVCpu, PCPUMSELREG pSReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-IEM_STATIC uint16_t *iemSRegRef(PVMCPU pVCpu, uint8_t iSegReg)
+DECLINLINE(uint16_t *) iemSRegRef(PVMCPU pVCpu, uint8_t iSegReg)
 {
-    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-#if 0
     Assert(iSegReg < X86_SREG_COUNT);
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     return &pCtx->aSRegs[iSegReg].Sel;
-#else
-    switch (iSegReg)
-    {
-        case X86_SREG_ES: return &pCtx->es.Sel;
-        case X86_SREG_CS: return &pCtx->cs.Sel;
-        case X86_SREG_SS: return &pCtx->ss.Sel;
-        case X86_SREG_DS: return &pCtx->ds.Sel;
-        case X86_SREG_FS: return &pCtx->fs.Sel;
-        case X86_SREG_GS: return &pCtx->gs.Sel;
-    }
-    AssertFailedReturn(NULL);
-#endif
 }
 
 
@@ -5069,67 +5056,30 @@ IEM_STATIC uint16_t *iemSRegRef(PVMCPU pVCpu, uint8_t iSegReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iSegReg             The segment register.
  */
-IEM_STATIC uint16_t iemSRegFetchU16(PVMCPU pVCpu, uint8_t iSegReg)
+DECLINLINE(uint16_t) iemSRegFetchU16(PVMCPU pVCpu, uint8_t iSegReg)
 {
-    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-#if 0
     Assert(iSegReg < X86_SREG_COUNT);
-    return pCtx->aSRegs[iSegReg].Sel;
-#else
-    switch (iSegReg)
-    {
-        case X86_SREG_ES: return pCtx->es.Sel;
-        case X86_SREG_CS: return pCtx->cs.Sel;
-        case X86_SREG_SS: return pCtx->ss.Sel;
-        case X86_SREG_DS: return pCtx->ds.Sel;
-        case X86_SREG_FS: return pCtx->fs.Sel;
-        case X86_SREG_GS: return pCtx->gs.Sel;
-    }
-    AssertFailedReturn(0xffff);
-#endif
+    return IEM_GET_CTX(pVCpu)->aSRegs[iSegReg].Sel;
 }
 
 
 /**
- * Gets a reference (pointer) to the specified general register.
+ * Gets a reference (pointer) to the specified general purpose register.
  *
  * @returns Register reference.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   iReg                The general register.
+ * @param   iReg                The general purpose register.
  */
-IEM_STATIC void *iemGRegRef(PVMCPU pVCpu, uint8_t iReg)
+DECLINLINE(void *) iemGRegRef(PVMCPU pVCpu, uint8_t iReg)
 {
-    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-#if 0
     Assert(iReg < 16);
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     return &pCtx->aGRegs[iReg];
-#else
-    switch (iReg)
-    {
-        case X86_GREG_xAX: return &pCtx->rax;
-        case X86_GREG_xCX: return &pCtx->rcx;
-        case X86_GREG_xDX: return &pCtx->rdx;
-        case X86_GREG_xBX: return &pCtx->rbx;
-        case X86_GREG_xSP: return &pCtx->rsp;
-        case X86_GREG_xBP: return &pCtx->rbp;
-        case X86_GREG_xSI: return &pCtx->rsi;
-        case X86_GREG_xDI: return &pCtx->rdi;
-        case X86_GREG_x8:  return &pCtx->r8;
-        case X86_GREG_x9:  return &pCtx->r9;
-        case X86_GREG_x10: return &pCtx->r10;
-        case X86_GREG_x11: return &pCtx->r11;
-        case X86_GREG_x12: return &pCtx->r12;
-        case X86_GREG_x13: return &pCtx->r13;
-        case X86_GREG_x14: return &pCtx->r14;
-        case X86_GREG_x15: return &pCtx->r15;
-    }
-    AssertFailedReturn(NULL);
-#endif
 }
 
 
 /**
- * Gets a reference (pointer) to the specified 8-bit general register.
+ * Gets a reference (pointer) to the specified 8-bit general purpose register.
  *
  * Because of AH, CH, DH and BH we cannot use iemGRegRef directly here.
  *
@@ -5137,68 +5087,117 @@ IEM_STATIC void *iemGRegRef(PVMCPU pVCpu, uint8_t iReg)
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-IEM_STATIC uint8_t *iemGRegRefU8(PVMCPU pVCpu, uint8_t iReg)
+DECLINLINE(uint8_t *) iemGRegRefU8(PVMCPU pVCpu, uint8_t iReg)
 {
-    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX)
-        return (uint8_t *)iemGRegRef(pVCpu, iReg);
-
-    uint8_t *pu8Reg = (uint8_t *)iemGRegRef(pVCpu, iReg & 3);
-    if (iReg >= 4)
-        pu8Reg++;
-    return pu8Reg;
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    if (iReg < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX))
+    {
+        Assert(iReg < 16);
+        return &pCtx->aGRegs[iReg].u8;
+    }
+    /* high 8-bit register. */
+    Assert(iReg < 8);
+    return &pCtx->aGRegs[iReg & 3].bHi;
 }
 
 
 /**
- * Fetches the value of a 8-bit general register.
+ * Gets a reference (pointer) to the specified 16-bit general purpose register.
+ *
+ * @returns Register reference.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iReg                The register.
+ */
+DECLINLINE(uint16_t *) iemGRegRefU16(PVMCPU pVCpu, uint8_t iReg)
+{
+    Assert(iReg < 16);
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    return &pCtx->aGRegs[iReg].u16;
+}
+
+
+/**
+ * Gets a reference (pointer) to the specified 32-bit general purpose register.
+ *
+ * @returns Register reference.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iReg                The register.
+ */
+DECLINLINE(uint32_t *) iemGRegRefU32(PVMCPU pVCpu, uint8_t iReg)
+{
+    Assert(iReg < 16);
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    return &pCtx->aGRegs[iReg].u32;
+}
+
+
+/**
+ * Gets a reference (pointer) to the specified 64-bit general purpose register.
+ *
+ * @returns Register reference.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iReg                The register.
+ */
+DECLINLINE(uint64_t *) iemGRegRefU64(PVMCPU pVCpu, uint8_t iReg)
+{
+    Assert(iReg < 64);
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    return &pCtx->aGRegs[iReg].u64;
+}
+
+
+/**
+ * Fetches the value of a 8-bit general purpose register.
  *
  * @returns The register value.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-IEM_STATIC uint8_t iemGRegFetchU8(PVMCPU pVCpu, uint8_t iReg)
+DECLINLINE(uint8_t) iemGRegFetchU8(PVMCPU pVCpu, uint8_t iReg)
 {
-    uint8_t const *pbSrc = iemGRegRefU8(pVCpu, iReg);
-    return *pbSrc;
+    return *iemGRegRefU8(pVCpu, iReg);
 }
 
 
 /**
- * Fetches the value of a 16-bit general register.
+ * Fetches the value of a 16-bit general purpose register.
  *
  * @returns The register value.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-IEM_STATIC uint16_t iemGRegFetchU16(PVMCPU pVCpu, uint8_t iReg)
+DECLINLINE(uint16_t) iemGRegFetchU16(PVMCPU pVCpu, uint8_t iReg)
 {
-    return *(uint16_t *)iemGRegRef(pVCpu, iReg);
+    Assert(iReg < 16);
+    return IEM_GET_CTX(pVCpu)->aGRegs[iReg].u16;
 }
 
 
 /**
- * Fetches the value of a 32-bit general register.
+ * Fetches the value of a 32-bit general purpose register.
  *
  * @returns The register value.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-IEM_STATIC uint32_t iemGRegFetchU32(PVMCPU pVCpu, uint8_t iReg)
+DECLINLINE(uint32_t) iemGRegFetchU32(PVMCPU pVCpu, uint8_t iReg)
 {
-    return *(uint32_t *)iemGRegRef(pVCpu, iReg);
+    Assert(iReg < 16);
+    return IEM_GET_CTX(pVCpu)->aGRegs[iReg].u32;
 }
 
 
 /**
- * Fetches the value of a 64-bit general register.
+ * Fetches the value of a 64-bit general purpose register.
  *
  * @returns The register value.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iReg                The register.
  */
-IEM_STATIC uint64_t iemGRegFetchU64(PVMCPU pVCpu, uint8_t iReg)
+DECLINLINE(uint64_t) iemGRegFetchU64(PVMCPU pVCpu, uint8_t iReg)
 {
-    return *(uint64_t *)iemGRegRef(pVCpu, iReg);
+    Assert(iReg < 16);
+    return IEM_GET_CTX(pVCpu)->aGRegs[iReg].u64;
 }
 
 
@@ -9784,47 +9783,47 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FSW
 #define IEM_MC_FETCH_FCW(a_u16Fcw)                      (a_u16Fcw) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FCW
 
-#define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8(pVCpu, (a_iGReg)) = (a_u8Value)
-#define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *(uint16_t *)iemGRegRef(pVCpu, (a_iGReg)) = (a_u16Value)
-#define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) = (uint32_t)(a_u32Value) /* clear high bits. */
-#define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) = (a_u64Value)
+#define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8( pVCpu, (a_iGReg)) = (a_u8Value)
+#define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *iemGRegRefU16(pVCpu, (a_iGReg)) = (a_u16Value)
+#define IEM_MC_STORE_GREG_U32(a_iGReg, a_u32Value)      *iemGRegRefU64(pVCpu, (a_iGReg)) = (uint32_t)(a_u32Value) /* clear high bits. */
+#define IEM_MC_STORE_GREG_U64(a_iGReg, a_u64Value)      *iemGRegRefU64(pVCpu, (a_iGReg)) = (a_u64Value)
 #define IEM_MC_STORE_GREG_U8_CONST                      IEM_MC_STORE_GREG_U8
 #define IEM_MC_STORE_GREG_U16_CONST                     IEM_MC_STORE_GREG_U16
 #define IEM_MC_STORE_GREG_U32_CONST                     IEM_MC_STORE_GREG_U32
 #define IEM_MC_STORE_GREG_U64_CONST                     IEM_MC_STORE_GREG_U64
-#define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) &= UINT32_MAX
+#define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             *iemGRegRefU64(pVCpu, (a_iGReg)) &= UINT32_MAX
 #define IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(a_pu32Dst)    do { (a_pu32Dst)[1] = 0; } while (0)
 #define IEM_MC_STORE_FPUREG_R80_SRC_REF(a_iSt, a_pr80Src) \
     do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[a_iSt].r80 = *(a_pr80Src); } while (0)
 
-#define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           (a_pu8Dst) = iemGRegRefU8(pVCpu, (a_iGReg))
-#define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)         (a_pu16Dst) = (uint16_t *)iemGRegRef(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           (a_pu8Dst)  = iemGRegRefU8( pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)         (a_pu16Dst) = iemGRegRefU16(pVCpu, (a_iGReg))
 /** @todo User of IEM_MC_REF_GREG_U32 needs to clear the high bits on commit.
  *        Use IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF! */
-#define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = (uint32_t *)iemGRegRef(pVCpu, (a_iGReg))
-#define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = (uint64_t *)iemGRegRef(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = iemGRegRefU32(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = iemGRegRefU64(pVCpu, (a_iGReg))
 /** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u
 
-#define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pVCpu, (a_iGReg)) += (a_u8Value)
-#define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pVCpu, (a_iGReg)) += (a_u16Value)
+#define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *iemGRegRefU8( pVCpu, (a_iGReg)) += (a_u8Value)
+#define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) += (a_u16Value)
 #define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value) \
     do { \
-        uint32_t *pu32Reg = (uint32_t *)iemGRegRef(pVCpu, (a_iGReg)); \
+        uint32_t *pu32Reg = iemGRegRefU32(pVCpu, (a_iGReg)); \
         *pu32Reg += (a_u32Value); \
         pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
     } while (0)
-#define IEM_MC_ADD_GREG_U64(a_iGReg, a_u64Value)        *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) += (a_u64Value)
+#define IEM_MC_ADD_GREG_U64(a_iGReg, a_u64Value)        *iemGRegRefU64(pVCpu, (a_iGReg)) += (a_u64Value)
 
-#define IEM_MC_SUB_GREG_U8(a_iGReg,  a_u8Value)         *(uint8_t *)iemGRegRef(pVCpu, (a_iGReg)) -= (a_u8Value)
-#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pVCpu, (a_iGReg)) -= (a_u16Value)
+#define IEM_MC_SUB_GREG_U8(a_iGReg,  a_u8Value)         *iemGRegRefU8( pVCpu, (a_iGReg)) -= (a_u8Value)
+#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) -= (a_u16Value)
 #define IEM_MC_SUB_GREG_U32(a_iGReg, a_u32Value) \
     do { \
-        uint32_t *pu32Reg = (uint32_t *)iemGRegRef(pVCpu, (a_iGReg)); \
+        uint32_t *pu32Reg = iemGRegRefU32(pVCpu, (a_iGReg)); \
         *pu32Reg -= (a_u32Value); \
         pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
     } while (0)
-#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) -= (a_u64Value)
+#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        *iemGRegRefU64(pVCpu, (a_iGReg)) -= (a_u64Value)
 #define IEM_MC_SUB_LOCAL_U16(a_u16Value, a_u16Const)   do { (a_u16Value) -= a_u16Const; } while (0)
 
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u8Value, a_iGReg)    do { (a_u8Value)  += iemGRegFetchU8( pVCpu, (a_iGReg)); } while (0)
@@ -9860,25 +9859,25 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 
 #define IEM_MC_OR_2LOCS_U32(a_u32Local, a_u32Mask)      do { (a_u32Local) |= (a_u32Mask); } while (0)
 
-#define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pVCpu, (a_iGReg)) &= (a_u8Value)
-#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pVCpu, (a_iGReg)) &= (a_u16Value)
+#define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Value)          *iemGRegRefU8( pVCpu, (a_iGReg)) &= (a_u8Value)
+#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) &= (a_u16Value)
 #define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Value) \
     do { \
-        uint32_t *pu32Reg = (uint32_t *)iemGRegRef(pVCpu, (a_iGReg)); \
+        uint32_t *pu32Reg = iemGRegRefU32(pVCpu, (a_iGReg)); \
         *pu32Reg &= (a_u32Value); \
         pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
     } while (0)
-#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Value)        *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) &= (a_u64Value)
+#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Value)        *iemGRegRefU64(pVCpu, (a_iGReg)) &= (a_u64Value)
 
-#define IEM_MC_OR_GREG_U8(a_iGReg, a_u8Value)           *(uint8_t  *)iemGRegRef(pVCpu, (a_iGReg)) |= (a_u8Value)
-#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Value)         *(uint16_t *)iemGRegRef(pVCpu, (a_iGReg)) |= (a_u16Value)
+#define IEM_MC_OR_GREG_U8(a_iGReg, a_u8Value)           *iemGRegRefU8( pVCpu, (a_iGReg)) |= (a_u8Value)
+#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Value)         *iemGRegRefU16(pVCpu, (a_iGReg)) |= (a_u16Value)
 #define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Value) \
     do { \
-        uint32_t *pu32Reg = (uint32_t *)iemGRegRef(pVCpu, (a_iGReg)); \
+        uint32_t *pu32Reg = iemGRegRefU32(pVCpu, (a_iGReg)); \
         *pu32Reg |= (a_u32Value); \
         pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
     } while (0)
-#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         *(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) |= (a_u64Value)
+#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         *iemGRegRefU64(pVCpu, (a_iGReg)) |= (a_u64Value)
 
 
 /** @note Not for IOPL or IF modification. */
@@ -10650,7 +10649,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if (   IEM_GET_CTX(pVCpu)->rcx != 0 \
             && !(IEM_GET_CTX(pVCpu)->eflags.u & a_fBit)) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
-#define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pVCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
+#define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (iemGRegFetchU64(pVCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
 
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt) \
     if (iemFpuStRegNotEmpty(pVCpu, (a_iSt)) == VINF_SUCCESS) {
