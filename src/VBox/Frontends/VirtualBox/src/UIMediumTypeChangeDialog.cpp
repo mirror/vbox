@@ -39,58 +39,10 @@
 
 UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumID)
     : QIWithRetranslateUI<QIDialog>(pParent)
+    , m_strMediumID(strMediumID)
 {
-#ifdef VBOX_WS_MAC
-    // TODO: Is that necessary?
-    setWindowFlags(Qt::Sheet);
-#else /* !VBOX_WS_MAC */
-    /* Enable size-grip: */
-    setSizeGripEnabled(true);
-#endif /* !VBOX_WS_MAC */
-
-    /* Search for corresponding medium: */
-    m_medium = vboxGlobal().medium(strMediumID).medium();
-    m_enmMediumTypeOld = m_medium.GetType();
-    m_enmMediumTypeNew = m_enmMediumTypeOld;
-
-    /* Create main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-
-    /* Create label: */
-    m_pLabel = new QILabel(this);
-    /* Configure label: */
-    m_pLabel->setWordWrap(true);
-    m_pLabel->useSizeHintForWidth(450);
-    m_pLabel->updateGeometry();
-    /* Add label into main layout: */
-    pMainLayout->addWidget(m_pLabel);
-
-    /* Create group-box: */
-    m_pGroupBox = new QGroupBox(this);
-    /* Add group-box into main layout: */
-    pMainLayout->addWidget(m_pGroupBox);
-
-    /* Create button-box: */
-    m_pButtonBox = new QIDialogButtonBox(this);
-    /* Configure button-box: */
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-    connect(m_pButtonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()), this, SLOT(sltAccept()));
-    connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(sltReject()));
-    /* Add button-box into main layout: */
-    pMainLayout->addWidget(m_pButtonBox);
-
-    /* Add a stretch to main layout: */
-    pMainLayout->addStretch();
-
-    /* Prepare radio-buttons: */
-    prepareMediumTypeButtons();
-
-    /* Retranslate: */
-    retranslateUi();
-
-    /* Resize to minimum size: */
-    resize(minimumSizeHint());
+    /* Prepare: */
+    prepare();
 }
 
 void UIMediumTypeChangeDialog::sltAccept()
@@ -157,6 +109,61 @@ void UIMediumTypeChangeDialog::sltValidate()
     /* Enable/disable OK button depending on chosen type,
      * for now only the previous type is restricted, others are free to choose: */
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_enmMediumTypeOld != m_enmMediumTypeNew);
+}
+
+void UIMediumTypeChangeDialog::prepare()
+{
+#ifdef VBOX_WS_MAC
+    // TODO: Is that necessary?
+    setWindowFlags(Qt::Sheet);
+#else /* !VBOX_WS_MAC */
+    /* Enable size-grip: */
+    setSizeGripEnabled(true);
+#endif /* !VBOX_WS_MAC */
+
+    /* Search for corresponding medium: */
+    m_medium = vboxGlobal().medium(m_strMediumID).medium();
+    m_enmMediumTypeOld = m_medium.GetType();
+    m_enmMediumTypeNew = m_enmMediumTypeOld;
+
+    /* Create main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+
+    /* Create label: */
+    m_pLabel = new QILabel(this);
+    /* Configure label: */
+    m_pLabel->setWordWrap(true);
+    m_pLabel->useSizeHintForWidth(450);
+    m_pLabel->updateGeometry();
+    /* Add label into main layout: */
+    pMainLayout->addWidget(m_pLabel);
+
+    /* Create group-box: */
+    m_pGroupBox = new QGroupBox(this);
+    /* Add group-box into main layout: */
+    pMainLayout->addWidget(m_pGroupBox);
+
+    /* Create button-box: */
+    m_pButtonBox = new QIDialogButtonBox(this);
+    /* Configure button-box: */
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+    connect(m_pButtonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()), this, SLOT(sltAccept()));
+    connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(sltReject()));
+    /* Add button-box into main layout: */
+    pMainLayout->addWidget(m_pButtonBox);
+
+    /* Add a stretch to main layout: */
+    pMainLayout->addStretch();
+
+    /* Prepare radio-buttons: */
+    prepareMediumTypeButtons();
+
+    /* Retranslate: */
+    retranslateUi();
+
+    /* Resize to minimum size: */
+    resize(minimumSizeHint());
 }
 
 void UIMediumTypeChangeDialog::prepareMediumTypeButtons()
