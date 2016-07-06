@@ -73,8 +73,8 @@ class FioTest(object):
     """
 
     kdHostIoEngine = {
-        'solaris': 'solarisaio',
-        'linux':   'libaio'
+        'solaris': ('solarisaio', False),
+        'linux':   ('libaio', True)
     };
 
     def __init__(self, oExecutor, dCfg = None):
@@ -86,7 +86,7 @@ class FioTest(object):
         """ Prepares the testcase """
 
         sTargetOs = self.dCfg.get('TargetOs', 'linux');
-        sIoEngine = self.kdHostIoEngine.get(sTargetOs);
+        sIoEngine, fDirectIo = self.kdHostIoEngine.get(sTargetOs);
         if sIoEngine is None:
             return False;
 
@@ -96,7 +96,10 @@ class FioTest(object):
         cfgBuf.write('ioengine=' + sIoEngine + '\n');
         cfgBuf.write('iodepth=' + self.dCfg.get('QueueDepth', '32') + '\n');
         cfgBuf.write('size=' + self.dCfg.get('TestsetSize', '2g') + '\n');
-        cfgBuf.write('direct=1\n');
+        if fDirectIo:
+            cfgBuf.write('direct=1\n');
+        else:
+            cfgBuf.write('direct=0\n');
         cfgBuf.write('directory=' + self.dCfg.get('FilePath', '/mnt') + '\n');
 
         cfgBuf.write('[seq-write]\n');
@@ -115,7 +118,7 @@ class FioTest(object):
         cfgBuf.write('rw=randread\n');
         cfgBuf.write('stonewall\n');
 
-        self.sCfgFileId = self.oExecutor.copyString(cfgBuf, 'aio-test', cMsTimeout);
+        self.sCfgFileId = self.oExecutor.copyString(cfgBuf.getvalue(), 'aio-test', cMsTimeout);
         return self.sCfgFileId is not None;
 
     def run(self, cMsTimeout = 30000):
@@ -156,6 +159,11 @@ class IozoneTest(object):
         self.sTestsetSize = dCfg.get('TestsetSize', '2g');
         self.sQueueDepth  = dCfg.get('QueueDepth',  '32');
         self.sFilePath    = dCfg.get('FilePath',    '/mnt/iozone');
+        self.fDirectIo    = True;
+
+        sTargetOs = dCfg.get('TargetOs');
+        if sTargetOs == 'solaris':
+            self.fDirectIo = False;
 
     def prepare(self, cMsTimeout = 30000):
         """ Prepares the testcase """
@@ -164,9 +172,11 @@ class IozoneTest(object):
 
     def run(self, cMsTimeout = 30000):
         """ Runs the testcase """
-        fRc, sOutput = self.oExecutor.execBinary('iozone', ('-r', self.sRecordSize, '-s', self.sTestsetSize, \
-                                                            '-t', '1', '-T', '-I', \
-                                                            '-H', self.sQueueDepth,'-F', self.sFilePath));
+        tupArgs = ('-r', self.sRecordSize, '-s', self.sTestsetSize, \
+                   '-t', '1', '-T', '-H', self.sQueueDepth, '-F', self.sFilePath + '/iozone.tmp');
+        if self.fDirectIo:
+            tupArgs += ('-I',);
+        fRc, sOutput = self.oExecutor.execBinary('iozone', tupArgs);
         if fRc:
             self.sResult = sOutput;
 
@@ -388,11 +398,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         # Create a basic pool with the default configuration.
         oStorCfg = storagecfg.StorageCfg(oExecutor, socket.gethostname().lower());
-        fRc, sPoolId = oStorCfg.createStoragePool(oExecutor);
+        fRc, sPoolId = oStorCfg.createStoragePool();
         if fRc:
             fRc, sMountpoint = oStorCfg.createVolume(sPoolId);
             if fRc:
-
                 # Create a basic config
                 dCfg = {
                     'RecordSize':  '64k',
@@ -423,9 +432,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     oTst.cleanup();
                     reporter.testDone();
             else:
-                reporter.testFailure('Creating a storage pool on the target failed');
+                reporter.testFailure('Creating a storage volume on the target failed');
 
             oStorCfg.cleanup();
+        else:
+            reporter.testFailure('Creating a storage pool on the target failed');
 
         return fRc;
 

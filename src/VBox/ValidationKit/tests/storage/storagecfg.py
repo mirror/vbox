@@ -116,7 +116,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
 
         fRc = True;
         if sZPoolRaid is not None:
-            fRc = oExec.execBinary('zpool', ('create', sPool, sZPoolRaid,) + asDisks);
+            fRc = oExec.execBinary('zpool', ('create', '-f', sPool, sZPoolRaid,) + tuple(asDisks));
         else:
             fRc = False;
 
@@ -213,7 +213,7 @@ class StorageCfg(object):
     """
 
     kdStorageCfgs = {
-        'testboxstor1': ('solaris', 'c[3-9]t*d0')
+        'testboxstor1.de.oracle.com': ('solaris', 'c[3-9]t\dd0\Z')
     };
 
     def __init__(self, oExec, sHostname = None):
@@ -314,7 +314,7 @@ class StorageCfg(object):
                 lstDiskPaths.append(oDisk.getPath());
 
             # Find a name for the pool
-            sPool = 'pool' + self.iPoolId;
+            sPool = 'pool' + str(self.iPoolId);
             self.iPoolId += 1;
 
             fRc = self.oStorOs.createStoragePool(self.oExec, sPool, lstDiskPaths, sRaidLvl);
@@ -358,7 +358,7 @@ class StorageCfg(object):
         fRc = True;
         sMountPoint = None;
         if self.dPools.has_key(sPool):
-            sVol = 'vol' + self.iVolId;
+            sVol = 'vol' + str(self.iVolId);
             sMountPoint = self.oStorOs.getMntBase() + '/' + sVol;
             self.iVolId += 1;
             fRc = self.oStorOs.createVolume(self.oExec, sPool, sVol, sMountPoint, cbVol);
@@ -381,7 +381,7 @@ class StorageCfg(object):
         if sVol is not None:
             fRc = self.oStorOs.destroyVolume(self.oExec, sPool, sVol);
             if fRc:
-                self.dVols.pop(sVol);
+                self.dVols.pop(sMountPoint);
         else:
             fRc = False;
 
