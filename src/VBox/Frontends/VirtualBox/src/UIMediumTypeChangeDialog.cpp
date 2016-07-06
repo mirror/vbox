@@ -102,6 +102,7 @@ void UIMediumTypeChangeDialog::sltValidate()
             break;
         }
     }
+    AssertPtrReturnVoid(pCheckedButton);
 
     /* Determine chosen type: */
     m_enmMediumTypeNew = pCheckedButton->property("mediumType").value<KMediumType>();
@@ -128,39 +129,55 @@ void UIMediumTypeChangeDialog::prepare()
 
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
+    {
+        /* Create label: */
+        m_pLabel = new QILabel;
+        AssertPtrReturnVoid(m_pLabel);
+        {
+            /* Configure label: */
+            m_pLabel->setWordWrap(true);
+            m_pLabel->useSizeHintForWidth(450);
+            m_pLabel->updateGeometry();
+        }
+        /* Add label into main layout: */
+        pMainLayout->addWidget(m_pLabel);
 
-    /* Create label: */
-    m_pLabel = new QILabel(this);
-    /* Configure label: */
-    m_pLabel->setWordWrap(true);
-    m_pLabel->useSizeHintForWidth(450);
-    m_pLabel->updateGeometry();
-    /* Add label into main layout: */
-    pMainLayout->addWidget(m_pLabel);
+        /* Create group-box: */
+        m_pGroupBox = new QGroupBox;
+        AssertPtrReturnVoid(m_pGroupBox);
+        {
+            /* Configure group-box: */
+            m_pGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 
-    /* Create group-box: */
-    m_pGroupBox = new QGroupBox(this);
-    /* Add group-box into main layout: */
-    pMainLayout->addWidget(m_pGroupBox);
+            /* Prepares radio-buttons: */
+            prepareMediumTypeButtons();
+        }
+        /* Add group-box into main layout: */
+        pMainLayout->addWidget(m_pGroupBox);
 
-    /* Create button-box: */
-    m_pButtonBox = new QIDialogButtonBox(this);
-    /* Configure button-box: */
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-    connect(m_pButtonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()), this, SLOT(sltAccept()));
-    connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(sltReject()));
-    /* Add button-box into main layout: */
-    pMainLayout->addWidget(m_pButtonBox);
+        /* Add a stretch to main layout: */
+        pMainLayout->addStretch();
 
-    /* Add a stretch to main layout: */
-    pMainLayout->addStretch();
-
-    /* Prepare radio-buttons: */
-    prepareMediumTypeButtons();
+        /* Create button-box: */
+        m_pButtonBox = new QIDialogButtonBox;
+        AssertPtrReturnVoid(m_pButtonBox);
+        {
+            /* Configure button-box: */
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+            m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+            connect(m_pButtonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()), this, SLOT(sltAccept()));
+            connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(sltReject()));
+        }
+        /* Add button-box into main layout: */
+        pMainLayout->addWidget(m_pButtonBox);
+    }
 
     /* Retranslate: */
     retranslateUi();
+
+    /* Revalidate: */
+    sltValidate();
 
     /* Resize to minimum size: */
     resize(minimumSizeHint());
@@ -173,34 +190,38 @@ void UIMediumTypeChangeDialog::prepareMediumTypeButtons()
 
     /* Create group-box layout: */
     m_pGroupBoxLayout = new QVBoxLayout(m_pGroupBox);
-    /* Populate radio-buttons: */
-    prepareMediumTypeButton(KMediumType_Normal);
-    prepareMediumTypeButton(KMediumType_Immutable);
-    prepareMediumTypeButton(KMediumType_Writethrough);
-    prepareMediumTypeButton(KMediumType_Shareable);
-    prepareMediumTypeButton(KMediumType_MultiAttach);
-    /* Make sure button reflecting current type is checked: */
-    QList<QRadioButton*> buttons = findChildren<QRadioButton*>();
-    for (int i = 0; i < buttons.size(); ++i)
+    AssertPtrReturnVoid(m_pGroupBoxLayout);
     {
-        if (buttons[i]->property("mediumType").value<KMediumType>() == m_enmMediumTypeOld)
+        /* Populate radio-buttons: */
+        prepareMediumTypeButton(KMediumType_Normal);
+        prepareMediumTypeButton(KMediumType_Immutable);
+        prepareMediumTypeButton(KMediumType_Writethrough);
+        prepareMediumTypeButton(KMediumType_Shareable);
+        prepareMediumTypeButton(KMediumType_MultiAttach);
+        /* Make sure button reflecting current type is checked: */
+        QList<QRadioButton*> buttons = m_pGroupBox->findChildren<QRadioButton*>();
+        for (int i = 0; i < buttons.size(); ++i)
         {
-            buttons[i]->setChecked(true);
-            buttons[i]->setFocus();
-            break;
+            if (buttons[i]->property("mediumType").value<KMediumType>() == m_enmMediumTypeOld)
+            {
+                buttons[i]->setChecked(true);
+                buttons[i]->setFocus();
+                break;
+            }
         }
     }
-    /* Revalidate finally: */
-    sltValidate();
 }
 
 void UIMediumTypeChangeDialog::prepareMediumTypeButton(KMediumType mediumType)
 {
     /* Create radio-button: */
     QRadioButton *pRadioButton = new QRadioButton(m_pGroupBox);
-    /* Configure radio-button: */
-    connect(pRadioButton, SIGNAL(clicked()), this, SLOT(sltValidate()));
-    pRadioButton->setProperty("mediumType", QVariant::fromValue(mediumType));
+    AssertPtrReturnVoid(pRadioButton);
+    {
+        /* Configure radio-button: */
+        connect(pRadioButton, SIGNAL(clicked()), this, SLOT(sltValidate()));
+        pRadioButton->setProperty("mediumType", QVariant::fromValue(mediumType));
+    }
     /* Add radio-button into layout: */
     m_pGroupBoxLayout->addWidget(pRadioButton);
 }
