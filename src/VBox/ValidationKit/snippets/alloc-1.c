@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     cb = cMBs * 1024 * 1024;
     if (cb / (1024 * 1024) != cMBs)
         cb = ~(unsigned long)0 / (1024 * 1024) * (1024 * 1024);
-    printf("alloc-1: allocating %ld MB (%lu bytes)\n", cb/1024/1024, cb);
+    printf("alloc-1: allocating %lu MB (%lu bytes)\n", cb/1024/1024, cb);
 
     /*
      * The allocation loop.
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         char         *pb = malloc(cbThis);
         if (!pb)
         {
-            printf("\nalloc-1: calloc failed, cbDone=%ld MB (%lu bytes)\n",
+            printf("\nalloc-1: calloc failed, cbDone=%lu MB (%lu bytes)\n",
                    cbDone/1024/1024, cbDone);
             return 1;
         }
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         if (uPctNow != uPct && !(uPctNow & 1))
         {
             if (!(uPctNow % 10))
-                printf("%u%%", (unsigned)uPctNow);
+                printf("%u%%", uPctNow);
             else
                 printf(".");
             fflush(stdout);
