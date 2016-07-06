@@ -266,6 +266,12 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
+#ifdef VMCPU_INCL_CPUM_GST_CTX
+        /** The guest CPUM context for direct use by execution engines.
+         * This is not for general consumption, but for HM, REM, IEM, and maybe a few
+         * others.  The rest will use the function based CPUM API. */
+        CPUMCTX             GstCtx;
+#endif
         uint8_t             padding[4096];      /* multiple of 4096 */
     } cpum;
 } VMCPU;
