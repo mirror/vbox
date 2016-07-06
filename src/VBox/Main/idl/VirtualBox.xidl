@@ -18814,7 +18814,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Null value, also means "dummy audio driver".</desc>
     </const>
     <const name="WinMM"         value="1">
-        <desc>Windows multimedia (Windows hosts only, not used at the moment).</desc>
+        <desc>Windows multimedia (Windows hosts only, not supported at the moment).</desc>
     </const>
     <const name="OSS"           value="2">
         <desc>Open Sound System (Linux / Unix hosts only).</desc>
