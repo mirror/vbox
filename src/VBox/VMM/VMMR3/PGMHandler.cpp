@@ -452,6 +452,8 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND 
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
  * @param   hType           The handler type.
  * @param   GCPtr           Start address.
  * @param   GCPtrLast       Last address (inclusive).
