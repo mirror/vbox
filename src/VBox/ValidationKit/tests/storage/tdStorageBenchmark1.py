@@ -44,6 +44,7 @@ sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
 from common     import constants;
+from common     import utils;
 from testdriver import reporter;
 from testdriver import base;
 from testdriver import vbox;
@@ -377,31 +378,38 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     # Test execution helpers.
     #
 
-    def test1Benchmark(self, sBenchmark, oTxsSession = None):
+    def test1Benchmark(self, sTargetOs, sBenchmark, oTxsSession = None):
         """
         Runs the given benchmark on the test host.
         """
         lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin', \
                           '/opt/csw/bin', '/usr/ccs/bin', '/usr/sfw/bin'];
-
         oExecutor = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, self.sScratchPath);
-        oTst = None;
-        if sBenchmark == 'iozone':
-            oTst = IozoneTest(oExecutor);
-        elif sBenchmark == 'fio':
-            oTst = FioTest(oExecutor); # pylint: disable=R0204
 
-        if oTst is not None:
-            reporter.testStart(sBenchmark);
-
-            # Create a basic pool with the default configuration.
-            oStorCfg = storagecfg.StorageCfg(oExecutor, socket.gethostname().lower());
-            fRc, sPoolId = oStorCfg.createStoragePool(oExecutor);
+        # Create a basic pool with the default configuration.
+        oStorCfg = storagecfg.StorageCfg(oExecutor, socket.gethostname().lower());
+        fRc, sPoolId = oStorCfg.createStoragePool(oExecutor);
+        if fRc:
+            fRc, sMountpoint = oStorCfg.createVolume(sPoolId);
             if fRc:
-                fRc, sMountpoint = oStorCfg.createVolume(sPoolId);
-                _ = sMountpoint;
-                if fRc:
-                    oTst = IozoneTest(oExecutor);
+
+                # Create a basic config
+                dCfg = {
+                    'RecordSize':  '64k',
+                    'TestsetSize': '20g',
+                    'QueueDepth':  '32',
+                    'FilePath': sMountpoint,
+                    'TargetOs': sTargetOs
+                };
+
+                oTst = None;
+                if sBenchmark == 'iozone':
+                    oTst = IozoneTest(oExecutor, dCfg);
+                elif sBenchmark == 'fio':
+                    oTst = FioTest(oExecutor, dCfg); # pylint: disable=R0204
+
+                if oTst is not None:
+                    reporter.testStart(sBenchmark);
                     fRc = oTst.prepare();
                     if fRc:
                         fRc = oTst.run();
@@ -413,21 +421,21 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         reporter.testFailure('Preparing the testcase failed');
 
                     oTst.cleanup();
+                    reporter.testDone();
             else:
                 reporter.testFailure('Creating a storage pool on the target failed');
 
             oStorCfg.cleanup();
-            reporter.testDone();
 
         return fRc;
 
-    def test1Benchmarks(self, oTxsSession = None):
+    def test1Benchmarks(self, sTargetOs, oTxsSession = None):
         """
         Runs all the configured benchmarks on the target.
         """
         reporter.testStart('Host');
         for sTest in self.asTests:
-            self.test1Benchmark(sTest, oTxsSession);
+            self.test1Benchmark(sTargetOs, sTest, oTxsSession);
         reporter.testDone();
 
     def test1(self):
@@ -438,7 +446,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         # Test the host first if requested
         fRc = True;
         if self.fTestHost:
-            fRc = self.test1Benchmarks()
+            fRc = self.test1Benchmarks(utils.getHostOs());
 
         # Loop thru the test VMs.
         #for sVM in self.asTestVMs:
