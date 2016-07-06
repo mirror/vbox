@@ -339,15 +339,15 @@ DECLEXPORT(EGLBoolean) eglChooseConfig (EGLDisplay hDisplay, const EGLint *paAtt
         {
             switch (*pAttrib)
             {
-        if (   *pAttrib == EGL_COLOR_BUFFER_TYPE
-            && pAttrib[1] != EGL_DONT_CARE && pAttrib[1] != EGL_RGB_BUFFER)
-            return setEGLError(EGL_BAD_ACCESS);
                 case EGL_COLOR_BUFFER_TYPE:
                     aAttribList[cAttribs] = GLX_X_VISUAL_TYPE;
                     aAttribList[cAttribs + 1] =   pAttrib[1] == EGL_DONT_CARE ? GLX_DONT_CARE
                                                 : pAttrib[1] == EGL_RGB_BUFFER ? GLX_TRUE_COLOR
                                                 : pAttrib[1] == EGL_LUMINANCE_BUFFER ? GLX_GRAY_SCALE
                                                 : GL_FALSE;
+                    if (   *pAttrib == EGL_COLOR_BUFFER_TYPE
+                        && pAttrib[1] != EGL_DONT_CARE && pAttrib[1] != EGL_RGB_BUFFER)
+                        return setEGLError(EGL_BAD_ACCESS);
                     break;
                 case EGL_CONFIG_CAVEAT:
                     cConfigCaveat =   pAttrib[1] == EGL_DONT_CARE ? GLX_DONT_CARE
