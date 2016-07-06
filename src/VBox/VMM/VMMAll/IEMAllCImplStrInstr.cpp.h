@@ -155,7 +155,7 @@
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -324,7 +324,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -493,7 +493,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
 IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -625,7 +625,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
 IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -758,7 +758,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -932,7 +932,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -1065,7 +1065,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -1193,7 +1193,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoChecked)
 {
     PVM             pVM  = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX        pCtx = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX        pCtx = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC    rcStrict;
 
     /*
@@ -1256,7 +1256,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoChecked)
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.
@@ -1439,7 +1439,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
 IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg, bool, fIoChecked)
 {
     PVM             pVM  = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX        pCtx = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX        pCtx = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC    rcStrict;
 
     /*
@@ -1483,7 +1483,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
 IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg, bool, fIoChecked)
 {
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX    pCtx  = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX    pCtx  = IEM_GET_CTX(pVCpu);
 
     /*
      * Setup.

@@ -634,9 +634,21 @@ typedef IEMCPU *PIEMCPU;
 typedef IEMCPU const *PCIEMCPU;
 
 
+/** @def IEM_GET_CTX
+ * Gets the guest CPU context for the calling EMT.
+ * @returns PCPUMCTX
+ * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
+ */
+#if !defined(IEM_VERIFICATION_MODE_FULL) && !defined(IEM_VERIFICATION_MODE) \
+ && !defined(IEM_VERIFICATION_MODE_MINIMAL) && defined(VMCPU_INCL_CPUM_GST_CTX)
+# define IEM_GET_CTX(a_pVCpu) (&(a_pVCpu)->cpum.GstCtx)
+#else
+# define IEM_GET_CTX(a_pVCpu) ((a_pVCpu)->iem.s.CTX_SUFF(pCtx))
+#endif
+
 /** Gets the current IEMTARGETCPU value.
  * @returns IEMTARGETCPU value.
- * @param   a_pVCpu         The IEM per CPU instance data.
+ * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
  */
 #if IEM_CFG_TARGET_CPU != IEMTARGETCPU_DYNAMIC
 # define IEM_GET_TARGET_CPU(a_pVCpu)   (IEM_CFG_TARGET_CPU)

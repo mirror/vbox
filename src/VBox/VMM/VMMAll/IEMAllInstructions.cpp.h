@@ -10779,7 +10779,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
         return rcStrict;
     pVCpu->iem.s.offOpcode = offOpcodeSaved;
 
-    PCPUMCTX        pCtx     = pVCpu->iem.s.CTX_SUFF(pCtx);
+    PCPUMCTX        pCtx     = IEM_GET_CTX(pVCpu);
     uint64_t const  RspSaved = pCtx->rsp;
     switch (pVCpu->iem.s.enmEffOpSize)
     {
@@ -17657,7 +17657,9 @@ typedef IEM_CIMPL_DECL_TYPE_3(FNIEMCIMPLFARBRANCH, uint16_t, uSel, uint64_t, off
 FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImpl)
 {
     /* Registers? How?? */
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if (RT_LIKELY((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT)))
+    { /* likely */ }
+    else
         return IEMOP_RAISE_INVALID_OPCODE(); /* callf eax is not legal */
 
     /* Far pointer loaded from memory. */
