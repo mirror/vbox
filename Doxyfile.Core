@@ -692,8 +692,10 @@ PREDEFINED          += \
     "END_INTERFACE_MAP()=" \
     "DISP_FUNCTION(class, name, function, result, id)=" \
     "END_DISPATCH_MAP()=" \
-    "IMPLEMENT_OLECREATE2(class, name, id1, id2, id3, id4,\
-    id5, id6, id7, id8, id9, id10, id11)="
+    "IMPLEMENT_OLECREATE2(class, name, id1, id2, id3, id4, id5, id6, id7, id8, id9, id10, id11)=" \
+    RT_GCC_EXTENSION= \
+    "CPUM_STRUCT_NM(n)=" \
+    "CPUM_UNION_NM(n)="
 
 EXPAND_AS_DEFINED      = \
     RCPTRTYPE \

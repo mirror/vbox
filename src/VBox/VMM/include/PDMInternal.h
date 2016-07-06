@@ -952,7 +952,7 @@ typedef struct PDMQUEUE
  * cannot be used for this since it has to be cleared immediately to prevent
  * other EMTs from spinning. */
 #define PDM_QUEUE_FLUSH_FLAG_PENDING_BIT    1
-/** }@  */
+/** @}  */
 
 
 /**
