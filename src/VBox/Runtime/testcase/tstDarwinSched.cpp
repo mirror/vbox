@@ -89,7 +89,6 @@ static void thread_print_policies(int fDefault)
         struct thread_basic_info        BasicInfo = {{0,0},{0,0},0,0,0,0,0,0};
         struct policy_timeshare_info    TSInfo = {0,0,0,0,0};
         int                             rc;
-        int                             i;
 
         memset(&Param, 0, sizeof(Param));
         rc = pthread_getschedparam(pthread_self(), &iPolicy, &Param);
