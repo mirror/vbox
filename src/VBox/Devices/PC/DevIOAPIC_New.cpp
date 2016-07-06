@@ -586,7 +586,10 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
             uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
             if (IOAPIC_RTE_GET_VECTOR(u64Rte) == u8Vector)
             {
+#ifdef DEBUG_ramshankar
+                /* This assertion may trigger when restoring saved-states created using the old, incorrect I/O APIC code. */
                 Assert(IOAPIC_RTE_GET_REMOTE_IRR(u64Rte));
+#endif
                 pThis->au64RedirTable[idxRte] &= ~IOAPIC_RTE_REMOTE_IRR;
                 fRemoteIrrCleared = true;
                 STAM_COUNTER_INC(&pThis->StatEoiReceived);
