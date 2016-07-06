@@ -81,8 +81,7 @@ private:
     /** Prepare routine. */
     void prepare();
 
-    /** Retranslation routine.
-      * @todo Fix translation context. */
+    /** Retranslation routine. */
     void retranslateUi();
 
     /** Updates details. */
