@@ -796,6 +796,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
             RTStrmPrintf(pStrm, "|winmm|dsound");
 #else
             RTStrmPrintf(pStrm, "|dsound");
+#endif
         }
         if (fLinux || fSolaris)
         {
