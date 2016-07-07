@@ -112,7 +112,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEMOP_HLP_MIN_586()                                 do { } while (0)
 #define IEMOP_HLP_MIN_686()                                 do { } while (0)
 #define IEMOP_HLP_NO_REAL_OR_V86_MODE()                     do { } while (0)
-#define IEMOP_HLP_NO_LOCK_PREFIX()                          do { } while (0)
 #define IEMOP_HLP_NO_64BIT()                                do { } while (0)
 #define IEMOP_HLP_ONLY_64BIT()                              do { } while (0)
 #define IEMOP_HLP_64BIT_OP_SIZE()                           do { } while (0)

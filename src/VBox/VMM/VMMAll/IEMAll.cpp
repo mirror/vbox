@@ -10768,16 +10768,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
     } while (0)
 
-/** The instruction allows no lock prefixing (in this encoding), throw \#UD if
- * lock prefixed.
- * @deprecated  IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX */
-#define IEMOP_HLP_NO_LOCK_PREFIX() \
-    do \
-    { \
-        if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK) \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
-    } while (0)
-
 /** The instruction is not available in 64-bit mode, throw \#UD if we're in
  * 64-bit mode. */
 #define IEMOP_HLP_NO_64BIT() \
