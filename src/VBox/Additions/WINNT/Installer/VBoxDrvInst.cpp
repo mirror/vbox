@@ -1047,7 +1047,8 @@ int DelService(const TCHAR *pszStartStopName)
 
     if (hService != NULL)
     {
-        if (LockServiceDatabase(hSCManager))
+        SC_LOCK hSCLock = LockServiceDatabase(hSCManager);
+        if (hSCLock != NULL)
         {
             if (FALSE == DeleteService(hService))
             {
@@ -1071,7 +1072,7 @@ int DelService(const TCHAR *pszStartStopName)
             {
                 _tprintf(_T("Service '%ws' successfully removed!\n"), pszStartStopName);
             }
-            UnlockServiceDatabase(hSCManager);
+            UnlockServiceDatabase(hSCLock);
         }
         else
         {
