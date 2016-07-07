@@ -1777,6 +1777,7 @@ class TestDriver(base.TestDriver):                                              
         try:
             rc = self.oVBoxMgr.waitForEvents(int(cMsTimeout));
             _ = rc; #reporter.log2('vbox.waitForTasksSleepWorker(%u): true (waitForEvents -> %s)' % (cMsTimeout, rc));
+            reporter.doPollWork('vbox.TestDriver.waitForTasksSleepWorker');
             return True;
         except KeyboardInterrupt:
             raise;
@@ -3184,6 +3185,7 @@ class TestDriver(base.TestDriver):                                              
 
         # Start the VM.
         reporter.log('startVmAndConnectToTxsViaTcp: Starting(/preparing) "%s" (timeout %s s)...' % (sVmName, cMsTimeout / 1000));
+        reporter.flushall();
         oSession = self.startVmByName(sVmName);
         if oSession is not None:
             # Connect to TXS.

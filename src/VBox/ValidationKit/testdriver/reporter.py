@@ -1561,16 +1561,19 @@ def checkTestManagerConnection():
     g_oLock.release();
     return fRc;
 
-def flushall():
+def flushall(fSkipXml = False):
     """
     Flushes all output streams, both standard and logger related.
+    This may also push data to the remote test manager.
     """
     try:    sys.stdout.flush();
     except: pass;
     try:    sys.stderr.flush();
     except: pass;
 
-    # Note! Current no logger specific streams to flush.
+    g_oLock.acquire();
+    fRc = g_oReporter.xmlFlush(fRetry = False);
+    g_oLock.release();
 
     return True;
 

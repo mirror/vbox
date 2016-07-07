@@ -1117,7 +1117,6 @@ class TestDriverBase(object): # pylint: disable=R0902
                     if cMsSleep > 1000:
                         cMsSleep = 1000;
                     fMore = self.waitForTasksSleepWorker(cMsSleep);
-                    reporter.doPollWork('TestDriverBase.waitForTasks'); # shouldn't be necessary, remove when we figure why...
         except KeyboardInterrupt:
             self.fInterrupted = True;
             reporter.errorXcpt('KeyboardInterrupt', 6);
