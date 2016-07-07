@@ -669,7 +669,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             if self.fTestHost:
                 reporter.testStart('Host');
                 if self.fUseScratch:
-                    sMountpoint = self.sScratchPath;
+                    sMountPoint = self.sScratchPath;
                 else:
                     sMountPoint = self.prepareStorage(self.oStorCfg);
                 if sMountPoint is not None:
