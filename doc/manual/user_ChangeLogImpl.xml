@@ -33,22 +33,14 @@
           response time</para>
       </listitem>
 
-      <!--- (new code currently disabled)
       <listitem>
         <para>Audio: added HDA (High Definition Audio) support for newer Linux guests</para>
       </listitem>
 
       <listitem>
-        <para>Audio: added on-demand timers which should improve the overall performance</para>
+        <para>Audio: added on-demand timers which should improve the overall performance
+          and reduce the CPU consumption</para>
       </listitem>
-
-      <listitem>
-        <para>Audio: added support for master volume controls in the AC'97 emulation</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: various bugfixes and infrastructure improvements</para>
-      </listitem>-->
 
       <listitem>
         <para>better support for Python 3</para>
@@ -94,6 +86,14 @@
 
       <listitem>
         <para>Storage: implemented NVMHCI-compatible storage controller</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: added support for master volume controls in the AC'97 emulation</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: various bugfixes and infrastructure improvements</para>
       </listitem>
 
       <listitem>
