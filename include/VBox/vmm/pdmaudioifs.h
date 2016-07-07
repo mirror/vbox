@@ -310,8 +310,8 @@ typedef struct PDMPCMPROPS
     uint32_t    uAlign;
     /** Sample frequency in Hertz (Hz). */
     uint32_t    uHz;
-    /** Bandwidth (bytes/s). */
-    uint32_t    cbPerSec;
+    /** Bitrate (in bytes/s). */
+    uint32_t    cbBitrate;
     /** Whether the endianness is swapped or not. */
     bool        fSwapEndian;
 } PDMPCMPROPS, *PPDMPCMPROPS;
@@ -523,10 +523,18 @@ typedef uint32_t PDMAUDIOSTRMSTS;
  */
 typedef enum PDMAUDIOBACKENDSTS
 {
+    /** Unknown/invalid status. */
     PDMAUDIOBACKENDSTS_UNKNOWN = 0,
-    PDMAUDIOBACKENDSTS_INIT,
+    /** The backend is in its initialization phase.
+     *  Not all backends support this status. */
+    PDMAUDIOBACKENDSTS_INITIALIZING,
+    /** The backend has stopped its operation. */
+    PDMAUDIOBACKENDSTS_STOPPED,
+    /** The backend is up and running. */
     PDMAUDIOBACKENDSTS_RUNNING,
-    PDMAUDIOBACKENDSTS_SHUTDOWN
+    /** The backend ran into an error and is unable to recover.
+     *  A manual re-initialization might help. */
+    PDMAUDIOBACKENDSTS_ERROR
 } PDMAUDIOBACKENDSTS;
 
 /**

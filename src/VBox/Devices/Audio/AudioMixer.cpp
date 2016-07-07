@@ -828,6 +828,9 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink)
 #endif
     }
 
+    /* Update last updated timestamp. */
+    pSink->tsLastUpdatedMS = RTTimeMilliTS();
+
     /* Reset status. */
     pSink->fStatus = AUDMIXSINK_STS_NONE;
 }
@@ -920,8 +923,23 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     /* Number of detected disabled streams of this sink. */
     uint8_t cStreamsDisabled = 0;
 
-    /* Update last updated timestamp. */
-    pSink->tsLastUpdatedNS = RTTimeNanoTS();
+    /* Get the time delta and calculate the bytes that need to be processed. */
+    uint64_t tsDeltaMS = RTTimeMilliTS() - pSink->tsLastUpdatedMS;
+    uint32_t cbDelta   = (pSink->PCMProps.cbBitrate / 1000 /* s to ms */) * tsDeltaMS;
+
+    Log3Func(("[%s] Bitrate is %RU32 bytes/s -> %RU64ms / %RU32 bytes elapsed\n",
+              pSink->pszName, pSink->PCMProps.cbBitrate, tsDeltaMS, cbDelta));
+
+    if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
+    {
+        pSink->In.cbReadable  = cbDelta;
+    }
+    else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
+    {
+        pSink->Out.cbWritable = cbDelta;
+    }
+
+    uint8_t uCurLUN = 0;
 
     PAUDMIXSTREAM pMixStream, pMixStreamNext;
     RTListForEachSafe(&pSink->lstStreams, pMixStream, pMixStreamNext, AUDMIXSTREAM, Node)
@@ -992,7 +1010,12 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
-                pSink->In.cbReadable = pConn->pfnStreamGetReadable(pConn, pMixStream->pStream);
+                if (uCurLUN == 0)
+                {
+                    pSink->In.cbReadable = pConn->pfnStreamGetReadable(pConn, pMixStream->pStream);
+                    Log3Func(("\t%s: cbReadable=%RU32\n", pMixStream->pStream->szName, pSink->In.cbReadable));
+                    uCurLUN++;
+                }
 #endif
             }
             else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
@@ -1000,7 +1023,12 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
-                pSink->Out.cbWritable = pConn->pfnStreamGetWritable(pConn, pMixStream->pStream);
+                if (uCurLUN == 0)
+                {
+                    pSink->Out.cbWritable = pConn->pfnStreamGetWritable(pConn, pMixStream->pStream);
+                    Log3Func(("\t%s: cbWritable=%RU32\n", pMixStream->pStream->szName, pSink->Out.cbWritable));
+                    uCurLUN++;
+                }
 #endif
             }
         }
@@ -1015,8 +1043,11 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         audioMixerSinkReset(pSink);
     }
 
-    if (RT_FAILURE(rc))
-        LogFlowFunc(("Failed with rc=%Rrc\n", rc));
+    /* Update last updated timestamp. */
+    pSink->tsLastUpdatedMS = RTTimeMilliTS();
+
+    Log3Func(("[%s] cbReadable=%RU32, cbWritable=%RU32, rc=%Rrc\n",
+              pSink->pszName, pSink->In.cbReadable, pSink->Out.cbWritable, rc));
 
     return rc;
 }
@@ -1024,8 +1055,6 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-
-    uint64_t tsElapsed = RTTimeNanoTS() - pSink->tsLastUpdatedNS;
 
     /*
      * Note: Hz elapsed     = cTicksElapsed / cTimerTicks

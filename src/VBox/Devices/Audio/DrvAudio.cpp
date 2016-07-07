@@ -656,8 +656,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     rc = AudioMixBufWriteCirc(&pGstStream->MixBuf, pvBuf, cbBuf, &cWritten);
     if (rc == VINF_BUFFER_OVERFLOW)
     {
-        LogRel2(("Audio: Lost audio samples from guest stream '%s' (only %zu / %zu bytes written), expect stuttering audio output\n",
-                 pGstStream->szName, AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritten), cbBuf));
+        LogRel2(("Audio: Lost audio samples from guest stream '%s', expect stuttering audio output\n", pGstStream->szName));
         rc = VINF_SUCCESS;
     }
 
@@ -824,8 +823,8 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     return rc;
 }
 
-static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
-                                            uint32_t *pcSamplesPlayed)
+static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
+                                            PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -850,6 +849,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
         /* Backend output (temporarily) disabled / unavailable? */
         if (pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, PDMAUDIODIR_OUT) != PDMAUDIOBACKENDSTS_RUNNING)
         {
+            /* Pull the new config from the backend and check again. */
             rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, &pThis->BackendCfg);
             AssertRC(rc);
 
@@ -926,8 +926,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
     return rc;
 }
 
-static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
-                                               uint32_t *pcSamplesCaptured)
+static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
+                                               PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesCaptured)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 

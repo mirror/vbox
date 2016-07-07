@@ -168,7 +168,7 @@ static int drvAudioVideoRecPcmInitInfo(PDMPCMPROPS * pProps, PPDMAUDIOSTREAMCFG 
     pProps->cChannels = as->cChannels;
     pProps->cShift = (as->cChannels == 2) + cShift;
     pProps->uAlign = (1 << pProps->cShift) - 1;
-    pProps->cbPerSec = pProps->uHz << pProps->cShift;
+    pProps->cbBitrate = (pProps->cBits * pProps->uHz * pProps->cChannels) / 8;
     pProps->fSwapEndian = (as->enmEndianness != PDMAUDIOHOSTENDIANESS);
 
     return rc;

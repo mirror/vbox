@@ -36,7 +36,7 @@ typedef struct AUDIOMIXER
     PDMAUDIOSTREAMCFG       devFmt;
     /** The master volume of this mixer. */
     PDMAUDIOVOLUME          VolMaster;
-    /* List of audio mixer sinks. */
+    /** List of audio mixer sinks. */
     RTLISTANCHOR            lstSinks;
     /** Number of used audio sinks. */
     uint8_t                 cSinks;
@@ -89,8 +89,11 @@ typedef struct AUDMIXSTREAM
  */
 typedef enum AUDMIXSINKDIR
 {
+    /** Unknown direction. */
     AUDMIXSINKDIR_UNKNOWN = 0,
+    /** Input (capturing from a device). */
     AUDMIXSINKDIR_INPUT,
+    /** Output (playing to a device). */
     AUDMIXSINKDIR_OUTPUT,
     /** The usual 32-bit hack. */
     AUDMIXSINKDIR_32BIT_HACK = 0x7fffffff
@@ -182,8 +185,8 @@ typedef struct AUDMIXSINK
     PDMAUDIOVOLUME          Volume;
     /** The volume of this sink, combined with the last set  master volume. */
     PDMAUDIOVOLUME          VolumeCombined;
-    /** Timestamp (in ns) since last update. */
-    uint64_t                tsLastUpdatedNS;
+    /** Timestamp (in ms) since last update. */
+    uint64_t                tsLastUpdatedMS;
 } AUDMIXSINK, *PAUDMIXSINK;
 
 /**

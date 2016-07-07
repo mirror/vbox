@@ -1854,13 +1854,21 @@ static DECLCALLBACK(OSStatus) coreAudioPlaybackCb(void *pvUser,
 
         /* Move offset. */
         cbRead += cbToRead;
-        Assert(pBufData->mBuffers[0].mDataByteSize >= cbRead);
+
+        /* Check if we're lagging behind. */
+        if (cbRead > pBufData->mBuffers[0].mDataByteSize)
+        {
+            LogRel2(("CoreAudio: Host output lagging behind, expect stuttering guest audio output\n"));
+            cbRead = pBufData->mBuffers[0].mDataByteSize;
+            break;
+        }
 
         Assert(cbToRead <= cbLeft);
         cbLeft -= cbToRead;
     }
 
-    /* Write the bytes to the core audio buffer which where really written. */
+    /* Write the bytes to the core audio buffer which were really written. */
+    Assert(pBufData->mBuffers[0].mDataByteSize >= cbRead);
     pBufData->mBuffers[0].mDataByteSize = cbRead;
 
     Log3Func(("Read %zu / %zu bytes\n", cbRead, cbToRead));

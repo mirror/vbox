@@ -3066,7 +3066,7 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
             /* Also make sure to handle the DMA position enable bit. */
             pThis->fDMAPosition = RT_BOOL(pThis->u64DPBase & RT_BIT_64(0));
-            LogRel(("HDA: %s DMA position buffer\n", pThis->fDMAPosition ? "Enabled" : "Disabled"));
+            LogRel2(("HDA: %s DMA position buffer\n", pThis->fDMAPosition ? "Enabled" : "Disabled"));
             break;
         }
         case HDA_REG_DPUBASE:
@@ -3777,11 +3777,21 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
         int rc2 = VINF_SUCCESS;
         PHDAMIXERSTREAM pStream = NULL;
 
-        if (pCfg->enmDir == PDMAUDIODIR_IN)
+        PPDMAUDIOSTREAMCFG pStreamCfg = (PPDMAUDIOSTREAMCFG)RTMemDup(pCfg, sizeof(PDMAUDIOSTREAMCFG));
+        if (!pStreamCfg)
         {
-            LogFunc(("enmRecSource=%ld\n", pCfg->DestSource.Source));
+            rc = VERR_NO_MEMORY;
+            break;
+        }
 
-            switch (pCfg->DestSource.Source)
+        /* Include the driver's LUN in the stream name for easier identification. */
+        RTStrPrintf(pStreamCfg->szName, RT_ELEMENTS(pStreamCfg->szName), "[LUN#%RU8] %s", pDrv->uLUN, pCfg->szName);
+
+        if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
+        {
+            LogFunc(("enmRecSource=%ld\n", pStreamCfg->DestSource.Source));
+
+            switch (pStreamCfg->DestSource.Source)
             {
                 case PDMAUDIORECSOURCE_LINE:
                     pStream = &pDrv->LineIn;
@@ -3796,11 +3806,11 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
                     break;
             }
         }
-        else if (pCfg->enmDir == PDMAUDIODIR_OUT)
+        else if (pStreamCfg->enmDir == PDMAUDIODIR_OUT)
         {
-            LogFunc(("enmPlaybackDest=%ld\n", pCfg->DestSource.Dest));
+            LogFunc(("enmPlaybackDest=%ld\n", pStreamCfg->DestSource.Dest));
 
-            switch (pCfg->DestSource.Dest)
+            switch (pStreamCfg->DestSource.Dest)
             {
                 case PDMAUDIOPLAYBACKDEST_FRONT:
                     pStream = &pDrv->Front;
@@ -3831,11 +3841,11 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
             pStream->pMixStrm = NULL;
 
             PAUDMIXSTREAM pMixStrm;
-            rc2 = AudioMixerSinkCreateStream(pSink->pMixSink, pDrv->pConnector, pCfg, 0 /* fFlags */, &pMixStrm);
+            rc2 = AudioMixerSinkCreateStream(pSink->pMixSink, pDrv->pConnector, pStreamCfg, 0 /* fFlags */, &pMixStrm);
             if (RT_SUCCESS(rc2))
             {
                 rc2 = AudioMixerSinkAddStream(pSink->pMixSink, pMixStrm);
-                LogFlowFunc(("LUN#%RU8: Added \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pCfg->szName , rc2));
+                LogFlowFunc(("LUN#%RU8: Added \"%s\" to sink, rc=%Rrc\n", pDrv->uLUN, pStreamCfg->szName , rc2));
             }
 
             if (RT_SUCCESS(rc2))
@@ -3844,6 +3854,12 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
 
         if (RT_SUCCESS(rc))
             rc = rc2;
+
+        if (pStreamCfg)
+        {
+            RTMemFree(pStreamCfg);
+            pStreamCfg = NULL;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
