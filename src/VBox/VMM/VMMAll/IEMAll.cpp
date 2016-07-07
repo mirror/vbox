@@ -218,7 +218,7 @@ typedef IEMSELDESC *PIEMSELDESC;
  * non-volatile registers.  However, it eliminates return code checks and allows
  * for more optimal return value passing (return regs instead of stack buffer).
  */
-#if defined(DOXYGEN_RUNNING) || defined(RT_OS_WINDOWS)
+#if defined(DOXYGEN_RUNNING) || defined(RT_OS_WINDOWS) || 1
 # define IEM_WITH_SETJMP
 #endif
 
@@ -7841,7 +7841,7 @@ IEM_STATIC void *iemMemMapJmp(PVMCPU pVCpu, size_t cbMem, uint8_t iSegReg, RTGCP
     else
     {
         void *pvMem;
-        VBOXSTRICTRC rcStrict = iemMemBounceBufferMapCrossPage(pVCpu, iMemMap, &pvMem, cbMem, GCPtrMem, fAccess);
+        rcStrict = iemMemBounceBufferMapCrossPage(pVCpu, iMemMap, &pvMem, cbMem, GCPtrMem, fAccess);
         if (rcStrict == VINF_SUCCESS)
             return pvMem;
         longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
@@ -7863,7 +7863,6 @@ IEM_STATIC void *iemMemMapJmp(PVMCPU pVCpu, size_t cbMem, uint8_t iSegReg, RTGCP
     { /* likely */ }
     else
     {
-        void *pvMem;
         rcStrict = iemMemBounceBufferMapPhys(pVCpu, iMemMap, &pvMem, cbMem, GCPhysFirst, fAccess, rcStrict);
         if (rcStrict == VINF_SUCCESS)
             return pvMem;
@@ -12671,7 +12670,11 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
  * @param   fExecuteInhibit     If set, execute the instruction following CLI,
  *                      POP SS and MOV SS,GR.
  */
+#ifdef __GNUC__
+DECLINLINE(VBOXSTRICTRC)        iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
+#else
 DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
+#endif
 {
 #ifdef IEM_WITH_SETJMP
     VBOXSTRICTRC rcStrict;
@@ -13110,6 +13113,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                 iemMemRollback(pVCpu);
             pVCpu->iem.s.cLongJumps++;
         }
+        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
 # endif
 
         /*
