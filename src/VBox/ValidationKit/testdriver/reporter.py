@@ -888,12 +888,13 @@ class RemoteReporter(ReporterBase):
             self._secTsXmlFlush = utils.timestampSecond();
         return False;
 
-    def _xmlFlushIfNecessary(self):
+    def _xmlFlushIfNecessary(self, fPolling = False):
         """Flushes the XML back log if necessary."""
         tsNow = utils.timestampSecond();
         cSecs     = tsNow - self._secTsXmlFlush;
         cSecsLast = tsNow - self._secTsXmlLast;
-        self._secTsXmlLast = tsNow;
+        if fPolling is not True:
+            self._secTsXmlLast = tsNow;
         self._writeOutput('xml-debug/%s: %s s since flush, %s s since poll'
                           % (len(self._asXml), cSecs, cSecsLast,)); # temporarily while debugging flush/poll problem.
 
@@ -942,7 +943,7 @@ class RemoteReporter(ReporterBase):
     def doPollWork(self):
         if len(self._asXml) > 0:
             g_oLock.acquire();
-            self._xmlFlushIfNecessary();
+            self._xmlFlushIfNecessary(fPolling = True);
             g_oLock.release();
         return None;
 
