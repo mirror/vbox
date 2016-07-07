@@ -200,6 +200,10 @@ protected:
 
     /* Other keyboard variables: */
     int m_iKeyboardCaptureViewIndex;
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /* Holds the index of the screen to capture keyboard when ready. */
+    int m_idxDelayedKeyboardCaptureView;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
     const VBoxGlobalSettings &m_globalSettings;
 
     uint8_t m_pressedKeys[128];
@@ -208,11 +212,6 @@ protected:
     QMap<int, uint8_t> m_pressedHostComboKeys;
 
     bool m_fIsKeyboardCaptured : 1;
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-    /* Holds whether we were asked to enable
-     * keyboard capturing but had to delay it. */
-    bool m_fDelayKeyboardCapture : 1;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
     bool m_bIsHostComboPressed : 1;
     bool m_bIsHostComboAlone : 1;
     bool m_bIsHostComboProcessed : 1;
