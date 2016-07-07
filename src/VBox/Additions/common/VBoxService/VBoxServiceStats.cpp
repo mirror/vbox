@@ -262,9 +262,11 @@ static void vgsvcVMStatsReport(void)
             req.guestStats.u32CpuLoad_Kernel = (uint32_t)(deltaKernel* 100 / ullTotalTime);
             req.guestStats.u32CpuLoad_User   = (uint32_t)(deltaUser  * 100 / ullTotalTime);
 
-            req.guestStats.u32StatCaps      |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL
+            req.guestStats.u32StatCaps      |= VBOX_GUEST_STAT_CPU_LOAD_IDLE
+                                            |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
                                             |  VBOX_GUEST_STAT_CPU_LOAD_USER;
             req.guestStats.u32CpuId          = i;
+            fCpuInfoAvail = true;
             int rc = VbglR3StatReport(&req);
             if (RT_SUCCESS(rc))
                 VGSvcVerbose(3, "vgsvcVMStatsReport: new statistics (CPU %u) reported successfully!\n", i);
@@ -417,7 +419,6 @@ static void vgsvcVMStatsReport(void)
                     g_VMStat.au64LastCpuLoad_User[u32CpuId]   = u64User;
                     g_VMStat.au64LastCpuLoad_Nice[u32CpuId]   = u64Nice;
 
-                    req.guestStats.u32CpuId = u32CpuId;
                     req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
                     req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
                     req.guestStats.u32CpuLoad_User   = (uint32_t)((u64DeltaUser
@@ -425,6 +426,7 @@ static void vgsvcVMStatsReport(void)
                     req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE
                                                |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
                                                |  VBOX_GUEST_STAT_CPU_LOAD_USER;
+                    req.guestStats.u32CpuId = u32CpuId;
                     fCpuInfoAvail = true;
                     rc = VbglR3StatReport(&req);
                     if (RT_SUCCESS(rc))
@@ -581,7 +583,6 @@ static void vgsvcVMStatsReport(void)
                                                |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
                                                |  VBOX_GUEST_STAT_CPU_LOAD_USER;
                     fCpuInfoAvail = true;
-
                     rc = VbglR3StatReport(&req);
                     if (RT_SUCCESS(rc))
                         VGSvcVerbose(3, "vgsvcVMStatsReport: new statistics (CPU %u) reported successfully!\n", cCPUs);
