@@ -29,5 +29,7 @@ int main(int argc, char **argv)
 
     printf("Disabling global hook\n");
     VBoxHookRemoveWindowTracker();
+    CloseHandle(hEvent);
+
     return 0;
 }
