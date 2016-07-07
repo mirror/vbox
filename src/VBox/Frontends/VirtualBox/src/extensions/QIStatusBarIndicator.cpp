@@ -33,6 +33,9 @@
 /* GUI includes: */
 # include "QIStatusBarIndicator.h"
 
+/* Other VBox includes: */
+# include <iprt/assert.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -113,6 +116,7 @@ void QIStateStatusBarIndicator::drawContents(QPainter *pPainter)
 
 QITextStatusBarIndicator::QITextStatusBarIndicator(QWidget *pParent /* = 0 */)
     : QIStatusBarIndicator(pParent)
+    , m_pLabel(0)
 {
     /* Create main-layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
@@ -121,7 +125,7 @@ QITextStatusBarIndicator::QITextStatusBarIndicator(QWidget *pParent /* = 0 */)
         /* Configure main-layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->setSpacing(0);
-        /* Crete label: */
+        /* Create label: */
         m_pLabel = new QLabel;
         if (m_pLabel)
         {
@@ -133,11 +137,13 @@ QITextStatusBarIndicator::QITextStatusBarIndicator(QWidget *pParent /* = 0 */)
 
 QString QITextStatusBarIndicator::text() const
 {
+    AssertPtrReturn(m_pLabel, QString());
     return m_pLabel->text();
 }
 
 void QITextStatusBarIndicator::setText(const QString &strText)
 {
+    AssertPtrReturnVoid(m_pLabel);
     m_pLabel->setText(strText);
 }
 
