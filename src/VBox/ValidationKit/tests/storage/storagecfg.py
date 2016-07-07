@@ -156,6 +156,21 @@ class StorageConfigOsLinux(StorageConfigOs):
 
     def __init__(self):
         StorageConfigOs.__init__(self);
+        self.dSimplePools = { }; # Simple storage pools which don't use lvm (just one partition)
+        self.dMounts      = { }; # Pool/Volume to mountpoint mapping.
+
+    def _getDmRaidLevelFromLvl(self, sRaidLvl):
+        """
+        Converts our raid level indicators to something mdadm can understand.
+        """
+        if sRaidLvl == 'raid5':
+            return '5';
+        elif sRaidLvl == 'raid1':
+            return 'mirror';
+        elif sRaidLvl == 'raid0' or sRaidLvl is None:
+            return 'stripe';
+
+        return 'stripe';
 
     def getDisksMatchingRegExp(self, sRegExp):
         """
@@ -174,10 +189,29 @@ class StorageConfigOsLinux(StorageConfigOs):
         Creates a new storage pool with the given disks and the given RAID level.
         """
         fRc = True;
-        _ = oExec;
-        _ = sPool;
-        _ = asDisks;
-        _ = sRaidLvl;
+        if len(asDisks) == 1 and sRaidLvl is None:
+            # Doesn't require LVM, put into the simple pools dictionary so we can
+            # use it when creating a volume later.
+            self.dSimplePools[sPool] = asDisks[0];
+        else:
+            # If a RAID is required use dm-raid first to create one.
+            asLvmPvDisks = asDisks;
+            fRc = oExec.execBinaryNoStdOut('mdadm', ('--create', '/dev/md0', '--assume-clean',
+                                                     '--level=' + self._getDmRaidLevelFromLvl(sRaidLvl),
+                                                     '--raid-devices=' + str(len(asDisks))) + tuple(asDisks));
+            if fRc:
+                # /dev/md0 is the only block device to use for our volume group.
+                asLvmPvDisks = [ '/dev/md0' ];
+
+            # Create a physical volume on every disk first.
+            for sLvmPvDisk in asLvmPvDisks:
+                fRc = oExec.execBinaryNoStdOut('pvcreate', (sLvmPvDisk, ));
+                if not fRc:
+                    break;
+
+            if fRc:
+                # Create volume group with all physical volumes included
+                fRc = oExec.execBinaryNoStdOut('vgcreate', (sPool, ) + tuple(asLvmPvDisks));
         return fRc;
 
     def createVolume(self, oExec, sPool, sVol, sMountPoint, cbVol = None):
@@ -186,25 +220,59 @@ class StorageConfigOsLinux(StorageConfigOs):
         given pool and volume IDs.
         """
         fRc = True;
-        _ = oExec;
-        _ = sPool;
-        _ = sVol;
-        _ = sMountPoint;
-        _ = cbVol;
+        sBlkDev = None;
+        if self.dSimplePools.has_key(sPool):
+            sDiskPath = self.dSimplePools.get(sPool);
+            # Create a partition with the requested size
+            sFdiskScript = ';\n'; # Single partition filling everything
+            if cbVol is not None:
+                sFdiskScript = ',' + str(cbVol / 512) + '\n'; # Get number of sectors
+            fRc, _ = oExec.execBinary('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), sFdiskScript);
+            if fRc:
+                sBlkDev = sDiskPath + '1';
+        else:
+            if cbVol is None:
+                fRc = oExec.execBinaryNoStdOut('lvcreate', ('-l', '100%FREE', '-n', sVol, sPool));
+            else:
+                fRc = oExec.execBinaryNoStdOut('lvcreate', ('-L', str(cbVol), '-n', sVol, sPool));
+            if fRc:
+                sBlkDev = '/dev/mapper' + sPool + '-' + sVol;
+
+        if fRc is True and sBlkDev is not None:
+            # Create a filesystem and mount it
+            fRc = oExec.execBinaryNoStdOut('mkfs.ext4', ('-F', '-F', sBlkDev,));
+            fRc = fRc and oExec.mkDir(sMountPoint);
+            fRc = fRc and oExec.execBinaryNoStdOut('mount', (sBlkDev, sMountPoint));
+            if fRc:
+                self.dMounts[sPool + '/' + sVol] = sMountPoint;
         return fRc;
 
     def destroyVolume(self, oExec, sPool, sVol):
         """
         Destroys the given volume.
         """
-        fRc, _ = oExec.execBinary('lvremove', (sPool + '/' + sVol,));
+        # Unmount first
+        sMountPoint = self.dMounts[sPool + '/' + sVol];
+        fRc, _ = oExec.execBinary('umount', (sMountPoint,));
+        self.dMounts.pop(sPool + '/' + sVol);
+        oExec.rmDir(sMountPoint);
+        if self.dSimplePools.has_key(sPool):
+            # Wipe partition table
+            sDiskPath = self.dSimplePools.get(sPool);
+            fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath));
+        else:
+            fRc = oExec.execBinaryNoStdOut('lvremove', (sPool + '/' + sVol,));
         return fRc;
 
     def destroyPool(self, oExec, sPool):
         """
         Destroys the given storage pool.
         """
-        fRc, _ = oExec.execBinary('vgremove', (sPool,));
+        fRc = True;
+        if self.dSimplePools.has_key(sPool):
+            self.dSimplePools.pop(sPool);
+        else:
+            fRc = oExec.execBinaryNoStdOut('vgremove', (sPool,));
         return fRc;
 
 class StorageCfg(object):
@@ -212,11 +280,7 @@ class StorageCfg(object):
     Storage configuration helper class taking care of the different host OS.
     """
 
-    kdStorageCfgs = {
-        'testboxstor1.de.oracle.com': ('solaris', r'c[3-9]t\dd0\Z')
-    };
-
-    def __init__(self, oExec, sHostname = None):
+    def __init__(self, oExec, sTargetOs, oDiskCfg):
         self.oExec    = oExec;
         self.lstDisks = [ ]; # List of disks present in the system.
         self.dPools   = { }; # Dictionary of storage pools.
@@ -224,13 +288,11 @@ class StorageCfg(object):
         self.iPoolId  = 0;
         self.iVolId   = 0;
 
-        sOs, oDiskCfg = self.kdStorageCfgs.get(sHostname);
-
         fRc = True;
         oStorOs = None;
-        if sOs == 'solaris':
+        if sTargetOs == 'solaris':
             oStorOs = StorageConfigOsSolaris();
-        elif sOs == 'linux':
+        elif sTargetOs == 'linux':
             oStorOs = StorageConfigOsLinux(); # pylint: disable=R0204
         else:
             fRc = False;
@@ -386,4 +448,10 @@ class StorageCfg(object):
             fRc = False;
 
         return fRc;
+
+    def mkDirOnVolume(self, sMountPoint, sDir, fMode = 0700):
+        """
+        Creates a new directory on the volume pointed to by the given mount point.
+        """
+        return self.oExec.mkDir(sMountPoint + '/' + sDir, fMode);
 

@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 import array;
 import os;
 import shutil;
+import subprocess;
 
 # Validation Kit imports.
 from common     import utils;
@@ -40,6 +41,7 @@ from testdriver import reporter;
 
 class StdInOutBuffer(object):
     """ Standard input output buffer """
+
     def __init__(self, sInput = None):
         if sInput is not None:
             self.sInput = self._toString(sInput);
@@ -64,8 +66,11 @@ class StdInOutBuffer(object):
     def read(self, cb):
         """file.read"""
         cb = min(cb, len(self.sInput) - self.offInput);
-        sReturn = self.sInput[self.offInput:(self.offInput + cb)];
-        self.offInput += cb;
+        if cb > 0:
+            sReturn = self.sInput[self.offInput:(self.offInput + cb)];
+            self.offInput += cb;
+        else:
+            sReturn = '';
         return sReturn;
 
     def write(self, sText):
@@ -79,6 +84,9 @@ class StdInOutBuffer(object):
         """
         return self.sOutput;
 
+    def close(self):
+        """ file.close """
+        return;
 
 class RemoteExecutor(object):
     """
@@ -121,15 +129,20 @@ class RemoteExecutor(object):
         reporter.log('Executing [sudo]: %s' % (asArgs, ));
         reporter.flushall();
         try:
-            oStdIn = None;
-            if sInput is not None:
-                oStdIn = StdInOutBuffer(sInput);
-            sOutput = utils.sudoProcessOutputChecked(asArgs, stdin= oStdIn, shell = False, close_fds = False);
+            oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                              shell = False, close_fds = False);
+
+            sOutput, _ = oProcess.communicate(sInput);
+            iExitCode  = oProcess.poll();
+
+            if iExitCode is not 0:
+                print(sOutput);
+                raise subprocess.CalledProcessError(iExitCode, asArgs);
         except:
             reporter.errorXcpt();
             return (False, None);
         reporter.log('Exit code [sudo]: %s (%s)' % (True, asArgs));
-        return (True, sOutput);
+        return (True, str(sOutput));
 
     def _execLocallyOrThroughTxs(self, sExec, asArgs, sInput):
         """
@@ -166,6 +179,15 @@ class RemoteExecutor(object):
         else:
             fRc = False;
         return (fRc, sOutput);
+
+    def execBinaryNoStdOut(self, sExec, asArgs, sInput = None):
+        """
+        Executes the given binary with the given arguments
+        providing some optional input through stdin and
+        returning whether the process exited successfully.
+        """
+        fRc, _ = self.execBinary(sExec, asArgs, sInput);
+        return fRc;
 
     def copyFile(self, sLocalFile, sFilename, cMsTimeout = 30000):
         """
@@ -215,3 +237,28 @@ class RemoteExecutor(object):
                 sFileId = None;
 
         return sFileId;
+
+    def mkDir(self, sDir, fMode = 0700, cMsTimeout = 30000):
+        """
+        Creates a new directory at the given location.
+        """
+        fRc = True;
+        if self.oTxsSession is not None:
+            fRc = self.oTxsSession.syncMkDir(sDir, fMode, cMsTimeout);
+        else:
+            fRc = self.execBinaryNoStdOut('mkdir', ('-m', format(fMode, 'o'), sDir));
+
+        return fRc;
+
+    def rmDir(self, sDir, cMsTimeout = 30000):
+        """
+        Removes the given directory.
+        """
+        fRc = True;
+        if self.oTxsSession is not None:
+            fRc = self.oTxsSession.syncRmDir(sDir, cMsTimeout);
+        else:
+            fRc = self.execBinaryNoStdOut('rmdir', (sDir,));
+
+        return fRc;
+

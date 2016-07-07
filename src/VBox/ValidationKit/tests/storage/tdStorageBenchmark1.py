@@ -229,13 +229,19 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     Storage benchmark.
     """
 
+    # Global storage configs for the testbox
+    kdStorageCfgs = {
+        'testboxstor1.de.oracle.com': r'c[3-9]t\dd0\Z',
+        'adaris': [ '/dev/sda' ]
+    };
+
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs           = None;
         self.oGuestToGuestVM   = None;
         self.oGuestToGuestSess = None;
         self.oGuestToGuestTxs  = None;
-        self.asTestVMsDef      = ['tst-debian'];
+        self.asTestVMsDef      = ['tst-storage'];
         self.asTestVMs         = self.asTestVMsDef;
         self.asSkipVMs         = [];
         self.asVirtModesDef    = ['hwvirt', 'hwvirt-np', 'raw',]
@@ -248,9 +254,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asDiskFormats     = self.asDiskFormatsDef;
         self.asTestsDef        = ['iozone', 'fio'];
         self.asTests           = self.asTestsDef;
-        self.asIscsiTargetsDef = ['aurora|iqn.2011-03.home.aurora:aurora.storagebench|1'];
+        self.asIscsiTargetsDef = [ ]; # @todo: Configure one target for basic iSCSI testing
         self.asIscsiTargets    = self.asIscsiTargetsDef;
         self.fTestHost         = False;
+        self.oStorCfg          = None;
 
     #
     # Overridden methods.
@@ -351,8 +358,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         # Construct the resource list the first time it's queried.
         if self.asRsrcs is None:
             self.asRsrcs = [];
-            if 'tst-debian' in self.asTestVMs:
-                self.asRsrcs.append('4.2/storage/debian.vdi');
+            if 'tst-storage' in self.asTestVMs:
+                self.asRsrcs.append('5.1/storage/tst-storage.vdi');
 
         return self.asRsrcs;
 
@@ -367,8 +374,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         #
 
         # Linux VMs
-        if 'tst-debian' in self.asTestVMs:
-            oVM = self.createTestVM('tst-debian', 1, '4.2/storage/debian.vdi', sKind = 'Debian_64', fIoApic = True, \
+        if 'tst-storage' in self.asTestVMs:
+            oVM = self.createTestVM('tst-storage', 1, '5.1/storage/tst-storage.vdi', sKind = 'ArchLinux_64', fIoApic = True, \
                                     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
                                     eNic0Type = vboxcon.NetworkAdapterType_Am79C973);
             if oVM is None:
@@ -388,84 +395,288 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     # Test execution helpers.
     #
 
-    def test1Benchmark(self, sTargetOs, sBenchmark, oTxsSession = None):
+    def prepareStorage(self, oStorCfg):
+        """
+        Prepares the host storage for disk images or direct testing on the host.
+        """
+        # Create a basic pool with the default configuration.
+        sMountPoint = None;
+        fRc, sPoolId = oStorCfg.createStoragePool();
+        if fRc:
+            fRc, sMountPoint = oStorCfg.createVolume(sPoolId);
+            if not fRc:
+                sMountPoint = None;
+                oStorCfg.cleanup();
+
+        return sMountPoint;
+
+    def cleanupStorage(self, oStorCfg):
+        """
+        Cleans up any created storage space for a test.
+        """
+        return oStorCfg.cleanup();
+
+    def testBenchmark(self, sTargetOs, sBenchmark, sMountpoint, oExecutor):
         """
         Runs the given benchmark on the test host.
         """
-        lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin', \
-                          '/opt/csw/bin', '/usr/ccs/bin', '/usr/sfw/bin'];
-        oExecutor = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, self.sScratchPath);
+        # Create a basic config
+        dCfg = {
+            'RecordSize':  '64k',
+            'TestsetSize': '100m',
+            'QueueDepth':  '32',
+            'FilePath': sMountpoint,
+            'TargetOs': sTargetOs
+        };
 
-        # Create a basic pool with the default configuration.
-        oStorCfg = storagecfg.StorageCfg(oExecutor, socket.gethostname().lower());
-        fRc, sPoolId = oStorCfg.createStoragePool();
-        if fRc:
-            fRc, sMountpoint = oStorCfg.createVolume(sPoolId);
+        oTst = None;
+        if sBenchmark == 'iozone':
+            oTst = IozoneTest(oExecutor, dCfg);
+        elif sBenchmark == 'fio':
+            oTst = FioTest(oExecutor, dCfg); # pylint: disable=R0204
+
+        if oTst is not None:
+            reporter.testStart(sBenchmark);
+            fRc = oTst.prepare();
             if fRc:
-                # Create a basic config
-                dCfg = {
-                    'RecordSize':  '64k',
-                    'TestsetSize': '20g',
-                    'QueueDepth':  '32',
-                    'FilePath': sMountpoint,
-                    'TargetOs': sTargetOs
-                };
-
-                oTst = None;
-                if sBenchmark == 'iozone':
-                    oTst = IozoneTest(oExecutor, dCfg);
-                elif sBenchmark == 'fio':
-                    oTst = FioTest(oExecutor, dCfg); # pylint: disable=R0204
-
-                if oTst is not None:
-                    reporter.testStart(sBenchmark);
-                    fRc = oTst.prepare();
-                    if fRc:
-                        fRc = oTst.run();
-                        if fRc:
-                            fRc = oTst.reportResult();
-                        else:
-                            reporter.testFailure('Running the testcase failed');
-                    else:
-                        reporter.testFailure('Preparing the testcase failed');
-
-                    oTst.cleanup();
-                    reporter.testDone();
+                fRc = oTst.run();
+                if fRc:
+                    fRc = oTst.reportResult();
+                else:
+                    reporter.testFailure('Running the testcase failed');
             else:
-                reporter.testFailure('Creating a storage volume on the target failed');
+                reporter.testFailure('Preparing the testcase failed');
 
-            oStorCfg.cleanup();
-        else:
-            reporter.testFailure('Creating a storage pool on the target failed');
+        oTst.cleanup();
+        reporter.testDone();
 
         return fRc;
 
-    def test1Benchmarks(self, sTargetOs, oTxsSession = None):
+    def testBenchmarks(self, sTargetOs, sMountPoint, oExecutor):
         """
         Runs all the configured benchmarks on the target.
         """
-        reporter.testStart('Host');
         for sTest in self.asTests:
-            self.test1Benchmark(sTargetOs, sTest, oTxsSession);
+            self.testBenchmark(sTargetOs, sTest, sMountPoint, oExecutor);
+
+    def test1OneCfg(self, sVmName, eStorageController, sDiskFormat, sDiskPath, cCpus, fHwVirt, fNestedPaging):
+        """
+        Runs the specified VM thru test #1.
+
+        Returns a success indicator on the general test execution. This is not
+        the actual test result.
+        """
+        oVM = self.getVmByName(sVmName);
+
+        # Reconfigure the VM
+        fRc = True;
+        oSession = self.openSession(oVM);
+        if oSession is not None:
+            # Attach HD
+            fRc = oSession.ensureControllerAttached(_ControllerTypeToName(eStorageController));
+            fRc = fRc and oSession.setStorageControllerType(eStorageController, _ControllerTypeToName(eStorageController));
+
+            if sDiskFormat == "iSCSI":
+                listNames = [];
+                listValues = [];
+                listValues = sDiskPath.split('|');
+                listNames.append('TargetAddress');
+                listNames.append('TargetName');
+                listNames.append('LUN');
+
+                if self.fpApiVer >= 5.0:
+                    oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath, vboxcon.AccessMode_ReadWrite, \
+                                                      vboxcon.DeviceType_HardDisk);
+                else:
+                    oHd = oSession.oVBox.createHardDisk(sDiskFormat, sDiskPath);
+                oHd.type = vboxcon.MediumType_Normal;
+                oHd.setProperties(listNames, listValues);
+
+                # Attach it.
+                if fRc is True:
+                    try:
+                        if oSession.fpApiVer >= 4.0:
+                            oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
+                                                            1, 0, vboxcon.DeviceType_HardDisk, oHd);
+                        else:
+                            oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
+                                                            1, 0, vboxcon.DeviceType_HardDisk, oHd.id);
+                    except:
+                        reporter.errorXcpt('attachDevice("%s",%s,%s,HardDisk,"%s") failed on "%s"' \
+                                           % (_ControllerTypeToName(eStorageController), 1, 0, oHd.id, oSession.sName) );
+                        fRc = False;
+                    else:
+                        reporter.log('attached "%s" to %s' % (sDiskPath, oSession.sName));
+            else:
+                fRc = fRc and oSession.createAndAttachHd(sDiskPath, sDiskFormat, _ControllerTypeToName(eStorageController), \
+                                                         cb = 300*1024*1024*1024, iPort = 1, fImmutable = False);
+            fRc = fRc and oSession.enableVirtEx(fHwVirt);
+            fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
+            fRc = fRc and oSession.setCpuCount(cCpus);
+            fRc = fRc and oSession.saveSettings();
+            fRc = oSession.close() and fRc and True; # pychecker hack.
+            oSession = None;
+        else:
+            fRc = False;
+
+        # Start up.
+        if fRc is True:
+            self.logVmInfo(oVM);
+            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(sVmName, fCdWait = False, fNatForwardingForTxs = True);
+            if oSession is not None:
+                self.addTask(oSession);
+
+                # Fudge factor - Allow the guest to finish starting up.
+                self.sleep(5);
+
+                # Prepare the storage on the guest
+                lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin' ];
+                oExecVm = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, '${SCRATCH}');
+                oStorCfgVm = storagecfg.StorageCfg(oExecVm, 'linux', [ '/dev/sdb' ]);
+
+                sMountPoint = self.prepareStorage(oStorCfgVm);
+                if sMountPoint is not None:
+                    self.testBenchmarks('linux', sMountPoint, oExecVm);
+                    self.cleanupStorage(oStorCfgVm);
+                else:
+                    reporter.testFailure('Failed to prepare storage for the guest benchmark');
+
+                # cleanup.
+                self.removeTask(oTxsSession);
+                self.terminateVmBySession(oSession)
+
+                # Remove disk
+                oSession = self.openSession(oVM);
+                if oSession is not None:
+                    try:
+                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 1, 0);
+
+                        # Remove storage controller if it is not an IDE controller.
+                        if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
+                           and eStorageController is not vboxcon.StorageControllerType_PIIX4:
+                            oSession.o.machine.removeStorageController(_ControllerTypeToName(eStorageController));
+
+                        oSession.saveSettings();
+                        self.oVBox.deleteHdByLocation(sDiskPath);
+                        oSession.saveSettings();
+                        oSession.close();
+                        oSession = None;
+                    except:
+                        reporter.errorXcpt('failed to detach/delete disk %s from storage controller' % (sDiskPath));
+                else:
+                    fRc = False;
+            else:
+                fRc = False;
+        return fRc;
+
+    def testBenchmarkOneVM(self, sVmName):
+        """
+        Runs one VM thru the various benchmark configurations.
+        """
+        reporter.testStart(sVmName);
+        fRc = True;
+        for sStorageCtrl in self.asStorageCtrls:
+            reporter.testStart(sStorageCtrl);
+
+            if sStorageCtrl == 'AHCI':
+                eStorageCtrl = vboxcon.StorageControllerType_IntelAhci;
+            elif sStorageCtrl == 'IDE':
+                eStorageCtrl = vboxcon.StorageControllerType_PIIX4;
+            elif sStorageCtrl == 'LsiLogicSAS':
+                eStorageCtrl = vboxcon.StorageControllerType_LsiLogicSas;
+            elif sStorageCtrl == 'LsiLogic':
+                eStorageCtrl = vboxcon.StorageControllerType_LsiLogic;
+            elif sStorageCtrl == 'BusLogic':
+                eStorageCtrl = vboxcon.StorageControllerType_BusLogic;
+            else:
+                eStorageCtrl = None;
+
+            for sDiskFormat in self.asDiskFormats:
+                reporter.testStart('%s' % (sDiskFormat));
+
+                if sDiskFormat == "iSCSI":
+                    asPaths = self.asIscsiTargets;
+                else:
+                    # Create a new default storage config on the host
+                    sMountPoint = self.prepareStorage(self.oStorCfg);
+                    if sMountPoint is not None:
+                        asPaths = [ sMountPoint ];
+                    else:
+                        asPaths = [];
+                        fRc = False;
+                        reporter.testFailure('Failed to prepare storage for VM');
+
+                for sPath in asPaths:
+                    reporter.testStart('%s' % (sPath));
+
+                    if sDiskFormat == "iSCSI":
+                        sPath = sPath;
+                    else:
+                         # Create a directory where every normal user can write to.
+                        self.oStorCfg.mkDirOnVolume(sPath, 'test', 0777);
+                        sPath = sPath + "/test/test.disk";
+
+                    for cCpus in self.acCpus:
+                        if cCpus == 1:  reporter.testStart('1 cpu');
+                        else:           reporter.testStart('%u cpus' % (cCpus));
+
+                        for sVirtMode in self.asVirtModes:
+                            if sVirtMode == 'raw' and cCpus > 1:
+                                continue;
+                            hsVirtModeDesc = {};
+                            hsVirtModeDesc['raw']       = 'Raw-mode';
+                            hsVirtModeDesc['hwvirt']    = 'HwVirt';
+                            hsVirtModeDesc['hwvirt-np'] = 'NestedPaging';
+                            reporter.testStart(hsVirtModeDesc[sVirtMode]);
+
+                            fHwVirt       = sVirtMode != 'raw';
+                            fNestedPaging = sVirtMode == 'hwvirt-np';
+                            fRc = self.test1OneCfg(sVmName, eStorageCtrl, sDiskFormat, sPath, \
+                                                   cCpus, fHwVirt, fNestedPaging)  and  fRc and True; # pychecker hack.
+                            reporter.testDone();
+
+                        reporter.testDone();
+                    reporter.testDone();
+                reporter.testDone();
+            reporter.testDone();
         reporter.testDone();
+        return fRc;
 
     def test1(self):
         """
         Executes test #1.
         """
 
-        # Test the host first if requested
         fRc = True;
-        if self.fTestHost:
-            fRc = self.test1Benchmarks(utils.getHostOs());
+        oDiskCfg = self.kdStorageCfgs.get(socket.gethostname().lower());
 
-        # Loop thru the test VMs.
-        #for sVM in self.asTestVMs:
-        #    # run test on the VM.
-        #    if not self.test1OneVM(sVM):
-        #        fRc = False;
-        #    else:
-        #        fRc = True;
+        # Test the host first if requested
+        if oDiskCfg is not None:
+            lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin', \
+                              '/opt/csw/bin', '/usr/ccs/bin', '/usr/sfw/bin'];
+            oExecutor = remoteexecutor.RemoteExecutor(None, lstBinaryPaths, self.sScratchPath);
+            self.oStorCfg = storagecfg.StorageCfg(oExecutor, utils.getHostOs(), oDiskCfg);
+
+            if self.fTestHost:
+                reporter.testStart('Host');
+                sMountPoint = self.prepareStorage(self.oStorCfg);
+                if sMountPoint is not None:
+                    fRc = self.testBenchmarks(utils.getHostOs(), sMountPoint, oExecutor);
+                    self.cleanupStorage(self.oStorCfg);
+                else:
+                    reporter.testFailure('Failed to prepare host storage');
+                reporter.testDone();
+
+            if fRc:
+                # Loop thru the test VMs.
+                for sVM in self.asTestVMs:
+                    # run test on the VM.
+                    if not self.testBenchmarkOneVM(sVM):
+                        fRc = False;
+                    else:
+                        fRc = True;
+        else:
+            fRc = False;
 
         return fRc;
 
