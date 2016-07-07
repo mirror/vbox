@@ -1571,9 +1571,10 @@ def flushall(fSkipXml = False):
     try:    sys.stderr.flush();
     except: pass;
 
-    g_oLock.acquire();
-    fRc = g_oReporter.xmlFlush(fRetry = False);
-    g_oLock.release();
+    if fSkipXml is not True:
+        g_oLock.acquire();
+        g_oReporter.xmlFlush(fRetry = False);
+        g_oLock.release();
 
     return True;
 
