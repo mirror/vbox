@@ -348,6 +348,12 @@ typedef IEMSELDESC *PIEMSELDESC;
  */
 #define IEM_IS_CANONICAL(a_u64Addr)         X86_IS_CANONICAL(a_u64Addr)
 
+/** @def IEM_USE_UNALIGNED_DATA_ACCESS
+ * Use unaligned accesses instead of elaborate byte assembly. */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(DOXYGEN_RUNNING)
+# define IEM_USE_UNALIGNED_DATA_ACCESS
+#endif
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -1706,7 +1712,11 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU16Slow(PVMCPU pVCpu, u
     if (rcStrict == VINF_SUCCESS)
     {
         uint8_t offOpcode = pVCpu->iem.s.offOpcode;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        *pu16 = (uint16_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         *pu16 = RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
+# endif
         pVCpu->iem.s.offOpcode = offOpcode + 2;
     }
     else
@@ -1728,7 +1738,11 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PVMCPU pVCpu, uint16_t *pu16)
     if (RT_LIKELY((uint8_t)offOpcode + 2 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 2;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        *pu16 = (uint16_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         *pu16 = RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
+# endif
         return VINF_SUCCESS;
     }
     return iemOpcodeGetNextU16Slow(pVCpu, pu16);
@@ -1749,7 +1763,11 @@ DECL_NO_INLINE(IEM_STATIC, uint16_t) iemOpcodeGetNextU16SlowJmp(PVMCPU pVCpu)
     {
         uint8_t offOpcode = pVCpu->iem.s.offOpcode;
         pVCpu->iem.s.offOpcode += 2;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        return *(uint16_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         return RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
+# endif
     }
     longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
 }
@@ -1767,7 +1785,11 @@ DECLINLINE(uint16_t) iemOpcodeGetNextU16Jmp(PVMCPU pVCpu)
     if (RT_LIKELY((uint8_t)offOpcode + 2 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 2;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        return *(uint16_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         return RT_MAKE_U16(pVCpu->iem.s.abOpcode[offOpcode], pVCpu->iem.s.abOpcode[offOpcode + 1]);
+# endif
     }
     return iemOpcodeGetNextU16SlowJmp(pVCpu);
 }
@@ -1970,10 +1992,14 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU32Slow(PVMCPU pVCpu, u
     if (rcStrict == VINF_SUCCESS)
     {
         uint8_t offOpcode = pVCpu->iem.s.offOpcode;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        *pu32 = *(uint32_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         *pu32 = RT_MAKE_U32_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                     pVCpu->iem.s.abOpcode[offOpcode + 1],
                                     pVCpu->iem.s.abOpcode[offOpcode + 2],
                                     pVCpu->iem.s.abOpcode[offOpcode + 3]);
+# endif
         pVCpu->iem.s.offOpcode = offOpcode + 4;
     }
     else
@@ -1995,10 +2021,14 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PVMCPU pVCpu, uint32_t *pu32)
     if (RT_LIKELY((uint8_t)offOpcode + 4 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 4;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        *pu32 = *(uint32_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         *pu32 = RT_MAKE_U32_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                     pVCpu->iem.s.abOpcode[offOpcode + 1],
                                     pVCpu->iem.s.abOpcode[offOpcode + 2],
                                     pVCpu->iem.s.abOpcode[offOpcode + 3]);
+# endif
         return VINF_SUCCESS;
     }
     return iemOpcodeGetNextU32Slow(pVCpu, pu32);
@@ -2019,10 +2049,14 @@ DECL_NO_INLINE(IEM_STATIC, uint32_t) iemOpcodeGetNextU32SlowJmp(PVMCPU pVCpu)
     {
         uint8_t offOpcode = pVCpu->iem.s.offOpcode;
         pVCpu->iem.s.offOpcode = offOpcode + 4;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        return *(uint32_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         return RT_MAKE_U32_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                    pVCpu->iem.s.abOpcode[offOpcode + 1],
                                    pVCpu->iem.s.abOpcode[offOpcode + 2],
                                    pVCpu->iem.s.abOpcode[offOpcode + 3]);
+# endif
     }
     longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
 }
@@ -2040,10 +2074,14 @@ DECLINLINE(uint32_t) iemOpcodeGetNextU32Jmp(PVMCPU pVCpu)
     if (RT_LIKELY((uint8_t)offOpcode + 4 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 4;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        return *(uint32_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         return RT_MAKE_U32_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                    pVCpu->iem.s.abOpcode[offOpcode + 1],
                                    pVCpu->iem.s.abOpcode[offOpcode + 2],
                                    pVCpu->iem.s.abOpcode[offOpcode + 3]);
+# endif
     }
     return iemOpcodeGetNextU32SlowJmp(pVCpu);
 }
@@ -2259,6 +2297,9 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU64Slow(PVMCPU pVCpu, u
     if (rcStrict == VINF_SUCCESS)
     {
         uint8_t offOpcode = pVCpu->iem.s.offOpcode;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        *pu64 = *(uint64_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         *pu64 = RT_MAKE_U64_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                     pVCpu->iem.s.abOpcode[offOpcode + 1],
                                     pVCpu->iem.s.abOpcode[offOpcode + 2],
@@ -2267,6 +2308,7 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemOpcodeGetNextU64Slow(PVMCPU pVCpu, u
                                     pVCpu->iem.s.abOpcode[offOpcode + 5],
                                     pVCpu->iem.s.abOpcode[offOpcode + 6],
                                     pVCpu->iem.s.abOpcode[offOpcode + 7]);
+# endif
         pVCpu->iem.s.offOpcode = offOpcode + 8;
     }
     else
@@ -2287,6 +2329,9 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPU pVCpu, uint64_t *pu64)
     uintptr_t const offOpcode = pVCpu->iem.s.offOpcode;
     if (RT_LIKELY((uint8_t)offOpcode + 8 <= pVCpu->iem.s.cbOpcode))
     {
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        *pu64 = *(uint64_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         *pu64 = RT_MAKE_U64_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                     pVCpu->iem.s.abOpcode[offOpcode + 1],
                                     pVCpu->iem.s.abOpcode[offOpcode + 2],
@@ -2295,6 +2340,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PVMCPU pVCpu, uint64_t *pu64)
                                     pVCpu->iem.s.abOpcode[offOpcode + 5],
                                     pVCpu->iem.s.abOpcode[offOpcode + 6],
                                     pVCpu->iem.s.abOpcode[offOpcode + 7]);
+# endif
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 8;
         return VINF_SUCCESS;
     }
@@ -2316,6 +2362,9 @@ DECL_NO_INLINE(IEM_STATIC, uint64_t) iemOpcodeGetNextU64SlowJmp(PVMCPU pVCpu)
     {
         uint8_t offOpcode = pVCpu->iem.s.offOpcode;
         pVCpu->iem.s.offOpcode = offOpcode + 8;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        return *(uint64_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         return RT_MAKE_U64_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                    pVCpu->iem.s.abOpcode[offOpcode + 1],
                                    pVCpu->iem.s.abOpcode[offOpcode + 2],
@@ -2324,6 +2373,7 @@ DECL_NO_INLINE(IEM_STATIC, uint64_t) iemOpcodeGetNextU64SlowJmp(PVMCPU pVCpu)
                                    pVCpu->iem.s.abOpcode[offOpcode + 5],
                                    pVCpu->iem.s.abOpcode[offOpcode + 6],
                                    pVCpu->iem.s.abOpcode[offOpcode + 7]);
+# endif
     }
     longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
 }
@@ -2341,6 +2391,9 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
     if (RT_LIKELY((uint8_t)offOpcode + 8 <= pVCpu->iem.s.cbOpcode))
     {
         pVCpu->iem.s.offOpcode = (uint8_t)offOpcode + 8;
+# ifdef IEM_USE_UNALIGNED_DATA_ACCESS
+        return *(uint64_t const *)&pVCpu->iem.s.abOpcode[offOpcode];
+# else
         return RT_MAKE_U64_FROM_U8(pVCpu->iem.s.abOpcode[offOpcode],
                                    pVCpu->iem.s.abOpcode[offOpcode + 1],
                                    pVCpu->iem.s.abOpcode[offOpcode + 2],
@@ -2349,6 +2402,7 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
                                    pVCpu->iem.s.abOpcode[offOpcode + 5],
                                    pVCpu->iem.s.abOpcode[offOpcode + 6],
                                    pVCpu->iem.s.abOpcode[offOpcode + 7]);
+# endif
     }
     return iemOpcodeGetNextU64SlowJmp(pVCpu);
 }
