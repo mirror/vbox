@@ -2288,7 +2288,7 @@ class TestDriver(base.TestDriver):                                              
                     reporter.errorTimeout('Timeout while waiting for progress.')
                 return -1
 
-            reporter.doPollWork();
+            reporter.doPollWork('vbox.TestDriver.waitOnProgress');
             try:    oProgress.waitForCompletion(cMsInterval);
             except: return -2;
 

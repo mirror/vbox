@@ -222,7 +222,7 @@ class ProgressWrapper(TdTaskBase):
                 self.o.waitForCompletion(cMsToWait);
             except KeyboardInterrupt: raise;
             except: pass;
-            reporter.doPollWork();
+            reporter.doPollWork('ProgressWrapper.waitForTask');
             fState = self.pollTask(False);
         return fState;
 
@@ -409,7 +409,7 @@ class ProgressWrapper(TdTaskBase):
             except:
                 reporter.errorXcpt(self.sName);
                 return -2;
-            reporter.doPollWork();
+            reporter.doPollWork('ProgressWrapper.wait');
 
         try:
             rc = self.o.resultCode;
@@ -482,7 +482,7 @@ class ProgressWrapper(TdTaskBase):
                 else:
                     reporter.errorXcpt(self.sName);
                 return -2;
-            reporter.doPollWork();
+            reporter.doPollWork('ProgressWrapper.waitForOperation');
         # Not reached.
 
     def doQuickApiTest(self):
@@ -676,7 +676,7 @@ class SessionWrapper(TdTaskBase):
             try:    self.oVBoxMgr.waitForEvents(cMsSleep);
             except KeyboardInterrupt: raise;
             except: pass;
-            reporter.doPollWork();
+            reporter.doPollWork('SessionWrapper.waitForTask');
             fState = self.pollTask(False);
         return fState;
 

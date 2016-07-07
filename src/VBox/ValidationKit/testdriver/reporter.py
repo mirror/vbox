@@ -289,10 +289,11 @@ class ReporterBase(object):
     # Misc.
     #
 
-    def doPollWork(self):
+    def doPollWork(self, sDebug = None):
         """
         Check if any pending stuff expired and needs doing.
         """
+        _ = sDebug;
         return None;
 
 
@@ -888,15 +889,15 @@ class RemoteReporter(ReporterBase):
             self._secTsXmlFlush = utils.timestampSecond();
         return False;
 
-    def _xmlFlushIfNecessary(self, fPolling = False):
+    def _xmlFlushIfNecessary(self, fPolling = False, sDebug = None):
         """Flushes the XML back log if necessary."""
         tsNow = utils.timestampSecond();
         cSecs     = tsNow - self._secTsXmlFlush;
         cSecsLast = tsNow - self._secTsXmlLast;
         if fPolling is not True:
             self._secTsXmlLast = tsNow;
-        self._writeOutput('xml-debug/%s: %s s since flush, %s s since poll'
-                          % (len(self._asXml), cSecs, cSecsLast,)); # temporarily while debugging flush/poll problem.
+        self._writeOutput('xml-debug/%s: %s s since flush, %s s since poll %s'
+                          % (len(self._asXml), cSecs, cSecsLast, sDebug if sDebug is not None else '', )); # temporarily
 
         # Absolute flush thresholds.
         if cSecs >= self.kcSecXmlFlushMax:
@@ -940,10 +941,10 @@ class RemoteReporter(ReporterBase):
         g_oLock.release();
         return None;
 
-    def doPollWork(self):
+    def doPollWork(self, sDebug = None):
         if len(self._asXml) > 0:
             g_oLock.acquire();
-            self._xmlFlushIfNecessary(fPolling = True);
+            self._xmlFlushIfNecessary(fPolling = True, sDebug = sDebug);
             g_oLock.release();
         return None;
 
@@ -1378,12 +1379,12 @@ def getErrorCount():
     g_oLock.release();
     return cErrors;
 
-def doPollWork():
+def doPollWork(sDebug = None):
     """
     This can be called from wait loops and similar to make the reporter call
     home with pending XML and such.
     """
-    g_oReporter.doPollWork();
+    g_oReporter.doPollWork(sDebug);
     return None;
 
 
