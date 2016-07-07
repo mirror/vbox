@@ -115,7 +115,7 @@ CREATE OR REPLACE function TestCaseLogic_addEntry(a_uidAuthor INTEGER, a_sName T
         INSERT INTO TestCases (uidAuthor, sName, sDescription, fEnabled, cSecTimeout, 
                                sTestBoxReqExpr, sBuildReqExpr, sBaseCmd, sTestSuiteZips, sComment)
             VALUES (a_uidAuthor, a_sName, a_sDescription, a_fEnabled, a_cSecTimeout, 
-                    a_sTestBoxReqExpr, a_sBuildReqExpr, a_sBaseCmd, a_sTestSuiteZips, a_Comment)
+                    a_sTestBoxReqExpr, a_sBuildReqExpr, a_sBaseCmd, a_sTestSuiteZips, a_sComment)
             RETURNING idTestcase INTO v_idTestCase;
         RETURN v_idTestCase;
     END;
