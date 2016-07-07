@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 import array;
 import os;
 import shutil;
+import StringIO
 import subprocess;
 
 # Validation Kit imports.
@@ -43,11 +44,9 @@ class StdInOutBuffer(object):
     """ Standard input output buffer """
 
     def __init__(self, sInput = None):
+        self.sInput = StringIO.StringIO();
         if sInput is not None:
-            self.sInput = self._toString(sInput);
-        else:
-            self.sInput = '';
-        self.offInput = 0;
+            self.sInput.write(self._toString(sInput));
         self.sOutput  = '';
 
     def _toString(self, sText):
@@ -65,13 +64,7 @@ class StdInOutBuffer(object):
 
     def read(self, cb):
         """file.read"""
-        cb = min(cb, len(self.sInput) - self.offInput);
-        if cb > 0:
-            sReturn = self.sInput[self.offInput:(self.offInput + cb)];
-            self.offInput += cb;
-        else:
-            sReturn = '';
-        return sReturn;
+        return self.sInput.read(cb);
 
     def write(self, sText):
         """file.write"""

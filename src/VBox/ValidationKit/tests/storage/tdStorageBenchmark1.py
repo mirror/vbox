@@ -257,6 +257,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asIscsiTargetsDef = [ ]; # @todo: Configure one target for basic iSCSI testing
         self.asIscsiTargets    = self.asIscsiTargetsDef;
         self.fTestHost         = False;
+        self.fUseScratch       = False;
         self.oStorCfg          = None;
 
     #
@@ -287,6 +288,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('  --test-host');
         reporter.log('      Do all configured tests on the host first and report the results');
         reporter.log('      to get a baseline');
+        reporter.log('  --use-scratch');
+        reporter.log('      Use the scratch directory for testing instead of setting up');
+        reporter.log('      fresh volumes on dedicated disks (for development)');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -342,6 +346,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     reporter.log('warning: The "--test-vms" value "%s" does not specify any of our test VMs.' % (s));
         elif asArgs[iArg] == '--test-host':
             self.fTestHost = True;
+        elif asArgs[iArg] == '--use-scratch':
+            self.fUseScratch = True;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -597,14 +603,19 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 if sDiskFormat == "iSCSI":
                     asPaths = self.asIscsiTargets;
                 else:
-                    # Create a new default storage config on the host
-                    sMountPoint = self.prepareStorage(self.oStorCfg);
-                    if sMountPoint is not None:
-                        asPaths = [ sMountPoint ];
+                    if self.fUseScratch:
+                        asPaths = [ self. sScratchPath ];
                     else:
-                        asPaths = [];
-                        fRc = False;
-                        reporter.testFailure('Failed to prepare storage for VM');
+                        # Create a new default storage config on the host
+                        sMountPoint = self.prepareStorage(self.oStorCfg);
+                        if sMountPoint is not None:
+                            # Create a directory where every normal user can write to.
+                            self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0777);
+                            asPaths = [ sMountPoint + '/test' ];
+                        else:
+                            asPaths = [];
+                            fRc = False;
+                            reporter.testFailure('Failed to prepare storage for VM');
 
                 for sPath in asPaths:
                     reporter.testStart('%s' % (sPath));
@@ -612,9 +623,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     if sDiskFormat == "iSCSI":
                         sPath = sPath;
                     else:
-                         # Create a directory where every normal user can write to.
-                        self.oStorCfg.mkDirOnVolume(sPath, 'test', 0777);
-                        sPath = sPath + "/test/test.disk";
+                        sPath = sPath + "/test.disk";
 
                     for cCpus in self.acCpus:
                         if cCpus == 1:  reporter.testStart('1 cpu');
@@ -659,7 +668,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
             if self.fTestHost:
                 reporter.testStart('Host');
-                sMountPoint = self.prepareStorage(self.oStorCfg);
+                if self.fUseScratch:
+                    sMountpoint = self.sScratchPath;
+                else:
+                    sMountPoint = self.prepareStorage(self.oStorCfg);
                 if sMountPoint is not None:
                     fRc = self.testBenchmarks(utils.getHostOs(), sMountPoint, oExecutor);
                     self.cleanupStorage(self.oStorCfg);
