@@ -42,7 +42,7 @@ import os;
 import hashlib;
 import StringIO;
 from optparse import OptionParser;
-from PIL import Image;
+from PIL import Image;                  # pylint: disable=import-error
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));

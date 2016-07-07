@@ -103,7 +103,7 @@ if True: # pylint: disable=W0125
     from testmanager.webui import wuihlpgraphgooglechart        as GraphImplementation;
 else:
     try:
-        import matplotlib; # pylint: disable=W0611,F0401
+        import matplotlib; # pylint: disable=W0611,F0401,import-error,wrong-import-order
         from testmanager.webui import wuihlpgraphmatplotlib     as GraphImplementation;
     except:
         from testmanager.webui import wuihlpgraphsimple         as GraphImplementation;
