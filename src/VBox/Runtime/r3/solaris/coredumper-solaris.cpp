@@ -231,7 +231,8 @@ static ssize_t ProcReadAddrSpace(PRTSOLCOREPROCESS pSolProc, RTFOFF off, void *p
  */
 static inline bool IsProcessArchNative(PRTSOLCOREPROCESS pSolProc)
 {
-    return pSolProc->ProcInfo.pr_dmodel == PR_MODEL_NATIVE;
+    psinfo_t *pProcInfo = (psinfo_t *)pSolProc->pvProcInfo;
+    return pProcInfo->pr_dmodel == PR_MODEL_NATIVE;
 }
 
 
@@ -300,6 +301,7 @@ static int AllocMemoryArea(PRTSOLCORE pSolCore)
         size_t      cbAccounting;       /* Size of each accounting entry per entry */
     } const s_aPreAllocTable[] =
     {
+        { "/proc/%d/psinfo",     0,                  0,                     0 },
         { "/proc/%d/map",        0,                  sizeof(prmap_t),       sizeof(RTSOLCOREMAPINFO) },
         { "/proc/%d/auxv",       0,                  0,                     0 },
         { "/proc/%d/lpsinfo",    sizeof(prheader_t), sizeof(lwpsinfo_t),    sizeof(RTSOLCORETHREADINFO) },
@@ -455,24 +457,7 @@ static int ProcReadInfo(PRTSOLCORE pSolCore)
     AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
     PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
-    char szPath[PATH_MAX];
-    int rc = VINF_SUCCESS;
-
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/psinfo", (int)pSolProc->Process);
-    int fd = open(szPath, O_RDONLY);
-    if (fd >= 0)
-    {
-        size_t cbProcInfo = sizeof(psinfo_t);
-        rc = ReadFileNoIntr(fd, &pSolProc->ProcInfo, cbProcInfo);
-        close(fd);
-    }
-    else
-    {
-        rc = RTErrConvertFromErrno(fd);
-        CORELOGRELSYS((CORELOG_NAME "ProcReadInfo: failed to open %s. rc=%Rrc\n", szPath, rc));
-    }
-
-    return rc;
+    return ProcReadFileInto(pSolCore, "psinfo", &pSolProc->pvProcInfo, &pSolProc->cbProcInfo);
 }
 
 
@@ -992,11 +977,25 @@ static int ProcReadMiscInfo(PRTSOLCORE pSolCore)
         return VERR_GENERAL_FAILURE;
     }
 
-    rc = getzonenamebyid(pSolProc->ProcInfo.pr_zoneid, pSolProc->szZoneName, sizeof(pSolProc->szZoneName));
+    /*
+     * See comment in GetOldProcessInfo() for why we need to verify the offset here.
+     * It's not perfect, but it should be fine unless they really mess up the structure
+     * layout in the future. See @bugref{8479}.
+     */
+    size_t const offZoneId = RT_OFFSETOF(psinfo_t, pr_zoneid);
+    if (pSolProc->cbProcInfo < offZoneId)
+    {
+        CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: psinfo size mismatch. cbProcInfo=%u expected >= %u\n",
+                       pSolProc->cbProcInfo, offZoneId));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    psinfo_t *pProcInfo = (psinfo_t *)pSolProc->pvProcInfo;
+    rc = getzonenamebyid(pProcInfo->pr_zoneid, pSolProc->szZoneName, sizeof(pSolProc->szZoneName));
     if (rc < 0)
     {
         CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: getzonenamebyid failed. rc=%d errno=%d zoneid=%d\n", rc, errno,
-                       pSolProc->ProcInfo.pr_zoneid));
+                       pProcInfo->pr_zoneid));
         return VERR_GENERAL_FAILURE;
     }
     pSolProc->szZoneName[sizeof(pSolProc->szZoneName) - 1] = '\0';
@@ -1013,55 +1012,79 @@ static int ProcReadMiscInfo(PRTSOLCORE pSolCore)
  * On Solaris use the old-style procfs interfaces but the core file still should have this
  * info. for backward and GDB compatibility, hence the need for this ugly function.
  *
+ * @returns IPRT status code.
+ *
  * @param pSolCore          Pointer to the core object.
  * @param pInfo             Pointer to the old prpsinfo_t structure to update.
  */
-static void GetOldProcessInfo(PRTSOLCORE pSolCore, prpsinfo_t *pInfo)
+static int GetOldProcessInfo(PRTSOLCORE pSolCore, prpsinfo_t *pInfo)
 {
-    AssertReturnVoid(pSolCore);
-    AssertReturnVoid(pInfo);
+    AssertReturn(pSolCore, VERR_INVALID_PARAMETER);
+    AssertReturn(pInfo,    VERR_INVALID_PARAMETER);
 
+    /*
+     * The psinfo_t and the size of /proc/<pid>/psinfo varies both within the same Solaris system
+     * and across Solaris major versions. However, manual dumping of the structure and offsets shows
+     * that they changed the size of lwpsinfo_t and the size of the lwpsinfo_t::pr_filler.
+     *
+     * The proc psinfo file will be what gets dumped ultimately in the core file but we still need
+     * to read the fields to translate to the older process info structure here.
+     *
+     * See @bugref{8479}.
+     */
     PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
-    psinfo_t *pSrc = &pSolProc->ProcInfo;
-    memset(pInfo, 0, sizeof(prpsinfo_t));
-    pInfo->pr_state    = pSrc->pr_lwp.pr_state;
-    pInfo->pr_zomb     = (pInfo->pr_state == SZOMB);
-    RTStrCopy(pInfo->pr_clname, sizeof(pInfo->pr_clname), pSrc->pr_lwp.pr_clname);
-    RTStrCopy(pInfo->pr_fname, sizeof(pInfo->pr_fname), pSrc->pr_fname);
-    memcpy(&pInfo->pr_psargs, &pSrc->pr_psargs, sizeof(pInfo->pr_psargs));
-    pInfo->pr_nice     = pSrc->pr_lwp.pr_nice;
-    pInfo->pr_flag     = pSrc->pr_lwp.pr_flag;
-    pInfo->pr_uid      = pSrc->pr_uid;
-    pInfo->pr_gid      = pSrc->pr_gid;
-    pInfo->pr_pid      = pSrc->pr_pid;
-    pInfo->pr_ppid     = pSrc->pr_ppid;
-    pInfo->pr_pgrp     = pSrc->pr_pgid;
-    pInfo->pr_sid      = pSrc->pr_sid;
-    pInfo->pr_addr     = (caddr_t)pSrc->pr_addr;
-    pInfo->pr_size     = pSrc->pr_size;
-    pInfo->pr_rssize   = pSrc->pr_rssize;
-    pInfo->pr_wchan    = (caddr_t)pSrc->pr_lwp.pr_wchan;
-    pInfo->pr_start    = pSrc->pr_start;
-    pInfo->pr_time     = pSrc->pr_time;
-    pInfo->pr_pri      = pSrc->pr_lwp.pr_pri;
-    pInfo->pr_oldpri   = pSrc->pr_lwp.pr_oldpri;
-    pInfo->pr_cpu      = pSrc->pr_lwp.pr_cpu;
-    pInfo->pr_ottydev  = cmpdev(pSrc->pr_ttydev);
-    pInfo->pr_lttydev  = pSrc->pr_ttydev;
-    pInfo->pr_syscall  = pSrc->pr_lwp.pr_syscall;
-    pInfo->pr_ctime    = pSrc->pr_ctime;
-    pInfo->pr_bysize   = pSrc->pr_size * PAGESIZE;
-    pInfo->pr_byrssize = pSrc->pr_rssize * PAGESIZE;
-    pInfo->pr_argc     = pSrc->pr_argc;
-    pInfo->pr_argv     = (char **)pSrc->pr_argv;
-    pInfo->pr_envp     = (char **)pSrc->pr_envp;
-    pInfo->pr_wstat    = pSrc->pr_wstat;
-    pInfo->pr_pctcpu   = pSrc->pr_pctcpu;
-    pInfo->pr_pctmem   = pSrc->pr_pctmem;
-    pInfo->pr_euid     = pSrc->pr_euid;
-    pInfo->pr_egid     = pSrc->pr_egid;
-    pInfo->pr_aslwpid  = 0;
-    pInfo->pr_dmodel   = pSrc->pr_dmodel;
+
+    size_t offLwp         = RT_OFFSETOF(psinfo_t, pr_lwp);
+    size_t offLastOnProc  = RT_OFFSETOF(lwpsinfo_t, pr_last_onproc /* last member we care about in lwpsinfo_t */);
+    if (pSolProc->cbProcInfo >= offLwp + offLastOnProc)
+    {
+        psinfo_t *pSrc = (psinfo_t *)pSolProc->pvProcInfo;
+        memset(pInfo, 0, sizeof(prpsinfo_t));
+        pInfo->pr_state    = pSrc->pr_lwp.pr_state;
+        pInfo->pr_zomb     = (pInfo->pr_state == SZOMB);
+        RTStrCopy(pInfo->pr_clname, sizeof(pInfo->pr_clname), pSrc->pr_lwp.pr_clname);
+        RTStrCopy(pInfo->pr_fname, sizeof(pInfo->pr_fname), pSrc->pr_fname);
+        memcpy(&pInfo->pr_psargs, &pSrc->pr_psargs, sizeof(pInfo->pr_psargs));
+        pInfo->pr_nice     = pSrc->pr_lwp.pr_nice;
+        pInfo->pr_flag     = pSrc->pr_lwp.pr_flag;
+        pInfo->pr_uid      = pSrc->pr_uid;
+        pInfo->pr_gid      = pSrc->pr_gid;
+        pInfo->pr_pid      = pSrc->pr_pid;
+        pInfo->pr_ppid     = pSrc->pr_ppid;
+        pInfo->pr_pgrp     = pSrc->pr_pgid;
+        pInfo->pr_sid      = pSrc->pr_sid;
+        pInfo->pr_addr     = (caddr_t)pSrc->pr_addr;
+        pInfo->pr_size     = pSrc->pr_size;
+        pInfo->pr_rssize   = pSrc->pr_rssize;
+        pInfo->pr_wchan    = (caddr_t)pSrc->pr_lwp.pr_wchan;
+        pInfo->pr_start    = pSrc->pr_start;
+        pInfo->pr_time     = pSrc->pr_time;
+        pInfo->pr_pri      = pSrc->pr_lwp.pr_pri;
+        pInfo->pr_oldpri   = pSrc->pr_lwp.pr_oldpri;
+        pInfo->pr_cpu      = pSrc->pr_lwp.pr_cpu;
+        pInfo->pr_ottydev  = cmpdev(pSrc->pr_ttydev);
+        pInfo->pr_lttydev  = pSrc->pr_ttydev;
+        pInfo->pr_syscall  = pSrc->pr_lwp.pr_syscall;
+        pInfo->pr_ctime    = pSrc->pr_ctime;
+        pInfo->pr_bysize   = pSrc->pr_size * PAGESIZE;
+        pInfo->pr_byrssize = pSrc->pr_rssize * PAGESIZE;
+        pInfo->pr_argc     = pSrc->pr_argc;
+        pInfo->pr_argv     = (char **)pSrc->pr_argv;
+        pInfo->pr_envp     = (char **)pSrc->pr_envp;
+        pInfo->pr_wstat    = pSrc->pr_wstat;
+        pInfo->pr_pctcpu   = pSrc->pr_pctcpu;
+        pInfo->pr_pctmem   = pSrc->pr_pctmem;
+        pInfo->pr_euid     = pSrc->pr_euid;
+        pInfo->pr_egid     = pSrc->pr_egid;
+        pInfo->pr_aslwpid  = 0;
+        pInfo->pr_dmodel   = pSrc->pr_dmodel;
+
+        return VINF_SUCCESS;
+    }
+
+    CORELOGRELSYS((CORELOG_NAME "GetOldProcessInfo: Size/offset mismatch. offLwp=%u offLastOnProc=%u cbProcInfo=%u\n",
+                   offLwp, offLastOnProc, pSolProc->cbProcInfo));
+    return VERR_MISMATCH;
 }
 
 
@@ -1542,7 +1565,7 @@ static int ElfWriteNoteSection(PRTSOLCORE pSolCore, RTSOLCORETYPE enmType)
         {
             ELFWRITENOTE aElfNotes[] =
             {
-                { "NT_PSINFO",     NT_PSINFO,     &pSolProc->ProcInfo,     sizeof(psinfo_t) },
+                { "NT_PSINFO",     NT_PSINFO,      pSolProc->pvProcInfo,   pSolProc->cbProcInfo },
                 { "NT_PSTATUS",    NT_PSTATUS,    &pSolProc->ProcStatus,   sizeof(pstatus_t) },
                 { "NT_AUXV",       NT_AUXV,        pSolProc->pAuxVecs,     pSolProc->cAuxVecs * sizeof(auxv_t) },
                 { "NT_PLATFORM",   NT_PLATFORM,    pSolProc->szPlatform,   strlen(pSolProc->szPlatform) + 1 },
@@ -1976,71 +1999,76 @@ static int rtCoreDumperCreateCore(PRTSOLCORE pSolCore, ucontext_t *pContext, con
     int rc = rtCoreDumperSuspendThreads(pSolCore);
     if (RT_SUCCESS(rc))
     {
-        rc = ProcReadInfo(pSolCore);
+        rc = AllocMemoryArea(pSolCore);
         if (RT_SUCCESS(rc))
         {
-            GetOldProcessInfo(pSolCore, &pSolProc->ProcInfoOld);
-            if (IsProcessArchNative(pSolProc))
+            rc = ProcReadInfo(pSolCore);
+            if (RT_SUCCESS(rc))
             {
-                /*
-                 * Read process status, information such as number of active LWPs will be
-                 * invalid since we just quiesced the process.
-                 */
-                rc = ProcReadStatus(pSolCore);
+                rc = GetOldProcessInfo(pSolCore, &pSolProc->ProcInfoOld);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = AllocMemoryArea(pSolCore);
-                    if (RT_SUCCESS(rc))
+                    if (IsProcessArchNative(pSolProc))
                     {
-                        struct COREACCUMULATOR
-                        {
-                            const char        *pszName;
-                            PFNRTSOLCOREACCUMULATOR pfnAcc;
-                            bool               fOptional;
-                        } aAccumulators[] =
-                        {
-                            { "ProcReadLdt",      &ProcReadLdt,      false },
-                            { "ProcReadCred",     &ProcReadCred,     false },
-                            { "ProcReadPriv",     &ProcReadPriv,     false },
-                            { "ProcReadAuxVecs",  &ProcReadAuxVecs,  false },
-                            { "ProcReadMappings", &ProcReadMappings, false },
-                            { "ProcReadThreads",  &ProcReadThreads,  false },
-                            { "ProcReadMiscInfo", &ProcReadMiscInfo, false }
-                        };
-
-                        for (unsigned i = 0; i < RT_ELEMENTS(aAccumulators); i++)
-                        {
-                            rc = aAccumulators[i].pfnAcc(pSolCore);
-                            if (RT_FAILURE(rc))
-                            {
-                                CORELOGRELSYS((CORELOG_NAME "CreateCore: %s failed. rc=%Rrc\n", aAccumulators[i].pszName, rc));
-                                if (!aAccumulators[i].fOptional)
-                                    break;
-                            }
-                        }
-
+                        /*
+                         * Read process status, information such as number of active LWPs will be
+                         * invalid since we just quiesced the process.
+                         */
+                        rc = ProcReadStatus(pSolCore);
                         if (RT_SUCCESS(rc))
                         {
-                            pSolCore->fIsValid = true;
-                            return VINF_SUCCESS;
-                        }
+                            struct COREACCUMULATOR
+                            {
+                                const char        *pszName;
+                                PFNRTSOLCOREACCUMULATOR pfnAcc;
+                                bool               fOptional;
+                            } aAccumulators[] =
+                            {
+                                { "ProcReadLdt",      &ProcReadLdt,      false },
+                                { "ProcReadCred",     &ProcReadCred,     false },
+                                { "ProcReadPriv",     &ProcReadPriv,     false },
+                                { "ProcReadAuxVecs",  &ProcReadAuxVecs,  false },
+                                { "ProcReadMappings", &ProcReadMappings, false },
+                                { "ProcReadThreads",  &ProcReadThreads,  false },
+                                { "ProcReadMiscInfo", &ProcReadMiscInfo, false }
+                            };
 
-                        FreeMemoryArea(pSolCore);
+                            for (unsigned i = 0; i < RT_ELEMENTS(aAccumulators); i++)
+                            {
+                                rc = aAccumulators[i].pfnAcc(pSolCore);
+                                if (RT_FAILURE(rc))
+                                {
+                                    CORELOGRELSYS((CORELOG_NAME "CreateCore: %s failed. rc=%Rrc\n", aAccumulators[i].pszName, rc));
+                                    if (!aAccumulators[i].fOptional)
+                                        break;
+                                }
+                            }
+
+                            if (RT_SUCCESS(rc))
+                            {
+                                pSolCore->fIsValid = true;
+                                return VINF_SUCCESS;
+                            }
+
+                            FreeMemoryArea(pSolCore);
+                        }
+                        else
+                            CORELOGRELSYS((CORELOG_NAME "CreateCore: ProcReadStatus failed. rc=%Rrc\n", rc));
                     }
                     else
-                        CORELOGRELSYS((CORELOG_NAME "CreateCore: AllocMemoryArea failed. rc=%Rrc\n", rc));
+                    {
+                        CORELOGRELSYS((CORELOG_NAME "CreateCore: IsProcessArchNative failed.\n"));
+                        rc = VERR_BAD_EXE_FORMAT;
+                    }
                 }
                 else
-                    CORELOGRELSYS((CORELOG_NAME "CreateCore: ProcReadStatus failed. rc=%Rrc\n", rc));
+                    CORELOGRELSYS((CORELOG_NAME "CreateCore: GetOldProcessInfo failed. rc=%Rrc\n", rc));
             }
             else
-            {
-                CORELOGRELSYS((CORELOG_NAME "CreateCore: IsProcessArchNative failed.\n"));
-                rc = VERR_BAD_EXE_FORMAT;
-            }
+                CORELOGRELSYS((CORELOG_NAME "CreateCore: ProcReadInfo failed. rc=%Rrc\n", rc));
         }
         else
-            CORELOGRELSYS((CORELOG_NAME "CreateCore: ProcReadInfo failed. rc=%Rrc\n", rc));
+            CORELOGRELSYS((CORELOG_NAME "CreateCore: AllocMemoryArea failed. rc=%Rrc\n", rc));
 
         /*
          * Resume threads on failure.

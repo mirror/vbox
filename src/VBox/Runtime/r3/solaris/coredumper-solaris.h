@@ -102,7 +102,8 @@ typedef struct RTSOLCOREPROCESS
     char                            szExecPath[PATH_MAX];       /**< Path of the executable */
     char                           *pszExecName;                /**< Name of the executable file */
 #ifdef RT_OS_SOLARIS
-    psinfo_t                        ProcInfo;                   /**< Process info. */
+    void                           *pvProcInfo;                 /**< Process info. */
+    size_t                          cbProcInfo;                 /**< Size of the process info. */
     prpsinfo_t                      ProcInfoOld;                /**< Process info. Older version (for GDB compat.) */
     pstatus_t                       ProcStatus;                 /**< Process status info. */
     thread_t                        hCurThread;                 /**< The current thread */
