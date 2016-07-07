@@ -4823,12 +4823,15 @@ static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 }
 
 
-#if HC_ARCH_BITS == 32
-# ifdef VBOX_ENABLE_64_BITS_GUESTS
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 /**
  * Check if guest state allows safe use of 32-bit switcher again.
  *
- * @returns VBox status code.
+ * Segment bases and protected mode structures must be 32-bit addressable
+ * because the  32-bit switcher will ignore high dword when writing these VMCS
+ * fields.  See @bugref{8432} for details.
+ *
+ * @returns true if safe, false if must continue to use the 64-bit switcher.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -4838,37 +4841,29 @@ static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static bool hmR0VmxIs32BitSwitcherSafe(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    bool    rc = false;
-
-    do
-    {
-        if (pMixedCtx->gdtr.pGdt & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->idtr.pIdt & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->ldtr.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->tr.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->es.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->cs.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->ss.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->ds.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->fs.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        if (pMixedCtx->gs.u64Base & UINT64_C(0xffffffff00000000))
-            break;
-        /* All good, bases are 32-bit. */
-        rc = true;
-    } while (0);
-
-    return rc;
+    if (pMixedCtx->gdtr.pGdt    & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->idtr.pIdt    & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->ldtr.u64Base & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->tr.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->es.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->cs.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->ss.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->ds.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->fs.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    if (pMixedCtx->gs.u64Base   & UINT64_C(0xffffffff00000000))
+        return false;
+    /* All good, bases are 32-bit. */
+    return true;
 }
-# endif
 #endif
 
 
