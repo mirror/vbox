@@ -240,10 +240,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         break;
 
     case 0x05: /* format disk track */
-          BX_INFO("format disk track called\n");
-          goto int13_success;
-          return;
-          break;
+        BX_INFO("format disk track called\n");
+        goto int13_success;
+        break;
 
     case 0x08: /* read disk drive parameters */
 
