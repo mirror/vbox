@@ -2871,8 +2871,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
                     LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
 
-                    AssertMsgFailed(("Used SolAudio as audio backend, which should not happen anymore\n"));
-
                     /* Manually set backend to OSS for now. */
                     InsertConfigString(pLunL1, "Driver", "OSSAudio");
                     break;
