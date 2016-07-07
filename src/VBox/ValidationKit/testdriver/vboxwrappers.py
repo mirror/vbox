@@ -670,7 +670,10 @@ class SessionWrapper(TdTaskBase):
             cMsElapsed = base.timestampMilli() - msStart;
             if cMsElapsed > cMsTimeout:
                 break;
-            try:    self.oVBoxMgr.waitForEvents(min(cMsTimeout - cMsElapsed, 10000));
+            cMsSleep = cMsTimeout - cMsElapsed;
+            if cMsSleep > 10000:
+                cMsSleep = 10000;
+            try:    self.oVBoxMgr.waitForEvents(cMsSleep);
             except KeyboardInterrupt: raise;
             except: pass;
             reporter.doPollWork();
