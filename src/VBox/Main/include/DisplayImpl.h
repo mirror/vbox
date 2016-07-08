@@ -94,6 +94,13 @@ typedef struct _DISPLAYFBINFO
         ULONG height;
     } pendingViewportInfo;
 #endif /* VBOX_WITH_CROGL */
+
+#ifdef VBOX_WITH_VPX
+    struct
+    {
+        ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+    } videoCapture;
+#endif
 } DISPLAYFBINFO;
 
 /* The legacy VBVA (VideoAccel) data.
@@ -194,6 +201,9 @@ public:
     int  i_VideoCaptureStart();
     void i_VideoCaptureStop();
     int  i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
+#ifdef VBOX_WITH_VPX
+    void videoCaptureScreenChanged(unsigned uScreenId);
+#endif
 
     void i_notifyPowerDown(void);
 
@@ -448,6 +458,10 @@ private:
 
     /* Serializes access to mVideoAccelLegacy and mfVideoAccelVRDP, etc between VRDP and Display. */
     RTCRITSECT mVideoAccelLock;
+#ifdef VBOX_WITH_VPX
+    /* Serializes access to video capture source bitmaps. */
+    RTCRITSECT mVideoCaptureLock;
+#endif
 
 public:
 

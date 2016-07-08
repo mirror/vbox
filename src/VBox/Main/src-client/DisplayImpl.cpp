@@ -131,6 +131,9 @@ HRESULT Display::FinalConstruct()
     mfHostCursorCapabilities = 0;
 #endif
 #ifdef VBOX_WITH_VPX
+    rc = RTCritSectInit(&mVideoCaptureLock);
+    AssertRC(rc);
+
     mpVideoRecCtx = NULL;
     for (unsigned i = 0; i < RT_ELEMENTS(maVideoRecEnabled); i++)
         maVideoRecEnabled[i] = true;
@@ -158,6 +161,14 @@ HRESULT Display::FinalConstruct()
 void Display::FinalRelease()
 {
     uninit();
+
+#ifdef VBOX_WITH_VPX
+    if (RTCritSectIsInitialized(&mVideoCaptureLock))
+    {
+        RTCritSectDelete(&mVideoCaptureLock);
+        RT_ZERO(mVideoCaptureLock);
+    }
+#endif
 
     videoAccelDestroy(&mVideoAccelLegacy);
     i_saveVisibleRegion(0, NULL);
@@ -702,6 +713,9 @@ void Display::uninit()
         maFramebuffers[uScreenId].updateImage.pu8Address = NULL;
         maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
+#ifdef VBOX_WITH_VPX
+        maFramebuffers[uScreenId].videoCapture.pSourceBitmap.setNull();
+#endif
     }
 
     if (mParent)
@@ -960,6 +974,10 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     /* And re-send the seamless rectangles if necessary. */
     if (mfSeamlessEnabled)
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
+
+#ifdef VBOX_WITH_VPX
+    videoCaptureScreenChanged(uScreenId);
+#endif
 
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
@@ -2220,7 +2238,15 @@ int Display::i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
 #ifdef VBOX_WITH_VPX
     com::SafeArray<BOOL> Screens(ComSafeArrayInArg(aScreens));
     for (unsigned i = 0; i < Screens.size(); i++)
+    {
+        bool fChanged = maVideoRecEnabled[i] != RT_BOOL(Screens[i]);
+
         maVideoRecEnabled[i] = RT_BOOL(Screens[i]);
+
+        if (fChanged && i < mcMonitors)
+            videoCaptureScreenChanged(i);
+
+    }
     return VINF_SUCCESS;
 #else
     return VERR_NOT_IMPLEMENTED;
@@ -2329,6 +2355,8 @@ int Display::i_VideoCaptureStart()
         {
             LogRel(("Display::VideoCaptureStart: WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' "
                     "enabled\n", uScreen, ulWidth, ulHeight, ulRate, ulFPS, pszName));
+
+            videoCaptureScreenChanged(uScreen);
         }
         else
             LogRel(("Display::VideoCaptureStart: Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
@@ -2352,8 +2380,32 @@ void Display::i_VideoCaptureStop()
         LogRel(("Display::VideoCaptureStop: WebM/VP8 video recording stopped\n"));
     VideoRecContextClose(mpVideoRecCtx);
     mpVideoRecCtx = NULL;
+
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < mcMonitors; ++uScreenId)
+        videoCaptureScreenChanged(uScreenId);
 #endif
 }
+
+#ifdef VBOX_WITH_VPX
+void Display::videoCaptureScreenChanged(unsigned uScreenId)
+{
+    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+
+    if (VideoRecIsEnabled(mpVideoRecCtx) && maVideoRecEnabled[uScreenId])
+    {
+        /* Get a new source bitmap which will be used by video capture code. */
+        QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
+    }
+
+    int rc = RTCritSectEnter(&mVideoCaptureLock);
+    if (RT_SUCCESS(rc))
+    {
+        maFramebuffers[uScreenId].videoCapture.pSourceBitmap = pSourceBitmap;
+        RTCritSectLeave(&mVideoCaptureLock);
+    }
+}
+#endif
 
 int Display::i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                                ULONG x, ULONG y, ULONG width, ULONG height)
@@ -3106,28 +3158,43 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 }
 
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
-
-                if (   !pFBInfo->pFramebuffer.isNull()
-                    && !pFBInfo->fDisabled)
+                if (!pFBInfo->fDisabled)
                 {
-                    rc = VERR_NOT_SUPPORTED;
-                    if (   pFBInfo->fVBVAEnabled
-                        && pFBInfo->pu8FramebufferVRAM)
+                    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+                    int rc2 = RTCritSectEnter(&pDisplay->mVideoCaptureLock);
+                    if (RT_SUCCESS(rc2))
                     {
-                        rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                                  BitmapFormat_BGR,
-                                                  pFBInfo->u16BitsPerPixel,
-                                                  pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
-                                                  pFBInfo->pu8FramebufferVRAM, u64Now);
+                        pSourceBitmap = pFBInfo->videoCapture.pSourceBitmap;
+                        RTCritSectLeave(&pDisplay->mVideoCaptureLock);
                     }
-                    else if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && pDrv->IConnector.pbData)
+
+                    if (!pSourceBitmap.isNull())
                     {
-                        rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                                  BitmapFormat_BGR,
-                                                  pDrv->IConnector.cBits,
-                                                  pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
-                                                  pDrv->IConnector.cy, pDrv->IConnector.pbData, u64Now);
+                        BYTE *pbAddress = NULL;
+                        ULONG ulWidth = 0;
+                        ULONG ulHeight = 0;
+                        ULONG ulBitsPerPixel = 0;
+                        ULONG ulBytesPerLine = 0;
+                        BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
+                        HRESULT hr = pSourceBitmap->QueryBitmapInfo(&pbAddress,
+                                                                    &ulWidth,
+                                                                    &ulHeight,
+                                                                    &ulBitsPerPixel,
+                                                                    &ulBytesPerLine,
+                                                                    &bitmapFormat);
+                        if (SUCCEEDED(hr) && pbAddress)
+                            rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
+                                                      BitmapFormat_BGR,
+                                                      ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight,
+                                                      pbAddress, u64Now);
+                        else
+                            rc = VERR_NOT_SUPPORTED;
+
+                        pSourceBitmap.setNull();
                     }
+                    else
+                        rc = VERR_NOT_SUPPORTED;
+
                     if (rc == VINF_TRY_AGAIN)
                         break;
                 }
