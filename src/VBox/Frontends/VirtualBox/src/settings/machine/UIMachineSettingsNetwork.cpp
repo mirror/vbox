@@ -392,6 +392,11 @@ void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
     /* Update availability: */
     m_pAdapterOptionsContainer->setEnabled(m_pEnableAdapterCheckBox->isChecked());
 
+    /* Generate a new MAC address in case this adapter was never enabled before: */
+    if (   m_pEnableAdapterCheckBox->isChecked()
+        && m_pMACEditor->text().size() < 1)
+        m_pMACEditor->setText(vboxGlobal().host().GenerateMACAddress());
+
     /* Revalidate: */
     m_pParent->revalidate();
 }
