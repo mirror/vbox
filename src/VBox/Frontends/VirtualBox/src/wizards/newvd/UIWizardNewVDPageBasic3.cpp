@@ -195,6 +195,15 @@ int UIWizardNewVDPage3::calculateSliderScale(qulonglong uMaximumMediumSize)
         qulonglong uTickMBNext = (qulonglong)1 << (iPower + 1);
         qulonglong uGap = uTickMBNext - uMaximumMediumSize;
         iSliderScale = (int)((uTickMBNext - uTickMB) / uGap);
+#ifdef VBOX_WS_MAC
+        // WORKAROUND:
+        // There is an issue with Qt5 QSlider under OSX:
+        // Slider tick count (maximum - minimum) is limited with some
+        // "magical number" - 588351, having it more than that brings
+        // unpredictable results like slider token jumping and disappearing,
+        // so we are limiting tick count by lowering slider-scale 100 times.
+        iSliderScale /= 100;
+#endif /* VBOX_WS_MAC */
     }
     return qMax(iSliderScale, 8);
 }
