@@ -3010,8 +3010,9 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     else if (!pVCpu->hm.s.Event.fPending)
         hmR0SvmEvaluatePendingEvent(pVCpu, pCtx);
 
-    /* On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
-     * Just do it in software. See @bugref{8411}
+    /*
+     * On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
+     * Just do it in software, see @bugref{8411}.
      * NB: If we could continue a task switch exit we wouldn't need to do this.
      */
     if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending && (((pVCpu->hm.s.Event.u64IntInfo >> 8) & 7) == SVM_EVENT_NMI)))
