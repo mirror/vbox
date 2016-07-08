@@ -579,13 +579,13 @@ typedef struct VMCPU
                                                                                 | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_REQUEST) )
 
 /** All the forced VM flags. */
-#define VM_FF_ALL_MASK                          (~0U)
+#define VM_FF_ALL_MASK                          (UINT32_MAX)
 /** All the forced VMCPU flags. */
-#define VMCPU_FF_ALL_MASK                       (~0U)
+#define VMCPU_FF_ALL_MASK                       (UINT32_MAX)
 
 /** All the forced VM flags except those related to raw-mode and hardware
  * assisted execution. */
-#define VM_FF_ALL_REM_MASK                      (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NO_MEMORY)
+#define VM_FF_ALL_REM_MASK                      (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)
 /** All the forced VMCPU flags except those related to raw-mode and hardware
  * assisted execution. */
 #define VMCPU_FF_ALL_REM_MASK                   (~(  VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_PDM_CRITSECT \
