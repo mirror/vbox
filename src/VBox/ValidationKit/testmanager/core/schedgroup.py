@@ -464,7 +464,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
         #
         # Validate.
         #
-        dDataErrors = oData.validateAndConvert(self._oDb, idPrimaryMustBeNullOrNot = True);
+        dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
         if len(dDataErrors) > 0:
             raise TMInvalidData('Invalid data passed to addEntry: %s' % (dDataErrors,));
         if self.exists(oData.sName):
