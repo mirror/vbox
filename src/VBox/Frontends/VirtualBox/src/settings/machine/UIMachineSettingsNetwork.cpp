@@ -362,7 +362,7 @@ void UIMachineSettingsNetwork::polishTab()
                                         attachmentType() == KNetworkAttachmentType_NAT);
 
     /* Postprocessing: */
-    sltHandleAdvancedButtonStateChange();
+    handleAdvancedButtonStateChange();
 }
 
 void UIMachineSettingsNetwork::reloadAlternative()
@@ -371,6 +371,17 @@ void UIMachineSettingsNetwork::reloadAlternative()
     updateAlternativeList();
     /* Select previous or default alternative-name combo-box item: */
     updateAlternativeName();
+}
+
+void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
+{
+    /* Check whether the button state really changed: */
+    if (m_pAdvancedArrow->isExpanded() == fExpanded)
+        return;
+
+    /* Push the state to button and handle the state change: */
+    m_pAdvancedArrow->setExpanded(fExpanded);
+    handleAdvancedButtonStateChange();
 }
 
 void UIMachineSettingsNetwork::retranslateUi()
@@ -392,8 +403,8 @@ void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
 
     /* Generate a new MAC address in case this adapter was never enabled before: */
     if (   m_pEnableAdapterCheckBox->isChecked()
-        && m_pMACEditor->text().size() < 1)
-        m_pMACEditor->setText(vboxGlobal().host().GenerateMACAddress());
+        && m_pMACEditor->text().isEmpty())
+        sltGenerateMac();
 
     /* Revalidate: */
     m_pParent->revalidate();
@@ -543,20 +554,11 @@ void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
 
 void UIMachineSettingsNetwork::sltHandleAdvancedButtonStateChange()
 {
-    /* Update visibility of advanced options: */
-    m_pAdapterTypeLabel->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pAdapterTypeCombo->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pPromiscuousModeLabel->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pPromiscuousModeCombo->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pGenericPropertiesLabel->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
-                                          m_pAdvancedArrow->isExpanded());
-    m_pGenericPropertiesTextEdit->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
-                                             m_pAdvancedArrow->isExpanded());
-    m_pMACLabel->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pMACEditor->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pMACButton->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pCableConnectedCheckBox->setVisible(m_pAdvancedArrow->isExpanded());
-    m_pPortForwardingButton->setVisible(m_pAdvancedArrow->isExpanded());
+    /* Handle the button state change: */
+    handleAdvancedButtonStateChange();
+
+    /* Notify listeners about the button state change: */
+    emit sigNotifyAdvancedButtonStateChange(m_pAdvancedArrow->isExpanded());
 }
 
 void UIMachineSettingsNetwork::sltGenerateMac()
@@ -778,6 +780,24 @@ void UIMachineSettingsNetwork::updateAlternativeName()
     m_pAdapterNameCombo->blockSignals(false);
 }
 
+void UIMachineSettingsNetwork::handleAdvancedButtonStateChange()
+{
+    /* Update visibility of advanced options: */
+    m_pAdapterTypeLabel->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pAdapterTypeCombo->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pPromiscuousModeLabel->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pPromiscuousModeCombo->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pGenericPropertiesLabel->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
+                                          m_pAdvancedArrow->isExpanded());
+    m_pGenericPropertiesTextEdit->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
+                                             m_pAdvancedArrow->isExpanded());
+    m_pMACLabel->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pMACEditor->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pMACButton->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pCableConnectedCheckBox->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pPortForwardingButton->setVisible(m_pAdvancedArrow->isExpanded());
+}
+
 /* static */
 int UIMachineSettingsNetwork::position(QComboBox *pComboBox, int iData)
 {
@@ -811,6 +831,8 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     {
         /* Creating adapter tab: */
         UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(this);
+        connect(pTab, SIGNAL(sigNotifyAdvancedButtonStateChange(bool)),
+                this, SLOT(sltHandleAdvancedButtonStateChange(bool)));
         m_pTwAdapters->addTab(pTab, pTab->tabTitle());
     }
 }
@@ -1078,6 +1100,16 @@ void UIMachineSettingsNetworkPage::sltHandleUpdatedTab()
         /* Update all the tabs (except sender) with the same attachment type as sender have: */
         if (pTab != pSender && pTab->attachmentType() == senderAttachmentType)
             pTab->reloadAlternative();
+    }
+}
+
+void UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange(bool fExpanded)
+{
+    /* Update the advanced button states for all the pages: */
+    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    {
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
+        pTab->setAdvancedButtonState(fExpanded);
     }
 }
 
