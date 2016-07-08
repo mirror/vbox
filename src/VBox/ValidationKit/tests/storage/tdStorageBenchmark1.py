@@ -381,7 +381,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         # Linux VMs
         if 'tst-storage' in self.asTestVMs:
-            oVM = self.createTestVM('tst-storage', 1, '5.1/storage/tst-storage.vdi', sKind = 'ArchLinux_64', fIoApic = True, \
+            oVM = self.createTestVM('tst-storage', 1, '5.0/storage/tst-storage.vdi', sKind = 'ArchLinux_64', fIoApic = True, \
                                     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
                                     eNic0Type = vboxcon.NetworkAdapterType_Am79C973);
             if oVM is None:
