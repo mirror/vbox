@@ -252,10 +252,8 @@ void QIArrowSplitter::prepare()
             {
                 /* Configure switch-button: */
                 m_pSwitchButton->setIconSize(QSize(iIconMetric, iIconMetric));
-                m_pSwitchButton->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Collapsed,
-                                                       UIIconPool::iconSet(":/arrow_right_10px.png"));
-                m_pSwitchButton->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Expanded,
-                                                       UIIconPool::iconSet(":/arrow_down_10px.png"));
+                m_pSwitchButton->setIcons(UIIconPool::iconSet(":/arrow_right_10px.png"),
+                                          UIIconPool::iconSet(":/arrow_down_10px.png"));
                 connect(m_pSwitchButton, SIGNAL(sigClicked()), this, SLOT(sltUpdateNavigationButtonsVisibility()));
                 connect(m_pSwitchButton, SIGNAL(sigClicked()), this, SLOT(sltUpdateDetailsBrowserVisibility()));
                 /* Add switch-button into button-layout: */

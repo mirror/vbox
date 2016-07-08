@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,6 @@
 #define ___QIArrowButtonSwitch_h___
 
 /* Qt includes: */
-#include <QMap>
 #include <QIcon>
 
 /* GUI includes: */
@@ -34,17 +33,16 @@ class QIArrowButtonSwitch : public QIRichToolButton
 
 public:
 
-    /** Button states. */
-    enum ButtonState { ButtonState_Collapsed, ButtonState_Expanded };
-
     /** Constructor, passes @a pParent to the QIRichToolButton constructor. */
     QIArrowButtonSwitch(QWidget *pParent = 0);
 
-    /** Defines the @a icon for the @a buttonState. */
-    void setIconForButtonState(ButtonState buttonState, const QIcon &icon);
+    /** Defines the @a iconCollapsed and the @a iconExpanded. */
+    void setIcons(const QIcon &iconCollapsed, const QIcon &iconExpanded);
 
-    /** Returns whether button-state is ButtonState_Expanded. */
-    bool isExpanded() const { return m_buttonState == ButtonState_Expanded; }
+    /** Defines whether the button is @a fExpanded. */
+    void setExpanded(bool fExpanded);
+    /** Returns whether the button is expanded. */
+    bool isExpanded() const { return m_fExpanded; }
 
 protected slots:
 
@@ -59,12 +57,15 @@ protected:
 private:
 
     /** Updates icon according button-state. */
-    void updateIcon();
+    void updateIcon() { setIcon(m_fExpanded ? m_iconExpanded : m_iconCollapsed); }
 
-    /** Holds the button-state. */
-    ButtonState m_buttonState;
-    /** Holds icons for button-states. */
-    QMap<ButtonState, QIcon> m_icons;
+    /** Holds whether the button is expanded. */
+    bool m_fExpanded;
+
+    /** Holds the icon for collapsed button. */
+    QIcon m_iconCollapsed;
+    /** Holds the icon for expanded button. */
+    QIcon m_iconExpanded;
 };
 
 #endif /* !___QIArrowButtonSwitch_h___ */

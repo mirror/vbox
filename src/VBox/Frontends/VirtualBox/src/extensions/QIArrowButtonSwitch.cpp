@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,25 +30,33 @@
 
 QIArrowButtonSwitch::QIArrowButtonSwitch(QWidget *pParent /* = 0 */)
     : QIRichToolButton(pParent)
-    , m_buttonState(ButtonState_Collapsed)
+    , m_fExpanded(false)
 {
     /* Update icon: */
     updateIcon();
 }
 
-void QIArrowButtonSwitch::setIconForButtonState(QIArrowButtonSwitch::ButtonState buttonState, const QIcon &icon)
+void QIArrowButtonSwitch::setIcons(const QIcon &iconCollapsed, const QIcon &iconExpanded)
 {
-    /* Assign icon: */
-    m_icons[buttonState] = icon;
+    /* Assign icons: */
+    m_iconCollapsed = iconCollapsed;
+    m_iconExpanded = iconExpanded;
+    /* Update icon: */
+    updateIcon();
+}
+
+void QIArrowButtonSwitch::setExpanded(bool fExpanded)
+{
+    /* Set button state: */
+    m_fExpanded = fExpanded;
     /* Update icon: */
     updateIcon();
 }
 
 void QIArrowButtonSwitch::sltButtonClicked()
 {
-    /* Toggle button-state: */
-    m_buttonState = m_buttonState == ButtonState_Collapsed ?
-                    ButtonState_Expanded : ButtonState_Collapsed;
+    /* Toggle button state: */
+    m_fExpanded = !m_fExpanded;
     /* Update icon: */
     updateIcon();
 }
@@ -59,16 +67,11 @@ void QIArrowButtonSwitch::keyPressEvent(QKeyEvent *pEvent)
     switch (pEvent->key())
     {
         /* Animate-click for the Space key: */
-        case Qt::Key_Minus: if (m_buttonState == ButtonState_Expanded) return animateClick(); break;
-        case Qt::Key_Plus: if (m_buttonState == ButtonState_Collapsed) return animateClick(); break;
+        case Qt::Key_Minus: if (m_fExpanded) return animateClick(); break;
+        case Qt::Key_Plus: if (!m_fExpanded) return animateClick(); break;
         default: break;
     }
     /* Call to base-class: */
     QIRichToolButton::keyPressEvent(pEvent);
-}
-
-void QIArrowButtonSwitch::updateIcon()
-{
-    setIcon(m_icons.value(m_buttonState));
 }
 

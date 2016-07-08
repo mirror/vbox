@@ -70,10 +70,8 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     m_pMACEditor->setMinimumWidthByText(QString().fill('0', 12));
     m_pMACButton->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
     m_pAdvancedArrow->setIconSize(QSize(iIconMetric, iIconMetric));
-    m_pAdvancedArrow->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Collapsed,
-                                            UIIconPool::iconSet(":/arrow_right_10px.png"));
-    m_pAdvancedArrow->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Expanded,
-                                            UIIconPool::iconSet(":/arrow_down_10px.png"));
+    m_pAdvancedArrow->setIcons(UIIconPool::iconSet(":/arrow_right_10px.png"),
+                               UIIconPool::iconSet(":/arrow_down_10px.png"));
 
     /* Setup connections: */
     connect(m_pEnableAdapterCheckBox, SIGNAL(toggled(bool)), this, SLOT(sltHandleAdapterActivityChange()));
