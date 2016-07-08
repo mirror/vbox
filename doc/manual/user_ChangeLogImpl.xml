@@ -43,6 +43,11 @@
       </listitem>
 
       <listitem>
+        <para>Audio: more fine-grained volume control for the AC'97 emulation, which now also
+          takes the master volume control into account</para>
+      </listitem>
+
+      <listitem>
         <para>better support for Python 3</para>
       </listitem>
 
