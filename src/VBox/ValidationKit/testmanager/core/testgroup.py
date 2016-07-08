@@ -421,12 +421,12 @@ class TestGroupLogic(ModelLogicBase):
         # Do the job.
         #
         self._oDb.execute('INSERT INTO TestGroups (uidAuthor, sName, sDescription, sComment)\n'
-                          'VALUES (%s, %s, %s)\n'
+                          'VALUES (%s, %s, %s, %s)\n'
                           'RETURNING idTestGroup\n'
                           , ( uidAuthor,
                               oData.sName,
                               oData.sDescription,
-                              oData.sComment, ));
+                              oData.sComment ));
         idTestGroup = self._oDb.fetchOne()[0];
         oData.idTestGroup = idTestGroup;
 
