@@ -239,7 +239,9 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      * See if we're lucky.
      */
     /* NOP ... */
-    if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
+    if (!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP))
+    { /* We're more likely to end up here with real critsects than a NOP one. */ }
+    else
         return VINF_SUCCESS;
 
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
@@ -433,7 +435,9 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos
      * See if we're lucky.
      */
     /* NOP ... */
-    if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
+    if (!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP))
+    { /* We're more likely to end up here with real critsects than a NOP one. */ }
+    else
         return VINF_SUCCESS;
 
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
@@ -559,7 +563,9 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
 
     /* Check for NOP sections before asserting ownership. */
-    if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
+    if (!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP))
+    { /* We're more likely to end up here with real critsects than a NOP one. */ }
+    else
         return VINF_SUCCESS;
 
     /*

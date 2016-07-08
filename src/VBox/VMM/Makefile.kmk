@@ -335,6 +335,7 @@ VMMR3/SSM.cpp_DEFS +=	\
 
 if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
  VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
 endif
 
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
