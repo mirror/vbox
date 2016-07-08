@@ -2817,7 +2817,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
                 if (fWarn)
                 {
-                    char   szMissingStreams[255];
+                    char   szMissingStreams[255] = "";
                     size_t len = 0;
                     if (!fValidLineIn)
                     {
