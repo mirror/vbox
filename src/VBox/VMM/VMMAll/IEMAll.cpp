@@ -13148,10 +13148,12 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                                       & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
                                                                 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                                 | VMCPU_FF_TLB_FLUSH
+# ifdef VBOX_WITH_RAW_MODE
                                                                 | VMCPU_FF_TRPM_SYNC_IDT
                                                                 | VMCPU_FF_SELM_SYNC_TSS
                                                                 | VMCPU_FF_SELM_SYNC_GDT
                                                                 | VMCPU_FF_SELM_SYNC_LDT
+# endif
                                                                 | VMCPU_FF_INHIBIT_INTERRUPTS
                                                                 | VMCPU_FF_BLOCK_NMIS ));
 
