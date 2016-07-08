@@ -1035,12 +1035,13 @@ DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
     pVCpu->iem.s.uRexB              = 0;
     pVCpu->iem.s.uRexIndex          = 0;
     pVCpu->iem.s.iEffSeg            = X86_SREG_DS;
-    if (pVCpu->iem.s.cbOpcode > pVCpu->iem.s.offOpcode) /* No need to check RIP here because branch instructions will update cbOpcode.  */
-    {
-        pVCpu->iem.s.cbOpcode      -= pVCpu->iem.s.offOpcode;
-        memmove(&pVCpu->iem.s.abOpcode[0], &pVCpu->iem.s.abOpcode[pVCpu->iem.s.offOpcode], pVCpu->iem.s.cbOpcode);
-    }
-    else
+    // busted and need rewrite:
+    //if (pVCpu->iem.s.cbOpcode > pVCpu->iem.s.offOpcode) /* No need to check RIP here because branch instructions will update cbOpcode.  */
+    //{
+    //    pVCpu->iem.s.cbOpcode      -= pVCpu->iem.s.offOpcode;
+    //    memmove(&pVCpu->iem.s.abOpcode[0], &pVCpu->iem.s.abOpcode[pVCpu->iem.s.offOpcode], pVCpu->iem.s.cbOpcode);
+    //}
+    //else
         pVCpu->iem.s.cbOpcode       = 0;
     pVCpu->iem.s.offOpcode          = 0;
     Assert(pVCpu->iem.s.cActiveMappings == 0);
@@ -8124,7 +8125,7 @@ IEM_STATIC RTGCPTR iemMemApplySegmentToReadJmp(PVMCPU pVCpu, uint8_t iSegReg, si
      */
     else
     {
-        PCPUMSELREGHID pSel   = iemSRegGetHid(pVCpu, iSegReg);
+        PCPUMSELREGHID pSel = iemSRegGetHid(pVCpu, iSegReg);
         if (      (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_DOWN))
                == X86DESCATTR_P /* data, expand up */
             ||    (pSel->Attr.u & (X86DESCATTR_P | X86DESCATTR_UNUSABLE | X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ))
@@ -8149,6 +8150,58 @@ IEM_STATIC RTGCPTR iemMemApplySegmentToReadJmp(PVMCPU pVCpu, uint8_t iSegReg, si
         else
             iemRaiseSelectorInvalidAccessJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
         iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_R);
+    }
+    iemRaiseGeneralProtectionFault0Jmp(pVCpu);
+}
+
+
+IEM_STATIC RTGCPTR iemMemApplySegmentToWriteJmp(PVMCPU pVCpu, uint8_t iSegReg, size_t cbMem, RTGCPTR GCPtrMem)
+{
+    Assert(cbMem >= 1);
+    Assert(iSegReg < X86_SREG_COUNT);
+
+    /*
+     * 64-bit mode is simpler.
+     */
+    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+    {
+        if (iSegReg >= X86_SREG_FS)
+        {
+            PCPUMSELREGHID pSel = iemSRegGetHid(pVCpu, iSegReg);
+            GCPtrMem += pSel->u64Base;
+        }
+
+        if (RT_LIKELY(X86_IS_CANONICAL(GCPtrMem) && X86_IS_CANONICAL(GCPtrMem + cbMem - 1)))
+            return GCPtrMem;
+    }
+    /*
+     * 16-bit and 32-bit segmentation.
+     */
+    else
+    {
+        PCPUMSELREGHID pSel           = iemSRegGetHid(pVCpu, iSegReg);
+        uint32_t const fRelevantAttrs = pSel->Attr.u & (  X86DESCATTR_P     | X86DESCATTR_UNUSABLE
+                                                        | X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE | X86_SEL_TYPE_DOWN);
+        if (fRelevantAttrs == (X86DESCATTR_P | X86_SEL_TYPE_WRITE)) /* data, expand up */
+        {
+            /* expand up */
+            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
+            if (RT_LIKELY(   GCPtrLast32 > pSel->u32Limit
+                          && GCPtrLast32 > (uint32_t)GCPtrMem))
+                return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+        }
+        else if (fRelevantAttrs == (X86DESCATTR_P | X86_SEL_TYPE_WRITE | X86_SEL_TYPE_DOWN)) /* data, expand up */
+        {
+            /* expand down */
+            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
+            if (RT_LIKELY(   (uint32_t)GCPtrMem >  pSel->u32Limit
+                          && GCPtrLast32        <= (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff))
+                          && GCPtrLast32 > (uint32_t)GCPtrMem))
+                return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+        }
+        else
+            iemRaiseSelectorInvalidAccessJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
+        iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
     }
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
 }
@@ -13067,10 +13120,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 # endif
         {
             /*
-             * The run loop.  We limit ourselves to 2048 instructions right now.
+             * The run loop.  We limit ourselves to 4096 instructions right now.
              */
             PVM         pVM    = pVCpu->CTX_SUFF(pVM);
-            uint32_t    cInstr = 2048;
+            uint32_t    cInstr = 4096;
             for (;;)
             {
                 /*
@@ -13091,17 +13144,34 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                     pVCpu->iem.s.cInstructions++;
                     if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
                     {
-                        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_INHIBIT_INTERRUPTS)
-                                      && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
-                                      && cInstr-- > 0 ))
+                        uint32_t fCpu = pVCpu->fLocalForcedActions
+                                      & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                                | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                                | VMCPU_FF_TLB_FLUSH
+                                                                | VMCPU_FF_TRPM_SYNC_IDT
+                                                                | VMCPU_FF_SELM_SYNC_TSS
+                                                                | VMCPU_FF_SELM_SYNC_GDT
+                                                                | VMCPU_FF_SELM_SYNC_LDT
+                                                                | VMCPU_FF_INHIBIT_INTERRUPTS
+                                                                | VMCPU_FF_BLOCK_NMIS ));
+
+                        if (RT_LIKELY(   (   !fCpu
+                                          || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                                              && !pCtx->rflags.Bits.u1IF) )
+                                      && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK) ))
                         {
-                            iemReInitDecoder(pVCpu);
-                            continue;
+                            if (cInstr-- > 0)
+                            {
+                                Assert(pVCpu->iem.s.cActiveMappings == 0);
+                                iemReInitDecoder(pVCpu);
+                                continue;
+                            }
                         }
                     }
+                    Assert(pVCpu->iem.s.cActiveMappings == 0);
                 }
-                else if (pVCpu->iem.s.cActiveMappings > 0) /** @todo This should only happen when rcStrict != VINF_SUCCESS! */
-                    iemMemRollback(pVCpu);
+                else if (pVCpu->iem.s.cActiveMappings > 0)
+                        iemMemRollback(pVCpu);
                 rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
                 break;
             }
