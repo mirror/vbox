@@ -110,6 +110,9 @@ void VBoxSeamlessDestroy(void *pInstance)
 {
     LogFlowFuncEnter();
 
+    if (!pInstance)
+        return;
+
     PVBOXSEAMLESSCONTEXT pCtx = (PVBOXSEAMLESSCONTEXT)pInstance;
     AssertPtr(pCtx);
 
