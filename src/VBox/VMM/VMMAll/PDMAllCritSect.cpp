@@ -55,7 +55,7 @@
 /** Skips some of the overly paranoid atomic updates.
  * Makes some assumptions about cache coherence, though not brave enough not to
  * always end with an atomic update. */
-//#define PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
+#define PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
 
 /* Undefine the automatic VBOX_STRICT API mappings. */
 #undef PDMCritSectEnter
