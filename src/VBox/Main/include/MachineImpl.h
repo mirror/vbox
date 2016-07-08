@@ -798,6 +798,7 @@ protected:
               m_strTaskName(t),
               m_machineStateBackup(m->mData->mMachineState) // save the current machine state
         {}
+        virtual ~Task(){}
 
         HRESULT createThread()
         {
