@@ -365,7 +365,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         if self.asRsrcs is None:
             self.asRsrcs = [];
             if 'tst-storage' in self.asTestVMs:
-                self.asRsrcs.append('5.1/storage/tst-storage.vdi');
+                self.asRsrcs.append('5.0/storage/tst-storage.vdi');
 
         return self.asRsrcs;
 
