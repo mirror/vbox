@@ -176,10 +176,10 @@ Controller" */
 # define IOAPIC_DIRECT_OFF_EOI                  0x40
 #endif
 
-#define IOAPIC_WITH_PDM_CRITSECT
 #ifdef IOAPIC_WITH_PDM_CRITSECT
 # define IOAPIC_LOCK(pThis, rcBusy)         (pThis)->CTX_SUFF(pIoApicHlp)->pfnLock((pThis)->CTX_SUFF(pDevIns), (rcBusy))
 # define IOAPIC_UNLOCK(pThis)               (pThis)->CTX_SUFF(pIoApicHlp)->pfnUnlock((pThis)->CTX_SUFF(pDevIns))
+# error "Unused, remove me for debugging"
 #else
 # define IOAPIC_LOCK(pThis, rcBusy)         PDMCritSectEnter(&(pThis)->CritSect, (rcBusy))
 # define IOAPIC_UNLOCK(pThis)               PDMCritSectLeave(&(pThis)->CritSect)
