@@ -108,6 +108,7 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
                 return NULL;
         }
 
+        bool fNeedSuperSPU = false;
         /* This basically calls the SPU's SPULoad() function */
         if (!the_spu->entry_point( &(the_spu->name), &(the_spu->super_name),
                                    &(the_spu->init), &(the_spu->self),
@@ -128,6 +129,7 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
                         the_spu->super_name = "error";
                 }
                 the_spu->superSPU = crSPULoad( child, id, the_spu->super_name, dir, server );
+                fNeedSuperSPU = true;
         }
 #else
         if (crStrcmp(the_spu->name,"hosterror"))
@@ -138,11 +140,18 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
                         the_spu->super_name = "hosterror";
                 }
                 the_spu->superSPU = crSPULoad( child, id, the_spu->super_name, dir, server );
+                fNeedSuperSPU = true;
         }
 #endif
         else
         {
                 the_spu->superSPU = NULL;
+        }
+        if (fNeedSuperSPU && !the_spu->superSPU)
+        {
+                crError( "Unable to load super SPU \"%s\" of \"%s\"!", the_spu->super_name, name );
+                crSPUUnloadChain(the_spu);
+                return NULL;
         }
         crDebug("Initializing %s SPU", name);
         the_spu->function_table = the_spu->init( id, child, the_spu, 0, 1 );
