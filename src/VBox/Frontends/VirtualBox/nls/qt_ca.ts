@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="ca">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="ca" version="2.0">
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
@@ -103,11 +101,7 @@ que teniu instal·lat el connector libgstreamer-plugins-base.</translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation>
-            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar el còdec següent per reproduir aquest contingut: %0</numerusform>
-            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar els còdecs següents per reproduir aquest contingut: %0</numerusform>
-            <numerusform>No es troba un còdec requerit. Necessiteu instal·lar els còdecs següents per reproduir aquest contingut: %0</numerusform>
-        </translation>
+        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
     </message>
     <message>
         <source>Could not open media source.</source>
@@ -127,7 +121,7 @@ que teniu instal·lat el connector libgstreamer-plugins-base.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation>No es pot decodificar el suport multimèdia.</translation>
+        <translation>No es pot descodificar el suport multimèdia.</translation>
     </message>
 </context>
 <context>
@@ -714,7 +708,7 @@ a
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
+        <comment>Translate this string to the string 'LTR' in left-to-right languages or to 'RTL' in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>LTR</translation>
     </message>
     <message>
@@ -1183,7 +1177,7 @@ No s&apos;ha trobat el directori.
 Comproveu que el nom del directori es correcte.</translation>
     </message>
     <message>
-        <source>&apos;%1&apos; is write protected.
+        <source>'%1' is write protected.
 Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos; està protegit contra escriptura.Voleu suprimir-lo igualment?</translation>
     </message>
@@ -1457,7 +1451,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Japanese</source>
-        <translation>Japonés</translation>
+        <translation>Japonès</translation>
     </message>
     <message>
         <source>Korean</source>
@@ -1714,11 +1708,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation>Es requreix autenticació</translation>
-    </message>
-    <message>
-        <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation>S&apos;ha fet la consulta HTTP però no hi ha compatibilitat SSL compilada</translation>
+        <translation>Es requereix autenticació</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
@@ -1738,18 +1728,22 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unknown protocol specified</source>
-        <translation>El protocol esfecificat és desconegut</translation>
+        <translation>El protocol especificat és desconegut</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
         <translation>S&apos;ha produït un error en la conformitat de connexió SSL</translation>
+    </message>
+    <message>
+        <source>HTTPS connection requested but SSL support not compiled in</source>
+        <translation>S&apos;ha fet la consulta HTTP però no hi ha compatibilitat SSL compilada</translation>
     </message>
 </context>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
         <source>Authentication required</source>
-        <translation>Es requreix autenticació</translation>
+        <translation>Es requereix autenticació</translation>
     </message>
 </context>
 <context>
@@ -1760,7 +1754,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>No s&apos;ha pogut iniciar la transcacció</translation>
+        <translation>No s&apos;ha pogut iniciar la transacció</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -1803,7 +1797,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>No s&apos;ha pogut iniciar la transcacció</translation>
+        <translation>No s&apos;ha pogut iniciar la transacció</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -1916,7 +1910,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation>El connector &apos;%1&apos; usa una bilioteca Qt incompatible. S&apos;esperava build key &quot;%2&quot;, got &quot;%3&quot;</translation>
+        <translation>El connector &apos;%1&apos; usa una biblioteca Qt incompatible. S&apos;esperava build key &quot;%2&quot;, got &quot;%3&quot;</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2087,7 +2081,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to store statement results</source>
-        <translation>No es poden emmagatzemar els resultats de la declaracio</translation>
+        <translation>No es poden emmagatzemar els resultats de la declaració</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
@@ -2241,11 +2235,11 @@ Do you want to delete it anyway?</source>
     <name>QMultiInputContextPlugin</name>
     <message>
         <source>Multiple input method switcher</source>
-        <translation>Commutador de mètode d&apos;entrada multiple</translation>
+        <translation>Commutador de mètode d&apos;entrada múltiple</translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation>Commutador de mètode d&apos;entrada multiple que usa el menu contextual del giny de text</translation>
+        <translation>Commutador de mètode d&apos;entrada múltiple que usa el menu contextual del giny de text</translation>
     </message>
 </context>
 <context>
@@ -2264,7 +2258,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unsupported socket operation</source>
-        <translation>Operacio de sòcol no implementada</translation>
+        <translation>Operació de sòcol no implementada</translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
@@ -2590,7 +2584,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not begin transaction</source>
-        <translation>No s&apos;ha pogut començar la transcacció</translation>
+        <translation>No s&apos;ha pogut començar la transacció</translation>
     </message>
     <message>
         <source>Could not commit transaction</source>
@@ -2632,7 +2626,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Inches (in)</source>
-        <translation>Polçades (in)</translation>
+        <translation>Polzades (in)</translation>
     </message>
     <message>
         <source>Points (pt)</source>
@@ -3513,7 +3507,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation>Potencia els geus</translation>
+        <translation>Potencia els greus</translation>
     </message>
     <message>
         <source>Bass Up</source>
@@ -4088,7 +4082,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
-        <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
+        <comment>text that appears at the start of nearly-obsolete web pages in the form of a 'searchable index'</comment>
         <translation>Aquest és un índex on es pot cercar. Introduïu les paraules de cerca: </translation>
     </message>
     <message>
@@ -4298,7 +4292,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
-        <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
+        <comment>menu item in Recent Searches menu that empties menu's contents</comment>
         <translation>Neteja les cerques recents</translation>
     </message>
     <message>
@@ -4693,10 +4687,6 @@ Trieu un nom de fitxer diferent.</translation>
         <translation>No es pot llistar l&apos;element %1 perquè sembla que es troba fora l&apos;element document.</translation>
     </message>
     <message>
-        <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation>No es pot llistar l&apos;atribut %1 perquè sembla que es troba a dalt de tot.</translation>
-    </message>
-    <message>
         <source>Year %1 is invalid because it begins with %2.</source>
         <translation>L&apos;any %1 no és vàlid perquè comença amb %2.</translation>
     </message>
@@ -4738,7 +4728,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation>Sense operants en una divisó d&apos;enters, %1, pot ser %2.</translation>
+        <translation>Sense operants en una divisió d&apos;enters, %1, pot ser %2.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
@@ -4878,11 +4868,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation>Un predicat posicioanl ha d&apos;avaluar un únic valor numèric.</translation>
+        <translation>Un predicat posicional ha d&apos;avaluar un únic valor numèric.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation>El nom objectiu en una instració de processat no pot ser %1 en cap combinació en majúscules o minúscules. Per tant, no és vàlid %2.</translation>
+        <translation>El nom objectiu en una instrucció de processat no pot ser %1 en cap combinació en majúscules o minúscules. Per tant, no és vàlid %2.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
@@ -4910,19 +4900,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation>
-            <numerusform>%1 fa servir com a màxim %n(s) argument. Per tant, %2 no és vàlid.</numerusform>
-            <numerusform>%1 fa servir com a màxim %n(s) arguments. Per tant, %2 no és vàlid.</numerusform>
-            <numerusform>%1 fa servir com a màxim %n(s) arguments. Per tant, %2 no és vàlid.</numerusform>
-        </translation>
+        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation>
-            <numerusform>%1 requereix com a mínim %n argument. Per tant, %2 no és vàlid.</numerusform>
-            <numerusform>%1 requereix com a mínim %n arguments. Per tant, %2 no és vàlid.</numerusform>
-            <numerusform>%1 requereix com a mínim %n arguments. Per tant, %2 no és vàlid.</numerusform>
-        </translation>
+        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform></translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
@@ -5090,7 +5072,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation>La característica d&apos;importació d&apos;esquema no és compatible, i per tant les delcaracions %1 no ocorreran.</translation>
+        <translation>La característica d&apos;importació d&apos;esquema no és compatible, i per tant les declaracions %1 no ocorreran.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
@@ -5109,10 +5091,6 @@ Trieu un nom de fitxer diferent.</translation>
         <translation>No hi ha cap valor disponible per a la variable externa amb el nom %1.</translation>
     </message>
     <message>
-        <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation>El nomespai per a una funció definida per l&apos;usuari no pot estar buit (proveu amb el prefix predefinit %1 que existeix per a casos com aquest)</translation>
-    </message>
-    <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
         <translation>El nomespai %1 està reservat; a més, les funcions definides per l&apos;usuari no haurien de fer-lo servir. Proveu el prefix predefinit %2 que existeix per a casos com aquest.</translation>
     </message>
@@ -5126,7 +5104,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation>Les funcions externes no són compatibles. Totes les funcions compatibles es poden utilitzar direcctament, sense haver-les de declarar primerament com a externes</translation>
+        <translation>Les funcions externes no són compatibles. Totes les funcions compatibles es poden utilitzar directament, sense haver-les de declarar primerament com a externes</translation>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
@@ -5134,7 +5112,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation>El nom d&apos;una variable lligada a una expressió for ha de ser diferent d&apos;una variableposicional. Per tant, les dues variables anomnades %1 xoquen.</translation>
+        <translation>El nom d&apos;una variable lligada a una expressió «for» ha de ser diferent d&apos;una variable posicional. Per tant, les dues variables anomenades %1 xoquen.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
@@ -5242,7 +5220,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation>Si es promou %1 a %2 es pot produir una pèrdua de precissió.</translation>
+        <translation>Si es promou %1 a %2 es pot produir una pèrdua de precisió.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
@@ -5259,6 +5237,14 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
         <translation>Només l&apos;Unicode Codepoint Collation és compatible (%1). %2 no és compatible.</translation>
+    </message>
+    <message>
+        <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
+        <translation>No es pot llistar l&apos;atribut %1 perquè sembla que es troba a dalt de tot.</translation>
+    </message>
+    <message>
+        <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
+        <translation>El nomespai per a una funció definida per l&apos;usuari no pot estar buit (proveu amb el prefix predefinit %1 que existeix per a casos com aquest)</translation>
     </message>
 </context>
 <context>

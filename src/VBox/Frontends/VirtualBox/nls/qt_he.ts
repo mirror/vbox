@@ -1,77 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="el">
+<TS version="2.0">
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
         <source>Services</source>
-        <translation>Υπηρεσίες</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide %1</source>
-        <translation>Απόκρυψη %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide Others</source>
-        <translation>Απόκρυψη άλλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show All</source>
-        <translation>Εμφάνιση όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>Προτιμήσεις...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Quit %1</source>
-        <translation>Τερματισμός %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>About %1</source>
-        <translation>Πληροφορίες για το %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Η συσκευή αναπαραγωγής ήχου &lt;b&gt;%1&lt;/b&gt; δεν δουλεύει.&lt;br/&gt;Επαναφορά σε &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Αλλαγή στη συσκευή αναπαραγωγής ήχου &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;η οποία είναι διαθέσιμη και έχει μεγαλύτερη προτεραιότητα.&lt;/html&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation>Επαναφορά στη συσκευή &apos;%1&apos;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation>Γνωστοποιήσεις</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Music</source>
-        <translation>Μουσική</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Video</source>
-        <translation>Βίντεο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Communication</source>
-        <translation>Επικοινωνία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Games</source>
-        <translation>Παιχνίδια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Accessibility</source>
-        <translation>Βοηθήματα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -79,14 +79,12 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation>Προειδοποίηση: Δεν έχετε το πακέτο gstreamer0.10-plugins-good εγκατεστημένο.
-          Κάποιες εφαρμογές βίντεο θα είναι απενεργοποιημένες.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation>Προειδοποίηση: Δεν έχετε τη βάση gstreamer plugins εγκατεστημένη.
-          Όλες οι εφαρμογές ήχου και βίντεο έχουν απενεργοποιηθεί</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -96,325 +94,319 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation>Δεν είναι δυνατή η αναπαραγωγή. 
-
-Ελέξτε την εγκατάσταση του Gstreamer και σιγουρευτείτε οτι
-έχετε εγκαταστήσει το  libgstreamer-plugins-base.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation>
-            <numerusform>Ένα απαιτούμενο codec λείπει. Χρειάζεται να εγκαταστήσετε το ακόλουθο codec για να παίξετε το περιεχόμενο: %0</numerusform>
-            <numerusform>Ένα απαιτούμενο codec λείπει. Χρειάζεται να εγκαταστήσετε τα ακόλουθα codec για να παίξετε το περιεχόμενο: %0</numerusform>
+        <translation type="unfinished">
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα πηγής μέσου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation>Μή έγκυρος τύπος πηγής.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation>Δεν ήταν δυνατός ο εντοπισμός πηγής μέσου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα της συσκευής ήχου. Η συσκευή ήδη χρησιμοποιείται.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation>Δεν ήταν δυνατή η αποκωδικοποίηση της πηγής μέσου.</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation>Ένταση: %1%</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation>Χρησιμοποιήστε τον ολισθητή για να ρυθμίσετε την ένταση. Η πιο αριστερή θέση είναι 0%, η πιο δεξιά είναι %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3Accel</name>
     <message>
         <source>%1, %2 not defined</source>
-        <translation>%1, %2 δεν έχει καθοριστεί</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ambiguous %1 not handled</source>
-        <translation>Αμφίβολο %1 δεν μπορεί να χειριστεί</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3DataTable</name>
     <message>
         <source>True</source>
-        <translation>Σωστό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>False</source>
-        <translation>Λάθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Εισαγωγή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Ανανέωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3FileDialog</name>
     <message>
         <source>Copy or Move a File</source>
-        <translation>Αντιγραφή ή Μετακίνηση αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Read: %1</source>
-        <translation>Ανάγνωση : %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Write: %1</source>
-        <translation>Εγγραφή : %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Ακύρωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>All Files (*)</source>
-        <translation>Όλα τα Αρχεία (*)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
-        <translation>Τύπος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date</source>
-        <translation>Ημερομηνία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Attributes</source>
-        <translation>Ιδιότητες</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;Εντάξει</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Look &amp;in:</source>
-        <translation>Ψάξε &amp;in :</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation>&amp;Όνομα αρχεiου:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File &amp;type:</source>
-        <translation>&amp;Τύπος αρχείου:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Πίσω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>One directory up</source>
-        <translation>Επάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>Δημιουργία Νέου Φακέλου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>List View</source>
-        <translation>Προβολή Λίστας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>Προβολή με Λεπτομέρειες</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preview File Info</source>
-        <translation>Προεπισκόπηση Πληροφοριών Αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preview File Contents</source>
-        <translation>Προεπισκόπηση Περιεχομένων Αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Read-write</source>
-        <translation>Ανάγνωση-εγγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>Ανάγνωση μόνο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Write-only</source>
-        <translation>Εγγραφή-μόνο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation>Απροσπέλαστο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Symlink to File</source>
-        <translation>Σύνδεσμος σε αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Symlink to Directory</source>
-        <translation>Σύνδεσμος σε φάκελλο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation>Σύνδεσμος σε ειδικό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File</source>
-        <translation>Αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Dir</source>
-        <translation>Κατάλογος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Special</source>
-        <translation>Ειδικό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation>Αποθήκευση ως</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation>&amp;Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Αποθήκευση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation>&amp;Μετονομασία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>R&amp;eload</source>
-        <translation>Φ&amp;όρτωμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
-        <translation>Ταξινόμηση κατά &amp;Όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sort by &amp;Size</source>
-        <translation>Ταξινόμηση κατά &amp;Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation>Ταξινόμηση κατά &amp;Ημερομηνία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Unsorted</source>
-        <translation>&amp;Αταξινόμητα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation>Ταξινόμηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>Εμφάνιση &amp;Κρυφών Αρχείων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>the file</source>
-        <translation>το αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>the directory</source>
-        <translation>ο φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>the symlink</source>
-        <translation>ο σύνδεσμος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete %1</source>
-        <translation>Διαγραφή %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Είστε σίγουροι ότι θέλετε να διαγράψετε %1 &quot;%2&quot;?&lt;/qt?\&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation>&amp;Όχι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>New Folder 1</source>
-        <translation>Νέος Φάκελος 1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>Νέος Φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>New Folder %1</source>
-        <translation>Νέος Φάκελος %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>Εύρεση Φακέλου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation>Φάκελοι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>Φάκελος:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>Λάθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1
 File not found.
 Check path and filename.</source>
-        <translation>%1
-Το αρχείο δεν βρέθηκε.
-Ελέγξτε την διαδρομή και το όνομα του αρχείου.</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -422,384 +414,376 @@ Check path and filename.</source>
     <message>
         <source>Could not read directory
 %1</source>
-        <translation>Δεν ήταν δυνατή η ανάγνωση του φακέλου
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not create directory
 %1</source>
-        <translation>Δεν ήταν δυνατή η δημιουργία του φακέλου
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not remove file or directory
 %1</source>
-        <translation>Δεν ήταν δυνατή η διαγραφή του αρχείου ή του φακέλου
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not rename
 %1
 to
 %2</source>
-        <translation>Δεν ήταν δυνατή η μετονομασία
-%1
-σε
-%2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not open
 %1</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not write
 %1</source>
-        <translation>Δεν ήταν δυνατή η εγγραφή
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3MainWindow</name>
     <message>
         <source>Line up</source>
-        <translation>Ευθυγράμμιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Customize...</source>
-        <translation>Προσαρμογή...</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3NetworkProtocol</name>
     <message>
         <source>Operation stopped by the user</source>
-        <translation>Η λειτουργία σταμάτησε από τον χρήστη</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3ProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3TabDialog</name>
     <message>
         <source>OK</source>
-        <translation>Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Εφαρμογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Defaults</source>
-        <translation>Επαναφορά σε αρχικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3TextEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>&amp;Αναίρεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>&amp;Ακύρωση Αναίρεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Αποκοπ&amp;ή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Αντιγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>&amp;Επικόλληση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation>Καθαρισμός</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Επιλογή Όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3TitleBar</name>
     <message>
         <source>System</source>
-        <translation>Σύστημα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore up</source>
-        <translation>Επαναφορά πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Ελαχιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore down</source>
-        <translation>Επαναφορά κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation>Μεγιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Contains commands to manipulate the window</source>
-        <translation>Περιέχει εντολές για τον έλεγχο του παραθύρου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation>Θετεί από ελαχιστοποίηση σε κανονικό μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
-        <translation>Θέτει το παράθυρο εκτός όψης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation>Θέτει το παράθυρο από μεγιστοποίηση σε κανονικό μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
-        <translation>Θέτει το παράθυρο σε πλήρη οθόνη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Closes the window</source>
-        <translation>Κλείνει το παράθυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation>Εμφανίζει το όνομα του παραθύρου και περιέχει εντολές για τον έλεγχο του</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3ToolBar</name>
     <message>
         <source>More...</source>
-        <translation>Περισσότερα...</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3UrlOperator</name>
     <message>
         <source>The protocol `%1&apos; is not supported</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζεται</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει τον κατάλογο φακέλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support creating new directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την δημιουργία νέων φακέλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support removing files or directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την μετακίνηση αρχείων ή φακέλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support renaming files or directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την μετονομασία αρχείων ή φακέλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support getting files</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την απόκτηση αρχείων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support putting files</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την υποβολή αρχείων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
-        <translation>Το πρωτόκολλο &apos;%1&apos; δεν υποστηρίζει την αντιγραφή ή μεταφορά αρχείων ή φακέλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>(unknown)</source>
-        <translation>(άγνωστο)</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Q3Wizard</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Πίσω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Επόμενο &gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Τέλος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAbstractSocket</name>
     <message>
         <source>Host not found</source>
-        <translation>Ο διακομιστής δεν βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>Άρνηση σύνδεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Socket operation timed out</source>
-        <translation>Η λειτουργία socket εξάντλησε το χρονικό περιθώριο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Socket is not connected</source>
-        <translation>Το socket δεν ειναι συνεδεμένο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QAbstractSpinBox</name>
     <message>
         <source>&amp;Step up</source>
-        <translation>&amp;Βήμα πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Step &amp;down</source>
-        <translation>Βήμα &amp;κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Select All</source>
-        <translation>&amp;Επιλογή Όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
         <source>Activate</source>
-        <translation>Ενεργοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>Το εκτελέσιμο &apos;%1&apos; απαιτεί Qt %2, βρέθηκε Qt %3.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Λάθος μη συμβατής βιβλιοθήκης Qt</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
         <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
-        <translation>QT_ΚΑΤΕΥΘΥΝΣΗ_ΠΑΡΑΘΕΣΗΣ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Activates the program&apos;s main window</source>
-        <translation>Ενεργοποιεί το κεντρικό παράθυρο της εφαρμογής</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QCheckBox</name>
     <message>
         <source>Uncheck</source>
-        <translation>Απεπιλογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Check</source>
-        <translation>Επιλογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Toggle</source>
-        <translation>Αντιστροφή</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QColorDialog</name>
     <message>
         <source>Hu&amp;e:</source>
-        <translation>Απόχρωσ&amp;η:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Sat:</source>
-        <translation>&amp;Κορεσμός:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Val:</source>
-        <translation>&amp;Φωτεινότητα:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Red:</source>
-        <translation>&amp;Κόκκινο:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Green:</source>
-        <translation>&amp;Πράσινο:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bl&amp;ue:</source>
-        <translation>Μπ&amp;λε:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A&amp;lpha channel:</source>
-        <translation>Ά&amp;λφα κανάλι:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Basic colors</source>
-        <translation>&amp;Βασικά χρώματα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Custom colors</source>
-        <translation>&amp;Ειδικά χρώματα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Add to Custom Colors</source>
-        <translation>&amp;Πρόσθεση σε ειδικά χρώματα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select color</source>
-        <translation>Επιλέξτε χρώμα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QComboBox</name>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>False</source>
-        <translation>Λάθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>True</source>
-        <translation>Σωστό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -807,3188 +791,3170 @@ to
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: άρνηση άδειας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: υπάρχει ήδη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: δεν υπάρχει</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: έλλειψη πόρων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: άγνωστο λάθος %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: το κλειδί είναι άδειο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: αδύνατη η δημιουργία κλειδιού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: αποτυχία ftok</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDB2Driver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Δεν ήταν δυνατή η σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to set autocommit</source>
-        <translation>Δεν ήταν δυνατος ο ορισμός της αυτόματης αντιστοίχησης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDB2Result</name>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Δεν ήταν δυνατή η προετοιμασία της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση της μεταβλητής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch record %1</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση της εγγραφής %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση του επόμενου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση του πρώτου</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDateTimeEdit</name>
     <message>
         <source>AM</source>
-        <translation>ΜΜ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>am</source>
-        <translation>μμ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PM</source>
-        <translation>ΠΜ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>pm</source>
-        <translation>πμ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDial</name>
     <message>
         <source>QDial</source>
-        <translation>Ποντεσιόμετρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SpeedoMeter</source>
-        <translation>Ταχύμετρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SliderHandle</source>
-        <translation>Ελεγκτής Ολίσθησης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Τι είναι αυτό;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Done</source>
-        <translation>Εντάξει</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDialogButtonBox</name>
     <message>
         <source>OK</source>
-        <translation>Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save</source>
-        <translation>Αποθήκευση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>Εφαρμογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Επανέναρξη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Don&apos;t Save</source>
-        <translation>Μην αποθηκεύσεις</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation>Αποβολή αλλαγών</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Yes</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes to &amp;All</source>
-        <translation>Ναι σε &amp;Όλα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;No</source>
-        <translation>&amp;Όχι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>N&amp;o to All</source>
-        <translation>Ό&amp;χι σε Όλα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save All</source>
-        <translation>Αποθήκευση Όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation>Ματαίωσε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Retry</source>
-        <translation>Προσπάθησε πάλι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation>Αγνόησε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation>Επανέφερε τα αρχικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close without Saving</source>
-        <translation>Κλείσιμο χωρίς αποθήκευση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDirModel</name>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kind</source>
         <comment>Match OS X Finder</comment>
-        <translation>Είδος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation>Τύπος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>Ημερομηνία Τροποποίησης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDockWidget</name>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation>Προσάρτηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Float</source>
-        <translation>Επίπλευση</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QDoubleSpinBox</name>
     <message>
         <source>More</source>
-        <translation>Περισσότερα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Less</source>
-        <translation>Λιγότερα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QErrorMessage</name>
     <message>
         <source>Debug Message:</source>
-        <translation>Μήνυμα αποσφαλμάτωσης:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Warning:</source>
-        <translation>Προειδοποίηση:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fatal Error:</source>
-        <translation>Κριτικό λάθος:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Show this message again</source>
-        <translation>&amp;Προβολή αυτού του μηνύματος πάλι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QFileDialog</name>
     <message>
         <source>All Files (*)</source>
-        <translation>Όλα τα Αρχεία (*)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Directories</source>
-        <translation>Φάκελοι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Open</source>
-        <translation>&amp;Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Αποθήκευση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 already exists.
 Do you want to replace it?</source>
-        <translation>%1 υπάρχει ήδη.
-Να γίνει η αντικατάστασή του;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1
 File not found.
 Please verify the correct file name was given.</source>
-        <translation>%1
-Δεν υπάρχει το αρχείο.
-Παρακαλώ επιβεβαιώστε το όνομα του αρχείου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>My Computer</source>
-        <translation>Ο υπολογιστής μου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Rename</source>
-        <translation>&amp;Μετονομασία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>Εμφάνιση &amp;κρυφών αρχείων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Πίσω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Parent Directory</source>
-        <translation>Γονικός φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>List View</source>
-        <translation>Προβολή Λίστας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>Προβολή με Λεπτομέρειες</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Files of type:</source>
-        <translation>Αρχεία τύπου:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Directory:</source>
-        <translation>Φάκελος:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1
 Directory not found.
 Please verify the correct directory name was given.</source>
-        <translation>%1
-Ο φάκελος δεν βρέθηκε.
-Παρακαλώ επιβεβαιώστε το όνομα του φακέλου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
-        <translation>&apos;%1&apos; έχει προστασία εγγραφής.
-Να γίνει διαγραφή ?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation>Είστε σίγουροι οτι θέλετε να διαγράψετε το &apos;%1&apos;?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
-        <translation>Δεν ήταν δυνατή η διαγραφή του φακέλου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save As</source>
-        <translation>Αποθήκευση ως</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Drive</source>
-        <translation>Δίσκος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File</source>
-        <translation>Αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation>Άγνωστο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Find Directory</source>
-        <translation>Εύρεση φακέλου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show </source>
-        <translation>Εμφάνιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>Μπροστά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>Νέος Φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;New Folder</source>
-        <translation>&amp;Νέος Φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Choose</source>
-        <translation>&amp;Επιλογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File &amp;name:</source>
-        <translation>Όνομα &amp;αρχείου  :</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Look in:</source>
-        <translation>Ψάξε σε :</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create New Folder</source>
-        <translation>Δημιουργία Νέου Φακέλου</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QFileSystemModel</name>
     <message>
         <source>Invalid filename</source>
-        <translation>Μη έγκυρο όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;Το όνομα &quot;%1&quot; δεν μπορεί να χρησιμοποιηθεί&lt;/b&gt;&lt;p&gt;Προσπαθήστε να χρησιμοποιήστε άλλο όνομα, με λιγότερους χαρακτήρες ή χωρίς σημεία στίξης.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kind</source>
         <comment>Match OS X Finder</comment>
-        <translation>Είδος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation>Τύπος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>Ημερομηνία Τροποποίησης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>My Computer</source>
-        <translation>Ο υπολογιστής μου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Computer</source>
-        <translation>Υπολογιστής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 TB</source>
-        <translation>%1 TB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 GB</source>
-        <translation>%1 GB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation>%1 MB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 KB</source>
-        <translation>%1 KB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 bytes</source>
-        <translation>%1 bytes</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QFontDatabase</name>
     <message>
         <source>Normal</source>
-        <translation>Κανονικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation>Έντονα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation>Ήμι Έντονα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Black</source>
-        <translation>Σκούρα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Demi</source>
-        <translation>Μεσαία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>Ελαφριά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation>Πλάγια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Oblique</source>
-        <translation>Πλάγια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Any</source>
-        <translation>Οτιδήποτε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Latin</source>
-        <translation>Λατινικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Greek</source>
-        <translation>Ελληνικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation>Κυριλλικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Armenian</source>
-        <translation>Αρμενικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hebrew</source>
-        <translation>Εβραϊκά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Arabic</source>
-        <translation>Αραβικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Syriac</source>
-        <translation>Συριακά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Thaana</source>
-        <translation>Τάανα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation>Ντεβανγκάρι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bengali</source>
-        <translation>Μπενγάλι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation>Γκουρκούκι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Gujarati</source>
-        <translation>Γκουτζαράτι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Oriya</source>
-        <translation>Ορίγια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tamil</source>
-        <translation>Ταμίλ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Telugu</source>
-        <translation>Τελούγκου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Kannada</source>
-        <translation>Κανάντα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation>Μαλαγιαλάμ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation>Σινχάλα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation>Ταϋλανδέζικα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation>Λάο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tibetan</source>
-        <translation>Θιβετιανά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation>Μιανμάρ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Georgian</source>
-        <translation>Γεωργιανά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Khmer</source>
-        <translation>Χμερ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Simplified Chinese</source>
-        <translation>Απλοποιημένα Κινεζικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Traditional Chinese</source>
-        <translation>Παραδοσιακά Κινεζικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Japanese</source>
-        <translation>Ιαπωνικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Korean</source>
-        <translation>Κορεάτικα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Vietnamese</source>
-        <translation>Βιετναμέζικα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Symbol</source>
-        <translation>Σύμβολα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation>Όγκαμ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Runic</source>
-        <translation>Ρουνική</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QFontDialog</name>
     <message>
         <source>&amp;Font</source>
-        <translation>&amp;Γραμματοσειρά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Font st&amp;yle</source>
-        <translation>Στυλ γρ&amp;αμματοσειράς</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Effects</source>
-        <translation>Εφφέ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stri&amp;keout</source>
-        <translation>Γρά&amp;μμιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Underline</source>
-        <translation>&amp;Υπογράμμιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sample</source>
-        <translation>Δείγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wr&amp;iting System</source>
-        <translation>Σύ&amp;στημα εγγραφής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select Font</source>
-        <translation>Επιλογή γραμματοσειράς</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QFtp</name>
     <message>
         <source>Not connected</source>
-        <translation>Χωρίς σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>Ο διακομιστής %1 δεν βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation>Άρνηση σύνδεσης στον διακομιστή %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Σύνδεση στον διακομιστή %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused for data connection</source>
-        <translation>Άρνηση σύνδεσης για σύνδεση δεδομένων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο πρόβλημα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>Η σύνδεση στον διακομιστή απέτυχε:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>Η είσοδςο απέτυχε :
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Listing directory failed:
 %1</source>
-        <translation>Η λίστα φακέλων απέτυχε :
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Changing directory failed:
 %1</source>
-        <translation>Η αλλαγή φακέλου απέτυχε :
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Downloading file failed:
 %1</source>
-        <translation>Το κατέβασμα του αρχείου απέτυχε :
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Uploading file failed:
 %1</source>
-        <translation>Το ανέβασμα του αρχείου απέτυχε :
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Removing file failed:
 %1</source>
-        <translation>Η διαγραφή του αρχείου απέτυχε :
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Creating directory failed:
 %1</source>
-        <translation>Η δημιουργία του φακέλου απέτυχε:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Removing directory failed:
 %1</source>
-        <translation>Η διαγραφή του φακέλου απέτυχε:
-%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>Η σύνδεση τερματίστηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation>Ο διακομιστής %1 βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Η σύνδεση στο %1 τερματίστηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation>Ο διακομιστής βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Συνεδεμένος στον διακομιστή</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHostInfo</name>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο πρόβλημα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHostInfoAgent</name>
     <message>
         <source>Host not found</source>
-        <translation>Ο διακομιστής δεν βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown address type</source>
-        <translation>Άγνωστος τύπος διεύθυνσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο πρόβλημα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHttp</name>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο πρόβλημα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation>Το αίτημα ματαιώθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation>Δεν έχει οριστεί εξυπηρετητής για σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wrong content length</source>
-        <translation>Λάθος μέγεθος περιεχομένου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation>Ο εξυπηρετητής τερμάτισε τη σύνδεση απρόσμενα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>Άρνηση σύνδεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 not found</source>
-        <translation>Ο διακομιστής %1 δεν βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>HTTP request failed</source>
-        <translation>Το αίτημα HTTP απέτυχε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid HTTP response header</source>
-        <translation>Μη έγκυρη HTTP κεφαλίδα στην απάντηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid HTTP chunked body</source>
-        <translation>Μη έγκυρος HTTP κορμός</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation>Ο διακομιστής %1 βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Συνδεδεμένος στον διακομιστή %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Η σύνδεση στο %1 τερματίστηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host found</source>
-        <translation>Ο διακομιστής βρέθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Συνδεδεμένος στον διακομιστή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>Η σύνδεση τερματίστηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Proxy authentication required</source>
-        <translation>Ο μεσολαβητής απαιτεί αυθεντικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation>Απαιτείται αυθεντικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation>Άρνηση σύνδεσης (ή εξαντλήθηκε το χρονικό όριο)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation>Ο μεσολαβητής απαιτεί αυθεντικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host requires authentication</source>
-        <translation>Ο διακομιστής απαιτεί αυθεντικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Data corrupted</source>
-        <translation>Διαβρωμένα δεδομένα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown protocol specified</source>
-        <translation>Προσδιορίστηκε άγνωστο πρωτόκολλο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation>Η χειραψία SSL απέτυχε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation>Ζητήθηκε σύνδεση HTTPS αλλά η υποστήριξη για SSL δεν έχει περιληφθεί</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
         <source>Authentication required</source>
-        <translation>Απαιτείται αυθεντικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIBaseDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>Λάθος στο άνοιγμα της βάσης δεδομενων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIBaseResult</name>
     <message>
         <source>Unable to create BLOB</source>
-        <translation>Δεν ήταν δυνατή η δημιουργία BLOB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to write BLOB</source>
-        <translation>Δεν ήταν δυνατή η εγγραφή BLOB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to open BLOB</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα BLOB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to read BLOB</source>
-        <translation>Δεν ήταν δυνατή η ανάγνωση BLOB</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not find array</source>
-        <translation>Δεν ήταν δυνατή η εύρεση του πίνακα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get array data</source>
-        <translation>Δεν ήταν δυνατή η απόκτηση δεδομένων πίνακα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get query info</source>
-        <translation>Δεν ήταν δυνατή η απόκτηση πληροφοριών ερωτήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not start transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation>Δεν ήταν δυνατός ο εντοπισμός της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
-        <translation>Δεν ήταν δυνατή η προετοιμασία της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not describe input statement</source>
-        <translation>Δεν ήταν δυνατή η περιγραφή της πρότασης εισόδου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not describe statement</source>
-        <translation>Δεν ήταν δυνατή η περιγραφή της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to close statement</source>
-        <translation>Δεν ήταν δυνατό το κλείσιμο της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση του ερωτήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not fetch next item</source>
-        <translation>Δεν ήταν δυνατή η απόκτηση του επόμενου αντικειμένου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation>Δεν ήταν δυνατή η απόκτηση πληροφοριών πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QIODevice</name>
     <message>
         <source>Permission denied</source>
-        <translation>Άρνηση άδειας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Too many open files</source>
-        <translation>Πολλά ανοιχτά αρχεία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No such file or directory</source>
-        <translation>Δεν υπάρχει τέτοιο αρχείο ή φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No space left on device</source>
-        <translation>Δεν υπάρχει χώρος στη συσκευή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο πρόβλημα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QInputContext</name>
     <message>
         <source>XIM</source>
-        <translation>XIM</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>XIM input method</source>
-        <translation>Μέθοδος εισαγωγής XIM</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Windows input method</source>
-        <translation>Μέθοδος εισαγωγής Windows</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Mac OS X input method</source>
-        <translation>Μέθοδος εισαγωγής MAC OS Χ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QLibrary</name>
     <message>
         <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
-        <translation>QLibrary::load_sys: Δεν μπορεί να φορτωθεί %1 (%2)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation>QLibrary::load_sys: Δεν μπορεί να ξεφορτωθεί %1 (%2)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation>QLibrary::resolve_sys: Το σύμβολο &quot;%1&quot; δεν είναι ορισμένο στο %2 (%3)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation>Δεν γίνεται mmap &apos;%1&apos;: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation>Δεδομένα επιβεβαίωσης plugin λανθασμένα στο &apos;%1&apos;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation>Δεν γίνεται unmap &apos;%1&apos;: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>Το plugin &apos;%1&apos; χρησιμοποιεί μη συμβατή Qt βιβλιοθήκη. (%2.%3.%4) [%5]</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation>Το plugin &apos;%1&apos; χρησιμοποιεί μη συμβατή Qt βιβλιοθήκη. Αναμενόταν κλειδί &quot;%2&quot; αντί του &quot;%3&quot;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο λάθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The shared library was not found.</source>
-        <translation>Η κοινόχρηστη βιβλιοθήκη δεν βρέθηκε.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>Το αρχείο &apos;%1&apos; δεν είναι έγκυρο Qt plugin.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>Το &apos;%1&apos; plugin χρησιμοποιεί μη συμβατή βιβλιοθήκη Qt. (Δεν ειναι δυνατή η πρόσμιξη βιβλιοθηκών αποσφαλμάτωσης και τελικών εκδόσεων)</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QLineEdit</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>&amp;Αναίρεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>&amp;Ακύρωση Αναίρεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Αποκοπ&amp;ή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Αντιγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>&amp;Επικόλληση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Επιλογή Όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QLocalServer</name>
     <message>
         <source>%1: Name error</source>
-        <translation>%1: Λάθος όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation>%1: Άρνηση άδειας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Address in use</source>
-        <translation>%1: Η διεύθυνση χρησιμοποιείται</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: Άγνωστο λάθος %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation>%1: Άρνηση σύνδεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation>%1: Απομακρυσμένος τερματισμός</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation>%1: Μη έγκυρο όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
-        <translation>%1: Λάθος πρόσβασης socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
-        <translation>%1: Λάθος πόρων socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Socket operation timed out</source>
-        <translation>%1: Η λειτουργία socket εξάντλησε το χρονικό περιθώριο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation>%1: Το Datagram είναι πολύ μεγάλο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Connection error</source>
-        <translation>%1: Λάθος στη σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation>%1: Η λειτουργεία socket δεν υποστηρίζεται</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: Άγνωστο λάθος %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMYSQLDriver</name>
     <message>
         <source>Unable to open database &apos;</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα της βάσης δεδομένων &apos;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to connect</source>
-        <translation>Δεν ήταν δυνατή η σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMYSQLResult</name>
     <message>
         <source>Unable to fetch data</source>
-        <translation>Δεν ήταν δυνατή η απόκτηση δεδομένων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute query</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση του ερωτήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to store result</source>
-        <translation>Δεν ήταν δυνατή η αποθήκευση του αποτελέσματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Δεν ήταν δυνατή η προετοιμασία της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
-        <translation>Δεν ήταν δυνατή η αρχικοποίηση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind value</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση της τιμής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση των εξωτερικών τιμών</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
-        <translation>Δεν ήταν δυνατή η αποθήκευση των αποτελεσμάτων της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση του επόμενου ερωτήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to store next result</source>
-        <translation>Δεν ήταν δυνατή η αποθήκευση του επόμενου αποτελέσματος</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation>(Χωρίς τίτλο)</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMdiSubWindow</name>
     <message>
         <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Ελαχιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation>Επαναφορά Κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Restore</source>
-        <translation>&amp;Επαναφορά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation>&amp;Μετακίνηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation>Ε&amp;λαχιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation>Μ&amp;εγιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>Παραμονή στην &amp;επιφάνεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>- [%1]</source>
-        <translation>- [%1]</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation>Μεγιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unshade</source>
-        <translation>Αποσκίαση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Shade</source>
-        <translation>Σκίαση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation>Επαναφορά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation>Μενού</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMenu</name>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation>Εκτέλεση</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>OK</source>
-        <translation>Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>About Qt</source>
-        <translation>Πληροφορίες για το Qt</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αυτό το πρόγραμμα χρησιμοποιεί την έκδοση Qt %1. &lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Details...</source>
-        <translation>Εμφάνιση λεπτομερειών...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide Details...</source>
-        <translation>Απόκρυψη πληροφοριών...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Αυτο το πρόγραμμα χρησιμοποιεί την Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Το Qt Open Source Edition αποσκοπεί στην ανάπτυξη Open Source εφαρμογών. Για την ανάπτυξη ιδιωτικών (closed source) εφαρμογών απαιτείται η εμπορική άδεια Qt&lt;/p&gt;&lt;p&gt;Για την επισκόπηση της Qt άδειας χρήσης δείτε &lt;a  href=&quot;http://www.trolltech.com/company/model/&apos; www.trolltech.com/company/model&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Σχετικά με το Qt&lt;/h3&gt;%1&lt;p&gt;Το Qt είναι μια εργαλειοθήκη C++ για ανάπτυξη πολυ-πλατφορμικών εφαρμογών.&lt;/p&gt;&lt;p&gt;Το Qt προσφέρει μίας-πηγής φορητότητα σε MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, και όλες τις μεγάλες εμπορικές εκδόσεις Unix. Το Qt είναι επίσης διαθέσιμο για ενσωματωμένες συσκευές όπως το Qt for Embedded Linux και το Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Το Qt είναι ένα προϊόν της Nokia. Για περισότερες πληροφορίες, δείτε &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMultiInputContext</name>
     <message>
         <source>Select IM</source>
-        <translation>Επιλογή ΙΜ</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QMultiInputContextPlugin</name>
     <message>
         <source>Multiple input method switcher</source>
-        <translation>Επιλογέας πολλαπλών μεθόδων εισαγωγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation>Επιλογέας πολλαπλών μεθόδων εισαγωγής που χρησιμοποιεί το μενού των εργαλείων κειμένου</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNativeSocketEngine</name>
     <message>
         <source>The remote host closed the connection</source>
-        <translation>Ο απομακρυσμένος διακομιστής τερμάτισε τη σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation>Η δικτυακή λειτουργία εξάντλησε το χρονικό περιθώριο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Out of resources</source>
-        <translation>Δεν υπάρχουν πόροι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unsupported socket operation</source>
-        <translation>Μη υποστηριζόμενη εργασία socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
-        <translation>Μη υποστηριζόμενος τύπος πρωτοκόλλου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid socket descriptor</source>
-        <translation>Μη έγκυρη οπεριγραφή socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network unreachable</source>
-        <translation>Απροσπέλαστο δίκτυο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Permission denied</source>
-        <translation>Άρνηση άδειας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection timed out</source>
-        <translation>Η σύνδεση τερματίστηκε λόγω καθυστέρησης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation>Άρνηση σύνδεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The bound address is already in use</source>
-        <translation>Η διεύθυνση σύνδεσης χρησιμοποιείται ήδη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The address is not available</source>
-        <translation>Η διεύθυνση δεν είναι διαθέσιμη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The address is protected</source>
-        <translation>Η διεύθυνση είναι προστατευμένη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to send a message</source>
-        <translation>Δεν ήταν δυνατή η αποστολή μηνύματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to receive a message</source>
-        <translation>Δεν ήταν δυνατή η λήψη μηνύματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to write</source>
-        <translation>Αδύνατη η εγγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network error</source>
-        <translation>Πρόβλημα δικτύου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Another socket is already listening on the same port</source>
-        <translation>Ένα άλλο socket είναι ήδη σε κατάσταση αναμονής στη συγκεκριμένη πόρτα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize non-blocking socket</source>
-        <translation>Δεν ήταν δυνατή η αρχικοποίηση non-blocking socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize broadcast socket</source>
-        <translation>Δεν ήταν δυνατή η αρχικοποίηση broadcast socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>Προσπάθεια χρήσης IPv6 socket σε πλατφόρμα που δεν υποστηρίζει IPv6</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host unreachable</source>
-        <translation>Απροσπέλαστος διακομιστής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Datagram was too large to send</source>
-        <translation>Το Datagram ήταν πολύ μεγάλο για να σταλεί</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operation on non-socket</source>
-        <translation>Λειτουργία σε non-socket</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο λάθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation>Ο μεσολαβητής δεν είναι έγκυρος για αυτή τη λειτουργία</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFileBackend</name>
     <message>
         <source>Request for opening non-local file %1</source>
-        <translation>Αίτημα για άνοιγμα μη-τοπικού αρχείου %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation>Λάθος στο άνοιγμα %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Λάθος εγγραφής γράφοντας το %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation>Δεν μπορεί να ανοίξει %1: Η διαδρομή είναι φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>Λάθος ανάγνωσης διαβάζοντας το %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation>Δεν μπορεί να ανοίξει το %1: είναι φάκελος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation>Η σύνδεση στο %1 απέτυχε: απαιτείται αυθεντικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation>Λάθος στο κατέβασμα %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation>Λάθος στο ανέβασμα %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation>Λάθος στο κατέβασμα %1 - ο διακομιστής απάντησε %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>Το πρωτόκολλο &quot;%1&quot; είναι άγνωστο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QNetworkReplyImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation>Η λειτουργία ακυρώθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QOCIDriver</name>
     <message>
         <source>Unable to logon</source>
-        <translation>Αδύνατη η σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to initialize</source>
         <comment>QOCIDriver</comment>
-        <translation>Αδύνατη η αρχικοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QOCIResult</name>
     <message>
         <source>Unable to bind column for batch execute</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση της στήλης για την εκτέλεση της δέσμης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute batch statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης της δέσμης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to goto next</source>
-        <translation>Δεν ήταν δυνατή η συνέχιση στο επόμενο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to alloc statement</source>
-        <translation>Δεν ήταν δυνατός ο εντοπισμός της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Δεν ήταν δυνατή η προετοιμασία της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind value</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση της τιμής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης επιλογής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Δεν ήταν δυνατή η σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation>Δεν ήταν δυνατή η σύνδεση - Ο οδηγός δεν υποστηρίζει την απαραίτητη λειτουργικότητα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
-        <translation>Δεν ήταν δυνατή η απενεργοποίηση του αυτόματου ορισμού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to enable autocommit</source>
-        <translation>Δεν ήταν δυνατή η ενεργοποίηση του αυτόματου ορισμού</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QODBCResult</name>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult: Δεν ήταν δυνατός ο ορισμός του &apos;SQL_CURSOS_STATIC&apos; σαν παράμετρο της πρότασης. Ελέγξτε τις ρυθμίσεις του οδηγού ODBC</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση του επόμενου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Δεν ήταν δυνατή η προετοιμασία της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση της τιμής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση του τελευταίου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση του πρώτου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση του προηγούμενου</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation>Η λειτουργία δεν υποστηρίζεται στο %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation>Μη έγκυρο URI: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Λάθος εγγραφής γράφοντας το %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>Λάθος ανάγνωσης διαβάζοντας το %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation>Λάθος socket στο %1: %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation>Ο απομακρυσμένος διακομιστής τερμάτισε τη σύνδεση πρόωρα στο %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation>Λάθος πρωτοκόλλου: ελήφθη πακέτο μεγέθους 0</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Value</source>
-        <translation>Τιμή</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPSQLDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Δεν ήταν δυνατή η σύνδεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not begin transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Could not rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to subscribe</source>
-        <translation>Δεν ήταν δυνατή η συνδρομή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to unsubscribe</source>
-        <translation>Δεν ήταν δυνατή η αποσυνδρομή</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPSQLResult</name>
     <message>
         <source>Unable to create query</source>
-        <translation>Δεν ήταν δυνατή η δημιουργία του ερωτήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Δεν ήταν δυνατή η προετοιμασία της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation>Εκατοστά (cm)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
-        <translation>Χιλιοστά (mm)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Inches (in)</source>
-        <translation>Ίντσες (in)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Points (pt)</source>
-        <translation>Σημεία (pt)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Form</source>
-        <translation>Φόρμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Paper</source>
-        <translation>Χαρτί</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page size:</source>
-        <translation>Μέγεθος σελίδας:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Width:</source>
-        <translation>Πλάτος:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Height:</source>
-        <translation>Ύψος:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Paper source:</source>
-        <translation>Πηγή χαρτιού:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Orientation</source>
-        <translation>Προσανατολισμός</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation>Οριζόντιος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation>Κάθετος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse landscape</source>
-        <translation>Αντίστροφο κάθετο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse portrait</source>
-        <translation>Αντίστροφο οριζόντιο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Margins</source>
-        <translation>Περιθώρια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>top margin</source>
-        <translation>Περιθώριο πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>left margin</source>
-        <translation>Περιθώριο αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>right margin</source>
-        <translation>Περιθώριο δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>bottom margin</source>
-        <translation>Περιθώριο κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPluginLoader</name>
     <message>
         <source>Unknown error</source>
-        <translation>Άγνωστο λάθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The plugin was not loaded.</source>
-        <translation>Το plugin δεν έχει φορτωθεί.</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintDialog</name>
     <message>
         <source>locally connected</source>
-        <translation>Συνδεδεμένος τοπικά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Aliases: %1</source>
-        <translation>Αναγνωριστικό : %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation>άγνωστο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print To File ...</source>
-        <translation>Εκτύπωση σε αρχείο ...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File %1 is not writable.
 Please choose a different file name.</source>
-        <translation>Το αρχείο %1 δεν μπορεί να εγγραφεί.
-Παρακαλώ διαλέξτε άλλο όνομα αρχείου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 already exists.
 Do you want to overwrite it?</source>
-        <translation>%1 υπάρχει ήδη.
-Θέλετε να επαναγραφτεί ?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 is a directory.
 Please choose a different file name.</source>
-        <translation>%1 είναι φάκελος.
-Παρακαλώ διαλέξτε άλλο όνομα αρχείου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A0</source>
-        <translation>A0</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A1</source>
-        <translation>A1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A2</source>
-        <translation>A2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A3</source>
-        <translation>A3</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A4</source>
-        <translation>A4</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A5</source>
-        <translation>A5</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A6</source>
-        <translation>A6</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A7</source>
-        <translation>A7</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A8</source>
-        <translation>A8</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A9</source>
-        <translation>A9</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B0</source>
-        <translation>B0</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B1</source>
-        <translation>B1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B2</source>
-        <translation>B2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B3</source>
-        <translation>B3</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B4</source>
-        <translation>B4</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B5</source>
-        <translation>B5</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B6</source>
-        <translation>B6</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B7</source>
-        <translation>B7</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B8</source>
-        <translation>B8</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B9</source>
-        <translation>B9</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>B10</source>
-        <translation>B10</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>C5E</source>
-        <translation>C5E</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>DLE</source>
-        <translation>DLE</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation>Executive</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation>Folio</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation>Folio</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation>US Legal</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Letter</source>
-        <translation>US Letter</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation>Ταμπλόιντ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation>Φάκελος #10</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation>Προσαρμοσμένο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
-        <translation>Επιλογές &gt;&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Print</source>
-        <translation>Εκτύπωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Options &lt;&lt;</source>
-        <translation>Επιλογές &lt;&lt;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
-        <translation>Εκτύπωση σε αρχείο (PDF)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation>Εκτύπωση σε αρχείο (Postscript)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Local file</source>
-        <translation>Τοπικό αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation>Εγγραφή %1 σε αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
-        <translation>Διαμόρφωση σελίδας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print Preview</source>
-        <translation>Προεπισκόπηση εκτύπωσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Next page</source>
-        <translation>Επόμενη σελίδα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Previous page</source>
-        <translation>Προηγούμενη σελίδα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>First page</source>
-        <translation>Πρώτη σελίδα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Last page</source>
-        <translation>Τελευταία σελίδα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fit width</source>
-        <translation>Προσαρμογή πλάτους</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fit page</source>
-        <translation>Προσαρμογή σελίδας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation>Μεγένθυση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation>Σμίκρυνση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation>Οριζόντιος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation>Κάθετος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show single page</source>
-        <translation>Εμφάνιση μίας σελίδας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation>Εμφάνιση αντικρυστών σελίδων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation>Εμφάνιση επισκόπησης όλων των σελίδων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>Εκτύπωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page setup</source>
-        <translation>Διαμόρφωση σελίδας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation>Φόρμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page</source>
-        <translation>Σελίδα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation>Προχωρημένα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintSettingsOutput</name>
     <message>
         <source>Form</source>
-        <translation>Φόρμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copies</source>
-        <translation>Αντίγραφα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation>Περιοχή εκτύπωσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation>Εκτύπωση όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pages from</source>
-        <translation>Σελίδες από </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>to</source>
-        <translation>έως</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Selection</source>
-        <translation>Επιλογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation>Προτιμήσεις εξόδου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copies:</source>
-        <translation>Αντίγραφα:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Collate</source>
-        <translation>Κατάταξη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation>Αντίστροφα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Options</source>
-        <translation>Επιλογές</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Color Mode</source>
-        <translation>Έγχρωμη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>Χρώμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Grayscale</source>
-        <translation>Ασπρόμαυρη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Duplex Printing</source>
-        <translation>Διπλοεκτύπωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>None</source>
-        <translation>Καμμία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Long side</source>
-        <translation>Μακριά πλευρά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Short side</source>
-        <translation>Κοντή πλευρά</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPrintWidget</name>
     <message>
         <source>Form</source>
-        <translation>Φόρμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation>Εκτυπωτής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation>&amp;Όνομα:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>P&amp;roperties</source>
-        <translation>Ιδιότητες</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation>Τοποθεσία:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation>Προεπισκόπηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation>Τύπος:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation>Όνομα αρχείου:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>...</source>
-        <translation>...</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QPushButton</name>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QRadioButton</name>
     <message>
         <source>Check</source>
-        <translation>Έλεγχος</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
-        <translation>δεν δημιουργήθηκαν προβλήματα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>disabled feature used</source>
-        <translation>χρησιμοποιήθηκε απενεργοποιημένο χαρακτηριστικό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation>λανθασμένη σύνταξη char class</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation>λανθασμένη σύνταξη lookahead</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
-        <translation>λανθασμένη σύνταξη repetition</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>invalid octal value</source>
-        <translation>μη έγκυρη τιμή octal</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>missing left delim</source>
-        <translation>απουσία αριστερού delim</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unexpected end</source>
-        <translation>απροσδόκητο τέλος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>met internal limit</source>
-        <translation>συνάντηση εσωτερικού ορίου</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Driver</name>
     <message>
         <source>Error to open database</source>
-        <translation>Λάθος στο άνοιγμα της βάσης δεδομένων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback Transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLite2Result</name>
     <message>
         <source>Unable to fetch results</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση των αποτελεσμάτων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLiteDriver</name>
     <message>
         <source>Error opening database</source>
-        <translation>Λάθος στο άνοιγμα της βάσης δεδομένων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error closing database</source>
-        <translation>Λάθος στο κλείσιμο της βάσης δεδομένων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>Δεν ήταν δυνατή η εκκίνηση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Δεν ήταν δυνατή η ακύρωση της συνδιαλλαγής</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSQLiteResult</name>
     <message>
         <source>Unable to fetch row</source>
-        <translation>Δεν ήταν δυνατή η προσκόμιση της σειράς</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Δεν ήταν δυνατή η εκτέλεση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
-        <translation>Δεν ήταν δυνατή η αρχικοποίηση της πρότασης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to bind parameters</source>
-        <translation>Δεν ήταν δυνατή η δέσμευση των παραμέτρων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Parameter count mismatch</source>
-        <translation>Λανθασμένος αριθμός παραμέτρων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No query</source>
-        <translation>Χωρίς ερώτημα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QScrollBar</name>
     <message>
         <source>Scroll here</source>
-        <translation>Κύλισε εδώ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation>Αριστερό άκρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Top</source>
-        <translation>Πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation>Δεξιό άκρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation>Κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation>Σελίδα αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Σελίδα πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Σελίδα δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Σελίδα κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation>Κύλισε αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation>Κύλισε πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation>Κύλισε δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation>Κύλισε κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Line up</source>
-        <translation>Γραμμή πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Position</source>
-        <translation>Θέση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Line down</source>
-        <translation>Γραμμή κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation>%1: αδύνατο να τεθεί το κλειδί</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
-        <translation>%1: το μέγεθος δημιουργίας είναι μικρότερο από 0</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation>%1: αδύνατο το κλείδωμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation>%1: αδύνατο το ξεκλείδωμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1: άρνηση άδειας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation>%1: υπάρχει ήδη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation>%1: υπάρχει ήδη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation>%1: έλλειψη πόρων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation>%1: άγνωστο λάθος %2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation>%1: το κλειδί είναι άδειο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation>%1: το αρχείο κλειδιού unix δεν υπάρχει</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation>%1: αποτυχία ftok</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation>%1: αδύνατη η δημιουργία κλειδιού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
-        <translation>%1: περιορισμοί μεγέθους συστήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QShortcut</name>
     <message>
         <source>Space</source>
-        <translation>Space</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Esc</source>
-        <translation>Esc</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tab</source>
-        <translation>Tab</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Backtab</source>
-        <translation>Backtab</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Backspace</source>
-        <translation>Backspace</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Return</source>
-        <translation>Return</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter</source>
-        <translation>Enter</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation>Ins</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Del</source>
-        <translation>Del</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation>Pause</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>Print</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SysReq</source>
-        <translation>SysReq</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Home</source>
-        <translation>Home</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>End</source>
-        <translation>End</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left</source>
-        <translation>Left</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Up</source>
-        <translation>Up</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Right</source>
-        <translation>Right</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Down</source>
-        <translation>Down</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PgUp</source>
-        <translation>PgUp</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PgDown</source>
-        <translation>PgDown</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CapsLock</source>
-        <translation>CapsLock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>NumLock</source>
-        <translation>numLock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ScrollLock</source>
-        <translation>ScrollLock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation>Μενού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Προηγούμενο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Forward</source>
-        <translation>Επόμενο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>Τερματισμός</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>Ανανέωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Down</source>
-        <translation>Μείωση έντασης ήχου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Mute</source>
-        <translation>Αποκοπή ήχου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume Up</source>
-        <translation>Αύξηση έντασης ήχου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation>Ενίσχυση μπάσων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Up</source>
-        <translation>Αύξηση μπάσων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Down</source>
-        <translation>Μείωση μπάσων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Treble Up</source>
-        <translation>Αύξηση τρέμουλου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Treble Down</source>
-        <translation>Μείωση τρέμουλου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Play</source>
-        <translation>Αναπαραγωγή πολυμέσου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Stop</source>
-        <translation>Τερματισμός πολυμέσου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation>Προηγούμενο πολυμέσο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation>Επόμενο πολυμέσο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Record</source>
-        <translation>Εγγραφή πολυμέσου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Favorites</source>
-        <translation>Αγαπημένα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Search</source>
-        <translation>Εύρεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Standby</source>
-        <translation>Αναμονή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation>Άνοιγμα URL</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch Mail</source>
-        <translation>Εκκίνηση ταχυδρομείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch Media</source>
-        <translation>Εκκίνηση πολυμέσων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (0)</source>
-        <translation>Εκκίνηση (0)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (1)</source>
-        <translation>Εκκίνηση (1)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (2)</source>
-        <translation>Εκκίνηση (2)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (3)</source>
-        <translation>Εκκίνηση (3)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (4)</source>
-        <translation>Εκκίνηση (4)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (5)</source>
-        <translation>Εκκίνηση (5)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (6)</source>
-        <translation>Εκκίνηση (6)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (7)</source>
-        <translation>Εκκίνηση (7)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (8)</source>
-        <translation>Εκκίνηση (8)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (9)</source>
-        <translation>Εκκίνηση (9)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (A)</source>
-        <translation>Εκκίνηση (A)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (B)</source>
-        <translation>Εκκίνηση B()</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (C)</source>
-        <translation>Εκκίνηση (C)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (D)</source>
-        <translation>Εκκίνηση (D)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (E)</source>
-        <translation>Εκκίνηση (E)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Launch (F)</source>
-        <translation>Εκκίνηση (F)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation>Εκτύπωση οθόνης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page Up</source>
-        <translation>Page Up</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page Down</source>
-        <translation>Page Down</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation>Num Lock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Number Lock</source>
-        <translation>Number Lock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation>Scroll Lock</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Insert</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Delete</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Escape</source>
-        <translation>Escape</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>System Request</source>
-        <translation>Αίτηση συστήματος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>Επιλογή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation>Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No</source>
-        <translation>Όχι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Context1</source>
-        <translation>Περιεχόμενο1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Context2</source>
-        <translation>Περιεχόμενο2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Context3</source>
-        <translation>Περιεχόμενο3</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Context4</source>
-        <translation>Περιεχόμενο4</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Call</source>
-        <translation>Κλήση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hangup</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Flip</source>
-        <translation>Αντιστροφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation>Ctrl</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Shift</source>
-        <translation>Shift</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Alt</source>
-        <translation>Alt</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Meta</source>
-        <translation>Meta</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>+</source>
-        <translation>+</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>F%1</source>
-        <translation>F%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Home Page</source>
-        <translation>Αρχική Σελίδα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSlider</name>
     <message>
         <source>Page left</source>
-        <translation>Σελίδα αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Σελίδα πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Position</source>
-        <translation>Θέση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Σελίδα δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Σελίδα κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation>Socks5 πρόβλημα στη σύνδεση με τον socks server λόγω καθυστέρησης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation>Η δικτυακή λειτουργία εξάντλησε το χρονικό περιθώριο</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSpinBox</name>
     <message>
         <source>More</source>
-        <translation>Περισσότερα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Less</source>
-        <translation>Λιγότερα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSql</name>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation>Θέλετε να διαγράψετε αυτή την εγγραφή ?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation>Ναι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No</source>
-        <translation>Όχι</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Εισαγωγή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Ενημέρωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation>Αποθήκευση αλλαγών ?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>Επιβεβαίωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation>Ακύρωση αλλαγών;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QSslSocket</name>
     <message>
         <source>Unable to write data: %1</source>
-        <translation>Δεν ήταν δυνατή η εγγραφή των δεδομένων : %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation>Πρόβλημα στην ανάγνωση : %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
-        <translation>Πρόβλημα κατά την διαδικασία χειραψίας SSL : %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
-        <translation>Πρόβλημα στη δημιουργία SSL περιεχομένου (%1)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
-        <translation>Μη έγκυρη ή άδεια λίστα κρυπτογράφησης (%1)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error creating SSL session, %1</source>
-        <translation>Πρόβλημα στη δημιουργία SSL συνεδρίας, %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error creating SSL session: %1</source>
-        <translation>Πρόβλημα στη δημιουργία SSL συνεδρίας: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
-        <translation>Δεν είναι δυνατή η παροχή πιστοποιητικού χωρίς κλειδί, %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error loading local certificate, %1</source>
-        <translation>Πρόβλημα κατά το φόρτωμα του πιστοποιητικού,%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Error loading private key, %1</source>
-        <translation>Πρόβλημα κατά το φόρτωμα του ιδιωτικού κλειδιού,%1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation>Το ιδιωτικό κλειδί δεν πιστοποιεί το δημόσιο κλειδί, %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTDSDriver</name>
     <message>
         <source>Unable to open connection</source>
-        <translation>Δεν ήταν δυνατό το άνοιγμα της σύνδεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to use database</source>
-        <translation>Δεν ήταν δυνατή η χρήση της βάσης δεδομένων</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTabBar</name>
     <message>
         <source>Scroll Left</source>
-        <translation>Κύλιση αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll Right</source>
-        <translation>Κύλιση δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTextControl</name>
     <message>
         <source>&amp;Undo</source>
-        <translation>&amp;Αναίρεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Redo</source>
-        <translation>&amp;Ακύρωση Αναίρεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>Αποκοπ&amp;ή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Αντιγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy &amp;Link Location</source>
-        <translation>Αντιγραφή &amp;Θέσης Δεσμού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Paste</source>
-        <translation>&amp;Επικόλληση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Διαγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Επιλογή Όλων</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QToolButton</name>
     <message>
         <source>Press</source>
-        <translation>Πιέστε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open</source>
-        <translation>Άνοιγμα</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUdpSocket</name>
     <message>
         <source>This platform does not support IPv6</source>
-        <translation>Η πλατφόρμα δεν υποστηρίζει το IPv6</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoGroup</name>
     <message>
         <source>Undo</source>
-        <translation>Αναίρεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>Ακύρωση Αναίρεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoModel</name>
     <message>
         <source>&lt;empty&gt;</source>
-        <translation>&lt;κενό&gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QUndoStack</name>
     <message>
         <source>Undo</source>
-        <translation>Αναίρεση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>Ακύρωση Αναίρεσης</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4042,469 +4008,469 @@ Please choose a different file name.</source>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation>Το αίτημα ακυρώθηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation>Το αίτημα εμποδίστηκε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation>Δεν μπορεί να εμφανιστεί το URL</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation>Η φόρτωση του πλαισίου διακόπηκε λόγω αλλαγής πολιτικής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation>Δεν μπορεί να εμφανιστεί ο τύπος MIME</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation>Το αρχείο δεν υπάρχει</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation>Κακό αίτημα HTTP</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation>Υποβολή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation>Υποβολή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation>Επανέναρξη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation>Αυτό είναι το ευρετήριο. Εισάγετε λέξεις κλειδιά για αναζήτηση: </translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation>Επιλογή αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation>Δεν επιλέχτηκε αρχείο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation>Άνοιγμα σε Νέο Παράθυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation>Αποθήκευση Δεσμού...</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation>Αντιγραφή Δεσμού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
-        <translation>Άνοιγμα Εικόνας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation>Αποθήκευση Εικόνας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation>Αντιγραφή Εικόνας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation>Άνοιγμα πλαισίου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation>Αντιγραφή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation>Πήγαινε πίσω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation>Πήγαινε μπροστά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation>Τερματισμός</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation>Επαναφόρτωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation>Αποκοπή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation>Επικόλληση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation>Δεν βρέθηκαν προτάσεις</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation>Αγνόησε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation>Προσθήκη στο Λεξικό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation>Αναζήτηση στον Ιστό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation>Αναζήτηση στο Λεξικό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation>Άνοιγμα Δεσμού</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation>Αγνόησε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation>Ορθογραφία</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation>Εμφάνιση Ορθογραφίας και Γραμματικής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation>Απόκρυψη Ορθογραφίας και Γραμματικής</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation>Έλεγχος Ορθογραφίας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation>Έλεγχος Ορθογραφίας ενώ Πληκτρολογείτε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation>Έλεγχος Γραμματικής και Ορθογραφίας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation>Γραμματοσειρά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation>Έντονα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation>Πλάγια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation>Υπογράμμιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation>Περιγράμμιση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation>Κατεύθυνση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation>Αρχικό</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation>ΑΠΔ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation>ΔΠΑ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation>Επιθεώρηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation>Όχι πρόσφατες αναζητήσεις</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation>Πρόσφατες αναζητήσεις</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation>Εκκαθάριση πρόσφατων αναζητήσεων</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation>Άγνωστο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation>%1 (%2x%3 πίξελ)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation>Επιθεώρηση σελίδων - %2</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>Τι είναι αυτό ?</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWidget</name>
     <message>
         <source>*</source>
-        <translation>*</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWizard</name>
     <message>
         <source>Go Back</source>
-        <translation>Πήγαινε πίσω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>Συνέχισε</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Commit</source>
-        <translation>Διάπραξη</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Done</source>
-        <translation>Εντάξει</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>Έξοδος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Πίσω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Finish</source>
-        <translation>&amp;Τέλος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Άκυρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Βοήθεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;Επόμενο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Επόμενο &gt;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QWorkspace</name>
     <message>
         <source>&amp;Restore</source>
-        <translation>&amp;Επαναφορά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation>&amp;Μετακίνηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>&amp;Μέγεθος</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Mi&amp;nimize</source>
-        <translation>Ε&amp;λαχιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Ma&amp;ximize</source>
-        <translation>Μ&amp;εγιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>&amp;Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation>Παραμονή στην &amp;επιφάνεια</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
-        <translation>Σκίαση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 - [%2]</source>
-        <translation>%1 - [%2]</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Ελαχιστοποίηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation>Επαναφορά Κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation>Αποσκίαση</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QXml</name>
     <message>
         <source>no error occurred</source>
-        <translation>δεν δημιουργήθηκαν προβλήματα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation>σφάλμα ενεργοποιήθηκε από τον καταναλωτή</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unexpected end of file</source>
-        <translation>απροσδόκητο τέλος αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>more than one document type definition</source>
-        <translation>πάνω από ένας ορισμός τύπου αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing element</source>
-        <translation>λάθος κατά τη συντακτική ανάλυση του στοιχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>tag mismatch</source>
-        <translation>αναντιστοιχία ετικέτας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing content</source>
-        <translation>λάθος κατά τη συντακτική ανάλυση του περιεχομένου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>unexpected character</source>
-        <translation>μη αναμενόμενος χαρακτήρας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>invalid name for processing instruction</source>
-        <translation>μη έγκυρο όνομα για οδηγία επεξεργασίας</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>αναμενόταν η έκδοση ενώ διαβαζόταν η δήλωση XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
-        <translation>λάθος τιμή για την αυτόνομη δήλωση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>encoding declaration or standalone declaration expected while reading the XML declaration</source>
-        <translation>αναμενόταν η κωδικοποιημένη ή η αυτόνομη δήλωση ενώ διαβαζόταν η δήλωση XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>standalone declaration expected while reading the XML declaration</source>
-        <translation>αναμενόταν η αυτόνομη δήλωση ενώ διαβαζόταν η δήλωση XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
-        <translation>λάθος κατά τη συντακτική ανάλυση του ορισμού τύπου αρχείου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation>αναμένεται γράμμα</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
-        <translation>λάθος κατά τη συντακτική ανάλυση του σχόλιου</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing reference</source>
-        <translation>λάθος κατά τη συντακτική ανάλυση της αναφοράς</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
@@ -4535,27 +4501,27 @@ Please choose a different file name.</source>
     <name>QXmlStream</name>
     <message>
         <source>Extra content at end of document.</source>
-        <translation>Παραπανίσιο περιεχόμενο στο τέλος του κειμένου.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>Μη έγκυρη τιμή οντότητας.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
-        <translation>Μη έγκυρος χαρακτήρας XML.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>Η ακολουθία &apos;]]&gt;&apos; δεν επιτρέπεται στο περιεχόμενο.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
-        <translation>Το πρόθεμα του χώρου ονομάτων %1 δεν έχει δηλωθεί</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Attribute redefined.</source>
-        <translation>Η ιδιότητα επαναπροσδιορίστηκε.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
@@ -4563,19 +4529,19 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Invalid XML version string.</source>
-        <translation>Μη έγκυρη έκδοση XML.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unsupported XML version.</source>
-        <translation>Μη υποστηριζόμενη έκδοση XML.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 is an invalid encoding name.</source>
-        <translation>%1 είναι μη έγκυρο όνομα κωδικοποίησης.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Encoding %1 is unsupported</source>
-        <translation>Η κωδικοποίηση %1 δεν υποστηρίζεται</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Standalone accepts only yes or no.</source>
@@ -4651,7 +4617,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Entity &apos;%1&apos; not declared.</source>
-        <translation>Η οντότητα &apos;%1&apos; δεν έχει δηλωθεί.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
@@ -5250,77 +5216,77 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VolumeSlider</name>
     <message>
         <source>Muted</source>
-        <translation>Σιώπηση</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation>Ένταση: %1%</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation>Κύλισε εδώ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation>Αριστερό άκρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Top</source>
-        <translation>Πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation>Δεξιό άκρο</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation>Κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation>Σελίδα αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Σελίδα πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Σελίδα δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Σελίδα κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation>Κύλισε αριστερά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation>Κύλισε πάνω</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation>Κύλισε δεξιά</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation>Κύλισε κάτω</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

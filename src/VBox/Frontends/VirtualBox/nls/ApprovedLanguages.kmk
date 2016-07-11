@@ -19,7 +19,6 @@
 VBOX_APPROVED_GUI_LANGUAGES := \
 	bg    \
 	ca    \
-	ca_VA \
 	cs    \
 	da    \
 	de    \
@@ -36,6 +35,8 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	nl    \
 	pt_BR \
 	ru    \
+	sl    \
 	tr    \
+	uk    \
 	zh_CN \
 	zh_TW
