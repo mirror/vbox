@@ -5523,20 +5523,16 @@ EslSocketTransmit (
           //
           //  Validate the buffer length
           //
+          // NB: local fix for https://github.com/tianocore/edk2/issues/52
           if (( NULL == pDataLength )
-            && ( 0 > pDataLength )
-            && ( NULL == pBuffer )) {
+            || ( NULL == pBuffer )) {
             if ( NULL == pDataLength ) {
-              DEBUG (( DEBUG_RX,
+              DEBUG (( DEBUG_TX,
                         "ERROR - pDataLength is NULL!\r\n" ));
             }
-            else if ( NULL == pBuffer ) {
-              DEBUG (( DEBUG_RX,
-                        "ERROR - pBuffer is NULL!\r\n" ));
-            }
             else {
-              DEBUG (( DEBUG_RX,
-                        "ERROR - Data length < 0!\r\n" ));
+              DEBUG (( DEBUG_TX,
+                        "ERROR - pBuffer is NULL!\r\n" ));
             }
             Status = EFI_INVALID_PARAMETER;
             pSocket->errno = EFAULT;
