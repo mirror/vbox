@@ -559,6 +559,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 RTUNICP Cp;
                                 RTUtf16GetCpEx(&pwszStr, &Cp);
                                 char *pszEnd = RTStrPutCp(szTmp, Cp);
+                                *pszEnd = '\0';
                                 cch += pfnOutput(pvArgOutput, szTmp, pszEnd - szTmp);
 #else
                                 char ch = (char)*pwszStr++;
