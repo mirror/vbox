@@ -764,6 +764,13 @@ class Session(TdTaskBase):
                         msPendingInputReply = base.timestampMilli();
                         continue;
 
+                    rc = self.sendMsg('STDINEOS');
+                    oStdIn = None;
+                    if rc is not True:
+                        sFailure = 'sendMsg failure';
+                        break;
+                    msPendingInputReply = base.timestampMilli();
+
                 # Wait for input (500 ms timeout).
                 if cbMsg is None:
                     cbMsg, sOpcode, abPayload = self.recvReply(cMsTimeout=500, fNoDataOk=True);

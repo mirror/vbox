@@ -1864,6 +1864,20 @@ static int txsDoExecHlpHandleTransportEvent(RTPOLLSET hPollSet, uint32_t fPollEv
             rc = txsReplySimple(pPktHdr, "STDINIGN");
     }
     /*
+     * Marks the end of the stream for stdin.
+     */
+    else if (txsIsSameOpcode(pPktHdr, "STDINEOS"))
+    {
+        if (RT_LIKELY(pPktHdr->cb == sizeof(TXSPKTHDR)))
+        {
+            /* Close the pipe. */
+            txsDoExecHlpHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW, pStdInBuf);
+            rc = txsReplyAck(pPktHdr);
+        }
+        else
+            rc = txsReplySimple(pPktHdr, "STDINBAD");
+    }
+    /*
      * The only other two requests are connection oriented and we return a error
      * code so that we unwind the whole EXEC shebang and start afresh.
      */
