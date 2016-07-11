@@ -53,13 +53,12 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
 {
     switch (GCPhysAddr)
     {
-        case VMMDEV_TESTING_MMIO_NOP:
         case VMMDEV_TESTING_MMIO_NOP_R3:
-#ifdef IN_RING3
-            return VINF_SUCCESS;
-#else
+#ifndef IN_RING3
             return VINF_IOM_R3_MMIO_WRITE;
 #endif
+        case VMMDEV_TESTING_MMIO_NOP:
+            return VINF_SUCCESS;
 
         default:
         {
