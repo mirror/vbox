@@ -107,6 +107,10 @@ public:
     {
     }
 
+    virtual ~GuestSessionListener(void)
+    {
+    }
+
     HRESULT init(GuestSession *pSession)
     {
         AssertPtrReturn(pSession, E_POINTER);
@@ -2164,7 +2168,9 @@ int GuestSession::i_startTaskAsync(const Utf8Str &strTaskDesc,
         return VERR_COM_UNEXPECTED;
 
     /* Initialize our worker task. */
+    RT_GCC_NO_DEPRECATED_BEGIN
     std::auto_ptr<GuestSessionTask> task(pTask);
+    RT_GCC_NO_DEPRECATED_END
     int rc = task->RunAsync(strTaskDesc, pProgress);
     if (RT_FAILURE(rc))
         return rc;

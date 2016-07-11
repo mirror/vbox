@@ -108,6 +108,10 @@ public:
     {
     }
 
+    virtual ~GuestProcessListener(void)
+    {
+    }
+
     HRESULT init(GuestProcess *pProcess)
     {
         AssertPtrReturn(pProcess, E_POINTER);

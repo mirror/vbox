@@ -53,6 +53,10 @@ public:
     {
     }
 
+    virtual ~VRDPConsoleListener()
+    {
+    }
+
     HRESULT init(ConsoleVRDPServer *server)
     {
         m_server = server;

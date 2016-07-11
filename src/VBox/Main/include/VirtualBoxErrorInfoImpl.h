@@ -108,6 +108,7 @@ public:
         : m_resultCode(S_OK),
           m_resultDetail(0)
     {}
+    virtual ~VirtualBoxErrorInfo() {}
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(HRESULT aResultCode,

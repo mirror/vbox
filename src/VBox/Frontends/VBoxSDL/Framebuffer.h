@@ -48,7 +48,7 @@ class ATL_NO_VTABLE VBoxSDLFB :
 {
 public:
     VBoxSDLFB();
-    ~VBoxSDLFB();
+    virtual ~VBoxSDLFB();
 
     HRESULT init(uint32_t uScreenId,
                  bool fFullscreen, bool fResizable, bool fShowSDLConfig,

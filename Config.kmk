@@ -1595,7 +1595,7 @@ VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_GCC_WARN_PEDANTIC += -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
-VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long $(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_Wno-return-type-c-linkage)
+VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long $(VBOX_GCC_Wno-return-type-c-linkage)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = #-Wdxxxx
@@ -5601,7 +5601,7 @@ ifdef VBOX_WITH_QTGUI
 	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions -Wno-non-virtual-dtor \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) \
-	$(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
+	$(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
@@ -6005,7 +6005,7 @@ else # the gcc guys
    TEMPLATE_VBOXGUESTR3EXE_TOOL         := VBoxXGccAmd64LinuxGnu
    TEMPLATE_VBOXGUESTR3EXE_TOOL.x86     := VBoxXGccX86RedHatLinux
   endif
-  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS      := $(filter-out $(VBOX_GCC_pipe) $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_mtune-generic) $(VBOX_GCC_Wlogical-op),$(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS)) -pipe
+  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS      := $(filter-out $(VBOX_GCC_pipe) $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_mtune-generic) $(VBOX_GCC_Wlogical-op),$(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS)) -pipe
   TEMPLATE_VBOXGUESTR3EXE_CFLAGS        := $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS)
   TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux := $(filter-out $(VBOX_GCC_ORIGIN_OPT) $(VBOX_LD_as_needed),$(TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux))
  endif

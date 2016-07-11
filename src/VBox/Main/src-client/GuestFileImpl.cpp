@@ -57,6 +57,10 @@ public:
     {
     }
 
+    virtual ~GuestFileListener()
+    {
+    }
+
     HRESULT init(GuestFile *pFile)
     {
         AssertPtrReturn(pFile, E_POINTER);
