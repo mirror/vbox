@@ -2413,7 +2413,7 @@ ifdef VBOX_WITH_CROGL
  endif
 
  if1of ($(KBUILD_TARGET),darwin)
-  VBOX_WITH_CR_DISPLAY_LISTS = 1
+  #VBOX_WITH_CR_DISPLAY_LISTS = 1
  endif
 
  VBOX_PATH_CROGL_GLAPI       = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/glapi_parser
