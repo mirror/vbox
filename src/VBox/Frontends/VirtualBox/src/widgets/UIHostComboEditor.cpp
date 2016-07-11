@@ -685,8 +685,6 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
     }
 
 # elif defined(VBOX_WS_X11)
-//#  pragma GCC diagnostic push
-//#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
     /* Make sure it's generic XCB event: */
     if (eventType != "xcb_generic_event_t")
@@ -704,7 +702,9 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
         {
             /* Parse key-event: */
             xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
+            RT_GCC_NO_DEPRECATED_BEGIN
             const KeySym ks = ::XKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0);
+            RT_GCC_NO_DEPRECATED_END
             const int iKeySym = static_cast<const int>(ks);
 
             /* Handle key-event: */
@@ -714,7 +714,6 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
             break;
     }
 
-//#  pragma GCC diagnostic pop
 # else
 
 #  warning "port me!"
@@ -830,10 +829,6 @@ bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 }
 
 # elif defined(VBOX_WS_X11)
-#  if RT_GNUC_PREREQ(4, 6)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#  endif
 
 bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
 {
@@ -844,7 +839,9 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
         {
             /* Get key-code: */
             XKeyEvent *pKeyEvent = (XKeyEvent*)pEvent;
+            RT_GCC_NO_DEPRECATED_BEGIN
             KeySym ks = ::XKeycodeToKeysym(pKeyEvent->display, pKeyEvent->keycode, 0);
+            RT_GCC_NO_DEPRECATED_END
 
             int iKeySym = (int)ks;
 
@@ -858,9 +855,6 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
     return false;
 }
 
-#  if RT_GNUC_PREREQ(4, 6)
-#   pragma GCC diagnostic pop
-#  endif
 # endif /* VBOX_WS_X11 */
 
 #endif /* QT_VERSION < 0x050000 */
