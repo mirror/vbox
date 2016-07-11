@@ -10853,27 +10853,20 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 
 #ifndef TST_IEM_CHECK_MC
     /* Calc effective address with modified ESP. */
-    uint8_t const   offOpcodeSaved = pVCpu->iem.s.offOpcode;
+/** @todo testcase */
+    PCPUMCTX        pCtx     = IEM_GET_CTX(pVCpu);
     RTGCPTR         GCPtrEff;
     VBOXSTRICTRC    rcStrict;
-    rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
-    pVCpu->iem.s.offOpcode = offOpcodeSaved;
-
-    PCPUMCTX        pCtx     = IEM_GET_CTX(pVCpu);
-    uint64_t const  RspSaved = pCtx->rsp;
     switch (pVCpu->iem.s.enmEffOpSize)
     {
-        case IEMMODE_16BIT: iemRegAddToRsp(pVCpu, pCtx, 2); break;
-        case IEMMODE_32BIT: iemRegAddToRsp(pVCpu, pCtx, 4); break;
-        case IEMMODE_64BIT: iemRegAddToRsp(pVCpu, pCtx, 8); break;
+        case IEMMODE_16BIT: rcStrict = iemOpHlpCalcRmEffAddrEx(pVCpu, bRm, 0, &GCPtrEff, 2); break;
+        case IEMMODE_32BIT: rcStrict = iemOpHlpCalcRmEffAddrEx(pVCpu, bRm, 0, &GCPtrEff, 4); break;
+        case IEMMODE_64BIT: rcStrict = iemOpHlpCalcRmEffAddrEx(pVCpu, bRm, 0, &GCPtrEff, 8); break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
-    rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-    Assert(rcStrict == VINF_SUCCESS);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    pCtx->rsp = RspSaved;
 
     /* Perform the operation - this should be CImpl. */
     RTUINT64U TmpRsp;
@@ -13708,8 +13701,8 @@ FNIEMOP_DEF_1(iemOp_fdivr_m32r, uint8_t, bRm)
 /** Opcode 0xd8. */
 FNIEMOP_DEF(iemOp_EscF0)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xd8 & 0x7);
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -14494,8 +14487,9 @@ IEM_STATIC const PFNIEMOP g_apfnEscF1_E0toFF[32] =
 /** Opcode 0xd9. */
 FNIEMOP_DEF(iemOp_EscF1)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xd9 & 0x7);
+
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
@@ -14843,8 +14837,8 @@ FNIEMOP_DEF_1(iemOp_fidivr_m32i, uint8_t, bRm)
 /** Opcode 0xda. */
 FNIEMOP_DEF(iemOp_EscF2)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xda & 0x7);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
@@ -15303,8 +15297,8 @@ FNIEMOP_DEF_1(iemOp_fcomi_stN,  uint8_t, bRm)
 /** Opcode 0xdb. */
 FNIEMOP_DEF(iemOp_EscF3)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xdb & 0x7);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
@@ -15587,8 +15581,8 @@ FNIEMOP_DEF_1(iemOp_fdivr_m64r, uint8_t, bRm)
 /** Opcode 0xdc. */
 FNIEMOP_DEF(iemOp_EscF4)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xdc & 0x7);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
@@ -15897,8 +15891,8 @@ FNIEMOP_DEF_1(iemOp_fucomp_stN,  uint8_t, bRm)
 /** Opcode 0xdd. */
 FNIEMOP_DEF(iemOp_EscF5)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xdd & 0x7);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
@@ -16144,8 +16138,8 @@ FNIEMOP_DEF_1(iemOp_fidivr_m16i, uint8_t, bRm)
 /** Opcode 0xde. */
 FNIEMOP_DEF(iemOp_EscF6)
 {
-    pVCpu->iem.s.offFpuOpcode = pVCpu->iem.s.offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    pVCpu->iem.s.uFpuOpcode = RT_MAKE_U16(bRm, 0xde & 0x7);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
@@ -16606,7 +16600,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)pVCpu->iem.s.offOpcode != i8Imm)
+            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm)
             {
                 IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_IF_CX_IS_NZ() {
@@ -16625,7 +16619,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)pVCpu->iem.s.offOpcode != i8Imm)
+            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm)
             {
                 IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
                 IEM_MC_IF_ECX_IS_NZ() {
@@ -16644,7 +16638,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)pVCpu->iem.s.offOpcode != i8Imm)
+            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm)
             {
                 IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
                 IEM_MC_IF_RCX_IS_NZ() {

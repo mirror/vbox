@@ -318,6 +318,8 @@ typedef struct IEMTLBENTRY
 #endif
 } IEMTLBENTRY;
 AssertCompileSize(IEMTLBENTRY, 32);
+/** Pointer to an IEM TLB entry. */
+typedef IEMTLBENTRY *PIEMTLBENTRY;
 
 /** @name IEMTLBE_F_XXX - TLB entry flags (IEMTLBENTRY::fFlagsAndPhysRev)
  * @{  */
@@ -390,75 +392,122 @@ AssertCompileSizeAlignment(IEMTLB, 64);
  */
 typedef struct IEMCPU
 {
-    /** Pointer to the CPU context - ring-3 context. */
-    R3PTRTYPE(PCPUMCTX)     pCtxR3;
-    /** Pointer to the CPU context - ring-0 context. */
-    R0PTRTYPE(PCPUMCTX)     pCtxR0;
-    /** Pointer to the CPU context - raw-mode context. */
-    RCPTRTYPE(PCPUMCTX)     pCtxRC;
-
     /** Info status code that needs to be propagated to the IEM caller.
      * This cannot be passed internally, as it would complicate all success
      * checks within the interpreter making the code larger and almost impossible
      * to get right.  Instead, we'll store status codes to pass on here.  Each
      * source of these codes will perform appropriate sanity checks. */
-    int32_t                 rcPassUp;
+    int32_t                 rcPassUp;                                                                       /* 0x00 */
 
     /** The current CPU execution mode (CS). */
-    IEMMODE                 enmCpuMode;
+    IEMMODE                 enmCpuMode;                                                                     /* 0x04 */
     /** The CPL. */
-    uint8_t                 uCpl;
+    uint8_t                 uCpl;                                                                           /* 0x08 */
 
     /** Whether to bypass access handlers or not. */
-    bool                    fBypassHandlers;
+    bool                    fBypassHandlers;                                                                /* 0x09 */
     /** Indicates that we're interpreting patch code - RC only! */
-    bool                    fInPatchCode;
+    bool                    fInPatchCode;                                                                   /* 0x0a */
 
     /** @name Decoder state.
      * @{ */
-    /** The current offset into abOpcodes. */
-    uint8_t                 offOpcode;
-    /** The size of what has currently been fetched into abOpcodes. */
-    uint8_t                 cbOpcode;
+#ifdef IEM_WITH_CODE_TLB
+    /** Unused. */
+    uint8_t                 bUnused0;                                                                       /* 0x0b */
+    /** The offset of the next instruction byte. */
+    uint32_t                offInstrNextByte;                                                               /* 0x0c */
+    /** Pointer to the page containing RIP, user specified buffer or abOpcode.
+     * This can be NULL if the page isn't mappable for some reason, in which
+     * case we'll do fallback stuff.
+     *
+     * If we're executing an instruction from a user specified buffer,
+     * IEMExecOneWithPrefetchedByPC and friends, this is not necessarily a page
+     * aligned pointer but pointer to the user data.
+     *
+     * For instructions crossing pages, this will start on the first page and be
+     * advanced to the next page by the time we've decoded the instruction.  This
+     * therefore precludes stuff like <tt>pbInstrBuf[offInstrNextByte + cbInstrBuf - cbCurInstr]</tt>
+     */
+    uint8_t const          *pbInstrBuf;                                                                     /* 0x10 */
+# if defined(IN_RC) && HC_ARCH_BITS != 32
+    uint32_t                uInstrBufHigh; /** The high dword of the host context pbInstrBuf member. */
+# endif
+    /** The program counter corresponding to pbInstrBuf.
+     * This is set to a non-canonical address when we need to invalidate it. */
+    uint64_t                uInstrBufPc;                                                                    /* 0x18 */
+    /** The number of bytes available at pbInstrBuf for the current instruction.
+     * This takes the max opcode length into account so that doesn't need to be
+     * checked separately. */
+    uint32_t                cbInstrBuf;                                                                     /* 0x20 */
+    /** The number of bytes available at pbInstrBuf in total (for IEMExecLots).
+     * This takes the CS segment limit into account. */
+    uint16_t                cbInstrBufTotal;                                                                /* 0x24 */
+    /** Offset into pbInstrBuf of the first byte of the current instruction. */
+    uint16_t                offCurInstrStart;                                                               /* 0x26 */
 
-    /** The effective segment register (X86_SREG_XXX). */
-    uint8_t                 iEffSeg;
-
+    /** The prefix mask (IEM_OP_PRF_XXX). */
+    uint32_t                fPrefixes;                                                                      /* 0x28 */
     /** The extra REX ModR/M register field bit (REX.R << 3). */
-    uint8_t                 uRexReg;
+    uint8_t                 uRexReg;                                                                        /* 0x2c */
     /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
      * (REX.B << 3). */
-    uint8_t                 uRexB;
-    /** The prefix mask (IEM_OP_PRF_XXX). */
-    uint32_t                fPrefixes;
+    uint8_t                 uRexB;                                                                          /* 0x2d */
     /** The extra REX SIB index field bit (REX.X << 3). */
-    uint8_t                 uRexIndex;
+    uint8_t                 uRexIndex;                                                                      /* 0x2e */
 
-    /** Offset into abOpcodes where the FPU instruction starts.
-     * Only set by the FPU escape opcodes (0xd8-0xdf) and used later on when the
-     * instruction result is committed. */
-    uint8_t                 offFpuOpcode;
+    /** The effective segment register (X86_SREG_XXX). */
+    uint8_t                 iEffSeg;                                                                        /* 0x2f */
+
+#else
+    /** The current offset into abOpcodes. */
+    uint8_t                 offOpcode;                                                                      /*       0x0b */
+    /** The size of what has currently been fetched into abOpcodes. */
+    uint8_t                 cbOpcode;                                                                       /*       0x0c */
+
+    /** The effective segment register (X86_SREG_XXX). */
+    uint8_t                 iEffSeg;                                                                        /*       0x0d */
+
+    /** The extra REX ModR/M register field bit (REX.R << 3). */
+    uint8_t                 uRexReg;                                                                        /*       0x0e */
+    /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
+     * (REX.B << 3). */
+    uint8_t                 uRexB;                                                                          /*       0x0f */
+    /** The prefix mask (IEM_OP_PRF_XXX). */
+    uint32_t                fPrefixes;                                                                      /*       0x10 */
+    /** The extra REX SIB index field bit (REX.X << 3). */
+    uint8_t                 uRexIndex;                                                                      /*       0x14 */
 
     /** Explicit alignment padding. */
-    uint8_t                 abAlignment1[2];
+    uint8_t                 abAlignment1[3];                                                                /*       0x15 */
+#endif
 
     /** The effective operand mode . */
-    IEMMODE                 enmEffOpSize;
+    IEMMODE                 enmEffOpSize;                                                                   /* 0x30, 0x18 */
     /** The default addressing mode . */
-    IEMMODE                 enmDefAddrMode;
+    IEMMODE                 enmDefAddrMode;                                                                 /* 0x34, 0x1c */
     /** The effective addressing mode . */
-    IEMMODE                 enmEffAddrMode;
+    IEMMODE                 enmEffAddrMode;                                                                 /* 0x38, 0x20 */
     /** The default operand mode . */
-    IEMMODE                 enmDefOpSize;
+    IEMMODE                 enmDefOpSize;                                                                   /* 0x3c, 0x24 */
+
+    /** The FPU opcode (FOP). */
+    uint16_t                uFpuOpcode;                                                                     /* 0x40, 0x28 */
+    /** Align the opcode buffer on a dword boundrary. */
+    uint8_t                 abAlignment2a[2];                                                               /* 0x42, 0x2a */
 
     /** The opcode bytes. */
-    uint8_t                 abOpcode[15];
+    uint8_t                 abOpcode[15];                                                                   /* 0x44, 0x2c */
     /** Explicit alignment padding. */
-    uint8_t                 abAlignment2[HC_ARCH_BITS == 64 ? 5 : 5];
+#ifdef IEM_WITH_CODE_TLB
+    uint8_t                 abAlignment2b[1+4];                                                             /* 0x53 */
+#else
+    uint8_t                 abAlignment2b[1+28];                                                            /*       0x3b */
+#endif
     /** @} */
 
+
     /** The flags of the current exception / interrupt. */
-    uint32_t                fCurXcpt;
+    uint32_t                fCurXcpt;                                                                       /* 0x58, 0x58 */
     /** The current exception / interrupt. */
     uint8_t                 uCurXcpt;
     /** Exception / interrupt recursion depth. */
@@ -524,7 +573,6 @@ typedef struct IEMCPU
     /** Pointer set jump buffer - raw-mode context. */
     RCPTRTYPE(jmp_buf *)    pJmpBufRC;
 
-
     /** @name Statistics
      * @{  */
     /** The number of instructions we've executed. */
@@ -548,7 +596,7 @@ typedef struct IEMCPU
     uint32_t                cPendingCommit;
     /** Number of long jumps. */
     uint32_t                cLongJumps;
-    uint32_t                uPadding; /**< Alignment padding. */
+    uint32_t                uAlignment6; /**< Alignment padding. */
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The Number of I/O port reads that has been performed. */
     uint32_t                cIOReads;
@@ -573,7 +621,7 @@ typedef struct IEMCPU
     /** To prevent EMR3HmSingleInstruction from triggering endless recursion via
      *  emR3ExecuteInstruction and iemExecVerificationModeCheck. */
     uint8_t                 cVerifyDepth;
-    bool                    afAlignment2[2];
+    bool                    afAlignment7[2];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
@@ -604,7 +652,7 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                au32Alignment6[HC_ARCH_BITS == 64 ? 1 + 4 + 8 : 1 + 2 + 4]; /**< Alignment padding. */
+    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 1 + 2 + 8 : 1 + 2]; /**< Alignment padding. */
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
@@ -612,6 +660,16 @@ typedef struct IEMCPU
     /** Instruction TLB.
      * @remarks Must be 64-byte aligned. */
     IEMTLB                  CodeTlb;
+
+    /** Pointer to the CPU context - ring-3 context.
+     * @todo put inside IEM_VERIFICATION_MODE_FULL++. */
+    R3PTRTYPE(PCPUMCTX)     pCtxR3;
+    /** Pointer to the CPU context - ring-0 context. */
+    R0PTRTYPE(PCPUMCTX)     pCtxR0;
+    /** Pointer to the CPU context - raw-mode context. */
+    RCPTRTYPE(PCPUMCTX)     pCtxRC;
+    /** Alignment padding. */
+    RTRCPTR                 uAlignment9;
 
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The event verification records for what IEM did (LIFO). */
@@ -641,9 +699,9 @@ typedef IEMCPU const *PCIEMCPU;
  */
 #if !defined(IEM_VERIFICATION_MODE_FULL) && !defined(IEM_VERIFICATION_MODE) \
  && !defined(IEM_VERIFICATION_MODE_MINIMAL) && defined(VMCPU_INCL_CPUM_GST_CTX)
-# define IEM_GET_CTX(a_pVCpu) (&(a_pVCpu)->cpum.GstCtx)
+# define IEM_GET_CTX(a_pVCpu)           (&(a_pVCpu)->cpum.GstCtx)
 #else
-# define IEM_GET_CTX(a_pVCpu) ((a_pVCpu)->iem.s.CTX_SUFF(pCtx))
+# define IEM_GET_CTX(a_pVCpu)           ((a_pVCpu)->iem.s.CTX_SUFF(pCtx))
 #endif
 
 /** Gets the current IEMTARGETCPU value.
@@ -651,10 +709,18 @@ typedef IEMCPU const *PCIEMCPU;
  * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
  */
 #if IEM_CFG_TARGET_CPU != IEMTARGETCPU_DYNAMIC
-# define IEM_GET_TARGET_CPU(a_pVCpu)   (IEM_CFG_TARGET_CPU)
+# define IEM_GET_TARGET_CPU(a_pVCpu)    (IEM_CFG_TARGET_CPU)
 #else
-# define IEM_GET_TARGET_CPU(a_pVCpu)   ((a_pVCpu)->iem.s.uTargetCpu)
+# define IEM_GET_TARGET_CPU(a_pVCpu)    ((a_pVCpu)->iem.s.uTargetCpu)
 #endif
+
+/** @def Gets the instruction length. */
+#ifdef IEM_WITH_CODE_TLB
+# define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offInstrNextByte - (uint32_t)(a_pVCpu)->iem.s.offCurInstrStart)
+#else
+# define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offOpcode)
+#endif
+
 
 /** @name IEM_ACCESS_XXX - Access details.
  * @{ */

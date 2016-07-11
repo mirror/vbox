@@ -759,8 +759,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
 
+#ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -785,8 +787,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
 
+#ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -829,8 +833,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
 
+#ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -855,8 +861,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
 
+#ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -882,8 +890,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
 
+#ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -908,8 +918,10 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
 
+#ifndef IEM_WITH_CODE_TLB
     /* Flush the prefetch buffer. */
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -1644,7 +1656,11 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
     pCtx->eflags.Bits.u1RF = 0;
 
     /* Flush the prefetch buffer. */
+# ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+# else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+# endif
     return VINF_SUCCESS;
 #endif
 }
@@ -1869,7 +1885,11 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
      *        mode.  */
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -2092,8 +2112,11 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
      *        mode.  */
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
-
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2496,7 +2519,11 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     }
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -2569,7 +2596,9 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     pCtx->eflags.Bits.u1RF = 0;
 
     /* Flush the prefetch buffer. */
+#ifndef IEM_WITH_CODE_TLB
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -2892,7 +2921,11 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     IEMMISC_SET_EFL(pVCpu, pCtx, uNewFlags);
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -2971,7 +3004,11 @@ IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uin
     pVCpu->iem.s.uCpl  = 3;
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -3406,7 +3443,11 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     }
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -3706,7 +3747,11 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
     }
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -3832,7 +3877,11 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
     pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
@@ -3936,7 +3985,11 @@ IEM_CIMPL_DEF_0(iemCImpl_sysret)
      *        on sysret. */
 
     /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
     pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
 
     return VINF_SUCCESS;
 }
