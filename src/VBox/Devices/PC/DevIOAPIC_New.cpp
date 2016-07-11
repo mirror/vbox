@@ -176,6 +176,15 @@ Controller" */
 # define IOAPIC_DIRECT_OFF_EOI                  0x40
 #endif
 
+#define IOAPIC_WITH_PDM_CRITSECT
+#ifdef IOAPIC_WITH_PDM_CRITSECT
+# define IOAPIC_LOCK(pThis, rcBusy)         (pThis)->CTX_SUFF(pIoApicHlp)->pfnLock((pThis)->CTX_SUFF(pDevIns), (rcBusy))
+# define IOAPIC_UNLOCK(pThis)               (pThis)->CTX_SUFF(pIoApicHlp)->pfnUnlock((pThis)->CTX_SUFF(pDevIns))
+#else
+# define IOAPIC_LOCK(pThis, rcBusy)         PDMCritSectEnter(&(pThis)->CritSect, (rcBusy))
+# define IOAPIC_UNLOCK(pThis)               PDMCritSectLeave(&(pThis)->CritSect)
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -219,8 +228,10 @@ typedef struct IOAPIC
     /** The internal IRR reflecting state of the interrupt lines. */
     uint32_t                uIrr;
 
+#ifndef IOAPIC_WITH_PDM_CRITSECT
     /** The critsect for updating to the RTEs. */
     PDMCRITSECT             CritSect;
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     /** Number of MMIO reads in RZ. */
@@ -361,7 +372,9 @@ DECLINLINE(uint32_t) ioapicGetIndex(PCIOAPIC pThis)
  */
 static void ioapicSignalIntrForRte(PIOAPIC pThis, uint8_t idxRte)
 {
+#ifndef IOAPIC_WITH_PDM_CRITSECT
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+#endif
 
     /* Ensure the RTE isn't masked. */
     uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
@@ -462,7 +475,7 @@ static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uVa
     AssertMsg(idxRte < RT_ELEMENTS(pThis->au64RedirTable), ("Invalid index %u, expected <= %u\n", idxRte,
                                                             RT_ELEMENTS(pThis->au64RedirTable)));
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_MMIO_WRITE);
+    int rc = IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
     if (rc == VINF_SUCCESS)
     {
         /*
@@ -495,7 +508,7 @@ static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uVa
         if (pThis->uIrr & uPinMask)
             ioapicSignalIntrForRte(pThis, idxRte);
 
-        PDMCritSectLeave(&pThis->CritSect);
+        IOAPIC_UNLOCK(pThis);
         LogFlow(("IOAPIC: ioapicSetRedirTableEntry: uIndex=%#RX32 idxRte=%u uValue=%#RX32\n", uIndex, idxRte, uValue));
     }
     else
@@ -578,7 +591,7 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
     LogFlow(("IOAPIC: ioapicSetEoi: u8Vector=%#x (%u)\n", u8Vector, u8Vector));
 
     bool fRemoteIrrCleared = false;
-    int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_MMIO_WRITE);
+    int rc = IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
     if (rc == VINF_SUCCESS)
     {
         for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
@@ -604,7 +617,7 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
             }
         }
 
-        PDMCritSectLeave(&pThis->CritSect);
+        IOAPIC_UNLOCK(pThis);
         AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
     }
     else
@@ -632,7 +645,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
 
     if (RT_LIKELY(iIrq >= 0 && iIrq < (int)RT_ELEMENTS(pThis->au64RedirTable)))
     {
-        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_SUCCESS);
+        int rc = IOAPIC_LOCK(pThis, VINF_SUCCESS);
         AssertRC(rc);
 
         uint8_t  const idxRte        = iIrq;
@@ -650,7 +663,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
         if (!fActive)
         {
             pThis->uIrr &= ~uPinMask;
-            PDMCritSectLeave(&pThis->CritSect);
+            IOAPIC_UNLOCK(pThis);
             return;
         }
 
@@ -703,7 +716,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
             IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
         }
 
-        PDMCritSectLeave(&pThis->CritSect);
+        IOAPIC_UNLOCK(pThis);
     }
 #undef IOAPIC_ASSERT_IRQ
 }
@@ -1077,7 +1090,7 @@ static DECLCALLBACK(void) ioapicR3Reset(PPDMDEVINS pDevIns)
     LogFlow(("IOAPIC: ioapicR3Reset: pThis=%p\n", pThis));
 
     /* There might be devices threads calling ioapicSetIrq() in parallel, hence the lock. */
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    IOAPIC_LOCK(pThis, VERR_IGNORED);
 
     pThis->uIrr    = 0;
     pThis->u8Index = 0;
@@ -1089,7 +1102,7 @@ static DECLCALLBACK(void) ioapicR3Reset(PPDMDEVINS pDevIns)
         pThis->au32TagSrc[idxRte] = 0;
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
+    IOAPIC_UNLOCK(pThis);
 }
 
 
@@ -1115,11 +1128,13 @@ static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
     LogFlow(("IOAPIC: ioapicR3Destruct: pThis=%p\n", pThis));
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
+#ifndef IOAPIC_WITH_PDM_CRITSECT
     /*
      * Destroy the RTE critical section.
      */
     if (PDMCritSectIsInitialized(&pThis->CritSect))
         PDMR3CritSectDelete(&pThis->CritSect);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -1168,12 +1183,14 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
+#ifndef IOAPIC_WITH_PDM_CRITSECT
     /*
      * Setup the critical section to protect concurrent writes to the RTEs.
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "IOAPIC");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("IOAPIC: Failed to create critical section. rc=%Rrc"), rc);
+#endif
 
     /*
      * Register the IOAPIC.
