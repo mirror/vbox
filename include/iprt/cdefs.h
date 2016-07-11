@@ -987,6 +987,17 @@
 # define RT_GCC_EXTENSION
 #endif
 
+#if RT_GNUC_PREREQ(4, 6)
+# define RT_GCC_NO_DEPRECATED_BEGIN \
+   _Pragma("GCC diagnostic push") \
+   _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+# define RT_GCC_NO_DEPRECATED_END \
+   _Pragma("GCC diagnostic pop")
+#else
+# define RT_GCC_NO_DEPRECATED_BEGIN
+# define RT_GCC_NO_DEPRECATED_END
+#endif
+
 /** @def RT_COMPILER_GROKS_64BIT_BITFIELDS
  * Macro that is defined if the compiler understands 64-bit bitfields. */
 #if !defined(RT_OS_OS2) || (!defined(__IBMC__) && !defined(__IBMCPP__))
