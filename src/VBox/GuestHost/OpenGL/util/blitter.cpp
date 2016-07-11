@@ -299,7 +299,7 @@ void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize,
  *                          default ogl state.
  *
  *                          Otherwise, the blitter works in a "no-context" mode,
- *                          i.e. the§ caller is responsible for making a proper
+ *                          i.e. the caller is responsible for making a proper
  *                          context current before calling the blitter. Note
  *                          that BltEnter/Leave MUST still be called, but the
  *                          proper context must be set before doing BltEnter,
