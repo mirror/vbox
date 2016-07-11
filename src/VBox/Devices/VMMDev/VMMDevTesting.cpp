@@ -56,9 +56,9 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
         case VMMDEV_TESTING_MMIO_NOP:
         case VMMDEV_TESTING_MMIO_NOP_R3:
 #ifdef IN_RING3
-            return VINF_IOM_R3_MMIO_WRITE;
-#else
             return VINF_SUCCESS;
+#else
+            return VINF_IOM_R3_MMIO_WRITE;
 #endif
 
         default:
