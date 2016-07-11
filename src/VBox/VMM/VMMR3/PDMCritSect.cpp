@@ -498,7 +498,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
      * Assert free waiters and so on (c&p from RTCritSectDelete).
      */
     Assert(pCritSect->Core.u32Magic == RTCRITSECT_MAGIC);
-    Assert(pCritSect->Core.cNestings == 0);
+    //Assert(pCritSect->Core.cNestings == 0); - we no longer reset this when leaving.
     Assert(pCritSect->Core.cLockers == -1);
     Assert(pCritSect->Core.NativeThreadOwner == NIL_RTNATIVETHREAD);
     Assert(RTCritSectIsOwner(&pUVM->pdm.s.ListCritSect));
