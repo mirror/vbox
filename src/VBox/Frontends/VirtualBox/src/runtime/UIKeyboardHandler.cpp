@@ -395,6 +395,9 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         }
         free(pGrabReply);
 
+        /* Successfully captured, stop delayed capture attempts: */
+        m_idxDelayedKeyboardCaptureView = -1;
+
 # endif /* QT_VERSION >= 0x050000 */
 #else
 
@@ -408,10 +411,6 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 
         /* Store new keyboard-captured state value: */
         m_fIsKeyboardCaptured = true;
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-        /* Successfully captured, stop delayed capture attempts: */
-        m_idxDelayedKeyboardCaptureView = -1;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
@@ -420,6 +419,11 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 
 void UIKeyboardHandler::releaseKeyboard()
 {
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /* If we haven't captured the keyboard by now it is too late: */
+    m_idxDelayedKeyboardCaptureView = -1;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
     /* Do NOT release the keyboard if it is already released: */
     if (!m_fIsKeyboardCaptured)
         return;
@@ -505,10 +509,6 @@ void UIKeyboardHandler::releaseKeyboard()
 
         /* Store new keyboard-captured state value: */
         m_fIsKeyboardCaptured = false;
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-        /* If we haven't captured the keyboard by now it is too late: */
-        m_idxDelayedKeyboardCaptureView = -1;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
