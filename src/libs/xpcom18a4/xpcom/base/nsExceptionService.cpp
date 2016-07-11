@@ -83,7 +83,7 @@ public:
 
 #ifdef NS_DEBUG
   inline nsrefcnt ReleaseQuiet() {
-    // shut up NS_ASSERT_OWNINGTHREAD (see explaination below)
+    // shut up NS_ASSERT_OWNINGTHREAD (see explanation below)
     nsAutoOwningThread old = _mOwningThread;
     _mOwningThread = nsAutoOwningThread();
     nsrefcnt ref = Release();
@@ -114,7 +114,7 @@ PRInt32 nsExceptionManager::totalInstances = 0;
 // instance on creation). In both cases, there should be no other threads
 // holding objects (i.e. it's thread-safe to call them), but
 // NS_CheckThreadSafe() assertions will still happen and yell in the debug
-// build. Since it is quite annoying, we use a special ReleaseQuiet() mehtod
+// build. Since it is quite annoying, we use a special ReleaseQuiet() method
 // in DoDropThread() to shut them up.
 NS_IMPL_THREADSAFE_ISUPPORTS1(nsExceptionManager, nsIExceptionManager)
 
@@ -164,7 +164,7 @@ NS_IMETHODIMP nsExceptionManager::GetExceptionFromProvider(nsresult rc, nsIExcep
 /* The Exception Service */
 
 PRUintn nsExceptionService::tlsIndex = BAD_TLS_INDEX;
-PRLock *nsExceptionService::lock = PR_FALSE;
+PRLock *nsExceptionService::lock = nsnull;
 nsExceptionManager *nsExceptionService::firstThread = nsnull;
 
 #ifdef NS_DEBUG
@@ -200,6 +200,11 @@ nsExceptionService::nsExceptionService()
 nsExceptionService::~nsExceptionService()
 {
   Shutdown();
+  if (lock) {
+    PRLock *tmp = lock;
+    lock = nsnull;
+    PR_DestroyLock(tmp);
+  }
   /* destructor code */
 #ifdef NS_DEBUG
   PR_AtomicDecrement(&totalInstances);
@@ -210,12 +215,7 @@ nsExceptionService::~nsExceptionService()
 void nsExceptionService::ThreadDestruct( void *data )
 {
   if (!lock) {
-    // a typical situation is when IPC worker threads that have instantiated
-    // exception managers are stopped after nsExceptionService is shut down,
-    // which will result into this warning.  disable it.
-#if 0    
     NS_WARNING("nsExceptionService ignoring thread destruction after shutdown");
-#endif    
     return;
   }
   DropThread( (nsExceptionManager *)data );
@@ -224,13 +224,11 @@ void nsExceptionService::ThreadDestruct( void *data )
 
 void nsExceptionService::Shutdown()
 {
+  PR_SetThreadPrivate(tlsIndex, nsnull);
   mProviders.Reset();
   if (lock) {
     DropAllThreads();
-    PR_DestroyLock(lock);
-    lock = nsnull;
   }
-  PR_SetThreadPrivate(tlsIndex, nsnull);
 }
 
 /* void setCurrentException (in nsIException error); */
@@ -355,12 +353,16 @@ nsExceptionService::DoGetExceptionFromProvider(nsresult errCode,
 {
     nsExceptionManager **emp = &firstThread;
     while (*emp != thread) {
-        NS_ABORT_IF_FALSE(*emp, "Could not find the thread to drop!");
+        if (!*emp)
+        {
+            NS_WARNING("Could not find the thread to drop!");
+            return;
+        }
         emp = &(*emp)->mNextThread;
     }
     *emp = thread->mNextThread;
     thread->ReleaseQuiet();
-    thread = 0;
+    thread = nsnull;
 }
 
 /*static*/ void nsExceptionService::DropThread(nsExceptionManager *thread)
