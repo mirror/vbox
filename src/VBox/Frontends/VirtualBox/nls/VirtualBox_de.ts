@@ -1132,39 +1132,39 @@
     </message>
     <message>
         <source>Issuer:               %1</source>
-        <translation>Aussteller           %1</translation>
+        <translation>Aussteller:               %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Subjekt:                  %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation>Nicht gültig vor: %1</translation>
+        <translation>Nicht gültig bevor:       %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation>Nicht gültig nach: %1</translation>
+        <translation>Nicht gültig nach:        %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation>Serielle Nummer: %1</translation>
+        <translation type="unfinished">Fortlaufende Nummer:      %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation>Selbstsigniert: %1</translation>
+        <translation>Selbstsigniert:           %1</translation>
     </message>
     <message>
         <source>True</source>
-        <translation>wahr</translation>
+        <translation>ja</translation>
     </message>
     <message>
         <source>False</source>
-        <translation>falsch</translation>
+        <translation>nein</translation>
     </message>
     <message>
         <source>Authority (CA):       %1</source>
-        <translation>Zertifizierungsstelle: %1</translation>
+        <translation>Zertifizierungsstelle:    %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
@@ -1172,11 +1172,11 @@
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation>Signaturalgorithmus: %1 (%2)</translation>
+        <translation>Signaturalgorithmus:      %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation>X.509-Versionsnummer: %1</translation>
+        <translation>X.509-Versionsnummer:     %1</translation>
     </message>
 </context>
 <context>
