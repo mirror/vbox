@@ -151,7 +151,7 @@ class RemoteExecutor(object):
             if sInput is not None:
                 oStdIn = StdInOutBuffer(sInput);
             else:
-                oStdIn = '/dev/null';
+                oStdIn = '/dev/null'; # pylint: disable=R0204
             fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs,
                                               oStdIn = oStdIn, oStdOut = oStdOut);
             sOutput = oStdOut.getOutput();

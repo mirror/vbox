@@ -63,6 +63,8 @@ def _ControllerTypeToName(eControllerType):
         sType = "SAS Controller";
     elif eControllerType == vboxcon.StorageControllerType_LsiLogic or eControllerType == vboxcon.StorageControllerType_BusLogic:
         sType = "SCSI Controller";
+    elif eControllerType == vboxcon.StorageControllerType_NVMe:
+        sType = "NVMe Controller";
     else:
         sType = "Storage Controller";
     return sType;
@@ -249,7 +251,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asVirtModes       = self.asVirtModesDef
         self.acCpusDef         = [1, 2,]
         self.acCpus            = self.acCpusDef;
-        self.asStorageCtrlsDef = ['AHCI', 'IDE', 'LsiLogicSAS', 'LsiLogic', 'BusLogic'];
+        self.asStorageCtrlsDef = ['AHCI', 'IDE', 'LsiLogicSAS', 'LsiLogic', 'BusLogic', 'NVMe'];
         self.asStorageCtrls    = self.asStorageCtrlsDef;
         self.asDiskFormatsDef  = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'QCOW', 'iSCSI'];
         self.asDiskFormats     = self.asDiskFormatsDef;
@@ -483,6 +485,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             fRc = oSession.ensureControllerAttached(_ControllerTypeToName(eStorageController));
             fRc = fRc and oSession.setStorageControllerType(eStorageController, _ControllerTypeToName(eStorageController));
 
+            iDevice = 0;
+            if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
+               eStorageController == vboxcon.StorageControllerType_PIIX4:
+                iDevice = 1; # Master is for the OS.
+
             if sDiskFormat == "iSCSI":
                 listNames = [];
                 listValues = [];
@@ -504,10 +511,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     try:
                         if oSession.fpApiVer >= 4.0:
                             oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
-                                                            1, 0, vboxcon.DeviceType_HardDisk, oHd);
+                                                            0, iDevice, vboxcon.DeviceType_HardDisk, oHd);
                         else:
                             oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
-                                                            1, 0, vboxcon.DeviceType_HardDisk, oHd.id);
+                                                            0, iDevice, vboxcon.DeviceType_HardDisk, oHd.id);
                     except:
                         reporter.errorXcpt('attachDevice("%s",%s,%s,HardDisk,"%s") failed on "%s"' \
                                            % (_ControllerTypeToName(eStorageController), 1, 0, oHd.id, oSession.sName) );
@@ -516,7 +523,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         reporter.log('attached "%s" to %s' % (sDiskPath, oSession.sName));
             else:
                 fRc = fRc and oSession.createAndAttachHd(sDiskPath, sDiskFormat, _ControllerTypeToName(eStorageController), \
-                                                         cb = 300*1024*1024*1024, iPort = 1, fImmutable = False);
+                                                         cb = 300*1024*1024*1024, iPort = 0, iDevice = iDevice, \
+                                                         fImmutable = False);
             fRc = fRc and oSession.enableVirtEx(fHwVirt);
             fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
             fRc = fRc and oSession.setCpuCount(cCpus);
@@ -539,7 +547,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 # Prepare the storage on the guest
                 lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin' ];
                 oExecVm = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, '${SCRATCH}');
-                oStorCfgVm = storagecfg.StorageCfg(oExecVm, 'linux', [ '/dev/sdb' ]);
+                lstDisks = [ '/dev/sdb' ];
+                # The naming scheme for NVMe is different.
+                if eStorageController == vboxcon.StorageControllerType_NVMe:
+                    lstDisks = [ '/dev/nvme0n1' ];
+                oStorCfgVm = storagecfg.StorageCfg(oExecVm, 'linux', lstDisks);
 
                 sMountPoint = self.prepareStorage(oStorCfgVm);
                 if sMountPoint is not None:
@@ -556,7 +568,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 oSession = self.openSession(oVM);
                 if oSession is not None:
                     try:
-                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 1, 0);
+                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 0, iDevice);
 
                         # Remove storage controller if it is not an IDE controller.
                         if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
@@ -595,6 +607,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 eStorageCtrl = vboxcon.StorageControllerType_LsiLogic;
             elif sStorageCtrl == 'BusLogic':
                 eStorageCtrl = vboxcon.StorageControllerType_BusLogic;
+            elif sStorageCtrl == 'NVMe':
+                eStorageCtrl = vboxcon.StorageControllerType_NVMe;
             else:
                 eStorageCtrl = None;
 
@@ -647,6 +661,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
                         reporter.testDone();
                     reporter.testDone();
+
+                # Cleanup storage area
+                if sDiskFormat != 'iSCSI' and not self.fUseScratch:
+                    self.cleanupStorage(self.oStorCfg);
+
                 reporter.testDone();
             reporter.testDone();
         reporter.testDone();

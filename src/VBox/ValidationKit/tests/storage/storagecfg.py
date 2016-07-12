@@ -229,7 +229,10 @@ class StorageConfigOsLinux(StorageConfigOs):
                 sFdiskScript = ',' + str(cbVol / 512) + '\n'; # Get number of sectors
             fRc, _ = oExec.execBinary('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), sFdiskScript);
             if fRc:
-                sBlkDev = sDiskPath + '1';
+                if sDiskPath.find('nvme') is not -1:
+                    sBlkDev = sDiskPath + 'p1';
+                else:
+                    sBlkDev = sDiskPath + '1';
         else:
             if cbVol is None:
                 fRc = oExec.execBinaryNoStdOut('lvcreate', ('-l', '100%FREE', '-n', sVol, sPool));
