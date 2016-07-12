@@ -44,7 +44,7 @@ public:
            m_cRefs(0)
     {
     }
-    virtual ~MyUSBDevice() {};
+    virtual ~MyUSBDevice() {}
 
     STDMETHOD_(ULONG, AddRef)(void)
     {
