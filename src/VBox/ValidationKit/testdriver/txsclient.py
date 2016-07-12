@@ -749,14 +749,18 @@ class Session(TdTaskBase):
                    and oStdIn is not None \
                    and not isinstance(oStdIn, basestring):
                     try:
-                        abInput = oStdIn.read(65536);
+                        sInput = oStdIn.read(65536);
                     except:
                         reporter.errorXcpt('read standard in');
                         sFailure = 'exception reading stdin';
                         rc = None;
                         break;
-                    if len(abInput) > 0:
-                        oStdIn.uTxsClientCrc32 = zlib.crc32(abInput, oStdIn.uTxsClientCrc32);
+                    if len(sInput) > 0:
+                        oStdIn.uTxsClientCrc32 = zlib.crc32(sInput, oStdIn.uTxsClientCrc32);
+                        # Convert to a byte array before handing it of to sendMsg or the string
+                        # will get some zero termination added breaking the CRC (and injecting
+                        # unwanted bytes).
+                        abInput = array.array('B', sInput);
                         rc = self.sendMsg('STDIN', (long(oStdIn.uTxsClientCrc32 & 0xffffffff), abInput));
                         if rc is not True:
                             sFailure = 'sendMsg failure';
