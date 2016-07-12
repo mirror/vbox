@@ -4911,7 +4911,6 @@ Scegli un nome diverso.</translation>
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -5199,7 +5198,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è un tipo atomico. Il cast è possibile solo con tipi atomici.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
@@ -5247,7 +5246,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile aggiungere attributi dopo qualsiasi altro tipo di nodo.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
