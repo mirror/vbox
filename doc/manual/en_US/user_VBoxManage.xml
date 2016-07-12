@@ -3138,219 +3138,298 @@ Value: 2006.01.01</screen>
   <sect1 id="vboxmanage-guestcontrol">
     <title>VBoxManage guestcontrol</title>
 
-    <para>The <computeroutput>guestcontrol</computeroutput> commands allow you
-    to control certain things inside a guest from the host. Please see <xref
+    <para>The <computeroutput>guestcontrol</computeroutput> commands enable
+    control of the guest from the host. Please see <xref
     linkend="guestadd-guestcontrol" /> for an introduction.</para>
 
-    <para>There are two sets of subcommands here.  The first set requires guest
-      credentials to be specified, the second set does not.</para>
+    <para>guestcontrol has two sets of subcommands. The first set requires guest
+      credentials to be specified, the second does not.</para>
 
-    <para>The first set of subcommands are on the following form:</para>
-
+    <para>The first set of subcommands are of the form:</para>
     <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
-            [-v|--verbose] [-q|quiet] [--username &lt;name&gt;] [--domain &lt;domain&gt; ]
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;] ...
-    </screen>
-
-    <para>and the second set are on the following form:</para>
-
-    <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
+            [--username &lt;name&gt; ]
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
+            [--domain &lt;domain&gt; ]
             [-v|--verbose] [-q|quiet] ...
     </screen>
 
-    <para>where the common parameters are:
+    <para>The "common-options" are:</para>
+    <screen>
+           [--username &lt;name&gt; ]
+           [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
+           [--domain &lt;domain&gt; ]
+           [-v|--verbose] [-q|quiet] 
+    </screen>
+
+    <para>Where details of the common options for the first set of subcommands are:
       <glosslist>
+
         <glossentry>
-          <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-          <glossdef><para>The VM UUID or VM name. Mandatory.</para></glossdef>
+          <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
+            <glossdef>
+              <para>The VM UUID or VM name. Mandatory.</para>
+            </glossdef>
         </glossentry>
+   
         <glossentry>
           <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-          <glossdef><para>Name of the user the process should run under. This
-            user must exist on the guest OS. If not specified the host user
-            name is used.</para>
+          <glossdef><para>Specifies the user name on guest OS under which the process should run. This
+            user name must already exist on the guest OS. If unspecified, the host user name is used. Optional</para>
           </glossdef>
         </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>--passwordfile &lt;file&gt;|--password</computeroutput></glossterm>
+          <glossdef><para>Specifies the absolute path on guest file system of password file containing the 
+            password for the specified user account or password for the specified user account. Optional. 
+            If both are omitted, empty password is assumed.</para></glossdef>
+        </glossentry>
+
         <glossentry>
           <glossterm><computeroutput>--domain &lt;domain&gt;</computeroutput></glossterm>
-          <glossdef><para>User domain for windows guests, optional.</para></glossdef>
+          <glossdef><para>User domain for Windows guests. Optional.</para></glossdef>
         </glossentry>
-        <glossentry>
-          <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-          <glossdef><para>Password of the specified user account to be read from
-            the given file. If not given, an empty password is assumed.</para></glossdef>
-        </glossentry>
-        <glossentry>
-          <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-          <glossdef><para>Password of the specified user account. If not given,
-            an empty password is assumed.</para></glossdef>
-        </glossentry>
+
         <glossentry>
           <glossterm><computeroutput>-v|--verbose</computeroutput></glossterm>
-          <glossdef><para>Makes the sub-command execution more noisy.</para></glossdef>
+          <glossdef><para>Makes the subcommand execution more verbose. Optional</para></glossdef>
         </glossentry>
+
         <glossentry>
           <glossterm><computeroutput>-q|--quiet</computeroutput></glossterm>
-          <glossdef><para>Makes the sub-command execution more quiet.</para></glossdef>
+          <glossdef><para>Makes the subcommand execution quieter. Optional.</para></glossdef>
         </glossentry>
       </glosslist>
     </para>
 
-    <para>The first set of subcommands:<itemizedlist>
+    <para>The first set of subcommands: <itemizedlist>
         <listitem>
-          <para><emphasis role="bold"><computeroutput>run</computeroutput></emphasis>,
-          allows you to execute a guest program waiting for it to complete and
-          forwarding stdout, stderr and stdin to/from the host.</para>
-
+          <para><emphasis role="bold"><computeroutput>run</computeroutput></emphasis>
+          Executes a guest program - forwarding stdout, stderr and stdin to/from the host 
+          until it completes.</para>
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; run [common-options]
-            [--exe &lt;path to executable&gt;] [--timeout &lt;msec&gt;]
-            [-E|--putenv &lt;NAME&gt;[=&lt;VALUE&gt;]] [--unquoted-args]
-            [--ignore-operhaned-processes] [--no-profile]
-            [--no-wait-stdout|--wait-stdout]
-            [--no-wait-stderr|--wait-stderr]
-            [--dos2unix] [--unix2dos]
+            --exe &lt;path to executable&gt; [--timeout &lt;msec&gt;]
+           [-E|--putenv &lt;NAME&gt;[=&lt;VALUE&gt;]] [--unquoted-args]
+           [--ignore-operhaned-processes] [--profile]
+           [--no-wait-stdout|--wait-stdout]
+           [--no-wait-stderr|--wait-stderr]
+           [--dos2unix] [--unix2dos]
             -- &lt;program/arg0&gt; [argument1] ... [argumentN]]
           </screen>
-
-          <para>where the options are: <glosslist>
+            <glosslist>
               <glossentry>
-                <glossterm><computeroutput>--exe "&lt;path to program&gt;"</computeroutput></glossterm>
-                <glossdef><para>Guest path to the guest executable that should be executed.
-                  in the guest, e.g.
-                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
+                <glossterm><computeroutput>--exe "&lt;path to executable&gt;"</computeroutput></glossterm>
+                <glossdef><para>Specifies the absolute path of the executable on the guest OS file system. Mandatory. e.g.:
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>Name of the user the process should run under. This
-                  user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--dos2unix</computeroutput></glossterm>
-
-                <glossdef><para>
-                  Converts output from DOS/Windows guests to UNIX-compatible
-                  line endings (CR + LF &rarr; LF). Not implemented yet.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--environment
-                    "&lt;NAME&gt;=&lt;VALUE&gt;"</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>One or more environment variables to be set or
-                  unset.</para>
-
-                  <para>By default, the new process in the guest will be
-                  created with the standard environment of the guest OS. This
-                  option allows for modifying that environment. To set/modify
-                  a variable, a pair of
-                  <computeroutput>NAME=VALUE</computeroutput> must be
-                  specified; to unset a certain variable, the name with no
-                  value must set, e.g.
-                  <computeroutput>NAME=</computeroutput>.</para>
-
-                  <para>Arguments containing spaces must be enclosed in
-                  quotation marks. More than one
-                  <computeroutput>--environment</computeroutput> at a time can
-                  be specified to keep the command line tidy.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--timeout &lt;msec&gt;</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Value (in milliseconds) that specifies the time how
-                  long the started process is allowed to run and how long
-                  VBoxManage waits for getting output from that process. If no
-                  timeout is specified, VBoxManage will wait forever until the
-                  started process ends or an error occured.</para>
+                  <para>Specifies the maximum time (microseconds) that the executable can run, 
+                  during which VBoxManage receives its output. Optional. 
+                  If unspecified, VBoxManage waits indefinitely for the process to end, or an error occurs.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>-E|--putenv "&lt;NAME&gt;=&lt;VALUE&gt;"
+                </computeroutput></glossterm>
+                <glossdef>
+                  <para>Sets/modifies/unsets environment variable(s) in the environment in which the program will run. Optional.</para>
+                  <para>The guest process is created with the standard default guest OS environment. 
+                  Use this option to modify that default environment. To set/modify a variable use:
+                  <computeroutput>&lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>. 
+                  To unset a variable use:
+                  <computeroutput>&lt;NAME&gt;=</computeroutput></para>
+                  <para>Any spaces in names/values should be enclosed by quotes. </para>
+                  <para>To set/modify/unset multiple variables, use multiple instances of the 
+                  <computeroutput>--E|--putenv</computeroutput> option. </para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--unquoted-args</computeroutput></glossterm>
+                <glossdef>
+                  <para>Disables escaped double quoting (e.g. \"fred\") on arguments passed to the executed program. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--ignore-operhaned-processes</computeroutput></glossterm>
+                <glossdef>
+                  <para>Ignore orphaned processes. Not yet implemented. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--profile</computeroutput></glossterm>
+                <glossdef>
+                  <para>Use Profile. Not yet implemented. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--no-wait-stdout|--wait-stdout</computeroutput></glossterm>
+                <glossdef>
+                  <para>Does not wait/waits until the guest process ends and receives its exit code and reason/flags. 
+                  In the case of --wait-stdout -  while the process runs, VBoxManage receives its stdout. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>>--no-wait-stderr|--wait-stderr</computeroutput></glossterm>
+                <glossdef>
+                  <para>Does not wait/waits until the guest process ends and receives its exit code and reason/flags. 
+                  In case of --wait-stderr - while the process runs, VBoxManage receives its stderr. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--dos2unix</computeroutput></glossterm>
+                <glossdef><para>
+                  Converts output from DOS/Windows guests to UNIX/Linux-compatible line endings 
+                  (CR + LF &rarr; LF). Not yet implemented. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--unix2dos</computeroutput></glossterm>
-
                 <glossdef><para>
-                  Converts output from a UNIX/Linux guests to DOS-/Windows-compatible
-                  line endings (LF &rarr; CR + LF). Not implemented yet.</para></glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  Converts output from a UNIX/Linux guests to DOS/Windows-compatible
+                  line endings (LF &rarr; CR + LF). Not yet implemented. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--wait-exit</computeroutput></glossterm>
-
+                <glossterm><computeroutput>[-- &lt;program/arg0&gt; [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Waits until the process ends and outputs its
-                  exit code along with the exit reason/flags.</para>
+                  <para>Specifies program name, followed by one or more arguments to pass to the program. Optional.</para>
+                  <para>Note: Any spaces in arguments should be enclosed by quotes.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist>
+
+          <para><note>
+              <para>On Windows there are certain limitations for graphical
+              applications; please see <xref linkend="KnownIssues" /> for more
+              information.</para>
+            </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "/bin/ls"
+          --username foo --passwordfile bar.txt --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "c:\\windows\\system32\\ipconfig.exe"
+          --username foo --passwordfile bar.txt --wait-exit --wait-stdout</screen> Note that
+          the double backslashes in the second example are only required on
+          Unix hosts.</para>
+
+          <para><note>
+            <para>For certain commands a user name of an existing user account on the guest
+            must be specified; anonymous executions are not supported for security reasons. A
+            user account password, however, is optional and depends on the guest's OS security
+            policy or rules. If no password is specified for a given user name, an empty password
+            will be used. On certain OSes like Windows the security policy may needs to be adjusted
+            in order to allow user accounts with an empty password set. Also, global domain rules might
+            apply and therefore cannot be changed.</para>
+          </note></para>
+
+          <para>Starting at VirtualBox 4.1.2 guest process execution by default is limited
+          to serve up to 5 guest processes at a time. If a new guest process gets started
+          which would exceed this limit, the oldest not running guest process will be discarded
+          in order to be able to run that new process. Also, retrieving output from this
+          old guest process will not be possible anymore then. If all 5 guest processes
+          are still active and running, starting a new guest process will result in an
+          appropriate error message.</para>
+
+          <para>To raise or lower the guest process execution limit, either the guest
+          property <computeroutput>/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept</computeroutput>
+          or VBoxService' command line by specifying <computeroutput>--control-procs-max-kept</computeroutput>
+          needs to be modified. A restart of the guest OS is required afterwards. To serve unlimited
+          guest processes, a value of <computeroutput>0</computeroutput> needs to be set (not recommended).</para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>start</computeroutput></emphasis>,
+          Executes a guest program until it completes.</para>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; start [common-options]
+            [--exe &lt;path to executable&gt;] [--timeout &lt;msec&gt;]
+            [-E|--putenv &lt;NAME&gt;[=&lt;VALUE&gt;]] [--unquoted-args]
+            [--ignore-operhaned-processes] [--profile]
+            -- &lt;program/arg0&gt; [argument1] ... [argumentN]]
+          </screen>
+
+          <para>Where the options are: <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--wait-stdout</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Waits until the process ends and outputs its
-                  exit code along with the exit reason/flags. While waiting
-                  VBoxManage retrieves the process output collected from stdout.</para>
+                <glossterm><computeroutput>--exe "&lt;path to executable&gt;"</computeroutput></glossterm>
+                <glossdef><para>Specifies the absolute path of the executable on the guest OS file system. Mandatory. e.g.:
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--wait-stderr</computeroutput></glossterm>
-
+                <glossterm><computeroutput>--timeout &lt;msec&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>Waits until the process ends and outputs its
-                  exit code along with the exit reason/flags. While waiting
-                  VBoxManage retrieves the process output collected from stderr.</para>
+                  <para>Specifies the maximum time (microseconds) that the executable can run. Optional.
+                  If unspecified, VBoxManage waits indefinitely for the process to end, or an error occurs.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>[-- [&lt;argument1s&gt;] ... [&lt;argumentNs&gt;]]</computeroutput></glossterm>
-
+                <glossterm><computeroutput>-E|--putenv "&lt;NAME&gt;=&lt;VALUE&gt;"
+                </computeroutput></glossterm>
                 <glossdef>
-                  <para>One or more arguments to pass to the process being
-                  executed.</para>
-                  <para>Arguments containing spaces must be enclosed in
-                  quotation marks.</para>
+                  <para>Sets/modifies/unsets environment variable(s) in the environment in which the program will run. Optional.</para>
+                  <para>The guest process is created with the standard default guest OS environment.
+                  Use this option to modify that default environment. To set/modify a variable use:
+                  <computeroutput>&lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>.
+                  To unset a variable use:
+                  <computeroutput>&lt;NAME&gt;=</computeroutput></para>
+                  <para>Any spaces in names/values should be enclosed by quotes. </para>
+                  <para>To set/modify/unset multiple variables, use multiple instances of the
+                  <computeroutput>--E|--putenv</computeroutput> option. </para>
                 </glossdef>
               </glossentry>
 
+              <glossentry>
+                <glossterm><computeroutput>--unquoted-args</computeroutput></glossterm>
+                <glossdef>
+                  <para>Disables escaped double quoting (e.g. \"fred\") on arguments passed to the executed program. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--ignore-operhaned-processes</computeroutput></glossterm>
+                <glossdef>
+                  <para>Ignores orphaned processes. Not implemented yet. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--profile</computeroutput></glossterm>
+                <glossdef>
+                  <para>Use a profile. Not implemented yet. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>[-- &lt;program/arg0&gt; [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies program name, followed by one or more arguments to pass to the program. Optional.</para>
+                  <para>Note: Any spaces in arguments should be enclosed by quotes.</para>
+                </glossdef>
+              </glossentry>
             </glosslist></para>
 
           <para><note>
@@ -3389,920 +3468,581 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>copyto</computeroutput></emphasis>,
-          which allows copying
-          files from the host to the guest (only with installed Guest
-          Additions 4.0 and later).</para>
+          <para><emphasis role="bold"><computeroutput>copyfrom</computeroutput></emphasis>
+          This command enables copying of files from the guest to the host file system. 
+          (Note - only with Guest Additions 4.0 or later installed).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyto|cp
-            &lt;guest source&gt; &lt;host dest&gt; --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--dryrun] [--follow] [--recursive] [--verbose]</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyfrom [common-options]
+            --target-directory &lt;host-dst-dir&gt;
+            [--dryrun] [--follow] [--R|recursive]
+            &lt;guest-src0&gt; [&lt;guest-src1&gt; [...]] </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are:<glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>source on host</computeroutput></glossterm>
-
+                <glossterm><computeroutput>--target-directory &lt;host-dst-dir&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>Absolute path of source file(s) on host to copy over
-                  to the guest, e.g.
-                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.
-                  This also can be a wildcard expression, e.g.
-                  <computeroutput>C:\Windows\System32\*.dll</computeroutput></para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>destination on guest</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Absolute destination path on the guest, e.g.
-                  <computeroutput>C:\Temp</computeroutput></para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
+                  <para>Specifies the absolute path of the host file system destination directory. Mandatory. e.g.
+                  <computeroutput>C:\Temp</computeroutput>.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--dryrun</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Tells VBoxManage to only perform a dry run instead of
-                  really copying files to the guest.</para>
+                  <para>Instructs VBoxManage to perform a dry run instead of an actual file copying 
+                  operation. Optional. </para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--follow</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Enables following symlinks on the host's
-                  source.</para>
+                  <para>Enables symlink following on the guest file system. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--recursive</computeroutput></glossterm>
-
+                <glossterm><computeroutput>-R|--recursive</computeroutput></glossterm>
                 <glossdef>
-                  <para>Recursively copies files/directories of the specified
-                  source.</para>
+                  <para>Enables recursive copying of files/directories from the specified guest file system
+                  directory. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;guest-src0&gt; [&lt;guest-src1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  <para>Specifies the absolute path(s) of guest file system file(s) to be copied. Mandatory. e.g.
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.
+                  Wildcards can be used in the expression(s), e.g.
+                  <computeroutput>C:\Windows\System*\*.dll</computeroutput>.</para>
                 </glossdef>
               </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--flags &lt;flags&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Additional flags to set. This is not used at the
-                  moment.</para>
-                </glossdef>
-              </glossentry>
-            </glosslist></para>
+            </glosslist>
+          </para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>copyfrom</computeroutput></emphasis>,
-          which allows copying
-          files from the guest to the host (only with installed Guest
-          Additions 4.0 and later). It has the same parameters as
-          <computeroutput>copyto</computeroutput> above.</para>
+          <para><emphasis role="bold"><computeroutput>copyto</computeroutput></emphasis>,
+          Copies from the host to a guest file system. 
+          (Note - only with Guest Additions 4.0 or later installed).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyto [common-options]
+            --target-directory &lt;guest-dst&gt;
+            [--dryrun] [--follow] [--R|recursive]
+            &lt;host-src0&gt; [&lt;host-src1&gt; [...]] </screen>
+
+          <para>Where the parameters are:<glosslist>
+              <glossentry>
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--target-directory &lt;guest-dst&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the absolute path of the guest file system destination directory. Mandatory. e.g.
+                  <computeroutput>C:\Temp</computeroutput>.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--dryrun</computeroutput></glossterm>
+                <glossdef>
+                  <para>Instructs VBoxManage to perform a dry run instead of an actual file copying 
+                  operation. Optional. </para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--follow</computeroutput></glossterm>
+                <glossdef>
+                  <para>Enables symlink following on the host file system. Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>-R|--recursive</computeroutput></glossterm>
+                <glossdef>
+                  <para>Enables recursive copying of files/directories from the specified host file system
+                  directory(ies). Optional.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>&lt;host-src0&gt; [&lt;host-src1&gt; [...]]</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the absolute path(s) of host file system file(s) to be copied. Mandatory. e.g.
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.
+                  Wildcards can be used in the expression(s), e.g.
+                  <computeroutput>C:\Windows\System*\*.dll</computeroutput>.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist>
+          </para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>createdirectory</computeroutput></emphasis>,
-          which allows
-          copying files from the host to the guest (only with installed Guest
-          Additions 4.0 and later).</para>
+          <para><emphasis role="bold"><computeroutput>md|mkdir|createdir|createdirectory</computeroutput></emphasis>,
+          Creates one or more directory(ies) on the guest file system. 
+          (Note - only with Guest Additions 4.0 or later installed).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; createdir[ectory]|mkdir|md
-            &lt;guest directory&gt;... --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--parents] [--mode &lt;mode&gt;] [--verbose]</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt;  md|mkdir|createdir|createdirectory
+            [common-options ]
+            [--parents] [--mode &lt;mode&gt;]
+            &lt;guest directory&gt; [...] </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>directory to create on guest</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Absolute path of directory/directories to create on
-                  guest, e.g. <computeroutput>D:\Foo\Bar</computeroutput>.
-                  Parent directories need to exist (e.g. in this example
-                  <computeroutput>D:\Foo</computeroutput>) when switch
-                  <computeroutput>--parents</computeroutput> is omitted. The
-                  specified user must have appropriate rights to create the
-                  specified directory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
-                </glossdef>
-              </glossentry>
-
               <glossentry>
                 <glossterm><computeroutput>--parents</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Also creates not yet existing parent directories of
-                  the specified directory, e.g. if the directory
-                  <computeroutput>D:\Foo</computeroutput> of
-                  <computeroutput>D:\Foo\Bar</computeroutput> does not exist
-                  yet it will be created. Without specifying
-                  <computeroutput>--parent</computeroutput> the action would
-                  have failed.</para>
+                  <para>Creates any absent parent directory(ies) of the specified directory. Optional.</para> 
+                  <para>e.g. If specified directory is <computeroutput>D:\Foo\Bar</computeroutput>
+                  and <computeroutput>D:\Foo</computeroutput> is absent, it will    
+                  be created. In such a case, had the <computeroutput>--parents</computeroutput> 
+                  option not been used, this command would have failed.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--mode &lt;mode&gt;</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Sets the permission mode of the specified directory.
-                  Only octal modes (e.g.
-                  <computeroutput>0755</computeroutput>) are supported right
-                  now.</para>
+                  <para>Specifies the permission mode on the specified directory(ies) (and any parents, 
+                  where <computeroutput>--parents</computeroutput> option used).
+                  Currently octal modes (e.g. <computeroutput>0755</computeroutput>) only are 
+                  supported.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;guest directory&gt;... </computeroutput></glossterm>
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  <para>Specifies list of absolute paths of directory(ies) to be created on
+                  guest file system. Mandatory. 
+                  e.g. <computeroutput>D:\Foo\Bar</computeroutput> </para>
+                  <para>All parent directories must already exist
+                  unless switch <computeroutput>--parents</computeroutput> used. 
+                  (e.g. in the above example <computeroutput>D:\Foo</computeroutput>). 
+                  The specified user must have sufficient rights to create the
+                  specified directory(ies), and any parents that need 
+                  to be created.</para>
                 </glossdef>
               </glossentry>
-            </glosslist></para>
+            </glosslist>
+          </para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>removedirectory</computeroutput></emphasis>,
-          which allows deletion of guest directories (only with installed Guest
-          Additions 4.3.2 and later).</para>
+          <para><emphasis role="bold"><computeroutput>rmdir|removedir|removedirectory</computeroutput></emphasis>
+          Deletes specified guest file system directories. (Only with installed Guest Additions 4.3.2 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removedir[ectory]|rmdir
-            &lt;guest directory&gt;... --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--recursive|-R|-r] [--verbose]</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removedirectory|removedir|rmdir [common-options]
+            [--recursive|-R]
+            &lt;guest directory&gt;... 
+          </screen>   
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>directory to remove on guest</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Absolute path of directory/directories to remove on
-                  guest, e.g. <computeroutput>D:\Foo\Bar</computeroutput>. The
-                  specified user must have appropriate rights to delete the
-                  specified guest directories.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--recursive</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Remove directories and their contents recursively.</para>
+                  <para>Recursively removes directories and contents. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;guest directory&gt;...</computeroutput></glossterm>
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  <para>Specifies the absolute path(s) of directory(ies) to be deleted on
+                  guest file system. Mandatory. Wildcards are allowed. e.g. <computeroutput>D:\Foo\Bar</computeroutput>.  
+                  The specified user must have sufficient rights to delete the
+                  specified directory(ies).</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>removefile</computeroutput></emphasis>,
-          which allows deletion of guest files (only with installed Guest
+          <para><emphasis role="bold"><computeroutput>removefile|rm</computeroutput></emphasis>
+          Deletes specified files on the guest file system. (Only with installed Guest
           Additions 4.3.2 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removefile|rm
-            &lt;guest file&gt;... --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--verbose]</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removefile|rm [common-options]
+            [-f|--force]
+            &lt;guest file&gt;... </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>file to remove on guest</computeroutput></glossterm>
-
+                <glossterm><computeroutput>-f|--force</computeroutput></glossterm>
                 <glossdef>
-                  <para>Absolute path of a file/files to remove on
-                  guest, e.g. <computeroutput>D:\Foo\Bar\text.txt</computeroutput>. The
-                  specified user must have appropriate rights to delete the
-                  specified guest files.</para>
+                  <para>Enforce operation (override any requests for confirmations). Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;guest file&gt;...</computeroutput></glossterm>
                 <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
+                  <para>Specifies absolute path(s) of file(s) to be deleted on guest file system. Mandatory.
+                   Wildcards are allowed. e.g. <computeroutput>D:\Foo\Bar\text.txt</computeroutput>.  
+                   The specified user should have sufficient rights to delete the specified file(s).</para>
                 </glossdef>
               </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
-                </glossdef>
-              </glossentry>
-            </glosslist></para>
+            </glosslist>
+          </para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>ren[ame]|mv</computeroutput></emphasis>,
-          which allows renaming of guest files and/or directories (only with installed Guest
+          <para><emphasis role="bold"><computeroutput>mv|move|ren|rename</computeroutput></emphasis>
+          This subcommand renames file(s) and/or directory(ies) on the guest file system. (Only with installed Guest
           Additions 4.3.2 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; ren[ame]|mv
-            &lt;source&gt;... &lt;dest&gt; --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--verbose]</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; mv|move|ren|rename [common-options]
+            &lt;source&gt;... &lt;dest&gt; </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>source</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;source&gt;... </computeroutput></glossterm>
                 <glossdef>
-                  <para>Absolute path of one or more source(s) to move to
-                  destination. If more than one source is specified, destination
-                  must be an existing directory on the guest. The specified user
-                  must have appropriate rights to access source and destination
-                  files and directories.</para>
+                  <para>Specifies absolute path(s) of file(s) to be moved on guest file system. Mandatory.
+                  Wildcards are allowed. The specified user should  have sufficient rights to 
+                  access the specified file(s).</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>dest</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;dest&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>Absolute path of the destination to move the source(s)
-                  to. This can be a directory or a file, depending if one or more
-                  sources have been specified. The specified user
-                  must have appropriate rights to access the destination
-                  file and directory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  <para>Specifies the absolute path of the destination file/directory(ies) to which the file(s)
+                  are to be moved. This can be a directory, or a file if only one file to be moved. Mandatory.
+                  The specified user must have sufficient rights to access the destination file/directory.</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>createtemporary</computeroutput></emphasis>,
-          which allows
-          copying files from the host to the guest (only with installed Guest
-          Additions 4.2 and later).</para>
+          <para><emphasis role="bold"><computeroutput>mktemp|createtemp|createtemporary</computeroutput></emphasis>
+          Creates a temporary file/directory on the guest file system, to assist subsequent
+          copying of files from the host to the guest file systems. By default, the file/directory 
+          is created in the guest's platform specific temp directory. Not currently supported.
+          (Only with installed Guest Additions 4.2 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; createtemp[orary]|mktemp
-            &lt;template&gt; --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--directory] [--secure] [--tmpdir &lt;directory&gt;]
-            [--domain &lt;domain&gt;] [--mode &lt;mode&gt;] [--verbose]</screen>
+            <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; mktemp|createtemp|createtemporary [common-options]
+            [--directory] [--secure] [--mode &lt;mode&gt;] [--tmpdir &lt;directory&gt;]
+            &lt;template&gt; 
+            </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>The parameters are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>template</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>A file name without a path and with at least three consecutive 'X'
-                    characters or ending in 'X'
-                  </para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--directory</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Create a temporary directory instead of a file.</para>
+                  <para>Creates a temporary directory instead of a file, specified by the &lt;template&gt; parameter. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--secure</computeroutput></glossterm>
-
                 <glossdef>
                   <para>
-                    Secure creation. The file mode is fixed to
-                    <computeroutput>0755</computeroutput>. And the operation
-                    will fail if it cannot performed securely.
+                  Enforces secure file/directory creation. Optional. The permission mode is set to
+                  <computeroutput>0755</computeroutput>. Operation fails if it cannot be performed securely. 
                   </para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--tmpdir &lt;directory&gt;</computeroutput></glossterm>
-
                 <glossdef>
                   <para>
-                    Directory where the file / directory is created. If not
-                    specified, the platform-specific temp directory is used.
+                  Specifies the absolute path of the directory on the guest file system into which the 
+                  file/directory specified in will be created. Optional.
+                  If unspecified, the platform-specific temp directory is used. 
                   </para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--mode &lt;mode&gt;</computeroutput></glossterm>
-
                 <glossdef>
-                  <para>Sets the permission mode of the specified directory.
-                  Only octal modes (e.g.
-                  <computeroutput>0755</computeroutput>) are supported right
-                  now.</para>
+                  <para>Specifies the permission mode of the specified directory. Optional. 
+                  Currently only octal modes (e.g. <computeroutput>0755</computeroutput>) 
+                  are supported.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;template&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  <para>Specifies a file name without a directory path, containing at least one sequence comprising 
+                   three consecutive 'X' characters, or ending in 'X'. Mandatory. 
+                  </para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
         </listitem>
 
         <listitem>
+          <para><emphasis role="bold"><computeroutput>stat</computeroutput></emphasis>,
+          Displays file or file system status(es) on the guest.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; stat [common-options]
+            &lt;file1&gt;[... filen] </screen>
+
+          <para>Where the parameters are: <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>&lt;file1&gt;[... filen]</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies absolute path(s) of file(s) on guest file system. Mandatory.
+                  e.g. <computeroutput>/home/foo/a.out</computeroutput>.
+                  The specified user should have sufficient rights to access
+                  the specified file/file system(s).</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+      </itemizedlist>
+    </para>
+
+    <para>The second set of subcommands are of the form:</para>
+    <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
+            [-v|--verbose] [-q|quiet] ...
+    </screen>
+
+    <para>The "common-options" are:</para>
+    <screen>
+            [-v|--verbose] [-q|--quiet] 
+    </screen>
+
+    <para>Where details of the common options for the second set of subcommands are:
+      <glosslist>
+
+        <glossentry>
+          <glossterm><computeroutput>-v|--verbose</computeroutput></glossterm>
+          <glossdef><para>Makes the sub-command execution more verbose. Optional.</para></glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>-q|--quiet</computeroutput></glossterm>
+          <glossdef><para>Makes the sub-command execution quieter. Optional.</para></glossdef>
+        </glossentry>
+      </glosslist>
+    </para>
+
+    <para>The second set of subcommands: <itemizedlist>
+        <listitem>
           <para><emphasis role="bold"><computeroutput>list</computeroutput></emphasis>,
-          which lists various guest control information such as open guest sessions,
-          guest processes and guest files.</para>
+          Lists guest control configuration and status data, e.g. open guest sessions,
+          guest processes and files.</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; list
-            &lt;all|sessions|processes|files&gt; [--verbose]</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; list [common-opts]
+            &lt;all|sessions|processes|files&gt; </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
             <glossentry>
-              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+              <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
               <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
+                <para>Specifies the VM UUID or VM name. Mandatory.</para>
               </glossdef>
             </glossentry>
-
             <glossentry>
               <glossterm><computeroutput>all|sessions|processes|files</computeroutput></glossterm>
-
               <glossdef>
-                <para>Whether to list guest sessions, guest processes, guest files
-                  or all information available. Mandatory.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose.</para>
+                <para>Indicates whether to list all available data or guest sessions, processes or files.
+                Mandatory.</para>
               </glossdef>
             </glossentry>
           </glosslist></para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>process kill</computeroutput></emphasis>,
-          which terminates specific guest processes of a guest session, based on either the
-          session's ID or the session's name.</para>
+          <para><emphasis role="bold"><computeroutput>closeprocess</computeroutput></emphasis>,
+          Terminates guest processes (specified by PID(s))running in guest session(s) 
+          specified by the session ID or name(s).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; process kill
-            --session-id &lt;ID&gt;
-          | --session-name &lt;name or pattern&gt;
-          [--verbose]
-          &lt;PID&gt; ... &lt;PID n&gt;</screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; closeprocess [common-options]
+            --session-id &lt;ID&gt; | --session-name &lt;name or pattern&gt;
+          &lt;PID1&gt; [... &lt;PID n&gt;] </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
             <glossentry>
-              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+              <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
               <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
+                <para>Specifies the VM UUID or VM name. Mandatory.</para>
               </glossdef>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
-
+              <glossterm><computeroutput>--session-id &lt;ID&gt;</computeroutput></glossterm>
               <glossdef>
-                <para>Specifies the guest session to use by its ID.</para>
+                <para>Specifies the guest session by its ID. Optional.</para>
               </glossdef>
             </glossentry>
 
             <glossentry>
               <glossterm><computeroutput>--session-name</computeroutput></glossterm>
-
               <glossdef>
-                <para>Specifies the guest session to use by its name. Multiple
-                  sessions can be closed when specifying * or ? wildcards.</para>
+                <para>Specifies the guest session by its name, or multiple sessions 
+                using a pattern containing wildcards. Optional.</para>
               </glossdef>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
+              <glossterm><computeroutput>&lt;PID1&gt; [... &lt;PID n&gt;]</computeroutput></glossterm>
               <glossdef>
-                <para>Tells VBoxManage to be more verbose.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>&lt;PID&gt; ... &lt;PID n&gt;</computeroutput></glossterm>
-
-              <glossdef>
-                <para>List of process identifiers (PIDs) to terminate.</para>
+                <para>Specifies a list of process identifiers (PIDs) of guest processes to be terminated. Mandatory.</para>
               </glossdef>
             </glossentry>
           </glosslist></para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>[p[s]]kill</computeroutput></emphasis>,
-          which terminates specific guest processes of a guest session, based on either the
-          session's ID or the session's name.</para>
+          <para><emphasis role="bold"><computeroutput>closesession</computeroutput></emphasis>,
+          Closes specified guest sessions, specified either by session ID or name.</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; process kill
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; closesession [common-options]
             --session-id &lt;ID&gt;
           | --session-name &lt;name or pattern&gt;
-          [--verbose]
-          &lt;PID&gt; ... &lt;PID n&gt;</screen>
+          | --all </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
             <glossentry>
-              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+              <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
               <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
+                <para>Specifies the VM UUID or VM name. Mandatory.</para>
               </glossdef>
             </glossentry>
 
             <glossentry>
               <glossterm><computeroutput>--session-id</computeroutput></glossterm>
-
               <glossdef>
-                <para>Specifies the guest session to use by its ID.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
-
-              <glossdef>
-                <para>Specifies the guest session to use by its name. Multiple
-                  sessions can be closed when specifying * or ? wildcards.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>&lt;PID&gt; ... &lt;PID n&gt;</computeroutput></glossterm>
-
-              <glossdef>
-                <para>List of process identifiers (PIDs) to terminate.</para>
-              </glossdef>
-            </glossentry>
-          </glosslist></para>
-        </listitem>
-
-        <listitem>
-          <para><emphasis role="bold"><computeroutput>session close</computeroutput></emphasis>,
-          which closes specific guest sessions, based on either the session's ID or the
-          session's name.</para>
-
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; session close
-            --session-id &lt;ID&gt;
-          | --session-name &lt;name or pattern&gt;
-          | --all
-          [--verbose]</screen>
-
-          <para>where the parameters mean: <glosslist>
-            <glossentry>
-              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
-              <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
-
-              <glossdef>
-                <para>Close a guest session specified by its ID.</para>
+                <para>Specifies the guest session to be closed by ID. Optional.</para>
               </glossdef>
             </glossentry>
 
              <glossentry>
               <glossterm><computeroutput>--session-name</computeroutput></glossterm>
-
               <glossdef>
-                <para>Close a guest session specified by its name. Multiple sessions
-                  can be closed when specifying * or ? wildcards.</para>
+                <para>Specifies the guest session to be closed by name. Optional.
+                Multiple sessions can be specified by using a pattern
+                containing wildcards. </para>
               </glossdef>
             </glossentry>
 
              <glossentry>
               <glossterm><computeroutput>--all</computeroutput></glossterm>
-
               <glossdef>
-                <para>Close all guest sessions.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose.</para>
+                <para>Close all guest sessions. Optional.</para>
               </glossdef>
             </glossentry>
           </glosslist></para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>stat</computeroutput></emphasis>,
-          which displays file
-          or file system status on the guest.</para>
+          <para><emphasis role="bold"><computeroutput>updatega|updateadditions|updateguestadditions</computeroutput></emphasis>
+          Ugrades Guest Additions already installed on the guest. 
+          (Only already installed Guest Additions 4.0 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; stat
-            &lt;file&gt;... --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--verbose]</screen>
-
-          <para>where the parameters mean: <glosslist>
-              <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>file element(s) to check on guest</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Absolute path of directory/directories to check on
-                  guest, e.g. <computeroutput>/home/foo/a.out</computeroutput>.
-                  The specified user must have appropriate rights to access
-                  the given file element(s).</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Name of the user the copy process should run under.
-                  This user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified to be read from
-                  the given file. If not given, an empty password is
-                  assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
-                </glossdef>
-              </glossentry>
-            </glosslist></para>
-        </listitem>
-
-        <listitem>
-          <para><emphasis role="bold"><computeroutput>updateadditions</computeroutput></emphasis>,
-          which allows
-          for updating an already installed Guest Additions version on the
-          guest (only already installed Guest Additions 4.0 and later).</para>
-
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; updateadditions
-            [--source "&lt;guest additions .ISO file to use&gt;"] [--verbose]
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; updatega|updateadditions|updateguestadditions [common-options]
+            [--source "&lt;New .ISO path&gt;"]
             [--wait-start] [-- [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>Where the parameters are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--source</computeroutput> "&lt;guest additions .ISO file to
-                use&gt;"</glossterm>
-
+                <glossterm><computeroutput>--source</computeroutput> "&lt;New ISO path&gt;"</glossterm>
                 <glossdef>
-                  <para>Full path to an alternative VirtualBox Guest Additions
-                  .ISO file to use for the Guest Additions update.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Tells VBoxManage to be more verbose.</para>
+                  <para>Specifies the absolute path on guest file system of ISO file for Guest Additions update. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--wait-start</computeroutput></glossterm>
                 <glossdef>
-                  <para>Starts the regular updating process and waits until the
-                    actual Guest Additions update inside the guest was started.
-                    This can be necessary due to needed interaction with the
-                    guest OS during the installation phase.</para>
-                  <para>When omitting this flag VBoxManage will wait for the
-                    whole Guest Additions update to complete.</para>
+                  <para>Indicates that VBoxManage starts the usual updating process on the guest and then waits 
+                   until the actual Guest Additions updating begins, at which point VBoxManage self-terminates. Optional.</para>
+                  <para>Default behavior is that VBoxManage waits for completion of the Guest Additions update before 
+                   terminating. Use of this option is sometimes necessary, as a running VBoxManage 
+                   can affect the interaction between the installer and the guest OS.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>[-- [&lt;argument1s&gt;] ... [&lt;argumentNs&gt;]]</computeroutput></glossterm>
-
+                <glossterm><computeroutput>[-- [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Optional command line arguments to use for the Guest Additions
-                  installer. Useful for retrofitting features which weren't installed
-                  before on the guest.</para>
-                  <para>Arguments containing spaces must be enclosed in
-                  quotation marks.</para>
+                  <para>Specifies optional command line arguments to be supplied to the Guest Additions
+                   updater. Useful for retrofitting features which are not currently installed.</para>
+                  <para>Arguments containing spaces should be enclosed by quotes.</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
         </listitem>
+
         <listitem>
           <para><emphasis role="bold"><computeroutput>watch</computeroutput></emphasis>,
-          which prints current guest control activity.</para>
+          This subcommand prints current guest control activity.</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; watch
-          [--verbose]</screen>
-
-          <para>where the parameters mean: <glosslist>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; watch [common-options]
+          </screen>
+          <para>Where the parameters are: <glosslist>
             <glossentry>
-              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
+              <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
               <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
-              </glossdef>
-            </glossentry>
-
-            <glossentry>
-              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
-
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose.</para>
+                <para>Specifies the VM UUID or VM name. Mandatory.</para>
               </glossdef>
             </glossentry>
           </glosslist></para>
@@ -4465,6 +4205,251 @@ Value: 2006.01.01</screen>
     </glosslist>
   </sect1>
 
+  <sect1 id="vboxmanage-natnetwork">
+    <title>VBoxManage natnetwork</title>
+
+    <para>NAT networks use the Network Address Translation (NAT) service - which works in a 
+    similar way to a home router. It groups systems using it into a network and prevents
+    outside systems from directly accessing those inside, while letting systems inside communicate 
+    with each other and outside systems using TCP and UDP over IPv4 and IPv6.</para>
+
+    <para>A NAT service is attached to an internal network. Virtual machines to make use of one 
+    should be attached to it. The name of an internal network is chosen when the NAT service is 
+    created, and the internal network will be created if it does not already exist. 
+    An example command to create a NAT network:</para>
+
+    <screen>VBoxManage natnetwork add --netname natnet1 --network "192.168.15.0/24" --enable</screen>
+
+    <para>Here, "natnet1" is the name of the internal network to be used and "192.168.15.0/24" is the
+    network address and mask of the NAT service interface. By default, in this static configuration 
+    - the gateway will be assigned the address 192.168.15.1 (the address after the interface address),
+    though this is subject to change.</para>
+
+    <para>To add a DHCP server to the NAT network after creation:</para>
+
+    <screen>VBoxManage natnetwork modify --netname natnet1 --dhcp on</screen>
+
+    <para>Below are the subcommands for <emphasis role="bold"><computeroutput>VBoxManage natnetwork </computeroutput></emphasis></para>
+
+    <screen>VBoxManage natnetwork add --netname &lt;name&gt;
+                         [--network &lt;network&gt;]
+                         [--enable|--disable]
+                         [--dhcp on|off]
+                         [--port-forward-4 &lt;rule&gt;]
+                         [--loopback-4 &lt;rule&gt;]
+                         [--ipv6 on|off]
+                         [--port-forward-6 &lt;rule&gt;]
+                         [--loopback-6 &lt;rule&gt;]
+    </screen> 
+
+
+    <para><emphasis role="bold"><computeroutput>VBoxManage natnetwork add</computeroutput></emphasis> 
+    Creates a new internal network interface, and adds a NAT network service. This command is a 
+    prerequisite for enabling attachment of VMs to the NAT network. Parameters:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>--netname &lt;name&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;name&gt; is the name of the new internal network interface on the host OS. </para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--network &lt;network&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;network&gt; specifies the static(default)/DHCP network address and mask of 
+            the NAT service interface.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--enable|--disable</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables/disables the NAT network service.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--dhcp on|off</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables/disables DHCP server specified by --netname; its use also indicates that it 
+            is a DHCP server.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--port-forward-4 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv4 port forwarding, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--loopback-4 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv4 loopback interface, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--ipv6 on|off</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables/disables IPv6 (default is IPv4, disables gives IPv4).</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--port-forward-6 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv6 port forwarding, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--loopback-6 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv6 loopback interface, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+    </para> 
+
+    <screen>VBoxManage natnetwork remove --netname &lt;name&gt; </screen>
+
+    <para><emphasis role="bold"><computeroutput>VBoxManage natnetwork remove</computeroutput></emphasis>
+    Removes a NAT network service, parameters:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>--netname &lt;name&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;name&gt; specifies an existing NAT network service.
+            Does not remove any DHCP server enabled on the network.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+    </para> 
+
+    <screen>VBoxManage natnetwork modify --netname &lt;name&gt;
+                            [--network &lt;network&gt;]
+                            [--enable|--disable]
+                            [--dhcp on|off]
+                            [--port-forward-4 &lt;rule&gt;]
+                            [--loopback-4 &lt;rule&gt;]
+                            [--ipv6 on|off]
+                            [--port-forward-6 &lt;rule&gt;]
+                            [--loopback-6 &lt;rule&gt;]
+    </screen>
+
+    <para><emphasis role="bold"><computeroutput>VBoxManage natnetwork modify</computeroutput></emphasis> 
+    Modifies an existing NAT network service, parameters:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>--netname &lt;name&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;name&gt; specifies an existing NAT network service.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--network &lt;network&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;network&gt; specifies the new static(default)/DHCP network address and mask 
+            of the NAT service interface.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--enable|--disable</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables/disables the NAT network service.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--dhcp on|off</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables (and if absent, adds)/disables (if any) DHCP server.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--port-forward-4 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv4 port forwarding, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--loopback-4 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv4 loopback interface, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--ipv6 on|off</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables/disables IPv6 (default is IPv4, disables gives IPv4).</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--port-forward-6 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv6 port forwarding, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--loopback-6 &lt;rule&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Enables IPv6 loopback interface, rule specified by &lt;rule&gt;.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+    </para> 
+
+    <screen>VBoxManage natnetwork start --netname &lt;name&gt;
+    </screen>
+
+    <para><emphasis  role="bold"><computeroutput>VBoxManage natnetwork start</computeroutput></emphasis> 
+    Starts specified NAT network service and any associated DHCP server, parameters:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>--netname &lt;name&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;name&gt; specifies an existing NAT network service.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+    </para>
+
+    <screen>VBoxManage natnetwork stop --netname &lt;name&gt;
+    </screen>
+
+    <para><emphasis  role="bold"><computeroutput>VBoxManage natnetwork stop</computeroutput></emphasis> 
+    Stops specified NAT network service and any DHCP server, parameters:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>--netname &lt;name&gt;</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;name&gt; specifies an existing NAT network service.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+    </para>
+
+    <screen>VBoxManage natnetwork list [&lt;pattern&gt;] </screen>
+
+    <para><emphasis  role="bold"><computeroutput>VBoxManage natnetwork list</computeroutput></emphasis> 
+    Lists all NAT network services with optional filtering, parameters:</para>
+
+    <para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>[&lt;pattern&gt;]</computeroutput></glossterm>
+          <glossdef>
+            <para>Where &lt;pattern&gt; is optional filtering pattern.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+    </para>
+  </sect1>
+
   <sect1 id="vboxmanage-hostonlyif">
     <title>VBoxManage hostonlyif</title>
 
@@ -4486,7 +4471,7 @@ Value: 2006.01.01</screen>
       <glossentry>
         <glossterm><computeroutput>create</computeroutput></glossterm>
         <glossdef>
-          <para>Ceates a new vboxnet&lt;N&gt; interface on the host OS.
+          <para>Creates a new vboxnet&lt;N&gt; interface on the host OS.
             This command is essential before you can attach VMs to host-only network.</para>
         </glossdef>
       </glossentry>
