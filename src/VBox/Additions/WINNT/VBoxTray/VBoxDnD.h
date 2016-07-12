@@ -392,9 +392,9 @@ public: /** @todo Make protected! */
      *  support. */
     VBoxDnDDropTarget         *pDropTarget;
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
-#else
+#else /* !RT_OS_WINDOWS */
     /** @todo Implement me. */
-#endif /* RT_OS_WINDOWS */
+#endif /* !RT_OS_WINDOWS */
 
     /** The window's own DnD context. */
     VBGLR3GUESTDNDCMDCTX       mDnDCtx;
@@ -405,5 +405,6 @@ public: /** @todo Make protected! */
     /** Format being requested. */
     RTCString                  mFormatRequested;
 };
-#endif /* __VBOXTRAYDND__H */
+
+#endif /* !__VBOXTRAYDND__H */
 
