@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.1.0 Release Candidate 1 (2016-07-07)</title>
+    <title>Version 5.1.0 (2016-07-12)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -25,7 +25,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: overall migration to Qt5</para>
+        <para>GUI: overall migration to Qt5 (bug #11775)</para>
       </listitem>
 
       <listitem>
@@ -81,7 +81,7 @@
 
       <listitem>
         <para>GUI: fixed location of touch events in unscaled HiDPI mode
-          (bug #14366, #14367)</para>
+          (bugs #14366, #14367)</para>
       </listitem>
 
       <listitem>
@@ -132,6 +132,17 @@
 
       <listitem>
         <para>Linux installers: no longer rely on DKMS for module rebuilding</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fix a problem when updating the initramfs after
+          the guest modules are compiled (bug #15579)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: try to fix a problem where the OpenGL libraries
+          where loaded by the X server when we only support X clients
+          (bug #15574)</para>
       </listitem>
 
     </itemizedlist>
