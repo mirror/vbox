@@ -113,10 +113,17 @@
 #endif
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
-#undef LOG_GROUP
-#include "../Audio/DevIchAc97.cpp"
-#undef LOG_GROUP
-#include "../Audio/DevIchHda.cpp"
+#ifdef VBOX_WITH_AUDIO_50
+# undef LOG_GROUP
+# include "../Audio_old/DevIchAc97.cpp"
+# undef LOG_GROUP
+# include "../Audio_old/DevIchHda.cpp"
+#else
+# undef LOG_GROUP
+# include "../Audio/DevIchAc97.cpp"
+# undef LOG_GROUP
+# include "../Audio/DevIchHda.cpp"
+#endif
 #ifdef VBOX_WITH_NVME_IMPL
 # undef LOG_GROUP
 # include "../Storage/DevNVMe.cpp"
@@ -1950,9 +1957,11 @@ int main()
     GEN_CHECK_OFF(AC97DRIVER, MicIn);
     GEN_CHECK_OFF(AC97DRIVER, Out);
 
+#ifndef VBOX_WITH_AUDIO_50
     GEN_CHECK_SIZE(HDAMIXERSTREAM);
     GEN_CHECK_OFF(HDAMIXERSTREAM, DestSource);
     GEN_CHECK_OFF(HDAMIXERSTREAM, pMixStrm);
+#endif
 
     GEN_CHECK_SIZE(HDADRIVER);
     GEN_CHECK_OFF(HDADRIVER, Node);
@@ -1965,7 +1974,9 @@ int main()
 #ifdef VBOX_WITH_HDA_MIC_IN
     GEN_CHECK_OFF(HDADRIVER, MicIn);
 #endif
+#ifndef VBOX_WITH_AUDIO_50
     GEN_CHECK_OFF(HDADRIVER, Front);
+#endif
 #ifdef VBOX_WITH_HDA_51_SURROUND
     GEN_CHECK_OFF(HDADRIVER, CenterLFE);
     GEN_CHECK_OFF(HDADRIVER, Rear);
@@ -1988,7 +1999,9 @@ int main()
     GEN_CHECK_OFF(HDASTREAMSTATE, BDLE);
 
     GEN_CHECK_SIZE(HDASTREAM);
+#ifndef VBOX_WITH_AUDIO_50
     GEN_CHECK_OFF(HDASTREAM, u8SD);
+#endif
     GEN_CHECK_OFF(HDASTREAM, u64BDLBase);
     GEN_CHECK_OFF(HDASTREAM, u16FMT);
     GEN_CHECK_OFF(HDASTREAM, u16FIFOS);
@@ -2003,9 +2016,13 @@ int main()
     GEN_CHECK_OFF(HDASTATE, IBase);
     GEN_CHECK_OFF(HDASTATE, MMIOBaseAddr);
     GEN_CHECK_OFF(HDASTATE, au32Regs[0]);
+#ifdef VBOX_WITH_AUDIO_50
+    GEN_CHECK_OFF(HDASTATE, au32Regs[HDA_NREGS]);
+#else
     GEN_CHECK_OFF(HDASTATE, au32Regs[HDA_NUM_REGS]);
     GEN_CHECK_OFF(HDASTATE, aStreams);
     GEN_CHECK_OFF(HDASTATE, aTags);
+#endif
     GEN_CHECK_OFF(HDASTATE, u64CORBBase);
     GEN_CHECK_OFF(HDASTATE, u64RIRBBase);
     GEN_CHECK_OFF(HDASTATE, u64DPBase);
@@ -2031,12 +2048,16 @@ int main()
     GEN_CHECK_OFF(HDASTATE, pCodec);
     GEN_CHECK_OFF(HDASTATE, lstDrv);
     GEN_CHECK_OFF(HDASTATE, pMixer);
+#ifndef VBOX_WITH_AUDIO_50
     GEN_CHECK_OFF(HDASTATE, SinkFront);
+#endif
 #ifdef VBOX_WITH_HDA_51_SURROUND
     GEN_CHECK_OFF(HDASTATE, SinkCenterLFE);
     GEN_CHECK_OFF(HDASTATE, SinkRear);
 #endif
+#ifndef VBOX_WITH_AUDIO_50
     GEN_CHECK_OFF(HDASTATE, SinkLineIn);
+#endif
 #ifdef VBOX_WITH_HDA_MIC_IN
     GEN_CHECK_OFF(HDASTATE, SinkMicIn);
 #endif
