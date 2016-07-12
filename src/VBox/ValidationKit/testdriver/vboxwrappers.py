@@ -135,17 +135,17 @@ class VirtualBoxWrapper(object): # pylint: disable=R0903
         Returns True on success and False on failure. Error information is logged.
         """
         try:
-            oIMedium = self.oVBox.findHardDisk(sHdLocation);
+            oIMedium = self.o.findHardDisk(sHdLocation);
         except:
             try:
                 if self.fpApiVer >= 4.1:
-                    oIMedium = self.oVBox.openMedium(sHdLocation, vboxcon.DeviceType_HardDisk,
-                                                     vboxcon.AccessMode_ReadWrite, False);
+                    oIMedium = self.o.openMedium(sHdLocation, vboxcon.DeviceType_HardDisk,
+                                                 vboxcon.AccessMode_ReadWrite, False);
                 elif self.fpApiVer >= 4.0:
-                    oIMedium = self.oVBox.openMedium(sHdLocation, vboxcon.DeviceType_HardDisk,
-                                                     vboxcon.AccessMode_ReadWrite);
+                    oIMedium = self.o.openMedium(sHdLocation, vboxcon.DeviceType_HardDisk,
+                                                 vboxcon.AccessMode_ReadWrite);
                 else:
-                    oIMedium = self.oVBox.openHardDisk(sHdLocation, vboxcon.AccessMode_ReadOnly, False, "", False, "");
+                    oIMedium = self.o.openHardDisk(sHdLocation, vboxcon.AccessMode_ReadOnly, False, "", False, "");
             except:
                 return reporter.errorXcpt('failed to open hd "%s"' % (sHdLocation));
         return self.deleteHdByMedium(oIMedium)
