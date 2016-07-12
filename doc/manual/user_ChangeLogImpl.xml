@@ -85,8 +85,8 @@
       </listitem>
 
       <listitem>
-        <para>Storage: use fallocate or similar if present to speed up creating
-          fixed-sized disk images</para>
+        <para>Storage: use <emphasis>fallocate()</emphasis> or similar if present to speed
+          up creating fixed-sized disk images</para>
       </listitem>
 
       <listitem>
@@ -98,6 +98,10 @@
       </listitem>
 
       <listitem>
+        <para>E1000: implemented interrupt throttling for performance improvements</para>
+      </listitem>
+
+      <listitem>
         <para>EFI: many improvements, for example allow to boot from USB</para>
       </listitem>
 
@@ -106,7 +110,24 @@
       </listitem>
 
       <listitem>
-        <para>Windows hosts: rework COM proxy (e.g. bug #8298)</para>
+        <para>API: Windows XP guests and Windows 2003 server guests now default to
+          the E1000 T Server network card</para>
+      </listitem>
+
+      <listitem>
+        <para>API: activate the x2APIC by default for Linux guests</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxSVC: fixed several memory leaks when handling .dmg images</para>
+      </listitem>
+
+      <listitem>
+        <para>Installers: ship VBoxBugReport</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: reworked COM proxy (e.g. bug #8298)</para>
       </listitem>
 
       <listitem>
