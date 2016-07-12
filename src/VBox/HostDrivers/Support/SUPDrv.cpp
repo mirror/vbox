@@ -467,6 +467,7 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTRandBytes,
     /* VBoxUSB */
     (PFNRT)RTPathStripFilename,
+    (PFNRT)RTHandleTableAlloc,
 #if !defined(RT_OS_FREEBSD)
     (PFNRT)RTStrPurgeEncoding,
 #endif
