@@ -215,6 +215,14 @@ void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType i
         pAction->menu()->exec(position);
 }
 
+#ifdef VBOX_WS_MAC
+void UIMachineWindowNormal::sltActionHovered(UIAction *pAction)
+{
+    /* Show the action message for a ten seconds: */
+    statusBar()->showMessage(pAction->statusTip(), 10000);
+}
+#endif /* VBOX_WS_MAC */
+
 void UIMachineWindowNormal::prepareSessionConnections()
 {
     /* Call to base-class: */
@@ -284,6 +292,11 @@ void UIMachineWindowNormal::prepareStatusBar()
         /* Post-configure status-bar: */
         connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
                 this, SLOT(sltHandleStatusBarConfigurationChange(const QString&)));
+#ifdef VBOX_WS_MAC
+        /* Make sure the status-bar is aware of action hovering: */
+        connect(actionPool(), SIGNAL(sigActionHovered(UIAction *)),
+                this, SLOT(sltActionHovered(UIAction *)));
+#endif /* VBOX_WS_MAC */
     }
 
 #ifdef VBOX_WS_MAC

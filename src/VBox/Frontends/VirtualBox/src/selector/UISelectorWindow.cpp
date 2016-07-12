@@ -364,6 +364,14 @@ void UISelectorWindow::sltHandleGroupSavingProgressChange()
     updateActionsAppearance();
 }
 
+#ifdef VBOX_WS_MAC
+void UISelectorWindow::sltActionHovered(UIAction *pAction)
+{
+    /* Show the action message for a ten seconds: */
+    statusBar()->showMessage(pAction->statusTip(), 10000);
+}
+#endif /* VBOX_WS_MAC */
+
 void UISelectorWindow::sltHandleStateChange(QString)
 {
     /* Get current item: */
@@ -1608,6 +1616,12 @@ void UISelectorWindow::prepareStatusBar()
     statusBar()->addPermanentWidget(pIndicator);
     pIndicator->updateAppearance();
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+#ifdef VBOX_WS_MAC
+    /* Make sure the status-bar is aware of action hovering: */
+    connect(actionPool(), SIGNAL(sigActionHovered(UIAction *)),
+            this, SLOT(sltActionHovered(UIAction *)));
+#endif /* VBOX_WS_MAC */
 }
 
 void UISelectorWindow::prepareWidgets()
