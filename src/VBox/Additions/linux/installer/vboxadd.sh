@@ -498,7 +498,7 @@ cleanup()
     # Delete old versions of VBox modules.
     cleanup_modules
     for i in /lib/modules/*; do
-        update_module_dependencies "${i#/lib/modules}"
+        update_module_dependencies "${i#/lib/modules/}"
     done
 
     # Remove old module sources
