@@ -230,10 +230,10 @@ ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
   # Decide whether to use the stable (5.0) audio code or not.
 endif
 ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
-# export VBOX_ADDITIONS_SH_MODE     = release
-# export VBOX_DOCUMENTATION_SH_MODE = release
-# export VBOX_EFI_SH_MODE           = release
-# export VBOX_EXTPACKS_SH_MODE      = release
+ export VBOX_ADDITIONS_SH_MODE     = release
+ export VBOX_DOCUMENTATION_SH_MODE = release
+ export VBOX_EFI_SH_MODE           = release
+ export VBOX_EXTPACKS_SH_MODE      = release
 endif
 
 # Some info on the vendor
