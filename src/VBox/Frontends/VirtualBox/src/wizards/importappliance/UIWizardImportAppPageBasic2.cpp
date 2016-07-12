@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Global includes: */
+# include <QFontDatabase>
 # include <QVBoxLayout>
 # include <QTextBrowser>
 # include <QPushButton>
@@ -232,6 +233,8 @@ void UIApplianceUnverifiedCertificateViewer::prepare()
         {
             /* Configure text-browser: */
             m_pTextBrowser->setMinimumSize(500, 300);
+            const QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+            m_pTextBrowser->setFont(font);
             /* Add text-browser into layout: */
             pLayout->addWidget(m_pTextBrowser);
         }
@@ -283,6 +286,6 @@ void UIApplianceUnverifiedCertificateViewer::retranslateUi()
     info << tr("Public Algorithm:     %1 (%2)").arg(m_certificate.GetPublicKeyAlgorithm()).arg(m_certificate.GetPublicKeyAlgorithmOID());
     info << tr("Signature Algorithm:  %1 (%2)").arg(m_certificate.GetSignatureAlgorithmName()).arg(m_certificate.GetSignatureAlgorithmOID());
     info << tr("X.509 Version Number: %1").arg(ver);
-    m_pTextBrowser->setText(info.join("<br>"));
+    m_pTextBrowser->setPlainText(info.join("\n"));
 }
 
