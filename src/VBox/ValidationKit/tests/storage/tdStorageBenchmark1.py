@@ -211,8 +211,11 @@ class IozoneTest(object):
                         while sLine[idxValue] == ' ':
                             idxValue += 1;
 
+                        # Get the reported value, cut off after the decimal point
+                        # it is not supported by the testmanager yet and is not really
+                        # relevant anyway.
                         idxValueEnd = idxValue;
-                        while sLine[idxValueEnd] == '.' or sLine[idxValueEnd].isdigit():
+                        while sLine[idxValueEnd].isdigit():
                             idxValueEnd += 1;
 
                         for sNeedle, sTestVal in self.lstTests:
