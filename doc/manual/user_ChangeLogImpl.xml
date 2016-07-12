@@ -58,7 +58,11 @@
     <itemizedlist>
 
       <listitem>
-        <para>VMM: many fixes</para>
+        <para>VMM: activate the x2APIC by default for Linux guests</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: many more fixes</para>
       </listitem>
 
       <listitem>
@@ -77,7 +81,7 @@
 
       <listitem>
         <para>GUI: fixed location of touch events in unscaled HiDPI mode
-          (bugs #105381, #14366)</para>
+          (bug #14366, #14367)</para>
       </listitem>
 
       <listitem>
@@ -86,7 +90,7 @@
 
       <listitem>
         <para>Storage: use <emphasis>fallocate()</emphasis> or similar if present to speed
-          up creating fixed-sized disk images</para>
+          up creating fixed-sized disk images (bug #5967)</para>
       </listitem>
 
       <listitem>
@@ -112,10 +116,6 @@
       <listitem>
         <para>API: Windows XP guests and Windows 2003 server guests now default to
           the E1000 T Server network card</para>
-      </listitem>
-
-      <listitem>
-        <para>API: activate the x2APIC by default for Linux guests</para>
       </listitem>
 
       <listitem>
