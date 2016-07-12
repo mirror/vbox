@@ -373,6 +373,8 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         case WM_CREATE:
         {
             int rc = OnCreate();
+            /** @todo r=bird: MSDN says this returns 0 on success and -1 on failure, not
+             *        TRUE/FALSE... */
             if (RT_FAILURE(rc))
                 return FALSE;
             return TRUE;
