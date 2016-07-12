@@ -61,10 +61,6 @@ class UIGChooserModel : public QObject
 
 signals:
 
-    /* Notifiers: Status-bar stuff: */
-    void sigShowStatusMessage(const QString &strStatusMessage);
-    void sigClearStatusMessage();
-
     /* Notifier: Current-item stuff: */
     void sigSelectionChanged();
 
@@ -194,9 +190,6 @@ private slots:
     /* Handlers: Drag&drop stuff: */
     void sltStartScrolling();
     void sltCurrentDragObjectDestroyed();
-
-    /* Handler: Context-menu stuff: */
-    void sltActionHovered(QAction *pAction);
 
     /* Handler: Item lookup stuff: */
     void sltEraseLookupTimer();

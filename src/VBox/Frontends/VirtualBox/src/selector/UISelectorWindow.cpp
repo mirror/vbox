@@ -1632,7 +1632,6 @@ void UISelectorWindow::prepareWidgets()
 
     /* Prepare graphics VM list: */
     m_pPaneChooser = new UIGChooser(this);
-    m_pPaneChooser->setStatusBar(statusBar());
 
     /* Prepare graphics details: */
     m_pPaneDetails = new UIGDetails(this);

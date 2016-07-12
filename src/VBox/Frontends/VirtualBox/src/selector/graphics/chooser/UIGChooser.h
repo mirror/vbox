@@ -70,9 +70,6 @@ public:
     bool isSingleGroupSelected() const;
     bool isAllItemsOfOneGroupSelected() const;
 
-    /* API: Status-bar stuff: */
-    void setStatusBar(QStatusBar *pStatusBar);
-
     /* API: Group-saving stuff: */
     bool isGroupSavingInProgress() const;
 
@@ -96,7 +93,6 @@ private:
     QVBoxLayout *m_pMainLayout;
     UIGChooserModel *m_pChooserModel;
     UIGChooserView *m_pChooserView;
-    QStatusBar *m_pStatusBar;
 };
 
 #endif /* __UIGChooser_h__ */

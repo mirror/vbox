@@ -39,7 +39,6 @@ UIGChooser::UIGChooser(UISelectorWindow *pParent)
     , m_pMainLayout(0)
     , m_pChooserModel(0)
     , m_pChooserView(0)
-    , m_pStatusBar(0)
 {
     /* Prepare palette: */
     preparePalette();
@@ -89,20 +88,6 @@ bool UIGChooser::isSingleGroupSelected() const
 bool UIGChooser::isAllItemsOfOneGroupSelected() const
 {
     return m_pChooserModel->isAllItemsOfOneGroupSelected();
-}
-
-void UIGChooser::setStatusBar(QStatusBar *pStatusBar)
-{
-    /* Old status-bar set? */
-    if (m_pStatusBar)
-       m_pChooserModel->disconnect(m_pStatusBar);
-
-    /* Connect new status-bar: */
-    m_pStatusBar = pStatusBar;
-    connect(m_pChooserModel, SIGNAL(sigClearStatusMessage()),
-            m_pStatusBar, SLOT(clearMessage()));
-    connect(m_pChooserModel, SIGNAL(sigShowStatusMessage(const QString&)),
-            m_pStatusBar, SLOT(showMessage(const QString&)));
 }
 
 bool UIGChooser::isGroupSavingInProgress() const
