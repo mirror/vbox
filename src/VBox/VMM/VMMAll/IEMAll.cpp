@@ -1301,6 +1301,91 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPU pVCpu, bool fByp
 }
 
 
+/**
+ * Invalidates the IEM TLBs.
+ *
+ * This is called internally as well as by PGM when moving GC mappings.
+ *
+ * @returns
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   fVmm        Set when PGM calls us with a remapping.
+ */
+void IEMInvalidTLBs(PVMCPU pVCpu, bool fVmm)
+{
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.CodeTlb.uTlbRevision += IEMTLB_REVISION_INCR;
+    if (pVCpu->iem.s.CodeTlb.uTlbRevision != 0)
+    { /* very likely */ }
+    else
+    {
+        pVCpu->iem.s.CodeTlb.uTlbRevision = IEMTLB_REVISION_INCR;
+        unsigned i = RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries);
+        while (i-- > 0)
+            pVCpu->iem.s.CodeTlb.aEntries[i].uTag = 0;
+    }
+#endif
+
+#ifdef IEM_WITH_DATA_TLB
+    pVCpu->iem.s.DataTlb.uTlbRevision += IEMTLB_REVISION_INCR;
+    if (pVCpu->iem.s.DataTlb.uTlbRevision != 0)
+    { /* very likely */ }
+    else
+    {
+        pVCpu->iem.s.DataTlb.uTlbRevision = IEMTLB_REVISION_INCR;
+        unsigned i = RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries);
+        while (i-- > 0)
+            pVCpu->iem.s.DataTlb.aEntries[i].uTag = 0;
+    }
+#endif
+    NOREF(pVCpu); NOREF(fVmm);
+}
+
+
+/**
+ * Invalidates the host physical aspects of the IEM TLBs.
+ *
+ * This is called internally as well as by PGM when moving GC mappings.
+ *
+ * @returns
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ */
+void IEMInvalidTLBsHostPhys(PVMCPU pVCpu, uint64_t uTlbPhysRev, bool fFullFlush)
+{
+#if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
+    /* Note! This probably won't end up looking exactly like this, but it give an idea... */
+
+    pVCpu->iem.s.CodeTlb.uTlbPhysRev = uTlbPhysRev;
+    pVCpu->iem.s.DataTlb.uTlbPhysRev = uTlbPhysRev;
+
+    if (!fFlushFlush)
+    { /* very likely */ }
+    else
+    {
+        unsigned i;
+# ifdef IEM_WITH_CODE_TLB
+        i = RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries);
+        while (i-- > 0)
+        {
+            pVCpu->iem.s.CodeTlb.aEntries[i].pMappingR3        = NULL;
+            pVCpu->iem.s.CodeTlb.aEntries[i].fFlagsAndPhysRev &= ~(IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PHYS_REV)
+        }
+# endif
+# ifdef IEM_WITH_DATA_TLB
+        i = RT_ELEMENTS(pVCpu->iem.s.DataTlb.aEntries);
+        while (i-- > 0)
+        {
+            pVCpu->iem.s.DataTlb.aEntries[i].pMappingR3        = NULL;
+            pVCpu->iem.s.DataTlb.aEntries[i].fFlagsAndPhysRev &= ~(IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PHYS_REV)
+        }
+# endif
+    }
+#endif
+    NOREF(pVCpu); NOREF(fFullFlush);
+}
+
+
 #ifdef IEM_WITH_CODE_TLB
 
 /**
@@ -1384,62 +1469,83 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
     }
 
     /*
-     * Try use the code TLB to translate the address.
+     * Get the TLB entry for this piece of code.
      */
     uint64_t     uTag  = (GCPtrFirst >> X86_PAGE_SHIFT) | pVCpu->iem.s.CodeTlb.uTlbRevision;
     AssertCompile(RT_ELEMENTS(pVCpu->iem.s.CodeTlb.aEntries) == 256);
     PIEMTLBENTRY pTlbe = &pVCpu->iem.s.CodeTlb.aEntries[(uint8_t)uTag];
     if (pTlbe->uTag == uTag)
     {
-
-    }
-
-
-
-    /*
-     * What we're doing here is very similar to iemMemMap/iemMemBounceBufferMap.
-     *
-     * First translate CS:rIP to a physical address.
-     */
-# if 0 /** @todo later */
-    uint8_t     cbLeft = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode; Assert(cbLeft < cbMin);
-    uint32_t    cbToTryRead;
-    RTGCPTR     GCPtrNext;
-    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
-    {
-        cbToTryRead = PAGE_SIZE;
-        GCPtrNext   = pCtx->rip + pVCpu->iem.s.cbOpcode;
-        if (!IEM_IS_CANONICAL(GCPtrNext))
-            return iemRaiseGeneralProtectionFault0(pVCpu);
+        /* likely when executing lots of code, otherwise unlikely */
+# ifdef VBOX_WITH_STATISTICS
+        pVCpu->iem.s.CodeTlb.cTlbHits++;
+# endif
     }
     else
     {
-        uint32_t GCPtrNext32 = pCtx->eip;
-        Assert(!(GCPtrNext32 & ~(uint32_t)UINT16_MAX) || pVCpu->iem.s.enmCpuMode == IEMMODE_32BIT);
-        GCPtrNext32 += pVCpu->iem.s.cbOpcode;
-        if (GCPtrNext32 > pCtx->cs.u32Limit)
-            return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
-        cbToTryRead = pCtx->cs.u32Limit - GCPtrNext32 + 1;
-        if (!cbToTryRead) /* overflowed */
+        pVCpu->iem.s.CodeTlb.cTlbMisses++;
+        pVCpu->iem.s.CodeTlb.cTlbMissesTag++;
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
+        if (PATMIsPatchGCAddr(pVCpu->CTX_SUFF(pVM), pCtx->eip))
         {
-            Assert(GCPtrNext32 == 0); Assert(pCtx->cs.u32Limit == UINT32_MAX);
-            cbToTryRead = UINT32_MAX;
-            /** @todo check out wrapping around the code segment.  */
+            pTlbe->uTag             = uTag;
+            pTlbe->fFlagsAndPhysRev = IEMTLBE_F_PATCH_CODE  | IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_USER
+                                    | IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_DIRTY | IEMTLBE_F_NO_MAPPINGR3;
+            pTlbe->GCPhys           = NIL_RTGCPHYS;
+            pTlbe->pMappingR3       = NULL;
         }
-        if (cbToTryRead < cbMin - cbLeft)
-            return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
-        GCPtrNext = (uint32_t)pCtx->cs.u64Base + GCPtrNext32;
+        else
+# endif
+        {
+            RTGCPHYS    GCPhys;
+            uint64_t    fFlags;
+            int rc = PGMGstGetPage(pVCpu, GCPtrNext, &fFlags, &GCPhys);
+            if (RT_FAILURE(rc))
+            {
+                Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
+                return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, rc);
+            }
+
+            AssertCompile(IEMTLBE_F_PT_NO_EXEC == 1);
+            pTlbe->uTag             = uTag;
+            pTlbe->fFlagsAndPhysRev = (~fFlags & (X86_PTE_US | X86_PTE_RW | X86_PTE_D)) | (fFlags >> X86_PTE_PAE_BIT_NX);
+            pTlbe->GCPhys           = GCPhys;
+            pTlbe->pMappingR3       = NULL;
+        }
     }
 
-    /* Only read up to the end of the page, and make sure we don't read more
-       than the opcode buffer can hold. */
-    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrNext & PAGE_OFFSET_MASK);
-    if (cbToTryRead > cbLeftOnPage)
-        cbToTryRead = cbLeftOnPage;
-    if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode) - pVCpu->iem.s.cbOpcode)
-        cbToTryRead = sizeof(pVCpu->iem.s.abOpcode) - pVCpu->iem.s.cbOpcode;
-/** @todo r=bird: Convert assertion into undefined opcode exception? */
-    Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
+    /*
+     * Check TLB access flags.
+     */
+    if (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_USER | IEMTLBE_F_PT_NO_EXEC))
+    {
+        if ((pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_USER) && pVCpu->iem.s.uCpl == 3)
+        {
+            Log(("iemOpcodeFetchBytesJmp: %RGv - supervisor page\n", GCPtrFirst));
+            iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
+        }
+        if ((pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PT_NO_EXEC) && (pCtx->msrEFER & MSR_K6_EFER_NXE))
+        {
+            Log(("iemOpcodeFetchMoreBytes: %RGv - NX\n", GCPtrFirst));
+            iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
+        }
+    }
+
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    /*
+     * Allow interpretation of patch manager code blocks since they can for
+     * instance throw #PFs for perfectly good reasons.
+     */
+    if (!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PATCH_CODE))
+    { /* no unlikely */ }
+    else
+    {
+
+    }
+
+# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
+
+# if 0
 
 # ifdef VBOX_WITH_RAW_MODE_NOT_R0
     /* Allow interpretation of patch manager code blocks since they can for
