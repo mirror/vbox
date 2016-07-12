@@ -1148,7 +1148,7 @@
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation type="unfinished">Fortlaufende Nummer:      %1</translation>
+        <translation>Fortlaufende Nummer:      %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
@@ -4843,19 +4843,19 @@
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium wird normal an die VM gebunden und beim Laden von Sicherungspunkten ordungsgemäß wieder hergestellt.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schreibzugriffe auf das Medium werden nur temporär gespeichert und gehen beim Ausschalten der VM verloren.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>In diesem Modus wird immer direkt auf das virtuelle Medium geschrieben und Sicherungspunkte werden nicht berücksichtigt.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium kann zugleich von mehreren VMs benutzt werden. Die Gäste müssen gemeinsame Zugriffe auf das Medium aber untereinander koordinieren.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
@@ -4863,7 +4863,7 @@
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Medium kann zugleich von mehreren VMs benutzt werden. Schreibzugriffe gehen auf jeweils gesonderte virtuelle Differenzmedien, die separat für jede VM angelegt werden.</translation>
     </message>
 </context>
 <context>
@@ -8225,12 +8225,12 @@
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>Diese Festplatte wird indirekt mittels einer neu erzeugten Differenzdatei angeschlossen.</translation>
+        <translation>Diese Festplatte wird indirekt mittels eines neu erzeugten Differenzmediums angeschlossen.</translation>
     </message>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation>Diese Basisfestplatte ist indirekt über die folgenden Differenzfestplatten eingebunden:</translation>
+        <translation>Diese Basisfestplatte ist indirekt über die folgenden Differenzmedien eingebunden:</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
