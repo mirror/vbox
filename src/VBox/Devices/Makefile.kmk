@@ -544,7 +544,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS += VBOX_WITH_HDA_51_SURROUND
  endif
 
- VBoxDD_DEFS  += $(if $(VBOX_WITH_AUDIO_STABLE),VBOX_WITH_AUDIO_STABLE,)
+ VBoxDD_DEFS  += $(if $(VBOX_WITH_AUDIO_50),VBOX_WITH_AUDIO_50,)
 
  VBoxDD_SOURCES         += \
    $(VBOX_AUDIO_PATH_SOURCES)/DevIchAc97.cpp \
@@ -904,7 +904,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Parallel/DevParallel.cpp \
   	VMMDev/VMMDevTesting.cpp
 
-  VBoxDDRC_DEFS         += $(if $(VBOX_WITH_AUDIO_STABLE),VBOX_WITH_AUDIO_STABLE,)
+  VBoxDDRC_DEFS         += $(if $(VBOX_WITH_AUDIO_50),VBOX_WITH_AUDIO_50,)
   VBoxDDRC_SOURCES      += \
  	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
 
@@ -1088,7 +1088,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 
- VBoxDDR0_DEFS          += $(if $(VBOX_WITH_AUDIO_STABLE),VBOX_WITH_AUDIO_STABLE,)
+ VBoxDDR0_DEFS          += $(if $(VBOX_WITH_AUDIO_50),VBOX_WITH_AUDIO_50,)
  VBoxDDR0_SOURCES       += \
  	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
 

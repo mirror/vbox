@@ -31,7 +31,7 @@
 #include <iprt/critsect.h>
 #include <iprt/list.h>
 
-#ifdef VBOX_WITH_AUDIO_STABLE
+#ifdef VBOX_WITH_AUDIO_50
 # undef ___VBox_vmm_pdmaudioifs_h
 # include "pdmaudioifs_old.h"
 #else
@@ -956,7 +956,7 @@ typedef struct PDMIHOSTAUDIO
 
 /** @} */
 
-#endif /* VBOX_WITH_AUDIO_STABLE */
+#endif /* VBOX_WITH_AUDIO_50 */
 
 #endif /* !___VBox_vmm_pdmaudioifs_h */
 
