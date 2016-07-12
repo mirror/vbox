@@ -149,6 +149,7 @@ class IozoneTest(object):
                           ('rewriters',       'Rewrite'),
                           ('re-readers',      'ReRead'),
                           ('stride readers',  'StrideRead'),
+                          ('reverse readers', 'ReverseRead'),
                           ('random readers',  'RandomRead'),
                           ('mixed workload',  'MixedWorkload'),
                           ('random writers',  'RandomWrite'),
@@ -173,7 +174,7 @@ class IozoneTest(object):
     def run(self, cMsTimeout = 30000):
         """ Runs the testcase """
         tupArgs = ('-r', self.sRecordSize, '-s', self.sTestsetSize, \
-                   '-t', '1', '-T', '-H', self.sQueueDepth, '-F', self.sFilePath + '/iozone.tmp');
+                   '-t', '1', '-T', '-F', self.sFilePath + '/iozone.tmp');
         if self.fDirectIo:
             tupArgs += ('-I',);
         fRc, sOutput = self.oExecutor.execBinary('iozone', tupArgs);
@@ -604,7 +605,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     asPaths = self.asIscsiTargets;
                 else:
                     if self.fUseScratch:
-                        asPaths = [ self. sScratchPath ];
+                        asPaths = [ self.sScratchPath ];
                     else:
                         # Create a new default storage config on the host
                         sMountPoint = self.prepareStorage(self.oStorCfg);
@@ -691,8 +692,6 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             fRc = False;
 
         return fRc;
-
-
 
 if __name__ == '__main__':
     sys.exit(tdStorageBenchmark().main(sys.argv));

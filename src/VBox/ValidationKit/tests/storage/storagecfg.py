@@ -182,7 +182,7 @@ class StorageConfigOsLinux(StorageConfigOs):
         """
         Returns the mountpoint base for the host.
         """
-        return '/media';
+        return '/mnt';
 
     def createStoragePool(self, oExec, sPool, asDisks, sRaidLvl):
         """

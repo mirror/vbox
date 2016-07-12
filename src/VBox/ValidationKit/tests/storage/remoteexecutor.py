@@ -47,6 +47,7 @@ class StdInOutBuffer(object):
         self.sInput = StringIO.StringIO();
         if sInput is not None:
             self.sInput.write(self._toString(sInput));
+            self.sInput.seek(0);
         self.sOutput  = '';
 
     def _toString(self, sText):
@@ -149,6 +150,8 @@ class RemoteExecutor(object):
             oStdIn = None;
             if sInput is not None:
                 oStdIn = StdInOutBuffer(sInput);
+            else:
+                oStdIn = '/dev/null';
             fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs,
                                               oStdIn = oStdIn, oStdOut = oStdOut);
             sOutput = oStdOut.getOutput();
