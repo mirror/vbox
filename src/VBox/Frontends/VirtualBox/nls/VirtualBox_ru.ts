@@ -116,22 +116,22 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>Драйвер ядра VirtualBox (vboxdrv) не загружен, либо присутствует проблема с доступом к /dev/vboxdrv. Пожалуйста переустановите драйвер, выполнив &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; от имени администратора.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Модуль ядра VirtualBox не совместим с текущей версией приложения. Возможно установка VirtualBox не была завершена или прошла некорректно. Запуск&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;может исправить данную проблему. Также убедитесь в том, что не используете платную (PUEL) и бесплатную (OSE) версии VirtualBox одновременно.</translation>
     </message>
 </context>
 <context>
     <name>QIArrowButtonPress</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished">&amp;Назад</translation>
+        <translation>&amp;Назад</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Да&amp;лее</translation>
     </message>
 </context>
 <context>
@@ -146,11 +146,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Детали</translation>
+        <translation>&amp;Детали</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished">&amp;Детали (%1 из %2)</translation>
+        <translation>&amp;Детали (%1 из %2)</translation>
     </message>
 </context>
 <context>
@@ -470,7 +470,7 @@
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation>Предпросмотр монитора</translation>
+        <translation>Показать экран гостевой ОС</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
@@ -592,7 +592,7 @@
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Открыть браузер и перейти на сайт программы VirtualBox</translation>
+        <translation>Открыть браузер и перейти на сайт VirtualBox</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -1438,39 +1438,39 @@
     </message>
     <message>
         <source>&amp;VirtualBox Bug Tracker...</source>
-        <translation type="unfinished"></translation>
+        <translation>Сообщить об ошибке &amp;VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product bug tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть браузер и перейти к системе отслеживания ошибок VirtualBox</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Forums...</source>
-        <translation type="unfinished"></translation>
+        <translation>Форумы &amp;VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product forums</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть браузер и перейти к форумам VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Oracle Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Веб-страница Oracle...</translation>
     </message>
     <message>
         <source>Open the browser and go to the Oracle web site</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть браузер и перейти на сайт Oracle</translation>
     </message>
     <message>
         <source>&amp;Detach GUI</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти в &amp;фоновой режим</translation>
     </message>
     <message>
         <source>Detach the GUI from headless VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Продолжить работу в фоновом режиме</translation>
     </message>
     <message>
         <source>Disable Dock Icon Overlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Скрывать иконку гостевой ОС</translation>
     </message>
 </context>
 <context>
@@ -1693,63 +1693,63 @@
     <name>UIApplianceUnverifiedCertificateViewer</name>
     <message>
         <source>Unverifiable Certificate! Continue?</source>
-        <translation type="unfinished"></translation>
+        <translation>Непроверяемый сертификат! Продолжить?</translation>
     </message>
     <message>
         <source>&lt;b&gt;The appliance is signed by an unverified self signed certificate issued by &apos;%1&apos;. We recommend to only proceed with the importing if you are sure you should trust this entity.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Данная конфигурация подписана непроверенным самозаверяющим сертификатом, предоставленным &apos;%1&apos;. Мы рекомендуем продолжать дальнейшие действия лишь в случае Вашего доверия данной личности.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;The appliance is signed by an unverified certificate issued to &apos;%1&apos;. We recommend to only proceed with the importing if you are sure you should trust this entity.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Данная конфигурация подписана непроверенным сертификатом, предоставленным &apos;%1&apos;. Мы рекомендуем продолжать дальнейшие действия лишь в случае Вашего доверия данной личности.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Issuer:               %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Издатель:                   %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Пользователь:               %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Срок действия (начало):     %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Срок действия (конец):      %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Серийный номер:             %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Самозаверенный сертификат:  %1</translation>
     </message>
     <message>
         <source>True</source>
-        <translation type="unfinished"></translation>
+        <translation>Да</translation>
     </message>
     <message>
         <source>False</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет</translation>
     </message>
     <message>
         <source>Authority (CA):       %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Доверенный сертификат:      %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Алгоритм открытого ключа:   %1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Алгоритм подписи:           %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Версия X.509:               %1</translation>
     </message>
 </context>
 <context>
@@ -2517,7 +2517,7 @@
     <name>UIEmptyFilePathSelector</name>
     <message>
         <source>Choose...</source>
-        <translation type="unfinished">Выбрать...</translation>
+        <translation>Выбрать...</translation>
     </message>
 </context>
 <context>
@@ -2867,55 +2867,55 @@ p, li { white-space: pre-wrap; }
     <name>UIFilePathSelector</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Копировать</translation>
+        <translation>&amp;Копировать</translation>
     </message>
     <message>
         <source>Other...</source>
-        <translation type="unfinished">Другой...</translation>
+        <translation>Другой...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="unfinished">Открывает диалог выбора папки.</translation>
+        <translation>Открывает диалог выбора папки.</translation>
     </message>
     <message>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished">Устанавливает путь к папке, используемый по умолчанию.</translation>
+        <translation>Устанавливает путь к папке, используемый по умолчанию.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="unfinished">Открывает диалог выбора файла.</translation>
+        <translation>Открывает диалог выбора файла.</translation>
     </message>
     <message>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished">Устанавливает путь к файлу, используемый по умолчанию.</translation>
+        <translation>Устанавливает путь к файлу, используемый по умолчанию.</translation>
     </message>
     <message>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished">&lt;по умолчанию&gt;</translation>
+        <translation>&lt;по умолчанию&gt;</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="unfinished">Фактическая папка по умолчанию будет показана после принятия изменений и повторного открытия этого окна.</translation>
+        <translation>Фактическая папка по умолчанию будет показана после принятия изменений и повторного открытия этого окна.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished">&lt;ничего не выбрано&gt;</translation>
+        <translation>&lt;ничего не выбрано&gt;</translation>
     </message>
     <message>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
-        <translation type="unfinished">Используйте пункт &lt;b&gt;Другой...&lt;/b&gt; из выпадающего списка для выбора требуемого пути.</translation>
+        <translation>Используйте пункт &lt;b&gt;Другой...&lt;/b&gt; из выпадающего списка для выбора требуемого пути.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished">Определяет название папки.</translation>
+        <translation>Определяет название папки.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished">Определяет название файла.</translation>
+        <translation>Определяет название файла.</translation>
     </message>
 </context>
 <context>
@@ -4431,7 +4431,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 network mask prefix length.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверную длину IPv6 маски сети.</translation>
     </message>
 </context>
 <context>
@@ -4802,27 +4802,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, VirtualBox будет пытаться автоматически определить настройки для работы с прокси-сервером в целях загрузки гостевых дополнений и проверки обновлений.</translation>
     </message>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Автоматическая настройка прокси</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, VirtualBox будет использовать прямое Интернет соединение в целях загрузки гостевых дополнений и проверки обновлений.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Прямое Интернет соединение</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, VirtualBox будет использовать данные настройки для работы с прокси-сервером в целях загрузки гостевых дополнений и проверки обновлений.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ручная настройка прокси</translation>
     </message>
 </context>
 <context>
@@ -5423,17 +5423,17 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Аудио</translation>
+        <translation>Аудио</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Аудио драйвер</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Аудиоконтроллер</translation>
     </message>
 </context>
 <context>
@@ -5441,62 +5441,62 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Дисплей</translation>
+        <translation>Дисплей</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">Видеопамять</translation>
+        <translation>Видеопамять</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished">Мониторы</translation>
+        <translation>Мониторы</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished">3D-ускорение</translation>
+        <translation>3D-ускорение</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished">2D-ускорение видео</translation>
+        <translation>2D-ускорение видео</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт сервера удалённого доступа</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Сервер удалённого доступа</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключен</translation>
     </message>
 </context>
 <context>
@@ -5504,70 +5504,70 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Общие</translation>
+        <translation>Общие</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished">Тип ОС</translation>
+        <translation>Тип ОС</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Сеть</translation>
+        <translation>Сеть</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Сетевой мост, &apos;%1&apos;</translation>
+        <translation>Сетевой мост, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Внутренняя сеть, &apos;%1&apos;</translation>
+        <translation>Внутренняя сеть, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Виртуальный адаптер хоста, &apos;%1&apos;</translation>
+        <translation>Виртуальный адаптер хоста, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Универсальный драйвер, &apos;%1&apos;</translation>
+        <translation>Универсальный драйвер, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Сеть NAT, &apos;%1&apos;</translation>
+        <translation>Сеть NAT, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataNetworkStatistics</name>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished">Данных передано</translation>
+        <translation>Данных передано</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished">Данных принято</translation>
+        <translation>Данных принято</translation>
     </message>
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Статистика сетевых адаптеров</translation>
+        <translation>Статистика сетевых адаптеров</translation>
     </message>
 </context>
 <context>
@@ -5575,17 +5575,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">LPT-порты</translation>
+        <translation>LPT-порты</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключен</translation>
     </message>
 </context>
 <context>
@@ -5593,84 +5593,84 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Рабочие характеристики</translation>
+        <translation>Рабочие характеристики</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не обнаружены</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не определен</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Не доступен</translation>
+        <translation>Не доступен</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished">Разрешение экрана</translation>
+        <translation>Разрешение экрана</translation>
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation type="unfinished">Время работы</translation>
+        <translation>Время работы</translation>
     </message>
     <message>
         <source>Clipboard Mode</source>
-        <translation type="unfinished">Общий буфер обмена</translation>
+        <translation>Общий буфер обмена</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation type="unfinished">Функция Drag and Drop</translation>
+        <translation>Функция Drag and Drop</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
-        <translation type="unfinished">Unrestricted Execution</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished">Интерфейс паравиртуализации</translation>
+        <translation>Интерфейс паравиртуализации</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished">Дополнения гостевой ОС</translation>
+        <translation>Дополнения гостевой ОС</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished">Тип гостевой ОС</translation>
+        <translation>Тип гостевой ОС</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт сервера удалённого доступа</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">COM-порты</translation>
+        <translation>COM-порты</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт %1</translation>
     </message>
 </context>
 <context>
@@ -5678,47 +5678,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Общие папки</translation>
+        <translation>Общие папки</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Общие папки</translation>
+        <translation>Общие папки</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Носители</translation>
+        <translation>Носители</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="unfinished">(Оптический привод)</translation>
+        <translation>(Оптический привод)</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataStorageStatistics</name>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished">Запросов DMA</translation>
+        <translation>Запросов DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished">Запросов PIO</translation>
+        <translation>Запросов PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished">Данных считано</translation>
+        <translation>Данных считано</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished">Данных записано</translation>
+        <translation>Данных записано</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Статистика носителей информации</translation>
+        <translation>Статистика носителей информации</translation>
     </message>
 </context>
 <context>
@@ -5726,107 +5726,107 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Система</translation>
+        <translation>Система</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Оперативная память</translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation type="unfinished">Процессор(ы)</translation>
+        <translation>Процессор(ы)</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished">Предел загрузки ЦПУ</translation>
+        <translation>Предел загрузки ЦПУ</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="unfinished">Порядок загрузки</translation>
+        <translation>Порядок загрузки</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished">ACPI</translation>
+        <translation></translation>
     </message>
     <message>
         <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished">I/O APIC</translation>
+        <translation></translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished">Интерфейс паравиртуализации</translation>
+        <translation>Интерфейс паравиртуализации</translation>
     </message>
 </context>
 <context>
@@ -5834,22 +5834,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">Фильтры устройств</translation>
+        <translation>Фильтры устройств</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">%1 (%2 активно)</translation>
+        <translation>%1 (%2 активно)</translation>
     </message>
 </context>
 <context>
@@ -8138,7 +8138,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add NVMe Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить NVMe контроллер</translation>
     </message>
 </context>
 <context>
@@ -8866,27 +8866,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип носителя подключается как напрямую так и косвенно, защищён при взятии снимков состояния.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип носителя подключается косвенно, любые произведённые изменения будут удалены при следующем запуске машины.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип носителя подключается напрямую и игнорируется при взятии снимков состояния.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип носителя подключается напрямую, предназначен для совместного использования несколькими машинами одновременно.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип носителя подключается напрямую, может быть использован для чтения несколькими машинами одновременно.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот тип носителя подключается косвенно, чтобы базовый образ мог быть использован несколькими машинами, каждая из которых будет иметь отдельный разностный носитель для хранения своих изменений.</translation>
     </message>
 </context>
 <context>
@@ -10689,15 +10689,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current port forwarding rules are not valid. All of the host or guest address values should be correct or empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущие правила проброса портов неверны. Все значения хостовых и гостевых адресов должны быть корректны или пусты.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the guest address values may be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущие правила проброса портов неверны. Значения гостевых адресов не могут быть пусты.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to acquire the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось получить COM-объект VirtualBox.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10803,7 +10803,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the location of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет местоположение виртуальной машины.</translation>
     </message>
 </context>
 <context>
@@ -10894,42 +10894,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Unable to initialize HTTP library</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка инициализации библиотеки HTTP</translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>В соединении отказано</translation>
     </message>
     <message>
         <source>Content moved</source>
-        <translation type="unfinished"></translation>
+        <translation>Контент перемещён</translation>
     </message>
     <message>
         <source>Proxy not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Прокси недоступен</translation>
     </message>
     <message>
         <source>Url not found on the server</source>
-        <translation type="unfinished"></translation>
+        <translation>Цель не найдена на сервере</translation>
     </message>
 </context>
 <context>
     <name>UINetworkReplyPrivateThread</name>
     <message>
         <source>During proxy configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Во время настройки прокси</translation>
     </message>
     <message>
         <source>During certificate downloading</source>
-        <translation type="unfinished"></translation>
+        <translation>Во время загрузки сертификата</translation>
     </message>
     <message>
         <source>During network request</source>
-        <translation type="unfinished"></translation>
+        <translation>Во время сетевого запроса</translation>
     </message>
 </context>
 <context>
@@ -12336,15 +12336,15 @@ p, li { white-space: pre-wrap; }
     <name>UIVMInformationDialog</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished">%1 - Информация о сессии</translation>
+        <translation>%1 - Информация о сессии</translation>
     </message>
     <message>
         <source>Configuration &amp;Details</source>
-        <translation type="unfinished">&amp;Детали конфигурации</translation>
+        <translation>&amp;Детали конфигурации</translation>
     </message>
     <message>
         <source>&amp;Runtime Information</source>
-        <translation type="unfinished">&amp;Информация о сессии</translation>
+        <translation>&amp;Информация о сессии</translation>
     </message>
 </context>
 <context>
@@ -12464,15 +12464,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Фильтр</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите здесь строку фильтрации</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Фильтр</translation>
     </message>
 </context>
 <context>
@@ -13076,31 +13076,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance is not signed</source>
-        <translation type="unfinished"></translation>
+        <translation>Конфигурация не заверена</translation>
     </message>
     <message>
         <source>Appliance signed by %1 (trusted)</source>
-        <translation type="unfinished"></translation>
+        <translation>Конфигурация заверена %1 (подтверждено)</translation>
     </message>
     <message>
         <source>Appliance signed by %1 (expired!)</source>
-        <translation type="unfinished"></translation>
+        <translation>Конфигурация заверена %1 (просрочено!)</translation>
     </message>
     <message>
         <source>Unverified signature by %1!</source>
-        <translation type="unfinished"></translation>
+        <translation>Непроверенная подпись %1!</translation>
     </message>
     <message>
         <source>Self signed by %1 (trusted)</source>
-        <translation type="unfinished"></translation>
+        <translation>Самозаверено %1 (подтверждено)</translation>
     </message>
     <message>
         <source>Self signed by %1 (expired!)</source>
-        <translation type="unfinished"></translation>
+        <translation>Самозаверено %1 (просрочено!)</translation>
     </message>
     <message>
         <source>Unverified self signed signature by %1!</source>
-        <translation type="unfinished"></translation>
+        <translation>Непроверенная самозаверенная подпись %1!</translation>
     </message>
 </context>
 <context>
@@ -13334,11 +13334,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;&lt;nobr&gt;Holds the name or full path to the virtual machine folder you are about to create.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;Содержит имя или полный путь к папке машины, которую вы собираетесь создать.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;nobr&gt;You are about to create the virtual machine in the following folder:&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;Вы собираетесь создать виртуальную машину в следующей папке:&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -15388,12 +15388,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Порт сервера удалённого дисплея</translation>
+        <translation>Порт сервера удалённого доступа</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Сервер удалённого дисплея</translation>
+        <translation>Сервер удалённого доступа</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -16075,27 +16075,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished">USB</translation>
+        <translation></translation>
     </message>
     <message>
         <source>PCIe</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>NVMe</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>NVMe Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
+        <translation>NVMe порт %1</translation>
     </message>
     <message>
         <source>RuntimeAttributes</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Рабочие характеристики</translation>
     </message>
 </context>
 <context>
