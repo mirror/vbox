@@ -467,7 +467,8 @@ static void vusbRhR3FrameRateCalcNew(PVUSBROOTHUB pThis, bool fIdle)
         }
     }
 
-    if (uNewFrameRate != pThis->uFrameRate)
+    if (   uNewFrameRate != pThis->uFrameRate
+        && uNewFrameRate)
     {
         LogFlow(("Frame rate changed from %u to %u\n", pThis->uFrameRate, uNewFrameRate));
         vusbRhR3CalcTimerIntervals(pThis, uNewFrameRate);
@@ -552,6 +553,14 @@ static DECLCALLBACK(int) vusbRhR3PeriodFrameWorker(PPDMDRVINS pDrvIns, PPDMTHREA
 
             rc = RTSemEventMultiWait(pThis->hSemEventPeriodFrame, RT_INDEFINITE_WAIT);
             RTSemEventMultiReset(pThis->hSemEventPeriodFrame);
+
+            /*
+             * Notify the device above about the frame rate changed if we are supposed to
+             * process frames.
+             */
+            uint32_t uFrameRate = ASMAtomicReadU32(&pThis->uFrameRateDefault);
+            if (uFrameRate)
+                vusbRhR3CalcTimerIntervals(pThis, uFrameRate);
         }
 
         AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%Rrc\n", rc), rc);
