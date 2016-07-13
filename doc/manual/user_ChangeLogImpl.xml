@@ -11,7 +11,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>Storage: fixed creating fixed size VHD images (bug #15601)</para>
       </listitem>
 
     </itemizedlist>
