@@ -546,9 +546,19 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
     frGeo.setRight(frGeo.right() + sh.width());
     frGeo.setBottom(frGeo.bottom() + sh.height());
 
+    /* Calculate common bound region: */
+    QRegion region;
+    for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
+    {
+        /* Get enumerated screen's available area: */
+        QRect rect = vboxGlobal().availableGeometry(iScreenIndex);
+        /* Append rectangle: */
+        region += rect;
+    }
+
     /* Adjust position if necessary: */
     if (fAdjustPosition)
-        frGeo = VBoxGlobal::normalizeGeometry(frGeo, vboxGlobal().availableGeometry(pos()));
+        frGeo = VBoxGlobal::normalizeGeometry(frGeo, region);
 
     /* Finally, set the frame geometry: */
     setGeometry(frGeo.left() + dl, frGeo.top() + dt,
