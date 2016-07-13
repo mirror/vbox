@@ -588,29 +588,30 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 # cleanup.
                 self.removeTask(oTxsSession);
                 self.terminateVmBySession(oSession)
-
-                # Remove disk
-                oSession = self.openSession(oVM);
-                if oSession is not None:
-                    try:
-                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 0, iDevice);
-
-                        # Remove storage controller if it is not an IDE controller.
-                        if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
-                           and eStorageController is not vboxcon.StorageControllerType_PIIX4:
-                            oSession.o.machine.removeStorageController(_ControllerTypeToName(eStorageController));
-
-                        oSession.saveSettings();
-                        self.oVBox.deleteHdByLocation(sDiskPath);
-                        oSession.saveSettings();
-                        oSession.close();
-                        oSession = None;
-                    except:
-                        reporter.errorXcpt('failed to detach/delete disk %s from storage controller' % (sDiskPath));
-                else:
-                    fRc = False;
             else:
                 fRc = False;
+
+            # Remove disk
+            oSession = self.openSession(oVM);
+            if oSession is not None:
+                try:
+                    oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 0, iDevice);
+
+                    # Remove storage controller if it is not an IDE controller.
+                    if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
+                       and eStorageController is not vboxcon.StorageControllerType_PIIX4:
+                        oSession.o.machine.removeStorageController(_ControllerTypeToName(eStorageController));
+
+                    oSession.saveSettings();
+                    self.oVBox.deleteHdByLocation(sDiskPath);
+                    oSession.saveSettings();
+                    oSession.close();
+                    oSession = None;
+                except:
+                    reporter.errorXcpt('failed to detach/delete disk %s from storage controller' % (sDiskPath));
+            else:
+                fRc = False;
+
         return fRc;
 
     def testBenchmarkOneVM(self, sVmName):
