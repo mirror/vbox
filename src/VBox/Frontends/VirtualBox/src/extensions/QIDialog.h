@@ -36,8 +36,6 @@ public:
 
     /** Constructs the dialog passing @a pParent and @a flags to the base-class. */
     QIDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
-    /** Destructs the dialog. */
-    ~QIDialog();
 
     /** Defines whether the dialog is @a fVisible. */
     void setVisible(bool fVisible);
@@ -56,7 +54,7 @@ public slots:
 protected:
 
     /** Handles show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** Handles show @a pEvent sent for the first time. */
     virtual void polishEvent(QShowEvent *pEvent);
 
