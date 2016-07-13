@@ -248,6 +248,8 @@ void QIMessageBox::prepare()
             m_pButton3 = createButton(m_iButton3);
             if (m_pButton3)
                 connect(m_pButton3, SIGNAL(clicked()), SLOT(sltDone3()));
+            /* Make sure Escape button always set: */
+            Assert(m_iButtonEsc);
             /* If this is a critical message add a "Copy to clipboard" button: */
             if (m_iconType == AlertIconType_Critical)
             {
@@ -335,7 +337,10 @@ void QIMessageBox::closeEvent(QCloseEvent *pCloseEvent)
     if (m_fDone)
         pCloseEvent->accept();
     else
+    {
         pCloseEvent->ignore();
+        reject();
+    }
 }
 
 void QIMessageBox::updateDetailsContainer()

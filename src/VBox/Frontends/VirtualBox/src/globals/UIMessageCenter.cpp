@@ -171,7 +171,7 @@ void UIMessageCenter::error(QWidget *pParent, MessageType type,
                            const char *pcszAutoConfirmId /* = 0*/) const
 {
     message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-            AlertButton_Ok | AlertButtonOption_Default);
+            AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape);
 }
 
 bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType type,
