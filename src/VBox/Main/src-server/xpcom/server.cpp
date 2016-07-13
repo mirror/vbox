@@ -742,6 +742,12 @@ int main(int argc, char **argv)
     if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open release log (%s, %Rrc)", szError, vrc);
 
+    /* Set up a build identifier so that it can be seen from core dumps what
+     * exact build was used to produce the core. Same as in Console::i_powerUpThread(). */
+    static char saBuildID[48];
+    RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
+                "BU", "IL", "DI", "D", RTBldCfgVersion(), RTBldCfgRevision(), "BU", "IL", "DI", "D");
+
     daemon_pipe_wr = PR_GetInheritedFD(VBOXSVC_STARTUP_PIPE_NAME);
     RTEnvUnset("NSPR_INHERIT_FDS");
 
