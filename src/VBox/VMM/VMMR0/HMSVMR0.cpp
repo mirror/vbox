@@ -3262,7 +3262,6 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);
 
-
     if (pSvmTransient->fRestoreTscAuxMsr)
     {
         uint64_t u64GuestTscAuxMsr = ASMRdMsr(MSR_K8_TSC_AUX);
