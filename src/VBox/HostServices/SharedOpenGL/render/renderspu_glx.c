@@ -1924,7 +1924,6 @@ renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
     }
 }
 
-#define CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
