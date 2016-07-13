@@ -352,11 +352,13 @@ if "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  VBoxVMM_LDFLAGS += /Export:PdbTypeHack
 
  LIBRARIES += VBoxVMMPdbTypeHack
- VBoxVMMPdbTypeHack_TEMPLATE = VBoxR3DllNoPic
- VBoxVMMPdbTypeHack_SOURCES  = VMMAll/AllPdbTypeHack.cpp
- VBoxVMMPdbTypeHack_DEFS     = $(VBoxVMM_DEFS)
- VBoxVMMPdbTypeHack_INCS     = $(VBoxVMM_INCS)
-
+ VBoxVMMPdbTypeHack_TEMPLATE       = $(VBoxVMM_TEMPLATE)
+ VBoxVMMPdbTypeHack_SOURCES        = VMMAll/AllPdbTypeHack.cpp
+ VBoxVMMPdbTypeHack_DEFS           = $(VBoxVMM_DEFS)
+ VBoxVMMPdbTypeHack_DEFS.win       = $(VBoxVMM_DEFS.win)
+ VBoxVMMPdbTypeHack_DEFS.win.x86   = $(VBoxVMM_DEFS.win.x86)
+ VBoxVMMPdbTypeHack_DEFS.win.amd64 = $(VBoxVMM_DEFS.win.amd64)
+ VBoxVMMPdbTypeHack_INCS           = $(VBoxVMM_INCS)
 endif
 
 
