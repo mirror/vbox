@@ -137,7 +137,11 @@ typedef struct VMCPU
     /** IEM part.
      * @remarks This comes first as it allows the use of 8-bit immediates for the
      *          first 64 bytes of the structure, reducing code size a wee bit. */
-    union
+#ifdef ___IEMInternal_h /* For PDB hacking. */
+    union VMCPUUNIONIEMFULL
+#else
+    union VMCPUUNIONIEMSTUB
+#endif
     {
 #ifdef ___IEMInternal_h
         struct IEMCPU       s;
@@ -146,7 +150,7 @@ typedef struct VMCPU
     } iem;
 
     /** HM part. */
-    union
+    union VMCPUUNIONHM
     {
 #ifdef ___HMInternal_h
         struct HMCPU    s;
@@ -155,7 +159,7 @@ typedef struct VMCPU
     } hm;
 
     /** EM part. */
-    union
+    union VMCPUUNIONEM
     {
 #ifdef ___EMInternal_h
         struct EMCPU        s;
@@ -164,7 +168,7 @@ typedef struct VMCPU
     } em;
 
     /** TRPM part. */
-    union
+    union VMCPUUNIONTRPM
     {
 #ifdef ___TRPMInternal_h
         struct TRPMCPU      s;
@@ -173,7 +177,7 @@ typedef struct VMCPU
     } trpm;
 
     /** TM part. */
-    union
+    union VMCPUUNIONTM
     {
 #ifdef ___TMInternal_h
         struct TMCPU        s;
@@ -182,7 +186,7 @@ typedef struct VMCPU
     } tm;
 
     /** VMM part. */
-    union
+    union VMCPUUNIONVMM
     {
 #ifdef ___VMMInternal_h
         struct VMMCPU       s;
@@ -191,7 +195,7 @@ typedef struct VMCPU
     } vmm;
 
     /** PDM part. */
-    union
+    union VMCPUUNIONPDM
     {
 #ifdef ___PDMInternal_h
         struct PDMCPU       s;
@@ -200,7 +204,7 @@ typedef struct VMCPU
     } pdm;
 
     /** IOM part. */
-    union
+    union VMCPUUNIONIOM
     {
 #ifdef ___IOMInternal_h
         struct IOMCPU       s;
@@ -210,7 +214,7 @@ typedef struct VMCPU
 
     /** DBGF part.
      * @todo Combine this with other tiny structures. */
-    union
+    union VMCPUUNIONDBGF
     {
 #ifdef ___DBGFInternal_h
         struct DBGFCPU      s;
@@ -219,7 +223,7 @@ typedef struct VMCPU
     } dbgf;
 
     /** GIM part. */
-    union
+    union VMCPUUNIONGIM
     {
 #ifdef ___GIMInternal_h
         struct GIMCPU s;
@@ -228,7 +232,7 @@ typedef struct VMCPU
     } gim;
 
     /** APIC part. */
-    union
+    union VMCPUUNIONAPIC
     {
 #ifdef ___APICInternal_h
         struct APICCPU      s;
@@ -252,7 +256,7 @@ typedef struct VMCPU
     uint8_t                 abAlignment2[3640];
 
     /** PGM part. */
-    union
+    union VMCPUUNIONPGM
     {
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
@@ -261,7 +265,7 @@ typedef struct VMCPU
     } pgm;
 
     /** CPUM part. */
-    union
+    union VMCPUUNIONCPUM
     {
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;

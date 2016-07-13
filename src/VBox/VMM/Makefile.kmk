@@ -340,6 +340,25 @@ endif
 
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
 
+if "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
+ #
+ # Debug type info hack for VMCPU, VM and similar.
+ #
+ # The microsoft linker seems to be using the last occurence of the structures
+ # when writing the module PDB file.  So, we put the fully complete structures
+ # in a library which is at the end of the library list.
+ #
+ VBoxVMM_LIBS    += $(VBoxVMMPdbTypeHack_1_TARGET)
+ VBoxVMM_LDFLAGS += /Export:PdbTypeHack
+
+ LIBRARIES += VBoxVMMPdbTypeHack
+ VBoxVMMPdbTypeHack_TEMPLATE = VBoxR3DllNoPic
+ VBoxVMMPdbTypeHack_SOURCES  = VMMAll/AllPdbTypeHack.cpp
+ VBoxVMMPdbTypeHack_DEFS     = $(VBoxVMM_DEFS)
+ VBoxVMMPdbTypeHack_INCS     = $(VBoxVMM_INCS)
+
+endif
+
 
 if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
 
@@ -547,8 +566,9 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
   	VMMAll/REMAll.cpp
  endif
 
- # the very last one.
- VMMRC_SOURCES += VMMRC/VMMRC99.asm
+ # The very last one.
+ VMMRC_SOURCES += \
+ 	VMMRC/VMMRC99.asm
 
  VMMRC/VMMRCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMRCDeps.cpp to .c
 
@@ -557,6 +577,22 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
   VMMRC_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  endif
+
+ if "$(KBUILD_TARGET)" == "win"
+  # Debug type info hack for VMCPU, VM and similar.  See VBoxVMM for details.
+  VMMRC_LIBS    += $(VMMRCPdbTypeHack_1_TARGET)
+  VMMRC_LDFLAGS += /Export:PdbTypeHack
+
+  LIBRARIES += VMMRCPdbTypeHack
+  VMMRCPdbTypeHack_TEMPLATE       = $(VMMRC_TEMPLATE)
+  VMMRCPdbTypeHack_SOURCES        = VMMAll/AllPdbTypeHack.cpp
+  VMMRCPdbTypeHack_DEFS           = $(VMMRC_DEFS)
+  VMMRCPdbTypeHack_DEFS.win       = $(VMMRC_DEFS.win)
+  VMMRCPdbTypeHack_DEFS.win.x86   = $(VMMRC_DEFS.win.x86)
+  VMMRCPdbTypeHack_DEFS.win.amd64 = $(VMMRC_DEFS.win.amd64)
+  VMMRCPdbTypeHack_INCS           = $(VMMRC_INCS)
+ endif
+
 endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
 
 
@@ -698,6 +734,22 @@ ifndef VBOX_ONLY_EXTPACKS
  if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
   VMMR0_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  endif
+
+ if "$(KBUILD_TARGET)" == "win"
+  # Debug type info hack for VMCPU, VM and similar.  See VBoxVMM for details.
+  VMMR0_LIBS    += $(VMMR0PdbTypeHack_1_TARGET)
+  VMMR0_LDFLAGS += /Export:PdbTypeHack
+
+  LIBRARIES += VMMR0PdbTypeHack
+  VMMR0PdbTypeHack_TEMPLATE       = $(VMMR0_TEMPLATE)
+  VMMR0PdbTypeHack_SOURCES        = VMMAll/AllPdbTypeHack.cpp
+  VMMR0PdbTypeHack_DEFS           = $(VMMR0_DEFS)
+  VMMR0PdbTypeHack_DEFS.win       = $(VMMR0_DEFS.win)
+  VMMR0PdbTypeHack_DEFS.win.x86   = $(VMMR0_DEFS.win.x86)
+  VMMR0PdbTypeHack_DEFS.win.amd64 = $(VMMR0_DEFS.win.amd64)
+  VMMR0PdbTypeHack_INCS           = $(VMMR0_INCS)
+ endif
+
 endif # !VBOX_ONLY_EXTPACKS
 
 
