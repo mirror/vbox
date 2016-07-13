@@ -110,7 +110,10 @@ RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead);
  * content is returned as one single section (with pMarker = NULL).
  *
  * @returns IPRT status code.
- * @retval  VINF_EOF if the file is empty. The ppSectionHead value will be NULL.
+ * @retval  VINF_EOF if the file is empty.  The @a ppSectionHead value will be
+ *          NULL.
+ * @retval  VWRN_NOT_FOUND no section was found and RTCRPEMREADFILE_F_ONLY_PEM
+ *          is specified.  The @a ppSectionHead value will be NULL.
  *
  * @param   pvContent       The content bytes to parse.
  * @param   cbContent       The number of content bytes.
@@ -132,7 +135,10 @@ RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_
  * content is returned as one single section (with pMarker = NULL).
  *
  * @returns IPRT status code.
- * @retval  VINF_EOF if the file is empty. The ppSectionHead value will be NULL.
+ * @retval  VINF_EOF if the file is empty.  The @a ppSectionHead value will be
+ *          NULL.
+ * @retval  VWRN_NOT_FOUND no section was found and RTCRPEMREADFILE_F_ONLY_PEM
+ *          is specified.  The @a ppSectionHead value will be NULL.
  *
  * @param   pszFilename     The path to the file to read.
  * @param   fFlags          RTCRPEMREADFILE_F_XXX.
@@ -149,6 +155,10 @@ RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMM
  * @{ */
 /** Continue on encoding error. */
 #define RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR    RT_BIT(0)
+/** Only PEM sections, no binary fallback. */
+#define RTCRPEMREADFILE_F_ONLY_PEM                      RT_BIT(1)
+/** Valid flags. */
+#define RTCRPEMREADFILE_F_VALID_MASK                    UINT32_C(0x00000003)
 /** @} */
 
 /**

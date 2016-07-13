@@ -53,32 +53,40 @@ RT_DECL_DATA_CONST(uint32_t const) g_cRTCrX509CertificateMarkers = RT_ELEMENTS(g
 RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, const char *pszFilename, uint32_t fFlags,
                                              PCRTASN1ALLOCATORVTABLE pAllocator, PRTERRINFO pErrInfo)
 {
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTCRX509CERT_READ_F_PEM_ONLY), VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemReadFile(pszFilename, 0, g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
+    int rc = RTCrPemReadFile(pszFilename,
+                             fFlags & RTCRX509CERT_READ_F_PEM_ONLY ? RTCRPEMREADFILE_F_ONLY_PEM : 0,
+                             g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
                              &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        RTCRX509CERTIFICATE TmpCert;
-        RTASN1CURSORPRIMARY PrimaryCursor;
-        RTAsn1CursorInitPrimary(&PrimaryCursor, pSectionHead->pbData, (uint32_t)RT_MIN(pSectionHead->cbData, UINT32_MAX),
-                                pErrInfo, pAllocator, RTASN1CURSOR_FLAGS_DER, RTPathFilename(pszFilename));
-        rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &TmpCert, "Cert");
-        if (RT_SUCCESS(rc))
+        if (pSectionHead)
         {
-            rc = RTCrX509Certificate_CheckSanity(&TmpCert, 0, pErrInfo, "Cert");
+            RTCRX509CERTIFICATE TmpCert;
+            RTASN1CURSORPRIMARY PrimaryCursor;
+            RTAsn1CursorInitPrimary(&PrimaryCursor, pSectionHead->pbData, (uint32_t)RT_MIN(pSectionHead->cbData, UINT32_MAX),
+                                    pErrInfo, pAllocator, RTASN1CURSOR_FLAGS_DER, RTPathFilename(pszFilename));
+            rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &TmpCert, "Cert");
             if (RT_SUCCESS(rc))
             {
-                rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, pAllocator);
+                rc = RTCrX509Certificate_CheckSanity(&TmpCert, 0, pErrInfo, "Cert");
                 if (RT_SUCCESS(rc))
                 {
-                    if (pSectionHead->pNext || PrimaryCursor.Cursor.cbLeft)
-                        rc = VINF_ASN1_MORE_DATA;
+                    rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, pAllocator);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (pSectionHead->pNext || PrimaryCursor.Cursor.cbLeft)
+                            rc = VINF_ASN1_MORE_DATA;
+                    }
                 }
+                RTCrX509Certificate_Delete(&TmpCert);
             }
-            RTCrX509Certificate_Delete(&TmpCert);
+            RTCrPemFreeSections(pSectionHead);
         }
-        RTCrPemFreeSections(pSectionHead);
+        else
+            rc = rc != VINF_SUCCESS ? -rc : VERR_INTERNAL_ERROR_2;
+
     }
     return rc;
 }
@@ -88,32 +96,39 @@ RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate
                                                uint32_t fFlags, PCRTASN1ALLOCATORVTABLE pAllocator,
                                                PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTCRX509CERT_READ_F_PEM_ONLY), VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemParseContent(pvBuf, cbBuf, 0, g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
+    int rc = RTCrPemParseContent(pvBuf, cbBuf,
+                                 fFlags & RTCRX509CERT_READ_F_PEM_ONLY ? RTCRPEMREADFILE_F_ONLY_PEM : 0,
+                                 g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
                                  &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        RTCRX509CERTIFICATE TmpCert;
-        RTASN1CURSORPRIMARY PrimaryCursor;
-        RTAsn1CursorInitPrimary(&PrimaryCursor, pSectionHead->pbData, (uint32_t)RT_MIN(pSectionHead->cbData, UINT32_MAX),
-                                pErrInfo, pAllocator, RTASN1CURSOR_FLAGS_DER, pszErrorTag);
-        rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &TmpCert, "Cert");
-        if (RT_SUCCESS(rc))
+        if (pSectionHead)
         {
-            rc = RTCrX509Certificate_CheckSanity(&TmpCert, 0, pErrInfo, "Cert");
+            RTCRX509CERTIFICATE TmpCert;
+            RTASN1CURSORPRIMARY PrimaryCursor;
+            RTAsn1CursorInitPrimary(&PrimaryCursor, pSectionHead->pbData, (uint32_t)RT_MIN(pSectionHead->cbData, UINT32_MAX),
+                                    pErrInfo, pAllocator, RTASN1CURSOR_FLAGS_DER, pszErrorTag);
+            rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &TmpCert, "Cert");
             if (RT_SUCCESS(rc))
             {
-                rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, pAllocator);
+                rc = RTCrX509Certificate_CheckSanity(&TmpCert, 0, pErrInfo, "Cert");
                 if (RT_SUCCESS(rc))
                 {
-                    if (pSectionHead->pNext || PrimaryCursor.Cursor.cbLeft)
-                        rc = VINF_ASN1_MORE_DATA;
+                    rc = RTCrX509Certificate_Clone(pCertificate, &TmpCert, pAllocator);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (pSectionHead->pNext || PrimaryCursor.Cursor.cbLeft)
+                            rc = VINF_ASN1_MORE_DATA;
+                    }
                 }
+                RTCrX509Certificate_Delete(&TmpCert);
             }
-            RTCrX509Certificate_Delete(&TmpCert);
+            RTCrPemFreeSections(pSectionHead);
         }
-        RTCrPemFreeSections(pSectionHead);
+        else
+            rc = rc != VINF_SUCCESS ? -rc : VERR_INTERNAL_ERROR_2;
     }
     return rc;
 }
@@ -124,9 +139,11 @@ RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate
 RTDECL(int) RTCrX509Certificates_ReadFromFile(const char *pszFilename, uint32_t fFlags,
                                               PRTCRX509CERTIFICATES pCertificates, PRTERRINFO pErrInfo)
 {
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTCRX509CERT_READ_F_PEM_ONLY), VERR_INVALID_FLAGS);
     PCRTCRPEMSECTION pSectionHead;
-    int rc = RTCrPemReadFile(pszFilename, 0, g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
+    int rc = RTCrPemReadFile(pszFilename,
+                             fFlags & RTCRX509CERT_READ_F_PEM_ONLY ? RTCRPEMREADFILE_F_ONLY_PEM : 0,
+                             g_aRTCrX509CertificateMarkers, g_cRTCrX509CertificateMarkers,
                              &pSectionHead, pErrInfo);
     if (RT_SUCCESS(rc))
     {

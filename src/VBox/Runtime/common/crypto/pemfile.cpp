@@ -262,9 +262,13 @@ static int rtCrPemDecodeBase64(uint8_t const *pbContent, size_t cbContent, void 
  * @returns true if likely to be binary, false if not binary.
  * @param   pbFile              The file bytes to scan.
  * @param   cbFile              The number of bytes.
+ * @param   fFlags              RTCRPEMREADFILE_F_XXX
  */
-static bool rtCrPemIsBinaryBlob(uint8_t const *pbFile, size_t cbFile)
+static bool rtCrPemIsBinaryBlob(uint8_t const *pbFile, size_t cbFile, uint32_t fFlags)
 {
+    if (fFlags & RTCRPEMREADFILE_F_ONLY_PEM)
+        return false;
+
     /*
      * Well formed PEM files should probably only contain 7-bit ASCII and
      * restrict thenselfs to the following control characters:
@@ -337,6 +341,7 @@ RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_
     AssertReturn(cbContent, VINF_EOF);
     AssertPtr(pvContent);
     AssertPtr(paMarkers);
+    AssertReturn(!(fFlags & ~RTCRPEMREADFILE_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
      * Pre-allocate a section.
@@ -351,7 +356,7 @@ RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_
         uint8_t const  *pbContent = (uint8_t const *)pvContent;
         size_t          offBegin, offEnd, offResume;
         PCRTCRPEMMARKER pMatch;
-        if (   !rtCrPemIsBinaryBlob(pbContent, cbContent)
+        if (   !rtCrPemIsBinaryBlob(pbContent, cbContent, fFlags)
             && rtCrPemFindMarkerSection(pbContent, cbContent, 0 /*offStart*/, paMarkers, cMarkers,
                                         &pMatch, &offBegin, &offEnd, &offResume) )
         {
@@ -406,7 +411,7 @@ RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_
 
             RTCrPemFreeSections(*ppSectionHead);
         }
-        else
+        else if (!(fFlags & RTCRPEMREADFILE_F_ONLY_PEM))
         {
             /*
              * No PEM section found.  Return the whole file as one binary section.
@@ -426,6 +431,8 @@ RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_
             rc = VERR_NO_MEMORY;
             RTMemFree(pSection);
         }
+        else
+            rc = VWRN_NOT_FOUND;
     }
     else
         rc = VERR_NO_MEMORY;
@@ -438,7 +445,7 @@ RTDECL(int) RTCrPemReadFile(const char *pszFilename, uint32_t fFlags, PCRTCRPEMM
                             PCRTCRPEMSECTION *ppSectionHead, PRTERRINFO pErrInfo)
 {
     *ppSectionHead = NULL;
-    AssertReturn(!(fFlags & ~RTCRPEMREADFILE_F_CONTINUE_ON_ENCODING_ERROR), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTCRPEMREADFILE_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     size_t      cbContent;
     void        *pvContent;

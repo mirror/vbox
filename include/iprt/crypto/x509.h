@@ -1014,6 +1014,13 @@ RTDECL(int) RTCrX509Certificate_ReadFromFile(PRTCRX509CERTIFICATE pCertificate, 
 RTDECL(int) RTCrX509Certificate_ReadFromBuffer(PRTCRX509CERTIFICATE pCertificate, const void *pvBuf, size_t cbBuf,
                                                uint32_t fFlags, PCRTASN1ALLOCATORVTABLE pAllocator,
                                                PRTERRINFO pErrInfo, const char *pszErrorTag);
+/** @name Flags for RTCrX509Certificate_ReadFromFile and
+ *        RTCrX509Certificate_ReadFromBuffer
+ * @{ */
+/** Only allow PEM certificates, not binary ones.
+ * @sa RTCRPEMREADFILE_F_ONLY_PEM  */
+#define RTCRX509CERT_READ_F_PEM_ONLY        RT_BIT(1)
+/** @} */
 
 /** X509 Certificate markers for RTCrPemFindFirstSectionInContent et al. */
 extern RTDATADECL(RTCRPEMMARKER const)  g_aRTCrX509CertificateMarkers[];
