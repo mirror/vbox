@@ -157,6 +157,8 @@ class IozoneTest(object):
                           ('random writers',  'RandomWrite'),
                           ('pwrite writers',  'PWrite'),
                           ('pread readers',   'PRead'),
+                          ('fwriters',        'FWrite'),
+                          ('freaders',        'FRead'),
                           ('readers',         'FirstRead')];
         self.sRecordSize  = dCfg.get('RecordSize',  '4k');
         self.sTestsetSize = dCfg.get('TestsetSize', '2g');
@@ -222,6 +224,7 @@ class IozoneTest(object):
                             if sLine.rfind(sNeedle) is not -1:
                                 reporter.testValue(sTestVal, sLine[idxValue:idxValueEnd],
                                                    constants.valueunit.g_asNames[constants.valueunit.KILOBYTES_PER_SEC]);
+                                break;
             except:
                 fRc = False;
         else:
