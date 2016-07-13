@@ -552,6 +552,11 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
     {
         /* Get enumerated screen's available area: */
         QRect rect = vboxGlobal().availableGeometry(iScreenIndex);
+#ifdef VBOX_WS_WIN
+        /* On Windows host window can exceed the available
+         * area in maximized/sticky-borders state: */
+        rect.adjust(-10, -10, 10, 10);
+#endif /* VBOX_WS_WIN */
         /* Append rectangle: */
         region += rect;
     }
