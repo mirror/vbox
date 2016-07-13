@@ -671,7 +671,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         else:           reporter.testStart('%u cpus' % (cCpus));
 
                         for sVirtMode in self.asVirtModes:
-                            if sVirtMode == 'raw' and cCpus > 1:
+                            if sVirtMode == 'raw' and (cCpus > 1 or sVmName == 'tst-storage'):
                                 continue;
                             hsVirtModeDesc = {};
                             hsVirtModeDesc['raw']       = 'Raw-mode';
