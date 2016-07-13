@@ -14,6 +14,10 @@
         <para>Storage: fixed creating fixed size VHD images (bug #15601)</para>
       </listitem>
 
+      <listitem>
+        <para>USB: fixed a crash under certain conditions</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
