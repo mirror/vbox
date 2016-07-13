@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@ QIDialog::QIDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
     : QDialog(pParent, flags)
     , m_fPolished(false)
 {
-    /* No need to count that window as important for application,
+    /* Do not count that window as important for application,
      * it will NOT be taken into account when other top-level windows will be closed: */
     setAttribute(Qt::WA_QuitOnClose, false);
 }
@@ -120,7 +120,7 @@ void QIDialog::showEvent(QShowEvent *pEvent)
     m_fPolished = true;
 }
 
-void QIDialog::polishEvent(QShowEvent*)
+void QIDialog::polishEvent(QShowEvent *)
 {
     /* Make sure layout is polished: */
     adjustSize();

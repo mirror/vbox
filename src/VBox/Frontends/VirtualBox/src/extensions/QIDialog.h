@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIDialog_h__
-#define __QIDialog_h__
+#ifndef ___QIDialog_h___
+#define ___QIDialog_h___
 
 /* Qt includes: */
 #include <QDialog>
@@ -25,47 +25,54 @@
 /* Forward declarations: */
 class QEventLoop;
 
-/* Qt dialog extension: */
-class QIDialog: public QDialog
+
+/** QDialog extension providing the GUI with
+  * the advanced capabilities like delayed show. */
+class QIDialog : public QDialog
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor/destructor: */
+    /** Constructs the dialog passing @a pParent and @a flags to the base-class. */
     QIDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    /** Destructs the dialog. */
     ~QIDialog();
 
-    /* API: Visibility stuff: */
+    /** Defines whether the dialog is @a fVisible. */
     void setVisible(bool fVisible);
 
 public slots:
 
-    /** Shows the dialog as a modal dialog, blocking until the user closes it.
+    /** Shows the dialog as a modal one, blocking until the user closes it.
       * @param  fShow              detemines whether the dialog should be shown instantly.
       * @param  fApplicationModal  determine whether the dialog should be application-modal. */
     virtual int execute(bool fShow = true, bool fApplicationModal = false);
 
-    /** Shows the dialog as a modal dialog, blocking until the user closes it.
+    /** Shows the dialog as a modal one, blocking until the user closes it.
       * @note  Provided for compatibility with various Qt versions. */
     virtual int exec() /* overload for Qt4, override for Qt5 */ { return execute(); }
 
 protected:
 
-    /* Handler: Show-event stuff: */
+    /** Handles show @a pEvent. */
     void showEvent(QShowEvent *pEvent);
-
-    /* Handler: Polish-event stuff: */
+    /** Handles show @a pEvent sent for the first time. */
     virtual void polishEvent(QShowEvent *pEvent);
 
 private:
 
-    /* Variables: */
+    /** Holds whether the dialog is polished. */
     bool m_fPolished;
+
+    /** Holds the separate event-loop instance.
+      * @note  This event-loop is only used when the dialog being executed via the execute()
+      *        functionality, allowing for the delayed show and advanced modality flag. */
     QPointer<QEventLoop> m_pEventLoop;
 };
 
+/** Safe pointer to the QIDialog class. */
 typedef QPointer<QIDialog> UISafePointerDialog;
 
-#endif /* __QIDialog_h__ */
+#endif /* !___QIDialog_h___ */
 
