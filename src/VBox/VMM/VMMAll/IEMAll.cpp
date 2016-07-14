@@ -7591,7 +7591,7 @@ DECLINLINE(void) iemMemPageUnmap(PVMCPU pVCpu, RTGCPHYS GCPhysMem, uint32_t fAcc
  */
 DECLINLINE(int) iemMapLookup(PVMCPU pVCpu, void *pvMem, uint32_t fAccess)
 {
-    Assert(pVCpu->iem.s.cActiveMappings < RT_ELEMENTS(pVCpu->iem.s.aMemMappings));
+    Assert(pVCpu->iem.s.cActiveMappings <= RT_ELEMENTS(pVCpu->iem.s.aMemMappings));
     fAccess &= IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_MASK;
     if (   pVCpu->iem.s.aMemMappings[0].pv == pvMem
         && (pVCpu->iem.s.aMemMappings[0].fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_MASK)) == fAccess)
