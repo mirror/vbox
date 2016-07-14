@@ -59,7 +59,7 @@ RCTime RCTime::operator-(const RCTime& his)
 { RCTime difference(gmt - his.gmt); return difference; }
 
 RCTime RCTime::operator/(PRUint64 his)
-{ RCTime quotient(gmt / gmt); return quotient; }
+{ RCTime quotient(gmt / his); return quotient; }
 
 RCTime RCTime::operator*(PRUint64 his)
 { RCTime product(gmt * his); return product; }
