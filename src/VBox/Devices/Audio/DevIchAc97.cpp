@@ -137,13 +137,10 @@
 #define AC97_BARS_VOL_MASK              0x1f   /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
 #define AC97_BARS_VOL_STEPS             31     /**< Volume steps for the Baseline Audio Register Set (5.7.2). */
 #define AC97_BARS_VOL_MUTE_SHIFT        15     /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
-
-#define AC97_BARS_VOL_MASTER_MASK       0x3f   /**< Master volume mask for the Baseline Audio Register Set (5.7.2). */
-#define AC97_BARS_VOL_MASTER_STEPS      63     /**< Master volume steps for the Baseline Audio Register Set (5.7.2). */
-#define AC97_BARS_VOL_MASTER_MUTE_SHIFT 15     /**< Master Mute bit shift for the Baseline Audio Register Set (5.7.2). */
-
-#define AC97_VOL_MAX_STEPS              63
 /** @} */
+
+/* AC'97 uses 1.5dB steps, we use 0.375dB steps: 1 AC'97 step equals 4 PDM steps. */
+#define AC97_DB_FACTOR                  4
 
 #define AC97_REC_MASK 7
 enum
@@ -964,23 +961,8 @@ static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStrm)
 
 static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL enmMixerCtl, uint32_t uVal)
 {
-#ifdef DEBUG
-    uint32_t uValMaster = ichac97MixerGet(pThis, AC97_Master_Volume_Mute);
-
-    bool    fMasterMuted = (uValMaster >> AC97_BARS_VOL_MASTER_MUTE_SHIFT) & 1;
-    uint8_t lMasterAtt   = (uValMaster >> 8) & AC97_BARS_VOL_MASTER_MASK;
-    uint8_t rMasterAtt   = uValMaster & AC97_BARS_VOL_MASTER_MASK;
-
-    Assert(lMasterAtt <= AC97_VOL_MAX_STEPS);
-    Assert(rMasterAtt <= AC97_VOL_MAX_STEPS);
-
-    LogFlowFunc(("lMasterAtt=%RU8, rMasterAtt=%RU8, fMasterMuted=%RTbool\n", lMasterAtt, rMasterAtt, fMasterMuted));
-#endif
-
     bool    fCntlMuted;
     uint8_t lCntlAtt, rCntlAtt;
-
-    uint8_t uSteps;
 
     /*
      * From AC'97 SoundMax Codec AD1981A/AD1981B:
@@ -991,54 +973,40 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
      *
      * Linux ALSA depends on this behavior.
      */
+    //@todo: Does this apply to anything other than the master volume control?
     if (uVal & RT_BIT(5))
         uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
     if (uVal & RT_BIT(13))
         uVal |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
 
-    /* For the master volume, 0 corresponds to 0dB attenuation, each step
-     * corresponds to -1.5dB. */
-    if (index == AC97_Master_Volume_Mute)
+    fCntlMuted = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
+    lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASK;
+    rCntlAtt   = uVal & AC97_BARS_VOL_MASK;
+
+    /* For the master volume, 0 corresponds to 0dB attenuation. For the other volume
+     * controls, 0 means 12dB gain and 8 means unity gain. 
+     */
+    if (index != AC97_Master_Volume_Mute)
     {
-        fCntlMuted = (uVal >> AC97_BARS_VOL_MASTER_MUTE_SHIFT) & 1;
-        lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASTER_MASK;
-        rCntlAtt   = uVal & AC97_BARS_VOL_MASTER_MASK;
-
-        uSteps = PDMAUDIO_VOLUME_MAX / AC97_BARS_VOL_MASTER_STEPS;
-    }
-    /* For other volume controls:
-     * - 0 - 7 corresponds to +12dB, in 1.5dB steps.
-     * - 8     corresponds to 0dB gain (unchanged).
-     * - 9 - X corresponds to -1.5dB steps. */
-    else
-    {
-        fCntlMuted = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
-        lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASK;
-        rCntlAtt   = uVal & AC97_BARS_VOL_MASK;
-
-        Assert(lCntlAtt <= AC97_VOL_MAX_STEPS);
-        Assert(rCntlAtt <= AC97_VOL_MAX_STEPS);
-
 #ifndef VBOX_WITH_AC97_GAIN_SUPPORT
         /* NB: Currently there is no gain support, only attenuation. */
-        lCntlAtt = lCntlAtt <= 8 ? 0 : lCntlAtt - 8;
-        rCntlAtt = rCntlAtt <= 8 ? 0 : rCntlAtt - 8;
+        lCntlAtt = lCntlAtt < 8 ? 0 : lCntlAtt - 8;
+        rCntlAtt = rCntlAtt < 8 ? 0 : rCntlAtt - 8;
 #endif
-        uSteps = PDMAUDIO_VOLUME_MAX / AC97_BARS_VOL_STEPS;
     }
+    Assert(lCntlAtt <= 255 / AC97_DB_FACTOR);
+    Assert(rCntlAtt <= 255 / AC97_DB_FACTOR);
 
     LogFunc(("index=0x%x, uVal=%RU32, enmMixerCtl=%RU32\n", index, uVal, enmMixerCtl));
-
     LogFunc(("lAtt=%RU8, rAtt=%RU8 ", lCntlAtt, rCntlAtt));
 
     /*
-     * AC'97 volume controls have 31 steps, each -1.5dB => -40,5dB attenuation total.
-     *
-     * In contrast, we're internally using 255 (PDMAUDIO_VOLUME_MAX) steps, each -0.375dB,
-     * where 0 corresponds to -96dB and 255 corresponds to 0dB (unchanged).
+     * For AC'97 volume controls, each additional step means -1.5dB attenuation with 
+     * zero being maximum. In contrast, we're internally using 255 (PDMAUDIO_VOLUME_MAX) 
+     * steps, each -0.375dB, where 0 corresponds to -96dB and 255 corresponds to 0dB.
      */
-    uint8_t lVol = PDMAUDIO_VOLUME_MAX - RT_MIN((lCntlAtt * 4 /* dB resolution */ * uSteps /* steps */), PDMAUDIO_VOLUME_MAX);
-    uint8_t rVol = PDMAUDIO_VOLUME_MAX - RT_MIN((rCntlAtt * 4 /* dB resolution */ * uSteps /* steps */), PDMAUDIO_VOLUME_MAX);
+    uint8_t lVol = PDMAUDIO_VOLUME_MAX - lCntlAtt * AC97_DB_FACTOR;
+    uint8_t rVol = PDMAUDIO_VOLUME_MAX - rCntlAtt * AC97_DB_FACTOR;
 
     Log(("-> fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n", fCntlMuted, lVol, rVol));
 
