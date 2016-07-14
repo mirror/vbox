@@ -65,6 +65,13 @@ static DECLCALLBACK(int) rtDbgModExportsAddSymbolCallback(RTLDRMOD hLdrMod, cons
 
     if (Value >= pArgs->uImageBase)
     {
+        char szOrdinalNm[48];
+        if (!pszSymbol)
+        {
+            RTStrPrintf(szOrdinalNm, sizeof(szOrdinalNm), "Ordinal%u", uSymbol);
+            pszSymbol = szOrdinalNm;
+        }
+
         int rc = RTDbgModSymbolAdd(pArgs->pDbgMod, pszSymbol, RTDBGSEGIDX_RVA, Value - pArgs->uImageBase,
                                    0 /*cb*/, 0 /* fFlags */, NULL /*piOrdinal*/);
         Log(("Symbol #%05u %#018RTptr %s [%Rrc]\n", uSymbol, Value, pszSymbol, rc)); NOREF(rc);
