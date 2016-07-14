@@ -18,6 +18,11 @@
         <para>USB: fixed a crash under certain conditions</para>
       </listitem>
 
+      <listitem>
+        <para>EFI: fixed access to devices attached to SATA port 2 and
+          higher (bug #15607)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
