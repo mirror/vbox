@@ -247,24 +247,25 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         if fRc is True:
             (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 3 * 60000);
 
-            # Add the Windows Guest Additions installer files to the files we want to download
-            # from the guest.
-            sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
-            asLogFile.append(sGuestAddsDir + 'install.log');
-            # Note: There won't be a install_ui.log because of the silent installation.
-            asLogFile.append(sGuestAddsDir + 'install_drivers.log');
-            asLogFile.append('C:/Windows/setupapi.log');
+            if fRc is True:
+                # Add the Windows Guest Additions installer files to the files we want to download
+                # from the guest.
+                sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
+                asLogFile.append(sGuestAddsDir + 'install.log');
+                # Note: There won't be a install_ui.log because of the silent installation.
+                asLogFile.append(sGuestAddsDir + 'install_drivers.log');
+                asLogFile.append('C:/Windows/setupapi.log');
 
-            # Note: setupapi.dev.log only is available since Windows 2000.
-            if fHaveSetupApiDevLog:
-                asLogFile.append('C:/Windows/setupapi.dev.log');
+                # Note: setupapi.dev.log only is available since Windows 2000.
+                if fHaveSetupApiDevLog:
+                    asLogFile.append('C:/Windows/setupapi.dev.log');
 
-            #
-            # Download log files.
-            # Ignore errors as all files above might not be present (or in different locations)
-            # on different Windows guests.
-            #
-            self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
+                #
+                # Download log files.
+                # Ignore errors as all files above might not be present (or in different locations)
+                # on different Windows guests.
+                #
+                self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
