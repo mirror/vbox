@@ -706,9 +706,11 @@ IdeInitCalculateMode (
   OUT EFI_ATA_COLLECTIVE_MODE                **SupportedModes
   )
 {
+#ifndef VBOX
   if (Channel >= ICH_IDE_MAX_CHANNEL || Device >= ICH_IDE_MAX_DEVICES) {
     return EFI_INVALID_PARAMETER;
   }
+#endif
 
   *SupportedModes = AllocateCopyPool (sizeof (EFI_ATA_COLLECTIVE_MODE), &gEfiAtaCollectiveModeTemplate);
   if (*SupportedModes == NULL) {
