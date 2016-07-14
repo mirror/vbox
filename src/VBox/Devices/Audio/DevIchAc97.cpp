@@ -997,8 +997,8 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
     Assert(lCntlAtt <= 255 / AC97_DB_FACTOR);
     Assert(rCntlAtt <= 255 / AC97_DB_FACTOR);
 
-    LogFunc(("index=0x%x, uVal=%RU32, enmMixerCtl=%RU32\n", index, uVal, enmMixerCtl));
-    LogFunc(("lAtt=%RU8, rAtt=%RU8 ", lCntlAtt, rCntlAtt));
+    LogRel(("index=0x%x, uVal=%RU32, enmMixerCtl=%RU32\n", index, uVal, enmMixerCtl));
+    LogRel(("lAtt=%RU8, rAtt=%RU8 ", lCntlAtt, rCntlAtt));
 
     /*
      * For AC'97 volume controls, each additional step means -1.5dB attenuation with 
