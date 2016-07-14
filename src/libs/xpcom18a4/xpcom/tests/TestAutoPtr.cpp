@@ -81,6 +81,7 @@ class TestRefObjectBaseA {
 
 class TestRefObjectBaseB {
     public:
+        virtual ~TestRefObjectBaseB() {}
         int fooB;
         virtual nsrefcnt AddRef() = 0;
         virtual nsrefcnt Release() = 0;
