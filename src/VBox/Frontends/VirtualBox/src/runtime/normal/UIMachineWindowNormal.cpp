@@ -129,6 +129,12 @@ void UIMachineWindowNormal::sltHandleSessionInitialized()
 #ifndef RT_OS_DARWIN
 void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QString &strMachineID)
 {
+# ifdef VBOX_WS_X11
+    /* We should skip that stuff on Unity (Compiz) to avoid duplicated menu-bar: */
+    if (vboxGlobal().typeOfWindowManager() == X11WMType_Compiz)
+        return;
+# endif /* VBOX_WS_X11 */
+
     /* Skip unrelated machine IDs: */
     if (vboxGlobal().managedVMUuid() != strMachineID)
         return;
@@ -347,10 +353,21 @@ void UIMachineWindowNormal::loadSettings()
 
     /* Load GUI customizations: */
     {
-#ifndef VBOX_WS_MAC
+#if   defined(VBOX_WS_MAC)
+        /* Nothing for Mac OS X. */
+#elif defined(VBOX_WS_WIN)
         /* Update menu-bar visibility: */
         menuBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked());
-#endif /* !VBOX_WS_MAC */
+#elif defined(VBOX_WS_X11)
+        /* We should skip that stuff on Unity (Compiz) to avoid duplicated menu-bar: */
+        if (vboxGlobal().typeOfWindowManager() != X11WMType_Compiz)
+        {
+            /* Update menu-bar visibility: */
+            menuBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked());
+        }
+#else
+# warning "port me!"
+#endif
         /* Update status-bar visibility: */
         statusBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
