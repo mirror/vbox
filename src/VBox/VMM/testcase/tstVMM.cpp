@@ -49,6 +49,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static uint32_t g_cCpus = 1;
+static bool     g_fStat = false;                /* don't create log files on the testboxes */
 
 
 /*********************************************************************************************************************************
@@ -212,6 +213,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         { "--cpus",          'c', RTGETOPT_REQ_UINT8 },
         { "--test",          't', RTGETOPT_REQ_STRING },
+        { "--stat",          's', RTGETOPT_REQ_NOTHING },
     };
     enum
     {
@@ -248,8 +250,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
                 break;
 
+            case 's':
+                g_fStat = true;
+                break;
+
             case 'h':
-                RTPrintf("usage: tstVMM [--cpus|-c cpus] [--test <vmm|tm|msrs|known-msrs>]\n");
+                RTPrintf("usage: tstVMM [--cpus|-c cpus] [-s] [--test <vmm|tm|msrs|known-msrs>]\n");
                 return 1;
 
             case 'V':
@@ -285,7 +291,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
                 if (RT_FAILURE(rc))
                     RTTestFailed(hTest, "VMMDoTest failed: rc=%Rrc\n", rc);
-                STAMR3Dump(pUVM, "*");
+                if (g_fStat)
+                    STAMR3Dump(pUVM, "*");
                 break;
             }
 
@@ -302,7 +309,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)tstTMWorker, 2, pVM, hTest);
                 if (RT_FAILURE(rc))
                     RTTestFailed(hTest, "VMMDoTest failed: rc=%Rrc\n", rc);
-                STAMR3Dump(pUVM, "*");
+                if (g_fStat)
+                    STAMR3Dump(pUVM, "*");
                 break;
             }
 
