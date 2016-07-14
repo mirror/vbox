@@ -907,7 +907,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 oCaseFile.noteReasonForId(self.ktHarmless, oFailedResult.idTestResult);
 
             elif  sResultLog.find('** error: no action was specified') > 0 \
-               or sResultLog.find('(len(self._asXml, asText))'):
+               or sResultLog.find('(len(self._asXml, asText))') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_Ignore_Buggy_Test_Driver, oFailedResult.idTestResult);
 
             else:
