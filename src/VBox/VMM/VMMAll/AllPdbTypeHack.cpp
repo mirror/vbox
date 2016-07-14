@@ -78,6 +78,9 @@ PPDMCRITSECTRW      g_PdbTypeHack4 = NULL;
 PPDMDEVINS          g_PdbTypeHack5 = NULL;
 PPDMDRVINS          g_PdbTypeHack6 = NULL;
 PPDMUSBINS          g_PdbTypeHack7 = NULL;
+PCVMCPU             g_PdbTypeHack8 = NULL;
+CTX_SUFF(PVM)       g_PdbTypeHack9 = NULL;
+CTX_SUFF(PVMCPU)    g_PdbTypeHack10 = NULL;
 
 DECLEXPORT(uint32_t) PdbTypeHack(PVM pVM, PVMCPU pVCpu, PPDMCRITSECT pCs1, PPDMCRITSECTRW pCs2);
 }
@@ -88,8 +91,11 @@ DECLEXPORT(uint32_t) PdbTypeHack(PVM pVM, PVMCPU pVCpu, PPDMCRITSECT pCs1, PPDMC
        helps making sure we've included all we need to get at the internal stuff.. */
     return pVM->fGlobalForcedActions
          | (pVM == g_PdbTypeHack1)
+         | (pVM == g_PdbTypeHack9)
          | pVCpu->fLocalForcedActions
          | (pVCpu == g_PdbTypeHack2)
+         | (pVCpu == g_PdbTypeHack8)
+         | (pVCpu == g_PdbTypeHack10)
          | pCs1->s.Core.fFlags
          | (pCs1 == g_PdbTypeHack3)
          | pCs2->s.Core.fFlags
@@ -101,5 +107,4 @@ DECLEXPORT(uint32_t) PdbTypeHack(PVM pVM, PVMCPU pVCpu, PPDMCRITSECT pCs1, PPDMC
          | (uint32_t)g_PdbTypeHack7->Internal.s.fVMSuspended
          | (g_PdbTypeHack7 != NULL);
 }
-
 
