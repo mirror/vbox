@@ -382,7 +382,7 @@ NextIsInclude(input_callback_state *callback_state, char **startp,
         /* make sure we have accurate line info */
         IDL_file_get(&scratch, (int *)&data->lineno);
         fprintf(stderr,
-                "%s:%d: didn't find end of quoted include name \"%s\n",
+                "%s:%u: didn't find end of quoted include name \"%s\n",
                 scratch, data->lineno, filename);
         return -1;
     }
