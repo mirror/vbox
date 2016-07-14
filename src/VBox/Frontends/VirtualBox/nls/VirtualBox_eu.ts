@@ -174,7 +174,7 @@
 <context>
     <name>QIMessageBox</name>
     <message>
-        <location filename="../src/extensions/QIMessageBox.cpp" line="+299"/>
+        <location filename="../src/extensions/QIMessageBox.cpp" line="+301"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="+1796"/>
         <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+180"/>
         <source>OK</source>
@@ -345,7 +345,7 @@
         <translation type="obsolete">Bidali ACPI Indar Botoi sakatze gertaera makina birtualera</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="+477"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="+482"/>
         <source>&amp;Close...</source>
         <translation>It&amp;xi...</translation>
     </message>
@@ -1771,7 +1771,7 @@
 <context>
     <name>UIApplianceUnverifiedCertificateViewer</name>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="+260"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="+263"/>
         <source>Unverifiable Certificate! Continue?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4211,7 +4211,7 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+633"/>
+        <location line="+627"/>
         <source>None</source>
         <translation>Ezer ez</translation>
     </message>
@@ -4283,7 +4283,7 @@
         <translation type="obsolete">Ezker Alt</translation>
     </message>
     <message>
-        <location line="-555"/>
+        <location line="-549"/>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="+178"/>
         <source>Unset shortcut</source>
         <translation>Desezarri lastertekla</translation>
@@ -9768,7 +9768,7 @@
         <translation>Erakutsi Egoerabarra</translation>
     </message>
     <message>
-        <location line="+330"/>
+        <location line="+338"/>
         <source>Select a virtual machine file</source>
         <translation>Hautatu makina birtual agiria</translation>
     </message>
@@ -9778,12 +9778,12 @@
         <translation>Makina birtual agiriak (%1)</translation>
     </message>
     <message>
-        <location line="-223"/>
+        <location line="-231"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Ongi etorri VirtualBox-era!&lt;/h3&gt;&lt;p&gt;Leiho honetako ezker aldea zure ordenagailuko makina birtualen zerrenda bat da. Zerrenda orain hutsik dago oraindik ez duzulako makina birtualik sortu.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Makina birtual berri bat sortzeko, sakatu &lt;b&gt;Berria&lt;/b&gt; botoia leihoaren goialdeko tresna barra nagusian.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; tekla sakatu dezakezu berehalako laguntza lortzeko, edo ikusi &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; azken argibideak eta berriak jasotzeko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+773"/>
+        <location line="+781"/>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Kudeatzailea</translation>
@@ -11165,7 +11165,7 @@
         <translation>Ireki Birtualizazio Heuskarria (%1)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="-204"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="-206"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+1"/>
         <source>Appliance settings</source>
         <translation>Gailu ezarpenak</translation>
