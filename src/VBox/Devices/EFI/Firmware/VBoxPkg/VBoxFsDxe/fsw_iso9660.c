@@ -212,7 +212,7 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
                 str->data = tmp;
                 str->len += len;
 
-                if ((nm->flags & RR_NM_CONT) == 0);
+                if ((nm->flags & RR_NM_CONT) == 0)
                     goto done;
             }
         }
