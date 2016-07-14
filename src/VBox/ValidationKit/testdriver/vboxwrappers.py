@@ -57,6 +57,8 @@ def _ControllerNameToBus(sController):
         iType = vboxcon.StorageBus_SAS;
     elif sController == "SCSI Controller":
         iType = vboxcon.StorageBus_SCSI;
+    elif sController == "NVMe Controller":
+        iType = vboxcon.StorageBus_PCIe;
     else:
         iType = vboxcon.StorageBus_Null;
     return iType;
