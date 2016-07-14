@@ -9905,12 +9905,12 @@ IEM_STATIC VBOXSTRICTRC iemMemStackPushCommitSpecial(PVMCPU pVCpu, void *pvMem, 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   cbMem               The number of bytes to push onto the stack.
+ * @param   cbMem               The number of bytes to pop from the stack.
  * @param   ppvMem              Where to return the pointer to the stack memory.
  * @param   puNewRsp            Where to return the new RSP value.  This must be
- *                              passed unchanged to
- *                              iemMemStackPopCommitSpecial() or applied
- *                              manually if iemMemStackPopDoneSpecial() is used.
+ *                              assigned to CPUMCTX::rsp manually some time
+ *                              after iemMemStackPopDoneSpecial() has been
+ *                              called.
  */
 IEM_STATIC VBOXSTRICTRC iemMemStackPopBeginSpecial(PVMCPU pVCpu, size_t cbMem, void const **ppvMem, uint64_t *puNewRsp)
 {
@@ -9928,43 +9928,22 @@ IEM_STATIC VBOXSTRICTRC iemMemStackPopBeginSpecial(PVMCPU pVCpu, size_t cbMem, v
  *
  * @returns Strict VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   cbMem               The number of bytes to push onto the stack.
+ * @param   cbMem               The number of bytes to pop from the stack.
  * @param   ppvMem              Where to return the pointer to the stack memory.
  * @param   puNewRsp            Where to return the new RSP value.  This must be
- *                              passed unchanged to
- *                              iemMemStackPopCommitSpecial() or applied
- *                              manually if iemMemStackPopDoneSpecial() is used.
+ *                              assigned to CPUMCTX::rsp manually some time
+ *                              after iemMemStackPopDoneSpecial() has been
+ *                              called.
  */
 IEM_STATIC VBOXSTRICTRC iemMemStackPopContinueSpecial(PVMCPU pVCpu, size_t cbMem, void const **ppvMem, uint64_t *puNewRsp)
 {
     Assert(cbMem < UINT8_MAX);
-    PCPUMCTX    pCtx     = IEM_GET_CTX(pVCpu);
+    PCPUMCTX    pCtx = IEM_GET_CTX(pVCpu);
     RTUINT64U   NewRsp;
     NewRsp.u = *puNewRsp;
     RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pVCpu, pCtx, &NewRsp, 8);
     *puNewRsp = NewRsp.u;
     return iemMemMap(pVCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_R);
-}
-
-
-/**
- * Commits a special stack pop (started by iemMemStackPopBeginSpecial).
- *
- * This will update the rSP.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pvMem               The pointer returned by
- *                              iemMemStackPopBeginSpecial().
- * @param   uNewRsp             The new RSP value returned by
- *                              iemMemStackPopBeginSpecial().
- */
-IEM_STATIC VBOXSTRICTRC iemMemStackPopCommitSpecial(PVMCPU pVCpu, void const *pvMem, uint64_t uNewRsp)
-{
-    VBOXSTRICTRC rcStrict = iemMemCommitAndUnmap(pVCpu, (void *)pvMem, IEM_ACCESS_STACK_R);
-    if (rcStrict == VINF_SUCCESS)
-        IEM_GET_CTX(pVCpu)->rsp = uNewRsp;
-    return rcStrict;
 }
 
 

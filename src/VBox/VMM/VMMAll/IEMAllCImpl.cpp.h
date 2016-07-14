@@ -2161,6 +2161,11 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         uNewRip = uPtrFrame.pu64[0];
         uNewCs  = uPtrFrame.pu16[4];
     }
+    rcStrict = iemMemStackPopDoneSpecial(pVCpu, uPtrFrame.pv);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* extremely likely */ }
+    else
+        return rcStrict;
 
     /*
      * Real mode and V8086 mode are easy.
@@ -2178,9 +2183,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
 
         /* commit the operation. */
-        rcStrict = iemMemStackPopCommitSpecial(pVCpu, uPtrFrame.pv, uNewRsp);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        pCtx->rsp           = uNewRsp;
         pCtx->rip           = uNewRip;
         pCtx->cs.Sel        = uNewCs;
         pCtx->cs.ValidSel   = uNewCs;
@@ -2265,30 +2268,34 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     if ((uNewCs & X86_SEL_RPL) != pVCpu->iem.s.uCpl)
     {
         /* Read the outer stack pointer stored *after* the parameters. */
-        RTCPTRUNION uPtrStack;
-        rcStrict = iemMemStackPopContinueSpecial(pVCpu, cbPop + cbRetPtr, &uPtrStack.pv, &uNewRsp);
+        rcStrict = iemMemStackPopContinueSpecial(pVCpu, cbPop + cbRetPtr, &uPtrFrame.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
 
-        uPtrStack.pu8 += cbPop; /* Skip the parameters. */
+        uPtrFrame.pu8 += cbPop; /* Skip the parameters. */
 
         uint16_t uNewOuterSs;
         uint64_t uNewOuterRsp;
         if (enmEffOpSize == IEMMODE_16BIT)
         {
-            uNewOuterRsp = uPtrStack.pu16[0];
-            uNewOuterSs  = uPtrStack.pu16[1];
+            uNewOuterRsp = uPtrFrame.pu16[0];
+            uNewOuterSs  = uPtrFrame.pu16[1];
         }
         else if (enmEffOpSize == IEMMODE_32BIT)
         {
-            uNewOuterRsp = uPtrStack.pu32[0];
-            uNewOuterSs  = uPtrStack.pu16[2];
+            uNewOuterRsp = uPtrFrame.pu32[0];
+            uNewOuterSs  = uPtrFrame.pu16[2];
         }
         else
         {
-            uNewOuterRsp = uPtrStack.pu64[0];
-            uNewOuterSs  = uPtrStack.pu16[4];
+            uNewOuterRsp = uPtrFrame.pu64[0];
+            uNewOuterSs  = uPtrFrame.pu16[4];
         }
+        rcStrict = iemMemStackPopDoneSpecial(pVCpu, uPtrFrame.pv);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* extremely likely */ }
+        else
+            return rcStrict;
 
         /* Check for NULL stack selector (invalid in ring-3 and non-long mode)
            and read the selector. */
@@ -2410,9 +2417,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
 
         /* commit */
-        rcStrict = iemMemStackPopCommitSpecial(pVCpu, uPtrFrame.pv, uNewRsp);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        pCtx->rsp               = uNewRsp;
         if (enmEffOpSize == IEMMODE_16BIT)
             pCtx->rip           = uNewRip & UINT16_MAX; /** @todo Testcase: When exactly does this occur? With call it happens prior to the limit check according to Intel... */
         else
@@ -2497,9 +2502,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
 
         /* commit */
-        rcStrict = iemMemStackPopCommitSpecial(pVCpu, uPtrFrame.pv, uNewRsp);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        pCtx->rsp           = uNewRsp;
         if (enmEffOpSize == IEMMODE_16BIT)
             pCtx->rip       = uNewRip & UINT16_MAX; /** @todo Testcase: When exactly does this occur? With call it happens prior to the limit check according to Intel... */
         else
@@ -2861,6 +2864,12 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         if (IEM_GET_TARGET_CPU(pVCpu) == IEMTARGETCPU_286)
             uNewFlags &= ~(X86_EFL_NT | X86_EFL_IOPL);
     }
+    rcStrict = iemMemStackPopDoneSpecial(pVCpu, uFrame.pv);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* extremely likely */ }
+    else
+        return rcStrict;
+
     /** @todo Check how this is supposed to work if sp=0xfffe. */
     Log7(("iemCImpl_iret_real_v8086: uNewCs=%#06x uNewRip=%#010x uNewFlags=%#x uNewRsp=%#18llx\n",
           uNewCs, uNewEip, uNewFlags, uNewRsp));
@@ -2903,14 +2912,11 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     /*
      * Commit the operation.
      */
-    rcStrict = iemMemStackPopCommitSpecial(pVCpu, uFrame.pv, uNewRsp);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
 #ifdef DBGFTRACE_ENABLED
     RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "iret/rm %04x:%04x -> %04x:%04x %x %04llx",
                       pCtx->cs.Sel, pCtx->eip, uNewCs, uNewEip, uNewFlags, uNewRsp);
 #endif
-
+    pCtx->rsp           = uNewRsp;
     pCtx->rip           = uNewEip;
     pCtx->cs.Sel        = uNewCs;
     pCtx->cs.ValidSel   = uNewCs;
@@ -3122,8 +3128,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         uNewCs     = uFrame.pu16[1];
         uNewFlags  = uFrame.pu16[2];
     }
-    rcStrict = iemMemCommitAndUnmap(pVCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
-    if (rcStrict != VINF_SUCCESS)
+    rcStrict = iemMemStackPopDoneSpecial(pVCpu, (void *)uFrame.pv); /* don't use iemMemStackPopCommitSpecial here. */
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* extremely likely */ }
+    else
         return rcStrict;
     Log7(("iemCImpl_iret_prot: uNewCs=%#06x uNewEip=%#010x uNewFlags=%#x uNewRsp=%#18llx\n", uNewCs, uNewEip, uNewFlags, uNewRsp));
 
@@ -3519,8 +3527,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
         uNewRsp    = uFrame.pu16[3];
         uNewSs     = uFrame.pu16[4];
     }
-    rcStrict = iemMemCommitAndUnmap(pVCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
-    if (rcStrict != VINF_SUCCESS)
+    rcStrict = iemMemStackPopDoneSpecial(pVCpu, (void *)uFrame.pv); /* don't use iemMemStackPopCommitSpecial here. */
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* extremely like */ }
+    else
         return rcStrict;
     Log7(("iretq stack: cs:rip=%04x:%016RX64 rflags=%016RX64 ss:rsp=%04x:%016RX64\n", uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp));
 
