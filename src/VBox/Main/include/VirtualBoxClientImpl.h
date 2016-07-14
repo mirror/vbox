@@ -33,7 +33,7 @@ class ATL_NO_VTABLE VirtualBoxClient :
 #endif
 {
 public:
-    DECLARE_CLASSFACTORY()
+    DECLARE_CLASSFACTORY_SINGLETON(VirtualBoxClient)
 
     // Do not use any ATL registry support.
     //DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)

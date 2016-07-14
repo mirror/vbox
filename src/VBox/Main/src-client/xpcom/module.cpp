@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,17 +61,20 @@ extern nsIClassInfo *NS_CLASSINFO_NAME(VirtualBoxClientWrap);
  *
  *  Suitable for IN-PROC components.
  */
-class SessionClassFactory : public Session
+class VirtualBoxClientClassFactory : public VirtualBoxClient
 {
 public:
-    virtual ~SessionClassFactory() {
+    virtual ~VirtualBoxClientClassFactory()
+    {
         FinalRelease();
         instance = 0;
     }
-    static nsresult getInstance (Session **inst) {
+    static nsresult GetInstance(VirtualBoxClient **inst)
+    {
         int rv = NS_OK;
-        if (instance == 0) {
-            instance = new SessionClassFactory();
+        if (instance == 0)
+        {
+            instance = new VirtualBoxClientClassFactory();
             if (instance) {
                 instance->AddRef(); // protect FinalConstruct()
                 rv = instance->FinalConstruct();
@@ -88,27 +91,23 @@ public:
         *inst = instance;
         return rv;
     }
-    static nsresult releaseInstance () {
+    static nsresult FactoryDestructor()
+    {
         if (instance)
             instance->Release();
         return NS_OK;
     }
 
 private:
-    static Session *instance;
+    static VirtualBoxClient *instance;
 };
 
-/** @note this is for singleton; disabled for now */
-//
-//Session *SessionClassFactory::instance = 0;
-//
-//NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR_WITH_RC (
-//    Session, SessionClassFactory::getInstance
-//)
+VirtualBoxClient *VirtualBoxClientClassFactory::instance = nsnull;
+
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC(Session)
 
-NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC(VirtualBoxClient)
+NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR_WITH_RC(VirtualBoxClient, VirtualBoxClientClassFactory::GetInstance)
 
 /**
  *  Component definition table.
@@ -122,8 +121,6 @@ static const nsModuleComponentInfo components[] =
         SessionConstructor, // constructor function
         NULL, // registration function
         NULL, // deregistration function
-/** @note this is for singleton; disabled for now */
-//        SessionClassFactory::releaseInstance,
         NULL, // destructor function
         NS_CI_INTERFACE_GETTER_NAME(SessionWrap), // interfaces function
         NULL, // language helper
@@ -135,7 +132,7 @@ static const nsModuleComponentInfo components[] =
         VirtualBoxClientConstructor, // constructor function
         NULL, // registration function
         NULL, // deregistration function
-        NULL, // destructor function
+        VirtualBoxClientClassFactory::FactoryDestructor, // destructor function
         NS_CI_INTERFACE_GETTER_NAME(VirtualBoxClientWrap), // interfaces function
         NULL, // language helper
         &NS_CLASSINFO_NAME(VirtualBoxClientWrap) // global class info & flags
