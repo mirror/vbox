@@ -118,16 +118,6 @@
         linkend="networkingdetails" />.</para>
       </glossdef>
     </glossentry>
-
-    <glossentry>
-      <glossterm>DKMS</glossterm>
-
-      <glossdef>
-        <para>Dynamic Kernel Module Support. A framework that simplifies
-        installing and updating external kernel modules on Linux machines; see
-        <xref linkend="externalkernelmodules" />.</para>
-      </glossdef>
-    </glossentry>
   </glossdiv>
 
   <glossdiv>

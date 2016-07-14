@@ -365,102 +365,63 @@
       <computeroutput>vboxnetadp</computeroutput> which are required for the
       more advanced networking features of VirtualBox.</para>
 
-      <para>The VirtualBox kernel module is automatically installed on your
-      system when you install VirtualBox. To maintain it with future kernel
-      updates, for those Linux distributions which provide it -- most current
-      ones -- we recommend installing Dynamic Kernel Module Support
-      (DKMS)<footnote>
-          <para>See <ulink
-          url="http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support">http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support</ulink>
-          for an introduction.</para>
-        </footnote>. This framework helps with building and upgrading kernel
-      modules.</para>
+      <para>The modules will be built automatically during installation or
+      after kernel updates if your Linux system is prepared for building
+      external kernel modules.</para>
 
-      <para>If DKMS is not already installed, execute one of the following:
+      <para>Most Linux distributions can be set up simply by installing
+      the right packages - normally, these will be the GNU compiler
+      (GCC), GNU Make (make) and packages containing header files for
+      your kernel - and making sure that all system updates are
+      installed and that the system is running the most up-to-date
+      kernel included in the distribution. <emphasis>The version numbers
+      of the header file packages must be the same as that of the kernel
+      you are using.</emphasis></para>
+
       <itemizedlist>
-          <listitem>
-            <para>On an Ubuntu system:</para>
+        <listitem>
+          <para>With Debian and Ubuntu releases, you must install the
+          right version of the
+          <computeroutput>linux-headers</computeroutput> and if it
+          exists the <computeroutput>linux-kbuild</computeroutput>
+          package. Current Ubuntu releases should have the right
+          packages installed by default.</para>
+        </listitem>
 
-            <screen>sudo apt-get install dkms</screen>
-          </listitem>
+        <listitem>
+          <para>In even older Debian and Ubuntu releases, you must
+          install the right version of the
+          <computeroutput>kernel-headers</computeroutput>
+          package.</para>
+        </listitem>
 
-          <listitem>
-            <para>On a Fedora system:<screen>yum install dkms</screen></para>
-          </listitem>
+        <listitem>
+          <para>On Fedora and Redhat systems, the package is
+          <computeroutput>kernel-devel</computeroutput>.</para>
+        </listitem>
 
-          <listitem>
-            <para>On a Mandriva or Mageia system:<screen>urpmi dkms</screen></para>
-          </listitem>
-        </itemizedlist></para>
+        <listitem>
+          <para>On SUSE and openSUSE Linux, you must install the right
+          versions of the <computeroutput>kernel-source</computeroutput>
+          and <computeroutput>kernel-syms</computeroutput>
+          packages.</para>
+        </listitem>
 
-      <para>If DKMS is available and installed, the VirtualBox kernel module
-      should always work automatically, and it will be automatically rebuilt
-      if your host kernel is updated.</para>
+        <listitem>
+          <para>If you have built your own kernel, you will need to make
+          sure that you also installed all the required header and other
+          files for building external modules to the right locations.
+          The details of how to do this will depend on how you built
+          your kernel, and if you are unsure you should consult the
+          documentation which you followed to do so.</para>
+        </listitem>
+      </itemizedlist>
 
-      <para>Otherwise, there are only two situations in which you will need to
-      worry about the kernel module:<orderedlist>
-          <listitem>
-            <para>The original installation fails. This probably means that
-            your Linux system is not prepared for building external kernel
-            modules.</para>
+      <para>If you suspect that something has gone wrong with module installation,
+      check that your system is set up as described above and try running (as root)
+      the following command:</para>
 
-            <para>Most Linux distributions can be set up simply by installing
-            the right packages - normally, these will be the GNU compiler
-            (GCC), GNU Make (make) and packages containing header files for
-            your kernel - and making sure that all system updates are
-            installed and that the system is running the most up-to-date
-            kernel included in the distribution. <emphasis>The version numbers
-            of the header file packages must be the same as that of the kernel
-            you are using.</emphasis></para>
-
-            <itemizedlist>
-              <listitem>
-                <para>With Debian and Ubuntu releases, you must install the
-                right version of the
-                <computeroutput>linux-headers</computeroutput> and if it
-                exists the <computeroutput>linux-kbuild</computeroutput>
-                package. Current Ubuntu releases should have the right
-                packages installed by default.</para>
-              </listitem>
-
-              <listitem>
-                <para>In even older Debian and Ubuntu releases, you must
-                install the right version of the
-                <computeroutput>kernel-headers</computeroutput>
-                package.</para>
-              </listitem>
-
-              <listitem>
-                <para>On Fedora and Redhat systems, the package is
-                <computeroutput>kernel-devel</computeroutput>.</para>
-              </listitem>
-
-              <listitem>
-                <para>On SUSE and openSUSE Linux, you must install the right
-                versions of the <computeroutput>kernel-source</computeroutput>
-                and <computeroutput>kernel-syms</computeroutput>
-                packages.</para>
-              </listitem>
-
-              <listitem>
-                <para>If you have built your own kernel, you will need to make
-                sure that you also installed all the required header and other
-                files for building external modules to the right locations.
-                The details of how to do this will depend on how you built
-                your kernel, and if you are unsure you should consult the
-                documentation which you followed to do so.</para>
-              </listitem>
-            </itemizedlist>
-          </listitem>
-
-          <listitem>
-            <para>The kernel of your Linux host was updated and DKMS is not
-            installed. In that case, the kernel module will need to be
-            reinstalled by executing (as root):</para>
-
-            <screen>rcvboxdrv setup</screen>
-          </listitem>
-        </orderedlist></para>
+      <screen>rcvboxdrv setup</screen>
     </sect2>
 
     <sect2>
