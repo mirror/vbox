@@ -2033,7 +2033,7 @@ VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu)
     AssertMsg((pCtx->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
     AssertReleaseMsg(pCtx->eflags.Bits.u2IOPL == 0,
                      ("X86_EFL_IOPL=%d CPL=%d\n", pCtx->eflags.Bits.u2IOPL, pCtx->ss.Sel & X86_SEL_RPL));
-    Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
+    Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE));
 
     pCtx->eflags.u32        |= X86_EFL_IF; /* paranoia */
 
