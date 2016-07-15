@@ -891,12 +891,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 oCaseFile.noteReason(self.ktReason_Ignore_Stale_Files);
                 return self.caseClosed(oCaseFile);
 
-            # Broken XPCOM build.
-            if   sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0 \
-              or sMainLog.find('Details: code NS_ERROR_INVALID_POINTER') > 0:
-                oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build);
-                return self.caseClosed(oCaseFile);
-
         #
         # Go thru each failed result.
         #
@@ -922,6 +916,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif  sResultLog.find('** error: no action was specified') > 0 \
                or sResultLog.find('(len(self._asXml, asText))') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_Ignore_Buggy_Test_Driver, oFailedResult.idTestResult);
+
+            if   sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0 \
+              or sMainLog.find('Details: code NS_ERROR_INVALID_POINTER') > 0:
+                oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build);
+                return self.caseClosed(oCaseFile);
 
             else:
                 self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
