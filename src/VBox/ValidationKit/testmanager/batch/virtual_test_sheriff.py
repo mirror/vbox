@@ -894,7 +894,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             # Broken XPCOM build.
             if   sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0 \
               or sMainLog.find('Details: code NS_ERROR_INVALID_POINTER') > 0:
-                oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build, oFailedResult.idTestResult);
+                oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build);
                 return self.caseClosed(oCaseFile);
 
         #
