@@ -252,7 +252,9 @@ int main()
     CHECK_PADDING_VMCPU(64, iom);
     CHECK_PADDING_VMCPU(64, dbgf);
     CHECK_PADDING_VMCPU(64, gim);
+#ifdef VBOX_WITH_NEW_APIC
     CHECK_PADDING_VMCPU(64, apic);
+#endif
     PRINT_OFFSET(VMCPU, pgm);
     CHECK_PADDING_VMCPU(4096, pgm);
     CHECK_PADDING_VMCPU(4096, cpum);
