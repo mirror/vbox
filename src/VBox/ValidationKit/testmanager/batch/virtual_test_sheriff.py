@@ -429,6 +429,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
     ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
+    ktReason_Buggy_Build_Broken_Build                  = ( 'Broken Build',      'Buggy build' );
     ## @}
 
     ## BSOD category.
@@ -915,6 +916,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif  sResultLog.find('** error: no action was specified') > 0 \
                or sResultLog.find('(len(self._asXml, asText))') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_Ignore_Buggy_Test_Driver, oFailedResult.idTestResult);
+
+            elif  sResultLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0:
+                oCaseFile.noteReasonForId(self.ktReason_Buggy_Build_Broken_Build, oFailedResult.idTestResult);
 
             else:
                 self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
