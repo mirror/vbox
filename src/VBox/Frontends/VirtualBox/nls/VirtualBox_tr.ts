@@ -1722,27 +1722,27 @@
     </message>
     <message>
         <source>Issuer:               %1</source>
-        <translation>Veren:                %1</translation>
+        <translation type="vanished">Veren:                %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation>Konu:                  %1</translation>
+        <translation type="vanished">Konu:                  %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation>Geçerlilik Başlangıcı: %1</translation>
+        <translation type="vanished">Geçerlilik Başlangıcı: %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation>Geçerlilik Sonu:      %1</translation>
+        <translation type="vanished">Geçerlilik Sonu:      %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation>Seri Numarası:        %1</translation>
+        <translation type="vanished">Seri Numarası:        %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation>Kendinden İmzalı: %1</translation>
+        <translation type="vanished">Kendinden İmzalı: %1</translation>
     </message>
     <message>
         <source>True</source>
@@ -1754,19 +1754,69 @@
     </message>
     <message>
         <source>Authority (CA):       %1</source>
-        <translation>Yetkili (CA):             %1</translation>
+        <translation type="vanished">Yetkili (CA):             %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
-        <translation>Ortak Algoritma:    %1 (%2)</translation>
+        <translation type="vanished">Ortak Algoritma:    %1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation>İmza Algoritması:       %1 (%2)</translation>
+        <translation type="vanished">İmza Algoritması:       %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation>X.509 Sürüm Numarası: %1</translation>
+        <translation type="vanished">X.509 Sürüm Numarası: %1</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
+        <comment>key: value</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Issuer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Subject</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid Before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authority (CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2)</source>
+        <comment>value (clarification)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X.509 Version Number</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

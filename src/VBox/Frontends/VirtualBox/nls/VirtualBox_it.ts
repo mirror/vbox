@@ -1914,27 +1914,27 @@
     </message>
     <message>
         <source>Issuer:               %1</source>
-        <translation>Emittente:          %1</translation>
+        <translation type="vanished">Emittente:          %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation>Oggetto:             %1</translation>
+        <translation type="vanished">Oggetto:             %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation>Non valido prima:   %1</translation>
+        <translation type="vanished">Non valido prima:   %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation>Non valido dopo:   %1</translation>
+        <translation type="vanished">Non valido dopo:   %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation>Numero di serie:     %1</translation>
+        <translation type="vanished">Numero di serie:     %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation>Auto-firmato:        %1</translation>
+        <translation type="vanished">Auto-firmato:        %1</translation>
     </message>
     <message>
         <source>True</source>
@@ -1946,19 +1946,69 @@
     </message>
     <message>
         <source>Authority (CA):       %1</source>
-        <translation>Autorità (CA):        %1</translation>
+        <translation type="vanished">Autorità (CA):        %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
-        <translation>Algoritmo pubblico: %1 (%2)</translation>
+        <translation type="vanished">Algoritmo pubblico: %1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation>Algoritmo di firma:    %1 (%2)</translation>
+        <translation type="vanished">Algoritmo di firma:    %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation>Numero versione X.509: %1</translation>
+        <translation type="vanished">Numero versione X.509: %1</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
+        <comment>key: value</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Issuer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Subject</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid Before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authority (CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2)</source>
+        <comment>value (clarification)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X.509 Version Number</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

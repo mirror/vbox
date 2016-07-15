@@ -1542,6 +1542,7 @@
         <translation type="unfinished">
             <numerusform></numerusform>
             <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -1552,6 +1553,7 @@
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
+            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -1728,30 +1730,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Issuer:               %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Subject:              %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not Valid Before:     %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not Valid After:      %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Serial Number:        %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Self-Signed:          %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>True</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1760,19 +1738,53 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Authority (CA):       %1</source>
+        <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
+        <comment>key: value</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Public Algorithm:     %1 (%2)</source>
+        <source>Issuer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Signature Algorithm:  %1 (%2)</source>
+        <source>Subject</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>X.509 Version Number: %1</source>
+        <source>Not Valid Before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authority (CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2)</source>
+        <comment>value (clarification)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X.509 Version Number</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3159,6 +3171,7 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>%n grup</numerusform>
             <numerusform>%n grups</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -3172,6 +3185,7 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>%n màquina</numerusform>
             <numerusform>%n màquines</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -3180,6 +3194,7 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>(%n executant-se)</numerusform>
             <numerusform>(%n executant-se)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -10162,6 +10177,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">
             <numerusform>&lt;p&gt;La màquina virtual &lt;b&gt;%1&lt;/b&gt; es troba en un estat alçat.&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat en temps d&apos;execució de la màquina virtual exportada. Tingueu en compte que la màquina existent no canviarà.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Les màquines virtuals &lt;b&gt;%1&lt;/b&gt; es troben en un estat alçat.&lt;/p&gt;&lt;p&gt;Si continueu, es descartaran els estat en temps d&apos;execució de les màquines virtuals exportades. Tingueu en compte que les màquines existents no canviaran.&lt;/p&gt;</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -10410,6 +10426,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">
             <numerusform>&lt;p&gt;La %n màquina virtual següent es troba en estat alçat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si voleu continuar, es descartarà l&apos;estat d&apos;execució de la màquina exportada. L&apos;altra màquina no canviarà.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Les %n màquines virtuals següents es troben en estat alçat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si voleu continuar, es descartaran els estats d&apos;execució de les màquines exportades. Les altres màquines no canviaran.&lt;/p&gt;</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -10652,6 +10669,7 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>&lt;p&gt;La màquina virtual %n es troba en un estat alçat &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat en temps d&apos;execució de la màquina virtual exportada. Tingueu en compte que la màquina existent no canviarà.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Les %n màquines virtuals es troben en un estat alçat &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat en temps d&apos;execució de les màquines virtuals exportades. Tingueu en compte que les màquines existent no canviaran.&lt;/p&gt;</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -16166,6 +16184,7 @@ Versió %1</translation>
         <translation>
             <numerusform>%n any</numerusform>
             <numerusform>%n anys</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16173,6 +16192,7 @@ Versió %1</translation>
         <translation>
             <numerusform>%n mes</numerusform>
             <numerusform>%n mesos</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16180,6 +16200,7 @@ Versió %1</translation>
         <translation>
             <numerusform>%n dia</numerusform>
             <numerusform>%n dies</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16187,6 +16208,7 @@ Versió %1</translation>
         <translation>
             <numerusform>%n hora</numerusform>
             <numerusform>%n hores</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16194,6 +16216,7 @@ Versió %1</translation>
         <translation>
             <numerusform>%n minut</numerusform>
             <numerusform>%n minuts</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16201,6 +16224,7 @@ Versió %1</translation>
         <translation>
             <numerusform>%n segon</numerusform>
             <numerusform>%n segons</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -18856,6 +18880,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n dia)</numerusform>
             <numerusform> (fa %n dies)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -18863,6 +18888,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n hora)</numerusform>
             <numerusform> (fa %n hores)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -18870,6 +18896,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n minut)</numerusform>
             <numerusform> (fa %n minuts)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -18877,6 +18904,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n segon)</numerusform>
             <numerusform> (fa %n segons)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -18974,6 +19002,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation>
             <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutable connectada. Mentre treballeu amb esta captura, la imatge immutable no es reiniciarà per evitar la pèrdua de dades.</numerusform>
             <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutables connectades. Mentre treballeu amb esta captura, les imatges immutables no es reiniciaran per evitar la pèrdua de dades.</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>

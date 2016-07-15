@@ -1705,27 +1705,27 @@
     </message>
     <message>
         <source>Issuer:               %1</source>
-        <translation>Издатель:                   %1</translation>
+        <translation type="vanished">Издатель:                   %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation>Пользователь:               %1</translation>
+        <translation type="vanished">Пользователь:               %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation>Срок действия (начало):     %1</translation>
+        <translation type="vanished">Срок действия (начало):     %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation>Срок действия (конец):      %1</translation>
+        <translation type="vanished">Срок действия (конец):      %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation>Серийный номер:             %1</translation>
+        <translation type="vanished">Серийный номер:             %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation>Самозаверенный сертификат:  %1</translation>
+        <translation type="vanished">Самозаверенный сертификат:  %1</translation>
     </message>
     <message>
         <source>True</source>
@@ -1737,19 +1737,69 @@
     </message>
     <message>
         <source>Authority (CA):       %1</source>
-        <translation>Доверенный сертификат:      %1</translation>
+        <translation type="vanished">Доверенный сертификат:      %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
-        <translation>Алгоритм открытого ключа:   %1 (%2)</translation>
+        <translation type="vanished">Алгоритм открытого ключа:   %1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation>Алгоритм подписи:           %1 (%2)</translation>
+        <translation type="vanished">Алгоритм подписи:           %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation>Версия X.509:               %1</translation>
+        <translation type="vanished">Версия X.509:               %1</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
+        <comment>key: value</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Issuer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Subject</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid Before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authority (CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2)</source>
+        <comment>value (clarification)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X.509 Version Number</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -1616,27 +1616,27 @@
     <message>
         <source>Issuer:               %1</source>
         <translatorcomment>todo</translatorcomment>
-        <translation>签发者:               %1</translation>
+        <translation type="vanished">签发者:               %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation>主题:              %1</translation>
+        <translation type="vanished">主题:              %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation>在此之前无效:     %1</translation>
+        <translation type="vanished">在此之前无效:     %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation>在此之后无效:      %1</translation>
+        <translation type="vanished">在此之后无效:      %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation>序列号:        %1</translation>
+        <translation type="vanished">序列号:        %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation>自行签署:          %1</translation>
+        <translation type="vanished">自行签署:          %1</translation>
     </message>
     <message>
         <source>True</source>
@@ -1649,19 +1649,69 @@
     <message>
         <source>Authority (CA):       %1</source>
         <translatorcomment>todo</translatorcomment>
-        <translation>授权机构 (CA):       %1</translation>
+        <translation type="vanished">授权机构 (CA):       %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
-        <translation>公钥算法:     %1 (%2)</translation>
+        <translation type="vanished">公钥算法:     %1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation>签名算法:  %1 (%2)</translation>
+        <translation type="vanished">签名算法:  %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation>X.509 版本: %1</translation>
+        <translation type="vanished">X.509 版本: %1</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
+        <comment>key: value</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Issuer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Subject</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid Before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authority (CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2)</source>
+        <comment>value (clarification)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X.509 Version Number</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

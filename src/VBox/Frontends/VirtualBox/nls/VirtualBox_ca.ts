@@ -969,6 +969,7 @@
         <translation>
             <numerusform>Aquesta màquina virtual està protegida amb contrasenya. Introduïu la contrasenya d&apos;encriptació a continuació.</numerusform>
             <numerusform>Aquesta màquina virtual està protegida amb contrasenya. Introduïu les %n contrasenyes d&apos;encriptació a continuació.</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -987,6 +988,7 @@
         <translation>
             <numerusform>&lt;nobr&gt;Utilitzat pel disc dur següent:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Utilitzat pels %n discos durs següents:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -1131,30 +1133,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Issuer:               %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Subject:              %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not Valid Before:     %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not Valid After:      %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Serial Number:        %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Self-Signed:          %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>True</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1163,19 +1141,53 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Authority (CA):       %1</source>
+        <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
+        <comment>key: value</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Public Algorithm:     %1 (%2)</source>
+        <source>Issuer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Signature Algorithm:  %1 (%2)</source>
+        <source>Subject</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>X.509 Version Number: %1</source>
+        <source>Not Valid Before</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Valid After</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Self-Signed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authority (CA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (%2)</source>
+        <comment>value (clarification)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Algorithm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X.509 Version Number</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1316,6 +1328,7 @@
         <translation>
             <numerusform>%n grup</numerusform>
             <numerusform>%n grups</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -1329,6 +1342,7 @@
         <translation>
             <numerusform>%n màquina</numerusform>
             <numerusform>%n màquines</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -1337,6 +1351,7 @@
         <translation>
             <numerusform>(%n en execució)</numerusform>
             <numerusform>(%n en execució)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -5692,6 +5707,7 @@
         <translation>
             <numerusform>&lt;p&gt;La màquina virtual següent es troba en estat desat:&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat d&apos;execució de la màquina exportada. Les altres màquines no canviaran.&lt;/p&gt; </numerusform>
             <numerusform>&lt;p&gt;Les %n màquines virtuals següents es troben en estat desat:&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat d&apos;execució de les màquines exportades. Les altres màquines no canviaran.&lt;/p&gt; </numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -8232,6 +8248,7 @@
         <translation>
             <numerusform>%n any</numerusform>
             <numerusform>%n anys</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8239,6 +8256,7 @@
         <translation>
             <numerusform>%n mes</numerusform>
             <numerusform>%n mesos</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8246,6 +8264,7 @@
         <translation>
             <numerusform>%n dia</numerusform>
             <numerusform>%n dies</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8253,6 +8272,7 @@
         <translation>
             <numerusform>%n hora</numerusform>
             <numerusform>%n hores</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8260,6 +8280,7 @@
         <translation>
             <numerusform>%n minut</numerusform>
             <numerusform>%n minuts</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8267,6 +8288,7 @@
         <translation>
             <numerusform>%n segon</numerusform>
             <numerusform>%n segons</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -9236,6 +9258,7 @@
         <translation>
             <numerusform>Avís: Esteu fent una captura d&apos;una màquina en execució que té %n imatge no immutable adjunta. Mentres treballeu des d&apos;aquesta captura no es reiniciarà la imatge immutable per evitar la pèrdua de dades.</numerusform>
             <numerusform>Avís: Esteu fent una captura d&apos;una màquina en execució que té %n imatges no immutables adjuntes. Mentres treballeu des d&apos;aquesta captura no es reiniciaran les imatges immutables per evitar la pèrdua de dades.</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
