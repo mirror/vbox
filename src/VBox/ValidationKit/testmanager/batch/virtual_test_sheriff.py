@@ -141,6 +141,31 @@ class VirtualTestSheriffCaseFile(object):
         return self.isVBoxTest() \
            and self.oTestCase.sName.lower().startswith('install:');
 
+    def isVBoxUSBTest(self):
+        """ Test case classification: VirtualBox USB test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('usb:');
+
+    def isVBoxStorageTest(self):
+        """ Test case classification: VirtualBox Storage test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('storage:');
+
+    def isVBoxGAsTest(self):
+        """ Test case classification: VirtualBox Guest Additions test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('ga\'s tests');
+
+    def isVBoxAPITest(self):
+        """ Test case classification: VirtualBox API test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('api:');
+
+    def isVBoxBenchmarkTest(self):
+        """ Test case classification: VirtualBox Benchmark test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('benchmark:');
+
     def isVBoxSmokeTest(self):
         """ Test case classification: Smoke test. """
         return self.isVBoxTest() \
@@ -892,6 +917,13 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 return self.caseClosed(oCaseFile);
 
         #
+        # XPCOM screwup
+        #
+        if   sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0:
+            oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build);
+            return self.caseClosed(oCaseFile);
+
+        #
         # Go thru each failed result.
         #
         for oFailedResult in aoFailedResults:
@@ -916,11 +948,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif  sResultLog.find('** error: no action was specified') > 0 \
                or sResultLog.find('(len(self._asXml, asText))') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_Ignore_Buggy_Test_Driver, oFailedResult.idTestResult);
-
-            if   sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0 \
-              or sMainLog.find('Details: code NS_ERROR_INVALID_POINTER') > 0:
-                oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build);
-                return self.caseClosed(oCaseFile);
 
             else:
                 self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
@@ -964,6 +991,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
             oCaseFile = VirtualTestSheriffCaseFile(self, oTestSet, oTree, oBuild, oTestBox, oTestGroup, oTestCase);
 
+            self.dprint(u'usb = %s.' % (oCaseFile.isVBoxUSBTest()));
             if oTestSet.enmStatus == TestSetData.ksTestStatus_BadTestBox:
                 self.dprint(u'investigateBadTestBox is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateBadTestBox(oCaseFile);
@@ -975,6 +1003,26 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif oCaseFile.isVBoxInstallTest():
                 self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+
+            elif oCaseFile.isVBoxUSBTest():
+                self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+
+            elif oCaseFile.isVBoxStorageTest():
+                self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+
+            elif oCaseFile.isVBoxGAsTest():
+                self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+
+            elif oCaseFile.isVBoxAPITest():
+                self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+
+            elif oCaseFile.isVBoxBenchmarkTest():
+                self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
+                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = False);
 
             elif oCaseFile.isVBoxSmokeTest():
                 self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
