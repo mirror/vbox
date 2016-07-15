@@ -636,6 +636,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 eStorageCtrl = vboxcon.StorageControllerType_LsiLogic;
             elif sStorageCtrl == 'BusLogic':
                 if sVmName == 'tst-storage': # Broken for 64bit Linux
+                    reporter.testDone(True);
                     continue;
                 eStorageCtrl = vboxcon.StorageControllerType_BusLogic;
             elif sStorageCtrl == 'NVMe':
