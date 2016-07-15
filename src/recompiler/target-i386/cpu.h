@@ -705,6 +705,9 @@ typedef struct CPUX86State {
     /* exception/interrupt handling */
     int error_code;
     int exception_is_int;
+#ifdef VBOX
+# define EXCEPTION_IS_INT_VALUE_HARDWARE_IRQ 0x42 /**< Special CPUX86State::exception_is_int value indicating hardware irq.  (HACK ALERT) */
+#endif
     target_ulong exception_next_eip;
     target_ulong dr[8]; /* debug registers */
     union {

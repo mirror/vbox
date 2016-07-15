@@ -2453,10 +2453,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         pVM->rem.s.Env.exception_index = u8TrapNo;
         if (enmType != TRPM_SOFTWARE_INT)
         {
-            pVM->rem.s.Env.exception_is_int     = 0;
-#ifdef IEM_VERIFICATION_MODE /* Ugly hack, needs proper fixing. */
-            pVM->rem.s.Env.exception_is_int     = enmType == TRPM_HARDWARE_INT ? 0x42 : 0;
-#endif
+            pVM->rem.s.Env.exception_is_int     = enmType == TRPM_HARDWARE_INT
+                                                ? EXCEPTION_IS_INT_VALUE_HARDWARE_IRQ : 0; /* HACK ALERT! */
             pVM->rem.s.Env.exception_next_eip   = pVM->rem.s.Env.eip;
         }
         else
