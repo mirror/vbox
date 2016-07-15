@@ -372,11 +372,6 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
             /* 3D acceleration video RAM amount test: */
             else if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
             {
-# if 0
-                int cGuestScreenCount = m_pEditorVideoScreenCount->value();
-                uNeedBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cGuestScreenCount);
-                uNeedBytes = qMin(uNeedBytes, 256 * _1M);
-# endif
                 uNeedBytes = qMax(uNeedBytes, (quint64) 128 * _1M);
                 if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
                 {
@@ -959,10 +954,6 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
 #ifdef VBOX_WITH_CRHGSMI
     if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
     {
-# if 0
-        uNeedMBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cGuestScreenCount) / _1M;
-        uNeedMBytes = qMin(uNeedMBytes, 256);
-# endif
         uNeedMBytes = qMax(uNeedMBytes, (quint64) 128);
         /* No less than 256MB (if possible): */
         if (m_iMaxVRAMVisible < 256 && m_iMaxVRAM >= 256)

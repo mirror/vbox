@@ -3684,15 +3684,6 @@ quint64 VBoxGlobal::required2DOffscreenVideoMemory()
 
 #ifdef VBOX_WITH_CRHGSMI
 /* static */
-quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
-{
-    cMonitors = RT_MAX(cMonitors, 1);
-    quint64 cbSize = VBoxGlobal::requiredVideoMemory(strGuestOSTypeId, 1); /* why not cMonitors? */
-    cbSize += 64 * _1M;
-    return cbSize;
-}
-
-/* static */
 bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 {
     return    strGuestOSTypeId.startsWith("WindowsVista")
