@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Global includes: */
-# include <QFontDatabase>
 # include <QVBoxLayout>
 # include <QTextBrowser>
 # include <QPushButton>
@@ -233,8 +232,6 @@ void UIApplianceUnverifiedCertificateViewer::prepare()
         {
             /* Configure text-browser: */
             m_pTextBrowser->setMinimumSize(500, 300);
-            const QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-            m_pTextBrowser->setFont(font);
             /* Add text-browser into layout: */
             pLayout->addWidget(m_pTextBrowser);
         }
@@ -273,19 +270,19 @@ void UIApplianceUnverifiedCertificateViewer::retranslateUi()
                                  ).arg(m_certificate.GetFriendlyName()));
 
     /* Translate text-browser contents: */
-    QStringList info;
-    KCertificateVersion ver = m_certificate.GetVersionNumber();
-    info << tr("Issuer:               %1").arg(QStringList(m_certificate.GetIssuerName().toList()).join(", "));
-    info << tr("Subject:              %1").arg(QStringList(m_certificate.GetSubjectName().toList()).join(", "));
-    info << tr("Not Valid Before:     %1").arg(m_certificate.GetValidityPeriodNotBefore());
-    info << tr("Not Valid After:      %1").arg(m_certificate.GetValidityPeriodNotAfter());
-    info << tr("Serial Number:        %1").arg(m_certificate.GetSerialNumber());
-    info << tr("Self-Signed:          %1").arg(m_certificate.GetSelfSigned() ? tr("True") : tr("False"));
-    info << tr("Authority (CA):       %1").arg(m_certificate.GetCertificateAuthority() ? tr("True") : tr("False"));
-    //info << tr("Trusted:              %1").arg(m_certificate.GetTrusted() ? tr("True") : tr("False")); - no, that's why we're here
-    info << tr("Public Algorithm:     %1 (%2)").arg(m_certificate.GetPublicKeyAlgorithm()).arg(m_certificate.GetPublicKeyAlgorithmOID());
-    info << tr("Signature Algorithm:  %1 (%2)").arg(m_certificate.GetSignatureAlgorithmName()).arg(m_certificate.GetSignatureAlgorithmOID());
-    info << tr("X.509 Version Number: %1").arg(ver);
-    m_pTextBrowser->setPlainText(info.join("\n"));
+    const QString strTemplateRow = tr("<tr><td>%1:</td><td>%2</td></tr>", "key: value");
+    QString strTableContent;
+    strTableContent += strTemplateRow.arg(tr("Issuer"),               QStringList(m_certificate.GetIssuerName().toList()).join(", "));
+    strTableContent += strTemplateRow.arg(tr("Subject"),              QStringList(m_certificate.GetSubjectName().toList()).join(", "));
+    strTableContent += strTemplateRow.arg(tr("Not Valid Before"),     m_certificate.GetValidityPeriodNotBefore());
+    strTableContent += strTemplateRow.arg(tr("Not Valid After"),      m_certificate.GetValidityPeriodNotAfter());
+    strTableContent += strTemplateRow.arg(tr("Serial Number"),        m_certificate.GetSerialNumber());
+    strTableContent += strTemplateRow.arg(tr("Self-Signed"),          m_certificate.GetSelfSigned() ? tr("True") : tr("False"));
+    strTableContent += strTemplateRow.arg(tr("Authority (CA)"),       m_certificate.GetCertificateAuthority() ? tr("True") : tr("False"));
+//    strTableContent += strTemplateRow.arg(tr("Trusted"),              m_certificate.GetTrusted() ? tr("True") : tr("False"));
+    strTableContent += strTemplateRow.arg(tr("Public Algorithm"),     tr("%1 (%2)", "value (clarification)").arg(m_certificate.GetPublicKeyAlgorithm()).arg(m_certificate.GetPublicKeyAlgorithmOID()));
+    strTableContent += strTemplateRow.arg(tr("Signature Algorithm"),  tr("%1 (%2)", "value (clarification)").arg(m_certificate.GetSignatureAlgorithmName()).arg(m_certificate.GetSignatureAlgorithmOID()));
+    strTableContent += strTemplateRow.arg(tr("X.509 Version Number"), QString::number(m_certificate.GetVersionNumber()));
+    m_pTextBrowser->setText(QString("<table>%1</table>").arg(strTableContent));
 }
 
