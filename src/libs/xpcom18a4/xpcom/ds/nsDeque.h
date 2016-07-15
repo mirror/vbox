@@ -67,7 +67,6 @@
 
 class nsDequeFunctor{
 public:
-  virtual ~nsDequeFunctor() {}
   virtual void* operator()(void* anObject)=0;
 };
 

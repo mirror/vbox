@@ -80,7 +80,6 @@ typedef PRUint32 nsrefcnt;
 class NS_NO_VTABLE nsISupports {
 public:
 
-  virtual ~nsISupports() {}
   /**
    * @name Methods
    */
