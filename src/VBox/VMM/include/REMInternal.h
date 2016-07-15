@@ -155,8 +155,8 @@ typedef struct REM
      * It is used to prevent rescheduling on the first call. */
     uint32_t                cCanExecuteRaw;
 
-    /** Pending interrupt (~0 -> nothing). */
-    uint32_t                u32PendingInterrupt;
+    /** Pending interrupt that remR3LoadDone will assert with TRPM. */
+    uint32_t                uStateLoadPendingInterrupt;
 
     /** Number of recorded invlpg instructions. */
     uint32_t volatile       cInvalidatedPages;

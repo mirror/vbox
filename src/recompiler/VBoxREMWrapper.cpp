@@ -4,7 +4,7 @@
  * VBoxREM Win64 DLL Wrapper.
  */
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -375,8 +375,6 @@ static DECLCALLBACKPTR(void, pfnREMR3NotifyDmaPending)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyQueuePending)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyFF)(PVM);
 static DECLCALLBACKPTR(int, pfnREMR3NotifyCodePageChanged)(PVM, PVMCPU, RTGCPTR);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyPendingInterrupt)(PVM, PVMCPU, uint8_t);
-static DECLCALLBACKPTR(uint32_t, pfnREMR3QueryPendingInterrupt)(PVM, PVMCPU);
 static DECLCALLBACKPTR(int, pfnREMR3DisasEnableStepping)(PVM, bool);
 static DECLCALLBACKPTR(bool, pfnREMR3IsPageAccessHandled)(PVM, RTGCPHYS);
 /** @} */
@@ -1199,8 +1197,6 @@ static const REMFNDESC g_aExports[] =
     { "REMR3NotifyQueuePending",                (void *)&pfnREMR3NotifyQueuePending,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyFF",                          (void *)&pfnREMR3NotifyFF,                          &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyCodePageChanged",             (void *)&pfnREMR3NotifyCodePageChanged,             &g_aArgsNotifyCodePageChanged[0],           RT_ELEMENTS(g_aArgsNotifyCodePageChanged),             REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
-    { "REMR3NotifyPendingInterrupt",            (void *)&pfnREMR3NotifyPendingInterrupt,            &g_aArgsNotifyPendingInterrupt[0],          RT_ELEMENTS(g_aArgsNotifyPendingInterrupt),            REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
-    { "REMR3QueryPendingInterrupt",             (void *)&pfnREMR3QueryPendingInterrupt,             &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_INT,    sizeof(uint32_t), NULL },
     { "REMR3DisasEnableStepping",               (void *)&pfnREMR3DisasEnableStepping,               &g_aArgsDisasEnableStepping[0],             RT_ELEMENTS(g_aArgsDisasEnableStepping),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
     { "REMR3IsPageAccessHandled",               (void *)&pfnREMR3IsPageAccessHandled,               &g_aArgsIsPageAccessHandled[0],             RT_ELEMENTS(g_aArgsIsPageAccessHandled),               REMFNDESC_FLAGS_RET_INT,    sizeof(bool),   NULL }
 };
@@ -2444,24 +2440,6 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 #else
     Assert(VALID_PTR(pfnREMR3DisasEnableStepping));
     return pfnREMR3DisasEnableStepping(pVM, fEnable);
-#endif
-}
-
-REMR3DECL(void) REMR3NotifyPendingInterrupt(PVM pVM, PVMCPU pVCpu, uint8_t u8Interrupt)
-{
-#ifndef USE_REM_STUBS
-    Assert(VALID_PTR(pfnREMR3NotifyPendingInterrupt));
-    pfnREMR3NotifyPendingInterrupt(pVM, pVCpu, u8Interrupt);
-#endif
-}
-
-REMR3DECL(uint32_t) REMR3QueryPendingInterrupt(PVM pVM, PVMCPU pVCpu)
-{
-#ifdef USE_REM_STUBS
-    return REM_NO_PENDING_IRQ;
-#else
-    Assert(VALID_PTR(pfnREMR3QueryPendingInterrupt));
-    return pfnREMR3QueryPendingInterrupt(pVM, pVCpu);
 #endif
 }
 

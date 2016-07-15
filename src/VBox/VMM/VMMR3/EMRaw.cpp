@@ -1303,9 +1303,6 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check various preconditions.
          */
 #ifdef VBOX_STRICT
-# ifdef VBOX_WITH_REM
-        Assert(REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ);
-# endif
         Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss.Sel & X86_SEL_RPL) == 3 || (pCtx->ss.Sel & X86_SEL_RPL) == 0
                || (EMIsRawRing1Enabled(pVM) && (pCtx->ss.Sel & X86_SEL_RPL) == 1));
         AssertMsg(   (pCtx->eflags.u32 & X86_EFL_IF)
