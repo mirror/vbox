@@ -1373,8 +1373,12 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
  * @param   pVCpu       The cross context virtual CPU structure to make the
  *                      change on.  Usually the calling EMT.
  * @param   fVisible    Whether to make it visible (true) or hide it (false).
+ *
+ * @remarks This is "VMMDECL" so that it still links with
+ *          the old APIC code which is in VBoxDD2 and not in
+ *          the VMM module.
  */
-VMM_INT_DECL(bool) CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible)
+VMMDECL(bool) CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible)
 {
     bool fOld = pVCpu->cpum.s.fCpuIdApicFeatureVisible;
     pVCpu->cpum.s.fCpuIdApicFeatureVisible = fVisible;
