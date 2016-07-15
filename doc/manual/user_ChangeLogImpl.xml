@@ -15,6 +15,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: fixed a hang during power off if the VM was suspended
+          before and a NVMe controller is configured</para>
+      </listitem>
+
+      <listitem>
         <para>USB: fixed a crash under certain conditions</para>
       </listitem>
 
