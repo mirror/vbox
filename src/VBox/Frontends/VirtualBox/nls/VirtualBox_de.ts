@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="de_DE">
+<TS version="2.0" language="de_DE">
 <context>
     <name>@@@</name>
     <message>
@@ -1108,27 +1108,27 @@
     </message>
     <message>
         <source>Issuer:               %1</source>
-        <translation type="vanished">Aussteller:               %1</translation>
+        <translation>Aussteller:               %1</translation>
     </message>
     <message>
         <source>Subject:              %1</source>
-        <translation type="vanished">Subjekt:                  %1</translation>
+        <translation>Subjekt:                  %1</translation>
     </message>
     <message>
         <source>Not Valid Before:     %1</source>
-        <translation type="vanished">Nicht gültig bevor:       %1</translation>
+        <translation>Nicht gültig bevor:       %1</translation>
     </message>
     <message>
         <source>Not Valid After:      %1</source>
-        <translation type="vanished">Nicht gültig nach:        %1</translation>
+        <translation>Nicht gültig nach:        %1</translation>
     </message>
     <message>
         <source>Serial Number:        %1</source>
-        <translation type="vanished">Fortlaufende Nummer:      %1</translation>
+        <translation>Fortlaufende Nummer:      %1</translation>
     </message>
     <message>
         <source>Self-Signed:          %1</source>
-        <translation type="vanished">Selbstsigniert:           %1</translation>
+        <translation>Selbstsigniert:           %1</translation>
     </message>
     <message>
         <source>True</source>
@@ -1140,69 +1140,69 @@
     </message>
     <message>
         <source>Authority (CA):       %1</source>
-        <translation type="vanished">Zertifizierungsstelle:    %1</translation>
+        <translation>Zertifizierungsstelle:    %1</translation>
     </message>
     <message>
         <source>Public Algorithm:     %1 (%2)</source>
-        <translation type="vanished">Öffentlicher Algorithmus: %1 (%2)</translation>
+        <translation>Öffentlicher Algorithmus: %1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm:  %1 (%2)</source>
-        <translation type="vanished">Signaturalgorithmus:      %1 (%2)</translation>
+        <translation>Signaturalgorithmus:      %1 (%2)</translation>
     </message>
     <message>
         <source>X.509 Version Number: %1</source>
-        <translation type="vanished">X.509-Versionsnummer:     %1</translation>
+        <translation>X.509-Versionsnummer:     %1</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
         <comment>key: value</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Issuer</source>
-        <translation type="unfinished"></translation>
+        <translation>Aussteller</translation>
     </message>
     <message>
         <source>Subject</source>
-        <translation type="unfinished"></translation>
+        <translation>Subjekt</translation>
     </message>
     <message>
         <source>Not Valid Before</source>
-        <translation type="unfinished"></translation>
+        <translation>nicht gültig vor</translation>
     </message>
     <message>
         <source>Not Valid After</source>
-        <translation type="unfinished"></translation>
+        <translation>nicht gültig nach</translation>
     </message>
     <message>
         <source>Serial Number</source>
-        <translation type="unfinished"></translation>
+        <translation>fortlaufende Nummer</translation>
     </message>
     <message>
         <source>Self-Signed</source>
-        <translation type="unfinished"></translation>
+        <translation>selbstsigniert</translation>
     </message>
     <message>
         <source>Authority (CA)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zertifizierungsstelle</translation>
     </message>
     <message>
         <source>Public Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffentlicher Algorithmus</translation>
     </message>
     <message>
         <source>%1 (%2)</source>
         <comment>value (clarification)</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Signature Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Signaturalgorithmus</translation>
     </message>
     <message>
         <source>X.509 Version Number</source>
-        <translation type="unfinished"></translation>
+        <translation>X.509-Versionsnummer</translation>
     </message>
 </context>
 <context>
