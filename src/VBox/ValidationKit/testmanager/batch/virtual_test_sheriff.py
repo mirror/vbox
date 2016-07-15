@@ -991,7 +991,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
             oCaseFile = VirtualTestSheriffCaseFile(self, oTestSet, oTree, oBuild, oTestBox, oTestGroup, oTestCase);
 
-            self.dprint(u'usb = %s.' % (oCaseFile.isVBoxUSBTest()));
             if oTestSet.enmStatus == TestSetData.ksTestStatus_BadTestBox:
                 self.dprint(u'investigateBadTestBox is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateBadTestBox(oCaseFile);
