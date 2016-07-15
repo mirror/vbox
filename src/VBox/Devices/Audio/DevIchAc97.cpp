@@ -983,10 +983,10 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
     lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASK;
     rCntlAtt   = uVal & AC97_BARS_VOL_MASK;
 
-    /* For the master volume, 0 corresponds to 0dB attenuation. For the other volume
-     * controls, 0 means 12dB gain and 8 means unity gain. 
+    /* For the master and headphone volume, 0 corresponds to 0dB attenuation. For the other
+     * volume controls, 0 means 12dB gain and 8 means unity gain.
      */
-    if (index != AC97_Master_Volume_Mute)
+    if (index != AC97_Master_Volume_Mute && index != AC97_Headphone_Volume_Mute)
     {
 #ifndef VBOX_WITH_AC97_GAIN_SUPPORT
         /* NB: Currently there is no gain support, only attenuation. */
@@ -1001,8 +1001,8 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
     LogFunc(("lAtt=%RU8, rAtt=%RU8 ", lCntlAtt, rCntlAtt));
 
     /*
-     * For AC'97 volume controls, each additional step means -1.5dB attenuation with 
-     * zero being maximum. In contrast, we're internally using 255 (PDMAUDIO_VOLUME_MAX) 
+     * For AC'97 volume controls, each additional step means -1.5dB attenuation with
+     * zero being maximum. In contrast, we're internally using 255 (PDMAUDIO_VOLUME_MAX)
      * steps, each -0.375dB, where 0 corresponds to -96dB and 255 corresponds to 0dB.
      */
     uint8_t lVol = PDMAUDIO_VOLUME_MAX - lCntlAtt * AC97_DB_FACTOR;
