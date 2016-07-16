@@ -328,9 +328,10 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 #define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
 #define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
 #define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
-#define IEMTLBE_F_UNUSED            RT_BIT_64(5) /**< Currently unused. */
+#define IEMTLBE_F_PATCH_CODE        RT_BIT_64(5) /**< Code TLB:    Patch code (PATM). */
 #define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
 #define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
+#define IEMTLBE_F_PHYS_REV          UINT64_C(0xffffffffffffff00) /**< Physical revision mask. */
 /** @} */
 
 
@@ -385,6 +386,10 @@ typedef struct IEMTLB
     uint32_t            au32Padding[3];
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
+/** IEMTLB::uTlbRevision increment.  */
+#define IEMTLB_REVISION_INCR    RT_BIT_64(36)
+/** IEMTLB::uTlbPhysRev increment.  */
+#define IEMTLB_PHYS_REV_INCR    RT_BIT_64(8)
 
 
 /**
