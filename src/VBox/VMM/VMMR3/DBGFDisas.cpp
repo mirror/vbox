@@ -35,7 +35,6 @@
 #include <VBox/param.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
-#include "internal/pgm.h"
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

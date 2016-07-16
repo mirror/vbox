@@ -42,8 +42,6 @@
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 
-#include "internal/pgm.h"
-
 
 /*******************************************************************************
  * Structures and Typedefs                                                     *

@@ -65,7 +65,6 @@
 #include <VBox/disopcode.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include "internal/pgm.h"
 
 
 /* Enabled by default */

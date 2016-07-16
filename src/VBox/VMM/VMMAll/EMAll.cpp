@@ -43,7 +43,6 @@
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include <VBox/log.h>
-#include "internal/pgm.h"
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>

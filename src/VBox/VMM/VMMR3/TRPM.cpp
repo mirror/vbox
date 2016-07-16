@@ -81,7 +81,6 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/pgm.h>
-#include "internal/pgm.h"
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>

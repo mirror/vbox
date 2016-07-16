@@ -35,7 +35,6 @@
 #include "PATMA.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/csam.h>
-#include "internal/pgm.h"
 #include <VBox/dbg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>

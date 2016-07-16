@@ -93,7 +93,6 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
-#include <internal/pgm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
