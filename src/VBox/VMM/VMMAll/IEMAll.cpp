@@ -734,6 +734,7 @@ IEM_STATIC VBOXSTRICTRC     iemRaiseSelectorInvalidAccess(PVMCPU pVCpu, uint32_t
 IEM_STATIC VBOXSTRICTRC     iemRaisePageFault(PVMCPU pVCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc);
 IEM_STATIC VBOXSTRICTRC     iemRaiseAlignmentCheckException(PVMCPU pVCpu);
 #ifdef IEM_WITH_SETJMP
+DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaisePageFaultJmp(PVMCPU pVCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc);
 DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseGeneralProtectionFault0Jmp(PVMCPU pVCpu);
 DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseSelectorBoundsJmp(PVMCPU pVCpu, uint32_t iSegReg, uint32_t fAccess);
 DECL_NO_INLINE(IEM_STATIC, DECL_NO_RETURN(void)) iemRaiseSelectorBoundsBySelectorJmp(PVMCPU pVCpu, RTSEL Sel);
@@ -1360,7 +1361,7 @@ void IEMInvalidTLBsHostPhys(PVMCPU pVCpu, uint64_t uTlbPhysRev, bool fFullFlush)
     pVCpu->iem.s.CodeTlb.uTlbPhysRev = uTlbPhysRev;
     pVCpu->iem.s.DataTlb.uTlbPhysRev = uTlbPhysRev;
 
-    if (!fFlushFlush)
+    if (!fFullFlush)
     { /* very likely */ }
     else
     {
@@ -1370,7 +1371,7 @@ void IEMInvalidTLBsHostPhys(PVMCPU pVCpu, uint64_t uTlbPhysRev, bool fFullFlush)
         while (i-- > 0)
         {
             pVCpu->iem.s.CodeTlb.aEntries[i].pMappingR3        = NULL;
-            pVCpu->iem.s.CodeTlb.aEntries[i].fFlagsAndPhysRev &= ~(IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PHYS_REV)
+            pVCpu->iem.s.CodeTlb.aEntries[i].fFlagsAndPhysRev &= ~(IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PHYS_REV);
         }
 # endif
 # ifdef IEM_WITH_DATA_TLB
@@ -1378,7 +1379,7 @@ void IEMInvalidTLBsHostPhys(PVMCPU pVCpu, uint64_t uTlbPhysRev, bool fFullFlush)
         while (i-- > 0)
         {
             pVCpu->iem.s.DataTlb.aEntries[i].pMappingR3        = NULL;
-            pVCpu->iem.s.DataTlb.aEntries[i].fFlagsAndPhysRev &= ~(IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PHYS_REV)
+            pVCpu->iem.s.DataTlb.aEntries[i].fFlagsAndPhysRev &= ~(IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PHYS_REV);
         }
 # endif
     }
@@ -1500,11 +1501,11 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
         {
             RTGCPHYS    GCPhys;
             uint64_t    fFlags;
-            int rc = PGMGstGetPage(pVCpu, GCPtrNext, &fFlags, &GCPhys);
+            int rc = PGMGstGetPage(pVCpu, GCPtrFirst, &fFlags, &GCPhys);
             if (RT_FAILURE(rc))
             {
-                Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
-                return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, rc);
+                Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrFirst, rc));
+                iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, rc);
             }
 
             AssertCompile(IEMTLBE_F_PT_NO_EXEC == 1);
@@ -1516,7 +1517,7 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
     }
 
     /*
-     * Check TLB access flags.
+     * Check TLB page table level access flags.
      */
     if (pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_PT_NO_USER | IEMTLBE_F_PT_NO_EXEC))
     {
@@ -1541,50 +1542,37 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
     { /* no unlikely */ }
     else
     {
+        /** @todo Could be optimized this a little in ring-3 if we liked. */
+        size_t cbRead = 0;
+        int rc = PATMReadPatchCode(pVCpu->CTX_SUFF(pVM), GCPtrFirst, pvDst, cbDst, &cbRead);
+        AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
+        AssertStmt(cbRead == cbDst, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VERR_IEM_IPE_1));
+        return;
+    }
+# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
+    /*
+     * Look up the physical page info if necessary.
+     */
+    if ((pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PHYS_REV) == pVCpu->iem.s.CodeTlb.uTlbPhysRev)
+    { /* not necessary */ }
+    else
+    {
     }
 
-# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
+
+# if defined(IN_RING3) || (defined(IN_RING0) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE))
+    /*
+     * Try do a direct read using the pMappingR3 pointer.
+     */
+    if (!(pTlbe->fFlagsAndPhysRev & (IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ))
+    {
+
+    }
+# endif
+
 
 # if 0
-
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    /* Allow interpretation of patch manager code blocks since they can for
-       instance throw #PFs for perfectly good reasons. */
-    if (pVCpu->iem.s.fInPatchCode)
-    {
-        size_t cbRead = 0;
-        int rc = PATMReadPatchCode(pVCpu->CTX_SUFF(pVM), GCPtrNext, pVCpu->iem.s.abOpcode, cbToTryRead, &cbRead);
-        AssertRCReturn(rc, rc);
-        pVCpu->iem.s.cbOpcode = (uint8_t)cbRead; Assert(pVCpu->iem.s.cbOpcode == cbRead); Assert(cbRead > 0);
-        return VINF_SUCCESS;
-    }
-# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
-
-    RTGCPHYS    GCPhys;
-    uint64_t    fFlags;
-    int rc = PGMGstGetPage(pVCpu, GCPtrNext, &fFlags, &GCPhys);
-    if (RT_FAILURE(rc))
-    {
-        Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
-        return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, rc);
-    }
-    if (!(fFlags & X86_PTE_US) && pVCpu->iem.s.uCpl == 3)
-    {
-        Log(("iemOpcodeFetchMoreBytes: %RGv - supervisor page\n", GCPtrNext));
-        return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
-    }
-    if ((fFlags & X86_PTE_PAE_NX) && (pCtx->msrEFER & MSR_K6_EFER_NXE))
-    {
-        Log(("iemOpcodeFetchMoreBytes: %RGv - NX\n", GCPtrNext));
-        return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
-    }
-    GCPhys |= GCPtrNext & PAGE_OFFSET_MASK;
-    Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pVCpu->iem.s.cbOpcode));
-    /** @todo Check reserved bits and such stuff. PGM is better at doing
-     *        that, so do it when implementing the guest virtual address
-     *        TLB... */
-
     /*
      * Read the bytes at this address.
      *
@@ -5283,6 +5271,14 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaisePageFault(PVMCPU pVCpu, RTGCPTR
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_PF, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR | IEM_XCPT_FLAGS_CR2,
                              uErr, GCPtrWhere);
 }
+
+#ifdef IEM_WITH_SETJMP
+/** \#PF(n) - 0e, longjmp.  */
+IEM_STATIC DECL_NO_RETURN(void) iemRaisePageFaultJmp(PVMCPU pVCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc)
+{
+    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VBOXSTRICTRC_VAL(iemRaisePageFault(pVCpu, GCPtrWhere, fAccess, rc)));
+}
+#endif
 
 
 /** \#MF(0) - 10.  */
