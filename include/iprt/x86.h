@@ -1382,6 +1382,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define  MSR_K6_EFER_LMA                     RT_BIT_32(10)
 /** Bit 11 - NXE - No-Execute Page Protection Enabled. (R/W) */
 #define  MSR_K6_EFER_NXE                     RT_BIT_32(11)
+#define  MSR_K6_EFER_BIT_NXE                 11 /**< Bit number of MSR_K6_EFER_NXE */
 /** Bit 12 - SVME - Secure VM Extension Enabled. (R/W) */
 #define  MSR_K6_EFER_SVME                    RT_BIT_32(12)
 /** Bit 13 - LMSLE - Long Mode Segment Limit Enable. (R/W?) */
@@ -1564,6 +1565,8 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 #define X86_PTE_BIT_PAT                     7
 /** Bit 8 -  G  - Global flag. */
 #define X86_PTE_BIT_G                       8
+/** Bits 63 - NX - PAE/LM - No execution flag. */
+#define X86_PTE_PAE_BIT_NX                  63
 
 /** Bit 0 -  P  - Present bit mask. */
 #define X86_PTE_P                           RT_BIT_32(0)
