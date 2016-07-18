@@ -1918,7 +1918,10 @@ int Display::i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint
         && pDisplay->maFramebuffers[aScreenId].fVBVAEnabled == false) /* A non-VBVA mode. */
     {
         if (pDisplay->mpDrv)
+        {
             rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppbData, pcbData, pcx, pcy);
+            *pfMemFree = false;
+        }
         else
         {
             /* No image. */
@@ -1929,7 +1932,6 @@ int Display::i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint
             *pfMemFree = true;
             rc = VINF_SUCCESS;
         }
-        *pfMemFree = false;
     }
     else if (aScreenId < pDisplay->mcMonitors)
     {
