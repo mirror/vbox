@@ -511,6 +511,7 @@ VBox-xpcom-nspr_DEFS.darwin.amd64 = \
 	VBOX_USE_MORE_IPRT_IN_NSPR
 VBox-xpcom-nspr_DEFS.darwin = \
 	HAVE_BSD_FLOCK=1 \
+	HAVE_SOCKLEN_T=1 \
 	_PR_PTHREADS
 VBox-xpcom-nspr_DEFS.freebsd = \
 	FREEBSD=1 \
