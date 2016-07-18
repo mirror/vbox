@@ -12588,8 +12588,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
     // we need to lock this object in uninit() because the lock is shared
     // with mPeer (as well as data we modify below). mParent lock is needed
-    // by several calls to it, and USB needs host lock.
-    AutoMultiWriteLock3 multilock(mParent, mParent->i_host(), this COMMA_LOCKVAL_SRC_POS);
+    // by several calls to it.
+    AutoMultiWriteLock2 multilock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     /*
@@ -12644,12 +12644,15 @@ void SessionMachine::uninit(Uninit::Reason aReason)
             mData->mSession.mRemoteControls.begin();
         while (it != mData->mSession.mRemoteControls.end())
         {
+            ComPtr<IInternalSessionControl> pControl = *it;
+            mData->mSession.mRemoteControls.erase(it);
             LogFlowThisFunc(("  Calling remoteControl->Uninitialize()...\n"));
-            HRESULT rc = (*it)->Uninitialize();
+            HRESULT rc = pControl->Uninitialize();
             LogFlowThisFunc(("  remoteControl->Uninitialize() returned %08X\n", rc));
             if (FAILED(rc))
                 Log1WarningThisFunc(("Forgot to close the remote session?\n"));
-            ++it;
+            multilock.acquire();
+            it = mData->mSession.mRemoteControls.begin();
         }
         mData->mSession.mRemoteControls.clear();
     }
