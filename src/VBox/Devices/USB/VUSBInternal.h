@@ -226,6 +226,8 @@ typedef struct VUSBDEV
     PVUSBHUB            pHub;
     /** The device state. */
     VUSBDEVICESTATE volatile enmState;
+    /** Reference counter to protect the device structure from going away. */
+    uint32_t volatile        cRefs;
 
     /** The device address. */
     uint8_t             u8Address;
@@ -253,10 +255,6 @@ typedef struct VUSBDEV
     RTCRITSECT          CritSectAsyncUrbs;
     /** List of active async URBs. */
     RTLISTANCHOR        LstAsyncUrbs;
-#if HC_ARCH_BITS == 32
-    /** Align the size to a 8 byte boundary. */
-    uint32_t            u32Alignment0;
-#endif
 
     /** Dumper state. */
     union VUSBDEVURBDUMPERSTATE
@@ -747,6 +745,38 @@ DECLINLINE(bool) vusbDevSetStateCmp(PVUSBDEV pDev, VUSBDEVICESTATE enmStateNew, 
     VUSBDEV_ASSERT_VALID_STATE(enmStateNew);
     VUSBDEV_ASSERT_VALID_STATE(enmStateOld);
     return ASMAtomicCmpXchgU32((volatile uint32_t *)&pDev->enmState, enmStateNew, enmStateOld);
+}
+
+/**
+ * Retains the given VUSB device pointer.
+ *
+ * @returns New reference count.
+ * @param   pThis          The VUSB device pointer.
+ */
+DECLINLINE(uint32_t) vusbDevRetain(PVUSBDEV pThis)
+{
+    AssertPtrReturn(pThis, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pThis));
+    return cRefs;
+}
+
+/**
+ * Releases the given VUSB device pointer.
+ *
+ * @returns New reference count.
+ * @retval 0 if no onw is holding a reference anymore causing the device to be destroyed.
+ */
+DECLINLINE(uint32_t) vusbDevRelease(PVUSBDEV pThis)
+{
+    AssertPtrReturn(pThis, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pThis));
+    if (cRefs == 0)
+        vusbDevDestroy(pThis);
+    return cRefs;
 }
 
 /** Strings for the CTLSTAGE enum values. */

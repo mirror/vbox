@@ -278,8 +278,7 @@ static DECLCALLBACK(int) vusbPDMHubAttachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS p
         RTMemFree(pDev->paIfStates);
         pUsbIns->pvVUsbDev2 = NULL;
     }
-    vusbDevDestroy(pDev);
-    RTMemFree(pDev);
+    vusbDevRelease(pDev);
     return rc;
 }
 
@@ -289,9 +288,20 @@ static DECLCALLBACK(int) vusbPDMHubDetachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS p
 {
     PVUSBDEV pDev = (PVUSBDEV)pUsbIns->pvVUsbDev2;
     Assert(pDev);
-    vusbDevDestroy(pDev);
-    RTMemFree(pDev);
-    pUsbIns->pvVUsbDev2 = NULL;
+
+    /*
+     * Deal with pending async reset.
+     * (anything but reset)
+     */
+    vusbDevSetStateCmp(pDev, VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_RESET);
+
+    /*
+     * Detach and free resources.
+     */
+    if (pDev->pHub)
+        vusbDevDetach(pDev);
+
+    vusbDevRelease(pDev);
     return VINF_SUCCESS;
 }
 
@@ -321,10 +331,20 @@ static const PDMUSBHUBREG g_vusbHubReg =
 static PVUSBDEV vusbRhFindDevByAddress(PVUSBROOTHUB pRh, uint8_t Address)
 {
     unsigned iHash = vusbHashAddress(Address);
-    for (PVUSBDEV pDev = pRh->apAddrHash[iHash]; pDev; pDev = pDev->pNextHash)
-        if (pDev->u8Address == Address)
-            return pDev;
-    return NULL;
+    PVUSBDEV pDev = NULL;
+
+    RTCritSectEnter(&pRh->CritSectDevices);
+    for (PVUSBDEV pCur = pRh->apAddrHash[iHash]; pCur; pCur = pCur->pNextHash)
+        if (pCur->u8Address == Address)
+        {
+            pDev = pCur;
+            break;
+        }
+
+    if (pDev)
+        vusbDevRetain(pDev);
+    RTCritSectLeave(&pRh->CritSectDevices);
+    return pDev;
 }
 
 
@@ -354,7 +374,10 @@ static DECLCALLBACK(void) vusbRhFreeUrb(PVUSBURB pUrb)
 
     /* The URB comes from the roothub if there is no device (invalid address). */
     if (pUrb->pVUsb->pDev)
+    {
         vusbUrbPoolFree(&pUrb->pVUsb->pDev->UrbPool, pUrb);
+        vusbDevRelease(pUrb->pVUsb->pDev);
+    }
     else
         vusbUrbPoolFree(&pRh->Hub.Dev.UrbPool, pUrb);
 }
@@ -370,6 +393,8 @@ static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev
 
     if (!pDev)
         pDev = vusbRhFindDevByAddress(pRh, DstAddress);
+    else
+        vusbDevRetain(pDev);
 
     if (pDev)
         pUrbPool = &pDev->UrbPool;
@@ -705,6 +730,7 @@ static DECLCALLBACK(int) vusbRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUS
     }
     else
     {
+        vusbDevRetain(&pRh->Hub.Dev);
         pUrb->pVUsb->pDev = &pRh->Hub.Dev;
         Log(("vusb: pRh=%p: SUBMIT: Address %i not found!!!\n", pRh, pUrb->DstAddress));
 
@@ -1234,6 +1260,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->Hub.Dev.u8Address            = VUSB_INVALID_ADDRESS;
     pThis->Hub.Dev.u8NewAddress         = VUSB_INVALID_ADDRESS;
     pThis->Hub.Dev.i16Port              = -1;
+    pThis->Hub.Dev.cRefs                = 1;
     pThis->Hub.Dev.IDevice.pfnReset     = vusbRhDevReset;
     pThis->Hub.Dev.IDevice.pfnPowerOn   = vusbRhDevPowerOn;
     pThis->Hub.Dev.IDevice.pfnPowerOff  = vusbRhDevPowerOff;

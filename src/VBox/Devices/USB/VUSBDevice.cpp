@@ -965,6 +965,7 @@ static void vusbDevAddressUnHash(PVUSBDEV pDev)
     pDev->u8Address = VUSB_INVALID_ADDRESS;
     pDev->u8NewAddress = VUSB_INVALID_ADDRESS;
 
+    RTCritSectEnter(&pDev->pHub->pRootHub->CritSectDevices);
     PVUSBDEV pCur = pDev->pHub->pRootHub->apAddrHash[u8Hash];
     if (pCur == pDev)
     {
@@ -988,6 +989,7 @@ static void vusbDevAddressUnHash(PVUSBDEV pDev)
             }
         }
     }
+    RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
 }
 
 /**
@@ -1263,23 +1265,12 @@ int vusbDevDetach(PVUSBDEV pDev)
  * Destroys a device, detaching it from the hub if necessary.
  *
  * @param   pDev    The device.
- * @thread  EMT
+ * @thread any.
  */
 void vusbDevDestroy(PVUSBDEV pDev)
 {
     LogFlow(("vusbDevDestroy: pDev=%p[%s] enmState=%d\n", pDev, pDev->pUsbIns->pszName, pDev->enmState));
 
-    /*
-     * Deal with pending async reset.
-     * (anything but reset)
-     */
-    vusbDevSetStateCmp(pDev, VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_RESET);
-
-    /*
-     * Detach and free resources.
-     */
-    if (pDev->pHub)
-        vusbDevDetach(pDev);
     RTMemFree(pDev->paIfStates);
     TMR3TimerDestroy(pDev->pResetTimer);
     pDev->pResetTimer = NULL;
@@ -1306,6 +1297,8 @@ void vusbDevDestroy(PVUSBDEV pDev)
     RTCritSectDelete(&pDev->CritSectAsyncUrbs);
     /* Not using vusbDevSetState() deliberately here because it would assert on the state. */
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
+    pDev->pUsbIns->pvVUsbDev2 = NULL;
+    RTMemFree(pDev);
 }
 
 
@@ -1765,6 +1758,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     pDev->pNextHash = NULL;
     pDev->pHub = NULL;
     pDev->enmState = VUSB_DEVICE_STATE_DETACHED;
+    pDev->cRefs = 1;
     pDev->u8Address = VUSB_INVALID_ADDRESS;
     pDev->u8NewAddress = VUSB_INVALID_ADDRESS;
     pDev->i16Port = -1;
