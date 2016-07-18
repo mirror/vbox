@@ -920,13 +920,16 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     /* Guest screen image will be invalid during resize, make sure that it is not updated. */
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
-        mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, false);
+        if (mpDrv)
+        {
+            mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, false);
 
-        mpDrv->IConnector.pbData     = NULL;
-        mpDrv->IConnector.cbScanline = 0;
-        mpDrv->IConnector.cBits      = 32; /* DevVGA does not work with cBits == 0. */
-        mpDrv->IConnector.cx         = 0;
-        mpDrv->IConnector.cy         = 0;
+            mpDrv->IConnector.pbData     = NULL;
+            mpDrv->IConnector.cbScanline = 0;
+            mpDrv->IConnector.cBits      = 32; /* DevVGA does not work with cBits == 0. */
+            mpDrv->IConnector.cx         = 0;
+            mpDrv->IConnector.cy         = 0;
+        }
     }
 
     maFramebuffers[uScreenId].pSourceBitmap.setNull();
@@ -1914,7 +1917,18 @@ int Display::i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint
     if (   aScreenId == VBOX_VIDEO_PRIMARY_SCREEN
         && pDisplay->maFramebuffers[aScreenId].fVBVAEnabled == false) /* A non-VBVA mode. */
     {
-        rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppbData, pcbData, pcx, pcy);
+        if (pDisplay->mpDrv)
+            rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppbData, pcbData, pcx, pcy);
+        else
+        {
+            /* No image. */
+            *ppbData = NULL;
+            *pcbData = 0;
+            *pcx = 0;
+            *pcy = 0;
+            *pfMemFree = true;
+            rc = VINF_SUCCESS;
+        }
         *pfMemFree = false;
     }
     else if (aScreenId < pDisplay->mcMonitors)
