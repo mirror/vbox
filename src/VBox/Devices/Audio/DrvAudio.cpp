@@ -1466,7 +1466,6 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
-#if 1
 static DECLCALLBACK(int) drvAudioGetConfig(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOBACKENDCFG pCfg)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -1478,7 +1477,15 @@ static DECLCALLBACK(int) drvAudioGetConfig(PPDMIAUDIOCONNECTOR pInterface, PPDMA
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, pCfg);
+    if (pThis->pHostDrvAudio)
+    {
+        if (pThis->pHostDrvAudio->pfnGetConfig)
+            rc = pThis->pHostDrvAudio->pfnGetConfig(pThis->pHostDrvAudio, pCfg);
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+    else
+    	AssertFailed();
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -1494,15 +1501,21 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioGetStatus(PPDMIAUDIOCONNECTOR pI
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
+    PDMAUDIOBACKENDSTS backendSts = PDMAUDIOBACKENDSTS_UNKNOWN;
+
     int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_FAILURE(rc))
-        return PDMAUDIOBACKENDSTS_UNKNOWN;
-
-    PDMAUDIOBACKENDSTS backendSts = pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, enmDir);
-
-    int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
-        rc = rc2;
+    {
+        if (   pThis->pHostDrvAudio
+            && pThis->pHostDrvAudio->pfnGetStatus)
+        {
+             backendSts = pThis->pHostDrvAudio->pfnGetStatus(pThis->pHostDrvAudio, enmDir);
+        }
+
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return backendSts;
@@ -1621,7 +1634,6 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
     AudioMixBufSetVolume(&pGstStream->MixBuf, pVol);
     return VINF_SUCCESS;
 }
-#endif
 
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
