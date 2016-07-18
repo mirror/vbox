@@ -18,7 +18,6 @@
 #ifndef ___DARWIN_PASTEBOARD_H
 #define ___DARWIN_PASTEBOARD_H
 
-typedef struct OpaquePasteboardRef;
 typedef struct OpaquePasteboardRef *PasteboardRef;
 
 int initPasteboard (PasteboardRef *pPasteboardRef);
