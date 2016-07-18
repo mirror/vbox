@@ -439,14 +439,14 @@ check_gcc()
       elif [ $cc_maj -eq 4 -a $cc_min -eq 0 -a "$OS" = "darwin" ]; then
         log_success "found version $cc_ver"
       # gcc-4.0 is allowed for Darwin only
-      elif [ $cc_maj -lt 3 \
-             -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
-             -o \( $cc_maj -eq 4 -a $cc_min -lt 1 -a "$OS" != "darwin" \) \
+      elif [ $cc_maj -lt 4 \
+             -o \( $cc_maj -eq 4 -a $cc_min -lt 4 -a "$OS" != "darwin" \) \
+             -o \( $cc_maj -eq 4 -a $cc_min -lt 2 -a "$OS"  = "darwin" \) \
              -o \( $cc_maj -eq 4 -a $cc_min -gt 9 \) \
              -o \( $cc_maj -eq 5 -a $cc_min -gt 9 \) \
              -o \( $cc_maj -eq 6 -a $cc_min -gt 1 \) \
              -o $cc_maj -gt 6 ]; then
-        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 3.x with x>1 or gcc 4.x, gcc 5.x or gcc 6.x"
+        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 4.x, gcc 5.x or gcc 6.x"
         fail really
       else
         log_success "found version $cc_ver"
