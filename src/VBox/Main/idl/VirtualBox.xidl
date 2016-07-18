@@ -5309,7 +5309,7 @@
           Virtual machine not registered.
         </result>
         <result name="E_ACCESSDENIED">
-          Process not started by OpenRemoteSession.
+          Process not started by <link to="IMachine::launchVMProcess"/>.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Session already open or being opened.
