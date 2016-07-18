@@ -168,7 +168,7 @@ static int suplibDarwinOpenService(PSUPLIBDATA pThis)
      * This will cause the user client class in SUPDrv-darwin.cpp to be
      * instantiated and create a session for this process.
      */
-    io_connect_t Connection = NULL;
+    io_connect_t Connection = 0;
     kr = IOServiceOpen(ServiceObject, mach_task_self(), SUP_DARWIN_IOSERVICE_COOKIE, &Connection);
     IOObjectRelease(ServiceObject);
     if (kr != kIOReturnSuccess)

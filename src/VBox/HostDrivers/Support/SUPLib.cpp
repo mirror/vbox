@@ -101,7 +101,7 @@ SUPLIBDATA                      g_supLibData =
     /*.hDevice              = */    SUP_HDEVICE_NIL,
     /*.fUnrestricted        = */    true
 #if   defined(RT_OS_DARWIN)
-    ,/* .uConnection        = */    NULL
+    ,/* .uConnection        = */    0
 #elif defined(RT_OS_LINUX)
     ,/* .fSysMadviseWorks   = */    false
 #endif
