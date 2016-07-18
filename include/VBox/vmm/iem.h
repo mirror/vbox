@@ -116,6 +116,11 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEV
 VMM_INT_DECL(int)           IEMBreakpointSet(PVM pVM, RTGCPTR GCPtrBp);
 VMM_INT_DECL(int)           IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp);
 
+VMM_INT_DECL(void)          IEMTlbInvalidateAll(PVMCPU pVCpu, bool fVmm);
+VMM_INT_DECL(void)          IEMTlbInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtr);
+VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysical(PVMCPU pVCpu);
+
+
 /** @name Given Instruction Interpreters
  * @{ */
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,

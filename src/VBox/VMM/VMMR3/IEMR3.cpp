@@ -59,6 +59,9 @@ static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
  */
 VMMR3DECL(int)      IEMR3Init(PVM pVM)
 {
+    uint64_t const uInitialTlbRevision = UINT64_C(0) - (IEMTLB_REVISION_INCR * 200U);
+    uint64_t const uInitialTlbPhysRev  = UINT64_C(0) - (IEMTLB_PHYS_REV_INCR * 100U);
+
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
@@ -66,24 +69,50 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         pVCpu->iem.s.pCtxR0 = VM_R0_ADDR(pVM, pVCpu->iem.s.pCtxR3);
         pVCpu->iem.s.pCtxRC = VM_RC_ADDR(pVM, pVCpu->iem.s.pCtxR3);
 
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Instructions interpreted",          "/IEM/CPU%u/cInstructions", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cLongJumps,                STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                        "Number of longjmp calls",           "/IEM/CPU%u/cLongJumps", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,           STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Potential exits",                   "/IEM/CPU%u/cPotentialExits", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "VERR_IEM_ASPECT_NOT_IMPLEMENTED",   "/IEM/CPU%u/cRetAspectNotImplemented", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "VERR_IEM_INSTR_NOT_IMPLEMENTED",    "/IEM/CPU%u/cRetInstrNotImplemented", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInfStatuses,           STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Informational statuses returned",   "/IEM/CPU%u/cRetInfStatuses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetErrStatuses,           STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Error statuses returned",           "/IEM/CPU%u/cRetErrStatuses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cbWritten,                 STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                        "Approx bytes written",              "/IEM/CPU%u/cbWritten", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPendingCommit,            STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+        pVCpu->iem.s.CodeTlb.uTlbRevision = pVCpu->iem.s.DataTlb.uTlbRevision = uInitialTlbRevision;
+        pVCpu->iem.s.CodeTlb.uTlbPhysRev  = pVCpu->iem.s.DataTlb.uTlbPhysRev  = uInitialTlbPhysRev;
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,               STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Instructions interpreted",                     "/IEM/CPU%u/cInstructions", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cLongJumps,                  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                        "Number of longjmp calls",                      "/IEM/CPU%u/cLongJumps", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Potential exits",                              "/IEM/CPU%u/cPotentialExits", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "VERR_IEM_ASPECT_NOT_IMPLEMENTED",              "/IEM/CPU%u/cRetAspectNotImplemented", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,     STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "VERR_IEM_INSTR_NOT_IMPLEMENTED",               "/IEM/CPU%u/cRetInstrNotImplemented", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInfStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Informational statuses returned",              "/IEM/CPU%u/cRetInfStatuses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetErrStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Error statuses returned",                      "/IEM/CPU%u/cRetErrStatuses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cbWritten,                   STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                        "Approx bytes written",                         "/IEM/CPU%u/cbWritten", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPendingCommit,              STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
                         "Times RC/R0 had to postpone instruction committing to ring-3", "/IEM/CPU%u/cPendingCommit", idCpu);
+
+#ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB hits",                            "/IEM/CPU%u/CodeTlb-Hits", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB hits",                            "/IEM/CPU%u/DataTlb-Hits", idCpu);
+#endif
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB misses",                          "/IEM/CPU%u/CodeTlb-Misses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB revision",                        "/IEM/CPU%u/CodeTlb-Revision", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.CodeTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB physical revision",               "/IEM/CPU%u/CodeTlb-PhysRev", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbSlowReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB slow read path",                  "/IEM/CPU%u/CodeTlb-SlowReads", idCpu);
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB misses",                          "/IEM/CPU%u/DataTlb-Misses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB revision",                        "/IEM/CPU%u/DataTlb-Revision", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
+
 
         /*
          * Host and guest CPU information.

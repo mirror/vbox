@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM_PHYS
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
@@ -3761,6 +3762,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
         HMFlushTLB(pVCpu);
 #endif
+        IEMTlbInvalidateAllPhysical(pVCpu);
         STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
 }

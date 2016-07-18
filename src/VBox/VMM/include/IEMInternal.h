@@ -64,6 +64,8 @@ RT_C_DECLS_BEGIN
 #endif
 
 
+//#define IEM_WITH_CODE_TLB// - work in progress
+
 
 /** Finish and move to types.h */
 typedef union
@@ -309,9 +311,9 @@ typedef struct IEMTLBENTRY
     uint64_t                GCPhys;
     /** Pointer to the ring-3 mapping (possibly also valid in ring-0). */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(uint8_t *)    pMappingR3;
+    R3PTRTYPE(uint8_t *)    pbMappingR3;
 #else
-    R3R0PTRTYPE(uint8_t *)  pMappingR3;
+    R3R0PTRTYPE(uint8_t *)  pbMappingR3;
 #endif
 #if HC_ARCH_BITS == 32
     uint32_t                u32Padding1;
@@ -370,6 +372,9 @@ typedef struct IEMTLB
     uint64_t            cTlbHits;
     /** TLB misses. */
     uint32_t            cTlbMisses;
+    /** Slow read path.  */
+    uint32_t            cTlbSlowReadPath;
+#if 0
     /** TLB misses because of tag mismatch. */
     uint32_t            cTlbMissesTag;
     /** TLB misses because of virtual access violation. */
@@ -382,8 +387,9 @@ typedef struct IEMTLB
     uint32_t            cTlbMissesWriteHandler;
     /** TLB misses because no r3(/r0) mapping. */
     uint32_t            cTlbMissesMapping;
+#endif
     /** Alignment padding. */
-    uint32_t            au32Padding[3];
+    uint32_t            au32Padding[3+5];
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
 /** IEMTLB::uTlbRevision increment.  */
@@ -447,8 +453,9 @@ typedef struct IEMCPU
     /** The number of bytes available at pbInstrBuf in total (for IEMExecLots).
      * This takes the CS segment limit into account. */
     uint16_t                cbInstrBufTotal;                                                                /* 0x24 */
-    /** Offset into pbInstrBuf of the first byte of the current instruction. */
-    uint16_t                offCurInstrStart;                                                               /* 0x26 */
+    /** Offset into pbInstrBuf of the first byte of the current instruction.
+     * Can be negative to efficiently handle cross page instructions. */
+    int16_t                 offCurInstrStart;                                                               /* 0x26 */
 
     /** The prefix mask (IEM_OP_PRF_XXX). */
     uint32_t                fPrefixes;                                                                      /* 0x28 */
@@ -721,7 +728,7 @@ typedef IEMCPU const *PCIEMCPU;
 
 /** @def Gets the instruction length. */
 #ifdef IEM_WITH_CODE_TLB
-# define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offInstrNextByte - (uint32_t)(a_pVCpu)->iem.s.offCurInstrStart)
+# define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offInstrNextByte - (uint32_t)(int32_t)(a_pVCpu)->iem.s.offCurInstrStart)
 #else
 # define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offOpcode)
 #endif

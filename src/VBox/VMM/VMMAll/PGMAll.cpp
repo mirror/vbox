@@ -23,6 +23,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/selm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/mm.h>
@@ -730,6 +731,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      */
     REMNotifyInvalidatePage(pVM, GCPtrPage);
 #endif /* !IN_RING3 */
+    IEMTlbInvalidatePage(pVCpu, GCPtrPage);
 
 
 #ifdef IN_RC
@@ -2020,6 +2022,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLBSameCR3));
     }
 
+    IEMTlbInvalidateAll(pVCpu, false /*fVmm*/);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLB), a);
     return rc;
 }
