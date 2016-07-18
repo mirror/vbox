@@ -33,6 +33,11 @@
           higher (bug #15607)</para>
       </listitem>
 
+      <listitem>
+        <para>API: fixed audio settings handling for older config files
+          (bug #15626)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
