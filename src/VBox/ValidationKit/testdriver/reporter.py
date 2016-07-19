@@ -907,6 +907,7 @@ class RemoteReporter(ReporterBase):
           and cSecsLast >= self.kcSecXmlFlushIdle:
             return self.xmlFlush();
 
+        _ = sDebug;
         return False;
 
     def _xmlWrite(self, asText, fIndent = True):
