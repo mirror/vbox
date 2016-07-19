@@ -214,10 +214,12 @@ else # VBOX_WITH_QTGUI_V5
    Frameworks/$(qtmod).framework/$(qtmod)=>Versions/5/$(qtmod) \
    Frameworks/$(qtmod).framework/Resources=>Versions/5/Resources)
  else # win x11
-  ifndef VBOX_ONLY_BUILD
-   ifneq ($(VBOX_GCC_VERSION_CXX),)
-    ifeq ($(int-ge $(VBOX_GCC_VERSION_CXX),40400),)
-     $(error gcc >= 4.4 required when compiling against Qt5!)
+  if1of ($(KBUILD_TARGET), linux solaris)
+   ifndef VBOX_ONLY_BUILD
+    ifneq ($(VBOX_GCC_VERSION_CXX),)
+     ifeq ($(int-ge $(VBOX_GCC_VERSION_CXX),40400),)
+      $(error gcc >= 4.4 required when compiling against Qt5!)
+     endif
     endif
    endif
   endif
