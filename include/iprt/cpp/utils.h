@@ -49,7 +49,7 @@ protected:
     ~RTCNonCopyable() {}
 private:
     RTCNonCopyable(RTCNonCopyable const &);
-    RTCNonCopyable const &operator=(RTCNonCopyable const &);
+    RTCNonCopyable &operator=(RTCNonCopyable const &);
 };
 
 
