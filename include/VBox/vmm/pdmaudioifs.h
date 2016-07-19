@@ -26,10 +26,14 @@
 #ifndef ___VBox_vmm_pdmaudioifs_h
 #define ___VBox_vmm_pdmaudioifs_h
 
-#include <VBox/types.h>
 #include <iprt/circbuf.h>
 #include <iprt/critsect.h>
 #include <iprt/list.h>
+
+#include <VBox/types.h>
+#ifdef VBOX_WITH_STATISTICS
+# include <VBox/vmm/stam.h>
+#endif
 
 #ifdef VBOX_WITH_AUDIO_50
 # undef ___VBox_vmm_pdmaudioifs_h
@@ -556,6 +560,13 @@ typedef enum PDMAUDIOSTREAMCTX
  */
 typedef struct PDMAUDIOSTREAMIN
 {
+    /** Timestamp (in ms) since last read. */
+    uint64_t tsLastReadMS;
+#ifdef VBOX_WITH_STATISTICS
+    STAMCOUNTER StatBytesElapsed;
+    STAMCOUNTER StatBytesTotalRead;
+    STAMCOUNTER StatSamplesCaptured;
+#endif
 } PDMAUDIOSTREAMIN, *PPDMAUDIOSTREAMIN;
 
 /**
@@ -564,6 +575,13 @@ typedef struct PDMAUDIOSTREAMIN
  */
 typedef struct PDMAUDIOSTREAMOUT
 {
+    /** Timestamp (in ms) since last write. */
+    uint64_t    tsLastWriteMS;
+#ifdef VBOX_WITH_STATISTICS
+    STAMCOUNTER StatBytesElapsed;
+    STAMCOUNTER StatBytesTotalWritten;
+    STAMCOUNTER StatSamplesPlayed;
+#endif
 } PDMAUDIOSTREAMOUT, *PPDMAUDIOSTREAMOUT;
 
 struct PDMAUDIOSTREAM;
