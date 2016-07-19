@@ -86,8 +86,9 @@ UISelectorWindow* UISelectorWindow::m_spInstance = 0;
 /* static */
 void UISelectorWindow::create()
 {
-    /* Make sure selector-window is not created: */
-    AssertReturnVoid(!m_spInstance);
+    /* Return if selector-window is already created: */
+    if (m_spInstance)
+        return;
 
     /* Create selector-window: */
     new UISelectorWindow;
@@ -1134,8 +1135,8 @@ void UISelectorWindow::polishEvent(QShowEvent*)
 #ifdef VBOX_WS_MAC
 bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    /* Ignore for non-active window: */
-    if (!isActiveWindow())
+    /* Ignore for non-active window except for FileOpen event which should be always processed: */
+    if (!isActiveWindow() && pEvent->type() != QEvent::FileOpen)
         return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
 
     /* Ignore for other objects: */
@@ -1148,7 +1149,7 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
     {
         case QEvent::FileOpen:
         {
-            sltOpenUrls(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->file());
+            sltOpenUrls(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->url());
             pEvent->accept();
             return true;
             break;
