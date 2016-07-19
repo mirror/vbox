@@ -375,8 +375,10 @@ static DECLCALLBACK(void) vusbRhFreeUrb(PVUSBURB pUrb)
     /* The URB comes from the roothub if there is no device (invalid address). */
     if (pUrb->pVUsb->pDev)
     {
+        PVUSBDEV pDev = pUrb->pVUsb->pDev;
+
         vusbUrbPoolFree(&pUrb->pVUsb->pDev->UrbPool, pUrb);
-        vusbDevRelease(pUrb->pVUsb->pDev);
+        vusbDevRelease(pDev);
     }
     else
         vusbUrbPoolFree(&pRh->Hub.Dev.UrbPool, pUrb);
