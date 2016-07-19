@@ -932,7 +932,7 @@ XPT_GetInterfaceIndexByName(XPTInterfaceDirectoryEntry *ide_block,
             return PR_TRUE;
         }
     }
-    indexp = 0;
+    *indexp = 0;
     return PR_FALSE;
 }
 
