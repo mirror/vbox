@@ -1494,89 +1494,87 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
 
-    if (!EMIsSupervisorCodeRecompiled(pVM))
-    {
-#ifdef TRPM_FORWARD_TRAPS_IN_GC
+#if defined(TRPM_FORWARD_TRAPS_IN_GC) && !defined(IEM_VERIFICATION_MODE)
 
 # ifdef LOG_ENABLED
-        DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "TRPMInject");
-        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "TRPMInject");
+    DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "TRPMInject");
+    DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "TRPMInject");
 # endif
 
-        uint8_t u8Interrupt = 0;
-        int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-        Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
-        if (RT_SUCCESS(rc))
+    uint8_t u8Interrupt = 0;
+    int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+    Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
+    if (RT_SUCCESS(rc))
+    {
+        if (HMIsEnabled(pVM) || EMIsSupervisorCodeRecompiled(pVM))
         {
-# ifndef IEM_VERIFICATION_MODE
-            if (HMIsEnabled(pVM))
-# endif
-            {
-                rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
-                AssertRC(rc);
-                STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-                return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM;
-            }
-            /* If the guest gate is not patched, then we will check (again) if we can patch it. */
-            if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] == TRPM_INVALID_HANDLER)
-            {
-                CSAMR3CheckGates(pVM, u8Interrupt, 1);
-                Log(("TRPMR3InjectEvent: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
-            }
-
-            if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] != TRPM_INVALID_HANDLER)
-            {
-                /* Must check pending forced actions as our IDT or GDT might be out of sync */
-                rc = EMR3CheckRawForcedActions(pVM, pVCpu);
-                if (rc == VINF_SUCCESS)
-                {
-                    /* There's a handler -> let's execute it in raw mode */
-                    rc = TRPMForwardTrap(pVCpu, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
-                    if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
-                    {
-                        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
-
-                        STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-                        return VINF_EM_RESCHEDULE_RAW;
-                    }
-                }
-            }
-            else
-                STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
-
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
-            AssertRCReturn(rc, rc);
-        }
-        else
-        {
-            /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
-            AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
-            return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
-        }
-#else /* !TRPM_FORWARD_TRAPS_IN_GC */
-        uint8_t u8Interrupt = 0;
-        int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-        Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
-        if (RT_SUCCESS(rc))
-        {
-            rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
             AssertRC(rc);
             STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
+            return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM;
+        }
+        /* If the guest gate is not patched, then we will check (again) if we can patch it. */
+        if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] == TRPM_INVALID_HANDLER)
+        {
+            CSAMR3CheckGates(pVM, u8Interrupt, 1);
+            Log(("TRPMR3InjectEvent: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
+        }
+
+        if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] != TRPM_INVALID_HANDLER)
+        {
+            /* Must check pending forced actions as our IDT or GDT might be out of sync */
+            rc = EMR3CheckRawForcedActions(pVM, pVCpu);
+            if (rc == VINF_SUCCESS)
+            {
+                /* There's a handler -> let's execute it in raw mode */
+                rc = TRPMForwardTrap(pVCpu, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
+                if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
+                {
+                    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
+
+                    STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
+                    return VINF_EM_RESCHEDULE_RAW;
+                }
+            }
         }
         else
-        {
-            /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
-            AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
-        }
-        return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
-#endif /* !TRPM_FORWARD_TRAPS_IN_GC */
+            STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
+
+        rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
+        AssertRCReturn(rc, rc);
     }
+    else
+    {
+        /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
+        AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
+        return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+    }
+
     /** @todo check if it's safe to translate the patch address to the original guest address.
      *        this implies a safe state in translated instructions and should take sti successors into account (instruction fusing)
      */
-    /* Note: if it's a PATM address, then we'll go back to raw mode regardless of the return code below. */
+    /* Note: if it's a PATM address, then we'll go back to raw mode regardless of the return codes below. */
 
     /* Fall back to the recompiler */
     return VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+
+#else  /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
+    uint8_t u8Interrupt = 0;
+    int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+    Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
+    if (RT_SUCCESS(rc))
+    {
+        rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
+        AssertRC(rc);
+        STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
+    }
+    else
+    {
+        /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
+        AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
+    }
+    return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+#endif /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
+
 }
 
