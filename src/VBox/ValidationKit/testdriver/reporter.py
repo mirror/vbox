@@ -871,7 +871,6 @@ class RemoteReporter(ReporterBase):
             if len(asXml) > 0  or  fForce is True:
                 self._fXmlFlushing = True;
 
-                self._writeOutput('xml-debug/%s: flushing!'  % (len(self._asXml),)); # temporarily while debugging flush/poll
                 g_oLock.release();
                 (asXml, fIncErrors) = self._xmlDoFlush(asXml, fRetry = fRetry);
                 g_oLock.acquire();
@@ -896,8 +895,6 @@ class RemoteReporter(ReporterBase):
         cSecsLast = tsNow - self._secTsXmlLast;
         if fPolling is not True:
             self._secTsXmlLast = tsNow;
-        self._writeOutput('xml-debug/%s: %s s since flush, %s s since poll %s'
-                          % (len(self._asXml), cSecs, cSecsLast, sDebug if sDebug is not None else '', )); # temporarily
 
         # Absolute flush thresholds.
         if cSecs >= self.kcSecXmlFlushMax:
@@ -914,7 +911,6 @@ class RemoteReporter(ReporterBase):
 
     def _xmlWrite(self, asText, fIndent = True):
         """XML output function for the reporter."""
-        self._writeOutput('xml-debug/%s: %s' % (len(self._asXml), asText)); # temporarily while debugging flush/poll problem.
         self._asXml += asText;
         self._xmlFlushIfNecessary();
         _ = fIndent; # No pretty printing, thank you.
