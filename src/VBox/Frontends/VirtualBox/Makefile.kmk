@@ -492,7 +492,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
-	src/runtime/information/UIInformation.h \
+	src/runtime/information/UIInformationConfiguration.h \
 	src/runtime/information/UIInformationDataItem.h \
 	src/runtime/information/UIInformationItem.h \
 	src/runtime/information/UIInformationModel.h \
@@ -790,7 +790,7 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
-	src/runtime/information/UIInformation.cpp \
+	src/runtime/information/UIInformationConfiguration.cpp \
 	src/runtime/information/UIInformationDataItem.cpp \
 	src/runtime/information/UIInformationItem.cpp \
 	src/runtime/information/UIInformationModel.cpp \
