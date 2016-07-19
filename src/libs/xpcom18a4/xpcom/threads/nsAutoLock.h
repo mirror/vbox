@@ -150,18 +150,14 @@ private:
 
     // Not meant to be implemented. This makes it a compiler error to
     // construct or assign an nsAutoLock object incorrectly.
-    nsAutoLock(void) {}
-    nsAutoLock(nsAutoLock& /*aLock*/) {}
-    nsAutoLock& operator =(nsAutoLock& /*aLock*/) {
-        return *this;
-    }
+    nsAutoLock(void);
+    nsAutoLock(const nsAutoLock& /*aLock*/);
+    nsAutoLock& operator =(const nsAutoLock& /*aLock*/);
 
     // Not meant to be implemented. This makes it a compiler error to
     // attempt to create an nsAutoLock object on the heap.
-    static void* operator new(size_t /*size*/) CPP_THROW_NEW {
-        return nsnull;
-    }
-    static void operator delete(void* /*memory*/) {}
+    static void* operator new(size_t /*size*/) CPP_THROW_NEW;
+    static void operator delete(void* /*memory*/);
 
 public:
     /**
@@ -310,18 +306,14 @@ private:
 
     // Not meant to be implemented. This makes it a compiler error to
     // construct or assign an nsAutoLock object incorrectly.
-    nsAutoMonitor(void) {}
-    nsAutoMonitor(nsAutoMonitor& /*aMon*/) {}
-    nsAutoMonitor& operator =(nsAutoMonitor& /*aMon*/) {
-        return *this;
-    }
+    nsAutoMonitor(void);
+    nsAutoMonitor(const nsAutoMonitor& /*aMon*/);
+    nsAutoMonitor& operator =(const nsAutoMonitor& /*aMon*/);
 
     // Not meant to be implemented. This makes it a compiler error to
     // attempt to create an nsAutoLock object on the heap.
-    static void* operator new(size_t /*size*/) CPP_THROW_NEW {
-        return nsnull;
-    }
-    static void operator delete(void* /*memory*/) {}
+    static void* operator new(size_t /*size*/) CPP_THROW_NEW;
+    static void operator delete(void* /*memory*/);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,18 +369,14 @@ private:
 
     // Not meant to be implemented. This makes it a compiler error to
     // construct or assign an nsAutoLock object incorrectly.
-    nsAutoCMonitor(void) {}
-    nsAutoCMonitor(nsAutoCMonitor& /*aMon*/) {}
-    nsAutoCMonitor& operator =(nsAutoCMonitor& /*aMon*/) {
-        return *this;
-    }
+    nsAutoCMonitor(void);
+    nsAutoCMonitor(const nsAutoCMonitor& /*aMon*/);
+    nsAutoCMonitor& operator =(const nsAutoCMonitor& /*aMon*/);
 
     // Not meant to be implemented. This makes it a compiler error to
     // attempt to create an nsAutoLock object on the heap.
-    static void* operator new(size_t /*size*/) CPP_THROW_NEW {
-        return nsnull;
-    }
-    static void operator delete(void* /*memory*/) {}
+    static void* operator new(size_t /*size*/) CPP_THROW_NEW;
+    static void operator delete(void* /*memory*/);
 };
 
 #endif // nsAutoLock_h__
