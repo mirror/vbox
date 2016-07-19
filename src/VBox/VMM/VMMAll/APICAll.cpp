@@ -629,7 +629,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
                 && apicIsEnabled(&pVM->aCpus[idCpu]))
                 fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             else
-                AssertMsgFailed(("APIC: apicSendIntr: No CPU found for lowest-priority delivery mode!\n"));
+                AssertMsgFailed(("APIC: apicSendIntr: No CPU found for lowest-priority delivery mode! idCpu=%u\n", idCpu));
             break;
         }
 
