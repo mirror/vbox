@@ -214,9 +214,9 @@ else # VBOX_WITH_QTGUI_V5
    Frameworks/$(qtmod).framework/$(qtmod)=>Versions/5/$(qtmod) \
    Frameworks/$(qtmod).framework/Resources=>Versions/5/Resources)
  else # win x11
-  ifeq ($(int-ge $(VBOX_GCC_VERSION_CXX),40400),)
-   $(error gcc >= 4.4 required when compiling against Qt5!)
-  endif
+#  ifeq ($(int-ge $(VBOX_GCC_VERSION_CXX),40400),)
+#   $(error gcc >= 4.4 required when compiling against Qt5!)
+#  endif
   if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
    include $(KBUILD_PATH)/units/qt5.kmk
    ifeq ($(KBUILD_TARGET),win)
