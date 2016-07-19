@@ -38,6 +38,11 @@
           (bug #15626)</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: Fixed issue with double-click/opening registerted file types
+          (.vbox and extension pack) on OS X</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
