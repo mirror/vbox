@@ -24,10 +24,13 @@
 #include "DBGPlugInCommonELF.h"
 #include <VBox/vmm/dbgf.h>
 #include <VBox/dis.h>
+#include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
 #include <iprt/ctype.h>
+#include <iprt/vfs.h>
+#include <iprt/zip.h>
 
 
 /*********************************************************************************************************************************
@@ -40,6 +43,47 @@
 
 /** @} */
 
+
+/**
+ * Config item type.
+ */
+typedef enum DBGDIGGERLINUXCFGITEMTYPE
+{
+    /** Invalid type. */
+    DBGDIGGERLINUXCFGITEMTYPE_INVALID = 0,
+    /** String. */
+    DBGDIGGERLINUXCFGITEMTYPE_STRING,
+    /** Number. */
+    DBGDIGGERLINUXCFGITEMTYPE_NUMBER,
+    /** Flag whether this feature is included in the
+     * kernel or as a module. */
+    DBGDIGGERLINUXCFGITEMTYPE_FLAG
+} DBGDIGGERLINUXCFGITEMTYPE;
+
+/**
+ * Item in the config database.
+ */
+typedef struct DBGDIGGERLINUXCFGITEM
+{
+    /** String space core. */
+    RTSTRSPACECORE            Core;
+    /** Config item type. */
+    DBGDIGGERLINUXCFGITEMTYPE enmType;
+    /** Data based on the type. */
+    union
+    {
+        /** Number. */
+        int64_t               i64Num;
+        /** Flag. */
+        bool                  fModule;
+        /** String - variable in size. */
+        char                  aszString[1];
+    } u;
+} DBGDIGGERLINUXCFGITEM;
+/** Pointer to a config database item. */
+typedef DBGDIGGERLINUXCFGITEM *PDBGDIGGERLINUXCFGITEM;
+/** Pointer to a const config database item. */
+typedef const DBGDIGGERLINUXCFGITEM *PCDBGDIGGERLINUXCFGITEM;
 
 /**
  * Linux guest OS digger instance data.
@@ -83,6 +127,9 @@ typedef struct DBGDIGGERLINUX
 
     /** The kernel message log interface. */
     DBGFOSIDMESG    IDmesg;
+
+    /** The config database root. */
+    RTSTRSPACE      hCfgDb;
 } DBGDIGGERLINUX;
 /** Pointer to the linux guest OS digger instance data. */
 typedef DBGDIGGERLINUX *PDBGDIGGERLINUX;
@@ -139,6 +186,8 @@ typedef LNXPRINTKHDR const *PCLNXPRINTKHDR;
 #define LNX_MAX_KALLSYMS_ENC_LENGTH         UINT8_C(28)
 /** The approximate maximum length of a string token. */
 #define LNX_MAX_KALLSYMS_TOKEN_LEN          UINT16_C(32)
+/** Maximum compressed config size expected. */
+#define LNX_MAX_COMPRESSED_CFG_SIZE         _1M
 
 /** Module tag for linux ('linuxmod' on little endian ASCII systems). */
 #define DIG_LNX_MOD_TAG                     UINT64_C(0x545f5d78758e898c)
@@ -969,6 +1018,31 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
 
 
 /**
+ * Worker destroying the config database.
+ */
+static DECLCALLBACK(int) dbgDiggerLinuxCfgDbDestroyWorker(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PDBGDIGGERLINUXCFGITEM pCfgItem = (PDBGDIGGERLINUXCFGITEM)pStr;
+    RTStrFree((char *)pCfgItem->Core.pszString);
+    RTMemFree(pCfgItem);
+    NOREF(pvUser);
+    return 0;
+}
+
+
+/**
+ * Destroy the config database.
+ *
+ * @returns nothing.
+ * @param   pThis               The Linux digger data.
+ */
+static void dbgDiggerLinuxCfgDbDestroy(PDBGDIGGERLINUX pThis)
+{
+    RTStrSpaceDestroy(&pThis->hCfgDb, dbgDiggerLinuxCfgDbDestroyWorker, NULL);
+}
+
+
+/**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
 static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
@@ -1021,6 +1095,7 @@ static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
 
+    dbgDiggerLinuxCfgDbDestroy(pThis);
     pThis->fValid = false;
 }
 
@@ -1712,6 +1787,399 @@ static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM p
 
     return rc;
 }
+
+/**
+ * Skips whitespace and comments in the given config returning the pointer
+ * to the first non whitespace character.
+ *
+ * @returns Pointer to the first non whitespace character or NULL if the end
+ *          of the string was reached.
+ * @param   pszCfg              The config string.
+ */
+static const char *dbgDiggerLinuxCfgSkipWhitespace(const char *pszCfg)
+{
+    do
+    {
+        while (   *pszCfg != '\0'
+               && (   RT_C_IS_SPACE(*pszCfg)
+                   || *pszCfg == '\n'))
+            pszCfg++;
+
+        /* Do we have a comment? Skip it. */
+        if (*pszCfg == '#')
+        {
+            while (   *pszCfg != '\n'
+                   && *pszCfg != '\0')
+                pszCfg++;
+        }
+    } while (   *pszCfg != '\0'
+             && (   RT_C_IS_SPACE(*pszCfg)
+                 || *pszCfg == '\n'
+                 || *pszCfg == '#'));
+
+    return pszCfg;
+}
+
+/**
+ * Parses an identifier at the given position.
+ *
+ * @returns VBox status code.
+ * @param   pszCfg              The config data.
+ * @param   ppszCfgNext         Where to store the pointer to the data following the identifier.
+ * @param   ppszIde             Where to store the pointer to the identifier on success.
+ *                              Free with RTStrFree().         
+ */
+static int dbgDiggerLinuxCfgParseIde(const char *pszCfg, const char **ppszCfgNext, char **ppszIde)
+{
+    int rc = VINF_SUCCESS;
+    size_t cchIde = 0;
+
+    while (   *pszCfg != '\0'
+           && (   RT_C_IS_ALNUM(*pszCfg)
+               || *pszCfg == '_'))
+    {
+        cchIde++;
+        pszCfg++;
+    }
+
+    if (cchIde)
+    {
+        *ppszIde = RTStrDupN(pszCfg - cchIde, cchIde);
+        if (!*ppszIde)
+            rc = VERR_NO_STR_MEMORY;
+    }
+
+    *ppszCfgNext = pszCfg;
+    return rc;
+}
+
+/**
+ * Parses a value for a config item.
+ *
+ * @returns VBox status code.
+ * @param   pszCfg              The config data.
+ * @param   ppszCfgNext         Where to store the pointer to the data following the identifier.
+ * @param   pcbCfg              Where the initial size of the string is stored.
+ *                              Contains the remaining string length on return.
+ * @param   ppCfgItem           Where to store the created config item on success.
+ */
+static int dbgDiggerLinuxCfgParseVal(const char *pszCfg, const char **ppszCfgNext,
+                                     PDBGDIGGERLINUXCFGITEM *ppCfgItem)
+{
+    int rc = VINF_SUCCESS;
+    PDBGDIGGERLINUXCFGITEM pCfgItem = NULL;
+
+    if (RT_C_IS_DIGIT(*pszCfg) || *pszCfg == '-')
+    {
+        /* Parse the number. */
+        int64_t i64Num;
+        rc = RTStrToInt64Ex(pszCfg, (char **)ppszCfgNext, 0, &i64Num);
+        if (   RT_SUCCESS(rc)
+            || rc == VWRN_TRAILING_CHARS
+            || rc == VWRN_TRAILING_SPACES)
+        {
+            pCfgItem = (PDBGDIGGERLINUXCFGITEM)RTMemAllocZ(sizeof(DBGDIGGERLINUXCFGITEM));
+            if (pCfgItem)
+            {
+                pCfgItem->enmType = DBGDIGGERLINUXCFGITEMTYPE_NUMBER;
+                pCfgItem->u.i64Num = i64Num; 
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    else if (*pszCfg == '\"')
+    {
+        /* Parse a string. */
+        const char *pszCfgCur = pszCfg + 1;
+        while (   *pszCfgCur != '\0'
+               && *pszCfgCur != '\"')
+            pszCfgCur++;
+
+        if (*pszCfgCur == '\"')
+        {
+            pCfgItem = (PDBGDIGGERLINUXCFGITEM)RTMemAllocZ(RT_OFFSETOF(DBGDIGGERLINUXCFGITEM, u.aszString[pszCfgCur - pszCfg + 1]));
+            if (pCfgItem)
+            {
+                pCfgItem->enmType = DBGDIGGERLINUXCFGITEMTYPE_STRING;
+                RTStrCopyEx(&pCfgItem->u.aszString[0], pszCfgCur - pszCfg + 1, pszCfg, pszCfgCur - pszCfg);
+                *ppszCfgNext = pszCfgCur + 1;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_INVALID_STATE;
+    }
+    else if (   *pszCfg == 'y'
+             || *pszCfg == 'm')
+    {
+        /* Included or module. */
+        pCfgItem = (PDBGDIGGERLINUXCFGITEM)RTMemAllocZ(sizeof(DBGDIGGERLINUXCFGITEM));
+        if (pCfgItem)
+        {
+            pCfgItem->enmType = DBGDIGGERLINUXCFGITEMTYPE_FLAG;
+            pCfgItem->u.fModule = *pszCfg == 'm'; 
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        pszCfg++;
+        *ppszCfgNext = pszCfg;
+    }
+    else
+        rc = VERR_INVALID_STATE;
+
+    if (RT_SUCCESS(rc))
+        *ppCfgItem = pCfgItem;
+    else if (pCfgItem)
+        RTMemFree(pCfgItem);
+
+    return rc;
+}
+
+/**
+ * Parses the given kernel config and creates the config database.
+ *
+ * @returns VBox status code
+ * @param   pThis               The Linux digger data.
+ * @param   pbCfg               The config string.
+ */
+static int dbgDiggerLinuxCfgParse(PDBGDIGGERLINUX pThis, const char *pszCfg)
+{
+    int rc = VINF_SUCCESS;
+
+    /*
+     * The config is a text file with the following elements:
+     *     # starts a comment which goes till the end of the line
+     *     <Ide>=<val> where <Ide> is an identifier consisting of
+     *                 alphanumerical characters (including _)
+     *     <val> denotes the value for the identifier and can have the following
+     *           formats:
+     *               (-)[0-9]* for numbers
+     *               "..."     for a string value
+     *               m         when a feature is enabled as a module
+     *               y         when a feature is enabled
+     * Newlines are used as a separator between values and mark the end
+     * of a comment
+     */
+    const char *pszCfgCur = pszCfg;
+    while (   RT_SUCCESS(rc)
+           && *pszCfgCur != '\0')
+    {
+        /* Start skipping the whitespace. */
+        pszCfgCur = dbgDiggerLinuxCfgSkipWhitespace(pszCfgCur);
+        if (   pszCfgCur
+            && *pszCfgCur != '\0')
+        {
+            char *pszIde = NULL;
+            /* Must be an identifier, parse it. */
+            rc = dbgDiggerLinuxCfgParseIde(pszCfgCur, &pszCfgCur, &pszIde);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Skip whitespace again (shouldn't be required because = follows immediately
+                 * in the observed configs).
+                 */
+                pszCfgCur = dbgDiggerLinuxCfgSkipWhitespace(pszCfgCur);
+                if (   pszCfgCur
+                    && *pszCfgCur == '=')
+                {
+                    pszCfgCur++;
+                    pszCfgCur = dbgDiggerLinuxCfgSkipWhitespace(pszCfgCur);
+                    if (   pszCfgCur
+                        && *pszCfgCur != '\0')
+                    {
+                        /* Get the value. */
+                        PDBGDIGGERLINUXCFGITEM pCfgItem = NULL;
+                        rc = dbgDiggerLinuxCfgParseVal(pszCfgCur, &pszCfgCur, &pCfgItem);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pCfgItem->Core.pszString = pszIde;
+                            bool fRc = RTStrSpaceInsert(&pThis->hCfgDb, &pCfgItem->Core);
+                            if (!fRc)
+                            {
+                                RTStrFree(pszIde);
+                                RTMemFree(pCfgItem);
+                                rc = VERR_INVALID_STATE;
+                            }
+                        }
+                    }
+                    else
+                        rc = VERR_EOF;
+                }
+                else
+                    rc = VERR_INVALID_STATE;
+            }
+
+            if (RT_FAILURE(rc))
+                RTStrFree(pszIde);
+        }
+        else
+            break; /* Reached the end of the config. */
+    }
+
+    if (RT_FAILURE(rc))
+        dbgDiggerLinuxCfgDbDestroy(pThis);
+
+    return rc;
+}
+
+/** 
+ * Decompresses the given config and validates the UTF-8 encoding.
+ *
+ * @returns VBox status code.
+ * @param   pbCfgComp           The compressed config.
+ * @param   cbCfgComp           Size of the compressed config.
+ * @param   ppszCfg             Where to store the pointer to the decompressed config
+ *                              on success.
+ */
+static int dbgDiggerLinuxCfgDecompress(const uint8_t *pbCfgComp, size_t cbCfgComp, char **ppszCfg)
+{
+    int rc = VINF_SUCCESS;
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
+
+    rc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pbCfgComp, cbCfgComp, &hVfsIos);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSIOSTREAM hVfsIosDecomp = NIL_RTVFSIOSTREAM;
+        rc = RTZipGzipDecompressIoStream(hVfsIos, RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR, &hVfsIosDecomp);
+        if (RT_SUCCESS(rc))
+        {
+            char *pszCfg = NULL;
+            size_t cchCfg = 0;
+            size_t cbRead = 0;
+
+            do
+            {
+                uint8_t abBuf[_64K];
+                rc = RTVfsIoStrmRead(hVfsIosDecomp, abBuf, sizeof(abBuf), true /*fBlocking*/, &cbRead);
+                if (rc == VINF_EOF && cbRead == 0)
+                    rc = VINF_SUCCESS;
+                if (   RT_SUCCESS(rc)
+                    && cbRead > 0)
+                {
+                    /* Append data. */
+                    char *pszCfgNew = pszCfg;
+                    rc = RTStrRealloc(&pszCfgNew, cchCfg + cbRead + 1);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pszCfg = pszCfgNew;
+                        memcpy(pszCfg + cchCfg, &abBuf[0], cbRead);
+                        cchCfg += cbRead;
+                        pszCfg[cchCfg] = '\0'; /* Enforce string termination. */
+                    }
+                }
+            } while (RT_SUCCESS(rc) && cbRead > 0);
+
+            if (RT_SUCCESS(rc))
+                *ppszCfg = pszCfg;
+            else if (RT_FAILURE(rc) && pszCfg)
+                RTStrFree(pszCfg);
+
+            RTVfsIoStrmRelease(hVfsIosDecomp);
+        }
+        RTVfsIoStrmRelease(hVfsIos);
+    }
+
+    return rc;
+}
+
+/**
+ * Reads and decodes the compressed kernel config.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pAddrStart          The start address of the compressed config.
+ * @param   cbCfgComp           The size of the compressed config.
+ */
+static int dbgDiggerLinuxCfgDecode(PDBGDIGGERLINUX pThis, PUVM pUVM,
+                                   PCDBGFADDRESS pAddrStart, size_t cbCfgComp)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t *pbCfgComp = (uint8_t *)RTMemTmpAlloc(cbCfgComp);
+    if (!pbCfgComp)
+        return VERR_NO_MEMORY;
+
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrStart, pbCfgComp, cbCfgComp);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszCfg = NULL;
+        rc = dbgDiggerLinuxCfgDecompress(pbCfgComp, cbCfgComp, &pszCfg);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTStrIsValidEncoding(pszCfg))
+                rc = dbgDiggerLinuxCfgParse(pThis, pszCfg);
+            else
+                rc = VERR_INVALID_UTF8_ENCODING;
+            RTStrFree(pszCfg);
+        }
+    }
+
+    RTMemFree(pbCfgComp);
+    return rc;
+}
+
+/**
+ * Tries to find the compressed kernel config in the kernel address space
+ * and sets up the config database.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
+ */
+static int dbgDiggerLinuxCfgFind(PDBGDIGGERLINUX pThis, PUVM pUVM)
+{
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Go looking for the IKCFG_ST string which indicates the start
+     * of the compressed config file.
+     */
+    static const uint8_t s_abCfgNeedleStart[] = "IKCFG_ST";
+    static const uint8_t s_abCfgNeedleEnd[] = "IKCFG_ED";
+    DBGFADDRESS CurAddr = pThis->AddrLinuxBanner;
+    uint32_t    cbLeft  = LNX_MAX_KERNEL_SIZE;
+    while (cbLeft > 4096)
+    {
+        DBGFADDRESS HitAddrStart;
+        rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
+                           s_abCfgNeedleStart, sizeof(s_abCfgNeedleStart) - 1, &HitAddrStart);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Check for the end marker which shouldn't be that far away. */
+        DBGFR3AddrAdd(&HitAddrStart, sizeof(s_abCfgNeedleStart) - 1);
+        DBGFADDRESS HitAddrEnd;
+        rc = DBGFR3MemScan(pUVM, 0 /* idCpu */, &HitAddrStart, LNX_MAX_COMPRESSED_CFG_SIZE,
+                           1 /* uAlign */, s_abCfgNeedleEnd, sizeof(s_abCfgNeedleEnd) - 1, &HitAddrEnd);
+        if (RT_SUCCESS(rc))
+        {
+            /* Allocate a buffer to hold the compressed data between the markers and fetch it. */
+            RTGCUINTPTR cbCfg = HitAddrEnd.FlatPtr - HitAddrStart.FlatPtr;
+            Assert(cbCfg == (size_t)cbCfg);
+            rc = dbgDiggerLinuxCfgDecode(pThis, pUVM, &HitAddrStart, cbCfg);
+            if (RT_SUCCESS(rc))
+                break;
+        }
+
+        /*
+         * Advance.
+         */
+        RTGCUINTPTR cbDistance = HitAddrStart.FlatPtr - CurAddr.FlatPtr + sizeof(s_abCfgNeedleStart) - 1;
+        if (RT_UNLIKELY(cbDistance >= cbLeft))
+        {
+            LogFunc(("Failed to find compressed kernel config\n"));
+            break;
+        }
+        cbLeft -= cbDistance;
+        DBGFR3AddrAdd(&CurAddr, cbDistance);
+
+    }
+
+    return rc;
+}
+
 /**
  * @copydoc DBGFOSREG::pfnInit
  */
@@ -1725,8 +2193,19 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
      */
     pThis->f64Bit = pThis->AddrLinuxBanner.FlatPtr > UINT32_MAX;
 
+    pThis->hCfgDb = NULL;
+
+    /*
+     * Try to find the compressed kernel config and parse it before we try
+     * to get the symbol table, the config database is required to select
+     * the method to use.
+     */ 
+    int rc = dbgDiggerLinuxCfgFind(pThis, pUVM);
+    if (RT_FAILURE(rc))
+        LogFlowFunc(("Failed to find kernel config (%Rrc), no config database available\n", rc));
+
     static const uint8_t s_abNeedle[] = "kobj";
-    int rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedle, sizeof(s_abNeedle) - 1);
+    rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedle, sizeof(s_abNeedle) - 1);
     if (RT_FAILURE(rc))
     {
         /* Try alternate needle (seen on older x86 Linux kernels). */
