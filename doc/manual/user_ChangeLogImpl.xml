@@ -11,6 +11,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: fixed issue with double-click/opening registered file types
+          (.vbox and Extension Pack) on Mac OS X</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: fixed creating fixed size VHD images (bug #15601)</para>
       </listitem>
 
@@ -39,8 +44,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: Fixed issue with double-click/opening registerted file types
-          (.vbox and extension pack) on OS X</para>
+        <para>Linux hosts: fixed EL5 builds (bug #15634)</para>
       </listitem>
 
     </itemizedlist>
