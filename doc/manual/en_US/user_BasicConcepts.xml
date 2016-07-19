@@ -1009,6 +1009,9 @@
     <para>On a Linux host, depending on your host configuration, you can also
     select between the OSS, ALSA or the PulseAudio subsystem. On newer Linux
     distributions, the PulseAudio subsystem should be preferred.</para>
+
+    <para>Since VirtualBox 5.0 only OSS is supported on Solaris hosts - the "Solaris Audio" 
+    audio backend is no longer supported on Solaris hosts.</para>
   </sect1>
 
   <sect1 id="settings-network">

@@ -469,11 +469,24 @@ IOAPIC:          on
           </listitem>
 
           <listitem>
-            <para><computeroutput>--memory
-            &lt;memorysize&gt;</computeroutput>: This sets the amount of RAM,
+            <para><computeroutput>--iconfile &lt;filename&gt;</computeroutput>:
+            This specifies the absolute path on the host file system for the VirtualBox 
+            icon to be displayed in the VM.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--memory &lt;memorysize&gt;</computeroutput>: This sets the amount of RAM,
             in MB, that the virtual machine should allocate for itself from
             the host. See the remarks in <xref linkend="gui-createvm" /> for
             more information.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--pagefusion on|off</computeroutput>:
+            Enables/disables (default) the Page Fusion feature.  
+            The Page Fusion feature minimises memory duplication between VMs with similar 
+            configurations running on the same host.
+            See <xref linkend="guestadd-pagefusion" /> for details.</para>
           </listitem>
 
           <listitem>
@@ -488,6 +501,18 @@ IOAPIC:          on
             determine whether the VM should have ACPI and I/O APIC support,
             respectively; see <xref linkend="settings-motherboard" /> for
             details.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--pciattach &lt;host PCI address [@ guest PCI bus address]&gt;</computeroutput>:
+            Attaches a specified PCI network controller on the host to a PCI bus (can specify) on the guest.
+            See <xref linkend="pcipassthrough" /> for details. </para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--pcidetach &lt;host PCI address&gt;</computeroutput>:
+            Detaches a specified PCI network controller on the host from the attached PCI bus on the guest. 
+            See <xref linkend="pcipassthrough" /> for details. </para>
           </listitem>
 
           <listitem>
@@ -545,6 +570,13 @@ IOAPIC:          on
           </listitem>
 
           <listitem>
+            <para><computeroutput>--cpu-profile &lt;host|intel 80[86|286|386]&gt;</computeroutput>:
+            Indicate the use of a profile for guest cpu emulation. Specify either one based  
+            on the host system CPU (host), or one from a number of older Intel 
+            Micro-architectures - 8086, 80286, 80386.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--hpet on|off</computeroutput>: This
             enables/disables a High Precision Event Timer (HPET) which can
             replace the legacy system timers. This is turned off by default.
@@ -564,6 +596,23 @@ IOAPIC:          on
             Guru Meditation. Some guests raise a triple fault to reset the
             CPU so sometimes this is desired behavior. Works only for non-SMP
             guests.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--apic on|off</computeroutput>:
+            This setting enables(default)/disables IO APIC. With
+            I/O APIC, operating systems can use more than 16 interrupt
+            requests (IRQs) thus avoiding IRQ sharing for improved
+            reliability. See <xref linkend="settings-motherboard" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--x2apic on|off</computeroutput>:
+            This setting enables(default)/disables CPU x2APIC support.
+            CPU x2APIC support helps operating systems run more efficiently on high 
+            core count configurations, and optimizes interrupt
+            distribution in virtualized environments. Disable when using host/guest
+            operating systems incompatible with x2APIC support.</para>
           </listitem>
 
           <listitem>
@@ -716,6 +765,12 @@ IOAPIC:          on
           </listitem>
 
           <listitem>
+            <para><computeroutput>--graphicscontroller none|vboxvga|vmsvga</computeroutput>: This
+            option specifies use of a graphics controller, and type chosen from vboxvga or vmsvga.
+            <xref linkend="settings-motherboard" />).</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--biossystemtimeoffset &lt;ms&gt;</computeroutput>:
             This allows you to set a fixed time offset of the guest relative to
             the host time. The offset is specified in milliseconds. If the offset
@@ -730,10 +785,10 @@ IOAPIC:          on
           </listitem>
 
           <listitem>
-            <para><computeroutput>--firmware efi|bios</computeroutput>:
-            Specifies which firmware is used to boot particular virtual
-            machine: EFI or BIOS. Use EFI only if your fully understand what
-            you're doing.</para>
+            <para><computeroutput>--firmware bios|efi|efi32|efi64</computeroutput>:
+            Specifies which firmware to be used to boot the VM: 
+            Available options are BIOS, or one of the EFI options: efi, efi32 or efi64.
+            Use EFI options with care.</para>
           </listitem>
 
           <listitem>
@@ -882,9 +937,22 @@ IOAPIC:          on
           <listitem>
             <para><computeroutput>--macaddress&lt;1-N&gt;
             auto|&lt;mac&gt;</computeroutput>: With this option you can set
-            the MAC address of the virtual network card. Normally, each
-            virtual network card is assigned a random address by VirtualBox at
+            the MAC address of a particular network adapter on the VM. Normally, each
+            network adapter is assigned a random address by VirtualBox at
             VM creation.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--mouse &lt;ps2|usb|usbtablet|usbmultitouch&gt;</computeroutput>: 
+            Specifies the mode of the mouse to be used in the VM. Available options are: ps2, usb, 
+            usbtablet, usbmultitouch.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--keyboard &lt;ps2|usb&gt;</computeroutput>: 
+            Specifies the mode of the keyboard to be used in the VM. Available options are: ps2, usb.
+            </para>
           </listitem>
 
           <listitem>
@@ -905,6 +973,16 @@ IOAPIC:          on
             Those parameters are backend engine-specific, and are different
             between UDP Tunnel and the VDE backend drivers. For example,
             please see <xref linkend="network_udp_tunnel" />.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--nicspeed&lt;1-N&gt; &lt;kbps&gt;</computeroutput>:
+            If generic networking has been enabled for a virtual network card (see the
+            <computeroutput>--nic</computeroutput> option above; otherwise
+            this setting has no effect), this mode enables access
+            to rarely used networking sub-modes, such as VDE network or UDP Tunnel.
+            This option specifies the throughput rate in KBytes/sec.
             </para>
           </listitem>
         </itemizedlist></para>
@@ -952,6 +1030,15 @@ IOAPIC:          on
               &lt;tftpserver&gt;</computeroutput>: This option defines the
               TFTP server address to boot from (please see <xref
               linkend="nat-adv-tftp" /> for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--nattbindip&lt;1-N&gt;
+              &lt;ip;&gt;</computeroutput>: VirtualBox's NAT engine normally routes 
+              TCP/IP packets through the default interface assigned by the host's 
+              TCP/IP stack. Use this option to instruct the NAT engine to bind 
+              to a specified IP address instead. (Please see <xref
+              linkend="nat-adv-settings" /> for details).</para>
             </listitem>
 
             <listitem>
@@ -1097,9 +1184,21 @@ IOAPIC:          on
           </listitem>
 
           <listitem>
-            <para><computeroutput>--audio none|null|oss</computeroutput>: With
+            <para><computeroutput>--audio none|null|oss|alsa|pulse</computeroutput>: With
             this option, you can set whether the VM should have audio
-            support.</para>
+            support, and if so - which type.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--audiocontroller ac97|hda|sb16</computeroutput>: With
+            this option, you can specify the audio controller to be used with this VM.
+            </para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--audiocodec stac9700|ad1980|stac9221|sb16</computeroutput>: With
+            this option, you can specify the audio codec to be used with this VM.
+            </para>
           </listitem>
 
           <listitem>
@@ -1395,10 +1494,46 @@ IOAPIC:          on
             Allows to configure tracing. In particular this defines which group of
             tracepoints are enabled.</para>
           </listitem>
+          <listitem>
+            <para><computeroutput>--tracing-allow-vm-access on|off</computeroutput>:
+            Enables/disables(default) VM access to the tracebuffer.</para>
+          </listitem>
         </itemizedlist>
       </para>
     </sect2>
 
+    <sect2 id="vboxmanage-usbcardreader">
+      <title>USB card reader settings</title>
+
+      <para>The following setting defines access to a USB Card Reader by the guest environment.
+      USB card readers are typically used for accessing data on memory cards such as 
+      CompactFlash (CF), Secure Digital (SD) or MultiMediaCard (MMC).</para>
+      <itemizedlist>
+          <listitem>
+            <para><computeroutput>--usbcardreader on|off</computeroutput>:
+            Enables/disables the USB card reader interface.</para>
+          </listitem>
+      </itemizedlist>
+    </sect2>
+
+    <sect2 id="vboxmanage-autostart">
+      <title>Auto starting VMs during host system boot</title>
+
+      <para>These settings configure the VM autostart feature,
+      which automatically starts the VM at host system boot-up. 
+      Note that there are pre-requisities that need to be addressed before using this feature. 
+      See <xref lang="" linkend="autostart" /> for more details.</para>
+      <itemizedlist>
+        <listitem>
+          <para><computeroutput>--autostart on|off</computeroutput>:
+          Enables/disables VM autostart at host system boot-up, using specified user name.</para>
+        </listitem>
+        <listitem>
+          <para><computeroutput>--autostart-delay &lt;seconds&gt;</computeroutput>:
+          Specifies a delay (seconds) following host system boot-up, before VM autostarts.</para>
+        </listitem>
+      </itemizedlist>
+    </sect2>
   </sect1>
 
   <sect1 id="vboxmanage-clonevm">
@@ -1741,7 +1876,7 @@ Virtual system 0:
 
       <listitem>
         <para><computeroutput>nic&lt;1-N&gt;
-        null|nat|bridged|intnet|hostonly|generic</computeroutput>: With this, you can
+        null|nat|bridged|intnet|hostonly|generic|natnetwork[&lt;devicename&gt;]</computeroutput>: With this, you can
         set, for each of the VM's virtual network cards, what type of
         networking should be available. They can be not connected to the host
         (<computeroutput>null</computeroutput>), use network address
@@ -1749,10 +1884,11 @@ Virtual system 0:
         (<computeroutput>bridged</computeroutput>) or communicate with other
         virtual machines using internal networking
         (<computeroutput>intnet</computeroutput>) or host-only networking
-        (<computeroutput>hostonly</computeroutput>) or access to rarely used
+        (<computeroutput>hostonly</computeroutput>) or natnetwork networking
+        (<computeroutput>natnetwork</computeroutput>) or access to rarely used
         sub-modes
-        (<computeroutput>generic</computeroutput>). These options correspond
-        to the modes which are described in detail in <xref
+        (<computeroutput>generic</computeroutput>). 
+        These options correspond to the modes which are described in detail in <xref
         linkend="networkingmodes" />.</para>
       </listitem>
 
@@ -1798,7 +1934,23 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para>The <computeroutput>guestmemoryballoon</computeroutput>
+        <para><computeroutput>natpf&lt;1-N&gt;
+        [&lt;name&gt;],tcp|udp,[&lt;hostip&gt;],&lt;hostport&gt;,[&lt;guestip&gt;],
+        &lt;guestport&gt;</computeroutput>: This option defines a NAT
+        port-forwarding rule (please see <xref linkend="natforward"/>
+        for details).
+        </para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>natpf&lt;1-N&gt; delete
+        &lt;name&gt;</computeroutput>: This option deletes a NAT
+        port-forwarding rule (please see <xref linkend="natforward"/>
+        for details).</para>
+      </listitem>
+
+      <listitem>
+        <para>The <computeroutput>guestmemoryballoon&lt;balloon size in MB&gt;</computeroutput>
         operation changes the size of the guest memory balloon, that is,
         memory allocated by the VirtualBox Guest Additions from the guest
         operating system and returned to the hypervisor for re-use by other
@@ -1807,11 +1959,12 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para><computeroutput>usbattach</computeroutput> and
-        <computeroutput>usbdettach</computeroutput> make host USB devices
-        visible to the virtual machine on the fly, without the need for
+        <para><computeroutput>usbattach&lt;uuid|address&gt; [--capturefile &lt;filename&gt;]</computeroutput></para> 
+        <para>and <computeroutput>usbdetach &lt;uuid|address&gt; [--capturefile &lt;filename&gt;]</computeroutput> 
+        make host USB devices visible/invisible to the virtual machine on the fly, without the need for
         creating filters first. The USB devices can be specified by UUID
-        (unique identifier) or by address on the host system.</para>
+        (unique identifier) or by address on the host system. Use the --capturefile 
+        option to specify the absolute path of a file for writing activity logging data.</para>
 
         <para>You can use <computeroutput>VBoxManage list
         usbhost</computeroutput> to locate this information.</para>
@@ -1849,6 +2002,12 @@ Virtual system 0:
         linkend="vboxmanage-modifyvm-other" />.</para>
       </listitem>
 
+      <listitem>
+        <para><computeroutput>vrdevideochannelquality
+        &lt;percent&gt;</computeroutput>: Sets the image quality for video
+        redirection; see <xref lang=""
+        linkend="vrde-videochannel" />.</para>
+      </listitem>
 
       <listitem>
         <para><computeroutput>setvideomodehint</computeroutput> requests that
@@ -1933,7 +2092,38 @@ Virtual system 0:
         <xref linkend="autologon" />.</para>
       </listitem>
 
-      <!-- @todo r=andy Document teleport! -->
+      <listitem>
+        <para><computeroutput>teleport --host &lt;name&gt; --port &lt;port&gt;</computeroutput> 
+        can be used to configure a VM as a target for teleporting. 
+        &lt;name&gt; specifies the virtual machine name. &lt;port&gt; specifies the port on the 
+        virtual machine which should listen for a teleporting request from another
+        virtual machine. It can be any free TCP/IP port number (e.g. 6000);
+        See <xref linkend="teleporting" /> for an introduction.</para>
+        <itemizedlist>
+          <listitem>
+            <para><computeroutput>--maxdowntime &lt;msec&gt;</computeroutput>:
+            Optional - specifies the maximum downtime (millseconds) for the 
+            teleporting target VM.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--password
+            &lt;password&gt;</computeroutput>: 
+            Optional - indicates that the teleporting request will only succeed if the
+            source machine specifies the same password as the one given with
+            this command.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--passwordfile
+            &lt;password file&gt;</computeroutput>: 
+            Optional - indicates that the teleporting request will only succeed if the
+            source machine specifies the same password as the one specified
+            in the file given with this command. Use <computeroutput>stdin</computeroutput>
+            to read the password from stdin.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
 
       <listitem>
         <para><computeroutput>plugcpu|unplugcpu
@@ -2897,7 +3087,6 @@ Value: 2006.01.01</screen>
           </para></glossdef>
         </glossentry>
 
-
         <glossentry>
           <glossterm><computeroutput>vrdeauthlibrary</computeroutput></glossterm>
 
@@ -3145,7 +3334,7 @@ Value: 2006.01.01</screen>
     <para>guestcontrol has two sets of subcommands. The first set requires guest
       credentials to be specified, the second does not.</para>
 
-    <para>The first set of subcommands are of the form:</para>
+    <para>The first set of subcommands is of the form:</para>
     <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
             [--username &lt;name&gt; ]
             [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
@@ -3167,7 +3356,7 @@ Value: 2006.01.01</screen>
         <glossentry>
           <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
             <glossdef>
-              <para>The VM UUID or VM name. Mandatory.</para>
+              <para>Specifies the VM UUID or VM name. Mandatory.</para>
             </glossdef>
         </glossentry>
    
@@ -3218,16 +3407,16 @@ Value: 2006.01.01</screen>
           </screen>
             <glosslist>
               <glossentry>
-                <glossterm><computeroutput>--exe "&lt;path to executable&gt;"</computeroutput></glossterm>
-                <glossdef><para>Specifies the absolute path of the executable on the guest OS file system. Mandatory. e.g.:
-                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.</para>
+                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
-                <glossdef>
-                  <para>Specifies the VM UUID or VM name. Mandatory.</para>
+                <glossterm><computeroutput>--exe &lt;path to executable&gt;</computeroutput></glossterm>
+                <glossdef><para>Specifies the absolute path of the executable on the guest OS file system. Mandatory. e.g.:
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.</para>
                 </glossdef>
               </glossentry>
 
@@ -3241,7 +3430,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>-E|--putenv "&lt;NAME&gt;=&lt;VALUE&gt;"
+                <glossterm><computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;
                 </computeroutput></glossterm>
                 <glossdef>
                   <para>Sets/modifies/unsets environment variable(s) in the environment in which the program will run. Optional.</para>
@@ -3286,7 +3475,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>>--no-wait-stderr|--wait-stderr</computeroutput></glossterm>
+                <glossterm><computeroutput>--no-wait-stderr|--wait-stderr</computeroutput></glossterm>
                 <glossdef>
                   <para>Does not wait/waits until the guest process ends and receives its exit code and reason/flags. 
                   In case of --wait-stderr - while the process runs, VBoxManage receives its stderr. Optional.</para>
@@ -3354,12 +3543,12 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>start</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>start</computeroutput></emphasis>
           Executes a guest program until it completes.</para>
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; start [common-options]
-            [--exe &lt;path to executable&gt;] [--timeout &lt;msec&gt;]
-            [-E|--putenv &lt;NAME&gt;[=&lt;VALUE&gt;]] [--unquoted-args]
-            [--ignore-operhaned-processes] [--profile]
+           [--exe &lt;path to executable&gt;] [--timeout &lt;msec&gt;]
+           [-E|--putenv &lt;NAME&gt;[=&lt;VALUE&gt;]] [--unquoted-args]
+           [--ignore-operhaned-processes] [--profile]
             -- &lt;program/arg0&gt; [argument1] ... [argumentN]]
           </screen>
 
@@ -3372,7 +3561,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--exe "&lt;path to executable&gt;"</computeroutput></glossterm>
+                <glossterm><computeroutput>--exe &lt;path to executable&gt;</computeroutput></glossterm>
                 <glossdef><para>Specifies the absolute path of the executable on the guest OS file system. Mandatory. e.g.:
                   <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
                 </glossdef>
@@ -3387,7 +3576,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>-E|--putenv "&lt;NAME&gt;=&lt;VALUE&gt;"
+                <glossterm><computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;
                 </computeroutput></glossterm>
                 <glossdef>
                   <para>Sets/modifies/unsets environment variable(s) in the environment in which the program will run. Optional.</para>
@@ -3412,14 +3601,14 @@ Value: 2006.01.01</screen>
               <glossentry>
                 <glossterm><computeroutput>--ignore-operhaned-processes</computeroutput></glossterm>
                 <glossdef>
-                  <para>Ignores orphaned processes. Not implemented yet. Optional.</para>
+                  <para>Ignores orphaned processes. Not yet implemented. Optional.</para>
                 </glossdef>
               </glossentry>
 
               <glossentry>
                 <glossterm><computeroutput>--profile</computeroutput></glossterm>
                 <glossdef>
-                  <para>Use a profile. Not implemented yet. Optional.</para>
+                  <para>Use a profile. Not yet implemented. Optional.</para>
                 </glossdef>
               </glossentry>
 
@@ -3469,12 +3658,12 @@ Value: 2006.01.01</screen>
 
         <listitem>
           <para><emphasis role="bold"><computeroutput>copyfrom</computeroutput></emphasis>
-          This command enables copying of files from the guest to the host file system. 
+          Copies files from the guest to the host file system. 
           (Note - only with Guest Additions 4.0 or later installed).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyfrom [common-options]
+           [--dryrun] [--follow] [--R|recursive]
             --target-directory &lt;host-dst-dir&gt;
-            [--dryrun] [--follow] [--R|recursive]
             &lt;guest-src0&gt; [&lt;guest-src1&gt; [...]] </screen>
 
           <para>Where the parameters are:<glosslist>
@@ -3482,14 +3671,6 @@ Value: 2006.01.01</screen>
                 <glossterm><computeroutput>&lt;uid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies the VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--target-directory &lt;host-dst-dir&gt;</computeroutput></glossterm>
-                <glossdef>
-                  <para>Specifies the absolute path of the host file system destination directory. Mandatory. e.g.
-                  <computeroutput>C:\Temp</computeroutput>.</para>
                 </glossdef>
               </glossentry>
 
@@ -3517,6 +3698,14 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
+                <glossterm><computeroutput>--target-directory &lt;host-dst-dir&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the absolute path of the host file system destination directory. Mandatory. e.g.
+                  <computeroutput>C:\Temp</computeroutput>.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
                 <glossterm><computeroutput>&lt;guest-src0&gt; [&lt;guest-src1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies the absolute path(s) of guest file system file(s) to be copied. Mandatory. e.g.
@@ -3530,13 +3719,13 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>copyto</computeroutput></emphasis>,
-          Copies from the host to a guest file system. 
+          <para><emphasis role="bold"><computeroutput>copyto</computeroutput></emphasis>
+          Copies files from the host to the guest file system. 
           (Note - only with Guest Additions 4.0 or later installed).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyto [common-options]
+           [--dryrun] [--follow] [--R|recursive]
             --target-directory &lt;guest-dst&gt;
-            [--dryrun] [--follow] [--R|recursive]
             &lt;host-src0&gt; [&lt;host-src1&gt; [...]] </screen>
 
           <para>Where the parameters are:<glosslist>
@@ -3544,14 +3733,6 @@ Value: 2006.01.01</screen>
                 <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies the VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--target-directory &lt;guest-dst&gt;</computeroutput></glossterm>
-                <glossdef>
-                  <para>Specifies the absolute path of the guest file system destination directory. Mandatory. e.g.
-                  <computeroutput>C:\Temp</computeroutput>.</para>
                 </glossdef>
               </glossentry>
 
@@ -3579,6 +3760,14 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
+                <glossterm><computeroutput>--target-directory &lt;guest-dst&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the absolute path of the guest file system destination directory. Mandatory. e.g.
+                  <computeroutput>C:\Temp</computeroutput>.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
                 <glossterm><computeroutput>&lt;host-src0&gt; [&lt;host-src1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies the absolute path(s) of host file system file(s) to be copied. Mandatory. e.g.
@@ -3592,14 +3781,13 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>md|mkdir|createdir|createdirectory</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>md|mkdir|createdir|createdirectory</computeroutput></emphasis>
           Creates one or more directory(ies) on the guest file system. 
           (Note - only with Guest Additions 4.0 or later installed).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt;  md|mkdir|createdir|createdirectory
-            [common-options ]
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt;  md|mkdir|createdir|createdirectory [common-options]
             [--parents] [--mode &lt;mode&gt;]
-            &lt;guest directory&gt; [...] </screen>
+            &lt;guest-dir0&gt; [&lt;guest-dir1&gt; [...]] </screen>
 
           <para>Where the parameters are: <glosslist>
               <glossentry>
@@ -3630,11 +3818,11 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>&lt;guest directory&gt;... </computeroutput></glossterm>
+                <glossterm><computeroutput>&lt;guest-dir0&gt; [&lt;guest-dir1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Specifies list of absolute paths of directory(ies) to be created on
+                  <para>Specifies list of absolute path(s) of directory(ies) to be created on
                   guest file system. Mandatory. 
-                  e.g. <computeroutput>D:\Foo\Bar</computeroutput> </para>
+                  e.g. <computeroutput>D:\Foo\Bar</computeroutput>.</para>
                   <para>All parent directories must already exist
                   unless switch <computeroutput>--parents</computeroutput> used. 
                   (e.g. in the above example <computeroutput>D:\Foo</computeroutput>). 
@@ -3651,9 +3839,9 @@ Value: 2006.01.01</screen>
           <para><emphasis role="bold"><computeroutput>rmdir|removedir|removedirectory</computeroutput></emphasis>
           Deletes specified guest file system directories. (Only with installed Guest Additions 4.3.2 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removedirectory|removedir|rmdir [common-options]
-            [--recursive|-R]
-            &lt;guest directory&gt;... 
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; rmdir|removedir|removedirectory [common-options]
+           [--recursive|-R]
+            &lt;guest-dir0&gt; [&lt;guest-dir1&gt; [...]]
           </screen>   
 
           <para>Where the parameters are: <glosslist>
@@ -3672,10 +3860,10 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>&lt;guest directory&gt;...</computeroutput></glossterm>
+                <glossterm><computeroutput>&lt;guest-dir0&gt; [&lt;guest-dir1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Specifies the absolute path(s) of directory(ies) to be deleted on
-                  guest file system. Mandatory. Wildcards are allowed. e.g. <computeroutput>D:\Foo\Bar</computeroutput>.  
+                  <para>Specifies list of the absolute path(s) of directory(ies) to be deleted on
+                  guest file system. Mandatory. Wildcards are allowed. e.g. <computeroutput>D:\Foo\*Bar</computeroutput>.  
                   The specified user must have sufficient rights to delete the
                   specified directory(ies).</para>
                 </glossdef>
@@ -3684,13 +3872,13 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>removefile|rm</computeroutput></emphasis>
+          <para><emphasis role="bold"><computeroutput>rm|removefile</computeroutput></emphasis>
           Deletes specified files on the guest file system. (Only with installed Guest
           Additions 4.3.2 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removefile|rm [common-options]
-            [-f|--force]
-            &lt;guest file&gt;... </screen>
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; rm|removefile [common-options]
+           [-f|--force]
+            &lt;guest-file0&gt; [&lt;guest-file1&gt; [...]] </screen>
 
           <para>Where the parameters are: <glosslist>
               <glossentry>
@@ -3708,10 +3896,10 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>&lt;guest file&gt;...</computeroutput></glossterm>
+                <glossterm><computeroutput>&lt;guest-file0&gt; [&lt;guest-file1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Specifies absolute path(s) of file(s) to be deleted on guest file system. Mandatory.
-                   Wildcards are allowed. e.g. <computeroutput>D:\Foo\Bar\text.txt</computeroutput>.  
+                  <para>Specifies list of absolute path(s) of file(s) to be deleted on guest file system. Mandatory.
+                   Wildcards are allowed. e.g. <computeroutput>D:\Foo\Bar\text*.txt</computeroutput>.  
                    The specified user should have sufficient rights to delete the specified file(s).</para>
                 </glossdef>
               </glossentry>
@@ -3725,7 +3913,7 @@ Value: 2006.01.01</screen>
           Additions 4.3.2 and later).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; mv|move|ren|rename [common-options]
-            &lt;source&gt;... &lt;dest&gt; </screen>
+           &lt;guest-source0&gt; [&lt;guest-source1&gt; [...]] &lt;guest-dest&gt;</screen>
 
           <para>Where the parameters are: <glosslist>
               <glossentry>
@@ -3736,10 +3924,11 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>&lt;source&gt;... </computeroutput></glossterm>
+                <glossterm><computeroutput>&lt;guest-source0&gt; [&lt;guest-source1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Specifies absolute path(s) of file(s) to be moved on guest file system. Mandatory.
-                  Wildcards are allowed. The specified user should  have sufficient rights to 
+                  <para>Specifies absolute path(s) of file(s) and/or single directory to be moved/renamed on guest 
+                  file system. Mandatory.
+                  Wildcards are allowed in file names(s). The specified user should have sufficient rights to 
                   access the specified file(s).</para>
                 </glossdef>
               </glossentry>
@@ -3747,8 +3936,9 @@ Value: 2006.01.01</screen>
               <glossentry>
                 <glossterm><computeroutput>&lt;dest&gt;</computeroutput></glossterm>
                 <glossdef>
-                  <para>Specifies the absolute path of the destination file/directory(ies) to which the file(s)
-                  are to be moved. This can be a directory, or a file if only one file to be moved. Mandatory.
+                  <para>Specifies the absolute path of the destination file/directory to which the file(s)
+                  are to be moved. Mandatory. If only one file to be moved, &lt;dest&gt; can be file or directory, 
+                  else it must be a directory.
                   The specified user must have sufficient rights to access the destination file/directory.</para>
                 </glossdef>
               </glossentry>
@@ -3763,7 +3953,7 @@ Value: 2006.01.01</screen>
           (Only with installed Guest Additions 4.2 and later).</para>
 
             <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; mktemp|createtemp|createtemporary [common-options]
-            [--directory] [--secure] [--mode &lt;mode&gt;] [--tmpdir &lt;directory&gt;]
+           [--directory] [--secure] [--mode &lt;mode&gt;] [--tmpdir &lt;directory&gt;]
             &lt;template&gt; 
             </screen>
 
@@ -3793,6 +3983,15 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
+                <glossterm><computeroutput>--mode &lt;mode&gt;</computeroutput></glossterm>
+                <glossdef>
+                  <para>Specifies the permission mode of the specified directory. Optional. 
+                  Currently only octal modes (e.g. <computeroutput>0755</computeroutput>) 
+                  are supported.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
                 <glossterm><computeroutput>--tmpdir &lt;directory&gt;</computeroutput></glossterm>
                 <glossdef>
                   <para>
@@ -3800,15 +3999,6 @@ Value: 2006.01.01</screen>
                   file/directory specified in will be created. Optional.
                   If unspecified, the platform-specific temp directory is used. 
                   </para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--mode &lt;mode&gt;</computeroutput></glossterm>
-                <glossdef>
-                  <para>Specifies the permission mode of the specified directory. Optional. 
-                  Currently only octal modes (e.g. <computeroutput>0755</computeroutput>) 
-                  are supported.</para>
                 </glossdef>
               </glossentry>
 
@@ -3824,11 +4014,11 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>stat</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>stat</computeroutput></emphasis>
           Displays file or file system status(es) on the guest.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; stat [common-options]
-            &lt;file1&gt;[... filen] </screen>
+           &lt;file0&gt; [&lt;file1&gt; [...]]</screen>
 
           <para>Where the parameters are: <glosslist>
               <glossentry>
@@ -3839,12 +4029,12 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>&lt;file1&gt;[... filen]</computeroutput></glossterm>
+                <glossterm><computeroutput>&lt;file0&gt; [&lt;file1&gt; [...]]</computeroutput></glossterm>
                 <glossdef>
-                  <para>Specifies absolute path(s) of file(s) on guest file system. Mandatory.
+                  <para>Specifies absolute path(s) of file(s) and/or file system(s) on guest file system. Mandatory.
                   e.g. <computeroutput>/home/foo/a.out</computeroutput>.
                   The specified user should have sufficient rights to access
-                  the specified file/file system(s).</para>
+                  the specified file(s)/file system(s).</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
@@ -3852,9 +4042,9 @@ Value: 2006.01.01</screen>
       </itemizedlist>
     </para>
 
-    <para>The second set of subcommands are of the form:</para>
+    <para>The second set of subcommands is of the form:</para>
     <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
-            [-v|--verbose] [-q|quiet] ...
+           [-v|--verbose] [-q|quiet] ...
     </screen>
 
     <para>The "common-options" are:</para>
@@ -3879,12 +4069,12 @@ Value: 2006.01.01</screen>
 
     <para>The second set of subcommands: <itemizedlist>
         <listitem>
-          <para><emphasis role="bold"><computeroutput>list</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>list</computeroutput></emphasis>
           Lists guest control configuration and status data, e.g. open guest sessions,
           guest processes and files.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; list [common-opts]
-            &lt;all|sessions|processes|files&gt; </screen>
+           &lt;all|sessions|processes|files&gt; </screen>
 
           <para>Where the parameters are: <glosslist>
             <glossentry>
@@ -3893,6 +4083,7 @@ Value: 2006.01.01</screen>
                 <para>Specifies the VM UUID or VM name. Mandatory.</para>
               </glossdef>
             </glossentry>
+
             <glossentry>
               <glossterm><computeroutput>all|sessions|processes|files</computeroutput></glossterm>
               <glossdef>
@@ -3900,17 +4091,18 @@ Value: 2006.01.01</screen>
                 Mandatory.</para>
               </glossdef>
             </glossentry>
+
           </glosslist></para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>closeprocess</computeroutput></emphasis>,
-          Terminates guest processes (specified by PID(s))running in guest session(s) 
+          <para><emphasis role="bold"><computeroutput>closeprocess</computeroutput></emphasis>
+          Terminates guest processes specified by PID(s))running in guest session(s),
           specified by the session ID or name(s).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; closeprocess [common-options]
-            --session-id &lt;ID&gt; | --session-name &lt;name or pattern&gt;
-          &lt;PID1&gt; [... &lt;PID n&gt;] </screen>
+           --session-id &lt;ID&gt; | --session-name &lt;name or pattern&gt;
+           &lt;PID0&gt; [&lt;PID1&gt; [...]] </screen>
 
           <para>Where the parameters are: <glosslist>
             <glossentry>
@@ -3928,7 +4120,7 @@ Value: 2006.01.01</screen>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+              <glossterm><computeroutput>--session-name &lt;name or pattern&gt;</computeroutput></glossterm>
               <glossdef>
                 <para>Specifies the guest session by its name, or multiple sessions 
                 using a pattern containing wildcards. Optional.</para>
@@ -3936,7 +4128,7 @@ Value: 2006.01.01</screen>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>&lt;PID1&gt; [... &lt;PID n&gt;]</computeroutput></glossterm>
+              <glossterm><computeroutput>&lt;PID0&gt; [&lt;PID1&gt; [...]]</computeroutput></glossterm>
               <glossdef>
                 <para>Specifies a list of process identifiers (PIDs) of guest processes to be terminated. Mandatory.</para>
               </glossdef>
@@ -3945,13 +4137,11 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>closesession</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>closesession</computeroutput></emphasis>
           Closes specified guest sessions, specified either by session ID or name.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; closesession [common-options]
-            --session-id &lt;ID&gt;
-          | --session-name &lt;name or pattern&gt;
-          | --all </screen>
+           --session-id &lt;ID&gt; | --session-name &lt;name or pattern&gt; | --all </screen>
 
           <para>Where the parameters are: <glosslist>
             <glossentry>
@@ -3962,14 +4152,14 @@ Value: 2006.01.01</screen>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+              <glossterm><computeroutput>--session-id &lt;ID&gt;</computeroutput></glossterm>
               <glossdef>
                 <para>Specifies the guest session to be closed by ID. Optional.</para>
               </glossdef>
             </glossentry>
 
              <glossentry>
-              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+              <glossterm><computeroutput>--session-name &lt;name or pattern&gt;</computeroutput></glossterm>
               <glossdef>
                 <para>Specifies the guest session to be closed by name. Optional.
                 Multiple sessions can be specified by using a pattern
@@ -3992,8 +4182,9 @@ Value: 2006.01.01</screen>
           (Only already installed Guest Additions 4.0 and later).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; updatega|updateadditions|updateguestadditions [common-options]
-            [--source "&lt;New .ISO path&gt;"]
-            [--wait-start] [-- [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
+           [--source &lt;New .ISO path&gt;]
+           [--wait-start] 
+           [-- &lt;argument0&gt; [&lt;argument1&gt; [...]]]</screen>
 
           <para>Where the parameters are: <glosslist>
               <glossentry>
@@ -4004,9 +4195,9 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>--source</computeroutput> "&lt;New ISO path&gt;"</glossterm>
+                <glossterm><computeroutput>--source</computeroutput> &lt;New .ISO path&gt;</glossterm>
                 <glossdef>
-                  <para>Specifies the absolute path on guest file system of ISO file for Guest Additions update. Mandatory.</para>
+                  <para>Specifies the absolute path on guest file system of the .ISO file for Guest Additions update. Mandatory.</para>
                 </glossdef>
               </glossentry>
 
@@ -4022,7 +4213,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm><computeroutput>[-- [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</computeroutput></glossterm>
+                <glossterm><computeroutput>[-- &lt;argument0&gt; [&lt;argument1&gt; [...]]]</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies optional command line arguments to be supplied to the Guest Additions
                    updater. Useful for retrofitting features which are not currently installed.</para>
@@ -4033,7 +4224,7 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold"><computeroutput>watch</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>watch</computeroutput></emphasis>
           This subcommand prints current guest control activity.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; watch [common-options]

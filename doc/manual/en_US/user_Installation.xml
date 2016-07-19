@@ -467,9 +467,9 @@
       </sect3>
 
       <sect3>
-        <title>Using the alternative installer (VirtualBox.run)</title>
+        <title>Using the alternative generic installer (VirtualBox.run)</title>
 
-        <para>The alternative installer performs the following steps:</para>
+        <para>The alternative generic installer performs the following steps:</para>
 
         <itemizedlist>
           <listitem>
