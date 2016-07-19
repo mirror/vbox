@@ -681,10 +681,11 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
             /* darn, someone raced in on us. */
             ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeThread);
             STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
-            Assert(pCritSect->s.Core.cNestings == 0);
 # ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
             //pCritSect->s.Core.cNestings = 1;
+            Assert(pCritSect->s.Core.cNestings == 1);
 # else
+            //Assert(pCritSect->s.Core.cNestings == 0);
             ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
 # endif
         }
