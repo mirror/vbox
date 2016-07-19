@@ -1115,6 +1115,8 @@ PyXPCOM_InterfaceVariantHelper::PyXPCOM_InterfaceVariantHelper(Py_nsISupports *p
 	m_var_array=nsnull;
 	m_buffer_array=nsnull;
 	m_pyparams=nsnull;
+        m_typedescs = nsnull;
+        m_python_type_desc_array = nsnull;
 	m_num_array = 0;
         m_methodindex = methodindex;
 	// Parent should never die before we do, but let's not take the chance.
