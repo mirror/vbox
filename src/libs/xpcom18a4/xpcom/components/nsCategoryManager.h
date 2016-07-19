@@ -116,7 +116,7 @@ public:
   void operator delete(void*) { }
 
 private:
-  CategoryNode() { }
+  CategoryNode() : mLock(nsnull) { }
   void* operator new(size_t aSize, PLArenaPool* aArena);
 
   nsTHashtable<CategoryLeaf> mTable;
@@ -142,7 +142,7 @@ public:
    */
   NS_METHOD WriteCategoryManagerToRegistry(PRFileDesc* fd);
 
-  nsCategoryManager() { }
+  nsCategoryManager() : mLock(nsnull) { }
 private:
   friend class nsCategoryManagerFactory;
   static nsCategoryManager* Create();
