@@ -1511,7 +1511,7 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream, ui
 {
     int rc = VINF_SUCCESS;
 
-    PCOREAUDIOSTREAMOUT pStreamOut = (PCOREAUDIOSTREAMOUT)pHstStrmOut;
+    PCOREAUDIOSTREAMOUT pStreamOut = (PCOREAUDIOSTREAMOUT)pStream;
     UInt32 cSamples = 0;
 
     OSStatus err = noErr;
