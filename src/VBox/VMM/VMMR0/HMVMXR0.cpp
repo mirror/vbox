@@ -5282,6 +5282,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
     /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
     VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
+    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
 
     /* Leave VMX Root Mode. */
     VMXDisable();
@@ -5315,6 +5316,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
     rc2 = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc2);
+    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(fOldEFlags);
     return rc;
