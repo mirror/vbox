@@ -4943,7 +4943,10 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
                 pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_CTLS | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_HOST_CONTEXT);
+                HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_EFER_MSR
+                                    | HM_CHANGED_VMX_ENTRY_CTLS
+                                    | HM_CHANGED_VMX_EXIT_CTLS
+                                    | HM_CHANGED_HOST_CONTEXT);
                 Log4(("Load[%RU32]: hmR0VmxSetupVMRunHandler: selected 32-bit switcher (safe)\n", pVCpu->idCpu));
             }
         }
