@@ -250,7 +250,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.oGuestToGuestVM   = None;
         self.oGuestToGuestSess = None;
         self.oGuestToGuestTxs  = None;
-        self.asTestVMsDef      = ['tst-storage'];
+        self.asTestVMsDef      = ['tst-storage', 'tst-storage32'];
         self.asTestVMs         = self.asTestVMsDef;
         self.asSkipVMs         = [];
         self.asVirtModesDef    = ['hwvirt', 'hwvirt-np', 'raw',]
@@ -375,6 +375,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             self.asRsrcs = [];
             if 'tst-storage' in self.asTestVMs:
                 self.asRsrcs.append('5.0/storage/tst-storage.vdi');
+            if 'tst-storage32' in self.asTestVMs:
+                self.asRsrcs.append('5.0/storage/tst-storage32.vdi');
 
         return self.asRsrcs;
 
@@ -391,6 +393,13 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         # Linux VMs
         if 'tst-storage' in self.asTestVMs:
             oVM = self.createTestVM('tst-storage', 1, '5.0/storage/tst-storage.vdi', sKind = 'ArchLinux_64', fIoApic = True, \
+                                    eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
+                                    eNic0Type = vboxcon.NetworkAdapterType_Am79C973);
+            if oVM is None:
+                return False;
+
+        if 'tst-storage32' in self.asTestVMs:
+            oVM = self.createTestVM('tst-storage32', 1, '5.0/storage/tst-storage32.vdi', sKind = 'ArchLinux', fIoApic = True, \
                                     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
                                     eNic0Type = vboxcon.NetworkAdapterType_Am79C973);
             if oVM is None:
