@@ -4923,8 +4923,9 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                              | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
         }
 # ifdef VBOX_ENABLE_64_BITS_GUESTS
-        /* Keep using the 64-bit switcher even though we're in 32-bit because of bad Intel design. See @bugref{8432#c7}.
-         * If Real-on-V86 is active, clear the 64-bit switcher flag because now we know the guest is in a sane
+        /*
+         * Keep using the 64-bit switcher even though we're in 32-bit because of bad Intel design, see @bugref{8432#c7}.
+         * If real-on-v86 mode is active, clear the 64-bit switcher flag because now we know the guest is in a sane
          * state where it's safe to use the 32-bit switcher. Otherwise check the guest state if it's safe to use
          * the much faster 32-bit switcher again.
          */
@@ -4937,13 +4938,14 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
         {
             Assert(pVCpu->hm.s.vmx.pfnStartVM == VMXR0SwitcherStartVM64);
-            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active || hmR0VmxIs32BitSwitcherSafe(pVCpu, pMixedCtx))
+            if (   pVCpu->hm.s.vmx.RealMode.fRealOnV86Active
+                || hmR0VmxIs32BitSwitcherSafe(pVCpu, pMixedCtx))
             {
                 pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
                 pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_CTLS | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_HOST_CONTEXT);
                 Log4(("Load[%RU32]: hmR0VmxSetupVMRunHandler: selected 32-bit switcher (safe)\n", pVCpu->idCpu));
-            } 
+            }
         }
 # else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
