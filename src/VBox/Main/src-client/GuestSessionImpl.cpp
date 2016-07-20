@@ -291,8 +291,6 @@ void GuestSession::uninit(void)
 
     LogFlowThisFuncEnter();
 
-    int rc = VINF_SUCCESS;
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("Closing directories (%zu total)\n",
@@ -344,7 +342,7 @@ void GuestSession::uninit(void)
 
     baseUninit();
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFuncLeave();
 }
 
 // implementation of public getters/setters for attributes
@@ -1743,7 +1741,6 @@ int GuestSession::i_startSessionAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    HRESULT hr = S_OK;
     int vrc = VINF_SUCCESS;
 
     GuestSessionTaskInternalOpen* pTask = NULL;
@@ -1760,8 +1757,7 @@ int GuestSession::i_startSessionAsync(void)
         /* Asynchronously open the session on the guest by kicking off a
          * worker thread. */
         //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
-        hr = pTask->createThread();
-
+        HRESULT hrc = pTask->createThread();
     }
     catch(std::bad_alloc &)
     {

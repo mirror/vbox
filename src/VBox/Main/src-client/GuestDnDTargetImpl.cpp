@@ -90,6 +90,7 @@ public:
     void handler()
     {
         int vrc = GuestDnDTarget::i_sendDataThread(*m_pThread, this);
+        NOREF(vrc);
     }
 
     virtual ~SendDataTask(void)

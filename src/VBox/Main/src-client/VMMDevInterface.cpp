@@ -534,7 +534,6 @@ DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, boo
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
-    BOOL           val = 0;
 
     if (!pfPageFusionEnabled)
         return VERR_INVALID_POINTER;

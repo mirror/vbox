@@ -78,7 +78,7 @@ HRESULT RemoteUSBDevice::init(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc,
     unconst(mData.backend)      = "vrdp";
 
     unconst(mData.port)         = pDevDesc->idPort;
-    unconst(mData.version)      = pDevDesc->bcdUSB >> 8;
+    unconst(mData.version)      = (uint16_t)(pDevDesc->bcdUSB >> 8);
     if (fDescExt)
     {
         VRDEUSBDEVICEDESCEXT *pDevDescExt = (VRDEUSBDEVICEDESCEXT *)pDevDesc;
@@ -116,7 +116,7 @@ HRESULT RemoteUSBDevice::init(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc,
     mData.state                  = USBDeviceState_Available;
 
     mData.dirty                  = false;
-    unconst(mData.devId)        = pDevDesc->id;
+    unconst(mData.devId)        = (uint16_t)pDevDesc->id;
 
     unconst(mData.clientId)     = u32ClientId;
 

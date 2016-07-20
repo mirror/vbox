@@ -89,7 +89,7 @@ class HGCMObject
 
         uint32_t Handle()
         {
-            return m_core.AvlCore.Key;
+            return (uint32_t)m_core.AvlCore.Key;
         };
 
         HGCMOBJ_TYPE Type()

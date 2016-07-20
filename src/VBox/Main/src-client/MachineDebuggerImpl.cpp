@@ -1312,7 +1312,7 @@ HRESULT MachineDebugger::getRegisters(ULONG aCpuId, std::vector<com::Utf8Str> &a
                             szHex[159] = szHex[0] = '\0';
                             ssize_t cch = DBGFR3RegFormatValue(szHex, sizeof(szHex), &paRegs[iReg].Val,
                                                                paRegs[iReg].enmType, true /*fSpecial*/);
-                            Assert(cch > 0);
+                            Assert(cch > 0); NOREF(cch);
                             aNames[iReg] = Utf8Str(paRegs[iReg].pszName);
                             aValues[iReg] = Utf8Str(szHex);
                         }
