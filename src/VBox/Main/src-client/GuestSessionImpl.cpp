@@ -92,6 +92,7 @@ public:
     void handler()
     {
         int vrc = GuestSession::i_startSessionThread(NULL, this);
+        NOREF(vrc);
     }
 };
 
@@ -292,6 +293,7 @@ void GuestSession::uninit(void)
     LogFlowThisFuncEnter();
 
     int rc = VINF_SUCCESS;
+    NOREF(rc);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1743,7 +1745,6 @@ int GuestSession::i_startSessionAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    HRESULT hr = S_OK;
     int vrc = VINF_SUCCESS;
 
     GuestSessionTaskInternalOpen* pTask = NULL;
@@ -1760,8 +1761,8 @@ int GuestSession::i_startSessionAsync(void)
         /* Asynchronously open the session on the guest by kicking off a
          * worker thread. */
         //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
-        hr = pTask->createThread();
-
+        HRESULT hrc = pTask->createThread();
+        NOREF(hrc);
     }
     catch(std::bad_alloc &)
     {

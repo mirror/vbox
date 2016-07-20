@@ -241,7 +241,7 @@ public:
 
     uint64_t addProcessed(uint32_t cbDataAdd)
     {
-        const uint64_t cbTotal = getTotal();
+        const uint64_t cbTotal = getTotal(); NOREF(cbTotal);
         Assert(cbProcessed + cbDataAdd <= cbTotal);
         cbProcessed += cbDataAdd;
         return cbProcessed;

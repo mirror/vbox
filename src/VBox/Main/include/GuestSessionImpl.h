@@ -102,6 +102,7 @@ public:
     void handler()
     {
         int vrc = SessionTaskOpen::taskThread(NULL, this);
+        NOREF(vrc);
     }
 
 protected:
@@ -136,6 +137,7 @@ public:
     void handler()
     {
         int vrc = SessionTaskCopyTo::taskThread(NULL, this);
+        NOREF(vrc);
     }
 
 protected:
@@ -168,6 +170,7 @@ public:
     void handler()
     {
         int vrc = SessionTaskCopyFrom::taskThread(NULL, this);
+        NOREF(vrc);
     }
 
 protected:
@@ -198,6 +201,7 @@ public:
     void handler()
     {
         int vrc = SessionTaskUpdateAdditions::taskThread(NULL, this);
+        NOREF(vrc);
     }
 
 protected:

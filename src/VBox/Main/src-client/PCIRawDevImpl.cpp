@@ -77,7 +77,7 @@ DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
     const ComPtr<IMachine>& machine = pConsole->i_machine();
     ComPtr<IVirtualBox> vbox;
 
-    HRESULT hrc = machine->COMGETTER(Parent)(vbox.asOutParam());
+    HRESULT hrc = machine->COMGETTER(Parent)(vbox.asOutParam()); NOREF(hrc);
     Assert(SUCCEEDED(hrc));
 
     ComPtr<IEventSource> es;
@@ -97,7 +97,7 @@ DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
     if (RT_FAILURE(rc))
         msg = BstrFmt("runtime error %Rrc", rc);
 
-    fireHostPCIDevicePlugEvent(es, bstrId.raw(), true /* plugged */, RT_SUCCESS(rc) /* success */, pda, msg.raw());
+    fireHostPCIDevicePlugEvent(es, bstrId.raw(), true /* plugged */, RT_SUCCESS_NP(rc) /* success */, pda, msg.raw());
 
     return VINF_SUCCESS;
 }

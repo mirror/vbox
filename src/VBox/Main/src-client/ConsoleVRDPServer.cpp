@@ -2145,7 +2145,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
     H3DORLOG(("H3DOR: VRDEImageCbNotify: pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
               pvContext, pvUser, hVideo, u32Id, pvData, cbData));
 
-    ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvContext);
+    ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvContext); NOREF(pServer);
     H3DORInstance *p = (H3DORInstance *)pvUser;
     Assert(p);
     Assert(p->pThis);
@@ -3692,10 +3692,10 @@ void ConsoleVRDPServer::SendResize(void)
 void ConsoleVRDPServer::SendUpdateBitmap(unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const
 {
     VRDEORDERHDR update;
-    update.x = x;
-    update.y = y;
-    update.w = w;
-    update.h = h;
+    update.x = (uint16_t)x;
+    update.y = (uint16_t)y;
+    update.w = (uint16_t)w;
+    update.h = (uint16_t)h;
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEUpdate(mhServer, uScreenId, &update, sizeof(update));
