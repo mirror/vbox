@@ -1007,7 +1007,7 @@
 /** @def RT_GCC_NO_WARN_CONVERSION_BEGIN
  * Used to start a block of code where GCC should not warn about implicit
  * conversions that may alter a value. */
-#if RT_GNUC_PREREQ(4, 4)
+#if RT_GNUC_PREREQ(4, 6)
 # define RT_GCC_NO_WARN_CONVERSION_BEGIN \
    _Pragma("GCC diagnostic push") \
    _Pragma("GCC diagnostic ignored \"-Wconversion\"")
