@@ -1601,8 +1601,13 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
             ichac97StreamUpdateStatus(pThis, pStream, new_sr);
         }
 
-        if (rc == VINF_EOF) /* All data processed? */
+        if (/* All data processed? */
+               rc == VINF_EOF
+            /* ... or an error occurred? */
+            || RT_FAILURE(rc))
+        {
             break;
+        }
     }
 
     if (RT_SUCCESS(rc))
