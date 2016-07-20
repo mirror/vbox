@@ -1419,9 +1419,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_STAMDeregister(PPDMDRVINS pDrvIns, void *pv
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
 
-    int rc = STAMR3DeregisterByAddr(pDrvIns->Internal.s.pVMR3->pUVM, pvSample);
-    AssertRC(rc);
-    return rc;
+    return STAMR3DeregisterByAddr(pDrvIns->Internal.s.pVMR3->pUVM, pvSample);
 }
 
 
