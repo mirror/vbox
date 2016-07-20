@@ -304,7 +304,9 @@ VBoxSVC_DEFS.win += _WIN32_WINNT=0x0510
 # VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 
-VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
+ifneq ($(KBUILD_TARGET),win)
+ VBoxSVC_CXXFLAGS = -Wunused
+endif
 
 VBoxSVC_INCS = \
 	include \
