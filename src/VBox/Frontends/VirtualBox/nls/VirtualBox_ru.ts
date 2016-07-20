@@ -5473,7 +5473,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation>Аудио</translation>
+        <translation type="vanished">Аудио</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5491,7 +5491,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation>Дисплей</translation>
+        <translation type="vanished">Дисплей</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5554,7 +5554,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Общие</translation>
+        <translation type="vanished">Общие</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5571,7 +5571,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation>Сеть</translation>
+        <translation type="vanished">Сеть</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5617,7 +5617,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation>Статистика сетевых адаптеров</translation>
+        <translation type="vanished">Статистика сетевых адаптеров</translation>
     </message>
 </context>
 <context>
@@ -5625,7 +5625,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>LPT-порты</translation>
+        <translation type="vanished">LPT-порты</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5643,7 +5643,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation>Рабочие характеристики</translation>
+        <translation type="vanished">Рабочие характеристики</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5715,7 +5715,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation>COM-порты</translation>
+        <translation type="vanished">COM-порты</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5728,7 +5728,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Общие папки</translation>
+        <translation type="vanished">Общие папки</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5740,7 +5740,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation>Носители</translation>
+        <translation type="vanished">Носители</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5768,7 +5768,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation>Статистика носителей информации</translation>
+        <translation type="vanished">Статистика носителей информации</translation>
     </message>
 </context>
 <context>
@@ -5776,7 +5776,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>Система</translation>
+        <translation type="vanished">Система</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5881,11 +5881,6 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>UIInformationDataUSB</name>
-    <message>
-        <source>USB</source>
-        <comment>details report</comment>
-        <translation></translation>
-    </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
@@ -16145,7 +16140,87 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>RuntimeAttributes</source>
         <comment>DetailsElementType</comment>
-        <translation>Рабочие характеристики</translation>
+        <translation type="vanished">Рабочие характеристики</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Общие</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Превью</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Система</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Дисплей</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Носители</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Аудио</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Сеть</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">COM-порты</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">LPT</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Общие папки</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Интерфейс пользователя</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Описание</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

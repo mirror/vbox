@@ -4502,7 +4502,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">អូឌីយ៉ូ</translation>
+        <translation type="obsolete">អូឌីយ៉ូ</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -4520,7 +4520,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">បង្ហាញ​</translation>
+        <translation type="obsolete">បង្ហាញ​</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -4583,7 +4583,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">ទូទៅ</translation>
+        <translation type="obsolete">ទូទៅ</translation>
     </message>
     <message>
         <source>Name</source>
@@ -4600,7 +4600,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">បណ្ដាញ</translation>
+        <translation type="obsolete">បណ្ដាញ</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -4646,16 +4646,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">ស្ថិតិ​បណ្ដាញ</translation>
+        <translation type="obsolete">ស្ថិតិ​បណ្ដាញ</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataParallelPorts</name>
-    <message>
-        <source>Parallel Ports</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
@@ -4672,7 +4667,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">គុណលក្ខណៈ​ពេលវេលា​រត់</translation>
+        <translation type="obsolete">គុណលក្ខណៈ​ពេលវេលា​រត់</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -4743,10 +4738,6 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIInformationDataSerialPorts</name>
     <message>
-        <source>Serial Ports</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
         <translation type="unfinished">ច្រក %1</translation>
@@ -4756,21 +4747,12 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSharedFolders</name>
     <message>
         <source>Shared Folders</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataStorage</name>
-    <message>
-        <source>Storage</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>(Optical Drive)</source>
         <translation type="unfinished"></translation>
@@ -4797,7 +4779,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">ស្ថិតិ​ផ្ទុក​</translation>
+        <translation type="obsolete">ស្ថិតិ​ផ្ទុក​</translation>
     </message>
 </context>
 <context>
@@ -4805,7 +4787,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">ប្រព័ន្ធ</translation>
+        <translation type="obsolete">ប្រព័ន្ធ</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -4913,7 +4895,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -13602,8 +13584,83 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">ទូទៅ</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">ប្រព័ន្ធ</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">បង្ហាញ​</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">អូឌីយ៉ូ</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">សេច​ក្តី​ពិណណ៌នា​</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

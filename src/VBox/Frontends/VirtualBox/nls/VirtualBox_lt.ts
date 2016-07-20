@@ -5011,7 +5011,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Garsas</translation>
+        <translation type="obsolete">Garsas</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5029,7 +5029,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Ekranas</translation>
+        <translation type="obsolete">Ekranas</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5092,7 +5092,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Bendra</translation>
+        <translation type="obsolete">Bendra</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5109,7 +5109,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Tinklas</translation>
+        <translation type="obsolete">Tinklas</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5155,16 +5155,11 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Tinklo statistika</translation>
+        <translation type="obsolete">Tinklo statistika</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataParallelPorts</name>
-    <message>
-        <source>Parallel Ports</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
@@ -5181,7 +5176,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Vykdymo ypatybės</translation>
+        <translation type="obsolete">Vykdymo ypatybės</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5253,7 +5248,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Nuoseklieji prievadai</translation>
+        <translation type="obsolete">Nuoseklieji prievadai</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5266,7 +5261,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Bendrieji aplankai</translation>
+        <translation type="obsolete">Bendrieji aplankai</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5278,7 +5273,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Atminties įtaisas</translation>
+        <translation type="obsolete">Atminties įtaisas</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5306,7 +5301,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Atminties įtaisų statistika</translation>
+        <translation type="obsolete">Atminties įtaisų statistika</translation>
     </message>
 </context>
 <context>
@@ -5314,7 +5309,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistema</translation>
+        <translation type="obsolete">Sistema</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5422,7 +5417,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -15128,8 +15123,83 @@ IPv6.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Bendra</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Peržiūra</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistema</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ekranas</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Atminties įtaisas</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Garsas</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Tinklas</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Aprašas</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

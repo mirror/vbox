@@ -5577,7 +5577,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">오디오</translation>
+        <translation type="obsolete">오디오</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5595,7 +5595,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">디스플레이</translation>
+        <translation type="obsolete">디스플레이</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5658,7 +5658,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">일반</translation>
+        <translation type="obsolete">일반</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5675,7 +5675,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">네트워크</translation>
+        <translation type="obsolete">네트워크</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5721,7 +5721,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">네트워크 통계</translation>
+        <translation type="obsolete">네트워크 통계</translation>
     </message>
 </context>
 <context>
@@ -5729,7 +5729,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">병렬 포트</translation>
+        <translation type="obsolete">병렬 포트</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5747,7 +5747,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">런타임 속성</translation>
+        <translation type="obsolete">런타임 속성</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5819,7 +5819,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">직렬 포트</translation>
+        <translation type="obsolete">직렬 포트</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5832,7 +5832,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">공유 폴더</translation>
+        <translation type="obsolete">공유 폴더</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5844,7 +5844,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">저장소</translation>
+        <translation type="obsolete">저장소</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5872,7 +5872,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">저장소 통계</translation>
+        <translation type="obsolete">저장소 통계</translation>
     </message>
 </context>
 <context>
@@ -5880,7 +5880,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">시스템</translation>
+        <translation type="obsolete">시스템</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5988,7 +5988,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -16188,8 +16188,83 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">일반</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">미리 보기</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">시스템</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">디스플레이</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">저장소</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">오디오</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">네트워크</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">직렬 포트</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">병렬 포트</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">공유 폴더</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">사용자 인터페이스</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">설명</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

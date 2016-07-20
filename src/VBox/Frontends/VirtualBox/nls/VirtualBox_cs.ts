@@ -5451,7 +5451,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Zvuk</translation>
+        <translation type="obsolete">Zvuk</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5466,11 +5466,6 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>UIInformationDataDisplay</name>
-    <message>
-        <source>Display</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
@@ -5532,7 +5527,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Obecné</translation>
+        <translation type="obsolete">Obecné</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5549,7 +5544,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Síť</translation>
+        <translation type="obsolete">Síť</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5595,7 +5590,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistiky síťových rozhraní</translation>
+        <translation type="obsolete">Statistiky síťových rozhraní</translation>
     </message>
 </context>
 <context>
@@ -5603,7 +5598,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Paralelní porty</translation>
+        <translation type="obsolete">Paralelní porty</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5621,7 +5616,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Parametry při spuštění</translation>
+        <translation type="obsolete">Parametry při spuštění</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5693,7 +5688,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Sériové porty</translation>
+        <translation type="obsolete">Sériové porty</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5706,7 +5701,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sdílené složky</translation>
+        <translation type="obsolete">Sdílené složky</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5718,7 +5713,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Úložiště</translation>
+        <translation type="obsolete">Úložiště</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5746,7 +5741,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistiky o úložištích</translation>
+        <translation type="obsolete">Statistiky o úložištích</translation>
     </message>
 </context>
 <context>
@@ -5754,7 +5749,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Systém</translation>
+        <translation type="obsolete">Systém</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5862,7 +5857,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -16969,8 +16964,83 @@ Verze %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Obecné</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Náhled</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Systém</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Úložiště</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Zvuk</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Síť</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sériové porty</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Paralelní porty</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sdílené složky</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Uživatelské rozhraní</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Popis</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

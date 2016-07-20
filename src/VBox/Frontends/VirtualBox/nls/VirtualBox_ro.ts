@@ -4524,7 +4524,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Sunet</translation>
+        <translation type="obsolete">Sunet</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -4542,7 +4542,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Afi»ôare</translation>
+        <translation type="obsolete">Afi»ôare</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -4603,11 +4603,6 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
 <context>
     <name>UIInformationDataGeneral</name>
     <message>
-        <source>General</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <comment>details report</comment>
         <translation type="unfinished">Nume</translation>
@@ -4622,7 +4617,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Re»õea</translation>
+        <translation type="obsolete">Re»õea</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -4668,7 +4663,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistici re»õea</translation>
+        <translation type="obsolete">Statistici re»õea</translation>
     </message>
 </context>
 <context>
@@ -4676,7 +4671,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Porturi paralele</translation>
+        <translation type="obsolete">Porturi paralele</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -4694,7 +4689,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Atribute la rulare</translation>
+        <translation type="obsolete">Atribute la rulare</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -4766,7 +4761,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Porturi seriale</translation>
+        <translation type="obsolete">Porturi seriale</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -4779,7 +4774,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Directoare partajate</translation>
+        <translation type="obsolete">Directoare partajate</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -4791,7 +4786,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Stocare</translation>
+        <translation type="obsolete">Stocare</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -4819,7 +4814,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistici stocare</translation>
+        <translation type="obsolete">Statistici stocare</translation>
     </message>
 </context>
 <context>
@@ -4827,7 +4822,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistem</translation>
+        <translation type="obsolete">Sistem</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -4935,7 +4930,7 @@ Acest director este folosit, dacƒÉ nu este explicit specificat altfel, atunci c√
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -14576,8 +14571,83 @@ Versiunea %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistem</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Afi»ôare</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Stocare</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sunet</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Re»õea</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Descriere</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

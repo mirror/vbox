@@ -5045,7 +5045,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Suara</translation>
+        <translation type="obsolete">Suara</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5063,7 +5063,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Tampilan</translation>
+        <translation type="obsolete">Tampilan</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5124,11 +5124,6 @@
 <context>
     <name>UIInformationDataGeneral</name>
     <message>
-        <source>General</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <comment>details report</comment>
         <translation type="unfinished">Nama</translation>
@@ -5143,7 +5138,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Jaringan</translation>
+        <translation type="obsolete">Jaringan</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5189,7 +5184,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistik Jaringan</translation>
+        <translation type="obsolete">Statistik Jaringan</translation>
     </message>
 </context>
 <context>
@@ -5197,7 +5192,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Port Paralel</translation>
+        <translation type="obsolete">Port Paralel</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5215,7 +5210,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Atribut Runtime</translation>
+        <translation type="obsolete">Atribut Runtime</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5287,7 +5282,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Port Serial</translation>
+        <translation type="obsolete">Port Serial</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5299,11 +5294,6 @@
     <name>UIInformationDataSharedFolders</name>
     <message>
         <source>Shared Folders</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -5312,7 +5302,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Penyimpanan</translation>
+        <translation type="obsolete">Penyimpanan</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5340,7 +5330,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistik Penyimpanan</translation>
+        <translation type="obsolete">Statistik Penyimpanan</translation>
     </message>
 </context>
 <context>
@@ -5348,7 +5338,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistem</translation>
+        <translation type="obsolete">Sistem</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5456,7 +5446,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -15364,8 +15354,83 @@ Versi %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Pratinjau</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistem</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Tampilan</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Penyimpanan</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Suara</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Jaringan</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Port serial</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Port paralel</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Folder bersama</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Deskripsi</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

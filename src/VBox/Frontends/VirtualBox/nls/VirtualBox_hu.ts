@@ -5537,7 +5537,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Audió</translation>
+        <translation type="obsolete">Audió</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5555,7 +5555,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Képernyő</translation>
+        <translation type="obsolete">Képernyő</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5618,7 +5618,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Általános</translation>
+        <translation type="obsolete">Általános</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5635,7 +5635,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Hálózat</translation>
+        <translation type="obsolete">Hálózat</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5681,7 +5681,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Hálózati statisztika</translation>
+        <translation type="obsolete">Hálózati statisztika</translation>
     </message>
 </context>
 <context>
@@ -5689,7 +5689,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Párhuzamos portok</translation>
+        <translation type="obsolete">Párhuzamos portok</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5707,7 +5707,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Futtatókörnyezet paraméterei</translation>
+        <translation type="obsolete">Futtatókörnyezet paraméterei</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5779,7 +5779,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Soros portok</translation>
+        <translation type="obsolete">Soros portok</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5792,7 +5792,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Megosztott mappák</translation>
+        <translation type="obsolete">Megosztott mappák</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5804,7 +5804,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Tároló</translation>
+        <translation type="obsolete">Tároló</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5832,7 +5832,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Tároló statisztika</translation>
+        <translation type="obsolete">Tároló statisztika</translation>
     </message>
 </context>
 <context>
@@ -5840,7 +5840,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Rendszer</translation>
+        <translation type="obsolete">Rendszer</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5948,7 +5948,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -16832,8 +16832,83 @@ Verzió %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Általános</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Előnézet</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Rendszer</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Képernyő</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Tároló</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Audió</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Hálózat</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Soros portok</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Párhuzamos portok</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Megosztott mappák</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Felhasználói felület</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Leírás</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

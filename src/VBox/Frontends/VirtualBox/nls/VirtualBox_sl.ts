@@ -2784,7 +2784,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Zvok</translation>
+        <translation type="obsolete">Zvok</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -2802,7 +2802,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Zaslon</translation>
+        <translation type="obsolete">Zaslon</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -2865,7 +2865,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Splošno</translation>
+        <translation type="obsolete">Splošno</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2882,7 +2882,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Omrežje</translation>
+        <translation type="obsolete">Omrežje</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2928,7 +2928,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Omrežna statistika</translation>
+        <translation type="obsolete">Omrežna statistika</translation>
     </message>
 </context>
 <context>
@@ -2936,7 +2936,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Vzporedna vrata</translation>
+        <translation type="obsolete">Vzporedna vrata</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2954,7 +2954,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Lastnosti izvajanja</translation>
+        <translation type="obsolete">Lastnosti izvajanja</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -3026,7 +3026,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Zaporedna vrata</translation>
+        <translation type="obsolete">Zaporedna vrata</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3039,7 +3039,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Deljene mape</translation>
+        <translation type="obsolete">Deljene mape</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -3051,7 +3051,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Pomnilnške naprave</translation>
+        <translation type="obsolete">Pomnilnške naprave</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -3079,7 +3079,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Statistika pomnilniških naprav</translation>
+        <translation type="obsolete">Statistika pomnilniških naprav</translation>
     </message>
 </context>
 <context>
@@ -3087,7 +3087,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistem</translation>
+        <translation type="obsolete">Sistem</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3195,7 +3195,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -8959,8 +8959,83 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Splošno</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Predogled</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistem</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Zaslon</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Pomnilnške naprave</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Zvok</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Omrežje</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Zaporedna vrata</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Vzporedna vrata</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Deljene mape</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Uporabniški vmesnik</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Opis</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

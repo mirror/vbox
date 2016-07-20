@@ -1542,7 +1542,6 @@
         <translation type="unfinished">
             <numerusform></numerusform>
             <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -1553,7 +1552,6 @@
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
-            <numerusform></numerusform>
             <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
@@ -3171,7 +3169,6 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>%n grup</numerusform>
             <numerusform>%n grups</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -3185,7 +3182,6 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>%n màquina</numerusform>
             <numerusform>%n màquines</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -3194,7 +3190,6 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>(%n executant-se)</numerusform>
             <numerusform>(%n executant-se)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -5503,7 +5498,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Àudio</translation>
+        <translation type="obsolete">Àudio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5521,7 +5516,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Pantalla</translation>
+        <translation type="obsolete">Pantalla</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5584,7 +5579,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">General</translation>
+        <translation type="obsolete">General</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5601,7 +5596,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Xarxa</translation>
+        <translation type="obsolete">Xarxa</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5647,7 +5642,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Estadístiques de xarxa</translation>
+        <translation type="obsolete">Estadístiques de xarxa</translation>
     </message>
 </context>
 <context>
@@ -5655,7 +5650,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Ports paral·lels</translation>
+        <translation type="obsolete">Ports paral·lels</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5673,7 +5668,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Atributs del temps d&apos;execució</translation>
+        <translation type="obsolete">Atributs del temps d&apos;execució</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5745,7 +5740,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Ports en sèrie</translation>
+        <translation type="obsolete">Ports en sèrie</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5758,7 +5753,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Carpetes compartides</translation>
+        <translation type="obsolete">Carpetes compartides</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5770,7 +5765,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Emmagatzematge</translation>
+        <translation type="obsolete">Emmagatzematge</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5798,7 +5793,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Estadístiques d&apos;emmagatzematge</translation>
+        <translation type="obsolete">Estadístiques d&apos;emmagatzematge</translation>
     </message>
 </context>
 <context>
@@ -5806,7 +5801,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistema</translation>
+        <translation type="obsolete">Sistema</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5914,7 +5909,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -10177,7 +10172,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">
             <numerusform>&lt;p&gt;La màquina virtual &lt;b&gt;%1&lt;/b&gt; es troba en un estat alçat.&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat en temps d&apos;execució de la màquina virtual exportada. Tingueu en compte que la màquina existent no canviarà.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Les màquines virtuals &lt;b&gt;%1&lt;/b&gt; es troben en un estat alçat.&lt;/p&gt;&lt;p&gt;Si continueu, es descartaran els estat en temps d&apos;execució de les màquines virtuals exportades. Tingueu en compte que les màquines existents no canviaran.&lt;/p&gt;</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -10426,7 +10420,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">
             <numerusform>&lt;p&gt;La %n màquina virtual següent es troba en estat alçat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si voleu continuar, es descartarà l&apos;estat d&apos;execució de la màquina exportada. L&apos;altra màquina no canviarà.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Les %n màquines virtuals següents es troben en estat alçat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si voleu continuar, es descartaran els estats d&apos;execució de les màquines exportades. Les altres màquines no canviaran.&lt;/p&gt;</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -10669,7 +10662,6 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>&lt;p&gt;La màquina virtual %n es troba en un estat alçat &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat en temps d&apos;execució de la màquina virtual exportada. Tingueu en compte que la màquina existent no canviarà.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Les %n màquines virtuals es troben en un estat alçat &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat en temps d&apos;execució de les màquines virtuals exportades. Tingueu en compte que les màquines existent no canviaran.&lt;/p&gt;</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -16184,7 +16176,6 @@ Versió %1</translation>
         <translation>
             <numerusform>%n any</numerusform>
             <numerusform>%n anys</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16192,7 +16183,6 @@ Versió %1</translation>
         <translation>
             <numerusform>%n mes</numerusform>
             <numerusform>%n mesos</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16200,7 +16190,6 @@ Versió %1</translation>
         <translation>
             <numerusform>%n dia</numerusform>
             <numerusform>%n dies</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16208,7 +16197,6 @@ Versió %1</translation>
         <translation>
             <numerusform>%n hora</numerusform>
             <numerusform>%n hores</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16216,7 +16204,6 @@ Versió %1</translation>
         <translation>
             <numerusform>%n minut</numerusform>
             <numerusform>%n minuts</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -16224,7 +16211,6 @@ Versió %1</translation>
         <translation>
             <numerusform>%n segon</numerusform>
             <numerusform>%n segons</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -17018,8 +17004,83 @@ Versió %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">General</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Vista prèvia</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistema</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Pantalla</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Emmagatzematge</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Àudio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Xarxa</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ports en sèrie</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ports paral·lels</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Carpetes compartides</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Descripció</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -18880,7 +18941,6 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n dia)</numerusform>
             <numerusform> (fa %n dies)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -18888,7 +18948,6 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n hora)</numerusform>
             <numerusform> (fa %n hores)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -18896,7 +18955,6 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n minut)</numerusform>
             <numerusform> (fa %n minuts)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -18904,7 +18962,6 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">
             <numerusform> (fa %n segon)</numerusform>
             <numerusform> (fa %n segons)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -19002,7 +19059,6 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation>
             <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutable connectada. Mentre treballeu amb esta captura, la imatge immutable no es reiniciarà per evitar la pèrdua de dades.</numerusform>
             <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutables connectades. Mentre treballeu amb esta captura, les imatges immutables no es reiniciaran per evitar la pèrdua de dades.</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>

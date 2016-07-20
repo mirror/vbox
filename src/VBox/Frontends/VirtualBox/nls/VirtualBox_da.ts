@@ -5430,7 +5430,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Lydkort</translation>
+        <translation type="obsolete">Lydkort</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5448,7 +5448,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Skærm</translation>
+        <translation type="obsolete">Skærm</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5511,7 +5511,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Generelt</translation>
+        <translation type="obsolete">Generelt</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5526,10 +5526,6 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>UIInformationDataNetwork</name>
-    <message>
-        <source>Network</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
@@ -5574,7 +5570,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Netværksstatistik</translation>
+        <translation type="obsolete">Netværksstatistik</translation>
     </message>
 </context>
 <context>
@@ -5582,7 +5578,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Parallelporte</translation>
+        <translation type="obsolete">Parallelporte</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5600,7 +5596,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Afviklingsindstillinger</translation>
+        <translation type="obsolete">Afviklingsindstillinger</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5672,7 +5668,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Serielle porte</translation>
+        <translation type="obsolete">Serielle porte</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5685,7 +5681,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Delte mapper</translation>
+        <translation type="obsolete">Delte mapper</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5697,7 +5693,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Lagerenheder</translation>
+        <translation type="obsolete">Lagerenheder</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5722,18 +5718,13 @@ p, li { white-space: pre-wrap; }
         <source>Data Written</source>
         <translation type="unfinished">Data skrevet</translation>
     </message>
-    <message>
-        <source>Storage Statistics</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIInformationDataSystem</name>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">System</translation>
+        <translation type="obsolete">System</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5841,7 +5832,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -15552,8 +15543,83 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Generelt</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Forhåndsvisning</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">System</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Skærm</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Lagerenheder</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Lydkort</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Serielle porte</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Parallelporte</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Delte mapper</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Brugerflade</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Beskrivelse</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

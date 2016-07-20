@@ -4861,7 +4861,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Audio</translation>
+        <translation type="obsolete">Audio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -4879,7 +4879,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Beeldscherm</translation>
+        <translation type="obsolete">Beeldscherm</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -4942,7 +4942,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Algemeen</translation>
+        <translation type="obsolete">Algemeen</translation>
     </message>
     <message>
         <source>Name</source>
@@ -4959,7 +4959,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Netwerk</translation>
+        <translation type="obsolete">Netwerk</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5005,16 +5005,11 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Netwerkstatistieken</translation>
+        <translation type="obsolete">Netwerkstatistieken</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataParallelPorts</name>
-    <message>
-        <source>Parallel Ports</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
@@ -5031,7 +5026,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Runtime attributen</translation>
+        <translation type="obsolete">Runtime attributen</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5103,7 +5098,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Seriële poorten</translation>
+        <translation type="obsolete">Seriële poorten</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5116,7 +5111,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Gedeelde mappen</translation>
+        <translation type="obsolete">Gedeelde mappen</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5128,7 +5123,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Opslag</translation>
+        <translation type="obsolete">Opslag</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5156,7 +5151,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Opslagstatistieken</translation>
+        <translation type="obsolete">Opslagstatistieken</translation>
     </message>
 </context>
 <context>
@@ -5164,7 +5159,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Systeem</translation>
+        <translation type="obsolete">Systeem</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5272,7 +5267,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -13373,8 +13368,83 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Algemeen</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Preview</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Systeem</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Beeldscherm</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Opslag</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Audio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Netwerk</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Seriële poorten</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Parallelle porten</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Gedeelde mappen</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Gebruikersinterface</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Beschrijving</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

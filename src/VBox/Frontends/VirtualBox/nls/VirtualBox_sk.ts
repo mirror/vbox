@@ -4931,7 +4931,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Audio</translation>
+        <translation type="obsolete">Audio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -4949,7 +4949,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Displej</translation>
+        <translation type="obsolete">Displej</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5012,7 +5012,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Všeobecné</translation>
+        <translation type="obsolete">Všeobecné</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5029,7 +5029,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Sieť</translation>
+        <translation type="obsolete">Sieť</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5075,7 +5075,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sieťové štatistiky</translation>
+        <translation type="obsolete">Sieťové štatistiky</translation>
     </message>
 </context>
 <context>
@@ -5083,7 +5083,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Paralelné porty</translation>
+        <translation type="obsolete">Paralelné porty</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5098,11 +5098,6 @@
 </context>
 <context>
     <name>UIInformationDataRuntimeAttributes</name>
-    <message>
-        <source>Runtime Attributes</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
@@ -5173,7 +5168,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Sériové porty</translation>
+        <translation type="obsolete">Sériové porty</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5186,7 +5181,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Zdieľané priečinky</translation>
+        <translation type="obsolete">Zdieľané priečinky</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5198,7 +5193,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Úložisko</translation>
+        <translation type="obsolete">Úložisko</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -5226,7 +5221,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Štatistiky o úložiskách</translation>
+        <translation type="obsolete">Štatistiky o úložiskách</translation>
     </message>
 </context>
 <context>
@@ -5234,7 +5229,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Systém</translation>
+        <translation type="obsolete">Systém</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -5342,7 +5337,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -14380,8 +14375,83 @@ verzia %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Všeobecné</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Náhľad</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Systém</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Displej</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Úložisko</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Audio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sieť</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Popis</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

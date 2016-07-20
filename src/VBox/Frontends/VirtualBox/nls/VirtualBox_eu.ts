@@ -4142,7 +4142,7 @@
 <context>
     <name>UIHostComboEditor</name>
     <message>
-        <location filename="../src/widgets/UIHostComboEditor.cpp" line="+205"/>
+        <location filename="../src/widgets/UIHostComboEditor.cpp" line="+204"/>
         <location line="+14"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;key_%1&gt;</translation>
@@ -4158,7 +4158,7 @@
         <translation>Eskuin </translation>
     </message>
     <message>
-        <location line="+235"/>
+        <location line="+173"/>
         <source>Left Shift</source>
         <translation>Ezkerreko Aldatu</translation>
     </message>
@@ -4224,7 +4224,7 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+638"/>
+        <location line="+627"/>
         <source>None</source>
         <translation>Ezer ez</translation>
     </message>
@@ -4508,12 +4508,11 @@
 <context>
     <name>UIInformationDataAudio</name>
     <message>
-        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+375"/>
         <source>Audio</source>
-        <translation type="unfinished">Audioa</translation>
+        <translation type="obsolete">Audioa</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+363"/>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
         <translation type="unfinished">Hostalari Gidagailua</translation>
@@ -4528,13 +4527,7 @@
 <context>
     <name>UIInformationDataDisplay</name>
     <message>
-        <location line="-160"/>
-        <source>Display</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+14"/>
+        <location line="-127"/>
         <source>Video Memory</source>
         <comment>details report</comment>
         <translation type="unfinished">Bideo Oroimena</translation>
@@ -4603,13 +4596,12 @@
 <context>
     <name>UIInformationDataGeneral</name>
     <message>
-        <location line="-180"/>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Orokorra</translation>
+        <translation type="obsolete">Orokorra</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-147"/>
         <source>Name</source>
         <comment>details report</comment>
         <translation type="unfinished">Izena</translation>
@@ -4624,12 +4616,11 @@
 <context>
     <name>UIInformationDataNetwork</name>
     <message>
-        <location line="+317"/>
         <source>Network</source>
-        <translation type="unfinished">Sarea</translation>
+        <translation type="obsolete">Sarea</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+295"/>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
         <translation type="unfinished">Zubi egokitzailea, %1</translation>
@@ -4668,7 +4659,7 @@
 <context>
     <name>UIInformationDataNetworkStatistics</name>
     <message>
-        <location line="+426"/>
+        <location line="+370"/>
         <source>Data Transmitted</source>
         <translation type="unfinished">Datu Igorrita</translation>
     </message>
@@ -4678,22 +4669,20 @@
         <translation type="unfinished">Datu Jasota</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sare Estatistikak</translation>
+        <translation type="obsolete">Sare Estatistikak</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataParallelPorts</name>
     <message>
-        <location line="-359"/>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Ataka Kidetuak</translation>
+        <translation type="obsolete">Ataka Kidetuak</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="-275"/>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
         <translation type="unfinished">Ataka %1</translation>
@@ -4708,13 +4697,7 @@
 <context>
     <name>UIInformationDataRuntimeAttributes</name>
     <message>
-        <location line="+138"/>
-        <source>Runtime Attributes</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+73"/>
+        <location line="+179"/>
         <source>Not Detected</source>
         <comment>guest additions</comment>
         <translation type="unfinished">Ez da Atzeman</translation>
@@ -4796,12 +4779,11 @@
 <context>
     <name>UIInformationDataSerialPorts</name>
     <message>
-        <location line="-350"/>
         <source>Serial Ports</source>
-        <translation type="unfinished">Serieko Atakak</translation>
+        <translation type="obsolete">Serieko Atakak</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="-276"/>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
         <translation type="unfinished">Ataka %1</translation>
@@ -4810,13 +4792,12 @@
 <context>
     <name>UIInformationDataSharedFolders</name>
     <message>
-        <location line="+145"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Elkarbanatutako Agiritegiak</translation>
+        <translation type="obsolete">Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+129"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation type="unfinished">Elkarbanatutako Agiritegiak</translation>
@@ -4825,12 +4806,11 @@
 <context>
     <name>UIInformationDataStorage</name>
     <message>
-        <location line="-389"/>
         <source>Storage</source>
-        <translation type="unfinished">Biltegia</translation>
+        <translation type="obsolete">Biltegia</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="-297"/>
         <source>(Optical Drive)</source>
         <translation type="unfinished">(Diska Optikoa)</translation>
     </message>
@@ -4838,7 +4818,7 @@
 <context>
     <name>UIInformationDataStorageStatistics</name>
     <message>
-        <location line="+710"/>
+        <location line="+624"/>
         <location line="+37"/>
         <source>DMA Transfers</source>
         <translation type="unfinished">DMA Eskualdaketak</translation>
@@ -4867,22 +4847,20 @@
         <translation type="unfinished">Datu Idatzita</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Biltegi Estatistikak</translation>
+        <translation type="obsolete">Biltegi Estatistikak</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataSystem</name>
     <message>
-        <location line="-1060"/>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistema</translation>
+        <translation type="obsolete">Sistema</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="-905"/>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
         <translation type="unfinished">Gaituta</translation>
@@ -5005,13 +4983,12 @@
 <context>
     <name>UIInformationDataUSB</name>
     <message>
-        <location line="+411"/>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+360"/>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
         <translation type="unfinished">Ezgaituta</translation>
@@ -6988,8 +6965,8 @@
         <location filename="../src/globals/VBoxGlobal.cpp" line="-704"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-343"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-1730"/>
-        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-321"/>
-        <location line="+897"/>
+        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-269"/>
+        <location line="+805"/>
         <source>Controller: %1</source>
         <translation>Kontrolatzailea: %1</translation>
     </message>
@@ -9771,7 +9748,7 @@
 <context>
     <name>UISelectorWindow</name>
     <message>
-        <location filename="../src/selector/UISelectorWindow.cpp" line="+140"/>
+        <location filename="../src/selector/UISelectorWindow.cpp" line="+141"/>
         <source>Show Toolbar</source>
         <translation>Erakutsi Tresnabarra</translation>
     </message>
@@ -11727,7 +11704,7 @@
     </message>
     <message>
         <location filename="../src/UIVMInfoDialog.cpp" line="-221"/>
-        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-462"/>
+        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-442"/>
         <source>off</source>
         <comment>guest monitor status</comment>
         <translation>itzalita</translation>
@@ -11791,7 +11768,7 @@
     <message>
         <location line="+191"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="+205"/>
-        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+152"/>
+        <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="+142"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
         <translation>Egokitzailea %1</translation>
@@ -13396,125 +13373,204 @@
     <message>
         <location line="+662"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>General</source>
         <comment>DetailsElementType</comment>
         <translation>Orokorra</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Preview</source>
         <comment>DetailsElementType</comment>
         <translation>Aurreikuspena</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>System</source>
         <comment>DetailsElementType</comment>
         <translation>Sistema</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Display</source>
         <comment>DetailsElementType</comment>
         <translation>Erakutsi</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Storage</source>
         <comment>DetailsElementType</comment>
         <translation>Biltegia</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Audio</source>
         <comment>DetailsElementType</comment>
         <translation>Audioa</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Network</source>
         <comment>DetailsElementType</comment>
         <translation>Sarea</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Serial ports</source>
         <comment>DetailsElementType</comment>
         <translation>Serieko Atakak</translation>
     </message>
     <message>
-        <location line="-727"/>
+        <location line="-28"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Parallel ports</source>
         <comment>DetailsElementType</comment>
         <translation>Ataka Kidetuak</translation>
     </message>
     <message>
-        <location line="-727"/>
+        <location line="-28"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>USB</source>
         <comment>DetailsElementType</comment>
         <translation>USB</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Shared folders</source>
         <comment>DetailsElementType</comment>
         <translation>Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
         <translation>Erabiltzaile interfazea</translation>
     </message>
     <message>
-        <location line="-728"/>
+        <location line="-29"/>
         <location line="+30"/>
-        <location line="+667"/>
-        <location line="+32"/>
         <source>Description</source>
         <comment>DetailsElementType</comment>
         <translation>Azalpena</translation>
     </message>
     <message>
+        <location line="+652"/>
+        <location line="+33"/>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Orokorra</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Aurreikuspena</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistema</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Biltegia</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Audioa</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sarea</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Serieko Atakak</translation>
+    </message>
+    <message>
         <location line="-31"/>
-        <location line="+32"/>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <location line="+33"/>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ataka Kidetuak</translation>
+    </message>
+    <message>
+        <location line="-31"/>
+        <location line="+33"/>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Elkarbanatutako Agiritegiak</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Erabiltzaile interfazea</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Azalpena</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <location line="+33"/>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>

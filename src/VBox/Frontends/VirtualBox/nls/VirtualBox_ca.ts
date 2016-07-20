@@ -969,7 +969,6 @@
         <translation>
             <numerusform>Aquesta màquina virtual està protegida amb contrasenya. Introduïu la contrasenya d&apos;encriptació a continuació.</numerusform>
             <numerusform>Aquesta màquina virtual està protegida amb contrasenya. Introduïu les %n contrasenyes d&apos;encriptació a continuació.</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -988,7 +987,6 @@
         <translation>
             <numerusform>&lt;nobr&gt;Utilitzat pel disc dur següent:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Utilitzat pels %n discos durs següents:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -1328,7 +1326,6 @@
         <translation>
             <numerusform>%n grup</numerusform>
             <numerusform>%n grups</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -1342,7 +1339,6 @@
         <translation>
             <numerusform>%n màquina</numerusform>
             <numerusform>%n màquines</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -1351,7 +1347,6 @@
         <translation>
             <numerusform>(%n en execució)</numerusform>
             <numerusform>(%n en execució)</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2775,7 +2770,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Àudio</translation>
+        <translation type="obsolete">Àudio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -2793,7 +2788,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Pantalla</translation>
+        <translation type="obsolete">Pantalla</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -2856,7 +2851,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">General</translation>
+        <translation type="obsolete">General</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2873,7 +2868,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Xarxa</translation>
+        <translation type="obsolete">Xarxa</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2919,7 +2914,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Estadístiques de xarxa</translation>
+        <translation type="obsolete">Estadístiques de xarxa</translation>
     </message>
 </context>
 <context>
@@ -2927,7 +2922,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Ports paral·lels</translation>
+        <translation type="obsolete">Ports paral·lels</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2945,7 +2940,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="unfinished">Atributs de temps d&apos;execució</translation>
+        <translation type="obsolete">Atributs de temps d&apos;execució</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -3017,7 +3012,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Ports en sèrie</translation>
+        <translation type="obsolete">Ports en sèrie</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3030,7 +3025,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Carpetes compartides</translation>
+        <translation type="obsolete">Carpetes compartides</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -3042,7 +3037,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Emmagatzematge</translation>
+        <translation type="obsolete">Emmagatzematge</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -3070,7 +3065,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="unfinished">Estadístiques d&apos;emmagatzematge</translation>
+        <translation type="obsolete">Estadístiques d&apos;emmagatzematge</translation>
     </message>
 </context>
 <context>
@@ -3078,7 +3073,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sistema</translation>
+        <translation type="obsolete">Sistema</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3186,7 +3181,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5707,7 +5702,6 @@
         <translation>
             <numerusform>&lt;p&gt;La màquina virtual següent es troba en estat desat:&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat d&apos;execució de la màquina exportada. Les altres màquines no canviaran.&lt;/p&gt; </numerusform>
             <numerusform>&lt;p&gt;Les %n màquines virtuals següents es troben en estat desat:&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Si continueu, es descartarà l&apos;estat d&apos;execució de les màquines exportades. Les altres màquines no canviaran.&lt;/p&gt; </numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -8248,7 +8242,6 @@
         <translation>
             <numerusform>%n any</numerusform>
             <numerusform>%n anys</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8256,7 +8249,6 @@
         <translation>
             <numerusform>%n mes</numerusform>
             <numerusform>%n mesos</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8264,7 +8256,6 @@
         <translation>
             <numerusform>%n dia</numerusform>
             <numerusform>%n dies</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8272,7 +8263,6 @@
         <translation>
             <numerusform>%n hora</numerusform>
             <numerusform>%n hores</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8280,7 +8270,6 @@
         <translation>
             <numerusform>%n minut</numerusform>
             <numerusform>%n minuts</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -8288,7 +8277,6 @@
         <translation>
             <numerusform>%n segon</numerusform>
             <numerusform>%n segons</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -8943,8 +8931,83 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>RuntimeAttributes</source>
-        <comment>DetailsElementType</comment>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">General</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Vista prèvia</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistema</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Pantalla</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Emmagatzematge</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Àudio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Xarxa</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ports en sèrie</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ports paral·lels</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Carpetes compartides</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Interfície d&apos;usuari</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Descripció</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9258,7 +9321,6 @@
         <translation>
             <numerusform>Avís: Esteu fent una captura d&apos;una màquina en execució que té %n imatge no immutable adjunta. Mentres treballeu des d&apos;aquesta captura no es reiniciarà la imatge immutable per evitar la pèrdua de dades.</numerusform>
             <numerusform>Avís: Esteu fent una captura d&apos;una màquina en execució que té %n imatges no immutables adjuntes. Mentres treballeu des d&apos;aquesta captura no es reiniciaran les imatges immutables per evitar la pèrdua de dades.</numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>

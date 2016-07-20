@@ -2770,7 +2770,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation>Ήχος</translation>
+        <translation type="vanished">Ήχος</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -2788,7 +2788,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation>Οθόνη</translation>
+        <translation type="vanished">Οθόνη</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -2851,7 +2851,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Γενικά</translation>
+        <translation type="vanished">Γενικά</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2868,7 +2868,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation>Δίκτυο</translation>
+        <translation type="vanished">Δίκτυο</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2914,7 +2914,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation>Στατιστικά δικτύου</translation>
+        <translation type="vanished">Στατιστικά δικτύου</translation>
     </message>
 </context>
 <context>
@@ -2922,7 +2922,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Παράλληλες Θύρες</translation>
+        <translation type="vanished">Παράλληλες Θύρες</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2940,7 +2940,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation>Ιδιότητες Εκτέλεσης</translation>
+        <translation type="vanished">Ιδιότητες Εκτέλεσης</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -3012,7 +3012,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation>Σειριακές Θύρες</translation>
+        <translation type="vanished">Σειριακές Θύρες</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3025,7 +3025,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Κοινοί Φάκελοι</translation>
+        <translation type="vanished">Κοινοί Φάκελοι</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -3037,7 +3037,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation>Αποθήκευση</translation>
+        <translation type="vanished">Αποθήκευση</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -3065,7 +3065,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation>Στατιστικά αποθήκευσης</translation>
+        <translation type="vanished">Στατιστικά αποθήκευσης</translation>
     </message>
 </context>
 <context>
@@ -3073,7 +3073,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>Σύστημα</translation>
+        <translation type="vanished">Σύστημα</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3181,7 +3181,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -8947,7 +8947,87 @@
     <message>
         <source>RuntimeAttributes</source>
         <comment>DetailsElementType</comment>
-        <translation>ΙδιότητεςΕκτέλεσης</translation>
+        <translation type="vanished">ΙδιότητεςΕκτέλεσης</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Γενικά</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Προεπισκόπηση</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Σύστημα</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Οθόνη</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Αποθήκευση</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Ήχος</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Δίκτυο</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Σειριακές Θύρες</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Παράλληλες Θύρες</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Κοινοί φάκελοι</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Περιβάλλον χρήστη</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Περιγραφή</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

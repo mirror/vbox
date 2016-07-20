@@ -5891,7 +5891,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation>Áudio</translation>
+        <translation type="vanished">Áudio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -5909,7 +5909,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation>Tela</translation>
+        <translation type="vanished">Tela</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -5972,7 +5972,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Geral</translation>
+        <translation type="vanished">Geral</translation>
     </message>
     <message>
         <source>Name</source>
@@ -5989,7 +5989,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation>Rede</translation>
+        <translation type="vanished">Rede</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -6035,7 +6035,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation>Estatísticas de Rede</translation>
+        <translation type="vanished">Estatísticas de Rede</translation>
     </message>
 </context>
 <context>
@@ -6043,7 +6043,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Portas Paralelas</translation>
+        <translation type="vanished">Portas Paralelas</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -6061,7 +6061,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation>Atributos de Tempo de Execução</translation>
+        <translation type="vanished">Atributos de Tempo de Execução</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -6133,7 +6133,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation>Portas Seriais</translation>
+        <translation type="vanished">Portas Seriais</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -6146,7 +6146,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Pastas Compartilhadas</translation>
+        <translation type="vanished">Pastas Compartilhadas</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -6158,7 +6158,7 @@ p, li { white-space: pre-wrap; }
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation>Armazenamento</translation>
+        <translation type="vanished">Armazenamento</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -6186,7 +6186,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation>Estatísticas de Armazenamento</translation>
+        <translation type="vanished">Estatísticas de Armazenamento</translation>
     </message>
 </context>
 <context>
@@ -6194,7 +6194,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>Sistema</translation>
+        <translation type="vanished">Sistema</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -6302,7 +6302,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -17935,7 +17935,87 @@ Versão %1</translation>
     <message>
         <source>RuntimeAttributes</source>
         <comment>DetailsElementType</comment>
-        <translation>Atributos de Tempo de Execução</translation>
+        <translation type="vanished">Atributos de Tempo de Execução</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Geral</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Pré-Visualização</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Sistema</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Armazenamento</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Áudio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Rede</translation>
+    </message>
+    <message>
+        <source>Serial ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Portas Seriais</translation>
+    </message>
+    <message>
+        <source>Parallel ports</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Portas Paralelas</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared folders</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Pastas Compartilhadas</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Interface do Usuário</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished">Descrição</translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
