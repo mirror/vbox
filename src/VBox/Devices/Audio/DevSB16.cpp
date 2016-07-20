@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
  * DevSB16 - VBox SB16 Audio Controller.
- *
- * @todo hiccups on NT4 and Win98.
  */
 
 /*
@@ -43,6 +41,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_SB16
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/file.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 # include <iprt/string.h>
@@ -57,6 +56,20 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 #include "DrvAudio.h"
+
+#if 0
+/*
+ * SB16_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
+ * to a file on the host. Be sure to adjust SB16_DEBUG_DUMP_PCM_DATA_PATH
+ * to your needs before using this!
+ */
+# define SB16_DEBUG_DUMP_PCM_DATA
+# ifdef RT_OS_WINDOWS
+#  define SB16_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
+# else
+#  define SB16_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
+# endif
+#endif
 
 /** Current saved state version. */
 #define SB16_SAVE_STATE_VERSION         2
@@ -1637,6 +1650,13 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
         int rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
         AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
 
+#ifdef SB16_DEBUG_DUMP_PCM_DATA
+        RTFILE fh;
+        RTFileOpen(&fh, SB16_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm",
+                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        RTFileWrite(fh, tmpbuf, cbToRead, NULL);
+        RTFileClose(fh);
+#endif
         /*
          * Write data to the backends.
          */
@@ -1680,10 +1700,6 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     if (pThis->left_till_irq < 0)
         pThis->left_till_irq = pThis->block_size;
 
-    PSB16DRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-        pDrv->pConnector->pfnStreamIterate(pDrv->pConnector, pDrv->Out.pStream);
-
     free = dma_len;
 
     if (free <= 0)
@@ -1692,9 +1708,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     copy = free;
     till = pThis->left_till_irq;
 
-#ifdef DEBUG_SB16_MOST
-    LogFlowFunc(("pos:%06d %d till:%d len:%d\n", dma_pos, free, till, dma_len));
-#endif
+    Log3Func(("pos %d/%d free %5d till %5d\n", dma_pos, dma_len, free, till));
 
     if (copy >= till)
     {
@@ -1724,11 +1738,9 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
         }
     }
 
-#ifdef DEBUG_SB16_MOST
-    LogFlowFunc(("pos %5d free %5d size %5d till % 5d copy %5d written %5d size %5d\n",
-                 dma_pos, free, dma_len, pThis->left_till_irq, copy, written,
-                 pThis->block_size));
-#endif
+    Log3Func(("pos %d/%d free %5d till %5d copy %5d written %5d block_size %5d\n",
+               dma_pos, dma_len, free, pThis->left_till_irq, copy, written,
+               pThis->block_size));
 
     while (pThis->left_till_irq <= 0)
         pThis->left_till_irq += pThis->block_size;
@@ -1782,12 +1794,10 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     uint64_t cTicksElapsed = cTicksNow - pThis->uTimerTSIO;
     uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
+    bool     fIsPlaying    = false; /* Whether one or more streams are still playing. */
+    bool     fDoTransfer   = false;
+
     pThis->uTimerTSIO = cTicksNow;
-
-    bool     fIsPlaying = false;
-    uint32_t cbWritable = UINT32_MAX;
-
-    LogFlowFuncEnter();
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
@@ -1796,6 +1806,29 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         if (!pStream)
             continue;
 
+#ifdef DEBUG
+        PSB16DRIVER pDrvPrev = RTListNodeGetPrev(&pDrv->Node, SB16DRIVER, Node);
+        if (   pDrvPrev
+            && !RTListNodeIsDummy(&pThis->lstDrv, pDrvPrev, SB16DRIVER, Node))
+        {
+            PPDMAUDIOSTREAM pStreamPrev = pDrvPrev->Out.pStream;
+            AssertPtr(pStreamPrev);
+
+            /*
+             * Sanity. Make sure that all streams have the same configuration
+             * to get SB16's DMA transfers right.
+             *
+             * SB16 only allows one output configuration per serial data out,
+             * so check if all streams have the same configuration.
+             */
+            AssertMsg(pStream->Cfg.uHz       == pStreamPrev->Cfg.uHz,
+                      ("%RU32Hz vs. %RU32Hz\n", pStream->Cfg.uHz, pStreamPrev->Cfg.uHz));
+            AssertMsg(pStream->Cfg.cChannels == pStreamPrev->Cfg.cChannels,
+                      ("%RU8 vs. %RU8 channels\n", pStream->Cfg.cChannels, pStreamPrev->Cfg.cChannels));
+            AssertMsg(pStream->Cfg.enmFormat == pStreamPrev->Cfg.enmFormat,
+                      ("%ld vs. %ld format\n", pStream->Cfg.enmFormat, pStreamPrev->Cfg.enmFormat));
+        }
+#endif
         PPDMIAUDIOCONNECTOR pConn = pDrv->pConnector;
         if (!pConn)
             continue;
@@ -1815,41 +1848,42 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
                     LogFlowFunc(("%s: Failed playing stream, rc=%Rrc\n", pStream->szName, rc2));
                     continue;
                 }
+            }
 
-                rc2 = pConn->pfnStreamIterate(pConn, pStream);
-                if (RT_FAILURE(rc2))
-                {
-                    LogFlowFunc(("%s: Failed re-iterating stream, rc=%Rrc\n", pStream->szName, rc2));
-                    continue;
-                }
-
-                cbWritable = RT_MIN(pConn->pfnStreamGetWritable(pConn, pStream), cbWritable);
+            if (pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY)
+            {
+                /* Only do the next DMA transfer if we're able to write the entire
+                 * next data block. */
+                fDoTransfer = pConn->pfnStreamGetWritable(pConn, pStream) >= (uint32_t)pThis->block_size;
             }
         }
 
         PDMAUDIOSTRMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
         fIsPlaying |= (   (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
                        || (strmSts & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE));
-
-        LogFlowFunc(("%s: strmSts=0x%x -> fIsPlaying=%RTbool\n", pStream->szName, strmSts, fIsPlaying));
     }
 
-    if (   ASMAtomicReadBool(&pThis->fTimerActive)
-        || fIsPlaying)
-    {
-        if (cbWritable)
-        {
-            /* Schedule the next transfer. */
-            PDMDevHlpDMASchedule(pThis->pDevInsR3);
-        }
+    bool fTimerActive = ASMAtomicReadBool(&pThis->fTimerActive);
+    bool fKickTimer   = fTimerActive || fIsPlaying;
 
+    LogFlowFunc(("fTimerActive=%RTbool, fIsPlaying=%RTbool\n", fTimerActive, fIsPlaying));
+
+    if (fDoTransfer)
+    {
+        /* Schedule the next transfer. */
+        PDMDevHlpDMASchedule(pThis->pDevInsR3);
+
+        /* Kick the timer at least one more time. */
+        fKickTimer = true;
+    }
+
+    if (fKickTimer)
+    {
         /* Kick the timer again. */
         uint64_t cTicks = pThis->cTimerTicksIO;
         /** @todo adjust cTicks down by now much cbOutMin represents. */
         TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
     }
-
-    LogFlowFuncLeave();
 }
 
 #endif /* !VBOX_WITH_AUDIO_CALLBACKS */
@@ -2074,13 +2108,14 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     LogFlowFuncEnter();
 
     AssertReturn(pCfg->enmDir == PDMAUDIODIR_OUT, VERR_INVALID_PARAMETER);
+    Assert(DrvAudioHlpStreamCfgIsValid(pCfg));
 
     /* Set a default audio format for the host. */
     PDMAUDIOSTREAMCFG CfgHost;
     CfgHost.enmDir          = PDMAUDIODIR_OUT;
     CfgHost.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-    CfgHost.uHz             = 44100;
-    CfgHost.cChannels       = 2;
+    CfgHost.uHz             = pCfg->uHz;
+    CfgHost.cChannels       = pCfg->cChannels;
     CfgHost.enmFormat       = PDMAUDIOFMT_S16;
     CfgHost.enmEndianness   = PDMAUDIOHOSTENDIANNESS;
 
@@ -2093,8 +2128,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        if (!RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "[LUN#%RU8] sb16.po (%RU32Hz, %RU8 %s)",
-                         pDrv->uLUN, pCfg->uHz, pCfg->cChannels, pCfg->cChannels > 1 ? "Channels" : "Channel"))
+        if (!RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "[LUN#%RU8] %s (%RU32Hz, %RU8 %s)",
+                         pDrv->uLUN, CfgHost.szName, pCfg->uHz, pCfg->cChannels, pCfg->cChannels > 1 ? "Channels" : "Channel"))
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
@@ -2138,14 +2173,8 @@ static void sb16CloseOut(PSB16STATE pThis)
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
-        if (pDrv->Out.pStream)
-        {
-            pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
-
-            int rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
-            if (RT_SUCCESS(rc2))
-                pDrv->Out.pStream = NULL;
-        }
+        int rc2 = pDrv->pConnector->pfnStreamControl(pDrv->pConnector, pDrv->Out.pStream, PDMAUDIOSTREAMCMD_DISABLE);
+        AssertRC(rc2);
     }
 
     LogFlowFuncLeave();
@@ -2207,7 +2236,18 @@ static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
 
     LogRel2(("SB16: Powering off ...\n"));
 
-    sb16CloseOut(pThis);
+    PSB16DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
+        if (pDrv->Out.pStream)
+        {
+            pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
+
+            int rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
+            if (RT_SUCCESS(rc2))
+                pDrv->Out.pStream = NULL;
+        }
+    }
 }
 
 /**
