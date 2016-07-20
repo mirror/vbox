@@ -25,10 +25,10 @@
 # include <QScrollArea>
 
 /* GUI includes: */
-# include <VBoxGlobal.h>
-# include <UIMessageCenter.h>
-# include <VBoxSnapshotDetailsDlg.h>
-# include <VBoxUtils.h>
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "VBoxSnapshotDetailsDlg.h"
+# include "VBoxUtils.h"
 
 /* COM includes: */
 # include "CMachine.h"
