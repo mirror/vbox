@@ -104,8 +104,8 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>Ένα απαιτούμενο codec λείπει. Χρειάζεται να εγκαταστήσετε το ακόλουθο codec για να παίξετε το περιεχόμενο: %0</numerusform>
-            <numerusform>Ένα απαιτούμενο codec λείπει. Χρειάζεται να εγκαταστήσετε τα ακόλουθα codec για να παίξετε το περιεχόμενο: %0</numerusform>
+            <numerusform>Ένα απαιτούμενο codec λείπει. Χρειάζεται να εγκαταστήσετε το ακόλουθο codec για να αναπαράγετε το περιεχόμενο: %0</numerusform>
+            <numerusform>Κάποια απαιτούμενα codec λείπουν. Χρειάζεται να εγκαταστήσετε τα ακόλουθα codec για να αναπαράγετε το περιεχόμενο: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -1710,7 +1710,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Proxy authentication required</source>
-        <translation>Ο μεσολαβητής απαιτεί αυθεντικοποίηση</translation>
+        <translation>Ο διαμεσολαβητής απαιτεί αυθεντικοποίηση</translation>
     </message>
     <message>
         <source>Authentication required</source>
@@ -1722,7 +1722,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation>Ο μεσολαβητής απαιτεί αυθεντικοποίηση</translation>
+        <translation>Ο διαμεσολαβητής απαιτεί αυθεντικοποίηση</translation>
     </message>
     <message>
         <source>Host requires authentication</source>
@@ -2352,7 +2352,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation>Ο μεσολαβητής δεν είναι έγκυρος για αυτή τη λειτουργία</translation>
+        <translation>Ο διαμεσολαβητής δεν είναι έγκυρος για αυτή τη λειτουργία</translation>
     </message>
 </context>
 <context>
@@ -3061,7 +3061,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>None</source>
-        <translation>Καμμία</translation>
+        <translation>Καμία</translation>
     </message>
     <message>
         <source>Long side</source>
@@ -3995,47 +3995,47 @@ Please choose a different file name.</source>
     <name>QUnicodeControlCharacterMenu</name>
     <message>
         <source>LRM Left-to-right mark</source>
-        <translation type="unfinished"></translation>
+        <translation>LRM Σημάδι από αριστερά στα δεξιά</translation>
     </message>
     <message>
         <source>RLM Right-to-left mark</source>
-        <translation type="unfinished"></translation>
+        <translation>RLM Σημάδι από δεξιά στα αριστερά</translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWJ Μηδενικό πλάτος συνδετήρα</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWNJ Μηδενικό πλάτος μη-συνδετήρα</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWSP Μηδενικό πλάτος διαστήματος</translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation type="unfinished"></translation>
+        <translation>LRE Εκκίνηση ενσωμάτωσης από αριστερά στα δεξιά</translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation type="unfinished"></translation>
+        <translation>RLE Εκκίνηση ενσωμάτωσης από δεξιά στα αριστερά</translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation type="unfinished"></translation>
+        <translation>LRO Εκκίνηση παράκαμψης από αριστερά στα δεξιά</translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation type="unfinished"></translation>
+        <translation>RLO Εκκίνηση παράκαμψης από δεξιά στα αριστερά</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF Αναδυόμενη κατευθυντική διαμόρφωση</translation>
     </message>
     <message>
         <source>Insert Unicode control character</source>
-        <translation type="unfinished"></translation>
+        <translation>Εισαγωγή χαρακτήρα ελέγχου Unicode</translation>
     </message>
 </context>
 <context>
@@ -4144,12 +4144,12 @@ Please choose a different file name.</source>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation>Πήγαινε πίσω</translation>
+        <translation>Πίσω</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation>Πήγαινε μπροστά</translation>
+        <translation>Μπροστά</translation>
     </message>
     <message>
         <source>Stop</source>
@@ -4334,11 +4334,11 @@ Please choose a different file name.</source>
     <name>QWizard</name>
     <message>
         <source>Go Back</source>
-        <translation>Πήγαινε πίσω</translation>
+        <translation>Πίσω</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>Συνέχισε</translation>
+        <translation>Συνέχεια</translation>
     </message>
     <message>
         <source>Commit</source>
@@ -4508,27 +4508,27 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>εσωτερική γενική αναφορά οντότητας δεν επιτρέπεται στο DTD</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation type="unfinished"></translation>
+        <translation>εξωτερικά αναλυμένη γενική αναφορά οντότητας δεν επιτρέπεται σε τιμή ιδιότητας</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>εξωτερικά αναλυμένη γενική αναφορά οντότητας δεν επιτρέπεται στο DTD</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation type="unfinished"></translation>
+        <translation>μη αναλυμένη αναφορά οντότητας σε λάθος πλαίσιο</translation>
     </message>
     <message>
         <source>recursive entities</source>
-        <translation type="unfinished"></translation>
+        <translation>αναδρομικές οντότητες</translation>
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation type="unfinished"></translation>
+        <translation>λάθος στη δήλωση κειμένου μιας εξωτερικής οντότητας</translation>
     </message>
 </context>
 <context>
@@ -4559,7 +4559,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Απρόσμενος χαρακτήρας &apos;%1&apos; σε δημόσια ταυτότητα κυριολεκτικά.</translation>
     </message>
     <message>
         <source>Invalid XML version string.</source>
@@ -4579,75 +4579,75 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Standalone accepts only yes or no.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αυτόνομη αποδοχή μόνο ναι ή όχι.</translation>
     </message>
     <message>
         <source>Invalid attribute in XML declaration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μη έγκυρη ιδιότητα στη δήλωση XML.</translation>
     </message>
     <message>
         <source>Premature end of document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Πρόωρο τέλος εγγράφου.</translation>
     </message>
     <message>
         <source>Invalid document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μη έγκυρο έγγραφο.</translation>
     </message>
     <message>
         <source>Expected </source>
-        <translation type="unfinished"></translation>
+        <translation>Αναμενόμενο </translation>
     </message>
     <message>
         <source>, but got &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>, αλλά έχει &apos;</translation>
     </message>
     <message>
         <source>Unexpected &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Απροσδόκητο &apos;</translation>
     </message>
     <message>
         <source>Expected character data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αναμενόμενα δεδομένα χαρακτήρα.</translation>
     </message>
     <message>
         <source>Recursive entity detected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αναδρομική οντότητα εντοπίστηκε.</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αναμένεται ετικέτα εκκίνησης.</translation>
     </message>
     <message>
         <source>XML declaration not at start of document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η δήλωση XML δεν είναι στην αρχή του εγγράφου.</translation>
     </message>
     <message>
         <source>NDATA in parameter entity declaration.</source>
-        <translation type="unfinished"></translation>
+        <translation>NDATA σε δήλωση παράμετρου οντότητας.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 είναι ένα άκυρο όνομα επεξεργασίας οδηγίας.</translation>
     </message>
     <message>
         <source>Invalid processing instruction name.</source>
-        <translation type="unfinished"></translation>
+        <translation>άκυρο όνομα επεξεργασίας οδηγίας.</translation>
     </message>
     <message>
         <source>Illegal namespace declaration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Παράνομη δήλωση χώρου ονομάτων.</translation>
     </message>
     <message>
         <source>Invalid XML name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μη έγκυρο όνομα XML.</translation>
     </message>
     <message>
         <source>Opening and ending tag mismatch.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ασυμβατότητα ετικέτας ανοιγμάτος και κλεισίματος.</translation>
     </message>
     <message>
         <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αναφορά σε μη αναλυμένη οντότητα &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Entity &apos;%1&apos; not declared.</source>
@@ -4655,598 +4655,600 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αναφορά στην εξωτερική οντότητα &apos;%1&apos; στην τιμή ιδιότητας.</translation>
     </message>
     <message>
         <source>Invalid character reference.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μη έγκυρη αναφορά χαρακτήρα.</translation>
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Βρέθηκε λάθος κωδικοποιημένο περιεχόμενο.</translation>
     </message>
     <message>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η αυτόνομη ψευδο-ιδιότητα πρέπει να εμφανίζεται μετά την κωδικοποίηση.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 είναι μη έγκυρο ΔΗΜΟΣΙΟ αναγνωριστικό.</translation>
     </message>
 </context>
 <context>
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια ιδιότητα-%1 με τιμή %2 έχει ήδη δηλωθεί.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια ιδιότητα-%1 πρέπει να έχει έγκυρη τιμή %2, ενώ η %3 δεν είναι.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation type="unfinished"></translation>
+        <translation>Χρονικό περιθώριο δικτύου.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το στοιχείο %1 δεν μπορεί να είναι σειριακό γιατί εμφανίζεται εκτός του στοιχείου του αρχείου.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το έτος %1 δεν είναι έγκυρο γιατί αρχίζει με %2.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η ημέρα %1 είναι εκτός του εύρους %2..%3.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο μήνας %1 είναι εκτός του εύρους %2..%3.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Υπερχείλιση: Δεν μπορεί να αντιπροσωπευθεί η ημέρα %1.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η ημέρα %1 δεν είναι έγκυρη για το μήνα %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="unfinished"></translation>
+        <translation>Η ώρα 24:%1:%2.%3 δεν είναι έγκυρη. Η ώρα είναι 24, αλλά τα λεπτά, δευτερόλεπτα και χιλιοστά του δευτερολέπτου δεν είναι όλα 0</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η ώρα %1:%2:%3.%4 δεν είναι έγκυρη.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Υπερχείλιση: Δεν μπορεί να αντιπροσωπευθεί η ημέρα.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Τουλάχιστον ένα στοιχείο πρέπει να είναι παρών.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένα τουλάχιστον στοιχείο του χρόνου πρέπει να είναι εμφανίζεται μετά το διαχωριστικό %1.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μη τελεστής σε διαίρεση ακέραιων, %1, μπορεί να είναι %2.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο πρώτος τελεστής σε διαίρεση ακέραιων, %1, δεν μπορεί ναι είναι το άπειρο (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο δεύτερος τελεστής σε μια διαίρεση, %1, δεν μπορεί να είναι το μηδέν (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι έγκυρη τιμή τύπου %2.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Όταν γίνεται τροποποίηση στο %1 από το %2, η αρχική τιμή δεν μπορεί να είναι %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η διαίρεση ακεραίου (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η διαίρεση (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η διαίρεση μέτρου (%1) με το μηδέν (%2) είναι απροσδιόριστη.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η διαίρεση μιας τιμής τύπου %1 με το %2 (όχι αριθμό) δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η διαίρεση μιας τιμής τύπου %1 με το %2 ή με το %3 (συν ή πλην μηδέν) δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο πολλαπλασιασμός μιας τιμής τύπου %1 με το %2 ή το %3 (συν ή πλην άπειρο) δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια τιμή του τύπου %1 δεν μπορεί να έχει μια Αποτελεσματική Μπούλεια Τιμή.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η Αποτελεσματική Μπούλεια Τιμή δεν μπορεί να υπολογιστεί για μια ακολουθία που περιέχει δύο ή περισσότερες ατομικές τιμές.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Η τιμή %1 του τύπου %2 υπερβαίνει το μέγιστο (%3).</translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Η τιμή %1 του τύπου %2 είναι κάτω του ελάχιστου (%3).</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια τιμή του τύπου %1 πρέπει να περιέχει έναν ζυγό αριθμό ψηφίων. Η τιμή %2 δεν τον περιέχει.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι έγκυρη σαν τιμή τύπου %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο τελεστής %1 δεν μπορεί να χρησιμοποιηθεί στον τύπο %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο τελεστής %1 δεν μπορεί να χρησιμοποιηθεί σε ατομικές τιμές τύπου %2 και %3.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το URI χώρου ονομάτων στο όνομα για μία υπολογισμένη ιδιότητα δεν μπορεί να είναι %1.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα για μια υπολογισμένη ιδιότητα δεν μπορεί να έχει το URI χώρου ονομάτων %1 με το τοπικό όνομα %2.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Λάθος τύπου στην τροποποίηση, αναμενόταν %1, ελήφθη %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Όταν τροποποείται το %1 ή τύποι που προήρθαν από αυτό, η αρχική τιμή πρέπει να είναι από τον ίδιο τύπο, ή πρέπει να είναι κυριολεκτικά χαρακτήρες. Ο τύπος %2 δεν επιτρέπεται.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν είναι δυνατή τροποποίηση με το %1 σαν τον τελικό τύπο.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν είναι δυνατό να τροποποίηθει το %1 σε %2.</translation>
     </message>
     <message>
         <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η τροποποίηση του %1 δεν είναι δυνατή επειδή είναι ένας αόριστος τύπος, και άρα δεν μπορεί να αποκτήσει υπόσταση.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν είναι δυνατό να τροποποίηθει η τιμή %1 τύπου %2 σε %3</translation>
     </message>
     <message>
         <source>Failure when casting from %1 to %2: %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Αποτυχία κατά την τροποποίηση από %1 σε %2: %3</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένα σχόλιο δεν μπορεί να περιέχει %1</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένα σχόλιο δεν μπορεί να τελειώνει με %1.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Καμία σύγκριση δεν μπορεί να γίνει που να περιλαμβάνει τον τύπο %1.</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο τελεστής %1 δεν είναι διαθέσιμος μεταξύ ατομικών τιμών του τύπου %2 και %3.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένας κόμβος ιδιότητας δεν μπορεί να είναι το τέκνο ενός κόμβου εγγράφου. Οπότε, η ιδιότητα %1 είναι άτοπη.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένα δομοστοιχείο βιβλιοθήκης δεν μπορεί να εκτιμηθεί άμεσα. Πρέπει να εισαχθεί από το βασικό δομοστοιχείο.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια τιμή του τύπου %1 δεν μπορεί να είναι ένα κατηγόρημα. Ένα κατηγόρημα πρέπει να έχει ένα αριθμητικό τύπο ή ένα Αποτελεσματικό τύπο Τιμής Boolean.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένα κατηγόρημα θέσης πρέπει να εκτιμηθεί σε μια μονή αριθμητική τιμή.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το τελικό όνομα σε μια υπολογιστική οδηγία δεν μπορεί να είναι %1 σε κανένα συνδυασμό κεφαλαίων και πεζών. Οπότε, είναι %2 άκυρο.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι έγκυρο τελικό όνομα σε μία υπολογιστική οδηγία. Πρέπει να είναι μία %2 τιμή, π.χ. %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation type="unfinished"></translation>
+        <translation>iΤο τελευταίο βήμα σε μια διαδρομή πρέπει να περιέχει είτε κόμβους είτε ατομικές τιμές. Δε μπορεί να είναι ένα μείγμα μεταξύ των δύο.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Τα δεδομένα μιας υπολογιστικής οδηγίας δεν μπορεί να περιέχει τη γραμμή %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν υπάρχει σύνδεση χώρου ονομάτων για το πρόθεμα %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν υπάρχει σύνδεση χώρου ονομάτων για το πρόθεμα %1 στο %2</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 είναι μη έγκυρο %2</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 παίρνει το πολύ %n όρισμα. Οπότε %2 είναι άκυρο.</numerusform>
+            <numerusform>%1 παίρνει το πολύ %n ορίσματα. Οπότε %2 είναι άκυρο.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 παίρνει τουλάχιστον %n όρισμα. Οπότε %2 είναι άκυρο.</numerusform>
+            <numerusform>%1 παίρνει τουλάχιστον %n όρισμα. Οπότε %2 είναι άκυρο.</numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι ένας αριθμητικός τύπος, xs:χρόνοςΜήναςΔιάρκεια ή xs:ημέραΏραΔιάρκεια.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι του τύπου %3, %4, ή %5.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το δεύτερο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2. Πρέπει να είναι του τύπου %3, %4, ή %5.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι ένας έγκυρος χαρακτήρας XML 1.0.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το πρώτο όρισμα στο %1 δεν μπορεί να είναι του τύπου %2.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αν και οι δύο τιμές έχουν μετατοπίσεις ζώνης, πρέπει να έχουν τη ίδια μετατόπιση ζώνης. %1 και %2 δεν είναι τα ίδια.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 κλήθηκε.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 πρέπει να ακολουθείται από %2 ή %3, όχι στο τέλος των χαρακτήρων αντικατάστασης.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="unfinished"></translation>
+        <translation>Στους χαρακτήρες αντικατάστασης, %1 πρέπει να ακολουθείται από τουλάχιστο ένα ψηφίο όταν δεν έχει διαφύγει.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Στους χαρακτήρες αντικατάστασης, %1 μπορεί να χρησιμοποιηθεί να διαφύγει του εαυτού του ή %2, όχι %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 αντιστοιχεί σε χαρακτήρες νέας γραμμής</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 και %2 αντιστοιχούν με την αρχή και το τέλος μιας γραμμής.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Οι αντιστοιχίες είναι χωρίς διάκριση πεζών-κεφαλαίων</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Οι κενοί χαρακτήρες διαγράφονται, εκτός αν εμφανίζονται σε ομάδες χαρακτήρων</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι έγκυρο σχήμα κανονικής έκφρασης : %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι έγκυρη σημαία για κανονικές εκφράσεις. Έγκυρες σημαίες είναι:</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Αν το πρώτο όρισμα είναι μια κενή ακολουθία ή μια μηδενικού μεγέθους γραμμή (όχι χώρος ονομάτων), δεν μπορεί να ορισθεί ένα πρόθεμα. Το πρόθεμα %1 έχει ορισθεί.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Δε θα είναι δυνατό να ανακτηθεί το %1.</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο ριζικός κόμβος του δεύτερου ορίσματος στη συνάρτηση %1 πρέπει να είναι ένας κόμβος εγγράφου. Το %2 δεν είναι ένας κόμβος εγγράφου.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation type="unfinished"></translation>
+        <translation>Η προκαθορισμένη συλλογή δεν έχει προσδιοριστεί</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν μπορεί να ανακτηθεί</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="unfinished"></translation>
+        <translation>Η αίτηση κανονικοποίησης %1 δεν υποστηρίζεται. Οι υποστηριζόμενες αιτήσεις είναι %2, %3, %4, και %5, και καμία, δηλαδή κενή γραμμή (μη κανονικοποίηση).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μία μετατόπιση ζώνης πρέπει να ανήκει στο εύρος %1..%2 συμπεριλαμβανομένου. %3 είναι εκτός εύρους.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι ένας ολόκληρος αριθμός λεπτών.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η απαιτούμενη πληθικότητα είναι %1, έχει πληθικότητα %2.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το αντικείμενο %1 δεν ταιριάζει με τον απαιτούμενο τύπο %2.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 είναι ένας άγνωστος τύπος σχήματος.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μόνο μία %1 δήλωση μπορεί να υπάρχει στον πρόλογο του ερωτήματος.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation type="unfinished"></translation>
+        <translation>Η έναρξη της μεταβλητής %1 εξαρτάται από τον εαυτό της</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν υπάρχει καμία μεταβλητή με το όνομα %1</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="unfinished"></translation>
+        <translation>Η μεταβλητή %1 δεν χρησιμοποιείται</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η έκδοση %1 δεν υποστηρίζεται. Η υποστηριζόμενη έκδοση XQuery είναι 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η κωδικοποίηση %1 είναι άκυρη. Πρέπει να περιέχει λατινικούς χαρακτήρες μόνο, δεν πρέπει να περιέχει κενά διαστήματα, και πρέπει να ταιριάζει στη κανονική έκφραση %2.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Καμία συνάρτηση με υπογραφή %1 δεν είναι διαθέσιμη</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια προκαθορισμένη δήλωση χώρου ονομάτων πρέπει να λαμβάνει χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
     </message>
     <message>
         <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Οι δηλώσεις χώρου ονομάτων πρέπει να λαμβάνουν χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η εισαγωγή δομοστοιχείων πρέπει να λαμβάνει χώρα πριν τις δηλώσεις συνάρτησεων, μεταβλητών, και ιδιοτήτων.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν είναι δυνατό να επαναδηλωθεί το πρόθεμα %1.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μόνο το πρόθεμα %1 μπορεί να δηλωθεί για να συνδέσει το χώρο ονομάτων %2. Εξ&apos;ορισμού, είναι ήδη συνδεδεμένο με το πρόθεμα %1.</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το πρόθεμα %1 είναι ήδη δηλωμένο στο πρόλογο.</translation>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα μιας ιδιότητας πρέπει να έχει ένα πρόθεμα. Δεν υπάρχει προκαθορισμένος χώρος ονομάτων για ιδιότητες.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η λειτουργία εισαγωγής σχήματος δεν υποστηρίζεται, και γι&apos;αυτό %1 δηλώσεις δεν μπορούν να λάβουν χώρα.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο τελικός χώρος ονομάτων ενός %1 δεν μπορεί να είναι κενός.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Η λειτουργία εισαγωγής δομοστοιχείων δεν υποστηρίζεται</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια μεταβλητή με το όνομα %1 έχει ήδη δηλωθεί στο πρόλογο.</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Καμία τιμή δεν είναι διαθέσιμη για την εξωτερική μεταβλητή με το όνομα %1.</translation>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο χώρος ονομάτων %1 είναι εκχωρημένος, οπότε συναρτήσεις καθορισμένες από το χρήστη δεν θα τον χρησιμοποιήσουν. Δοκιμάστε το προκαθορισμένο πρόθεμα %2, το οποίο υπάρχει για αυτές τις περιπτώσεις.</translation>
     </message>
     <message>
         <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο χώρος ονομάτων μιας συνάρτησης καθορισμένης από το χρήστη σε ένα αντιστάθμισμα βιβλιοθήκης πρέπει να είναι ισοδύναμο με το αντιστάθμισμα χώρου ονομάτων. Με άλλα λόγια, πρέπει να είναι %1 αντί για %2</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια συνάρτηση με την υπογραφή %1 υπάρχει ήδη.</translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν υποστηρίζονται εξωτερικές συναρτήσεις. Όλες οι υποστηριζόμενες συναρτήσεις μπορούν να χρησιμοποιηθούν άμεσα, χωρίς πρώτα να δηλώνονται σαν εξωτερικές</translation>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένα όρισμα με το όνομα %1 έχει ήδη δηλωθεί. Κάθε όνομα ορίσματος πρέπει να είναι μοναδικό.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα μιας μεταβλητής συνδεδεμένης μέσα σε μια παράσταση πρέπει να είναι διαφορετικό από τη μεταβλητή θέσης. Συνεπώς, οι δύο μεταβλητές με το όνομα %1 συγκρούονται.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η Λειτουργία Ταυτοποίησης Σχήματος δεν υποστηρίζεται. Οπότε, %1 εκφράσεις δεν μπορούν να χρησιμοποιηθούν.</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation type="unfinished"></translation>
+        <translation>Καμία από τις αναγνωριστικές εκφράσεις δεν υποστηρίζεται. Οπότε, μια εναλλακτική έκφραση πρέπει να είναι παρούσα</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο %1-άξονας δεν υποστηρίζεται στο XQuery</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι μια έγκυρη αριθμητική σταθερά.</translation>
     </message>
     <message>
         <source>No function by name %1 is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Καμία συνάρτηση με το όνομα %1 δεν είναι διαθέσιμη.</translation>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το URI χώρου ονομάτων δεν μπορεί να είναι μια κενή γραμμή όταν συνδέεται με το πρόθεμα, %1.</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 είναι μη έγκυρο URI χώρου ονομάτων.</translation>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν είναι δυνατό να γίνει σύνδεση με το πρόθεμα %1</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο χώρος ονομάτων %1 μπορεί μόνο να συνδεθεί με το %2 (και είναι, σε κάθε περίπτωση, προδηλωμένο).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="unfinished"></translation>
+        <translation>Το πρόθεμα %1 μπορεί να συνδεθεί μόνο με το %2 (και είναι, σε κάθε περίπτωση, προδηλωμένο).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Δύο ιδιότητες δήλωσης χώρου ονομάτων έχουν το ίδιο όνομα: %1.</translation>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το URI χώρου ονομάτων πρέπει να είναι μια σταθερά και δεν μπορεί να χρησιμοποιεί ενσωματωμένες εκφράσεις.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια ιδιότητα με το όνομα %1 έχει ήδη εμφανιστεί σε αυτό το στοιχείο.</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ένας άμεσος κατασκευαστής στοιχείων δεν έχει σχηματιστεί καλά. %1 τελειώνει με %2.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα %1 δεν αναφέρεται σε κανένα τύπο σχήματος.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 είναι ένας πολύπλοκος τύπος. Η τροποποίηση σε πολύπλοκους τύπους δεν είναι δυνατή. Ωστόσο, τροποποίηση σε ατομικούς τύπους όπως %2 δουλεύει.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι ένας ατομικός τύπος. Η τροποποίηση είναι μόνο δυνατή σε ατομικούς τύπους.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι ένα έγκυρο όνομα για μια υπολογιστική οδηγία. Οπότε αυτή η δοκιμή ονόματος δεν θα ταιριάξει ποτέ.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 δεν είναι μια εντός πεδίου δήλωση ιδιότητας. Σημειώστε ότι η λειτουργία εισαγωγής σχήματος δεν υποστηρίζεται.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation type="unfinished"></translation>
+        <translation>Το όνομα μιας επέκτασης έκφρασης πρέπει να είναι σε χώρο ονομάτων.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="unfinished"></translation>
+        <translation>κενό</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="unfinished"></translation>
+        <translation>μηδέν ή ένα</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="unfinished"></translation>
+        <translation>ακριβώς ένα</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="unfinished"></translation>
+        <translation>ένα ή παραπάνω</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="unfinished"></translation>
+        <translation>μηδέν ή παραπάνω</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ο απαιτούμενος τύπος είναι %1, αλλά βρέθηκε %2.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation type="unfinished"></translation>
+        <translation>Προάγωντας %1 σε %2 μπορεί να προκαλέσει απώλεια ακρίβειας.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Η εστίαση δεν προσδιορίστηκε.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation type="unfinished"></translation>
+        <translation>Δεν είναι δυνατό να προστεθούν ιδιότητες μετά από κανένα είδος κόμβου.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μια ιδιότητα με το όνομα %1 έχει ήδη δημιουργηθεί.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Μόνο το Unicode Codepoint Collation υποστηρίζεται(%1). %2 δεν υποστηρίζεται.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
