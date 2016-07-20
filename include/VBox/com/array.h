@@ -194,7 +194,7 @@
  * @param aArray    com::SafeArray instance to pass as an input parameter.
  */
 #define ComSafeArrayAsInParam(aArray)   \
-    (aArray).size(), (aArray).__asInParam_Arr((aArray).raw())
+    (PRUint32)(aArray).size(), (aArray).__asInParam_Arr((aArray).raw())
 
 /**
  * Wraps the given com::SafeArray instance to generate an expression that is
@@ -878,7 +878,10 @@ public:
                 SafeArray::Init(m.arr[i]);
         }
 
+        /** @todo Fix this! */
+        RT_GCC_NO_WARN_CONVERSION_BEGIN
         m.size = aNewSize;
+        RT_GCC_NO_WARN_CONVERSION_END
 #else
         /* nothing to do here, SafeArrayCreate() has performed element
          * initialization */
@@ -1145,7 +1148,10 @@ protected:
                     for (size_t i = aNewSize; i < m.size; ++ i)
                         SafeArray::Uninit(m.arr[i]);
 
+                    /** @todo Fix this! */
+                    RT_GCC_NO_WARN_CONVERSION_BEGIN
                     m.size = aNewSize;
+                    RT_GCC_NO_WARN_CONVERSION_END
                 }
 
                 /* Copy the old contents. */
@@ -1164,11 +1170,17 @@ protected:
                 for (size_t i = aNewSize; i < m.size; ++ i)
                     SafeArray::Uninit(m.arr[i]);
 
+                /** @todo Fix this! */
+                RT_GCC_NO_WARN_CONVERSION_BEGIN
                 m.size = aNewSize;
+                RT_GCC_NO_WARN_CONVERSION_END
             }
         }
 
+        /** @todo Fix this! */
+        RT_GCC_NO_WARN_CONVERSION_BEGIN
         m.capacity = newCapacity;
+        RT_GCC_NO_WARN_CONVERSION_END
 
 #else
 
