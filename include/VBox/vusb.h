@@ -842,7 +842,7 @@ DECLINLINE(int) VUSBIRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, size_t cb
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
-DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t DstAddress, PVUSBIDEVICE pDev,
+DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, PVUSBIDEVICE pDev,
                                    VUSBXFERTYPE enmType, VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
     return pInterface->pfnNewUrb(pInterface, DstAddress, pDev, enmType, enmDir, cbData, cTds, pszTag);
