@@ -2141,7 +2141,112 @@ Virtual system 0:
         can use up to 50% of a single host CPU.</para>
       </listitem>
 
-      <!-- @todo r=andy Document webcam! -->
+      <listitem>
+        <para><computeroutput>webcam 
+        attach &lt;path|alias&gt; [&lt;key=value&gt;[;&lt;key=value&gt;...]]</computeroutput>: This operation 
+        attaches a webcam to a running VM. Specify the absolute path of the 
+        webcam on the host operating system, or use its alias (obtained by using the command: VBoxManage 
+        list webcams).</para>
+
+        <para>Note that alias '.0' means default video input device on the host operating system, '.1', '.2', 
+        etc. mean first, second, etc. video input device. The device order is host-specific.</para>
+
+        <para>The optional settings parameter is a ';' delimited list of name/value pairs, enabling configuration 
+        of the emulated webcam device.</para>
+
+        <para>The following settings are supported:</para>
+
+        <para>MaxFramerate (default no maximum limit) - this specifies the highest rate (Frames/sec) at which 
+        video frames are sent to the guest. Higher frame rates increase CPU load, so this setting can be useful 
+        when there is a need to reduce CPU load.  Its default 'value' is "no maximum limit", thus enabling the 
+        guest to use all frame rates supported by the host webcam.</para>
+
+        <para>MaxPayloadTransferSize (default 3060 bytes) - this specifies the maximum number of bytes the emulated 
+        webcam can send to the guest in one buffer. The default is used by some webcams. Higher values can 
+        slightly reduce CPU load, if the guest is able to use larger buffers. 
+        Note that higher MaxPayloadTransferSize values may be not supported by some guest operating systems.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>webcam 
+        detach &lt;path|alias&gt;</computeroutput>: This operation 
+        detaches a webcam from a running VM. Specify the absolute path of the 
+        webcam on the host, or use its alias (obtained from webcam list below).</para>
+        <para>Note the points below relating to specific Host Operating Systems:</para>
+
+        <para>Windows hosts</para>
+
+        <para>When the webcam device is detached from the host, the emulated webcam device 
+        is automatically detached from the guest.</para>
+
+        <para>Mac OS X hosts</para>
+
+        <para>OS X version 10.7 or newer is required.</para>
+
+        <para>When the webcam device is detached from the host, the emulated webcam device remains i
+        attached to the guest and must be manually detached using the 
+        VBoxManage controlvm "VM name" webcam detach command.</para>
+
+        <para>Linux hosts</para>
+
+        <para>When the webcam is detached from the host, the emulated webcam device is automatically detached 
+        from the guest only if the webcam is streaming video. If the emulated webcam is inactive, it     
+        should be manually detached using the VBoxManage controlvm "VM name" webcam detach command.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>webcam list</computeroutput>: This operation 
+        lists webcams attached to the running VM.
+        The output is a list of absolute paths or aliases that were used for attaching the webcams 
+        to the VM using the 'webcam attach' command above.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>addencpassword 
+        &lt;id&gt; &lt;password file&gt;|- [--removeonsuspend &lt;yes|no&gt;]</computeroutput>: This operation 
+        supplies an encrypted VM specified by &lt;id&gt; with the encryption password to enable a headless start. 
+        Either specify the absolute path of a password file on the host file system: &lt;password file&gt;, or 
+        use a '-' to instruct VBoxManage to prompt the user for the encryption password. </para>
+
+        <para><computeroutput>--removeonsuspend &lt;yes|no&gt;</computeroutput> specifies whether to remove/keep 
+        the password from/in VM memory when the VM is suspended. If the VM has been suspended and the password has 
+        been removed, the user needs to resupply the password before the VM can be resumed. This feature is useful 
+        in cases where the user doesn't want the password to be stored in VM memory, and the VM is suspended by a   
+        host suspend event.</para>
+
+        <para>Note: On VirtualBox versions 5.0 and later, data stored on hard disk images can be transparently 
+        encrypted for the guest. VirtualBox uses the AES algorithm in XTS mode and supports 128 or 256 
+        bit data encryption keys (DEK). The DEK is stored encrypted in the medium properties, and is 
+        decrypted during VM startup by supplying the encryption password.</para>
+
+        <para>The "VBoxManage encryptmedium" operation is used to create a DEK encrypted medium. 
+        See <xref linkend="diskencryption-encryption" />" for details.
+        When starting an encrypted VM from a VirtualBox GUI app, the user will be prompted for the 
+        encryption password.</para>
+
+        <para>For a headless encrypted VM start, use:</para>
+    
+        <para>VBoxManage startvm "vmname" --type headless</para>
+
+        <para>followed by:</para>
+
+        <para>VBoxManage "vmname" controlvm "vmname" addencpassword ...</para>
+
+        <para>to supply the encryption password required.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>removeencpassword &lt;id&gt;</computeroutput>: This operation
+        removes encryption password authorization for password &lt;id&gt; for all encrypted media 
+        attached to the VM.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>removeallencpasswords</computeroutput>: This operation
+        removes encryption password authorization for all passwords for all 
+        encrypted media attached to the VM.</para>
+      </listitem>
 
     </itemizedlist>
   </sect1>
