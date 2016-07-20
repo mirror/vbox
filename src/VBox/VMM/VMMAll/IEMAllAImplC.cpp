@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2011-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,9 @@
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <iprt/x86.h>
+#ifdef RT_ARCH_X86
+# include <iprt/uint128.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1129,37 +1132,191 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
 
 /* multiplication and division */
 
+
+
 IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pfEFlags))
 {
-    AssertFailed();
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    RTUINT128U Result;
+    RTUInt128MulU64ByU64(&Result, *pu64RAX, u64Factor);
+    *pu64RAX = Result.s.Lo;
+    *pu64RDX = Result.s.Hi;
+    /** @todo research the undefined MUL flags. */
+    return 0;
 }
 
 
 IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pfEFlags))
 {
-    AssertFailed();
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+/** @todo Testcase: IMUL 1 operand   */
+    RTUINT128U Result;
+    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF);
+    if ((int64_t)*pu64RAX >= 0)
+    {
+        if ((int64_t)*pu64RDX >= 0)
+        {
+            RTUInt128MulU64ByU64(&Result, *pu64RAX, *pu64RDX);
+            *pu64RAX = Result.s.Lo;
+            *pu64RDX = Result.s.Hi;
+            if (Result.s.Hi != 0 || Result.s.Lo >= UINT64_C(0x8000000000000000))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+        }
+        else
+        {
+            RTUInt128MulU64ByU64(&Result, *pu64RAX, UINT64_C(0) - *pu64RDX);
+            if (Result.s.Hi != 0 || Result.s.Lo > UINT64_C(0x8000000000000000))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            *pu64RAX = UINT64_C(0) - Result.s.Lo;
+            *pu64RDX = UINT64_C(0) - Result.s.Hi;
+        }
+    }
+    else
+    {
+        if ((int64_t)*pu64RDX >= 0)
+        {
+            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, *pu64RDX);
+            if (Result.s.Hi != 0 || Result.s.Lo > UINT64_C(0x8000000000000000))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            *pu64RAX = UINT64_C(0) - Result.s.Lo;
+            *pu64RDX = UINT64_C(0) - Result.s.Hi;
+        }
+        else
+        {
+            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, UINT64_C(0) - *pu64RDX);
+            if (Result.s.Hi != 0 || Result.s.Lo >= UINT64_C(0x8000000000000000))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            *pu64RAX = Result.s.Lo;
+            *pu64RDX = Result.s.Hi;
+        }
+    }
+    if (*pu64RAX & RT_BIT_64(63))
+        *pfEFlags |= X86_EFL_SF;
+
+    /** @todo research the undefined IMUL flags. */
+    return 0;
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
-    AssertFailed();
+/** @todo Testcase: IMUL 2 and 3 operands. */
+    uint64_t u64Ign;
+    iemAImpl_imul_u64(puDst, &u64Ign, uSrc, pfEFlags);
 }
 
 
 
 IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
 {
-    AssertFailed();
+    if (   u64Divisor != 0
+        && *pu64RDX < u64Divisor)
+    {
+        RTUINT128U Dividend;
+        Dividend.s.Lo = *pu64RAX;
+        Dividend.s.Hi = *pu64RDX;
+
+        RTUINT128U Divisor;
+        Divisor.s.Lo = u64Divisor;
+        Divisor.s.Hi = 0;
+
+        RTUINT128U Remainder;
+        RTUINT128U Quotient;
+        RTUInt128DivRem(&Quotient, &Remainder, &Dividend, &Divisor);
+        Assert(Quotient.s.Hi == 0);
+        Assert(Remainder.s.Hi == 0);
+
+        *pu64RAX = Quotient.s.Lo;
+        *pu64RDX = Remainder.s.Lo;
+        /** @todo research the undefined DIV flags. */
+        return 0;
+
+    }
+    /* #DE */
     return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
 
 IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
 {
-    AssertFailed();
+    if (u64Divisor != 0)
+    {
+        /*
+         * Convert to unsigned division.
+         */
+        RTUINT128U Dividend;
+        Dividend.s.Hi = 0;
+        if ((int64_t)*pu64RDX >= 0)
+        {
+            Dividend.s.Lo = *pu64RAX;
+            Dividend.s.Hi = *pu64RDX;
+        }
+        else
+        {
+            Dividend.s.Lo = UINT64_C(0) - *pu64RAX;
+            Dividend.s.Hi = UINT64_C(0) - *pu64RDX;
+        }
+
+        RTUINT128U Divisor;
+        Divisor.s.Hi = 0;
+        if ((int64_t)u64Divisor >= 0)
+            Divisor.s.Lo = u64Divisor;
+        else
+            Divisor.s.Lo = UINT64_C(0) - u64Divisor;
+
+        RTUINT128U Remainder;
+        RTUINT128U Quotient;
+        RTUInt128DivRem(&Quotient, &Remainder, &Dividend, &Divisor);
+
+        /*
+         * Setup the result, checking for overflows.
+         */
+        if ((int64_t)u64Divisor >= 0)
+        {
+            if ((int64_t)*pu64RDX >= 0)
+            {
+                /* Positive divisor, positive dividend => result positive. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint64_t)INT64_MAX)
+                {
+                    *pu64RAX = Quotient.s.Lo;
+                    *pu64RDX = Remainder.s.Lo;
+                    return 0;
+                }
+            }
+            else
+            {
+                /* Positive divisor, positive dividend => result negative. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= UINT64_C(0x8000000000000000))
+                {
+                    *pu64RAX = UINT64_C(0) - Quotient.s.Lo;
+                    *pu64RDX = UINT64_C(0) - Remainder.s.Lo;
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            if ((int64_t)*pu64RDX >= 0)
+            {
+                /* Negative divisor, positive dividend => negative quotient, positive remainder. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= UINT64_C(0x8000000000000000))
+                {
+                    *pu64RAX = UINT64_C(0) - Quotient.s.Lo;
+                    *pu64RDX = Remainder.s.Lo;
+                    return 0;
+                }
+            }
+            else
+            {
+                /* Negative divisor, negative dividend => positive quotient, negative remainder. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint64_t)INT64_MAX)
+                {
+                    *pu64RAX = Quotient.s.Lo;
+                    *pu64RDX = UINT64_C(0) - Remainder.s.Lo;
+                    return 0;
+                }
+            }
+        }
+    }
+    /* #DE */
     return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
