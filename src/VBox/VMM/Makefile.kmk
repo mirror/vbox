@@ -628,7 +628,7 @@ ifndef VBOX_ONLY_EXTPACKS
  VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
  ifeq ($(VBOX_LDR_FMT),elf)
-  VMMR0_CXXFLAGS += $(filter-out -Wno-unused,$(TEMPLATE_VBoxR0_CXXFLAGS)) -Wunused-variable -Wno-unused-parameter
+  VMMR0_CXXFLAGS += -Wunused -Wunused-variable -Wno-unused-parameter
  endif
 
  VMMR0_INCS      = \
