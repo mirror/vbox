@@ -872,8 +872,8 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * Enables the Hyper-V APIC-assist page.
  *
  * @returns VBox status code.
- * @param   pVM                The cross context VM structure.
- * @param   GCPhysTscPage      Where to map the APIC-assist page.
+ * @param   pVM                     The cross context VM structure.
+ * @param   GCPhysApicAssistPage    Where to map the APIC-assist page.
  */
 VMMR3_INT_DECL(int) gimR3HvEnableApicAssistPage(PVM pVM, RTGCPHYS GCPhysApicAssistPage)
 {
