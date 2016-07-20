@@ -1261,7 +1261,7 @@ static uint8_t usbsysfsReadDevicePropertyU8Def(unsigned uBase, uint8_t bDef, con
  * @param   pszFormat   The format string for the property.
  * @param   ...         Arguments for the format string.
  */
-static uint8_t usbsysfsReadDevicePropertyU16Def(unsigned uBase, uint16_t u16Def, const char *pszFormat, ...)
+static uint16_t usbsysfsReadDevicePropertyU16Def(unsigned uBase, uint16_t u16Def, const char *pszFormat, ...)
 {
     int64_t i64Tmp = 0;
 

@@ -44,6 +44,11 @@
       </listitem>
 
       <listitem>
+        <para>API: fixed truncation of USB product/vendor IDs on Linux
+          hosts (5.1.0 regression; bug #15644)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux hosts: fixed EL5 builds (bug #15634)</para>
       </listitem>
 
