@@ -72,8 +72,24 @@ UIInformationDataItem::~UIInformationDataItem()
 
 QVariant UIInformationDataItem::data(const QModelIndex &index, int role) const
 {
-    Q_UNUSED(index);
-    Q_UNUSED(role);
+    switch (role)
+    {
+        case Qt::DisplayRole:
+        {
+            return gpConverter->toString(m_type);
+        }
+        break;
+
+        case Qt::UserRole + 2:
+        {
+            return m_type;
+        }
+        break;
+
+        default:
+        break;
+    }
+
     /* Return null QVariant by default: */
     return QVariant();
 }
@@ -87,12 +103,6 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("General", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/machine_16px.png");
@@ -108,16 +118,12 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataSystem::UIInformationDataSystem(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -129,12 +135,6 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("System", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/chipset_16px.png");
@@ -207,16 +207,12 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataDisplay::UIInformationDataDisplay(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -228,12 +224,6 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Display", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/vrdp_16px.png");
@@ -276,16 +266,12 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataStorage::UIInformationDataStorage(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -297,11 +283,6 @@ QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) cons
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Storage");
-        }
-        break;
 
         case Qt::DecorationRole:
         {
@@ -349,16 +330,12 @@ QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole+2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataAudio::UIInformationDataAudio(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -370,12 +347,6 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Audio");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/sound_16px.png");
@@ -397,16 +368,12 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataNetwork::UIInformationDataNetwork(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -418,12 +385,6 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Network");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/nw_16px.png");
@@ -472,16 +433,12 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataSerialPorts::UIInformationDataSerialPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -493,12 +450,6 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Serial Ports");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/serial_port_16px.png");
@@ -535,16 +486,12 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
@@ -557,12 +504,6 @@ QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Parallel Ports", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/parallel_port_16px.png");
@@ -588,12 +529,6 @@ QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
@@ -610,12 +545,6 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("USB", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/usb_16px.png");
@@ -648,16 +577,12 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataSharedFolders::UIInformationDataSharedFolders(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -670,12 +595,6 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Shared Folders", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/sf_16px.png");
@@ -694,16 +613,12 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 void UIInformationDataSharedFolders::updateData()
@@ -720,12 +635,6 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Runtime Attributes", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/state_running_16px.png");
@@ -851,16 +760,12 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
@@ -916,12 +821,6 @@ QVariant UIInformationDataNetworkStatistics::data(const QModelIndex &index, int 
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Network Statistics", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/nw_16px.png");
@@ -950,16 +849,12 @@ QVariant UIInformationDataNetworkStatistics::data(const QModelIndex &index, int 
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
-    return QVariant();
+
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 QString UIInformationDataNetworkStatistics::parseStatistics(const QString &strText)
@@ -1021,7 +916,7 @@ void UIInformationDataNetworkStatistics::sltProcessStatistics()
 }
 
 UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
-    : UIInformationDataItem(InformationElementType_NetworkStatistics, machine, console, pModel)
+    : UIInformationDataItem(InformationElementType_StorageStatistics, machine, console, pModel)
 {
     /* Storage statistics: */
     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
@@ -1178,7 +1073,7 @@ UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMa
         }
     }
 
-     m_pTimer = new QTimer(this);
+    m_pTimer = new QTimer(this);
     connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
     /* Statistics page update: */
     sltProcessStatistics();
@@ -1189,12 +1084,6 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
 {
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return tr("Storage Statistics", "details report");
-        }
-        break;
-
         case Qt::DecorationRole:
         {
             return QString(":/hd_16px.png");
@@ -1295,17 +1184,12 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
         }
         break;
 
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
         default:
         break;
     }
 
-    return QVariant();
+    /* Call to base-class: */
+    return UIInformationDataItem::data(index, role);
 }
 
 QString UIInformationDataStorageStatistics::parseStatistics(const QString &strText)

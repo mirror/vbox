@@ -690,10 +690,9 @@ enum InformationElementType
     InformationElementType_Parallel,
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     InformationElementType_USB,
-    InformationElementType_SF,
+    InformationElementType_SharedFolders,
     InformationElementType_UI,
     InformationElementType_Description,
-    InformationElementType_SharedFolders,
     InformationElementType_RuntimeAttributes,
     InformationElementType_StorageStatistics,
     InformationElementType_NetworkStatistics
