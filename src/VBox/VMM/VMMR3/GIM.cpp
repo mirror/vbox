@@ -93,7 +93,6 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     AssertCompile(sizeof(pVM->gim.s) <= sizeof(pVM->gim.padding));
     AssertCompile(sizeof(pVM->aCpus[0].gim.s) <= sizeof(pVM->aCpus[0].gim.padding));
 
-
     /*
      * Initialize members.
      */

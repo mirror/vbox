@@ -868,6 +868,63 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
 
 
 /**
+ * Enables the Hyper-V APIC-assist page.
+ *
+ * @returns VBox status code.
+ * @param   pVM                The cross context VM structure.
+ * @param   GCPhysTscPage      Where to map the APIC-assist page.
+ */
+VMMR3_INT_DECL(int) gimR3HvEnableApicAssistPage(PVM pVM, RTGCPHYS GCPhysApicAssistPage)
+{
+    PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
+    AssertPtrReturn(pDevIns, VERR_GIM_DEVICE_NOT_REGISTERED);
+
+    /*
+     * Map the APIC-assist-page at the specified address.
+     */
+    /** @todo this is buggy when large pages are used due to a PGM limitation, see
+     *        @bugref{7532}. Instead of the overlay style mapping, we just
+     *               rewrite guest memory directly. */
+    size_t const cbApicAssistPage = PAGE_SIZE;
+    void *pvApicAssist = RTMemAllocZ(cbApicAssistPage);
+    if (RT_LIKELY(pvApicAssist))
+    {
+        int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysApicAssistPage, pvApicAssist, cbApicAssistPage);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Inform APIC. */
+            LogRel(("GIM: HyperV: Enabled APIC-assist page at %#RGp\n", GCPhysApicAssistPage));
+        }
+        else
+        {
+            LogRelFunc(("GIM: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", rc));
+            rc = VERR_GIM_OPERATION_FAILED;
+        }
+
+        RTMemFree(pvApicAssist);
+        return rc;
+    }
+
+    LogRelFunc(("GIM: HyperV: Failed to alloc %u bytes\n", cbApicAssistPage));
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * Disables the Hyper-V APIC-assist page.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+VMMR3_INT_DECL(int) gimR3HvDisableApicAssistPage(PVM pVM)
+{
+    LogRel(("GIM: HyperV: Disabled APIC-assist page\n"));
+    /** @todo inform APIC */
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Enables the Hyper-V TSC page.
  *
  * @returns VBox status code.
@@ -1001,7 +1058,7 @@ VMMR3_INT_DECL(int) gimR3HvDisableTscPage(PVM pVM)
 #else
         pRegion->fMapped = false;
 #endif
-        LogRel(("GIM: HyperV: Disabled TSC-page\n"));
+        LogRel(("GIM: HyperV: Disabled TSC page\n"));
 
         TMR3CpuTickParavirtDisable(pVM);
         return VINF_SUCCESS;

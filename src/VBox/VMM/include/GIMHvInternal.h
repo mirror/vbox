@@ -454,6 +454,31 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 #define MSR_GIM_HV_GUEST_OS_ID_BUILD(a)           ((a) & 0xffff)
 /** @} */
 
+/** @name Hyper-V MSR - APIC-assist page (MSR_GIM_HV_APIC_ASSIST_PAGE).
+ * @{
+ */
+/** Guest-physical page frame number of the APIC-assist page. */
+#define MSR_GIM_HV_APICASSIST_GUEST_PFN(a)        ((a) >> 12)
+/** The hypercall enable bit. */
+#define MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT     RT_BIT_64(0)
+/** Whether the hypercall-page is enabled or not. */
+#define MSR_GIM_HV_APICASSIST_PAGE_IS_ENABLED(a)  RT_BOOL((a) & MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT)
+/** @} */
+
+/**
+ * Hyper-V APIC-assist (HV_REFERENCE_TSC_PAGE) structure placed in the TSC
+ * reference page.
+ */
+typedef struct GIMHVAPICASSIST
+{
+    uint32_t fNoEoiRequired : 1;
+    uint32_t u31Reserved0   : 31;
+} GIMHVAPICASSIST;
+/** Pointer to Hyper-V reference TSC. */
+typedef GIMHVAPICASSIST *PGIMHVAPICASSIST;
+/** Pointer to a const Hyper-V reference TSC. */
+typedef GIMHVAPICASSIST const *PCGIMHVAPICASSIST;
+AssertCompileSize(GIMHVAPICASSIST, 4);
 
 /**
  * Hypercall parameter type.
@@ -1123,6 +1148,8 @@ VMMR3_INT_DECL(int)             gimR3HvSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
 VMMR3_INT_DECL(int)             gimR3HvGetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup);
 
+VMMR3_INT_DECL(int)             gimR3HvDisableApicAssistPage(PVM pVM);
+VMMR3_INT_DECL(int)             gimR3HvEnableApicAssistPage(PVM pVM, RTGCPHYS GCPhysTscPage);
 VMMR3_INT_DECL(int)             gimR3HvDisableTscPage(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSeq, uint32_t uTscSeq);
 VMMR3_INT_DECL(int)             gimR3HvDisableHypercallPage(PVM pVM);
