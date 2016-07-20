@@ -2105,7 +2105,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
 VRDESettings::VRDESettings() :
-    fEnabled(false),
+    fEnabled(true), // default for old VMs, for new ones it's false
     authType(AuthType_Null),
     ulAuthTimeout(5000),
     fAllowMultiConnection(false),
@@ -2116,9 +2116,9 @@ VRDESettings::VRDESettings() :
 /**
  * Check if all settings have default values.
  */
-bool VRDESettings::areDefaultSettings() const
+bool VRDESettings::areDefaultSettings(SettingsVersion_T sv) const
 {
-    return !fEnabled
+    return (sv < SettingsVersion_v1_16 ? fEnabled : !fEnabled)
         && authType == AuthType_Null
         && (ulAuthTimeout == 5000 || ulAuthTimeout == 0)
         && strAuthLibrary.isEmpty()
@@ -3085,7 +3085,7 @@ MachineUserData::MachineUserData() :
     uFaultTolerancePort(0),
     uFaultToleranceInterval(0),
     fRTCUseUTC(false),
-    strVMPriority("")
+    strVMPriority()
 {
     llGroups.push_back("/");
 }
@@ -3720,6 +3720,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         /* Starting with VirtualBox 5.1 the default is Default, before it was
          * Legacy. This needs to matched by areParavirtDefaultSettings(). */
         hw.paravirtProvider = ParavirtProvider_Default;
+        /* The new default is disabled, before it was enabled by default. */
+        hw.vrdeSettings.fEnabled = false;
         /* The new default is disabled, before it was enabled by default. */
         hw.audioAdapter.fEnabled = false;
     }
@@ -5402,10 +5404,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmVideoCapture->setAttribute("maxSize",   hw.ulVideoCaptureMaxSize);
     }
 
-    if (!hw.vrdeSettings.areDefaultSettings())
+    if (!hw.vrdeSettings.areDefaultSettings(m->sv))
     {
         xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");
-        if (hw.vrdeSettings.fEnabled)
+        if (m->sv < SettingsVersion_v1_16 ? !hw.vrdeSettings.fEnabled : hw.vrdeSettings.fEnabled)
             pelmVRDE->setAttribute("enabled", hw.vrdeSettings.fEnabled);
         if (m->sv < SettingsVersion_v1_11)
         {

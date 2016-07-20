@@ -432,7 +432,7 @@ struct VRDESettings
 {
     VRDESettings();
 
-    bool areDefaultSettings() const;
+    bool areDefaultSettings(SettingsVersion_T sv) const;
 
     bool operator==(const VRDESettings& v) const;
 
