@@ -987,15 +987,38 @@
 # define RT_GCC_EXTENSION
 #endif
 
+/** @def RT_GCC_NO_WARN_DEPRECATED_BEGIN
+ * Used to start a block of code where GCC should not warn about deprecated
+ * declarations. */
 #if RT_GNUC_PREREQ(4, 6)
-# define RT_GCC_NO_DEPRECATED_BEGIN \
+# define RT_GCC_NO_WARN_DEPRECATED_BEGIN \
    _Pragma("GCC diagnostic push") \
    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-# define RT_GCC_NO_DEPRECATED_END \
+/** @def RT_GCC_NO_WARN_DEPRECATED_END
+ * Used to end a block of code where GCC should not warn about deprecated
+ * declarations. */
+# define RT_GCC_NO_WARN_DEPRECATED_END \
    _Pragma("GCC diagnostic pop")
 #else
-# define RT_GCC_NO_DEPRECATED_BEGIN
-# define RT_GCC_NO_DEPRECATED_END
+# define RT_GCC_NO_WARN_DEPRECATED_BEGIN
+# define RT_GCC_NO_WARN_DEPRECATED_END
+#endif
+
+/** @def RT_GCC_NO_WARN_CONVERSION_BEGIN
+ * Used to start a block of code where GCC should not warn about implicit
+ * conversions that may alter a value. */
+#if RT_GNUC_PREREQ(4, 4)
+# define RT_GCC_NO_WARN_CONVERSION_BEGIN \
+   _Pragma("GCC diagnostic push") \
+   _Pragma("GCC diagnostic ignored \"-Wconversion\"")
+/** @def RT_GCC_NO_WARN_CONVERSION_END
+ * Used to end a block of code where GCC should not warn about implicit
+ * conversions that may alter a value. */
+# define RT_GCC_NO_WARN_CONVERSION_END \
+   _Pragma("GCC diagnostic pop")
+#else
+# define RT_GCC_NO_WARN_CONVERSION_BEGIN
+# define RT_GCC_NO_WARN_CONVERSION_END
 #endif
 
 /** @def RT_COMPILER_GROKS_64BIT_BITFIELDS

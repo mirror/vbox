@@ -702,9 +702,9 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
         {
             /* Parse key-event: */
             xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
-            RT_GCC_NO_DEPRECATED_BEGIN
+            RT_GCC_NO_WARN_DEPRECATED_BEGIN
             const KeySym ks = ::XKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0);
-            RT_GCC_NO_DEPRECATED_END
+            RT_GCC_NO_WARN_DEPRECATED_END
             const int iKeySym = static_cast<const int>(ks);
 
             /* Handle key-event: */
@@ -839,9 +839,9 @@ bool UIHostComboEditorPrivate::x11Event(XEvent *pEvent)
         {
             /* Get key-code: */
             XKeyEvent *pKeyEvent = (XKeyEvent*)pEvent;
-            RT_GCC_NO_DEPRECATED_BEGIN
+            RT_GCC_NO_WARN_DEPRECATED_BEGIN
             KeySym ks = ::XKeycodeToKeysym(pKeyEvent->display, pKeyEvent->keycode, 0);
-            RT_GCC_NO_DEPRECATED_END
+            RT_GCC_NO_WARN_DEPRECATED_END
 
             int iKeySym = (int)ks;
 

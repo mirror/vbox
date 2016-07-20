@@ -357,7 +357,7 @@ public:
                 rc = VERR_VERSION_MISMATCH;
             else
             {
-                RT_GCC_NO_DEPRECATED_BEGIN
+                RT_GCC_NO_WARN_DEPRECATED_BEGIN
                 std::auto_ptr<AbstractService> apService;
                 /* No exceptions may propagate outside. */
                 try
@@ -370,7 +370,7 @@ public:
                 {
                     rc = VERR_UNRESOLVED_ERROR;
                 }
-                RT_GCC_NO_DEPRECATED_END
+                RT_GCC_NO_WARN_DEPRECATED_END
                 if (RT_SUCCESS(rc))
                 {
                     /*
