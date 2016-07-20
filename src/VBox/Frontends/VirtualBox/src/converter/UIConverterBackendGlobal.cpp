@@ -1603,9 +1603,9 @@ template<> QString toString(const InformationElementType &informationElementType
         case InformationElementType_SharedFolders:     strResult = QApplication::translate("VBoxGlobal", "Shared folders", "InformationElementType"); break;
         case InformationElementType_UI:                strResult = QApplication::translate("VBoxGlobal", "User interface", "InformationElementType"); break;
         case InformationElementType_Description:       strResult = QApplication::translate("VBoxGlobal", "Description", "InformationElementType"); break;
-        case InformationElementType_RuntimeAttributes: strResult = QApplication::translate("VBoxGlobal", "Runtime Attributes", "InformationElementType"); break;
+        case InformationElementType_RuntimeAttributes: strResult = QApplication::translate("VBoxGlobal", "Runtime attributes", "InformationElementType"); break;
         case InformationElementType_StorageStatistics: strResult = QApplication::translate("VBoxGlobal", "Storage statistics", "InformationElementType"); break;
-        case InformationElementType_NetworkStatistics: strResult = QApplication::translate("VBoxGlobal", "Network Statistics", "InformationElementType"); break;
+        case InformationElementType_NetworkStatistics: strResult = QApplication::translate("VBoxGlobal", "Network statistics", "InformationElementType"); break;
         default:
         {
             AssertMsgFailed(("No text for information element type=%d", informationElementType));
@@ -1636,9 +1636,9 @@ template<> InformationElementType fromString<InformationElementType>(const QStri
     keys << QApplication::translate("VBoxGlobal", "Shared folders", "InformationElementType");     values << InformationElementType_SharedFolders;
     keys << QApplication::translate("VBoxGlobal", "User interface", "InformationElementType");     values << InformationElementType_UI;
     keys << QApplication::translate("VBoxGlobal", "Description", "InformationElementType");        values << InformationElementType_Description;
-    keys << QApplication::translate("VBoxGlobal", "Runtime Attributes", "InformationElementType"); values << InformationElementType_RuntimeAttributes;
+    keys << QApplication::translate("VBoxGlobal", "Runtime attributes", "InformationElementType"); values << InformationElementType_RuntimeAttributes;
     keys << QApplication::translate("VBoxGlobal", "Storage statistics", "InformationElementType"); values << InformationElementType_StorageStatistics;
-    keys << QApplication::translate("VBoxGlobal", "Network Statistics", "InformationElementType"); values << InformationElementType_NetworkStatistics;
+    keys << QApplication::translate("VBoxGlobal", "Network statistics", "InformationElementType"); values << InformationElementType_NetworkStatistics;
     /* Invalid type for unknown words: */
     if (!keys.contains(strInformationElementType, Qt::CaseInsensitive))
         return InformationElementType_Invalid;
