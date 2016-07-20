@@ -12646,6 +12646,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         {
             ComPtr<IInternalSessionControl> pControl = *it;
             mData->mSession.mRemoteControls.erase(it);
+            multilock.release();
             LogFlowThisFunc(("  Calling remoteControl->Uninitialize()...\n"));
             HRESULT rc = pControl->Uninitialize();
             LogFlowThisFunc(("  remoteControl->Uninitialize() returned %08X\n", rc));
