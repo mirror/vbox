@@ -86,7 +86,6 @@ public:
     void handler()
     {
         int vrc = GuestDnDSource::i_receiveDataThread(*m_pThread, this);
-        NOREF(vrc);
     }
 
     virtual ~RecvDataTask(void) { }

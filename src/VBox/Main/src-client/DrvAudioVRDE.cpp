@@ -497,10 +497,10 @@ int AudioVRDE::onVRDEInputBegin(void *pvContext, PVRDEAUDIOINBEGIN pVRDEAudioBeg
 
     VRDEAUDIOFORMAT audioFmt = pVRDEAudioBegin->fmt;
 
-    int iSampleHz  = VRDE_AUDIO_FMT_SAMPLE_FREQ(audioFmt);     NOREF(iSampleHz);
-    int cChannels  = VRDE_AUDIO_FMT_CHANNELS(audioFmt);        NOREF(cChannels);
-    int cBits      = VRDE_AUDIO_FMT_BITS_PER_SAMPLE(audioFmt); NOREF(cBits);
-    bool fUnsigned = VRDE_AUDIO_FMT_SIGNED(audioFmt);          NOREF(fUnsigned);
+    int iSampleHz  = VRDE_AUDIO_FMT_SAMPLE_FREQ(audioFmt);
+    int cChannels  = VRDE_AUDIO_FMT_CHANNELS(audioFmt);
+    int cBits      = VRDE_AUDIO_FMT_BITS_PER_SAMPLE(audioFmt);
+    bool fUnsigned = VRDE_AUDIO_FMT_SIGNED(audioFmt);
 
     LogFlowFunc(("cbSample=%RU32, iSampleHz=%d, cChannels=%d, cBits=%d, fUnsigned=%RTbool\n",
                  VRDE_AUDIO_FMT_BYTES_PER_SAMPLE(audioFmt), iSampleHz, cChannels, cBits, fUnsigned));

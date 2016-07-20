@@ -239,7 +239,6 @@ public:
     void handler()
     {
         int vrc = Console::i_powerUpThread(NULL, this);
-        NOREF(vrc);
     }
 
 };
@@ -258,7 +257,6 @@ public:
     void handler()
     {
         int vrc = Console::i_powerDownThread(NULL, this);
-        NOREF(vrc);
     }
 };
 
@@ -307,6 +305,7 @@ public:
                 pNREv->COMGETTER(Proto)(&proto);
                 BOOL fRemove;
                 pNREv->COMGETTER(Remove)(&fRemove);
+                bool fUdp = (proto == NATProtocol_UDP);
                 Bstr hostIp, guestIp;
                 LONG hostPort, guestPort;
                 pNREv->COMGETTER(HostIP)(hostIp.asOutParam());
@@ -3909,6 +3908,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
     LONG lPort;
     DeviceType_T lType;
     PCFGMNODE pLunL0 = NULL;
+    PCFGMNODE pCfg = NULL;
 
     hrc = pMediumAtt->COMGETTER(Device)(&lDev);                             H();
     hrc = pMediumAtt->COMGETTER(Port)(&lPort);                              H();
@@ -4817,7 +4817,6 @@ void Console::i_removeSecretKeysOnSuspend()
 {
     /* Remove keys which are supposed to be removed on a suspend. */
     int rc = m_pKeyStore->deleteAllSecretKeys(true /* fSuspend */, true /* fForce */);
-    NOREF(rc);
 }
 
 /**
@@ -7554,7 +7553,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     Assert(mVMDestroying == false);
 
     PUVM     pUVM  = mpUVM;                 Assert(pUVM != NULL);
-    uint32_t cRefs = VMR3RetainUVM(pUVM);   Assert(cRefs != UINT32_MAX);  NOREF(cRefs);
+    uint32_t cRefs = VMR3RetainUVM(pUVM);   Assert(cRefs != UINT32_MAX);
 
     AssertMsg(   mMachineState == MachineState_Running
               || mMachineState == MachineState_Paused
@@ -8131,7 +8130,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
     memcpy(pFolderName->String.ucs2, bstrHostPath.raw(), cbString);
 
     pFolderName->u16Size   = (uint16_t)cbString;
-    pFolderName->u16Length = (uint16_t)(cbString - sizeof(RTUTF16));
+    pFolderName->u16Length = (uint16_t)cbString - sizeof(RTUTF16);
 
     parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[0].u.pointer.addr = pFolderName;
@@ -8148,7 +8147,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
     memcpy(pMapName->String.ucs2, bstrName.raw(), cbString);
 
     pMapName->u16Size   = (uint16_t)cbString;
-    pMapName->u16Length = (uint16_t)(cbString - sizeof(RTUTF16));
+    pMapName->u16Length = (uint16_t)cbString - sizeof(RTUTF16);
 
     parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[1].u.pointer.addr = pMapName;
@@ -8211,7 +8210,7 @@ HRESULT Console::i_removeSharedFolder(const Utf8Str &strName)
     memcpy(pMapName->String.ucs2, bstrName.raw(), cbString);
 
     pMapName->u16Size   = (uint16_t)cbString;
-    pMapName->u16Length = (uint16_t)(cbString - sizeof(RTUTF16));
+    pMapName->u16Length = (uint16_t)cbString - sizeof(RTUTF16);
 
     parms.type = VBOX_HGCM_SVC_PARM_PTR;
     parms.u.pointer.addr = pMapName;
@@ -10282,6 +10281,7 @@ DECLCALLBACK(void) Console::i_drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterfac
 DECLCALLBACK(int) Console::i_drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface, unsigned uLUN)
 {
     PDRVMAINSTATUS pThis = RT_FROM_MEMBER(pInterface, DRVMAINSTATUS, IMediaNotify);
+    PPDMDRVINS pDrvIns = pThis->pDrvIns;
     LogFunc(("uLUN=%d\n", uLUN));
     if (pThis->pmapMediumAttachments)
     {

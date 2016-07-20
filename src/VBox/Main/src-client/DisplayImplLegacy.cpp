@@ -717,6 +717,8 @@ int Display::i_videoAccelFlush(PPDMIDISPLAYPORT pUpPort)
             phdr->w = (uint16_t)w;
             phdr->h = (uint16_t)h;
 
+            DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
             /* Handle the command.
              *
              * Guest is responsible for updating the guest video memory.

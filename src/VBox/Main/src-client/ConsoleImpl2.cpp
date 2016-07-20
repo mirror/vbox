@@ -1701,7 +1701,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 hrc = pMachine->GetBootOrder(pos, &bootDevice);                             H();
 
                 char szParamName[] = "BootDeviceX";
-                szParamName[sizeof(szParamName) - 2] = (char)(pos - 1 + '0');
+                szParamName[sizeof(szParamName) - 2] = ((char (pos - 1)) + '0');
 
                 const char *pszBootDevice;
                 switch (bootDevice)
@@ -2534,13 +2534,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             char *pMac = (char*)&Mac;
             for (uint32_t i = 0; i < 6; ++i)
             {
-                int c1 = *macStr++ - '0';
+                char c1 = *macStr++ - '0';
                 if (c1 > 9)
                     c1 -= 7;
-                int c2 = *macStr++ - '0';
+                char c2 = *macStr++ - '0';
                 if (c2 > 9)
                     c2 -= 7;
-                *pMac++ = (char)(((c1 & 0x0f) << 4) | (c2 & 0x0f));
+                *pMac++ = ((c1 & 0x0f) << 4) | (c2 & 0x0f);
             }
             InsertConfigBytes(pCfg, "MAC", &Mac, sizeof(Mac));
 
@@ -2597,7 +2597,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     break;
 
                 PCFGMNODE pNetBtDevCfg;
-                achBootIdx[0] = (char)('0' + uBootIdx++);   /* Boot device order. */
+                achBootIdx[0] = '0' + uBootIdx++;   /* Boot device order. */
                 InsertConfigNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);
                 InsertConfigInteger(pNetBtDevCfg, "NIC", it->mInstance);
                 InsertConfigInteger(pNetBtDevCfg, "PCIBusNo",      it->mPCIAddress.miBus);
@@ -4243,8 +4243,10 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
     // InsertConfig* throws
     try
     {
+        int rc = VINF_SUCCESS;
         HRESULT hrc;
         Bstr bstr;
+        PCFGMNODE pLunL1 = NULL;
         PCFGMNODE pCfg = NULL;
 
 #define H() \

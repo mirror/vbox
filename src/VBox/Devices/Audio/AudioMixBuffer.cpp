@@ -60,9 +60,7 @@
 # define AUDMIXBUF_LOG(x) RTPrintf x
 #endif
 
-#ifdef DEBUG
 DECLINLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf);
-#endif
 
 /*
  *   Soft Volume Control
@@ -407,7 +405,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
                                                                PCPDMAUDMIXBUFCONVOPTS pOpts) \
     { \
         _aType const *pSrc = (_aType const *)pvSrc; \
-        uint32_t cSamples = RT_MIN(pOpts->cSamples, (uint32_t)(cbSrc / sizeof(_aType))); \
+        uint32_t cSamples = RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
         AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
                              pOpts->cSamples, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
         for (uint32_t i = 0; i < cSamples; i++) \
@@ -424,7 +422,7 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
                                                              PCPDMAUDMIXBUFCONVOPTS pOpts) \
     { \
         _aType const *pSrc = (_aType const *)pvSrc; \
-        const uint32_t cSamples = RT_MIN(pOpts->cSamples, (uint32_t)(cbSrc / sizeof(_aType))); \
+        const uint32_t cSamples = RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
         AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
                              cSamples, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
         for (uint32_t i = 0; i < cSamples; i++) \
@@ -570,9 +568,9 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
                               pRate->srcSampleLast.i64LSample, pRate->srcSampleLast.i64RSample)); \
         \
         if (pcDstWritten) \
-            *pcDstWritten = (uint32_t)(paDst - paDstStart); \
+            *pcDstWritten = paDst - paDstStart; \
         if (pcSrcRead) \
-            *pcSrcRead = (uint32_t)(paSrc - paSrcStart); \
+            *pcSrcRead = paSrc - paSrcStart; \
     }
 
 /* audioMixBufOpAssign: Assigns values from source buffer to destination bufffer, overwriting the destination. */
