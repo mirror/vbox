@@ -18,7 +18,7 @@
 #define LOG_GROUP LOG_GROUP_AUDIO_MIXER_BUFFER
 #include <VBox/log.h>
 
-#ifdef DEBUG_andy
+#if 0
 /*
  * AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
  * to a file on the host. Be sure to adjust AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH
@@ -923,7 +923,14 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
 }
 
 /**
- * Returns number of available live samples.
+ * Returns number of available live samples, that is, samples that
+ * have been written into the mixing buffer but not have been processed yet.
+ *
+ * For a parent buffer, this simply returns the currently used number of samples
+ * in the buffer.
+ *
+ * For a child buffer, this returns the number of samples which have been mixed
+ * to the parent and were not processed by the parent yet.
  *
  * @return  uint32_t                Number of live samples available.
  * @param   pMixBuf                 Mixing buffer to return value for.
@@ -932,18 +939,25 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
-    uint32_t cSamples, cAvail;
+#ifdef DEBUG
+    uint32_t cSamples;
+#endif
+    uint32_t cAvail;
     if (pMixBuf->pParent) /* Is this a child buffer? */
     {
+#ifdef DEBUG
         /* Use the sample count from the parent, as
          * pMixBuf->cMixed specifies the sample count
          * in parent samples. */
         cSamples = pMixBuf->pParent->cSamples;
+#endif
         cAvail   = pMixBuf->cMixed;
     }
     else
     {
+#ifdef DEBUG
         cSamples = pMixBuf->cSamples;
+#endif
         cAvail   = pMixBuf->cUsed;
     }
 
@@ -1842,8 +1856,6 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
     convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
     convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
-
-    LogFlowFunc(("ASDF %RU32 %RU32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 
     /* Anything to do at all? */
     if (cLenDst1)
