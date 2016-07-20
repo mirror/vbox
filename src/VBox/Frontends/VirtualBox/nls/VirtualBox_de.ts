@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="de_DE">
+<TS version="2.1" language="de_DE">
 <context>
     <name>@@@</name>
     <message>
@@ -1107,52 +1107,12 @@
         <translation>&lt;b&gt;Die Appliance wurde mit einem nicht überprüften Zertifikat von &apos;%1&apos; signiert. Importieren Sie diese VM nur, wenn Sie dieser Entität vertrauen können.&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>Issuer:               %1</source>
-        <translation>Aussteller:               %1</translation>
-    </message>
-    <message>
-        <source>Subject:              %1</source>
-        <translation>Subjekt:                  %1</translation>
-    </message>
-    <message>
-        <source>Not Valid Before:     %1</source>
-        <translation>Nicht gültig bevor:       %1</translation>
-    </message>
-    <message>
-        <source>Not Valid After:      %1</source>
-        <translation>Nicht gültig nach:        %1</translation>
-    </message>
-    <message>
-        <source>Serial Number:        %1</source>
-        <translation>Fortlaufende Nummer:      %1</translation>
-    </message>
-    <message>
-        <source>Self-Signed:          %1</source>
-        <translation>Selbstsigniert:           %1</translation>
-    </message>
-    <message>
         <source>True</source>
         <translation>ja</translation>
     </message>
     <message>
         <source>False</source>
         <translation>nein</translation>
-    </message>
-    <message>
-        <source>Authority (CA):       %1</source>
-        <translation>Zertifizierungsstelle:    %1</translation>
-    </message>
-    <message>
-        <source>Public Algorithm:     %1 (%2)</source>
-        <translation>Öffentlicher Algorithmus: %1 (%2)</translation>
-    </message>
-    <message>
-        <source>Signature Algorithm:  %1 (%2)</source>
-        <translation>Signaturalgorithmus:      %1 (%2)</translation>
-    </message>
-    <message>
-        <source>X.509 Version Number: %1</source>
-        <translation>X.509-Versionsnummer:     %1</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
