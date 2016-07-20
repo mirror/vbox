@@ -941,6 +941,7 @@ public:
         {
             RTMemFree(pvData);
             cbData = 0;
+            pvData = NULL;
         }
         uType = 0;
     }
