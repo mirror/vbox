@@ -173,7 +173,7 @@ PyXPCOM_TypeObject::Py_repr(PyObject *self)
 	// @comm The repr of this object displays both the object's address, and its attached nsISupports's address
 	Py_nsISupports *pis = (Py_nsISupports *)self;
 	// Try and get the IID name.
-	char *iid_repr;
+	char *iid_repr = nsnull;
 	nsCOMPtr<nsIInterfaceInfoManager> iim(do_GetService(
 	                NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID));
 	if (iim!=nsnull)
