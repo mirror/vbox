@@ -802,7 +802,7 @@ LibAliasProxyRule(struct libalias *la, const char *cmd)
                 } else {
                     *p = ' ';
 
-                    n = sscanf(token, "%s %s", s, str_server_port);
+                    n = sscanf(token, "%255s %255s", s, str_server_port);
                     if (n != 2) {
                         ret = -1;
                         goto getout;
@@ -885,7 +885,7 @@ LibAliasProxyRule(struct libalias *la, const char *cmd)
                     char s[sizeof(buffer)];
 
                     *p = ' ';
-                    n = sscanf(token, "%s %d", s, &nbits);
+                    n = sscanf(token, "%255s %d", s, &nbits);
                     if (n != 2) {
                         ret = -1;
                         goto getout;
