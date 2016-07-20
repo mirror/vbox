@@ -231,7 +231,7 @@ void UIVMInformationDialog::prepareTabWidget()
         /* Prepare tab-widget: */
         m_pTabWidget->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
         m_pTabWidget->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
-        m_pTabWidget->setCurrentIndex(1);
+
         /* Add tab-widget into main-layout: */
         centralWidget()->layout()->addWidget(m_pTabWidget);
 
@@ -252,6 +252,8 @@ void UIVMInformationDialog::prepareTabWidget()
             m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
         }
+        /* Set runtime information tab as default: */
+        m_pTabWidget->setCurrentIndex(1);
     }
 }
 
