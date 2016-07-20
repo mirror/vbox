@@ -1298,7 +1298,7 @@ HRESULT Appliance::i_readFSOVA(TaskOVF *pTask)
      * the OVA. The manifest is optional.)
      */
     char    *pszOvfNameBase = NULL;
-    size_t   cchOvfNameBase = 0;
+    size_t   cchOvfNameBase = 0; NOREF(cchOvfNameBase);
     unsigned cLeftToFind = 3;
     HRESULT  hrc = S_OK;
     do
@@ -1446,6 +1446,7 @@ HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const
     size_t cbBufferedOvf;
     int vrc = RTVfsIoStrmReadAll(hVfsIosOvf, &pvBufferedOvf, &cbBufferedOvf);
     uint32_t cRefs = RTVfsIoStrmRelease(hVfsIosOvf);     /* consumes stream handle.  */
+    NOREF(cRefs);
     Assert(cRefs == 0);
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("Could not read the OVF file for '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);

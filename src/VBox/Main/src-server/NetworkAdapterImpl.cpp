@@ -25,6 +25,7 @@
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 
+#include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
 
@@ -352,16 +353,16 @@ HRESULT NetworkAdapter::i_updateMacAddress(Utf8Str aMACAddress)
                     /* canonicalize hex digits to capital letters */
                     if (c >= 'a' && c <= 'f')
                     {
-                        /** @todo the runtime lacks an ascii lower/upper conv */
-                        c &= 0xdf;
+                        c = (char)RTLocCToUpper(c);
                         *macAddressStr = c;
                     }
                     /* we only accept capital letters */
-                    if (((c < '0') || (c > '9')) &&
-                        ((c < 'A') || (c > 'F')))
+                    if (   (c < '0' || c > '9')
+                        && (c < 'A' || c > 'F'))
                         rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
                     /* the second digit must have even value for unicast addresses */
-                    if ((i == 1) && (!!(c & 1) == (c >= '0' && c <= '9')))
+                    if (   (i == 1)
+                        && (!!(c & 1) == (c >= '0' && c <= '9')))
                         rc = setError(E_INVALIDARG, tr("Invalid MAC address format"));
 
                     macAddressStr++;

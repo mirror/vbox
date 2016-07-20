@@ -180,7 +180,7 @@ typedef const SHFLSTRING *PCSHFLSTRING;
 /** Calculate size of the string. */
 DECLINLINE(uint32_t) ShflStringSizeOfBuffer(PCSHFLSTRING pString)
 {
-    return pString ? sizeof(SHFLSTRING) - sizeof(pString->String) + pString->u16Size : 0;
+    return pString ? (uint32_t)(sizeof(SHFLSTRING) - sizeof(pString->String) + pString->u16Size) : 0;
 }
 
 DECLINLINE(uint32_t) ShflStringLength(PCSHFLSTRING pString)
@@ -200,7 +200,7 @@ DECLINLINE(PSHFLSTRING) ShflStringInitBuffer(void *pvBuffer, uint32_t u32Size)
     if (u32Size >= u32HeaderSize && u32Size - u32HeaderSize <= 0xFFFF)
     {
         pString = (PSHFLSTRING)pvBuffer;
-        pString->u16Size = u32Size - u32HeaderSize;
+        pString->u16Size = (uint16_t)(u32Size - u32HeaderSize);
         pString->u16Length = 0;
         if (pString->u16Size >= sizeof(pString->String.ucs2[0]))
             pString->String.ucs2[0] = 0;

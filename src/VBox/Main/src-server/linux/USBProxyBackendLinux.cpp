@@ -320,9 +320,9 @@ int USBProxyBackendLinux::waitUsbfs(RTMSINTERVAL aMillies)
     }
 
     RT_ZERO(PollFds);
-    PollFds[0].fd        = RTFileToNative(mhFile);
+    PollFds[0].fd        = (int)RTFileToNative(mhFile);
     PollFds[0].events    = POLLIN;
-    PollFds[1].fd        = RTPipeToNative(mhWakeupPipeR);
+    PollFds[1].fd        = (int)RTPipeToNative(mhWakeupPipeR);
     PollFds[1].events    = POLLIN | POLLERR | POLLHUP;
 
     int rc = poll(&PollFds[0], 2, aMillies);

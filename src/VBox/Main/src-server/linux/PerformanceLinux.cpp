@@ -81,7 +81,7 @@ private:
     uint64_t     mUser, mKernel, mIdle;
     uint64_t     mSingleUser, mSingleKernel, mSingleIdle;
     uint32_t     mHZ;
-    ULONG        totalRAM;
+    ULONG        mTotalRAM;
 };
 
 CollectorHAL *createHAL()
@@ -100,15 +100,15 @@ CollectorLinux::CollectorLinux()
         mHZ = 100;
     }
     else
-        mHZ = hz;
+        mHZ = (uint32_t)hz;
     LogFlowThisFunc(("mHZ=%u\n", mHZ));
 
     uint64_t cb;
     int rc = RTSystemQueryTotalRam(&cb);
     if (RT_FAILURE(rc))
-        totalRAM = 0;
+        mTotalRAM = 0;
     else
-        totalRAM = (ULONG)(cb / 1024);
+        mTotalRAM = (ULONG)(cb / 1024);
 }
 
 int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
@@ -211,13 +211,13 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint
 
 int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-    AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
+    AssertReturn(mTotalRAM, VERR_INTERNAL_ERROR);
     uint64_t cb;
     int rc = RTSystemQueryAvailableRam(&cb);
     if (RT_SUCCESS(rc))
     {
-        *total = totalRAM;
-        *available = cb / 1024;
+        *total = mTotalRAM;
+        *available = (ULONG)(cb / 1024);
         *used = *total - *available;
     }
     return rc;
@@ -412,7 +412,7 @@ int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint
 
 char *CollectorLinux::trimNewline(char *pszName)
 {
-    unsigned cbName = strlen(pszName);
+    size_t cbName = strlen(pszName);
     if (cbName == 0)
         return pszName;
 
@@ -426,7 +426,7 @@ char *CollectorLinux::trimNewline(char *pszName)
 
 char *CollectorLinux::trimTrailingDigits(char *pszName)
 {
-    unsigned cbName = strlen(pszName);
+    size_t cbName = strlen(pszName);
     if (cbName == 0)
         return pszName;
 
@@ -451,7 +451,7 @@ char *CollectorLinux::trimTrailingDigits(char *pszName)
 void CollectorLinux::getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits)
 {
     unsigned cbName = 0;
-    unsigned cbDevName = strlen(pszDevName);
+    size_t cbDevName = strlen(pszDevName);
     const char *pszEnd = pszDevName + cbDevName - 1;
     if (fTrimDigits)
         while (pszEnd > pszDevName && RT_C_IS_DIGIT(*pszEnd))

@@ -172,6 +172,7 @@ private:
     void handler()
     {
         int vrc = taskThread(NULL, this);
+        NOREF(vrc);
     }
 
     static DECLCALLBACK(int) taskThread(RTTHREAD aThread, void *pvUser);
@@ -351,7 +352,7 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
 
     HRESULT rc = S_OK;
 
-    float fPercentStep = 100.0f / aTask->filenames.size();
+    float fPercentStep = 100.0f / (float)aTask->filenames.size();
     try
     {
         char szPath[RTPATH_MAX];
@@ -368,7 +369,7 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr("Can't delete file '%s' (%Rrc)"), szPath, vrc);
             if (aTask->progress)
-                aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
+                aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * (float)i));
         }
     }
     catch(HRESULT aRC)

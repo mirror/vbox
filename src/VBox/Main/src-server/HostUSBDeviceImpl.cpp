@@ -215,7 +215,7 @@ HRESULT HostUSBDevice::getVersion(USHORT *aVersion)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aVersion = mUsb->bcdUSB >> 8;
+    *aVersion = (USHORT)(mUsb->bcdUSB >> 8);
 
     return S_OK;
 }
@@ -256,7 +256,7 @@ HRESULT HostUSBDevice::getPortVersion(USHORT *aPortVersion)
      * if speed is unknown, fall back to the old and inaccurate method.
      */
     if (mUsb->enmSpeed == USBDEVICESPEED_UNKNOWN)
-        *aPortVersion = mUsb->bcdUSB >> 8;
+        *aPortVersion = (USHORT)(mUsb->bcdUSB >> 8);
     else
     {
         switch (mUsb->enmSpeed)
@@ -458,7 +458,7 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
     {
         alock.release();
         HRESULT hrc = i_attachToVM(aMachine, aCaptureFilename, aMaskedIfs);
-        return SUCCEEDED(hrc);
+        return hrc;
     }
 
     /*

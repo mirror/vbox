@@ -375,7 +375,7 @@ static int usbfsReadBCD(const char *pszValue, unsigned uBase, uint16_t *pu16, ch
         /*
          * Set the value.
          */
-        *pu16 = (uint16_t)u32Int << 8 | (uint16_t)u32Dec;
+        *pu16 = (uint16_t)((u32Int << 8) | (uint16_t)u32Dec);
     }
     return VINF_SUCCESS;
 }
@@ -1178,7 +1178,7 @@ static int usbsysfsGetPortFromStr(const char *pszPath, uint8_t *pu8Port)
     }
 
     /* usbfs compatibility, 0-based port number. */
-    *pu8Port -= 1;
+    *pu8Port = (uint8_t)(*pu8Port - 1);
     return VINF_SUCCESS;
 }
 
@@ -1283,7 +1283,7 @@ static void usbsysfsFillInDevice(USBDEVICE *pDev, USBDeviceInfo *pInfo)
 
     /* Fill in the simple fields */
     pDev->enmState           = USBDEVICESTATE_UNUSED;
-    pDev->bBus               = usbsysfsGetBusFromPath(pszSysfsPath);
+    pDev->bBus               = (uint8_t)usbsysfsGetBusFromPath(pszSysfsPath);
     pDev->bDeviceClass       = usbsysfsReadDevicePropertyU8Def(16, 0, "%s/bDeviceClass", pszSysfsPath);
     pDev->bDeviceSubClass    = usbsysfsReadDevicePropertyU8Def(16, 0, "%s/bDeviceSubClass", pszSysfsPath);
     pDev->bDeviceProtocol    = usbsysfsReadDevicePropertyU8Def(16, 0, "%s/bDeviceProtocol", pszSysfsPath);

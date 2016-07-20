@@ -531,7 +531,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                 AssertMsgFailed(("Invalid poll ID returned\n"));
                 rc = VERR_INVALID_STATE;
             }
-            aMillies -= (RTTimeMilliTS() - msPollStart);
+            aMillies -= (RTMSINTERVAL)(RTTimeMilliTS() - msPollStart);
         }
         else if (rc == VERR_TIMEOUT)
         {
@@ -666,6 +666,7 @@ void USBProxyBackendUsbIp::disconnect()
     if (m->hSocket != NIL_RTSOCKET)
     {
         int rc = RTPollSetRemove(m->hPollSet, USBIP_POLL_ID_SOCKET);
+        NOREF(rc);
         Assert(RT_SUCCESS(rc) || rc == VERR_POLL_HANDLE_ID_NOT_FOUND);
 
         RTTcpClientCloseEx(m->hSocket, false /*fGracefulShutdown*/);

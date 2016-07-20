@@ -69,7 +69,7 @@ int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type
                     {
                         if (cbBlock > 2 * sizeof(uint32_t))
                         {
-                            cbData = cbBlock - 2 * sizeof(uint32_t);
+                            cbData = (uint32_t)(cbBlock - 2 * sizeof(uint32_t));
                             pu8Data = (uint8_t *)RTMemAlloc(cbData);
                             if (pu8Data == NULL)
                             {

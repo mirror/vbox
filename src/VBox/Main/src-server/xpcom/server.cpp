@@ -837,12 +837,12 @@ int main(int argc, char **argv)
 
         {
             char szBuf[80];
-            int  iSize;
+            size_t cSize;
 
-            iSize = RTStrPrintf(szBuf, sizeof(szBuf),
+            cSize = RTStrPrintf(szBuf, sizeof(szBuf),
                                 VBOX_PRODUCT" XPCOM Server Version "
                                 VBOX_VERSION_STRING);
-            for (int i = iSize; i > 0; i--)
+            for (size_t i = cSize; i > 0; i--)
                 putchar('*');
             RTPrintf("\n%s\n", szBuf);
             RTPrintf("(C) 2004-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
