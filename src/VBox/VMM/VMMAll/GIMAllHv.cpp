@@ -677,10 +677,10 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else  /* IN_RING3 */
-            /* First, update all but the TSC-page enable bit. */
+            /* First, update all but the TSC page enable bit. */
             pHv->u64TscPageMsr = (uRawValue & ~MSR_GIM_HV_REF_TSC_ENABLE_BIT);
 
-            /* Is the guest disabling the TSC-page? */
+            /* Is the guest disabling the TSC page? */
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_REF_TSC_ENABLE_BIT);
             if (!fEnable)
             {
@@ -689,12 +689,43 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                 return VINF_SUCCESS;
             }
 
-            /* Enable the TSC-page. */
+            /* Enable the TSC page. */
             RTGCPHYS GCPhysTscPage = MSR_GIM_HV_REF_TSC_GUEST_PFN(uRawValue) << PAGE_SHIFT;
             int rc = gimR3HvEnableTscPage(pVM, GCPhysTscPage, false /* fUseThisTscSequence */, 0 /* uTscSequence */);
             if (RT_SUCCESS(rc))
             {
                 pHv->u64TscPageMsr = uRawValue;
+                return VINF_SUCCESS;
+            }
+
+            return VERR_CPUM_RAISE_GP_0;
+#endif /* IN_RING3 */
+        }
+
+        case MSR_GIM_HV_APIC_ASSIST_PAGE:
+        {
+#ifndef IN_RING3
+            return VINF_CPUM_R3_MSR_WRITE;
+#else  /* IN_RING3 */
+            PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+            /* First, update all but the APIC-assist page enable bit. */
+            pHvCpu->uApicAssistPageMsr = (uRawValue & ~MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT);
+
+            /* Is the guest disabling the APIC-assist page? */
+            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT);
+            if (!fEnable)
+            {
+                gimR3HvDisableApicAssistPage(pVM);
+                pHvCpu->uApicAssistPageMsr = uRawValue;
+                return VINF_SUCCESS;
+            }
+
+            /* Enable the APIC-assist page. */
+            RTGCPHYS GCPhysApicAssist = MSR_GIM_HV_APICASSIST_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+            int rc = gimR3HvEnableApicAssistPage(pVM, GCPhysApicAssist);
+            if (RT_SUCCESS(rc))
+            {
+                pHvCpu->uApicAssistPageMsr = uRawValue;
                 return VINF_SUCCESS;
             }
 

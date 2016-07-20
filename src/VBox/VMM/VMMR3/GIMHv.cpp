@@ -556,6 +556,7 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->gim.s.u.HvCpu.uSint2Msr = MSR_GIM_HV_SINT_MASKED_BIT;
         pVCpu->gim.s.u.HvCpu.uSimpMsr  = 0;
+        pVCpu->gim.s.u.HvCpu.uApicAssistPageMsr = 0;
     }
 }
 

@@ -1121,6 +1121,8 @@ typedef struct GIMHVCPU
     uint64_t                    uSimpMsr;
     /** Interrupt source 2 MSR. */
     uint64_t                    uSint2Msr;
+    /** APIC-assist page MSR. */
+    uint64_t                    uApicAssistPageMsr;
     /** @} */
 } GIMHVCPU;
 /** Pointer to per-VCPU GIM Hyper-V instance data. */
