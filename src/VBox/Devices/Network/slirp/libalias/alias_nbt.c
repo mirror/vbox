@@ -777,7 +777,7 @@ AliasHandleResourceNBSTAT(
     /* Check out of length */
     bcount = ntohs(q->rdlen);
 
-    if (q == NULL || (char *)((u_char *) n + bcount) > pmax)
+    if ((char *)((u_char *) n + bcount) > pmax)
         return (NULL);
     else
         return ((u_char *) n + bcount);
