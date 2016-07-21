@@ -1243,17 +1243,10 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
          * Convert to unsigned division.
          */
         RTUINT128U Dividend;
-        Dividend.s.Hi = 0;
-        if ((int64_t)*pu64RDX >= 0)
-        {
-            Dividend.s.Lo = *pu64RAX;
-            Dividend.s.Hi = *pu64RDX;
-        }
-        else
-        {
-            Dividend.s.Lo = UINT64_C(0) - *pu64RAX;
-            Dividend.s.Hi = UINT64_C(0) - *pu64RDX;
-        }
+        Dividend.s.Lo = *pu64RAX;
+        Dividend.s.Hi = *pu64RDX;
+        if ((int64_t)*pu64RDX < 0)
+            RTUInt128AssignNeg(&Dividend);
 
         RTUINT128U Divisor;
         Divisor.s.Hi = 0;
