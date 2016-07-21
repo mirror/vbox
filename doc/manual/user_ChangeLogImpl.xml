@@ -49,6 +49,10 @@
       </listitem>
 
       <listitem>
+        <para>API: fixed VRDP with authentication (bug #15653</para>
+      </listitem>
+
+      <listitem>
         <para>Linux hosts: fixed EL5 builds (bug #15634)</para>
       </listitem>
 
