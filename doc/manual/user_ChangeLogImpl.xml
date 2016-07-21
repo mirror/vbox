@@ -29,9 +29,13 @@
       </listitem>
 
       <listitem>
-        <para>Audio: make AC97 volume control work again (5.1 regression;
+        <para>Audio: make AC'97 volume control work again (5.1 regression;
           bug #15598)</para>
       </listitem>
+
+      <listitem>
+        <para>Audio: fixed rare VM hangs when using AC'97 emulation</para>
+      </listitem
 
       <listitem>
         <para>EFI: fixed access to devices attached to SATA port 2 and
@@ -1012,7 +1016,7 @@
       </listitem>
 
       <listitem>
-        <para>Audio: properly reset AC97 audio streams, otherwise there is
+        <para>Audio: properly reset AC'97 audio streams, otherwise there is
           silence until a non-48 kHz stream is played</para>
       </listitem>
 
@@ -1981,7 +1985,7 @@
       </listitem>
 
       <listitem>
-        <para>Audio: provide Linux guests a different AC97 audio codec type so Linux
+        <para>Audio: provide Linux guests a different AC'97 audio codec type so Linux
           ALSA does not mis-detect the link speed (default for new VMs)</para>
       </listitem>
 
