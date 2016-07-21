@@ -247,6 +247,15 @@ start()
         done
         ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
         ln -sf "${INSTALL_DIR}/lib/VBoxEGL.so" /var/lib/VBoxGuestAdditions/lib/libEGL.so.1
+        # SELinux for the OpenGL libraries, so that gdm can load them during the
+        # acceleration support check.  This prevents an "Oh no, something has gone
+        # wrong!" error when starting EL7 guests.
+        if test -e /etc/selinux/config; then
+            semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
+            semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
+            chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
+            chcon -h  -t lib_t  "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
+        fi
         echo "/var/lib/VBoxGuestAdditions/lib" > /etc/ld.so.conf.d/00vboxvideo.conf
     fi
     ldconfig
@@ -431,21 +440,15 @@ rmdir -p /lib/modules/"\$1"/misc 2>/dev/null
 exit 0
 EOF
     chmod 0755 /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
-    # At least Fedora 11 and Fedora 12 require the correct security context when
-    # executing this command from service scripts. Shouldn't hurt for other
-    # distributions.
-    chcon -u system_u -t mount_exec_t "$lib_path/$PACKAGE/mount.vboxsf" > /dev/null 2>&1
-    # And at least Fedora 15 needs this for the acceleration support check to
-    # work
-    redhat_release=`cat /etc/redhat-release 2> /dev/null`
-    case "$redhat_release" in Fedora\ release\ 15* )
-        for i in "$lib_path"/*.so
-        do
-            restorecon "$i" >/dev/null
-        done
-        ;;
-    esac
-
+    # SELinux security context for the mount helper.
+    if test -e /etc/selinux/config; then
+        # This is correct.  semanage maps this to the real path, and it aborts
+        # with an error, telling you what you should have typed, if you specify
+        # the real path.  The "chcon" is there as a back-up in case this is
+        # different on old guests.
+        semanage fcontext -a -t mount_exec_t "/usr/lib/$PACKAGE/mount.vboxsf"
+        chcon -t mount_exec_t "$lib_path/$PACKAGE/mount.vboxsf"
+    fi
     succ_msg
 }
 
