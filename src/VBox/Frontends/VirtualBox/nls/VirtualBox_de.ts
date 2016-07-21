@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="de_DE">
+<TS version="2.0" language="de_DE">
 <context>
     <name>@@@</name>
     <message>
@@ -2746,7 +2746,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="vanished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -2764,7 +2764,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="vanished">Anzeige</translation>
+        <translation>Anzeige</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -2827,7 +2827,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="vanished">Allgemein</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2844,7 +2844,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="vanished">Netzwerk</translation>
+        <translation>Netzwerk</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2890,7 +2890,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="vanished">Netzwerkadapter</translation>
+        <translation>Netzwerkadapter</translation>
     </message>
 </context>
 <context>
@@ -2898,7 +2898,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="vanished">Parallel-Ports</translation>
+        <translation>Parallel-Ports</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2916,7 +2916,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="vanished">Laufzeit-Attribute</translation>
+        <translation>Laufzeit-Attribute</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -2988,7 +2988,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="vanished">Serielle Schnittstellen</translation>
+        <translation>Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3001,7 +3001,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="vanished">Gemeinsame Ordner</translation>
+        <translation>Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -3013,7 +3013,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="vanished">Massenspeicher</translation>
+        <translation>Massenspeicher</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -3041,7 +3041,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="vanished">Massenspeicher</translation>
+        <translation>Massenspeicher</translation>
     </message>
 </context>
 <context>
@@ -3049,7 +3049,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="vanished">System</translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3157,7 +3157,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="vanished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -8847,82 +8847,82 @@
     <message>
         <source>General</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Allgemein</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Vorschau</translation>
+        <translation>Vorschau</translation>
     </message>
     <message>
         <source>System</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">System</translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Anzeige</translation>
+        <translation>Anzeige</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Massenspeicher</translation>
+        <translation>Massenspeicher</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Netzwerk</translation>
+        <translation>Netzwerk</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Serielle Schnittstellen</translation>
+        <translation>Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>Parallel ports</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Parallel-Ports</translation>
+        <translation>Parallele Schnittstellen</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Gemeinsame Ordner</translation>
+        <translation>Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Benutzerschnittstelle</translation>
+        <translation>Benutzerschnittstelle</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Beschreibung</translation>
+        <translation>Beschreibung</translation>
     </message>
     <message>
         <source>Runtime attributes</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Laufzeit</translation>
     </message>
     <message>
         <source>Storage statistics</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Massenspeicher</translation>
     </message>
     <message>
         <source>Network statistics</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkadapter</translation>
     </message>
 </context>
 <context>
