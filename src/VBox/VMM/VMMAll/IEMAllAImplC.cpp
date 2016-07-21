@@ -1128,8 +1128,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
 }
 
 
-/* multiplication and division */
+#endif /* RT_ARCH_X86 */
+#ifdef RT_ARCH_X86
 
+/* multiplication and division */
 
 
 IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pfEFlags))
@@ -1150,7 +1152,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
     *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF);
     if ((int64_t)*pu64RAX >= 0)
     {
-        if ((int64_t)*pu64RDX >= 0)
+        if ((int64_t)u64Factor >= 0)
         {
             RTUInt128MulU64ByU64(&Result, *pu64RAX, u64Factor);
             *pu64RAX = Result.s.Lo;
