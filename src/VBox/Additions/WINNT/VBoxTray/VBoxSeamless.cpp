@@ -331,11 +331,11 @@ void VBoxSeamlessCheckWindows(bool fForce)
                 if (cbSize)
                 {
                     RECT *lpRect = (RECT *)&lpRgnData->Buffer[0];
-                    LogRel(("VBoxTray: New visible region: \n"));
+                    Log(("VBoxTray: New visible region: \n"));
 
                     for (DWORD i = 0; i < lpRgnData->rdh.nCount; i++)
                     {
-                        LogRel(("VBoxTray: visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
+                        Log(("VBoxTray: visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
                     }
 
                     LPRGNDATA lpCtxRgnData = VBOXDISPIFESCAPE_DATA(pCtx->lpEscapeData, RGNDATA);

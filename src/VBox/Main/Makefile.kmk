@@ -671,6 +671,10 @@ VBoxC_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 
+ifneq ($(KBUILD_TARGET),win)
+# VBoxC_CXXFLAGS = -Wunused -Wconversion
+endif
+
 VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 ifdef VBOX_WITH_VPX
   VBoxC_SDKS += VBOX_VPX

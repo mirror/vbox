@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.1.2 (20xx-xx-xx)</title>
+    <title>Version 5.1.2 (2016-07-21)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -11,12 +11,16 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: several fixes</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: fixed screenshot if the VM is started in separate mode</para>
       </listitem>
 
       <listitem>
         <para>GUI: fixed issue with double-click/opening registered file types
-          (.vbox and .vbox-extpack) on Mac OS X</para>
+          (.vbox and .vbox-extpack) on Mac OS X (bug #15648)</para>
       </listitem>
 
       <listitem>
@@ -32,6 +36,10 @@
       <listitem>
         <para>GUI: jump to the second tab of the session information window
           (5.1.0 regression)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fix for Alt-Tab</para>
       </listitem>
 
       <listitem>
@@ -85,7 +93,7 @@
       </listitem>
 
       <listitem>
-        <para>API: fixed VRDP with authentication (bug #15653</para>
+        <para>API: fixed VRDP with authentication (bug #15653)</para>
       </listitem>
 
       <listitem>
@@ -100,6 +108,11 @@
       <listitem>
         <para>non-Windows hosts: fixed a crash during shutdown under rare
           circumstances (bug #15568)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fixed SELinux issue which prevented certain
+          Linux guests to work in 3D mode (bug #15574)</para>
       </listitem>
 
       <listitem>

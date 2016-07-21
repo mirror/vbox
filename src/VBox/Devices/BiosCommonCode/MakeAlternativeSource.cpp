@@ -1007,6 +1007,12 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                      && pb[7] == 0xa0
                      && pb[8] == 0xe2
                      && pb[9] == 0xa0)
+                 || (   pb[0] == 0xd4
+                     && pb[1] == 0xc6
+                     && pb[2] == 0xc5
+                     && pb[3] == 0xba
+                     && pb[4] == 0xb8
+                     && pb[5] == 0xb6)
                  || (   pb[0] == 0xec  /* _int15_function switch */
                      && pb[1] == 0xe9
                      && pb[2] == 0xd8
