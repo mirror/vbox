@@ -2,12 +2,12 @@
 /** @file
  * DevPCI - ICH9 southbridge PCI bus emulation device.
  *
- * @note    bird: I've cleaned up DevPCI.cpp to some extend, this file has not
+ * @note    bird: I've cleaned up DevPCI.cpp to some extent, this file has not
  *                be cleaned up and because of pending code merge.
  */
 
 /*
- * Copyright (C) 2010-2015 Oracle Corporation
+ * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1047,7 +1047,8 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
 
     if ((enmType & PCI_ADDRESS_SPACE_BAR64) != 0)
     {
-        AssertMsgReturn(iRegion  < 4,
+        /* VBOX_PCI_BASE_ADDRESS_5 and VBOX_PCI_ROM_ADDRESS are excluded. */
+        AssertMsgReturn(iRegion < (PCI_NUM_REGIONS-2),
                         ("Region %d cannot be 64-bit\n", iRegion),
                         VERR_INVALID_PARAMETER);
         /* Mark next region as continuation of this one. */
