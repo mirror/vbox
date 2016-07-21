@@ -2419,7 +2419,7 @@ typedef BS3REGCTX const BS3_FAR *PCBS3REGCTX;
  *
  * @param   pRegCtx     Where to store the register context.
  */
-BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx));
+BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PBS3REGCTX pRegCtx));
 
 /**
  * Switch to the specified CPU bitcount, reserve additional stack and save the
@@ -2436,7 +2436,7 @@ BS3_CMN_PROTO_NOSB(void, Bs3RegCtxSave,(PCBS3REGCTX pRegCtx));
  *                          to make it possible to pass a full mode value.
  * @param   cbExtraStack    Number of bytes of additional stack to allocate.
  */
-BS3_CMN_PROTO_FARSTUB(8, void, Bs3RegCtxSaveEx,(PCBS3REGCTX pRegCtx, uint8_t bBitMode, uint16_t cbExtraStack));
+BS3_CMN_PROTO_FARSTUB(8, void, Bs3RegCtxSaveEx,(PBS3REGCTX pRegCtx, uint8_t bBitMode, uint16_t cbExtraStack));
 
 /**
  * Transforms a register context to a different ring.
@@ -3026,9 +3026,9 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 /** @def BS3TESTMODE_PROTOTYPES_CMN
  * A set of standard protypes to go with #BS3TESTMODEENTRY_CMN. */
 #define BS3TESTMODE_PROTOTYPES_CMN(a_BaseNm) \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c16); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c32); \
-    FNBS3TESTDOMODE BS3_FAR_CODE    RT_CONCAT(a_BaseNm, _c64)
+    FNBS3TESTDOMODE /*BS3_FAR_CODE*/    RT_CONCAT(a_BaseNm, _c16); \
+    FNBS3TESTDOMODE /*BS3_FAR_CODE*/    RT_CONCAT(a_BaseNm, _c32); \
+    FNBS3TESTDOMODE /*BS3_FAR_CODE*/    RT_CONCAT(a_BaseNm, _c64)
 
 /** @def BS3TESTMODEENTRY_MODE
  * Produces a BS3TESTMODEENTRY initializer for a full set of mode test

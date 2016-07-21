@@ -70,14 +70,14 @@ CPUDECODE1TST const g_aSimpleTests[] =
      *  fFlags, cbUd, cbOpcodes, abOpcodes
      */
 #if 1
-    /* Using currently undefined 0x0f 0x38 sequences. */
-    {        0,  2,   3,         { 0x0f, 0x38, RM_EAX_EAX, } },
-    {        0,  2+1, 3+1,       { P_LK, 0x0f, 0x38, RM_EAX_EAX, } },
-    {        0,  2+1, 3+1,       { P_RN, 0x0f, 0x38, RM_EAX_EAX, } },
-    {        0,  2+1, 3+1,       { P_RZ, 0x0f, 0x38, RM_EAX_EAX, } },
-    {        0,  2+2, 3+2, { P_LK, P_LK, 0x0f, 0x38, RM_EAX_EAX, } },
+    /* Using currently undefined 0x0f 0x7a sequences. */
+    {        0, 3,   3,               { 0x0f, 0x7a, RM_EAX_EAX, } },
+    {        0, 3+1, 3+1,       { P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {        0, 3+1, 3+1,       { P_RN, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {        0, 3+1, 3+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {        0, 3+2, 3+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
 #endif
-#if 1
+#if 0
     /* The XADD instruction has empty lines for 66, f3 and f2 prefixes.
        AMD doesn't do anything special for XADD Ev,Gv as the intel table would indicate. */
     {    F_486,   99,  3,             { 0x0f, 0xc1, RM_EAX_EAX, } },
@@ -89,7 +89,7 @@ CPUDECODE1TST const g_aSimpleTests[] =
     {    F_486,   99,  5, { P_OZ, P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
     {    F_486,   99,  5, { P_RZ, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
 #endif
-#if 1
+#if 0
     /* The movnti instruction is confined to the unprefixed lined in the intel manuals. Check how the other lines work. */
     {   F_SSE2,    3,  3,             { 0x0f, 0xc3, RM_EAX_EAX, } },        /* invalid - reg,reg */
     {   F_SSE2,   99,  3,             { 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },
@@ -99,6 +99,7 @@ CPUDECODE1TST const g_aSimpleTests[] =
     {   F_SSE2,    4,  4,       { P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
     {   F_SSE2,    5,  5, { P_RZ, P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
 #endif
+#if 1
     /* The lddqu instruction requires a 0xf2 prefix, intel only lists 0x66 and empty
        prefix for it.  Check what they really mean by that*/
     {   F_SSE3,    4,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_EAX, } },          /* invalid - reg, reg  */
@@ -116,6 +117,14 @@ CPUDECODE1TST const g_aSimpleTests[] =
     {   F_SSE3,    5,  5,      { P_LK, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
     {   F_SSE3,   99,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
     {   F_SSE3,   99,  6,{ P_OZ, P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+#endif
+    {   F_SSE2,   99,  3,            { 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2,   99,  4,      { P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2,    5,  5,{ P_RZ, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } }, // WTF?
+    {   F_SSE2,    5,  5,{ P_OZ, P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2,   99,  5,{ P_RN, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2,   99,  4,      { P_RN, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2,    4,  4,      { P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
 /** @todo crc32 / movbe  */
 };
 
@@ -146,6 +155,7 @@ void DecodeEdgeTest(void)
             unsigned cb = g_aSimpleTests[i].cbOpcodes;
             while (cb >= 1)
             {
+                unsigned const   cErrorsBefore = Bs3TestSubErrorCount();
                 uint8_t BS3_FAR *pbRip = &pbPages[X86_PAGE_SIZE - cb];
                 Bs3MemCpy(pbRip, &g_aSimpleTests[i].abOpcodes[0], cb);
                 Bs3RegCtxSetRipCsFromFlat(&Ctx, (uintptr_t)pbRip);
@@ -157,29 +167,41 @@ void DecodeEdgeTest(void)
                 if (cb >= g_aSimpleTests[i].cbUd)
                 {
                     if (TrapFrame.bXcpt != X86_XCPT_UD)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #UD got %#x\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes, TrapFrame.bXcpt);
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #UD got %#x at %RX32\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
+                                       TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
                 }
                 else if (cb < g_aSimpleTests[i].cbOpcodes)
                 {
                     if (TrapFrame.bXcpt != X86_XCPT_PF)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF (on) got %#x\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes, TrapFrame.bXcpt);
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF (on) got %#x at %RX32\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
+                                       TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
                     else if (TrapFrame.Ctx.rip.u32 != (uintptr_t)pbRip)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF rip of %p (on) got %#RX32\n",
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF rip of %p (on) got %#RX32\n",
                                        i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
                                        pbRip, TrapFrame.Ctx.rip.u32);
                 }
                 else
                 {
                     if (TrapFrame.bXcpt != X86_XCPT_PF)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF (after) got %#x\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes, TrapFrame.bXcpt);
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF (after) got %#x at %RX32\n",
+                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
+                                       TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
                     else if (TrapFrame.Ctx.rip.u32 != (uintptr_t)&pbPages[X86_PAGE_SIZE])
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cb=%d: expected #PF rip of %p (after) got %#RX32\n",
+                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF rip of %p (after) got %#RX32\n",
                                        i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
                                        &pbPages[X86_PAGE_SIZE], TrapFrame.Ctx.rip.u32);
                 }
+                if (Bs3TestSubErrorCount() != cErrorsBefore)
+                {
+                    Bs3TestPrintf("  %.*Rhxs", cb, &g_aSimpleTests[i].abOpcodes[0]);
+                    if (cb < g_aSimpleTests[i].cbOpcodes)
+                        Bs3TestPrintf("[%.*Rhxs]", g_aSimpleTests[i].cbOpcodes - cb, &g_aSimpleTests[i].abOpcodes[cb]);
+                    Bs3TestPrintf("\n");
+                }
+
+                /* next */
                 cb--;
             }
         }
