@@ -34,7 +34,9 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_mul);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_imul);
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_div);
 BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_idiv);
 
 
@@ -43,7 +45,9 @@ BS3TESTMODE_PROTOTYPES_CMN(bs3CpuInstr2_idiv);
 *********************************************************************************************************************************/
 static const BS3TESTMODEENTRY g_aModeTests[] =
 {
+    BS3TESTMODEENTRY_CMN("mul", bs3CpuInstr2_mul),
     BS3TESTMODEENTRY_CMN("imul", bs3CpuInstr2_imul),
+    BS3TESTMODEENTRY_CMN("div", bs3CpuInstr2_div),
     BS3TESTMODEENTRY_CMN("idiv", bs3CpuInstr2_idiv),
 };
 
