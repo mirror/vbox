@@ -3538,7 +3538,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
         if (!(   fKeepAllMACs
               || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NAT)
               || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NATNetwork)))
-            Host::i_generateMACAddress(it1->strMACAddress);
+            /* Force generation of new MAC address below. */
+            it1->strMACAddress.setNull();
     }
     /* Now iterate over all network entries. */
     std::list<VirtualSystemDescriptionEntry*> avsdeNWs = vsdescThis->i_findByType(VirtualSystemDescriptionType_NetworkAdapter);
@@ -3566,6 +3567,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                     if (it1->ulSlot == iSlot)
                     {
                         it1->fEnabled = true;
+                        if (it1->strMACAddress.isEmpty())
+                            Host::i_generateMACAddress(it1->strMACAddress);
                         it1->type = (NetworkAdapterType_T)vsdeNW->strVBoxCurrent.toUInt32();
                         break;
                     }
