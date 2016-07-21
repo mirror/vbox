@@ -1140,7 +1140,14 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, u
     RTUInt128MulU64ByU64(&Result, *pu64RAX, u64Factor);
     *pu64RAX = Result.s.Lo;
     *pu64RDX = Result.s.Hi;
-    /** @todo research the undefined MUL flags. */
+
+    /* MUL EFLAGS according to Skylake (similar to IMUL). */
+    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF);
+    if (Result.s.Lo & RT_BIT_64(63))
+        *pfEFlags |= X86_EFL_SF;
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
+    if (Result.s.Hi != 0)
+        *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
     return 0;
 }
 
