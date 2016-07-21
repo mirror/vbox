@@ -656,14 +656,14 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignSub(PRTUINT128U pValue1Result, PCRTUINT12
 DECLINLINE(PRTUINT128U) RTUInt128AssignNeg(PRTUINT128U pValueResult)
 {
     /* result = 0 - value */
-    if (pValue1Result->s.Lo != 0)
+    if (pValueResult->s.Lo != 0)
     {
-        pValue1Result->s.Lo = UINT64_C(0) - pValue1Result->s.Lo;
-        pValue1Result->s.Hi = UINT64_MAX  - pValue1Result->s.Hi;
+        pValueResult->s.Lo = UINT64_C(0) - pValueResult->s.Lo;
+        pValueResult->s.Hi = UINT64_MAX  - pValueResult->s.Hi;
     }
     else
-        pValue1Result->s.Hi = UINT64_C(0) - pValue1Result->s.Hi;
-    return pValue1Result;
+        pValueResult->s.Hi = UINT64_C(0) - pValueResult->s.Hi;
+    return pValueResult;
 }
 
 
