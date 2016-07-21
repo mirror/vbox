@@ -12,7 +12,21 @@
 
       <listitem>
         <para>GUI: fixed issue with double-click/opening registered file types
-          (.vbox and Extension Pack) on Mac OS X</para>
+          (.vbox and .vbox-extpack) on Mac OS X</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed issue about it was not possible to close some of error/warning
+          messages with the close button</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed a crash while taking screenshot for separate UI frontend.</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: weakened the control over the VM window behavior allowing to resize
+          it across multiple screens and use in Snap Assist techniques.</para>
       </listitem>
 
       <listitem>
