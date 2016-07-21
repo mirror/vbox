@@ -46,6 +46,10 @@ namespace UINativeHotKey
 {
     QString toString(int iKeyCode);
     bool isValidKey(int iKeyCode);
+    /** Translates a modifier key in host platform
+      * encoding to the corresponding set 1 PC scan code.
+      * @note  Non-modifier keys will return zero. */
+    unsigned modifierToSet1ScanCode(int iKeyCode);
 #if defined(VBOX_WS_WIN)
     int distinguishModifierVKey(int wParam, int lParam);
 #elif defined(VBOX_WS_X11)
@@ -62,6 +66,9 @@ namespace UIHostCombo
     QString hostComboCacheKey();
     QString toReadableString(const QString &strKeyCombo);
     QList<int> toKeyCodeList(const QString &strKeyCombo);
+    /** Returns a sequence of the set 1 PC scan codes for all
+      * modifiers contained in the (host platform format) sequence passed. */
+    QList<unsigned> modifiersToScanCodes(const QString &strKeyCombo);
     bool isValidKeyCombo(const QString &strKeyCombo);
 }
 

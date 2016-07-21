@@ -524,19 +524,31 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
      * (for ex., activating the menu) when we release all pressed keys below.
      * This is just a work-around and is likely to fail in some cases.  We are
      * not aware of any ideal solution.  Historically we sent an 0xFE scan code,
-     * but this is a real key release code on Brazilian keyboards. */
+     * but this is a real key release code on Brazilian keyboards. Now we send
+     * a sequence of all modifier keys contained in the host sequence, hoping
+     * that the user will choose something which the guest does not interpret. */
     for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
     {
         if ((m_pressedKeys[i] & IsKeyPressed) || (m_pressedKeys[i] & IsExtKeyPressed))
         {
             if (!fSentRESEND)
             {
-                LONG aCodes[] = { 0x1D,  0x2A, 0x38, 0x9D, 0xAA, 0xB8 };
-                QVector <LONG> codes(RT_ELEMENTS(aCodes));
-                for (unsigned i = 0; i < RT_ELEMENTS(aCodes); ++i)
-                    codes[i] = aCodes[i];
+                QList <unsigned> shortCodes = UIHostCombo::modifiersToScanCodes(m_globalSettings.hostCombo());
+                QVector <LONG> codes;
+                foreach (unsigned idxCode, shortCodes)
+                {
+                    if (idxCode & 0x100)
+                        codes << 0xE0;
+                    codes << (idxCode & 0x7F);
+                    m_pressedKeys[idxCode & 0x7F] &= idxCode & 0x100 ? ~IsExtKeyPressed : ~IsKeyPressed;
+                }
+                foreach (unsigned idxCode, shortCodes)
+                {
+                    if (idxCode & 0x100)
+                        codes << 0xE0;
+                    codes << ((idxCode & 0x7F) | 0x80);
+                }
                 keyboard().PutScancodes(codes);
-                m_pressedKeys[0x1D] = m_pressedKeys[0x2A] = m_pressedKeys[0x38] = 0;
                 fSentRESEND = true;
             }
             if (m_pressedKeys[i] & IsKeyPressed)

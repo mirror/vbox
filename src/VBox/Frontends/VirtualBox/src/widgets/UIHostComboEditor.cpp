@@ -58,6 +58,11 @@
 # include "XKeyboard.h"
 #endif /* VBOX_WS_X11 */
 
+/* Other VBox includes: */
+#if defined(VBOX_WS_X11)
+# include <VBox/VBoxKeyboard.h>
+#endif /* VBOX_WS_X11 */
+
 /* External includes: */
 #if defined(VBOX_WS_MAC)
 # include <Carbon/Carbon.h>
@@ -275,6 +280,64 @@ bool UINativeHotKey::isValidKey(int iKeyCode)
     return false;
 }
 
+unsigned UINativeHotKey::modifierToSet1ScanCode(int iKeyCode)
+{
+    switch(iKeyCode)
+    {
+#if defined(VBOX_WS_MAC)
+
+        case controlKey:                        return 0x1D;
+        case rightControlKey:                   return 0x11D;
+        case shiftKey:                          return 0x2A;
+        case rightShiftKey:                     return 0x36;
+        case optionKey:                         return 0x38;
+        case rightOptionKey:                    return 0x138;
+        case cmdKey:                            return 0x15B;
+        case kEventKeyModifierRightCmdKeyMask:  return 0x15C;
+        default:                                return 0;
+
+#elif defined(VBOX_WS_WIN)
+
+        case VK_CONTROL:
+        case VK_LCONTROL:  return 0x1D;
+        case VK_RCONTROL:  return 0x11D;
+        case VK_SHIFT:
+        case VK_LSHIFT:    return 0x2A;
+        case VK_RSHIFT:    return 0x36;
+        case VK_MENU:
+        case VK_LMENU:     return 0x38;
+        case VK_RMENU:     return 0x138;
+        case VK_LWIN:      return 0x15B;
+        case VK_RWIN:      return 0x15C;
+        case VK_APPS:      return 0x15D;
+        default:           return 0;
+
+#elif defined(VBOX_WS_X11)
+
+        case XK_Control_L:         return 0x1D;
+        case XK_Control_R:         return 0x11D;
+        case XK_Shift_L:           return 0x2A;
+        case XK_Shift_R:           return 0x36;
+        case XK_Alt_L:             return 0x38;
+        case XK_ISO_Level3_Shift:
+        case XK_Alt_R:             return 0x138;
+        case XK_Meta_L:
+        case XK_Super_L:           return 0x15B;
+        case XK_Meta_R:
+        case XK_Super_R:           return 0x15C;
+        case XK_Menu:              return 0x15D;
+        default:                   return 0;
+
+#else
+
+# warning "port me!"
+
+        default:  return 0;
+
+#endif
+    }
+}
+
 #if defined(VBOX_WS_WIN)
 
 int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
@@ -379,6 +442,17 @@ QList<int> UIHostCombo::toKeyCodeList(const QString &strKeyCombo)
         if (int iKeyCode = encodedKeyList[i].toInt())
             keyCodeList << iKeyCode;
     return keyCodeList;
+}
+
+QList<unsigned> UIHostCombo::modifiersToScanCodes(const QString &strKeyCombo)
+{
+    QStringList encodedKeyList = strKeyCombo.split(',');
+    QList<unsigned> scanCodeList;
+    for (int i = 0; i < encodedKeyList.size(); ++i)
+        if (unsigned idxScanCode = UINativeHotKey::modifierToSet1ScanCode(encodedKeyList[i].toInt()))
+            if (idxScanCode != 0)
+                scanCodeList << idxScanCode;
+    return scanCodeList;
 }
 
 bool UIHostCombo::isValidKeyCombo(const QString &strKeyCombo)
