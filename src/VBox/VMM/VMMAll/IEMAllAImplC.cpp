@@ -22,9 +22,7 @@
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <iprt/x86.h>
-#ifdef RT_ARCH_X86
-# include <iprt/uint128.h>
-#endif
+#include <iprt/uint128.h>
 
 
 /*********************************************************************************************************************************
@@ -1154,7 +1152,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
     {
         if ((int64_t)*pu64RDX >= 0)
         {
-            RTUInt128MulU64ByU64(&Result, *pu64RAX, *pu64RDX);
+            RTUInt128MulU64ByU64(&Result, *pu64RAX, u64Factor);
             *pu64RAX = Result.s.Lo;
             *pu64RDX = Result.s.Hi;
             if (Result.s.Hi != 0 || Result.s.Lo >= UINT64_C(0x8000000000000000))
@@ -1162,7 +1160,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
         }
         else
         {
-            RTUInt128MulU64ByU64(&Result, *pu64RAX, UINT64_C(0) - *pu64RDX);
+            RTUInt128MulU64ByU64(&Result, *pu64RAX, UINT64_C(0) - u64Factor);
             if (Result.s.Hi != 0 || Result.s.Lo > UINT64_C(0x8000000000000000))
                 *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
             *pu64RAX = UINT64_C(0) - Result.s.Lo;
@@ -1171,9 +1169,9 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
     }
     else
     {
-        if ((int64_t)*pu64RDX >= 0)
+        if ((int64_t)u64Factor >= 0)
         {
-            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, *pu64RDX);
+            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, u64Factor);
             if (Result.s.Hi != 0 || Result.s.Lo > UINT64_C(0x8000000000000000))
                 *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
             *pu64RAX = UINT64_C(0) - Result.s.Lo;
@@ -1181,7 +1179,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
         }
         else
         {
-            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, UINT64_C(0) - *pu64RDX);
+            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, UINT64_C(0) - u64Factor);
             if (Result.s.Hi != 0 || Result.s.Lo >= UINT64_C(0x8000000000000000))
                 *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
             *pu64RAX = Result.s.Lo;
