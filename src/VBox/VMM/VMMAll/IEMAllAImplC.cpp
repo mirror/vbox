@@ -1212,6 +1212,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, u
 
 IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
 {
+    /* Note! Skylake leaves all flags alone. */
     if (   u64Divisor != 0
         && *pu64RDX < u64Divisor)
     {
