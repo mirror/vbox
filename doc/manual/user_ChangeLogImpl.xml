@@ -35,7 +35,7 @@
 
       <listitem>
         <para>Audio: fixed rare VM hangs when using AC'97 emulation</para>
-      </listitem
+      </listitem>
 
       <listitem>
         <para>EFI: fixed access to devices attached to SATA port 2 and
