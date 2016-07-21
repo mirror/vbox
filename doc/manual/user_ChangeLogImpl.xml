@@ -11,22 +11,27 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: fixed screenshot if the VM is started in separate mode</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: fixed issue with double-click/opening registered file types
           (.vbox and .vbox-extpack) on Mac OS X</para>
       </listitem>
 
       <listitem>
-        <para>GUI: fixed issue about it was not possible to close some of error/warning
-          messages with the close button</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: fixed a crash while taking screenshot for separate UI frontend.</para>
+        <para>GUI: fixed a bug which made it impossibleto close some error/warning
+          messages using the close button</para>
       </listitem>
 
       <listitem>
         <para>GUI: weakened the control over the VM window behavior allowing to resize
-          it across multiple screens and use in Snap Assist techniques.</para>
+          it across multiple screens and to use in Snap Assist techniques</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: jump to the second tab of the session information window
+          (5.1.0 regression)</para>
       </listitem>
 
       <listitem>
@@ -43,7 +48,7 @@
       </listitem>
 
       <listitem>
-        <para>Audio: make AC'97 volume control work again (5.1 regression;
+        <para>Audio: make AC'97 volume control work again (5.1.0 regression;
           bug #15598)</para>
       </listitem>
 
@@ -52,8 +57,16 @@
       </listitem>
 
       <listitem>
+        <para>Audio: SB16 fixes</para>
+      </listitem>
+
+      <listitem>
         <para>EFI: fixed access to devices attached to SATA port 2 and
           higher (bug #15607)</para>
+      </listitem>
+
+      <listitem>
+        <para>OVA: fix for checking certain signatures</para>
       </listitem>
 
       <listitem>
@@ -71,7 +84,21 @@
       </listitem>
 
       <listitem>
+        <para>API: don't crash if there is no graphics controller configured
+          (bug #15628)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux hosts: fixed EL5 builds (bug #15634)</para>
+      </listitem>
+
+      <listitem>
+        <para>non-Windows hosts: fixed a crash during shutdown under rare
+          circumstances (bug #15568)</para>
+      </listitem>
+
+      <listitem>
+        <para>User Manual: updates</para>
       </listitem>
 
     </itemizedlist>
