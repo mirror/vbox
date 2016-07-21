@@ -307,11 +307,13 @@ restart()
 update_module_dependencies()
 {
     depmod "${1}"
+    rm -f "/lib/modules/${1}/initrd/vboxvideo"
     test -d "/lib/modules/${1}/initrd" &&
+        test -f "/lib/modules/${1}/misc/vboxvideo.ko" &&
         touch "/lib/modules/${1}/initrd/vboxvideo"
     test -n "${QUICKSETUP}" && return
     if type dracut >/dev/null 2>&1; then
-        dracut -f "/boot/initramfs-${1}.img"
+        dracut -f "/boot/initramfs-${1}.img" "${1}"
     elif type update-initramfs >/dev/null 2>&1; then
         update-initramfs -u -k "${1}"
     fi
