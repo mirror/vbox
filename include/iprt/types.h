@@ -1566,7 +1566,6 @@ typedef RTCCINTREG             *PRTCCINTREG;
 /** Pointer to a const signed integer register in the current context. */
 typedef RTCCINTREG const       *PCRTCCINTREG;
 
-
 /** Unsigned integer register in the current context.
  * @remarks This is for dealing with EAX in 16-bit mode. */
 #if ARCH_BITS == 16 && defined(RT_ARCH_X86)
@@ -1592,6 +1591,98 @@ typedef RTCCINTXREG            *PRTCCINTXREG;
  * context. */
 typedef RTCCINTXREG const      *PCRTCCINTXREG;
 
+/** @def RTCCUINTREG_C
+ * Defines a constant of RTCCUINTREG type.
+ * @param a_Value   Constant value  */
+/** @def RTCCUINTREG_MAX
+ * Max value that RTCCUINTREG can hold. */
+/** @def RTCCUINTREG_FMT
+ * Generic IPRT format specifier for RTCCUINTREG. */
+/** @def RTCCUINTREG_XFMT
+ * Generic IPRT format specifier for RTCCUINTREG, hexadecimal. */
+/** @def RTCCINTREG_C
+ * Defines a constant of RTCCINTREG type.
+ * @param a_Value   Constant value  */
+/** @def RTCCINTREG_MAX
+ * Max value that RTCCINTREG can hold. */
+/** @def RTCCINTREG_MIN
+ * Min value that RTCCINTREG can hold. */
+/** @def RTCCINTREG_XFMT
+ * Generic IPRT format specifier for RTCCINTREG, hexadecimal. */
+#if ARCH_BITS == 32
+# define RTCCUINTREG_C(a_Value)     UINT32_C(a_Value)
+# define RTCCUINTREG_MAX            UINT32_MAX
+# define RTCCUINTREG_FMT            "RU32"
+# define RTCCUINTREG_XFMT           "RX32"
+# define RTCCINTREG_C(a_Value)      INT32_C(a_Value)
+# define RTCCINTREG_MAX             INT32_MAX
+# define RTCCINTREG_MIN             INT32_MIN
+# define RTCCINTREG_FMT             "RI32"
+# define RTCCINTREG_XFMT            "RX32"
+#elif ARCH_BITS == 64
+# define RTCCUINTREG_C(a_Value)     UINT64_C(a_Value)
+# define RTCCUINTREG_MAX            UINT64_MAX
+# define RTCCUINTREG_FMT            "RU64"
+# define RTCCUINTREG_XFMT           "RX64"
+# define RTCCINTREG_C(a_Value)      INT64_C(a_Value)
+# define RTCCINTREG_MAX             INT64_MAX
+# define RTCCINTREG_MIN             INT64_MIN
+# define RTCCINTREG_FMT             "RI64"
+# define RTCCINTREG_XFMT            "RX64"
+#elif ARCH_BITS == 16
+# define RTCCUINTREG_C(a_Value)     UINT16_C(a_Value)
+# define RTCCUINTREG_MAX            UINT16_MAX
+# define RTCCUINTREG_FMT            "RU16"
+# define RTCCUINTREG_XFMT           "RX16"
+# define RTCCINTREG_C(a_Value)      INT16_C(a_Value)
+# define RTCCINTREG_MAX             INT16_MAX
+# define RTCCINTREG_MIN             INT16_MIN
+# define RTCCINTREG_FMT             "RI16"
+# define RTCCINTREG_XFMT            "RX16"
+#else
+# error "Unsupported ARCH_BITS!"
+#endif
+/** @def RTCCUINTXREG_C
+ * Defines a constant of RTCCUINTXREG type.
+ * @param a_Value   Constant value  */
+/** @def RTCCUINTXREG_MAX
+ * Max value that RTCCUINTXREG can hold. */
+/** @def RTCCUINTXREG_FMT
+ * Generic IPRT format specifier for RTCCUINTXREG. */
+/** @def RTCCUINTXREG_XFMT
+ * Generic IPRT format specifier for RTCCUINTXREG, hexadecimal. */
+/** @def RTCCINTXREG_C
+ * Defines a constant of RTCCINTXREG type.
+ * @param a_Value   Constant value  */
+/** @def RTCCINTXREG_MAX
+ * Max value that RTCCINTXREG can hold. */
+/** @def RTCCINTXREG_MIN
+ * Min value that RTCCINTXREG can hold. */
+/** @def RTCCINTXREG_FMT
+ * Generic IPRT format specifier for RTCCINTXREG. */
+/** @def RTCCINTXREG_XFMT
+ * Generic IPRT format specifier for RTCCINTXREG, hexadecimal. */
+#if ARCH_BITS == 16 && defined(RT_ARCH_X86)
+# define RTCCUINTXREG_C(a_Value)    UINT32_C(a_Value)
+# define RTCCUINTXREG_MAX           UINT32_MAX
+# define RTCCUINTXREG_FMT           "RU32"
+# define RTCCUINTXREG_XFMT          "RX32"
+# define RTCCINTXREG_C(a_Value)     INT32_C(a_Value)
+# define RTCCINTXREG_MAX            INT32_MAX
+# define RTCCINTXREG_MIN            INT32_MIN
+# define RTCCINTXREG_FMT            "RI32"
+# define RTCCINTXREG_XFMT           "RX32"
+#else
+# define RTCCUINTXREG_C(a_Value)    RTCCUINTREG_C(a_Value)
+# define RTCCUINTXREG_MAX           RTCCUINTREG_MAX
+# define RTCCUINTXREG_FMT           RTCCUINTREG_FMT
+# define RTCCUINTXREG_XFMT          RTCCUINTREG_XFMT
+# define RTCCINTXREG_C(a_Value)     RTCCINTREG_C(a_Value)
+# define RTCCINTXREG_MAX            RTCCINTREG_MAX
+# define RTCCINTXREG_MIN            RTCCINTREG_MIN
+# define RTCCINTXREG_FMT            RTCCINTREG_FMT
+# define RTCCINTXREG_XFMT           RTCCINTREG_XFMT
+#endif
 /** @} */
 
 
