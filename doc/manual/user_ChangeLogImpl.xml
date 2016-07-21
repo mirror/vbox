@@ -20,7 +20,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: fixed a bug which made it impossibleto close some error/warning
+        <para>GUI: fixed a bug which made it impossible close some error/warning
           messages using the close button</para>
       </listitem>
 
