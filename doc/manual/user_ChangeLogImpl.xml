@@ -70,8 +70,8 @@
       </listitem>
 
       <listitem>
-        <para>OVA: fix MAC address generation for appliances created by
-          VirtualBox (bug #15623)</para>
+        <para>OVA: fixed MAC address generation for appliances created by
+          VirtualBox (5.1.0 regression; bug #15623)</para>
       </listitem>
 
       <listitem>
