@@ -229,6 +229,9 @@ typedef IEMSELDESC *PIEMSELDESC;
  * due to GCC lacking knowledge about the value range of a switch. */
 #define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE)
 
+/** Variant of IEM_NOT_REACHED_DEFAULT_CASE_RET that returns a custom value. */
+#define IEM_NOT_REACHED_DEFAULT_CASE_RET2(a_RetValue) default: AssertFailedReturn(a_RetValue)
+
 /**
  * Returns IEM_RETURN_ASPECT_NOT_IMPLEMENTED, and in debug builds logs the
  * occation.
@@ -860,7 +863,7 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xc0fe;
     pVCpu->iem.s.enmDefOpSize       = (IEMMODE)0xc0fe;
     pVCpu->iem.s.enmEffOpSize       = (IEMMODE)0xc0fe;
-    pVCpu->iem.s.fPrefixes          = (IEMMODE)0xfeedbeef;
+    pVCpu->iem.s.fPrefixes          = 0xfeedbeef;
     pVCpu->iem.s.uRexReg            = 127;
     pVCpu->iem.s.uRexB              = 127;
     pVCpu->iem.s.uRexIndex          = 127;
@@ -9187,7 +9190,7 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataXdtr(PVMCPU pVCpu, uint16_t *pcbLimit, PR
     }
     else
     {
-        uint32_t uTmp;
+        uint32_t uTmp = 0; /* (Visual C++ maybe used uninitialized) */
         if (enmOpSize == IEMMODE_32BIT)
         {
             if (IEM_GET_TARGET_CPU(pVCpu) != IEMTARGETCPU_486)
@@ -12274,7 +12277,7 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
                         case 5: u32EffAddr = pCtx->ebp; break;
                         case 6: u32EffAddr = pCtx->esi; break;
                         case 7: u32EffAddr = pCtx->edi; break;
-                        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                        IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
                     }
                     u32EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
 
@@ -12301,14 +12304,14 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
                             break;
                         case 6: u32EffAddr += pCtx->esi; break;
                         case 7: u32EffAddr += pCtx->edi; break;
-                        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                        IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
                     }
                     break;
                 }
                 case 5: u32EffAddr = pCtx->ebp; SET_SS_DEF(); break;
                 case 6: u32EffAddr = pCtx->esi; break;
                 case 7: u32EffAddr = pCtx->edi; break;
-                IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
             }
 
             /* Get and add the displacement. */
@@ -12329,7 +12332,7 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
                     break;
                 }
                 default:
-                    AssertFailedReturn(VERR_IEM_IPE_2); /* (caller checked for these) */
+                    AssertFailedReturn(RTGCPTR_MAX); /* (caller checked for these) */
             }
         }
 
@@ -12395,7 +12398,7 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
                     case 13: u64EffAddr = pCtx->r13; break;
                     case 14: u64EffAddr = pCtx->r14; break;
                     case 15: u64EffAddr = pCtx->r15; break;
-                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
                 }
                 u64EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
 
@@ -12436,11 +12439,11 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
                             u64EffAddr += (int32_t)u32Disp;
                         }
                         break;
-                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
                 }
                 break;
             }
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+            IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
         }
 
         /* Get and add the displacement. */
@@ -12462,7 +12465,7 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
                 u64EffAddr += (int32_t)u32Disp;
                 break;
             }
-            IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* (caller checked for these) */
+            IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX); /* (caller checked for these) */
         }
 
     }
