@@ -1425,7 +1425,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
     NTSTATUS rcNt;
 
     /*
-     * Try figure if the entire allocation size. Free/Alloc may fail otherwise.
+     * Try figure the entire allocation size. Free/Alloc may fail otherwise.
      */
     PVOID   pvFree = pMemInfo->AllocationBase;
     SIZE_T  cbFree = pMemInfo->RegionSize + ((uintptr_t)pMemInfo->BaseAddress - (uintptr_t)pMemInfo->AllocationBase);
@@ -1444,6 +1444,9 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
             break;
         if (pMemInfo->AllocationBase != MemInfo2.AllocationBase)
             break;
+        if (pMemInfo2.RegionSize == 0)
+            break;
+        cbFree += MemInfo2.RegionSize;
     }
     SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: %s exec mem at %p (LB %#zx, %p LB %#zx)\n",
                  pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW ? "Replacing" : "Freeing",
