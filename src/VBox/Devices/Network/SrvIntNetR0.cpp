@@ -1403,8 +1403,10 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, INTNETADDRTYPE enmAddrType, 
 
     PINTNETADDRCACHE pCache = &pIf->aAddrCache[enmAddrType];
 
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
     const uint8_t cbAddr = pCache->cbAddress;
     Assert(cbAddr == intnetR0AddrSize(enmAddrType));
+#endif
 
     RTSpinlockAcquire(pNetwork->hAddrSpinlock);
 

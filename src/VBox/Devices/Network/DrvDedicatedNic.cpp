@@ -251,10 +251,12 @@ PDMBOTHCBDECL(int) drvDedicatedNicUp_AllocBuf(PPDMINETWORKUP pInterface, size_t 
  */
 PDMBOTHCBDECL(int) drvDedicatedNicUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
+#ifdef VBOX_STRICT
     PDRVDEDICATEDNIC  pThis = RT_FROM_MEMBER(pInterface, DRVDEDICATEDNIC, CTX_SUFF(INetworkUp));
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
     Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+#endif
 
     if (pSgBuf)
     {
@@ -291,7 +293,7 @@ PDMBOTHCBDECL(int) drvDedicatedNicUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCAT
     /*
      * Tell the driver to send the packet.
      */
-
+    NOREF(pThis);
     return VERR_INTERNAL_ERROR_4;
 
 #else  /* IN_RING3 */

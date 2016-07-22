@@ -4266,11 +4266,12 @@ static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC* pDesc, uint32_t cb
  */
 static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC* pDesc, bool fOnWorkerThread)
 {
-    int rc = VINF_SUCCESS;
+#ifdef VBOX_STRICT
     PPDMSCATTERGATHER pTxSg = pThis->CTX_SUFF(pTxSg);
     Assert(e1kGetDescType(pDesc) == E1K_DTYP_DATA);
     Assert(pDesc->data.cmd.fTSE);
     Assert(!e1kXmitIsGsoBuf(pTxSg));
+#endif
 
     uint16_t u16MaxPktLen = pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw3.u16MSS;
     Assert(u16MaxPktLen != 0);
@@ -4279,6 +4280,7 @@ static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC* pDesc, bool fOnWork
     /*
      * Carve out segments.
      */
+    int rc;
     do
     {
         /* Calculate how many bytes we have left in this TCP segment */

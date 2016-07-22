@@ -179,7 +179,7 @@ static void ioapic_service(PIOAPIC pThis)
                                                                         uTagSrc);
                 /* We must be sure that attempts to reschedule in R3
                    never get here */
-                Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
+                Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED); NOREF(rc);
             }
         }
     }
@@ -523,7 +523,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t 
                                                             uTagSrc);
     /* We must be sure that attempts to reschedule in R3
        never get here */
-    Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
+    Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED); NOREF(rc);
 }
 
 #ifdef IN_RING3

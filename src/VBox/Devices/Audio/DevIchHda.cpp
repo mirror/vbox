@@ -2169,10 +2169,11 @@ static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     const uint8_t  u8Strm  = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
-          uint32_t u32LPIB = HDA_STREAM_REG(pThis, LPIB, u8Strm);
+    uint32_t       u32LPIB = HDA_STREAM_REG(pThis, LPIB, u8Strm);
+#ifdef LOG_ENABLED
     const uint32_t u32CBL  = HDA_STREAM_REG(pThis, CBL,  u8Strm);
-
     LogFlowFunc(("[SD%RU8]: LPIB=%RU32, CBL=%RU32\n", u8Strm, u32LPIB, u32CBL));
+#endif
 
     *pu32Value = u32LPIB;
     return VINF_SUCCESS;
@@ -2291,8 +2292,10 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+#if defined(IN_RING3) || defined(LOG_ENABLED) || defined(VBOX_STRICT)
     bool fRun      = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+#endif
     bool fReset    = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
     bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
 
@@ -4551,8 +4554,8 @@ DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, c
         return VINF_SUCCESS;
     }
 
-    uint32_t idxRegMem = g_aHdaRegMap[idxRegDsc].mem_idx;
 #ifdef LOG_ENABLED
+    uint32_t const idxRegMem   = g_aHdaRegMap[idxRegDsc].mem_idx;
     uint32_t const u32CurValue = pThis->au32Regs[idxRegMem];
 #endif
     int rc = g_aHdaRegMap[idxRegDsc].pfnWrite(pThis, idxRegDsc, u32Value);
@@ -4656,9 +4659,11 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                     Log3Func(("\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
                               g_afMasks[cbReg] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
                 }
-                uint32_t u32LogOldVal = pThis->au32Regs[idxRegMem];
+#ifdef LOG_ENABLED
+                uint32_t uLogOldVal = pThis->au32Regs[idxRegMem];
+#endif
                 rc = hdaWriteReg(pThis, idxRegDsc, u64Value, "*");
-                Log3Func(("\t%#x -> %#x\n", u32LogOldVal, pThis->au32Regs[idxRegMem]));
+                Log3Func(("\t%#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
             }
             else
             {

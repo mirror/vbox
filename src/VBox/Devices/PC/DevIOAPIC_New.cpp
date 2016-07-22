@@ -760,7 +760,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t 
                                                             u8TriggerMode,
                                                             uTagSrc);
     /* Can't reschedule to R3. */
-    Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
+    Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED); NOREF(rc);
 }
 
 
