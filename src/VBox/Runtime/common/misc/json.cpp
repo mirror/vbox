@@ -447,27 +447,27 @@ static int rtJsonTokenizerGetLiteral(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN p
     int rc = VINF_SUCCESS;
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     size_t cchLiteral = 0;
-    char aszLiteral[6]; /* false + 0 terminator as the lingest possible literal. */
-    RT_ZERO(aszLiteral);
+    char szLiteral[6]; /* false + 0 terminator as the lingest possible literal. */
+    RT_ZERO(szLiteral);
 
     pToken->Pos = pTokenizer->Pos;
 
     Assert(RT_C_IS_ALPHA(ch));
 
     while (   RT_C_IS_ALPHA(ch)
-           && cchLiteral < RT_ELEMENTS(aszLiteral) - 1)
+           && cchLiteral < RT_ELEMENTS(szLiteral) - 1)
     {
-        aszLiteral[cchLiteral] = ch;
+        szLiteral[cchLiteral] = ch;
         cchLiteral++;
         rtJsonTokenizerSkipCh(pTokenizer);
         ch = rtJsonTokenizerGetCh(pTokenizer);
     }
 
-    if (!RTStrNCmp(&aszLiteral[0], "false", RT_ELEMENTS(aszLiteral)))
+    if (!RTStrNCmp(&szLiteral[0], "false", RT_ELEMENTS(szLiteral)))
         pToken->enmClass = RTJSONTOKENCLASS_FALSE;
-    else if (!RTStrNCmp(&aszLiteral[0], "true", RT_ELEMENTS(aszLiteral)))
+    else if (!RTStrNCmp(&szLiteral[0], "true", RT_ELEMENTS(szLiteral)))
         pToken->enmClass = RTJSONTOKENCLASS_TRUE;
-    else if (!RTStrNCmp(&aszLiteral[0], "null", RT_ELEMENTS(aszLiteral)))
+    else if (!RTStrNCmp(&szLiteral[0], "null", RT_ELEMENTS(szLiteral)))
         pToken->enmClass = RTJSONTOKENCLASS_NULL;
     else
     {
@@ -488,30 +488,28 @@ static int rtJsonTokenizerGetLiteral(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN p
  */
 static int rtJsonTokenizerGetNumber(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken)
 {
-    unsigned uBase = 10;
-    char *pszNext = NULL;
     size_t cchNum = 0;
-    char aszTmp[128]; /* Everything larger is not possible to display in signed 64bit. */
-    RT_ZERO(aszTmp);
+    char   szTmp[128]; /* Everything larger is not possible to display in signed 64bit. */
 
     pToken->enmClass = RTJSONTOKENCLASS_NUMBER;
 
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     while (   RT_C_IS_DIGIT(ch)
-           && cchNum < sizeof(aszTmp) - 1)
+           && cchNum < sizeof(szTmp) - 1)
     {
-        aszTmp[cchNum] = ch;
+        szTmp[cchNum] = ch;
         cchNum++;
         rtJsonTokenizerSkipCh(pTokenizer);
         ch = rtJsonTokenizerGetCh(pTokenizer);
     }
 
     int rc = VINF_SUCCESS;
-    if (RT_C_IS_DIGIT(ch) && cchNum == sizeof(aszTmp) - 1)
+    if (RT_C_IS_DIGIT(ch) && cchNum >= sizeof(szTmp) - 1)
         rc = VERR_NUMBER_TOO_BIG;
     else
     {
-        rc = RTStrToInt64Ex(&aszTmp[0], NULL, 0, &pToken->Class.Number.i64Num);
+        szTmp[cchNum] = '\0';
+        rc = RTStrToInt64Ex(&szTmp[0], NULL, 0, &pToken->Class.Number.i64Num);
         Assert(RT_SUCCESS(rc) || rc == VWRN_NUMBER_TOO_BIG);
         if (rc == VWRN_NUMBER_TOO_BIG)
             rc = VERR_NUMBER_TOO_BIG;
@@ -531,8 +529,8 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
 {
     int rc = VINF_SUCCESS;
     size_t cchStr = 0;
-    char aszTmp[_4K];
-    RT_ZERO(aszTmp);
+    char szTmp[_4K];
+    RT_ZERO(szTmp);
 
     Assert(rtJsonTokenizerGetCh(pTokenizer) == '\"');
     rtJsonTokenizerSkipCh(pTokenizer); /* Skip " */
@@ -543,7 +541,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     while (   ch != '\"'
            && ch != '\0'
-           && cchStr < sizeof(aszTmp) - 1)
+           && cchStr < sizeof(szTmp) - 1)
     {
         if (ch == '\\')
         {
@@ -553,28 +551,28 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
             switch (chNext)
             {
                 case '\"':
-                    aszTmp[cchStr] = '\"';
+                    szTmp[cchStr] = '\"';
                     break;
                 case '\\':
-                    aszTmp[cchStr] = '\\';
+                    szTmp[cchStr] = '\\';
                     break;
                 case '/':
-                    aszTmp[cchStr] = '/';
+                    szTmp[cchStr] = '/';
                     break;
                 case '\b':
-                    aszTmp[cchStr] = '\b';
+                    szTmp[cchStr] = '\b';
                     break;
                 case '\n':
-                    aszTmp[cchStr] = '\n';
+                    szTmp[cchStr] = '\n';
                     break;
                 case '\f':
-                    aszTmp[cchStr] = '\f';
+                    szTmp[cchStr] = '\f';
                     break;
                 case '\r':
-                    aszTmp[cchStr] = '\r';
+                    szTmp[cchStr] = '\r';
                     break;
                 case '\t':
-                    aszTmp[cchStr] = '\t';
+                    szTmp[cchStr] = '\t';
                     break;
                 case 'u':
                     rc = VERR_NOT_SUPPORTED;
@@ -584,7 +582,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
             }
         }
         else
-            aszTmp[cchStr] = ch;
+            szTmp[cchStr] = ch;
         cchStr++;
         rtJsonTokenizerSkipCh(pTokenizer);
         ch = rtJsonTokenizerGetCh(pTokenizer);
@@ -593,7 +591,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
     if (rtJsonTokenizerGetCh(pTokenizer) == '\"')
         rtJsonTokenizerSkipCh(pTokenizer); /* Skip closing " */
 
-    pToken->Class.String.pszStr = RTStrDupN(&aszTmp[0], cchStr);
+    pToken->Class.String.pszStr = RTStrDupN(&szTmp[0], cchStr);
     if (pToken->Class.String.pszStr)
         pToken->Pos.iChEnd += cchStr;
     else
