@@ -138,6 +138,11 @@ DECLINLINE(uint32_t) VBoxDtCompareAndSwapU32(uint32_t volatile *pu32Dst, uint32_
  */
 # undef NULL
 # define NULL (0)
+
+# ifdef _MSC_VER
+//#  pragma warning(disable: 4389) /* signed/unsigned mismatch */
+# endif
+
 #endif /* VBOX */
 
 /** Check if the given address is a valid kernel address.
@@ -2324,8 +2329,8 @@ dtrace_speculation(dtrace_state_t *state)
 			continue;
 		}
 
-		if (dtrace_cas32((uint32_t *)&spec->dtsp_state,
-		    current, DTRACESPEC_ACTIVE) == current)
+		if (   (dtrace_speculation_state_t)dtrace_cas32((uint32_t *)&spec->dtsp_state, current, DTRACESPEC_ACTIVE)
+		    == current)
 			return (i + 1);
 	}
 
@@ -2420,8 +2425,7 @@ dtrace_speculation_commit(dtrace_state_t *state, processorid_t cpu,
 			AssertFatalMsgFailed(("%d\n",  current));
 #endif
 		}
-	} while (dtrace_cas32((uint32_t *)&spec->dtsp_state,
-	    current, new) != current);
+	} while ((dtrace_speculation_state_t)dtrace_cas32((uint32_t *)&spec->dtsp_state, current, new) != current);
 
 	/*
 	 * We have set the state to indicate that we are committing this
@@ -2538,8 +2542,7 @@ dtrace_speculation_discard(dtrace_state_t *state, processorid_t cpu,
 			AssertFatalMsgFailed(("%d\n", current));
 #endif
 		}
-	} while (dtrace_cas32((uint32_t *)&spec->dtsp_state,
-	    current, new) != current);
+	} while ((dtrace_speculation_state_t)dtrace_cas32((uint32_t *)&spec->dtsp_state, current, new) != current);
 
 	buf->dtb_offset = 0;
 	buf->dtb_drops = 0;
@@ -2729,8 +2732,7 @@ dtrace_speculation_buffer(dtrace_state_t *state, processorid_t cpuid,
 			AssertFatalMsgFailed(("%d\n", current));
 #endif
 		}
-	} while (dtrace_cas32((uint32_t *)&spec->dtsp_state,
-	    current, new) != current);
+	} while ((dtrace_speculation_state_t)dtrace_cas32((uint32_t *)&spec->dtsp_state, current, new) != current);
 
 	ASSERT(new == DTRACESPEC_ACTIVEONE || new == DTRACESPEC_ACTIVEMANY);
 	return (buf);
@@ -6063,8 +6065,8 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 
 				do {
 					current = state->dts_activity;
-				} while (dtrace_cas32(activity, current,
-				    DTRACE_ACTIVITY_KILLED) != current);
+				} while (   (dtrace_speculation_state_t)dtrace_cas32(activity, current, DTRACE_ACTIVITY_KILLED)
+					 != current);
 
 				continue;
 			}
@@ -6358,8 +6360,8 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 				if (current != DTRACE_ACTIVITY_WARMUP)
 					current = DTRACE_ACTIVITY_ACTIVE;
 
-				if (dtrace_cas32(activity, current,
-				    DTRACE_ACTIVITY_DRAINING) != current) {
+				if (   (dtrace_speculation_state_t)dtrace_cas32(activity, current, DTRACE_ACTIVITY_DRAINING)
+				    != current) {
 					*flags |= CPU_DTRACE_DROP;
 					continue;
 				}
@@ -6779,7 +6781,7 @@ dtrace_cred2priv(cred_t *cr, uint32_t *privp, uid_t *uidp, zoneid_t *zoneidp)
 		 */
 		priv = DTRACE_PRIV_ALL;
 #ifdef VBOX
-		*uidp = ~0;
+		*uidp = UINT32_MAX;
 		*zoneidp = 0;
 #endif
 	} else {
@@ -9736,7 +9738,7 @@ dtrace_ecb_aggregation_create(dtrace_ecb_t *ecb, dtrace_actdesc_t *desc)
 		break;
 
 	case DTRACEAGG_MAX:
-		agg->dtag_initial = INT64_MIN;
+		agg->dtag_initial = (uint64_t)INT64_MIN;
 		agg->dtag_aggregate = dtrace_aggregate_max;
 		break;
 
@@ -11293,9 +11295,9 @@ dtrace_enabling_matchall(void)
 	 * block pending our completion.
 	 */
 	for (enab = dtrace_retained; enab != NULL; enab = enab->dten_next) {
+#ifndef VBOX
 		cred_t *cr = enab->dten_vstate->dtvs_state->dts_cred.dcr_cred;
 
-#ifndef VBOX
 		if (INGLOBALZONE(curproc) ||
 		    cr != NULL && getzoneid() == crgetzoneid(cr))
 #endif
@@ -12614,7 +12616,7 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 	state->dts_aggid_arena = vmem_create(c, (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 #else
-        state->dts_aggid_arena = vmem_create(c, (void *)1, _1G, 1,
+        state->dts_aggid_arena = vmem_create(c, (void *)(uintptr_t)1, _1G, 1,
             NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 #endif
 
@@ -12800,7 +12802,7 @@ static int
 dtrace_state_buffer(dtrace_state_t *state, dtrace_buffer_t *buf, int which)
 {
 	dtrace_optval_t *opt = state->dts_options, size;
-	processorid_t cpu VBDTUNASS(DTRACE_CPUALL);
+	processorid_t cpu VBDTUNASS((processorid_t)DTRACE_CPUALL);
 	int flags = 0, rval;
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
@@ -14930,7 +14932,7 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 #else
-        dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX - 16, 1,
+        dtrace_arena = vmem_create("dtrace", (void *)(uintptr_t)1, UINT32_MAX - 16, 1,
             NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 #endif
 #ifndef VBOX
