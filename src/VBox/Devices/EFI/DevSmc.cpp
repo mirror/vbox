@@ -370,7 +370,7 @@ static uint8_t  g_abOsk0And1[32+32];
  */
 static bool devR0SmcWaitHostState(uint8_t bState, const char *pszWhat)
 {
-    uint8_t bCurState;
+    uint8_t bCurState = 0; /* (MSC is potentially uninitialized) */
     for (uint32_t cMsSleep = 1; cMsSleep <= 64; cMsSleep <<= 1)
     {
         RTThreadSleep(cMsSleep);

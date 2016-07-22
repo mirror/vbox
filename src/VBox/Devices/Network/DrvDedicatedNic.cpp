@@ -166,7 +166,6 @@ PDMBOTHCBDECL(int) drvR0DedicatedNicReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
         default:
             return VERR_INVALID_FUNCTION;
     }
-    return VINF_SUCCESS;
 }
 
 #endif /* IN_RING0 */
