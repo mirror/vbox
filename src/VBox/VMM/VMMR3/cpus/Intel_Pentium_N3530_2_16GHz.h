@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for Intel(R) Pentium(R) CPU  N3530  @ 2.16GHz.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Pentium_N3530_2_16GHz[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Pentium_N3530_2_16GHz[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000b, 0x756e6547, 0x6c65746e, 0x49656e69, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00030678, 0x02100800, 0x41d8e3bf, 0xbfebfbff, 0 | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID | CPUMCPUIDLEAF_F_CONTAINS_APIC },
@@ -61,7 +61,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Pentium_N3530_2_16GHz[] =
 /**
  * MSR ranges for Intel(R) Pentium(R) CPU  N3530  @ 2.16GHz.
  */
-static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_N3530_2_16GHz[] = 
+static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_N3530_2_16GHz[] =
 {
     MFI(0x00000000, "IA32_P5_MC_ADDR", Ia32P5McAddr), /* value=0x0 */
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
@@ -236,7 +236,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_N3530_2_16GHz[] =
 /**
  * Database entry for Intel(R) Pentium(R) CPU  N3530  @ 2.16GHz.
  */
-static CPUMDBENTRY const g_Entry_Intel_Pentium_N3530_2_16GHz = 
+static CPUMDBENTRY const g_Entry_Intel_Pentium_N3530_2_16GHz =
 {
     /*.pszName          = */ "Intel Pentium N3530 2.16GHz",
     /*.pszFullName      = */ "Intel(R) Pentium(R) CPU  N3530  @ 2.16GHz",

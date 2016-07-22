@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_6700K[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_6700K[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000016, 0x756e6547, 0x6c65746e, 0x49656e69, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x000506e3, 0x02100800, 0x7ffafbbf, 0xbfebfbff, 0 | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID | CPUMCPUIDLEAF_F_CONTAINS_APIC },
@@ -84,7 +84,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_6700K[] =
 /**
  * MSR ranges for Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz.
  */
-static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_6700K[] = 
+static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_6700K[] =
 {
     MFX(0x00000000, "IA32_P5_MC_ADDR", Ia32P5McAddr, Ia32P5McAddr, 0, UINT64_C(0xfffffffffffff000), 0), /* value=0xfff */
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
@@ -481,7 +481,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_6700K[] =
 /**
  * Database entry for Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz.
  */
-static CPUMDBENTRY const g_Entry_Intel_Core_i7_6700K = 
+static CPUMDBENTRY const g_Entry_Intel_Core_i7_6700K =
 {
     /*.pszName          = */ "Intel Core i7-6700K",
     /*.pszFullName      = */ "Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz",

@@ -562,7 +562,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  ifdef VBOX_WITH_NEW_APIC
   VMMRC_SOURCES += \
   	VMMAll/APICAll.cpp
- endif 
+ endif
  ifdef VBOX_WITH_REM
   VMMRC_SOURCES += \
   	VMMAll/REMAll.cpp
