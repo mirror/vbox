@@ -886,7 +886,7 @@ static NTSTATUS vboxVidPnApplyInfoForPathTarget(PVBOXMP_DEVEXT pDevExt,
         Assert(tmpStatus == STATUS_SUCCESS);
         return Status;
     }
-    
+
     Status = vboxVidPnCheckMonitorModes(pDevExt, VidPnTargetId, &aModes[VidPnTargetId]);
 
     if (!NT_SUCCESS(Status))

@@ -85,7 +85,7 @@ irqreturn_t vbox_irq_handler(int irq, void *arg)
 }
 
 /**
- * Query the host for 
+ * Query the host for
  */
 static void vbox_update_mode_hints(struct vbox_private *vbox)
 {

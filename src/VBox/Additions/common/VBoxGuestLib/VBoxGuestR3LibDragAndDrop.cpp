@@ -51,14 +51,16 @@ using namespace DragAndDropSvc;
 
 #include "VBGLR3Internal.h"
 
+
 /*********************************************************************************************************************************
-*    Forward declarations                                                                                                        *
+*   Forward declarations                                                                                                         *
 *********************************************************************************************************************************/
 
 VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uStatus, uint8_t uPercent, int rcErr);
 
+
 /*********************************************************************************************************************************
-*    Private internal functions                                                                                                  *
+*   Private internal functions                                                                                                   *
 *********************************************************************************************************************************/
 
 static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, uint32_t *pcParms, bool fWait)

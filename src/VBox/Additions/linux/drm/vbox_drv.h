@@ -286,7 +286,7 @@ static inline int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait)
 {
     int ret;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
     ret = ttm_bo_reserve(&bo->bo, true, no_wait, NULL);
 #else
     ret = ttm_bo_reserve(&bo->bo, true, no_wait, false, 0);
