@@ -1015,19 +1015,19 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # VBoxDD2 (shared object)
  #
  VBoxDD2_TEMPLATE        = VBoxR3DllWarnNoPic
- VBoxDD2_DEFS            = IN_VBOXDD2
+ VBoxDD2_DEFS            = \
+	IN_VBOXDD2 \
+	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,) \
+	$(if $(VBOX_WITH_NEW_APIC),VBOX_WITH_NEW_APIC,) \
+	$(if $(VBOX_WITH_NEW_IOAPIC),VBOX_WITH_NEW_IOAPIC,)
  VBoxDD2_INCS           := \
 	build \
  	$(PATH_SUB_CURRENT)
  VBoxDD2_SOURCES         = \
  	build/VBoxDD2.cpp  \
- 	PC/DevLPC.cpp
- ifndef VBOX_WITH_NEW_APIC
-  VBoxDD2_SOURCES += PC/DevAPIC.cpp
- endif
- ifndef VBOX_WITH_NEW_IOAPIC
-  VBoxDD2_SOURCES += PC/DevIoApic.cpp
- endif
+ 	PC/DevLPC.cpp \
+	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp) \
+	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic.cpp)
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
@@ -1040,16 +1040,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
  VBoxDD2_LDFLAGS.linux   = -Wl,--no-undefined
-
- ifdef VBOX_WITH_PXE_ROM
-  VBoxDD2_DEFS          += VBOX_WITH_PXE_ROM
- endif
- ifdef VBOX_WITH_NEW_APIC
-  VBoxDD2_DEFS          += VBOX_WITH_NEW_APIC
- endif
- ifdef VBOX_WITH_NEW_IOAPIC
-  VBoxDD2_DEFS          += VBOX_WITH_NEW_IOAPIC
- endif
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
 
@@ -1084,13 +1074,19 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Parallel/DevParallel.cpp \
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \
- 	Network/DrvDedicatedNic.cpp
+ 	Network/DrvDedicatedNic.cpp \
+ 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
 
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 
- VBoxDDR0_DEFS          += $(if $(VBOX_WITH_AUDIO_50),VBOX_WITH_AUDIO_50,)
- VBoxDDR0_SOURCES       += \
- 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
+ VBoxDDR0_DEFS          += \
+	$(if $(VBOX_WITH_AUDIO_50),VBOX_WITH_AUDIO_50,) \
+	$(if $(VBOX_WITH_HGSMI),VBOX_WITH_HGSMI,) \
+	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM,) \
+	$(if $(VBOX_WITH_VDMA),VBOX_WITH_VDMA,) \
+	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI,) \
+	$(if $(VBOXWDDM_WITH_VBVA),VBOXWDDM_WITH_VBVA,) \
+	$(if $(VBOX_VDMA_WITH_WATCHDOG),VBOX_VDMA_WITH_WATCHDOG,)
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
@@ -1119,25 +1115,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
  ifdef VBOX_WITH_VMSVGA3D
   VBoxDDR0_DEFS         += VBOX_WITH_VMSVGA3D
- endif
-
- ifdef VBOX_WITH_HGSMI
-  VBoxDDR0_DEFS         += VBOX_WITH_HGSMI
- endif
- ifdef VBOX_WITH_WDDM
-  VBoxDDR0_DEFS         += VBOX_WITH_WDDM
- endif
- ifdef VBOX_WITH_VDMA
-  VBoxDDR0_DEFS         += VBOX_WITH_VDMA
- endif
- ifdef VBOX_WITH_CRHGSMI
-  VBoxDDR0_DEFS         += VBOX_WITH_CRHGSMI
- endif
- ifdef VBOXWDDM_WITH_VBVA
-  VBoxDDR0_DEFS         += VBOXWDDM_WITH_VBVA
- endif
- ifdef VBOX_VDMA_WITH_WATCHDOG
-  VBoxDDR0_DEFS        += VBOX_VDMA_WITH_WATCHDOG
  endif
 
  ifdef VBOX_WITH_VUSB
@@ -1539,7 +1516,6 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	../HostServices/SharedOpenGL/render/renderspu_cocoa_helper.m \
  	../HostServices/SharedOpenGL/OpenGLTest/OpenGLTestDarwin.cpp
  endif
-
 
 
 endif # defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
