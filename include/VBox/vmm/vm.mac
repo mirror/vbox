@@ -69,7 +69,7 @@ struc VMCPU
     .pdm                    resb 256
     .iom                    resb 512
     .dbgf                   resb 256
-    .gim                    resb 64
+    .gim                    resb 256
     .apic                   resb 768
 
     .fTraceGroups           resd 1

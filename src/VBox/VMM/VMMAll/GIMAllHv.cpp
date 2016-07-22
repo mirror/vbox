@@ -285,7 +285,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                         PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
                         if (    pMsgIn->uConnectionId  == GIM_HV_VMBUS_MSG_CONNECTION_ID
                             &&  pMsgIn->enmMessageType == GIMHVMSGTYPE_VMBUS
-                            && !MSR_GIM_HV_SINT_IS_MASKED(pHvCpu->uSint2Msr)
+                            && !MSR_GIM_HV_SINT_IS_MASKED(pHvCpu->auSintXMsr[GIM_HV_VMBUS_MSG_SINT])
                             &&  MSR_GIM_HV_SIMP_IS_ENABLED(pHvCpu->uSimpMsr))
                         {
                             RTGCPHYS GCPhysSimp = MSR_GIM_HV_SIMP_GPA(pHvCpu->uSimpMsr);
@@ -482,10 +482,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             *puValue = pHv->uDbgStatusMsr;
             return VINF_SUCCESS;
 
-        case MSR_GIM_HV_SINT2:
+        case MSR_GIM_HV_SINT0:   case MSR_GIM_HV_SINT1:   case MSR_GIM_HV_SINT2:   case MSR_GIM_HV_SINT3:
+        case MSR_GIM_HV_SINT4:   case MSR_GIM_HV_SINT5:   case MSR_GIM_HV_SINT6:   case MSR_GIM_HV_SINT7:
+        case MSR_GIM_HV_SINT8:   case MSR_GIM_HV_SINT9:   case MSR_GIM_HV_SINT10:  case MSR_GIM_HV_SINT11:
+        case MSR_GIM_HV_SINT12:  case MSR_GIM_HV_SINT13:  case MSR_GIM_HV_SINT14:  case MSR_GIM_HV_SINT15:
         {
             PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
-            *puValue = pHvCpu->uSint2Msr;
+            *puValue = pHvCpu->auSintXMsr[idMsr - MSR_GIM_HV_SINT0];
             return VINF_SUCCESS;
         }
 
@@ -495,6 +498,10 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             *puValue = pHvCpu->uSimpMsr;
             return VINF_SUCCESS;
         }
+
+        case MSR_GIM_HV_SVERSION:
+            *puValue = GIM_HV_SVERSION;
+            return VINF_SUCCESS;
 
         case MSR_GIM_HV_RESET:
             *puValue = 0;
@@ -589,7 +596,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                 if (MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(pHv->u64HypercallMsr))
                 {
                     gimR3HvDisableHypercallPage(pVM);
-                    pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT;
+                    pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE;
                     LogRel(("GIM: HyperV: Hypercall page disabled via Guest OS ID MSR\n"));
                 }
             }
@@ -641,10 +648,10 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             /** @todo There is/was a problem with hypercalls for FreeBSD 10.1 guests,
              *  see @bugref{7270#c116}. */
             /* First, update all but the hypercall page enable bit. */
-            pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT);
+            pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_PAGE_ENABLE);
 
             /* Hypercall page can only be enabled when the guest has enabled hypercalls. */
-            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT);
+            bool fEnable = MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(uRawValue);
             if (   fEnable
                 && !gimHvAreHypercallsEnabled(pVCpu))
             {
@@ -678,10 +685,10 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             return VINF_CPUM_R3_MSR_WRITE;
 #else  /* IN_RING3 */
             /* First, update all but the TSC page enable bit. */
-            pHv->u64TscPageMsr = (uRawValue & ~MSR_GIM_HV_REF_TSC_ENABLE_BIT);
+            pHv->u64TscPageMsr = (uRawValue & ~MSR_GIM_HV_REF_TSC_ENABLE);
 
             /* Is the guest disabling the TSC page? */
-            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_REF_TSC_ENABLE_BIT);
+            bool fEnable = MSR_GIM_HV_REF_TSC_IS_ENABLED(uRawValue);
             if (!fEnable)
             {
                 gimR3HvDisableTscPage(pVM);
@@ -708,26 +715,28 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             return VINF_CPUM_R3_MSR_WRITE;
 #else  /* IN_RING3 */
             PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
-            /* First, update all but the APIC-assist page enable bit. */
-            pHvCpu->uApicAssistPageMsr = (uRawValue & ~MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT);
+            pHvCpu->uApicAssistPageMsr = uRawValue;
 
-            /* Is the guest disabling the APIC-assist page? */
-            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT);
-            if (!fEnable)
+            if (MSR_GIM_HV_APICASSIST_PAGE_IS_ENABLED(uRawValue))
             {
-                gimR3HvDisableApicAssistPage(pVM);
-                pHvCpu->uApicAssistPageMsr = uRawValue;
-                return VINF_SUCCESS;
+                RTGCPHYS GCPhysApicAssistPage = MSR_GIM_HV_APICASSIST_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+                if (PGMPhysIsGCPhysNormal(pVM, GCPhysApicAssistPage))
+                {
+                    int rc = gimR3HvEnableApicAssistPage(pVCpu, GCPhysApicAssistPage);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pHvCpu->uApicAssistPageMsr = uRawValue;
+                        return VINF_SUCCESS;
+                    }
+                }
+                else
+                {
+                    LogRelMax(5, ("GIM: HyperV%u: APIC-assist page address %#RGp invalid!\n", pVCpu->idCpu,
+                                  GCPhysApicAssistPage));
+                }
             }
-
-            /* Enable the APIC-assist page. */
-            RTGCPHYS GCPhysApicAssist = MSR_GIM_HV_APICASSIST_GUEST_PFN(uRawValue) << PAGE_SHIFT;
-            int rc = gimR3HvEnableApicAssistPage(pVM, GCPhysApicAssist);
-            if (RT_SUCCESS(rc))
-            {
-                pHvCpu->uApicAssistPageMsr = uRawValue;
-                return VINF_SUCCESS;
-            }
+            else
+                gimR3HvDisableApicAssistPage(pVCpu);
 
             return VERR_CPUM_RAISE_GP_0;
 #endif /* IN_RING3 */
@@ -738,7 +747,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            if (MSR_GIM_HV_RESET_IS_SET(uRawValue))
+            if (MSR_GIM_HV_RESET_IS_ENABLED(uRawValue))
             {
                 LogRel(("GIM: HyperV: Reset initiated through MSR\n"));
                 int rc = PDMDevHlpVMReset(pVM->gim.s.pDevInsR3, PDMVMRESET_F_GIM);
@@ -754,7 +763,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            if (uRawValue & MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT)
+            if (uRawValue & MSR_GIM_HV_CRASH_CTL_NOTIFY)
             {
                 LogRel(("GIM: HyperV: Guest indicates a fatal condition! P0=%#RX64 P1=%#RX64 P2=%#RX64 P3=%#RX64 P4=%#RX64\n",
                         pHv->uCrashP0Msr, pHv->uCrashP1Msr, pHv->uCrashP2Msr, pHv->uCrashP3Msr, pHv->uCrashP4Msr));
@@ -850,7 +859,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                             rc = gimR3HvDebugWrite(pVM, pHv->pvDbgBuffer, cbWrite, &cbWritten, false /*fUdpPkt*/);
                             if (   RT_SUCCESS(rc)
                                 && cbWrite == cbWritten)
-                                pHv->uDbgStatusMsr = MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT;
+                                pHv->uDbgStatusMsr = MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS;
                             else
                                 pHv->uDbgStatusMsr = 0;
                         }
@@ -881,7 +890,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
                         if (RT_SUCCESS(rc))
                         {
                             pHv->uDbgStatusMsr  = ((uint16_t)cbReallyRead) << 16;
-                            pHv->uDbgStatusMsr |= MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT;
+                            pHv->uDbgStatusMsr |= MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS;
                         }
                         else
                         {
@@ -906,22 +915,52 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
-            uint8_t uVector = MSR_GIM_HV_SINT_VECTOR(uRawValue);
+            PGIMHVCPU pHvCpu  = &pVCpu->gim.s.u.HvCpu;
+            uint8_t   uVector = MSR_GIM_HV_SINT_VECTOR(uRawValue);
             if (  !MSR_GIM_HV_SINT_IS_MASKED(uRawValue)
-                && uVector < 16)
+                && uVector < GIM_HV_SINT_VECTOR_VALID_MIN)
             {
-                LogRel(("GIM: HyperV: Programmed an invalid vector in SINT2, uVector=%u -> #GP(0)\n", uVector));
+                LogRel(("GIM: HyperV: Programmed an invalid vector in SINT2 (VMBUS_MSG_SINT), uVector=%u -> #GP(0)\n", uVector));
                 return VERR_CPUM_RAISE_GP_0;
             }
 
-            pHvCpu->uSint2Msr = uRawValue;
+            pHvCpu->auSintXMsr[GIM_HV_VMBUS_MSG_SINT] = uRawValue;
             if (MSR_GIM_HV_SINT_IS_MASKED(uRawValue))
-                LogRel(("GIM: HyperV: Masked SINT2\n"));
+                LogRel(("GIM: HyperV: Masked SINT2 (VMBUS_MSG_SINT)\n"));
             else
-                LogRel(("GIM: HyperV: Unmasked SINT2, uVector=%u\n", uVector));
+                LogRel(("GIM: HyperV: Unmasked SINT2 (VMBUS_MSG_SINT), uVector=%u\n", uVector));
             return VINF_SUCCESS;
 #endif
+        }
+
+        case MSR_GIM_HV_SIEFP:
+        {
+#ifndef IN_RING3
+            return VINF_CPUM_R3_MSR_WRITE;
+#else
+            PGIMHVCPU pHvCpu  = &pVCpu->gim.s.u.HvCpu;
+            pHvCpu->uSiefpMsr = uRawValue;
+            if (MSR_GIM_HV_SIEF_PAGE_IS_ENABLED(uRawValue))
+            {
+                RTGCPHYS GCPhysSiefPage = MSR_GIM_HV_SIEF_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+                if (PGMPhysIsGCPhysNormal(pVM, GCPhysSiefPage))
+                {
+                    int rc = gimR3HvEnableSiefPage(pVCpu, GCPhysSiefPage);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /** @todo SIEF setup. */
+                        return VINF_SUCCESS;
+                    }
+                }
+                else
+                    LogRelMax(5, ("GIM: HyperV%u: SIEF page address %#RGp invalid!\n", pVCpu->idCpu, GCPhysSiefPage));
+            }
+            else
+                gimR3HvDisableSiefPage(pVCpu);
+
+            return VERR_CPUM_RAISE_GP_0;
+#endif
+            break;
         }
 
         case MSR_GIM_HV_SIMP:

@@ -400,10 +400,10 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 /** @name Hyper-V MSR - Reset (MSR_GIM_HV_RESET).
  * @{
  */
-/** The hypercall enable bit. */
-#define MSR_GIM_HV_RESET_BIT                      RT_BIT_64(0)
-/** Whether the hypercall-page is enabled or not. */
-#define MSR_GIM_HV_RESET_IS_SET(a)                RT_BOOL((a) & MSR_GIM_HV_RESET_BIT)
+/** The reset enable mask. */
+#define MSR_GIM_HV_RESET_ENABLE                       RT_BIT_64(0)
+/** Whether the reset MSR is enabled. */
+#define MSR_GIM_HV_RESET_IS_ENABLED(a)                RT_BOOL((a) & MSR_GIM_HV_RESET_ENABLE)
 /** @} */
 
 /** @name Hyper-V MSR - Hypercall (MSR_GIM_HV_HYPERCALL).
@@ -411,10 +411,10 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
  */
 /** Guest-physical page frame number of the hypercall-page. */
 #define MSR_GIM_HV_HYPERCALL_GUEST_PFN(a)         ((a) >> 12)
-/** The hypercall enable bit. */
-#define MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT      RT_BIT_64(0)
+/** The hypercall enable mask. */
+#define MSR_GIM_HV_HYPERCALL_PAGE_ENABLE          RT_BIT_64(0)
 /** Whether the hypercall-page is enabled or not. */
-#define MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(a)   RT_BOOL((a) & MSR_GIM_HV_HYPERCALL_PAGE_ENABLE_BIT)
+#define MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(a)   RT_BOOL((a) & MSR_GIM_HV_HYPERCALL_PAGE_ENABLE)
 /** @} */
 
 /** @name Hyper-V MSR - Reference TSC (MSR_GIM_HV_REF_TSC).
@@ -422,17 +422,17 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
  */
 /** Guest-physical page frame number of the TSC-page. */
 #define MSR_GIM_HV_REF_TSC_GUEST_PFN(a)           ((a) >> 12)
-/** The TSC-page enable bit. */
-#define MSR_GIM_HV_REF_TSC_ENABLE_BIT             RT_BIT_64(0)
+/** The TSC-page enable mask. */
+#define MSR_GIM_HV_REF_TSC_ENABLE                 RT_BIT_64(0)
 /** Whether the TSC-page is enabled or not. */
-#define MSR_GIM_HV_REF_TSC_IS_ENABLED(a)          RT_BOOL((a) & MSR_GIM_HV_REF_TSC_ENABLE_BIT)
+#define MSR_GIM_HV_REF_TSC_IS_ENABLED(a)          RT_BOOL((a) & MSR_GIM_HV_REF_TSC_ENABLE)
 /** @} */
 
 /** @name Hyper-V MSR - Guest crash control (MSR_GIM_HV_CRASH_CTL).
  * @{
  */
-/** The Crash Notify bit. */
-#define MSR_GIM_HV_CRASH_CTL_NOTIFY_BIT           RT_BIT_64(63)
+/** The Crash Control notify mask. */
+#define MSR_GIM_HV_CRASH_CTL_NOTIFY               RT_BIT_64(63)
 /** @} */
 
 /** @name Hyper-V MSR - Guest OS ID (MSR_GIM_HV_GUEST_OS_ID).
@@ -459,10 +459,22 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
  */
 /** Guest-physical page frame number of the APIC-assist page. */
 #define MSR_GIM_HV_APICASSIST_GUEST_PFN(a)        ((a) >> 12)
-/** The hypercall enable bit. */
-#define MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT     RT_BIT_64(0)
-/** Whether the hypercall-page is enabled or not. */
-#define MSR_GIM_HV_APICASSIST_PAGE_IS_ENABLED(a)  RT_BOOL((a) & MSR_GIM_HV_APICASSIST_PAGE_ENABLE_BIT)
+/** The APIC-assist page enable mask. */
+#define MSR_GIM_HV_APICASSIST_PAGE_ENABLE         RT_BIT_64(0)
+/** Whether the APIC-assist page is enabled or not. */
+#define MSR_GIM_HV_APICASSIST_PAGE_IS_ENABLED(a)  RT_BOOL((a) & MSR_GIM_HV_APICASSIST_PAGE_ENABLE)
+/** @} */
+
+/** @name Hyper-V MSR - Synthetic Interrupt Event Flags page
+ *        (MSR_GIM_HV_SIEFP).
+ * @{
+ */
+/** Guest-physical page frame number of the APIC-assist page. */
+#define MSR_GIM_HV_SIEF_GUEST_PFN(a)              ((a) >> 12)
+/** The SIEF enable mask. */
+#define MSR_GIM_HV_SIEF_PAGE_ENABLE               RT_BIT_64(0)
+/** Whether the SIEF page is enabled or not. */
+#define MSR_GIM_HV_SIEF_PAGE_IS_ENABLED(a)        RT_BOOL((a) & MSR_GIM_HV_SIEF_PAGE_ENABLE)
 /** @} */
 
 /**
@@ -698,21 +710,21 @@ typedef enum GIMHVHYPERCALLPARAM
  * @{
  */
 /** Debug send buffer operation success. */
-#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS_BIT    RT_BIT_64(0)
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_W_SUCCESS        RT_BIT_64(0)
 /** Debug receive buffer operation success. */
-#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS_BIT    RT_BIT_64(2)
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_R_SUCCESS        RT_BIT_64(2)
 /** Debug connection was reset. */
-#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_CONN_RESET_BIT   RT_BIT_64(3)
+#define MSR_GIM_HV_SYNTH_DEBUG_STATUS_CONN_RESET       RT_BIT_64(3)
 /** @} */
 
 
 /** @name Hyper-V MSR - synthetic interrupt (MSR_GIM_HV_SINTx).
  * @{
  */
-/** The interrupt masked bit. */
-#define MSR_GIM_HV_SINT_MASKED_BIT                     RT_BIT_64(16)
+/** The interrupt masked mask. */
+#define MSR_GIM_HV_SINT_MASKED                         RT_BIT_64(16)
 /** Whether the interrupt source is masked. */
-#define MSR_GIM_HV_SINT_IS_MASKED(a)                   RT_BOOL((a) & MSR_GIM_HV_SINT_MASKED_BIT)
+#define MSR_GIM_HV_SINT_IS_MASKED(a)                   RT_BOOL((a) & MSR_GIM_HV_SINT_MASKED)
 /** Interrupt vector. */
 #define MSR_GIM_HV_SINT_VECTOR(a)                      ((a) & UINT64_C(0xff))
 /** @} */
@@ -721,10 +733,10 @@ typedef enum GIMHVHYPERCALLPARAM
 /** @name Hyper-V MSR - synthetic interrupt message page (MSR_GIM_HV_SIMP).
  * @{
  */
-/** The SIMP enabled bit. */
-#define MSR_GIM_HV_SIMP_ENABLED_BIT                    RT_BIT_64(0)
+/** The SIMP enable mask. */
+#define MSR_GIM_HV_SIMP_ENABLE                         RT_BIT_64(0)
 /** Whether the SIMP is enabled. */
-#define MSR_GIM_HV_SIMP_IS_ENABLED(a)                  RT_BOOL((a) & MSR_GIM_HV_SIMP_ENABLED_BIT)
+#define MSR_GIM_HV_SIMP_IS_ENABLED(a)                  RT_BOOL((a) & MSR_GIM_HV_SIMP_ENABLE)
 /** The SIMP guest-physical address. */
 #define MSR_GIM_HV_SIMP_GPA(a)                         ((a) & UINT64_C(0xfffffffffffff000))
 /** @} */
@@ -764,10 +776,23 @@ typedef enum GIMHVHYPERCALLPARAM
  * @{ */
 /** VMBus connection ID. */
 #define GIM_HV_VMBUS_MSG_CONNECTION_ID            1
-/** VMBus synthetic interrupt source. */
+/** VMBus synthetic interrupt source (see VMBUS_MESSAGE_SINT in linux
+ *  sources). */
 #define GIM_HV_VMBUS_MSG_SINT                     2
 /** @} */
 
+/** @name SynIC.
+ *  Synthetic Interrupt Controller definitions.
+ */
+/** SynIC version register. */
+#define GIM_HV_SVERSION                           1
+/** Number of synthetic interrupt sources. */
+#define GIM_HV_SINT_COUNT                         16
+/** Lowest valid vector for synthetic interrupt. */
+#define GIM_HV_SINT_VECTOR_VALID_MIN              16
+/** Highest valid vector for synthetic interrupt. */
+#define GIM_HV_SINT_VECTOR_VALID_MAX              255
+/** @} */
 
 /** @name Hyper-V synthetic interrupt message type.
  * @{
@@ -1119,8 +1144,10 @@ typedef struct GIMHVCPU
      * @{ */
     /** Synthetic interrupt message page MSR. */
     uint64_t                    uSimpMsr;
-    /** Interrupt source 2 MSR. */
-    uint64_t                    uSint2Msr;
+    /** Interrupt source MSRs. */
+    uint64_t                    auSintXMsr[GIM_HV_SINT_COUNT];
+    /** Synethtic interrupt events flag page MSR. */
+    uint64_t                    uSiefpMsr;
     /** APIC-assist page MSR. */
     uint64_t                    uApicAssistPageMsr;
     /** @} */
@@ -1150,8 +1177,12 @@ VMMR3_INT_DECL(int)             gimR3HvSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
 VMMR3_INT_DECL(int)             gimR3HvGetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup);
 
-VMMR3_INT_DECL(int)             gimR3HvDisableApicAssistPage(PVM pVM);
-VMMR3_INT_DECL(int)             gimR3HvEnableApicAssistPage(PVM pVM, RTGCPHYS GCPhysTscPage);
+VMMR3_INT_DECL(int)             gimR3HvDisableSiefPage(PVMCPU pVCpu);
+VMMR3_INT_DECL(int)             gimR3HvEnableSiefPage(PVMCPU pVCpu, RTGCPHYS GCPhysSiefPage);
+VMMR3_INT_DECL(int)             gimR3HvEnableSimPage(PVMCPU pVCpu, RTGCPHYS GCPhysSimPage);
+VMMR3_INT_DECL(int)             gimR3HvDisableSimPage(PVMCPU pVCpu);
+VMMR3_INT_DECL(int)             gimR3HvDisableApicAssistPage(PVMCPU pVCpu);
+VMMR3_INT_DECL(int)             gimR3HvEnableApicAssistPage(PVMCPU pVCpu, RTGCPHYS GCPhysTscPage);
 VMMR3_INT_DECL(int)             gimR3HvDisableTscPage(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSeq, uint32_t uTscSeq);
 VMMR3_INT_DECL(int)             gimR3HvDisableHypercallPage(PVM pVM);
