@@ -1827,7 +1827,7 @@ static const char *dbgDiggerLinuxCfgSkipWhitespace(const char *pszCfg)
  * @param   pszCfg              The config data.
  * @param   ppszCfgNext         Where to store the pointer to the data following the identifier.
  * @param   ppszIde             Where to store the pointer to the identifier on success.
- *                              Free with RTStrFree().         
+ *                              Free with RTStrFree().
  */
 static int dbgDiggerLinuxCfgParseIde(const char *pszCfg, const char **ppszCfgNext, char **ppszIde)
 {
@@ -1882,7 +1882,7 @@ static int dbgDiggerLinuxCfgParseVal(const char *pszCfg, const char **ppszCfgNex
             if (pCfgItem)
             {
                 pCfgItem->enmType = DBGDIGGERLINUXCFGITEMTYPE_NUMBER;
-                pCfgItem->u.i64Num = i64Num; 
+                pCfgItem->u.i64Num = i64Num;
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -1919,7 +1919,7 @@ static int dbgDiggerLinuxCfgParseVal(const char *pszCfg, const char **ppszCfgNex
         if (pCfgItem)
         {
             pCfgItem->enmType = DBGDIGGERLINUXCFGITEMTYPE_FLAG;
-            pCfgItem->u.fModule = *pszCfg == 'm'; 
+            pCfgItem->u.fModule = *pszCfg == 'm';
         }
         else
             rc = VERR_NO_MEMORY;
@@ -2024,7 +2024,7 @@ static int dbgDiggerLinuxCfgParse(PDBGDIGGERLINUX pThis, const char *pszCfg)
     return rc;
 }
 
-/** 
+/**
  * Decompresses the given config and validates the UTF-8 encoding.
  *
  * @returns VBox status code.
@@ -2199,7 +2199,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
      * Try to find the compressed kernel config and parse it before we try
      * to get the symbol table, the config database is required to select
      * the method to use.
-     */ 
+     */
     int rc = dbgDiggerLinuxCfgFind(pThis, pUVM);
     if (RT_FAILURE(rc))
         LogFlowFunc(("Failed to find kernel config (%Rrc), no config database available\n", rc));
