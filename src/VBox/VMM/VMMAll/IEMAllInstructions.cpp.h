@@ -21,6 +21,11 @@
 *******************************************************************************/
 extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forward declare it. */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4702) /* Unreachable code like return in iemOp_Grp6_lldt. */
+#endif
+
 
 /**
  * Common worker for instructions like ADD, AND, OR, ++ with a byte
@@ -18077,3 +18082,6 @@ const PFNIEMOP g_apfnOneByteMap[256] =
 
 /** @} */
 
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
