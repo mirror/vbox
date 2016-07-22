@@ -337,6 +337,7 @@ static bool disIsString(uint32_t uFlatAddr, uint32_t cb)
 }
 
 
+#if 0 /* unused */
 /**
  * Checks if a dword could be a far 16:16 BIOS address.
  *
@@ -355,6 +356,7 @@ static bool disIsFarBiosAddr(uint32_t uFlatAddr)
         return false;
     return true;
 }
+#endif
 
 
 static bool disByteData(uint32_t uFlatAddr, uint32_t cb)

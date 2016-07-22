@@ -161,7 +161,6 @@ static bool writefile(const char *pszFile, void const *pvFile, size_t cbFile)
 {
     remove(pszFile);
 
-    int rc = -1;
     FILE *pFile = openfile(pszFile, true);
     if (pFile)
     {
@@ -1027,6 +1026,7 @@ static bool omfWriter_LEDataAddU16(POMFWRITER pThis, uint16_t u16)
     return false;
 }
 
+#if 0 /* unused */
 /**
  * LEDATA + FIXUPP - Adds a byte to the LEDATA record, splitting if needed.
  */
@@ -1040,6 +1040,7 @@ static bool omfWriter_LEDataAddU8(POMFWRITER pThis, uint8_t b)
     }
     return false;
 }
+#endif
 
 /**
  * MODEND - End of module, simple variant.
@@ -1932,10 +1933,6 @@ static bool convertElfToOmf(const char *pszFile, uint8_t const *pbFile, size_t c
      */
     if (omfWriter_BeginModule(pThis, pszFile))
     {
-        Elf64_Ehdr const *pEhdr     = (Elf64_Ehdr const *)pbFile;
-        Elf64_Shdr const *paShdrs   = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
-        const char       *pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
-
         if (   convertElfSectionsToSegDefsAndGrpDefs(pThis, &ElfStuff)
             && convertElfSymbolsToPubDefsAndExtDefs(pThis, &ElfStuff)
             && omfWriter_LinkPassSeparator(pThis)
@@ -3619,8 +3616,6 @@ static bool convertMachoToOmf(const char *pszFile, uint8_t const *pbFile, size_t
     if (omfWriter_BeginModule(pThis, pszFile))
     {
         Elf64_Ehdr const *pEhdr     = (Elf64_Ehdr const *)pbFile;
-        Elf64_Shdr const *paShdrs   = (Elf64_Shdr const *)&pbFile[pEhdr->e_shoff];
-        const char       *pszStrTab = (const char *)&pbFile[paShdrs[pEhdr->e_shstrndx].sh_offset];
 
         if (   convertMachOSectionsToSegDefsAndGrpDefs(pThis, &MachOStuff)
             && convertMachOSymbolsToPubDefsAndExtDefs(pThis, &MachOStuff)
@@ -4585,7 +4580,6 @@ static bool convertOmfWriteDebugData(POMFWRITER pThis, POMFDETAILS pOmfStuff)
         return true;
 
     /* Begin and write the CV version signature. */
-    uint32_t const  cbMaxChunk = RT_ALIGN(OMF_MAX_RECORD_PAYLOAD - 1 - 16, 4); /* keep the data dword aligned */
     if (   !omfWriter_LEDataBegin(pThis, pOmfStuff->iSymbolsSeg, 0)
         || !omfWriter_LEDataAddU32(pThis, RTCVSYMBOLS_SIGNATURE_CV8))
         return false;

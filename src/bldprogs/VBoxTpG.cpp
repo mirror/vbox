@@ -1020,8 +1020,6 @@ static RTEXITCODE generateHeader(PSCMSTREAM pStrm)
 
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
-            PVTGARG const pFirstArg = RTListGetFirst(&pProbe->ArgHead, VTGARG, ListEntry);
-
             ScmStreamPrintf(pStrm,
                             "extern uint32_t const volatile g_cVTGProbeEnabled_%s_%s;\n"
                             "extern VTGDESCPROBE            g_VTGProbeData_%s_%s;\n"
@@ -1201,8 +1199,6 @@ static RTEXITCODE generateWrapperHeader(PSCMSTREAM pStrm)
     {
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
-            PVTGARG const pFirstArg = RTListGetFirst(&pProbe->ArgHead, VTGARG, ListEntry);
-
             generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszMangledName);
             ScmStreamPrintf(pStrm,
                             "# define %s("

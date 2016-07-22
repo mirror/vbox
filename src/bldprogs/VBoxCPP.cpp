@@ -1112,6 +1112,7 @@ static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t
  */
 
 
+#if 0 /* unused */
 /**
  * Skips white spaces, including escaped new-lines.
  *
@@ -1140,6 +1141,7 @@ static void vbcppProcessSkipWhiteAndEscapedEol(PSCMSTREAM pStrmInput)
             break;
     }
 }
+#endif
 
 
 /**
@@ -1262,7 +1264,7 @@ static size_t vbcppProcessSkipWhite(PSCMSTREAM pStrmInput)
 static bool vbcppInputLookForLeftParenthesis(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
     size_t offSaved = ScmStreamTell(pStrmInput);
-    RTEXITCODE rcExit = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    /*RTEXITCODE rcExit =*/ vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
     unsigned ch = ScmStreamPeekCh(pStrmInput);
     if (ch == '(')
         return true;
@@ -2291,7 +2293,7 @@ static bool vbcppMacroExpandLookForLeftParenthesis(PVBCPP pThis, PVBCPPMACROEXP 
      */
     PSCMSTREAM pStrmInput = pExp->pStrmInput;
     size_t     offSaved   = ScmStreamTell(pStrmInput);
-    RTEXITCODE rcExit     = vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
+    /*RTEXITCODE rcExit = */ vbcppProcessSkipWhiteEscapedEolAndComments(pThis, pStrmInput);
     unsigned ch = ScmStreamPeekCh(pStrmInput);
     if (ch == '(')
     {
@@ -2380,7 +2382,6 @@ static RTEXITCODE vbcppMacroExpandDefinedOperator(PVBCPP pThis, PVBCPPMACROEXP p
 static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode, size_t *pcReplacements)
 {
     RTEXITCODE  rcExit        = RTEXITCODE_SUCCESS;
-    size_t      cReplacements = 0;
     size_t      off           = 0;
     unsigned    ch;
     while (   off < pExp->StrBuf.cchBuf
@@ -3453,7 +3454,7 @@ static VBCPPEXPRRET vbcppExprParseBinaryOperator(PVBCPPEXPRPARSER pParser)
             }
             break;
         case '>':
-            enmOp = kVBCppBinary_GreaterThan; break;
+            enmOp = kVBCppBinary_GreaterThan;
             if (pParser->pszCur[1] == '=')
             {
                 pParser->pszCur++;
@@ -3778,7 +3779,8 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
  */
 static VBCPPEXPRRET vbcppExprParseCharacterConstant(PVBCPPEXPRPARSER pParser)
 {
-    char ch  = *pParser->pszCur++;
+    Assert(*pParser->pszCur == '\'');
+    pParser->pszCur++;
     char ch2 = *pParser->pszCur++;
     if (ch2 == '\'')
         return vbcppExprParseError(pParser, "Empty character constant");
@@ -4832,7 +4834,6 @@ static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, siz
             ScmStreamGetCh(pStrmInput);
             pchFileSpec = pchFilename = ScmStreamGetCur(pStrmInput);
             unsigned chEnd  = chType == '<' ? '>' : '"';
-            unsigned chPrev = ch;
             while (   (ch = ScmStreamGetCh(pStrmInput)) != ~(unsigned)0
                    &&  ch != chEnd)
             {
