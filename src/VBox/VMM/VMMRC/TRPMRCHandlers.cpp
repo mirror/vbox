@@ -723,8 +723,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    PVM     pVM   = TRPMCPU_2_VM(pTrpmCpu);
-    PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
+    PVMCPU pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0b: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xb);
     PGMRZDynMapStartAutoSet(pVCpu);
