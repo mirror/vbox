@@ -607,7 +607,7 @@ void VBoxDtPanic(const char *pszFormat, ...)
     va_list va;
     va_start(va, pszFormat);
     dtrace_vpanic(pszFormat, va);
-    va_end(va);
+    /*va_end(va); - unreachable */
 }
 
 
@@ -676,7 +676,7 @@ cred_t *VBoxDtGetCurrentCreds(void)
 void VBoxDtCredHold(struct VBoxDtCred *pCred)
 {
     int32_t cRefs = ASMAtomicIncS32(&pCred->cr_refs);
-    Assert(cRefs > 1);
+    Assert(cRefs > 1); NOREF(cRefs);
 }
 
 

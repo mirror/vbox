@@ -2474,7 +2474,7 @@ out:
 		uint32_t rval = dtrace_cas32((uint32_t *)&spec->dtsp_state,
 		    DTRACESPEC_COMMITTING, DTRACESPEC_INACTIVE);
 
-		ASSERT(rval == DTRACESPEC_COMMITTING);
+		ASSERT(rval == DTRACESPEC_COMMITTING); NOREF(rval);
 	}
 
 	src->dtb_offset = 0;
@@ -9406,7 +9406,9 @@ dtrace_predicate_hold(dtrace_predicate_t *pred)
 static void
 dtrace_predicate_release(dtrace_predicate_t *pred, dtrace_vstate_t *vstate)
 {
+#ifdef VBOX_STRICT
 	dtrace_difo_t *dp = pred->dtp_difo;
+#endif
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
 	ASSERT(dp != NULL && dp->dtdo_refcnt != 0);
