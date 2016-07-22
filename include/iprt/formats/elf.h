@@ -37,14 +37,14 @@ typedef Elf64_Sword         Elf_Sword;
 typedef Elf64_Word          Elf_Word;
 typedef Elf64_Size          Elf_Size;
 typedef Elf64_Hashelt       Elf_Hashelt;
-typedef	Elf64_Ehdr          Elf_Ehdr;
-typedef	Elf64_Shdr          Elf_Shdr;
-typedef	Elf64_Phdr          Elf_Phdr;
-typedef	Elf64_Nhdr          Elf_Nhdr;
-typedef	Elf64_Dyn           Elf_Dyn;
-typedef	Elf64_Rel           Elf_Rel;
-typedef	Elf64_Rela          Elf_Rela;
-typedef	Elf64_Sym           Elf_Sym;
+typedef Elf64_Ehdr          Elf_Ehdr;
+typedef Elf64_Shdr          Elf_Shdr;
+typedef Elf64_Phdr          Elf_Phdr;
+typedef Elf64_Nhdr          Elf_Nhdr;
+typedef Elf64_Dyn           Elf_Dyn;
+typedef Elf64_Rel           Elf_Rel;
+typedef Elf64_Rela          Elf_Rela;
+typedef Elf64_Sym           Elf_Sym;
 
 #define ELF_R_SYM           ELF64_R_SYM
 #define ELF_R_TYPE          ELF64_R_TYPE
@@ -62,14 +62,14 @@ typedef Elf32_Sword         Elf_Sword;
 typedef Elf32_Word          Elf_Word;
 typedef Elf32_Size          Elf_Size;
 typedef Elf32_Hashelt       Elf_Hashelt;
-typedef	Elf32_Ehdr          Elf_Ehdr;
-typedef	Elf32_Shdr          Elf_Shdr;
-typedef	Elf32_Phdr          Elf_Phdr;
-typedef	Elf32_Nhdr          Elf_Nhdr;
-typedef	Elf32_Dyn           Elf_Dyn;
-typedef	Elf32_Rel           Elf_Rel;
-typedef	Elf32_Rela          Elf_Rela;
-typedef	Elf32_Sym           Elf_Sym;
+typedef Elf32_Ehdr          Elf_Ehdr;
+typedef Elf32_Shdr          Elf_Shdr;
+typedef Elf32_Phdr          Elf_Phdr;
+typedef Elf32_Nhdr          Elf_Nhdr;
+typedef Elf32_Dyn           Elf_Dyn;
+typedef Elf32_Rel           Elf_Rel;
+typedef Elf32_Rela          Elf_Rela;
+typedef Elf32_Sym           Elf_Sym;
 
 #define ELF_R_SYM           ELF32_R_SYM
 #define ELF_R_TYPE          ELF32_R_TYPE

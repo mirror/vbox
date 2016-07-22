@@ -63,7 +63,7 @@ typedef struct RTCRDIGESTDESC
      * Allocates the digest data.
      */
     DECLCALLBACKMEMBER(void *, pfnNew)(void);
-    
+
     /**
      * Frees the digest data.
      *
