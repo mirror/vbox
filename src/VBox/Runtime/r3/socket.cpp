@@ -1468,7 +1468,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
     int const fdMax = (int)pThis->hNative + 1;
-    AssertReturn(fdMax - 1 == pThis->hNative, VERR_INTERNAL_ERROR_5);
+    AssertReturn((RTSOCKETNATIVE)(fdMax - 1) == pThis->hNative, VERR_INTERNAL_ERROR_5);
 
     /*
      * Set up the file descriptor sets and do the select.
@@ -1512,7 +1512,7 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     AssertReturn(!(fEvents & ~RTSOCKET_EVT_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
     int const fdMax = (int)pThis->hNative + 1;
-    AssertReturn(fdMax - 1 == pThis->hNative, VERR_INTERNAL_ERROR_5);
+    AssertReturn((RTSOCKETNATIVE)(fdMax - 1) == pThis->hNative, VERR_INTERNAL_ERROR_5);
 
     *pfEvents = 0;
 
