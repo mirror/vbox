@@ -161,7 +161,7 @@ public:
 
                 int vrc = RTTimerLRStart(sTimer, gShutdownDelayMs * RT_NS_1MS_64);
                 AssertRC(vrc);
-                timerStarted = SUCCEEDED(vrc);
+                timerStarted = !!(SUCCEEDED(vrc));
             }
             else
             {
