@@ -618,28 +618,26 @@ static DECLCALLBACK(int) rtPathVarQuery_WinSystemRoot(uint32_t iItem, char *pszB
 #undef RTPATHMATCHVAR_DOUBLE_ENVVAR
 
 /**
- *
- *
- * @author bird (9/29/2015)
+ * Variables.
  */
 static RTPATHMATCHVAR const g_aVariables[] =
 {
-    { RT_STR_TUPLE("Arch"),                     false,  rtPathVarQuery_Arch, rtPathVarMatch_Arch },
-    { RT_STR_TUPLE("Bits"),                     false,  rtPathVarQuery_Bits, rtPathVarMatch_Bits },
-    { RT_STR_TUPLE("Path"),                     true,   rtPathVarQuery_Path, NULL },
+    { RT_STR_TUPLE("Arch"),                     false,  rtPathVarQuery_Arch,                        rtPathVarMatch_Arch },
+    { RT_STR_TUPLE("Bits"),                     false,  rtPathVarQuery_Bits,                        rtPathVarMatch_Bits },
+    { RT_STR_TUPLE("Path"),                     true,   rtPathVarQuery_Path,                        NULL },
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    { RT_STR_TUPLE("SystemDrive"),              true,   rtPathVarQuery_DosSystemDrive, NULL },
+    { RT_STR_TUPLE("SystemDrive"),              true,   rtPathVarQuery_DosSystemDrive,              NULL },
 #endif
 #ifdef RT_OS_WINDOWS
-    { RT_STR_TUPLE("SystemRoot"),               true,   rtPathVarQuery_WinSystemRoot, NULL },
-    { RT_STR_TUPLE("AppData"),                  true,   rtPathVarQuery_WinAppData, NULL },
-    { RT_STR_TUPLE("ProgramData"),              true,   rtPathVarQuery_WinProgramData, NULL },
-    { RT_STR_TUPLE("ProgramFiles"),             true,   rtPathVarQuery_WinProgramFiles, NULL },
-    { RT_STR_TUPLE("OtherProgramFiles"),        true,   rtPathVarQuery_WinOtherProgramFiles, NULL },
-    { RT_STR_TUPLE("AllProgramFiles"),          true,   rtPathVarQuery_WinAllProgramFiles, NULL },
-    { RT_STR_TUPLE("CommonProgramFiles"),       true,   rtPathVarQuery_WinCommonProgramFiles, NULL },
-    { RT_STR_TUPLE("OtherCommonProgramFiles"),  true,   rtPathVarQuery_WinOtherCommonProgramFiles, NULL },
-    { RT_STR_TUPLE("AllCommonProgramFiles"),    true,   rtPathVarQuery_WinAllCommonProgramFiles, NULL },
+    { RT_STR_TUPLE("SystemRoot"),               true,   rtPathVarQuery_WinSystemRoot,               NULL },
+    { RT_STR_TUPLE("AppData"),                  true,   rtPathVarQuery_WinAppData,                  rtPathVarMatch_WinAppData },
+    { RT_STR_TUPLE("ProgramData"),              true,   rtPathVarQuery_WinProgramData,              rtPathVarMatch_WinProgramData },
+    { RT_STR_TUPLE("ProgramFiles"),             true,   rtPathVarQuery_WinProgramFiles,             rtPathVarMatch_WinProgramFiles },
+    { RT_STR_TUPLE("OtherProgramFiles"),        true,   rtPathVarQuery_WinOtherProgramFiles,        rtPathVarMatch_WinOtherProgramFiles },
+    { RT_STR_TUPLE("AllProgramFiles"),          true,   rtPathVarQuery_WinAllProgramFiles,          rtPathVarMatch_WinAllProgramFiles },
+    { RT_STR_TUPLE("CommonProgramFiles"),       true,   rtPathVarQuery_WinCommonProgramFiles,       rtPathVarMatch_WinCommonProgramFiles },
+    { RT_STR_TUPLE("OtherCommonProgramFiles"),  true,   rtPathVarQuery_WinOtherCommonProgramFiles,  rtPathVarMatch_WinOtherCommonProgramFiles },
+    { RT_STR_TUPLE("AllCommonProgramFiles"),    true,   rtPathVarQuery_WinAllCommonProgramFiles,    rtPathVarMatch_WinAllCommonProgramFiles },
 #endif
 };
 
