@@ -3940,6 +3940,16 @@ endif
 #
 # Template for building SUPDRV R0 things.
 #
+# Disabled Visual C++ warnings:
+#     -wd4996: deprecated / insecure.
+#     -wd4127: conditional expression is constant [level 4]
+#     -wd4201: nonstandard extension used : nameless struct/union [level 4]
+#     -wd4214: nonstandard extension used : bit field types other than int [level 4]
+#     -wd4706: assignment within conditional expression [level 4]
+#     -wd4324: '_TDI_PNP_CONTEXT_XP' : structure was padded due to __declspec(align())
+#
+#     -wd4100: 'identifier' : unreferenced formal parameter [level 4] --- TODO: Enable this one!
+#
 TEMPLATE_VBOXR0DRV                     = VBox SUPDRV Ring 0
 TEMPLATE_VBOXR0DRV_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXR0DRV_ASFLAGS             = $(VBOX_ASFLAGS)
@@ -3962,7 +3972,8 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_DEFS.x86          += NO_INTERLOCKED_INTRINSICS # Avoids intrisic VC/WDK trouble
  TEMPLATE_VBOXR0DRV_DEFS.x86          += WIN9X_COMPAT_SPINLOCK     # Avoid multiply defined _KeInitializeSpinLock@4
  TEMPLATE_VBOXR0DRV_DEFS.amd64         = _AMD64_
- TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -W3 -GS- -wd4996 -Zc:wchar_t- -Gs4096 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
+ TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
+ 	-W4 -wd4996 -wd4127 -wd4201 -wd4214 -wd4706 -wd4324  -wd4100
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
