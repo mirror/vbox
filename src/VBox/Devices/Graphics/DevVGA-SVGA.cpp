@@ -848,7 +848,8 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             /* Go to ring-3 and halt the CPU. */
             rc = VINF_IOM_R3_IOPORT_READ;
             break;
-#elif defined(VMSVGA_USE_EMT_HALT_CODE)
+#else
+# if defined(VMSVGA_USE_EMT_HALT_CODE)
             /* The guest is basically doing a HLT via the device here, but with
                a special wake up condition on FIFO completion. */
             PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
@@ -861,7 +862,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
                 rc = VMR3WaitForDeviceReady(pVM, idCpu);
             ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
             VMCPUSET_ATOMIC_DEL(&pSVGAState->BusyDelayedEmts, idCpu);
-#else
+# else
 
             /* Delay the EMT a bit so the FIFO and others can get some work done.
                This used to be a crude 50 ms sleep. The current code tries to be
@@ -890,8 +891,9 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
                 ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
             }
             STAM_REL_PROFILE_STOP(&pSVGAState->StatBusyDelayEmts, EmtDelay);
-#endif
+# endif
             *pu32 = pThis->svga.fBusy != 0;
+#endif
         }
         else
             *pu32 = false;
@@ -1489,7 +1491,7 @@ PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
     if (cb != 4)
     {
         Log(("Ignoring non-dword read at %x cb=%d\n", Port, cb));
-        *pu32 = ~0;
+        *pu32 = UINT32_MAX;
         return VINF_SUCCESS;
     }
 

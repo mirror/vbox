@@ -1858,7 +1858,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
 
                 if (fAddFCS)
                 {
-                    uint32_t fcs = ~0;
+                    uint32_t fcs = UINT32_MAX;
                     uint8_t *p = src;
 
                     while (p != &src[cbToRecv])

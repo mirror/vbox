@@ -143,10 +143,10 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCP
                     *(uint32_t *)pv = VMMDEV_TESTING_NOP_RET;
                     break;
                 case 2:
-                    *(uint16_t *)pv = (uint16_t)VMMDEV_TESTING_NOP_RET;
+                    *(uint16_t *)pv = RT_LO_U16(VMMDEV_TESTING_NOP_RET);
                     break;
                 case 1:
-                    *(uint8_t *)pv  = (uint8_t)VMMDEV_TESTING_NOP_RET;
+                    *(uint8_t *)pv  = RT_LO_U8(VMMDEV_TESTING_NOP_RET);
                     break;
                 default:
                     AssertFailed();

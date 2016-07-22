@@ -363,6 +363,11 @@ DECLINLINE(void) vga_reset_dirty(PVGASTATE pThis, RTGCPHYS offVRAMStart, RTGCPHY
     ASMBitClearRange(&pThis->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4310 4245) /* Buggy warnings: cast truncates constant value; conversion from 'int' to 'const uint8_t', signed/unsigned mismatch */
+#endif
+
 /* force some bits to zero */
 static const uint8_t sr_mask[8] = {
     (uint8_t)~0xfc,
@@ -393,6 +398,10 @@ static const uint8_t gr_mask[16] = {
     (uint8_t)~0xff, /* 0x0e */
     (uint8_t)~0xff, /* 0x0f */
 };
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #define cbswap_32(__x) \
 ((uint32_t)( \
@@ -3620,7 +3629,6 @@ PDMBOTHCBDECL(int) vgaIOPortReadBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     static int lastWasNotNewline = 0;  /* We are only called in a single-threaded way */
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 

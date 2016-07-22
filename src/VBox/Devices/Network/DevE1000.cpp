@@ -4720,7 +4720,6 @@ static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr,
                        bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
-    uint32_t cbVTag = 0;
 
     e1kPrintTDesc(pThis, pDesc, "vvv");
 
