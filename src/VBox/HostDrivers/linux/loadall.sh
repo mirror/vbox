@@ -22,7 +22,7 @@ MY_GROUPNAME="vboxusers"
 #
 # vboxusers membership check.
 #
-if ! (id -Gn | grep -w ${MY_GROUPNAME}); then 
+if ! (id -Gn | grep -w ${MY_GROUPNAME}); then
     echo "loadall.sh: you're not a member of vboxusers...";
     # Create the group.
     if ! getent group ${MY_GROUPNAME}; then

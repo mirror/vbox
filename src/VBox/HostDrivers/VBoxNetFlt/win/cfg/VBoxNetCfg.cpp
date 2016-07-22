@@ -3161,7 +3161,7 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
             SetErrBreak(("Querying NetCfgInstanceId failed (0x%08X)", ret));
 
         /*
-        *   Set default metric value of interface to fix multicast issue 
+        *   Set default metric value of interface to fix multicast issue
         *   See @bugref{6379} for details.
         */
         HRESULT hSMRes = vboxNetCfgWinSetupMetric(hkey);
@@ -3385,21 +3385,21 @@ HRESULT vboxLoadIpHelpFunctions(HINSTANCE& pIpHlpInstance)
     pIpHlpInstance = loadSystemDll("Iphlpapi.dll");
     if (pIpHlpInstance == NULL)
         return E_FAIL;
-    
-    g_pfnInitializeIpInterfaceEntry = 
+
+    g_pfnInitializeIpInterfaceEntry =
         (PFNINITIALIZEIPINTERFACEENTRY)GetProcAddress(pIpHlpInstance, "InitializeIpInterfaceEntry");
     Assert(g_pfnInitializeIpInterfaceEntry);
 
     if (g_pfnInitializeIpInterfaceEntry)
     {
-        g_pfnGetIpInterfaceEntry = 
+        g_pfnGetIpInterfaceEntry =
             (PFNGETIPINTERFACEENTRY)GetProcAddress(pIpHlpInstance, "GetIpInterfaceEntry");
         Assert(g_pfnGetIpInterfaceEntry);
     }
 
     if (g_pfnGetIpInterfaceEntry)
     {
-        g_pfnSetIpInterfaceEntry = 
+        g_pfnSetIpInterfaceEntry =
             (PFNSETIPINTERFACEENTRY)GetProcAddress(pIpHlpInstance, "SetIpInterfaceEntry");
         Assert(g_pfnSetIpInterfaceEntry);
     }
@@ -3469,7 +3469,7 @@ HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID)
 
     if (pLUID == NULL)
         return E_INVALIDARG;
-    
+
     res = RegQueryValueExW(hKey, L"NetLuidIndex", NULL,
         &dwValueType, (LPBYTE)&luidIndex, &cbSize);
     if (res != 0)
@@ -3496,7 +3496,7 @@ HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey)
     HINSTANCE hModule = NULL;
     NET_LUID luid;
     int loopbackMetric;
-    
+
     rc = vboxLoadIpHelpFunctions(hModule);
 
     if (SUCCEEDED(rc))
@@ -3527,7 +3527,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameHostOnlyConnection(IN const GUID 
     if (hDevInfo != INVALID_HANDLE_VALUE)
     {
         SP_DEVINFO_DATA DevInfoData;
-                
+
         DevInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
         if (SetupDiOpenDeviceInfo(hDevInfo, pwszId, NULL, 0, &DevInfoData))
         {

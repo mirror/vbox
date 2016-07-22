@@ -119,10 +119,10 @@ int usblibOsStopService(void)
                 rc = 0;
             else if (ControlService(hService, SERVICE_CONTROL_STOP, &Status))
             {
-	        /*
-		 * Wait for finish about 1 minute.
-		 * It should be enough for work with driver verifier
-		 */
+                /*
+                 * Wait for finish about 1 minute.
+                 * It should be enough for work with driver verifier
+                 */
                 int iWait = 600;
                 while (Status.dwCurrentState == SERVICE_STOP_PENDING && iWait-- > 0)
                 {

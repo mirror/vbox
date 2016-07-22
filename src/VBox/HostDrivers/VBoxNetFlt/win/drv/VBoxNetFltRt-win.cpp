@@ -2745,7 +2745,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PVBOXNETFLTINS pNetFlt,
 
     /* release for the retain we made before waining on the mutex */
     vboxNetFltRelease(pNetFlt, false);
-    
+
     LogFlowFunc(("LEAVE: Status 0x%x\n", Status));
 
     return Status;

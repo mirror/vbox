@@ -843,13 +843,13 @@ static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t Interfac
     } while (0);
 
     /* Clean up. */
-    if (pUrb) 
+    if (pUrb)
         VBoxUsbToolUrbFree(pUrb);
     if (pNewIFInfo)
         vboxUsbMemFree(pNewIFInfo);
     if (pNewPipeInfo)
         vboxUsbMemFree(pNewPipeInfo);
-    
+
     return Status;
 }
 
@@ -1089,10 +1089,10 @@ static NTSTATUS vboxUsbRtUrbSendCompletion(PDEVICE_OBJECT pDevObj, IRP *pIrp, vo
                 pUrbInfo->len += sizeof (pUrb->UrbControlTransfer.SetupPacket);
 
                 /* If a control URB was successfully completed on the default control
-                 * pipe, stash away the handle. When submitting the URB, we don't need 
-                 * to know (and initially don't have) the handle. If we want to abort 
-                 * the default control pipe, we *have* to have a handle. This is how we 
-                 * find out what the handle is. 
+                 * pipe, stash away the handle. When submitting the URB, we don't need
+                 * to know (and initially don't have) the handle. If we want to abort
+                 * the default control pipe, we *have* to have a handle. This is how we
+                 * find out what the handle is.
                  */
                 if (!pUrbInfo->ep && (pDevExt->Rt.hPipe0 == NULL))
                 {
