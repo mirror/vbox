@@ -4050,6 +4050,16 @@ iemTaskSwitch(PVMCPU          pVCpu,
         iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->ds, uNewDS);
         iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->fs, uNewFS);
         iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->gs, uNewGS);
+
+        /* quick fix: fake DescSS. */ /** @todo fix the code further down? */
+        DescSS.Legacy.u = 0;
+        DescSS.Legacy.Gen.u16LimitLow = (uint16_t)pCtx->ss.u32Limit;
+        DescSS.Legacy.Gen.u4LimitHigh = pCtx->ss.u32Limit >> 16;
+        DescSS.Legacy.Gen.u16BaseLow  = (uint16_t)pCtx->ss.u64Base;
+        DescSS.Legacy.Gen.u8BaseHigh1 = (uint8_t)(pCtx->ss.u64Base >> 16);
+        DescSS.Legacy.Gen.u8BaseHigh2 = (uint8_t)(pCtx->ss.u64Base >> 24);
+        DescSS.Legacy.Gen.u4Type      = X86_SEL_TYPE_RW_ACC;
+        DescSS.Legacy.Gen.u2Dpl       = 3;
     }
     else
     {
@@ -4248,18 +4258,18 @@ iemTaskSwitch(PVMCPU          pVCpu,
                 || pCtx->esp < cbStackFrame)
             {
                 /** @todo Intel says \#SS(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
-                Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
-                     cbStackFrame));
+                Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #SS\n",
+                     pCtx->ss.Sel, pCtx->esp, cbStackFrame));
                 return iemRaiseStackSelectorNotPresentWithErr(pVCpu, uExt);
             }
         }
         else
         {
-            if (   pCtx->esp - 1 > (DescSS.Legacy.Gen.u4Type & X86_DESC_DB ? UINT32_MAX : UINT32_C(0xffff))
+            if (   pCtx->esp - 1 > (DescSS.Legacy.Gen.u1DefBig ? UINT32_MAX : UINT32_C(0xffff))
                 || pCtx->esp - cbStackFrame < cbLimitSS + UINT32_C(1))
             {
-                Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x (expand down) is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
-                     cbStackFrame));
+                Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x (expand down) is out of bounds -> #SS\n",
+                     pCtx->ss.Sel, pCtx->esp, cbStackFrame));
                 return iemRaiseStackSelectorNotPresentWithErr(pVCpu, uExt);
             }
         }
@@ -4271,8 +4281,8 @@ iemTaskSwitch(PVMCPU          pVCpu,
             rcStrict = iemMemStackPushU16(pVCpu, uErr);
         if (rcStrict != VINF_SUCCESS)
         {
-            Log(("iemTaskSwitch: Can't push error code to new task's stack. %s-bit TSS. rc=%Rrc\n", fIsNewTSS386 ? "32" : "16",
-                 VBOXSTRICTRC_VAL(rcStrict)));
+            Log(("iemTaskSwitch: Can't push error code to new task's stack. %s-bit TSS. rc=%Rrc\n",
+                 fIsNewTSS386 ? "32" : "16", VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
     }
