@@ -530,7 +530,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
                 return VINF_SUCCESS;
 #endif
             }
-            return VERR_CPUM_RAISE_GP_0;
+            break;
         }
 
         /* Write-only MSRs: */
@@ -542,11 +542,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             static uint32_t s_cTimes = 0;
             if (s_cTimes++ < 20)
                 LogRel(("GIM: HyperV: Unknown/invalid RdMsr (%#x) -> #GP(0)\n", idMsr));
+            LogFunc(("Unknown/invalid RdMsr (%#RX32) -> #GP(0)\n", idMsr));
+            break;
 #else
             return VINF_CPUM_R3_MSR_READ;
 #endif
-            LogFunc(("Unknown/invalid RdMsr (%#RX32) -> #GP(0)\n", idMsr));
-            break;
         }
     }
 
@@ -1009,7 +1009,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
         case MSR_GIM_HV_TSC_FREQ:
         case MSR_GIM_HV_APIC_FREQ:
             LogFunc(("WrMsr on read-only MSR %#RX32 -> #GP(0)\n", idMsr));
-            return VERR_CPUM_RAISE_GP_0;
+            break;
 
         case MSR_GIM_HV_DEBUG_OPTIONS_MSR:
         {
@@ -1032,11 +1032,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             if (s_cTimes++ < 20)
                 LogRel(("GIM: HyperV: Unknown/invalid WrMsr (%#x,%#x`%08x) -> #GP(0)\n", idMsr,
                         uRawValue & UINT64_C(0xffffffff00000000), uRawValue & UINT64_C(0xffffffff)));
+            LogFunc(("Unknown/invalid WrMsr (%#RX32,%#RX64) -> #GP(0)\n", idMsr, uRawValue));
+            break;
 #else
             return VINF_CPUM_R3_MSR_WRITE;
 #endif
-            LogFunc(("Unknown/invalid WrMsr (%#RX32,%#RX64) -> #GP(0)\n", idMsr, uRawValue));
-            break;
         }
     }
 
