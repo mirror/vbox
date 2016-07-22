@@ -3753,7 +3753,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             }
         }
     }
-    return VERR_INTERNAL_ERROR_5;   /* Should never happen. */
+    /* not reached */
 }
 
 

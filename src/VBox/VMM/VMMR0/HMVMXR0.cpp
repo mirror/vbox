@@ -794,7 +794,7 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     RTCCUINTREG fEFlags = ASMIntDisableFlags();
 
     /* Enable the VMX bit in CR4 if necessary. */
-    RTCCUINTREG uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, ~0);
+    RTCCUINTREG uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
 
     /* Enter VMX root mode. */
     int rc = VMXEnable(HCPhysCpuPage);
@@ -13297,12 +13297,12 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 /* Get the stack pointer & pop the contents of the stack onto Eflags. */
                 RTGCPTR   GCPtrStack = 0;
                 X86EFLAGS Eflags;
+                Eflags.u32 = 0;
                 rc = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pMixedCtx), pMixedCtx->esp & uMask, SELMTOFLAT_FLAGS_CPL0,
                                   &GCPtrStack);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(sizeof(Eflags.u32) >= cbParm);
-                    Eflags.u32 = 0;
                     rc = VBOXSTRICTRC_TODO(PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u32, cbParm, PGMACCESSORIGIN_HM));
                     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc)); /** @todo allow strict return codes here */
                 }
