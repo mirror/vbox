@@ -6065,7 +6065,7 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 
 				do {
 					current = state->dts_activity;
-				} while (   (dtrace_speculation_state_t)dtrace_cas32(activity, current, DTRACE_ACTIVITY_KILLED)
+				} while (   (dtrace_activity_t)dtrace_cas32(activity, current, DTRACE_ACTIVITY_KILLED)
 					 != current);
 
 				continue;
@@ -6360,7 +6360,7 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 				if (current != DTRACE_ACTIVITY_WARMUP)
 					current = DTRACE_ACTIVITY_ACTIVE;
 
-				if (   (dtrace_speculation_state_t)dtrace_cas32(activity, current, DTRACE_ACTIVITY_DRAINING)
+				if (   (dtrace_activity_t)dtrace_cas32(activity, current, DTRACE_ACTIVITY_DRAINING)
 				    != current) {
 					*flags |= CPU_DTRACE_DROP;
 					continue;
