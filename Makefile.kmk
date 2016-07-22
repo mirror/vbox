@@ -269,7 +269,7 @@ $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.5.5.1):
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
 	$(QUIET)chrpath --delete $@
-      
+
       ifneq ($(KBUILD_TARGET),solaris)
 $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
 	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
