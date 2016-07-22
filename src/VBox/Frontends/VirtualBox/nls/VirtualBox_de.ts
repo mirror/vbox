@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="de_DE">
+<TS version="2.1" language="de_DE">
 <context>
     <name>@@@</name>
     <message>
@@ -2746,7 +2746,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation>Audio</translation>
+        <translation type="vanished">Audio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -2764,7 +2764,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation>Anzeige</translation>
+        <translation type="vanished">Anzeige</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -2827,7 +2827,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Allgemein</translation>
+        <translation type="vanished">Allgemein</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2844,7 +2844,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
+        <translation type="vanished">Netzwerk</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2890,7 +2890,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation>Netzwerkadapter</translation>
+        <translation type="vanished">Netzwerkadapter</translation>
     </message>
 </context>
 <context>
@@ -2898,7 +2898,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Parallel-Ports</translation>
+        <translation type="vanished">Parallel-Ports</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2916,7 +2916,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation>Laufzeit-Attribute</translation>
+        <translation type="vanished">Laufzeit-Attribute</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -2988,7 +2988,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation>Serielle Schnittstellen</translation>
+        <translation type="vanished">Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3001,7 +3001,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Gemeinsame Ordner</translation>
+        <translation type="vanished">Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -3013,7 +3013,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation>Massenspeicher</translation>
+        <translation type="vanished">Massenspeicher</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -3041,7 +3041,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation>Massenspeicher</translation>
+        <translation type="vanished">Massenspeicher</translation>
     </message>
 </context>
 <context>
@@ -3049,7 +3049,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>System</translation>
+        <translation type="vanished">System</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3157,7 +3157,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation>USB</translation>
+        <translation type="vanished">USB</translation>
     </message>
     <message>
         <source>Disabled</source>
