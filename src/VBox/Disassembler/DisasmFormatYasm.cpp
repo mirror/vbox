@@ -1129,6 +1129,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         PUT_FAR();
                         PUT_SIZE_OVERRIDE();
                         PUT_SEGMENT_OVERRIDE();
+                        off = 0;
                         int rc = VERR_SYMBOL_NOT_FOUND;
                         switch (pParam->fUse & (DISUSE_IMMEDIATE_ADDR_16_16 | DISUSE_IMMEDIATE_ADDR_16_32 | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT16))
                         {
@@ -1177,6 +1178,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         PUT_SIZE_OVERRIDE();
                         PUT_C('[');
                         PUT_SEGMENT_OVERRIDE();
+                        off = 0;
                         int rc = VERR_SYMBOL_NOT_FOUND;
                         switch (pParam->fUse & (DISUSE_IMMEDIATE_ADDR_16_16 | DISUSE_IMMEDIATE_ADDR_16_32 | DISUSE_DISPLACEMENT64 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT16))
                         {

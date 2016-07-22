@@ -2252,7 +2252,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     /*
      * Create the command line and convert the executable name.
      */
-    PRTUTF16 pwszCmdLine;
+    PRTUTF16 pwszCmdLine = NULL; /* Shut up, MSC! */
     if (RT_SUCCESS(rc))
         rc = RTGetOptArgvToUtf16String(&pwszCmdLine, papszArgs,
                                        !(fFlags & RTPROC_FLAGS_UNQUOTED_ARGS)
@@ -2497,7 +2497,7 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void)
     DWORD_PTR dwSystemAffinityMask;
 
     BOOL fRc = GetProcessAffinityMask(GetCurrentProcess(), &dwProcessAffinityMask, &dwSystemAffinityMask);
-    Assert(fRc);
+    Assert(fRc); NOREF(fRc);
 
     return dwProcessAffinityMask;
 }

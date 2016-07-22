@@ -242,7 +242,7 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD Thread, void *pvArg)
             /*
              * Rearm the timer handler.
              */
-#ifdef USE_CATCH_UP
+# ifdef USE_CATCH_UP
             pTimer->llNext.QuadPart += NSInterval;
             LARGE_INTEGER ll;
             ll.QuadPart = RTTimeNanoTS() - pTimer->llNext.QuadPart;
@@ -250,11 +250,11 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD Thread, void *pvArg)
                 ll.QuadPart = ll.QuadPart / 100;
             else
                 ll.QuadPart = -500000 / 100; /* need to catch up, do a minimum wait of 0.5ms. */
-#else
+# else
             LARGE_INTEGER ll = pTimer->llNext;
-#endif
-            BOOL frc = SetWaitableTimer(pTimer->hTimer, &ll, 0, NULL, NULL, FALSE);
-            AssertMsg(frc || pTimer->u32Magic != RTTIMER_MAGIC, ("last error %d\n", GetLastError()));
+# endif
+            BOOL fRc = SetWaitableTimer(pTimer->hTimer, &ll, 0, NULL, NULL, FALSE);
+            AssertMsg(fRc || pTimer->u32Magic != RTTIMER_MAGIC, ("last error %d\n", GetLastError())); NOREF(fRc);
         }
         else
 #endif
@@ -264,7 +264,7 @@ static DECLCALLBACK(int) rttimerCallback(RTTHREAD Thread, void *pvArg)
              */
             int rc2 = GetLastError();
             RTThreadUserSignal(Thread);
-            AssertMsgFailed(("Wait on hTimer failed, rc=%d lasterr=%d\n", rc, rc2));
+            AssertMsgFailed(("Wait on hTimer failed, rc=%d lasterr=%d\n", rc, rc2)); NOREF(rc2);
             return -1;
         }
     }

@@ -219,8 +219,6 @@ DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTINTERNAL *pTh
 #undef RTSemEventWaitNoResume
 RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
-    PCRTLOCKVALSRCPOS pSrcPos = NULL;
-
     /*
      * Validate input.
      */
@@ -242,7 +240,7 @@ RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies
                                          TRUE /*fAlertable*/);
         if (rc != WAIT_TIMEOUT || cMillies == 0)
             return rtSemEventWaitHandleStatus(pThis, rc);
-        int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+        int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, NULL /*pSrcPos*/, false,
                                                         cMillies, RTTHREADSTATE_EVENT, true);
         if (RT_FAILURE(rc9))
             return rc9;

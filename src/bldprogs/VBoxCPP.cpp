@@ -2606,7 +2606,7 @@ static RTEXITCODE vbcppMacroInsert(PVBCPP pThis, PVBCPPMACRO pMacro)
             vbcppMacroFree(&pOld->Core, NULL);
 
             bool fRc = RTStrSpaceInsert(&pThis->StrSpace, &pMacro->Core);
-            Assert(fRc);
+            Assert(fRc); NOREF(fRc);
         }
         else
         {
@@ -4370,7 +4370,7 @@ static RTEXITCODE vbcppExtractDirectiveLine(PVBCPP pThis, PSCMSTREAM pStrmInput,
         if (ch == '/')
         {
             /* Comment? */
-            unsigned ch2 = ScmStreamGetCh(pStrmInput); Assert(ch == ch2);
+            unsigned ch2 = ScmStreamGetCh(pStrmInput); Assert(ch == ch2); NOREF(ch2);
             ch = ScmStreamPeekCh(pStrmInput);
             if (ch == '*')
             {
@@ -4402,7 +4402,7 @@ static RTEXITCODE vbcppExtractDirectiveLine(PVBCPP pThis, PSCMSTREAM pStrmInput,
                      || vbcppStrBufLastCh(pStrBuf) == '\0') )
         {
             unsigned ch2 = ScmStreamGetCh(pStrmInput);
-            Assert(ch == ch2);
+            Assert(ch == ch2); NOREF(ch2);
             rcExit = RTEXITCODE_SUCCESS;
         }
         else

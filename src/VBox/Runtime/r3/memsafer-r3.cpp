@@ -160,7 +160,7 @@ static void rtMemSaferNodeInsert(PRTMEMSAFERNODE pThis)
     pThis->Core.Key = rtMemSaferScramblePointer(pThis->Core.Key);
     bool fRc = RTAvlPVInsert(&g_pMemSaferTree, &pThis->Core);
     RTCritSectRwLeaveExcl(&g_MemSaferCritSect);
-    Assert(fRc);
+    Assert(fRc); NOREF(fRc);
 }
 
 

@@ -849,7 +849,7 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
     if (pEntry)
     {
         uint32_t cRefs = ASMAtomicIncU32(&pEntry->cRefs);
-        Assert(cRefs < UINT32_MAX / 2);
+        Assert(cRefs < UINT32_MAX / 2); NOREF(cRefs);
     }
     else
     {
