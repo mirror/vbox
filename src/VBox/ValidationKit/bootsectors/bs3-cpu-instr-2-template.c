@@ -47,6 +47,7 @@
 #ifdef BS3_INSTANTIATING_CMN
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_mul_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xBX_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xCX_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_div_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_idiv_xBX_ud2);
 #endif
@@ -271,6 +272,52 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_imul)(uint8_t bMode)
                     if (TrapFrame.Ctx.rdx.RT_CONCAT(u,ARCH_BITS) != s_aTests[i].uOutDX)
                         Bs3TestFailedF("Expected xDX = %#RX" RT_XSTR(ARCH_BITS) " got %#RX" RT_XSTR(ARCH_BITS),
                                        s_aTests[i].uOutDX, TrapFrame.Ctx.rdx.RT_CONCAT(u,ARCH_BITS));
+                    if (   (TrapFrame.Ctx.rflags.u16 & (IMUL_CHECK_EFLAGS | IMUL_CHECK_EFLAGS_ZERO))
+                        != (s_aTests[i].fFlags & IMUL_CHECK_EFLAGS) )
+                        Bs3TestFailedF("Expected EFLAGS = %#06RX16, got %#06RX16", s_aTests[i].fFlags & IMUL_CHECK_EFLAGS,
+                                       TrapFrame.Ctx.rflags.u16 & (IMUL_CHECK_EFLAGS | IMUL_CHECK_EFLAGS_ZERO));
+                }
+            }
+        }
+    }
+
+    /*
+     * Repeat for the truncating two operand version.
+     */
+    Bs3RegCtxSetRipCsFromCurPtr(&Ctx, BS3_CMN_NM(bs3CpuInstr2_imul_xCX_xBX_ud2));
+
+    for (k = 0; k < 2; k++)
+    {
+        Ctx.rflags.u16 |= MUL_CHECK_EFLAGS | MUL_CHECK_EFLAGS_ZERO;
+        for (j = 0; j < 2; j++)
+        {
+            for (i = 0; i < RT_ELEMENTS(s_aTests); i++)
+            {
+                if (k == 0)
+                {
+                    Ctx.rcx.RT_CONCAT(u,ARCH_BITS) = s_aTests[i].uInAX;
+                    Ctx.rbx.RT_CONCAT(u,ARCH_BITS) = s_aTests[i].uInBX;
+                }
+                else
+                {
+                    Ctx.rcx.RT_CONCAT(u,ARCH_BITS) = s_aTests[i].uInBX;
+                    Ctx.rbx.RT_CONCAT(u,ARCH_BITS) = s_aTests[i].uInAX;
+                }
+                Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+                if (TrapFrame.bXcpt != X86_XCPT_UD)
+                    Bs3TestFailedF("Expected #UD got %#x", TrapFrame.bXcpt);
+                else if (   TrapFrame.Ctx.rcx.RT_CONCAT(u,ARCH_BITS) != s_aTests[i].uOutAX
+                         || TrapFrame.Ctx.rdx.u != Ctx.rdx.u
+                         || TrapFrame.Ctx.rbx.u != Ctx.rbx.u
+                         ||    (TrapFrame.Ctx.rflags.u16 & (IMUL_CHECK_EFLAGS | IMUL_CHECK_EFLAGS_ZERO))
+                            != (s_aTests[i].fFlags & IMUL_CHECK_EFLAGS) )
+                {
+                    Bs3TestFailedF("test #%i failed: input %#" RTCCUINTREG_XFMT " * %#" RTCCUINTREG_XFMT,
+                                   i, s_aTests[i].uInAX, s_aTests[i].uInBX);
+
+                    if (TrapFrame.Ctx.rcx.RT_CONCAT(u,ARCH_BITS) != s_aTests[i].uOutAX)
+                        Bs3TestFailedF("Expected xAX = %#RX" RT_XSTR(ARCH_BITS) " got %#RX" RT_XSTR(ARCH_BITS),
+                                       s_aTests[i].uOutAX, TrapFrame.Ctx.rcx.RT_CONCAT(u,ARCH_BITS));
                     if (   (TrapFrame.Ctx.rflags.u16 & (IMUL_CHECK_EFLAGS | IMUL_CHECK_EFLAGS_ZERO))
                         != (s_aTests[i].fFlags & IMUL_CHECK_EFLAGS) )
                         Bs3TestFailedF("Expected EFLAGS = %#06RX16, got %#06RX16", s_aTests[i].fFlags & IMUL_CHECK_EFLAGS,

@@ -59,6 +59,14 @@ BS3_PROC_BEGIN_CMN bs3CpuInstr2_imul_xBX_ud2, BS3_PBC_NEAR
 BS3_PROC_END_CMN   bs3CpuInstr2_imul_xBX_ud2
 
 
+BS3_PROC_BEGIN_CMN bs3CpuInstr2_imul_xCX_xBX_ud2, BS3_PBC_NEAR
+        imul    xCX, xBX
+.again:
+        ud2
+        jmp     .again
+BS3_PROC_END_CMN   bs3CpuInstr2_imul_xCX_xBX_ud2
+
+
 BS3_PROC_BEGIN_CMN bs3CpuInstr2_div_xBX_ud2, BS3_PBC_NEAR
         div     xBX
 .again:
