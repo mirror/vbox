@@ -6171,7 +6171,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         case SVGA3D_DECLUSAGE_POSITIONT:
             Log(("ShaderSetPositionTransformed: (%d,%d)\n", pContext->state.RectViewPort.w, pContext->state.RectViewPort.h));
         case SVGA3D_DECLUSAGE_POSITION:
-            ShaderSetPositionTransformed(pContext->pShaderContext, pContext->state.RectViewPort.w, pContext->state.RectViewPort.h, 
+            ShaderSetPositionTransformed(pContext->pShaderContext, pContext->state.RectViewPort.w, pContext->state.RectViewPort.h,
                                          pVertexDecl[iVertex].identity.usage == SVGA3D_DECLUSAGE_POSITIONT);
             break;
         }

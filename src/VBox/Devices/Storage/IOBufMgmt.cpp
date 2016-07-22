@@ -45,7 +45,7 @@ typedef struct IOBUFDESCINT
 } IOBUFDESCINT;
 
 /**
- * A 
+ * A
  */
 typedef struct IOBUFMGRBIN
 {

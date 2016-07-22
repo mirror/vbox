@@ -180,6 +180,7 @@ typedef struct DSOUNDDEV
     GUID        Guid;
 } DSOUNDDEV, *PDSOUNDDEV;
 
+
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
@@ -190,6 +191,7 @@ typedef struct DSOUNDDEV
 /** Makes DRVHOSTDSOUND out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface) \
     ( (PDRVHOSTDSOUND)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTDSOUND, IHostAudio)) )
+
 
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *

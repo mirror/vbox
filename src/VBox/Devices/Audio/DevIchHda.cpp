@@ -875,6 +875,7 @@ typedef struct HDACALLBACKCTX
 } HDACALLBACKCTX, *PHDACALLBACKCTX;
 #endif
 
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -966,6 +967,7 @@ static int           hdaProcessInterrupt(PHDASTATE pThis);
 static void hdaTimerMaybeStart(PHDASTATE pThis);
 static void hdaTimerMaybeStop(PHDASTATE pThis);
 #endif
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *

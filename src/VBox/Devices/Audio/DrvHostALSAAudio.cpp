@@ -63,6 +63,7 @@ RT_C_DECLS_END
 
 #include "VBoxDD.h"
 
+
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
@@ -70,6 +71,7 @@ RT_C_DECLS_END
 /** Makes DRVHOSTALSAAUDIO out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVHOSTALSAAUDIO(pInterface) \
     ( (PDRVHOSTALSAAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTALSAAUDIO, IHostAudio)) )
+
 
 /*********************************************************************************************************************************
 *   Structures                                                                                                                   *

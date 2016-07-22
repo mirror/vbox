@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -40,6 +41,7 @@ RT_C_DECLS_END
 
 #include "VBoxDD.h"
 
+
 /*********************************************************************************************************************************
 *   Defines                                                                                                                      *
 *********************************************************************************************************************************/
@@ -61,6 +63,7 @@ RT_C_DECLS_END
 /** Makes DRVHOSTPULSEAUDIO out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface) \
     ( (PDRVHOSTPULSEAUDIO)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPULSEAUDIO, IHostAudio)) )
+
 
 /*********************************************************************************************************************************
 *   Structures                                                                                                                   *
@@ -153,6 +156,7 @@ typedef struct PULSEAUDIOENUMCBCTX
     /** Name of default source being used. Must be free'd using RTStrFree(). */
     char               *pszDefaultSource;
 } PULSEAUDIOENUMCBCTX, *PPULSEAUDIOENUMCBCTX;
+
 
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *

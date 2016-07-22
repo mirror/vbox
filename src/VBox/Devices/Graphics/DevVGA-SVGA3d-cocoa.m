@@ -289,8 +289,8 @@
         self.autoresizingMask = NSViewNotSizable;
 
         /*
-         * Get notifications when we're moved or resized and when we're moved 
-         * to a different screen or GPU or when the GL context simply needs updating. 
+         * Get notifications when we're moved or resized and when we're moved
+         * to a different screen or GPU or when the GL context simply needs updating.
          */
         if (pParentView)
         {
@@ -471,7 +471,7 @@
 
 /**
  * This is called when the bounds change.
- *  
+ *
  * We indicate that the FIFO thread must update the GL context.
  */
 - (void)vboxBoundsDidChange:(NSNotification *)pNotification
@@ -482,7 +482,7 @@
 
 /**
  * This is called when the frame changes size or position.
- *  
+ *
  * We indicate that the FIFO thread must update the GL context.
  */
 - (void)vboxFrameDidChange:(NSNotification *)pNotification
@@ -491,10 +491,10 @@
     self->m_fUpdateCtx = true;
 }
 
-/** 
- * This is called when moved to different screen/GPU or/and when the GL context 
+/**
+ * This is called when moved to different screen/GPU or/and when the GL context
  * needs updating.
- *  
+ *
  * We indicate that the FIFO thread must update the GL context.
  */
 - (void)vboxFrameDidChangeGlobal:(NSNotification *)pNotification

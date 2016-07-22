@@ -88,6 +88,7 @@ extern bool DevINIPConfigured(void);
  * is to ignore flushes, i.e. true. */
 #define VBOX_IGNORE_FLUSH
 
+
 /*********************************************************************************************************************************
 *   Defined types, constants and macros                                                                                          *
 *********************************************************************************************************************************/
@@ -2486,6 +2487,7 @@ static DECLCALLBACK(bool) drvvdIsLocked(PPDMIMOUNT pInterface)
     return pThis->fLocked;
 }
 
+
 /*********************************************************************************************************************************
 *   Async Media interface methods                                                                                                *
 *********************************************************************************************************************************/
@@ -2720,6 +2722,7 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCR
 
     return VINF_SUCCESS;
 }
+
 
 /*********************************************************************************************************************************
 *   Extended media interface methods                                                                                             *
@@ -3856,6 +3859,7 @@ static VDTYPE drvvdGetVDFromMediaType(PDMMEDIATYPE enmType)
     AssertMsgFailed(("Invalid media type %d{%s} given!\n", enmType, drvvdGetTypeName(enmType)));
     return VDTYPE_HDD;
 }
+
 
 /*********************************************************************************************************************************
 *   Base interface methods                                                                                                       *

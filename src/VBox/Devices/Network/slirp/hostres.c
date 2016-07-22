@@ -900,7 +900,7 @@ append_a(struct response *res, const char *name, struct in_addr addr)
     CHECKED( append_rrhdr(res, name, Type_A, 3600) );
     CHECKED( append_u16(res, RT_H2N_U16_C(sizeof(addr))) );
     CHECKED( append_u32(res, addr.s_addr) );
- 
+
     APPEND_EPILOGUE();
 }
 
@@ -1020,7 +1020,7 @@ append_name(struct response *res, const char *name)
 
             ++s;
         }
-        
+
         poff = wr;
 
         buf[poff] = (uint8_t)plen; /* length byte */

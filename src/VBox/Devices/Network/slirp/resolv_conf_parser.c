@@ -244,7 +244,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
             if (NetAddr.enmType == RTNETADDRTYPE_INVALID)
             {
                 LogRel(("NAT: resolv.conf: bad nameserver address %s\n", tok));
-                continue;                
+                continue;
             }
 
 
