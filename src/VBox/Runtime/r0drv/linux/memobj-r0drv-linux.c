@@ -375,7 +375,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
     /*
      * Reserve the pages.
-     * 
+     *
      * Linux >= 4.5 with CONFIG_DEBUG_VM panics when setting PG_reserved on compound
      * pages. According to Michal Hocko this shouldn't be necessary anyway because
      * as pages which are not on the LRU list are never evictable.

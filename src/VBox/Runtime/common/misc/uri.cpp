@@ -1161,4 +1161,3 @@ RTDECL(char *) RTUriFilePath(const char *pszUri)
     return NULL;
 }
 
-

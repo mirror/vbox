@@ -72,4 +72,3 @@ extern "C" int vcc100_ntdll_fakes_cpp(void)
     return 42;
 }
 
-

@@ -551,7 +551,7 @@ static PCRTCRDIGESTDESC const g_apDigestOps[] =
 /*
  * OpenSSL EVP.
  */
-    
+
 # if OPENSSL_VERSION_NUMBER >= 0x10100000
 /** @impl_interface_method{RTCRDIGESTDESC::pfnNew} */
 static DECLCALLBACK(void*) rtCrDigestOsslEvp_New(void)

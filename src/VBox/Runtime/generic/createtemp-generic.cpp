@@ -279,4 +279,3 @@ RTDECL(int) RTFileOpenTemp(PRTFILE phFile, char *pszFilename, size_t cbFilename,
 }
 RT_EXPORT_SYMBOL(RTFileOpenTemp);
 
-

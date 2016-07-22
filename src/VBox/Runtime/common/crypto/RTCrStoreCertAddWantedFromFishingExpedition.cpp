@@ -244,4 +244,3 @@ RTDECL(int) RTCrStoreCertAddWantedFromFishingExpedition(RTCRSTORE hStore, uint32
 }
 RT_EXPORT_SYMBOL(RTCrStoreCertAddWantedFromFishingExpedition);
 
-

@@ -276,7 +276,7 @@
   ?set_unexpected@@YAP6AXXZP6AXXZ@Z
   ?swprintf@@YAHPAGIPBGZZ
   ?swprintf@@YAHPA_WIPB_WZZ
-  ?terminate@@YAXXZ ;fixme-causes-trouble-with-version-in-libcmt.lib; 
+  ?terminate@@YAXXZ ;fixme-causes-trouble-with-version-in-libcmt.lib;
   ?try_lock@critical_section@Concurrency@@QAE_NXZ
   ?try_lock@reader_writer_lock@Concurrency@@QAE_NXZ
   ?try_lock_read@reader_writer_lock@Concurrency@@QAE_NXZ
@@ -1637,5 +1637,4 @@
   wprintf_s
   wscanf
   wscanf_s
-
 

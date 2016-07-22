@@ -57,7 +57,7 @@ static bool rtCrStoreIsDarwinCertTrustworthy(SecCertificateRef hCert, SecTrustSe
     OSStatus orc = SecTrustSettingsCopyTrustSettings(hCert, enmTrustDomain, &hTrustSettings);
     if (orc == noErr)
     {
-	CFIndex const cTrustSettings = CFArrayGetCount(hTrustSettings);
+        CFIndex const cTrustSettings = CFArrayGetCount(hTrustSettings);
         for (CFIndex i = 0; i < cTrustSettings; i++)
         {
             CFDictionaryRef hDict = (CFDictionaryRef)CFArrayGetValueAtIndex(hTrustSettings, i);
@@ -245,5 +245,4 @@ RTDECL(int) RTCrStoreCreateSnapshotById(PRTCRSTORE phStore, RTCRSTOREID enmStore
     return rc;
 }
 RT_EXPORT_SYMBOL(RTCrStoreCreateSnapshotById);
-
 
