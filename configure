@@ -51,6 +51,8 @@ case "$OS" in
     ;;
   freebsd)
     ;;
+  netbsd)
+    ;;
   sunos)
     OS='solaris'
     ;;
@@ -539,6 +541,7 @@ check_open_watcom()
     "dos")      wc_bin="binw";;
     "freebsd")  wc_bin="binfbsd";; # ??
     "linux")    wc_bin="binl";;
+    "netbsd")   wc_bin="binnbsd";; # ??
     "solaris")  wc_bin="binsol";;  # ??
     "os2")      wc_bin="binp";;
     "win")      wc_bin="binnt";;
@@ -2939,7 +2942,7 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   [ $WITH_JAVA   -eq 1 ] && check_java
 
   # PulseAudio
-  if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
+  if [ "$OS" = "linux" -o "$OS" = "freebsd" -o "$OS" = "netbsd" ]; then
     if [ $WITH_PULSE -eq 1 ]; then
       check_pulse
     elif [ $WITH_PULSE -eq 0 ]; then
