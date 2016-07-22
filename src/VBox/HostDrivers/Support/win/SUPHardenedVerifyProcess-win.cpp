@@ -1444,7 +1444,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
             break;
         if (pMemInfo->AllocationBase != MemInfo2.AllocationBase)
             break;
-        if (pMemInfo2.RegionSize == 0)
+        if (MemInfo2.RegionSize == 0)
             break;
         cbFree += MemInfo2.RegionSize;
     }
