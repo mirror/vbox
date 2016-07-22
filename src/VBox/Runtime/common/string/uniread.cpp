@@ -59,7 +59,7 @@ static FILE *g_pCurOutFile;
  * @param   pszFormat           The message.
  * @param   ...                 Format arguments.
  */
-static void ParseError(const char *pszFormat, ...)
+static DECL_NO_RETURN(void) ParseError(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -197,7 +197,7 @@ static char *SplitDecompField(char **ppszType)
     if (!psz)
     {
         ParseError("Bad Decomposition Type/Mappings\n");
-        return *ppszType;
+        /* not reached: return *ppszType; */
     }
     *psz++ = '\0';
 
@@ -255,13 +255,13 @@ static RTUNICP ToRange(const char *psz, PRTUNICP pLast)
             if (pszEnd && *pszEnd)
             {
                 ParseError("failed converting '%s' to a number!\n", psz);
-                return ~(RTUNICP)0;
+                /* not reached: return ~(RTUNICP)0;*/
             }
         }
         else
         {
             ParseError("failed converting '%s' to a number!\n", psz);
-            return ~(RTUNICP)0;
+            /* not reached: return ~(RTUNICP)0; */
         }
     }
     *pLast = (RTUNICP)ulLast;
@@ -298,7 +298,7 @@ static PRTUNICP ToMapping(char *psz, unsigned *pcEntries, unsigned cMax)
         if (i >= cMax)
         {
             ParseError("Too many mappings.\n");
-            break;
+            /* not reached: break; */
         }
         if (i >= cAlloc)
         {
@@ -592,7 +592,7 @@ static int ReadUnicodeData(const char *pszBasePath, const char *pszFilename)
         if (CodePoint >= RT_ELEMENTS(g_aCPInfo))
         {
             ParseError("U+05X is out of range\n", CodePoint);
-            continue;
+            /* not reached: continue;*/
         }
 
         /* catchup? */
@@ -601,8 +601,8 @@ static int ReadUnicodeData(const char *pszBasePath, const char *pszFilename)
         if (i != CodePoint)
         {
             ParseError("i=%d CodePoint=%u\n", i, CodePoint);
-            CloseFile(pFile);
-            return 1;
+            /* not reached: CloseFile(pFile);
+            return 1; */
         }
 
         /* this one */
@@ -674,19 +674,19 @@ static int GenerateExcludedData(void)
 static int YesNoMaybePropertyValue(char **ppszNextField)
 {
     if (!**ppszNextField)
-    {
         ParseError("Missing Y/N/M field\n");
-        return 0;
+    else
+    {
+        char *psz = NextField(ppszNextField);
+        if (!strcmp(psz, "N"))
+            return 0;
+        if (!strcmp(psz, "Y"))
+            return 1;
+        if (!strcmp(psz, "M"))
+            return 2;
+        ParseError("Unexpected Y/N/M value: '%s'\n",  psz);
     }
-    char *psz = NextField(ppszNextField);
-    if (!strcmp(psz, "N"))
-        return 0;
-    if (!strcmp(psz, "Y"))
-        return 1;
-    if (!strcmp(psz, "M"))
-        return 2;
-    ParseError("Unexpected Y/N/M value: '%s'\n",  psz);
-    return 0;
+    /* not reached: return 0; */
 }
 
 
@@ -720,7 +720,7 @@ static void ApplyProperty(RTUNICP StartCP, const char *pszProperty, char *pszNex
     if (StartCP >= RT_ELEMENTS(g_aCPInfo))
     {
         ParseError("U+%06X is out of the g_aCPInfo range.\n", StartCP);
-        return;
+        /* not reached: return; */
     }
     struct CPINFO *pCPInfo = &g_aCPInfo[StartCP];
     /* string switch */
@@ -791,7 +791,7 @@ static void ApplyProperty(RTUNICP StartCP, const char *pszProperty, char *pszNex
     else
     {
         ParseError("Unknown property '%s'\n", pszProperty);
-        return;
+        /* not reached: return; */
     }
 
     if (pszNextField && *pszNextField)
@@ -833,7 +833,7 @@ static int ReadProperties(const char *pszBasePath, const char *pszFilename)
         if (!*pszProperty)
         {
             ParseError("no property field.\n");
-            continue;
+            /* not reached: continue; */
         }
 
         RTUNICP LastCP;
