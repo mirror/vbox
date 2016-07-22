@@ -88,6 +88,7 @@
 --filter-out-files "*/include/VBox/HostServices/glxext.h"
 --filter-out-files "*/include/VBox/HostServices/wglext.h"
 --filter-out-files "*/src/VBox/Devices/Audio/sys-queue.h"
+--filter-out-files "*/src/VBox/Devices/Audio_old/sys-queue.h"
 --filter-out-files "*/src/VBox/HostDrivers/VBoxUSB/os2/usbcalls.h"
 --filter-out-files "*/src/VBox/RDP/x11server/Init*.c"
 --filter-out-files "*/vslick.h"
