@@ -2278,6 +2278,8 @@
  * Gets the low uint8_t of a uint16_t or something equivalent. */
 #ifdef __GNUC__
 # define RT_LO_U8(a)    __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint16_t)); (uint8_t)(a); })
+#elif defined(_MSC_VER) /* shut up cast truncates constant value warnings */
+# define RT_LO_U8(a)                            ( (uint8_t)(UINT8_MAX & (a)) )
 #else
 # define RT_LO_U8(a)                            ( (uint8_t)(a) )
 #endif
@@ -2293,6 +2295,8 @@
  * Gets the low uint16_t of a uint32_t or something equivalent. */
 #ifdef __GNUC__
 # define RT_LO_U16(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint32_t)); (uint16_t)(a); })
+#elif defined(_MSC_VER) /* shut up cast truncates constant value warnings */
+# define RT_LO_U16(a)                           ( (uint16_t)(UINT16_MAX & (a)) )
 #else
 # define RT_LO_U16(a)                           ( (uint16_t)(a) )
 #endif
@@ -2308,6 +2312,8 @@
  * Gets the low uint32_t of a uint64_t or something equivalent. */
 #ifdef __GNUC__
 # define RT_LO_U32(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint64_t)); (uint32_t)(a); })
+#elif defined(_MSC_VER) /* shut up cast truncates constant value warnings */
+# define RT_LO_U32(a)                           ( (uint32_t)(UINT32_MAX & (a)) )
 #else
 # define RT_LO_U32(a)                           ( (uint32_t)(a) )
 #endif
