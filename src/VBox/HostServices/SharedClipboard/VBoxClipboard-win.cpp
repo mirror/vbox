@@ -100,7 +100,7 @@ void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
         if (pv && cb)
         {
             Log(("%s\n", pv));
-            
+
             //size_t cb = RTStrNLen(pv, );
             char* buf = (char*)RTMemAlloc(cb + 1);
             RT_BZERO(buf, cb);
@@ -110,7 +110,7 @@ void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
                 if (buf[i] == '\n' || buf[i] == '\r')
                     buf[i] = ' ';
             }
-            
+
             Log(("%s\n", buf));
             RTMemFree(buf);
         }
@@ -456,7 +456,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             if (hViewer)
                 SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pCtx->hwndNextInChain, (LPARAM)pCtx->hwndNextInChain, CBChainPingProc, (ULONG_PTR) pCtx);
         } break;
-		        
+
         case WM_RENDERFORMAT:
         {
             /* Insert the requested clipboard format data into the clipboard. */
@@ -503,7 +503,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             else
             {
                 int vboxrc = vboxClipboardReadDataFromClient (pCtx, u32Format);
-                
+
                 dprintf(("vboxClipboardReadDataFromClient vboxrc = %d, pv %p, cb %d, u32Format %d\n",
                           vboxrc, pCtx->pClient->data.pv, pCtx->pClient->data.cb, pCtx->pClient->data.u32Format));
 
@@ -725,9 +725,9 @@ DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD ThreadSelf, void *pInstance)
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
-            /* 
-            * Window procedure can return error, 
-            * but this is exceptional situation 
+            /*
+            * Window procedure can return error,
+            * but this is exceptional situation
             * that should be identified in testing
             */
             Assert(msgret >= 0);
@@ -989,7 +989,7 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
         char* pszResult = NULL;
         size_t cch;
 
-        if(u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML && 
+        if(u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML &&
             !IsWindowsHTML((const char*)pv))
         {
             /* check that this is not already CF_HTML */
@@ -1035,7 +1035,7 @@ EndFragment  = Header length + fragment length - 40(ending length)
 const char pcszFormatSample[] =
     "Version:1.0\r\n"
     "StartHTML:000000101\r\n"
-    "EndHTML:%09d\r\n" // END HTML = Header length + fragment lengh 
+    "EndHTML:%09d\r\n" // END HTML = Header length + fragment lengh
 "StartFragment:000000137\r\n"
 "EndFragment:%09d\r\n"
 "<html>\r\n"
@@ -1044,7 +1044,7 @@ const char pcszFormatSample[] =
 "</body>\r\n"
 "</html>\r\n";
 
-/* 
+/*
 * Extracts field value from CF_HTML struct
 * @src - source in CF_HTML format
 * @option - name of CF_HTML field
@@ -1078,7 +1078,7 @@ int GetHeaderValue(const char *pcszSrc, const char *pcszOption, size_t *pcValue)
     return rc;
 }
 
-/* 
+/*
  * Check that the source string contains CF_HTML struct
  * returns true if the @source string is in CF_HTML format
  */
@@ -1089,12 +1089,12 @@ bool IsWindowsHTML(const char *pcszSource)
 }
 
 
-/* 
+/*
 * Converts clipboard data from CF_HTML format to mimie clipboard format
 * Returns allocated buffer that contains html converted to text/html mime type
 * return result code
 * parameters - output buffer and size of output buffer
-* It allocates the buffer needed for storing converted fragment 
+* It allocates the buffer needed for storing converted fragment
 * Allocated buffer should be destroyed by RTMemFree after usage
 */
 int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszOutput, size_t *pcCh)
@@ -1176,7 +1176,7 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pcszOutput, si
     size_t cFragmentLength = 0;
 
     char* pszBuf = (char*)pcszSource;
-    
+
     /* construct CF_HTML formatted string */
     char* pszResult = NULL;
     int rc = RTStrNLenEx(pszBuf, RTSTR_MAX, &cFragmentLength);
