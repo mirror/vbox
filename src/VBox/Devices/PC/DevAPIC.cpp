@@ -2358,8 +2358,9 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /*
      * Validate configuration.
+     * "Mode" is ignored (used by newer APIC code).
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IOAPIC|RZEnabled|NumCPUs", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IOAPIC|RZEnabled|NumCPUs|Mode", "");
 
     bool fIoApic;
     int rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &fIoApic, true);
