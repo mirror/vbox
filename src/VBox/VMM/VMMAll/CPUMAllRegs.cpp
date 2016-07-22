@@ -45,7 +45,7 @@
 #endif
 
 /** Disable stack frame pointer generation here. */
-#if defined(_MSC_VER) && !defined(DEBUG)
+#if defined(_MSC_VER) && !defined(DEBUG) && defined(RT_ARCH_X86)
 # pragma optimize("y", off)
 #endif
 

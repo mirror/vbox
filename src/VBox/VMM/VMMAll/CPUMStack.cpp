@@ -24,11 +24,6 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/mm.h>
 
-/** Disable stack frame pointer generation here. */
-#if defined(_MSC_VER) && !defined(DEBUG)
-# pragma optimize("y", off)
-#endif
-
 
 VMMDECL(void) CPUMPushHyper(PVMCPU pVCpu, uint32_t u32)
 {
