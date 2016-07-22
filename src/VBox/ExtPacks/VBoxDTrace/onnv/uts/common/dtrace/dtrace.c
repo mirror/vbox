@@ -138,11 +138,6 @@ DECLINLINE(uint32_t) VBoxDtCompareAndSwapU32(uint32_t volatile *pu32Dst, uint32_
  */
 # undef NULL
 # define NULL (0)
-
-# ifdef _MSC_VER
-//#  pragma warning(disable: 4389) /* signed/unsigned mismatch */
-# endif
-
 #endif /* VBOX */
 
 /** Check if the given address is a valid kernel address.
