@@ -261,7 +261,7 @@ RTDECL(int) RTTimerLRChangeInterval(RTTIMERLR hTimerLR, uint64_t u64NanoInterval
         ASMAtomicWriteU64(&pThis->u64StartTS, u64Now);
         ASMAtomicWriteU64(&pThis->u64NextTS, u64Now);
         ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
-        int rc = RTSemEventSignal(pThis->hEvent);
+        RTSemEventSignal(pThis->hEvent);
     }
 
     return VINF_SUCCESS;

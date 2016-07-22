@@ -234,7 +234,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
     size_t cVars;
     const char * const *papszEnv;
 #ifdef RTENV_HAVE_WENVIRON
-    PCRTUTF16 const * papwszEnv;
+    PCRTUTF16 const * papwszEnv = NULL;
 #endif
     PRTENVINTERNAL pIntEnvToClone;
     AssertPtrReturn(pEnv, VERR_INVALID_POINTER);

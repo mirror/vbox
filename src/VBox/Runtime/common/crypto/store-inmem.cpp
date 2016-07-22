@@ -235,7 +235,6 @@ static DECLCALLBACK(int) rtCrStoreInMem_CertCtxQueryPrivateKey(void *pvProvider,
 /** @interface_method_impl{RTCRSTOREPROVIDER, pfnCertFindAll} */
 static DECLCALLBACK(int) rtCrStoreInMem_CertFindAll(void *pvProvider, PRTCRSTORECERTSEARCH pSearch)
 {
-    PRTCRSTOREINMEM pThis = (PRTCRSTOREINMEM)pvProvider;
     pSearch->auOpaque[0] = ~(uintptr_t)pvProvider;
     pSearch->auOpaque[1] = 0;
     pSearch->auOpaque[2] = ~(uintptr_t)0;  /* For the front-end API. */

@@ -51,23 +51,26 @@ RTDECL(int) RTPathIsSame(const char *pszPath1, const char *pszPath2)
     /*
      * If the files exist, try use the attributes.
      */
-    RTFSOBJINFO ObjInfo1, ObjInfo2;
+    RTFSOBJINFO ObjInfo1;
     int rc = RTPathQueryInfoEx(pszPath1, &ObjInfo1, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
     if (RT_SUCCESS(rc))
-        rc = RTPathQueryInfoEx(pszPath2, &ObjInfo2, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
-    if (RT_SUCCESS(rc))
     {
-        if ((ObjInfo1.Attr.fMode & RTFS_TYPE_MASK) != (ObjInfo2.Attr.fMode & RTFS_TYPE_MASK))
-            return false;
-        if (ObjInfo1.Attr.u.Unix.INodeIdDevice       != ObjInfo2.Attr.u.Unix.INodeIdDevice)
-            return false;
-        if (ObjInfo1.Attr.u.Unix.INodeId             != ObjInfo2.Attr.u.Unix.INodeId)
-            return false;
-        if (ObjInfo1.Attr.u.Unix.GenerationId        != ObjInfo2.Attr.u.Unix.GenerationId)
-            return false;
-        if (   ObjInfo1.Attr.u.Unix.INodeIdDevice != 0
-            && ObjInfo1.Attr.u.Unix.INodeId       != 0)
-            return true;
+        RTFSOBJINFO ObjInfo2;
+        rc = RTPathQueryInfoEx(pszPath2, &ObjInfo2, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+        if (RT_SUCCESS(rc))
+        {
+            if ((ObjInfo1.Attr.fMode & RTFS_TYPE_MASK) != (ObjInfo2.Attr.fMode & RTFS_TYPE_MASK))
+                return false;
+            if (ObjInfo1.Attr.u.Unix.INodeIdDevice       != ObjInfo2.Attr.u.Unix.INodeIdDevice)
+                return false;
+            if (ObjInfo1.Attr.u.Unix.INodeId             != ObjInfo2.Attr.u.Unix.INodeId)
+                return false;
+            if (ObjInfo1.Attr.u.Unix.GenerationId        != ObjInfo2.Attr.u.Unix.GenerationId)
+                return false;
+            if (   ObjInfo1.Attr.u.Unix.INodeIdDevice != 0
+                && ObjInfo1.Attr.u.Unix.INodeId       != 0)
+                return true;
+        }
     }
 
     /*

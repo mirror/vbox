@@ -202,7 +202,7 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW hRWSem)
              * Make it invalid and unusable.
              */
             ASMAtomicWriteU32(&pThis->u32Magic, ~RTSEMRW_MAGIC);
-            pThis->cReads = ~0;
+            pThis->cReads = UINT32_MAX;
 
             /*
              * Do actual cleanup. None of these can now fail.

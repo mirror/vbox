@@ -1030,6 +1030,7 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
 
 #if defined(LOG_ENABLED) || defined(RT_STRICT)
 
+# if 0 /* unused */
 /**
  * Turns a tag value into a string for logging purposes.
  *
@@ -1049,6 +1050,7 @@ static const char *rtDwarfLog_GetTagName(uint32_t uTag)
     RTStrPrintf(s_szStatic, sizeof(s_szStatic),"DW_TAG_%#x", uTag);
     return s_szStatic;
 }
+# endif
 
 
 /**

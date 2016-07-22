@@ -113,6 +113,5 @@ RTDECL(size_t) RTPathParseSimple(const char *pszPath, size_t *pcchDir, ssize_t *
     }
 
     /* will never get here */
-    return 0;
 }
 

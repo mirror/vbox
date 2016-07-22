@@ -638,7 +638,7 @@ static DECLCALLBACK(uint32_t) rtCrDigestOsslEvp_GetHashSize(void *pvState)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnGetHashSize} */
 static DECLCALLBACK(RTDIGESTTYPE) rtCrDigestOsslEvp_GetDigestType(void *pvState)
 {
-    EVP_MD_CTX *pThis = (EVP_MD_CTX *)pvState;
+    //EVP_MD_CTX *pThis = (EVP_MD_CTX *)pvState;
     /** @todo figure which digest algorithm it is! */
     return RTDIGESTTYPE_UNKNOWN;
 }

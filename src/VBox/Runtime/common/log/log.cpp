@@ -473,7 +473,7 @@ static DECLCALLBACK(void) rtlogPhaseMsgLocked(PRTLOGGER pLogger, const char *psz
     Assert(pLogger->pInt->hSpinMtx != NIL_RTSEMSPINMUTEX);
 
     va_start(args, pszFormat);
-    rtlogLoggerExVLocked(pLogger, 0, ~0, pszFormat, args);
+    rtlogLoggerExVLocked(pLogger, 0, ~0U, pszFormat, args);
     va_end(args);
 }
 
@@ -493,7 +493,7 @@ static DECLCALLBACK(void) rtlogPhaseMsgNormal(PRTLOGGER pLogger, const char *psz
     Assert(pLogger->pInt->hSpinMtx != NIL_RTSEMSPINMUTEX);
 
     va_start(args, pszFormat);
-    RTLogLoggerExV(pLogger, 0, ~0, pszFormat, args);
+    RTLogLoggerExV(pLogger, 0, ~0U, pszFormat, args);
     va_end(args);
 }
 

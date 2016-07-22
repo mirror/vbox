@@ -470,6 +470,7 @@ static uint32_t matchUpStructMembers(unsigned cWantedMembers, PMYMEMBER paWanted
 }
 
 
+#if 0
 /**
  * Resets the writable structure members prior to processing a PDB.
  *
@@ -490,6 +491,7 @@ static void resetMyStructs(void)
         }
     }
 }
+#endif
 
 
 /**
@@ -689,6 +691,7 @@ static RTEXITCODE findStructures(HANDLE hFake, uint64_t uModAddr, const char *ps
 }
 
 
+#if 0 /* unused */
 static bool strIEndsWith(const char *pszString, const char *pszSuffix)
 {
     size_t cchString = strlen(pszString);
@@ -697,6 +700,7 @@ static bool strIEndsWith(const char *pszString, const char *pszSuffix)
         return false;
     return RTStrICmp(pszString + cchString - cchSuffix, pszSuffix) == 0;
 }
+#endif
 
 
 /**
@@ -753,7 +757,6 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
      *  - Windows_Win8.9200.16384.120725-1247.X86CHK
      *  - en_windows_8_1_symbols_debug_checked_x64_2712568
      */
-    bool fFound = false;
     uint32_t i = u.Split.cComps - 1;
     while (i-- > 0)
     {

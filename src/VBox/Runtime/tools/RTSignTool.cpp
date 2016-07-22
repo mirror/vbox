@@ -647,7 +647,6 @@ static RTEXITCODE HandleMakeTaInfo(int cArgs, char **papszArgs)
         { "--quiet",        'q', RTGETOPT_REQ_NOTHING },
     };
 
-    RTLDRARCH       enmLdrArch = RTLDRARCH_WHATEVER;
     MAKETAINFOSTATE State = { 0, NULL, NULL };
 
     RTGETOPTSTATE GetState;

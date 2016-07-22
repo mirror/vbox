@@ -223,6 +223,7 @@ DECLHIDDEN(int) rtNetStrToIPv6AddrBase(const char *pcszAddr, PRTNETADDRIPV6 pAdd
          * Scan forward until we either get complete address or find
          * "::" compressed zero run.
          */
+        pszNext = NULL; /* (MSC incorrectly thinks it may be used unitialized) */
         for (iGroup = 0; iGroup < 8; ++iGroup)
         {
             /* check for embedded IPv4 at the end */

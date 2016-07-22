@@ -517,7 +517,7 @@ static int rtIso2022Decoder_FindEscAndSet(PRTISO2022DECODERSTATE pThis,
     uint32_t i = cMaps;
     while (i-- > 0)
     {
-        uint32_t cchMatch;
+        uint32_t cchMatch = 0; /* (MSC maybe used uninitialized) */
         PCRTISO2022MAP pMap = papMaps[i];
         /** @todo skip non-Teletex codesets if we ever add more than we need for it. */
         if (   pMap->abEscLoadXX[0] == b0
@@ -529,7 +529,8 @@ static int rtIso2022Decoder_FindEscAndSet(PRTISO2022DECODERSTATE pThis,
                 pThis->apMapGn[0] = pMap;
             return cchMatch + 1;
         }
-        else if (!ppMapRet) /* ppMapRet is NULL if Gn. */
+
+        if (!ppMapRet) /* ppMapRet is NULL if Gn. */
         {
             uint32_t iGn;
             if (   pMap->abEscLoadG1[0] == b0
@@ -1032,7 +1033,6 @@ static int rtIso2022RecodeAsUtf8(uint32_t uProfile, const char *pchSrc, uint32_t
     int rc = rtIso2022Decoder_Init(&Decoder, pchSrc, cchSrc, 102, 106, 107, 102, NULL /*pErrInfo*/);
     if (RT_SUCCESS(rc))
     {
-        size_t cchUtf8 = 0;
         for (;;)
         {
             RTUNICP uc;

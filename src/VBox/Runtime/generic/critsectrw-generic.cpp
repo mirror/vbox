@@ -574,6 +574,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
         Assert(pThis->cWriteRecursions < UINT32_MAX / 2);
         uint32_t cNestings = ASMAtomicIncU32(&pThis->cWriteRecursions); NOREF(cNestings);
 
+#ifdef IPRT_WITH_DTRACE
         if (IPRT_CRITSECTRW_EXCL_ENTERED_ENABLED())
         {
             uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
@@ -581,6 +582,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
                                          (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                          (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
         }
+#endif
         return VINF_SUCCESS;
     }
 
@@ -878,6 +880,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
             return rc9;
 #endif
         uint32_t cNestings = ASMAtomicDecU32(&pThis->cWriteRecursions); NOREF(cNestings);
+#ifdef IPRT_WITH_DTRACE
         if (IPRT_CRITSECTRW_EXCL_LEAVING_ENABLED())
         {
             uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
@@ -885,6 +888,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
                                          (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                          (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
         }
+#endif
     }
 
     return VINF_SUCCESS;

@@ -530,7 +530,6 @@ static DECLCALLBACK(int) rtZipZlibCompFinish(PRTZIPCOMP pZip)
         if (rc != Z_OK && rc != Z_STREAM_END)
             return zipErrConvertFromZlib(rc, true /*fCompressing*/);
     }
-    return VINF_SUCCESS;
 }
 
 

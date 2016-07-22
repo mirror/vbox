@@ -78,7 +78,7 @@ static volatile uint32_t    g_iUnknownMsgs;
  */
 RTDECL(PCRTSTATUSMSG) RTErrGet(int rc)
 {
-    unsigned iFound = ~0;
+    unsigned iFound = ~0U;
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs) - 1; i++)
     {

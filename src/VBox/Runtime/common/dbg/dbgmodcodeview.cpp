@@ -277,6 +277,7 @@ static int rtDbgModCvReadAtAlloc(PRTDBGMODCV pThis, uint32_t off, void **ppvBuf,
 }
 
 
+#ifdef LOG_ENABLED
 /**
  * Gets a name string for a subsection type.
  *
@@ -324,8 +325,10 @@ static const char *rtDbgModCvGetSubSectionName(uint16_t uSubSectType)
     RTStrPrintf(s_sz, sizeof(s_sz), "Unknown%#x", uSubSectType);
     return s_sz;
 }
+#endif /* LOG_ENABLED */
 
 
+#ifdef LOG_ENABLED
 /**
  * Gets a name string for a symbol type.
  *
@@ -336,7 +339,7 @@ static const char *rtDbgModCvSsSymTypeName(RTCVSYMTYPE enmSymType)
 {
     switch (enmSymType)
     {
-#define CASE_RET_STR(Name)  case kCvSymType_##Name: return #Name;
+# define CASE_RET_STR(Name)  case kCvSymType_##Name: return #Name;
         CASE_RET_STR(Compile);
         CASE_RET_STR(Register);
         CASE_RET_STR(Constant);
@@ -445,6 +448,7 @@ static const char *rtDbgModCvSsSymTypeName(RTCVSYMTYPE enmSymType)
     }
     return "<unknown type>";
 }
+#endif /* LOG_ENABLED */
 
 
 /**
@@ -738,7 +742,7 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
                     /*uint32_t uParent       =*/ *uCursor.pu32++;
                     /*uint32_t uEnd          =*/ *uCursor.pu32++;
                     /*uint32_t uNext         =*/ *uCursor.pu32++;
-                    uint32_t cbProc        = *uCursor.pu32++;
+                    /*uint32_t cbProc        =*/ *uCursor.pu32++;
                     /*uint32_t offDebugStart =*/ *uCursor.pu32++;
                     /*uint32_t offDebugEnd   =*/ *uCursor.pu32++;
                     uint32_t off           = *uCursor.pu32++;
@@ -1028,6 +1032,7 @@ static int rtDbgModCvSsProcessV8SymTab(PRTDBGMODCV pThis, void const *pvSymTab, 
         while (off + 4 <= pThis->cbSrcInfo)
         {
             PCRTCV8SRCINFO pSrcInfo = (PCRTCV8SRCINFO)&pThis->pbSrcInfo[off];
+#ifdef LOG_ENABLED
             const char    *pszName  = pSrcInfo->offSourceName < pThis->cbSrcStrings
                                     ? &pThis->pchSrcStrings[pSrcInfo->offSourceName] : "out-of-bounds.c!";
             if (pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_MD5)
@@ -1036,6 +1041,7 @@ static int rtDbgModCvSsProcessV8SymTab(PRTDBGMODCV pThis, void const *pvSymTab, 
                 Log3(("    %010zx #%03zu: <none> %#x=%s\n", off, iFile, pSrcInfo->offSourceName, pszName));
             else
                 Log3(("    %010zx #%03zu: !%#x! %#x=%s\n", off, iFile, pSrcInfo->uDigestType, pSrcInfo->offSourceName, pszName));
+#endif
             off += pSrcInfo->uDigestType == RTCV8SRCINFO_DIGEST_TYPE_MD5 ? sizeof(*pSrcInfo) : 8;
             iFile++;
         }
@@ -1120,8 +1126,8 @@ rtDbgModCvSs_Module(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, 
     RTCPTRUNION uCursor;
     uCursor.pv = pvSubSect;
     RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSubSect >= 2 + 2 + 2 + 2 + 0 + 1);
-    uint16_t iOverlay = *uCursor.pu16++;
-    uint16_t iLib     = *uCursor.pu16++;
+    uint16_t iOverlay = *uCursor.pu16++; NOREF(iOverlay);
+    uint16_t iLib     = *uCursor.pu16++; NOREF(iLib);
     uint16_t cSegs    = *uCursor.pu16++;
     pThis->uCurStyle  = *uCursor.pu16++;
     if (pThis->uCurStyle == 0)
@@ -1132,14 +1138,18 @@ rtDbgModCvSs_Module(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, 
     uint8_t cchName   = uCursor.pu8[cSegs * 12];
     RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSubSect >= 2 + 2 + 2 + 2 + cSegs * 12U + 1 + cchName);
 
+#ifdef LOG_ENABLED
     const char *pchName = (const char *)&uCursor.pu8[cSegs * 12 + 1];
     Log2(("RTDbgModCv: Module: iOverlay=%#x iLib=%#x cSegs=%#x Style=%c%c (%#x) %.*s\n", iOverlay, iLib, cSegs,
           RT_BYTE1(pThis->uCurStyle), RT_BYTE2(pThis->uCurStyle), pThis->uCurStyle, cchName, pchName));
+#endif
     RTDBGMODCV_CHECK_NOMSG_RET_BF(pThis->uCurStyle == RT_MAKE_U16('C', 'V'));
 
+#ifdef LOG_ENABLED
     PCRTCVMODSEGINFO32 paSegs = (PCRTCVMODSEGINFO32)uCursor.pv;
     for (uint16_t iSeg = 0; iSeg < cSegs; iSeg++)
         Log2(("    #%02u: %04x:%08x LB %08x\n", iSeg, paSegs[iSeg].iSeg, paSegs[iSeg].off, paSegs[iSeg].cb));
+#endif
 
     return VINF_SUCCESS;
 }
@@ -1180,6 +1190,7 @@ rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSec
                  + pHdr->cSegs * sizeof(uint16_t);
     Log2(("RTDbgModCv: SrcModule: cFiles=%u cSegs=%u\n", pHdr->cFiles, pHdr->cFiles));
     RTDBGMODCV_CHECK_RET_BF(cbSubSect >= cbHdr, ("cbSubSect=%#x cbHdr=%zx\n", cbSubSect, cbHdr));
+#ifdef LOG_ENABLED
     if (LogIs2Enabled())
     {
         for (uint32_t i = 0; i < pHdr->cFiles; i++)
@@ -1189,6 +1200,7 @@ rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSec
         for (uint32_t i = 0; i < pHdr->cSegs; i++)
             Log2(("RTDbgModCv:   seg #%u: %#010x-%#010x\n", paidxSegs[i], paSegRanges[i].offStart, paSegRanges[i].offEnd));
     }
+#endif
 
     /*
      * Work over the source files.
@@ -1332,7 +1344,6 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     {
         if (i == pHdr->cLogSegs)
             Log2(("Group/Physical descriptors: %u\n", pHdr->cSegs - pHdr->cLogSegs));
-        uint16_t idx = i < pHdr->cLogSegs ? i : i - pHdr->cLogSegs;
         char szFlags[16];
         memset(szFlags, '-', sizeof(szFlags));
         if (paDescs[i].fFlags & RTCVSEGMAPDESC_F_READ)
@@ -1353,8 +1364,8 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
         if (paDescs[i].fFlags & RTCVSEGMAPDESC_F_RESERVED)
             szFlags[8]  = '!', szFlags[9] = '\0';
         Log2(("    #%02u: %#010x LB %#010x flags=%#06x ovl=%#06x group=%#06x frame=%#06x iSegName=%#06x iClassName=%#06x %s\n",
-              idx, paDescs[i].off, paDescs[i].cb, paDescs[i].fFlags, paDescs[i].iOverlay, paDescs[i].iGroup,
-              paDescs[i].iFrame, paDescs[i].offSegName, paDescs[i].offClassName, szFlags));
+              i < pHdr->cLogSegs ? i : i - pHdr->cLogSegs, paDescs[i].off, paDescs[i].cb, paDescs[i].fFlags, paDescs[i].iOverlay,
+              paDescs[i].iGroup, paDescs[i].iFrame, paDescs[i].offSegName, paDescs[i].offClassName, szFlags));
 
         RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].offSegName == UINT16_MAX || paDescs[i].offSegName < pThis->cbSegNames);
         RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].offClassName == UINT16_MAX || paDescs[i].offClassName < pThis->cbSegNames);
@@ -1612,7 +1623,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     uint16_t iSeg = iSeg0 + (cbGroup0 > 0); /** @todo probably wrong... */
     for (i = 0; i < pHdr->cSegs; i++)
         if (paDescs[i].fFlags & RTCVSEGMAPDESC_F_ABS)
-            paDescs[i].iGroup = (uint16_t)RTDBGSEGIDX_ABS;
+            paDescs[i].iGroup = (uint16_t)(RTDBGSEGIDX_ABS & UINT16_MAX);
         else if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
             paDescs[i].iGroup = iSeg++;
 
@@ -2044,6 +2055,7 @@ static int rtDbgModCvLoadCodeViewInfo(PRTDBGMODCV pThis)
  *
  */
 
+#ifdef LOG_ENABLED
 static const char *rtDbgModCvGetCoffStorageClassName(uint8_t bStorageClass)
 {
     switch (bStorageClass)
@@ -2082,6 +2094,7 @@ static const char *rtDbgModCvGetCoffStorageClassName(uint8_t bStorageClass)
     RTStrPrintf(s_szName, sizeof(s_szName), "Unknown%#04x", bStorageClass);
     return s_szName;
 }
+#endif /* LOG_ENABLED */
 
 
 /**
@@ -2103,7 +2116,7 @@ static void rtDbgModCvAddCoffLineNumbers(PRTDBGMODCV pThis, const char *pszFile,
         if (pCur->Linenumber)
         {
             int rc = RTDbgModLineAdd(pThis->hCnt, pszFile, pCur->Linenumber, RTDBGSEGIDX_RVA, pCur->Type.VirtualAddress, NULL);
-            Log4(("    %#010x: %u  [%Rrc]\n", pCur->Type.VirtualAddress, pCur->Linenumber, rc));
+            Log4(("    %#010x: %u  [%Rrc]\n", pCur->Type.VirtualAddress, pCur->Linenumber, rc)); NOREF(rc);
         }
         pCur++;
     }

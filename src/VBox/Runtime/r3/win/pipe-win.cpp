@@ -126,17 +126,17 @@ typedef struct _FILE_PIPE_LOCAL_INFORMATION {
      ULONG NamedPipeEnd;
 } FILE_PIPE_LOCAL_INFORMATION, *PFILE_PIPE_LOCAL_INFORMATION;
 
-#define FILE_PIPE_DISCONNECTED_STATE    0x00000001
-#define FILE_PIPE_LISTENING_STATE       0x00000002
-#define FILE_PIPE_CONNECTED_STATE       0x00000003
-#define FILE_PIPE_CLOSING_STATE         0x00000004
+#define FILE_PIPE_DISCONNECTED_STATE    0x00000001U
+#define FILE_PIPE_LISTENING_STATE       0x00000002U
+#define FILE_PIPE_CONNECTED_STATE       0x00000003U
+#define FILE_PIPE_CLOSING_STATE         0x00000004U
 
-#define FILE_PIPE_INBOUND               0x00000000
-#define FILE_PIPE_OUTBOUND              0x00000001
-#define FILE_PIPE_FULL_DUPLEX           0x00000002
+#define FILE_PIPE_INBOUND               0x00000000U
+#define FILE_PIPE_OUTBOUND              0x00000001U
+#define FILE_PIPE_FULL_DUPLEX           0x00000002U
 
-#define FILE_PIPE_CLIENT_END            0x00000000
-#define FILE_PIPE_SERVER_END            0x00000001
+#define FILE_PIPE_CLIENT_END            0x00000000U
+#define FILE_PIPE_SERVER_END            0x00000001U
 
 extern "C" NTSYSAPI NTSTATUS WINAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, LONG, FILE_INFORMATION_CLASS);
 
@@ -857,7 +857,7 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
                     Assert(pThis->fIOPending);
                     HANDLE hEvent = pThis->Overlapped.hEvent;
                     RTCritSectLeave(&pThis->CritSect);
-                    WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+                    WaitForSingleObject(hEvent, INFINITE);
                     RTCritSectEnter(&pThis->CritSect);
                 }
             }
@@ -927,9 +927,7 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
     }
     return rc;
 
-#if 1
-    return VERR_NOT_IMPLEMENTED;
-#else
+#if 0 /** @todo r=bird: What's this? */
     int rc = rtPipeTryBlocking(pThis);
     if (RT_SUCCESS(rc))
     {

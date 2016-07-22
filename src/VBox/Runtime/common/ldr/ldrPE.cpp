@@ -672,8 +672,9 @@ static DECLCALLBACK(int) rtldrPEResolveImports32(PRTLDRMODPE pModPe, const void 
             else if (   pThunk->u1.Ordinal > 0
                      && pThunk->u1.Ordinal < pModPe->cbImage)
             {
-                rc = pfnGetImport(&pModPe->Core, pszModName, PE_RVA2TYPE(pvBitsR, (char*)(uintptr_t)pThunk->u1.AddressOfData + 2, const char *),
-                                  ~0, &Value, pvUser);
+                rc = pfnGetImport(&pModPe->Core, pszModName,
+                                  PE_RVA2TYPE(pvBitsR, (char*)(uintptr_t)pThunk->u1.AddressOfData + 2, const char *),
+                                  ~0U, &Value, pvUser);
                 Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %RTptr %s\n" : "RTLdrPE:  %08RX32 %s rc=%Rrc\n",
                       (uint32_t)Value, PE_RVA2TYPE(pvBitsR, (char*)(uintptr_t)pThunk->u1.AddressOfData + 2, const char *), rc));
             }
@@ -712,7 +713,8 @@ typedef IMAGE_THUNK_DATA64 *PIMAGE_THUNK_DATA64;
 
 
 /** @copydoc RTLDROPSPE::pfnResolveImports */
-static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void *pvBitsR, void *pvBitsW, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
+static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void *pvBitsR, void *pvBitsW,
+                                                 PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     /*
      * Check if there is actually anything to work on.
@@ -765,7 +767,7 @@ static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void 
             {
                 /** @todo add validation of the string pointer! */
                 rc = pfnGetImport(&pModPe->Core, pszModName, PE_RVA2TYPE(pvBitsR, (uintptr_t)pThunk->u1.AddressOfData + 2, const char *),
-                                  ~0, &Value, pvUser);
+                                  ~0U, &Value, pvUser);
                 Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %016RX64 %s\n" : "RTLdrPE:  %016RX64 %s rc=%Rrc\n",
                       (uint64_t)Value, PE_RVA2TYPE(pvBitsR, (uintptr_t)pThunk->u1.AddressOfData + 2, const char *), rc));
             }
@@ -787,7 +789,8 @@ static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void 
 /**
  * Applies fixups.
  */
-static int rtldrPEApplyFixups(PRTLDRMODPE pModPe, const void *pvBitsR, void *pvBitsW, RTUINTPTR BaseAddress, RTUINTPTR OldBaseAddress)
+static int rtldrPEApplyFixups(PRTLDRMODPE pModPe, const void *pvBitsR, void *pvBitsW, RTUINTPTR BaseAddress,
+                              RTUINTPTR OldBaseAddress)
 {
     if (    !pModPe->RelocDir.VirtualAddress
         ||  !pModPe->RelocDir.Size)
@@ -2036,6 +2039,7 @@ static void rtLdrPE_HashFinalize(PRTLDRPEHASHCTXUNION pHashCtx, RTDIGESTTYPE enm
 }
 
 
+#ifndef IPRT_WITHOUT_LDR_VERIFY
 /**
  * Returns the digest size for the given digest type.
  *
@@ -2053,6 +2057,7 @@ static uint32_t rtLdrPE_HashGetHashSize(RTDIGESTTYPE enmDigest)
         default:                   AssertReleaseFailedReturn(0);
     }
 }
+#endif
 
 
 /**

@@ -64,7 +64,7 @@ typedef struct
         /** For sanity include the array index. */
         RTTHREADTYPE    enmType;
         /** The Win32 thread priority. */
-        DWORD           dwThreadPriority;
+        int             iThreadPriority;
     } aTypes[RTTHREADTYPE_END];
 } PROCPRIORITY;
 
@@ -312,13 +312,13 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
               ("enmType=%d entry=%d\n", enmType, g_pProcessPriority->aTypes[enmType].enmType));
 
 #ifdef WIN32_SCHED_ENABLED
-    if (SetThreadPriority(rtThreadNativeGetHandle(pThread), g_pProcessPriority->aTypes[enmType].dwThreadPriority))
+    if (SetThreadPriority(rtThreadNativeGetHandle(pThread), g_pProcessPriority->aTypes[enmType].iThreadPriority))
         return VINF_SUCCESS;
 
     DWORD dwLastError = GetLastError();
     int rc = RTErrConvertFromWin32(dwLastError);
     AssertMsgFailed(("SetThreadPriority(%p, %d) failed, dwLastError=%d rc=%Rrc\n",
-                     rtThreadNativeGetHandle(pThread), g_pProcessPriority->aTypes[enmType].dwThreadPriority, dwLastError, rc));
+                     rtThreadNativeGetHandle(pThread), g_pProcessPriority->aTypes[enmType].iThreadPriority, dwLastError, rc));
     return rc;
 #else
     return VINF_SUCCESS;

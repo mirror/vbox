@@ -1100,7 +1100,7 @@ RTDECL(int) RTBigNumCompareWithS64(PRTBIGNUM pLeft, int64_t iRight)
     if (RT_SUCCESS(rc))
     {
         RTBIGNUM_ASSERT_VALID(pLeft);
-        if (pLeft->fNegative == (iRight < 0))
+        if (pLeft->fNegative == (unsigned)(iRight < 0)) /* (unsigned cast is for MSC weirdness) */
         {
             AssertCompile(RTBIGNUM_ELEMENT_SIZE <= sizeof(iRight));
             if (pLeft->cUsed * RTBIGNUM_ELEMENT_SIZE <= sizeof(iRight))
@@ -1728,6 +1728,7 @@ DECLINLINE(int) rtBigNumMagnitudeShiftLeftOne(PRTBIGNUM pBigNum, RTBIGNUMELEMENT
     if (uCarry)
     {
         int rc = rtBigNumSetUsed(pBigNum, cUsed + 1);
+        AssertRCReturn(rc, rc);
         pBigNum->pauElements[cUsed] = uCarry;
     }
 

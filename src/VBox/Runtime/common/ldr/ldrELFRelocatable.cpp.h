@@ -240,7 +240,7 @@ static int RTLDRELF_NAME(RelocateSectionExecDyn)(PRTLDRMODELF pModElf, Elf_Addr 
             /* Try to resolve the symbol. */
             const char *pszName = ELF_STR(pModElf, pSym->st_name);
             RTUINTPTR   ExtValue;
-            int rc = pfnGetImport(&pModElf->Core, "", pszName, ~0, &ExtValue, pvUser);
+            int rc = pfnGetImport(&pModElf->Core, "", pszName, ~0U, &ExtValue, pvUser);
             AssertMsgRCReturn(rc, ("Failed to resolve '%s' rc=%Rrc\n", pszName, rc), rc);
             SymValue = (Elf_Addr)ExtValue;
             AssertMsgReturn((RTUINTPTR)SymValue == ExtValue, ("Symbol value overflowed! '%s'\n", pszName),
@@ -444,7 +444,7 @@ static int RTLDRELF_NAME(Symbol)(PRTLDRMODELF pModElf, Elf_Addr BaseAddr, PFNRTL
         {
             /* Try to resolve the symbol. */
             RTUINTPTR Value;
-            int rc = pfnGetImport(&pModElf->Core, "", pszName, ~0, &Value, pvUser);
+            int rc = pfnGetImport(&pModElf->Core, "", pszName, ~0U, &Value, pvUser);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("Failed to resolve '%s' rc=%Rrc\n", pszName, rc));
@@ -746,7 +746,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSymbols)(PRTLDRMODINTERNAL pMod, unsi
                  * Call back.
                  */
                 AssertMsgReturn(Value == (RTUINTPTR)Value, (FMT_ELF_ADDR "\n", Value), VERR_SYMBOL_VALUE_TOO_BIG);
-                rc = pfnCallback(pMod, pszName, ~0, (RTUINTPTR)Value, pvUser);
+                rc = pfnCallback(pMod, pszName, ~0U, (RTUINTPTR)Value, pvUser);
                 if (rc)
                     return rc;
             }

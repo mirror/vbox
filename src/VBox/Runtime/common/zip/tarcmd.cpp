@@ -400,6 +400,7 @@ static bool rtZipTarHasEscapeSequence(const char *pszName)
     return false;
 }
 
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
 
 /**
  * Queries the user ID to use when extracting a member.
@@ -462,6 +463,7 @@ static RTEXITCODE rtZipTarQueryExtractGroup(PRTZIPTARCMDOPS pOpts, PCRTFSOBJINFO
     return rcExit;
 }
 
+#endif /* !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2) */
 
 
 /**
@@ -595,7 +597,6 @@ static RTEXITCODE rtZipTarCmdExtractCallback(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVf
                               "RTVfsObjQueryInfo(,,UNIX_OWNER) returned %Rrc on '%s'",
                               rc, pszName);
 
-    const char *pszLinkType = NULL;
     char szTarget[RTPATH_MAX];
     szTarget[0] = '\0';
     RTVFSSYMLINK hVfsSymlink = RTVfsObjToSymlink(hVfsObj);

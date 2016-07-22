@@ -2652,7 +2652,6 @@ RTDECL(int) RTCrX509CertPathsValidateAll(RTCRX509CERTPATHS hCertPaths, uint32_t 
 
     int      rcLastFailure = VINF_SUCCESS;
     uint32_t cValidPaths   = 0;
-    uint32_t iPath         = 0;
     PRTCRX509CERTPATHNODE pCurLeaf;
     RTListForEach(&pThis->LeafList, pCurLeaf, RTCRX509CERTPATHNODE, ChildListOrLeafEntry)
     {

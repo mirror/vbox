@@ -76,7 +76,7 @@ RTDECL(bool) RTErrVarsHaveChanged(PCRTERRVARS pVars)
     Assert(pVars->ai32Vars[0] == RTERRVARS_MAGIC);
 
     return pVars->ai32Vars[0] != RTERRVARS_MAGIC
-        || pVars->ai32Vars[1] != GetLastError()
+        || (uint32_t)pVars->ai32Vars[1] != GetLastError()
         || pVars->ai32Vars[2] != WSAGetLastError()
         || pVars->ai32Vars[3] != errno;
 }

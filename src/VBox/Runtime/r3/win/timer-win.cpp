@@ -285,9 +285,9 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
      * On windows we'll have to set the timer resolution before
      * we start the timer.
      */
-    ULONG ulMax = ~0;
-    ULONG ulMin = ~0;
-    ULONG ulCur = ~0;
+    ULONG ulMax = UINT32_MAX;
+    ULONG ulMin = UINT32_MAX;
+    ULONG ulCur = UINT32_MAX;
     NtQueryTimerResolution(&ulMax, &ulMin, &ulCur);
     Log(("NtQueryTimerResolution -> ulMax=%lu00ns ulMin=%lu00ns ulCur=%lu00ns\n", ulMax, ulMin, ulCur));
     if (ulCur > ulMin && ulCur > 10000 /* = 1ms */)
@@ -311,7 +311,7 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
     /*
      * Create new timer.
      */
-    int rc;
+    int rc = VERR_IPE_UNINITIALIZED_STATUS;
     PRTTIMER pTimer = (PRTTIMER)RTMemAlloc(sizeof(*pTimer));
     if (pTimer)
     {
@@ -325,9 +325,9 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
         pTimer->TimerId     = timeSetEvent(uMilliesInterval, 0, rttimerCallback, (DWORD_PTR)pTimer, TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
         if (pTimer->TimerId)
         {
-            ULONG ulMax = ~0;
-            ULONG ulMin = ~0;
-            ULONG ulCur = ~0;
+            ULONG ulMax = UINT32_MAX;
+            ULONG ulMin = UINT32_MAX;
+            ULONG ulCur = UINT32_MAX;
             NtQueryTimerResolution(&ulMax, &ulMin, &ulCur);
             Log(("NtQueryTimerResolution -> ulMax=%lu00ns ulMin=%lu00ns ulCur=%lu00ns\n", ulMax, ulMin, ulCur));
 
@@ -341,7 +341,7 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
         /*
          * Create Win32 event semaphore.
          */
-        pTimer->iError      = 0;
+        pTimer->iError = 0;
         pTimer->hTimer = CreateWaitableTimer(NULL, TRUE, NULL);
         if (pTimer->hTimer)
         {
@@ -440,7 +440,7 @@ RTR3DECL(int)     RTTimerDestroy(PRTTIMER pTimer)
          */
         rc = RTThreadWait(pTimer->Thread, 1000, NULL);
         if (RT_FAILURE(rc))
-            TerminateThread((HANDLE)RTThreadGetNative(pTimer->Thread), -1);
+            TerminateThread((HANDLE)RTThreadGetNative(pTimer->Thread), UINT32_MAX);
 
         /*
          * Free resource.

@@ -476,6 +476,4 @@ RTDECL(RTEXITCODE) RTZipUnzipCmd(unsigned cArgs, char **papszArgs)
         default:
             return rtZipUnzipDoWithMembers(&Opts, rtZipUnzipCmdExtractCallback, &cFiles, &cBytes);
     }
-
-    return RTEXITCODE_SUCCESS;
 }

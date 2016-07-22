@@ -244,7 +244,6 @@ int rtldrNativeLoadSystem(const char *pszFilename, const char *pszExt, uint32_t 
                  * returns a system32 path for some reason).
                  */
                 unsigned cMatchingComponents = 0;
-                unsigned cSlashes = 0;
                 size_t   off = 0;
                 while (off < pUniStrResult->Length)
                 {

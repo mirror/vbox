@@ -1400,7 +1400,6 @@ static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRT
                 rc2 = VERR_FILE_NOT_FOUND;
         if (RT_SUCCESS(rc2))
         {
-            size_t cchCurPath = cchPath + strlen(&pszPath[cchPath]);
             for (uint32_t iSuffix = 0; papszSuffixes[iSuffix]; iSuffix++)
             {
                 if (   !rtDbgCfgIsDirAndFixCase2(pszPath, pszName, papszSuffixes[iSuffix], fCaseInsensitive)

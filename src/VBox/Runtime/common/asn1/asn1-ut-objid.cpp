@@ -429,8 +429,8 @@ RTDECL(int) RTAsn1ObjId_Clone(PRTASN1OBJID pThis, PCRTASN1OBJID pSrc, PCRTASN1AL
         int rc;
         RTAsn1MemInitAllocation(&pThis->Allocation, pAllocator);
         pThis->cComponents = pSrc->cComponents;
-        size_t cbLeft = sizeof(pThis->szObjId);
 #if 0 /** @todo breaks with arrays of ObjIds or structs containing them. They get resized and repositioned in memory, thus invalidating the pointer. Add recall-pointers callback, or just waste memory? Or maybe make all arrays pointer-arrays? */
+        size_t cbLeft = sizeof(pThis->szObjId);
         if (pSrc->cComponents * sizeof(uint32_t) <= cbLeft)
         {
             pThis->pauComponents = (uint32_t *)&pThis->szObjId[sizeof(pThis->szObjId) - pSrc->cComponents * sizeof(uint32_t)];

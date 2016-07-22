@@ -582,9 +582,8 @@ static DECLCALLBACK(int) rtVfsReadAheadThreadProc(RTTHREAD hThreadSelf, void *pv
             if (!pThis->fTerminateThread)
             {
 
-                pBufDesc->off      = RTVfsIoStrmTell(pThis->hIos);
-                size_t cbRead      = 0;
-                size_t cbToRead    = pThis->cbBuffer;
+                pBufDesc->off = RTVfsIoStrmTell(pThis->hIos);
+                size_t cbRead = 0;
                 rc = RTVfsIoStrmRead(pThis->hIos, pBufDesc->pbBuffer, pThis->cbBuffer, true /*fBlocking*/, &cbRead);
                 if (RT_SUCCESS(rc))
                 {

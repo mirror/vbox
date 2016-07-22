@@ -208,7 +208,6 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
                     fProps |= RTPATH_PROP_FILENAME;
 
                     /* look for an ? */
-                    uint16_t cDots  = 0;
                     uint32_t offSuffix = offStart + cchComp;
                     while (offSuffix-- > offStart)
                         if (pszPath[offSuffix] == '.')

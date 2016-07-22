@@ -1122,7 +1122,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuf, size_
                     }
                     else if (GetLastError() == ERROR_IO_PENDING)
                     {
-                        DWORD rcWait = WaitForSingleObject(pThis->Read.OverlappedIO.hEvent, INFINITE);
+                        WaitForSingleObject(pThis->Read.OverlappedIO.hEvent, INFINITE);
 
                         RTCritSectEnter(&pThis->CritSect);
                         if (GetOverlappedResult(pThis->hNmPipe, &pThis->Read.OverlappedIO, &cbRead, TRUE /*fWait*/))
@@ -1552,7 +1552,7 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
                 /*
                  * Check for timeout.
                  */
-                DWORD cMsMaxWait;
+                DWORD cMsMaxWait = INFINITE; /* (MSC maybe used uninitialized) */
                 if (cMillies == RT_INDEFINITE_WAIT)
                     cMsMaxWait = INFINITE;
                 else if (   hWait != INVALID_HANDLE_VALUE

@@ -477,7 +477,6 @@ static int rtZipPkzipParseCentrDirHeaderExtra(PRTZIPPKZIPREADER pThis, uint8_t *
     int rc = RTStrCopyEx(pThis->szName, sizeof(pThis->szName), (const char*)pu8Buf, pThis->cdh.cbFilename);
     if (RT_SUCCESS(rc))
     {
-        uint8_t *offStart = pu8Buf;
         pu8Buf += pThis->cdh.cbFilename;
         cb      = pThis->cdh.cbExtra;
         while (cb >= 4)
@@ -766,8 +765,7 @@ static int rtZipPkzipFssIosReadEocb(PRTZIPPKZIPFSSTREAM pThis)
  */
 static DECLCALLBACK(int) rtZipPkzipFssBaseObj_Close(void *pvThis)
 {
-    PRTZIPPKZIPBASEOBJ pThis = (PRTZIPPKZIPBASEOBJ)pvThis;
-
+    NOREF(pvThis);
     return VINF_SUCCESS;
 }
 

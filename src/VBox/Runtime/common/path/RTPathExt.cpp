@@ -64,7 +64,6 @@ RTDECL(char *) RTPathSuffix(const char *pszPath)
         }
     }
 
-    /* will never get here */
-    return NULL;
+    /* not reached */
 }
 
