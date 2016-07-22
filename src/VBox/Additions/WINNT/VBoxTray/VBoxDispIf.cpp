@@ -355,6 +355,23 @@ static DWORD vboxDispIfWddmDcSettingsUpdate(VBOXDISPIF_WDDM_DISPCFG *pCfg, int i
 
     pCfg->pPathInfoArray[idx].targetInfo.modeInfoIdx = DISPLAYCONFIG_PATH_MODE_IDX_INVALID;
 
+    /* "A refresh rate with both the numerator and denominator set to zero indicates that
+     * the caller does not specify a refresh rate and the operating system should use
+     * the most optimal refresh rate available. For this case, in a call to the SetDisplayConfig
+     * function, the caller must set the scanLineOrdering member to the
+     * DISPLAYCONFIG_SCANLINE_ORDERING_UNSPECIFIED value; otherwise, SetDisplayConfig fails."
+     *
+     * If a refresh rate is set to a value, then the resize will fail if miniport driver
+     * does not support VSync, i.e. with display-only driver on Win8+ (@bugref{8440}).
+     */
+    pCfg->pPathInfoArray[idx].targetInfo.refreshRate.Numerator = 0;
+    pCfg->pPathInfoArray[idx].targetInfo.refreshRate.Denominator = 0;
+    pCfg->pPathInfoArray[idx].targetInfo.scanLineOrdering = DISPLAYCONFIG_SCANLINE_ORDERING_UNSPECIFIED;
+
+    /* Make sure that "The output can be forced on this target even if a monitor is not detected." */
+    pCfg->pPathInfoArray[idx].targetInfo.targetAvailable = TRUE;
+    pCfg->pPathInfoArray[idx].targetInfo.statusFlags |= DISPLAYCONFIG_TARGET_FORCIBLE;
+
     if (fEnable)
         pCfg->pPathInfoArray[idx].flags |= DISPLAYCONFIG_PATH_ACTIVE;
     else
