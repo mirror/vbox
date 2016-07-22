@@ -111,7 +111,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
         {
             rc = pProxyDev->pOps->pfnUrbCancel(pProxyDev, &Urb);
             AssertRC(rc);
-            /** @todo: This breaks the comment above... */
+            /** @todo This breaks the comment above... */
             pUrbReaped = pProxyDev->pOps->pfnUrbReap(pProxyDev, RT_INDEFINITE_WAIT);
         }
         if (pUrbReaped != &Urb)
@@ -162,14 +162,15 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
             goto err;
         }
 
-        if ((cbDesc > (Urb.cbData - sizeof(VUSBSETUP))))
+        if (cbDesc > Urb.cbData - sizeof(VUSBSETUP))
         {
             Log(("GetStdDescSync: Descriptor length too short, cbDesc=%u, Urb.cbData=%u\n", cbDesc, Urb.cbData));
             goto err;
         }
 
-        if ((cbInitialHint != cbHint) &&
-        	((cbDesc != cbHint) || (Urb.cbData < cbInitialHint)))
+        if (   cbInitialHint != cbHint
+            && (   cbDesc != cbHint
+                || Urb.cbData < cbInitialHint) )
         {
             Log(("GetStdDescSync: Descriptor length incorrect, cbDesc=%u, Urb.cbData=%u, cbHint=%u\n", cbDesc, Urb.cbData, cbHint));
             goto err;
