@@ -5781,6 +5781,21 @@ TEMPLATE_VBoxDbgSyms_INST = $(INST_VBOXDBG_SYMS)
 #
 # Template for building build bldprogs.
 #
+# Disabled Visual C++ warnings:
+#      -wd4065: switch statement contains 'default' but no 'case' labels
+#      -wd4996: deprecated / insecure.
+#      -wd4127: conditional expression is constant [level 4]
+#      -wd4706: assignment within conditional expression [level 4]
+#      -wd4201: nonstandard extension used : nameless struct/union [level 4]
+#      -wd4214: nonstandard extension used : bit field types other than int [level 4]
+#      -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
+#      -wd4512: 'VM' : assignment operator could not be generated
+#      -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
+#
+#      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data --- TODO: Enable this one!
+#      -wd4100: 'identifier' : unreferenced formal parameter [level 4] --- TODO: Enable this one!
+#
+#
 # HACK ALERT! The BLD_TRG_* is a hack to allow building libraries as well.
 #
 TEMPLATE_VBoxBldProg  = VBox Build Program
@@ -5815,7 +5830,7 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
  TEMPLATE_VBoxBldProg_SDKS              := ReorderCompilerIncs $(VBOX_WINPSDK)
  TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -MT$(VBOX_VCC_CRT_TYPE) \
- 	-W3 -wd4065 -wd4244 -wd4996
+ 	-W4 -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610  -wd4100 -wd4244
  TEMPLATE_VBoxBldProg_CXXFLAGS.debug    := -RTCsu
  TEMPLATE_VBoxBldProg_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBoxBldProg_CXXFLAGS.profile   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
