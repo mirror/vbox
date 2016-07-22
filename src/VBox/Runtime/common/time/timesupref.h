@@ -313,6 +313,9 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                 /*
                  * No joy must try again.
                  */
+#ifdef _MSC_VER
+# pragma warning(disable: 4702)
+#endif
 #ifndef IN_RING3
                 ASMSetFlags(uFlags);
 #endif

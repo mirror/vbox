@@ -297,7 +297,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
          * Wait for the current owner to release it.
          */
         IPRT_CRITSECT_WAITING(pCritSect, NULL, cLockers, (void *)pCritSect->NativeThreadOwner);
-#ifndef RTCRITSECT_STRICT
+#if !defined(RTCRITSECT_STRICT) && defined(IN_RING3)
         RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
         for (;;)
