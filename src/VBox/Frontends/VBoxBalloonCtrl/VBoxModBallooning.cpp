@@ -30,6 +30,7 @@ using namespace com;
 
 #define VBOX_MOD_BALLOONING_NAME "balloon"
 
+
 /*********************************************************************************************************************************
 *   Local Structures                                                                                                             *
 *********************************************************************************************************************************/
@@ -70,6 +71,7 @@ typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
     unsigned long ulBalloonReqLast;
 } VBOXWATCHDOG_BALLOONCTRL_PAYLOAD, *PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD;
 
+
 /*********************************************************************************************************************************
 *   Globals                                                                                                                      *
 *********************************************************************************************************************************/
@@ -82,6 +84,7 @@ static unsigned long g_ulMemoryBalloonDecrementMB  = 128;
 static unsigned long g_ulMemoryBalloonMaxMB        = 0;
 static unsigned long g_ulMemoryBalloonLowerLimitMB = 128;
 static unsigned long g_ulMemoryBalloonSafetyMB     = 1024;
+
 
 /*********************************************************************************************************************************
 *   Local Function Prototypes                                                                                                    *

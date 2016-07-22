@@ -101,7 +101,7 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
     cleanup();
 }
 
-const QRect	UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
+const QRect     UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= m_cHostScreenCount)

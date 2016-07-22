@@ -42,7 +42,7 @@ public:
 
     /** Returns the geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
-    const QRect	screenGeometry(int iHostScreenIndex = -1) const;
+    const QRect screenGeometry(int iHostScreenIndex = -1) const;
     /** Returns the available-geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
     const QRect availableGeometry(int iHostScreenIndex = -1) const;

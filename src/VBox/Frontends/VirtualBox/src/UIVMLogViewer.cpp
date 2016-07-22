@@ -1107,7 +1107,7 @@ void UIVMLogViewer::showEvent(QShowEvent *pEvent)
     /* Make sure the log view widget has the focus: */
     QWidget *pCurrentLogPage = currentLogPage();
     if (pCurrentLogPage)
-        pCurrentLogPage->setFocus(); 
+        pCurrentLogPage->setFocus();
 }
 
 void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)

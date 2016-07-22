@@ -76,6 +76,3 @@ BS3_CMN_DEF(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void BS3_FAR 
     return pvDst;
 }
 
-
-
-

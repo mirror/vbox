@@ -372,4 +372,3 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
                           , (tsExpire, idFailureCategory,));
         return True;
 
-

@@ -98,5 +98,3 @@ class WuiTestResultFailure(WuiFormContentBase):
                                        ));
         return aoActions;
 
-
-

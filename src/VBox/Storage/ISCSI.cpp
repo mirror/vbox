@@ -3509,7 +3509,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                             pImage->fTryReconnect = false;
                             iscsiReattach(pImage);
                         }
-    
+
                         /* If there is no connection complete the command with an error. */
                         if (RT_LIKELY(iscsiIsClientConnected(pImage)))
                         {

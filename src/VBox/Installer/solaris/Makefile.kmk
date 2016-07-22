@@ -356,7 +356,7 @@ ifdef VBOX_WITH_QTGUI
           libQt5WidgetsVBox.so.5 \
           plugins/platforms/libqxcb.so \
 	  $(if $(VBOX_GUI_USE_QGL),libQt5OpenGLVBox.so.5,)
-  endif  
+  endif
  else # VBOX_WITH_QTGUI_V5
   ifdef VBOX_WITH_ORACLE_QT
    SOLARIS_STRIP_BINS += \
@@ -446,7 +446,7 @@ ifndef VBOX_WITH_QTGUI_V5
  SOLARIS_QTLIBS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)
  SOLARIS_QTLIBS =
  ifdef VBOX_WITH_QTGUI
-  ifdef VBOX_WITH_ORACLE_QT 
+  ifdef VBOX_WITH_ORACLE_QT
     SOLARIS_QTLIBS += \
        	  libQtXmlVBox.so.4 \
   	  libQtSqlVBox.so.4 \

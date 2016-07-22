@@ -4668,7 +4668,7 @@ static DECLCALLBACK(int) vdIOIntSetAllocationSize(void *pvUser, PVDIOSTORAGE pIo
                         size_t cbChunk = (size_t)RT_MIN(cbFill - uOff, cbBuf);
 
                         rc = pVDIo->pInterfaceIo->pfnWriteSync(pVDIo->pInterfaceIo->Core.pvUser,
-                                                               pIoStorage->pStorage, cbSizeCur + uOff, 
+                                                               pIoStorage->pStorage, cbSizeCur + uOff,
                                                                pvBuf, cbChunk, NULL);
                         if (RT_SUCCESS(rc))
                         {

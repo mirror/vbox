@@ -39,6 +39,7 @@
 #include "UsbTestServiceGadget.h"
 #include "UsbTestServiceGadgetHostInternal.h"
 
+
 /*********************************************************************************************************************************
 *   Constants And Macros, Structures and Typedefs                                                                                *
 *********************************************************************************************************************************/
@@ -68,6 +69,7 @@ static const PCUTSGADGETHOSTIF g_apUtsGadgetHostIf[] =
 {
     &g_UtsGadgetHostIfUsbIp,
 };
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *

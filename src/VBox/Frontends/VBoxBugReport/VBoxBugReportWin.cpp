@@ -60,20 +60,20 @@ void BugReportNetworkAdaptersWin::printCharteristics(DWORD dwChars)
     static CharacteristicsName cMap[] =
     {
         { NCF_VIRTUAL, "virtual" },
-	{ NCF_SOFTWARE_ENUMERATED, "software_enumerated" },
-	{ NCF_PHYSICAL, "physical" },
+        { NCF_SOFTWARE_ENUMERATED, "software_enumerated" },
+        { NCF_PHYSICAL, "physical" },
         { NCF_HIDDEN, "hidden" },
-	{ NCF_NO_SERVICE, "no_service" },
-	{ NCF_NOT_USER_REMOVABLE, "not_user_removable" },
-	{ NCF_MULTIPORT_INSTANCED_ADAPTER, "multiport_instanced_adapter" },
-	{ NCF_HAS_UI, "has_ui" },
-	{ NCF_SINGLE_INSTANCE, "single_instance" },
-	{ NCF_FILTER, "filter" },
-	{ NCF_DONTEXPOSELOWER, "dontexposelower" },
-	{ NCF_HIDE_BINDING, "hide_binding" },
-	{ NCF_NDIS_PROTOCOL, "ndis_protocol" },
-	{ NCF_FIXED_BINDING, "fixed_binding" },
-	{ NCF_LW_FILTER, "lw_filter" }
+        { NCF_NO_SERVICE, "no_service" },
+        { NCF_NOT_USER_REMOVABLE, "not_user_removable" },
+        { NCF_MULTIPORT_INSTANCED_ADAPTER, "multiport_instanced_adapter" },
+        { NCF_HAS_UI, "has_ui" },
+        { NCF_SINGLE_INSTANCE, "single_instance" },
+        { NCF_FILTER, "filter" },
+        { NCF_DONTEXPOSELOWER, "dontexposelower" },
+        { NCF_HIDE_BINDING, "hide_binding" },
+        { NCF_NDIS_PROTOCOL, "ndis_protocol" },
+        { NCF_FIXED_BINDING, "fixed_binding" },
+        { NCF_LW_FILTER, "lw_filter" }
     };
     bool fPrintDelim = false;
 
@@ -216,7 +216,7 @@ void BugReportNetworkAdaptersWin::collect(void)
         RTPrintf("ERROR in osCollect: %s\n", e.what());
         throw;
     }
-            
+
 }
 
 
@@ -318,7 +318,7 @@ PBYTE BugReportUsbTreeWin::getDeviceRegistryProperty(HDEVINFO hDev,
     }
     if (uExpectedType != REG_NONE && uActualType != uExpectedType)
         throw RTCError(RTCStringFmt("SetupDiGetDeviceRegistryProperty(0x%x) returned type %d instead of %d",
-                                    uActualType, uExpectedType).c_str());    
+                                    uActualType, uExpectedType).c_str());
     PBYTE pBuffer = (PBYTE)RTMemAlloc(cbNeeded);
     if (!pBuffer)
         throw RTCError(RTCStringFmt("Failed to allocate %u bytes", cbNeeded).c_str());
@@ -407,7 +407,7 @@ RTCString BugReportUsbTreeWin::getDriverKeyName(HANDLE hHub, int iPort)
     RTMemFree(pName);
     return strName;
 }
-    
+
 
 RTCString BugReportUsbTreeWin::getExternalHubName(HANDLE hHub, int iPort)
 {

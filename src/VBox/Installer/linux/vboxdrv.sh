@@ -342,7 +342,7 @@ stop()
 }
 
 # enter the following variables in /etc/default/virtualbox:
-#   SHUTDOWN_USERS="foo bar"  
+#   SHUTDOWN_USERS="foo bar"
 #     check for running VMs of user foo and user bar
 #   SHUTDOWN=poweroff
 #   SHUTDOWN=acpibutton

@@ -478,7 +478,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
         QApplication::setStyle(new QPlastiqueStyle);
 #  else /* QT_VERSION >= 0x050000 */
-	a.setStyle("fusion");
+        a.setStyle("fusion");
 #  endif /* QT_VERSION >= 0x050000 */
 # endif /* Q_OS_SOLARIS */
 
@@ -608,7 +608,7 @@ int main(int argc, char **argv, char **envp)
         /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
         QApplication::setStyle(new QPlastiqueStyle);
 #else /* QT_VERSION >= 0x050000 */
-	a.setStyle("fusion");
+        a.setStyle("fusion");
 # endif /* QT_VERSION >= 0x050000 */
 #endif /* Q_OS_SOLARIS */
 
@@ -782,5 +782,4 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
 }
 
 #endif /* VBOX_WITH_HARDENING */
-
 

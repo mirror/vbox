@@ -35,4 +35,3 @@ BS3_CMN_DEF(size_t, Bs3StrNLen,(const char BS3_FAR *pszString, size_t cchMax))
     return cch;
 }
 
-

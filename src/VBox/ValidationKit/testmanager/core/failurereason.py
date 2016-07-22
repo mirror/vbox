@@ -560,4 +560,3 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
             self.oUserAccountLogic = UserAccountLogic(self._oDb);
         return True;
 
-

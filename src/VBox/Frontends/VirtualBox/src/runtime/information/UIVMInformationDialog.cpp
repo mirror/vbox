@@ -86,7 +86,7 @@ UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
     : QIWithRetranslateUI<QMainWindow>(0)
     , m_pTabWidget(0)
     , m_pMachineWindow(pMachineWindow)
-{    
+{
     /* Initialize instance: */
     m_spInstance = this;
 

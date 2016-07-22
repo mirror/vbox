@@ -64,7 +64,7 @@ enum CLIPFORMAT
     TEXT,  /* Treat this as Utf8, but it may really be ascii */
     UTF8,
     BMP,
-	HTML
+        HTML
 };
 
 /** The table mapping X11 names to data formats and to the corresponding
@@ -95,8 +95,8 @@ static struct _CLIPFORMATTABLE
     { "image/bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
     { "image/x-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
     { "image/x-MS-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP }
-   
-	
+
+
     /* TODO: Inkscape exports image/png but not bmp... */
 };
 
@@ -338,8 +338,8 @@ static void clipReportFormatsToVBox(CLIPBACKEND *pCtx)
     u32VBoxFormats |= clipVBoxFormatForX11Format(pCtx->X11BitmapFormat);
     u32VBoxFormats |= clipVBoxFormatForX11Format(pCtx->X11HTMLFormat);
     LogRelFlowFunc(("clipReportFormatsToVBox format: %d\n", u32VBoxFormats));
-    LogRelFlowFunc(("clipReportFormatsToVBox txt: %d, bitm: %d, html:%d, u32VBoxFormats: %d\n", 
-                    pCtx->X11TextFormat, pCtx->X11BitmapFormat, pCtx->X11HTMLFormat, 
+    LogRelFlowFunc(("clipReportFormatsToVBox txt: %d, bitm: %d, html:%d, u32VBoxFormats: %d\n",
+                    pCtx->X11TextFormat, pCtx->X11BitmapFormat, pCtx->X11HTMLFormat,
                     u32VBoxFormats ));
     ClipReportX11Formats(pCtx->pFrontend, u32VBoxFormats);
 }
@@ -449,7 +449,7 @@ static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
 
 /**
  * Go through an array of X11 clipboard targets to see if they contain a HTML
- * format we can support, and if so choose the ones we prefer 
+ * format we can support, and if so choose the ones we prefer
  * @param  pCtx      the clipboard backend context structure
  * @param  pTargets  the list of targets
  * @param  cTargets  the size of the list in @a pTargets
@@ -1205,14 +1205,14 @@ static int clipWinHTMLToUtf8ForX11CB(Display *pDisplay, const char *pszSrc,
     char *pszDest = (char *)XtMalloc(cbSrc);
     if(pszDest == NULL)
         return VERR_NO_MEMORY;
-        
+
     memcpy(pszDest, pszSrc, cbSrc);
 
     *atomTypeReturn = *atomTarget;
     *pValReturn = (XtPointer)pszDest;
     *pcLenReturn = cbSrc;
     *piFormatReturn = 8;
-    
+
     return VINF_SUCCESS;
 }
 
@@ -1299,7 +1299,7 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
         }
         RTMemFree(pv);
     }
-    else if ( (format == HTML) 
+    else if ( (format == HTML)
             && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML))
     {
         void *pv = NULL;
@@ -1311,10 +1311,10 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
             rc = VERR_NO_DATA;
         if (RT_SUCCESS(rc))
         {
-            /* 
-            * The common VBox HTML encoding will be - Utf8 
+            /*
+            * The common VBox HTML encoding will be - Utf8
             * becuase it more general for HTML formats then UTF16
-            * X11 clipboard returns UTF16, so before sending it we should 
+            * X11 clipboard returns UTF16, so before sending it we should
             * convert it to UTF8
             * It's very strange but here we get utf16 from x11 clipboard
             * in same time we send utf8 to x11 clipboard and it's work
@@ -1776,16 +1776,16 @@ static void clipConvertX11CB(void *pClientData, void *pvSrc, unsigned cbSrc)
         {
             case HTML:
             {
-                /* The common VBox HTML encoding will be - Utf8 
+                /* The common VBox HTML encoding will be - Utf8
                 * becuase it more general for HTML formats then UTF16
-                * X11 clipboard returns UTF16, so before sending it we should 
-                * convert it to UTF8 
+                * X11 clipboard returns UTF16, so before sending it we should
+                * convert it to UTF8
                 */
                 pvDest = NULL;
                 cbDest = 0;
-                /* Some applications sends data in utf16, some in itf8, 
+                /* Some applications sends data in utf16, some in itf8,
                  * without indication it in MIME.
-                 * But in case of utf16, at least an OpenOffice adds Byte Order Mark - 0xfeff 
+                 * But in case of utf16, at least an OpenOffice adds Byte Order Mark - 0xfeff
                  * at start of clipboard data
                  */
                 if( cbSrc >= sizeof(RTUTF16) && *(PRTUTF16)pvSrc == 0xfeff )
@@ -1808,8 +1808,8 @@ static void clipConvertX11CB(void *pClientData, void *pvSrc, unsigned cbSrc)
                         break;
                    }
                 }
-                                      
-                LogRelFlowFunc(("Source unicode %ls, cbSrc = %d\n, Byte Order Mark = %hx", 
+
+                LogRelFlowFunc(("Source unicode %ls, cbSrc = %d\n, Byte Order Mark = %hx",
                                 pvSrc, cbSrc, ((PRTUTF16)pvSrc)[0]));
                 LogRelFlowFunc(("converted to win unicode %s, cbDest = %d, rc = %Rrc\n", pvDest, cbDest, rc));
                 rc = VINF_SUCCESS;
@@ -1923,7 +1923,7 @@ static void vboxClipboardReadX11Worker(void *pUserData,
              * owner */
             getSelectionValue(pCtx, pCtx->X11HTMLFormat, pReq);
     }
-    else   
+    else
         rc = VERR_NOT_IMPLEMENTED;
     if (RT_FAILURE(rc))
     {
@@ -2816,4 +2816,3 @@ int main()
 
 #endif /* SMOKETEST defined */
 
-                    

@@ -1033,4 +1033,3 @@ class TestBoxScript(object):
 if __name__ == '__main__':
     sys.exit(TestBoxScript.main());
 
-

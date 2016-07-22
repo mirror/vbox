@@ -45,6 +45,7 @@
 
 #include "UsbTestServicePlatform.h"
 
+
 /*********************************************************************************************************************************
 *   Constants And Macros, Structures and Typedefs                                                                                *
 *********************************************************************************************************************************/
@@ -87,6 +88,7 @@ typedef struct UTSPLATFORMLNXDUMMYHCD
 } UTSPLATFORMLNXDUMMYHCD;
 /** Pointer to a dummy HCD entry. */
 typedef UTSPLATFORMLNXDUMMYHCD *PUTSPLATFORMLNXDUMMYHCD;
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *

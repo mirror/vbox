@@ -35,7 +35,7 @@ RT_C_DECLS_BEGIN
 /** Opaque gadget host handle. */
 typedef struct UTSGADGETHOSTINT *UTSGADGETHOST;
 /** Pointer to a gadget host handle. */
-typedef UTSGADGETHOST *PUTSGADGETHOST; 
+typedef UTSGADGETHOST *PUTSGADGETHOST;
 
 /** NIL gadget host handle. */
 #define NIL_UTSGADGETHOST ((UTSGADGETHOST)0)

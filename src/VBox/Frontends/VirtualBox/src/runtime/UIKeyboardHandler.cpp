@@ -54,7 +54,7 @@
 #  if QT_VERSION >= 0x050000
 #   include "iprt/cpp/utils.h"
 #  endif /* QT_VERSION >= 0x050000 */
-# endif /* VBOX_WS_MAC */ 
+# endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 

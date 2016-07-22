@@ -341,4 +341,3 @@ class PartialDbDump(object): # pylint: disable=R0903
 if __name__ == '__main__':
     sys.exit(PartialDbDump().main());
 
-

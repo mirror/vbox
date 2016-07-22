@@ -915,6 +915,7 @@ DECLCALLBACK(void) UINetworkReplyPrivateThread::handleProgressChange(RTHTTP hHtt
 
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
 
+
 /*********************************************************************************************************************************
 *   Class UINetworkReplyPrivate implementation.                                                                                  *
 *********************************************************************************************************************************/

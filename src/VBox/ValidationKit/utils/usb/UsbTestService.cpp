@@ -106,6 +106,7 @@ typedef struct UTSCLIENT
 /** Pointer to a UTS client instance. */
 typedef UTSCLIENT *PUTSCLIENT;
 
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -608,7 +609,7 @@ static int utsDoGadgetCreateCfgParseItem(PUTSGADGETCFGITEM pCfgItem, uint32_t u3
                      || RTStrICmp(pszVal, "0")
                      || RTStrICmp(pszVal, "false"))
                 pCfgItem->Val.u.f = false;
-            else 
+            else
                 rc = VERR_INVALID_PARAMETER;
             break;
         }
@@ -1191,7 +1192,7 @@ static RTEXITCODE utsMainLoop(void)
     RTEXITCODE enmExitCode = RTEXITCODE_SUCCESS;
     while (!g_fTerminate)
     {
-        /* 
+        /*
          * Wait for new connection and spin off a new thread
          * for every new client.
          */
