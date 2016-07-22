@@ -831,7 +831,9 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 {
     NOREF(pOp); NOREF(pDis);
 
+#ifdef LOG_ENABLED
     unsigned type    = OP_PARM_VTYPE(pParam->fParam);
+#endif
     unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
     if (fRegAddr)
         subtype = (pDis->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
