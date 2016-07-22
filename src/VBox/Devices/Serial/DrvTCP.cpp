@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation.
+ * Copyright (C) 2006-2016 Oracle Corporation.
  *
  * This file was contributed by Alexey Eromenko (derived from DrvNamedPipe)
  *
