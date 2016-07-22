@@ -732,7 +732,7 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
 
     if (strcmp(outname, "-")) {
         const char *fopen_mode;
-        const char *out_basename;
+        char *out_basename;
 
         /* explicit_output_filename can't be true without a filename */
         if (explicit_output_filename) {
@@ -752,6 +752,8 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
             out_basename = outname;
 #endif
             real_outname = g_strdup_printf("%s.%s", out_basename, mode->suffix);
+            if (out_basename != outname)
+                g_free(out_basename);
         }
 
         /* Use binary write for typelib mode */

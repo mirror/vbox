@@ -164,9 +164,10 @@ char *
 xpidl_strdup(const char *s);
 
 /*
- * Return a pointer to the start of the base filename of path
+ * Return a newly allocated string to the start of the base filename of path.
+ * Free with g_free().
  */
-const char *
+char *
 xpidl_basename(const char * path);
 
 /*

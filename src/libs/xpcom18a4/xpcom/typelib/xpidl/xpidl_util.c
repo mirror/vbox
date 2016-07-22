@@ -832,15 +832,16 @@ verify_interface_declaration(IDL_tree interface_tree)
 /*
  * Return a pointer to the start of the base filename of path
  */
-const char *
+char *
 xpidl_basename(const char * path)
 {
-    const char * result = g_basename(path);
+    char * result = g_path_get_basename(path);
     /* 
      *If this is windows then we'll handle either / or \ as a separator
      * g_basename only handles \ for windows
      */
 #if defined(XP_WIN32)
+# error adapt regarding g_basename() vs. g_path_get_basename()!
     const char * slash = strrchr(path, '/');
     /* If we found a slash and its after the current default OS separator */
     if (slash != NULL && (slash > result))

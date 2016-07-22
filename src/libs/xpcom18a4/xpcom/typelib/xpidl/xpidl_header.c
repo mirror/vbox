@@ -60,13 +60,14 @@ write_indent(FILE *outfile) {
 static gboolean
 header_prolog(TreeState *state)
 {
-    const char *define = xpidl_basename(state->basename);
+    char *define = xpidl_basename(state->basename);
     fprintf(state->file, "/*\n * DO NOT EDIT.  THIS FILE IS GENERATED FROM"
             " %s.idl\n */\n", state->basename);
     fprintf(state->file,
             "\n#ifndef __gen_%s_h__\n"
             "#define __gen_%s_h__\n",
             define, define);
+    g_free(define);
     if (state->base_includes != NULL) {
         guint len = g_slist_length(state->base_includes);
         guint i;
@@ -116,8 +117,9 @@ header_prolog(TreeState *state)
 static gboolean
 header_epilog(TreeState *state)
 {
-    const char *define = xpidl_basename(state->basename);
+    char *define = xpidl_basename(state->basename);
     fprintf(state->file, "\n#endif /* __gen_%s_h__ */\n", define);
+    g_free(define);
     return TRUE;
 }
 
