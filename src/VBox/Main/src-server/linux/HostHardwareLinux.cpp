@@ -641,7 +641,7 @@ private:
                                          "block/%s/device/vendor", mpcszName);
             if (RT_SUCCESS(rc))
             {
-                rc = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel), NULL, 
+                rc = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel), NULL,
                                              "block/%s/device/model", mpcszName);
                 if (RT_SUCCESS(rc))
                 {

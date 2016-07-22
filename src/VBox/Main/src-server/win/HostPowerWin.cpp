@@ -213,7 +213,7 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
             SetWindowLongPtr(hwnd, 0, 0);
             PostQuitMessage(0);
             return 0;
-        } 
+        }
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);

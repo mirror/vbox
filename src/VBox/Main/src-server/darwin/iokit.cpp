@@ -1026,7 +1026,7 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
          * To make the checks below work we have to get hold of the IOUSBHostDevice and IOUSBHostInterface
          * instances for the current device. Fortunately the IOUSBHostDevice instance contains a
          * "AppleUSBAlternateServiceRegistryID" which points to the legacy class instance for the same device.
-         * So just iterate over the list of IOUSBHostDevice instances and check whether the 
+         * So just iterate over the list of IOUSBHostDevice instances and check whether the
          * AppleUSBAlternateServiceRegistryID property matches with the legacy instance.
          *
          * The upside is that we can keep VBoxUSB untouched and still compatible with older OS X releases.

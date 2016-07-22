@@ -2578,7 +2578,7 @@ HRESULT ExtPackManager::i_refreshExtPack(const char *a_pszName, bool a_fUnusable
 bool ExtPackManager::i_areThereAnyRunningVMs(void) const
 {
     Assert(m->pVirtualBox != NULL); /* Only called from VBoxSVC. */
-    
+
     /*
      * Get list of machines and their states.
      */

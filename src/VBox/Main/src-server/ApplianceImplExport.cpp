@@ -758,7 +758,7 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
         catch(...)
         {
             delete task;
-            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND, 
+            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                                 tr("Could not create TaskOVF object for for writing out the OVF to disk"));
         }
 

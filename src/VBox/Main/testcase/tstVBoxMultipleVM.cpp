@@ -43,7 +43,7 @@ using namespace com;
 
 
 /*********************************************************************************************************************************
-*   Global Variables & defs                                                                                                         *
+*   Global Variables & defs                                                                                                      *
 *********************************************************************************************************************************/
 typedef std::vector<Bstr>       TMachinesList;
 static volatile bool            g_RunTest = true;
@@ -199,7 +199,7 @@ static int tstStopVM(IVirtualBox* pVBox, ISession* pSession, Bstr machineID, boo
     }
     return rc;
 }
- 
+
 
 /**
  * Get random @a maxCount machines from list of existing VMs.
@@ -211,7 +211,7 @@ static int tstGetMachinesList(IVirtualBox *pVBox, uint32_t maxCount, TMachinesLi
     HRESULT rc;
     size_t machinesCount = 0;
     com::SafeIfaceArray<IMachine> machines;
-    
+
     TST_COM_EXPR(pVBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines)));
 
     machinesCount = RT_MIN(machines.size(), maxCount);
@@ -250,7 +250,7 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
     bool alwaysUnlock = false;
     uint64_t percN = 0;
 
-    // choose and fill pack of machines for test 
+    // choose and fill pack of machines for test
     tstGetMachinesList(pVBox, maxPackSize, machinesList);
 
     RTPrintf("Start test.\n");
@@ -262,7 +262,7 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
         alwaysUnlock = true;
 
     // start all machines in pack
-    for (TMachinesList::iterator it = machinesList.begin(); 
+    for (TMachinesList::iterator it = machinesList.begin();
          it != machinesList.end() && g_RunTest;
          ++it)
     {
@@ -276,7 +276,7 @@ static int tstMachinesPack(IVirtualBox *pVBox, uint32_t maxPackSize, uint32_t pe
         RTThreadSleep(100);
     }
     // stop all machines in the pack
-    for (TMachinesList::iterator it = machinesList.begin(); 
+    for (TMachinesList::iterator it = machinesList.begin();
          it != machinesList.end() && g_RunTest;
          ++it)
     {
@@ -430,7 +430,7 @@ static int ParseArguments(int argc, char **argv, TestThreadArgs *pArgs)
     int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
     AssertRCReturn(rc, rc);
     AssertPtr(pArgs);
-    
+
     while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (rc)
