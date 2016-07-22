@@ -596,7 +596,7 @@ typedef enum PDMMEDIAEXIOREQSTATE
 {
     /** Invalid state. */
     PDMMEDIAEXIOREQSTATE_INVALID = 0,
-    /** The request is active and being processed. */ 
+    /** The request is active and being processed. */
     PDMMEDIAEXIOREQSTATE_ACTIVE,
     /** The request is suspended due to an error and no processing will take place. */
     PDMMEDIAEXIOREQSTATE_SUSPENDED,

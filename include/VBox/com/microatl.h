@@ -340,7 +340,7 @@ public:
         fInit = false;
 
         m_cLock = 0;
-	m_pTermFuncs = NULL;
+        m_pTermFuncs = NULL;
         _pAtlModule = this;
 
         if (FAILED(m_csStaticDataInitAndTypeInfo.Init()))
@@ -354,22 +354,22 @@ public:
     void Term() throw()
     {
         if (!fInit)
-	    return;
+            return;
 
-	// Call all term functions.
-	if (m_pTermFuncs)
-	{
-	    _ATL_TERMFUNC_ELEM *p = m_pTermFuncs;
-	    _ATL_TERMFUNC_ELEM *pNext;
-	    while (p)
-	    {
-	        p->pfn(p->pv);
-		pNext = p->pNext;
-		delete p;
-		p = pNext;
-	    }
-	    m_pTermFuncs = NULL;
-	}
+        // Call all term functions.
+        if (m_pTermFuncs)
+        {
+            _ATL_TERMFUNC_ELEM *p = m_pTermFuncs;
+            _ATL_TERMFUNC_ELEM *pNext;
+            while (p)
+            {
+                p->pfn(p->pv);
+                pNext = p->pNext;
+                delete p;
+                p = pNext;
+            }
+            m_pTermFuncs = NULL;
+        }
         m_csStaticDataInitAndTypeInfo.Term();
         fInit = false;
     }
@@ -396,8 +396,8 @@ public:
 
     HRESULT AddTermFunc(PFNATLTERMFUNC pfn, void *pv)
     {
-	HRESULT hrc = S_OK;
-	_ATL_TERMFUNC_ELEM *pNew = NULL;
+        HRESULT hrc = S_OK;
+        _ATL_TERMFUNC_ELEM *pNew = NULL;
         try
         {
             pNew = new _ATL_TERMFUNC_ELEM;
@@ -405,23 +405,23 @@ public:
         catch (...)
         {
         }
-	if (!pNew)
-	    return E_OUTOFMEMORY;
-	pNew->pfn = pfn;
-	pNew->pv = pv;
+        if (!pNew)
+            return E_OUTOFMEMORY;
+        pNew->pfn = pfn;
+        pNew->pv = pv;
         CComCritSectLock<CComCriticalSection> lock(m_csStaticDataInitAndTypeInfo, false);
         hrc = lock.Lock();
-	if (SUCCEEDED(hrc))
-	{
-	    pNew->pNext = m_pTermFuncs;
-	    m_pTermFuncs = pNew;
-	}
-	else
-	{
-	    delete pNew;
+        if (SUCCEEDED(hrc))
+        {
+            pNew->pNext = m_pTermFuncs;
+            m_pTermFuncs = pNew;
+        }
+        else
+        {
+            delete pNew;
             AssertMsgFailed(("CComModule::AddTermFunc: failed to lock critsect\n"));
         }
-	return hrc;
+        return hrc;
     }
 
 protected:
@@ -1002,10 +1002,10 @@ public:
     {
         AssertPtrReturn(pThis, E_NOINTERFACE);
         IUnknown *pObj = *(IUnknown **)((DWORD_PTR)pThis + dw);
-	// If this assertion fails then the object has a delegation with a NULL
-	// object pointer, which is highly unusual often means that the pointer
-	// was not set up correctly. Check the COM interface map of the class
-	// for bugs with initializing.
+        // If this assertion fails then the object has a delegation with a NULL
+        // object pointer, which is highly unusual often means that the pointer
+        // was not set up correctly. Check the COM interface map of the class
+        // for bugs with initializing.
         AssertPtrReturn(pObj, E_NOINTERFACE);
         return pObj->QueryInterface(iid, ppvObj);
     }

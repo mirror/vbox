@@ -363,4 +363,3 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 
 /** @} */
 
-
