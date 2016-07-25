@@ -87,12 +87,14 @@
 #define CURSOR_PIXEL_COUNT VBOX_MAX_CURSOR_WIDTH * VBOX_MAX_CURSOR_HEIGHT
 #define CURSOR_DATA_SIZE CURSOR_PIXEL_COUNT * 4 + CURSOR_PIXEL_COUNT / 8
 
+#define VBOX_MAX_SCREENS  32
+
 struct vbox_fbdev;
 
 struct vbox_private {
     struct drm_device *dev;
 
-    uint8_t __iomem *vram;
+    uint8_t __iomem *mapped_vram;
     HGSMIGUESTCOMMANDCONTEXT submit_info;
     struct VBVABUFFERCONTEXT *vbva_info;
     bool any_pitch;
@@ -101,7 +103,9 @@ struct vbox_private {
     /** Amount of available VRAM, including space used for buffers. */
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
-    uint32_t vram_size;
+    uint32_t available_vram_size;
+    /** Offset of host communication area in mapped VRAM. */
+    uint32_t vram_host_offset;
     /** Offset to the host flags in the VRAM. */
     uint32_t host_flags_offset;
     /** Array of structures for receiving mode hints. */

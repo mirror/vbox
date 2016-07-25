@@ -132,9 +132,9 @@ static int vbox_set_view(struct drm_crtc *crtc)
         VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
         pInfo->u32ViewIndex = vbox_crtc->crtc_id;
         pInfo->u32ViewOffset = vbox_crtc->fb_offset;
-        pInfo->u32ViewSize =   vbox->vram_size - vbox_crtc->fb_offset
+        pInfo->u32ViewSize =   vbox->available_vram_size - vbox_crtc->fb_offset
                              + vbox_crtc->crtc_id * VBVA_MIN_BUFFER_SIZE;
-        pInfo->u32MaxScreenSize = vbox->vram_size - vbox_crtc->fb_offset;
+        pInfo->u32MaxScreenSize = vbox->available_vram_size - vbox_crtc->fb_offset;
         VBoxHGSMIBufferSubmit(&vbox->submit_info, p);
         VBoxHGSMIBufferFree(&vbox->submit_info, p);
     }

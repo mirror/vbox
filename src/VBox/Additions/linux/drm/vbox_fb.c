@@ -497,5 +497,5 @@ void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
         vbox->fbdev->helper.fbdev->fix.smem_start =
                 vbox->fbdev->helper.fbdev->apertures->ranges[0].base +
                 gpu_addr;
-        vbox->fbdev->helper.fbdev->fix.smem_len = vbox->vram_size - gpu_addr;
+        vbox->fbdev->helper.fbdev->fix.smem_len = vbox->available_vram_size - gpu_addr;
 }
