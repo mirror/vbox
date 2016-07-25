@@ -95,7 +95,7 @@ class BuildChecker(object): # pylint: disable=R0903
                     if rc is False:
                         if not self.oConfig.fQuiet:
                             print 'missing files for build #%s / r%s / %s / %s / %s / %s / %s' \
-                                % (oBuild.idBuild, oBuild.iRevision, oBuild.sVersion, oBuild.oCat.sType, 
+                                % (oBuild.idBuild, oBuild.iRevision, oBuild.sVersion, oBuild.oCat.sType,
                                    oBuild.oCat.sBranch, oBuild.oCat.sProduct, oBuild.oCat.asOsArches,);
                             print '  %s' % (oBuild.sBinaries,);
                         if self.oConfig.fRealRun is True:
