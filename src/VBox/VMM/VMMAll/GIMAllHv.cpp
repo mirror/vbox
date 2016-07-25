@@ -908,27 +908,35 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #endif
         }
 
-        case MSR_GIM_HV_SINT2:
+        case MSR_GIM_HV_SINT0:    case MSR_GIM_HV_SINT1:    case MSR_GIM_HV_SINT2:    case MSR_GIM_HV_SINT3:
+        case MSR_GIM_HV_SINT4:    case MSR_GIM_HV_SINT5:    case MSR_GIM_HV_SINT6:    case MSR_GIM_HV_SINT7:
+        case MSR_GIM_HV_SINT8:    case MSR_GIM_HV_SINT9:    case MSR_GIM_HV_SINT10:   case MSR_GIM_HV_SINT11:
+        case MSR_GIM_HV_SINT12:   case MSR_GIM_HV_SINT13:   case MSR_GIM_HV_SINT14:   case MSR_GIM_HV_SINT15:
         {
-            if (!pHv->fDbgEnabled)
-                return VERR_CPUM_RAISE_GP_0;
 #ifndef IN_RING3
+            /** @todo make this RZ later? */
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            PGIMHVCPU pHvCpu  = &pVCpu->gim.s.u.HvCpu;
-            uint8_t   uVector = MSR_GIM_HV_SINT_VECTOR(uRawValue);
-            if (  !MSR_GIM_HV_SINT_IS_MASKED(uRawValue)
-                && uVector < GIM_HV_SINT_VECTOR_VALID_MIN)
+            PGIMHVCPU    pHvCpu     = &pVCpu->gim.s.u.HvCpu;
+            uint8_t      uVector    = MSR_GIM_HV_SINT_VECTOR(uRawValue);
+            bool const   fVMBusMsg  = RT_BOOL(idMsr == GIM_HV_VMBUS_MSG_SINT);
+            size_t const idxSintMsr = idMsr - MSR_GIM_HV_SINT0;
+            const char  *pszDesc    = fVMBusMsg ? "VMBus Message" : "Generic";
+            if (uVector < GIM_HV_SINT_VECTOR_VALID_MIN)
             {
-                LogRel(("GIM: HyperV: Programmed an invalid vector in SINT2 (VMBUS_MSG_SINT), uVector=%u -> #GP(0)\n", uVector));
+                LogRel(("GIM: HyperV%u: Programmed an invalid vector in SINT%u (%s), uVector=%u -> #GP(0)\n", pVCpu->idCpu,
+                        idxSintMsr, pszDesc, uVector));
                 return VERR_CPUM_RAISE_GP_0;
             }
 
-            pHvCpu->auSintXMsr[GIM_HV_VMBUS_MSG_SINT] = uRawValue;
-            if (MSR_GIM_HV_SINT_IS_MASKED(uRawValue))
-                LogRel(("GIM: HyperV: Masked SINT2 (VMBUS_MSG_SINT)\n"));
-            else
-                LogRel(("GIM: HyperV: Unmasked SINT2 (VMBUS_MSG_SINT), uVector=%u\n", uVector));
+            pHvCpu->auSintXMsr[idxSintMsr] = uRawValue;
+            if (fVMBusMsg)
+            {
+                if (MSR_GIM_HV_SINT_IS_MASKED(uRawValue))
+                    LogRel(("GIM: HyperV%u: Masked SINT%u (%s)\n", pVCpu->idCpu, idxSintMsr, pszDesc));
+                else
+                    LogRel(("GIM: HyperV%u: Unmasked SINT%u (%s), uVector=%u\n", pVCpu->idCpu, idxSintMsr, pszDesc, uVector));
+            }
             return VINF_SUCCESS;
 #endif
         }
