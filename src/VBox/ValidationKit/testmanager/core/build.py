@@ -433,7 +433,7 @@ class BuildDataEx(BuildData):
     Complete data set.
     """
 
-    kasInternalAttributes = [ 'oCat', ];    
+    kasInternalAttributes = [ 'oCat', ];
 
     def __init__(self):
         BuildData.__init__(self);
