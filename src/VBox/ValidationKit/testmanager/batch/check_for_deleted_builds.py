@@ -94,10 +94,15 @@ class BuildChecker(object): # pylint: disable=R0903
                     rc = oBuild.areFilesStillThere();
                     if rc is False:
                         if not self.oConfig.fQuiet:
-                            print 'missing files for build #%s' % (oBuild.idBuild,);
+                            print 'missing files for build #%s / r%s / %s / %s / %s / %s / %s' \
+                                % (oBuild.idBuild, oBuild.iRevision, oBuild.sVersion, oBuild.oCat.sType, 
+                                   oBuild.oCat.sBranch, oBuild.oCat.sProduct, oBuild.oCat.asOsArches,);
+                            print '  %s' % (oBuild.sBinaries,);
                         if self.oConfig.fRealRun is True:
                             oBuild.fBinariesDeleted = True;
                             oBuildLogic.editEntry(oBuild, fCommit = True);
+                    elif rc is True and not self.oConfig.fQuiet:
+                        print 'build #%s still have its files' % (oBuild.idBuild,);
                     elif rc is None and not self.oConfig.fQuiet:
                         print 'Unable to determine state of build #%s' % (oBuild.idBuild,);
 
