@@ -227,24 +227,8 @@ start()
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
     rm -f /etc/ld.so.conf.d/00vboxvideo.conf
-    ldconfig
     if /usr/bin/VBoxClient --check3d 2>/dev/null; then
-        rm -f /var/lib/VBoxGuestAdditions/lib/system/tmp.so
-        mkdir -m 0755 -p /var/lib/VBoxGuestAdditions/lib/system
-        ldconfig -p | while read -r line; do
-            case "${line}" in "libGL.so.1 ${ldconfig_arch} => "*)
-                ln -s "${line#libGL.so.1 ${ldconfig_arch} => }" /var/lib/VBoxGuestAdditions/lib/system/tmp.so
-                mv /var/lib/VBoxGuestAdditions/lib/system/tmp.so /var/lib/VBoxGuestAdditions/lib/system/libGL.so.1
-                break
-            esac
-        done
-        ldconfig -p | while read -r line; do
-            case "${line}" in "libEGL.so.1 ${ldconfig_arch} => "*)
-                ln -s "${line#libEGL.so.1 ${ldconfig_arch} => }" /var/lib/VBoxGuestAdditions/lib/system/tmp.so
-                mv /var/lib/VBoxGuestAdditions/lib/system/tmp.so /var/lib/VBoxGuestAdditions/lib/system/libEGL.so.1
-                break
-            esac
-        done
+        mkdir -p /var/lib/VBoxGuestAdditions/lib
         ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
         ln -sf "${INSTALL_DIR}/lib/VBoxEGL.so" /var/lib/VBoxGuestAdditions/lib/libEGL.so.1
         # SELinux for the OpenGL libraries, so that gdm can load them during the
