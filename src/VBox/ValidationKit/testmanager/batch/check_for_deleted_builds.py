@@ -86,6 +86,9 @@ class BuildChecker(object): # pylint: disable=R0903
         iStart   = 0;
         while True:
             aoBuilds = oBuildLogic.fetchForListing(iStart, cMaxRows, tsNow);
+            if not self.oConfig.fQuiet and len(aoBuilds) > 0:
+                print 'Processing builds #%s thru #%s' % (aoBuilds[0].idBuild, aoBuilds[-1].idBuild);
+
             for oBuild in aoBuilds:
                 if oBuild.fBinariesDeleted is False:
                     rc = oBuild.areFilesStillThere();
@@ -95,6 +98,8 @@ class BuildChecker(object): # pylint: disable=R0903
                         if self.oConfig.fRealRun is True:
                             oBuild.fBinariesDeleted = True;
                             oBuildLogic.editEntry(oBuild, fCommit = True);
+                    elif rc is None and not self.oConfig.fQuiet:
+                        print 'Unable to determine state of build #%s' % (oBuild.idBuild,);
 
             # advance
             if len(aoBuilds) < cMaxRows:
