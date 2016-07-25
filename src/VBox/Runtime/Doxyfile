@@ -2055,6 +2055,7 @@ PREDEFINED             = \
     "DECLINLINE(type)=inline type" \
     DECL_FORCE_INLINE(type)=DECLINLINE(type) \
     DECL_NO_INLINE(type)=type \
+    DECL_NO_RETURN(type)=type \
     DECLCALLBACK(type)=type \
     \
     AssertCompile(expr) \
