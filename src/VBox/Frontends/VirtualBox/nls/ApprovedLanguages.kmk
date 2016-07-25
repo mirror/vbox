@@ -33,6 +33,7 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	ja    \
 	ko    \
 	nl    \
+	pl    \
 	pt_BR \
 	ru    \
 	sl    \

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="pl">
+<TS version="2.1" language="pl">
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
@@ -29,7 +29,7 @@
     </message>
     <message>
         <source>About %1</source>
-        <translation>%1…</translation>
+        <translation>O programie %1…</translation>
     </message>
 </context>
 <context>

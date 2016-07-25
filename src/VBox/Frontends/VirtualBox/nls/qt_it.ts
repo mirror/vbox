@@ -4753,7 +4753,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando si esegue il cast da %1 a %2, il valore di origine non può essere %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
@@ -4813,7 +4813,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;URI dello spazio dei nomi nel nome per un attributo calcolato non può essere %1.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
@@ -4821,7 +4821,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di tipo nel cast, atteso %1, ricevuto %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
@@ -4829,7 +4829,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile alcun cast con %1 come tipo di destinazione.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
@@ -4909,8 +4909,9 @@ Scegli un nome diverso.</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 richiede almeno un argomento. %2 non è perciò valido.</numerusform>
+            <numerusform>%1 richiede almeno %n argomenti. %2 non è perciò valido.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -5094,7 +5095,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>La funzione di importazione dei moduli non è supportata</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
@@ -5102,7 +5103,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è disponibile alcun valore per la variabile esterna con nome %1.</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
@@ -5142,7 +5143,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;asse %1 non è supportato in XQuery</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
