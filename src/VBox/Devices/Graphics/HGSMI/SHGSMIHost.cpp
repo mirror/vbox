@@ -1,4 +1,7 @@
 /* $Id$ */
+/** @file
+ * Missing description.
+ */
 
 /*
  * Copyright (C) 2010-2016 Oracle Corporation
