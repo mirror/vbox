@@ -4010,7 +4010,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
           <para>Specify the UDP port number where the remote debugger is connected.</para>
         </listitem>
         <listitem>
-          <para>Key: <emphasis role="bold"><computeroutput>vendorid</computeroutput></emphasis></para>
+          <para>Key: <emphasis role="bold"><computeroutput>vendor</computeroutput></emphasis></para>
           <para>Value: Hyper-V vendor signature reported via CPUID to the guest</para>
           <para>Default: When debugging is enabled: <computeroutput>Microsoft Hv</computeroutput>,
           otherwise: <computeroutput>VBoxVBoxVBox</computeroutput></para>
