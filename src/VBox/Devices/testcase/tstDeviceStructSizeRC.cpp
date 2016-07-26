@@ -67,9 +67,9 @@
 #endif
 #undef LOG_GROUP
 #ifdef VBOX_WITH_NEW_IOAPIC
-# include "../PC/DevIOAPIC_New.cpp"
-#else
 # include "../PC/DevIoApic.cpp"
+#else
+# include "../PC/DevIoApic_Old.cpp"
 #endif
 #undef LOG_GROUP
 #include "../Storage/DevATA.cpp"
@@ -877,7 +877,7 @@ int main()
 #endif  /* VBOX_WITH_NEW_APIC */
 
 #ifdef VBOX_WITH_NEW_IOAPIC
-    /* PC/DevIOAPIC_New.cpp */
+    /* PC/DevIoApic.cpp */
     GEN_CHECK_SIZE(IOAPIC);
     GEN_CHECK_OFF(IOAPIC, pDevInsR3);
     GEN_CHECK_OFF(IOAPIC, pIoApicHlpR3);
@@ -901,7 +901,7 @@ int main()
     GEN_CHECK_OFF(IOAPIC, StatSetEoiR3);
 # endif
 #else
-    /* PC/DevIoApic.cpp */
+    /* PC/DevIoApic_Old.cpp */
     GEN_CHECK_SIZE(IOAPIC);
     GEN_CHECK_OFF(IOAPIC, id);
     GEN_CHECK_OFF(IOAPIC, ioregsel);
