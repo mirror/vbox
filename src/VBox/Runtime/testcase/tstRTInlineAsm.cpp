@@ -1878,8 +1878,10 @@ void tstASMBench(void)
 }
 
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
+    RT_NOREF_PV(argc); RT_NOREF_PV(argv);
+
     int rc = RTTestInitAndCreate("tstRTInlineAsm", &g_hTest);
     if (rc)
         return rc;

@@ -639,7 +639,6 @@ static int rtHttpConfigureProxyFromUrl(PRTHTTPINTERNAL pThis, const char *pszPro
     int rc = RTUriParse(pszProxyUrl, &Parsed);
     if (RT_SUCCESS(rc))
     {
-        bool fDone = false;
         char *pszHost = RTUriParsedAuthorityHost(pszProxyUrl, &Parsed);
         if (pszHost)
         {

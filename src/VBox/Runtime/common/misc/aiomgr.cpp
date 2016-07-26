@@ -734,7 +734,6 @@ static int rtAioMgrQueueWaitingReqs(PRTAIOMGRINT pThis, PRTAIOMGRFILEINT pFile)
 static int rtAioMgrQueueReqs(PRTAIOMGRINT pThis, PRTAIOMGRFILEINT pFile)
 {
     int rc = VINF_SUCCESS;
-    PRTAIOMGRFILEINT pReqsHead = NULL;
 
     /* Check the pending list first */
     if (!RTListIsEmpty(&pFile->AioMgr.ListWaitingReqs))

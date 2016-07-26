@@ -55,6 +55,8 @@
  */
 static RTEXITCODE rtManifestDoVerify(const char *pszManifest, bool fStdFormat, const char *pszChDir)
 {
+    RT_NOREF_PV(pszChDir); /** @todo implement pszChDir! */
+
     /*
      * Open the manifest.
      */

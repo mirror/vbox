@@ -447,6 +447,7 @@ static bool Test1(void)
 
 int main(int argc, char **argv)
 {
+    RT_NOREF_PV(argv);
     int rc = RTTestInitAndCreate("tstRTCritSectRw", &g_hTest);
     if (rc)
         return 1;

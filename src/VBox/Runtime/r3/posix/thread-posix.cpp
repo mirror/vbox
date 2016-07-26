@@ -117,7 +117,9 @@ static PFNPTHREADSETNAME g_pfnThreadSetName = NULL;
 *********************************************************************************************************************************/
 static void *rtThreadNativeMain(void *pvArgs);
 static void rtThreadKeyDestruct(void *pvValue);
+#ifdef RTTHREAD_POSIX_WITH_POKE
 static void rtThreadPosixPokeSignal(int iSignal);
+#endif
 
 
 #ifdef RTTHREAD_POSIX_WITH_POKE

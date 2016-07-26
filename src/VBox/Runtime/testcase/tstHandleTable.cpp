@@ -48,12 +48,14 @@ static DECLCALLBACK(void) tstHandleTableTest1Delete(RTHANDLETABLE hHandleTable, 
 {
     uint32_t *pcCalls = (uint32_t *)pvUser;
     (*pcCalls)++;
+    RT_NOREF_PV(hHandleTable); RT_NOREF_PV(h); RT_NOREF_PV(pvCtx); RT_NOREF_PV(pvObj);
 }
 
 static DECLCALLBACK(int) tstHandleTableTest1Retain(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, void *pvUser)
 {
     uint32_t *pcCalls = (uint32_t *)pvUser;
     (*pcCalls)++;
+    RT_NOREF_PV(hHandleTable); RT_NOREF_PV(pvCtx); RT_NOREF_PV(pvObj);
     return VINF_SUCCESS;
 }
 

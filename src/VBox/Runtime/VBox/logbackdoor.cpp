@@ -68,10 +68,11 @@ RT_EXPORT_SYMBOL(RTLogBackdoorPrintfV);
 
 /**
  * Callback for RTLogFormatV which writes to the backdoor.
- * See PFNLOGOUTPUT() for details.
+ * See PFNRTSTROUTPUT() for details.
  */
-static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars, size_t cbChars)
+static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pvArg, const char *pachChars, size_t cbChars)
 {
+    RT_NOREF_PV(pvArg);
     RTLogWriteUser(pachChars, cbChars);
     return cbChars;
 }

@@ -108,7 +108,7 @@ static RTBIGNUM g_Ten;
 static RTBIGNUM g_FourtyTwo;
 
 static uint8_t const g_abMinus1[] = { 0xff, 0xff, 0xff, 0xff,  0xff, 0xff, 0xff, 0xff };
-static int64_t  g_iBitMinus1 = -1;
+//static int64_t  g_iBitMinus1 = -1;
 static RTBIGNUM g_Minus1;
 
 
@@ -1614,6 +1614,8 @@ static void testUInt128Division(void)
 
 int main(int argc, char **argv)
 {
+    RT_NOREF_PV(argv);
+
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTBigNum", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;

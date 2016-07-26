@@ -42,8 +42,10 @@
 #include <iprt/time.h>
 
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
+    RT_NOREF_PV(argc); RT_NOREF_PV(argv);
+
     /*
      * Init runtime.
      */

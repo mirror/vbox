@@ -776,7 +776,6 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
     }
 
-    uint8_t const  *pbDummy;
     RTNETADDRTYPE   enmAddrType = RTNETADDRTYPE_INVALID;
     size_t          cchIpAddress;
     char            szIpAddress[48];
@@ -1315,13 +1314,12 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
         return rc;
 
     rtSocketErrorReset();
-#ifdef RTSOCKET_MAX_WRITE
-    int    cbNow = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
-#else
-    size_t cbNow = cbBuffer;
-#endif
-
 #ifdef RT_OS_WINDOWS
+# ifdef RTSOCKET_MAX_WRITE
+    int    cbNow = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
+# else
+    size_t cbNow = cbBuffer;
+# endif
     int cbWritten = send(pThis->hNative, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
     if (cbWritten >= 0)
     {

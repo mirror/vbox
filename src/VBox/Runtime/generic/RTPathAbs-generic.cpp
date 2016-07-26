@@ -94,7 +94,7 @@ static int fsCleanPath(char *pszPath)
      * Just change slashes to RTPATH_SLASH and skip them.
      */
     /** @todo check how OS/2 treats unnecessary leading slashes */
-    int cchIgnoreLeading = 0;
+    /*int cchIgnoreLeading = 0;*/
 #ifdef HAVE_UNC
     if (   RTPATH_IS_SLASH(pszSrc[0])
         && RTPATH_IS_SLASH(pszSrc[1]))
@@ -103,10 +103,10 @@ static int fsCleanPath(char *pszPath)
         pszTrg[1] = RTPATH_SLASH;
         pszTrg += 2;
         pszSrc += 2;
-        cchIgnoreLeading = 1;
+        /*cchIgnoreLeading = 1;*/
         while (RTPATH_IS_SLASH(*pszSrc))
         {
-            cchIgnoreLeading++;
+            /*cchIgnoreLeading++;*/
             pszSrc++;
             *pszTrg++ = RTPATH_SLASH;
         }

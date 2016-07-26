@@ -497,6 +497,7 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
 static DECLCALLBACK(int) MtTest1ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    RT_NOREF_PV(hSelf);
 
     /* Prepend new items at the start of the list. */
     for (size_t i = 0; i < MTTESTITEMS; ++i)
@@ -514,6 +515,7 @@ static DECLCALLBACK(int) MtTest1ThreadProc(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    RT_NOREF_PV(hSelf);
 
     /* Append new items at the end of the list. */
     for (size_t i = 0; i < MTTESTITEMS; ++i)
@@ -531,6 +533,7 @@ static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    RT_NOREF_PV(hSelf);
 
     /* Insert new items in the middle of the list. */
     for (size_t i = 0; i < MTTESTITEMS; ++i)
@@ -548,6 +551,7 @@ static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    RT_NOREF_PV(hSelf);
 
     MTTESTTYPE a;
     /* Try to read C items from random places. */
@@ -571,6 +575,7 @@ static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    RT_NOREF_PV(hSelf);
 
     /* Try to replace C items from random places. */
     for (size_t i = 0; i < MTTESTITEMS; ++i)
@@ -593,6 +598,7 @@ static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) MtTest6ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
+    RT_NOREF_PV(hSelf);
 
     /* Try to delete items from random places. */
     for (size_t i = 0; i < MTTESTITEMS; ++i)
@@ -615,7 +621,6 @@ static void test2()
 {
     RTTestISubF("MT test with 6 threads (%u tests per thread).", MTTESTITEMS);
 
-    int                         rc;
     MTTESTLISTTYPE<MTTESTTYPE>  testList;
     RTTHREAD                    ahThreads[6];
     static PFNRTTHREAD          apfnThreads[6] =
@@ -634,7 +639,7 @@ static void test2()
     {
         uint64_t tsNow = RTTimeMilliTS();
         uint32_t cWait = tsNow > tsMsDeadline ? 5000 : tsMsDeadline - tsNow;
-        RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], tsNow, NULL), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], cWait, NULL), VINF_SUCCESS);
     }
 
     RTTESTI_CHECK_RETV(testList.size() == MTTESTITEMS * 2);
