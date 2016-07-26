@@ -76,6 +76,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
     IPRT_LINUX_SAVE_EFL_AC();
     PRTSPINLOCKINTERNAL pThis;
     AssertReturn(fFlags == RTSPINLOCK_FLAGS_INTERRUPT_SAFE || fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, VERR_INVALID_PARAMETER);
+    RT_NOREF_PV(pszName);
 
     /*
      * Allocate.

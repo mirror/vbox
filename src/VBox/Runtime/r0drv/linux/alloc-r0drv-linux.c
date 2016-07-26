@@ -142,6 +142,7 @@ RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb)
     }
     return rc;
 #else
+    RT_NOREF_PV(pvMemory); RT_NOREF_PV(cb);
     return VERR_NOT_SUPPORTED;
 #endif
 }

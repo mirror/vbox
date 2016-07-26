@@ -1470,6 +1470,7 @@ AttributeNode::AttributeNode(const ElementNode *pElmRoot,
            pLibAttr)
 {
     m_pcszName = (const char *)pLibAttr->name;
+    RT_NOREF_PV(pElmRoot);
 
     if (   pLibAttr->ns
         && pLibAttr->ns->prefix)

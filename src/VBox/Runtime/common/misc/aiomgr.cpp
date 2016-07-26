@@ -849,7 +849,7 @@ static int rtAioMgrProcessBlockingEvent(PRTAIOMGRINT pThis)
 static DECLCALLBACK(int) rtAioMgrWorker(RTTHREAD hThreadSelf, void *pvUser)
 {
     PRTAIOMGRINT pThis = (PRTAIOMGRINT)pvUser;
-    bool fRunning = true;
+    /*bool fRunning = true;*/
     int rc = VINF_SUCCESS;
 
     do
@@ -878,9 +878,10 @@ static DECLCALLBACK(int) rtAioMgrWorker(RTTHREAD hThreadSelf, void *pvUser)
             /* Check files for new requests and queue waiting requests. */
             rc = rtAioMgrCheckFiles(pThis);
         }
-    } while (   fRunning
-             && RT_SUCCESS(rc));
+    } while (   /*fRunning - never modified
+             && */ RT_SUCCESS(rc));
 
+    RT_NOREF_PV(hThreadSelf);
     return rc;
 }
 
@@ -1097,6 +1098,7 @@ static int rtAioMgrFileIoReqCreate(RTAIOMGRFILE hAioMgrFile, RTFOFF off, PRTSGBU
 static DECLCALLBACK(int) rtAioMgrReqCtor(RTMEMCACHE hMemCache, void *pvObj, void *pvUser)
 {
     PRTAIOMGRREQ pReq = (PRTAIOMGRREQ)pvObj;
+    RT_NOREF_PV(hMemCache); RT_NOREF_PV(pvUser);
 
     memset(pReq, 0, sizeof(RTAIOMGRREQ));
     return RTFileAioReqCreate(&pReq->hReqIo);
@@ -1113,8 +1115,9 @@ static DECLCALLBACK(void) rtAioMgrReqDtor(RTMEMCACHE hMemCache, void *pvObj, voi
 {
     PRTAIOMGRREQ pReq = (PRTAIOMGRREQ)pvObj;
     int rc = RTFileAioReqDestroy(pReq->hReqIo);
-
     AssertRC(rc);
+
+    RT_NOREF_PV(hMemCache); RT_NOREF_PV(pvUser);
 }
 
 RTDECL(int) RTAioMgrCreate(PRTAIOMGR phAioMgr, uint32_t cReqsMax)

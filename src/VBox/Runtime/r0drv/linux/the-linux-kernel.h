@@ -34,6 +34,13 @@
 #include <iprt/types.h>
 #define bool linux_bool
 
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic push
+#endif
+#if RT_GNUC_PREREQ(4, 2)
+# pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 # include <generated/autoconf.h>
@@ -336,6 +343,10 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
  * Stop using the linux bool type.
  */
 #undef bool
+
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
 
 /*
  * There are post-2.6.24 kernels (confusingly with unchanged version number)

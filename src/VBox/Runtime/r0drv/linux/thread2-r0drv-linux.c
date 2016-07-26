@@ -90,7 +90,10 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
     }
 
     sched_setscheduler(current, iSchedClass, &Param);
+#else
+    RT_NOREF_PV(enmType);
 #endif
+    RT_NOREF_PV(pThread);
 
     return VINF_SUCCESS;
 }
@@ -98,6 +101,7 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
 
 DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
+    RT_NOREF_PV(pThread);
     return VERR_NOT_IMPLEMENTED;
 }
 

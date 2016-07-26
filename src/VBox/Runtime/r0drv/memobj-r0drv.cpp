@@ -426,6 +426,8 @@ RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
+    RT_NOREF_PV(pszTag);
+
     /* do the allocation. */
     return rtR0MemObjNativeAllocPage(pMemObj, cbAligned, fExecutable);
 }
@@ -442,6 +444,8 @@ RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecut
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
+    RT_NOREF_PV(pszTag);
+
     /* do the allocation. */
     return rtR0MemObjNativeAllocLow(pMemObj, cbAligned, fExecutable);
 }
@@ -457,6 +461,8 @@ RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocCont(pMemObj, cbAligned, fExecutable);
@@ -480,6 +486,8 @@ RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t c
     AssertReturn(fAccess, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
+    RT_NOREF_PV(pszTag);
+
     /* do the locking. */
     return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, fAccess, R0Process);
 }
@@ -500,6 +508,8 @@ RTR0DECL(int) RTR0MemObjLockKernelTag(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, 
     AssertReturn(fAccess, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
+    RT_NOREF_PV(pszTag);
+
     /* do the allocation. */
     return rtR0MemObjNativeLockKernel(pMemObj, pvAligned, cbAligned, fAccess);
 }
@@ -516,6 +526,8 @@ RTR0DECL(int) RTR0MemObjAllocPhysTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Ph
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest, PAGE_SIZE /* page aligned */);
@@ -547,6 +559,8 @@ RTR0DECL(int) RTR0MemObjAllocPhysExTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS 
 #endif
     RT_ASSERT_PREEMPTIBLE();
 
+    RT_NOREF_PV(pszTag);
+
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest, uAlignment);
 }
@@ -563,6 +577,8 @@ RTR0DECL(int) RTR0MemObjAllocPhysNCTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS 
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhysNC(pMemObj, cbAligned, PhysHighest);
@@ -585,6 +601,8 @@ RTR0DECL(int) RTR0MemObjEnterPhysTag(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t 
                  VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
+    RT_NOREF_PV(pszTag);
+
     /* do the allocation. */
     return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned, uCachePolicy);
 }
@@ -605,6 +623,8 @@ RTR0DECL(int) RTR0MemObjReserveKernelTag(PRTR0MEMOBJ pMemObj, void *pvFixed, siz
     if (pvFixed != (void *)-1)
         AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* do the reservation. */
     return rtR0MemObjNativeReserveKernel(pMemObj, pvFixed, cbAligned, uAlignment);
@@ -629,6 +649,8 @@ RTR0DECL(int) RTR0MemObjReserveUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, 
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* do the reservation. */
     return rtR0MemObjNativeReserveUser(pMemObj, R3PtrFixed, cbAligned, uAlignment, R0Process);
@@ -673,6 +695,8 @@ RTR0DECL(int) RTR0MemObjMapKernelExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToM
     AssertReturn(cbSub <= pMemToMap->cb, VERR_INVALID_PARAMETER);
     AssertReturn((!offSub && !cbSub) || (offSub + cbSub) <= pMemToMap->cb, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* adjust the request to simplify the native code. */
     if (offSub == 0 && cbSub == pMemToMap->cb)
@@ -727,6 +751,8 @@ RTR0DECL(int) RTR0MemObjMapUserTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, 
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
     RT_ASSERT_PREEMPTIBLE();
+
+    RT_NOREF_PV(pszTag);
 
     /* do the mapping. */
     rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process);

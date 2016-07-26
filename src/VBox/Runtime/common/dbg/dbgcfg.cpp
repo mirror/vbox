@@ -739,8 +739,9 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
                                       PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
 #ifdef IPRT_WITH_HTTP
-    NOREF(pszUuidMappingSubDir); /** @todo do we bother trying pszUuidMappingSubDir? */
-    NOREF(pszCacheSuffix); /** @todo do we bother trying pszUuidMappingSubDir? */
+    RT_NOREF_PV(pszUuidMappingSubDir); /** @todo do we bother trying pszUuidMappingSubDir? */
+    RT_NOREF_PV(pszCacheSuffix); /** @todo do we bother trying pszUuidMappingSubDir? */
+    RT_NOREF_PV(fFlags);
 
     if (pThis->fFlags & RTDBGCFG_FLAGS_NO_SYM_SRV)
         return VWRN_NOT_FOUND;

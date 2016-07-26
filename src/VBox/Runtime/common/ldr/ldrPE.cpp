@@ -2382,6 +2382,7 @@ static int rtldrPE_VerifySignatureRead(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE *pp
  */
 static void rtldrPE_VerifySignatureDestroy(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE pSignature)
 {
+    RT_NOREF_PV(pModPe);
     RTCrPkcs7ContentInfo_Delete(&pSignature->ContentInfo);
     RTMemTmpFree(pSignature);
 }
@@ -2400,6 +2401,7 @@ static int rtldrPE_VerifySignatureDecode(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE p
     WIN_CERTIFICATE const  *pEntry = pSignature->pRawData;
     AssertReturn(pEntry->wCertificateType == WIN_CERT_TYPE_PKCS_SIGNED_DATA, VERR_INTERNAL_ERROR_2);
     AssertReturn(pEntry->wRevision        == WIN_CERT_REVISION_2_0, VERR_INTERNAL_ERROR_2);
+    RT_NOREF_PV(pModPe);
 
     RTASN1CURSORPRIMARY PrimaryCursor;
     RTAsn1CursorInitPrimary(&PrimaryCursor,

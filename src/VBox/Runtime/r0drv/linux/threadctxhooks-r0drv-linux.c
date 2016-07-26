@@ -98,6 +98,7 @@ static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifie
     RTCCUINTREG fSavedEFlags = ASMGetFlags();
     stac();
 #endif
+    RT_NOREF_PV(pNext);
 
     AssertPtr(pThis);
     AssertPtr(pThis->pfnCallback);
@@ -132,6 +133,7 @@ static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier
     RTCCUINTREG fSavedEFlags = ASMGetFlags();
     stac();
 #endif
+    RT_NOREF_PV(iCpu);
 
     AssertPtr(pThis);
     AssertPtr(pThis->pfnCallback);

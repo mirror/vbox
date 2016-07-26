@@ -850,7 +850,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             pLogger->pInt->cSecsHistoryTimeSlot = UINT32_MAX;
         else
             pLogger->pInt->cSecsHistoryTimeSlot = cSecsHistoryTimeSlot;
-# endif  /* IN_RING3 */
+# else   /* !IN_RING3 */
+        RT_NOREF_PV(pfnPhase); RT_NOREF_PV(cHistory); RT_NOREF_PV(cbHistoryFileMax); RT_NOREF_PV(cSecsHistoryTimeSlot);
+# endif  /* !IN_RING3 */
         if (pszGroupSettings)
             RTLogGroupSettings(pLogger, pszGroupSettings);
 
@@ -933,7 +935,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 if (pszValue)
                     RTLogGroupSettings(pLogger, pszValue);
             }
-# endif /* IN_RING3 */
+# else  /* !IN_RING3 */
+            RT_NOREF_PV(pszEnvVarBase); RT_NOREF_PV(pszFilenameFmt); RT_NOREF_PV(args);
+# endif /* !IN_RING3 */
 
             /*
              * Open the destination(s).
