@@ -786,7 +786,7 @@ DECLINLINE(bool) pm1a_level(ACPIState *pThis)
 
 DECLINLINE(bool) gpe0_level(ACPIState *pThis)
 {
-    return (pThis->gpe0_en & pThis->gpe0_sts);
+    return !!(pThis->gpe0_en & pThis->gpe0_sts);
 }
 
 DECLINLINE(bool) smbus_level(ACPIState *pThis)
