@@ -1118,6 +1118,27 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
     </sect2>
 
     <sect2>
+      <title>Certain Solaris 10 releases may take long to boot with SMP</title>
+
+      <para>When using more than one CPU, Solaris 10 releases 5/08 ("S10U5"), 
+          10/08 ("S10U6"), and 5/09 ("S10U7") may take a long time to boot and 
+          may print warnings on the system console regarding failures to read 
+          from disk. This is a bug in Solaris 10 which affects specific physical 
+          and virtual configurations. It is caused by trying to read microcode 
+          updates from the boot disk when the disk interrupt is reassigned to a 
+          not yet fully initialized secondary CPU. Disk reads will time out and 
+          fail, triggering delays (approx. 45 seconds) and warnings.
+      </para>
+      <para>
+          The recommended solution is upgrading to at least Solaris 10 10/09 
+          ("S10U8") which includes a fix for this problem. Alternative solutions 
+          include restricting the number of virtual CPUs to one or possibly 
+          using a different storage controller.
+      </para>
+
+    </sect2>
+
+    <sect2>
       <title>Solaris 8 5/01 and earlier may crash on startup</title>
 
       <para>
