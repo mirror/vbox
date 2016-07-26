@@ -139,6 +139,8 @@ static struct
 static DECLCALLBACK(int) rtCrPkixSignatureRsa_Init(PCRTCRPKIXSIGNATUREDESC pDesc, void *pvState, void *pvOpaque,
                                                    bool fSigning, PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams)
 {
+    RT_NOREF_PV(pDesc); RT_NOREF_PV(pvState); RT_NOREF_PV(pvOpaque);
+
     if (pParams)
         return VERR_CR_PKIX_SIGNATURE_TAKES_NO_PARAMETERS;
 
@@ -198,6 +200,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Init(PCRTCRPKIXSIGNATUREDESC pDesc
 static DECLCALLBACK(int) rtCrPkixSignatureRsa_Reset(PCRTCRPKIXSIGNATUREDESC pDesc, void *pvState, bool fSigning)
 {
     PRTCRPKIXSIGNATURERSA pThis = (PRTCRPKIXSIGNATURERSA)pvState;
+    RT_NOREF_PV(fSigning); RT_NOREF_PV(pDesc);
     Assert(pThis->fSigning == fSigning); NOREF(pThis);
     return VINF_SUCCESS;
 }
@@ -207,7 +210,8 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Reset(PCRTCRPKIXSIGNATUREDESC pDes
 static DECLCALLBACK(void) rtCrPkixSignatureRsa_Delete(PCRTCRPKIXSIGNATUREDESC pDesc, void *pvState, bool fSigning)
 {
     PRTCRPKIXSIGNATURERSA pThis = (PRTCRPKIXSIGNATURERSA)pvState;
-    Assert(pThis->fSigning == fSigning); NOREF(pThis);
+    RT_NOREF_PV(fSigning); RT_NOREF_PV(pDesc);
+    Assert(pThis->fSigning == fSigning);
 
     RTBigNumDestroy(&pThis->Modulus);
     RTBigNumDestroy(&pThis->Exponent);
@@ -296,6 +300,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Verify(PCRTCRPKIXSIGNATUREDESC pDe
                                                      RTCRDIGEST hDigest, void const *pvSignature, size_t cbSignature)
 {
     PRTCRPKIXSIGNATURERSA pThis = (PRTCRPKIXSIGNATURERSA)pvState;
+    RT_NOREF_PV(pDesc);
     Assert(!pThis->fSigning);
     if (cbSignature > sizeof(pThis->Scratch) / 2)
         return VERR_CR_PKIX_SIGNATURE_TOO_LONG;
@@ -385,6 +390,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Sign(PCRTCRPKIXSIGNATUREDESC pDesc
                                                    RTCRDIGEST hDigest, void *pvSignature, size_t *pcbSignature)
 {
     PRTCRPKIXSIGNATURERSA pThis = (PRTCRPKIXSIGNATURERSA)pvState;
+    RT_NOREF_PV(pDesc);  RT_NOREF_PV(hDigest); RT_NOREF_PV(pvSignature); RT_NOREF_PV(pcbSignature);
     Assert(pThis->fSigning); NOREF(pThis);
     return VERR_NOT_IMPLEMENTED;
 }

@@ -145,9 +145,9 @@ RTDATADECL(bool) g_fRTAlignmentChecks = false;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_HAIKU) \
  || defined(RT_OS_LINUX)  || defined(RT_OS_OS2)     || defined(RT_OS_SOLARIS) /** @todo add host init hooks everywhere. */
 /* Stubs */
-DECLHIDDEN(int)  rtR3InitNativeFirst(uint32_t fFlags) { return VINF_SUCCESS; }
-DECLHIDDEN(int)  rtR3InitNativeFinal(uint32_t fFlags) { return VINF_SUCCESS; }
-DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags) { }
+DECLHIDDEN(int)  rtR3InitNativeFirst(uint32_t fFlags)     { RT_NOREF_PV(fFlags); return VINF_SUCCESS; }
+DECLHIDDEN(int)  rtR3InitNativeFinal(uint32_t fFlags)     { RT_NOREF_PV(fFlags); return VINF_SUCCESS; }
+DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags) { RT_NOREF_PV(fFlags); }
 #endif
 
 

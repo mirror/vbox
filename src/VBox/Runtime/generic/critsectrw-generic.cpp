@@ -926,6 +926,8 @@ RT_EXPORT_SYMBOL(RTCritSectRwIsWriteOwner);
 
 RTDECL(bool) RTCritSectRwIsReadOwner(PRTCRITSECTRW pThis, bool fWannaHear)
 {
+    RT_NOREF_PV(fWannaHear);
+
     /*
      * Validate handle.
      */

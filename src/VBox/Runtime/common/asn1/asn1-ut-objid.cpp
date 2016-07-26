@@ -394,6 +394,7 @@ RT_DECL_DATA_CONST(RTASN1COREVTABLE const) g_RTAsn1ObjId_Vtable =
 
 RTDECL(int) RTAsn1ObjId_Init(PRTASN1OBJID pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     RTAsn1Core_InitEx(&pThis->Asn1Core,
                       ASN1_TAG_OID,
                       ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_PRIMITIVE,
@@ -496,6 +497,7 @@ RTDECL(void) RTAsn1ObjId_Delete(PRTASN1OBJID pThis)
 
 RTDECL(int) RTAsn1ObjId_Enum(PRTASN1OBJID pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser);
     Assert(pThis && (!RTAsn1ObjId_IsPresent(pThis) || pThis->Asn1Core.pOps == &g_RTAsn1ObjId_Vtable));
 
     /* No children to enumerate. */
@@ -526,6 +528,7 @@ RTDECL(int) RTAsn1ObjId_Compare(PCRTASN1OBJID pLeft, PCRTASN1OBJID pRight)
 
 RTDECL(int) RTAsn1ObjId_CheckSanity(PCRTASN1OBJID pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
     if (RT_UNLIKELY(!RTAsn1ObjId_IsPresent(pThis)))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (OBJID).", pszErrorTag);
     return VINF_SUCCESS;

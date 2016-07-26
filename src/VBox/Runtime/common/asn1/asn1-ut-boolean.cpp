@@ -53,6 +53,7 @@ static const uint8_t  g_bTrue  = 0xff;
 
 RTDECL(int) RTAsn1Boolean_InitDefault(PRTASN1BOOLEAN pThis, bool fValue, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     RTAsn1Core_InitEx(&pThis->Asn1Core, ASN1_TAG_BOOLEAN, ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_PRIMITIVE,
                       &g_RTAsn1Boolean_Vtable, RTASN1CORE_F_DEFAULT | RTASN1CORE_F_PRIMITE_TAG_STRUCT);
     pThis->fValue = fValue;
@@ -101,6 +102,7 @@ RT_DECL_DATA_CONST(RTASN1COREVTABLE const) g_RTAsn1Boolean_Vtable =
 
 RTDECL(int) RTAsn1Boolean_Init(PRTASN1BOOLEAN pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     RTAsn1Core_InitEx(&pThis->Asn1Core, ASN1_TAG_BOOLEAN, ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_PRIMITIVE,
                       &g_RTAsn1Boolean_Vtable, RTASN1CORE_F_PRESENT | RTASN1CORE_F_PRIMITE_TAG_STRUCT);
     pThis->fValue = true;
@@ -160,6 +162,7 @@ RTDECL(void) RTAsn1Boolean_Delete(PRTASN1BOOLEAN pThis)
 RTDECL(int) RTAsn1Boolean_Enum(PRTASN1BOOLEAN pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
     Assert(pThis && (!RTAsn1Boolean_IsPresent(pThis) || pThis->Asn1Core.pOps == &g_RTAsn1Boolean_Vtable));
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser);
 
     /* No children to enumerate. */
     return VINF_SUCCESS;
@@ -189,6 +192,7 @@ RTDECL(int) RTAsn1Boolean_CheckSanity(PCRTASN1BOOLEAN pThis, uint32_t fFlags, PR
 {
     if (RT_UNLIKELY(!RTAsn1Boolean_IsPresent(pThis)))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (BOOLEAN).", pszErrorTag);
+    RT_NOREF_PV(fFlags);
     return VINF_SUCCESS;
 }
 

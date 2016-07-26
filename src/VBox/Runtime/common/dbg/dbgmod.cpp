@@ -368,6 +368,8 @@ RT_EXPORT_SYMBOL(RTDbgModCreate);
 RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
                                   RTUINTPTR uSubtrahend, RTDBGCFG hDbgCfg)
 {
+    RT_NOREF_PV(hDbgCfg);
+
     /*
      * Input validation and lazy initialization.
      */
@@ -504,7 +506,8 @@ static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback(RTDBGCFG hDbgCfg, const 
 {
     PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
     PCRTLDRDBGINFO      pDbgInfo  = (PCRTLDRDBGINFO)pvUser2;
-    NOREF(pDbgInfo); /** @todo consider a more direct search for a interpreter. */
+    RT_NOREF_PV(pDbgInfo); /** @todo consider a more direct search for a interpreter. */
+    RT_NOREF_PV(hDbgCfg);
 
     Assert(!pDbgMod->pDbgVt);
     Assert(!pDbgMod->pvDbgPriv);
@@ -562,6 +565,7 @@ static DECLCALLBACK(int)
 rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser)
 {
     RTDBGMODOPENDIETI *pArgs = (RTDBGMODOPENDIETI *)pvUser;
+    RT_NOREF_PV(hLdrMod);
 
     Assert(pDbgInfo->enmType > RTLDRDBGINFOTYPE_INVALID && pDbgInfo->enmType < RTLDRDBGINFOTYPE_END);
     const char *pszExtFile = pDbgInfo->pszExtFile;
@@ -674,7 +678,8 @@ static int rtDbgModOpenDebugInfoExternalToImage(PRTDBGMODINT pDbgMod, RTDBGCFG h
 static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback2(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
 {
     PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
-    NOREF(pvUser2); /** @todo image matching string or smth. */
+    RT_NOREF_PV(pvUser2); /** @todo image matching string or smth. */
+    RT_NOREF_PV(hDbgCfg);
 
     Assert(!pDbgMod->pDbgVt);
     Assert(!pDbgMod->pvDbgPriv);
@@ -944,6 +949,7 @@ static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const
     PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
     PRTDBGMODDEFERRED   pDeferred = (PRTDBGMODDEFERRED)pvUser2;
     LogFlow(("rtDbgModFromPeImageOpenCallback: %s\n", pszFilename));
+    RT_NOREF_PV(hDbgCfg);
 
     Assert(pDbgMod->pImgVt == NULL);
     Assert(pDbgMod->pvImgPriv == NULL);
@@ -1211,6 +1217,7 @@ rtDbgModFromMachOImageOpenDsymMachOCallback(RTDBGCFG hDbgCfg, const char *pszFil
 {
     PRTDBGMODINT        pDbgMod = (PRTDBGMODINT)pvUser1;
     PCRTDBGMODMACHOARGS pArgs   = (PCRTDBGMODMACHOARGS)pvUser2;
+    RT_NOREF_PV(hDbgCfg);
 
     Assert(!pDbgMod->pDbgVt);
     Assert(!pDbgMod->pvDbgPriv);
@@ -1330,6 +1337,8 @@ rtDbgModFromMachOImageOpenDsymMachOCallback(RTDBGCFG hDbgCfg, const char *pszFil
 static int rtDbgModFromMachOImageWorker(PRTDBGMODINT pDbgMod, RTLDRARCH enmArch, uint32_t cbImage,
                                         uint32_t cSegs, PCRTDBGSEGMENT paSegs, PCRTUUID pUuid, RTDBGCFG hDbgCfg)
 {
+    RT_NOREF_PV(cbImage); RT_NOREF_PV(cSegs); RT_NOREF_PV(paSegs);
+
     RTDBGMODMACHOARGS Args;
     Args.enmArch    = enmArch;
     Args.pUuid      = pUuid && RTUuidIsNull(pUuid) ? pUuid : NULL;

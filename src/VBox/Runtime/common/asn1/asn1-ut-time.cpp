@@ -54,6 +54,7 @@ static const char g_szEpochGeneralized[] = "19700101000000Z";
 
 RTDECL(int) RTAsn1Time_InitEx(PRTASN1TIME pThis, uint32_t uTag, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     AssertReturn(uTag == ASN1_TAG_UTC_TIME || uTag == ASN1_TAG_GENERALIZED_TIME, VERR_INVALID_PARAMETER);
     RTAsn1Core_InitEx(&pThis->Asn1Core,
                       uTag,
@@ -153,6 +154,7 @@ RTDECL(void) RTAsn1Time_Delete(PRTASN1TIME pThis)
 
 RTDECL(int) RTAsn1Time_Enum(PRTASN1TIME pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser);
     Assert(pThis && (!RTAsn1Time_IsPresent(pThis) || pThis->Asn1Core.pOps == &g_RTAsn1Time_Vtable));
 
     /* No children to enumerate. */
@@ -189,6 +191,7 @@ RTDECL(int) RTAsn1Time_Compare(PCRTASN1TIME pLeft, PCRTASN1TIME pRight)
 
 RTDECL(int) RTAsn1Time_CheckSanity(PCRTASN1TIME pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
     if (RT_UNLIKELY(!RTAsn1Time_IsPresent(pThis)))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (TIME).", pszErrorTag);
     return VINF_SUCCESS;
@@ -224,6 +227,7 @@ RTDECL(int) RTAsn1Time_CheckSanity(PCRTASN1TIME pThis, uint32_t fFlags, PRTERRIN
     \
     RTDECL(int) RT_CONCAT(a_Api,_Enum)(PRTASN1TIME pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser) \
     { \
+        RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser); \
         Assert(   pThis \
                && (   !RTAsn1Time_IsPresent(pThis) \
                    || (   pThis->Asn1Core.pOps == &g_RTAsn1Time_Vtable \

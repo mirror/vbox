@@ -44,6 +44,7 @@
 
 RTDECL(int) RTAsn1DynType_Init(PRTASN1DYNTYPE pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     RT_ZERO(*pThis);
     pThis->enmType = RTASN1TYPE_NOT_PRESENT;
     return VINF_SUCCESS;

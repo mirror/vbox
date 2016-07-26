@@ -52,6 +52,8 @@ static int rtCrPkcs7VerifySignedDataUsingOpenSsl(PCRTCRPKCS7CONTENTINFO pContent
                                                  RTCRSTORE hAdditionalCerts, RTCRSTORE hTrustedCerts,
                                                  void const *pvContent, uint32_t cbContent, PRTERRINFO pErrInfo)
 {
+    RT_NOREF_PV(fFlags);
+
     /*
      * Verify using OpenSSL.
      */
@@ -148,6 +150,7 @@ static int rtCrPkcs7VerifyCertUsageDigitalSignature(PCRTCRX509CERTIFICATE pCert,
 RTDECL(int) RTCrPkcs7VerifyCertCallbackDefault(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,
                                                void *pvUser, PRTERRINFO pErrInfo)
 {
+    RT_NOREF_PV(hCertPaths); RT_NOREF_PV(pvUser);
     int rc = VINF_SUCCESS;
 
     if (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA)
@@ -168,6 +171,7 @@ RTDECL(int) RTCrPkcs7VerifyCertCallbackDefault(PCRTCRX509CERTIFICATE pCert, RTCR
 RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,
                                                    void *pvUser, PRTERRINFO pErrInfo)
 {
+    RT_NOREF_PV(hCertPaths); RT_NOREF_PV(pvUser);
     int rc = VINF_SUCCESS;
     if (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA)
     {

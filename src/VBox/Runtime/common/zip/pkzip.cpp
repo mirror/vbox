@@ -90,6 +90,7 @@ static DECLCALLBACK(int) memFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
 {
     PMEMIOSTREAM pThis = (PMEMIOSTREAM)pvThis;
     Assert(pSgBuf->cSegs == 1);
+    RT_NOREF_PV(fBlocking);
 
     if (off < 0)
         off = pThis->off;
@@ -118,6 +119,7 @@ static DECLCALLBACK(int) memFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
  */
 static DECLCALLBACK(int) memFssIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
+    RT_NOREF_PV(pvThis); RT_NOREF_PV(off); RT_NOREF_PV(pSgBuf); RT_NOREF_PV(fBlocking); RT_NOREF_PV(pcbWritten);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -126,6 +128,7 @@ static DECLCALLBACK(int) memFssIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
  */
 static DECLCALLBACK(int) memFssIos_Flush(void *pvThis)
 {
+    RT_NOREF_PV(pvThis);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -134,6 +137,7 @@ static DECLCALLBACK(int) memFssIos_Flush(void *pvThis)
  */
 static DECLCALLBACK(int) memFssIos_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents)
 {
+    RT_NOREF_PV(pvThis); RT_NOREF_PV(fEvents); RT_NOREF_PV(cMillies); RT_NOREF_PV(fIntr); RT_NOREF_PV(pfRetEvents);
     return VERR_NOT_IMPLEMENTED;
 }
 

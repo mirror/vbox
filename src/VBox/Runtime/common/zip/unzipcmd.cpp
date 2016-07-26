@@ -94,6 +94,8 @@ typedef RTEXITCODE (*PFNDOWITHMEMBER)(PRTZIPUNZIPCMDOPS pOpts, RTVFSOBJ hVfsObj,
 static RTEXITCODE rtZipUnzipCmdListCallback(PRTZIPUNZIPCMDOPS pOpts, RTVFSOBJ hVfsObj,
                                             const char *pszName, RTEXITCODE rcExit, PRTFOFF pcBytes)
 {
+    RT_NOREF_PV(pOpts);
+
     /*
      * Query all the information.
      */

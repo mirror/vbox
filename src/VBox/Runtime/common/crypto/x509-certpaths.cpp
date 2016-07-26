@@ -749,6 +749,8 @@ static PRTCRX509CERTPATHNODE rtCrX509CertPathsGetNextRightUp(PRTCRX509CERTPATHSI
         /* Up. */
         pNode = pParent;
     }
+
+    RT_NOREF_PV(pThis);
 }
 
 
@@ -1136,6 +1138,7 @@ static const char *rtCrX509CertPathsNodeGetSourceName(PRTCRX509CERTPATHNODE pNod
 static void rtCrX509CertPathsDumpOneWorker(PRTCRX509CERTPATHSINT pThis, uint32_t iPath, PRTCRX509CERTPATHNODE pCurLeaf,
                                            uint32_t uVerbosity, PFNRTDUMPPRINTFV pfnPrintfV, void *pvUser)
 {
+    RT_NOREF_PV(pThis);
     rtDumpPrintf(pfnPrintfV, pvUser, "Path #%u: %s, %u deep, rcVerify=%Rrc\n",
                  iPath, RTCRX509CERTPATHNODE_SRC_IS_TRUSTED(pCurLeaf->uSrc) ? "trusted" : "untrusted", pCurLeaf->uDepth,
                  pCurLeaf->rcVerify);

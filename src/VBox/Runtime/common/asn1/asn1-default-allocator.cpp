@@ -57,6 +57,7 @@ static size_t rtAsn1DefaultAllocator_AlignSize(size_t cb)
 /** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnFree} */
 static DECLCALLBACK(void) rtAsn1DefaultAllocator_Free(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ALLOCATION pAllocation, void *pv)
 {
+    RT_NOREF_PV(pThis);
     RTMemFree(pv);
     pAllocation->cbAllocated = 0;
 }
@@ -74,6 +75,7 @@ static DECLCALLBACK(int)  rtAsn1DefaultAllocator_Alloc(PCRTASN1ALLOCATORVTABLE p
         pAllocation->cbAllocated = (uint32_t)cbAlloc;
         return VINF_SUCCESS;
     }
+    RT_NOREF_PV(pThis);
     return VERR_NO_MEMORY;
 }
 
@@ -92,6 +94,7 @@ static DECLCALLBACK(int)  rtAsn1DefaultAllocator_Realloc(PCRTASN1ALLOCATORVTABLE
         pAllocation->cbAllocated = (uint32_t)cbAlloc;
         return VINF_SUCCESS;
     }
+    RT_NOREF_PV(pThis);
     return VERR_NO_MEMORY;
 }
 

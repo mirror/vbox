@@ -56,6 +56,7 @@ typedef enum RTCRPKCS7CONTENTINFOCHOICE
 static int rtCrPkcs7ContentInfo_DecodeExtra(PRTASN1CURSOR pCursor, uint32_t fFlags, PRTCRPKCS7CONTENTINFO pThis,
                                             const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags); RT_NOREF_PV(pszErrorTag);
     pThis->u.pCore = NULL;
 
     /*

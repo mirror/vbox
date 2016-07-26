@@ -587,7 +587,7 @@ RTDECL(int) RTAsn1ContextTagN_Init(PRTASN1CONTEXTTAG pThis, uint32_t uTag, PCRTA
 
 RTDECL(int) RTAsn1ContextTagN_Clone(PRTASN1CONTEXTTAG pThis, PCRTASN1CONTEXTTAG pSrc, uint32_t uTag)
 {
-    Assert(pSrc->Asn1Core.uTag == uTag || !RTASN1CORE_IS_PRESENT(&pSrc->Asn1Core));
+    Assert(pSrc->Asn1Core.uTag == uTag || !RTASN1CORE_IS_PRESENT(&pSrc->Asn1Core)); RT_NOREF_PV(uTag);
     return RTAsn1Core_CloneNoContent(&pThis->Asn1Core, &pSrc->Asn1Core);
 }
 

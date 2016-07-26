@@ -78,6 +78,8 @@ RTDECL(bool) RTDirExists(const char *pszPath)
 
 RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 {
+    RT_NOREF_PV(fCreate);
+
     int rc;
     fMode = rtFsModeNormalize(fMode, pszPath, 0);
     if (rtFsModeIsValidPermissions(fMode))

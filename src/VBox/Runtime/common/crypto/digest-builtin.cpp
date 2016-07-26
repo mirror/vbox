@@ -63,6 +63,7 @@ static DECLCALLBACK(void) rtCrDigestMd2_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestMd2_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(fReInit); RT_NOREF_PV(pvOpaque);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTMd2Init((PRTMD2CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -117,6 +118,7 @@ static DECLCALLBACK(void) rtCrDigestMd5_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestMd5_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTMd5Init((PRTMD5CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -171,6 +173,7 @@ static DECLCALLBACK(void) rtCrDigestSha1_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha1_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha1Init((PRTSHA1CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -225,6 +228,7 @@ static DECLCALLBACK(void) rtCrDigestSha256_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha256_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha256Init((PRTSHA256CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -278,6 +282,7 @@ static DECLCALLBACK(void) rtCrDigestSha512_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha512_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha512Init((PRTSHA512CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -331,6 +336,7 @@ static DECLCALLBACK(void) rtCrDigestSha224_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha224_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha224Init((PRTSHA224CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -384,6 +390,7 @@ static DECLCALLBACK(void) rtCrDigestSha384_Final(void *pvState, uint8_t *pbHash)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha384_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha384Init((PRTSHA384CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -438,6 +445,7 @@ static DECLCALLBACK(void) rtCrDigestSha512t224_Final(void *pvState, uint8_t *pbH
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha512t224_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha512t224Init((PRTSHA512T224CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -492,6 +500,7 @@ static DECLCALLBACK(void) rtCrDigestSha512t256_Final(void *pvState, uint8_t *pbH
 /** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
 static DECLCALLBACK(int) rtCrDigestSha512t256_Init(void *pvState, void *pvOpaque, bool fReInit)
 {
+    RT_NOREF_PV(pvOpaque); RT_NOREF_PV(fReInit);
     AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
     RTSha512t256Init((PRTSHA512T256CONTEXT)pvState);
     return VINF_SUCCESS;
@@ -638,7 +647,7 @@ static DECLCALLBACK(uint32_t) rtCrDigestOsslEvp_GetHashSize(void *pvState)
 /** @impl_interface_method{RTCRDIGESTDESC::pfnGetHashSize} */
 static DECLCALLBACK(RTDIGESTTYPE) rtCrDigestOsslEvp_GetDigestType(void *pvState)
 {
-    //EVP_MD_CTX *pThis = (EVP_MD_CTX *)pvState;
+    RT_NOREF_PV(pvState); //EVP_MD_CTX *pThis = (EVP_MD_CTX *)pvState;
     /** @todo figure which digest algorithm it is! */
     return RTDIGESTTYPE_UNKNOWN;
 }

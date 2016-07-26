@@ -664,7 +664,7 @@ RTDECL(void) RTHeapOffsetFree(RTHEAPOFFSET hHeap, void *pv)
     pHeapInt = RTHEAPOFF_GET_ANCHOR(pBlock);
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
-    Assert(pHeapInt == (PRTHEAPOFFSETINTERNAL)hHeap || !hHeap);
+    Assert(pHeapInt == (PRTHEAPOFFSETINTERNAL)hHeap || !hHeap); RT_NOREF_PV(hHeap);
 
 #ifdef RTHEAPOFFSET_FREE_POISON
     /*
@@ -858,7 +858,7 @@ RTDECL(size_t) RTHeapOffsetSize(RTHEAPOFFSET hHeap, void *pv)
     pHeapInt = RTHEAPOFF_GET_ANCHOR(pBlock);
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
-    Assert(pHeapInt == (PRTHEAPOFFSETINTERNAL)hHeap || !hHeap);
+    Assert(pHeapInt == (PRTHEAPOFFSETINTERNAL)hHeap || !hHeap); RT_NOREF_PV(hHeap);
 
     /*
      * Calculate the block size.

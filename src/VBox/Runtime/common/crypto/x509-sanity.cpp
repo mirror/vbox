@@ -40,6 +40,8 @@
 
 static int rtCrX509Validity_CheckSanityExtra(PCRTCRX509VALIDITY pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
+
     if (RTAsn1Time_Compare(&pThis->NotBefore, &pThis->NotAfter) > 0)
         return RTErrInfoSetF(pErrInfo, VERR_CR_X509_VALIDITY_SWAPPED, "%s: NotBefore is after NotAfter", pszErrorTag);
     /** @todo check tag constraints? */
@@ -49,6 +51,8 @@ static int rtCrX509Validity_CheckSanityExtra(PCRTCRX509VALIDITY pThis, uint32_t 
 
 static int rtCrX509Name_CheckSanityExtra(PCRTCRX509NAME pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
+
     if (pThis->cItems == 0)
         return RTErrInfoSetF(pErrInfo, VERR_CR_X509_NAME_EMPTY_SET, "%s: Has no components.", pszErrorTag);
 
@@ -93,6 +97,7 @@ static int rtCrX509Name_CheckSanityExtra(PCRTCRX509NAME pThis, uint32_t fFlags, 
 static int rtCrX509SubjectPublicKeyInfo_CheckSanityExtra(PCRTCRX509SUBJECTPUBLICKEYINFO pThis, uint32_t fFlags,
                                                          PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
     if (pThis->SubjectPublicKey.cBits <= 32)
         return RTErrInfoSetF(pErrInfo, VERR_CR_X509_PUBLIC_KEY_TOO_SMALL,
                              "%s: SubjectPublicKey is too small, only %u bits", pszErrorTag, pThis->SubjectPublicKey.cBits);
@@ -103,6 +108,8 @@ static int rtCrX509SubjectPublicKeyInfo_CheckSanityExtra(PCRTCRX509SUBJECTPUBLIC
 static int rtCrX509TbsCertificate_CheckSanityExtra(PCRTCRX509TBSCERTIFICATE pThis, uint32_t fFlags,
                                                    PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
+
     if (   RTAsn1Integer_IsPresent(&pThis->T0.Version)
         && RTAsn1Integer_UnsignedCompareWithU32(&pThis->T0.Version, RTCRX509TBSCERTIFICATE_V1) != 0
         && RTAsn1Integer_UnsignedCompareWithU32(&pThis->T0.Version, RTCRX509TBSCERTIFICATE_V2) != 0
@@ -133,6 +140,8 @@ static int rtCrX509TbsCertificate_CheckSanityExtra(PCRTCRX509TBSCERTIFICATE pThi
 static int rtCrX509Certificate_CheckSanityExtra(PCRTCRX509CERTIFICATE pThis, uint32_t fFlags,
                                                PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
+
     if (RTCrX509AlgorithmIdentifier_Compare(&pThis->SignatureAlgorithm, &pThis->TbsCertificate.Signature) != 0)
         return RTErrInfoSetF(pErrInfo, VERR_CR_X509_CERT_TBS_SIGN_ALGO_MISMATCH,
                              "%s: SignatureAlgorithm (%s) does not match TbsCertificate.Signature (%s).", pszErrorTag,

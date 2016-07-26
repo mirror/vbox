@@ -581,6 +581,7 @@ DECLINLINE(int) rtDbgModCvAdjustSegAndOffset(PRTDBGMODCV pThis, uint32_t *piSeg,
 static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, const char *pchName,
                                uint32_t cchName, uint32_t fFlags, uint32_t cbSym)
 {
+    RT_NOREF_PV(fFlags);
     const char *pszName = rtDbgModCvAddSanitizedStringToCache(pchName, cchName);
     int rc;
     if (pszName)
@@ -666,6 +667,8 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
     int         rc = VINF_SUCCESS;
     RTCPTRUNION uCursor;
     uCursor.pv = pvSymTab;
+
+    RT_NOREF_PV(fFlags);
 
     while (cbSymTab > 0 && RT_SUCCESS(rc))
     {
@@ -826,6 +829,8 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
  */
 static int rtDbgModCvSsProcessV8SrcStrings(PRTDBGMODCV pThis, void const *pvSrcStrings, size_t cbSrcStrings, uint32_t fFlags)
 {
+    RT_NOREF_PV(fFlags);
+
     if (pThis->cbSrcStrings)
         Log(("\n!!More than one source file string table for this module!!\n\n"));
 
@@ -871,6 +876,8 @@ static int rtDbgModCvSsProcessV8SrcStrings(PRTDBGMODCV pThis, void const *pvSrcS
  */
 static int rtDbgModCvSsProcessV8SrcInfo(PRTDBGMODCV pThis, void const *pvSrcInfo, size_t cbSrcInfo, uint32_t fFlags)
 {
+    RT_NOREF_PV(fFlags);
+
     if (pThis->cbSrcInfo)
         Log(("\n!!More than one source file info table for this module!!\n\n"));
 
@@ -902,6 +909,8 @@ static int rtDbgModCvSsProcessV8SrcInfo(PRTDBGMODCV pThis, void const *pvSrcInfo
  */
 static int rtDbgModCvSsProcessV8SectLines(PRTDBGMODCV pThis, void const *pvSectLines, size_t cbSectLines, uint32_t fFlags)
 {
+    RT_NOREF_PV(fFlags);
+
     /*
      * Starts with header.
      */
@@ -1097,6 +1106,7 @@ static DECLCALLBACK(int)
 rtDbgModCvSs_GlobalPub_GlobalSym_StaticSym(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, PCRTCVDIRENT32 pDirEnt)
 {
     PCRTCVGLOBALSYMTABHDR pHdr = (PCRTCVGLOBALSYMTABHDR)pvSubSect;
+    RT_NOREF_PV(pDirEnt);
 
     /*
      * Quick data validation.
@@ -1123,6 +1133,8 @@ rtDbgModCvSs_GlobalPub_GlobalSym_StaticSym(PRTDBGMODCV pThis, void const *pvSubS
 static DECLCALLBACK(int)
 rtDbgModCvSs_Module(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, PCRTCVDIRENT32 pDirEnt)
 {
+    RT_NOREF_PV(pDirEnt);
+
     RTCPTRUNION uCursor;
     uCursor.pv = pvSubSect;
     RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSubSect >= 2 + 2 + 2 + 2 + 0 + 1);
@@ -1161,6 +1173,7 @@ rtDbgModCvSs_Module(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, 
 static DECLCALLBACK(int)
 rtDbgModCvSs_Symbols_PublicSym_AlignSym(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, PCRTCVDIRENT32 pDirEnt)
 {
+    RT_NOREF_PV(pDirEnt);
     RTDBGMODCV_CHECK_NOMSG_RET_BF(pThis->uCurStyle == RT_MAKE_U16('C', 'V'));
     RTDBGMODCV_CHECK_NOMSG_RET_BF(cbSubSect >= 8);
 
@@ -1179,6 +1192,7 @@ rtDbgModCvSs_Symbols_PublicSym_AlignSym(PRTDBGMODCV pThis, void const *pvSubSect
 static DECLCALLBACK(int)
 rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect, PCRTCVDIRENT32 pDirEnt)
 {
+    RT_NOREF_PV(pDirEnt);
     Log(("rtDbgModCvSs_SrcModule: uCurStyle=%#x\n%.*Rhxd\n", pThis->uCurStyle, cbSubSect, pvSubSect));
 
     /* Check the header. */
@@ -1659,6 +1673,8 @@ static DECLCALLBACK(int) rtDbgModCvDirEntCmp(void const *pvElement1, void const 
         return -1;
     if (pEntry1->uSubSectType > pEntry2->uSubSectType)
         return 1;
+
+    RT_NOREF_PV(pvUser);
     return 0;
 }
 
@@ -2109,6 +2125,7 @@ static const char *rtDbgModCvGetCoffStorageClassName(uint8_t bStorageClass)
 static void rtDbgModCvAddCoffLineNumbers(PRTDBGMODCV pThis, const char *pszFile, uint32_t iSection,
                                          PCIMAGE_LINENUMBER paLines, uint32_t cLines)
 {
+    RT_NOREF_PV(iSection);
     Log4(("Adding %u line numbers in section #%u  for %s\n", cLines, iSection, pszFile));
     PCIMAGE_LINENUMBER pCur = paLines;
     while (cLines-- > 0)
@@ -2438,7 +2455,7 @@ static DECLCALLBACK(int) rtDbgModCv_SymbolByName(PRTDBGMODINT pMod, const char *
                                                     PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
-    Assert(!pszSymbol[cchSymbol]);
+    Assert(!pszSymbol[cchSymbol]); RT_NOREF_PV(cchSymbol);
     return RTDbgModSymbolByName(pThis->hCnt, pszSymbol/*, cchSymbol*/, pSymInfo);
 }
 
@@ -2571,6 +2588,8 @@ static DECLCALLBACK(int) rtDbgModCvAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDR
  */
 static int rtDbgModCvAddSegmentsFromDbg(PRTDBGMODCV pThis, PCIMAGE_SEPARATE_DEBUG_HEADER pDbgHdr, const char *pszFilename)
 {
+    RT_NOREF_PV(pszFilename);
+
     /*
      * Validate the header fields a little.
      */
@@ -2740,6 +2759,8 @@ static int rtDbgModCvCreateInstance(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileTy
 static int rtDbgModCvProbeCoff(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileType, RTFILE hFile,
                                uint32_t off, uint32_t cb, const char *pszFilename)
 {
+    RT_NOREF_PV(pszFilename);
+
     /*
      * Check that there is sufficient data for a header, then read it.
      */
@@ -2833,6 +2854,7 @@ static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILE
                                  uint32_t off, uint32_t cb, RTLDRARCH enmArch, const char *pszFilename)
 {
     int rc = VERR_DBG_NO_MATCHING_INTERPRETER;
+    RT_NOREF_PV(enmArch); RT_NOREF_PV(pszFilename);
 
     /* Is a codeview format we (wish to) support? */
     if (   pCvHdr->u32Magic == RTCVHDR_MAGIC_NB11
@@ -2877,6 +2899,7 @@ static DECLCALLBACK(int) rtDbgModCvEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO
 {
     PRTDBGMODINT pDbgMod = (PRTDBGMODINT)pvUser;
     Assert(!pDbgMod->pvDbgPriv);
+    RT_NOREF_PV(hLdrMod);
 
     /* Skip external files, RTDbgMod will deal with those
        via RTDBGMODINT::pszDbgFile. */

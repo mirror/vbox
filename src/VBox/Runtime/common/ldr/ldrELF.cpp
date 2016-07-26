@@ -122,6 +122,8 @@ int rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLD
 {
     const char *pszLogName = pReader->pfnLogName(pReader); NOREF(pszLogName);
 
+    RT_NOREF_PV(pErrInfo); /** @todo implement */
+
     /*
      * Read the ident to decide if this is 32-bit or 64-bit
      * and worth dealing with.

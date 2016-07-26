@@ -44,7 +44,7 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile)
      * It's all hardcoded fun for now...
      */
     pvFile = (void *)((uintptr_t)pvFile - 32);
-    Assert(*(size_t *)pvFile == cbFile);
+    Assert(*(size_t *)pvFile == cbFile); RT_NOREF_PV(cbFile);
     *(size_t *)pvFile = ~(size_t)1;
 
     RTMemFree(pvFile);

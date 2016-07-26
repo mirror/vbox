@@ -227,6 +227,7 @@ static DECLCALLBACK(void) rtCrStoreInMem_DestroyStore(void *pvProvider)
 static DECLCALLBACK(int) rtCrStoreInMem_CertCtxQueryPrivateKey(void *pvProvider, PRTCRCERTCTXINT pCertCtx,
                                                                uint8_t *pbKey, size_t cbKey, size_t *pcbKeyRet)
 {
+    RT_NOREF_PV(pvProvider); RT_NOREF_PV(pCertCtx); RT_NOREF_PV(pbKey); RT_NOREF_PV(cbKey); RT_NOREF_PV(pcbKeyRet);
     //PRTCRSTOREINMEM pThis = (PRTCRSTOREINMEM)pvProvider;
     return VERR_NOT_FOUND;
 }

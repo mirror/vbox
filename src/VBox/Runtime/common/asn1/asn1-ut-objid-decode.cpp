@@ -232,24 +232,25 @@ static int rtAsn1ObjId_PreParse(uint8_t const *pbContent, uint32_t cbContent, PR
                             return VINF_SUCCESS;
                         }
                         return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_OBJID_TOO_LONG_STRING_FORM,
-                                                   "Object ID has a too long string form: %#x (max %#x)",
-                                                   cchObjId, RT_SIZEOFMEMB(RTASN1OBJID, szObjId));
+                                                   "%s: Object ID has a too long string form: %#x (max %#x)",
+                                                   pszErrorTag, cchObjId, RT_SIZEOFMEMB(RTASN1OBJID, szObjId));
                     }
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_OBJID_TOO_MANY_COMPONENTS,
-                                               "Object ID has too many components: %#x (max 127)", cComponents);
+                                               "%s: Object ID has too many components: %#x (max 127)", pszErrorTag, cComponents);
                 }
 
                 /* next */
                 rc = rtAsn1ObjId_ReadComponent(pbContent, cbContent, &uValue);
             } while (rc > 0);
         }
-        rc = RTAsn1CursorSetInfo(pCursor, rc, "Bad object ID component #%u encoding: %.*Rhxs",
-                                 cComponents, cbContent, pbContent);
+        rc = RTAsn1CursorSetInfo(pCursor, rc, "%s: Bad object ID component #%u encoding: %.*Rhxs",
+                                 pszErrorTag, cComponents, cbContent, pbContent);
     }
     else if (cbContent)
-        rc = RTAsn1CursorSetInfo(pCursor, VERR_ASN1_INVALID_OBJID_ENCODING, "Object ID content is loo long: %#x", cbContent);
+        rc = RTAsn1CursorSetInfo(pCursor, VERR_ASN1_INVALID_OBJID_ENCODING, "%s: Object ID content is loo long: %#x",
+                                 pszErrorTag, cbContent);
     else
-        rc = RTAsn1CursorSetInfo(pCursor, VERR_ASN1_INVALID_OBJID_ENCODING, "Zero length object ID content");
+        rc = RTAsn1CursorSetInfo(pCursor, VERR_ASN1_INVALID_OBJID_ENCODING, "%s: Zero length object ID content", pszErrorTag);
     return rc;
 }
 

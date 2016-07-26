@@ -402,6 +402,7 @@ RT_DECL_DATA_CONST(RTASN1COREVTABLE const) g_RTAsn1Integer_Vtable =
 
 RTDECL(int) RTAsn1Integer_Init(PRTASN1INTEGER pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     RTAsn1Core_InitEx(&pThis->Asn1Core,
                       ASN1_TAG_INTEGER,
                       ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_PRIMITIVE,
@@ -461,6 +462,7 @@ RTDECL(void) RTAsn1Integer_Delete(PRTASN1INTEGER pThis)
 
 RTDECL(int) RTAsn1Integer_Enum(PRTASN1INTEGER pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser);
     Assert(pThis && (!RTAsn1Integer_IsPresent(pThis) || pThis->Asn1Core.pOps == &g_RTAsn1Integer_Vtable));
 
     /* No children to enumerate. */
@@ -476,6 +478,7 @@ RTDECL(int) RTAsn1Integer_Compare(PCRTASN1INTEGER pLeft, PCRTASN1INTEGER pRight)
 
 RTDECL(int) RTAsn1Integer_CheckSanity(PCRTASN1INTEGER pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
     if (RT_UNLIKELY(!RTAsn1Integer_IsPresent(pThis)))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (INTEGER).", pszErrorTag);
     return VINF_SUCCESS;

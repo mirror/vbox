@@ -458,6 +458,8 @@ RTPATHMATCHVAR_MULTIPLE_ENVVARS(WinAllCommonProgramFiles, a_apszWinCommonProgram
 static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
                                              PRTPATHMATCHCACHE pCache)
 {
+    RT_NOREF_PV(pCache);
+
     /*
      * Query the PATH value.
      */
@@ -1649,7 +1651,7 @@ DECLINLINE(bool) rtPathGlobExecIsMatchFinalWithFileMode(PRTPATHGLOB pGlob, RTFMO
 {
     if (!(pGlob->fFlags & (RTPATHGLOB_F_NO_DIRS | RTPATHGLOB_F_ONLY_DIRS)))
         return true;
-    return RT_BOOL(pGlob->fFlags & RTPATHGLOB_F_ONLY_DIRS) == RTFS_IS_DIRECTORY(pGlob->u.ObjInfo.Attr.fMode);
+    return RT_BOOL(pGlob->fFlags & RTPATHGLOB_F_ONLY_DIRS) == RTFS_IS_DIRECTORY(fMode);
 }
 
 
@@ -1669,6 +1671,10 @@ DECL_NO_INLINE(static, int) rtPathGlobExecRecursiveStarStar(PRTPATHGLOB pGlob, s
                                                             size_t offStarStarPath)
 {
     /** @todo implement multi subdir matching. */
+    RT_NOREF_PV(pGlob);
+    RT_NOREF_PV(offPath);
+    RT_NOREF_PV(iStarStarComp);
+    RT_NOREF_PV(offStarStarPath);
     return VERR_PATH_MATCH_FEATURE_NOT_IMPLEMENTED;
 }
 

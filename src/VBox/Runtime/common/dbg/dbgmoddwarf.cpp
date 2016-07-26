@@ -3529,6 +3529,8 @@ static int rtDwarfLoc_Push(PRTDWARFLOCST pLoc, uint64_t uValue)
 
 static int rtDwarfLoc_Evaluate(PRTDWARFLOCST pLoc, void *pvLater, void *pvUser)
 {
+    RT_NOREF_PV(pvLater); RT_NOREF_PV(pvUser);
+
     while (!rtDwarfCursor_IsAtEndOfUnit(&pLoc->Cursor))
     {
         /* Read the next opcode.*/
@@ -4423,7 +4425,7 @@ static DECLCALLBACK(int) rtDwarfSyms_EnumSymbolsCallback(RTLDRMOD hLdrMod, const
                                                          RTLDRADDR Value, void *pvUser)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
-    NOREF(hLdrMod);
+    RT_NOREF_PV(hLdrMod); RT_NOREF_PV(uSymbol);
     Assert(pThis->iWatcomPass != 1);
 
     RTLDRADDR uRva = Value - RTDBGDWARF_SYM_ENUM_BASE_ADDRESS;
@@ -4555,7 +4557,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_SymbolByName(PRTDBGMODINT pMod, const cha
                                                     PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
-    Assert(!pszSymbol[cchSymbol]);
+    Assert(!pszSymbol[cchSymbol]); RT_NOREF_PV(cchSymbol);
     return RTDbgModSymbolByName(pThis->hCnt, pszSymbol/*, cchSymbol*/, pSymInfo);
 }
 
@@ -4669,6 +4671,8 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
 /** @callback_method_impl{FNRTLDRENUMDBG} */
 static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser)
 {
+    RT_NOREF_PV(hLdrMod);
+
     /*
      * Skip stuff we can't handle.
      */

@@ -166,6 +166,8 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
                         va_end(va);
                     }
                     pThis->fEverHadSignallers = false;
+#else
+                    RT_NOREF_PV(hClass); RT_NOREF_PV(pszNameFmt);
 #endif
 
                     *phEventMultiSem = pThis;
@@ -420,6 +422,7 @@ static int rtSemEventMultiPosixWaitIndefinite(struct RTSEMEVENTMULTIINTERNAL *pT
         }
 #else
         RTTHREAD hThreadSelf = RTThreadSelf();
+        RT_NOREF_PV(pSrcPos);
 #endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
         /** @todo interruptible wait is not implementable... */ NOREF(fFlags);
@@ -631,6 +634,8 @@ RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREA
 
     ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
     RTLockValidatorRecSharedResetOwner(&pThis->Signallers, hThread, NULL);
+#else
+    RT_NOREF_PV(hEventMultiSem); RT_NOREF_PV(hThread);
 #endif
 }
 
@@ -645,6 +650,8 @@ RTDECL(void) RTSemEventMultiAddSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREA
 
     ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
     RTLockValidatorRecSharedAddOwner(&pThis->Signallers, hThread, NULL);
+#else
+    RT_NOREF_PV(hEventMultiSem); RT_NOREF_PV(hThread);
 #endif
 }
 
@@ -658,6 +665,8 @@ RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTH
     AssertReturnVoid(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED);
 
     RTLockValidatorRecSharedRemoveOwner(&pThis->Signallers, hThread);
+#else
+    RT_NOREF_PV(hEventMultiSem); RT_NOREF_PV(hThread);
 #endif
 }
 

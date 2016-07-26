@@ -1735,6 +1735,7 @@ RTDECL(void) RTAsn1String_Delete(PRTASN1STRING pThis)
 
 RTDECL(int) RTAsn1String_Enum(PRTASN1STRING pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser);
     Assert(pThis && (!RTAsn1String_IsPresent(pThis) || pThis->Asn1Core.pOps == &g_RTAsn1String_Vtable));
 
     /* No children to enumerate. */
@@ -1751,6 +1752,7 @@ RTDECL(int) RTAsn1String_Compare(PCRTASN1STRING pLeft, PCRTASN1STRING pRight)
 
 RTDECL(int) RTAsn1String_CheckSanity(PCRTASN1STRING pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
     if (RT_UNLIKELY(!RTAsn1String_IsPresent(pThis)))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (STRING).", pszErrorTag);
     return rtAsn1String_CheckSanity(pThis, pErrInfo, pszErrorTag, NULL /*pcchUtf8*/);
@@ -1786,6 +1788,7 @@ RTDECL(int) RTAsn1String_CheckSanity(PCRTASN1STRING pThis, uint32_t fFlags, PRTE
     \
     RTDECL(int) RT_CONCAT(a_Api,_Enum)(PRTASN1STRING pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser) \
     { \
+        RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser); \
         Assert(   pThis \
                && (   !RTAsn1String_IsPresent(pThis) \
                    || (   pThis->Asn1Core.pOps == &g_RTAsn1String_Vtable \

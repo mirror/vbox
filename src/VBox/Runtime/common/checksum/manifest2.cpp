@@ -300,8 +300,7 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst)
     AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
     AssertPtr(phManifestDst);
 
-
-    /** @todo implement cloning. */
+    RT_NOREF_PV(phManifestDst); /** @todo implement cloning. */
 
     return VERR_NOT_IMPLEMENTED;
 }

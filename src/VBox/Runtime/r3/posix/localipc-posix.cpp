@@ -1048,18 +1048,21 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
 
 RTDECL(int) RTLocalIpcSessionQueryProcess(RTLOCALIPCSESSION hSession, PRTPROCESS pProcess)
 {
+    RT_NOREF_PV(hSession); RT_NOREF_PV(pProcess);
     return VERR_NOT_SUPPORTED;
 }
 
 
 RTDECL(int) RTLocalIpcSessionQueryUserId(RTLOCALIPCSESSION hSession, PRTUID pUid)
 {
+    RT_NOREF_PV(hSession); RT_NOREF_PV(pUid);
     return VERR_NOT_SUPPORTED;
 }
 
 
 RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTGID pGid)
 {
+    RT_NOREF_PV(hSession); RT_NOREF_PV(pGid);
     return VERR_NOT_SUPPORTED;
 }
 

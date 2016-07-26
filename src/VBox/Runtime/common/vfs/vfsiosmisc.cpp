@@ -219,7 +219,7 @@ RTDECL(void) RTVfsIoStrmReadAllFree(void *pvBuf, size_t cbBuf)
 
     /* Make sure the caller isn't messing with us. Hardcoded, but works. */
     Assert(((size_t *)pvBuf)[0] == READ_ALL_HEADER_MAGIC);
-    Assert(((size_t *)pvBuf)[1] == cbBuf);
+    Assert(((size_t *)pvBuf)[1] == cbBuf); RT_NOREF_PV(cbBuf);
 
     /* Free it. */
     RTMemFree(pvBuf);

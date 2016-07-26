@@ -353,6 +353,8 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, uint64_t MsStart, RTMS
 
 #else  /* POSIX */
 
+    RT_NOREF_PV(MsStart);
+
     /* clear the revents. */
     uint32_t i = pThis->cHandles;
     while (i-- > 0)

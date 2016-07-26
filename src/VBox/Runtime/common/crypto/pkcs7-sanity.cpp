@@ -43,6 +43,7 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                                                 PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
     bool const fAuthenticode = RT_BOOL(fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_AUTHENTICODE);
+    RT_NOREF_PV(fFlags);
 
     //RTAsn1Dump(&pSignedData->SeqCore.Asn1Core, 0, 0, RTAsn1DumpStrmPrintfV, g_pStdOut);
 
@@ -60,20 +61,20 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
         return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_SIGNED_DATA_NO_DIGEST_ALGOS, "SignedData.DigestAlgorithms is empty");
     if (pSignedData->DigestAlgorithms.cItems != 1 && fAuthenticode)
         return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_NOT_EXACTLY_ONE_DIGEST_ALGO,
-                             "SignedData.DigestAlgorithms has more than one algorithm (%u)",
-                             pSignedData->DigestAlgorithms.cItems);
+                             "%s: SignedData.DigestAlgorithms has more than one algorithm (%u)",
+                             pszErrorTag, pSignedData->DigestAlgorithms.cItems);
 
     if (fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH)
         for (uint32_t i = 0; i < pSignedData->DigestAlgorithms.cItems; i++)
         {
             if (RTCrX509AlgorithmIdentifier_QueryDigestType(&pSignedData->DigestAlgorithms.paItems[i]) == RTDIGESTTYPE_INVALID)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_UNKNOWN_DIGEST_ALGORITHM,
-                                     "SignedData.DigestAlgorithms[%i] is not known: %s",
-                                     i, pSignedData->DigestAlgorithms.paItems[i].Algorithm.szObjId);
+                                     "%s: SignedData.DigestAlgorithms[%i] is not known: %s",
+                                     pszErrorTag, i, pSignedData->DigestAlgorithms.paItems[i].Algorithm.szObjId);
             if (pSignedData->DigestAlgorithms.paItems[i].Parameters.enmType != RTASN1TYPE_NULL)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_DIGEST_PARAMS_NOT_IMPL,
-                                     "SignedData.DigestAlgorithms[%i] has parameters: tag=%u",
-                                     i, pSignedData->DigestAlgorithms.paItems[i].Parameters.u.Core.uTag);
+                                     "%s: SignedData.DigestAlgorithms[%i] has parameters: tag=%u",
+                                     pszErrorTag, i, pSignedData->DigestAlgorithms.paItems[i].Parameters.u.Core.uTag);
         }
 
     /*
@@ -81,26 +82,26 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
      */
     if (   (fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT)
         && pSignedData->Certificates.cItems == 0)
-        return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_NO_CERTIFICATES,
-                            "SignedData.Certifcates is empty, expected at least one certificate");
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_NO_CERTIFICATES,
+                             "%s: SignedData.Certifcates is empty, expected at least one certificate", pszErrorTag);
 
     /*
      * Crls.
      */
     if (fAuthenticode && RTAsn1Core_IsPresent(&pSignedData->Crls))
-        return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_EXPECTED_NO_CRLS,
-                            "SignedData.Crls is not empty as expected for authenticode.");
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_EXPECTED_NO_CRLS,
+                             "%s: SignedData.Crls is not empty as expected for authenticode.", pszErrorTag);
     /** @todo check Crls when they become important. */
 
     /*
      * SignerInfos.
      */
     if (pSignedData->SignerInfos.cItems == 0)
-        return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_NO_SIGNER_INFOS, "SignedData.SignerInfos is empty?");
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_NO_SIGNER_INFOS, "%s: SignedData.SignerInfos is empty?", pszErrorTag);
     if (fAuthenticode && pSignedData->SignerInfos.cItems != 1)
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_EXPECTED_ONE_SIGNER_INFO,
-                             "SignedData.SignerInfos should have one entry for authenticode: %u",
-                             pSignedData->SignerInfos.cItems);
+                             "%s: SignedData.SignerInfos should have one entry for authenticode: %u",
+                             pszErrorTag, pSignedData->SignerInfos.cItems);
 
     for (uint32_t i = 0; i < pSignedData->SignerInfos.cItems; i++)
     {
@@ -108,8 +109,8 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
 
         if (RTAsn1Integer_UnsignedCompareWithU32(&pSignerInfo->Version, RTCRPKCS7SIGNERINFO_V1) != 0)
             return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNER_INFO_VERSION,
-                                 "SignedData.SignerInfos[%u] version is %llu, expected %u",
-                                 i, pSignerInfo->Version.uValue.u, RTCRPKCS7SIGNERINFO_V1);
+                                 "%s: SignedData.SignerInfos[%u] version is %llu, expected %u",
+                                 pszErrorTag, i, pSignerInfo->Version.uValue.u, RTCRPKCS7SIGNERINFO_V1);
 
         /* IssuerAndSerialNumber. */
         int rc = RTCrX509Name_CheckSanity(&pSignerInfo->IssuerAndSerialNumber.Name, 0, pErrInfo,
@@ -119,7 +120,8 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
 
         if (pSignerInfo->IssuerAndSerialNumber.SerialNumber.Asn1Core.cb == 0)
             return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNER_INFO_NO_ISSUER_SERIAL_NO,
-                                 "SignedData.SignerInfos[%u].IssuerAndSerialNumber.SerialNumber is missing (zero length)", i);
+                                 "%s: SignedData.SignerInfos[%u].IssuerAndSerialNumber.SerialNumber is missing (zero length)",
+                                 pszErrorTag, i);
 
         PCRTCRX509CERTIFICATE pCert;
         pCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&pSignedData->Certificates,
@@ -127,7 +129,8 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                                                                     &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
         if (!pCert && (fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT))
             return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNER_CERT_NOT_SHIPPED,
-                                 "SignedData.SignerInfos[%u].IssuerAndSerialNumber not found in T0.Certificates", i);
+                                 "%s: SignedData.SignerInfos[%u].IssuerAndSerialNumber not found in T0.Certificates",
+                                 pszErrorTag, i);
 
         /* DigestAlgorithm */
         uint32_t j = 0;
@@ -137,8 +140,8 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
             j++;
         if (j >= pSignedData->DigestAlgorithms.cItems)
             return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_DIGEST_ALGO_NOT_FOUND_IN_LIST,
-                                 "SignedData.SignerInfos[%u].DigestAlgorithm (%s) not found in SignedData.DigestAlgorithms",
-                                 i, pSignerInfo->DigestAlgorithm.Algorithm.szObjId);
+                                 "%s: SignedData.SignerInfos[%u].DigestAlgorithm (%s) not found in SignedData.DigestAlgorithms",
+                                 pszErrorTag, i, pSignerInfo->DigestAlgorithm.Algorithm.szObjId);
 
         /* Digest encryption algorithm. */
 #if 0  /** @todo Unimportant: Seen timestamp signatures specifying pkcs1-Sha256WithRsaEncryption in SignerInfo and just RSA in the certificate.  Figure out how to compare the two. */
@@ -162,35 +165,35 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                 if (RTAsn1ObjId_CompareWithString(&pAttrib->Type, RTCR_PKCS9_ID_CONTENT_TYPE_OID) == 0)
                 {
                     if (fFoundContentInfo)
-                        return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_MISSING_CONTENT_TYPE_ATTRIB,
-                                            "Multiple authenticated content-type attributes.");
+                        return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MISSING_CONTENT_TYPE_ATTRIB,
+                                             "%s: Multiple authenticated content-type attributes.", pszErrorTag);
                     fFoundContentInfo = true;
                     AssertReturn(pAttrib->enmType == RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS, VERR_INTERNAL_ERROR_3);
                     if (pAttrib->uValues.pObjIds->cItems != 1)
                         return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_BAD_CONTENT_TYPE_ATTRIB,
-                                             "Expected exactly one value for content-type attrib, found: %u",
-                                             pAttrib->uValues.pObjIds->cItems);
+                                             "%s: Expected exactly one value for content-type attrib, found: %u",
+                                             pszErrorTag, pAttrib->uValues.pObjIds->cItems);
                 }
                 else if (RTAsn1ObjId_CompareWithString(&pAttrib->Type, RTCR_PKCS9_ID_MESSAGE_DIGEST_OID) == 0)
                 {
                     if (fFoundMessageDigest)
-                        return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_MISSING_MESSAGE_DIGEST_ATTRIB,
-                                            "Multiple authenticated message-digest attributes.");
+                        return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MISSING_MESSAGE_DIGEST_ATTRIB,
+                                             "%s: Multiple authenticated message-digest attributes.", pszErrorTag);
                     fFoundMessageDigest = true;
                     AssertReturn(pAttrib->enmType == RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS, VERR_INTERNAL_ERROR_3);
                     if (pAttrib->uValues.pOctetStrings->cItems != 1)
                         return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_BAD_CONTENT_TYPE_ATTRIB,
-                                             "Expected exactly one value for message-digest attrib, found: %u",
-                                             pAttrib->uValues.pOctetStrings->cItems);
+                                             "%s: Expected exactly one value for message-digest attrib, found: %u",
+                                             pszErrorTag, pAttrib->uValues.pOctetStrings->cItems);
                 }
             }
 
             if (!fFoundContentInfo)
-                return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_MISSING_CONTENT_TYPE_ATTRIB,
-                                    "Missing authenticated content-type attribute.");
+                return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MISSING_CONTENT_TYPE_ATTRIB,
+                                     "%s: Missing authenticated content-type attribute.", pszErrorTag);
             if (!fFoundMessageDigest)
-                return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_MISSING_MESSAGE_DIGEST_ATTRIB,
-                                    "Missing authenticated message-digest attribute.");
+                return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MISSING_MESSAGE_DIGEST_ATTRIB,
+                                     "%s: Missing authenticated message-digest attribute.", pszErrorTag);
         }
     }
 

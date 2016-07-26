@@ -66,6 +66,7 @@ RT_DECL_DATA_CONST(RTASN1COREVTABLE const) g_RTAsn1Null_Vtable =
 
 RTDECL(int) RTAsn1Null_Init(PRTASN1NULL pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     return RTAsn1Core_InitEx(&pThis->Asn1Core, ASN1_TAG_NULL, ASN1_TAGCLASS_UNIVERSAL | ASN1_TAGFLAG_PRIMITIVE,
                              &g_RTAsn1Null_Vtable, RTASN1CORE_F_PRESENT | RTASN1CORE_F_PRIMITE_TAG_STRUCT);
 }
@@ -73,7 +74,7 @@ RTDECL(int) RTAsn1Null_Init(PRTASN1NULL pThis, PCRTASN1ALLOCATORVTABLE pAllocato
 
 RTDECL(int) RTAsn1Null_Clone(PRTASN1NULL pThis, PCRTASN1NULL pSrc, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
-    AssertPtr(pSrc); AssertPtr(pThis); AssertPtr(pAllocator);
+    AssertPtr(pSrc); AssertPtr(pThis); AssertPtr(pAllocator); RT_NOREF_PV(pAllocator);
     RT_ZERO(*pThis);
     if (RTAsn1Null_IsPresent(pSrc))
     {
@@ -101,6 +102,7 @@ RTDECL(void) RTAsn1Null_Delete(PRTASN1NULL pThis)
 
 RTDECL(int) RTAsn1Null_Enum(PRTASN1NULL pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pfnCallback); RT_NOREF_PV(uDepth); RT_NOREF_PV(pvUser);
     Assert(pThis && (!RTAsn1Null_IsPresent(pThis) || pThis->Asn1Core.pOps == &g_RTAsn1Null_Vtable));
 
     /* No children to enumerate. */
@@ -119,6 +121,7 @@ RTDECL(int) RTAsn1Null_Compare(PCRTASN1NULL pLeft, PCRTASN1NULL pRight)
 
 RTDECL(int) RTAsn1Null_CheckSanity(PCRTASN1NULL pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
     if (RT_UNLIKELY(!RTAsn1Null_IsPresent(pThis)))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (NULL).", pszErrorTag);
     return VINF_SUCCESS;

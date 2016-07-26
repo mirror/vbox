@@ -37,48 +37,59 @@
 
 RTDECL(int) RTCdromOpen(const char *psz, uint32_t fFlags, PRTCDROM phCdrom)
 {
+    RT_NOREF_PV(psz); RT_NOREF_PV(fFlags); RT_NOREF_PV(phCdrom);
     return VERR_NOT_IMPLEMENTED;
 }
 
 
 RTDECL(uint32_t) RTCdromRetain(RTCDROM hCdrom)
 {
+    RT_NOREF_PV(hCdrom);
     AssertFailedReturn(UINT32_MAX);
 }
 
 
 RTDECL(uint32_t)    RTCdromRelease(RTCDROM hCdrom)
 {
+    RT_NOREF_PV(hCdrom);
     AssertFailedReturn(UINT32_MAX);
 }
 
 
 RTDECL(int) RTCdromQueryMountPoint(RTCDROM hCdrom, char *pszMountPoint, size_t cbMountPoint)
 {
+    RT_NOREF_PV(hCdrom);
+    RT_NOREF_PV(pszMountPoint);
+    RT_NOREF_PV(cbMountPoint);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 
 RTDECL(int)         RTCdromUnmount(RTCDROM hCdrom)
 {
+    RT_NOREF_PV(hCdrom);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 
 RTDECL(int)         RTCdromEject(RTCDROM hCdrom, bool fForce)
 {
+    RT_NOREF_PV(hCdrom);
+    RT_NOREF_PV(fForce);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 
 RTDECL(int)         RTCdromLock(RTCDROM hCdrom)
 {
+    RT_NOREF_PV(hCdrom);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 
 RTDECL(int)         RTCdromUnlock(RTCDROM hCdrom)
 {
+    RT_NOREF_PV(hCdrom);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -90,6 +101,7 @@ RTDECL(unsigned)    RTCdromCount(void)
 
 RTDECL(int)         RTCdromOrdinalToName(unsigned iCdrom, char *pszName, size_t cbName)
 {
+    RT_NOREF_PV(iCdrom);
     if (cbName)
         *pszName = '\0';
     return VERR_OUT_OF_RANGE;
@@ -98,6 +110,9 @@ RTDECL(int)         RTCdromOrdinalToName(unsigned iCdrom, char *pszName, size_t 
 
 RTDECL(int)         RTCdromOpenByOrdinal(unsigned iCdrom, uint32_t fFlags, PRTCDROM phCdrom)
 {
+    RT_NOREF_PV(iCdrom);
+    RT_NOREF_PV(fFlags);
+    RT_NOREF_PV(phCdrom);
     return VERR_OUT_OF_RANGE;
 }
 

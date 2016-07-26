@@ -44,6 +44,7 @@ RTDECL(int) RTAsn1Core_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRTASN
         pThis->pOps = &g_RTAsn1Core_Vtable;
         return VINF_SUCCESS;
     }
+    RT_NOREF_PV(fFlags);
     RT_ZERO(*pThis);
     return rc;
 }

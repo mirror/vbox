@@ -431,9 +431,7 @@ DECLINLINE(void) rtJsonTokenizerSkipWhitespace(PRTJSONTOKENIZER pTokenizer)
 
         if (   !rtJsonTokenizerIsEos(pTokenizer)
             && !rtJsonTokenizerIsSkipNewLine(pTokenizer))
-        {
             break; /* Skipped everything, next is some real content. */
-        }
     }
 }
 
@@ -722,7 +720,7 @@ static int rtJsonTokenizerInit(PRTJSONTOKENIZER pTokenizer, PFNRTJSONTOKENIZERRE
  */
 static void rtJsonTokenizerDestroy(PRTJSONTOKENIZER pTokenizer)
 {
-
+    RT_NOREF_PV(pTokenizer);
 }
 
 /**
@@ -1141,11 +1139,12 @@ static DECLCALLBACK(int) rtJsonTokenizerParseFromFile(void *pvUser, size_t offIn
                                                       void *pvBuf, size_t cbBuf,
                                                       size_t *pcbRead)
 {
-    int rc = VINF_SUCCESS;
     PRTJSONREADERARGS pArgs = (PRTJSONREADERARGS)pvUser;
-    size_t cbRead = 0;
 
-    rc = RTStrmReadEx(pArgs->u.hStream, pvBuf, cbBuf, &cbRead);
+    RT_NOREF_PV(offInput);
+
+    size_t cbRead = 0;
+    int rc = RTStrmReadEx(pArgs->u.hStream, pvBuf, cbBuf, &cbRead);
     if (RT_SUCCESS(rc))
         *pcbRead = cbRead;
 
@@ -1159,14 +1158,12 @@ RTDECL(int) RTJsonParseFromBuf(PRTJSONVAL phJsonVal, const uint8_t *pbBuf, size_
     AssertPtrReturn(pbBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf > 0, VERR_INVALID_PARAMETER);
 
-    int rc = VINF_SUCCESS;
-    RTJSONREADERARGS Args;
     RTJSONTOKENIZER Tokenizer;
-
+    RTJSONREADERARGS Args;
     Args.cbData  = cbBuf;
     Args.u.pbBuf = pbBuf;
 
-    rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromBuf, &Args);
+    int rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromBuf, &Args);
     if (RT_SUCCESS(rc))
     {
         rc = rtJsonParse(&Tokenizer, phJsonVal, pErrInfo);
@@ -1181,10 +1178,8 @@ RTDECL(int) RTJsonParseFromString(PRTJSONVAL phJsonVal, const char *pszStr, PRTE
     AssertPtrReturn(phJsonVal, VERR_INVALID_POINTER);
     AssertPtrReturn(pszStr, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
     RTJSONTOKENIZER Tokenizer;
-
-    rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromString, (void *)pszStr);
+    int rc = rtJsonTokenizerInit(&Tokenizer, rtJsonTokenizerParseFromString, (void *)pszStr);
     if (RT_SUCCESS(rc))
     {
         rc = rtJsonParse(&Tokenizer, phJsonVal, pErrInfo);

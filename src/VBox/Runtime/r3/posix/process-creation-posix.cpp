@@ -313,6 +313,8 @@ static int rtProcPosixAdjustProfileEnvFromChild(RTENV hEnvToUse, uint32_t fFlags
         else
             rc = VERR_BUFFER_OVERFLOW;
     }
+#else
+    RT_NOREF_PV(hEnvToUse); RT_NOREF_PV(fFlags); RT_NOREF_PV(hEnv);
 #endif
     return rc;
 }

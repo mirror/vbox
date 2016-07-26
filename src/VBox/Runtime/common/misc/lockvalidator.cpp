@@ -3060,7 +3060,7 @@ RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hTh
 
     if (pRecU->Excl.hThread == hThreadSelf)
     {
-        Assert(!fFirstRecursion);
+        Assert(!fFirstRecursion); RT_NOREF_PV(fFirstRecursion);
         pRecU->Excl.cRecursion++;
         rtLockValidatorStackPushRecursion(hThreadSelf, pRecU, pSrcPos);
     }
@@ -3097,7 +3097,7 @@ static void  rtLockValidatorRecExclReleaseOwnerUnchecked(PRTLOCKVALRECUNION pRec
     else
     {
         Assert(c < UINT32_C(0xffff0000));
-        Assert(!fFinalRecursion);
+        Assert(!fFinalRecursion); RT_NOREF_PV(fFinalRecursion);
         rtLockValidatorStackPopRecursion(pThread, pRec);
     }
 }

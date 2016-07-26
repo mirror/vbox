@@ -333,6 +333,8 @@ RTDECL(int) RTCrPemParseContent(void const *pvContent, size_t cbContent, uint32_
                                 PCRTCRPEMMARKER paMarkers, size_t cMarkers,
                                 PCRTCRPEMSECTION *ppSectionHead, PRTERRINFO pErrInfo)
 {
+    RT_NOREF_PV(pErrInfo);
+
     /*
      * Input validation.
      */

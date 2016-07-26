@@ -205,6 +205,7 @@ RT_DECL_DATA_CONST(RTASN1COREVTABLE const) g_RTAsn1Core_Vtable =
 
 RTDECL(int) RTAsn1Core_Init(PRTASN1CORE pThis, PCRTASN1ALLOCATORVTABLE pAllocator)
 {
+    RT_NOREF_PV(pAllocator);
     return RTAsn1Core_InitEx(pThis, 0, ASN1_TAGCLASS_CONTEXT | ASN1_TAGFLAG_PRIMITIVE,
                              &g_RTAsn1Core_Vtable, RTASN1CORE_F_PRESENT);
 }
@@ -261,6 +262,8 @@ RTDECL(int) RTAsn1Core_Compare(PCRTASN1CORE pLeft, PCRTASN1CORE pRight)
 
 RTDECL(int) RTAsn1Core_CheckSanity(PCRTASN1CORE pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
+    RT_NOREF_PV(fFlags);
+
     /* We can only check that it's present. */
     if (!RTAsn1Core_IsPresent(pThis))
         return RTErrInfoSetF(pErrInfo, VERR_ASN1_NOT_PRESENT, "%s: Missing (RTASN1CORE).", pszErrorTag);

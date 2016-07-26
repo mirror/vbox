@@ -47,6 +47,8 @@ static int rtCrSpcSerializedObject_DecodeMore(PRTASN1CURSOR pCursor, uint32_t fF
                                               PRTCRSPCSERIALIZEDOBJECT pThis, const char *pszErrorTag)
 
 {
+    RT_NOREF_PV(fFlags); RT_NOREF_PV(pszErrorTag);
+
     int rc;
     RTASN1CURSOR SubCursor;
     if (RTUuidCompareStr(pThis->Uuid.Asn1Core.uData.pUuid, RTCRSPCSERIALIZEDOBJECT_UUID_STR) == 0)

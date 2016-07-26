@@ -599,7 +599,8 @@ static int rtkldrEnumDbgInfoWrapper(PKLDRMOD pMod, KU32 iDbgInfo, KLDRDBGINFOTYP
                                     const char *pszExtFile, void *pvUser)
 {
     PRTLDRMODKLDRARGS pArgs = (PRTLDRMODKLDRARGS)pvUser;
-    NOREF(pMod);
+    RT_NOREF_PV(pMod); RT_NOREF_PV(iMajorVer); RT_NOREF_PV(iMinorVer);
+
 
     RTLDRDBGINFO DbgInfo;
     RT_ZERO(DbgInfo.u);
@@ -831,6 +832,7 @@ static DECLCALLBACK(int) rtkldr_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR
 static DECLCALLBACK(int) rtkldr_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf)
 {
     PRTLDRMODKLDR   pThis = (PRTLDRMODKLDR)pMod;
+    RT_NOREF_PV(iDbgInfo);
     /** @todo May have to apply fixups here. */
     return pThis->Core.pReader->pfnRead(pThis->Core.pReader, pvBuf, cb, off);
 }
@@ -849,11 +851,15 @@ static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmP
             if (rc == KLDR_ERR_NO_IMAGE_UUID)
                 return VERR_NOT_FOUND;
             AssertReturn(rc == 0, VERR_INVALID_PARAMETER);
+            cbBuf = RT_MIN(cbBuf, sizeof(RTUUID));
             break;
 
         default:
+            RT_NOREF_PV(pvBits);
             return VERR_NOT_FOUND;
     }
+    if (pcbRet)
+        *pcbRet = cbBuf;
     return VINF_SUCCESS;
 }
 
@@ -900,6 +906,8 @@ static const RTLDROPS g_rtkldrOps =
  */
 int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
 {
+    RT_NOREF_PV(pErrInfo);
+
     /* Convert enmArch to k-speak. */
     KCPUARCH enmCpuArch;
     switch (enmArch)

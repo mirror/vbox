@@ -1980,6 +1980,7 @@ DECLHIDDEN(int) rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCI
     return rc;
 
 #else  /* !RT_OS_WINDOWS */
+    RT_NOREF_PV(fEvents);
     *phNative = (RTHCUINTPTR)pThis->hNative;
     return VINF_SUCCESS;
 #endif /* !RT_OS_WINDOWS */

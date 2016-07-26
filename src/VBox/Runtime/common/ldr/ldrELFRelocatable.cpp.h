@@ -1019,6 +1019,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
                                                     PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    RT_NOREF_PV(pvBits);
 
     /*
      * Map the image bits if not already done and setup pointer into it.
@@ -1289,6 +1290,8 @@ static DECLCALLBACK(int) RTLDRELF_NAME(RvaToSegOffset)(PRTLDRMODINTERNAL pMod, R
 static DECLCALLBACK(int) RTLDRELF_NAME(GetImportStubCallback)(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol,
                                                               unsigned uSymbol, PRTLDRADDR pValue, void *pvUser)
 {
+    RT_NOREF_PV(hLdrMod); RT_NOREF_PV(pszModule); RT_NOREF_PV(pszSymbol);
+    RT_NOREF_PV(uSymbol); RT_NOREF_PV(pValue); RT_NOREF_PV(pvUser);
     return VERR_SYMBOL_NOT_FOUND;
 }
 
@@ -1743,6 +1746,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
 {
     const char *pszLogName = pReader->pfnLogName(pReader);
     RTFOFF      cbRawImage = pReader->pfnSize(pReader);
+    RT_NOREF_PV(fFlags);
 
     /*
      * Create the loader module instance.
