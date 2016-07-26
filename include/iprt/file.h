@@ -678,15 +678,15 @@ RTDECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRenam
  * Converts file opening modes (used by fopen, for example) to IPRT
  * compatible flags, which then can be used with RTFileOpen* APIs.
  *
- * Note: Handling sharing modes is not supported yet, so RTFILE_O_DENY_NONE
- *       will be used by default.
+ * @note    Handling sharing modes is not supported yet, so RTFILE_O_DENY_NONE
+ *          will always be used.
  *
  * @return  IPRT status code.
  * @param   pszMode                 Mode string to convert.
- * @param   puMode                  Where to store the converted mode flags
- *                                  on success.
+ * @param   pfMode                  Where to store the converted mode flags on
+ *                                  success.
  */
-RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode);
+RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *pfMode);
 
 /**
  * Converts file opening modes along with a separate disposition command
@@ -708,19 +708,18 @@ RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode);
  *      "oe" - Opens an existing file or fail if it does not exist.
  *      "ot" - Opens and truncate an existing file or fail if it does not exist.
  *
- * Sharing modes:
- *      Not implemented yet. RTFILE_O_DENY_NONE will be
- *      used by default.
+ * @note    Sharing modes are not implemented yet, so RTFILE_O_DENY_NONE will
+ *          always be used.
  *
  * @return  IPRT status code.
  * @param   pszAccess               Access mode string to convert.
  * @param   pszDisposition          Disposition mode string to convert.
- * @param   pszSharing              Sharing mode string to convert. Not
- *                                  implemented yet.
- * @param   puMode                  Where to store the converted mode flags
+ * @param   pszSharing              Sharing mode string to convert.  Not
+ *                                  implemented yet - completely ignored!
+ * @param   pfMode                  Where to store the converted mode flags
  *                                  on success.
  */
-RTDECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposition, const char *pszSharing, uint64_t *puMode);
+RTDECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposition, const char *pszSharing, uint64_t *pfMode);
 
 /**
  * Moves a file.
