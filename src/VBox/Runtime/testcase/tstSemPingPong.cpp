@@ -49,6 +49,8 @@ static volatile uint32_t g_cErrors = 0;
 
 static DECLCALLBACK(int) tstSemPingPongThread(RTTHREAD hThread, void *pvPP)
 {
+    RT_NOREF_PV(hThread);
+
     int rc;
     PRTPINGPONG pPP = (PRTPINGPONG)pvPP;
     for (uint32_t i = 0; i < TSTSEMPINGPONG_ITERATIONS; i++)

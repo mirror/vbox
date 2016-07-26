@@ -41,6 +41,8 @@ static RTTEST g_hTest;
 
 static DECLCALLBACK(int) test3Server(RTSOCKET hSocket, void *pvUser)
 {
+    RT_NOREF_PV(pvUser);
+
     RTTestSetDefault(g_hTest, NULL);
     char szBuf[4096];
 
@@ -113,6 +115,8 @@ void test3()
 
 static DECLCALLBACK(int) test2Server(RTSOCKET hSocket, void *pvUser)
 {
+    RT_NOREF_PV(pvUser);
+
     RTTestSetDefault(g_hTest, NULL);
     char szBuf[512];
 

@@ -52,6 +52,8 @@ static RTSEMXROADS          g_hXRoads;
 
 static int tstTrafficThreadCommon(uintptr_t iThread, bool fNS)
 {
+    RT_NOREF_PV(iThread);
+
     for (uint32_t iLoop = 0; RTTimeMilliTS() - g_u64StartMilliTS < g_cSecs*1000; iLoop++)
     {
         /* fudge */
@@ -79,6 +81,8 @@ static int tstTrafficThreadCommon(uintptr_t iThread, bool fNS)
 
 static DECLCALLBACK(int) tstTrafficNSThread(RTTHREAD hSelf, void *pvUser)
 {
+    RT_NOREF_PV(hSelf);
+
     uintptr_t iThread = (uintptr_t)pvUser;
     return tstTrafficThreadCommon(iThread, true);
 }
@@ -86,6 +90,8 @@ static DECLCALLBACK(int) tstTrafficNSThread(RTTHREAD hSelf, void *pvUser)
 
 static DECLCALLBACK(int) tstTrafficEWThread(RTTHREAD hSelf, void *pvUser)
 {
+    RT_NOREF_PV(hSelf);
+
     uintptr_t iThread = (uintptr_t)pvUser;
     return tstTrafficThreadCommon(iThread, false);
 }

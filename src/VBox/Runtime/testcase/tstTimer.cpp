@@ -52,6 +52,8 @@ static uint32_t cFrequency[200];
 
 static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
+    RT_NOREF_PV(pTimer); RT_NOREF_PV(pvUser); RT_NOREF_PV(iTick);
+
     gcTicks++;
 
     const uint64_t u64Now = RTTimeNanoTS();

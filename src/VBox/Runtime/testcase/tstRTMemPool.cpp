@@ -219,6 +219,8 @@ static DECLCALLBACK(int) tst4Thread(RTTHREAD hSelf, void *pvArg)
 {
 //    uint32_t    iThread  = (uint32_t)(uintptr_t)pvArg;
     RTMEMPOOL   hMemPool = g_hMemPool4;
+    RT_NOREF_PV(pvArg);
+
 
     /* setup. */
     RTTestSetDefault(g_hTest, NULL);

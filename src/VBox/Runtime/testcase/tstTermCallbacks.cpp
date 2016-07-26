@@ -45,6 +45,7 @@ static uint32_t g_fCalled;
 
 static DECLCALLBACK(void) tstTermCallback0(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
 {
+    RT_NOREF_PV(enmReason); RT_NOREF_PV(iStatus);
     RTTESTI_CHECK(pvUser == (void *)0);
     g_cCalls++;
     g_fCalled |= RT_BIT_32(0);
@@ -53,6 +54,7 @@ static DECLCALLBACK(void) tstTermCallback0(RTTERMREASON enmReason, int32_t iStat
 
 static DECLCALLBACK(void) tstTermCallback1(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
 {
+    RT_NOREF_PV(enmReason); RT_NOREF_PV(iStatus);
     RTTESTI_CHECK(pvUser == (void *)1);
     g_cCalls++;
     g_fCalled |= RT_BIT_32(1);
@@ -61,6 +63,7 @@ static DECLCALLBACK(void) tstTermCallback1(RTTERMREASON enmReason, int32_t iStat
 
 static DECLCALLBACK(void) tstTermCallback2(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
 {
+    RT_NOREF_PV(enmReason); RT_NOREF_PV(iStatus);
     RTTESTI_CHECK(pvUser == (void *)2);
     g_cCalls++;
     g_fCalled |= RT_BIT_32(2);
@@ -69,13 +72,14 @@ static DECLCALLBACK(void) tstTermCallback2(RTTERMREASON enmReason, int32_t iStat
 
 static DECLCALLBACK(void) tstTermCallback3(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
 {
+    RT_NOREF_PV(enmReason); RT_NOREF_PV(iStatus);
     RTTESTI_CHECK(pvUser == (void *)3);
     g_cCalls++;
     g_fCalled |= RT_BIT_32(3);
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
     RTTEST hTest;
     int rc = RTTestInitAndCreate("tstTermCallback", &hTest);

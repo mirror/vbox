@@ -64,6 +64,7 @@ void PrintResult(uint64_t u64Ticks, uint64_t u64MaxTicks, uint64_t u64MinTicks, 
     //RTTestValueF(g_hTest, u64MinTicks,                  RTTESTUNIT_NONE, "%s min ticks", pszOperation);
     RTTestValueF(g_hTest, u64Ticks / (uint64_t)cTimes,  RTTESTUNIT_NONE, "%s avg ticks", pszOperation);
     //RTTestValueF(g_hTest, u64MaxTicks,                  RTTESTUNIT_NONE, "%s max ticks", pszOperation);
+    RT_NOREF_PV(u64MaxTicks); RT_NOREF_PV(u64MinTicks);
 }
 
 # define ITERATE(preexpr, expr, postexpr, cIterations) \

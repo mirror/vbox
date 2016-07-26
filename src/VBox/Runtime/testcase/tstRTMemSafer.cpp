@@ -43,6 +43,8 @@
 
 static void doMemSaferScramble(RTTEST hTest, void *pvBuf, size_t cbAlloc)
 {
+    RT_NOREF_PV(hTest);
+
     /*
      * Fill it with random bytes and make a reference copy of these.
      */

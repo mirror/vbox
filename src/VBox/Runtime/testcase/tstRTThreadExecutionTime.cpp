@@ -46,6 +46,8 @@ static volatile uint64_t g_kernel, g_user;
 
 static DECLCALLBACK(int) testThread(RTTHREAD hSelf, void *pvUser)
 {
+    RT_NOREF_PV(hSelf); RT_NOREF_PV(pvUser);
+
     uint64_t u64Now = RTTimeMilliTS();
     uint64_t kernel, kernelStart, user, userStart;
     RTThreadGetExecutionTimeMilli(&kernelStart, &userStart);

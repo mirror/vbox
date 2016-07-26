@@ -72,6 +72,8 @@ static void tstRTProcQueryUsername(void)
 
 int main(int argc, char **argv)
 {
+    RT_NOREF_PV(argc); RT_NOREF_PV(argv);
+
     /*
      * Initialize IPRT and create the test.
      */

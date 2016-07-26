@@ -137,6 +137,8 @@ static DECLCALLBACK(int) testServerListenThread(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) tstRTLocalIpcSessionConnectionChild(RTTHREAD hSelf, void *pvUser)
 {
     RTLOCALIPCSESSION hClientSession;
+    RT_NOREF_PV(hSelf); RT_NOREF_PV(pvUser);
+
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTTestSetDefault(g_hTest, NULL), rcCheck);
 
     RTTEST_CHECK_RC_RET(g_hTest, RTLocalIpcSessionConnect(&hClientSession, "tstRTLocalIpcSessionConnection",0 /* Flags */),
@@ -268,6 +270,7 @@ static DECLCALLBACK(int) testSessionWaitThread(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) tstRTLocalIpcSessionWaitChild(RTTHREAD hSelf, void *pvUser)
 {
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTTestSetDefault(g_hTest, NULL), rcCheck);
+    RT_NOREF_PV(hSelf); RT_NOREF_PV(pvUser);
 
     RTLOCALIPCSESSION hClientSession;
     RTTESTI_CHECK_RC_RET(RTLocalIpcSessionConnect(&hClientSession, "tstRTLocalIpcSessionWait", 0 /*fFlags*/),
@@ -563,6 +566,7 @@ static DECLCALLBACK(int) testSessionDataThread(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) tstRTLocalIpcSessionDataChild(RTTHREAD hSelf, void *pvUser)
 {
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTTestSetDefault(g_hTest, NULL), rcCheck);
+    RT_NOREF_PV(hSelf); RT_NOREF_PV(pvUser);
 
     /*
      * Connect.
@@ -756,6 +760,7 @@ static DECLCALLBACK(int) testSessionPerfThread(RTTHREAD hSelf, void *pvUser)
 static DECLCALLBACK(int) tstRTLocalIpcSessionPerfChild(RTTHREAD hSelf, void *pvUser)
 {
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTTestSetDefault(g_hTest, NULL), rcCheck);
+    RT_NOREF_PV(hSelf); RT_NOREF_PV(pvUser);
 
     /*
      * Connect.

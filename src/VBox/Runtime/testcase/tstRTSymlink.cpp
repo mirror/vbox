@@ -143,12 +143,10 @@ static void test1(RTTEST hTest, const char *pszBaseDir)
     RTTestISub("Negative RTSymlinkRead, Exists & IsDangling");
     char szExecDir[RTPATH_MAX];
     RTTESTI_CHECK_RC_OK_RETV(RTPathExecDir(szExecDir, sizeof(szExecDir)));
-    size_t cchExecDir = strlen(szExecDir);
     RTTESTI_CHECK(RTDirExists(szExecDir));
 
     char szExecFile[RTPATH_MAX];
     RTTESTI_CHECK_RETV(RTProcGetExecutablePath(szExecFile, sizeof(szExecFile)) != NULL);
-    size_t cchExecFile = strlen(szExecFile);
     RTTESTI_CHECK(RTFileExists(szExecFile));
 
     RTTESTI_CHECK(!RTSymlinkExists(szExecFile));
@@ -186,7 +184,7 @@ static void test1(RTTEST hTest, const char *pszBaseDir)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
     RTTEST hTest;
     int rc = RTTestInitAndCreate("tstRTSymlink", &hTest);

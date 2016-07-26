@@ -43,9 +43,9 @@ static void tst1(void)
     void *pvBuf;
     size_t cbSize;
 
-    char pcTestPattern1[] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9 };
-    char pcTestPattern2[] = { 0x8, 0x9, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9 };
-    char pcTestPattern3[] = { 0x5, 0x6, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7 };
+    char achTestPattern1[] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9 };
+//    char achTestPattern2[] = { 0x8, 0x9, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9 };
+//    char achTestPattern3[] = { 0x5, 0x6, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7 };
 
     /* Create */
     RTTestISub("Creation");
@@ -58,17 +58,17 @@ static void tst1(void)
     RTTestISub("Full write");
     RTCircBufAcquireWriteBlock(pBuf, 10, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 10);
-    memcpy(pvBuf, pcTestPattern1, 10);
+    memcpy(pvBuf, achTestPattern1, 10);
     RTCircBufReleaseWriteBlock(pBuf, 10);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 0);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 10);
-//    RTTESTI_CHECK(memcmp(pBuf->pvBuf, pcTestPattern1, 10) == 0); /* Check the internal state */
+//    RTTESTI_CHECK(memcmp(pBuf->pvBuf, achTestPattern1, 10) == 0); /* Check the internal state */
 
     /* Half read */
     RTTestISub("Half read");
     RTCircBufAcquireReadBlock(pBuf, 5, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 5);
-    RTTESTI_CHECK(memcmp(pvBuf, pcTestPattern1, 5) == 0);
+    RTTESTI_CHECK(memcmp(pvBuf, achTestPattern1, 5) == 0);
     RTCircBufReleaseReadBlock(pBuf, 5);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 5);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 5);
@@ -77,24 +77,24 @@ static void tst1(void)
     RTTestISub("Sub write");
     RTCircBufAcquireWriteBlock(pBuf, 2, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 2);
-    memcpy(pvBuf, &pcTestPattern1[8], 2);
+    memcpy(pvBuf, &achTestPattern1[8], 2);
     RTCircBufReleaseWriteBlock(pBuf, 2);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 3);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 7);
-//    RTTESTI_CHECK(memcmp(pBuf->pvBuf, pcTestPattern2, 10) == 0); /* Check the internal state */
+//    RTTESTI_CHECK(memcmp(pBuf->pvBuf, achTestPattern2, 10) == 0); /* Check the internal state */
 
     /* Split tests */
     /* Split read */
     RTTestISub("Split read");
     RTCircBufAcquireReadBlock(pBuf, 7, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 5);
-    RTTESTI_CHECK(memcmp(pvBuf, &pcTestPattern1[5], 5) == 0);
+    RTTESTI_CHECK(memcmp(pvBuf, &achTestPattern1[5], 5) == 0);
     RTCircBufReleaseReadBlock(pBuf, 5);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 8);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 2);
     RTCircBufAcquireReadBlock(pBuf, 2, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 2);
-    RTTESTI_CHECK(memcmp(pvBuf, &pcTestPattern1[8], 2) == 0);
+    RTTESTI_CHECK(memcmp(pvBuf, &achTestPattern1[8], 2) == 0);
     RTCircBufReleaseReadBlock(pBuf, 2);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 10);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 0);
@@ -103,17 +103,17 @@ static void tst1(void)
     RTTestISub("Split write");
     RTCircBufAcquireWriteBlock(pBuf, 10, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 8);
-    memcpy(pvBuf, pcTestPattern1, 8);
+    memcpy(pvBuf, achTestPattern1, 8);
     RTCircBufReleaseWriteBlock(pBuf, 8);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 2);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 8);
     RTCircBufAcquireWriteBlock(pBuf, 2, &pvBuf, &cbSize);
     RTTESTI_CHECK(cbSize == 2);
-    memcpy(pvBuf, &pcTestPattern1[5], 2);
+    memcpy(pvBuf, &achTestPattern1[5], 2);
     RTCircBufReleaseWriteBlock(pBuf, 2);
     RTTESTI_CHECK(RTCircBufFree(pBuf) == 0);
     RTTESTI_CHECK(RTCircBufUsed(pBuf) == 10);
-//    RTTESTI_CHECK(memcmp(pBuf->pvBuf, pcTestPattern3, 10) == 0); /* Check the internal state */
+//    RTTESTI_CHECK(memcmp(pBuf->pvBuf, achTestPattern3, 10) == 0); /* Check the internal state */
 
     /* Destroy */
     RTCircBufDestroy(pBuf);

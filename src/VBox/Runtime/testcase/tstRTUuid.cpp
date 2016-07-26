@@ -36,7 +36,7 @@
 #include <iprt/initterm.h>
 
 
-int main(int argc, char **argv)
+int main()
 {
     RTTEST hTest;
     int rc = RTTestInitAndCreate("tstRTUuid", &hTest);

@@ -48,6 +48,8 @@ static volatile uint64_t gu64Prev;
 
 static DECLCALLBACK(void) TimerLRCallback(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 {
+    RT_NOREF_PV(hTimerLR); RT_NOREF_PV(pvUser); RT_NOREF_PV(iTick);
+
     gcTicks++;
 
     const uint64_t u64Now = RTTimeNanoTS();

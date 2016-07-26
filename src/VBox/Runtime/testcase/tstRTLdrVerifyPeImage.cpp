@@ -45,6 +45,8 @@ static DECLCALLBACK(int) TestCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSi
                                       void const *pvSignature, size_t cbSignature,
                                       PRTERRINFO pErrInfo, void *pvUser)
 {
+    RT_NOREF_PV(hLdrMod); RT_NOREF_PV(enmSignature); RT_NOREF_PV(pvSignature); RT_NOREF_PV(cbSignature);
+    RT_NOREF_PV(pErrInfo); RT_NOREF_PV(pvUser);
     return VINF_SUCCESS;
 }
 

@@ -45,6 +45,9 @@ static void test1Hlp1(const char *pszExpect, const char *pszFormat, ...)
     RTCString strTst(pszFormat, va);
     va_end(va);
     RTTESTI_CHECK_MSG(strTst.equals(pszExpect),  ("strTst='%s' expected='%s'\n",  strTst.c_str(), pszExpect));
+#else
+    RT_NOREF_PV(pszExpect);
+    RT_NOREF_PV(pszFormat);
 #endif
 }
 

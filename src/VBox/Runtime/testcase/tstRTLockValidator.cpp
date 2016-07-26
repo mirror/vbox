@@ -422,6 +422,7 @@ static DECLCALLBACK(int) testDd1Thread(RTTHREAD ThreadSelf, void *pvUser)
     uintptr_t       i     = (uintptr_t)pvUser;
     PRTCRITSECT     pMine = &g_aCritSects[i];
     PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
+    RT_NOREF_PV(ThreadSelf);
 
     RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
     if (!(i & 1))
@@ -463,6 +464,7 @@ static DECLCALLBACK(int) testDd2Thread(RTTHREAD ThreadSelf, void *pvUser)
     RTSEMRW         hMine = g_ahSemRWs[i];
     RTSEMRW         hNext = g_ahSemRWs[(i + 1) % g_cThreads];
     int             rc;
+    RT_NOREF_PV(ThreadSelf);
 
     if (i & 1)
     {
@@ -519,6 +521,7 @@ static DECLCALLBACK(int) testDd3Thread(RTTHREAD ThreadSelf, void *pvUser)
     RTSEMRW         hMine = g_ahSemRWs[i];
     RTSEMRW         hNext = g_ahSemRWs[(i + 1) % g_cThreads];
     int             rc;
+    RT_NOREF_PV(ThreadSelf);
 
     if (i & 1)
         RTTEST_CHECK_RC_RET(g_hTest, RTSemRWRequestWrite(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
@@ -565,6 +568,7 @@ static DECLCALLBACK(int) testDd4Thread(RTTHREAD ThreadSelf, void *pvUser)
     uintptr_t       i     = (uintptr_t)pvUser;
     RTSEMRW         hMine = g_ahSemRWs[i];
     RTSEMRW         hNext = g_ahSemRWs[(i + 1) % g_cThreads];
+    RT_NOREF_PV(ThreadSelf);
 
     do
     {
@@ -621,6 +625,7 @@ static DECLCALLBACK(int) testDd5Thread(RTTHREAD ThreadSelf, void *pvUser)
     uintptr_t       i     = (uintptr_t)pvUser;
     RTSEMMUTEX      hMine = g_ahSemMtxes[i];
     RTSEMMUTEX      hNext = g_ahSemMtxes[(i + 1) % g_cThreads];
+    RT_NOREF_PV(ThreadSelf);
 
     RTTEST_CHECK_RC_RET(g_hTest, RTSemMutexRequest(hMine, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
     if (i & 1)
@@ -661,6 +666,7 @@ static DECLCALLBACK(int) testDd6Thread(RTTHREAD ThreadSelf, void *pvUser)
     uintptr_t       i     = (uintptr_t)pvUser;
     PRTCRITSECT     pMine = &g_aCritSects[i];
     PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
+    RT_NOREF_PV(ThreadSelf);
 
     RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
     if (i & 1)
@@ -714,6 +720,7 @@ static DECLCALLBACK(int) testDd7Thread(RTTHREAD ThreadSelf, void *pvUser)
     uintptr_t       i     = (uintptr_t)pvUser;
     PRTCRITSECT     pMine = &g_aCritSects[i];
     PRTCRITSECT     pNext = &g_aCritSects[(i + 1) % g_cThreads];
+    RT_NOREF_PV(ThreadSelf);
 
     RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(pMine), VINF_SUCCESS, rcCheck);
     if (i & 1)
