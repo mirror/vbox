@@ -38,6 +38,8 @@ UIInformationView::UIInformationView(QWidget *pParent)
     m_pTextEdit->setVisible(false);
     /* Set selection mode: */
     setSelectionMode(QAbstractItemView::ExtendedSelection);
+    /* Set scrolling mode to per pixel: */
+    setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 }
 
 void UIInformationView::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
