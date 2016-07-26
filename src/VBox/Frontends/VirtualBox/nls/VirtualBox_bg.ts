@@ -112,22 +112,22 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>Драйверът на VirtualBox за Linux ядрото (vboxdrv) или не е зареден, или има проблем с правата на /dev/vboxdrv. Моля, преинсталирайте модула на ядрото, като изпълните&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;като root.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Модулите за ядрото на VirtualBox са несъвместими с тази версия на VirtualBox. Изглежда, че инсталацията на VirtualBox е неуспешна. Изпълнението на&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;може да реши проблема. Уверете се, че не смесвате OSE версията с PUEL версията на VirtualBox.</translation>
     </message>
 </context>
 <context>
     <name>QIArrowButtonPress</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished">&amp;Назад</translation>
+        <translation>На&amp;зад</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Напред</translation>
     </message>
 </context>
 <context>
@@ -142,11 +142,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Детайли</translation>
+        <translation>&amp;Детайли</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished">&amp;Детайли (%1 от %2)</translation>
+        <translation>&amp;Детайли (%1 от %2)</translation>
     </message>
 </context>
 <context>
@@ -584,7 +584,7 @@
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Отворете браузъра и отидете до продуктовия уеб сайт на VirtualBox</translation>
+        <translation>Отваря браузъра и отива в сайта на VirtualBox</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -1486,39 +1486,39 @@
     </message>
     <message>
         <source>&amp;VirtualBox Bug Tracker...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VirtualBox Докладчик за бъгове...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product bug tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Отваря браузъра и отива в докладчика за бъгове на VirtualBox</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Forums...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VirtualBox Форуми...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product forums</source>
-        <translation type="unfinished"></translation>
+        <translation>Отваря браузъра и отива във форумите на VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Oracle Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Oracle уеб сайт...</translation>
     </message>
     <message>
         <source>Open the browser and go to the Oracle web site</source>
-        <translation type="unfinished"></translation>
+        <translation>Отваря браузъра и отива в сайта на Oracle</translation>
     </message>
     <message>
         <source>&amp;Detach GUI</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Разкачване на ГПИ</translation>
     </message>
     <message>
         <source>Detach the GUI from headless VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Разкачва потребителския екран от виртуална машина</translation>
     </message>
     <message>
         <source>Disable Dock Icon Overlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Забраняване покриването на док иконата</translation>
     </message>
 </context>
 <context>
@@ -1737,73 +1737,73 @@
     <name>UIApplianceUnverifiedCertificateViewer</name>
     <message>
         <source>Unverifiable Certificate! Continue?</source>
-        <translation type="unfinished"></translation>
+        <translation>Непроверим сертификат! Продължаване?</translation>
     </message>
     <message>
         <source>&lt;b&gt;The appliance is signed by an unverified self signed certificate issued by &apos;%1&apos;. We recommend to only proceed with the importing if you are sure you should trust this entity.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Това приспособление е подписано с непроверим самоподписан сертификат, издаден от &apos;%1&apos;. Препоръчваме ви да продължите с внасянето, само ако сте сигурни, че можете да се доверите на източника.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;The appliance is signed by an unverified certificate issued to &apos;%1&apos;. We recommend to only proceed with the importing if you are sure you should trust this entity.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Това приспособление е подписано с непроверим сертификат, издаден от &apos;%1&apos;. Препоръчваме ви да продължите с внасянето, само ако сте сигурни, че можете да се доверите на източника.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>True</source>
-        <translation type="unfinished"></translation>
+        <translation>Вярно</translation>
     </message>
     <message>
         <source>False</source>
-        <translation type="unfinished"></translation>
+        <translation>Невярно</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
         <comment>key: value</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>Issuer</source>
-        <translation type="unfinished"></translation>
+        <translation>Издател</translation>
     </message>
     <message>
         <source>Subject</source>
-        <translation type="unfinished"></translation>
+        <translation>Субект</translation>
     </message>
     <message>
         <source>Not Valid Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Невалиден преди</translation>
     </message>
     <message>
         <source>Not Valid After</source>
-        <translation type="unfinished"></translation>
+        <translation>Невалиден след</translation>
     </message>
     <message>
         <source>Serial Number</source>
-        <translation type="unfinished"></translation>
+        <translation>Сериен номер</translation>
     </message>
     <message>
         <source>Self-Signed</source>
-        <translation type="unfinished"></translation>
+        <translation>Самоподписан</translation>
     </message>
     <message>
         <source>Authority (CA)</source>
-        <translation type="unfinished"></translation>
+        <translation>Източник (CA)</translation>
     </message>
     <message>
         <source>Public Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Публичен алгоритъм</translation>
     </message>
     <message>
         <source>%1 (%2)</source>
         <comment>value (clarification)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Алгоритъм за подпис</translation>
     </message>
     <message>
         <source>X.509 Version Number</source>
-        <translation type="unfinished"></translation>
+        <translation>X.509 номер на версия</translation>
     </message>
 </context>
 <context>
@@ -2578,7 +2578,7 @@
     <name>UIEmptyFilePathSelector</name>
     <message>
         <source>Choose...</source>
-        <translation type="unfinished">Избор...</translation>
+        <translation>Избор...</translation>
     </message>
 </context>
 <context>
@@ -2948,55 +2948,55 @@ p, li { white-space: pre-wrap; }
     <name>UIFilePathSelector</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="unfinished">&amp;Копиране</translation>
+        <translation>&amp;Копиране</translation>
     </message>
     <message>
         <source>Other...</source>
-        <translation type="unfinished">Други...</translation>
+        <translation>Други...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Нулиране</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="unfinished">Отваря прозорец за избор на друга папка.</translation>
+        <translation>Отваря прозорец за избор на друга папка.</translation>
     </message>
     <message>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished">Възстановява пътя до папката до стойността по подразбиране.</translation>
+        <translation>Възстановява пътя до папката до стойността по подразбиране.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="unfinished">Отваря прозорец за избор на друг файл.</translation>
+        <translation>Отваря прозорец за избор на друг файл.</translation>
     </message>
     <message>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished">Възстановява пътя до файла до стойността по подразбиране.</translation>
+        <translation>Възстановява пътя до файла до стойността по подразбиране.</translation>
     </message>
     <message>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished">&lt;по подразбиране&gt;</translation>
+        <translation>&lt;по подразбиране&gt;</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="unfinished">Настоящо избраният път по подразбиране ще бъде показан, след като приемете промените и отворите този диалог отново.</translation>
+        <translation>Настоящо избраният път по подразбиране ще бъде показан, след като приемете промените и отворите този диалог отново.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished">&lt;не е избрано&gt;</translation>
+        <translation>&lt;не е избрано&gt;</translation>
     </message>
     <message>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
-        <translation type="unfinished">Моля, използвайте елемента &lt;b&gt;Други...&lt;/b&gt; от падащия списък, за да изберете желания път.</translation>
+        <translation>Моля, използвайте елемента &lt;b&gt;Други...&lt;/b&gt; от падащия списък, за да изберете желания път.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished">Указва пътя до папката.</translation>
+        <translation>Указва пътя до папката.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished">Указва пътя до файла.</translation>
+        <translation>Указва пътя до файла.</translation>
     </message>
 </context>
 <context>
@@ -4545,7 +4545,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 network mask prefix length.</source>
-        <translation type="unfinished"></translation>
+        <translation>Реалният интерфейс &lt;b&gt;%1&lt;/b&gt; текущо няма валидна дължина на префикса на IPv6 мрежова маска.</translation>
     </message>
 </context>
 <context>
@@ -4916,27 +4916,27 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, VirtualBox ще опита да засече настройките на реалната машина за прокси за задачи като изтегляне на Виртуални Добавки от мрежата или проверка за обновления.</translation>
     </message>
     <message>
         <source>&amp;Auto-detect Host Proxy Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Авто-&amp;засичане на настройките за прокси</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use direct Internet connection for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, VirtualBox ще използва директна Интернет връзка за задачи като изтегляне на Виртуални Добавки от мрежата или проверка за обновления.</translation>
     </message>
     <message>
         <source>&amp;Direct Connection to the Internet</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Директна връзка с Интернет</translation>
     </message>
     <message>
         <source>When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, VirtualBox ще използва въведените настройки за прокси за задачи като изтегляне на Виртуални Добавки от мрежата или проверка за обновления.</translation>
     </message>
     <message>
         <source>&amp;Manual Proxy Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ръчна конфигурация на прокси</translation>
     </message>
 </context>
 <context>
@@ -5552,12 +5552,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Реален драйвер</translation>
+        <translation>Реален драйвер</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Контролер</translation>
+        <translation>Контролер</translation>
     </message>
 </context>
 <context>
@@ -5565,57 +5565,57 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">Видео памет</translation>
+        <translation>Видео памет</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished">Екрани</translation>
+        <translation>Екрани</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished">3D ускорение</translation>
+        <translation>3D ускорение</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished">2D видео ускорение</translation>
+        <translation>2D видео ускорение</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт за Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">Отдалечен работен плот</translation>
+        <translation>Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранен</translation>
     </message>
 </context>
 <context>
@@ -5628,12 +5628,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="unfinished">Име</translation>
+        <translation>Име</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished">Вид ОС</translation>
+        <translation>Вид ОС</translation>
     </message>
 </context>
 <context>
@@ -5645,43 +5645,43 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Мостов адаптер, %1</translation>
+        <translation>Мостов адаптер, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Вътрешна мрежа, &apos;%1&apos;</translation>
+        <translation>Вътрешна мрежа, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Адаптер само-хост, &apos;%1&apos;</translation>
+        <translation>Адаптер само-хост, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Основен, &apos;%1&apos;</translation>
+        <translation>Основен, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">NAT мрежа, &apos;%1&apos;</translation>
+        <translation>NAT мрежа, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataNetworkStatistics</name>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished">Предадени данни</translation>
+        <translation>Предадени данни</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished">Получени данни</translation>
+        <translation>Получени данни</translation>
     </message>
     <message>
         <source>Network Statistics</source>
@@ -5699,12 +5699,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Порт %1</translation>
+        <translation>Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранени</translation>
     </message>
 </context>
 <context>
@@ -5717,67 +5717,67 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не са засечени</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не е засечен</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Не е достъпен</translation>
+        <translation>Не е достъпен</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="unfinished">Разделителна способност на екрана</translation>
+        <translation>Разделителна способност на екрана</translation>
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation type="unfinished">Включена от</translation>
+        <translation>Включена от</translation>
     </message>
     <message>
         <source>Clipboard Mode</source>
-        <translation type="unfinished">Режим клипборд</translation>
+        <translation>Режим клипборд</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation type="unfinished">Режим влачене и пускане</translation>
+        <translation>Режим влачене и пускане</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Вместено страниране</translation>
+        <translation>Вместено страниране</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
-        <translation type="unfinished">Неограничено изпълнение</translation>
+        <translation>Неограничено изпълнение</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished">Паравиртуализационен интерфейс</translation>
+        <translation>Паравиртуализационен интерфейс</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished">Виртуални Добавки</translation>
+        <translation>Виртуални Добавки</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Виртуална ОС</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Порт за Отдалечен работен плот</translation>
     </message>
 </context>
 <context>
@@ -5789,7 +5789,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">Порт %1</translation>
+        <translation>Порт %1</translation>
     </message>
 </context>
 <context>
@@ -5802,7 +5802,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Споделени папки</translation>
+        <translation>Споделени папки</translation>
     </message>
 </context>
 <context>
@@ -5813,26 +5813,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="unfinished">(Оптично устройство)</translation>
+        <translation>(Оптично устройство)</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataStorageStatistics</name>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished">DMA трансфери</translation>
+        <translation>DMA трансфери</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished">PIO трансфери</translation>
+        <translation>PIO трансфери</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished">Прочетени данни</translation>
+        <translation>Прочетени данни</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished">Записани данни</translation>
+        <translation>Записани данни</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
@@ -5850,102 +5850,102 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Основна памет</translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation type="unfinished">Процесор(и)</translation>
+        <translation>Процесор(и)</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished">Лимит за изпълнение</translation>
+        <translation>Лимит за изпълнение</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="unfinished">Ред на зареждане</translation>
+        <translation>Ред на зареждане</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished">ACPI</translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished">I/O APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished">PAE/NX</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Вместено страниране</translation>
+        <translation>Вместено страниране</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished">Паравиртуализационен интерфейс</translation>
+        <translation>Паравиртуализационен интерфейс</translation>
     </message>
 </context>
 <context>
@@ -5958,17 +5958,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранено</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">Филтри на устройствата</translation>
+        <translation>Филтри на устройствата</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">%1 (%2 активен)</translation>
+        <translation>%1 (%2 активни)</translation>
     </message>
 </context>
 <context>
@@ -8135,7 +8135,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add NVMe Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавяне на NVMe контролер</translation>
     </message>
 </context>
 <context>
@@ -8855,27 +8855,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този тип съхранение е закачен директно или индиректно, запазва се при правене на снимки.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този тип съхранение е закачен индиректно, промените се заличават при следващото зареждане на виртуалната машина.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този тип съхранение е закачен директно, игнорира се при правене на снимки.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този тип съхранение е закачен директно, позволено е едновременното му използване от няколко машини.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този тип съхранение е закачен директно и може да се използва от няколко машини.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished"></translation>
+        <translation>Този тип съхранение е закачен индиректно, така че едно основно съхранение може да се използва от няколко ВМ, които имат свое различаващо съхранение, на което да запазват собствените си модификации.</translation>
     </message>
 </context>
 <context>
@@ -10715,7 +10715,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to acquire the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Неуспешно създаване на VirtualBoxClient COM обект.&lt;/p&gt;&lt;p&gt;Програмата ще бъде изключена.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10832,7 +10832,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the location of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показва местоположението на виртуалната машина.</translation>
     </message>
 </context>
 <context>
@@ -10943,7 +10943,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Url not found on the server</source>
-        <translation type="unfinished"></translation>
+        <translation>URL адресът не е намерен на сървъра</translation>
     </message>
 </context>
 <context>
@@ -12393,15 +12393,15 @@ p, li { white-space: pre-wrap; }
     <name>UIVMInformationDialog</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished">%1 - Информация за сесията</translation>
+        <translation>%1 - Информация за сесията</translation>
     </message>
     <message>
         <source>Configuration &amp;Details</source>
-        <translation type="unfinished">&amp;Детайли на конфигурацията</translation>
+        <translation>&amp;Детайли на конфигурацията</translation>
     </message>
     <message>
         <source>&amp;Runtime Information</source>
-        <translation type="unfinished">Ин&amp;формация за сесията</translation>
+        <translation>Ин&amp;формация за сесията</translation>
     </message>
 </context>
 <context>
@@ -12521,15 +12521,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Филтър</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation type="unfinished"></translation>
+        <translation>Въведете текст за филтър тук</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Филтър</translation>
     </message>
 </context>
 <context>
@@ -13133,31 +13133,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance is not signed</source>
-        <translation type="unfinished"></translation>
+        <translation>Неподписано приспособление</translation>
     </message>
     <message>
         <source>Appliance signed by %1 (trusted)</source>
-        <translation type="unfinished"></translation>
+        <translation>Подписано приспособление от %1 (доверен)</translation>
     </message>
     <message>
         <source>Appliance signed by %1 (expired!)</source>
-        <translation type="unfinished"></translation>
+        <translation>Подписано приспособление от %1 (изтекъл!)</translation>
     </message>
     <message>
         <source>Unverified signature by %1!</source>
-        <translation type="unfinished"></translation>
+        <translation>Непроверен ключ от %1!</translation>
     </message>
     <message>
         <source>Self signed by %1 (trusted)</source>
-        <translation type="unfinished"></translation>
+        <translation>Самоподписан от %1 (доверен)</translation>
     </message>
     <message>
         <source>Self signed by %1 (expired!)</source>
-        <translation type="unfinished"></translation>
+        <translation>Самоподписан от %1 (изтекъл!)</translation>
     </message>
     <message>
         <source>Unverified self signed signature by %1!</source>
-        <translation type="unfinished"></translation>
+        <translation>Непроверен самоподписан ключ от %1!</translation>
     </message>
 </context>
 <context>
@@ -13391,11 +13391,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;&lt;nobr&gt;Holds the name or full path to the virtual machine folder you are about to create.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;Указва името или пълния път до папката на виртуалната машина, която предстои да създадете.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;nobr&gt;You are about to create the virtual machine in the following folder:&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;Предстои да създадете виртуална машина в следната папка:&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -16059,102 +16059,102 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>PCIe</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCIe</translation>
     </message>
     <message>
         <source>NVMe</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>NVMe</translation>
     </message>
     <message>
         <source>NVMe Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
+        <translation>NVMe порт %1</translation>
     </message>
     <message>
         <source>General</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Основни</translation>
+        <translation>Основни</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Преглед</translation>
+        <translation>Преглед</translation>
     </message>
     <message>
         <source>System</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Система</translation>
+        <translation>Система</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Екран</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Съхранение</translation>
+        <translation>Съхранение</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Аудио</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Мрежа</translation>
+        <translation>Мрежа</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Серийни портове</translation>
+        <translation>Серийни портове</translation>
     </message>
     <message>
         <source>Parallel ports</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Паралелни портове</translation>
+        <translation>Паралелни портове</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Споделени папки</translation>
+        <translation>Споделени папки</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Потребителски интерфейс</translation>
+        <translation>Потребителски интерфейс</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Описание</translation>
+        <translation>Описание</translation>
     </message>
     <message>
         <source>Runtime attributes</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Атрибути на изпълнението</translation>
     </message>
     <message>
         <source>Storage statistics</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Статистики на съхранението</translation>
     </message>
     <message>
         <source>Network statistics</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Мрежови статистики</translation>
     </message>
 </context>
 <context>
