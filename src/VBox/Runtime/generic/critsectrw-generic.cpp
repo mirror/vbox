@@ -93,6 +93,8 @@ RTDECL(int) RTCritSectRwInitEx(PRTCRITSECTRW pThis, uint32_t fFlags,
     AssertReturn(!(fFlags & ~( RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_NO_LOCK_VAL | RTCRITSECT_FLAGS_BOOTSTRAP_HACK
                               | RTCRITSECT_FLAGS_NOP )),
                  VERR_INVALID_PARAMETER);
+    RT_NOREF_PV(hClass); RT_NOREF_PV(uSubClass); RT_NOREF_PV(pszNameFmt);
+
 
     /*
      * Initialize the structure, allocate the lock validator stuff and sems.
@@ -205,6 +207,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
 #else
     Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
 #endif
+    RT_NOREF_PV(pSrcPos);
 
 #ifdef RTCRITSECTRW_STRICT
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
@@ -545,6 +548,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
 #else
     Assert(!(pThis->fFlags & RTCRITSECT_FLAGS_RING0));
 #endif
+    RT_NOREF_PV(pSrcPos);
 
 #ifdef RTCRITSECTRW_STRICT
     RTTHREAD hThreadSelf = NIL_RTTHREAD;
