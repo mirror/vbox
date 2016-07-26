@@ -855,11 +855,11 @@ static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmP
             break;
 
         default:
-            RT_NOREF_PV(pvBits);
             return VERR_NOT_FOUND;
     }
     if (pcbRet)
         *pcbRet = cbBuf;
+    RT_NOREF_PV(pvBits);
     return VINF_SUCCESS;
 }
 
