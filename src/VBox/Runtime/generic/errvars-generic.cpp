@@ -46,6 +46,7 @@ RTDECL(PRTERRVARS) RTErrVarsSave(PRTERRVARS pVars)
 RTDECL(void) RTErrVarsRestore(PCRTERRVARS pVars)
 {
     Assert(pVars->ai32Vars[0] == RTERRVARS_MAGIC);
+    RT_NOREF_PV(pVars);
 }
 
 
@@ -61,6 +62,7 @@ RTDECL(bool) RTErrVarsAreEqual(PCRTERRVARS pVars1, PCRTERRVARS pVars2)
 RTDECL(bool) RTErrVarsHaveChanged(PCRTERRVARS pVars)
 {
     Assert(pVars->ai32Vars[0] == RTERRVARS_MAGIC);
+    RT_NOREF_PV(pVars);
     return false;
 }
 

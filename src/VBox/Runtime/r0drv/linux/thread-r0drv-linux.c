@@ -104,7 +104,7 @@ RT_EXPORT_SYMBOL(RTThreadYield);
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
 #ifdef CONFIG_PREEMPT
-    Assert(hThread == NIL_RTTHREAD);
+    Assert(hThread == NIL_RTTHREAD); RT_NOREF_PV(hThread);
 # ifdef preemptible
     return preemptible();
 # else
@@ -137,7 +137,7 @@ RT_EXPORT_SYMBOL(RTThreadPreemptIsEnabled);
 
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
-    Assert(hThread == NIL_RTTHREAD);
+    Assert(hThread == NIL_RTTHREAD); RT_NOREF_PV(hThread);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
     return !!test_tsk_thread_flag(current, TIF_NEED_RESCHED);
 

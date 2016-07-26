@@ -188,7 +188,8 @@ static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignm
     unsigned fLnxProt;
     unsigned long ulAddr;
 
-    Assert((pTask == current)); /* do_mmap */
+    Assert(pTask == current); /* do_mmap */
+    RT_NOREF_PV(pTask);
 
     /*
      * Convert from IPRT protection to mman.h PROT_ and call do_mmap.
@@ -256,7 +257,7 @@ static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignm
 static void rtR0MemObjLinuxDoMunmap(void *pv, size_t cb, struct task_struct *pTask)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
-    Assert(pTask == current);
+    Assert(pTask == current); RT_NOREF_PV(pTask);
     vm_munmap((unsigned long)pv, cb);
 #elif defined(USE_RHEL4_MUNMAP)
     down_write(&pTask->mm->mmap_sem);

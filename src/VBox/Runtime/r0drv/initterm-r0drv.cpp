@@ -66,7 +66,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
 {
     int rc;
     uint32_t cNewUsers;
-    Assert(fReserved == 0);
+    Assert(fReserved == 0); RT_NOREF_PV(fReserved);
 #ifndef RT_OS_SOLARIS       /* On Solaris our thread preemption information is only obtained in rtR0InitNative().*/
     RT_ASSERT_PREEMPTIBLE();
 #endif

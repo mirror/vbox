@@ -402,6 +402,7 @@ RT_EXPORT_SYMBOL(RTMemAllocExTag);
 RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW_DEF
 {
     PRTMEMHDR pHdr;
+    RT_NOREF_PV(cb);
 
     if (!pv)
         return;
