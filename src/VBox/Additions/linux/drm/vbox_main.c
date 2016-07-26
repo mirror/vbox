@@ -110,38 +110,38 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        unsigned num_rects)
 {
     struct vbox_private *vbox = fb->dev->dev_private;
+    struct drm_crtc *crtc;
     unsigned i;
 
     LogFunc(("vboxvideo: %d: fb=%p, num_rects=%u, vbox=%p\n", __LINE__, fb,
              num_rects, vbox));
-    vbox_enable_accel(vbox);
     mutex_lock(&vbox->hw_mutex);
-    for (i = 0; i < num_rects; ++i)
-    {
-        struct drm_crtc *crtc;
-        list_for_each_entry(crtc, &fb->dev->mode_config.crtc_list, head)
-        {
-            unsigned crtc_id = to_vbox_crtc(crtc)->crtc_id;
-            VBVACMDHDR cmd_hdr;
-
-            if (   CRTC_FB(crtc) != fb
-                || rects[i].x1 >   crtc->x
-                                  + crtc->hwmode.hdisplay
-                || rects[i].y1 >   crtc->y
-                                  + crtc->hwmode.vdisplay
-                || rects[i].x2 < crtc->x
-                || rects[i].y2 < crtc->y)
-                continue;
-            cmd_hdr.x = (int16_t)rects[i].x1;
-            cmd_hdr.y = (int16_t)rects[i].y1;
-            cmd_hdr.w = (uint16_t)rects[i].x2 - rects[i].x1;
-            cmd_hdr.h = (uint16_t)rects[i].y2 - rects[i].y1;
-            if (VBoxVBVABufferBeginUpdate(&vbox->vbva_info[crtc_id],
-                                          &vbox->submit_info))
+    list_for_each_entry(crtc, &fb->dev->mode_config.crtc_list, head) {
+        if (CRTC_FB(crtc) == fb) {
+            vbox_enable_accel(vbox);
+            for (i = 0; i < num_rects; ++i)
             {
-                VBoxVBVAWrite(&vbox->vbva_info[crtc_id], &vbox->submit_info, &cmd_hdr,
-                              sizeof(cmd_hdr));
-                VBoxVBVABufferEndUpdate(&vbox->vbva_info[crtc_id]);
+                unsigned crtc_id = to_vbox_crtc(crtc)->crtc_id;
+                VBVACMDHDR cmd_hdr;
+
+                if (   rects[i].x1 >   crtc->x
+                                      + crtc->hwmode.hdisplay
+                    || rects[i].y1 >   crtc->y
+                                      + crtc->hwmode.vdisplay
+                    || rects[i].x2 < crtc->x
+                    || rects[i].y2 < crtc->y)
+                    continue;
+                cmd_hdr.x = (int16_t)rects[i].x1;
+                cmd_hdr.y = (int16_t)rects[i].y1;
+                cmd_hdr.w = (uint16_t)rects[i].x2 - rects[i].x1;
+                cmd_hdr.h = (uint16_t)rects[i].y2 - rects[i].y1;
+                if (VBoxVBVABufferBeginUpdate(&vbox->vbva_info[crtc_id],
+                                              &vbox->submit_info))
+                {
+                    VBoxVBVAWrite(&vbox->vbva_info[crtc_id], &vbox->submit_info, &cmd_hdr,
+                                  sizeof(cmd_hdr));
+                    VBoxVBVABufferEndUpdate(&vbox->vbva_info[crtc_id]);
+                }
             }
         }
     }

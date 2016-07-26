@@ -216,8 +216,10 @@ static int vbox_master_set(struct drm_device *dev,
                            bool from_open)
 {
     struct vbox_private *vbox = dev->dev_private;
+    /* We do not yet know whether the new owner can handle hotplug, so we
+     * do not advertise dynamic modes on the first query and send a
+     * tentative hotplug notification after that to see if they query again. */
     vbox->initial_mode_queried = false;
-    vbox_disable_accel(vbox);
     return 0;
 }
 
@@ -227,7 +229,12 @@ static void vbox_master_drop(struct drm_device *dev,
 {
     struct vbox_private *vbox = dev->dev_private;
     vbox->initial_mode_queried = false;
+    mutex_lock(&vbox->hw_mutex);
+    /* Disable VBVA when someone releases master in case the next person tries
+     * to do VESA. */
+    /** @todo work out if anyone is likely to and whether it will even work. */
     vbox_disable_accel(vbox);
+    mutex_unlock(&vbox->hw_mutex);
 }
 
 static struct drm_driver driver =
