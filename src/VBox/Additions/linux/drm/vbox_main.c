@@ -69,13 +69,14 @@ void vbox_enable_accel(struct vbox_private *vbox)
 {
     unsigned i;
     struct VBVABUFFER *vbva;
+    uint32_t vram_map_offset = vbox->available_vram_size - vbox->vram_map_start;
 
     AssertLogRelReturnVoid(vbox->vbva_info != NULL);
     for (i = 0; i < vbox->num_crtcs; ++i) {
         if (vbox->vbva_info[i].pVBVA == NULL) {
             LogFunc(("vboxvideo: enabling VBVA.\n"));
             vbva = (struct VBVABUFFER *) (  ((uint8_t *)vbox->mapped_vram)
-                                           + vbox->vram_host_offset
+                                           + vram_map_offset
                                            + i * VBVA_MIN_BUFFER_SIZE);
             if (!VBoxVBVAEnable(&vbox->vbva_info[i], &vbox->submit_info, vbva, i))
                 AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
@@ -254,7 +255,6 @@ static int vbox_accel_init(struct vbox_private *vbox)
             return -ENOMEM;
     }
     /* Take a command buffer for each screen from the end of usable VRAM. */
-    vbox->vram_host_offset = (VBOX_MAX_SCREENS - vbox->num_crtcs) * VBVA_MIN_BUFFER_SIZE;
     vbox->available_vram_size -= vbox->num_crtcs * VBVA_MIN_BUFFER_SIZE;
     for (i = 0; i < vbox->num_crtcs; ++i)
         VBoxVBVASetupBufferContext(&vbox->vbva_info[i],
@@ -324,6 +324,7 @@ static int vbox_hw_init(struct vbox_private *vbox)
                                         vbox->full_vram_size - map_start);
     if (!vbox->mapped_vram)
         return -ENOMEM;
+    vbox->vram_map_start = map_start;
     guest_heap = ((uint8_t *)vbox->mapped_vram) + base_offset - map_start
                    + guest_heap_offset;
     vbox->host_flags_offset = base_offset - map_start + host_flags_offset;

@@ -106,7 +106,8 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                 crtc->x * bpp / 8 + crtc->y * pitch,
                                 pitch, width, height,
                                 vbox_crtc->blanked ? 0 : bpp, flags);
-    VBoxHGSMIReportFlagsLocation(&vbox->submit_info, vbox->host_flags_offset);
+    VBoxHGSMIReportFlagsLocation(&vbox->submit_info,   vbox->vram_map_start
+                                                     + vbox->host_flags_offset);
     LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
