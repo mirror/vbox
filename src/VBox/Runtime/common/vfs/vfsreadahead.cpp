@@ -347,6 +347,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_Read(void *pvThis, RTFOFF off, PCRTSGBUF
  */
 static DECLCALLBACK(int) rtVfsReadAhead_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
+    RT_NOREF_PV(pvThis); RT_NOREF_PV(off); RT_NOREF_PV(pSgBuf); RT_NOREF_PV(fBlocking); RT_NOREF_PV(pcbWritten);
     AssertFailed();
     return VERR_ACCESS_DENIED;
 }
@@ -402,7 +403,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_SetMode(void *pvThis, RTFMODE fMode, RTF
     AssertReturn(pThis->hFile != NIL_RTVFSFILE, VERR_NOT_SUPPORTED);
 
     RTCritSectEnter(&pThis->IoCritSect);
-    /// @todo int rc = RTVfsFileSetMode(pThis->hFile, fMode, fMask);
+    RT_NOREF_PV(fMode); RT_NOREF_PV(fMask); /// @todo int rc = RTVfsFileSetMode(pThis->hFile, fMode, fMask);
     int rc = VERR_NOT_SUPPORTED;
     RTCritSectLeave(&pThis->IoCritSect);
 
@@ -414,12 +415,13 @@ static DECLCALLBACK(int) rtVfsReadAhead_SetMode(void *pvThis, RTFMODE fMode, RTF
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
 static DECLCALLBACK(int) rtVfsReadAhead_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     PRTVFSREADAHEAD pThis = (PRTVFSREADAHEAD)pvThis;
     AssertReturn(pThis->hFile != NIL_RTVFSFILE, VERR_NOT_SUPPORTED);
 
     RTCritSectEnter(&pThis->IoCritSect);
+    RT_NOREF_PV(pAccessTime); RT_NOREF_PV(pModificationTime); RT_NOREF_PV(pChangeTime); RT_NOREF_PV(pBirthTime);
     /// @todo int rc = RTVfsFileSetTimes(pThis->hFile, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
     int rc = VERR_NOT_SUPPORTED;
     RTCritSectLeave(&pThis->IoCritSect);
@@ -437,6 +439,7 @@ static DECLCALLBACK(int) rtVfsReadAhead_SetOwner(void *pvThis, RTUID uid, RTGID 
     AssertReturn(pThis->hFile != NIL_RTVFSFILE, VERR_NOT_SUPPORTED);
 
     RTCritSectEnter(&pThis->IoCritSect);
+    RT_NOREF_PV(uid); RT_NOREF_PV(gid);
     /// @todo int rc = RTVfsFileSetOwner(pThis->hFile, uid, gid);
     int rc = VERR_NOT_SUPPORTED;
     RTCritSectLeave(&pThis->IoCritSect);
@@ -459,7 +462,11 @@ static DECLCALLBACK(int) rtVfsReadAhead_Seek(void *pvThis, RTFOFF offSeek, unsig
     uint64_t offActual = UINT64_MAX;
     int rc = RTVfsFileSeek(pThis->hFile, offSeek, uMethod, &offActual);
     if (RT_SUCCESS(rc))
+    {
         pThis->offConsumer = offActual;
+        if (poffActual)
+            *poffActual = offActual;
+    }
 
     RTCritSectLeave(&pThis->BufferCritSect);
     RTCritSectLeave(&pThis->IoCritSect);
