@@ -432,7 +432,7 @@ DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 #if 0 /* Enable this iff you have a COM port and really want this debug info. */
     RTLogComPrintf("TRPMGCTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip);
 #endif
-    NOREF(pTrpmCpu);
+    NOREF(pTrpmCpu); RT_NOREF_PV(pRegFrame);
     return VERR_TRPM_DONT_PANIC;
 }
 

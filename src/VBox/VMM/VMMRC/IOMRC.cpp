@@ -81,7 +81,7 @@ DECLINLINE(IEMMODE) iomDisModeToIemMode(DISCPUMODE enmDisMode)
  */
 static VBOXSTRICTRC iomRCInterpretIN(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-    STAM_COUNTER_INC(&pVM->iom.s.StatInstIn);
+    STAM_COUNTER_INC(&pVM->iom.s.StatInstIn); RT_NOREF_PV(pVM);
     Assert(pCpu->Param2.fUse & (DISUSE_IMMEDIATE8 | DISUSE_REG_GEN16));
     uint16_t u16Port = pCpu->Param2.fUse & DISUSE_REG_GEN16 ? pRegFrame->dx : (uint16_t)pCpu->Param2.uValue;
 
@@ -113,7 +113,7 @@ static VBOXSTRICTRC iomRCInterpretIN(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
  */
 static VBOXSTRICTRC iomRCInterpretOUT(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-    STAM_COUNTER_INC(&pVM->iom.s.StatInstOut);
+    STAM_COUNTER_INC(&pVM->iom.s.StatInstOut); RT_NOREF_PV(pVM);
     Assert(pCpu->Param1.fUse & (DISUSE_IMMEDIATE8 | DISUSE_REG_GEN16));
     uint16_t const u16Port = pCpu->Param1.fUse & DISUSE_REG_GEN16 ? pRegFrame->dx : (uint16_t)pCpu->Param1.uValue;
 

@@ -308,7 +308,7 @@ DECLEXPORT(VBOXSTRICTRC) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogFlow(("selmRCGuestGDTWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
-    NOREF(pvRange); NOREF(pvUser);
+    NOREF(pvRange); NOREF(pvUser); RT_NOREF_PV(uErrorCode);
 
     /*
      * Check if any selectors might be affected.
@@ -351,7 +351,7 @@ DECLEXPORT(VBOXSTRICTRC) selmRCGuestLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
     NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
+    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT); RT_NOREF_PV(pVM);
     return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
 }
 #endif
@@ -520,7 +520,7 @@ DECLEXPORT(VBOXSTRICTRC) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogFlow(("selmRCGuestTSSWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
-    NOREF(pvRange); NOREF(pvUser);
+    NOREF(pvRange); NOREF(pvUser); RT_NOREF_PV(uErrorCode);
 
     /*
      * Try emulate the access.

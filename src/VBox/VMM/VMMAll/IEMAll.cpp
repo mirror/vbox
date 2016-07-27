@@ -7023,7 +7023,6 @@ IEM_STATIC void iemFpuUpdateFSWWithMemOpThenPop(PVMCPU pVCpu, uint16_t u16FSW, u
 /**
  * Worker routine for raising an FPU stack underflow exception.
  *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pFpuCtx             The FPU context.
  * @param   iStReg              The stack register being accessed.
  */

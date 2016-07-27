@@ -878,7 +878,7 @@ static DECLCALLBACK(int) pdmRCDrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint
 /** @interface_method_impl{PDMDRVHLPRC,pfnAssertEMT} */
 static DECLCALLBACK(bool) pdmRCDrvHlp_AssertEMT(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction)
 {
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PDMDRV_ASSERT_DRVINS(pDrvIns); RT_NOREF_PV(pDrvIns);
     if (VM_IS_EMT(pDrvIns->Internal.s.pVMRC))
         return true;
 
@@ -891,7 +891,7 @@ static DECLCALLBACK(bool) pdmRCDrvHlp_AssertEMT(PPDMDRVINS pDrvIns, const char *
 /** @interface_method_impl{PDMDRVHLPRC,pfnAssertOther} */
 static DECLCALLBACK(bool) pdmRCDrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction)
 {
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PDMDRV_ASSERT_DRVINS(pDrvIns); RT_NOREF_PV(pDrvIns);
     if (!VM_IS_EMT(pDrvIns->Internal.s.pVMRC))
         return true;
 
@@ -899,6 +899,7 @@ static DECLCALLBACK(bool) pdmRCDrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
        still have drive code compiled in which it shouldn't execute. */
     RTAssertMsg1Weak("AssertOther", iLine, pszFile, pszFunction);
     RTAssertPanic();
+    RT_NOREF_PV(pszFile); RT_NOREF_PV(iLine); RT_NOREF_PV(pszFunction);
     return false;
 }
 
