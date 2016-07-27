@@ -669,8 +669,9 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
                 aResolutions[iScreen] = strResolution;
             }
 
-            /* Calculate uptime: */
-            uint32_t uUpSecs = (RTTimeProgramSecTS() / 5) * 5;
+            /* Determine uptime: */
+            CMachineDebugger debugger = m_console.GetDebugger();
+            uint32_t uUpSecs = (debugger.GetUptime() / 5000) * 5;
             char szUptime[32];
             uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
             uUpSecs -= uUpDays * 60 * 60 * 24;
@@ -687,8 +688,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
             /* Determine Drag&Drop mode: */
             QString strDnDMode = gpConverter->toString(m_machine.GetDnDMode());
 
-            /* Deterine virtualization attributes: */
-            CMachineDebugger debugger = m_console.GetDebugger();
+            /* Determine virtualization attributes: */
             QString strVirtualization = debugger.GetHWVirtExEnabled() ?
                                         VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
                                         VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
