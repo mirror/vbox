@@ -43,7 +43,7 @@
 #include <iprt/uni.h>
 
 #if defined(RT_OS_WINDOWS)
-# include <Windows.h>
+# include <iprt/win/windows.h>
 # include "../../r3/win/internal-r3-win.h"
 
 #elif defined(RT_OS_OS2)

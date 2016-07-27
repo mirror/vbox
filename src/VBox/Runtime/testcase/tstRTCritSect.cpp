@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef TRY_WIN32_CRIT
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 #define RTCRITSECT_WITHOUT_REMAPPING
 #include <iprt/critsect.h>

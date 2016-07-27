@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/cdefs.h>
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 
 #elif defined(RT_OS_OS2)
 # define INCL_BASE

@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef RT_OS_WINDOWS
-# include <winsock2.h>
+# include <iprt/win/winsock2.h>
 # include <ws2tcpip.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>

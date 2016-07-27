@@ -124,12 +124,15 @@
 # define SystemPolicyInformation                IncompleteWinternl_SystemPolicyInformation
 
 
+# pragma warning(push)
+# pragma warning(disable: 4668)
 # define WIN32_NO_STATUS
 # include <windef.h>
 # include <winnt.h>
 # include <winternl.h>
 # undef WIN32_NO_STATUS
 # include <ntstatus.h>
+# pragma warning(pop)
 
 
 # undef _FILE_INFORMATION_CLASS
@@ -178,18 +181,20 @@
 /*
  * Use ntifs.h and wdm.h.
  */
+# pragma warning(push)
 # ifdef RT_ARCH_X86
 #  define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
-#  pragma warning(disable : 4163)
+#  pragma warning(disable: 4163)
 # endif
+# pragma warning(disable: 4668)
 
 # include <ntifs.h>
 # include <wdm.h>
 
 # ifdef RT_ARCH_X86
-#  pragma warning(default : 4163)
 #  undef _InterlockedAddLargeStatistic
 # endif
+# pragma warning(pop)
 
 # define IPRT_NT_NEED_API_GROUP_NTIFS
 #endif

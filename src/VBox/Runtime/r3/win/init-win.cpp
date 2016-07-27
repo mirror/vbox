@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #ifndef LOAD_LIBRARY_SEARCH_APPLICATION_DIR
 # define LOAD_LIBRARY_SEARCH_APPLICATION_DIR    0x200
 # define LOAD_LIBRARY_SEARCH_SYSTEM32           0x800

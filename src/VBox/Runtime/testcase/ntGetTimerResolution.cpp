@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define _WIN32_WINNT 0x0500
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <stdio.h>
 
 extern "C" {

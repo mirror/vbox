@@ -33,7 +33,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include <process.h>
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #else
 # include <unistd.h>
 # ifndef RT_OS_OS2

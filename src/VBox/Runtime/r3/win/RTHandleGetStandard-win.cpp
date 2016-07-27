@@ -37,7 +37,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include "internal/socket.h"            /* (Needs Windows.h.) */
 

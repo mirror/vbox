@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_SEMAPHORE
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/semaphore.h>
 #include "internal/iprt.h"
@@ -108,6 +108,8 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
                                             !(fFlags & RTSEMMUTEX_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
                 va_end(va);
             }
+#else
+            RT_NOREF_PV(hClass); RT_NOREF_PV(uSubClass); RT_NOREF_PV(pszNameFmt);
 #endif
             *phMutexSem = pThis;
             return VINF_SUCCESS;
@@ -166,6 +168,7 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 
     return RTLockValidatorRecExclSetSubClass(&pThis->ValidatorRec, uSubClass);
 #else
+    RT_NOREF_PV(hMutexSem); RT_NOREF_PV(uSubClass);
     return RTLOCKVAL_SUB_CLASS_INVALID;
 #endif
 }
@@ -220,6 +223,7 @@ DECL_FORCE_INLINE(int) rtSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTER
 #else
         hThreadSelf = RTThreadSelf();
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_MUTEX, true);
+        RT_NOREF_PV(pSrcPos);
 #endif
     }
     DWORD rc = WaitForSingleObjectEx(pThis->hMtx,

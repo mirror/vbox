@@ -58,7 +58,7 @@
 # include <fcntl.h>
 #endif
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 #ifndef RT_OS_WINDOWS
 # include <termios.h>

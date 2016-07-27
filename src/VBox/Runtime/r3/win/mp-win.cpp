@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_SYSTEM
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/mp.h>
 #include "internal/iprt.h"

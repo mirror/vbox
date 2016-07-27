@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_UTF8
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/string.h>
 #include <iprt/alloc.h>

@@ -47,7 +47,14 @@
 # ifndef __STDC_LIMIT_MACROS
 #  define __STDC_LIMIT_MACROS
 # endif
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4668)
+# endif
 # include <stdint.h>
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
 
 # if defined(RT_OS_DARWIN) && defined(KERNEL) && defined(RT_ARCH_AMD64)
  /*

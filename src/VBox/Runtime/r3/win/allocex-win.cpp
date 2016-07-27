@@ -37,7 +37,7 @@
 #include <iprt/param.h>
 #include "../allocex.h"
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 
 static int rtMemAllocExInRange(size_t cbAlloc, uint32_t fFlags, void **ppv, uintptr_t uAddr, uintptr_t uAddrLast)

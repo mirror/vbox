@@ -152,6 +152,8 @@
 #ifndef RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
 # if defined(DOXYGEN_RUNNING) || defined(__WATCOMC__) /* Watcom has trouble with the expression below */
 #  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC 1
+# elif defined(_MSC_VER) /* Visual C++ has trouble too, but it'll only tell us when C4688 is enabled. */
+#  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC 0
 # else
 #  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC \
     (   (defined(PIC) || defined(__PIC__)) \

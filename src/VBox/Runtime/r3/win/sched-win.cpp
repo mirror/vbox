@@ -33,7 +33,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_THREAD
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/thread.h>
 #include <iprt/log.h>
@@ -258,7 +258,7 @@ static const PROCPRIORITY *g_pProcessPriority = &g_aDefaultPriority;
  */
 DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
 {
-    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
+    Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END); RT_NOREF_PV(enmType);
     return VINF_SUCCESS;
 }
 
@@ -274,7 +274,7 @@ DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
  */
 DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 {
-    Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST);
+    Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST); RT_NOREF_PV(enmPriority);
     return VINF_SUCCESS;
 }
 

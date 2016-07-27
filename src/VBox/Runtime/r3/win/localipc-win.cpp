@@ -41,7 +41,7 @@
 # define _WIN32_WINNT 0x0500
 #endif
 #define UNICODE    /* For the SDDL_ strings. */
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <sddl.h>
 
 #include "internal/iprt.h"

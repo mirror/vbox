@@ -53,7 +53,7 @@
 #define VerifyVersionInfoA                      Ignore_VerifyVersionInfoA
 #define VerSetConditionMask                     Ignore_VerSetConditionMask
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #undef DecodePointer
 #undef EncodePointer

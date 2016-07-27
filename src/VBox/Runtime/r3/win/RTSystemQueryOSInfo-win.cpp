@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <WinUser.h>
 
 #include "internal-r3-win.h"

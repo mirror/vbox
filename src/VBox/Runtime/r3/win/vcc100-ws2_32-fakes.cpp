@@ -40,7 +40,7 @@
 #define getaddrinfo                             Ignore_getaddrinfo
 #define freeaddrinfo                            Ignore_freeaddrinfo
 
-#include <winsock2.h>
+#include <iprt/win/winsock2.h>
 #include <ws2tcpip.h>
 
 #undef getaddrinfo

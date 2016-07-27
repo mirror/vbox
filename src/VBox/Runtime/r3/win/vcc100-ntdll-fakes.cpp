@@ -35,7 +35,7 @@
 # error "This code is X86 only"
 #endif
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 
 

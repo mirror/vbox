@@ -128,7 +128,7 @@
 *********************************************************************************************************************************/
 #ifdef IN_RING3
 # if defined(RT_OS_WINDOWS)
-#  include <Windows.h>
+#  include <iprt/win/windows.h>
 # elif defined(RT_OS_LINUX)
 #  include <unistd.h>
 # elif defined(RT_OS_FREEBSD)

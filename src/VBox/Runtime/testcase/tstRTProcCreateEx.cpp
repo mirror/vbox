@@ -45,7 +45,7 @@
 
 #ifdef RT_OS_WINDOWS
 # define SECURITY_WIN32
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include <Security.h>
 #endif
 

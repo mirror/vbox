@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 /*#define USE_VIRTUAL_ALLOC*/
 #define LOG_GROUP RTLOGGROUP_MEM
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

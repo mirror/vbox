@@ -116,7 +116,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #elif !defined(RT_OS_FREEBSD)
 # include <sys/mman.h>
 #endif

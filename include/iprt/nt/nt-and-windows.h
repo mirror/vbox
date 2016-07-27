@@ -38,7 +38,7 @@
 #define IPRT_NT_USE_WINTERNL
 #define IPRT_NT_HAVE_CURRENT_TEB_MACRO
 #define WIN32_NO_STATUS
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #undef WIN32_NO_STATUS
 
 #undef _PEB

@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DIR
 #ifdef RT_OS_WINDOWS /* dir.h has host specific stuff */
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #else
 # include <dirent.h>
 #endif

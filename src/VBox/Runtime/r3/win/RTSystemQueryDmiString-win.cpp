@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define _WIN32_DCOM
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <WbemCli.h>
 
 #include <iprt/system.h>

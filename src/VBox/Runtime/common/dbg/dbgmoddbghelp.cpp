@@ -42,7 +42,7 @@
 #include <iprt/string.h>
 #include "internal/dbgmod.h"
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <Dbghelp.h>
 #include <iprt/win/lazy-dbghelp.h>
 
@@ -116,7 +116,7 @@ static DECLCALLBACK(int) rtDbgModDbgHelp_SymbolByName(PRTDBGMODINT pMod, const c
                                                       PRTDBGSYMBOL pSymInfo)
 {
     RTDBGMOD hCnt = (RTDBGMOD)pMod->pvDbgPriv;
-    Assert(!pszSymbol[cchSymbol]);
+    Assert(!pszSymbol[cchSymbol]); RT_NOREF_PV(cchSymbol);
     return RTDbgModSymbolByName(hCnt, pszSymbol/*, cchSymbol*/, pSymInfo);
 }
 

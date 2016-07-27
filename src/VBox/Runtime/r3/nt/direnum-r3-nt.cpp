@@ -195,6 +195,8 @@ static int rtDirNtCheckRecord(PRTDIR pThis)
         AssertReturn((unsigned)pThis->uCurData.pBoth->ShortNameLength <= sizeof(pThis->uCurData.pBoth->ShortName),
                      VERR_IO_GEN_FAILURE);
     }
+#else
+    RT_NOREF_PV(pThis);
 #endif
 
     return VINF_SUCCESS;

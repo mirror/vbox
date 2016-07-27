@@ -39,7 +39,7 @@
 #include <iprt/log.h>
 #include "internal/fileaio.h"
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 
 /*********************************************************************************************************************************

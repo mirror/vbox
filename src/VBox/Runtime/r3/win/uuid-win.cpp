@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_UUID
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/uuid.h>
 #include <iprt/assert.h>

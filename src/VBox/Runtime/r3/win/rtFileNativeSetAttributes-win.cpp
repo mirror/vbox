@@ -29,7 +29,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 /* APIs used here require DDK headers. */
+#pragma warning(disable: 4668)
 #include <wdm.h>
+#pragma warning(default: 4668)
 
 /* Declare ntdll exports. */
 extern "C"

@@ -55,7 +55,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIMER
 #define _WIN32_WINNT 0x0500
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/timer.h>
 #ifdef USE_CATCH_UP
