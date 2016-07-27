@@ -6700,13 +6700,13 @@ bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T drv)
 #ifdef RT_OS_WINDOWS
         case AudioDriverType_DirectSound:
 #endif
-#ifdef VBOX_WITH_OSS
+#ifdef VBOX_WITH_AUDIO_OSS
         case AudioDriverType_OSS:
 #endif
-#ifdef VBOX_WITH_ALSA
+#ifdef VBOX_WITH_AUDIO_ALSA
         case AudioDriverType_ALSA:
 #endif
-#ifdef VBOX_WITH_PULSE
+#ifdef VBOX_WITH_AUDIO_PULSE
         case AudioDriverType_Pulse:
 #endif
 #ifdef RT_OS_DARWIN
@@ -6740,19 +6740,19 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
     RTCLock lock(s_mtx);
     if (s_linuxDriver == (AudioDriverType_T)-1)
     {
-# ifdef VBOX_WITH_PULSE
+# ifdef VBOX_WITH_AUDIO_PULSE
         /* Check for the pulse library & that the pulse audio daemon is running. */
         if (RTProcIsRunningByName("pulseaudio") &&
             RTLdrIsLoadable("libpulse.so.0"))
             s_linuxDriver = AudioDriverType_Pulse;
         else
-# endif /* VBOX_WITH_PULSE */
-# ifdef VBOX_WITH_ALSA
+# endif /* VBOX_WITH_AUDIO_PULSE */
+# ifdef VBOX_WITH_AUDIO_ALSA
             /* Check if we can load the ALSA library */
              if (RTLdrIsLoadable("libasound.so.2"))
                 s_linuxDriver = AudioDriverType_ALSA;
         else
-# endif /* VBOX_WITH_ALSA */
+# endif /* VBOX_WITH_AUDIO_ALSA */
             s_linuxDriver = AudioDriverType_OSS;
     }
     return s_linuxDriver;
@@ -6761,7 +6761,7 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
 #elif defined(RT_OS_OS2)
     return AudioDriverType_MMPM;
 #else /* All other platforms. */
-# ifdef VBOX_WITH_OSS
+# ifdef VBOX_WITH_AUDIO_OSS
     return AudioDriverType_OSS;
 # endif
 #endif

@@ -34,6 +34,7 @@
 #include <iprt/cpp/utils.h>
 
 #include "VBoxDD.h"
+#include "DrvAudio.h"
 #include "DevIchHdaCodec.h"
 #include "DevIchHdaCommon.h"
 #include "AudioMixer.h"

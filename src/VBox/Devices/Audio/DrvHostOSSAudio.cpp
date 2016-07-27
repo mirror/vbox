@@ -42,7 +42,7 @@
 #if ((SOUND_VERSION > 360) && (defined(OSS_SYSINFO)))
 /* OSS > 3.6 has a new syscall available for querying a bit more detailed information
  * about OSS' audio capabilities. This is handy for e.g. Solaris. */
-# define VBOX_WITH_OSS_SYSINFO 1
+# define VBOX_WITH_AUDIO_OSS_SYSINFO 1
 #endif
 
 /** Makes DRVHOSTOSSAUDIO out of PDMIHOSTAUDIO. */
@@ -596,7 +596,7 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
 
     int ossVer = -1;
 
-#ifdef VBOX_WITH_OSS_SYSINFO
+#ifdef VBOX_WITH_AUDIO_OSS_SYSINFO
     oss_sysinfo ossInfo;
     RT_ZERO(ossInfo);
 #endif
@@ -607,7 +607,7 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
         if (err == 0)
         {
             LogRel2(("OSS: Using version: %d\n", ossVer));
-#ifdef VBOX_WITH_OSS_SYSINFO
+#ifdef VBOX_WITH_AUDIO_OSS_SYSINFO
             err = ioctl(hFile, OSS_SYSINFO, &ossInfo);
             if (err == 0)
             {
@@ -634,7 +634,7 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
 
                 pCfg->cMaxStreamsIn   = UINT32_MAX;
                 pCfg->cMaxStreamsOut  = UINT32_MAX;
-#ifdef VBOX_WITH_OSS_SYSINFO
+#ifdef VBOX_WITH_AUDIO_OSS_SYSINFO
             }
 #endif
         }
