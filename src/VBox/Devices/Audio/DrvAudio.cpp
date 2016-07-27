@@ -396,7 +396,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
     AssertPtr(pThis->pHostDrvAudio);
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     switch (enmStreamCmd)
     {
