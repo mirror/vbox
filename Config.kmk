@@ -430,8 +430,6 @@ VBOX_WITH_NAT_SERVICE = 1
 VBOX_WITH_E1000 = 1
 # Enable the Virtio feature.
 VBOX_WITH_VIRTIO = 1
-# Enable new PS/2 mouse emulation.
-VBOX_WITH_NEW_PS2M = 1
 ifn1of ($(KBUILD_TARGET), win darwin)
  # Enable OSS audio support.
  VBOX_WITH_OSS = 1

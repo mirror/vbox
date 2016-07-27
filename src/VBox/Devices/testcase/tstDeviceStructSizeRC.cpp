@@ -424,38 +424,10 @@ int main()
 #endif
 
     /* Input/pckbd.c */
-#ifndef VBOX_WITH_NEW_PS2M
-    GEN_CHECK_SIZE(MouseCmdQueue);
-    GEN_CHECK_OFF(MouseCmdQueue, data);
-    GEN_CHECK_OFF(MouseCmdQueue, rptr);
-    GEN_CHECK_OFF(MouseCmdQueue, wptr);
-    GEN_CHECK_OFF(MouseCmdQueue, count);
-    GEN_CHECK_SIZE(MouseEventQueue);
-    GEN_CHECK_OFF(MouseEventQueue, data);
-    GEN_CHECK_OFF(MouseEventQueue, rptr);
-    GEN_CHECK_OFF(MouseEventQueue, wptr);
-    GEN_CHECK_OFF(MouseEventQueue, count);
-#endif
     GEN_CHECK_SIZE(KBDState);
     GEN_CHECK_OFF(KBDState, write_cmd);
     GEN_CHECK_OFF(KBDState, status);
     GEN_CHECK_OFF(KBDState, mode);
-#ifndef VBOX_WITH_NEW_PS2M
-    GEN_CHECK_OFF(KBDState, mouse_command_queue);
-    GEN_CHECK_OFF(KBDState, mouse_event_queue);
-    GEN_CHECK_OFF(KBDState, mouse_write_cmd);
-    GEN_CHECK_OFF(KBDState, mouse_status);
-    GEN_CHECK_OFF(KBDState, mouse_resolution);
-    GEN_CHECK_OFF(KBDState, mouse_sample_rate);
-    GEN_CHECK_OFF(KBDState, mouse_wrap);
-    GEN_CHECK_OFF(KBDState, mouse_type);
-    GEN_CHECK_OFF(KBDState, mouse_detect_state);
-    GEN_CHECK_OFF(KBDState, mouse_dx);
-    GEN_CHECK_OFF(KBDState, mouse_dy);
-    GEN_CHECK_OFF(KBDState, mouse_dz);
-    GEN_CHECK_OFF(KBDState, mouse_dw);
-    GEN_CHECK_OFF(KBDState, mouse_buttons);
-#endif
     GEN_CHECK_OFF(KBDState, pDevInsR3);
     GEN_CHECK_OFF(KBDState, pDevInsR0);
     GEN_CHECK_OFF(KBDState, pDevInsRC);
@@ -487,7 +459,6 @@ int main()
     GEN_CHECK_OFF(PS2K, Keyboard.IPort);
     GEN_CHECK_OFF(PS2K, Keyboard.pDrvBase);
     GEN_CHECK_OFF(PS2K, Keyboard.pDrv);
-#ifdef VBOX_WITH_NEW_PS2M
     /* Input/PS2M.c */
     GEN_CHECK_SIZE(PS2M);
     GEN_CHECK_OFF(PS2M, u8State);
@@ -516,12 +487,6 @@ int main()
     GEN_CHECK_OFF(PS2M, Mouse.IPort);
     GEN_CHECK_OFF(PS2M, Mouse.pDrvBase);
     GEN_CHECK_OFF(PS2M, Mouse.pDrv);
-#else
-    GEN_CHECK_OFF(KBDState, Mouse.IBase);
-    GEN_CHECK_OFF(KBDState, Mouse.IPort);
-    GEN_CHECK_OFF(KBDState, Mouse.pDrvBase);
-    GEN_CHECK_OFF(KBDState, Mouse.pDrv);
-#endif
 
     /* Network/DevPCNet.cpp */
     GEN_CHECK_SIZE(PCNETSTATE);

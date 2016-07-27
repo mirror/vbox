@@ -77,6 +77,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VSCSI/VSCSILun.cpp \
  	Storage/VSCSI/VSCSILunSbc.cpp \
  	Storage/VSCSI/VSCSILunMmc.cpp \
+ 	Storage/VSCSI/VSCSILunSsc.cpp \
  	Storage/VSCSI/VSCSISense.cpp \
  	Storage/VSCSI/VSCSIIoReq.cpp \
  	Storage/VSCSI/VSCSIVpdPagePool.cpp \
@@ -138,6 +139,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/MsixCommon.cpp \
 	EFI/DevSmc.cpp \
  	Graphics/DevVGA.cpp \
+ 	Graphics/Dev8514A.cpp \
  	Storage/DevATA.cpp \
  	PC/DevPit-i8254.cpp \
  	PC/DevPIC.cpp \
@@ -186,12 +188,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES += Storage/DrvHostFloppy.cpp
  endif
 
- ifn1of ($(KBUILD_TARGET), darwin)
+ ifn1of ($(KBUILD_TARGET), darwin win)
   VBoxDD_SOURCES += Storage/HBDMgmt-generic.cpp
  endif
 
  VBoxDD_SOURCES.darwin += Storage/HBDMgmt-darwin.cpp
- #VBoxDD_SOURCES.win += Storage/HBDMgmt-win.cpp Disabled until remaining issues are sorted out
+ VBoxDD_SOURCES.win += Storage/HBDMgmt-win.cpp #Disabled until remaining issues are sorted out
 
  VBoxDD_LIBS             = # more later.
  VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
@@ -529,14 +531,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS           += VBOX_WITH_DYNAMIC_DSDT
  endif
 
-
- # --- Input bits. ---
-
- ifdef VBOX_WITH_NEW_PS2M
-  VBoxDD_DEFS           += VBOX_WITH_NEW_PS2M
- endif
-
-
  # --- Audio bits. ---
 
  if 0 # Not stable yet.
@@ -866,6 +860,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Bus/MsixCommon.cpp \
   	EFI/DevSmc.cpp \
   	Graphics/DevVGA.cpp \
+  	Graphics/Dev8514A.cpp \
   	Input/DevPS2.cpp \
   	Input/PS2K.cpp \
   	Input/PS2M.cpp \
@@ -974,10 +969,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Storage/DevNVMe.cpp
   endif
 
-  ifdef VBOX_WITH_NEW_PS2M
-  VBoxDDRC_DEFS         += VBOX_WITH_NEW_PS2M
-  endif
-
   if1of ($(VBOX_LDR_FMT32), pe lx)
   VBoxDDRC_LIBS           = \
   	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
@@ -1036,6 +1027,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/MsixCommon.cpp \
  	EFI/DevSmc.cpp \
  	Graphics/DevVGA.cpp \
+ 	Graphics/Dev8514A.cpp \
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
  	Input/PS2M.cpp \
@@ -1140,10 +1132,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDR0_DEFS       += VBOX_WITH_NVME_IMPL
   VBoxDDR0_SOURCES    += \
  	Storage/DevNVMe.cpp
- endif
-
- ifdef VBOX_WITH_NEW_PS2M
-  VBoxDDR0_DEFS         += VBOX_WITH_NEW_PS2M
  endif
 
  ifdef VBOX_WITH_HGSMI
