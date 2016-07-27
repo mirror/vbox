@@ -1030,6 +1030,7 @@ DECLINLINE(int) padr_match(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
          hdr->ether_dhost[3],hdr->ether_dhost[4],hdr->ether_dhost[5],
          padr[0],padr[1],padr[2],padr[3],padr[4],padr[5], result));
 #endif
+    RT_NOREF_PV(size);
     return result;
 }
 
@@ -1041,6 +1042,7 @@ DECLINLINE(int) padr_bcast(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
 #ifdef PCNET_DEBUG_MATCH
     Log(("#%d padr_bcast result=%d\n", PCNET_INST_NR, result));
 #endif
+    RT_NOREF_PV(size);
    return result;
 }
 
@@ -1067,6 +1069,7 @@ static int ladr_match(PPCNETSTATE pThis, const uint8_t *buf, size_t size)
         return (ladr[index >> 3] & (1 << (index & 7)));
 #endif
     }
+    RT_NOREF_PV(size);
     return 0;
 }
 
@@ -2619,7 +2622,8 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
  */
 static int pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread)
 {
-    int rc = VINF_SUCCESS;
+    RT_NOREF_PV(fOnWorkerThread);
+    int rc;
 
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
@@ -3301,7 +3305,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     int         rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->StatAPROMRead, a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
-
+    RT_NOREF_PV(pvUser);
 
     /* FreeBSD is accessing in dwords. */
     if (cb == 1)
@@ -3334,6 +3338,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     int         rc    = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pvUser);
 
     if (cb == 1)
     {
@@ -3568,6 +3573,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
     int         rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pvUser);
 
     switch (cb)
     {
@@ -3595,6 +3601,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
     int         rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pvUser);
 
     switch (cb)
     {
@@ -3716,6 +3723,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
     int         rc    = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pDevIns);
 
     /*
      * We have to check the range, because we're page aligning the MMIO.
@@ -3752,6 +3760,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
     int         rc    = VINF_SUCCESS;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pDevIns);
 
     /*
      * We have to check the range, because we're page aligning the MMIO stuff presently.

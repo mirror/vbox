@@ -51,6 +51,8 @@
  */
 PDMBOTHCBDECL(int) vmmdevTestingMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
+    RT_NOREF_PV(pvUser);
+
     switch (GCPhysAddr)
     {
         case VMMDEV_TESTING_MMIO_NOP_R3:
@@ -126,6 +128,8 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
  */
 PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
+    RT_NOREF_PV(pvUser);
+
     switch (GCPhysAddr)
     {
         case VMMDEV_TESTING_MMIO_NOP_R3:
@@ -291,6 +295,7 @@ static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, VMMDevState *pThis
 PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    RT_NOREF_PV(pvUser);
 
     switch (Port)
     {
@@ -590,6 +595,7 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    RT_NOREF_PV(pvUser);
 
     switch (Port)
     {

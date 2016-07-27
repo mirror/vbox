@@ -442,12 +442,11 @@ static void serial_xmit(PDEVSERIAL pThis, bool bRetryXmit)
 
 static int serial_ioport_write(PDEVSERIAL pThis, uint32_t addr, uint32_t val)
 {
-    addr &= 7;
-
 #ifndef IN_RING3
-    NOREF(pThis);
+    NOREF(pThis); RT_NOREF_PV(addr); RT_NOREF_PV(val);
     return VINF_IOM_R3_IOPORT_WRITE;
 #else
+    addr &= 7;
     switch(addr) {
     default:
     case 0:
@@ -858,6 +857,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     int          rc;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pvUser);
 
     if (cb == 1)
     {
@@ -882,6 +882,7 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     int          rc;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    RT_NOREF_PV(pvUser);
 
     if (cb == 1)
     {

@@ -3578,7 +3578,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) vgaLbfAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUIN
     AssertPtr(pThis);
     Assert(GCPhysFault >= pThis->GCPhysVRAM);
     AssertMsg(uErrorCode & X86_TRAP_PF_RW, ("uErrorCode=%#x\n", uErrorCode));
-    NOREF(pRegFrame);
+    NOREF(pRegFrame); RT_NOREF_PV(pVCpu);
 
     return vgaLFBAccess(pVM, pThis, GCPhysFault, pvFault);
 }

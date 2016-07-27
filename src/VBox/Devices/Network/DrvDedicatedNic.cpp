@@ -139,6 +139,7 @@ typedef enum DRVDEDICATEDNICR0OP
  */
 PDMBOTHCBDECL(int) drvR0DedicatedNicReqHandler(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg)
 {
+    RT_NOREF_PV(pDrvIns); RT_NOREF_PV(u64Arg);
     switch ((DRVDEDICATEDNICR0OP)uOperation)
     {
         case DRVDEDICATEDNICR0OP_INIT:
@@ -204,6 +205,7 @@ PDMBOTHCBDECL(int) drvDedicatedNicUp_AllocBuf(PPDMINETWORKUP pInterface, size_t 
 
 #ifdef IN_RING0
     /** @todo Ask the driver for a buffer, atomically if we're called on EMT.  */
+    RT_NOREF_PV(cbMin); RT_NOREF_PV(pGso); RT_NOREF_PV(ppSgBuf);
     return VERR_TRY_AGAIN;
 
 #else  /* IN_RING3 */
@@ -293,7 +295,7 @@ PDMBOTHCBDECL(int) drvDedicatedNicUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCAT
     /*
      * Tell the driver to send the packet.
      */
-    NOREF(pThis);
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pSgBuf); RT_NOREF_PV(fOnWorkerThread);
     return VERR_INTERNAL_ERROR_4;
 
 #else  /* IN_RING3 */
@@ -327,7 +329,7 @@ PDMBOTHCBDECL(void) drvDedicatedNicUp_SetPromiscuousMode(PPDMINETWORKUP pInterfa
 {
     PDRVDEDICATEDNIC pThis = RT_FROM_MEMBER(pInterface, DRVDEDICATEDNIC, CTX_SUFF(INetworkUp));
     /** @todo enable/disable promiscuous mode (should be easy) */
-    NOREF(pThis);
+    NOREF(pThis); RT_NOREF_PV(fPromiscuous);
 }
 
 #ifdef IN_RING3
@@ -463,7 +465,6 @@ static DECLCALLBACK(void) drvR3DedicatedNicDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvR3DedicatedNicConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVDEDICATEDNIC pThis = PDMINS_2_DATA(pDrvIns, PDRVDEDICATEDNIC);
-    bool f;
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*

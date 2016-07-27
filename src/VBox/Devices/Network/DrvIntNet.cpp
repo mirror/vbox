@@ -487,6 +487,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
 {
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, CTX_SUFF(INetworkUp));
     STAM_PROFILE_START(&pThis->StatTransmit, a);
+    RT_NOREF_PV(fOnWorkerThread);
 
     AssertPtr(pSgBuf);
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
@@ -775,11 +776,11 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                                           cbFrame - sizeof(*pGso), pGso + 1));
                                 }
 #endif
-                                for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+                                for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
                                 {
                                     uint32_t cbSegFrame;
-                                    void    *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
-                                                                                  iSeg, cSegs, &cbSegFrame);
+                                    void    *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame,
+                                                                                  abHdrScratch, iSeg, cSegs, &cbSegFrame);
                                     rc = drvR3IntNetRecvWaitForSpace(pThis);
                                     if (RT_FAILURE(rc))
                                     {
