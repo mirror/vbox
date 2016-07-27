@@ -785,8 +785,8 @@ VBoxC_SOURCES = \
 
 # Audio bits.
 VBoxC_SOURCES += \
-	../Devices/$(VBOX_AUDIO_PATH_SOURCES)/AudioMixBuffer.cpp \
-	../Devices/$(VBOX_AUDIO_PATH_SOURCES)/DrvAudioCommon.cpp \
+	../Devices/Audio/AudioMixBuffer.cpp \
+	../Devices/Audio/DrvAudioCommon.cpp \
 	$(if $(VBOX_WITH_VRDE_AUDIO),src-client/DrvAudioVRDE$(VBOX_AUDIO_FILE_SUFFIX).cpp,)
 
 VBoxC_SOURCES.win = \

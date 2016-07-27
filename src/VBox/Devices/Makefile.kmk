@@ -537,44 +537,44 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  VBoxDD_SOURCES         += \
-	$(VBOX_AUDIO_PATH_SOURCES)/DevIchAc97.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/DevSB16.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHdaCodec.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/AudioMixBuffer.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/AudioMixer.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvAudio.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvAudioCommon.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostNullAudio.cpp
+	Audio/DevIchAc97.cpp \
+	Audio/DevSB16.cpp \
+	Audio/DevIchHda.cpp \
+	Audio/DevIchHdaCodec.cpp \
+	Audio/AudioMixBuffer.cpp \
+	Audio/AudioMixer.cpp \
+	Audio/DrvAudio.cpp \
+	Audio/DrvAudioCommon.cpp \
+	Audio/DrvHostNullAudio.cpp
 
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES += \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostCoreAudio.cpp
+	Audio/DrvHostCoreAudio.cpp
  endif
 
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_SOURCES += \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostDSound.cpp
+	Audio/DrvHostDSound.cpp
  endif
 
  ifdef VBOX_WITH_OSS
   VBoxDD_DEFS    += VBOX_WITH_OSS
   VBoxDD_SOURCES += \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostOSSAudio.cpp
+	Audio/DrvHostOSSAudio.cpp
  endif
 
  ifdef VBOX_WITH_ALSA
   VBoxDD_DEFS    += VBOX_WITH_ALSA
   VBoxDD_SOURCES += \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostALSAAudio.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/alsa_stubs.c
+	Audio/DrvHostALSAAudio.cpp \
+	Audio/alsa_stubs.c
  endif
 
  ifdef VBOX_WITH_PULSE
   VBoxDD_DEFS    += VBOX_WITH_PULSE
   VBoxDD_SOURCES += \
-	$(VBOX_AUDIO_PATH_SOURCES)/DrvHostPulseAudio.cpp \
-	$(VBOX_AUDIO_PATH_SOURCES)/pulse_stubs.c
+	Audio/DrvHostPulseAudio.cpp \
+	Audio/pulse_stubs.c
  endif
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
@@ -872,7 +872,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	VMMDev/VMMDevTesting.cpp
 
   VBoxDDRC_SOURCES      += \
- 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
+ 	Audio/DevIchHda.cpp
 
   ifdef VBOX_WITH_E1000
    VBoxDDRC_DEFS        += VBOX_WITH_E1000
@@ -1037,7 +1037,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp \
- 	$(VBOX_AUDIO_PATH_SOURCES)/DevIchHda.cpp
+ 	Audio/DevIchHda.cpp
 
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 
