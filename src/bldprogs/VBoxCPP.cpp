@@ -1061,6 +1061,8 @@ static RTEXITCODE vbcppOutputWrite(PVBCPP pThis, const char *pch, size_t cch)
 static RTEXITCODE vbcppOutputComment(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart, size_t cchOutputted,
                                      size_t cchMinIndent)
 {
+    RT_NOREF_PV(cchMinIndent); /** @todo  cchMinIndent */
+
     size_t offCur = ScmStreamTell(pStrmInput);
     if (offStart < offCur)
     {
@@ -1548,9 +1550,8 @@ static RTEXITCODE vbcppProcessNumber(PVBCPP pThis, PSCMSTREAM pStrmInput, char c
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE+msg.
  * @param   pThis               The C preprocessor instance.
  * @param   pStrmInput          The input stream.
- * @param   ch                  The first character.
  */
-static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput, char ch)
+static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
     RTEXITCODE  rcExit;
     size_t      cchDefine;
@@ -1693,6 +1694,8 @@ static uint32_t vbcppMacroLookupArg(PVBCPPMACRO pMacro, const char *pchName, siz
 static RTEXITCODE vbcppMacroExpandReplace(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t off, size_t cchToReplace,
                                           const char *pchReplacement, size_t cchReplacement)
 {
+    RT_NOREF_PV(pThis);
+
     /*
      * Figure how much space we actually need.
      * (Hope this whitespace stuff is correct...)
@@ -2382,6 +2385,7 @@ static RTEXITCODE vbcppMacroExpandDefinedOperator(PVBCPP pThis, PVBCPPMACROEXP p
 static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode, size_t *pcReplacements)
 {
     RTEXITCODE  rcExit        = RTEXITCODE_SUCCESS;
+    size_t      cReplacements = 0;
     size_t      off           = 0;
     unsigned    ch;
     while (   off < pExp->StrBuf.cchBuf
@@ -2440,6 +2444,7 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
                 && (   !pMacro->fFunction
                     || vbcppMacroExpandLookForLeftParenthesis(pThis, pExp, &off)) )
             {
+                cReplacements++;
                 rcExit = vbcppMacroExpandIt(pThis, pExp, offDefine, pMacro, off);
                 off = offDefine;
             }
@@ -2449,7 +2454,10 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
                          && enmMode == kMacroReScanMode_Expression
                          && cchDefine == sizeof("defined") - 1
                          && !strncmp(&pExp->StrBuf.pszBuf[offDefine], "defined", cchDefine))
+                {
+                    cReplacements++;
                     rcExit = vbcppMacroExpandDefinedOperator(pThis, pExp, offDefine, &off);
+                }
                 else
                     off = offDefine + cchDefine;
             }
@@ -2461,6 +2469,8 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
         }
     }
 
+    if (pcReplacements)
+        *pcReplacements = cReplacements;
     return rcExit;
 }
 
@@ -2972,6 +2982,8 @@ static RTEXITCODE vbcppMacroTryConvertToInlineD(PVBCPP pThis, PVBCPPMACRO pMacro
  */
 static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF_PV(offStart);
+
     /*
      * Parse it.
      */
@@ -3086,6 +3098,8 @@ static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size
  */
 static RTEXITCODE vbcppDirectiveUndef(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF_PV(offStart);
+
     /*
      * Parse it.
      */
@@ -3186,6 +3200,9 @@ static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offS
                                 VBCPPCONDKIND enmKind, VBCPPEVAL enmResult,
                                 const char *pchCondition, size_t cchCondition)
 {
+    RT_NOREF_PV(offStart); RT_NOREF_PV(pStrmInput);
+
+
     if (pThis->cCondStackDepth >= _64K)
         return vbcppError(pThis, "Too many nested #if/#ifdef/#ifndef statements");
 
@@ -4242,6 +4259,8 @@ static RTEXITCODE vbcppExprEvaluteTree(PVBCPP pThis, PVBCPPEXPR pRoot, PVBCPPEXP
 static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, size_t cReplacements, VBCPPEVAL *penmResult)
 {
     Assert(strlen(pszExpr) == cchExpr);
+    RT_NOREF_PV(cReplacements);
+
     size_t      cUndefined;
     PVBCPPEXPR  pExprTree;
     RTEXITCODE  rcExit = vbcppExprParse(pThis, pszExpr, cchExpr, &pExprTree, &cUndefined);
@@ -4270,6 +4289,8 @@ static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, siz
 
 static RTEXITCODE vbcppExtractSkipCommentLine(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
+    RT_NOREF_PV(pThis);
+
     unsigned chPrev = ScmStreamGetCh(pStrmInput); Assert(chPrev == '/');
     unsigned ch;
     while ((ch = ScmStreamPeekCh(pStrmInput)) != ~(unsigned)0)
@@ -4816,6 +4837,8 @@ static RTEXITCODE vbcppAddInclude(PVBCPP pThis, const char *pszDir)
  */
 static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF_PV(offStart);
+
     /*
      * Parse it.
      */
@@ -4922,6 +4945,8 @@ static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, siz
  */
 static RTEXITCODE vbcppDirectivePragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF_PV(offStart);
+
     /*
      * Parse out the first word.
      */
@@ -4982,6 +5007,8 @@ static RTEXITCODE vbcppDirectivePragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size
  */
 static RTEXITCODE vbcppDirectiveError(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF_PV(offStart);
+    RT_NOREF_PV(pStrmInput);
     return vbcppError(pThis, "Hit an #error");
 }
 
@@ -4997,6 +5024,8 @@ static RTEXITCODE vbcppDirectiveError(PVBCPP pThis, PSCMSTREAM pStrmInput, size_
  */
 static RTEXITCODE vbcppDirectiveLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF_PV(offStart);
+    RT_NOREF_PV(pStrmInput);
     return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
 
@@ -5010,6 +5039,7 @@ static RTEXITCODE vbcppDirectiveLineNo(PVBCPP pThis, PSCMSTREAM pStrmInput, size
  */
 static RTEXITCODE vbcppDirectiveLineNoShort(PVBCPP pThis, PSCMSTREAM pStrmInput)
 {
+    RT_NOREF_PV(pStrmInput);
     return vbcppError(pThis, "Not implemented: %s", __FUNCTION__);
 }
 
@@ -5157,7 +5187,7 @@ static RTEXITCODE vbcppPreprocess(PVBCPP pThis)
                     else if (ch == '\'')
                         rcExit = vbcppProcessCharacterConstant(pThis, pStrmInput);
                     else if (vbcppIsCIdentifierLeadChar(ch))
-                        rcExit = vbcppProcessIdentifier(pThis, pStrmInput, ch);
+                        rcExit = vbcppProcessIdentifier(pThis, pStrmInput);
                     else if (RT_C_IS_DIGIT(ch))
                         rcExit = vbcppProcessNumber(pThis, pStrmInput, ch);
                     else

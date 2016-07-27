@@ -1691,6 +1691,7 @@ static DECLCALLBACK(int) convertElfCompareRelA(void const *pvElement1, void cons
         return -1;
     if (pReloc1->r_offset > pReloc2->r_offset)
         return 1;
+    RT_NOREF_PV(pvUser);
     return 0;
 }
 
@@ -1699,6 +1700,8 @@ static bool convertElfSectionsToLeDataAndFixupps(POMFWRITER pThis, PCELFDETAILS 
     Elf64_Sym const    *paSymbols = pElfStuff->paSymbols;
     Elf64_Shdr const   *paShdrs   = pElfStuff->paShdrs;
     bool                fRet      = true;
+    RT_NOREF_PV(cbFile);
+
     for (uint32_t i = 1; i < pThis->cSegments; i++)
     {
         if (pThis->paSegments[i].iSegDef == UINT16_MAX)
@@ -2506,6 +2509,10 @@ static bool convertCoffSectionsToLeDataAndFixupps(POMFWRITER pThis, uint8_t cons
                                                   PCIMAGE_SECTION_HEADER paShdrs, uint16_t cSections,
                                                   PCIMAGE_SYMBOL paSymbols, uint16_t cSymbols, const char *pchStrTab)
 {
+    RT_NOREF_PV(cbFile);
+    RT_NOREF_PV(cSections);
+    RT_NOREF_PV(cSymbols);
+
     uint32_t const  cbStrTab = *(uint32_t const *)pchStrTab;
     bool            fRet     = true;
     for (uint32_t i = 0; i < pThis->cSegments; i++)

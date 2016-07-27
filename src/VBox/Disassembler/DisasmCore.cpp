@@ -235,7 +235,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
 static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
 #ifdef IN_RING0
-    NOREF(cbMinRead);
+    RT_NOREF_PV(cbMinRead);
     AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
     RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
     pDis->cbCachedInstr = offInstr + cbMaxRead;
@@ -638,7 +638,7 @@ static size_t disParseInstruction(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 static size_t ParseEscFP(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     PCDISOPCODE fpop;
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
 
     uint8_t    ModRM = disReadByte(pDis, offInstr);
     uint8_t    index = pDis->bOpCode - 0xD8;
@@ -759,7 +759,7 @@ static void UseSIB(PDISSTATE pDis, PDISOPPARAM pParam)
 
 static size_t ParseSIB(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     uint8_t SIB = disReadByte(pDis, offInstr);
     offInstr++;
@@ -790,7 +790,7 @@ static size_t ParseSIB(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPP
 
 static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     uint8_t SIB = disReadByte(pDis, offInstr);
     offInstr++;
@@ -829,7 +829,7 @@ static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis
  ********************************************************************************************************************************/
 static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam, int fRegAddr)
 {
-    NOREF(pOp); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pDis);
 
 #ifdef LOG_ENABLED
     unsigned type    = OP_PARM_VTYPE(pParam->fParam);
@@ -908,7 +908,7 @@ static void disasmModRMReg16(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDIS
     static const uint8_t s_auBaseModRMReg16[8]  =
     { DISGREG_BX, DISGREG_BX, DISGREG_BP, DISGREG_BP, DISGREG_SI, DISGREG_DI, DISGREG_BP, DISGREG_BX };
 
-    NOREF(pDis); NOREF(pOp);
+    RT_NOREF_PV(pDis); RT_NOREF_PV(pOp);
     pParam->fUse |= DISUSE_REG_GEN16;
     pParam->Base.idxGenReg = s_auBaseModRMReg16[idx];
     if (idx < 4)
@@ -922,7 +922,7 @@ static void disasmModRMReg16(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDIS
 
 static void disasmModRMSReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     if (idx >= DISSELREG_END)
     {
         Log(("disasmModRMSReg %d failed!!\n", idx));
@@ -1266,7 +1266,7 @@ static size_t QueryModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 //*****************************************************************************
 static size_t ParseIllegal(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     AssertFailed();
     return offInstr;
 }
@@ -1358,7 +1358,7 @@ static size_t ParseModRM_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pD
 //*****************************************************************************
 static size_t ParseModFence(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     /* Note! Only used in group 15, so we must account for the mod/rm byte. */
     return offInstr + 1;
 }
@@ -1366,7 +1366,7 @@ static size_t ParseModFence(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 //*****************************************************************************
 static size_t ParseImmByte(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     uint8_t byte = disReadByte(pDis, offInstr);
     if (pParam->fParam == OP_PARM_Lx)
     {
@@ -1390,14 +1390,14 @@ static size_t ParseImmByte(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 //*****************************************************************************
 static size_t ParseImmByte_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     return offInstr + 1;
 }
 //*****************************************************************************
 //*****************************************************************************
 static size_t ParseImmByteSX(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     if (pDis->uOpMode == DISCPUMODE_32BIT)
     {
         pParam->uValue = (uint32_t)(int8_t)disReadByte(pDis, offInstr);
@@ -1423,14 +1423,14 @@ static size_t ParseImmByteSX(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 //*****************************************************************************
 static size_t ParseImmByteSX_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     return offInstr + 1;
 }
 //*****************************************************************************
 //*****************************************************************************
 static size_t ParseImmUshort(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     pParam->uValue = disReadWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE16;
     pParam->cb     = sizeof(uint16_t);
@@ -1440,14 +1440,14 @@ static size_t ParseImmUshort(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 //*****************************************************************************
 static size_t ParseImmUshort_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     return offInstr + 2;
 }
 //*****************************************************************************
 //*****************************************************************************
 static size_t ParseImmUlong(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     pParam->uValue = disReadDWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE32;
     pParam->cb     = sizeof(uint32_t);
@@ -1457,14 +1457,14 @@ static size_t ParseImmUlong(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 //*****************************************************************************
 static size_t ParseImmUlong_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     return offInstr + 4;
 }
 //*****************************************************************************
 //*****************************************************************************
 static size_t ParseImmQword(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     pParam->uValue = disReadQWord(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE64;
     pParam->cb     = sizeof(uint64_t);
@@ -1474,14 +1474,14 @@ static size_t ParseImmQword(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 //*****************************************************************************
 static size_t ParseImmQword_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     return offInstr + 8;
 }
 //*****************************************************************************
 //*****************************************************************************
 static size_t ParseImmV(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     if (pDis->uOpMode == DISCPUMODE_32BIT)
     {
         pParam->uValue = disReadDWord(pDis, offInstr);
@@ -1507,7 +1507,7 @@ static size_t ParseImmV(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseImmV_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
     if (pDis->uOpMode == DISCPUMODE_32BIT)
         return offInstr + 4;
     if (pDis->uOpMode == DISCPUMODE_64BIT)
@@ -1518,7 +1518,7 @@ static size_t ParseImmV_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 //*****************************************************************************
 static size_t ParseImmZ(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
     if (pDis->uOpMode == DISCPUMODE_16BIT)
     {
@@ -1547,7 +1547,7 @@ static size_t ParseImmZ(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseImmZ_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
     /* Word for 16-bit operand-size or doubleword for 32 or 64-bit operand-size. */
     if (pDis->uOpMode == DISCPUMODE_16BIT)
         return offInstr + 2;
@@ -1559,7 +1559,7 @@ static size_t ParseImmZ_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 //*****************************************************************************
 static size_t ParseImmBRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     pParam->uValue = disReadByte(pDis, offInstr);
     pParam->fUse  |= DISUSE_IMMEDIATE8_REL;
     pParam->cb     = sizeof(uint8_t);
@@ -1570,7 +1570,7 @@ static size_t ParseImmBRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 //*****************************************************************************
 static size_t ParseImmBRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp); NOREF(pParam); NOREF(pDis);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam); RT_NOREF_PV(pDis);
     return offInstr + 1;
 }
 //*****************************************************************************
@@ -1578,7 +1578,7 @@ static size_t ParseImmBRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 //*****************************************************************************
 static size_t ParseImmVRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     if (pDis->uOpMode == DISCPUMODE_32BIT)
     {
         pParam->uValue = disReadDWord(pDis, offInstr);
@@ -1606,7 +1606,7 @@ static size_t ParseImmVRel(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 //*****************************************************************************
 static size_t ParseImmVRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
     if (pDis->uOpMode == DISCPUMODE_16BIT)
         return offInstr + 2;
     /* Both 32 & 64 bits mode use 32 bits relative immediates. */
@@ -1616,7 +1616,7 @@ static size_t ParseImmVRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 //*****************************************************************************
 static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
     {
         if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
@@ -1679,7 +1679,7 @@ static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 //*****************************************************************************
 static size_t ParseImmAddr_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp);
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
     {
         if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
@@ -1699,7 +1699,7 @@ static size_t ParseImmAddr_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 //*****************************************************************************
 static size_t ParseImmAddrF(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
     // immediate far pointers - only 16:16 or 16:32; determined by operand, *not* address size!
     Assert(pDis->uOpMode == DISCPUMODE_16BIT || pDis->uOpMode == DISCPUMODE_32BIT);
     Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p);
@@ -1723,10 +1723,10 @@ static size_t ParseImmAddrF(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 //*****************************************************************************
 static size_t ParseImmAddrF_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr); NOREF(pOp);
+    RT_NOREF_PV(offInstr); RT_NOREF_PV(pOp);
     // immediate far pointers - only 16:16 or 16:32
     Assert(pDis->uOpMode == DISCPUMODE_16BIT || pDis->uOpMode == DISCPUMODE_32BIT);
-    Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p);
+    Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p); RT_NOREF_PV(pParam);
     if (pDis->uOpMode == DISCPUMODE_32BIT)
         return offInstr + 4 + 2;    /* far 16:32 pointer */
     return offInstr + 2 + 2;        /* far 16:16 pointer */
@@ -1735,7 +1735,7 @@ static size_t ParseImmAddrF_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE
 //*****************************************************************************
 static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(offInstr);
+    RT_NOREF_PV(offInstr);
 
     /*
      * Sets up flags for stored in OPC fixed registers.
@@ -1837,7 +1837,7 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 //*****************************************************************************
 static size_t ParseXv(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
@@ -1862,7 +1862,7 @@ static size_t ParseXv(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
 //*****************************************************************************
 static size_t ParseXb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_DS_BASED;
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
@@ -1887,7 +1887,7 @@ static size_t ParseXb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
 //*****************************************************************************
 static size_t ParseYv(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
@@ -1912,7 +1912,7 @@ static size_t ParseYv(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
 //*****************************************************************************
 static size_t ParseYb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
 
     pParam->fUse |= DISUSE_POINTER_ES_BASED;
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
@@ -1937,7 +1937,7 @@ static size_t ParseYb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
 //*****************************************************************************
 static size_t ParseInvOpModRm(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pDis); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pDis); RT_NOREF_PV(pParam);
     /* This is used to avoid a bunch of special hacks to get the ModRM byte
        included when encountering invalid opcodes in groups. */
     return offInstr + 1;
@@ -1946,7 +1946,7 @@ static size_t ParseInvOpModRm(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, 
 //*****************************************************************************
 static size_t ParseVexDest(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp);
+    RT_NOREF_PV(pOp);
 
     unsigned type = OP_PARM_VTYPE(pParam->fParam);
 
@@ -1980,7 +1980,7 @@ static size_t ParseVexDest(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 //*****************************************************************************
 static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     /* 2nd byte */
     pDis->bOpCode = disReadByte(pDis, offInstr);
@@ -2043,7 +2043,7 @@ static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, 
 //*****************************************************************************
 static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     /* 3rd byte */
     pDis->bOpCode = disReadByte(pDis, offInstr);
@@ -2145,7 +2145,7 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 //*****************************************************************************
 static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     /* 3rd byte */
     pDis->bOpCode = disReadByte(pDis, offInstr);
@@ -2189,7 +2189,7 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 //*****************************************************************************
 static size_t ParseNopPause(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     if (pDis->fPrefix & DISPREFIX_REP)
     {
@@ -2205,7 +2205,7 @@ static size_t ParseNopPause(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 //*****************************************************************************
 static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t  modrm = disReadByte(pDis, offInstr);
     uint8_t  reg   = MODRM_REG(modrm);
@@ -2219,7 +2219,7 @@ static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
 //*****************************************************************************
 static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     unsigned idx;
     switch (pDis->bOpCode)
@@ -2254,7 +2254,7 @@ static size_t ParseShiftGrp2(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
 static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     unsigned idx = (pDis->bOpCode - 0xF6) * 8;
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2267,7 +2267,7 @@ static size_t ParseGrp3(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseGrp4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2280,7 +2280,7 @@ static size_t ParseGrp4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseGrp5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2314,7 +2314,7 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 
     AssertMsg(offStrict == offRet - 1  /* the imm8_opcode */ || pOp->uOpcode == OP_INVALID,
               ("offStrict=%#x offRet=%#x uOpCode=%u\n", offStrict, offRet, pOp->uOpcode));
-    NOREF(offStrict);
+    RT_NOREF_PV(offStrict);
 
     return offRet;
 }
@@ -2322,7 +2322,7 @@ static size_t Parse3DNow(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseGrp6(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2335,7 +2335,7 @@ static size_t ParseGrp6(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t mod   = MODRM_MOD(modrm);
@@ -2361,7 +2361,7 @@ static size_t ParseGrp7(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseGrp8(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2374,7 +2374,7 @@ static size_t ParseGrp8(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2387,7 +2387,7 @@ static size_t ParseGrp9(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
 //*****************************************************************************
 static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2400,7 +2400,7 @@ static size_t ParseGrp10(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2416,7 +2416,7 @@ static size_t ParseGrp12(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2431,7 +2431,7 @@ static size_t ParseGrp13(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t reg   = MODRM_REG(modrm);
@@ -2446,7 +2446,7 @@ static size_t ParseGrp14(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     uint8_t mod   = MODRM_MOD(modrm);
@@ -2464,7 +2464,7 @@ static size_t ParseGrp15(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pParam);
+    RT_NOREF_PV(pParam);
 
     uint8_t modrm = disReadByte(pDis, offInstr);
     pOp = &g_aMapX86_Group16[MODRM_REG(modrm)];
@@ -2475,7 +2475,7 @@ static size_t ParseGrp16(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     PCDISOPCODE pOpCode = &g_InvalidOpcode[0];
 
@@ -2522,7 +2522,7 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 //*****************************************************************************
 static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
-    NOREF(pOp); NOREF(pParam);
+    RT_NOREF_PV(pOp); RT_NOREF_PV(pParam);
 
     PCDISOPCODE pOpCode = NULL;
 

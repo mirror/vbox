@@ -812,6 +812,8 @@ static bool disDataSegment(uint32_t iSeg)
 
 static bool disIsCodeAndAdjustSize(uint32_t uFlatAddr, PRTDBGSYMBOL pSym, PBIOSSEG pSeg)
 {
+    RT_NOREF_PV(uFlatAddr);
+
     switch (g_enmBiosType)
     {
         /*
@@ -853,6 +855,7 @@ static bool disIsCodeAndAdjustSize(uint32_t uFlatAddr, PRTDBGSYMBOL pSym, PBIOSS
 
 static bool disIs16BitCode(const char *pszSymbol)
 {
+    RT_NOREF_PV(pszSymbol);
     return true;
 }
 
@@ -925,6 +928,8 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
  */
 static DECLCALLBACK(int) disReadOpcodeBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
+    RT_NOREF_PV(cbMinRead);
+
     RTUINTPTR   offBios  = pDis->uInstrAddr + offInstr - g_uBiosFlatBase;
     size_t      cbToRead = cbMaxRead;
     if (offBios + cbToRead > g_cbImg)
