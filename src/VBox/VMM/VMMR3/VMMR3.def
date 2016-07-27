@@ -344,6 +344,10 @@ EXPORTS
     TMTimerUnlock
     TMR3GetWarpDrive
     TMR3SetWarpDrive
+    TMR3TimeVirtGet
+    TMR3TimeVirtGetMicro
+    TMR3TimeVirtGetMilli
+    TMR3TimeVirtGetNano
 
     VMMGetCpu
 

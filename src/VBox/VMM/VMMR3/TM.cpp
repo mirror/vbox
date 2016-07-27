@@ -2912,6 +2912,75 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
 
 
 /**
+ * Gets the current TMCLOCK_VIRTUAL time without checking
+ * timers or anything.
+ *
+ * @returns The timestamp.
+ * @param   pUVM        The user mode VM structure.
+ *
+ * @remarks See TMVirtualGetNoCheck.
+ */
+VMMR3DECL(uint64_t) TMR3TimeVirtGet(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, UINT64_MAX);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT64_MAX);
+    return TMVirtualGetNoCheck(pVM);
+}
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL time in milliseconds without checking
+ * timers or anything.
+ *
+ * @returns The timestamp in milliseconds.
+ * @param   pUVM        The user mode VM structure.
+ *
+ * @remarks See TMVirtualGetNoCheck.
+ */
+VMMR3DECL(uint64_t) TMR3TimeVirtGetMilli(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, UINT64_MAX);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT64_MAX);
+    return TMVirtualToMilli(pVM, TMVirtualGetNoCheck(pVM));
+}
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL time in microseconds without checking
+ * timers or anything.
+ *
+ * @returns The timestamp in microseconds.
+ * @param   pUVM        The user mode VM structure.
+ *
+ * @remarks See TMVirtualGetNoCheck.
+ */
+VMMR3DECL(uint64_t) TMR3TimeVirtGetMicro(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, UINT64_MAX);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT64_MAX);
+    return TMVirtualToMicro(pVM, TMVirtualGetNoCheck(pVM));
+}
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL time in nanoseconds without checking
+ * timers or anything.
+ *
+ * @returns The timestamp in nanoseconds.
+ * @param   pUVM        The user mode VM structure.
+ *
+ * @remarks See TMVirtualGetNoCheck.
+ */
+VMMR3DECL(uint64_t) TMR3TimeVirtGetNano(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, UINT64_MAX);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT64_MAX);
+    return TMVirtualToNano(pVM, TMVirtualGetNoCheck(pVM));
+}
+
+
+/**
  * Gets the current warp drive percent.
  *
  * @returns The warp drive percent.
