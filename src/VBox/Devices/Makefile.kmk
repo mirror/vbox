@@ -186,12 +186,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES += Storage/DrvHostFloppy.cpp
  endif
 
- ifn1of ($(KBUILD_TARGET), darwin win)
+ ifn1of ($(KBUILD_TARGET), darwin)
   VBoxDD_SOURCES += Storage/HBDMgmt-generic.cpp
  endif
 
  VBoxDD_SOURCES.darwin += Storage/HBDMgmt-darwin.cpp
- VBoxDD_SOURCES.win += Storage/HBDMgmt-win.cpp #Disabled until remaining issues are sorted out
+ #VBoxDD_SOURCES.win += Storage/HBDMgmt-win.cpp #Disabled until remaining issues are sorted out
 
  VBoxDD_LIBS             = # more later.
  VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
