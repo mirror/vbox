@@ -1752,78 +1752,141 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
         DeleteObject(hBitmap);
 # else /* QT_VERSION >= 0x050000 */
     /* Create a ARGB image out of the shape data: */
-    QImage image(uWidth, uHeight, QImage::Format_ARGB32);
-    memcpy(image.bits(), srcShapePtr, uHeight * uWidth * 4);
+
+    /*
+     * Qt5 QCursor recommends 32 x 32 cursor, therefore the original data is copied to
+     * a larger QImage if necessary. Cursors like 10x16 did not work correctly (Solaris 10 guest).
+     */
+    uint uCursorWidth = uWidth >= 32? uWidth: 32;
+    uint uCursorHeight = uHeight >= 32? uHeight: 32;
+    uint x, y;
 
     if (fHasAlpha)
+    {
+        QImage image(uCursorWidth, uCursorHeight, QImage::Format_ARGB32);
+        memset(image.bits(), 0, image.byteCount());
+
+        const uint32_t *pu32SrcShapeScanline = (uint32_t *)srcShapePtr;
+        for (y = 0; y < uHeight; ++y, pu32SrcShapeScanline += uWidth)
+            memcpy(image.scanLine(y), pu32SrcShapeScanline, uWidth * sizeof(uint32_t));
+
         m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
+    }
     else
     {
         if (isPointer1bpp(srcShapePtr, uWidth, uHeight))
         {
             /* Incoming data consist of 32 bit BGR XOR mask and 1 bit AND mask.
              * XOR pixels contain either 0x00000000 or 0x00FFFFFF.
-             * image.convertToFormat(QImage::Format_Mono) converts them:
-             * 0x00000000 -> 1, 0x00FFFFFF -> 0.
              *
-             * XOR AND originally intended result (F denotes 0x00FFFFFF):
+             * Originally intended result (F denotes 0x00FFFFFF):
+             * XOR AND
              *   0   0 black
              *   F   0 white
              *   0   1 transparent
              *   F   1 xor'd
              *
-             * XOR AND converted bitmap intended result:
-             *   1   0 black
-             *   0   0 white
-             *   1   1 transparent
-             *   0   1 xor'd
+             * Actual Qt5 result for color table 0:0xFF000000, 1:0xFFFFFFFF
+             * (tested on Windows 7 and 10 64 bit hosts):
+             * Bitmap Mask
+             *  0   0 black
+             *  1   0 white
+             *  0   1 xor
+             *  1   1 transparent
              *
-             * Bitmap Mask actual Qt5 result (tested on Windows 7 64 bit host):
-             *   1   0 black
-             *   0   0 white
-             *   0   1 transparent
-             *   1   1 xor'd
-             *
-             * Converted bitmap to the Qt5 mask and bitmap:
-             * Mask = AND;
-             * Bitmap = ConvBitmap ^ Mask;
              */
-            QImage bitmap = image.convertToFormat(QImage::Format_Mono);
-            QImage mask(uWidth, uHeight, QImage::Format_Mono);
-            memcpy(mask.bits(), srcAndMaskPtr, uHeight * ((uWidth + 7) / 8));
 
-            const uint8_t *pu8Mask = mask.bits();
-            uint8_t *pu8Bitmap = bitmap.bits();
-            uint i;
-            for (i = 0; i < uHeight * ((uWidth + 7) / 8); ++i)
-                pu8Bitmap[i] ^= pu8Mask[i];
+            QVector<QRgb> colors(2);
+            colors[0] = UINT32_C(0xFF000000);
+            colors[1] = UINT32_C(0xFFFFFFFF);
+
+            QImage bitmap(uCursorWidth, uCursorHeight, QImage::Format_Mono);
+            bitmap.setColorTable(colors);
+            memset(bitmap.bits(), 0xFF, bitmap.byteCount());
+
+            QImage mask(uCursorWidth, uCursorHeight, QImage::Format_Mono);
+            mask.setColorTable(colors);
+            memset(mask.bits(), 0xFF, mask.byteCount());
+
+            const uint8_t *pu8SrcAndScanline = srcAndMaskPtr;
+            const uint32_t *pu32SrcShapeScanline = (uint32_t *)srcShapePtr;
+            for (y = 0; y < uHeight; ++y)
+            {
+                for (x = 0; x < uWidth; ++x)
+                {
+                    const uint8_t u8Bit = (uint8_t)(1 << (7 - x % 8));
+
+                    const uint8_t u8SrcMaskByte = pu8SrcAndScanline[x / 8];
+                    const uint8_t u8SrcMaskBit = u8SrcMaskByte & u8Bit;
+                    const uint32_t u32SrcPixel = pu32SrcShapeScanline[x] & UINT32_C(0xFFFFFF);
+
+                    uint8_t *pu8DstMaskByte = &mask.scanLine(y)[x / 8];
+                    uint8_t *pu8DstBitmapByte = &bitmap.scanLine(y)[x / 8];
+
+                    if (u8SrcMaskBit == 0)
+                    {
+                        if (u32SrcPixel == 0)
+                        {
+                            /* Black: Qt Bitmap = 0, Mask = 0 */
+                            *pu8DstMaskByte &= ~u8Bit;
+                            *pu8DstBitmapByte &= ~u8Bit;
+                        }
+                        else
+                        {
+                            /* White: Qt Bitmap = 1, Mask = 0 */
+                            *pu8DstMaskByte &= ~u8Bit;
+                            *pu8DstBitmapByte |= u8Bit;
+                        }
+                    }
+                    else
+                    {
+                        if (u32SrcPixel == 0)
+                        {
+                            /* Transparent: Qt Bitmap = 1, Mask = 1 */
+                            *pu8DstMaskByte |= u8Bit;
+                            *pu8DstBitmapByte |= u8Bit;
+                        }
+                        else
+                        {
+                            /* Xor'ed: Qt Bitmap = 0, Mask = 1 */
+                            *pu8DstMaskByte |= u8Bit;
+                            *pu8DstBitmapByte &= ~u8Bit;
+                        }
+                    }
+                }
+
+                pu8SrcAndScanline += (uWidth + 7) / 8;
+                pu32SrcShapeScanline += uWidth;
+            }
 
             m_cursor = QCursor(QBitmap::fromImage(bitmap), QBitmap::fromImage(mask), uXHot, uYHot);
         }
         else
         {
             /* Assign alpha channel values according to the AND mask: 1 -> 0x00, 0 -> 0xFF: */
-            const uint8_t *pu8And = srcAndMaskPtr;
-            uint32_t *pu32Pixel = (uint32_t *)image.bits();
-            uint y;
+            QImage image(uCursorWidth, uCursorHeight, QImage::Format_ARGB32);
+            memset(image.bits(), 0, image.byteCount());
+
+            const uint8_t *pu8SrcAndScanline = srcAndMaskPtr;
+            const uint32_t *pu32SrcShapeScanline = (uint32_t *)srcShapePtr;
+
             for (y = 0; y < uHeight; ++y)
             {
-                uint x;
-                for (x = 0; x < (uWidth + 7) / 8; ++x)
-                {
-                    const uint8_t b = *pu8And;
-                    uint k;
-                    for (k = 0; k < 8; ++k)
-                    {
-                        if (b & (1 << (7 - k)))
-                            *pu32Pixel &= UINT32_C(0x00FFFFFF);
-                        else
-                            *pu32Pixel |= UINT32_C(0xFF000000);
-                        ++pu32Pixel;
-                    }
+                uint32_t *pu32DstPixel = (uint32_t *)image.scanLine(y);
 
-                    ++pu8And;
+                for (x = 0; x < uWidth; ++x)
+                {
+                    const uint8_t u8Bit = (uint8_t)(1 << (7 - x % 8));
+                    const uint8_t u8SrcMaskByte = pu8SrcAndScanline[x / 8];
+
+                    if (u8SrcMaskByte & u8Bit)
+                        *pu32DstPixel++ = pu32SrcShapeScanline[x] & UINT32_C(0x00FFFFFF);
+                    else
+                        *pu32DstPixel++ = pu32SrcShapeScanline[x] | UINT32_C(0xFF000000);
                 }
+
+                pu32SrcShapeScanline += uWidth;
+                pu8SrcAndScanline += (uWidth + 7) / 8;
             }
 
             m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
