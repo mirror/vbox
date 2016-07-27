@@ -692,8 +692,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
 endif
 # Enable audio support for VRDE.
 VBOX_WITH_VRDE_AUDIO = 1
-# Enable to use the VBox 5.0 audio framework
-#VBOX_WITH_AUDIO_50 := 1
 # Use the VRDE external authentication library from VBoxSVC.
 if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_VRDEAUTH_IN_VBOXSVC = 1
@@ -1162,18 +1160,6 @@ ifdef VBOX_OSE
  VBOX_BRAND_GUI_VBOX_64PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_64px.png
  VBOX_BRAND_GUI_CUBE_42PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_cube_42px.png
  VBOX_BRAND_GUI_VBOX_SVG             := $(PATH_ROOT)/src/VBox/Artwork/OSE/virtualbox.svg
-endif
-
-#
-# Audio: Which code base to use.
-# This can be overriden in LocalConfig.kmk.
-#
-ifdef VBOX_WITH_AUDIO_50
- VBOX_AUDIO_PATH_SOURCES=Audio_old
- VBOX_AUDIO_FILE_SUFFIX=_old
-else
- VBOX_AUDIO_PATH_SOURCES=Audio
- VBOX_AUDIO_FILE_SUFFIX=
 endif
 
 #

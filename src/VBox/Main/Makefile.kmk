@@ -784,9 +784,6 @@ VBoxC_SOURCES = \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 
 # Audio bits.
-VBoxC_DEFS    += \
-	$(if $(VBOX_WITH_AUDIO_50),VBOX_WITH_AUDIO_50,)
-
 VBoxC_SOURCES += \
 	../Devices/$(VBOX_AUDIO_PATH_SOURCES)/AudioMixBuffer.cpp \
 	../Devices/$(VBOX_AUDIO_PATH_SOURCES)/DrvAudioCommon.cpp \

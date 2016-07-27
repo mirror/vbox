@@ -119,17 +119,10 @@
 
 #include <VBox/vmm/pdmaudioifs.h>
 
-#ifdef VBOX_WITH_AUDIO_50
-# undef LOG_GROUP
-# include "../Audio_old/DevIchAc97.cpp"
-# undef LOG_GROUP
-# include "../Audio_old/DevIchHda.cpp"
-#else
 # undef LOG_GROUP
 # include "../Audio/DevIchAc97.cpp"
 # undef LOG_GROUP
 # include "../Audio/DevIchHda.cpp"
-#endif
 
 #include <stdio.h>
 

@@ -35,11 +35,6 @@
 # include <VBox/vmm/stam.h>
 #endif
 
-#ifdef VBOX_WITH_AUDIO_50
-# undef ___VBox_vmm_pdmaudioifs_h
-# include "pdmaudioifs_old.h"
-#else
-
 /** @defgroup grp_pdm_ifs_audio     PDM Audio Interfaces
  * @ingroup grp_pdm_interfaces
  * @{
@@ -973,8 +968,6 @@ typedef struct PDMIHOSTAUDIO
 #define PDMIHOSTAUDIO_IID                           "96AC69D0-F301-42AC-8F1D-1E19BA808887"
 
 /** @} */
-
-#endif /* VBOX_WITH_AUDIO_50 */
 
 #endif /* !___VBox_vmm_pdmaudioifs_h */
 
