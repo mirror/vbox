@@ -117,6 +117,9 @@ extern const PDMDRVREG g_DrvNetShaper;
 #endif /* VBOX_WITH_NETSHAPER */
 extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;
+#ifdef VBOX_WITH_AUDIO_DEBUG
+extern const PDMDRVREG g_DrvHostDebugAudio;
+#endif
 extern const PDMDRVREG g_DrvHostNullAudio;
 #if defined(RT_OS_WINDOWS)
 extern const PDMDRVREG g_DrvHostDSound;

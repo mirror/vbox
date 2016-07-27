@@ -488,6 +488,40 @@ typedef struct PDMAUDIOMIXBUF
     uint8_t                   cShift;
 } PDMAUDIOMIXBUF;
 
+typedef uint32_t PDMAUDIOFILEFLAGS;
+
+/* No flags defined. */
+#define PDMAUDIOFILEFLAG_NONE            0
+
+/**
+ * Audio file types.
+ */
+typedef enum PDMAUDIOFILETYPE
+{
+    /** Unknown type, do not use. */
+    PDMAUDIOFILETYPE_UNKNOWN = 0,
+    /** Wave (.WAV) file. */
+    PDMAUDIOFILETYPE_WAV
+} PDMAUDIOFILETYPE;
+
+/**
+ * Structure for an audio file handle.
+ */
+typedef struct PDMAUDIOFILE
+{
+    /** Type of the audio file. */
+    PDMAUDIOFILETYPE enmType;
+    /** File name. */
+    char             szName[255];
+    /** Actual file handle. */
+    RTFILE           hFile;
+    /** Data needed for the specific audio file type implemented.
+     *  Optional, can be NULL. */
+    void            *pvData;
+    /** Data size (in bytes). */
+    size_t           cbData;
+} PDMAUDIOFILE, *PPDMAUDIOFILE;
+
 /** Stream status flag. To be used with PDMAUDIOSTRMSTS_FLAG_ flags. */
 typedef uint32_t PDMAUDIOSTRMSTS;
 

@@ -2179,7 +2179,7 @@ const PDMDRVREG g_DrvAUDIO =
     /* fClass */
     PDM_DRVREG_CLASS_AUDIO,
     /* cMaxInstances */
-    2,
+    UINT32_MAX,
     /* cbInstance */
     sizeof(DRVAUDIO),
     /* pfnConstruct */

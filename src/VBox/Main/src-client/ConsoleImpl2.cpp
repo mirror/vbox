@@ -2923,6 +2923,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVRDE);
             InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
 #endif
+
+#ifdef VBOX_WITH_AUDIO_DEBUG
+            InsertConfigNode(pInst, "LUN#2", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "AUDIO");
+
+            InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "DebugAudio");
+
+            InsertConfigNode(pLunL1, "Config", &pCfg);
+            InsertConfigString(pCfg, "AudioDriver", "DebugAudio");
+            InsertConfigString(pCfg, "StreamName", bstr);
+#endif
             /** @todo Add audio video recording driver here. */
         }
 
