@@ -1322,7 +1322,155 @@ IOAPIC:          on
             (VRDE) server.</para>
           </listitem>
 
-          <!-- @todo r=andy Document vrdeproperty -->
+          <listitem>
+            <para><computeroutput>--vrdeproperty "TCP/Ports|Address=&lt;value&gt;"</computeroutput>
+            sets the port number(s) and IP address on the VM that the VRDE server can bind to.</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>For TCP/Ports, &lt;value&gt; should be a port or a range of ports that the VRDE 
+                server can bind to; "default" or "0" means port 3389, the standard port for RDP. 
+                For details, see the description for the
+                <computeroutput>--vrdeport</computeroutput> option in <xref
+                linkend="vboxmanage-modifyvm-vrde" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>For TCP/Address, &lt;value&gt; should be the IP address of the host network
+                interface that the VRDE server will bind to. If specified, the server
+                will accept connections only on the specified host network interface.
+                For details, see the description for the
+                <computeroutput>--vrdeaddress</computeroutput> option in <xref
+                linkend="vboxmanage-modifyvm-vrde" />.</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeproperty "VideoChannel/Enabled|Quality|DownscaleProtection=&lt;value&gt;"</computeroutput>
+            sets the VRDP video redirection properties.</para>
+            <itemizedlist>
+              <listitem>
+                <para>For VideoChannel/Enabled, &lt;value&gt; can be set to "1" switching the VRDP video channel on.
+                For details, see <xref linkend="vrde-videochannel" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>For VideoChannel/Quality, &lt;value&gt; should be set between 10 and 100% inclusive, 
+                representing a JPEG compression level on the VRDE server video channel. Lower values mean lower 
+                quality but higher compression. For details, see <xref linkend="vrde-videochannel" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>For VideoChannel/DownscaleProtection, &lt;value&gt; can be set to "1" to 
+                enable the videochannel downscale protection feature. When enabled, if a video's size equals the shadow buffer 
+                size, then it is regarded as a full screen video, and is displayed; but if its size is between fullscreen and the downscale
+                threshold - it is NOT displayed, as it could be an application window, which would be unreadable when downscaled.
+                When the downscale protection feature is disabled, an attempt is always made to display videos.</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeproperty "Client/DisableDisplay|DisableInput|DisableAudio|DisableUSB=1"</computeroutput></para>
+            <para>disables one of the VRDE server features: Display, Input, Audio or USB respectively.
+            To re-enable a feature, use e.g. "Client/DisableDisplay=".
+            For details, see <xref linkend="vrde-customization" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeproperty "Client/DisableClipboard|DisableUpstreamAudio=1"</computeroutput></para>
+            <para>disables one of the VRDE server features: Clipboard or UpstreamAudio respectively.
+            To re-enable a feature, use e.g. "Client/DisableClipboard=".
+            For details, see <xref linkend="vrde-customization" />.</para>
+          </listitem>
+ 
+          <listitem>
+            <para><computeroutput>--vrdeproperty "Client/DisableRDPDR=1"</computeroutput></para>
+            <para>disables the VRDE server feature: RDP device redirection for smart cards.
+            To re-enable this feature, use "Client/DisableRDPR=".</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeproperty "H3DRedirect/Enabled=1"</computeroutput></para>
+            <para>enables the VRDE server feature: 3D redirection.
+            To re-disable this feature, use "H3DRedirect/Enabled=".</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeproperty "Security/Method|ServerCertificate|ServerPrivateKey|CACertificate=&lt;value&gt;"</computeroutput>
+            sets the desired security method/Path of server certificate, path of server private key, path of CA certificate, used for a connection.
+
+            <itemizedlist>
+              <listitem>
+                <para><computeroutput>--vrdeproperty "Security/Method=&lt;value&gt;"</computeroutput>
+                sets the desired security method, which is used for a connection. Valid values are:
+                <itemizedlist>
+                  <listitem>
+                    <para> <computeroutput>Negotiate</computeroutput> - both Enhanced (TLS)
+                    and Standard RDP Security connections are allowed. The security
+                    method is negotiated with the client. This is the default setting.</para>
+                  </listitem>
+                  <listitem>
+                    <para> <computeroutput>RDP</computeroutput> - only Standard RDP Security is accepted.</para>
+                  </listitem>
+                  <listitem>
+                    <para> <computeroutput>TLS</computeroutput> - only Enhanced RDP Security is accepted. 
+                    The client must support TLS.</para>
+                  </listitem>
+                </itemizedlist>
+                    For details, see <xref linkend="vrde-crypt" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>--vrdeproperty "Security/ServerCertificate=&lt;value&gt;"</computeroutput>
+                where &lt;value&gt; is the absolute path of the server certificate.
+                For details, see <xref linkend="vrde-crypt" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>--vrdeproperty "Security/ServerPrivateKey=&lt;value&gt;"</computeroutput>
+                where &lt;value&gt; is the absolute path of the server private key.
+                For details, see <xref linkend="vrde-crypt" />.</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>--vrdeproperty "Security/CACertificate=&lt;value&gt;"</computeroutput>
+                where &lt;value&gt; is the absolute path of the CA self signed certificate.
+                For details, see <xref linkend="vrde-crypt" />.</para>
+              </listitem>
+            </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeproperty "Audio/RateCorrectionMode|LogPath=&lt;value&gt;"</computeroutput>
+            sets the Audio connection mode, or Path of the audio logfile.
+
+            <itemizedlist>
+              <listitem>
+                <para><computeroutput>--vrdeproperty "Audio/RateCorrectionMode=&lt;value&gt;"</computeroutput>
+                where &lt;value&gt; is the desired rate correction mode, allowed values are:
+                <itemizedlist>
+                  <listitem>
+                    <para> <computeroutput>VRDP_AUDIO_MODE_VOID</computeroutput> - no mode specified, use to unset any Audio mode already set.</para>
+                  </listitem>
+                  <listitem>
+                    <para> <computeroutput>VRDP_AUDIO_MODE_RC</computeroutput> - rate correction mode.</para>
+                  </listitem>
+                  <listitem>
+                    <para> <computeroutput>VRDP_AUDIO_MODE_LPF</computeroutput> - low pass filter mode.</para>
+                  </listitem>
+                  <listitem>
+                    <para> <computeroutput>VRDP_AUDIO_MODE_CS</computeroutput> - client sync mode to prevent under/overflow of the client queue.</para>
+                  </listitem>
+                </itemizedlist></para>
+              </listitem>
+              <listitem>
+                <para><computeroutput>--vrdeproperty "Audio/LogPath=&lt;value&gt;"</computeroutput>
+                where &lt;value&gt; is the absolute path of the Audio log file.</para>
+              </listitem>
+            </itemizedlist></para>
+          </listitem>
 
           <listitem>
             <para><computeroutput>--vrdeextpack default|&lt;name&gt;</computeroutput>:
@@ -1999,9 +2147,159 @@ Virtual system 0:
         "default" or "0" means port 3389, the standard port for RDP. For
         details, see the description for the
         <computeroutput>--vrdeport</computeroutput> option in <xref
-        linkend="vboxmanage-modifyvm-other" />.</para>
+        linkend="vboxmanage-modifyvm-vrde" />.</para>
       </listitem>
 
+      <listitem>
+        <para><computeroutput>vrdeproperty "TCP/Ports|Address=&lt;value&gt;"</computeroutput>
+        sets the port number(s) and IP address on the VM that the VRDE server can bind to.</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>For TCP/Ports, &lt;value&gt; should be a port or a range of ports that the VRDE 
+            server can bind to; "default" or "0" means port 3389, the standard port for RDP. 
+            For details, see the description for the
+            <computeroutput>--vrdeport</computeroutput> option in <xref
+            linkend="vboxmanage-modifyvm-vrde" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>For TCP/Address, &lt;value&gt; should be the IP address of the host network
+            interface that the VRDE server will bind to. If specified, the server
+            will accept connections only on the specified host network interface.
+            For details, see the description for the
+            <computeroutput>--vrdeaddress</computeroutput> option in <xref
+            linkend="vboxmanage-modifyvm-vrde" />.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdeproperty "VideoChannel/Enabled|Quality|DownscaleProtection=&lt;value&gt;"</computeroutput>
+        sets the VRDP video redirection properties.</para>
+        <itemizedlist>
+          <listitem>
+            <para>For VideoChannel/Enabled, &lt;value&gt; can be set to "1" switching the VRDP video channel on.
+            For details, see <xref linkend="vrde-videochannel" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>For VideoChannel/Quality, &lt;value&gt; should be set between 10 and 100% inclusive, 
+            representing a JPEG compression level on the VRDE server video channel. Lower values mean lower 
+            quality but higher compression. For details, see <xref linkend="vrde-videochannel" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>For VideoChannel/DownscaleProtection, &lt;value&gt; can be set to "1" to 
+            enable the videochannel downscale protection feature. When enabled, if a video's size equals the shadow buffer 
+            size, then it is regarded as a full screen video, and is displayed; but if its size is between fullscreen and the downscale
+            threshold - it is NOT displayed, as it could be an application window, which would be unreadable when downscaled.
+            When the downscale protection feature is disabled, an attempt is always made to display videos.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdeproperty "Client/DisableDisplay|DisableInput|DisableAudio|DisableUSB=1"</computeroutput></para>
+        <para>disables one of the VRDE server features: Display, Input, Audio or USB respectively.
+        To re-enable a feature, use e.g. "Client/DisableDisplay=".
+        For details, see <xref linkend="vrde-customization" />.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdeproperty "Client/DisableClipboard|DisableUpstreamAudio=1"</computeroutput></para>
+        <para>disables one of the VRDE server features: Clipboard or UpstreamAudio respectively.
+        To re-enable a feature, use e.g. "Client/DisableClipboard=".
+        For details, see <xref linkend="vrde-customization" />.</para>
+      </listitem>
+ 
+      <listitem>
+        <para><computeroutput>vrdeproperty "Client/DisableRDPDR=1"</computeroutput></para>
+        <para>disables the VRDE server feature: RDP device redirection for smart cards.
+        To re-enable this feature, use "Client/DisableRDPR=".</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdeproperty "H3DRedirect/Enabled=1"</computeroutput></para>
+        <para>enables the VRDE server feature: 3D redirection.
+        To re-disable this feature, use "H3DRedirect/Enabled=".</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdeproperty "Security/Method|ServerCertificate|ServerPrivateKey|CACertificate=&lt;value&gt;"</computeroutput>
+        sets the desired security method/Path of server certificate, path of server private key, path of CA certificate, used for a connection.
+
+        <itemizedlist>
+          <listitem>
+            <para><computeroutput>vrdeproperty "Security/Method=&lt;value&gt;"</computeroutput>
+            sets the desired security method, which is used for a connection. Valid values are:
+            <itemizedlist>
+              <listitem>
+                <para> <computeroutput>Negotiate</computeroutput> - both Enhanced (TLS)
+                and Standard RDP Security connections are allowed. The security
+                method is negotiated with the client. This is the default setting.</para>
+              </listitem>
+              <listitem>
+                <para> <computeroutput>RDP</computeroutput> - only Standard RDP Security is accepted.</para>
+              </listitem>
+              <listitem>
+                <para> <computeroutput>TLS</computeroutput> - only Enhanced RDP Security is accepted. 
+                The client must support TLS.</para>
+              </listitem>
+            </itemizedlist>
+            For details, see <xref linkend="vrde-crypt" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>vrdeproperty "Security/ServerCertificate=&lt;value&gt;"</computeroutput>
+            where &lt;value&gt; is the absolute path of the server certificate.
+            For details, see <xref linkend="vrde-crypt" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>vrdeproperty "Security/ServerPrivateKey=&lt;value&gt;"</computeroutput>
+            where &lt;value&gt; is the absolute path of the server private key.
+            For details, see <xref linkend="vrde-crypt" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>vrdeproperty "Security/CACertificate=&lt;value&gt;"</computeroutput>
+            where &lt;value&gt; is the absolute path of the CA self signed certificate.
+            For details, see <xref linkend="vrde-crypt" />.</para>
+          </listitem>
+        </itemizedlist></para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdeproperty "Audio/RateCorrectionMode|LogPath=&lt;value&gt;"</computeroutput>
+        sets the Audio connection mode, or Path of the audio logfile.
+
+        <itemizedlist>
+          <listitem>
+            <para><computeroutput>vrdeproperty "Audio/RateCorrectionMode=&lt;value&gt;"</computeroutput>
+            where &lt;value&gt; is the desired rate correction mode, allowed values are:
+            <itemizedlist>
+              <listitem>
+                <para> <computeroutput>VRDP_AUDIO_MODE_VOID</computeroutput> - no mode specified, use to unset any Audio mode already set.</para>
+              </listitem>
+              <listitem>
+                <para> <computeroutput>VRDP_AUDIO_MODE_RC</computeroutput> - rate correction mode.</para>
+              </listitem>
+              <listitem>
+                <para> <computeroutput>VRDP_AUDIO_MODE_LPF</computeroutput> - low pass filter mode.</para>
+              </listitem>
+              <listitem>
+                <para> <computeroutput>VRDP_AUDIO_MODE_CS</computeroutput> - client sync mode to prevent under/overflow of the client queue.</para>
+              </listitem>
+            </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para><computeroutput>vrdeproperty "Audio/LogPath=&lt;value&gt;"</computeroutput>
+            where &lt;value&gt; is the absolute path of the Audio log file.</para>
+          </listitem>
+        </itemizedlist></para>
+      </listitem>
+            
       <listitem>
         <para><computeroutput>vrdevideochannelquality
         &lt;percent&gt;</computeroutput>: Sets the image quality for video
@@ -2156,9 +2454,9 @@ Virtual system 0:
 
         <para>The following settings are supported:</para>
 
-        <para>MaxFramerate (default no maximum limit) - this specifies the highest rate (Frames/sec) at which 
+        <para>MaxFramerate (default no maximum limit) - this specifies the highest rate (frames/sec) at which 
         video frames are sent to the guest. Higher frame rates increase CPU load, so this setting can be useful 
-        when there is a need to reduce CPU load.  Its default 'value' is "no maximum limit", thus enabling the 
+        when there is a need to reduce CPU load. Its default 'value' is 'no maximum limit', thus enabling the 
         guest to use all frame rates supported by the host webcam.</para>
 
         <para>MaxPayloadTransferSize (default 3060 bytes) - this specifies the maximum number of bytes the emulated 
@@ -2183,7 +2481,7 @@ Virtual system 0:
 
         <para>OS X version 10.7 or newer is required.</para>
 
-        <para>When the webcam device is detached from the host, the emulated webcam device remains i
+        <para>When the webcam device is detached from the host, the emulated webcam device remains
         attached to the guest and must be manually detached using the 
         VBoxManage controlvm "VM name" webcam detach command.</para>
 
