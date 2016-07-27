@@ -2238,45 +2238,6 @@ typedef CPUMCPUIDCONFIG *PCPUMCPUIDCONFIG;
 
 
 /**
- * Insert hypervisor identification leaves.
- *
- * We only return minimal information, primarily ensuring that the
- * 0x40000000 function returns 0x40000001 and identifying ourselves.
- * Hypervisor-specific interface is supported through GIM which will
- * modify these leaves if required depending on the GIM provider.
- *
- * @returns VBox status code.
- * @param   pCpum       The CPUM instance data.
- * @param   pConfig     The CPUID configuration we've read from CFGM.
- */
-static int cpumR3CpuIdPlantHypervisorLeaves(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
-{
-    CPUMCPUIDLEAF NewLeaf;
-    NewLeaf.uLeaf        = UINT32_C(0x40000000);
-    NewLeaf.uSubLeaf     = 0;
-    NewLeaf.fSubLeafMask = 0;
-    NewLeaf.uEax         = UINT32_C(0x40000001);
-    NewLeaf.uEbx         = 0x786f4256 /* 'VBox' */;
-    NewLeaf.uEcx         = 0x786f4256 /* 'VBox' */;
-    NewLeaf.uEdx         = 0x786f4256 /* 'VBox' */;
-    NewLeaf.fFlags       = 0;
-    int rc = cpumR3CpuIdInsert(NULL /* pVM */, &pCpum->GuestInfo.paCpuIdLeavesR3, &pCpum->GuestInfo.cCpuIdLeaves, &NewLeaf);
-    AssertLogRelRCReturn(rc, rc);
-
-    NewLeaf.uLeaf        = UINT32_C(0x40000001);
-    NewLeaf.uEax         = 0x656e6f6e;                            /* 'none' */
-    NewLeaf.uEbx         = 0;
-    NewLeaf.uEcx         = 0;
-    NewLeaf.uEdx         = 0;
-    NewLeaf.fFlags       = 0;
-    rc = cpumR3CpuIdInsert(NULL /* pVM */, &pCpum->GuestInfo.paCpuIdLeavesR3, &pCpum->GuestInfo.cCpuIdLeaves, &NewLeaf);
-    AssertLogRelRCReturn(rc, rc);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Mini CPU selection support for making Mac OS X happy.
  *
  * Executes the  /CPUM/MaxIntelFamilyModelStep config.
@@ -4032,12 +3993,6 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
     }
 
     /*
-     * Plant our own hypervisor CPUID leaves.
-     */
-    if (RT_SUCCESS(rc))
-        rc = cpumR3CpuIdPlantHypervisorLeaves(pCpum, &Config);
-
-    /*
      * MSR fudging.
      */
     if (RT_SUCCESS(rc))
@@ -4094,12 +4049,6 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
         AssertRCReturn(rc, rc);
         if (fEnable)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-
-        /* We don't enable the Hypervisor Present bit by default, but it may be needed by some guests. */
-        rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableHVP", &fEnable, false);
-        AssertRCReturn(rc, rc);
-        if (fEnable)
-            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
 
         return VINF_SUCCESS;
     }
