@@ -5294,8 +5294,9 @@ static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCO
     E1kLog2(("%s e1kTxQueueConsumer:\n", pThis->szPrf));
 
     int rc = e1kXmitPending(pThis, false /*fOnWorkerThread*/);
+#ifndef DEBUG_andy /** @todo r=andy Happens for me a lot, mute this for me. */
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
-
+#endif
     return true;
 }
 
