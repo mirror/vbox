@@ -17,7 +17,7 @@
       <listitem>
         <para>OVF: when importing appliances, make sure that the version of the
           embedded VirtualBox specific settings is processed, to get the
-          default settings handling right
+          default settings handling right</para>
       </listitem>
 
     </itemizedlist>
