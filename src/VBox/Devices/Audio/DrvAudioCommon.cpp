@@ -365,7 +365,6 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 
     bool fEqual =    pProps->uHz         == pCfg->uHz
                   && pProps->cChannels   == pCfg->cChannels
-                  && pProps->cbBitrate   == pCfg->cbBitrate
                   && pProps->fSigned     == fSigned
                   && pProps->cBits       == cBits
                   && pProps->fSwapEndian == !(pCfg->enmEndianness == PDMAUDIOHOSTENDIANNESS);
@@ -382,7 +381,6 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
 
     return    pProps1->uHz         == pProps2->uHz
            && pProps1->cChannels   == pProps2->cChannels
-           && pProps1->cbBitrate   == pProps2->cbBitrate
            && pProps1->fSigned     == pProps2->fSigned
            && pProps1->cBits       == pProps2->cBits
            && pProps1->fSwapEndian == pProps2->fSwapEndian;
@@ -402,7 +400,6 @@ int DrvAudioHlpPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pC
 
     pCfg->uHz           = pPCMProps->uHz;
     pCfg->cChannels     = pPCMProps->cChannels;
-    pCfg->cbBitrate     = DrvAudioHlpCalcBitrate(pPCMProps->cBits, pPCMProps->uHz, pPCMProps->cChannels) / 8;
     pCfg->enmFormat     = DrvAudioAudFmtBitsToAudFmt(pPCMProps->cBits, pPCMProps->fSigned);
 
     /** @todo We assume little endian is the default for now. */
@@ -440,7 +437,6 @@ bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
 
     fValid |= pCfg->uHz > 0;
     /** @todo Check for defined frequencies supported. */
-    fValid |= pCfg->cbBitrate > 0;
 
     return fValid;
 }
@@ -497,7 +493,6 @@ int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
         pProps->cShift      = (pCfg->cChannels == 2) + cShift;
         pProps->cChannels   = pCfg->cChannels;
         pProps->uAlign      = (1 << pProps->cShift) - 1;
-        pProps->cbBitrate   = DrvAudioHlpCalcBitrate(pCfg) / 8;
         pProps->fSwapEndian = pCfg->enmEndianness != PDMAUDIOHOSTENDIANNESS;
     }
 
@@ -534,8 +529,6 @@ void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
             LogFlow(("invalid(%d)", pCfg->enmFormat));
             break;
     }
-
-    LogFlow((", bitrate=%RU32", pCfg->cbBitrate));
 
     LogFlow((", endianness="));
     switch (pCfg->enmEndianness)
@@ -680,7 +673,6 @@ int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fO
 
     Assert(pProps->cChannels);
     Assert(pProps->uHz);
-    Assert(pProps->cbBitrate);
     Assert(pProps->cBits);
 
     pFile->pvData = (PAUDIOWAVFILEDATA)RTMemAllocZ(sizeof(AUDIOWAVFILEDATA));
@@ -701,7 +693,7 @@ int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fO
     pData->Hdr.u16AudioFormat   = 1;  /* PCM, linear quantization. */
     pData->Hdr.u16NumChannels   = pProps->cChannels;
     pData->Hdr.u32SampleRate    = pProps->uHz;
-    pData->Hdr.u32ByteRate      = pProps->cbBitrate / 8;
+    pData->Hdr.u32ByteRate      = DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels) / 8;
     pData->Hdr.u16BlockAlign    = pProps->cChannels * pProps->cBits / 8;
     pData->Hdr.u16BitsPerSample = pProps->cBits;
 
