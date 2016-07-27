@@ -14,6 +14,12 @@
         <para>GUI: show actual VM uptime in the session information window</para>
       </listitem>
 
+      <listitem>
+        <para>OVF: when importing appliances, make sure that the version of the
+          embedded VirtualBox specific settings is processed, to get the
+          default settings handling right
+      </listitem>
+
     </itemizedlist>
   </sect1>
 

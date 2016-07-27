@@ -232,6 +232,7 @@ protected:
     typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
 
     static const char *stringifyMediaType(MediaType t);
+    SettingsVersion_T parseVersion(const com::Utf8Str &strVersion);
     void parseUUID(com::Guid &guid,
                    const com::Utf8Str &strUUID) const;
     void parseTimestamp(RTTIMESPEC &timestamp,
