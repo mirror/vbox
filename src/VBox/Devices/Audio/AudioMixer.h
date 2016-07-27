@@ -196,7 +196,9 @@ typedef enum AUDMIXOP
 {
     /** Invalid operation, do not use. */
     AUDMIXOP_INVALID = 0,
+    /** Copy data from A to B, overwriting data in B. */
     AUDMIXOP_COPY,
+    /** Blend data from A with (existing) data in B. */
     AUDMIXOP_BLEND,
     /** The usual 32-bit hack. */
     AUDMIXOP_32BIT_HACK = 0x7fffffff
@@ -208,10 +210,8 @@ typedef enum AUDMIXOP
 int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer);
 int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink);
 void AudioMixerDestroy(PAUDIOMIXER pMixer);
-int AudioMixerGetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
 void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
-int AudioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
 

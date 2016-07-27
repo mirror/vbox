@@ -2431,7 +2431,7 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
-                pDrv->Flags |= PDMAUDIODRVFLAG_PRIMARY;
+                pDrv->Flags |= PDMAUDIODRVFLAGS_PRIMARY;
 
             LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
 
@@ -2692,16 +2692,6 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = AudioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
         if (RT_SUCCESS(rc))
         {
-            /* Set a default audio format for our mixer. */
-            PDMAUDIOSTREAMCFG streamCfg;
-            streamCfg.uHz           = 44100;
-            streamCfg.cChannels     = 2;
-            streamCfg.enmFormat     = PDMAUDIOFMT_S16;
-            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
-
-            rc = AudioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
-            AssertRC(rc);
-
             /* Add all required audio sinks. */
             int rc2 = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
             AssertRC(rc2);
@@ -2727,7 +2717,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
              * Only primary drivers are critical for the VM to run. Everything else
              * might not worth showing an own error message box in the GUI.
              */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
+            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
@@ -2846,7 +2836,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
+            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];

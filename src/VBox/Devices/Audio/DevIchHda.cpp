@@ -2855,7 +2855,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             }
 
             if (   RT_FAILURE(rc2)
-                && (pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
+                && (pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
             {
                 if (RT_SUCCESS(rc))
                     rc = rc2;
@@ -5599,7 +5599,7 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
-                pDrv->Flags |= PDMAUDIODRVFLAG_PRIMARY;
+                pDrv->Flags |= PDMAUDIODRVFLAGS_PRIMARY;
 
             LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
 
@@ -5915,16 +5915,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         rc = AudioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
         if (RT_SUCCESS(rc))
         {
-            /* Set a default audio format for our mixer. */
-            PDMAUDIOSTREAMCFG streamCfg;
-            streamCfg.uHz           = 44100;
-            streamCfg.cChannels     = 2;
-            streamCfg.enmFormat     = PDMAUDIOFMT_S16;
-            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
-
-            rc = AudioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
-            AssertRC(rc);
-
             /*
              * Add mixer output sinks.
              */
@@ -6011,7 +6001,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
              * Only primary drivers are critical for the VM to run. Everything else
              * might not worth showing an own error message box in the GUI.
              */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
+            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
@@ -6220,7 +6210,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (pDrv->Flags != PDMAUDIODRVFLAG_PRIMARY)
+            if (pDrv->Flags != PDMAUDIODRVFLAGS_PRIMARY)
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];

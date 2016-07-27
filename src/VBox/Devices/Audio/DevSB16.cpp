@@ -257,7 +257,7 @@ static DECLCALLBACK(int) sb16AttachInternal(PPDMDEVINS pDevIns, PSB16DRIVER pDrv
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
-                pDrv->Flags |= PDMAUDIODRVFLAG_PRIMARY;
+                pDrv->Flags |= PDMAUDIODRVFLAGS_PRIMARY;
 
             LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
 
@@ -1850,7 +1850,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
                 }
             }
 
-            if (pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY)
+            if (pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY)
             {
                 /* Only do the next DMA transfer if we're able to write the entire
                  * next data block. */
@@ -2420,7 +2420,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
          * Only primary drivers are critical for the VM to run. Everything else
          * might not worth showing an own error message box in the GUI.
          */
-        if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
+        if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
             continue;
 
         PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
@@ -2467,7 +2467,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (pDrv->Flags != PDMAUDIODRVFLAG_PRIMARY)
+            if (pDrv->Flags != PDMAUDIODRVFLAGS_PRIMARY)
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];

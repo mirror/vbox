@@ -40,27 +40,33 @@
  * @{
  */
 
-/** @todo r=bird: Don't be lazy with documentation! */
+/** PDM audio driver instance flags. */
 typedef uint32_t PDMAUDIODRVFLAGS;
 
 /** No flags set. */
-/** @todo r=bird: s/PDMAUDIODRVFLAG/PDMAUDIODRV_FLAGS/g */
-#define PDMAUDIODRVFLAG_NONE        0
+#define PDMAUDIODRVFLAGS_NONE       0
 /** Marks a primary audio driver which is critical
  *  when running the VM. */
-#define PDMAUDIODRVFLAG_PRIMARY     RT_BIT(0)
+#define PDMAUDIODRVFLAGS_PRIMARY    RT_BIT(0)
 
 /**
  * Audio format in signed or unsigned variants.
  */
 typedef enum PDMAUDIOFMT
 {
+    /** Invalid format, do not use. */
     PDMAUDIOFMT_INVALID,
+    /** 8-bit, unsigned. */
     PDMAUDIOFMT_U8,
+    /** 8-bit, signed. */
     PDMAUDIOFMT_S8,
+    /** 16-bit, unsigned. */
     PDMAUDIOFMT_U16,
+    /** 16-bit, signed. */
     PDMAUDIOFMT_S16,
+    /** 32-bit, unsigned. */
     PDMAUDIOFMT_U32,
+    /** 32-bit, signed. */
     PDMAUDIOFMT_S32,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOFMT_32BIT_HACK = 0x7fffffff
@@ -92,7 +98,9 @@ typedef struct PDMAUDIOBACKENDCFG
  */
 typedef struct PDMAUDIOSAMPLE
 {
+    /** Left channel. */
     int64_t i64LSample;
+    /** Right channel. */
     int64_t i64RSample;
 } PDMAUDIOSAMPLE;
 /** Pointer to a single (stereo) audio sample.   */
@@ -121,8 +129,11 @@ typedef enum PDMAUDIOENDIANNESS
  */
 typedef enum PDMAUDIODIR
 {
+    /** Unknown direction. */
     PDMAUDIODIR_UNKNOWN = 0,
+    /** Input. */
     PDMAUDIODIR_IN      = 1,
+    /** Output. */
     PDMAUDIODIR_OUT     = 2,
     /** Duplex handling. */
     PDMAUDIODIR_ANY     = 3,
@@ -135,9 +146,13 @@ typedef enum PDMAUDIODIR
  */
 typedef enum PDMAUDIOPLAYBACKDEST
 {
+    /** Unknown destination. */
     PDMAUDIOPLAYBACKDEST_UNKNOWN = 0,
+    /** Front channel. */
     PDMAUDIOPLAYBACKDEST_FRONT,
+    /** Center / LFE (Subwoofer) channel. */
     PDMAUDIOPLAYBACKDEST_CENTER_LFE,
+    /** Rear channel. */
     PDMAUDIOPLAYBACKDEST_REAR,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOPLAYBACKDEST_32BIT_HACK = 0x7fffffff
@@ -148,12 +163,19 @@ typedef enum PDMAUDIOPLAYBACKDEST
  */
 typedef enum PDMAUDIORECSOURCE
 {
+    /** Unknown recording source. */
     PDMAUDIORECSOURCE_UNKNOWN = 0,
+    /** Microphone-In. */
     PDMAUDIORECSOURCE_MIC,
+    /** CD. */
     PDMAUDIORECSOURCE_CD,
+    /** Video-In. */
     PDMAUDIORECSOURCE_VIDEO,
+    /** AUX. */
     PDMAUDIORECSOURCE_AUX,
+    /** Line-In. */
     PDMAUDIORECSOURCE_LINE,
+    /** Phone-In. */
     PDMAUDIORECSOURCE_PHONE,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIORECSOURCE_32BIT_HACK = 0x7fffffff
@@ -254,12 +276,19 @@ typedef struct PDMAUDIOSTREAMCFG
  */
 typedef enum PDMAUDIOMIXERCTL
 {
+    /** Unknown mixer control. */
     PDMAUDIOMIXERCTL_UNKNOWN = 0,
+    /** Master volume. */
     PDMAUDIOMIXERCTL_VOLUME_MASTER,
+    /** Front. */
     PDMAUDIOMIXERCTL_FRONT,
+    /** Center / LFE (Subwoofer). */
     PDMAUDIOMIXERCTL_CENTER_LFE,
+    /** Rear. */
     PDMAUDIOMIXERCTL_REAR,
+    /** Line-In. */
     PDMAUDIOMIXERCTL_LINE_IN,
+    /** Microphone-In. */
     PDMAUDIOMIXERCTL_MIC_IN,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
