@@ -70,7 +70,7 @@ void MachineDebugger::FinalRelease()
  * @returns COM result indicator
  * @param aParent handle of our parent object
  */
-HRESULT MachineDebugger::init (Console *aParent)
+HRESULT MachineDebugger::init(Console *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -301,7 +301,7 @@ HRESULT MachineDebugger::getPATMEnabled(BOOL *aPATMEnabled)
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
-        *aPATMEnabled = PATMR3IsEnabled (ptrVM.rawUVM());
+        *aPATMEnabled = PATMR3IsEnabled(ptrVM.rawUVM());
     else
 #endif
         *aPATMEnabled = false;
@@ -749,7 +749,7 @@ HRESULT MachineDebugger::setVirtualTimeRate(ULONG aVirtualTimeRate)
  * This is only temporary (promise) while prototyping the debugger.
  *
  * @returns COM status code
- * @param   a_u64Vm     Where to store the vm handle. Since there is no
+ * @param   aVM         Where to store the vm handle. Since there is no
  *                      uintptr_t in COM, we're using the max integer.
  *                      (No, ULONG is not pointer sized!)
  * @remarks The returned handle must be passed to VMR3ReleaseUVM()!
@@ -771,6 +771,24 @@ HRESULT MachineDebugger::getVM(LONG64 *aVM)
      * Note! ptrVM protection provided by SafeVMPtr is no long effective
      *       after we return from this method.
      */
+    return hrc;
+}
+
+/**
+ * Get the VM uptime in milliseconds.
+ *
+ * @returns COM status code
+ * @param   aUptime     Where to store the uptime.
+ */
+HRESULT MachineDebugger::getUptime(LONG64 *aUptime)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (SUCCEEDED(hrc))
+        *aUptime = (int64_t)TMR3TimeVirtGetMilli(ptrVM.rawUVM());
+
     return hrc;
 }
 
@@ -1536,7 +1554,7 @@ HRESULT MachineDebugger::dumpStats(const com::Utf8Str &aPattern)
  */
 HRESULT MachineDebugger::getStats(const com::Utf8Str &aPattern, BOOL aWithDescriptions, com::Utf8Str &aStats)
 {
-    Console::SafeVMPtrQuiet ptrVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
     if (!ptrVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");

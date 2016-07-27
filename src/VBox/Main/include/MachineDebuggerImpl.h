@@ -75,6 +75,7 @@ private:
     HRESULT getVirtualTimeRate(ULONG *aVirtualTimeRate);
     HRESULT setVirtualTimeRate(ULONG aVirtualTimeRate);
     HRESULT getVM(LONG64 *aVM);
+    HRESULT getUptime(LONG64 *aUptime);
 
     // wrapped IMachineDeugger properties
     HRESULT dumpGuestCore(const com::Utf8Str &aFilename,
@@ -129,6 +130,7 @@ private:
                      com::Utf8Str &aStats);
 
     // private methods
+    static DECLCALLBACK(int) i_getUptime(MachineDebugger *, PUVM pUVM, LONG64 *pUptime);
     bool i_queueSettings() const;
     HRESULT i_getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL *pfEnforced);
     HRESULT i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL fEnforce);

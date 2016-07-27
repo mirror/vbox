@@ -17598,7 +17598,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IMachineDebugger" extends="$unknown"
     uuid="9c0f5269-47ae-ee34-c2fe-53a16e388925"
     wsmap="managed"
-    reservedMethods="16" reservedAttributes="16"
+    reservedMethods="16" reservedAttributes="15"
     >
     <method name="dumpGuestCore">
       <desc>
@@ -18078,6 +18078,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VMR3ReleaseUVM when done. This is only for internal use while we carve
         the details of this interface.
       </desc>
+    </attribute>
+
+    <attribute name="uptime" type="long long" readonly="yes">
+      <desc>VM uptime in milliseconds, i.e. time in which it could have been
+        executing guest code. Excludes the time when the VM was paused.</desc>
     </attribute>
 
   </interface>
