@@ -52,7 +52,7 @@
 DECLEXPORT(VBOXSTRICTRC) patmRCVirtPagePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
                                                  RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    NOREF(pVCpu); NOREF(uErrorCode); NOREF(pCtxCore); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
+    NOREF(pVCpu); NOREF(uErrorCode); NOREF(pCtxCore); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); RT_NOREF_PV(pvUser);
 
     Assert(pvUser);
     Assert(!((uintptr_t)pvUser & PAGE_OFFSET_MASK));

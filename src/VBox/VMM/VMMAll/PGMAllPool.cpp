@@ -715,7 +715,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
         /** @todo Validate that the bit index is X86_PTE_RW. */
             )
     {
-        STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,Fork));
+        STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,Fork)); RT_NOREF_PV(pPool);
         return true;
     }
     return false;
@@ -1989,7 +1989,7 @@ void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
     if (!pPool->cDirtyPages)
         return;
 
-    Log(("pgmPoolResetDirtyPage %RGv\n", GCPtrPage));
+    Log(("pgmPoolResetDirtyPage %RGv\n", GCPtrPage)); RT_NOREF_PV(GCPtrPage);
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
     {
     }
@@ -2913,7 +2913,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
     int rc = VINF_SUCCESS;
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
-    LogFlow(("pgmPoolTrackInsert GCPhys=%RGp iUser=%d iUserTable=%x\n", GCPhys, iUser, iUserTable));
+    LogFlow(("pgmPoolTrackInsert GCPhys=%RGp iUser=%d iUserTable=%x\n", GCPhys, iUser, iUserTable)); RT_NOREF_PV(GCPhys);
 
     if (iUser != NIL_PGMPOOL_IDX)
     {
@@ -3851,7 +3851,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
-    Assert(!pgmPoolIsPageLocked(pPage));
+    Assert(!pgmPoolIsPageLocked(pPage)); RT_NOREF_PV(pPage);
 
 #ifdef VBOX_STRICT
     /*

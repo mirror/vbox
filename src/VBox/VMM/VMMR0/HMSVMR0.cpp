@@ -2185,6 +2185,8 @@ static int hmR0SvmLongJmpToRing3(PVMCPU pVCpu)
  */
 static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
+    RT_NOREF_PV(pvUser);
+
     if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
     {
         /*

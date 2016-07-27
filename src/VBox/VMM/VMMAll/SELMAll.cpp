@@ -95,7 +95,7 @@ selmGuestLDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     Log(("selmGuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
-    NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
+    NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser); RT_NOREF_PV(pVM);
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 #  ifdef IN_RING3
@@ -585,7 +585,7 @@ static void selLoadHiddenSelectorRegFromGuestTable(PVMCPU pVCpu, PCCPUMCTX pCtx,
                                                    RTGCPTR GCPtrDesc, RTSEL const Sel, uint32_t const iSReg)
 {
     Assert(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)));
-    RT_NOREF_PV(pCtx);
+    RT_NOREF_PV(pCtx); RT_NOREF_PV(Sel);
 
     /*
      * Try read the entry.

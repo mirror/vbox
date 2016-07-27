@@ -669,6 +669,8 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
  */
 int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
 {
+    RT_NOREF_PV(pShwPageCR3);
+
     /*
      * Skip this if it doesn't apply.
      */

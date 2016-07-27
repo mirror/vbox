@@ -410,7 +410,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysBaseN(PVMCPU pVCpu, uint
      * Validate the value.
      */
     Assert(pRange->uValue == (idMsr - 0x200) / 2);
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue);
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue); RT_NOREF_PV(pRange);
 
     if ((uValue & 0xff) >= 7)
     {
@@ -452,7 +452,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysMaskN(PVMCPU pVCpu, uint
      * Validate the value.
      */
     Assert(pRange->uValue == (idMsr - 0x200) / 2);
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue);
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue); RT_NOREF_PV(pRange);
 
     uint64_t fInvPhysMask = ~(RT_BIT_64(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
     if (fInvPhysMask & uValue)

@@ -458,7 +458,7 @@ DECLASM(int) TRPMGCHyperTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 #if 0 /* Enable this iff you have a COM port and really want this debug info. */
     RTLogComPrintf("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip);
 #endif
-    NOREF(pTrpmCpu);
+    NOREF(pTrpmCpu); RT_NOREF_PV(pRegFrame);
     return VERR_TRPM_DONT_PANIC;
 }
 
@@ -1425,6 +1425,7 @@ DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLCALLBACK(int) trpmRCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser)
 {
+    RT_NOREF_PV(pRegFrame);
     Log(("********************************************************\n"));
     Log(("trpmRCTrapInGeneric: eip=%RX32 uUser=%#x\n", pRegFrame->eip, uUser));
     Log(("********************************************************\n"));

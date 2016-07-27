@@ -2566,7 +2566,7 @@ APICBOTHCBDECL(int) apicReadMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 {
     NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
-    Assert(cb == 4);
+    Assert(cb == 4); RT_NOREF_PV(cb);
 
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
     PVMCPU   pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
@@ -2590,7 +2590,7 @@ APICBOTHCBDECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 {
     NOREF(pvUser);
     Assert(!(GCPhysAddr & 0xf));
-    Assert(cb == 4);
+    Assert(cb == 4); RT_NOREF_PV(cb);
 
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
     PVMCPU   pVCpu    = PDMDevHlpGetVMCPU(pDevIns);
