@@ -114,7 +114,9 @@ DECLHIDDEN(int) rtMemAllocEx32BitReach(size_t cbAlloc, uint32_t fFlags, void **p
 
 DECLHIDDEN(void) rtMemFreeExYyBitReach(void *pv, size_t cb, uint32_t fFlags)
 {
+    RT_NOREF_PV(fFlags);
+
     BOOL fRc = VirtualFree(pv, cb, MEM_RELEASE);
-    Assert(fRc); NOREF(fRc);
+    Assert(fRc); RT_NOREF_PV(fRc);
 }
 

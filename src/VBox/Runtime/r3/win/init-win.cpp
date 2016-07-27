@@ -343,6 +343,7 @@ DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags)
 DECLHIDDEN(int) rtR3InitNativeFinal(uint32_t fFlags)
 {
     /* Nothing to do here. */
+    RT_NOREF_PV(fFlags);
     return VINF_SUCCESS;
 }
 

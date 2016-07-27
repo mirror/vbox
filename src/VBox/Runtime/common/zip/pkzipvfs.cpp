@@ -405,6 +405,8 @@ static int rtZipPkzipReaderDecodeDosTime(PRTTIMESPEC pTimeSpec, uint16_t u16Time
  */
 static int rtZipPkzipParseLocalFileHeader(PRTZIPPKZIPREADER pThis, PRTZIPPKZIPLOCALFILEHDR pLfh, size_t *pcbExtra)
 {
+    RT_NOREF_PV(pThis);
+
     if (pLfh->cbFilename >= sizeof(pThis->szName))
         return VERR_PKZIP_NAME_TOO_LONG;
 

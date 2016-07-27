@@ -548,6 +548,8 @@ static RTEXITCODE rtZipTarCmdExtractFile(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVfsObj
                         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Error owner/group: %Rrc", pszDst, rc);
                 }
             }
+#else
+            RT_NOREF_PV(pOwner); RT_NOREF_PV(pGroup);
 #endif
 
             RTFMODE fMode = (pUnixInfo->Attr.fMode & pOpts->fFileModeAndMask) | pOpts->fFileModeOrMask;

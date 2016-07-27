@@ -549,6 +549,8 @@ static DECLCALLBACK(int) rtPathVarQuery_Path(uint32_t iItem, char *pszBuf, size_
 static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
                                                        PRTPATHMATCHCACHE pCache)
 {
+    RT_NOREF_PV(pCache);
+
     if (iItem == 0)
     {
         AssertReturn(cbBuf >= 3, VERR_BUFFER_OVERFLOW);
@@ -601,6 +603,8 @@ static DECLCALLBACK(int) rtPathVarQuery_DosSystemDrive(uint32_t iItem, char *psz
 static DECLCALLBACK(int) rtPathVarQuery_WinSystemRoot(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue,
                                                       PRTPATHMATCHCACHE pCache)
 {
+    RT_NOREF_PV(pCache);
+
     if (iItem == 0)
     {
         Assert(pszBuf); Assert(cbBuf);

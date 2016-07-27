@@ -227,6 +227,7 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 
 RTR3DECL(bool) RTFsIsCaseSensitive(const char *pszFsPath)
 {
+    RT_NOREF_PV(pszFsPath);
     return false;
 }
 

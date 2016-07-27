@@ -308,6 +308,7 @@ static DECLCALLBACK(int) rtProcWinResolveOnce(void *pvUser)
 {
     int      rc;
     RTLDRMOD hMod;
+    RT_NOREF_PV(pvUser);
 
     /*
      * kernel32.dll APIs introduced after NT4.

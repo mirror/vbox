@@ -1958,6 +1958,7 @@ DECLHIDDEN(int) rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void c
 DECLHIDDEN(int) rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTSOCKETINT *pThis = hSocket;
+    RT_NOREF_PV(fEvents);
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_OS_WINDOWS
@@ -1978,7 +1979,6 @@ DECLHIDDEN(int) rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCI
     return rc;
 
 #else  /* !RT_OS_WINDOWS */
-    RT_NOREF_PV(fEvents);
     *phNative = (RTHCUINTPTR)pThis->hNative;
     return VINF_SUCCESS;
 #endif /* !RT_OS_WINDOWS */
@@ -2234,6 +2234,7 @@ DECLHIDDEN(uint32_t) rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool f
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, 0);
     Assert(pThis->cUsers > 0);
     Assert(pThis->hPollSet != NIL_RTPOLLSET);
+    RT_NOREF_PV(fFinalEntry);
 
     /* Harvest events and clear the event mask for the next round of polling. */
     uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);

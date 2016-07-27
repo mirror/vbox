@@ -1565,6 +1565,7 @@ static DECLCALLBACK(int) rtThreadNameThreadCallback(PAVLPVNODECORE pNode, void *
 {
     PRTTHREADINT pThread = (PRTTHREADINT)pNode;
     rtThreadNativeInformDebugger(pThread);
+    RT_NOREF_PV(pvUser);
     return 0;
 }
 

@@ -70,7 +70,7 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
 {
     pPrimaryCursor->Cursor.pbCur            = (uint8_t const *)pvFirst;
     pPrimaryCursor->Cursor.cbLeft           = cb;
-    pPrimaryCursor->Cursor.fFlags           = fFlags;
+    pPrimaryCursor->Cursor.fFlags           = (uint8_t)fFlags; Assert(fFlags <= UINT8_MAX);
     pPrimaryCursor->Cursor.cDepth           = 0;
     pPrimaryCursor->Cursor.abReserved[0]    = 0;
     pPrimaryCursor->Cursor.abReserved[1]    = 0;

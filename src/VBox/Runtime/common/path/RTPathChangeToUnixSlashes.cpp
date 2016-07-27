@@ -44,7 +44,9 @@
  */
 RTDECL(char *) RTPathChangeToUnixSlashes(char *pszPath, bool fForce)
 {
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    RT_NOREF_PV(fForce);
+#else
     if (fForce)
 #endif
     {

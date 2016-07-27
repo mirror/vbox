@@ -130,6 +130,7 @@ RTDECL(int) RTDirRemove(const char *pszPath)
 
 RTDECL(int) RTDirFlush(const char *pszPath)
 {
+    RT_NOREF_PV(pszPath);
     return VERR_NOT_SUPPORTED;
 }
 

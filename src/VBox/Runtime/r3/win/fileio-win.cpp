@@ -699,6 +699,7 @@ RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
      * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation)
      * else where, and check for known file system names. (For LAN shares we'll
      * have to figure out the remote file system.) */
+    RT_NOREF_PV(hFile); RT_NOREF_PV(pcbMax);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -942,6 +943,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
 RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
+    RT_NOREF_PV(pChangeTime); /* Not exposed thru the windows API we're using. */
+
     if (!pAccessTime && !pModificationTime && !pBirthTime)
         return VINF_SUCCESS;    /* NOP */
 
@@ -1005,6 +1008,7 @@ RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree
 {
     /** @todo implement this using NtQueryVolumeInformationFile(hFile,,,,
      *        FileFsSizeInformation). */
+    RT_NOREF_PV(hFile); RT_NOREF_PV(pcbTotal); RT_NOREF_PV(pcbFree); RT_NOREF_PV(pcbBlock); RT_NOREF_PV(pcbSector);
     return VERR_NOT_SUPPORTED;
 }
 

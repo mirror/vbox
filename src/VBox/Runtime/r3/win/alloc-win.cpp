@@ -45,6 +45,8 @@
 
 RTDECL(void *) RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
+    RT_NOREF_PV(pszTag);
+
     /*
      * Allocate first.
      */
@@ -72,6 +74,8 @@ RTDECL(void *) RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 
 RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW_DEF
 {
+    RT_NOREF_PV(cb);
+
     if (pv)
         free(pv);
 }
@@ -79,6 +83,8 @@ RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW_DEF
 
 RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
+    RT_NOREF_PV(pszTag);
+
 #ifdef USE_VIRTUAL_ALLOC
     void *pv = VirtualAlloc(NULL, RT_ALIGN_Z(cb, PAGE_SIZE), MEM_COMMIT, PAGE_READWRITE);
 #else
@@ -91,6 +97,8 @@ RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 
 RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
+    RT_NOREF_PV(pszTag);
+
 #ifdef USE_VIRTUAL_ALLOC
     void *pv = VirtualAlloc(NULL, RT_ALIGN_Z(cb, PAGE_SIZE), MEM_COMMIT, PAGE_READWRITE);
 #else
@@ -108,6 +116,8 @@ RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 
 RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
 {
+    RT_NOREF_PV(cb);
+
     if (pv)
     {
 #ifdef USE_VIRTUAL_ALLOC

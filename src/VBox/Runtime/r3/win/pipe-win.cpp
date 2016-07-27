@@ -1305,6 +1305,7 @@ uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, boo
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, UINT32_MAX);
+    RT_NOREF_PV(fFinalEntry);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, UINT32_MAX);
@@ -1385,6 +1386,8 @@ uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool f
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, 0);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, 0);
+    RT_NOREF_PV(fFinalEntry);
+    RT_NOREF_PV(fHarvestEvents);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, 0);

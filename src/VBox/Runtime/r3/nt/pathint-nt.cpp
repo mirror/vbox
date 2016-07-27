@@ -393,6 +393,8 @@ static void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDi
 {
     RTUtf16Free(pNtName->Buffer);
     pNtName->Buffer = NULL;
+
+    RT_NOREF_PV(phRootDir); /* never returned by rtNtPathToNative */
 }
 
 

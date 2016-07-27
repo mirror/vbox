@@ -125,6 +125,7 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
     AssertReturn(enmType > RTSYMLINKTYPE_INVALID && enmType < RTSYMLINKTYPE_END, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszSymlink, VERR_INVALID_POINTER);
     AssertPtrReturn(pszTarget, VERR_INVALID_POINTER);
+    RT_NOREF_PV(fCreate);
 
     /*
      * Resolve the API.
@@ -229,6 +230,8 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
 
 RTDECL(int) RTSymlinkDelete(const char *pszSymlink, uint32_t fDelete)
 {
+    RT_NOREF_PV(fDelete);
+
     /*
      * Convert the path.
      */
@@ -272,6 +275,8 @@ RTDECL(int) RTSymlinkDelete(const char *pszSymlink, uint32_t fDelete)
 
 RTDECL(int) RTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead)
 {
+    RT_NOREF_PV(fRead);
+
     char *pszMyTarget;
     int rc = RTSymlinkReadA(pszSymlink, &pszMyTarget);
     if (RT_SUCCESS(rc))
