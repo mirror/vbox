@@ -1574,7 +1574,7 @@ USES += dtrace
 
 
 #
-# Compiler optimization flags.
+# Compiler warning control.
 #
 VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
 	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
@@ -1586,11 +1586,49 @@ ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
 endif
 VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
+
+# Disabled Visual C++ warnings, W4:
+#      -wd4065: switch statement contains 'default' but no 'case' labels
+#      -wd4996: deprecated / insecure.
+#      -wd4127: conditional expression is constant [level 4]
+#      -wd4706: assignment within conditional expression [level 4]
+#      -wd4201: nonstandard extension used : nameless struct/union [level 4]
+#      -wd4214: nonstandard extension used : bit field types other than int [level 4]
+#      -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
+#      -wd4512: 'VM' : assignment operator could not be generated
+#      -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
+# Disabled Visual C++ warnings, Wall:
+#      -wd4514: unreferenced inline function has been removed
+#      -wd4820: 'RTSTRSPACECORE' : '7' bytes padding added after data member 'RTSTRSPACECORE::uchHeight'
+#      -wd4365: '=' : conversion from 'unsigned char' to 'char', signed/unsigned mismatch
+#      -wd4987: nonstandard extension used: 'throw (...)' (setjmp.h + our stuff)
+#      -wd4710: 'std::string std::_Narrow_str(std::wstring)' : function not inlined
+#      -wd4061: enumerator 'RTASN1TYPE_END' in switch of enum 'RTASN1TYPE' is not explicitly handled by a case label
+#               Note! C4062 checks for the same but includes the 'default' case, just like gcc.  So, no trouble disabling this.
+#      -wd4986: 'operator new[]': exception specification does not match previous declaration (crtdbg.h vs new, exception specification only)
+#      -wd4191: 'type cast' : unsafe conversion from 'int (__cdecl *)(gzFile)' to 'PFNRT'
+#      -wd4574: 'INCL_WINSOCK_API_TYPEDEFS' is defined to be '0': did you mean to use '#if INCL_WINSOCK_API_TYPEDEFS'?
+#      -wd4917: 'OLE_XPOS_HIMETRIC' : a GUID can only be associated with a class, interface or namespace
+#      -wd4711: function 'void __cdecl rtMemCacheFreeOne(struct RTMEMCACHEINT * __ptr64,void * __ptr64)' selected for automatic inline expansion
+# Want to enable these:
+#      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
+#      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
+VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
+	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711
+ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
+ VBOX_VCC_WARN_ALL += -wd4100
+endif
+VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+
 ifeq ($(KBUILD_TARGET),win)
- VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = #-Wdxxxx
+ VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
 else
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -Wno-unused-parameter
 endif
+
+#
+# Compiler optimization flags.
+#
 ifeq ($(KBUILD_TYPE),debug)
  VBOX_GCC_FP     ?= -fno-omit-frame-pointer
  VBOX_GCC_OPT    ?= -O0
@@ -5768,22 +5806,6 @@ TEMPLATE_VBoxDbgSyms_INST = $(INST_VBOXDBG_SYMS)
 
 #
 # Template for building build bldprogs.
-#
-# Disabled Visual C++ warnings:
-#      -wd4065: switch statement contains 'default' but no 'case' labels
-#      -wd4996: deprecated / insecure.
-#      -wd4127: conditional expression is constant [level 4]
-#      -wd4706: assignment within conditional expression [level 4]
-#      -wd4201: nonstandard extension used : nameless struct/union [level 4]
-#      -wd4214: nonstandard extension used : bit field types other than int [level 4]
-#      -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
-#      -wd4512: 'VM' : assignment operator could not be generated
-#      -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
-#
-#      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data --- TODO: Enable this one!
-#      -wd4100: 'identifier' : unreferenced formal parameter [level 4] --- TODO: Enable this one!
-#
-#
 # HACK ALERT! The BLD_TRG_* is a hack to allow building libraries as well.
 #
 TEMPLATE_VBoxBldProg  = VBox Build Program
@@ -5818,7 +5840,7 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
  TEMPLATE_VBoxBldProg_SDKS              := ReorderCompilerIncs $(VBOX_WINPSDK)
  TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -MT$(VBOX_VCC_CRT_TYPE) \
- 	-W4 -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610  -wd4100 -wd4244
+	$(VBOX_VCC_WARN_ALL)
  TEMPLATE_VBoxBldProg_CXXFLAGS.debug    := -RTCsu
  TEMPLATE_VBoxBldProg_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBoxBldProg_CXXFLAGS.profile   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
