@@ -165,16 +165,17 @@
     } \
     /* The reminder of the methods shouldn't normally be needed, just stub them. */ \
     static DECLCALLBACK(void) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Delete)(PRTASN1CORE pThisCore) \
-    { AssertFailed(); } \
+    { AssertFailed(); RT_NOREF_PV(pThisCore); } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Clone)(PRTASN1CORE pThisCore, PCRTASN1CORE pSrcCore, \
                                                                                   PCRTASN1ALLOCATORVTABLE pAllocator) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR_2; } \
+    { AssertFailed(); RT_NOREF_PV(pThisCore); RT_NOREF_PV(pSrcCore); RT_NOREF_PV(pAllocator); return VERR_INTERNAL_ERROR_2; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Compare)(PCRTASN1CORE pLeftCore, \
                                                                                     PCRTASN1CORE pRightCore) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR_2; } \
+    { AssertFailed(); RT_NOREF_PV(pLeftCore); RT_NOREF_PV(pRightCore); return VERR_INTERNAL_ERROR_2; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_CheckSanity)(PCRTASN1CORE pThisCore, uint32_t fFlags, \
                                                                                         PRTERRINFO pErrInfo, const char *pszErrorTag) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR_2; } \
+    { AssertFailed(); RT_NOREF_PV(pThisCore); RT_NOREF_PV(fFlags); RT_NOREF_PV(pErrInfo); RT_NOREF_PV(pszErrorTag); \
+      return VERR_INTERNAL_ERROR_2; } \
     DECL_HIDDEN_CONST(RTASN1COREVTABLE const) RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_XTAG_,a_Name,_Vtable) = \
     { \
         /* When the Asn1Core is at the start of the structure, we can reuse the _Delete and _Enum APIs here. */ \
@@ -216,16 +217,17 @@
     } \
     /* The reminder of the methods shouldn't normally be needed, just stub them. */ \
     static DECLCALLBACK(void) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Delete)(PRTASN1CORE pThisCore) \
-    { AssertFailed(); } \
+    { AssertFailed(); RT_NOREF_PV(pThisCore); } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Clone)(PRTASN1CORE pThisCore, PCRTASN1CORE pSrcCore, \
                                                                                      PCRTASN1ALLOCATORVTABLE pAllocator) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR_3; } \
+    { AssertFailed(); RT_NOREF_PV(pThisCore); RT_NOREF_PV(pSrcCore); RT_NOREF_PV(pAllocator);  return VERR_INTERNAL_ERROR_3; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_Compare)(PCRTASN1CORE pLeftCore, \
                                                                                        PCRTASN1CORE pRightCore) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR_3; } \
+    { AssertFailed(); RT_NOREF_PV(pLeftCore); RT_NOREF_PV(pRightCore);  return VERR_INTERNAL_ERROR_3; } \
     static DECLCALLBACK(int) RT_CONCAT4(RTASN1TMPL_INT_NAME,_PC_XTAG_,a_Name,_CheckSanity)(PCRTASN1CORE pThisCore, uint32_t fFlags, \
                                                                                            PRTERRINFO pErrInfo, const char *pszErrorTag) \
-    { AssertFailed(); return VERR_INTERNAL_ERROR_3; } \
+    { AssertFailed(); RT_NOREF_PV(pThisCore); RT_NOREF_PV(fFlags); RT_NOREF_PV(pErrInfo); RT_NOREF_PV(pszErrorTag); \
+      return VERR_INTERNAL_ERROR_3; } \
     DECL_HIDDEN_CONST(RTASN1COREVTABLE const) RT_CONCAT5(g_,RTASN1TMPL_INT_NAME,_PCHOICE_XTAG_,a_Name,_Vtable) = \
     { \
         /* When the Asn1Core is at the start of the structure, we can reuse the _Delete and _Enum APIs here. */ \
@@ -320,6 +322,7 @@
 # define RTASN1TMPL_BEGIN_COMMON() \
 RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Init)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, PCRTASN1ALLOCATORVTABLE pAllocator) \
 { \
+    RT_NOREF_PV(pAllocator); \
     RT_ZERO(*pThis)
 # define RTASN1TMPL_END_COMMON() \
     return rc; \
@@ -496,6 +499,7 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_DecodeAsn1)(PRTASN1CURSOR pC
 
 # define RTASN1TMPL_BEGIN_PCHOICE() \
     RTASN1TMPL_BEGIN_COMMON(); \
+    RT_NOREF_PV(fFlags); \
     RTAsn1Dummy_InitEx(&pThis->Dummy); \
     pThis->Dummy.Asn1Core.pOps = &RT_CONCAT3(g_,RTASN1TMPL_INT_NAME,_Vtable); \
     RTAsn1CursorInitAllocation(pCursor, &pThis->Allocation); \
