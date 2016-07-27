@@ -128,6 +128,7 @@ const KRDROPS g_kRdrFileOps =
 /** @copydoc KRDROPS::pfnDone */
 static void     krdrRTFileDone(PKRDR pRdr)
 {
+    K_NOREF(pRdr);
 }
 
 
@@ -214,6 +215,7 @@ static unsigned krdrRTFileConvertProt(KPROT enmProt)
 static int krdrRTFileGenericProtect(PKRDR pRdr, PKRDRFILEPREP pPrep, KU32 cSegments, PCKLDRSEG paSegments, KBOOL fUnprotectOrProtect)
 {
     KU32 i;
+    K_NOREF(pRdr);
 
     /*
      * Iterate the segments and apply memory protection changes.
@@ -384,6 +386,7 @@ static int  krdrRTFileGenericMap(PKRDR pRdr, PKRDRFILEPREP pPrep, KU32 cSegments
 {
     int rc = 0;
     KU32 i;
+    K_NOREF(fFixed);
 
     /*
      * Generic mapping code using kHlpPageAlloc(), kHlpPageFree() and kHlpPageProtect().
@@ -429,6 +432,7 @@ static int  krdrRTFileGenericMap(PKRDR pRdr, PKRDRFILEPREP pPrep, KU32 cSegments
 /** @copydoc KRDROPS::pfnPageSize */
 static KSIZE   krdrRTFilePageSize(PKRDR pRdr)
 {
+    K_NOREF(pRdr);
     return PAGE_SIZE;
 }
 
@@ -478,6 +482,7 @@ static KFOFF krdrRTFileSize(PKRDR pRdr)
 static int krdrRTFileAllUnmap(PKRDR pRdr, const void *pvBits)
 {
     PKRDRFILE pRdrFile = (PKRDRFILE)pRdr;
+    K_NOREF(pvBits);
 
     /* check for underflow */
     if (pRdrFile->cMappings <= 0)
