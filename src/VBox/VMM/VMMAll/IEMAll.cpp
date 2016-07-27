@@ -1445,7 +1445,7 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysical(PVMCPU pVCpu)
  */
 VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVM pVM)
 {
-
+    RT_NOREF_PV(pVM);
 }
 
 #ifdef IEM_WITH_CODE_TLB
@@ -3409,11 +3409,10 @@ IEM_STATIC void iemHlpLoadNullDataSelectorOnV86Xcpt(PVMCPU pVCpu, PCPUMSELREG pS
 /**
  * Loads a segment selector during a task switch in V8086 mode.
  *
- * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
  * @param   pSReg           Pointer to the segment register.
  * @param   uSel            The selector value to load.
  */
-IEM_STATIC void iemHlpLoadSelectorInV86Mode(PVMCPU pVCpu, PCPUMSELREG pSReg, uint16_t uSel)
+IEM_STATIC void iemHlpLoadSelectorInV86Mode(PCPUMSELREG pSReg, uint16_t uSel)
 {
     /* See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers". */
     pSReg->Sel      = uSel;
@@ -4044,12 +4043,12 @@ iemTaskSwitch(PVMCPU          pVCpu,
     if (IEM_IS_V86_MODE(pVCpu))
     {
         pVCpu->iem.s.uCpl = 3;
-        iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->es, uNewES);
-        iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->cs, uNewCS);
-        iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->ss, uNewSS);
-        iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->ds, uNewDS);
-        iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->fs, uNewFS);
-        iemHlpLoadSelectorInV86Mode(pVCpu, &pCtx->gs, uNewGS);
+        iemHlpLoadSelectorInV86Mode(&pCtx->es, uNewES);
+        iemHlpLoadSelectorInV86Mode(&pCtx->cs, uNewCS);
+        iemHlpLoadSelectorInV86Mode(&pCtx->ss, uNewSS);
+        iemHlpLoadSelectorInV86Mode(&pCtx->ds, uNewDS);
+        iemHlpLoadSelectorInV86Mode(&pCtx->fs, uNewFS);
+        iemHlpLoadSelectorInV86Mode(&pCtx->gs, uNewGS);
 
         /* quick fix: fake DescSS. */ /** @todo fix the code further down? */
         DescSS.Legacy.u = 0;
@@ -5620,6 +5619,7 @@ IEM_STATIC void iemOpStubMsg2(PVMCPU pVCpu)
 #define FNIEMOP_STUB(a_Name) \
     FNIEMOP_DEF(a_Name) \
     { \
+        RT_NOREF_PV(pVCpu); \
         IEMOP_BITCH_ABOUT_STUB(); \
         return VERR_IEM_INSTR_NOT_IMPLEMENTED; \
     } \
@@ -5629,8 +5629,9 @@ IEM_STATIC void iemOpStubMsg2(PVMCPU pVCpu)
 #define FNIEMOP_STUB_1(a_Name, a_Type0, a_Name0) \
     FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
     { \
+        RT_NOREF_PV(pVCpu); \
+        RT_NOREF_PV(a_Name0); \
         IEMOP_BITCH_ABOUT_STUB(); \
-        NOREF(a_Name0); \
         return VERR_IEM_INSTR_NOT_IMPLEMENTED; \
     } \
     typedef int ignore_semicolon
@@ -5648,7 +5649,8 @@ IEM_STATIC void iemOpStubMsg2(PVMCPU pVCpu)
 #define FNIEMOP_UD_STUB_1(a_Name, a_Type0, a_Name0) \
     FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
     { \
-        NOREF(a_Name0); \
+        RT_NOREF_PV(pVCpu); \
+        RT_NOREF_PV(a_Name0); \
         Log(("Unsupported instruction %Rfn\n", __FUNCTION__)); \
         return IEMOP_RAISE_INVALID_OPCODE(); \
     } \
@@ -6601,11 +6603,10 @@ DECLINLINE(void) iemFpuRotateStackPop(PX86FXSTATE pFpuCtx)
  * Updates FSW and pushes a FPU result onto the FPU stack if no pending
  * exception prevents it.
  *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pResult             The FPU operation result to push.
  * @param   pFpuCtx             The FPU context.
  */
-IEM_STATIC void iemFpuMaybePushResult(PVMCPU pVCpu, PIEMFPURESULT pResult, PX86FXSTATE pFpuCtx)
+IEM_STATIC void iemFpuMaybePushResult(PIEMFPURESULT pResult, PX86FXSTATE pFpuCtx)
 {
     /* Update FSW and bail if there are pending exceptions afterwards. */
     uint16_t fFsw = pFpuCtx->FSW & ~X86_FSW_C_MASK;
@@ -6717,7 +6718,7 @@ IEM_STATIC void iemFpuPushResult(PVMCPU pVCpu, PIEMFPURESULT pResult)
     PCPUMCTX    pCtx    = IEM_GET_CTX(pVCpu);
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuMaybePushResult(pVCpu, pResult, pFpuCtx);
+    iemFpuMaybePushResult(pResult, pFpuCtx);
 }
 
 
@@ -6736,7 +6737,7 @@ IEM_STATIC void iemFpuPushResultWithMemOp(PVMCPU pVCpu, PIEMFPURESULT pResult, u
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateDP(pVCpu, pCtx, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuMaybePushResult(pVCpu, pResult, pFpuCtx);
+    iemFpuMaybePushResult(pResult, pFpuCtx);
 }
 
 
@@ -7026,7 +7027,7 @@ IEM_STATIC void iemFpuUpdateFSWWithMemOpThenPop(PVMCPU pVCpu, uint16_t u16FSW, u
  * @param   pFpuCtx             The FPU context.
  * @param   iStReg              The stack register being accessed.
  */
-IEM_STATIC void iemFpuStackUnderflowOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx, uint8_t iStReg)
+IEM_STATIC void iemFpuStackUnderflowOnly(PX86FXSTATE pFpuCtx, uint8_t iStReg)
 {
     Assert(iStReg < 8 || iStReg == UINT8_MAX);
     if (pFpuCtx->FCW & X86_FCW_IM)
@@ -7062,7 +7063,7 @@ DECL_NO_INLINE(IEM_STATIC, void) iemFpuStackUnderflow(PVMCPU pVCpu, uint8_t iStR
     PCPUMCTX    pCtx    = IEM_GET_CTX(pVCpu);
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
 }
 
 
@@ -7073,7 +7074,7 @@ iemFpuStackUnderflowWithMemOp(PVMCPU pVCpu, uint8_t iStReg, uint8_t iEffSeg, RTG
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateDP(pVCpu, pCtx, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
 }
 
 
@@ -7082,7 +7083,7 @@ DECL_NO_INLINE(IEM_STATIC, void) iemFpuStackUnderflowThenPop(PVMCPU pVCpu, uint8
     PCPUMCTX    pCtx    = IEM_GET_CTX(pVCpu);
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -7094,7 +7095,7 @@ iemFpuStackUnderflowWithMemOpThenPop(PVMCPU pVCpu, uint8_t iStReg, uint8_t iEffS
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateDP(pVCpu, pCtx, pFpuCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
+    iemFpuStackUnderflowOnly(pFpuCtx, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
@@ -7104,7 +7105,7 @@ DECL_NO_INLINE(IEM_STATIC, void) iemFpuStackUnderflowThenPopPop(PVMCPU pVCpu)
     PCPUMCTX    pCtx    = IEM_GET_CTX(pVCpu);
     PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
     iemFpuUpdateOpcodeAndIpWorker(pVCpu, pCtx, pFpuCtx);
-    iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, UINT8_MAX);
+    iemFpuStackUnderflowOnly(pFpuCtx, UINT8_MAX);
     iemFpuMaybePopOne(pFpuCtx);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -11456,17 +11457,17 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #endif
 
 /** The instruction requires a Pentium (586) or later. */
-#if IEM_CFG_TARGET_CPU >= IEMTARGETCPU_586
+#if IEM_CFG_TARGET_CPU >= IEMTARGETCPU_PENTIUM
 # define IEMOP_HLP_MIN_586() do { } while (0)
 #else
-# define IEMOP_HLP_MIN_586() IEMOP_HLP_MIN_CPU(IEMTARGETCPU_586, true)
+# define IEMOP_HLP_MIN_586() IEMOP_HLP_MIN_CPU(IEMTARGETCPU_PENTIUM, true)
 #endif
 
 /** The instruction requires a PentiumPro (686) or later. */
-#if IEM_CFG_TARGET_CPU >= IEMTARGETCPU_686
+#if IEM_CFG_TARGET_CPU >= IEMTARGETCPU_PPRO
 # define IEMOP_HLP_MIN_686() do { } while (0)
 #else
-# define IEMOP_HLP_MIN_686() IEMOP_HLP_MIN_CPU(IEMTARGETCPU_686, true)
+# define IEMOP_HLP_MIN_686() IEMOP_HLP_MIN_CPU(IEMTARGETCPU_PPRO, true)
 #endif
 
 
@@ -13542,6 +13543,7 @@ IEM_STATIC void iemLogCurInstr(PVMCPU pVCpu, PCPUMCTX pCtx, bool fSameCtx)
 # endif
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
                  pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u));
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(pCtx); RT_NOREF_PV(fSameCtx);
 }
 #endif
 
@@ -14256,12 +14258,14 @@ VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
 
 VMM_INT_DECL(int) IEMBreakpointSet(PVM pVM, RTGCPTR GCPtrBp)
 {
+    RT_NOREF_PV(pVM); RT_NOREF_PV(GCPtrBp);
     return VERR_NOT_IMPLEMENTED;
 }
 
 
 VMM_INT_DECL(int) IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp)
 {
+    RT_NOREF_PV(pVM); RT_NOREF_PV(GCPtrBp);
     return VERR_NOT_IMPLEMENTED;
 }
 

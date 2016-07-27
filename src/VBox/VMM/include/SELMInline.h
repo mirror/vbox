@@ -246,22 +246,23 @@ DECLINLINE(bool) selmIsSRegStale32(PCCPUMSELREG pSReg, PCX86DESC pShwDesc, uint3
         || pSReg->Attr.n.u1Granularity != pShwDesc->Gen.u1Granularity
         || pSReg->Attr.n.u2Dpl         != pShwDesc->Gen.u2Dpl - pShwDesc->Gen.u1Available)
     {
-        Log(("selmIsSRegStale32: Attributes changed (%#x -> %#x)\n", pSReg->Attr.u, X86DESC_GET_HID_ATTR(pShwDesc)));
+        Log(("selmIsSRegStale32: Attributes changed (%#x -> %#x) for %u\n", pSReg->Attr.u, X86DESC_GET_HID_ATTR(pShwDesc), iSReg));
         return true;
     }
 
     if (pSReg->u64Base != X86DESC_BASE(pShwDesc))
     {
-        Log(("selmIsSRegStale32: base changed (%#llx -> %#x)\n", pSReg->u64Base, X86DESC_BASE(pShwDesc)));
+        Log(("selmIsSRegStale32: base changed (%#llx -> %#x) for %u\n", pSReg->u64Base, X86DESC_BASE(pShwDesc), iSReg));
         return true;
     }
 
     if (pSReg->u32Limit != X86DESC_LIMIT_G(pShwDesc))
     {
-        Log(("selmIsSRegStale32: limit changed (%#x -> %#x)\n", pSReg->u32Limit, X86DESC_LIMIT_G(pShwDesc)));
+        Log(("selmIsSRegStale32: limit changed (%#x -> %#x) for %u\n", pSReg->u32Limit, X86DESC_LIMIT_G(pShwDesc), iSReg));
         return true;
     }
 
+    RT_NOREF_PV(iSReg);
     return false;
 }
 

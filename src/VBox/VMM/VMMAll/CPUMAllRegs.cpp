@@ -1521,6 +1521,9 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
 VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+#ifndef IN_RING0
+    RT_NOREF_PV(iGstReg);
+#endif
 
     /*
      * Compare the DR7s first.

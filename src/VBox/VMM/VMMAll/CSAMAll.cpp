@@ -63,6 +63,8 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
     Log(("csamCodePageWriteHandler: write to %RGv LB %zu\n", GCPtr, cbBuf));
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     Assert(VMCPU_IS_EMT(pVCpu));
+    RT_NOREF_PV(pvUser);
+    RT_NOREF_PV(enmOrigin);
 
     /*
      * Check if it's a dummy write that doesn't change anything.

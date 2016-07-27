@@ -831,6 +831,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_not_u64,(uint64_t  *puDst,  uint32_t *pfEFlags)
     uint64_t uResult = ~uDst;
     *puDst = uResult;
     /* EFLAGS are not modified. */
+    RT_NOREF_PV(pfEFlags);
 }
 
 
@@ -1213,6 +1214,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, u
 IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
 {
     /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
     if (   u64Divisor != 0
         && *pu64RDX < u64Divisor)
     {
@@ -1248,6 +1251,8 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, u
 IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
 {
     /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
     if (u64Divisor != 0)
     {
         /*

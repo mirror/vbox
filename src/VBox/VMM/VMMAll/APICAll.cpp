@@ -228,6 +228,7 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
                   s_aAccess[i].pszAfter));
     return VERR_CPUM_RAISE_GP_0;
 #else
+    RT_NOREF_PV(u32Reg); RT_NOREF_PV(pVCpu);
     return s_aAccess[i].rcRZ;
 #endif
 }
@@ -1833,15 +1834,14 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(u32Reg >= MSR_IA32_X2APIC_ID && u32Reg <= MSR_IA32_X2APIC_SELF_IPI);
     Assert(pu64Value);
+    RT_NOREF_PV(pDevIns);
 
 #ifndef IN_RING3
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (pApic->fRZEnabled)
     { /* likely */}
     else
-    {
         return VINF_CPUM_R3_MSR_READ;
-    }
 #endif
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMsrRead));
@@ -1939,15 +1939,14 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
      */
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(u32Reg >= MSR_IA32_X2APIC_ID && u32Reg <= MSR_IA32_X2APIC_SELF_IPI);
+    RT_NOREF_PV(pDevIns);
 
 #ifndef IN_RING3
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
     if (pApic->fRZEnabled)
     { /* likely */ }
     else
-    {
         return VINF_CPUM_R3_MSR_WRITE;
-    }
 #endif
 
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMsrWrite));
@@ -2197,7 +2196,11 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, ui
 
     ASMAtomicWriteU64(&pApicCpu->uApicBaseMsr, uBaseMsr);
     return VINF_SUCCESS;
+
 #else  /* !IN_RING3 */
+    RT_NOREF_PV(pDevIns);
+    RT_NOREF_PV(pVCpu);
+    RT_NOREF_PV(u64BaseMsr);
     return VINF_CPUM_R3_MSR_WRITE;
 #endif /* IN_RING3 */
 }
@@ -2208,6 +2211,7 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, ui
  */
 APICBOTHCBDECL(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 {
+    RT_NOREF_PV(pDevIns);
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
@@ -2220,6 +2224,7 @@ APICBOTHCBDECL(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
  */
 APICBOTHCBDECL(void) apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
 {
+    RT_NOREF_PV(pDevIns);
     apicSetTpr(pVCpu, u8Tpr);
 }
 
@@ -2252,6 +2257,7 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
  */
 APICBOTHCBDECL(uint8_t) apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
 {
+    RT_NOREF_PV(pDevIns);
     VMCPU_ASSERT_EMT(pVCpu);
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
 
@@ -2485,6 +2491,7 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu
  */
 APICBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
 {
+    RT_NOREF_PV(pDevIns);
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pu8Vector);
     NOREF(pu32TagSrc);

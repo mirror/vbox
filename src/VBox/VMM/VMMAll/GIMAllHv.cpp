@@ -149,6 +149,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     VMCPU_ASSERT_EMT(pVCpu);
 
 #ifndef IN_RING3
+    RT_NOREF_PV(pVCpu);
+    RT_NOREF_PV(pCtx);
     return VINF_GIM_R3_HYPERCALL;
 #else
     PVM pVM = pVCpu->CTX_SUFF(pVM);

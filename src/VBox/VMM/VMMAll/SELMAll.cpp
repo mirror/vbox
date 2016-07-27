@@ -585,6 +585,7 @@ static void selLoadHiddenSelectorRegFromGuestTable(PVMCPU pVCpu, PCCPUMCTX pCtx,
                                                    RTGCPTR GCPtrDesc, RTSEL const Sel, uint32_t const iSReg)
 {
     Assert(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    RT_NOREF_PV(pCtx);
 
     /*
      * Try read the entry.

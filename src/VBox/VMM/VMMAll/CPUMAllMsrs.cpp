@@ -102,6 +102,7 @@ typedef FNCPUMWRMSR *PFNCPUMWRMSR;
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_FixedValue(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr);
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
 }
@@ -110,6 +111,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_FixedValue(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IgnoreWrite(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     Log(("CPUM: Ignoring WRMSR %#x (%s), %#llx\n", idMsr, pRange->szName, uValue));
     return VINF_SUCCESS;
 }
@@ -118,6 +120,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IgnoreWrite(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_WriteOnly(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(puValue);
     return VERR_CPUM_RAISE_GP_0;
 }
 
@@ -125,6 +128,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_WriteOnly(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_ReadOnly(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     Assert(pRange->fWrGpMask == UINT64_MAX);
     return VERR_CPUM_RAISE_GP_0;
 }
@@ -141,6 +145,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_ReadOnly(PVMCPU pVCpu, uint32_t idMs
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32P5McAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0; /** @todo implement machine check injection. */
     return VINF_SUCCESS;
 }
@@ -149,6 +154,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32P5McAddr(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32P5McAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement machine check injection. */
     return VINF_SUCCESS;
 }
@@ -157,6 +163,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32P5McAddr(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32P5McType(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0; /** @todo implement machine check injection. */
     return VINF_SUCCESS;
 }
@@ -165,6 +172,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32P5McType(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32P5McType(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement machine check injection. */
     return VINF_SUCCESS;
 }
@@ -173,6 +181,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32P5McType(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32TimestampCounter(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = TMCpuTickGet(pVCpu);
     return VINF_SUCCESS;
 }
@@ -181,6 +190,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32TimestampCounter(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TimestampCounter(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     TMCpuTickSet(pVCpu->CTX_SUFF(pVM), pVCpu, uValue);
     return VINF_SUCCESS;
 }
@@ -189,6 +199,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TimestampCounter(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr);
     uint64_t uValue = pRange->uValue;
     if (uValue & 0x1f00)
     {
@@ -204,6 +215,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     return PDMApicGetBaseMsr(pVCpu, puValue, false /* fIgnoreErrors */);
 }
 
@@ -211,6 +223,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return PDMApicSetBaseMsr(pVCpu, uValue);
 }
 
@@ -218,6 +231,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FeatureControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 1; /* Locked, no VT-X, no SYSENTER micromanagement. */
     return VINF_SUCCESS;
 }
@@ -226,6 +240,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FeatureControl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32FeatureControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return VERR_CPUM_RAISE_GP_0;
 }
 
@@ -233,6 +248,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32FeatureControl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32BiosSignId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo fake microcode update. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -242,6 +258,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32BiosSignId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosSignId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* Normally, zero is written to Ia32BiosSignId before reading it in order
        to select the signature instead of the BBL_CR_D3 behaviour.  The GP mask
        of the database entry should take care of most illegal writes for now, so
@@ -253,6 +270,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosSignId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosUpdateTrigger(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Fake bios update trigger better.  The value is the address to an
      *        update package, I think.  We should probably GP if it's invalid. */
     return VINF_SUCCESS;
@@ -262,6 +280,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosUpdateTrigger(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmmMonitorCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -271,6 +290,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmmMonitorCtl(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SmmMonitorCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo SMM. */
     return VINF_SUCCESS;
 }
@@ -279,6 +299,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SmmMonitorCtl(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PmcN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo check CPUID leaf 0ah. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -288,6 +309,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PmcN(PVMCPU pVCpu, uint32_t idMs
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PmcN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo check CPUID leaf 0ah. */
     return VINF_SUCCESS;
 }
@@ -296,6 +318,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PmcN(PVMCPU pVCpu, uint32_t idMs
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MonitorFilterLineSize(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo return 0x1000 if we try emulate mwait 100% correctly. */
     *puValue = 0x40; /** @todo Change to CPU cache line size. */
     return VINF_SUCCESS;
@@ -305,6 +328,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MonitorFilterLineSize(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MonitorFilterLineSize(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo should remember writes, though it's supposedly something only a BIOS
      * would write so, it's not extremely important. */
     return VINF_SUCCESS;
@@ -313,6 +337,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MonitorFilterLineSize(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MPerf(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Read MPERF: Adjust against previously written MPERF value.  Is TSC
      *        what we want? */
     *puValue = TMCpuTickGet(pVCpu);
@@ -323,6 +348,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MPerf(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MPerf(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Write MPERF: Calc adjustment. */
     return VINF_SUCCESS;
 }
@@ -331,6 +357,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MPerf(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32APerf(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Read APERF: Adjust against previously written MPERF value.  Is TSC
      *        what we want? */
     *puValue = TMCpuTickGet(pVCpu);
@@ -341,6 +368,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32APerf(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32APerf(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Write APERF: Calc adjustment. */
     return VINF_SUCCESS;
 }
@@ -349,6 +377,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32APerf(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     /* This is currently a bit weird. :-) */
     uint8_t const   cVariableRangeRegs              = 0;
     bool const      fSystemManagementRangeRegisters = false;
@@ -365,6 +395,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrCap(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrPhysBaseN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Implement variable MTRR storage. */
     Assert(pRange->uValue == (idMsr - 0x200) / 2);
     *puValue = 0;
@@ -379,6 +410,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysBaseN(PVMCPU pVCpu, uint
      * Validate the value.
      */
     Assert(pRange->uValue == (idMsr - 0x200) / 2);
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue);
 
     if ((uValue & 0xff) >= 7)
     {
@@ -405,6 +437,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysBaseN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrPhysMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Implement variable MTRR storage. */
     Assert(pRange->uValue == (idMsr - 0x200) / 2);
     *puValue = 0;
@@ -419,6 +452,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysMaskN(PVMCPU pVCpu, uint
      * Validate the value.
      */
     Assert(pRange->uValue == (idMsr - 0x200) / 2);
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue);
 
     uint64_t fInvPhysMask = ~(RT_BIT_64(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
     if (fInvPhysMask & uValue)
@@ -439,6 +473,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysMaskN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrFixed(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     CPUM_MSR_ASSERT_CPUMCPU_OFFSET_RETURN(pVCpu, pRange, uint64_t, puFixedMtrr);
     *puValue = *puFixedMtrr;
     return VINF_SUCCESS;
@@ -449,6 +484,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrFixed(PVMCPU pVCpu, uint32_t
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrFixed(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     CPUM_MSR_ASSERT_CPUMCPU_OFFSET_RETURN(pVCpu, pRange, uint64_t, puFixedMtrr);
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue);
+
     for (uint32_t cShift = 0; cShift < 63; cShift += 8)
     {
         uint8_t uType = (uint8_t)(uValue >> cShift);
@@ -467,6 +504,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrFixed(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrDefType(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType;
     return VINF_SUCCESS;
 }
@@ -475,6 +513,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrDefType(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrDefType(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+
     if ((uValue & 0xff) >= 7)
     {
         Log(("CPUM: Invalid MTRR default type value on %s: %#llx (%#llx)\n", pRange->szName, uValue, uValue & 0xff));
@@ -489,6 +529,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrDefType(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Pat(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrPAT;
     return VINF_SUCCESS;
 }
@@ -497,6 +538,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Pat(PVMCPU pVCpu, uint32_t idMsr
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Pat(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.Guest.msrPAT = uValue;
     return VINF_SUCCESS;
 }
@@ -505,6 +547,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Pat(PVMCPU pVCpu, uint32_t idMsr
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SysEnterCs(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.SysEnter.cs;
     return VINF_SUCCESS;
 }
@@ -513,6 +556,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SysEnterCs(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SysEnterCs(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+
     /* Note! We used to mask this by 0xffff, but turns out real HW doesn't and
              there are generally 32-bit working bits backing this register. */
     pVCpu->cpum.s.Guest.SysEnter.cs = uValue;
@@ -523,6 +568,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SysEnterCs(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SysEnterEsp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.SysEnter.esp;
     return VINF_SUCCESS;
 }
@@ -537,6 +583,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SysEnterEsp(PVMCPU pVCpu, uint32
         return VINF_SUCCESS;
     }
     Log(("CPUM: IA32_SYSENTER_ESP not canonical! %#llx\n", uValue));
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     return VERR_CPUM_RAISE_GP_0;
 }
 
@@ -544,6 +591,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SysEnterEsp(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SysEnterEip(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.SysEnter.eip;
     return VINF_SUCCESS;
 }
@@ -562,6 +610,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SysEnterEip(PVMCPU pVCpu, uint32
 #else
     Log(("CPUM: IA32_SYSENTER_EIP not canonical! %#llx\n", uValue));
 #endif
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     return VERR_CPUM_RAISE_GP_0;
 }
 
@@ -574,6 +623,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McgCap(PVMCPU pVCpu, uint32_t id
 #else
     *puValue = 0;
 #endif
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     return VINF_SUCCESS;
 }
 
@@ -581,6 +631,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McgCap(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McgStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement machine checks. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -590,6 +641,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McgStatus(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McgStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement machine checks. */
     return VINF_SUCCESS;
 }
@@ -598,6 +650,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McgStatus(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McgCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement machine checks. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -607,6 +660,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McgCtl(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McgCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement machine checks. */
     return VINF_SUCCESS;
 }
@@ -615,6 +669,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McgCtl(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32DebugCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_DEBUGCTL. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -624,6 +679,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32DebugCtl(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_DEBUGCTL. */
     return VINF_SUCCESS;
 }
@@ -632,6 +688,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugCtl(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmrrPhysBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement intel SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -641,6 +698,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmrrPhysBase(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SmrrPhysBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement intel SMM. */
     return VERR_CPUM_RAISE_GP_0;
 }
@@ -649,6 +707,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SmrrPhysBase(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmrrPhysMask(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement intel SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -658,6 +717,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SmrrPhysMask(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SmrrPhysMask(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement intel SMM. */
     return VERR_CPUM_RAISE_GP_0;
 }
@@ -666,6 +726,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SmrrPhysMask(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformDcaCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement intel direct cache access (DCA)?? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -675,6 +736,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformDcaCap(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PlatformDcaCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement intel direct cache access (DCA)?? */
     return VINF_SUCCESS;
 }
@@ -683,6 +745,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PlatformDcaCap(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32CpuDcaCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement intel direct cache access (DCA)?? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -692,6 +755,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32CpuDcaCap(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Dca0Cap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement intel direct cache access (DCA)?? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -701,6 +765,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Dca0Cap(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Dca0Cap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement intel direct cache access (DCA)?? */
     return VINF_SUCCESS;
 }
@@ -709,6 +774,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Dca0Cap(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_PERFEVTSEL0+. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -718,6 +784,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfEvtSelN(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_PERFEVTSEL0+. */
     return VINF_SUCCESS;
 }
@@ -726,6 +793,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfEvtSelN(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     uint64_t uValue = pRange->uValue;
 
     /* Always provide the max bus ratio for now.  XNU expects it. */
@@ -747,6 +815,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfStatus(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* Pentium4 allows writing, but all bits are ignored. */
     return VINF_SUCCESS;
 }
@@ -755,6 +824,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfStatus(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_PERFCTL. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -764,6 +834,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfCtl(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_PERFCTL. */
     return VINF_SUCCESS;
 }
@@ -772,6 +843,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfCtl(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FixedCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_FIXED_CTRn (fixed performance counters). */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -781,6 +853,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FixedCtrN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32FixedCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_FIXED_CTRn (fixed performance counters). */
     return VINF_SUCCESS;
 }
@@ -789,6 +862,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32FixedCtrN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfCapabilities(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -798,6 +872,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfCapabilities(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfCapabilities(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement performance counters. */
     return VINF_SUCCESS;
 }
@@ -806,6 +881,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfCapabilities(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FixedCtrCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -815,6 +891,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FixedCtrCtrl(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32FixedCtrCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement performance counters. */
     return VINF_SUCCESS;
 }
@@ -823,6 +900,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32FixedCtrCtrl(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfGlobalStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -832,6 +910,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfGlobalStatus(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfGlobalStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement performance counters. */
     return VINF_SUCCESS;
 }
@@ -840,6 +919,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfGlobalStatus(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfGlobalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -849,6 +929,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfGlobalCtrl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfGlobalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement performance counters. */
     return VINF_SUCCESS;
 }
@@ -857,6 +938,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfGlobalCtrl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfGlobalOvfCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -866,6 +948,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfGlobalOvfCtrl(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfGlobalOvfCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement performance counters. */
     return VINF_SUCCESS;
 }
@@ -874,6 +957,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PerfGlobalOvfCtrl(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PebsEnable(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -883,6 +967,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PebsEnable(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PebsEnable(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement performance counters. */
     return VINF_SUCCESS;
 }
@@ -891,6 +976,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PebsEnable(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ClockModulation(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_CLOCK_MODULATION. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -900,6 +986,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ClockModulation(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ClockModulation(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_CLOCK_MODULATION. */
     return VINF_SUCCESS;
 }
@@ -908,6 +995,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ClockModulation(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ThermInterrupt(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_THERM_INTERRUPT. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -917,6 +1005,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ThermInterrupt(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ThermInterrupt(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_THERM_STATUS. */
     return VINF_SUCCESS;
 }
@@ -925,6 +1014,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ThermInterrupt(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ThermStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_THERM_STATUS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -934,6 +1024,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ThermStatus(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ThermStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_THERM_INTERRUPT. */
     return VINF_SUCCESS;
 }
@@ -942,6 +1033,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ThermStatus(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Therm2Ctl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_THERM2_CTL. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -951,6 +1043,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Therm2Ctl(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Therm2Ctl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement IA32_THERM2_CTL. */
     return VINF_SUCCESS;
 }
@@ -959,6 +1052,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Therm2Ctl(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MiscEnable(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.GuestMsrs.msr.MiscEnable;
     return VINF_SUCCESS;
 }
@@ -967,6 +1061,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MiscEnable(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MiscEnable(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
 #ifdef LOG_ENABLED
     uint64_t const uOld = pVCpu->cpum.s.GuestMsrs.msr.MiscEnable;
 #endif
@@ -989,6 +1084,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MiscEnable(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McCtlStatusAddrMiscN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(pRange);
+
     /** @todo Implement machine check exception injection. */
     switch (idMsr & 3)
     {
@@ -1013,6 +1110,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McCtlStatusAddrMiscN(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McCtlStatusAddrMiscN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     switch (idMsr & 3)
     {
         case 0:
@@ -1058,6 +1156,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McCtlStatusAddrMiscN(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McNCtl2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Implement machine check exception injection. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1067,6 +1166,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32McNCtl2(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McNCtl2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Implement machine check exception injection. */
     return VINF_SUCCESS;
 }
@@ -1075,6 +1175,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32McNCtl2(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32DsArea(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement IA32_DS_AREA. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1084,6 +1185,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32DsArea(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DsArea(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return VINF_SUCCESS;
 }
 
@@ -1091,6 +1194,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DsArea(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32TscDeadline(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement TSC deadline timer. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1100,6 +1204,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32TscDeadline(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TscDeadline(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement TSC deadline timer. */
     return VINF_SUCCESS;
 }
@@ -1108,6 +1213,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TscDeadline(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pRange);
     return PDMApicReadMsr(pVCpu, idMsr, puValue);
 }
 
@@ -1115,6 +1221,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     return PDMApicWriteMsr(pVCpu, idMsr, uValue);
 }
 
@@ -1122,6 +1229,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32X2ApicN(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32DebugInterface(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo IA32_DEBUG_INTERFACE (no docs)  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1131,6 +1239,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32DebugInterface(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo IA32_DEBUG_INTERFACE (no docs)  */
     return VINF_SUCCESS;
 }
@@ -1139,6 +1248,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1147,6 +1257,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBase(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1155,6 +1266,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1163,6 +1275,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1171,6 +1284,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1179,6 +1293,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1187,6 +1302,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed0(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1195,6 +1311,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed0(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1203,6 +1320,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1211,6 +1329,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1219,6 +1338,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1227,6 +1347,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1235,6 +1356,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEptVpidCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1243,6 +1365,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEptVpidCap(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTruePinbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1251,6 +1374,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTruePinbasedCtls(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueProcbasedCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1259,6 +1383,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueProcbasedCtls(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueExitCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1267,6 +1392,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueExitCtls(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueEntryCtls(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1275,6 +1401,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueEntryCtls(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmFunc(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1298,6 +1425,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmFunc(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64Efer(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrEFER;
     return VINF_SUCCESS;
 }
@@ -1313,6 +1441,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
                                  : 0;
     uint64_t        fMask        = 0;
     uint64_t        fIgnoreMask  = MSR_K6_EFER_LMA;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
 
     /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
     if (fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_NX)
@@ -1365,6 +1494,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64SyscallTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrSTAR;
     return VINF_SUCCESS;
 }
@@ -1373,6 +1503,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64SyscallTarget(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64SyscallTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.Guest.msrSTAR = uValue;
     return VINF_SUCCESS;
 }
@@ -1381,6 +1512,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64SyscallTarget(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64LongSyscallTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrLSTAR;
     return VINF_SUCCESS;
 }
@@ -1389,6 +1521,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64LongSyscallTarget(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64LongSyscallTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     if (!X86_IS_CANONICAL(uValue))
     {
         Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
@@ -1402,6 +1535,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64LongSyscallTarget(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64CompSyscallTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrCSTAR;
     return VINF_SUCCESS;
 }
@@ -1410,6 +1544,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64CompSyscallTarget(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64CompSyscallTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     if (!X86_IS_CANONICAL(uValue))
     {
         Log(("CPUM: wrmsr %s(%#x), %#llx -> #GP - not canonical\n", pRange->szName, idMsr, uValue));
@@ -1423,6 +1558,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64CompSyscallTarget(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64SyscallFlagMask(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrSFMASK;
     return VINF_SUCCESS;
 }
@@ -1431,6 +1567,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64SyscallFlagMask(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64SyscallFlagMask(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.Guest.msrSFMASK = uValue;
     return VINF_SUCCESS;
 }
@@ -1439,6 +1576,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64SyscallFlagMask(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64FsBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.fs.u64Base;
     return VINF_SUCCESS;
 }
@@ -1447,6 +1585,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64FsBase(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64FsBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.Guest.fs.u64Base = uValue;
     return VINF_SUCCESS;
 }
@@ -1455,6 +1594,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64FsBase(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64GsBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.gs.u64Base;
     return VINF_SUCCESS;
 }
@@ -1462,6 +1602,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64GsBase(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64GsBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.Guest.gs.u64Base = uValue;
     return VINF_SUCCESS;
 }
@@ -1471,6 +1612,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64GsBase(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64KernelGsBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.Guest.msrKERNELGSBASE;
     return VINF_SUCCESS;
 }
@@ -1478,6 +1620,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64KernelGsBase(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64KernelGsBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.Guest.msrKERNELGSBASE = uValue;
     return VINF_SUCCESS;
 }
@@ -1486,6 +1629,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64KernelGsBase(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64TscAux(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.GuestMsrs.msr.TscAux;
     return VINF_SUCCESS;
 }
@@ -1493,6 +1637,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Amd64TscAux(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64TscAux(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     pVCpu->cpum.s.GuestMsrs.msr.TscAux = uValue;
     return VINF_SUCCESS;
 }
@@ -1507,6 +1652,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64TscAux(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelEblCrPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo recalc clock frequency ratio? */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -1516,6 +1662,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelEblCrPowerOn(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelEblCrPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Write EBL_CR_POWERON: Remember written bits. */
     return VINF_SUCCESS;
 }
@@ -1524,6 +1671,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelEblCrPowerOn(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7CoreThreadCount(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     /* Note! According to cpuid_set_info in XNU (10.7.0), Westmere CPU only
              have a 4-bit core count. */
     uint16_t cCores   = pVCpu->CTX_SUFF(pVM)->cCpus;
@@ -1536,6 +1685,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7CoreThreadCount(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcHardPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo P4 hard power on config */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -1545,6 +1695,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcHardPowerOn(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP4EbcHardPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo P4 hard power on config */
     return VINF_SUCCESS;
 }
@@ -1553,6 +1704,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP4EbcHardPowerOn(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo P4 soft power on config  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -1562,6 +1714,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo P4 soft power on config */
     return VINF_SUCCESS;
 }
@@ -1570,6 +1723,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP4EbcSoftPowerOn(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcFrequencyId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     uint64_t uValue;
     PVM      pVM            = pVCpu->CTX_SUFF(pVM);
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
@@ -1628,6 +1783,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcFrequencyId(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP4EbcFrequencyId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo P4 bus frequency config  */
     return VINF_SUCCESS;
 }
@@ -1636,6 +1792,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP4EbcFrequencyId(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP6FsbFrequency(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     /* Convert the scalable bus frequency to the encoding in the intel manual (for core+). */
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVCpu->CTX_SUFF(pVM));
     if (uScalableBusHz <= CPUM_SBUSFREQ_100MHZ)
@@ -1662,6 +1820,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP6FsbFrequency(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPlatformInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     /* Just indicate a fixed TSC, no turbo boost, no programmable anything. */
     PVM      pVM            = pVCpu->CTX_SUFF(pVM);
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
@@ -1682,6 +1842,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPlatformInfo(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelFlexRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     uint64_t uValue = pRange->uValue & ~UINT64_C(0x1ff00);
 
     PVM      pVM            = pVCpu->CTX_SUFF(pVM);
@@ -1698,6 +1860,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelFlexRatio(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelFlexRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement writing MSR_FLEX_RATIO. */
     return VINF_SUCCESS;
 }
@@ -1706,6 +1869,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelFlexRatio(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPkgCStConfigControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl;
     return VINF_SUCCESS;
 }
@@ -1714,6 +1878,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPkgCStConfigControl(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelPkgCStConfigControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+
     if (pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl & RT_BIT_64(15))
     {
         Log(("CPUM: WRMDR %#x (%s), %#llx: Write protected -> #GP\n", idMsr, pRange->szName, uValue));
@@ -1734,6 +1900,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelPkgCStConfigControl(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPmgIoCaptureBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement I/O mwait wakeup. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1743,6 +1910,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPmgIoCaptureBase(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelPmgIoCaptureBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement I/O mwait wakeup. */
     return VINF_SUCCESS;
 }
@@ -1751,6 +1919,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelPmgIoCaptureBase(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchFromToN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last branch records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1760,6 +1929,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchFromToN(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchFromToN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement last branch records. */
     return VINF_SUCCESS;
 }
@@ -1768,6 +1938,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchFromToN(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchFromN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last branch records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1777,6 +1948,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchFromN(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchFromN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     /** @todo implement last branch records. */
     /** @todo Probing indicates that bit 63 is settable on SandyBridge, at least
      *        if the rest of the bits are zero.  Automatic sign extending?
@@ -1793,6 +1965,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchFromN(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchToN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last branch records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1802,6 +1975,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchToN(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchToN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement last branch records. */
     /** @todo Probing indicates that bit 63 is settable on SandyBridge, at least
      *        if the rest of the bits are zero.  Automatic sign extending?
@@ -1818,6 +1992,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchToN(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchTos(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last branch records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -1827,6 +2002,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelLastBranchTos(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchTos(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement last branch records. */
     return VINF_SUCCESS;
 }
@@ -1835,6 +2011,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelLastBranchTos(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelBblCrCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
 }
@@ -1843,6 +2020,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelBblCrCtl(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelBblCrCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return VINF_SUCCESS;
 }
 
@@ -1850,6 +2028,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelBblCrCtl(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelBblCrCtl3(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
 }
@@ -1858,6 +2037,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelBblCrCtl3(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelBblCrCtl3(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return VINF_SUCCESS;
 }
 
@@ -1865,6 +2045,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelBblCrCtl3(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7TemperatureTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
 }
@@ -1873,6 +2054,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7TemperatureTarget(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7TemperatureTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return VINF_SUCCESS;
 }
 
@@ -1880,6 +2062,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7TemperatureTarget(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7MsrOffCoreResponseN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo machine check. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -1889,6 +2072,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7MsrOffCoreResponseN(PVMCPU pV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7MsrOffCoreResponseN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo machine check. */
     return VINF_SUCCESS;
 }
@@ -1897,6 +2081,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7MsrOffCoreResponseN(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7MiscPwrMgmt(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -1905,6 +2090,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7MiscPwrMgmt(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7MiscPwrMgmt(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     return VINF_SUCCESS;
 }
 
@@ -1912,6 +2098,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7MiscPwrMgmt(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP6CrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr);
     int rc = CPUMGetGuestCRx(pVCpu, pRange->uValue, puValue);
     AssertRC(rc);
     return VINF_SUCCESS;
@@ -1921,6 +2108,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP6CrN(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP6CrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* This CRx interface differs from the MOV CRx, GReg interface in that
        #GP(0) isn't raised if unsupported bits are written to.  Instead they
        are simply ignored and masked off. (Pentium M Dothan)  */
@@ -1933,6 +2121,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelP6CrN(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCpuId1FeatureMaskEcdx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement CPUID masking.  */
     *puValue = UINT64_MAX;
     return VINF_SUCCESS;
@@ -1942,6 +2131,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCpuId1FeatureMaskEcdx(PVMCPU pV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCpuId1FeatureMaskEcdx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement CPUID masking.  */
     return VINF_SUCCESS;
 }
@@ -1950,7 +2140,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCpuId1FeatureMaskEcdx(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCpuId1FeatureMaskEax(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement CPUID masking.  */
+    *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1958,6 +2150,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCpuId1FeatureMaskEax(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCpuId1FeatureMaskEax(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement CPUID masking.  */
     return VINF_SUCCESS;
 }
@@ -1967,6 +2160,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCpuId1FeatureMaskEax(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCpuId80000001FeatureMaskEcdx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement CPUID masking.  */
     *puValue = UINT64_MAX;
     return VINF_SUCCESS;
@@ -1976,6 +2170,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCpuId80000001FeatureMaskEcdx(PV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCpuId80000001FeatureMaskEcdx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement CPUID masking.  */
     return VINF_SUCCESS;
 }
@@ -1985,6 +2180,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCpuId80000001FeatureMaskEcdx(PV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyAesNiCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement AES-NI.  */
     *puValue = 3;  /* Bit 0 is lock bit, bit 1 disables AES-NI. That's what they say. */
     return VINF_SUCCESS;
@@ -1994,6 +2190,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyAesNiCtl(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyAesNiCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement AES-NI.  */
     return VERR_CPUM_RAISE_GP_0;
 }
@@ -2002,6 +2199,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyAesNiCtl(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7TurboRatioLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement intel C states.  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2011,6 +2209,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7TurboRatioLimit(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7TurboRatioLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement intel C states.  */
     return VINF_SUCCESS;
 }
@@ -2019,6 +2218,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7TurboRatioLimit(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7LbrSelect(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last-branch-records.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2028,6 +2228,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7LbrSelect(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7LbrSelect(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement last-branch-records.  */
     return VINF_SUCCESS;
 }
@@ -2036,6 +2237,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7LbrSelect(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyErrorControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement memory error injection (MSR_ERROR_CONTROL).  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2045,6 +2247,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyErrorControl(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyErrorControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement memory error injection (MSR_ERROR_CONTROL).  */
     return VINF_SUCCESS;
 }
@@ -2053,6 +2256,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyErrorControl(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7VirtualLegacyWireCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement memory VLW?  */
     *puValue = pRange->uValue;
     /* Note: A20M is known to be bit 1 as this was disclosed in spec update
@@ -2070,6 +2274,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7VirtualLegacyWireCap(PVMCPU p
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7PowerCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2079,6 +2284,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7PowerCtl(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7PowerCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel power management  */
     return VINF_SUCCESS;
 }
@@ -2087,6 +2293,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7PowerCtl(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyPebsNumAlt(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel performance counters.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2096,6 +2303,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyPebsNumAlt(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyPebsNumAlt(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel performance counters.  */
     return VINF_SUCCESS;
 }
@@ -2104,6 +2312,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyPebsNumAlt(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7PebsLdLat(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel performance counters.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2113,6 +2322,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7PebsLdLat(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7PebsLdLat(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel performance counters.  */
     return VINF_SUCCESS;
 }
@@ -2121,6 +2331,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7PebsLdLat(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7PkgCnResidencyN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2130,6 +2341,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7PkgCnResidencyN(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7CoreCnResidencyN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2139,6 +2351,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7CoreCnResidencyN(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyVrCurrentConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Figure out what MSR_VR_CURRENT_CONFIG & MSR_VR_MISC_CONFIG are.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2148,6 +2361,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyVrCurrentConfig(PVMCPU p
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyVrCurrentConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Figure out what MSR_VR_CURRENT_CONFIG & MSR_VR_MISC_CONFIG are.  */
     return VINF_SUCCESS;
 }
@@ -2156,6 +2370,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyVrCurrentConfig(PVMCPU p
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyVrMiscConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Figure out what MSR_VR_CURRENT_CONFIG & MSR_VR_MISC_CONFIG are.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2165,6 +2380,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyVrMiscConfig(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyVrMiscConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Figure out what MSR_VR_CURRENT_CONFIG & MSR_VR_MISC_CONFIG are.  */
     return VINF_SUCCESS;
 }
@@ -2173,6 +2389,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyVrMiscConfig(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyRaplPowerUnit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2182,6 +2399,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyRaplPowerUnit(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyRaplPowerUnit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* Note! This is documented as read only and except for a Silvermont sample has
              always been classified as read only.  This is just here to make it compile. */
     return VINF_SUCCESS;
@@ -2191,6 +2409,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyRaplPowerUnit(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyPkgCnIrtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2200,6 +2419,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyPkgCnIrtlN(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyPkgCnIrtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel power management.  */
     return VINF_SUCCESS;
 }
@@ -2208,6 +2428,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyPkgCnIrtlN(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyPkgC2Residency(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2217,6 +2438,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SandyPkgC2Residency(PVMCPU pV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyPkgC2Residency(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* Note! This is documented as read only and except for a Silvermont sample has
              always been classified as read only.  This is just here to make it compile. */
     return VINF_SUCCESS;
@@ -2226,6 +2448,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7SandyPkgC2Residency(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgPowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2235,6 +2458,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgPowerLimit(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPkgPowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel RAPL.  */
     return VINF_SUCCESS;
 }
@@ -2243,6 +2467,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPkgPowerLimit(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgEnergyStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2252,6 +2477,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgEnergyStatus(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgPerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2261,6 +2487,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgPerfStatus(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgPowerInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2270,6 +2497,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPkgPowerInfo(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramPowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2279,6 +2507,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramPowerLimit(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplDramPowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel RAPL.  */
     return VINF_SUCCESS;
 }
@@ -2287,6 +2516,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplDramPowerLimit(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramEnergyStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2296,6 +2526,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramEnergyStatus(PVMCPU p
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramPerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2305,6 +2536,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramPerfStatus(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramPowerInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2314,6 +2546,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplDramPowerInfo(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0PowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2323,6 +2556,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0PowerLimit(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp0PowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel RAPL.  */
     return VINF_SUCCESS;
 }
@@ -2331,6 +2565,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp0PowerLimit(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0EnergyStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2340,6 +2575,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0EnergyStatus(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0Policy(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2349,6 +2585,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0Policy(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp0Policy(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel RAPL.  */
     return VINF_SUCCESS;
 }
@@ -2357,6 +2594,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp0Policy(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0PerfStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2366,6 +2604,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp0PerfStatus(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp1PowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2375,6 +2614,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp1PowerLimit(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp1PowerLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel RAPL.  */
     return VINF_SUCCESS;
 }
@@ -2383,6 +2623,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp1PowerLimit(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp1EnergyStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2392,6 +2633,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp1EnergyStatus(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp1Policy(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel RAPL.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2401,6 +2643,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7RaplPp1Policy(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp1Policy(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel RAPL.  */
     return VINF_SUCCESS;
 }
@@ -2409,6 +2652,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7RaplPp1Policy(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpNominal(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2418,6 +2662,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpNominal(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpLevel1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2427,6 +2672,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpLevel1(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpLevel2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2436,6 +2682,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpLevel2(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2445,6 +2692,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyConfigTdpControl(PVMCPU pV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7IvyConfigTdpControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel power management.  */
     return VINF_SUCCESS;
 }
@@ -2453,6 +2701,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7IvyConfigTdpControl(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyTurboActivationRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo intel power management.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2462,6 +2711,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7IvyTurboActivationRatio(PVMCP
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7IvyTurboActivationRatio(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo intel power management.  */
     return VINF_SUCCESS;
 }
@@ -2470,6 +2720,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7IvyTurboActivationRatio(PVMCP
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfGlobalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2479,6 +2730,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfGlobalCtrl(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfGlobalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2487,6 +2739,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfGlobalCtrl(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfGlobalStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2496,6 +2749,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfGlobalStatus(PVMCPU pV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfGlobalStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2504,6 +2758,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfGlobalStatus(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfGlobalOvfCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2513,6 +2768,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfGlobalOvfCtrl(PVMCPU p
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfGlobalOvfCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2521,6 +2777,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfGlobalOvfCtrl(PVMCPU p
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfFixedCtrCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2530,6 +2787,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfFixedCtrCtrl(PVMCPU pV
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfFixedCtrCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2538,6 +2796,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfFixedCtrCtrl(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfFixedCtr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2547,6 +2806,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncPerfFixedCtr(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfFixedCtr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2555,6 +2815,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncPerfFixedCtr(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncCBoxConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2564,6 +2825,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncCBoxConfig(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncArbPerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2573,6 +2835,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncArbPerfCtrN(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncArbPerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2581,6 +2844,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncArbPerfCtrN(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncArbPerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo uncore msrs.  */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2590,6 +2854,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7UncArbPerfEvtSelN(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncArbPerfEvtSelN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo uncore msrs.  */
     return VINF_SUCCESS;
 }
@@ -2598,6 +2863,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelI7UncArbPerfEvtSelN(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SmiCount(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+
     /*
      * 31:0 is SMI count (read only), 63:32 reserved.
      * Since we don't do SMI, the count is always zero.
@@ -2610,6 +2877,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelI7SmiCount(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore2EmttmCrTablesN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement enhanced multi thread termal monitoring? */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2619,6 +2887,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore2EmttmCrTablesN(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore2EmttmCrTablesN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement enhanced multi thread termal monitoring? */
     return VINF_SUCCESS;
 }
@@ -2627,6 +2896,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore2EmttmCrTablesN(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore2SmmCStMiscInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo SMM & C-states? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2636,6 +2906,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore2SmmCStMiscInfo(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore2SmmCStMiscInfo(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo SMM & C-states? */
     return VINF_SUCCESS;
 }
@@ -2644,6 +2915,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore2SmmCStMiscInfo(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore1ExtConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Core1&2 EXT_CONFIG (whatever that is)? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2653,6 +2925,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore1ExtConfig(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore1ExtConfig(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Core1&2 EXT_CONFIG (whatever that is)? */
     return VINF_SUCCESS;
 }
@@ -2661,6 +2934,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore1ExtConfig(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore1DtsCalControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Core1&2(?) DTS_CAL_CTRL (whatever that is)? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2670,6 +2944,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore1DtsCalControl(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore1DtsCalControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Core1&2(?) DTS_CAL_CTRL (whatever that is)? */
     return VINF_SUCCESS;
 }
@@ -2678,6 +2953,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore1DtsCalControl(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore2PeciControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Core2+ platform environment control interface control register? */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2687,6 +2963,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelCore2PeciControl(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore2PeciControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Core2+ platform environment control interface control register? */
     return VINF_SUCCESS;
 }
@@ -2695,6 +2972,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_IntelCore2PeciControl(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelAtSilvCoreC1Recidency(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     return VINF_SUCCESS;
 }
@@ -2713,6 +2991,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelAtSilvCoreC1Recidency(PVMCPU pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastBranchFromIp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /* AMD seems to just record RIP, while intel claims to record RIP+CS.BASE
        if I read the docs correctly, thus the need for separate functions. */
     /** @todo implement last branch records. */
@@ -2724,6 +3003,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastBranchFromIp(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastBranchToIp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last branch records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2733,6 +3013,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastBranchToIp(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastIntFromIp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last exception records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2742,6 +3023,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastIntFromIp(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_P6LastIntFromIp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement last exception records. */
     /* Note! On many CPUs, the high bit of the 0x000001dd register is always writable, even when the result is
              a non-cannonical address. */
@@ -2752,6 +3034,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_P6LastIntFromIp(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastIntToIp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo implement last exception records. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2761,6 +3044,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_P6LastIntToIp(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_P6LastIntToIp(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo implement last exception records. */
     return VINF_SUCCESS;
 }
@@ -2777,6 +3061,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_P6LastIntToIp(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hTscRate(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Implement TscRateMsr */
     *puValue = RT_MAKE_U64(0, 1); /* 1.0 = reset value. */
     return VINF_SUCCESS;
@@ -2786,6 +3071,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hTscRate(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hTscRate(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Implement TscRateMsr */
     return VINF_SUCCESS;
 }
@@ -2794,6 +3080,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hTscRate(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hLwpCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Implement AMD LWP? (Instructions: LWPINS, LWPVAL, LLWPCB, SLWPCB) */
     /* Note: Only listes in BKDG for Family 15H. */
     *puValue = 0;
@@ -2804,6 +3091,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hLwpCfg(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hLwpCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Implement AMD LWP? (Instructions: LWPINS, LWPVAL, LLWPCB, SLWPCB) */
     return VINF_SUCCESS;
 }
@@ -2812,6 +3100,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hLwpCfg(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hLwpCbAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Implement AMD LWP? (Instructions: LWPINS, LWPVAL, LLWPCB, SLWPCB) */
     /* Note: Only listes in BKDG for Family 15H. */
     *puValue = 0;
@@ -2822,6 +3111,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hLwpCbAddr(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hLwpCbAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Implement AMD LWP? (Instructions: LWPINS, LWPVAL, LLWPCB, SLWPCB) */
     return VINF_SUCCESS;
 }
@@ -2830,6 +3120,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hLwpCbAddr(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hMc4MiscN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo machine check. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2839,6 +3130,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hMc4MiscN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hMc4MiscN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo machine check. */
     return VINF_SUCCESS;
 }
@@ -2847,6 +3139,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hMc4MiscN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8PerfCtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD performance events. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2856,6 +3149,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8PerfCtlN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8PerfCtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD performance events. */
     return VINF_SUCCESS;
 }
@@ -2864,6 +3158,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8PerfCtlN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8PerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD performance events. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2873,6 +3168,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8PerfCtrN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8PerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD performance events. */
     return VINF_SUCCESS;
 }
@@ -2881,6 +3177,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8PerfCtrN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SysCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SYS_CFG */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -2890,6 +3187,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SysCfg(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SysCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SYS_CFG */
     return VINF_SUCCESS;
 }
@@ -2898,6 +3196,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SysCfg(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8HwCr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD HW_CFG */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2907,6 +3206,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8HwCr(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8HwCr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD HW_CFG */
     return VINF_SUCCESS;
 }
@@ -2915,6 +3215,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8HwCr(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IorrBaseN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IorrMask/IorrBase */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2924,6 +3225,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IorrBaseN(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IorrBaseN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IorrMask/IorrBase */
     return VINF_SUCCESS;
 }
@@ -2932,6 +3234,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IorrBaseN(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IorrMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IorrMask/IorrBase */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2941,6 +3244,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IorrMaskN(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IorrMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IorrMask/IorrBase */
     return VINF_SUCCESS;
 }
@@ -2949,6 +3253,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IorrMaskN(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8TopOfMemN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = 0;
     /** @todo return 4GB - RamHoleSize here for TOPMEM. Figure out what to return
      *        for TOPMEM2. */
@@ -2961,6 +3266,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8TopOfMemN(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8TopOfMemN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD TOPMEM and TOPMEM2/TOM2. */
     return VINF_SUCCESS;
 }
@@ -2969,6 +3275,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8TopOfMemN(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8NbCfg1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD NB_CFG1 */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2978,6 +3285,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8NbCfg1(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8NbCfg1(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD NB_CFG1 */
     return VINF_SUCCESS;
 }
@@ -2986,6 +3294,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8NbCfg1(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8McXcptRedir(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo machine check. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -2995,6 +3304,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8McXcptRedir(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8McXcptRedir(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo machine check. */
     return VINF_SUCCESS;
 }
@@ -3003,6 +3313,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8McXcptRedir(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuNameN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr);
     PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeaf(pVCpu->CTX_SUFF(pVM), pRange->uValue / 2 + 0x80000001);
     if (pLeaf)
     {
@@ -3020,6 +3331,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuNameN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuNameN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Remember guest programmed CPU name. */
     return VINF_SUCCESS;
 }
@@ -3028,6 +3340,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuNameN(PVMCPU pVCpu, uint32_t
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8HwThermalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD HTC. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3037,6 +3350,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8HwThermalCtrl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8HwThermalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD HTC. */
     return VINF_SUCCESS;
 }
@@ -3045,6 +3359,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8HwThermalCtrl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SwThermalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD STC. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3054,6 +3369,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SwThermalCtrl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SwThermalCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD STC. */
     return VINF_SUCCESS;
 }
@@ -3062,6 +3378,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SwThermalCtrl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8FidVidControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD FIDVID_CTL. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3071,6 +3388,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8FidVidControl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8FidVidControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD FIDVID_CTL. */
     return VINF_SUCCESS;
 }
@@ -3079,6 +3397,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8FidVidControl(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8FidVidStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD FIDVID_STATUS. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3088,6 +3407,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8FidVidStatus(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8McCtlMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD MC. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3097,6 +3417,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8McCtlMaskN(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8McCtlMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD MC. */
     return VINF_SUCCESS;
 }
@@ -3105,6 +3426,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8McCtlMaskN(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmiOnIoTrapN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM/SMI and I/O trap. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3114,6 +3436,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmiOnIoTrapN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmiOnIoTrapN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM/SMI and I/O trap. */
     return VINF_SUCCESS;
 }
@@ -3122,6 +3445,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmiOnIoTrapN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmiOnIoTrapCtlSts(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM/SMI and I/O trap. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3131,6 +3455,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmiOnIoTrapCtlSts(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmiOnIoTrapCtlSts(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM/SMI and I/O trap. */
     return VINF_SUCCESS;
 }
@@ -3139,6 +3464,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmiOnIoTrapCtlSts(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IntPendingMessage(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Interrupt pending message. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3148,6 +3474,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IntPendingMessage(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IntPendingMessage(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Interrupt pending message. */
     return VINF_SUCCESS;
 }
@@ -3156,6 +3483,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IntPendingMessage(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmiTriggerIoCycle(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM/SMI and trigger I/O cycle. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3165,6 +3493,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmiTriggerIoCycle(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmiTriggerIoCycle(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM/SMI and trigger I/O cycle. */
     return VINF_SUCCESS;
 }
@@ -3173,6 +3502,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmiTriggerIoCycle(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hMmioCfgBaseAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD MMIO Configuration base address. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3182,6 +3512,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hMmioCfgBaseAddr(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hMmioCfgBaseAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD MMIO Configuration base address. */
     return VINF_SUCCESS;
 }
@@ -3190,6 +3521,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hMmioCfgBaseAddr(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hTrapCtlMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD 0xc0010059. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3199,6 +3531,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hTrapCtlMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hTrapCtlMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD 0xc0010059. */
     return VINF_SUCCESS;
 }
@@ -3207,6 +3540,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hTrapCtlMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateCurLimit(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD P-states. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3216,6 +3550,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateCurLimit(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD P-states. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3225,6 +3560,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateControl(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hPStateControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD P-states. */
     return VINF_SUCCESS;
 }
@@ -3233,6 +3569,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hPStateControl(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD P-states. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3242,6 +3579,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateStatus(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hPStateStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD P-states. */
     return VINF_SUCCESS;
 }
@@ -3250,6 +3588,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hPStateStatus(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD P-states. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3259,6 +3598,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hPStateN(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hPStateN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD P-states. */
     return VINF_SUCCESS;
 }
@@ -3267,6 +3607,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hPStateN(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCofVidControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD P-states. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3276,6 +3617,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCofVidControl(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCofVidControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD P-states. */
     return VINF_SUCCESS;
 }
@@ -3284,6 +3626,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCofVidControl(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCofVidStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD P-states. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3293,6 +3636,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCofVidStatus(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCofVidStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* Note! Writing 0 seems to not GP, not sure if it does anything to the value... */
     /** @todo AMD P-states. */
     return VINF_SUCCESS;
@@ -3302,6 +3646,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCofVidStatus(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCStateIoBaseAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD C-states. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3311,6 +3656,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCStateIoBaseAddr(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCStateIoBaseAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD C-states. */
     return VINF_SUCCESS;
 }
@@ -3319,6 +3665,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCStateIoBaseAddr(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCpuWatchdogTimer(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD machine checks. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3328,6 +3675,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hCpuWatchdogTimer(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCpuWatchdogTimer(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD machine checks. */
     return VINF_SUCCESS;
 }
@@ -3336,6 +3684,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hCpuWatchdogTimer(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3345,6 +3694,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmBase(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM. */
     return VINF_SUCCESS;
 }
@@ -3353,6 +3703,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmBase(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3362,6 +3713,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmAddr(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM. */
     return VINF_SUCCESS;
 }
@@ -3371,6 +3723,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmAddr(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmMask(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3380,6 +3733,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmMask(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmMask(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM. */
     return VINF_SUCCESS;
 }
@@ -3388,6 +3742,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmMask(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmCr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SVM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3397,6 +3752,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmCr(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8VmCr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SVM. */
     return VINF_SUCCESS;
 }
@@ -3405,6 +3761,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8VmCr(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IgnNe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IGNNE\# control. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3414,6 +3771,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8IgnNe(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IgnNe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IGNNE\# control. */
     return VINF_SUCCESS;
 }
@@ -3422,6 +3780,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8IgnNe(PVMCPU pVCpu, uint32_t id
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3431,6 +3790,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8SmmCtl(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM. */
     return VINF_SUCCESS;
 }
@@ -3439,6 +3799,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmCtl(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SVM. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3448,6 +3809,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SVM. */
     return VINF_SUCCESS;
 }
@@ -3456,6 +3818,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hVmLockKey(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SVM. */
     *puValue = 0; /* RAZ */
     return VINF_SUCCESS;
@@ -3465,6 +3828,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hVmLockKey(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hVmLockKey(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SVM. */
     return VINF_SUCCESS;
 }
@@ -3473,6 +3837,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hVmLockKey(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hSmmLockKey(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM. */
     *puValue = 0; /* RAZ */
     return VINF_SUCCESS;
@@ -3482,6 +3847,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hSmmLockKey(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hSmmLockKey(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM. */
     return VINF_SUCCESS;
 }
@@ -3490,6 +3856,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hSmmLockKey(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hLocalSmiStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD SMM/SMI. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3499,6 +3866,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hLocalSmiStatus(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hLocalSmiStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD SMM/SMI. */
     return VINF_SUCCESS;
 }
@@ -3507,6 +3875,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hLocalSmiStatus(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hOsVisWrkIdLength(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr);
     /** @todo AMD OS visible workaround. */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3516,6 +3885,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hOsVisWrkIdLength(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hOsVisWrkIdLength(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD OS visible workaround. */
     return VINF_SUCCESS;
 }
@@ -3524,6 +3894,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hOsVisWrkIdLength(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hOsVisWrkStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD OS visible workaround. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3533,6 +3904,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hOsVisWrkStatus(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hOsVisWrkStatus(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD OS visible workaround. */
     return VINF_SUCCESS;
 }
@@ -3541,6 +3913,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hOsVisWrkStatus(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam16hL2IPerfCtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD L2I performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3550,6 +3923,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam16hL2IPerfCtlN(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam16hL2IPerfCtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD L2I performance counters. */
     return VINF_SUCCESS;
 }
@@ -3558,6 +3932,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam16hL2IPerfCtlN(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam16hL2IPerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD L2I performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3567,6 +3942,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam16hL2IPerfCtrN(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam16hL2IPerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD L2I performance counters. */
     return VINF_SUCCESS;
 }
@@ -3575,6 +3951,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam16hL2IPerfCtrN(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hNorthbridgePerfCtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD Northbridge performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3584,6 +3961,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hNorthbridgePerfCtlN(PVMCPU 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hNorthbridgePerfCtlN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD Northbridge performance counters. */
     return VINF_SUCCESS;
 }
@@ -3592,6 +3970,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hNorthbridgePerfCtlN(PVMCPU 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hNorthbridgePerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD Northbridge performance counters. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -3601,6 +3980,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hNorthbridgePerfCtrN(PVMCPU 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hNorthbridgePerfCtrN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD Northbridge performance counters. */
     return VINF_SUCCESS;
 }
@@ -3609,6 +3989,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hNorthbridgePerfCtrN(PVMCPU 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7MicrocodeCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus. Need to be explored and verify K7 presence. */
     /** @todo Undocumented register only seen mentioned in fam15h erratum \#608. */
@@ -3620,6 +4001,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7MicrocodeCtl(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7MicrocodeCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo Undocumented register only seen mentioned in fam15h erratum \#608. */
@@ -3630,6 +4012,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7MicrocodeCtl(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7ClusterIdMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus. Need to be explored and verify K7 presence. */
     /** @todo Undocumented register only seen mentioned in fam16h BKDG r3.00 when
@@ -3642,6 +4025,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7ClusterIdMaybe(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7ClusterIdMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo Undocumented register only seen mentioned in fam16h BKDG r3.00 when
@@ -3653,6 +4037,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7ClusterIdMaybe(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlStd07hEbax(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     bool           fIgnored;
     PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeafEx(pVCpu->CTX_SUFF(pVM), 0x00000007, 0, &fIgnored);
     if (pLeaf)
@@ -3666,6 +4051,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlStd07hEbax(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlStd07hEbax(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Changing CPUID leaf 7/0. */
     return VINF_SUCCESS;
 }
@@ -3674,6 +4060,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlStd07hEbax(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlStd06hEcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeaf(pVCpu->CTX_SUFF(pVM), 0x00000006);
     if (pLeaf)
         *puValue = pLeaf->uEcx;
@@ -3686,6 +4073,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlStd06hEcx(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlStd06hEcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Changing CPUID leaf 6. */
     return VINF_SUCCESS;
 }
@@ -3694,6 +4082,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlStd06hEcx(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlStd01hEdcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeaf(pVCpu->CTX_SUFF(pVM), 0x00000001);
     if (pLeaf)
         *puValue = RT_MAKE_U64(pLeaf->uEdx, pLeaf->uEcx);
@@ -3706,6 +4095,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlStd01hEdcx(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlStd01hEdcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Changing CPUID leaf 0x80000001. */
     return VINF_SUCCESS;
 }
@@ -3714,6 +4104,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlStd01hEdcx(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlExt01hEdcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeaf(pVCpu->CTX_SUFF(pVM), 0x80000001);
     if (pLeaf)
         *puValue = RT_MAKE_U64(pLeaf->uEdx, pLeaf->uEcx);
@@ -3726,6 +4117,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8CpuIdCtlExt01hEdcx(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlExt01hEdcx(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Changing CPUID leaf 0x80000001. */
     return VINF_SUCCESS;
 }
@@ -3734,6 +4126,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8CpuIdCtlExt01hEdcx(PVMCPU pVCpu
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8PatchLevel(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Fake AMD microcode patching.  */
     *puValue = pRange->uValue;
     return VINF_SUCCESS;
@@ -3743,6 +4136,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8PatchLevel(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8PatchLoader(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Fake AMD microcode patching.  */
     return VINF_SUCCESS;
 }
@@ -3751,6 +4145,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8PatchLoader(PVMCPU pVCpu, uint3
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DebugStatusMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3762,6 +4157,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DebugStatusMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DebugStatusMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3772,6 +4168,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DebugStatusMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BHTraceBaseMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3783,6 +4180,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BHTraceBaseMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BHTraceBaseMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3793,6 +4191,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BHTraceBaseMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BHTracePtrMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3804,6 +4203,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BHTracePtrMaybe(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BHTracePtrMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3814,6 +4214,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BHTracePtrMaybe(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BHTraceLimitMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3825,6 +4226,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BHTraceLimitMaybe(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BHTraceLimitMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3835,6 +4237,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BHTraceLimitMaybe(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7HardwareDebugToolCfgMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3846,6 +4249,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7HardwareDebugToolCfgMaybe(PVMCP
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7HardwareDebugToolCfgMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3856,6 +4260,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7HardwareDebugToolCfgMaybe(PVMCP
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7FastFlushCountMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3867,6 +4272,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7FastFlushCountMaybe(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7FastFlushCountMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo undocumented */
@@ -3877,6 +4283,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7FastFlushCountMaybe(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7NodeId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD node ID and bios scratch. */
@@ -3888,6 +4295,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7NodeId(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7NodeId(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD node ID and bios scratch. */
@@ -3898,6 +4306,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7NodeId(PVMCPU pVCpu, uint32_t i
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DrXAddrMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD DRx address masking (range breakpoints). */
@@ -3909,6 +4318,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DrXAddrMaskN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DrXAddrMaskN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD DRx address masking (range breakpoints). */
@@ -3919,6 +4329,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DrXAddrMaskN(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7Dr0DataMatchMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD undocument debugging features. */
@@ -3930,6 +4341,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7Dr0DataMatchMaybe(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7Dr0DataMatchMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD undocument debugging features. */
@@ -3940,6 +4352,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7Dr0DataMatchMaybe(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7Dr0DataMaskMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD undocument debugging features. */
@@ -3951,6 +4364,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7Dr0DataMaskMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7Dr0DataMaskMaybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD undocument debugging features. */
@@ -3961,6 +4375,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7Dr0DataMaskMaybe(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7LoadStoreCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD load-store config. */
@@ -3972,6 +4387,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7LoadStoreCfg(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7LoadStoreCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD load-store config. */
@@ -3982,6 +4398,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7LoadStoreCfg(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7InstrCacheCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD instruction cache config. */
@@ -3993,6 +4410,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7InstrCacheCfg(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7InstrCacheCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD instruction cache config. */
@@ -4003,6 +4421,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7InstrCacheCfg(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DataCacheCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD data cache config. */
@@ -4014,6 +4433,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DataCacheCfg(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DataCacheCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD data cache config. */
@@ -4024,6 +4444,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DataCacheCfg(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BusUnitCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD bus unit config. */
@@ -4035,6 +4456,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7BusUnitCfg(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BusUnitCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo AMD bus unit config. */
@@ -4045,6 +4467,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7BusUnitCfg(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DebugCtl2Maybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo Undocument AMD debug control register \#2. */
@@ -4056,6 +4479,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK7DebugCtl2Maybe(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DebugCtl2Maybe(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo Allegedly requiring edi=0x9c5a203a when execuing rdmsr/wrmsr on older
      *  cpus.  Need to be explored and verify K7 presence.  */
     /** @todo Undocument AMD debug control register \#2. */
@@ -4066,6 +4490,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK7DebugCtl2Maybe(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hFpuCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD FPU config. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4075,6 +4500,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hFpuCfg(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hFpuCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD FPU config. */
     return VINF_SUCCESS;
 }
@@ -4083,6 +4509,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hFpuCfg(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hDecoderCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD decoder config. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4092,6 +4519,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hDecoderCfg(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hDecoderCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD decoder config. */
     return VINF_SUCCESS;
 }
@@ -4100,6 +4528,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hDecoderCfg(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hBusUnitCfg2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /* Note! 10h and 16h */
     /** @todo AMD bus unit  config. */
     *puValue = 0;
@@ -4110,6 +4539,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hBusUnitCfg2(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hBusUnitCfg2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /* Note! 10h and 16h */
     /** @todo AMD bus unit config. */
     return VINF_SUCCESS;
@@ -4119,6 +4549,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hBusUnitCfg2(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hCombUnitCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD unit config. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4128,6 +4559,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hCombUnitCfg(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hCombUnitCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD unit config. */
     return VINF_SUCCESS;
 }
@@ -4136,6 +4568,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hCombUnitCfg(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hCombUnitCfg2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD unit config 2. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4145,6 +4578,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hCombUnitCfg2(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hCombUnitCfg2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD unit config 2. */
     return VINF_SUCCESS;
 }
@@ -4153,6 +4587,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hCombUnitCfg2(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hCombUnitCfg3(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD combined unit config 3. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4162,6 +4597,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hCombUnitCfg3(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hCombUnitCfg3(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD combined unit config 3. */
     return VINF_SUCCESS;
 }
@@ -4170,6 +4606,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hCombUnitCfg3(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hExecUnitCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD execution unit config. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4179,6 +4616,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hExecUnitCfg(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hExecUnitCfg(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD execution unit config. */
     return VINF_SUCCESS;
 }
@@ -4187,6 +4625,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hExecUnitCfg(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hLoadStoreCfg2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD load-store config 2. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4196,6 +4635,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam15hLoadStoreCfg2(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hLoadStoreCfg2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD load-store config 2. */
     return VINF_SUCCESS;
 }
@@ -4204,6 +4644,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam15hLoadStoreCfg2(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsFetchCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4213,6 +4654,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsFetchCtl(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsFetchCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4221,6 +4663,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsFetchCtl(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsFetchLinAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4230,6 +4673,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsFetchLinAddr(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsFetchLinAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4238,6 +4682,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsFetchLinAddr(PVMCPU pVCp
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsFetchPhysAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4247,6 +4692,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsFetchPhysAddr(PVMCPU pVC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsFetchPhysAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4255,6 +4701,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsFetchPhysAddr(PVMCPU pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpExecCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4264,6 +4711,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpExecCtl(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpExecCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4272,6 +4720,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpExecCtl(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpRip(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4281,6 +4730,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpRip(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpRip(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     if (!X86_IS_CANONICAL(uValue))
     {
@@ -4294,6 +4744,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpRip(PVMCPU pVCpu, uint
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpData(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4303,6 +4754,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpData(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpData(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4311,6 +4763,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpData(PVMCPU pVCpu, uin
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpData2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4320,6 +4773,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpData2(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpData2(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4328,6 +4782,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpData2(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpData3(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4337,6 +4792,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsOpData3(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpData3(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4345,6 +4801,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsOpData3(PVMCPU pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsDcLinAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4354,6 +4811,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsDcLinAddr(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsDcLinAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     if (!X86_IS_CANONICAL(uValue))
     {
@@ -4367,6 +4825,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsDcLinAddr(PVMCPU pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsDcPhysAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4376,6 +4835,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsDcPhysAddr(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsDcPhysAddr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4384,6 +4844,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsDcPhysAddr(PVMCPU pVCpu,
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4393,6 +4854,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam10hIbsCtl(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsCtl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     return VINF_SUCCESS;
 }
@@ -4401,6 +4863,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam10hIbsCtl(PVMCPU pVCpu, uint32
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam14hIbsBrTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     /** @todo AMD IBS. */
     *puValue = 0;
     return VINF_SUCCESS;
@@ -4410,6 +4873,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdFam14hIbsBrTarget(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam14hIbsBrTarget(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
     /** @todo AMD IBS. */
     if (!X86_IS_CANONICAL(uValue))
     {

@@ -1123,7 +1123,7 @@ VMM_INT_DECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE 
 static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
 #ifdef VBOX_WITH_RAW_RING1
-    NOREF(pvFault); NOREF(pcbSize);
+    NOREF(pvFault); NOREF(pcbSize); NOREF(pDis);
     if (EMIsRawRing1Enabled(pVM))
     {
         RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;

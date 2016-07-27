@@ -271,7 +271,7 @@ typedef int FNSVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
 *********************************************************************************************************************************/
 static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
-static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+static void hmR0SvmLeave(PVMCPU pVCpu);
 
 /** @name \#VMEXIT handlers.
  * @{
@@ -1758,15 +1758,12 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
-            PVM         pVM  = pVCpu->CTX_SUFF(pVM);
-            PCPUMCTX    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-
             /* No longjmps (log-flush, locks) in this fragile context. */
             VMMRZCallRing3Disable(pVCpu);
 
             if (!pVCpu->hm.s.fLeaveDone)
             {
-                hmR0SvmLeave(pVM, pVCpu, pCtx);
+                hmR0SvmLeave(pVCpu);
                 pVCpu->hm.s.fLeaveDone = true;
             }
 
@@ -2079,13 +2076,11 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Does the necessary state syncing before returning to ring-3 for any reason
  * (longjmp, preemption, voluntary exits to ring-3) from AMD-V.
  *
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jmp zone!!!
  */
-static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmLeave(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -2131,11 +2126,9 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Leaves the AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
  */
-static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmLeaveSession(PVMCPU pVCpu)
 {
     HM_DISABLE_PREEMPT();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -2145,7 +2138,7 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
        and done this from the SVMR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
-        hmR0SvmLeave(pVM, pVCpu, pCtx);
+        hmR0SvmLeave(pVCpu);
         pVCpu->hm.s.fLeaveDone = true;
     }
 
@@ -2170,15 +2163,13 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Does the necessary state syncing before doing a longjmp to ring-3.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jmp zone!!!
  */
-static int hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmLongJmpToRing3(PVMCPU pVCpu)
 {
-    return hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
+    return hmR0SvmLeaveSession(pVCpu);
 }
 
 
@@ -2231,7 +2222,7 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     Log4(("hmR0SvmCallRing3Callback->hmR0SvmLongJmpToRing3\n"));
-    int rc = hmR0SvmLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+    int rc = hmR0SvmLongJmpToRing3(pVCpu);
     AssertRCReturn(rc, rc);
 
     VMMRZCallRing3Enable(pVCpu);
@@ -2276,7 +2267,7 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
     AssertMsg(rcExit != VINF_EM_RAW_EMULATE_INSTR     || !TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
 
     /* Sync. the necessary state for going back to ring-3. */
-    hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
+    hmR0SvmLeaveSession(pVCpu);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);

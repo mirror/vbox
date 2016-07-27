@@ -60,7 +60,9 @@ DECLEXPORT(VBOXSTRICTRC) csamRCCodePageWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
 {
     PPATMGCSTATE pPATMGCState;
     bool         fPatchCode = PATMIsPatchGCAddr(pVM, pRegFrame->eip);
-    NOREF(uErrorCode);
+    RT_NOREF_PV(uErrorCode);
+    RT_NOREF_PV(pvUser);
+
 
     Assert(pVM->csam.s.cDirtyPages < CSAM_MAX_DIRTY_PAGES);
 

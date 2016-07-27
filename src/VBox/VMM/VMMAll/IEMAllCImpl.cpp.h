@@ -944,6 +944,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch
     Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
     Assert(   pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_TSS_AVAIL
            || pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL);
+    RT_NOREF_PV(enmEffOpSize);
 
     if (   pDesc->Legacy.Gate.u2Dpl < pVCpu->iem.s.uCpl
         || pDesc->Legacy.Gate.u2Dpl < (uSel & X86_SEL_RPL))
@@ -985,6 +986,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 #else
     Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
+    RT_NOREF_PV(enmEffOpSize);
 
     if (   pDesc->Legacy.Gate.u2Dpl < pVCpu->iem.s.uCpl
         || pDesc->Legacy.Gate.u2Dpl < (uSel & X86_SEL_RPL))
@@ -1054,6 +1056,8 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 #ifndef IEM_IMPLEMENTS_CALLGATE
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 #else
+    RT_NOREF_PV(enmEffOpSize);
+
     /* NB: Far jumps can only do intra-privilege transfers. Far calls support
      * inter-privilege calls and are much more complex.
      *
@@ -2970,6 +2974,8 @@ static void iemCImplCommonV8086LoadSeg(PCPUMSELREG pSReg, uint16_t uSeg)
 IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uint16_t, uNewCs,
                 uint32_t, uNewFlags, uint64_t, uNewRsp)
 {
+    RT_NOREF_PV(cbInstr);
+
     /*
      * Pop the V8086 specific frame bits off the stack.
      */
@@ -3031,6 +3037,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot_NestedTask, IEMMODE, enmEffOpSize)
 #ifndef IEM_IMPLEMENTS_TASKSWITCH
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 #else
+    RT_NOREF_PV(enmEffOpSize);
+
     /*
      * Read the segment selector in the link-field of the current TSS.
      */
@@ -3903,6 +3911,7 @@ IEM_CIMPL_DEF_0(iemCImpl_syscall)
 IEM_CIMPL_DEF_0(iemCImpl_sysret)
 
 {
+    RT_NOREF_PV(cbInstr);
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
 
     /*
@@ -4425,10 +4434,9 @@ IEM_CIMPL_DEF_2(iemCImpl_VerX, uint16_t, uSel, bool, fWrite)
  * @returns VINF_SUCCESS.
  * @param   pu16Dst         Pointer to the destination register.
  * @param   uSel            The selector to load details for.
- * @param   pEFlags         Pointer to the eflags register.
  * @param   fIsLar          true = LAR, false = LSL.
  */
-IEM_CIMPL_DEF_4(iemCImpl_LarLsl_u64, uint64_t *, pu64Dst, uint16_t, uSel, uint32_t *, pEFlags, bool, fIsLar)
+IEM_CIMPL_DEF_3(iemCImpl_LarLsl_u64, uint64_t *, pu64Dst, uint16_t, uSel, bool, fIsLar)
 {
     Assert(!IEM_IS_REAL_OR_V86_MODE(pVCpu));
 
@@ -4532,14 +4540,13 @@ IEM_CIMPL_DEF_4(iemCImpl_LarLsl_u64, uint64_t *, pu64Dst, uint16_t, uSel, uint32
  * @returns VINF_SUCCESS.
  * @param   pu16Dst         Pointer to the destination register.
  * @param   u16Sel          The selector to load details for.
- * @param   pEFlags         Pointer to the eflags register.
  * @param   fIsLar          true = LAR, false = LSL.
  */
-IEM_CIMPL_DEF_4(iemCImpl_LarLsl_u16, uint16_t *, pu16Dst, uint16_t, uSel, uint32_t *, pEFlags, bool, fIsLar)
+IEM_CIMPL_DEF_3(iemCImpl_LarLsl_u16, uint16_t *, pu16Dst, uint16_t, uSel, bool, fIsLar)
 {
     uint64_t u64TmpDst = *pu16Dst;
-    IEM_CIMPL_CALL_4(iemCImpl_LarLsl_u64, &u64TmpDst, uSel, pEFlags, fIsLar);
-    *pu16Dst = (uint16_t)u64TmpDst;
+    IEM_CIMPL_CALL_3(iemCImpl_LarLsl_u64, &u64TmpDst, uSel, fIsLar);
+    *pu16Dst = u64TmpDst;
     return VINF_SUCCESS;
 }
 
