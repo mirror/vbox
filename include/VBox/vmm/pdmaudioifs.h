@@ -644,6 +644,8 @@ typedef struct PDMAUDIOSTREAM
     PDMAUDIODIR            enmDir;
     /** Context of this stream. */
     PDMAUDIOSTREAMCTX      enmCtx;
+    /** Timestamp (in ms) since last iteration. */
+    uint64_t               tsLastIterateMS;
     /** Union for input/output specifics. */
     union
     {

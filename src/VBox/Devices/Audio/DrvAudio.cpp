@@ -717,6 +717,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         AssertMsg(pGstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED,
                   ("Writing to disabled guest output stream \"%s\" not possible\n", pGstStream->szName));
 
+        pGstStream->Out.tsLastWriteMS = RTTimeMilliTS();
+
         if (!AudioMixBufFreeBytes(&pGstStream->MixBuf))
         {
             LogRel2(("Audio: Guest stream '%s' full, expect stuttering audio output\n", pGstStream->szName));
@@ -897,6 +899,10 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
         }
 
     } while (0);
+
+    /* Update timestamps. */
+    pHstStream->tsLastIterateMS = RTTimeMilliTS();
+    pGstStream->tsLastIterateMS = RTTimeMilliTS();
 
     if (RT_FAILURE(rc))
         LogFunc(("Failed with %Rrc\n", rc));
@@ -1383,6 +1389,8 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
         AssertMsg(pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED,
                   ("Reading from disabled host input stream '%s' not possible\n", pHstStream->szName));
+
+        pGstStream->In.tsLastReadMS = RTTimeMilliTS();
 
         Log3Func(("%s\n", pStream->szName));
 
