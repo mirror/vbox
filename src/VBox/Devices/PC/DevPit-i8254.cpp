@@ -134,7 +134,7 @@
         } \
     } while (0)
 
-#if IN_RING3
+#ifdef IN_RING3
 /**
  * Acquires the TM lock and PIT lock, ignores failures.
  */
