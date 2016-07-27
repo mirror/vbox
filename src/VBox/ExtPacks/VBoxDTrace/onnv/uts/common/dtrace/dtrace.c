@@ -1916,6 +1916,7 @@ retry:
 static void
 dtrace_aggregate_min(uint64_t *oval, uint64_t nval, uint64_t arg)
 {
+	RT_NOREF_PV(arg);
 	if ((int64_t)nval < (int64_t)*oval)
 		*oval = nval;
 }
@@ -1924,6 +1925,7 @@ dtrace_aggregate_min(uint64_t *oval, uint64_t nval, uint64_t arg)
 static void
 dtrace_aggregate_max(uint64_t *oval, uint64_t nval, uint64_t arg)
 {
+	RT_NOREF_PV(arg);
 	if ((int64_t)nval > (int64_t)*oval)
 		*oval = nval;
 }
@@ -1997,6 +1999,7 @@ dtrace_aggregate_lquantize(uint64_t *lquanta, uint64_t nval, uint64_t incr)
 static void
 dtrace_aggregate_avg(uint64_t *data, uint64_t nval, uint64_t arg)
 {
+	RT_NOREF_PV(arg);
 	data[0]++;
 	data[1] += nval;
 }
@@ -2007,6 +2010,7 @@ dtrace_aggregate_stddev(uint64_t *data, uint64_t nval, uint64_t arg)
 {
 	int64_t snval = (int64_t)nval;
 	uint64_t tmp[2];
+	RT_NOREF_PV(arg);
 
 	data[0]++;
 	data[1] += nval;
@@ -2030,6 +2034,8 @@ dtrace_aggregate_stddev(uint64_t *data, uint64_t nval, uint64_t arg)
 static void
 dtrace_aggregate_count(uint64_t *oval, uint64_t nval, uint64_t arg)
 {
+	RT_NOREF_PV(arg); RT_NOREF_PV(nval);
+
 	*oval = *oval + 1;
 }
 
@@ -2037,6 +2043,7 @@ dtrace_aggregate_count(uint64_t *oval, uint64_t nval, uint64_t arg)
 static void
 dtrace_aggregate_sum(uint64_t *oval, uint64_t nval, uint64_t arg)
 {
+	RT_NOREF_PV(arg);
 	*oval += nval;
 }
 
@@ -7035,6 +7042,7 @@ top:
 static int
 dtrace_match_string(const char *s, const char *p, int depth)
 {
+	RT_NOREF_PV(depth);
 	return (s != NULL && strcmp(s, p) == 0);
 }
 
@@ -7042,6 +7050,7 @@ dtrace_match_string(const char *s, const char *p, int depth)
 static int
 dtrace_match_nul(const char *s, const char *p, int depth)
 {
+	RT_NOREF_PV(s); RT_NOREF_PV(p); RT_NOREF_PV(depth);
 	return (1); /* always match the empty pattern */
 }
 
@@ -7049,6 +7058,7 @@ dtrace_match_nul(const char *s, const char *p, int depth)
 static int
 dtrace_match_nonzero(const char *s, const char *p, int depth)
 {
+	RT_NOREF_PV(p); RT_NOREF_PV(depth);
 	return (s != NULL && s[0] != '\0');
 }
 
@@ -11403,6 +11413,8 @@ retry:
 static void
 dtrace_dof_error(dof_hdr_t *dof, const char *str)
 {
+	RT_NOREF_PV(dof);
+
 	if (dtrace_err_verbose)
 		cmn_err(CE_WARN, "failed to process DOF: %s", str);
 
@@ -11563,6 +11575,7 @@ dtrace_dof_property(const char *name)
 
 	return (dof);
 #else  /* VBOX */
+	RT_NOREF_PV(name);
 	return (NULL);
 #endif /* VBOX */
 }
