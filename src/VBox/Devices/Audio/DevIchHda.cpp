@@ -882,14 +882,15 @@ typedef struct HDACALLBACKCTX
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 static FNPDMDEVRESET hdaReset;
 
-/*
- * Stubs.
+/** @name Register read/write stubs.
+ * @{
  */
 static int hdaRegReadUnimpl(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegWriteUnimpl(PHDASTATE pThis, uint32_t iReg, uint32_t pu32Value);
+/** @} */
 
-/*
- * Global register set read/write functions.
+/** @name Global register set read/write functions.
+ * @{
  */
 static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
@@ -908,9 +909,10 @@ static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
 static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+/** @} */
 
-/*
- * {IOB}SDn read/write functions.
+/** @name {IOB}SDn write functions.
+ * @{
  */
 static int       hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
@@ -921,11 +923,14 @@ static int       hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32
 static int       hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+/** @} */
+
+/* Locking + logging. */
 DECLINLINE(int)  hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t iReg, uint32_t u32Value);
 DECLINLINE(void) hdaRegWriteSDUnlock(PHDASTREAM pStream);
 
-/*
- * Generic register read/write functions.
+/** @name Generic register read/write functions.
+ * @{
  */
 static int hdaRegReadU32(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegWriteU32(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
@@ -935,6 +940,7 @@ static int hdaRegReadU16(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegWriteU16(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegReadU8(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+/** @} */
 
 #ifdef IN_RING3
 static void hdaStreamDestroy(PHDASTREAM pStream);
@@ -1396,10 +1402,9 @@ static int hdaProcessInterrupt(PHDASTATE pThis)
  * Looks up a register at the exact offset given by @a offReg.
  *
  * @returns Register index on success, -1 if not found.
- * @param   pThis               The HDA device state.
  * @param   offReg              The register offset.
  */
-static int hdaRegLookup(PHDASTATE pThis, uint32_t offReg)
+static int hdaRegLookup(uint32_t offReg)
 {
     /*
      * Aliases.
@@ -1448,10 +1453,9 @@ static int hdaRegLookup(PHDASTATE pThis, uint32_t offReg)
  * Looks up a register covering the offset given by @a offReg.
  *
  * @returns Register index on success, -1 if not found.
- * @param   pThis               The HDA device state.
  * @param   offReg              The register offset.
  */
-static int hdaRegLookupWithin(PHDASTATE pThis, uint32_t offReg)
+static int hdaRegLookupWithin(uint32_t offReg)
 {
     /*
      * Aliases.
@@ -2789,8 +2793,8 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
-    rc = hdaRegWriteSDLock(pThis, pStream, iReg, u32Value);
-    AssertRC(rc);
+    int rcSem = hdaRegWriteSDLock(pThis, pStream, iReg, u32Value);
+    AssertRC(rcSem);
 
     LogFunc(("[SD%RU8]: Hz=%RU32, Channels=%RU8, enmFmt=%RU32\n",
              pStream->u8SD, strmCfg.uHz, strmCfg.cChannels, strmCfg.enmFormat));
@@ -2800,12 +2804,12 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     switch (strmCfg.enmDir)
     {
         case PDMAUDIODIR_IN:
-#ifdef VBOX_WITH_HDA_MIC_IN
-# error "Implement me!"
-#else
+# ifdef VBOX_WITH_HDA_MIC_IN
+#  error "Implement me!"
+# else
             strmCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
             RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Line In");
-#endif
+# endif
             break;
 
         case PDMAUDIODIR_OUT:
@@ -2834,10 +2838,10 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     if (RT_SUCCESS(rc))
     {
-        int rc2;
         PHDADRIVER pDrv;
         RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
         {
+            int rc2;
             switch (strmCfg.enmDir)
             {
                 case PDMAUDIODIR_OUT:
@@ -2872,9 +2876,10 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         }
         else
             LogFunc(("[SD%RU8]: (Re-)Opening stream failed with rc=%Rrc\n", pStream->u8SD, rc));
-
-        hdaRegWriteSDUnlock(pStream);
     }
+
+    if (RT_SUCCESS(rcSem))
+        hdaRegWriteSDUnlock(pStream);
 
     return VINF_SUCCESS; /* Never return failure. */
 #else /* !IN_RING3 */
@@ -2932,15 +2937,16 @@ static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 /**
  * XXX
  *
- * @return  bool                Returns @true if write is allowed, @false if not.
+ * @return  VBox status code.  ALL THE CALLERS IGNORES THIS. DUH.
+ *
  * @param   pThis               Pointer to HDA state.
- * @param   iReg                Register to write.
- * @param   u32Value            Value to write.
+ * @param   iReg                Register to write (logging only).
+ * @param   u32Value            Value to write (logging only).
  */
 DECLINLINE(int) hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t iReg, uint32_t u32Value)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtr(pThis);   /* don't bother returning errors */
+    AssertPtr(pStream);
 
 #ifdef VBOX_STRICT
     /* Check if the SD's RUN bit is set. */
@@ -2957,6 +2963,7 @@ DECLINLINE(int) hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t 
     }
 #endif
 
+    /** @todo r=bird: Why on EARTH are we using mutexes?  USE CRITICAL SECTIONS!! */
     return RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
 }
 
@@ -4471,7 +4478,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
      * Look up and log.
      */
     uint32_t        offReg = GCPhysAddr - pThis->MMIOBaseAddr;
-    int             idxRegDsc = hdaRegLookup(pThis, offReg);    /* Register descriptor index. */
+    int             idxRegDsc = hdaRegLookup(offReg);    /* Register descriptor index. */
 #ifdef LOG_ENABLED
     unsigned const  cbLog     = cb;
     uint32_t        offRegLog = offReg;
@@ -4588,7 +4595,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
      * Look up and log the access.
      */
     uint32_t    offReg = GCPhysAddr - pThis->MMIOBaseAddr;
-    int         idxRegDsc = hdaRegLookup(pThis, offReg);
+    int         idxRegDsc = hdaRegLookup(offReg);
     uint32_t    idxRegMem = idxRegDsc != -1 ? g_aHdaRegMap[idxRegDsc].mem_idx : UINT32_MAX;
     uint64_t    u64Value;
     if (cb == 4)        u64Value = *(uint32_t const *)pv;
@@ -4635,7 +4642,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
          * will only see 1 or 2 byte accesses of this kind, so no risk of
          * shifting out input values.
          */
-        if (idxRegDsc == -1 && (idxRegDsc = hdaRegLookupWithin(pThis, offReg)) != -1)
+        if (idxRegDsc == -1 && (idxRegDsc = hdaRegLookupWithin(offReg)) != -1)
         {
             uint32_t const cbBefore = offReg - g_aHdaRegMap[idxRegDsc].offset; Assert(cbBefore > 0 && cbBefore < 4);
             offReg    -= cbBefore;
@@ -4682,7 +4689,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             cb     -= cbReg;
             u64Value >>= cbReg * 8;
             if (idxRegDsc == -1)
-                idxRegDsc = hdaRegLookup(pThis, offReg);
+                idxRegDsc = hdaRegLookup(offReg);
             else
             {
                 idxRegDsc++;
