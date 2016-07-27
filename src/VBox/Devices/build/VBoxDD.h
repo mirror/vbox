@@ -124,6 +124,9 @@ extern const PDMDRVREG g_DrvHostNullAudio;
 #if defined(RT_OS_WINDOWS)
 extern const PDMDRVREG g_DrvHostDSound;
 #endif
+#if defined(RT_OS_DARWIN)
+extern const PDMDRVREG g_DrvHostCoreAudio;
+#endif
 #ifdef VBOX_WITH_AUDIO_OSS
 extern const PDMDRVREG g_DrvHostOSSAudio;
 #endif
@@ -132,9 +135,6 @@ extern const PDMDRVREG g_DrvHostALSAAudio;
 #endif
 #ifdef VBOX_WITH_AUDIO_PULSE
 extern const PDMDRVREG g_DrvHostPulseAudio;
-#endif
-#if defined(RT_OS_DARWIN)
-extern const PDMDRVREG g_DrvHostCoreAudio;
 #endif
 extern const PDMDRVREG g_DrvACPI;
 extern const PDMDRVREG g_DrvAcpiCpu;
