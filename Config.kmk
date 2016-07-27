@@ -444,7 +444,7 @@ if1of ($(KBUILD_TARGET), linux)
 endif
 ifeq ($(KBUILD_TYPE),debug)
  ## @todo Only build if running on test boxes?
- VBOX_WITH_AUDIO_DEBUG = 1
+ VBOX_WITH_AUDIO_DEBUG =
 endif
 # Enable PCI passthrough support.
 VBOX_WITH_PCI_PASSTHROUGH = 1
