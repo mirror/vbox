@@ -1123,6 +1123,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
                             int32_t offset, RTRCPTR *pFixup)
 {
     int32_t delta = pVM->patm.s.pPatchMemGC - patmInfo.pPatchMemGC;
+    RT_NOREF1(offset);
 
     switch (pRec->uType)
     {
