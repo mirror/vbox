@@ -40,7 +40,7 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
+static int  vmR3ReqProcessOne(PVMREQ pReq);
 
 
 /**
@@ -940,7 +940,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
          * The requester was an EMT, just execute it.
          */
         pReq->enmState = VMREQSTATE_QUEUED;
-        rc = vmR3ReqProcessOneU(pUVM, pReq);
+        rc = vmR3ReqProcessOne(pReq);
         LogFlow(("VMR3ReqQueue: returns %Rrc (processed)\n", rc));
     }
     return rc;
@@ -1167,7 +1167,7 @@ VMMR3_INT_DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityO
          * Process the request
          */
         STAM_COUNTER_INC(&pUVM->vm.s.StatReqProcessed);
-        int rc2 = vmR3ReqProcessOneU(pUVM, pReq);
+        int rc2 = vmR3ReqProcessOne(pReq);
         if (    rc2 >= VINF_EM_FIRST
             &&  rc2 <= VINF_EM_LAST)
         {
@@ -1186,12 +1186,11 @@ VMMR3_INT_DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityO
  *
  * @returns VBox status code.
  *
- * @param   pUVM        The user mode VM structure.
  * @param   pReq        Request packet to process.
  */
-static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
+static int  vmR3ReqProcessOne(PVMREQ pReq)
 {
-    LogFlow(("vmR3ReqProcessOneU: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
+    LogFlow(("vmR3ReqProcessOne: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
 
     /*
      * Process the request.
@@ -1311,14 +1310,14 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
     if (pReq->fFlags & VMREQFLAGS_NO_WAIT)
     {
         /* Free the packet, nobody is waiting. */
-        LogFlow(("vmR3ReqProcessOneU: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
+        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
                  pReq, rcReq, rcRet));
         VMR3ReqFree(pReq);
     }
     else
     {
         /* Notify the waiter and him free up the packet. */
-        LogFlow(("vmR3ReqProcessOneU: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
+        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
                  pReq, rcReq, rcRet));
         ASMAtomicXchgSize(&pReq->fEventSemClear, false);
         int rc2 = RTSemEventSignal(pReq->EventSem);

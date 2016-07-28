@@ -2270,7 +2270,7 @@ VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 
     Log(("CSAMR3UnmonitorPage %RRv %d\n", pPageAddrGC, enmTag));
 
-    Assert(enmTag == CSAM_TAG_REM);
+    Assert(enmTag == CSAM_TAG_REM); RT_NOREF_PV(enmTag);
 
 #ifdef VBOX_STRICT
     PCSAMPAGEREC pPageRec;
@@ -2345,6 +2345,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
     return VINF_SUCCESS;
 }
 
+#if 0 /* Unused */
 /**
  * Callback for delayed writes from non-EMT threads
  *
@@ -2357,6 +2358,7 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
     int rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
     AssertRC(rc);
 }
+#endif
 
 /**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
@@ -2371,11 +2373,14 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
  */
 static DECLCALLBACK(int) csamR3CodePageInvalidate(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvUser)
 {
+    RT_NOREF2(pVCpu, pvUser);
+
     g_fInCsamR3CodePageInvalidate = true;
     LogFlow(("csamR3CodePageInvalidate %RGv\n", GCPtr));
     /** @todo We can't remove the page (which unregisters the virtual handler) as we are called from a DoWithAll on the virtual handler tree. Argh. */
     csamFlushPage(pVM, GCPtr, false /* don't remove page! */);
     g_fInCsamR3CodePageInvalidate = false;
+
     return VINF_SUCCESS;
 }
 

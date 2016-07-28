@@ -445,6 +445,8 @@ static int vmmR3InitLoggers(PVM pVM)
  */
 static void vmmR3InitRegisterStats(PVM pVM)
 {
+    RT_NOREF_PV(pVM);
+
     /*
      * Statistics.
      */

@@ -2712,6 +2712,8 @@ static void vmR3CheckIntegrity(PVM pVM)
 #ifdef VBOX_STRICT
     int rc = PGMR3CheckIntegrity(pVM);
     AssertReleaseRC(rc);
+#else
+    RT_NOREF_PV(pVM);
 #endif
 }
 
@@ -3259,7 +3261,9 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
  */
 static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew)
 {
-#ifdef VBOX_STRICT
+#ifndef VBOX_STRICT
+    RT_NOREF2(enmStateOld, enmStateNew);
+#else
     switch (enmStateOld)
     {
         case VMSTATE_CREATING:
@@ -3530,6 +3534,7 @@ static void vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld)
     PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
 
+    RT_NOREF_PV(enmStateOld);
     AssertMsg(pVM->enmVMState == enmStateOld,
               ("%s != %s\n", VMR3GetStateName(pVM->enmVMState), VMR3GetStateName(enmStateOld)));
     vmR3SetStateLocked(pVM, pUVM, enmStateNew, pVM->enmVMState, false /*fSetRatherThanClearFF*/);
