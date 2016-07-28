@@ -252,7 +252,7 @@ PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, 
 PDMBOTHCBDECL(int) ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     LogFlow(("ich9pciIOPortAddressWrite: Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
-    NOREF(pvUser);
+    RT_NOREF2(Port, pvUser);
     if (cb == 4)
     {
         PICH9PCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
@@ -288,7 +288,7 @@ PDMBOTHCBDECL(int) ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, R
  */
 PDMBOTHCBDECL(int) ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    NOREF(pvUser);
+    RT_NOREF2(Port, pvUser);
     if (cb == 4)
     {
         PICH9PCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
@@ -315,6 +315,8 @@ static int ich9pciDataWriteAddr(PICH9PCIGLOBALS pGlobals, PciAddress* pAddr,
     int rc = VINF_SUCCESS;
 #ifdef IN_RING3
     NOREF(rcReschedule);
+#else
+    RT_NOREF2(val, cb);
 #endif
 
     if (pAddr->iBus != 0)       /* forward to subordinate bus */
