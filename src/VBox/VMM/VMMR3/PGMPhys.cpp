@@ -4350,11 +4350,11 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             RTAssertMsg1Weak(NULL, __LINE__, __FILE__, __FUNCTION__);
             RTAssertMsg2Weak("i=%d iClear=%d cHandyPages=%d\n", i, iClear, pVM->pgm.s.cHandyPages);
             for (uint32_t j = iClear; j < pVM->pgm.s.cHandyPages; j++)
-                RTAssertMsg2Add(("%03d: idPage=%d HCPhysGCPhys=%RHp idSharedPage=%d%\n", j,
-                                 pVM->pgm.s.aHandyPages[j].idPage,
-                                 pVM->pgm.s.aHandyPages[j].HCPhysGCPhys,
-                                 pVM->pgm.s.aHandyPages[j].idSharedPage,
-                                 j == i ? " <---" : ""));
+                RTAssertMsg2Add("%03d: idPage=%d HCPhysGCPhys=%RHp idSharedPage=%d%\n", j,
+                                pVM->pgm.s.aHandyPages[j].idPage,
+                                pVM->pgm.s.aHandyPages[j].HCPhysGCPhys,
+                                pVM->pgm.s.aHandyPages[j].idSharedPage,
+                                j == i ? " <---" : "");
             RTAssertPanic();
         }
 #endif

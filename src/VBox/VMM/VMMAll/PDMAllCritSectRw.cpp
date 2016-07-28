@@ -1343,6 +1343,7 @@ VMMDECL(bool) PDMCritSectRwIsReadOwner(PPDMCRITSECTRW pThis, bool fWannaHear)
      * Ask the lock validator.
      * Note! It doesn't know everything, let's deal with that if it becomes an issue...
      */
+    NOREF(fWannaHear);
     return RTLockValidatorRecSharedIsOwner(pThis->s.Core.pValidatorRead, NIL_RTTHREAD);
 #else
     /*

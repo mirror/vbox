@@ -2720,8 +2720,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         return rc;
     }
 
-    /* (won't ever get here). */
-    AssertFailed();
+    /* not reached */
 }
 
 /**
