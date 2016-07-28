@@ -1722,9 +1722,9 @@ static int supdrvVtgCreateObjectCopy(PSUPDRVDEVEXT pDevExt, PCVTGOBJHDR pVtgHdr,
      * Calculate the space required, allocate and copy in the data.
      */
     int             rc;
-    size_t const    cProbeLocs   = pVtgHdr->cbProbeLocs / (pVtgHdr->cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64));
-    size_t const    cbProbeLocs  = cProbeLocs * sizeof(VTGPROBELOC);
-    size_t const    offProbeLocs = RT_ALIGN(pVtgHdr->cbObj, 8);
+    uint32_t const  cProbeLocs   = pVtgHdr->cbProbeLocs / (pVtgHdr->cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64));
+    uint32_t const  cbProbeLocs  = cProbeLocs * sizeof(VTGPROBELOC);
+    uint32_t const  offProbeLocs = RT_ALIGN(pVtgHdr->cbObj, 8);
     size_t const    cb           = offProbeLocs + cbProbeLocs + cbStrTab + 1;
     PSUPDRVVTGCOPY  pThis = (PSUPDRVVTGCOPY)RTMemAlloc(RT_OFFSETOF(SUPDRVVTGCOPY, Hdr) + cb);
     if (!pThis)

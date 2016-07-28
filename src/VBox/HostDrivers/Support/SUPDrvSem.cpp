@@ -60,7 +60,7 @@
 static DECLCALLBACK(void) supR0SemEventDestructor(void *pvObj, void *pvUser1, void *pvUser2)
 {
     Assert(pvUser2 == NULL);
-    NOREF(pvObj);
+    RT_NOREF2(pvObj, pvUser2);
     RTSemEventDestroy((RTSEMEVENT)pvUser1);
 }
 
@@ -217,6 +217,7 @@ SUPDECL(int) SUPSemEventWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENT hEven
 
 SUPDECL(uint32_t) SUPSemEventGetResolution(PSUPDRVSESSION pSession)
 {
+    RT_NOREF1(pSession);
     Assert(SUP_IS_SESSION_VALID(pSession));
     return RTSemEventGetResolution();
 }
@@ -232,7 +233,7 @@ SUPDECL(uint32_t) SUPSemEventGetResolution(PSUPDRVSESSION pSession)
 static DECLCALLBACK(void) supR0SemEventMultiDestructor(void *pvObj, void *pvUser1, void *pvUser2)
 {
     Assert(pvUser2 == NULL);
-    NOREF(pvObj);
+    RT_NOREF2(pvObj, pvUser2);
     RTSemEventMultiDestroy((RTSEMEVENTMULTI)pvUser1);
 }
 
@@ -416,6 +417,7 @@ SUPDECL(int) SUPSemEventMultiWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENTM
 
 SUPDECL(uint32_t) SUPSemEventMultiGetResolution(PSUPDRVSESSION pSession)
 {
+    RT_NOREF1(pSession);
     Assert(SUP_IS_SESSION_VALID(pSession));
     return RTSemEventMultiGetResolution();
 }

@@ -5704,6 +5704,7 @@ static int supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq)
         default:
             return VERR_INVALID_FUNCTION;
     }
+    RT_NOREF1(pDevExt);
     return rc;
 #else
     RT_NOREF2(pDevExt, pReq);

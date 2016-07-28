@@ -1985,7 +1985,7 @@ SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszMo
      * Create a string table for the function names in the location array.
      * It's somewhat easier to do that here than from ring-0.
      */
-    size_t const        cProbeLocs  = pVtgHdr->cbProbeLocs
+    uint32_t const      cProbeLocs  = pVtgHdr->cbProbeLocs
                                     / (pVtgHdr->cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64));
     PVTGPROBELOC        paProbeLocs = (PVTGPROBELOC)((uintptr_t)pVtgHdr + pVtgHdr->offProbeLocs);
     PSUPDRVTRACERSTRTAB pStrTab     = supr3TracerCreateStrTab((PVTGPROBELOC32)paProbeLocs,
