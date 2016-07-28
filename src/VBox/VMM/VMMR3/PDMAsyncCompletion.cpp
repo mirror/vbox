@@ -259,7 +259,9 @@ int pdmR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMA
                                              PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
                                              const char *pszDesc)
 {
-    LogFlow(("PDMR3AsyncCompletionTemplateCreateDriver: pDrvIns=%p ppTemplate=%p pfnCompleted=%p pszDesc=%s\n", pDrvIns, ppTemplate, pfnCompleted, pszDesc));
+    LogFlow(("PDMR3AsyncCompletionTemplateCreateDriver: pDrvIns=%p ppTemplate=%p pfnCompleted=%p pszDesc=%s\n",
+             pDrvIns, ppTemplate, pfnCompleted, pszDesc));
+    RT_NOREF_PV(pszDesc); /** @todo async template description */
 
     /*
      * Validate input.
@@ -345,10 +347,13 @@ int pdmR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYN
  * @param   pszDesc         Description.
  * @internal
  */
-VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEINT pfnCompleted, void *pvUser2, const char *pszDesc)
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
+                                                          PFNPDMASYNCCOMPLETEINT pfnCompleted, void *pvUser2, const char *pszDesc)
 {
-    LogFlow(("%s: ppTemplate=%p pfnCompleted=%p pvUser2=%p pszDesc=%s\n",
-              __FUNCTION__, ppTemplate, pfnCompleted, pvUser2, pszDesc));
+    LogFlow(("PDMR3AsyncCompletionTemplateCreateInternal: ppTemplate=%p pfnCompleted=%p pvUser2=%p pszDesc=%s\n",
+              ppTemplate, pfnCompleted, pvUser2, pszDesc));
+    RT_NOREF_PV(pszDesc); /** @todo async template description */
+
 
     /*
      * Validate input.
@@ -857,40 +862,41 @@ int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpC
                 {
                     /* Create all bandwidth groups for resource control. */
                     PCFGMNODE pCfgBwGrp = CFGMR3GetChild(pCfgNodeClass, "BwGroups");
-
                     if (pCfgBwGrp)
                     {
                         for (PCFGMNODE pCur = CFGMR3GetFirstChild(pCfgBwGrp); pCur; pCur = CFGMR3GetNextChild(pCur))
                         {
-                            uint32_t cbMax, cbStart, cbStep;
-                            size_t cchName = CFGMR3GetNameLen(pCur) + 1;
-                            char *pszBwGrpId = (char *)RTMemAllocZ(cchName);
-
-                            if (!pszBwGrpId)
+                            size_t cbName = CFGMR3GetNameLen(pCur) + 1;
+                            char *pszBwGrpId = (char *)RTMemAllocZ(cbName);
+                            if (pszBwGrpId)
                             {
-                                rc = VERR_NO_MEMORY;
-                                break;
+                                rc = CFGMR3GetName(pCur, pszBwGrpId, cbName);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    uint32_t cbMax;
+                                    rc = CFGMR3QueryU32(pCur, "Max", &cbMax);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        uint32_t cbStart;
+                                        rc = CFGMR3QueryU32Def(pCur, "Start", &cbStart, cbMax);
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            uint32_t cbStep;
+                                            rc = CFGMR3QueryU32Def(pCur, "Step", &cbStep, 0);
+                                            if (RT_SUCCESS(rc))
+                                                rc = pdmacAsyncCompletionBwMgrCreate(pEndpointClass, pszBwGrpId,
+                                                                                     cbMax, cbStart, cbStep);
+                                        }
+                                    }
+                                }
+                                RTMemFree(pszBwGrpId);
                             }
-
-                            rc = CFGMR3GetName(pCur, pszBwGrpId, cchName);
-                            AssertRC(rc);
-
-                            if (RT_SUCCESS(rc))
-                                rc = CFGMR3QueryU32(pCur, "Max", &cbMax);
-                            if (RT_SUCCESS(rc))
-                                rc = CFGMR3QueryU32Def(pCur, "Start", &cbStart, cbMax);
-                            if (RT_SUCCESS(rc))
-                                rc = CFGMR3QueryU32Def(pCur, "Step", &cbStep, 0);
-                            if (RT_SUCCESS(rc))
-                                rc = pdmacAsyncCompletionBwMgrCreate(pEndpointClass, pszBwGrpId, cbMax, cbStart, cbStep);
-
-                            RTMemFree(pszBwGrpId);
-
+                            else
+                                rc = VERR_NO_MEMORY;
                             if (RT_FAILURE(rc))
                                 break;
                         }
                     }
-
                     if (RT_SUCCESS(rc))
                     {
                         PUVM pUVM = pVM->pUVM;
@@ -1506,8 +1512,6 @@ VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoin
     AssertReturnVoid(VALID_PTR(pEndpoint));
 
     PPDMASYNCCOMPLETIONEPCLASS pEndpointClass = pEndpoint->pEpClass;
-    PVM pVM = pEndpointClass->pVM;
-
     pEndpointClass->pEndpointOps->pfnEpClose(pEndpoint);
 
     /* Drop reference from the template. */

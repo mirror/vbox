@@ -51,6 +51,7 @@ patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvB
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     NOREF(pvPtr); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin); NOREF(pvUser);
+    RT_NOREF_PV(pVCpu);
 
     Assert(pvUser);
     Assert(!((uintptr_t)pvUser & PAGE_OFFSET_MASK));
@@ -62,7 +63,6 @@ patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvB
     return VINF_PGM_HANDLER_DO_DEFAULT;
 #else
     /* RC: Go handle this in ring-3. */
-    RT_NOREF_PV(pVCpu);
     return VINF_PATM_CHECK_PATCH_PAGE;
 #endif
 }

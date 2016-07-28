@@ -317,6 +317,7 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPU pVCpu, uint64_t cNsToDeadli
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL <= _4G);
 #ifdef IN_RING3
+    RT_NOREF_PV(pVCpu);
     uint64_t uCpuHz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
 #else
     uint64_t uCpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);

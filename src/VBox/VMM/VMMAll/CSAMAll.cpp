@@ -82,6 +82,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
      */
     int rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
     AssertRC(rc);
+    RT_NOREF_PV(pVCpu);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 
 #else

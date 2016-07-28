@@ -528,6 +528,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     {
         /** @todo r=bird: This code is bogus as it ASSUMES that all USB devices are
          *        capable of infinite number of instances. */
+        rc = VINF_SUCCESS; /* Shut up stupid incorrect uninitialized warning from Visual C++ 2010. */
         for (unsigned c = 0; c < _2M; c++)
         {
             iInstance = pUsbDev->iNextInstance++;
@@ -1615,7 +1616,8 @@ static DECLCALLBACK(int) pdmR3UsbHlp_DBGFStopV(PPDMUSBINS pUsbIns, const char *p
 
 
 /** @interface_method_impl{PDMUSBHLP,pfnDBGFInfoRegister} */
-static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegister(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERUSB pfnHandler)
+static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegister(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc,
+                                                      PFNDBGFHANDLERUSB pfnHandler)
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
     LogFlow(("pdmR3UsbHlp_DBGFInfoRegister: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
@@ -1623,7 +1625,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegister(PPDMUSBINS pUsbIns, const 
 
     PVM pVM = pUsbIns->Internal.s.pVM;
     VM_ASSERT_EMT(pVM);
-    NOREF(pVM); /** @todo int rc = DBGFR3InfoRegisterUsb(pVM, pszName, pszDesc, pfnHandler, pUsbIns); */
+    RT_NOREF4(pVM, pfnHandler, pszDesc, pszName); /** @todo int rc = DBGFR3InfoRegisterUsb(pVM, pszName, pszDesc, pfnHandler, pUsbIns); */
     int rc = VERR_NOT_IMPLEMENTED; AssertFailed();
 
     LogFlow(("pdmR3UsbHlp_DBGFInfoRegister: caller='%s'/%d: returns %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
@@ -1674,6 +1676,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_PDMQueueCreate(PPDMUSBINS pUsbIns, RTUINT c
         AssertLogRelReturn(pszName, VERR_NO_MEMORY);
     }
 
+    RT_NOREF5(cbItem, cItems, cMilliesInterval, pfnCallback, ppQueue);
     /** @todo int rc = PDMR3QueueCreateUsb(pVM, pUsbIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, pszName, ppQueue); */
     int rc = VERR_NOT_IMPLEMENTED; AssertFailed();
 
