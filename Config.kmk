@@ -1610,12 +1610,14 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 #      -wd4574: 'INCL_WINSOCK_API_TYPEDEFS' is defined to be '0': did you mean to use '#if INCL_WINSOCK_API_TYPEDEFS'?
 #      -wd4917: 'OLE_XPOS_HIMETRIC' : a GUID can only be associated with a class, interface or namespace
 #      -wd4711: function 'void __cdecl rtMemCacheFreeOne(struct RTMEMCACHEINT * __ptr64,void * __ptr64)' selected for automatic inline expansion
+#      -wd4571: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
+#      -wd4611: interaction between '_setjmp' and C++ object destruction is non-portable
 # Want to enable these:
 #      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
 #      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
 #      -wd4100: 'identifier' : unreferenced formal parameter [level 4]
 VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
-	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711
+	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571
 ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_VCC_WARN_ALL += -wd4100
 endif
@@ -4517,10 +4519,10 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) $(VBOX_GCC_WERR)
  TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBOXR3EXE_LDFLAGS)
 else ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(TEMPLATE_VBOXR3_CFLAGS)   $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CFLAGS            = $(filter-out -W3 -wd%,$(TEMPLATE_VBOXR3_CFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  TEMPLATE_VBoxR3DllNoPic_CFLAGS.debug      = $(filter-out -RTC%,$(TEMPLATE_VBOXR3_CFLAGS.debug))
  TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(TEMPLATE_VBOXR3_CXXFLAGS) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(filter-out -W3 -wd%,$(TEMPLATE_VBOXR3_CXXFLAGS)) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.debug    = $(filter-out -RTC%,$(TEMPLATE_VBOXR3_CXXFLAGS.debug)) # RTCsu Prevents IEM opt.
  TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
  TEMPLATE_VBoxR3DllNoPic_LDFLAGS           = $(TEMPLATE_VBOXR3_LDFLAGS)  $(VBOX_VCC_LD_WERR)
