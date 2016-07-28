@@ -2015,12 +2015,14 @@ static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeou
 
 static int hdaRegReadUnimpl(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg);
     *pu32Value = 0;
     return VINF_SUCCESS;
 }
 
 static int hdaRegWriteUnimpl(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_SUCCESS;
 }
 
@@ -2083,6 +2085,8 @@ static int hdaRegWriteU32(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF_PV(iReg);
+
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(GCTL, RST))
     {
         /* Set the CRST bit to indicate that we're leaving reset mode. */
@@ -2133,6 +2137,8 @@ static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
 
 static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
+    RT_NOREF_PV(iReg);
+
     uint32_t v = 0;
     if (   HDA_REG_FLAG_VALUE(pThis, RIRBSTS, RIRBOIS)
         || HDA_REG_FLAG_VALUE(pThis, RIRBSTS, RINTFL)
@@ -2187,6 +2193,8 @@ static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 
 static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
+    RT_NOREF_PV(iReg);
+
     /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
     *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(pThis->CTX_SUFF(pDevIns))
                                                    - pThis->u64BaseTS, 24, 1000);
@@ -2196,6 +2204,8 @@ static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 
 static int hdaRegReadSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
+    RT_NOREF_PV(iReg);
+
     /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
     *pu32Value = HDA_REG(pThis, SSYNC);
     LogFlowFunc(("%RU32\n", *pu32Value));
@@ -2210,6 +2220,8 @@ static int hdaRegWriteSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF_PV(iReg);
+
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(CORBRP, RST))
     {
         HDA_REG(pThis, CORBRP) = 0;
@@ -2233,6 +2245,7 @@ static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
     return rc;
 #else
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif
 }
@@ -2258,6 +2271,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     rc = hdaCORBCmdProcess(pThis);
     return rc;
 #else  /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* IN_RING3 */
 }
@@ -2292,6 +2306,7 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* IN_RING3 */
 }
@@ -2324,6 +2339,22 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         LogFunc(("[SD%RU8]: Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
         return hdaRegWriteU24(pThis, iReg, u32Value);
     }
+
+
+
+/** @todo r=bird: Andy, the spotty IN_RING3 in the rest of this function makes
+ *        little sense.  If you need to request a lock in ring-3, why don't
+ *        you need it in ring-0 / RC?  Or, reversely, why can you do the
+ *        fInReset handling without locking and resolving pStream in R0+RC
+ *        but not in ring-3?
+ *
+ *        What makes the least sense, is that you do fInReset +
+ *        hdaProcessInterrupt in R0/RC and then unconditionally forces a trip to
+ *        ring-3 and does the same again.
+ *
+ *        Please, do make up your mind what you want to do here ASAP!
+ */
+
 
 #ifdef IN_RING3
     PHDATAG pTag = &pThis->aTags[uTag];
