@@ -66,6 +66,8 @@
 # include <setupapi.h>
 # include <cfgmgr32.h>
 # include <iprt/mem.h>
+# include <iprt/ctype.h>
+# include <iprt/path.h>
 # include <iprt/string.h>
 #endif
 
@@ -82,50 +84,44 @@
 typedef struct DRVHOSTPARALLEL
 {
     /** Pointer to the driver instance structure. */
-    PPDMDRVINS                    pDrvIns;
+    PPDMDRVINS                  pDrvIns;
     /** Pointer to the driver instance. */
-    PPDMDRVINSR3                  pDrvInsR3;
-    PPDMDRVINSR0                  pDrvInsR0;
+    PPDMDRVINSR3                pDrvInsR3;
+    PPDMDRVINSR0                pDrvInsR0;
     /** Pointer to the char port interface of the driver/device above us. */
-    PPDMIHOSTPARALLELPORT         pDrvHostParallelPort;
+    PPDMIHOSTPARALLELPORT       pDrvHostParallelPort;
     /** Our host device interface. */
-    PDMIHOSTPARALLELCONNECTOR     IHostParallelConnector;
+    PDMIHOSTPARALLELCONNECTOR   IHostParallelConnector;
     /** Our host device interface. */
-    PDMIHOSTPARALLELCONNECTOR     IHostParallelConnectorR3;
+    PDMIHOSTPARALLELCONNECTOR   IHostParallelConnectorR3;
     /** Device Path */
-    char                         *pszDevicePath;
+    char                       *pszDevicePath;
     /** Device Handle */
-    RTFILE                        hFileDevice;
+    RTFILE                      hFileDevice;
 #ifndef VBOX_WITH_WIN_PARPORT_SUP
     /** Thread waiting for interrupts. */
-    PPDMTHREAD                    pMonitorThread;
+    PPDMTHREAD                  pMonitorThread;
     /** Wakeup pipe read end. */
-    RTPIPE                        hWakeupPipeR;
+    RTPIPE                      hWakeupPipeR;
     /** Wakeup pipe write end. */
-    RTPIPE                        hWakeupPipeW;
+    RTPIPE                      hWakeupPipeW;
     /** Current mode the parallel port is in. */
-    PDMPARALLELPORTMODE           enmModeCur;
+    PDMPARALLELPORTMODE         enmModeCur;
 #endif
 
 #ifdef VBOX_WITH_WIN_PARPORT_SUP
     /** Data register. */
-    uint32_t                      u32LptAddr;
+    RTIOPORT                    PortDirectData;
     /** Status register. */
-    uint32_t                      u32LptAddrStatus;
+    RTIOPORT                    PortDirectStatus;
     /** Control register.  */
-    uint32_t                      u32LptAddrControl;
-    /** Data read buffer. */
-    uint8_t                       u8ReadIn;
-    /** Control read buffer. */
-    uint8_t                       u8ReadInControl;
-    /** Status read buffer. */
-    uint8_t                       u8ReadInStatus;
-    /** Parallel port name */
-    char                          szParportName[6];
-    /** Whether the parallel port is available or not. */
-    bool                          fParportAvail;
-    /** Device Handle */
-    RTFILE                        hWinFileDevice;
+    RTIOPORT                    PortDirectControl;
+    /** Data read result buffer. */
+    uint8_t                     bReadIn;
+    /** Control read result buffer. */
+    uint8_t                     bReadInControl;
+    /** Status read result buffer. */
+    uint8_t                     bReadInStatus;
 #endif /* VBOX_WITH_WIN_PARPORT_SUP */
 } DRVHOSTPARALLEL, *PDRVHOSTPARALLEL;
 
@@ -180,8 +176,8 @@ typedef enum DRVHOSTPARALLELR0OP
 static int drvR0HostParallelReqWrite(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    LogFlowFunc(("write to data port=%#x val=%#x\n", pThis->u32LptAddr, u64Arg));
-    ASMOutU8(pThis->u32LptAddr, (uint8_t)(u64Arg));
+    LogFlowFunc(("write to data port=%#x val=%#x\n", pThis->PortDirectData, u64Arg));
+    ASMOutU8(pThis->PortDirectData, (uint8_t)(u64Arg));
     return VINF_SUCCESS;
 }
 
@@ -195,8 +191,8 @@ static int drvR0HostParallelReqWrite(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 static int drvR0HostParallelReqWriteControl(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    LogFlowFunc(("write to ctrl port=%#x val=%#x\n", pThis->u32LptAddrControl, u64Arg));
-    ASMOutU8(pThis->u32LptAddrControl, (uint8_t)(u64Arg));
+    LogFlowFunc(("write to ctrl port=%#x val=%#x\n", pThis->PortDirectControl, u64Arg));
+    ASMOutU8(pThis->PortDirectControl, (uint8_t)(u64Arg));
     return VINF_SUCCESS;
 }
 
@@ -209,9 +205,9 @@ static int drvR0HostParallelReqWriteControl(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 static int drvR0HostParallelReqRead(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    uint8_t u8Data = ASMInU8(pThis->u32LptAddr);
-    LogFlowFunc(("read from data port=%#x val=%#x\n", pThis->u32LptAddr, u8Data));
-    pThis->u8ReadIn = u8Data;
+    uint8_t u8Data = ASMInU8(pThis->PortDirectData);
+    LogFlowFunc(("read from data port=%#x val=%#x\n", pThis->PortDirectData, u8Data));
+    pThis->bReadIn = u8Data;
     return VINF_SUCCESS;
 }
 
@@ -224,9 +220,9 @@ static int drvR0HostParallelReqRead(PPDMDRVINS pDrvIns)
 static int drvR0HostParallelReqReadControl(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    uint8_t u8Data = ASMInU8(pThis->u32LptAddrControl);
-    LogFlowFunc(("read from ctrl port=%#x val=%#x\n", pThis->u32LptAddr, u8Data));
-    pThis->u8ReadInControl = u8Data;
+    uint8_t u8Data = ASMInU8(pThis->PortDirectControl);
+    LogFlowFunc(("read from ctrl port=%#x val=%#x\n", pThis->PortDirectControl, u8Data));
+    pThis->bReadInControl = u8Data;
     return VINF_SUCCESS;
 }
 
@@ -239,9 +235,9 @@ static int drvR0HostParallelReqReadControl(PPDMDRVINS pDrvIns)
 static int drvR0HostParallelReqReadStatus(PPDMDRVINS pDrvIns)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    uint8_t u8Data = ASMInU8(pThis->u32LptAddrStatus);
-    LogFlowFunc(("read from status port=%#x val=%#x\n", pThis->u32LptAddr, u8Data));
-    pThis->u8ReadInStatus = u8Data;
+    uint8_t u8Data = ASMInU8(pThis->PortDirectStatus);
+    LogFlowFunc(("read from status port=%#x val=%#x\n", pThis->PortDirectStatus, u8Data));
+    pThis->bReadInStatus = u8Data;
     return VINF_SUCCESS;
 }
 
@@ -256,21 +252,14 @@ static int drvR0HostParallelReqReadStatus(PPDMDRVINS pDrvIns)
 static int drvR0HostParallelReqSetPortDir(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    uint8_t u8ReadControlVal;
-    uint8_t u8WriteControlVal;
 
+    uint8_t bCtl = ASMInU8(pThis->PortDirectControl);
     if (u64Arg)
-    {
-       u8ReadControlVal = ASMInU8(pThis->u32LptAddrControl);
-       u8WriteControlVal = u8ReadControlVal | LPT_CONTROL_ENABLE_BIDIRECT; /* enable input direction */
-       ASMOutU8(pThis->u32LptAddrControl, u8WriteControlVal);
-    }
+        bCtl |= LPT_CONTROL_ENABLE_BIDIRECT;  /* enable input direction */
     else
-    {
-        u8ReadControlVal = ASMInU8(pThis->u32LptAddrControl);
-        u8WriteControlVal = u8ReadControlVal & ~LPT_CONTROL_ENABLE_BIDIRECT; /* disable input direction */
-        ASMOutU8(pThis->u32LptAddrControl, u8WriteControlVal);
-    }
+        bCtl &= ~LPT_CONTROL_ENABLE_BIDIRECT; /* disable input direction */
+    ASMOutU8(pThis->PortDirectControl, bCtl);
+
     return VINF_SUCCESS;
 }
 
@@ -282,7 +271,6 @@ PDMBOTHCBDECL(int) drvR0HostParallelReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
     int rc;
 
     LogFlowFuncEnter();
-    /* I have included break after each case. Need to work on this. */
     switch ((DRVHOSTPARALLELR0OP)uOperation)
     {
         case DRVHOSTPARALLELR0OP_READ:
@@ -319,125 +307,151 @@ PDMBOTHCBDECL(int) drvR0HostParallelReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
 /**
  * Find IO port range for the parallel port and return the lower address.
  *
- * @returns parallel port IO address.
- * @param   DevInst    Device Instance for parallel port.
+ * @returns Parallel base I/O port.
+ * @param   DevInst    Device instance (dword/handle) for the parallel port.
  */
-static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
+static RTIOPORT drvHostParallelGetWinHostIoPortsSub(const DEVINST DevInst)
 {
-    uint8_t  *pBuf  = NULL;
-    short     wHeaderSize;
-    uint32_t  u32Size;
-    CONFIGRET cmRet;
-    LOG_CONF  firstLogConf;
-    LOG_CONF  nextLogConf;
-    RES_DES   rdPrevResDes;
-    uint32_t  u32ParportAddr = 0;
+    RTIOPORT PortBase = 0;
 
-    wHeaderSize = sizeof(IO_DES);
-    cmRet = CM_Get_First_Log_Conf(&firstLogConf, DevInst, ALLOC_LOG_CONF);
-    if (cmRet != CR_SUCCESS)
+    /* Get handle of the first logical configuration. */
+    LOG_CONF  hFirstLogConf;
+    short     wHeaderSize = sizeof(IO_DES);
+    CONFIGRET rcCm = CM_Get_First_Log_Conf(&hFirstLogConf, DevInst, ALLOC_LOG_CONF);
+    if (rcCm != CR_SUCCESS)
+        rcCm = CM_Get_First_Log_Conf(&hFirstLogConf, DevInst, BOOT_LOG_CONF);
+    if (rcCm == CR_SUCCESS)
     {
-        cmRet = CM_Get_First_Log_Conf(&firstLogConf, DevInst, BOOT_LOG_CONF);
-        if (cmRet != CR_SUCCESS)
-            return 0;
-    }
-    cmRet = CM_Get_Next_Res_Des(&nextLogConf, firstLogConf, 2, 0L, 0L);
-    if (cmRet != CR_SUCCESS)
-    {
-        CM_Free_Res_Des_Handle(firstLogConf);
-        return 0;
-    }
-    /* This loop is based on the fact that only one resourece is assigned to
-     * the LPT port. If multiple resources (address range) are assigned to
-     * to LPT port, it will pick and return the last one
-     */
-    for (;;)
-    {
-        u32Size = 0;
-        cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L);
-        if (cmRet != CR_SUCCESS)
-        {
-            LogFlowFunc(("Failed to get Size \n"));
-            CM_Free_Res_Des_Handle(nextLogConf);
-            break;
-        }
+        /*
+         * This loop is based on the "fact" that only one I/O resource is assigned
+         * to the LPT port.  Should there ever be multiple resources, we'll pick
+         * the last one for some silly reason.
+         */
 
-        pBuf = (uint8_t *)RTMemAlloc(u32Size + 1);
-        if (!pBuf)
+        /* Get the first resource descriptor handle. */
+        LOG_CONF hCurLogConf = 0;
+        rcCm = CM_Get_Next_Res_Des(&hCurLogConf, hFirstLogConf, ResType_IO, 0, 0);
+        if (rcCm == CR_SUCCESS)
         {
-            LogFlowFunc(("Failed to get Buf %d\n", u32Size));
-            CM_Free_Res_Des_Handle(nextLogConf);
-            break;
-        }
-        cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L);
-        if (cmRet != CR_SUCCESS)
-        {
-            LogFlowFunc(("Failed to get Des Data \n"));
-            CM_Free_Res_Des_Handle(nextLogConf);
-            if (pBuf)
-                RTMemFree(pBuf);
-            break;
-        }
+            for (;;)
+            {
+                ULONG cbData;
+                rcCm = CM_Get_Res_Des_Data_Size(&cbData, hCurLogConf, 0);
+                if (rcCm != CR_SUCCESS)
+                    cbData = 0;
+                cbData = RT_MAX(cbData, sizeof(IO_DES));
+                IO_DES *pIoDesc = (IO_DES *)RTMemAllocZ(cbData);
+                if (pIoDesc)
+                {
+                    rcCm = CM_Get_Res_Des_Data(hCurLogConf, pIoDesc, cbData, 0L);
+                    if (rcCm == CR_SUCCESS)
+                    {
+                        LogRel(("drvHostParallelGetWinHostIoPortsSub: Count=%#u Type=%#x Base=%#RX64 End=%#RX64 Flags=%#x\n",
+                                pIoDesc->IOD_Count, pIoDesc->IOD_Type, (uint64_t)pIoDesc->IOD_Alloc_Base,
+                                (uint64_t)pIoDesc->IOD_Alloc_End,  pIoDesc->IOD_DesFlags));
+                        PortBase = (RTIOPORT)pIoDesc->IOD_Alloc_Base;
+                    }
+                    else
+                        LogRel(("drvHostParallelGetWinHostIoPortsSub: CM_Get_Res_Des_Data(,,%u,0) failed: %u\n", cbData, rcCm));
+                    RTMemFree(pIoDesc);
+                }
+                else
+                    LogRel(("drvHostParallelGetWinHostIoPortsSub: failed to allocate %#x bytes\n", cbData));
 
-        LogFlowFunc(("call GetIOResource\n"));
-        if (pBuf)
-            u32ParportAddr = ((IO_DES *)pBuf)->IOD_Alloc_Base;
-        LogFlowFunc(("called GetIOResource, ret=%#x\n", u32ParportAddr));
-        rdPrevResDes = 0;
-        cmRet = CM_Get_Next_Res_Des(&rdPrevResDes,
-                                    nextLogConf,
-                                    2,
-                                    0L,
-                                    0L);
-        if (pBuf)
-            RTMemFree(pBuf);
-        if (cmRet != CR_SUCCESS)
-           break;
-
-        CM_Free_Res_Des_Handle(nextLogConf);
-        nextLogConf = rdPrevResDes;
+                /* Next */
+                RES_DES hFreeResDesc = hCurLogConf;
+                rcCm = CM_Get_Next_Res_Des(&hCurLogConf, hCurLogConf, ResType_IO, 0, 0);
+                CM_Free_Res_Des_Handle(hFreeResDesc);
+                if (rcCm != CR_SUCCESS)
+                {
+                    if (rcCm != CR_NO_MORE_RES_DES)
+                        LogRel(("drvHostParallelGetWinHostIoPortsSub: CM_Get_Next_Res_Des failed: %u\n", rcCm));
+                    break;
+                }
+            }
+        }
+        else
+            LogRel(("drvHostParallelGetWinHostIoPortsSub: Initial CM_Get_Next_Res_Des failed: %u\n", rcCm));
+        CM_Free_Log_Conf_Handle(hFirstLogConf);
     }
-    CM_Free_Res_Des_Handle(nextLogConf);
-    LogFlowFunc(("return u32ParportAddr=%#x", u32ParportAddr));
-    return u32ParportAddr;
+    LogFlowFunc(("return PortBase=%#x", PortBase));
+    return PortBase;
 }
 
 /**
- * Get Parallel port address and update the shared data
- * structure.
+ * Get Parallel port address and update the shared data structure.
+ *
  * @returns VBox status code.
  * @param   pThis    The host parallel port instance data.
  */
-static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
+static int drvHostParallelGetWinHostIoPorts(PDRVHOSTPARALLEL pThis)
 {
-    HDEVINFO hDevInfo;
-    SP_DEVINFO_DATA DeviceInfoData;
-    uint32_t u32Idx;
-    uint32_t u32ParportAddr;
-    int rc = VINF_SUCCESS;
-
-    hDevInfo = SetupDiGetClassDevs(NULL, 0, 0, DIGCF_PRESENT | DIGCF_ALLCLASSES);
-    if (hDevInfo == INVALID_HANDLE_VALUE)
-        return VERR_INVALID_HANDLE;
-
-    /* Enumerate through all devices in Set. */
-    DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
-    for (u32Idx = 0; SetupDiEnumDeviceInfo(hDevInfo, u32Idx, &DeviceInfoData); u32Idx++)
+    /*
+     * Assume the host device path is on the form "\\.\PIPE\LPT1", then get the "LPT1" part.
+     */
+    const char * const pszCfgPortName = RTPathFilename(pThis->pszDevicePath);
+    AssertReturn(pszCfgPortName, VERR_INTERNAL_ERROR_3);
+    size_t const       cchCfgPortName = strlen(pszCfgPortName);
+    if (   cchCfgPortName != 4
+        || RTStrNICmp(pszCfgPortName, "LPT", 3) != 0
+        || !RT_C_IS_DIGIT(pszCfgPortName[3]) )
     {
-        DWORD dwDataType;
-        uint8_t *pBuf = NULL;
-        DWORD dwBufSize = 0;
+        LogRel(("drvHostParallelGetWinHostIoPorts: The configured device name '%s' is not on the expected 'LPTx' form!\n",
+                pszCfgPortName));
+        return VERR_INVALID_NAME;
+    }
 
-        while (!SetupDiGetDeviceRegistryProperty(hDevInfo, &DeviceInfoData, SPDRP_FRIENDLYNAME,
-                                                 (PDWORD)&dwDataType, (uint8_t *)pBuf,
-                                                 dwBufSize, (PDWORD)&dwBufSize))
+    /*
+     * Get a list of devices then enumerate it looking for the LPT port we're using.
+     */
+    HDEVINFO hDevInfo = SetupDiGetClassDevs(NULL, 0, 0, DIGCF_PRESENT | DIGCF_ALLCLASSES);
+    if (hDevInfo == INVALID_HANDLE_VALUE)
+    {
+        DWORD dwErr = GetLastError();
+        LogRel(("drvHostParallelGetWinHostIoPorts: SetupDiGetClassDevs failed: %u\n", dwErr));
+        return RTErrConvertFromWin32(dwErr);
+    }
+
+    int   rc     = VINF_SUCCESS;
+    char *pszBuf = NULL;
+    DWORD cbBuf  = 0;
+    for (int32_t idxDevInfo = 0;; idxDevInfo++)
+    {
+        /*
+         * Query the next device info.
+         */
+        SP_DEVINFO_DATA DeviceInfoData;
+        DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+        if (!SetupDiEnumDeviceInfo(hDevInfo, idxDevInfo, &DeviceInfoData))
         {
-            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+            DWORD dwErr = GetLastError();
+            if (dwErr != ERROR_NO_MORE_ITEMS && dwErr != NO_ERROR)
             {
-                LogFlow(("ERROR_INSUFF_BUFF = %d. dwBufSz = %d\n", GetLastError(), dwBufSize));
-                if (pBuf)
-                    RTMemFree(pBuf);
-                pBuf = (uint8_t *)RTMemAlloc(dwBufSize * 2);
+                LogRel(("drvHostParallelGetWinHostIoPorts: SetupDiEnumDeviceInfo failed: %u\n", dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
+            break;
+        }
+
+        /* Get the friendly name of the device. */
+        DWORD dwDataType;
+        DWORD cbBufActual;
+        BOOL  fOk;
+        while (!(fOk = SetupDiGetDeviceRegistryProperty(hDevInfo, &DeviceInfoData, SPDRP_FRIENDLYNAME,
+                                                       &dwDataType, (PBYTE)pszBuf, cbBuf, &cbBufActual)))
+        {
+            DWORD dwErr = GetLastError();
+            if (dwErr == ERROR_INSUFFICIENT_BUFFER)
+            {
+                LogFlow(("ERROR_INSUFF_BUFF = %d. dwBufSz = %d\n", dwErr, cbBuf));
+                void *pvNew = RTMemRealloc(pszBuf, RT_MAX(RT_ALIGN_Z(cbBufActual + 16, 64), 256));
+                if (pvNew)
+                    pszBuf = (char *)pvNew;
+                else
+                {
+                    LogFlow(("GetDevProp Error = %d & cbBufActual = %d\n", dwErr, cbBufActual));
+                    break;
+                }
             }
             else
             {
@@ -445,74 +459,48 @@ static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
                  * INVALID_DATA . Just break from here and proceed to next device
                  * enumerated item
                  */
-                LogFlow(("GetDevProp Error = %d & dwBufSz = %d\n", GetLastError(), dwBufSize));
+                LogFlow(("GetDevProp Error = %d & cbBufActual = %d\n", dwErr, cbBufActual));
                 break;
             }
         }
-
-        if (RTStrStr((char*)pBuf, "LPT"))
+        if (   fOk
+            && pszBuf)
         {
-            u32ParportAddr = drvHostWinFindIORangeResource(DeviceInfoData.DevInst);
-            if (u32ParportAddr)
+            pszBuf[cbBuf - 1] = '\0';
+
+            /*
+             * Does this look like the port name we're looking for.
+             *
+             * We're expecting either "Parallel Port (LPT1)" or just "LPT1", though we'll make do
+             * with anything that includes the name we're looking for as a separate word.
+             */
+            char *pszMatch;
+            do
+                pszMatch = RTStrIStr(pszBuf, pszCfgPortName);
+            while (   pszMatch != NULL
+                   && !(  (   pszMatch     == pszBuf
+                           || pszMatch[-1] == '('
+                           || RT_C_IS_BLANK(pszMatch[-1]))
+                        && (   pszMatch[cchCfgPortName] == '\0'
+                            || pszMatch[cchCfgPortName] == ')'
+                            || RT_C_IS_BLANK(pszMatch[cchCfgPortName])) ) );
+            if (pszMatch != NULL)
             {
-                /* Find parallel port name and update the shared data struncture */
-                char *pCh = RTStrStr((char*)pBuf, "(");
-                char *pTmpCh = RTStrStr((char *)pBuf, ")");
-                /* check for the confirmation for the availability of parallel port */
-                if (!(pCh && pTmpCh))
+                RTIOPORT Port = drvHostParallelGetWinHostIoPortsSub(DeviceInfoData.DevInst);
+                if (Port != 0)
                 {
-                    LogFlowFunc(("Parallel port Not Found. \n"));
-                    return VERR_NOT_FOUND;
-
+                    pThis->PortDirectData    = Port;
+                    pThis->PortDirectControl = Port + CTRL_REG_OFFSET;
+                    pThis->PortDirectStatus  = Port + STATUS_REG_OFFSET;
+                    break;
                 }
-                if (((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) < 0) {
-                    LogFlowFunc(("Parallel port string not properly formatted.\n"));
-                    return VERR_NOT_FOUND;
-                }
-                /* check for the confirmation for the availability of parallel port */
-                if (RTStrCopyEx((char *)(pThis->szParportName), sizeof(pThis->szParportName),
-                    pCh+1, ((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) - 1))
-                {
-                    LogFlowFunc(("Parallel Port Not Found.\n"));
-                    return VERR_NOT_FOUND;
-                }
-                *((char *)pThis->szParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
-
-                /* checking again to make sure that we have got a valid name and in valid format too. */
-                if (RTStrNCmp((char *)pThis->szParportName, "LPT", 3)) {
-                    LogFlowFunc(("Parallel Port name \"LPT\" Not Found.\n"));
-                    return VERR_NOT_FOUND;
-                }
-                if (!RTStrStr((char *)pThis->szParportName, "LPT")
-                    || !(pThis->szParportName[3] >= '0'
-                    && pThis->szParportName[3] <= '9'))
-                {
-                    RT_BZERO(pThis->szParportName, sizeof(pThis->szParportName));
-                    LogFlowFunc(("Printer Port Name Not Found.\n"));
-                    return VERR_NOT_FOUND;
-                }
-                pThis->fParportAvail     = true;
-                pThis->u32LptAddr        = u32ParportAddr;
-                pThis->u32LptAddrControl = pThis->u32LptAddr + CTRL_REG_OFFSET;
-                pThis->u32LptAddrStatus  = pThis->u32LptAddr + STATUS_REG_OFFSET;
+                LogRel(("drvHostParallelGetWinHostIoPorts: Addr not found for '%s'\n", pszBuf));
             }
-            else
-                LogFlowFunc(("u32Parport Addr No Available \n"));
-            if (pThis->fParportAvail)
-                break;
-        }
-        if (pBuf)
-            RTMemFree(pBuf);
-        if (pThis->fParportAvail)
-        {
-            /* Parallel port address has been found. No need to iterate further. */
-            break;
         }
     }
 
-    if (GetLastError() != NO_ERROR && GetLastError() != ERROR_NO_MORE_ITEMS)
-        rc =  VERR_GENERAL_FAILURE;
-
+    /* Cleanup. */
+    RTMemFree(pszBuf);
     SetupDiDestroyDeviceInfoList(hDevInfo);
     return rc;
 
@@ -614,7 +602,7 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
 # else /* VBOX_WITH_WIN_PARPORT_SUP */
-    if (pThis->fParportAvail)
+    if (pThis->PortDirectData != 0)
     {
         for (size_t i = 0; i < cbWrite; i++)
         {
@@ -657,15 +645,16 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
 # else  /* VBOX_WITH_WIN_PARPORT_SUP */
-    if (pThis->fParportAvail)
+    if (pThis->PortDirectData != 0)
     {
-        *((uint8_t*)(pvBuf)) = 0; /* Initialize the buffer. */
+        uint8_t *pabBuf = (uint8_t *)pvBuf;
+        memset(pabBuf, 0, cbRead);
         for (size_t i = 0; i < cbRead; i++)
         {
             LogFlowFunc(("calling R0 to read from parallel port\n"));
             int rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_READ, 0);
             AssertRC(rc);
-            *((uint8_t *)pvBuf + i) = (uint8_t)pThis->u8ReadIn;
+            pabBuf[i] = (uint8_t)pThis->bReadIn;
         }
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
@@ -688,12 +677,10 @@ static DECLCALLBACK(int) drvHostParallelSetPortDirection(PPDMIHOSTPARALLELCONNEC
         rc = RTErrConvertFromErrno(errno);
 
 # else /* VBOX_WITH_WIN_PARPORT_SUP */
-    uint64_t u64Data;
-    u64Data = (uint8_t)iMode;
-    if (pThis->fParportAvail)
+    if (pThis->PortDirectData != 0)
     {
-        LogFlowFunc(("calling R0 to write CTRL, data=%#x\n", u64Data));
-        rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_SETPORTDIRECTION, u64Data);
+        LogFlowFunc(("calling R0 to write CTRL, data=%#x\n", iMode));
+        rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_SETPORTDIRECTION, iMode);
         AssertRC(rc);
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
@@ -707,20 +694,17 @@ static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR 
 {
     PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
     int rc = VINF_SUCCESS;
-    int rcLnx = 0;
 
     LogFlowFunc(("fReg=%#x\n", fReg));
 # ifndef VBOX_WITH_WIN_PARPORT_SUP
-    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPWCONTROL, &fReg);
+    int rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPWCONTROL, &fReg);
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
 # else /* VBOX_WITH_WIN_PARPORT_SUP */
-    uint64_t u64Data;
-    u64Data = (uint8_t)fReg;
-    if (pThis->fParportAvail)
+    if (pThis->PortDirectData != 0)
     {
-        LogFlowFunc(("calling R0 to write CTRL, data=%#x\n", u64Data));
-        rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_WRITECONTROL, u64Data);
+        LogFlowFunc(("calling R0 to write CTRL, data=%#x\n", fReg));
+        rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_WRITECONTROL, fReg);
         AssertRC(rc);
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
@@ -735,11 +719,10 @@ static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR p
 {
     PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
     int rc = VINF_SUCCESS;
-    int rcLnx = 0;
-    uint8_t fReg = 0;
 
 # ifndef VBOX_WITH_WIN_PARPORT_SUP
-    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPRCONTROL, &fReg);
+    uint8_t fReg = 0;
+    int rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPRCONTROL, &fReg);
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
     else
@@ -749,12 +732,12 @@ static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR p
     }
 # else /* VBOX_WITH_WIN_PARPORT_SUP */
     *pfReg = 0; /* Initialize the buffer*/
-    if (pThis->fParportAvail)
+    if (pThis->PortDirectData != 0)
     {
         LogFlowFunc(("calling R0 to read control from parallel port\n"));
         rc = PDMDrvHlpCallR0(pThis-> CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_READCONTROL, 0);
         AssertRC(rc);
-        *pfReg = pThis->u8ReadInControl;
+        *pfReg = pThis->bReadInControl;
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
     return rc;
@@ -767,10 +750,9 @@ static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pI
 {
     PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
     int rc = VINF_SUCCESS;
-    int rcLnx = 0;
-    uint8_t fReg = 0;
 # ifndef  VBOX_WITH_WIN_PARPORT_SUP
-    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPRSTATUS, &fReg);
+    uint8_t fReg = 0;
+    int rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPRSTATUS, &fReg);
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
     else
@@ -780,12 +762,12 @@ static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pI
     }
 # else /* VBOX_WITH_WIN_PARPORT_SUP */
     *pfReg = 0; /* Intialize the buffer. */
-    if (pThis->fParportAvail)
+    if (pThis->PortDirectData != 0)
     {
         LogFlowFunc(("calling R0 to read status from parallel port\n"));
         rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_READSTATUS, 0);
         AssertRC(rc);
-        *pfReg = pThis->u8ReadInStatus;
+        *pfReg = pThis->bReadInStatus;
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
     return rc;
@@ -865,7 +847,6 @@ static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, 
  */
 static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 {
-    int rc;
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
@@ -876,19 +857,19 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hWakeupPipeW != NIL_RTPIPE)
     {
-        rc = RTPipeClose(pThis->hWakeupPipeW); AssertRC(rc);
+        int rc = RTPipeClose(pThis->hWakeupPipeW); AssertRC(rc);
         pThis->hWakeupPipeW = NIL_RTPIPE;
     }
 
     if (pThis->hWakeupPipeR != NIL_RTPIPE)
     {
-        rc = RTPipeClose(pThis->hWakeupPipeR); AssertRC(rc);
+        int rc = RTPipeClose(pThis->hWakeupPipeR); AssertRC(rc);
         pThis->hWakeupPipeR = NIL_RTPIPE;
     }
 
     if (pThis->hFileDevice != NIL_RTFILE)
     {
-        rc = RTFileClose(pThis->hFileDevice); AssertRC(rc);
+        int rc = RTFileClose(pThis->hFileDevice); AssertRC(rc);
         pThis->hFileDevice = NIL_RTFILE;
     }
 
@@ -897,13 +878,7 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
         MMR3HeapFree(pThis->pszDevicePath);
         pThis->pszDevicePath = NULL;
     }
-#else  /* VBOX_WITH_WIN_PARPORT_SUP */
-    if (pThis->hWinFileDevice != NIL_RTFILE)
-    {
-        rc = RTFileClose(pThis->hWinFileDevice); AssertRC(rc);
-        pThis->hWinFileDevice = NIL_RTFILE;
-    }
-#endif /* VBOX_WITH_WIN_PARPORT_SUP */
+#endif /* !VBOX_WITH_WIN_PARPORT_SUP */
 }
 
 /**
@@ -923,21 +898,19 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
      *
      * Must be done before returning any failure because we've got a destructor.
      */
-    pThis->hFileDevice  = NIL_RTFILE;
+    pThis->hFileDevice                                  = NIL_RTFILE;
 #ifndef VBOX_WITH_WIN_PARPORT_SUP
-    pThis->hWakeupPipeR = NIL_RTPIPE;
-    pThis->hWakeupPipeW = NIL_RTPIPE;
-#else
-    pThis->hWinFileDevice = NIL_RTFILE;
+    pThis->hWakeupPipeR                                 = NIL_RTPIPE;
+    pThis->hWakeupPipeW                                 = NIL_RTPIPE;
 #endif
 
-    pThis->pDrvInsR3                                = pDrvIns;
+    pThis->pDrvInsR3                                    = pDrvIns;
 #ifdef VBOX_WITH_DRVINTNET_IN_R0
-    pThis->pDrvInsR0                                = PDMDRVINS_2_R0PTR(pDrvIns);
+    pThis->pDrvInsR0                                    = PDMDRVINS_2_R0PTR(pDrvIns);
 #endif
 
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface                  = drvHostParallelQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface                    = drvHostParallelQueryInterface;
     /* IHostParallelConnector. */
     pThis->IHostParallelConnectorR3.pfnWrite            = drvHostParallelWrite;
     pThis->IHostParallelConnectorR3.pfnRead             = drvHostParallelRead;
@@ -967,6 +940,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Open the device
      */
+    /** @todo exclusive access on windows?   */
     rc = RTFileOpen(&pThis->hFileDevice, pThis->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Parallel#%d could not open '%s'"),
@@ -1023,22 +997,18 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
 
-#else /* VBOX_WITH_WIN_PARPORT_SUP */
-    pThis->fParportAvail     = false;
-    pThis->u32LptAddr        = 0;
-    pThis->u32LptAddrControl = 0;
-    pThis->u32LptAddrStatus  = 0;
-    rc = drvWinHostGetparportAddr(pThis);
+#else  /* VBOX_WITH_WIN_PARPORT_SUP */
 
-    /* If we have the char port availabe use it , else I am not getting exclusive access to parallel port.
-       Read and write will be done only if addresses are available
-    */
-    if (pThis->szParportName)
-    {
-        rc = RTFileOpen(&pThis->hWinFileDevice, (char *)pThis->szParportName,
-                        RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    }
-#endif
+    pThis->PortDirectData    = 0;
+    pThis->PortDirectControl = 0;
+    pThis->PortDirectStatus  = 0;
+    rc = drvHostParallelGetWinHostIoPorts(pThis);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("HostParallel#%d: Could not get direct access to the host parallel port!! (rc=%Rrc)"),
+                                   pDrvIns->iInstance, rc);
+
+#endif /* VBOX_WITH_WIN_PARPORT_SUP */
     return VINF_SUCCESS;
 }
 
