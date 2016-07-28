@@ -2272,6 +2272,7 @@ static int e1kRxChecksumOffload(PE1KSTATE pThis, const uint8_t *pFrame, size_t c
     }
 #else
     pStatus->fIXSM = true;
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pFrame); RT_NOREF_PV(cb);
 #endif
     return VINF_SUCCESS;
 }
@@ -2371,7 +2372,7 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
 
     E1K_INC_ISTAT_CNT(pThis->uStatRxFrm);
 
-#ifdef E1K_WITH_RXD_CACHE
+# ifdef E1K_WITH_RXD_CACHE
     while (cb > 0)
     {
         E1KRXDESC *pDesc = e1kRxDGet(pThis);
@@ -2383,7 +2384,7 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
                     pThis->szPrf, cb, e1kRxDInCache(pThis), RDH, RDT));
             break;
         }
-#else /* !E1K_WITH_RXD_CACHE */
+# else /* !E1K_WITH_RXD_CACHE */
     if (RDH == RDT)
     {
         E1kLog(("%s Out of receive buffers, dropping the packet\n",
@@ -2396,7 +2397,7 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
         E1KRXDESC desc, *pDesc = &desc;
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH),
                           &desc, sizeof(desc));
-#endif /* !E1K_WITH_RXD_CACHE */
+# endif /* !E1K_WITH_RXD_CACHE */
         if (pDesc->u64BufAddr)
         {
             /* Update descriptor */
@@ -2428,26 +2429,26 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
                 pDesc->status.fEOP = true;
                 e1kCsRxLeave(pThis);
                 e1kStoreRxFragment(pThis, pDesc, ptr, cb);
-#ifdef E1K_WITH_RXD_CACHE
+# ifdef E1K_WITH_RXD_CACHE
                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
                     return rc;
                 cb = 0;
-#else /* !E1K_WITH_RXD_CACHE */
+# else /* !E1K_WITH_RXD_CACHE */
                 pThis->led.Actual.s.fReading = 0;
                 return VINF_SUCCESS;
-#endif /* !E1K_WITH_RXD_CACHE */
+# endif /* !E1K_WITH_RXD_CACHE */
             }
             /*
              * Note: RDH is advanced by e1kStoreRxFragment if E1K_WITH_RXD_CACHE
              * is not defined.
              */
         }
-#ifdef E1K_WITH_RXD_CACHE
+# ifdef E1K_WITH_RXD_CACHE
         /* Write back the descriptor. */
         pDesc->status.fDD = true;
         e1kRxDPut(pThis, pDesc);
-#else /* !E1K_WITH_RXD_CACHE */
+# else /* !E1K_WITH_RXD_CACHE */
         else
         {
             /* Write back the descriptor. */
@@ -2457,7 +2458,7 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
                                   pDesc, sizeof(E1KRXDESC));
             e1kAdvanceRDH(pThis);
         }
-#endif /* !E1K_WITH_RXD_CACHE */
+# endif /* !E1K_WITH_RXD_CACHE */
     }
 
     if (cb > 0)
@@ -2466,9 +2467,9 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
     pThis->led.Actual.s.fReading = 0;
 
     e1kCsRxLeave(pThis);
-#ifdef E1K_WITH_RXD_CACHE
+# ifdef E1K_WITH_RXD_CACHE
     /* Complete packet has been stored -- it is time to let the guest know. */
-# ifdef E1K_USE_RX_TIMERS
+#  ifdef E1K_USE_RX_TIMERS
     if (RDTR)
     {
         /* Arm the timer to fire in RDTR usec (discard .024) */
@@ -2479,19 +2480,20 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
     }
     else
     {
-# endif /* E1K_USE_RX_TIMERS */
+#  endif /* E1K_USE_RX_TIMERS */
         /* 0 delay means immediate interrupt */
         E1K_INC_ISTAT_CNT(pThis->uStatIntRx);
         e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, ICR_RXT0);
-# ifdef E1K_USE_RX_TIMERS
+#  ifdef E1K_USE_RX_TIMERS
     }
-# endif /* E1K_USE_RX_TIMERS */
-#endif /* E1K_WITH_RXD_CACHE */
+#  endif /* E1K_USE_RX_TIMERS */
+# endif /* E1K_WITH_RXD_CACHE */
 
     return VINF_SUCCESS;
-#else
+#else  /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(pvBuf); RT_NOREF_PV(cb); RT_NOREF_PV(status);
     return VERR_INTERNAL_ERROR_2;
-#endif
+#endif /* !IN_RING3 */
 }
 
 
@@ -2701,6 +2703,7 @@ static int e1kRegWriteEECD(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
 
     return VINF_SUCCESS;
 #else /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(offset); RT_NOREF_PV(index); RT_NOREF_PV(value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
@@ -2738,6 +2741,7 @@ static int e1kRegReadEECD(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
 
     return rc;
 #else /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(offset); RT_NOREF_PV(index); RT_NOREF_PV(pu32Value);
     return VINF_IOM_R3_MMIO_READ;
 #endif /* !IN_RING3 */
 }
@@ -2773,6 +2777,7 @@ static int e1kRegWriteEERD(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
 
     return VINF_SUCCESS;
 #else /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(offset); RT_NOREF_PV(index); RT_NOREF_PV(value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
@@ -2846,6 +2851,7 @@ static int e1kRegWriteICR(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
 {
     ICR &= ~value;
 
+    RT_NOREF_PV(pThis); RT_NOREF_PV(offset); RT_NOREF_PV(index);
     return VINF_SUCCESS;
 }
 
@@ -2929,6 +2935,7 @@ static int e1kRegReadICR(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint3
  */
 static int e1kRegWriteICS(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
+    RT_NOREF_PV(offset); RT_NOREF_PV(index);
     E1K_INC_ISTAT_CNT(pThis->uStatIntICS);
     return e1kRaiseInterrupt(pThis, VINF_IOM_R3_MMIO_WRITE, value & g_aE1kRegMap[ICS_IDX].writable);
 }
@@ -2947,6 +2954,8 @@ static int e1kRegWriteICS(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  */
 static int e1kRegWriteIMS(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
+    RT_NOREF_PV(offset); RT_NOREF_PV(index);
+
     IMS |= value;
     E1kLogRel(("E1000: irq enabled, RDH=%x RDT=%x TDH=%x TDT=%x\n", RDH, RDT, TDH, TDT));
     E1kLog(("%s e1kRegWriteIMS: IRQ enabled\n", pThis->szPrf));
@@ -2969,6 +2978,8 @@ static int e1kRegWriteIMS(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  */
 static int e1kRegWriteIMC(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
+    RT_NOREF_PV(offset); RT_NOREF_PV(index);
+
     int rc = e1kCsEnter(pThis, VINF_IOM_R3_MMIO_WRITE);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
@@ -5547,6 +5558,8 @@ static int e1kRegReadAutoClear(PE1KSTATE pThis, uint32_t offset, uint32_t index,
  */
 static int e1kRegReadDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
+    RT_NOREF_PV(offset);
+
     AssertReturn(index < E1K_NUM_OF_32BIT_REGS, VERR_DEV_IO_ERROR);
     *pu32Value = pThis->auRegs[index] & g_aE1kRegMap[index].readable;
 
@@ -5567,6 +5580,8 @@ static int e1kRegReadDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, u
 
  static int e1kRegWriteUnimplemented(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
+    RT_NOREF_PV(pThis); RT_NOREF_PV(offset); RT_NOREF_PV(index); RT_NOREF_PV(value);
+
     E1kLog(("%s At %08X write attempt (%08X) to  unimplemented register %s (%s)\n",
             pThis->szPrf, offset, value, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
 
@@ -5591,6 +5606,8 @@ static int e1kRegReadDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, u
 
 static int e1kRegWriteDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
+    RT_NOREF_PV(offset);
+
     AssertReturn(index < E1K_NUM_OF_32BIT_REGS, VERR_DEV_IO_ERROR);
     pThis->auRegs[index] = (value & g_aE1kRegMap[index].writable)
                          | (pThis->auRegs[index] & ~g_aE1kRegMap[index].writable);
@@ -5603,12 +5620,12 @@ static int e1kRegWriteDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, 
  *
  * @returns Index in the register table or -1 if not found.
  *
- * @param   pThis       The device state structure.
  * @param   offReg      Register offset in memory-mapped region.
  * @thread  EMT
  */
-static int e1kRegLookup(PE1KSTATE pThis, uint32_t offReg)
+static int e1kRegLookup(uint32_t offReg)
 {
+
 #if 0
     int index;
 
@@ -5678,7 +5695,7 @@ static int e1kRegReadUnaligned(PE1KSTATE pThis, uint32_t offReg, void *pv, uint3
     uint32_t    u32    = 0;
     uint32_t    shift;
     int         rc     = VINF_SUCCESS;
-    int         index  = e1kRegLookup(pThis, offReg);
+    int         index  = e1kRegLookup(offReg);
 #ifdef LOG_ENABLED
     char        buf[9];
 #endif
@@ -5767,7 +5784,7 @@ static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32
      * Lookup the register and check that it's readable.
      */
     int rc     = VINF_SUCCESS;
-    int idxReg = e1kRegLookup(pThis, offReg);
+    int idxReg = e1kRegLookup(offReg);
     if (RT_LIKELY(idxReg != -1))
     {
         if (RT_UNLIKELY(g_aE1kRegMap[idxReg].readable))
@@ -5813,7 +5830,7 @@ static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32
 static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32Value)
 {
     int         rc    = VINF_SUCCESS;
-    int         index = e1kRegLookup(pThis, offReg);
+    int         index = e1kRegLookup(offReg);
     if (RT_LIKELY(index != -1))
     {
         if (RT_LIKELY(g_aE1kRegMap[index].writable))
@@ -5896,6 +5913,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
     PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     int         rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
+    RT_NOREF_PV(pvUser);
 
     uPort -= pThis->IOPortBase;
     if (RT_LIKELY(cb == 4))
@@ -5940,6 +5958,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort
     PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     int         rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
+    RT_NOREF_PV(pvUser);
 
     E1kLog2(("%s e1kIOPortOut: uPort=%RTiop value=%08x\n", pThis->szPrf, uPort, u32));
     if (RT_LIKELY(cb == 4))
