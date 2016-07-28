@@ -3550,10 +3550,9 @@
  *
  * @param      Cls     class name to declare for
  */
-
 #define DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Cls) \
-    inline Cls (const Cls &); \
-    inline Cls &operator= (const Cls &);
+    inline Cls(const Cls &); \
+    inline Cls &operator= (const Cls &)
 
 
 /** @def DECLARE_CLS_NEW_DELETE_NOOP
@@ -3571,7 +3570,7 @@
  */
 #define DECLARE_CLS_NEW_DELETE_NOOP(Cls) \
     inline static void *operator new (size_t); \
-    inline static void operator delete (void *);
+    inline static void operator delete (void *)
 
 #endif /* __cplusplus */
 

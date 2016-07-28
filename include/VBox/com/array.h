@@ -1097,7 +1097,7 @@ public:
 
 protected:
 
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeArray)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeArray);
 
     /**
      * Ensures that the array is big enough to contain aNewSize elements.

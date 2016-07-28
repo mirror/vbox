@@ -383,7 +383,7 @@ private:
         }
     private:
         HRESULT mRC; /* Whether the caller was added. */
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoVMCallerBase)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoVMCallerBase);
     };
 
 #if 0
@@ -477,7 +477,7 @@ private:
         }
         HRESULT mRC; /* Whether the VM ptr was retained. */
         PUVM    mpUVM;
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeVMPtrBase)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeVMPtrBase);
     };
 
 public:

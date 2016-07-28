@@ -212,7 +212,7 @@ public:
 
 private:
 
-    DECLARE_CLS_NEW_DELETE_NOOP(MultiResult)
+    DECLARE_CLS_NEW_DELETE_NOOP(MultiResult);
 
     static void incCounter();
     static void decCounter();
@@ -251,7 +251,7 @@ public:
 
 private:
 
-    DECLARE_CLS_NEW_DELETE_NOOP (MultiResultRef)
+    DECLARE_CLS_NEW_DELETE_NOOP(MultiResultRef);
 
     HRESULT &mRC;
 };

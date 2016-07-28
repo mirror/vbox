@@ -315,7 +315,7 @@ private:
     Data *m;
 
     /* auto_ptr data doesn't have proper copy semantics */
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (File)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(File);
 };
 
 /**
@@ -342,7 +342,7 @@ private:
     Data *m;
 
     /* auto_ptr data doesn't have proper copy semantics */
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(MemoryBuf)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(MemoryBuf);
 };
 
 

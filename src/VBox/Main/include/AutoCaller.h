@@ -189,8 +189,8 @@ protected:
     }
 
 private:
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoCaller)
-    DECLARE_CLS_NEW_DELETE_NOOP(AutoCaller)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoCaller);
+    DECLARE_CLS_NEW_DELETE_NOOP(AutoCaller);
 
     VirtualBoxBase *mObj;
     HRESULT mRC;
@@ -345,8 +345,8 @@ public:
 
 private:
 
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoInitSpan)
-    DECLARE_CLS_NEW_DELETE_NOOP(AutoInitSpan)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoInitSpan);
+    DECLARE_CLS_NEW_DELETE_NOOP(AutoInitSpan);
 
     VirtualBoxBase *mObj;
     Result mResult : 3; // must be at least total number of bits + 1 (sign)
@@ -422,8 +422,8 @@ public:
 
 private:
 
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoReinitSpan)
-    DECLARE_CLS_NEW_DELETE_NOOP(AutoReinitSpan)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoReinitSpan);
+    DECLARE_CLS_NEW_DELETE_NOOP(AutoReinitSpan);
 
     VirtualBoxBase *mObj;
     bool mSucceeded : 1;
@@ -486,8 +486,8 @@ public:
 
 private:
 
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoUninitSpan)
-    DECLARE_CLS_NEW_DELETE_NOOP(AutoUninitSpan)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoUninitSpan);
+    DECLARE_CLS_NEW_DELETE_NOOP(AutoUninitSpan);
 
     VirtualBoxBase *mObj;
     bool mInitFailed : 1;

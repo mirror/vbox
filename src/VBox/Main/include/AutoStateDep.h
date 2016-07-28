@@ -110,8 +110,8 @@
 
     private:
 
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoStateDependency)
-        DECLARE_CLS_NEW_DELETE_NOOP(AutoStateDependency)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoStateDependency);
+        DECLARE_CLS_NEW_DELETE_NOOP(AutoStateDependency);
     };
 
     /**
