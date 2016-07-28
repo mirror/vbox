@@ -122,7 +122,9 @@ static void         patmPrintStat(PVM pVM, void *pvSample, char *pszBuf, size_t 
 
 static int               patmReinit(PVM pVM);
 static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pParam);
+#ifdef PATM_RESOLVE_CONFLICTS_WITH_JUMP_PATCHES
 static RTRCPTR      patmR3GuestGCPtrToPatchGCPtrSimple(PVM pVM, RCPTRTYPE(uint8_t*) pInstrGC);
+#endif
 static int          patmR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch);
 
 #ifdef VBOX_WITH_DEBUGGER
@@ -3215,6 +3217,8 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
     Log(("Patch code ----------------------------------------------------------\n"));
     patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmR3DisasmCallback, pCacheRec);
     Log(("Patch code ends -----------------------------------------------------\n"));
+#else
+    RT_NOREF_PV(pCacheRec);
 #endif
     PATM_LOG_ORG_PATCH_INSTR(pVM, pPatch, "TRAP handler");
     Log(("Successfully installed Trap Trampoline patch at %RRv\n", pInstrGC));
@@ -3935,6 +3939,7 @@ int patmR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrH
 {
     uint8_t cbASMInt3 = 1;
     int rc;
+    RT_NOREF_PV(pInstrHC);
 
     /* Note: Do not use patch memory here! It might called during patch installation too. */
     PATM_LOG_PATCH_INSTR(pVM, pPatch, PATMREAD_ORGCODE, "patmR3PatchInstrInt3:", "");
@@ -4100,7 +4105,7 @@ failure:
 VMMR3_INT_DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags)
 {
     Assert(pInstrGC);
-    Assert(flags == PATMFL_CODE32);
+    Assert(flags == PATMFL_CODE32); RT_NOREF_PV(flags);
 
     Log(("PATMR3AddHint %RRv\n", pInstrGC));
     return PATMR3InstallPatch(pVM, pInstrGC, PATMFL_CODE32 | PATMFL_INSTR_HINT);
@@ -5421,6 +5426,8 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
             return VINF_SUCCESS;
         }
     }
+#else
+    RT_NOREF_PV(pInstrGC);
 #endif
 
     if (pConflictPatch->opcode == OP_CLI)
@@ -6022,6 +6029,7 @@ RTRCPTR patmGuestGCPtrToPatchGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t
     return 0;
 }
 
+#ifdef PATM_RESOLVE_CONFLICTS_WITH_JUMP_PATCHES
 /**
  * Converts Guest code GC ptr to Patch code GC ptr (if found)
  *
@@ -6036,6 +6044,7 @@ static RTRCPTR patmR3GuestGCPtrToPatchGCPtrSimple(PVM pVM, RCPTRTYPE(uint8_t*) p
         return patmGuestGCPtrToPatchGCPtr(pVM, &pPatchRec->patch, pInstrGC);
     return NIL_RTRCPTR;
 }
+#endif
 
 /**
  * Converts Guest code GC ptr to Patch code GC ptr (or nearest from below if no
