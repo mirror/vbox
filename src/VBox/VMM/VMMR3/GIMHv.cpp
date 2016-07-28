@@ -222,8 +222,13 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     char szVendor[13];
     rc = CFGMR3QueryStringDef(pCfgHv, "VendorID", szVendor, sizeof(szVendor), "VBoxVBoxVBox");
     AssertLogRelRCReturn(rc, rc);
+    AssertLogRelMsgReturn(strlen(szVendor) == 12,
+                          ("The VendorID config value must be exactly 12 chars, '%s' isn't!\n", szVendor),
+                          VERR_INVALID_PARAMETER);
 
     LogRel(("GIM: HyperV: Reporting vendor as '%s'\n", szVendor));
+    /** @todo r=bird: GIM_HV_VENDOR_MICROSOFT is 12 char and the string is max
+     *        12+terminator, so the NCmp is a little bit misleading. */
     if (!RTStrNCmp(szVendor, GIM_HV_VENDOR_MICROSOFT, sizeof(GIM_HV_VENDOR_MICROSOFT) - 1))
     {
         LogRel(("GIM: HyperV: Warning! Posing as the Microsoft vendor may alter guest behaviour!\n"));
