@@ -94,7 +94,6 @@ RT_C_DECLS_BEGIN
  *
  * IMPORTANT! Keep the nasm version of this struct up-to-date.
  */
-#pragma pack(4)
 typedef struct TRPM
 {
     /** Offset to the VM structure.
@@ -132,10 +131,10 @@ typedef struct TRPM
 
     /** RC Pointer to the IDT shadow area (aIdt) in HMA. */
     RCPTRTYPE(void *)       pvMonShwIdtRC;
-    /** Current (last) Guest's IDTR. */
-    VBOXIDTR                GuestIdtr;
     /** padding. */
     uint8_t                 au8Padding[2];
+    /** Current (last) Guest's IDTR. */
+    VBOXIDTR                GuestIdtr;
     /** Shadow IDT virtual write access handler type. */
     PGMVIRTHANDLERTYPE      hShadowIdtWriteHandlerType;
     /** Guest IDT virtual write access handler type. */
@@ -176,7 +175,7 @@ typedef struct TRPM
     R3PTRTYPE(PSTAMCOUNTER) paStatHostIrqR3;
 #endif
 } TRPM;
-#pragma pack()
+AssertCompileMemberAlignment(TRPM, GuestIdtr.pIdt, 8);
 
 /** Pointer to TRPM Data. */
 typedef TRPM *PTRPM;

@@ -36,13 +36,14 @@ struc TRPM
     .aTmpTrapHandlers   RTRCPTR_RES 256
 
     .pvMonShwIdtRC                  RTRCPTR_RES 1
-    .GuestIdtr                      resb 10
     .au8Padding                     resb 2
+    .GuestIdtr                      resb 10
     .hShadowIdtWriteHandlerType     resd 1
     .hGuestIdtWriteHandlerType      resd 1
 
     .aGuestTrapHandler  RTRCPTR_RES 256
 
+    alignb 8
     .StatRCWriteGuestIDTFault  resb STAMCOUNTER_size
     .StatRCWriteGuestIDTHandled  resb STAMCOUNTER_size
     .StatSyncIDT        resb STAMPROFILE_size
