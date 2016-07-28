@@ -920,7 +920,7 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapFree} */
 static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
     LogFlow(("pdmR3DevHlp_MMHeapFree: caller='%s'/%d: pv=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pv));
 
     MMR3HeapFree(pv);
@@ -1063,14 +1063,15 @@ static DECLCALLBACK(RTTRACEBUF) pdmR3DevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegister} */
-static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName,
+                                                   STAMUNIT enmUnit, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
 
     STAM_REG(pVM, pvSample, enmType, pszName, enmUnit, pszDesc);
-    NOREF(pVM);
+    RT_NOREF_PV(pVM); RT_NOREF6(pDevIns, pvSample, enmType, pszName, enmUnit, pszDesc);
 }
 
 
@@ -1637,12 +1638,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t i
 /** @interface_method_impl{PDMDEVHLPR3,pfnDriverDetach} */
 static DECLCALLBACK(int) pdmR3DevHlp_DriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
     LogFlow(("pdmR3DevHlp_DriverDetach: caller='%s'/%d: pDrvIns=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pDrvIns));
 
+#ifdef VBOX_STRICT
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
+#endif
 
     int rc = pdmR3DrvDetach(pDrvIns, fFlags);
 
@@ -3144,7 +3147,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
 /** @interface_method_impl{PDMDEVHLPR3,pfnHPETRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
 
@@ -3175,7 +3178,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETRE
 /** @interface_method_impl{PDMDEVHLPR3,pfnPciRawRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PciRawRegister(PPDMDEVINS pDevIns, PPDMPCIRAWREG pPciRawReg, PCPDMPCIRAWHLPR3 *ppPciRawHlpR3)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
 

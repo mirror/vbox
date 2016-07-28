@@ -184,6 +184,7 @@ VMMR3_INT_DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
 #ifdef VBOX_WITH_RAW_MODE
     LogFlow(("PDMR3LdrRelocate: offDelta=%RGv\n", offDelta));
+    RT_NOREF1(offDelta);
 
     /*
      * RC Modules.
@@ -223,6 +224,8 @@ VMMR3_INT_DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
         }
     }
     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+#else
+    RT_NOREF2(pUVM, offDelta);
 #endif
 }
 

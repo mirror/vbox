@@ -287,6 +287,8 @@ static void *mmR3UkHeapAlloc(PMMUKHEAP pHeap, MMTAG enmTag, size_t cb, bool fZer
         STAMR3RegisterFU(pUVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Total number of bytes allocated.",        "/MM/UkHeap/%s/cbAllocated", pszTag);
         STAMR3RegisterFU(pUVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Total number of bytes freed.",            "/MM/UkHeap/%s/cbFreed", pszTag);
     }
+#else
+    RT_NOREF_PV(enmTag);
 #endif
 
     /*
@@ -411,6 +413,8 @@ VMMR3DECL(void) MMR3UkHeapFree(PVM pVM, void *pv, MMTAG enmTag)
             pHeap->Stat.cFrees++;
             pHeap->Stat.cbFreed           += cbActual;
             pHeap->Stat.cbCurAllocated    -= cbActual;
+#else
+            RT_NOREF_PV(enmTag);
 #endif
             RTHeapSimpleFree(pSubHeap->hSimple, pv);
 
