@@ -30,7 +30,11 @@
 #include <iprt/stdarg.h>
 #ifdef _MSC_VER
 # if _MSC_VER >= 1400
+#  pragma warning(push)
+#  pragma warning(disable:4668) /* Several incorrect __cplusplus uses. */
+#  pragma warning(disable:4255) /* Incorrect __slwpcb prototype. */
 #  include <intrin.h>
+#  pragma warning(pop)
 # endif
 #endif
 
