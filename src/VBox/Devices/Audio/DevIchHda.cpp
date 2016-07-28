@@ -2808,7 +2808,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #  error "Implement me!"
 # else
             strmCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
-            RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Line In");
+            RTStrCopy(strmCfg.szName, sizeof(strmCfg.szName), "Line In");
 # endif
             break;
 
