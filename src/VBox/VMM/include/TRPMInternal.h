@@ -176,6 +176,7 @@ typedef struct TRPM
     R3PTRTYPE(PSTAMCOUNTER) paStatHostIrqR3;
 #endif
 } TRPM;
+#pragma pack()
 
 /** Pointer to TRPM Data. */
 typedef TRPM *PTRPM;
@@ -227,17 +228,14 @@ typedef struct TRPMCPU
     /** Saved trap vector number. */
     RTGCUINT                uSavedVector; /**< @todo don't use RTGCUINT */
 
-    /** Saved trap type. */
-    TRPMEVENT               enmSavedType;
-
     /** Saved errorcode. */
     RTGCUINT                uSavedErrorCode;
 
     /** Saved cr2. */
     RTGCUINTPTR             uSavedCR2;
 
-    /** Previous trap vector # - for debugging. */
-    RTGCUINT                uPrevVector;
+    /** Saved trap type. */
+    TRPMEVENT               enmSavedType;
 
     /** Instruction length for software interrupts and software exceptions
      * (\#BP, \#OF) */
@@ -248,12 +246,13 @@ typedef struct TRPMCPU
 
     /** Padding. */
     uint8_t                 au8Padding[2];
+
+    /** Previous trap vector # - for debugging. */
+    RTGCUINT                uPrevVector;
 } TRPMCPU;
 
 /** Pointer to TRPMCPU Data. */
 typedef TRPMCPU *PTRPMCPU;
-
-#pragma pack()
 
 
 PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER)  trpmGuestIDTWriteHandler;

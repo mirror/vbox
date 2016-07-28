@@ -894,10 +894,10 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCUInt(pSSM,    pTrpmCpu->uPrevVector);
     }
     SSMR3PutBool(pSSM,      HMIsEnabled(pVM));
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VCPU */
+    PVMCPU pVCpu = &pVM->aCpus[0];          /* raw mode implies 1 VCPU */
     SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT), 0));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
-    SSMR3PutU32(pSSM, ~0);              /* separator. */
+    SSMR3PutU32(pSSM, UINT32_MAX);          /* separator. */
 
     /*
      * Save any trampoline gates.
@@ -912,7 +912,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
         }
     }
 
-    return SSMR3PutU32(pSSM, ~0);       /* terminator */
+    return SSMR3PutU32(pSSM, UINT32_MAX);   /* terminator */
 }
 
 
@@ -1225,7 +1225,7 @@ int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 /**
  * Check if address is a gate handler (interrupt or trap).
  *
- * @returns gate nr or ~0 is not found
+ * @returns gate nr or UINT32_MAX is not found
  *
  * @param   pVM         The cross context VM structure.
  * @param   GCPtr       GC address to check.
@@ -1249,7 +1249,7 @@ VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
                 return iTrap;
         }
     }
-    return ~0;
+    return UINT32_MAX;
 }
 
 

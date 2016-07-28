@@ -74,13 +74,13 @@ struc TRPMCPU
     .uActiveErrorCode   RTGCPTR_RES 1
     .uActiveCR2         RTGCPTR_RES 1
     .uSavedVector       RTGCPTR_RES 1
-    .enmSavedType       resd 1
     .uSavedErrorCode    RTGCPTR_RES 1
     .uSavedCR2          RTGCPTR_RES 1
-    .uPrevVector        RTGCPTR_RES 1
+    .enmSavedType       resd 1
     .cbInstr            resb 1
     .cbSavedInstr       resb 1
     .au8Padding         resb 2
+    .uPrevVector        RTGCPTR_RES 1
 endstruc
 
 struc VBOXTSS
