@@ -8269,7 +8269,7 @@ static void ssmR3StrmLogUnitContent(PSSMHANDLE pSSM, SSMFILEUNITHDRV2 const *pUn
     else
         LogRel(("SSM: Cannot dump unit - ssmR3StrmSeek error: %Rrc\n", rc));
 
-    pSSM->rc = rc;
+    pSSM->rc = rcSaved;
 }
 
 
