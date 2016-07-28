@@ -1613,6 +1613,7 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 # Want to enable these:
 #      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
 #      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
+#      -wd4100: 'identifier' : unreferenced formal parameter [level 4]
 VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
 	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711
 ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
@@ -3700,17 +3701,7 @@ ifdef VBOX_WITH_RAW_MODE
  # Template for building RC things.
  #
  # Disabled Visual C++ warnings:
- #     -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
- #     -wd4996: deprecated / insecure.
- #     -wd4127: conditional expression is constant [level 4]
- #     -wd4100: 'identifier' : unreferenced formal parameter [level 4]
- #     -wd4214: nonstandard extension used : bit field types other than int [level 4]
- #     -wd4706: assignment within conditional expression [level 4]
- #     -wd4201: nonstandard extension used : nameless struct/union [level 4]
  #     -wd4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed
- #     -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
- #     -wd4512: 'VM' : assignment operator could not be generated
- #     -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
  #
  TEMPLATE_VBoxRc = VBox Raw-Mode Context
  TEMPLATE_VBoxRc_ASTOOL              = $(VBOX_ASTOOL)
@@ -3735,7 +3726,7 @@ ifdef VBOX_WITH_RAW_MODE
   TEMPLATE_VBoxRc_TOOL               = $(VBOX_VCC_TOOL_STEM)X86
   TEMPLATE_VBoxRc_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
   TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
-  	-W4 -wd4244 -wd4996 -wd4127 -wd4100 -wd4214 -wd4706 -wd4201 -wd4505 -wd4510 -wd4512 -wd4610 $(VBOX_VCC_WERR)
+  	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
   TEMPLATE_VBoxRc_LDFLAGS            =  -Ignore:4197 \
   	-Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Release -Debug -Opt:Ref -Opt:Icf \
@@ -3847,17 +3838,7 @@ endif # VBOX_WITH_RAW_MODE
 # Template for building R0 things.
 #
 # Disabled Visual C++ warnings:
-#     -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
-#     -wd4996: deprecated / insecure.
-#     -wd4127: conditional expression is constant [level 4]
-#     -wd4100: 'identifier' : unreferenced formal parameter [level 4]
-#     -wd4214: nonstandard extension used : bit field types other than int [level 4]
-#     -wd4706: assignment within conditional expression [level 4]
-#     -wd4201: nonstandard extension used : nameless struct/union [level 4]
-#     -wd4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed
-#     -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
-#     -wd4512: 'VM' : assignment operator could not be generated
-#     -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
+#      -wd4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed
 #
 TEMPLATE_VBoxR0 = VBox Ring 0
 TEMPLATE_VBoxR0_ASTOOL              = $(VBOX_ASTOOL)
@@ -3881,7 +3862,7 @@ ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
 TEMPLATE_VBoxR0_RCDEFS              = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
-	-W4 -wd4244 -wd4996 -wd4127 -wd4100 -wd4214 -wd4706 -wd4201 -wd4505 -wd4510 -wd4512 -wd4610 $(VBOX_VCC_WERR)
+  	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
 TEMPLATE_VBoxR0_LDFLAGS             = -Ignore:4197 \
 	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Release -Debug -Opt:Ref -Opt:Icf \
