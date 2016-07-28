@@ -3959,7 +3959,6 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
            return true;
        puPtr += 8;
    }
-   return true;
 # endif
 }
 
