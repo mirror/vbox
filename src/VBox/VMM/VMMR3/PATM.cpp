@@ -459,7 +459,7 @@ static int patmReinit(PVM pVM)
     pVM->patm.s.deltaReloc           = 0;
 
     /* Lowest and highest patched instruction */
-    pVM->patm.s.pPatchedInstrGCLowest     = ~0;
+    pVM->patm.s.pPatchedInstrGCLowest     = RTRCPTR_MAX;
     pVM->patm.s.pPatchedInstrGCHighest    = 0;
 
     pVM->patm.s.PatchLookupTreeHC->PatchTree            = 0;
