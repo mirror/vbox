@@ -173,6 +173,7 @@ static uint16_t Phy::regReadForbidden(PPHY pPhy, uint32_t index)
  */
 static void Phy::regWriteForbidden(PPHY pPhy, uint32_t index, uint16_t u16Value)
 {
+    RT_NOREF_PV(pPhy); RT_NOREF_PV(index); RT_NOREF_PV(u16Value);
     PhyLog(("PHY#%d At %02d write attempted to read-only '%s'\n",
             pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
 }
@@ -188,6 +189,7 @@ static void Phy::regWriteForbidden(PPHY pPhy, uint32_t index, uint16_t u16Value)
  */
 static uint16_t Phy::regReadUnimplemented(PPHY pPhy, uint32_t index)
 {
+    RT_NOREF_PV(pPhy); RT_NOREF_PV(index);
     PhyLog(("PHY#%d At %02d read attempted from unimplemented '%s'\n",
             pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
     return 0;
@@ -203,6 +205,7 @@ static uint16_t Phy::regReadUnimplemented(PPHY pPhy, uint32_t index)
  */
 static void Phy::regWriteUnimplemented(PPHY pPhy, uint32_t index, uint16_t u16Value)
 {
+    RT_NOREF_PV(pPhy); RT_NOREF_PV(index); RT_NOREF_PV(u16Value);
     PhyLog(("PHY#%d At %02d write attempted to unimplemented '%s'\n",
             pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
 }
@@ -440,6 +443,8 @@ static void Phy::regWritePCTRL(PPHY pPhy, uint32_t index, uint16_t u16Value)
  */
 static uint16_t Phy::regReadPSTATUS(PPHY pPhy, uint32_t index)
 {
+    RT_NOREF_PV(pPhy); RT_NOREF_PV(index);
+
     /* Read latched value */
     uint16_t u16 = REG(PSTATUS);
     if (REG(PSSTAT) & PSSTAT_LINK)
@@ -458,6 +463,8 @@ static uint16_t Phy::regReadPSTATUS(PPHY pPhy, uint32_t index)
  */
 static uint16_t Phy::regReadGSTATUS(PPHY pPhy, uint32_t index)
 {
+    RT_NOREF_PV(pPhy); RT_NOREF_PV(index);
+
     /*
      * - Link partner is capable of 1000BASE-T half duplex
      * - Link partner is capable of 1000BASE-T full duplex

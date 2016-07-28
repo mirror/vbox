@@ -1687,6 +1687,7 @@ PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = Port - pThis->IOPortBase;
     int             rc;
+    RT_NOREF_PV(pvUser);
 
     if (!(offReg & 3))
     {
@@ -1710,6 +1711,8 @@ PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 {
     PLSILOGICSCSI   pThis   = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg  = Port - pThis->IOPortBase;
+    RT_NOREF_PV(pvUser);
+    RT_NOREF_PV(cb);
 
     int rc = lsilogicRegisterRead(pThis, offReg & ~(uint32_t)3, pu32);
     if (rc == VINF_IOM_R3_MMIO_READ)
@@ -1727,6 +1730,7 @@ PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
     uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
     uint32_t        u32;
     int             rc;
+    RT_NOREF_PV(pvUser);
 
     /* See comments in lsilogicR3Map regarding size and alignment. */
     if (cb == 4)
@@ -1760,6 +1764,7 @@ PDMBOTHCBDECL(int) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
     Assert(!(offReg & 3)); Assert(cb == 4);
+    RT_NOREF_PV(pvUser);
 
     return lsilogicRegisterRead(pThis, offReg, (uint32_t *)pv);
 }
@@ -1772,6 +1777,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser,
     LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pThis, GCPhysAddr, pv, cb, pv, cb));
 #endif
 
+    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
     return VINF_SUCCESS;
 }
 
@@ -1783,6 +1789,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
     LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pThis, GCPhysAddr, pv, cb, pv, cb));
 #endif
 
+    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
     return VINF_SUCCESS;
 }
 

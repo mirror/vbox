@@ -171,6 +171,7 @@ typedef enum DRVHOSTPARALLELR0OP
 
 /**
  * R0 mode function to write byte value to data port.
+ *
  * @returns VBox status code.
  * @param   pDrvIns    Driver instance.
  * @param   u64Arg     Data to be written to data register.
@@ -185,8 +186,8 @@ static int drvR0HostParallelReqWrite(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 }
 
 /**
- * R0 mode function to write byte value to parallel port control
- * register.
+ * R0 mode function to write byte value to parallel port control register.
+ *
  * @returns VBox status code.
  * @param   pDrvIns     Driver instance.
  * @param   u64Arg      Data to be written to control register.
@@ -200,51 +201,45 @@ static int drvR0HostParallelReqWriteControl(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 }
 
 /**
- * R0 mode function to ready byte value from the parallel port
- * data register
+ * R0 mode function to ready byte value from the parallel port data register.
+ *
  * @returns VBox status code.
  * @param   pDrvIns    Driver instance.
- * @param   u64Arg     Not used.
  */
-static int drvR0HostParallelReqRead(PPDMDRVINS pDrvIns, uint64_t u64Arg)
+static int drvR0HostParallelReqRead(PPDMDRVINS pDrvIns)
 {
-    uint8_t u8Data;
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    u8Data = ASMInU8(pThis->u32LptAddr);
+    uint8_t u8Data = ASMInU8(pThis->u32LptAddr);
     LogFlowFunc(("read from data port=%#x val=%#x\n", pThis->u32LptAddr, u8Data));
     pThis->u8ReadIn = u8Data;
     return VINF_SUCCESS;
 }
 
 /**
- * R0 mode function to ready byte value from the parallel port
- * control register.
+ * R0 mode function to ready byte value from the parallel port control register.
+ *
  * @returns VBox status code.
  * @param   pDrvIns    Driver instance.
- * @param   u64Arg     Not used.
  */
-static int drvR0HostParallelReqReadControl(PPDMDRVINS pDrvIns, uint64_t u64Arg)
+static int drvR0HostParallelReqReadControl(PPDMDRVINS pDrvIns)
 {
-    uint8_t u8Data;
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    u8Data = ASMInU8(pThis->u32LptAddrControl);
+    uint8_t u8Data = ASMInU8(pThis->u32LptAddrControl);
     LogFlowFunc(("read from ctrl port=%#x val=%#x\n", pThis->u32LptAddr, u8Data));
     pThis->u8ReadInControl = u8Data;
     return VINF_SUCCESS;
 }
 
 /**
- * R0 mode function to ready byte value from the parallel port
- * status register.
+ * R0 mode function to ready byte value from the parallel port status register.
+ *
  * @returns VBox status code.
  * @param   pDrvIns    Driver instance.
- * @param   u64Arg     Not used.
  */
-static int drvR0HostParallelReqReadStatus(PPDMDRVINS pDrvIns, uint64_t u64Arg)
+static int drvR0HostParallelReqReadStatus(PPDMDRVINS pDrvIns)
 {
-    uint8_t u8Data;
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    u8Data = ASMInU8(pThis->u32LptAddrStatus);
+    uint8_t u8Data = ASMInU8(pThis->u32LptAddrStatus);
     LogFlowFunc(("read from status port=%#x val=%#x\n", pThis->u32LptAddr, u8Data));
     pThis->u8ReadInStatus = u8Data;
     return VINF_SUCCESS;
@@ -253,6 +248,7 @@ static int drvR0HostParallelReqReadStatus(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 /**
  * R0 mode function to set the direction of parallel port -
  * operate in bidirectional mode or single direction.
+ *
  * @returns VBox status code.
  * @param   pDrvIns    Driver instance.
  * @param   u64Arg     Mode.
@@ -290,13 +286,13 @@ PDMBOTHCBDECL(int) drvR0HostParallelReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
     switch ((DRVHOSTPARALLELR0OP)uOperation)
     {
         case DRVHOSTPARALLELR0OP_READ:
-            rc = drvR0HostParallelReqRead(pDrvIns, u64Arg);
+            rc = drvR0HostParallelReqRead(pDrvIns);
             break;
         case DRVHOSTPARALLELR0OP_READSTATUS:
-            rc = drvR0HostParallelReqReadStatus(pDrvIns, u64Arg);
+            rc = drvR0HostParallelReqReadStatus(pDrvIns);
             break;
         case DRVHOSTPARALLELR0OP_READCONTROL:
-            rc = drvR0HostParallelReqReadControl(pDrvIns, u64Arg);
+            rc = drvR0HostParallelReqReadControl(pDrvIns);
             break;
         case DRVHOSTPARALLELR0OP_WRITE:
             rc = drvR0HostParallelReqWrite(pDrvIns, u64Arg);

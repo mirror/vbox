@@ -1485,7 +1485,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    int rc = VINF_SUCCESS;
+    RT_NOREF_PV(pvUser);
 
     /* Ignore non-dword accesses. */
     if (cb != 4)
@@ -1514,7 +1514,8 @@ PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
         *pu32 = pThis->svga.u32IrqStatus;
         break;
     }
-    return rc;
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1531,7 +1532,7 @@ PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
 PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    int rc = VINF_SUCCESS;
+    RT_NOREF_PV(pvUser);
 
     /* Ignore non-dword accesses. */
     if (cb != 4)
@@ -1564,7 +1565,7 @@ PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         }
         break;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 #ifdef DEBUG_FIFO_ACCESS

@@ -291,6 +291,8 @@ DECLINLINE(void) vnetCsLeave(PVNETSTATE pThis)
 
 DECLINLINE(int) vnetCsRxEnter(PVNETSTATE pThis, int rcBusy)
 {
+    RT_NOREF_PV(pThis);
+    RT_NOREF_PV(rcBusy);
     // STAM_PROFILE_START(&pThis->CTXSUFF(StatCsRx), a);
     // int rc = PDMCritSectEnter(&pThis->csRx, rcBusy);
     // STAM_PROFILE_STOP(&pThis->CTXSUFF(StatCsRx), a);
@@ -300,6 +302,7 @@ DECLINLINE(int) vnetCsRxEnter(PVNETSTATE pThis, int rcBusy)
 
 DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
 {
+    RT_NOREF_PV(pThis);
     // PDMCritSectLeave(&pThis->csRx);
 }
 
@@ -366,6 +369,8 @@ DECLINLINE(void) vnetPrintFeatures(PVNETSTATE pThis, uint32_t fFeatures, const c
 
 static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(void *pvState)
 {
+    RT_NOREF_PV(pvState);
+
     /* We support:
      * - Host-provided MAC address
      * - Link status reporting in config space
@@ -397,6 +402,7 @@ static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(void *pvState)
 
 static DECLCALLBACK(uint32_t) vnetIoCb_GetHostMinimalFeatures(void *pvState)
 {
+    RT_NOREF_PV(pvState);
     return VNET_F_MAC;
 }
 

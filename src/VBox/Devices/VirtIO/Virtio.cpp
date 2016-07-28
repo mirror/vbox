@@ -271,6 +271,7 @@ void vpciReset(PVPCISTATE pState)
  */
 int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause)
 {
+    RT_NOREF_PV(rcBusy);
     // int rc = vpciCsEnter(pState, rcBusy);
     // if (RT_UNLIKELY(rc != VINF_SUCCESS))
     //     return rc;
@@ -326,6 +327,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIORead), a);
+    RT_NOREF_PV(pvUser);
 
     /*
      * We probably do not need to enter critical section when reading registers
@@ -424,6 +426,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     int         rc     = VINF_SUCCESS;
     bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
+    RT_NOREF_PV(pvUser);
 
     Port -= pState->IOPortBase;
     Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", INSTANCE(pState), Port, cb*2, u32));
