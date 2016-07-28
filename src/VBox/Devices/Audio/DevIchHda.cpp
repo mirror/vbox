@@ -2252,6 +2252,8 @@ static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF_PV(iReg);
+
     uint32_t v = HDA_REG(pThis, CORBSTS);
     HDA_REG(pThis, CORBSTS) &= ~(v & u32Value);
     return VINF_SUCCESS;
@@ -2479,7 +2481,9 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     hdaRegWriteSDUnlock(pStream);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+
 #else  /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* IN_RING3 */
 }
@@ -2914,6 +2918,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     return VINF_SUCCESS; /* Never return failure. */
 #else /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif
 }
@@ -2950,6 +2955,7 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value); RT_NOREF_PV(u8Strm);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* IN_RING3 */
 }
@@ -3021,7 +3027,7 @@ static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 
 static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    int rc = VINF_SUCCESS;
+    RT_NOREF_PV(iReg);
 
     /*
      * If the guest set the ICB bit of IRS register, HDA should process the verb in IC register,
@@ -3039,7 +3045,7 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
              * 3.4.3: Defines behavior of immediate Command status register.
              */
             LogRel(("HDA: Guest attempted process immediate verb (%x) with active CORB\n", uCmd));
-            return rc;
+            return VINF_SUCCESS;
         }
 
         HDA_REG(pThis, IRS) = HDA_REG_FIELD_FLAG_MASK(IRS, ICB);  /* busy */
@@ -3048,15 +3054,15 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         int rc2 = pThis->pCodec->pfnLookup(pThis->pCodec,
                                            HDA_CODEC_CMD(uCmd, 0 /* LUN */), &uResp);
         if (RT_FAILURE(rc2))
-            LogFunc(("Codec lookup failed with rc=%Rrc\n", rc2));
+            LogFunc(("Codec lookup failed with rc2=%Rrc\n", rc2));
 
         HDA_REG(pThis, IR)   = (uint32_t)uResp; /** @todo r=andy Do we need a 64-bit response? */
         HDA_REG(pThis, IRS)  = HDA_REG_FIELD_FLAG_MASK(IRS, IRV);  /* result is ready  */
         HDA_REG(pThis, IRS) &= ~HDA_REG_FIELD_FLAG_MASK(IRS, ICB); /* busy is clear */
-#else /* !IN_RING3 */
-        rc = VINF_IOM_R3_MMIO_WRITE;
-#endif
-        return rc;
+        return VINF_SUCCESS;
+#else  /* !IN_RING3 */
+        return VINF_IOM_R3_MMIO_WRITE;
+#endif /* !IN_RING3 */
     }
 
     /*
@@ -3065,11 +3071,13 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (   u32Value & HDA_REG_FIELD_FLAG_MASK(IRS, IRV)
         && HDA_REG_FLAG_VALUE(pThis, IRS, IRV))
         HDA_REG(pThis, IRS) &= ~HDA_REG_FIELD_FLAG_MASK(IRS, IRV);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF_PV(iReg);
+
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(RIRBWP, RST))
         HDA_REG(pThis, RIRBWP) = 0;
 
@@ -3128,6 +3136,8 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF_PV(iReg);
+
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
 
@@ -4504,6 +4514,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 {
     PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
     int         rc;
+    RT_NOREF_PV(pvUser);
 
     /*
      * Look up and log.
@@ -4612,6 +4623,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 {
     PHDASTATE pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
     int       rc;
+    RT_NOREF_PV(pvUser);
 
     /*
      * The behavior of accesses that aren't aligned on natural boundraries is
