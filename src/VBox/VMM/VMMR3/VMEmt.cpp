@@ -46,20 +46,20 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu);
+int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu);
 
 
 /**
  * The emulation thread main function.
  *
  * @returns Thread exit code.
- * @param   ThreadSelf  The handle to the executing thread.
+ * @param   hThreadSelf The handle to the executing thread.
  * @param   pvArgs      Pointer to the user mode per-VCpu structure (UVMPCU).
  */
-DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
+DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD hThreadSelf, void *pvArgs)
 {
     PUVMCPU pUVCpu = (PUVMCPU)pvArgs;
-    return vmR3EmulationThreadWithId(ThreadSelf, pUVCpu, pUVCpu->idCpu);
+    return vmR3EmulationThreadWithId(hThreadSelf, pUVCpu, pUVCpu->idCpu);
 }
 
 
@@ -91,7 +91,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
      * The request loop.
      */
     rc = VINF_SUCCESS;
-    Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", ThreadSelf, pUVM));
+    Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", hThreadSelf, pUVM));
     VMSTATE enmBefore = VMSTATE_CREATED; /* (only used for logging atm.) */
     for (;;)
     {
@@ -247,7 +247,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
      * Cleanup and exit.
      */
     Log(("vmR3EmulationThread: Terminating emulation thread! Thread=%#x pUVM=%p rc=%Rrc enmBefore=%d enmVMState=%d\n",
-         ThreadSelf, pUVM, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_TERMINATED));
+         hThreadSelf, pUVM, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_TERMINATED));
     if (   idCpu == 0
         && pUVM->pVM)
     {
