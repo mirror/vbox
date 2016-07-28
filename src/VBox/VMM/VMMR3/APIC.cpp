@@ -1046,7 +1046,7 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
     return rc;
 }
 
-
+#if 0 /** @todo not referenced and will cause assertion in apicR3LoadExec (VERR_WRONG_ORDER). */
 /**
  * @copydoc FNSSMDEVLIVEEXEC
  */
@@ -1062,7 +1062,7 @@ static DECLCALLBACK(int) apicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     AssertRCReturn(rc, rc);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
-
+#endif
 
 /**
  * @copydoc FNSSMDEVSAVEEXEC
