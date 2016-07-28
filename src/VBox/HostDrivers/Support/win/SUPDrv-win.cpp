@@ -1623,6 +1623,7 @@ void VBOXCALL supdrvOSCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSess
         supdrvNtProtectRelease(pSession->pNtProtect);
         pSession->pNtProtect = NULL;
     }
+    RT_NOREF1(pDevExt);
 #else
     RT_NOREF2(pDevExt, pSession);
 #endif
