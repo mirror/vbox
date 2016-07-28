@@ -987,7 +987,7 @@ RT_C_DECLS_END
      do { Log(("R3 P%u: ", pAhciPort->iLUN)); Log(a); } while(0)
 # endif
 
-#elif IN_RING0
+#elif defined(IN_RING0)
 
 # ifdef LOG_USE_C99
 #  define ahciLog(a) \
@@ -997,7 +997,7 @@ RT_C_DECLS_END
      do { Log(("R0 P%u: ", pAhciPort->iLUN)); Log(a); } while(0)
 # endif
 
-#elif IN_RC
+#elif defined(IN_RC)
 
 # ifdef LOG_USE_C99
 #  define ahciLog(a) \

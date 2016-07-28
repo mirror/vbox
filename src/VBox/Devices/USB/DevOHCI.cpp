@@ -1240,7 +1240,7 @@ DECLINLINE(void) ohciPhysWrite(POHCI pThis, uint32_t Addr, const void *pvBuf, si
 DECLINLINE(void) ohciGetDWords(POHCI pThis, uint32_t Addr, uint32_t *pau32s, int c32s)
 {
     ohciPhysRead(pThis, Addr, pau32s, c32s * sizeof(uint32_t));
-#if BYTE_ORDER != LITTLE_ENDIAN
+#ifndef RT_LITTLE_ENDIAN
     for(int i = 0; i < c32s; i++)
         pau32s[i] = RT_H2LE_U32(pau32s[i]);
 #endif
@@ -1251,7 +1251,7 @@ DECLINLINE(void) ohciGetDWords(POHCI pThis, uint32_t Addr, uint32_t *pau32s, int
  */
 DECLINLINE(void) ohciPutDWords(POHCI pThis, uint32_t Addr, const uint32_t *pau32s, int cu32s)
 {
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef RT_LITTLE_ENDIAN
     ohciPhysWrite(pThis, Addr, pau32s, cu32s << 2);
 #else
     for (int i = 0; i < c32s; i++, pau32s++, Addr += sizeof(*pau32s))
