@@ -179,7 +179,9 @@ static const uint8_t g_abArpReply[] =
 static int    gimR3HvInitHypercallSupport(PVM pVM);
 static void   gimR3HvTermHypercallSupport(PVM pVM);
 static int    gimR3HvInitDebugSupport(PVM pVM);
+#if 0 /** @todo currently unused, which is probably very wrong */
 static void   gimR3HvTermDebugSupport(PVM pVM);
+#endif
 
 
 /**
@@ -318,13 +320,15 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
                                 | GIM_HV_PART_FLAGS_CPU_PROFILER)));
     Assert((pHv->uBaseFeat & (GIM_HV_BASE_FEAT_HYPERCALL_MSRS | GIM_HV_BASE_FEAT_VP_ID_MSR))
                           == (GIM_HV_BASE_FEAT_HYPERCALL_MSRS | GIM_HV_BASE_FEAT_VP_ID_MSR));
+#ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
     {
-        PCGIMMMIO2REGION pcCur = &pHv->aMmio2Regions[i];
-        Assert(!pcCur->fRCMapping);
-        Assert(!pcCur->fMapped);
-        Assert(pcCur->GCPhysPage == NIL_RTGCPHYS);
+        PCGIMMMIO2REGION pCur = &pHv->aMmio2Regions[i];
+        Assert(!pCur->fRCMapping);
+        Assert(!pCur->fMapped);
+        Assert(pCur->GCPhysPage == NIL_RTGCPHYS);
     }
+#endif
 
     /*
      * Expose HVP (Hypervisor Present) bit to the guest.
@@ -659,11 +663,11 @@ VMMR3_INT_DECL(int) gimR3HvGetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup)
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   pSSM    Pointer to the SSM handle.
+ * @param   pSSM    The saved state handle.
  */
 VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
 {
-    PCGIMHV pcHv = &pVM->gim.s.u.Hv;
+    PCGIMHV pHv = &pVM->gim.s.u.Hv;
 
     /*
      * Save the Hyper-V SSM version.
@@ -673,59 +677,59 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save per-VM MSRs.
      */
-    SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);
-    SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);
-    SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);
+    SSMR3PutU64(pSSM, pHv->u64GuestOsIdMsr);
+    SSMR3PutU64(pSSM, pHv->u64HypercallMsr);
+    SSMR3PutU64(pSSM, pHv->u64TscPageMsr);
 
     /*
      * Save Hyper-V features / capabilities.
      */
-    SSMR3PutU32(pSSM, pcHv->uBaseFeat);
-    SSMR3PutU32(pSSM, pcHv->uPartFlags);
-    SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);
-    SSMR3PutU32(pSSM, pcHv->uMiscFeat);
-    SSMR3PutU32(pSSM, pcHv->uHyperHints);
-    SSMR3PutU32(pSSM, pcHv->uHyperCaps);
+    SSMR3PutU32(pSSM, pHv->uBaseFeat);
+    SSMR3PutU32(pSSM, pHv->uPartFlags);
+    SSMR3PutU32(pSSM, pHv->uPowMgmtFeat);
+    SSMR3PutU32(pSSM, pHv->uMiscFeat);
+    SSMR3PutU32(pSSM, pHv->uHyperHints);
+    SSMR3PutU32(pSSM, pHv->uHyperCaps);
 
     /*
      * Save the Hypercall region.
      */
-    PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
-    SSMR3PutU8(pSSM,     pcRegion->iRegion);
-    SSMR3PutBool(pSSM,   pcRegion->fRCMapping);
-    SSMR3PutU32(pSSM,    pcRegion->cbRegion);
-    SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);
-    SSMR3PutStrZ(pSSM,   pcRegion->szDescription);
+    PCGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    SSMR3PutU8(pSSM,     pRegion->iRegion);
+    SSMR3PutBool(pSSM,   pRegion->fRCMapping);
+    SSMR3PutU32(pSSM,    pRegion->cbRegion);
+    SSMR3PutGCPhys(pSSM, pRegion->GCPhysPage);
+    SSMR3PutStrZ(pSSM,   pRegion->szDescription);
 
     /*
      * Save the reference TSC region.
      */
-    pcRegion = &pcHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
-    SSMR3PutU8(pSSM,     pcRegion->iRegion);
-    SSMR3PutBool(pSSM,   pcRegion->fRCMapping);
-    SSMR3PutU32(pSSM,    pcRegion->cbRegion);
-    SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);
-    SSMR3PutStrZ(pSSM,   pcRegion->szDescription);
+    pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
+    SSMR3PutU8(pSSM,     pRegion->iRegion);
+    SSMR3PutBool(pSSM,   pRegion->fRCMapping);
+    SSMR3PutU32(pSSM,    pRegion->cbRegion);
+    SSMR3PutGCPhys(pSSM, pRegion->GCPhysPage);
+    SSMR3PutStrZ(pSSM,   pRegion->szDescription);
     /* Save the TSC sequence so we can bump it on restore (as the CPU frequency/offset may change). */
     uint32_t uTscSequence = 0;
-    if (   pcRegion->fMapped
-        && MSR_GIM_HV_REF_TSC_IS_ENABLED(pcHv->u64TscPageMsr))
+    if (   pRegion->fMapped
+        && MSR_GIM_HV_REF_TSC_IS_ENABLED(pHv->u64TscPageMsr))
     {
-        PCGIMHVREFTSC pcRefTsc = (PCGIMHVREFTSC)pcRegion->pvPageR3;
-        uTscSequence = pcRefTsc->u32TscSequence;
+        PCGIMHVREFTSC pRefTsc = (PCGIMHVREFTSC)pRegion->pvPageR3;
+        uTscSequence = pRefTsc->u32TscSequence;
     }
     SSMR3PutU32(pSSM, uTscSequence);
 
     /*
      * Save debug support data.
      */
-    SSMR3PutU64(pSSM, pcHv->uDbgPendingBufferMsr);
-    SSMR3PutU64(pSSM, pcHv->uDbgSendBufferMsr);
-    SSMR3PutU64(pSSM, pcHv->uDbgRecvBufferMsr);
-    SSMR3PutU64(pSSM, pcHv->uDbgStatusMsr);
-    SSMR3PutU32(pSSM, pcHv->enmDbgReply);
-    SSMR3PutU32(pSSM, pcHv->uDbgBootpXId);
-    SSMR3PutU32(pSSM, pcHv->DbgGuestIp4Addr.u);
+    SSMR3PutU64(pSSM, pHv->uDbgPendingBufferMsr);
+    SSMR3PutU64(pSSM, pHv->uDbgSendBufferMsr);
+    SSMR3PutU64(pSSM, pHv->uDbgRecvBufferMsr);
+    SSMR3PutU64(pSSM, pHv->uDbgStatusMsr);
+    SSMR3PutU32(pSSM, pHv->enmDbgReply);
+    SSMR3PutU32(pSSM, pHv->uDbgBootpXId);
+    SSMR3PutU32(pSSM, pHv->DbgGuestIp4Addr.u);
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -734,7 +738,7 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutU64(pSSM, pHvCpu->auSintXMsr[GIM_HV_VMBUS_MSG_SINT]);
     }
 
-    return SSMR3PutU8(pSSM, UINT8_MAX);;
+    return SSMR3PutU8(pSSM, UINT8_MAX);
 }
 
 
@@ -743,10 +747,9 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
- * @param   pSSM            Pointer to the SSM handle.
- * @param   uSSMVersion     The GIM saved-state version.
+ * @param   pSSM            The saved state handle.
  */
-VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
+VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
 {
     /*
      * Load the Hyper-V SSM version first.
@@ -757,8 +760,8 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     if (   uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION
         && uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
         return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
-                                 N_("Unsupported Hyper-V saved-state version %u (current %u)!"), uHvSavedStatVersion,
-                                 GIM_HV_SAVED_STATE_VERSION);
+                                 N_("Unsupported Hyper-V saved-state version %u (current %u)!"),
+                                 uHvSavedStatVersion, GIM_HV_SAVED_STATE_VERSION);
 
     /*
      * Update the TSC frequency from TM.
@@ -1341,7 +1344,6 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
  */
 static int gimR3HvInitHypercallSupport(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
     PGIMHV pHv = &pVM->gim.s.u.Hv;
     pHv->pbHypercallIn = (uint8_t *)RTMemAllocZ(GIM_HV_PAGE_SIZE);
     if (RT_LIKELY(pHv->pbHypercallIn))
@@ -1392,6 +1394,7 @@ static int gimR3HvInitDebugSupport(PVM pVM)
 }
 
 
+#if 0 /** @todo currently unused, which is probably very wrong */
 /**
  * Terminates Hyper-V guest debug support.
  *
@@ -1406,6 +1409,7 @@ static void gimR3HvTermDebugSupport(PVM pVM)
         pHv->pvDbgBuffer = NULL;
     }
 }
+#endif
 
 
 /**
@@ -1863,6 +1867,8 @@ VMMR3_INT_DECL(int) gimR3HvHypercallPostDebugData(PVM pVM, int *prcHv)
     /* Currently disabled as Windows 10 guest passes us undocumented flags. */
     if (fFlags & ~GIM_HV_DEBUG_POST_OPTIONS_MASK))
         rcHv = GIM_HV_STATUS_INVALID_PARAMETER;
+#else
+    RT_NOREF1(fFlags);
 #endif
     if (cbWrite > GIM_HV_DEBUG_MAX_DATA_SIZE)
         rcHv = GIM_HV_STATUS_INVALID_PARAMETER;

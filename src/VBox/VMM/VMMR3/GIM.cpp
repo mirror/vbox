@@ -74,7 +74,6 @@
 *********************************************************************************************************************************/
 static FNSSMINTSAVEEXEC  gimR3Save;
 static FNSSMINTLOADEXEC  gimR3Load;
-static FNPGMPHYSHANDLER  gimR3Mmio2WriteHandler;
 
 
 /**
@@ -307,12 +306,12 @@ static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            rc = gimR3HvLoad(pVM, pSSM, uVersion);
+            rc = gimR3HvLoad(pVM, pSSM);
             AssertRCReturn(rc, rc);
             break;
 
         case GIMPROVIDERID_KVM:
-            rc = gimR3KvmLoad(pVM, pSSM, uVersion);
+            rc = gimR3KvmLoad(pVM, pSSM);
             AssertRCReturn(rc, rc);
             break;
 
@@ -517,6 +516,7 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
     return NULL;
 }
 
+#if 0 /* ??? */
 
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER,
@@ -529,6 +529,9 @@ static DECLCALLBACK(VBOXSTRICTRC) gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, 
                                                          size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin,
                                                          void *pvUser)
 {
+    RT_NOREF6(pVM, pVCpu, GCPhys, pvPhys, pvBuf, cbBuf);
+    RT_NOREF3(enmAccessType, enmOrigin, pvUser);
+
     /*
      * Ignore writes to the mapped MMIO2 page.
      */
@@ -537,7 +540,6 @@ static DECLCALLBACK(VBOXSTRICTRC) gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, 
 }
 
 
-#if 0
 /**
  * Unmaps a registered MMIO2 region in the guest address space and removes any
  * access handlers for it.
@@ -678,5 +680,6 @@ VMMR3_INT_DECL(int) gimR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION
 {
     return PGMHandlerPhysicalDeregister(pVM, pRegion->GCPhysPage);
 }
+
 #endif
 

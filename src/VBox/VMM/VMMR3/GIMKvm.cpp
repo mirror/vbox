@@ -266,11 +266,11 @@ VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   pSSM    Pointer to the SSM handle.
+ * @param   pSSM    The saved state handle.
  */
 VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
 {
-    PCGIMKVM pcKvm = &pVM->gim.s.u.Kvm;
+    PCGIMKVM pKvm = &pVM->gim.s.u.Kvm;
 
     /*
      * Save the KVM SSM version.
@@ -282,30 +282,30 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
      */
     for (uint32_t i = 0; i < pVM->cCpus; i++)
     {
-        PCGIMKVMCPU pcKvmCpu = &pVM->aCpus[i].gim.s.u.KvmCpu;
+        PCGIMKVMCPU pKvmCpu = &pVM->aCpus[i].gim.s.u.KvmCpu;
 
         /* Guest may alter flags (namely GIM_KVM_SYSTEM_TIME_FLAGS_GUEST_PAUSED bit). So re-read them from guest-memory. */
         GIMKVMSYSTEMTIME SystemTime;
         RT_ZERO(SystemTime);
-        if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pcKvmCpu->u64SystemTimeMsr))
+        if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
         {
-            int rc = PGMPhysSimpleReadGCPhys(pVM, &SystemTime, pcKvmCpu->GCPhysSystemTime, sizeof(GIMKVMSYSTEMTIME));
+            int rc = PGMPhysSimpleReadGCPhys(pVM, &SystemTime, pKvmCpu->GCPhysSystemTime, sizeof(GIMKVMSYSTEMTIME));
             AssertRCReturn(rc, rc);
         }
 
-        SSMR3PutU64(pSSM, pcKvmCpu->u64SystemTimeMsr);
-        SSMR3PutU64(pSSM, pcKvmCpu->uTsc);
-        SSMR3PutU64(pSSM, pcKvmCpu->uVirtNanoTS);
-        SSMR3PutGCPhys(pSSM, pcKvmCpu->GCPhysSystemTime);
-        SSMR3PutU32(pSSM, pcKvmCpu->u32SystemTimeVersion);
+        SSMR3PutU64(pSSM, pKvmCpu->u64SystemTimeMsr);
+        SSMR3PutU64(pSSM, pKvmCpu->uTsc);
+        SSMR3PutU64(pSSM, pKvmCpu->uVirtNanoTS);
+        SSMR3PutGCPhys(pSSM, pKvmCpu->GCPhysSystemTime);
+        SSMR3PutU32(pSSM, pKvmCpu->u32SystemTimeVersion);
         SSMR3PutU8(pSSM, SystemTime.fFlags);
     }
 
     /*
      * Save per-VM data.
      */
-    SSMR3PutU64(pSSM, pcKvm->u64WallClockMsr);
-    return SSMR3PutU32(pSSM, pcKvm->uBaseFeat);
+    SSMR3PutU64(pSSM, pKvm->u64WallClockMsr);
+    return SSMR3PutU32(pSSM, pKvm->uBaseFeat);
 }
 
 
@@ -314,10 +314,9 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
- * @param   pSSM            Pointer to the SSM handle.
- * @param   uSSMVersion     The GIM saved-state version.
+ * @param   pSSM            The saved state handle.
  */
-VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
+VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM)
 {
     /*
      * Load the KVM SSM version first.
@@ -327,8 +326,8 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     AssertRCReturn(rc, rc);
     if (uKvmSavedStatVersion != GIM_KVM_SAVED_STATE_VERSION)
         return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
-                                 N_("Unsupported KVM saved-state version %u (expected %u)."), uKvmSavedStatVersion,
-                                 GIM_KVM_SAVED_STATE_VERSION);
+                                 N_("Unsupported KVM saved-state version %u (expected %u)."),
+                                 uKvmSavedStatVersion, GIM_KVM_SAVED_STATE_VERSION);
 
     /*
      * Update the TSC frequency from TM.
@@ -344,7 +343,6 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         PVMCPU     pVCpu   = &pVM->aCpus[i];
         PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
 
-        uint8_t fSystemTimeFlags = 0;
         SSMR3GetU64(pSSM, &pKvmCpu->u64SystemTimeMsr);
         SSMR3GetU64(pSSM, &pKvmCpu->uTsc);
         SSMR3GetU64(pSSM, &pKvmCpu->uVirtNanoTS);
@@ -473,11 +471,11 @@ VMMR3_INT_DECL(int) gimR3KvmDisableSystemTime(PVM pVM)
  * @callback_method_impl{PFNVMMEMTRENDEZVOUS,
  *      Worker for gimR3KvmEnableWallClock}
  */
-static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCPU pVCpu, void *pvData)
+static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    Assert(pvData);
-    PKVMWALLCLOCKINFO pWallClockInfo  = (PKVMWALLCLOCKINFO)pvData;
+    PKVMWALLCLOCKINFO pWallClockInfo  = (PKVMWALLCLOCKINFO)pvUser; AssertPtr(pWallClockInfo);
     RTGCPHYS          GCPhysWallClock = pWallClockInfo->GCPhysWallClock;
+    RT_NOREF1(pVCpu);
 
     /*
      * Read the wall-clock version (sequence) from the guest.
@@ -494,6 +492,7 @@ static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCP
     /*
      * Ensure the version is incrementally even.
      */
+    /* faster: uVersion = (uVersion | 1) + 1; */
     if (!(uVersion & 1))
         ++uVersion;
     ++uVersion;
@@ -520,10 +519,8 @@ static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCP
     Assert(!(WallClock.u32Version & 1));
     rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysWallClock, &WallClock, sizeof(GIMKVMWALLCLOCK));
     if (RT_SUCCESS(rc))
-    {
         LogRel(("GIM: KVM: Enabled wall-clock struct. at %#RGp - u32Sec=%u u32Nano=%u uVersion=%#RU32\n", GCPhysWallClock,
                 WallClock.u32Sec, WallClock.u32Nano, WallClock.u32Version));
-    }
     else
         LogRel(("GIM: KVM: Failed to write wall-clock struct. at %#RGp. rc=%Rrc\n", GCPhysWallClock, rc));
     return rc;
