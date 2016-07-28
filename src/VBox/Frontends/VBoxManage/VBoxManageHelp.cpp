@@ -1401,7 +1401,9 @@ RTEXITCODE errorSyntax(USAGECATEGORY fCategory, const char *pszFormat, ...)
         printUsageInternal(fCategory, g_pStdErr);
     else
         printUsage(fCategory, ~0U, g_pStdErr);
-#endif /* !VBOX_ONLY_DOCS */
+#else
+    RT_NOREF_PV(fCategory);
+#endif
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, "\nSyntax error: %N\n", pszFormat, &args);
     va_end(args);
@@ -1421,7 +1423,9 @@ RTEXITCODE errorSyntaxEx(USAGECATEGORY fCategory, uint32_t fSubCategory, const c
         printUsageInternal(fCategory, g_pStdErr);
     else
         printUsage(fCategory, fSubCategory, g_pStdErr);
-#endif /* !VBOX_ONLY_DOCS */
+#else
+    RT_NOREF2(fCategory, fSubCategory);
+#endif
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, "\nSyntax error: %N\n", pszFormat, &args);
     va_end(args);
@@ -1472,7 +1476,9 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY fCategory, uint32_t fSubCategory, int rc,
         printUsageInternal(fCategory, g_pStdErr);
     else
         printUsage(fCategory, fSubCategory, g_pStdErr);
-#endif /* !VBOX_ONLY_DOCS */
+#else
+    RT_NOREF2(fCategory, fSubCategory);
+#endif
 
     if (rc == VINF_GETOPT_NOT_OPTION)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid parameter '%s'", pValueUnion->psz);
