@@ -304,6 +304,7 @@ VMMR3_INT_DECL(int) PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *psz
     VM_ASSERT_EMT(pUVM->pVM);
     AssertPtrReturn(pFilter, VERR_INVALID_POINTER);
     AssertReturn(pFilter->pBwGroupR3 == NULL, VERR_ALREADY_EXISTS);
+    RT_NOREF_PV(pDrvIns);
 
     PPDMNETSHAPER pShaper = pUVM->pdm.s.pNetShaper;
     LOCK_NETSHAPER_RETURN(pShaper);
@@ -343,8 +344,10 @@ VMMR3_INT_DECL(int) PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *psz
  */
 VMMR3_INT_DECL(int) PDMR3NsDetach(PUVM pUVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
 {
+    RT_NOREF_PV(pDrvIns);
     VM_ASSERT_EMT(pUVM->pVM);
     AssertPtrReturn(pFilter, VERR_INVALID_POINTER);
+
     /* Now, return quietly if the filter isn't attached since driver/device
        destructors are called on constructor failure. */
     if (!pFilter->pBwGroupR3)
@@ -411,6 +414,8 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_
  */
 static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
 {
+    RT_NOREF_PV(pVM);
+
     PPDMNETSHAPER pShaper = (PPDMNETSHAPER)pThread->pvUser;
     LogFlow(("pdmR3NsTxThread: pShaper=%p\n", pShaper));
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -436,8 +441,8 @@ static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
  */
 static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
 {
-    PPDMNETSHAPER pShaper = (PPDMNETSHAPER)pThread->pvUser;
-    LogFlow(("pdmR3NsTxWakeUp: pShaper=%p\n", pShaper));
+    RT_NOREF2(pVM, pThread);
+    LogFlow(("pdmR3NsTxWakeUp: pShaper=%p\n", pThread->pvUser));
     /* Nothing to do */
     return VINF_SUCCESS;
 }
@@ -503,26 +508,22 @@ int pdmR3NetShaperInit(PVM pVM)
             {
                 for (PCFGMNODE pCur = CFGMR3GetFirstChild(pCfgBwGrp); pCur; pCur = CFGMR3GetNextChild(pCur))
                 {
-                    uint64_t cbMax;
                     size_t cbName = CFGMR3GetNameLen(pCur) + 1;
                     char *pszBwGrpId = (char *)RTMemAllocZ(cbName);
-
-                    if (!pszBwGrpId)
+                    if (pszBwGrpId)
                     {
-                        rc = VERR_NO_MEMORY;
-                        break;
+                        rc = CFGMR3GetName(pCur, pszBwGrpId, cbName);
+                        if (RT_SUCCESS(rc))
+                        {
+                            uint64_t cbMax;
+                            rc = CFGMR3QueryU64(pCur, "Max", &cbMax);
+                            if (RT_SUCCESS(rc))
+                                rc = pdmNsBwGroupCreate(pShaper, pszBwGrpId, cbMax);
+                        }
+                        RTMemFree(pszBwGrpId);
                     }
-
-                    rc = CFGMR3GetName(pCur, pszBwGrpId, cbName);
-                    AssertRC(rc);
-
-                    if (RT_SUCCESS(rc))
-                        rc = CFGMR3QueryU64(pCur, "Max", &cbMax);
-                    if (RT_SUCCESS(rc))
-                        rc = pdmNsBwGroupCreate(pShaper, pszBwGrpId, cbMax);
-
-                    RTMemFree(pszBwGrpId);
-
+                    else
+                        rc = VERR_NO_MEMORY;
                     if (RT_FAILURE(rc))
                         break;
                 }
