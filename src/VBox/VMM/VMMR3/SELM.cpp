@@ -2039,6 +2039,8 @@ VMMR3DECL(bool) SELMR3CheckShadowTR(PVM pVM)
         AssertFailed();
         return false;
     }
+#  else
+    RT_NOREF_PV(pVM);
 #  endif
     return true;
 }
@@ -2499,12 +2501,18 @@ static void selmR3FormatDescriptor(X86DESC Desc, RTSEL Sel, char *pszOutput, siz
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg)
+VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC Desc, RTSEL Sel, const char *pszMsg)
 {
-    char szOutput[128];
-    selmR3FormatDescriptor(Desc, Sel, &szOutput[0], sizeof(szOutput));
-    Log(("%s: %s\n", pszMsg, szOutput));
-    NOREF(szOutput[0]);
+#ifdef LOG_ENABLED
+    if (LogIsEnabled())
+    {
+        char szOutput[128];
+        selmR3FormatDescriptor(Desc, Sel, &szOutput[0], sizeof(szOutput));
+        Log(("%s: %s\n", pszMsg, szOutput));
+    }
+#else
+    RT_NOREF3(Desc, Sel, pszMsg);
+#endif
 }
 
 

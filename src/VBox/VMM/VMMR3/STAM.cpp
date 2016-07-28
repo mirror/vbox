@@ -829,7 +829,7 @@ static PSTAMDESC stamR3LookupFindNextWithDesc(PSTAMLOOKUP pLookup)
             PSTAMLOOKUP *papChildren = pCur->papChildren;
             do
             {
-                PSTAMLOOKUP pChild = pCur->papChildren[iCur];
+                PSTAMLOOKUP pChild = papChildren[iCur];
                 if (pChild->pDesc)
                     return pChild->pDesc;
 
@@ -907,10 +907,10 @@ static PSTAMDESC stamR3LookupFindFirstDescForRange(PSTAMLOOKUP pFirst, PSTAMLOOK
             /*
              * Check all children.
              */
-            PSTAMLOOKUP *papChildren = pCur->papChildren;
+            PSTAMLOOKUP * const papChildren = pCur->papChildren;
             do
             {
-                PSTAMLOOKUP pChild = pCur->papChildren[iCur];
+                PSTAMLOOKUP pChild = papChildren[iCur];
                 if (pChild->pDesc)
                     return pChild->pDesc;
                 if (pChild->cChildren > 0)
@@ -962,10 +962,10 @@ static PSTAMDESC stamR3LookupFindLastDescForRange(PSTAMLOOKUP pFirst, PSTAMLOOKU
             /*
              * Check children backwards, depth first.
              */
-            PSTAMLOOKUP *papChildren = pCur->papChildren;
+            PSTAMLOOKUP * const papChildren = pCur->papChildren;
             do
             {
-                PSTAMLOOKUP pChild = pCur->papChildren[iCur];
+                PSTAMLOOKUP pChild = papChildren[iCur];
                 if (pChild->cChildren > 0)
                 {
                     /* One level down. */
@@ -1445,10 +1445,9 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
  * Destroys the statistics descriptor, unlinking it and freeing all resources.
  *
  * @returns VINF_SUCCESS
- * @param   pUVM        Pointer to the user mode VM structure.
  * @param   pCur        The descriptor to destroy.
  */
-static int stamR3DestroyDesc(PUVM pUVM, PSTAMDESC pCur)
+static int stamR3DestroyDesc(PSTAMDESC pCur)
 {
     RTListNodeRemove(&pCur->ListEntry);
 #ifdef STAM_WITH_LOOKUP_TREE
@@ -1492,7 +1491,7 @@ VMMR3DECL(int)  STAMR3DeregisterByAddr(PUVM pUVM, void *pvSample)
     RTListForEachSafe(&pUVM->stam.s.List, pCur, pNext, STAMDESC, ListEntry)
     {
         if (pCur->u.pv == pvSample)
-            rc = stamR3DestroyDesc(pUVM, pCur);
+            rc = stamR3DestroyDesc(pCur);
     }
 
     STAM_UNLOCK_WR(pUVM);
@@ -1525,7 +1524,7 @@ static int stamR3DeregisterByPattern(PUVM pUVM, const char *pszPat)
             PSTAMDESC pNext = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
 
             if (RTStrSimplePatternMatch(pszPat, pCur->pszName))
-                rc = stamR3DestroyDesc(pUVM, pCur);
+                rc = stamR3DestroyDesc(pCur);
 
             /* advance. */
             if (pCur == pLast)
@@ -1721,7 +1720,7 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
             ASMAtomicXchgU64(&pDesc->u.pProfile->cPeriods, 0);
             ASMAtomicXchgU64(&pDesc->u.pProfile->cTicks, 0);
             ASMAtomicXchgU64(&pDesc->u.pProfile->cTicksMax, 0);
-            ASMAtomicXchgU64(&pDesc->u.pProfile->cTicksMin, ~0);
+            ASMAtomicXchgU64(&pDesc->u.pProfile->cTicksMin, UINT64_MAX);
             break;
 
         case STAMTYPE_RATIO_U32_RESET:

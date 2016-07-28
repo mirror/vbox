@@ -169,7 +169,7 @@
 *********************************************************************************************************************************/
 static bool                 tmR3HasFixedTSC(PVM pVM);
 static const char *         tmR3GetTSCModeName(PVM pVM);
-static uint64_t             tmR3CalibrateTSC(PVM pVM);
+static uint64_t             tmR3CalibrateTSC(void);
 static DECLCALLBACK(int)    tmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -414,7 +414,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU64(pCfgHandle, "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pVM->tm.s.cTSCTicksPerSecond = tmR3CalibrateTSC(pVM);
+        pVM->tm.s.cTSCTicksPerSecond = tmR3CalibrateTSC();
         if (   pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET
             && pVM->tm.s.cTSCTicksPerSecond >= _4G)
         {
@@ -924,7 +924,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
  *
  * @returns Number of ticks per second.
  */
-static uint64_t tmR3CalibrateTSC(PVM pVM)
+static uint64_t tmR3CalibrateTSC(void)
 {
     uint64_t u64Hz;
 
@@ -3252,6 +3252,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVC
     AssertPtr(pVM); Assert(pVM->tm.s.fTSCModeSwitchAllowed); NOREF(pVCpuEmt);
     Assert(   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
            && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode);
+    RT_NOREF1(pvData);
 
     /*
      * See tmR3CpuTickParavirtEnable for an explanation of the conversion math.

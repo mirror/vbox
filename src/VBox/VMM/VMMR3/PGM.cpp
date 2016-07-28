@@ -2165,7 +2165,7 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
  */
 VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 {
-    int rc;
+    int rc = VERR_IPE_UNINITIALIZED_STATUS; /* (MSC incorrectly thinks it can be usused uninitialized) */
 
     /*
      * Reserve space for the dynamic mappings.
@@ -4207,24 +4207,24 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
      * Check the trees.
      */
     int cErrors = 0;
-    const static PGMCHECKINTARGS s_LeftToRight = {  true, NULL, NULL, NULL, pVM };
-    const static PGMCHECKINTARGS s_RightToLeft = { false, NULL, NULL, NULL, pVM };
-    PGMCHECKINTARGS Args = s_LeftToRight;
+    const PGMCHECKINTARGS LeftToRight = {  true, NULL, NULL, NULL, pVM };
+    const PGMCHECKINTARGS RightToLeft = { false, NULL, NULL, NULL, pVM };
+    PGMCHECKINTARGS Args = LeftToRight;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
-    Args = s_RightToLeft;
+    Args = RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
 #ifdef VBOX_WITH_RAW_MODE
-    Args = s_LeftToRight;
+    Args = LeftToRight;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = s_RightToLeft;
+    Args = RightToLeft;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = s_LeftToRight;
+    Args = LeftToRight;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->HyperVirtHandlers,  true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = s_RightToLeft;
+    Args = RightToLeft;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->HyperVirtHandlers,  false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = s_LeftToRight;
+    Args = LeftToRight;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
-    Args = s_RightToLeft;
+    Args = RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, false, pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
 #endif /* VBOX_WITH_RAW_MODE */
 
