@@ -941,12 +941,11 @@ static int apicR3LoadVMData(PVM pVM, PSSMHANDLE pSSM)
  * Worker for loading per-VCPU APIC data for legacy (old) saved-states.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pSSM        The SSM handle.
  * @param   uVersion    Data layout version.
  */
-static int apicR3LoadLegacyVCpuData(PVM pVM, PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVersion)
+static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     AssertReturn(uVersion <= APIC_SAVED_STATE_VERSION_VBOX_50, VERR_NOT_SUPPORTED);
 
@@ -1055,6 +1054,7 @@ static DECLCALLBACK(int) apicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 {
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
     PVM      pVM      = PDMDevHlpGetVM(pApicDev->pDevInsR3);
+    RT_NOREF1(uPass);
 
     LogFlow(("APIC: apicR3LiveExec: uPass=%u\n", uPass));
 
@@ -1069,9 +1069,7 @@ static DECLCALLBACK(int) apicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
-    PAPIC    pApic    = VM_TO_APIC(pVM);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
     AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
 
     LogFlow(("APIC: apicR3SaveExec\n"));
@@ -1126,9 +1124,7 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
-    PAPIC    pApic    = VM_TO_APIC(pVM);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
 
     AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(uPass == SSM_PASS_FINAL, VERR_WRONG_ORDER);
@@ -1195,7 +1191,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         }
         else
         {
-            rc = apicR3LoadLegacyVCpuData(pVM, pVCpu, pSSM, uVersion);
+            rc = apicR3LoadLegacyVCpuData(pVCpu, pSSM, uVersion);
             AssertRCReturn(rc, rc);
         }
 
@@ -1234,11 +1230,14 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     Assert(TMTimerIsLockOwner(pTimer));
     Assert(pVCpu);
     LogFlow(("APIC%u: apicR3TimerCallback\n", pVCpu->idCpu));
+    RT_NOREF2(pDevIns, pTimer);
 
     PXAPICPAGE     pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    PAPICCPU       pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     uint32_t const uLvtTimer  = pXApicPage->lvt_timer.all.u32LvtTimer;
+#ifdef VBOX_WITH_STATISTICS
+    PAPICCPU       pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
     STAM_COUNTER_INC(&pApicCpu->StatTimerCallback);
+#endif
     if (!XAPIC_LVT_IS_MASKED(uLvtTimer))
     {
         uint8_t uVector = XAPIC_LVT_GET_VECTOR(uLvtTimer);
@@ -1283,8 +1282,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
  */
 static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
 {
-    PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
+    PVM pVM = PDMDevHlpGetVM(pDevIns);
     VM_ASSERT_EMT0(pVM);
     VM_ASSERT_IS_NOT_RUNNING(pVM);
 
@@ -1583,7 +1581,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate inputs.
      */
-    Assert(iInstance == 0);
+    Assert(iInstance == 0); NOREF(iInstance);
     Assert(pDevIns);
 
     PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
