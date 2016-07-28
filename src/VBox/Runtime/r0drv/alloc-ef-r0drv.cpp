@@ -205,6 +205,7 @@ bool    gfRTMemFreeLog = false;
  */
 static DECLCALLBACK(size_t) rtR0MemEfWrite(void *pvArg, const char *pachChars, size_t cbChars)
 {
+    RT_NOREF1(pvArg);
     if (cbChars)
     {
         RTLogWriteDebugger(pachChars, cbChars);

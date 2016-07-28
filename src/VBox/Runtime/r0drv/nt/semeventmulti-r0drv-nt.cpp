@@ -70,6 +70,7 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
                                      const char *pszNameFmt, ...)
 {
     AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    RT_NOREF2(hClass, pszNameFmt);
 
     AssertCompile(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
@@ -195,6 +196,7 @@ DECLINLINE(int) rtR0SemEventMultiNtWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
     AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    RT_NOREF1(pSrcPos);
 
     rtR0SemEventMultiNtRetain(pThis);
 

@@ -71,6 +71,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
     AssertReturn(!(fFlags & ~(RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)), VERR_INVALID_PARAMETER);
     Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
     AssertCompile(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
+    RT_NOREF2(hClass, pszNameFmt);
 
     PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
@@ -172,6 +173,7 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
     AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    NOREF(pSrcPos);
 
     rtR0SemEventNtRetain(pThis);
 

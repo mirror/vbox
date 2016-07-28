@@ -344,6 +344,7 @@ static int rtMpCallUsingBroadcastIpi(PFNRTMPWORKER pfnWorker, void *pvUser1, voi
 static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)DeferredContext;
+    RT_NOREF3(Dpc, SystemArgument1, SystemArgument2);
 
     ASMAtomicIncU32(&pArgs->cHits);
     pArgs->pfnWorker(KeGetCurrentProcessorNumber(), pArgs->pvUser1, pArgs->pvUser2);
@@ -452,18 +453,18 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     if (enmCpuid == RT_NT_CPUID_SPECIFIC)
     {
         ASMAtomicIncS32(&pArgs->cRefs);
-        BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
-        Assert(ret);
+        BOOLEAN fRc = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
+        Assert(fRc); NOREF(fRc);
     }
     else if (enmCpuid == RT_NT_CPUID_PAIR)
     {
         ASMAtomicIncS32(&pArgs->cRefs);
-        BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
-        Assert(ret);
+        BOOLEAN fRc = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
+        Assert(fRc); NOREF(fRc);
 
         ASMAtomicIncS32(&pArgs->cRefs);
-        ret = KeInsertQueueDpc(&paExecCpuDpcs[1], 0, 0);
-        Assert(ret);
+        fRc = KeInsertQueueDpc(&paExecCpuDpcs[1], 0, 0);
+        Assert(fRc); NOREF(fRc);
     }
     else
     {
@@ -475,8 +476,8 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
                 &&  (Mask & RT_BIT_64(i)))
             {
                 ASMAtomicIncS32(&pArgs->cRefs);
-                BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[i], 0, 0);
-                Assert(ret);
+                BOOLEAN fRc = KeInsertQueueDpc(&paExecCpuDpcs[i], 0, 0);
+                Assert(fRc); NOREF(fRc);
             }
         }
         if (enmCpuid != RT_NT_CPUID_OTHERS)
@@ -604,6 +605,8 @@ static VOID rtMpNtOnSpecificDpcWrapper(IN PKDPC Dpc, IN PVOID DeferredContext,
                                        IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PRTMPNTONSPECIFICARGS pArgs = (PRTMPNTONSPECIFICARGS)DeferredContext;
+    RT_NOREF3(Dpc, SystemArgument1, SystemArgument2);
+
     ASMAtomicWriteBool(&pArgs->fExecuting, true);
 
     pArgs->CallbackArgs.pfnWorker(KeGetCurrentProcessorNumber(), pArgs->CallbackArgs.pvUser1, pArgs->CallbackArgs.pvUser2);
@@ -701,7 +704,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     if (RTMpIsCpuOnline(idCpu))
     {
         BOOLEAN fRc = KeInsertQueueDpc(&pArgs->Dpc, 0, 0);
-        Assert(fRc);
+        Assert(fRc); NOREF(fRc);
         KeLowerIrql(bOldIrql);
 
         uint64_t const nsRealWaitTS = RTTimeNanoTS();
@@ -812,6 +815,7 @@ static ULONG_PTR rtMpIpiGenericCall(ULONG_PTR Argument)
  */
 int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
 {
+    NOREF(idCpu);
     g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
     return VINF_SUCCESS;
 }

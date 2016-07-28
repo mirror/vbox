@@ -35,9 +35,7 @@
 
 RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, PFNRTTHREADCTXHOOK pfnCallback, void *pvUser)
 {
-    NOREF(phCtxHook);
-    NOREF(pfnCallback);
-    NOREF(pvUser);
+    RT_NOREF4(phCtxHook, fFlags, pfnCallback, pvUser);
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTThreadCtxHookCreate);

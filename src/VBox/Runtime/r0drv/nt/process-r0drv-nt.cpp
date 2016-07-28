@@ -34,7 +34,7 @@
 
 RTDECL(RTPROCESS) RTProcSelf(void)
 {
-    return (RTPROCESS)PsGetCurrentProcessId();
+    return (RTPROCESS)(uintptr_t)PsGetCurrentProcessId();
 }
 
 

@@ -107,6 +107,7 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
     AssertPtrReturn(ppvNew, VERR_INVALID_PARAMETER);
     *ppvNew = NULL;
     AssertReturn(cb, VERR_INVALID_PARAMETER);
+    RT_NOREF_PV(pszTag);
 
     /*
      * We support none of the hard requirements passed thru flags.
