@@ -2820,7 +2820,7 @@ static int patmR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pIns
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
-    uint32_t orgOffsetPatchMem = ~0;
+    uint32_t orgOffsetPatchMem = UINT32_MAX;
     RTRCPTR pInstrStart;
     bool fInserted;
     NOREF(pInstrHC); NOREF(uOpSize);
@@ -3056,7 +3056,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
     uint32_t cbInstr;
     RTRCPTR  pCurInstrGC = pInstrGC;
     uint8_t *pCurInstrHC, *pInstrHC;
-    uint32_t orgOffsetPatchMem = ~0;
+    uint32_t orgOffsetPatchMem = UINT32_MAX;
 
     pInstrHC = pCurInstrHC = patmR3GCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
     AssertReturn(pCurInstrHC, VERR_PAGE_NOT_PRESENT);
@@ -3180,7 +3180,7 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
-    uint32_t orgOffsetPatchMem = ~0;
+    uint32_t orgOffsetPatchMem = UINT32_MAX;
     bool fInserted;
 
     // save original offset (in case of failures later on)
@@ -3281,7 +3281,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
 {
     PPATCHINFO pPatch = &pPatchRec->patch;
     int rc = VERR_PATCHING_REFUSED;
-    uint32_t orgOffsetPatchMem = ~0;
+    uint32_t orgOffsetPatchMem = UINT32_MAX;
     bool fInserted;
 
     Log(("patmDuplicateFunction %RRv\n", pInstrGC));
@@ -3412,7 +3412,7 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
 {
     PPATCHINFO  pPatch = &pPatchRec->patch;
     RTRCPTR     pPage, pPatchTargetGC = 0;
-    uint32_t    orgOffsetPatchMem = ~0;
+    uint32_t    orgOffsetPatchMem = UINT32_MAX;
     int         rc = VERR_PATCHING_REFUSED;
     PPATCHINFO  pPatchToJmp = NULL; /**< Patch the trampoline jumps to. */
     PTRAMPREC   pTrampRec = NULL; /**< Trampoline record used to find the patch. */
@@ -3905,14 +3905,14 @@ static int patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
  */
 static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
 {
-    uint8_t ASMInt3 = 0xCC;
+    uint8_t cbASMInt3 = 1;
     int     rc;
 
     Assert(pPatch->flags & (PATMFL_INT3_REPLACEMENT|PATMFL_INT3_REPLACEMENT_BLOCK));
     Assert(pPatch->uState == PATCH_ENABLED || pPatch->uState == PATCH_DIRTY);
 
     /* Restore first opcode byte. */
-    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pPatch->pPrivInstrGC, pPatch->aPrivInstr, sizeof(ASMInt3));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pPatch->pPrivInstrGC, pPatch->aPrivInstr, cbASMInt3);
     AssertRC(rc);
     return rc;
 }
@@ -3933,7 +3933,7 @@ static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
  */
 int patmR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch)
 {
-    uint8_t bASMInt3 = 0xCC;
+    uint8_t cbASMInt3 = 1;
     int rc;
 
     /* Note: Do not use patch memory here! It might called during patch installation too. */
@@ -3942,7 +3942,7 @@ int patmR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrH
     /* Save the original instruction. */
     rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
     AssertRC(rc);
-    pPatch->cbPatchJump = sizeof(bASMInt3);  /* bit of a misnomer in this case; size of replacement instruction. */
+    pPatch->cbPatchJump = cbASMInt3;  /* bit of a misnomer in this case; size of replacement instruction. */
 
     pPatch->flags |= PATMFL_INT3_REPLACEMENT;
 
