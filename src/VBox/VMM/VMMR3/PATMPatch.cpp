@@ -488,7 +488,7 @@ int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, bool fSize
 
     PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
-    AssertMsg(fSizeOverride == false, ("operand size override!!\n"));
+    AssertMsg(fSizeOverride == false, ("operand size override!!\n")); RT_NOREF_PV(fSizeOverride);
     callInfo.pCurInstrGC = pCurInstrGC;
 
     size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, 0, false, &callInfo);
@@ -516,7 +516,7 @@ int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RTRCPTR pNe
     PATMCALLINFO callInfo;
     uint32_t     size;
 
-    Log(("patmPatchGenSti at %RRv; next %RRv\n", pCurInstrGC, pNextInstrGC));
+    Log(("patmPatchGenSti at %RRv; next %RRv\n", pCurInstrGC, pNextInstrGC)); RT_NOREF_PV(pCurInstrGC);
     PATCHGEN_PROLOG(pVM, pPatch, g_patmStiRecord.cbFunction);
     callInfo.pNextInstrGC = pNextInstrGC;
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmStiRecord, 0, false, &callInfo);
@@ -1310,7 +1310,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
 {
     uint32_t size, offset;
 
-    Log(("patmPatchGenMovFromSS %RRv\n", pCurInstrGC));
+    Log(("patmPatchGenMovFromSS %RRv\n", pCurInstrGC)); RT_NOREF_PV(pCurInstrGC);
 
     Assert(pPatch->flags & PATMFL_CODE32);
 
