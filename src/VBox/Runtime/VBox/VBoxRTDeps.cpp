@@ -41,7 +41,10 @@
 #include <libxml/globals.h>
 #include <openssl/md5.h>
 #include <openssl/rc4.h>
-#include <openssl/pem.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+#endif
+#include <openssl/pem.h> /* drags in Windows.h */
 #include <openssl/x509.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>

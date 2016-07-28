@@ -1838,6 +1838,9 @@ struct IOContext
     {
         error = x.what();
     }
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(IOContext) /* (shuts up C4626 and C4625 MSC warnings) */
 };
 
 struct ReadContext : IOContext
@@ -1846,6 +1849,9 @@ struct ReadContext : IOContext
         : IOContext(pcszFilename, File::Mode_Read)
     {
     }
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(ReadContext) /* (shuts up C4626 and C4625 MSC warnings) */
 };
 
 struct WriteContext : IOContext
@@ -1854,6 +1860,9 @@ struct WriteContext : IOContext
         : IOContext(pcszFilename, File::Mode_Overwrite, fFlush)
     {
     }
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(WriteContext) /* (shuts up C4626 and C4625 MSC warnings) */
 };
 
 /**

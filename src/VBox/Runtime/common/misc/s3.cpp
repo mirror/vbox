@@ -38,6 +38,9 @@
 #include <iprt/file.h>
 #include <iprt/stream.h>
 
+#ifdef RT_OS_WINDOWS /* OpenSSL drags in Windows.h, which isn't compatible with -Wall.  */
+# include <iprt/win/windows.h>
+#endif
 #include <curl/curl.h>
 #include <openssl/hmac.h>
 #include <libxml/parser.h>

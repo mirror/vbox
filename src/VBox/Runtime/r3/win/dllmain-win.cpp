@@ -40,6 +40,8 @@
  */
 BOOL __stdcall DllMain(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
 {
+    RT_NOREF_PV(pvReserved);
+
     switch (dwReason)
     {
         /*

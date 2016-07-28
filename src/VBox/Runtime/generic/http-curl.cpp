@@ -53,6 +53,9 @@
 
 #include "internal/magics.h"
 
+#ifdef RT_OS_WINDOWS /* curl.h drags in windows.h which isn't necessarily -Wall clean. */
+# include <iprt/win/windows.h>
+#endif
 #include <curl/curl.h>
 
 #ifdef RT_OS_DARWIN
@@ -1423,7 +1426,7 @@ static bool rtHttpWinIsUrlInBypassList(const char *pszUrl, PCRTUTF16 pwszBypass)
          * names or IP addresses, and may use wildcard ('*', '?', I guess).  There
          * special "<local>" entry matches anything without a dot.
          */
-        RTNETADDRU  HostAddr;
+        RTNETADDRU  HostAddr = { 0, 0 };
         int         fIsHostIpv4Address = -1;
         char *pszEntry = pszBypassFree;
         while (*pszEntry != '\0')
@@ -1553,7 +1556,7 @@ static int rtHttpWinSelectProxyFromList(PRTHTTPINTERNAL pThis, const char *pszUr
                                                               pszEndOfScheme ? pszEndOfScheme - pszEntry : cchEntry);
             if (pszEqual)
             {
-                if (   pszEqual - pszEntry == cchUrlScheme
+                if (   (uintptr_t)(pszEqual - pszEntry) == cchUrlScheme
                     && RTStrNICmp(pszEntry, pszUrlScheme, cchUrlScheme) == 0)
                 {
                     pszBestEntry = pszEqual + 1;
@@ -1563,7 +1566,7 @@ static int rtHttpWinSelectProxyFromList(PRTHTTPINTERNAL pThis, const char *pszUr
             else
             {
                 bool fSchemeMatch = pszEndOfScheme
-                                 && pszEndOfScheme - pszEntry == cchUrlScheme
+                                 && (uintptr_t)(pszEndOfScheme - pszEntry) == cchUrlScheme
                                  && RTStrNICmp(pszEntry, pszUrlScheme, cchUrlScheme) == 0;
                 if (   !pszBestEntry
                     || (   !fBestEntryHasSameScheme
@@ -1620,8 +1623,6 @@ static int rtHttpWinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *pszU
          * in some way, if we can we prepare ProxyOptions with a non-zero dwFlags.
          */
         WINHTTP_PROXY_INFO          ProxyInfo;
-        PRTUTF16                    pwszProxy = NULL;
-        PRTUTF16                    pwszNoProxy = NULL;
         WINHTTP_AUTOPROXY_OPTIONS   AutoProxyOptions;
         RT_ZERO(AutoProxyOptions);
         RT_ZERO(ProxyInfo);
@@ -1872,7 +1873,7 @@ static void rtHttpUnsetCaFile(PRTHTTPINTERNAL pThis)
     {
         if (pThis->fDeleteCaFile)
         {
-            int rc2 = RTFileDelete(pThis->pszCaFile);
+            int rc2 = RTFileDelete(pThis->pszCaFile); RT_NOREF_PV(rc2);
             AssertMsg(RT_SUCCESS(rc2) || !RTFileExists(pThis->pszCaFile), ("rc=%Rrc '%s'\n", rc2, pThis->pszCaFile));
         }
         RTStrFree(pThis->pszCaFile);
