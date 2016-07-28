@@ -187,6 +187,7 @@
 #  pragma warning(disable: 4163)
 # endif
 # pragma warning(disable: 4668)
+# pragma warning(disable: 4255) /* warning C4255: 'ObGetFilterVersion' : no function prototype given: converting '()' to '(void)' */
 
 # include <ntifs.h>
 # include <wdm.h>
