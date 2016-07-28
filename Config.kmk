@@ -1612,14 +1612,17 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 #      -wd4711: function 'void __cdecl rtMemCacheFreeOne(struct RTMEMCACHEINT * __ptr64,void * __ptr64)' selected for automatic inline expansion
 #      -wd4571: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
 #      -wd4611: interaction between '_setjmp' and C++ object destruction is non-portable
+#      -wd4324: '_TDI_PNP_CONTEXT_XP' : structure was padded due to __declspec(align())
 # Want to enable these:
 #      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
 #      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
 #      -wd4100: 'identifier' : unreferenced formal parameter [level 4]
 VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
-	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571
+	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324
 ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_VCC_WARN_ALL += -wd4100
+else
+ VBOX_VCC_WARN_ALL += -WX # temp
 endif
 VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 
@@ -3982,7 +3985,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_DEFS.x86          += WIN9X_COMPAT_SPINLOCK     # Avoid multiply defined _KeInitializeSpinLock@4
  TEMPLATE_VBOXR0DRV_DEFS.amd64         = _AMD64_
  TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
- 	-W4 -wd4996 -wd4127 -wd4201 -wd4214 -wd4706 -wd4324  -wd4100
+	$(VBOX_VCC_WARN_ALL)
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
