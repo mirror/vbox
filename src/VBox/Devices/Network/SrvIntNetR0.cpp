@@ -1130,6 +1130,8 @@ static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
                  pIf->hIf, &pIf->MacAddr, enmAddrType, iEntry, pCache->cbAddress, pAddr, pszMsg));
             break;
     }
+#else
+    RT_NOREF2(pIf, pszMsg);
 #endif
 
     pCache->cEntries--;
@@ -1475,6 +1477,8 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, INTNETADDRTYPE enmAddrType, 
                  pIf->hIf, &pIf->MacAddr, enmAddrType, pCache->cEntries, pCache->cbAddress, pAddr, pszMsg));
             break;
     }
+#else
+    RT_NOREF1(pszMsg);
 #endif
     pCache->cEntries++;
     Assert(pCache->cEntries <= pCache->cEntriesAlloc);
@@ -4875,6 +4879,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     PINTNETIF pIf     = (PINTNETIF)pvUser1;
     PINTNET   pIntNet = (PINTNET)pvUser2;
     Log(("intnetR0IfDestruct: pvObj=%p pIf=%p pIntNet=%p hIf=%RX32\n", pvObj, pIf, pIntNet, pIf->hIf));
+    RT_NOREF1(pvObj);
 
     /*
      * For paranoid reasons we must now mark the interface as destroyed.
@@ -5895,6 +5900,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     PINTNET         pIntNet  = (PINTNET)pvUser2;
     Log(("intnetR0NetworkDestruct: pvObj=%p pNetwork=%p pIntNet=%p %s\n", pvObj, pNetwork, pIntNet, pNetwork->szName));
     Assert(pNetwork->pIntNet == pIntNet);
+    RT_NOREF1(pvObj);
 
     /* Take the big create/open/destroy sem. */
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
