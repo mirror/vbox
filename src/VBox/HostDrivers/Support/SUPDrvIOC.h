@@ -49,7 +49,7 @@
 
 #ifdef RT_OS_WINDOWS
 # ifndef CTL_CODE
-#  include <Windows.h>
+#  include <iprt/win/windows.h>
 # endif
   /* Automatic buffering, size not encoded. */
 # define SUP_CTL_CODE_SIZE(Function, Size)      CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_BUFFERED, FILE_WRITE_ACCESS)

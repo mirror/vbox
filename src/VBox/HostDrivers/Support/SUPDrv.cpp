@@ -147,7 +147,7 @@ static void                 supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
 DECLINLINE(int)             supdrvLdrLock(PSUPDRVDEVEXT pDevExt);
 DECLINLINE(int)             supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
-static int                  supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
+static int                  supdrvIOCtl_LoggerSettings(PSUPLOGGERSETTINGS pReq);
 static int                  supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq);
 static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
 
@@ -2026,7 +2026,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             REQ_CHECK_EXPR(SUP_IOCTL_LOGGER_SETTINGS, pReq->u.In.fWhat  <= SUPLOGGERSETTINGS_WHAT_DESTROY);
 
             /* execute */
-            pReq->Hdr.rc = supdrvIOCtl_LoggerSettings(pDevExt, pSession, pReq);
+            pReq->Hdr.rc = supdrvIOCtl_LoggerSettings(pReq);
             return 0;
         }
 
@@ -3835,6 +3835,7 @@ SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
 #ifdef RT_OS_DARWIN
     return supdrvOSEnableVTx(fEnable);
 #else
+    RT_NOREF1(fEnable);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -3869,6 +3870,7 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
 #ifdef RT_OS_DARWIN
     supdrvOSResumeVTxOnCpu(fSuspended);
 #else
+    RT_NOREF1(fSuspended);
     Assert(!fSuspended);
 #endif
 }
@@ -4692,7 +4694,7 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
             if (RT_FAILURE(rc))
             {
                 supdrvLdrUnlock(pDevExt);
-                Log(("Bad entry point address: %s=%p (rc=%Rrc)\n", pszWhat, pv, rc));
+                Log(("Bad entry point address: %s=%p (rc=%Rrc)\n", pszWhat, pv, rc)); NOREF(pszWhat);
                 return rc;
             }
         }
@@ -5522,11 +5524,9 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
  * Implements the logger settings request.
  *
  * @returns VBox status code.
- * @param   pDevExt     The device extension.
- * @param   pSession    The caller's session.
  * @param   pReq        The request.
  */
-static int supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq)
+static int supdrvIOCtl_LoggerSettings(PSUPLOGGERSETTINGS pReq)
 {
     const char *pszGroup = &pReq->u.In.szStrings[pReq->u.In.offGroups];
     const char *pszFlags = &pReq->u.In.szStrings[pReq->u.In.offFlags];
@@ -5706,6 +5706,7 @@ static int supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq)
     }
     return rc;
 #else
+    RT_NOREF2(pDevExt, pReq);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

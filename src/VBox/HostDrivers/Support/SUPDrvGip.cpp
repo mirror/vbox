@@ -187,11 +187,10 @@ static uint32_t supdrvGipFindCpuIndexForCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID i
  * (Re-)initializes the per-cpu structure prior to starting or resuming the GIP
  * updating.
  *
- * @param   pGip             Pointer to the GIP.
  * @param   pGipCpu          The per CPU structure for this CPU.
  * @param   u64NanoTS        The current time.
  */
-static void supdrvGipReInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
+static void supdrvGipReInitCpu(PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
 {
     /*
      * Here we don't really care about applying the TSC delta. The re-initialization of this
@@ -216,7 +215,7 @@ static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser
     unsigned            iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
 
     if (RT_LIKELY(iCpu < pGip->cCpus && pGip->aCPUs[iCpu].idCpu == idCpu))
-        supdrvGipReInitCpu(pGip, &pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
+        supdrvGipReInitCpu(&pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
 
     NOREF(pvUser2);
     NOREF(idCpu);
@@ -259,6 +258,7 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
     uint32_t                fSupported = 0;
     uint16_t                idApic;
     int                     iCpuSet;
+    NOREF(pGip);
 
     AssertMsg(idCpu == RTMpCpuId(), ("idCpu=%#x RTMpCpuId()=%#x\n", idCpu, RTMpCpuId())); /* paranoia^3 */
 
@@ -504,7 +504,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 if (   pGipR0->u32Mode == SUPGIPMODE_INVARIANT_TSC
                     || pGipR0->u32Mode == SUPGIPMODE_SYNC_TSC
                     || RTMpGetOnlineCount() == 1)
-                    supdrvGipReInitCpu(pGipR0, &pGipR0->aCPUs[0], u64NanoTS);
+                    supdrvGipReInitCpu(&pGipR0->aCPUs[0], u64NanoTS);
                 else
                     RTMpOnAll(supdrvGipReInitCpuCallback, pGipR0, &u64NanoTS);
 
@@ -914,9 +914,8 @@ static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEve
  * (supdrvInitAsyncRefineTscTimer).
  *
  * @param   pDevExt         Pointer to the device instance data.
- * @param   pGip            Pointer to the GIP.
  */
-static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
+static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDevExt)
 {
     uint64_t    u64NanoTS;
     RTCCUINTREG fEFlags;
@@ -1003,6 +1002,7 @@ DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUse
     RTCCUINTREG fEFlags   = ASMIntDisableFlags();
     uint64_t   *puTscStop = (uint64_t *)pvUser1;
     uint64_t   *pnsStop   = (uint64_t *)pvUser2;
+    RT_NOREF1(idCpu);
 
     *puTscStop = ASMReadTSC();
     *pnsStop   = RTTimeSystemNanoTS();
@@ -1019,7 +1019,6 @@ DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUse
  * maximum TSC frequency under 'normal' CPU operation.
  *
  * @returns VBox status code.
- * @param   pDevExt         Pointer to the device instance.
  * @param   pGip            Pointer to the GIP.
  * @param   fRough          Set if we're doing the rough calculation that the
  *                          TSC measuring code needs, where accuracy isn't all
@@ -1027,7 +1026,7 @@ DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUse
  *                          When clear we try for best accuracy that we can
  *                          achieve in reasonably short time.
  */
-static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, bool fRough)
+static int supdrvGipInitMeasureTscFreq(PSUPGLOBALINFOPAGE pGip, bool fRough)
 {
     uint32_t nsTimerIncr = RTTimerGetSystemGranularity();
     int      cTriesLeft = fRough ? 4 : 2;
@@ -1484,6 +1483,7 @@ static DECLCALLBACK(void) supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void 
     /* This is good enough, even though it will update some of the globals a
        bit to much. */
     supdrvGipMpEventOnlineOrInitOnCpu((PSUPDRVDEVEXT)pvUser1, idCpu);
+    NOREF(pvUser2);
 }
 
 
@@ -1498,6 +1498,7 @@ static DECLCALLBACK(void) supdrvGipInitDetermineAsyncTscWorker(RTCPUID idCpu, vo
 {
     Assert(RTMpCpuIdToSetIndex(idCpu) == (intptr_t)pvUser2);
     ASMAtomicWriteU64((uint64_t volatile *)pvUser1, ASMReadTSC());
+    RT_NOREF2(idCpu, pvUser2);
 }
 
 
@@ -1682,7 +1683,7 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
     pCpu->i64TSCDelta        = pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED ? INT64_MAX : 0;
 
     ASMAtomicWriteSize(&pCpu->enmState, SUPGIPCPUSTATE_INVALID);
-    ASMAtomicWriteSize(&pCpu->idCpu,    NIL_RTCPUID);
+    ASMAtomicWriteU32(&pCpu->idCpu,     NIL_RTCPUID);
     ASMAtomicWriteS16(&pCpu->iCpuSet,   -1);
     ASMAtomicWriteU16(&pCpu->idApic,    UINT16_MAX);
 
@@ -1878,11 +1879,11 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      */
     if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
     {
-        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /*fRough*/); /* cannot fail */
-        supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt, pGip);
+        rc = supdrvGipInitMeasureTscFreq(pGip, true /*fRough*/); /* cannot fail */
+        supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt);
     }
     else
-        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /*fRough*/);
+        rc = supdrvGipInitMeasureTscFreq(pGip, false /*fRough*/);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2441,6 +2442,7 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
     RTCCUINTREG        fEFlags   = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     uint64_t           u64TSC    = ASMReadTSC();
     uint64_t           u64NanoTS = RTTimeSystemNanoTS();
+    RT_NOREF1(pTimer);
 
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
     {
@@ -2489,6 +2491,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
     RTCPUID         idCpu     = RTMpCpuId();
     uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
+    RT_NOREF1(pTimer);
 
     /** @todo reset the transaction number and whatnot when iTick == 1. */
     if (pDevExt->idGipMaster == idCpu)
@@ -2939,6 +2942,7 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
                                       bool fIsMaster, RTCCUINTREG fEFlags)
 {
     TSCDELTA_DBG_VARS();
+    RT_NOREF1(pOtherSync);
 
     /*
      * Wait for the 'ready' signal.  In the master's case, this means the
@@ -3164,7 +3168,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 # define GIP_TSC_DELTA_M2_PRIMER_LOOPS      0
 
 
-static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs, uint32_t iLoop)
+static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs)
 {
     int64_t     iMasterTscDelta  = pArgs->pMaster->i64TSCDelta;
     int64_t     iBestDelta       = pArgs->pWorker->i64TSCDelta;
@@ -3263,6 +3267,7 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
                                       bool fIsMaster, uint32_t iTry)
 {
     unsigned iLoop;
+    RT_NOREF1(iTry);
 
     for (iLoop = 0; iLoop < GIP_TSC_DELTA_M2_LOOPS; iLoop++)
     {
@@ -3313,7 +3318,7 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 # if GIP_TSC_DELTA_M2_PRIMER_LOOPS > 0
             if (iLoop >= GIP_TSC_DELTA_M2_PRIMER_LOOPS)
 # endif
-                supdrvTscDeltaMethod2ProcessDataOnMaster(pArgs, iLoop);
+                supdrvTscDeltaMethod2ProcessDataOnMaster(pArgs);
 
             TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pMySync, pOtherSync);
         }
@@ -3506,6 +3511,7 @@ supdrvMeasureTscDeltaCallbackAbortSyncSetup(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSC
     PSUPTSCDELTASYNC2 volatile *ppMySync    = fIsMaster ? &pArgs->pSyncMaster : &pArgs->pSyncWorker;
     PSUPTSCDELTASYNC2 volatile *ppOtherSync = fIsMaster ? &pArgs->pSyncWorker : &pArgs->pSyncMaster;
     TSCDELTA_DBG_VARS();
+    RT_NOREF1(pMySync);
 
     /*
      * Clear our sync pointer and make sure the abort flag is set.
@@ -3751,6 +3757,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
 static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     supdrvMeasureTscDeltaCallbackUnwrapped(idCpu, (PSUPDRVGIPTSCDELTARGS)pvUser1);
+    RT_NOREF1(pvUser2);
 }
 
 
@@ -4233,8 +4240,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "Invalid state", VERR_INVALID_STATE);
         }
     }
-
-    return rc;
+    /* not reached */
 }
 
 
@@ -4638,6 +4644,7 @@ int VBOXCALL supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
     uint32_t        iCpuSet;
     uint32_t        fFlags;
     RTMSINTERVAL    cMsWaitRetry;
+    RT_NOREF1(pDevExt);
 
     /*
      * Validate and adjust/resolve the input so they can be passed onto SUPR0TscDeltaMeasureBySetIndex.
