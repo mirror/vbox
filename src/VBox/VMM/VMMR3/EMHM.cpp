@@ -240,6 +240,7 @@ DECLINLINE(int) emR3HmExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszP
 #ifdef LOG_ENABLED
     return emR3HmExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
 #else
+    RT_NOREF_PV(pszPrefix);
     return emR3HmExecuteInstructionWorker(pVM, pVCpu, rcGC);
 #endif
 }

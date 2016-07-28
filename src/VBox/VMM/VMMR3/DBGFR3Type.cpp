@@ -1130,6 +1130,7 @@ VMMR3DECL(int) DBGFR3TypeDumpEx(PUVM pUVM, const char *pszType, uint32_t fFlags,
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(pszType, VERR_INVALID_POINTER);
     AssertPtrReturn(pfnDump, VERR_INVALID_POINTER);
+    RT_NOREF_PV(fFlags);
 
     int rc = VINF_SUCCESS;
     if (!pUVM->dbgf.s.fTypeDbInitialized)

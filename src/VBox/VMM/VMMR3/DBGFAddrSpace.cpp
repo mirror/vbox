@@ -91,6 +91,7 @@ typedef struct DBGFR3ASLOADOPENDATA
     RTDBGMOD        hMod;
 } DBGFR3ASLOADOPENDATA;
 
+#if 0 /* unused */
 /**
  * Callback for dbgfR3AsSearchPath and dbgfR3AsSearchEnvPath.
  *
@@ -101,6 +102,7 @@ typedef struct DBGFR3ASLOADOPENDATA
 typedef int FNDBGFR3ASSEARCHOPEN(const char *pszFilename, void *pvUser);
 /** Pointer to a FNDBGFR3ASSEARCHOPEN. */
 typedef FNDBGFR3ASSEARCHOPEN *PFNDBGFR3ASSEARCHOPEN;
+#endif
 
 
 /*********************************************************************************************************************************
@@ -791,6 +793,7 @@ VMMR3DECL(RTDBGAS) DBGFR3AsQueryByPid(PUVM pUVM, RTPROCESS ProcId)
     return hDbgAs;
 }
 
+#if 0 /* unused */
 
 /**
  * Searches for the file in the path.
@@ -929,6 +932,8 @@ static int dbgfR3AsSearchCfgPath(PUVM pUVM, const char *pszFilename, const char 
     MMR3HeapFree(pszPath);
     return rc;
 }
+
+#endif /* unused */
 
 
 /**
@@ -1140,18 +1145,6 @@ static void dbgfR3AsSymbolJoinNames(PRTDBGSYMBOL pSymbol, RTDBGMOD hMod)
     memmove(&pSymbol->szName[cchModName + 1], &pSymbol->szName[0], cchSymbol + 1);
     memcpy(&pSymbol->szName[0], pszModName, cchModName);
     pSymbol->szName[cchModName] = '!';
-}
-
-
-/** Temporary symbol conversion function. */
-static void dbgfR3AsSymbolConvert(PRTDBGSYMBOL pSymbol, PCDBGFSYMBOL pDbgfSym)
-{
-    pSymbol->offSeg = pSymbol->Value = pDbgfSym->Value;
-    pSymbol->cb = pDbgfSym->cb;
-    pSymbol->iSeg = 0;
-    pSymbol->fFlags = 0;
-    pSymbol->iOrdinal = UINT32_MAX;
-    strcpy(pSymbol->szName, pDbgfSym->szName);
 }
 
 

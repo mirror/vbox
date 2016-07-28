@@ -309,6 +309,7 @@ static DECLCALLBACK(int) cpumR3RegSet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PCD
  */
 static DECLCALLBACK(int) cpumR3RegGet_Dummy(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
+    RT_NOREF_PV(pvUser);
     switch (pDesc->enmType)
     {
         case DBGFREGVALTYPE_U8:        pValue->u8   = 0; return VINF_SUCCESS;

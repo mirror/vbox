@@ -68,6 +68,7 @@ static DBGCCMD const g_aCmds[] =
 
 int emR3InitDbg(PVM pVM)
 {
+    RT_NOREF_PV(pVM);
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_DEBUGGER
     rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));

@@ -7781,6 +7781,7 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPU pVCpu, unsigned 
     Assert(pVCpu->iem.s.aMemMappings[iMemMap].fAccess & IEM_ACCESS_TYPE_WRITE);
 #ifdef IN_RING3
     Assert(!fPostponeFail);
+    RT_NOREF_PV(fPostponeFail);
 #endif
 
     /*
@@ -11408,7 +11409,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if (IEM_GET_TARGET_CPU(pVCpu) >= (a_uMinCpu) || !(a_fOnlyIf)) { } \
         else \
         { \
-            DBGFSTOP(pVCpu->CTX_SUFF(pVM)); \
+            (void)DBGFSTOP(pVCpu->CTX_SUFF(pVM)); \
             return IEMOP_RAISE_INVALID_OPCODE(); \
         } \
     } while (0)

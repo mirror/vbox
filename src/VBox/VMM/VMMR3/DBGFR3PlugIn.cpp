@@ -601,6 +601,7 @@ VMMR3DECL(void) DBGFR3PlugInUnloadAll(PUVM pUVM)
 static DECLCALLBACK(void) dbgfR3PlugInInfoList(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDBGFPLUGIN pPlugIn = pVM->pUVM->dbgf.s.pPlugInHead;
+    RT_NOREF_PV(pszArgs);
     if (pPlugIn)
     {
         pHlp->pfnPrintf(pHlp, "Debugging plug-in%s: %s", pPlugIn->pNext ? "s" : "", pPlugIn->szName);

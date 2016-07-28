@@ -1914,6 +1914,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PUVM pUVM, PDBGFREGENTRYNM paRegs, size_t cRe
 static DECLCALLBACK(int) dbgfR3RegNmSetWorkerOnCpu(PUVM pUVM, PDBGFREGLOOKUP pLookupRec,
                                                    PCDBGFREGVAL pValue, PCDBGFREGVAL pMask)
 {
+    RT_NOREF_PV(pUVM);
     PCDBGFREGSUBFIELD pSubField = pLookupRec->pSubField;
     if (pSubField && pSubField->pfnSet)
         return pSubField->pfnSet(pLookupRec->pSet->uUserArg.pv, pSubField, pValue->u128, pMask->u128);
@@ -2090,7 +2091,6 @@ VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, P
                     RTUInt128AssignShiftRight(&Value.u128, pSubField->cShift);
                 }
 
-                DBGFREGVAL Value3 = Value;
                 RTUInt128AssignAndNFirstBits(&Value.u128, pSubField->cBits);
                 if (rc == VINF_SUCCESS && RTUInt128IsNotEqual(&Value.u128, &Value.u128))
                     rc = VINF_DBGF_TRUNCATED_REGISTER;

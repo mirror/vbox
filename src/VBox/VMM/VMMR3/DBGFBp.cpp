@@ -342,7 +342,7 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PUVM pUVM, PCDBGFADDRESS pAddress, uint
         return VERR_INVALID_PARAMETER;
     AssertMsgReturn(!piBp || VALID_PTR(piBp), ("piBp=%p\n", piBp), VERR_INVALID_POINTER);
     if (piBp)
-        *piBp = ~0;
+        *piBp = UINT32_MAX;
 
     /*
      * Check if the breakpoint already exists.
@@ -504,7 +504,7 @@ static DECLCALLBACK(int) dbgfR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
         return VERR_INVALID_PARAMETER;
     AssertMsgReturn(!piBp || VALID_PTR(piBp), ("piBp=%p\n", piBp), VERR_INVALID_POINTER);
     if (piBp)
-        *piBp = ~0;
+        *piBp = UINT32_MAX;
     switch (fType)
     {
         case X86_DR7_RW_EO:
@@ -652,6 +652,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
  */
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
 {
+    RT_NOREF_PV(pBp);
     Assert(pBp->fEnabled);
     return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpRegRecalcOnCpu, NULL);
 }
@@ -669,6 +670,7 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
  */
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
 {
+    RT_NOREF_PV(pBp);
     Assert(!pBp->fEnabled);
     return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpRegRecalcOnCpu, NULL);
 }
@@ -702,8 +704,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
         return VERR_INVALID_PARAMETER;
     AssertMsgReturn(!piBp || VALID_PTR(piBp), ("piBp=%p\n", piBp), VERR_INVALID_POINTER);
     if (piBp)
-        *piBp = ~0;
-
+        *piBp = UINT32_MAX;
 
     /*
      * Check if the breakpoint already exists.
@@ -833,7 +834,7 @@ static DECLCALLBACK(int) dbgfR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT c
      */
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    *piBp = ~0;
+    *piBp = UINT32_MAX;
 
     /*
      * Check if the breakpoint already exists.
@@ -906,7 +907,7 @@ VMMR3DECL(int)  DBGFR3BpSetPortIo(PUVM pUVM, RTIOPORT uPort, RTIOPORT cPorts, ui
     /*
      * This must be done on EMT.
      */
-    uint32_t iBp = -1;
+    uint32_t iBp = UINT32_MAX;
     int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetPortIo, 7,
                               pUVM, uPort, cPorts, fAccess, &iHitTrigger, &iHitDisable, piBp);
     if (piBp)
@@ -941,7 +942,7 @@ static DECLCALLBACK(int) dbgfR3BpSetMmio(PUVM pUVM, PCRTGCPHYS pGCPhys, uint32_t
      */
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    *piBp = ~0;
+    *piBp = UINT32_MAX;
 
     /*
      * Check if the breakpoint already exists.
@@ -1014,7 +1015,7 @@ VMMR3DECL(int)  DBGFR3BpSetMmio(PUVM pUVM, RTGCPHYS GCPhys, uint32_t cb, uint32_
     /*
      * This must be done on EMT.
      */
-    uint32_t iBp = -1;
+    uint32_t iBp = UINT32_MAX;
     int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetMmio, 7,
                               pUVM, &GCPhys, cb, fAccess, &iHitTrigger, &iHitDisable, piBp);
     if (piBp)

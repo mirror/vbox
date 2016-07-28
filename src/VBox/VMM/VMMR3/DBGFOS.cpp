@@ -92,6 +92,7 @@ typedef DBGFOSEMTWRAPPER *PDBGFOSEMTWRAPPER;
  */
 int dbgfR3OSInit(PUVM pUVM)
 {
+    RT_NOREF_PV(pVM);
     return VINF_SUCCESS;
 }
 

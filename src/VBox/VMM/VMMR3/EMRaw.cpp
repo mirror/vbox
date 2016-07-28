@@ -420,6 +420,7 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *psz
 #ifdef LOG_ENABLED
     return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
 #else
+    RT_NOREF_PV(pszPrefix);
     return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC);
 #endif
 }
@@ -434,6 +435,7 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *psz
 static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
+    RT_NOREF_PV(pVM);
 
     /* Hand it over to the interpreter. */
     VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
