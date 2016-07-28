@@ -2177,18 +2177,18 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
                 goto default_case;
             case VBOX_PCI_COMMAND+1: /* Command register, bits 8-15. */
                 /* don't change reserved bits (11-15) */
-                u8Val &= UINT32_C(~0xf8);
+                u8Val &= ~UINT32_C(0xf8);
                 fUpdateMappings = true;
                 goto default_case;
             case VBOX_PCI_STATUS:  /* Status register, bits 0-7. */
                 /* don't change read-only bits => actually all lower bits are read-only */
-                u8Val &= UINT32_C(~0xff);
+                u8Val &= ~UINT32_C(0xff);
                 /* status register, low part: clear bits by writing a '1' to the corresponding bit */
                 aDev->config[addr] &= ~u8Val;
                 break;
             case VBOX_PCI_STATUS+1:  /* Status register, bits 8-15. */
                 /* don't change read-only bits */
-                u8Val &= UINT32_C(~0x06);
+                u8Val &= ~UINT32_C(0x06);
                 /* status register, high part: clear bits by writing a '1' to the corresponding bit */
                 aDev->config[addr] &= ~u8Val;
                 break;
