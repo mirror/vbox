@@ -2469,7 +2469,7 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
     int   rc = VINF_SUCCESS;
-    RT_NOREF1(pvUser);
+    RT_NOREF2(pvUser, cb);
 
     if (Port - pAhci->IOPortBase >= 8)
     {

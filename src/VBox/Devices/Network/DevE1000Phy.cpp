@@ -158,6 +158,7 @@ static void Phy::regWriteDefault(PPHY pPhy, uint32_t index, uint16_t u16Value)
  */
 static uint16_t Phy::regReadForbidden(PPHY pPhy, uint32_t index)
 {
+    RT_NOREF2(pPhy, index);
     PhyLog(("PHY#%d At %02d read attempted from write-only '%s'\n",
             pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
     return 0;
@@ -347,6 +348,7 @@ void Phy::hardReset(PPHY pPhy)
  */
 static void Phy::softReset(PPHY pPhy)
 {
+    RT_NOREF1(pPhy);
     PhyLog(("PHY#%d Soft reset is not yet implemented!\n", pPhy->iInstance));
 }
 

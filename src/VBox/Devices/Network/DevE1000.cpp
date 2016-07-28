@@ -1563,10 +1563,9 @@ DECLINLINE(void) e1kCancelTimer(PE1KSTATE pThis, PTMTIMER pTimer)
             pThis->szPrf, e1kGetTimerName(pThis, pTimer)));
     int rc = TMTimerStop(pTimer);
     if (RT_FAILURE(rc))
-    {
         E1kLog2(("%s e1kCancelTimer: TMTimerStop() failed with %Rrc\n",
                 pThis->szPrf, rc));
-    }
+    RT_NOREF1(pThis);
 }
 
 #define e1kCsEnter(ps, rc) PDMCritSectEnter(&ps->cs, rc)
@@ -1657,7 +1656,7 @@ static void e1kHardReset(PE1KSTATE pThis)
  * @param   pThis       The device state structure.
  * @param   cpPacket    The packet.
  * @param   cb          The size of the packet.
- * @param   cszText     A string denoting direction of packet transfer.
+ * @param   pszText     A string denoting direction of packet transfer.
  *
  * @return  The 1's complement of the 1's complement sum.
  *
@@ -1686,16 +1685,16 @@ static uint16_t e1kCSum16(const void *pvBuf, size_t cb)
  * @param   pThis       The device state structure.
  * @param   cpPacket    The packet.
  * @param   cb          The size of the packet.
- * @param   cszText     A string denoting direction of packet transfer.
+ * @param   pszText     A string denoting direction of packet transfer.
  * @thread  E1000_TX
  */
-DECLINLINE(void) e1kPacketDump(PE1KSTATE pThis, const uint8_t *cpPacket, size_t cb, const char *cszText)
+DECLINLINE(void) e1kPacketDump(PE1KSTATE pThis, const uint8_t *cpPacket, size_t cb, const char *pszText)
 {
 #ifdef DEBUG
     if (RT_LIKELY(e1kCsEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
     {
         Log4(("%s --- %s packet #%d: %RTmac => %RTmac (%d bytes) ---\n",
-                pThis->szPrf, cszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cb));
+                pThis->szPrf, pszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cb));
         if (ntohs(*(uint16_t*)(cpPacket+12)) == 0x86DD)
         {
             Log4(("%s --- IPv6: %RTnaipv6 => %RTnaipv6\n",
@@ -1720,15 +1719,16 @@ DECLINLINE(void) e1kPacketDump(PE1KSTATE pThis, const uint8_t *cpPacket, size_t 
     {
         if (ntohs(*(uint16_t*)(cpPacket+12)) == 0x86DD)
             E1kLogRel(("E1000: %s packet #%d, %RTmac => %RTmac, %RTnaipv6 => %RTnaipv6, seq=%x ack=%x\n",
-                       cszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cpPacket+14+8, cpPacket+14+24,
+                       pszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cpPacket+14+8, cpPacket+14+24,
                        ntohl(*(uint32_t*)(cpPacket+14+40+4)), ntohl(*(uint32_t*)(cpPacket+14+40+8))));
         else
             E1kLogRel(("E1000: %s packet #%d, %RTmac => %RTmac, %RTnaipv4 => %RTnaipv4, seq=%x ack=%x\n",
-                       cszText, ++pThis->u32PktNo, cpPacket+6, cpPacket,
+                       pszText, ++pThis->u32PktNo, cpPacket+6, cpPacket,
                        *(uint32_t*)(cpPacket+14+12), *(uint32_t*)(cpPacket+14+16),
                        ntohl(*(uint32_t*)(cpPacket+14+20+4)), ntohl(*(uint32_t*)(cpPacket+14+20+8))));
         e1kCsLeave(pThis);
     }
+    RT_NOREF2(cb, pszText);
 #endif
 }
 
@@ -1740,7 +1740,7 @@ DECLINLINE(void) e1kPacketDump(PE1KSTATE pThis, const uint8_t *cpPacket, size_t 
  * @param   pDesc       Pointer to descriptor union.
  * @thread  E1000_TX
  */
-DECLINLINE(int) e1kGetDescType(E1KTXDESC* pDesc)
+DECLINLINE(int) e1kGetDescType(E1KTXDESC *pDesc)
 {
     if (pDesc->legacy.cmd.fDEXT)
         return pDesc->context.dw2.u4DTYP;
@@ -1754,8 +1754,9 @@ DECLINLINE(int) e1kGetDescType(E1KTXDESC* pDesc)
  * @param   pDesc       Pointer to the descriptor.
  * @thread  E1000_RX
  */
-static void e1kPrintRDesc(PE1KSTATE pThis, E1KRXDESC* pDesc)
+static void e1kPrintRDesc(PE1KSTATE pThis, E1KRXDESC *pDesc)
 {
+    RT_NOREF2(pThis, pDesc);
     E1kLog2(("%s <-- Receive Descriptor (%d bytes):\n", pThis->szPrf, pDesc->u16Length));
     E1kLog2(("        Address=%16LX Length=%04X Csum=%04X\n",
              pDesc->u64BufAddr, pDesc->u16Length, pDesc->u16Checksum));
@@ -1781,12 +1782,14 @@ static void e1kPrintRDesc(PE1KSTATE pThis, E1KRXDESC* pDesc)
  *
  * @param   pThis       The device state structure.
  * @param   pDesc       Pointer to descriptor union.
- * @param   cszDir      A string denoting direction of descriptor transfer
+ * @param   pszDir      A string denoting direction of descriptor transfer
  * @thread  E1000_TX
  */
-static void e1kPrintTDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, const char* cszDir,
+static void e1kPrintTDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, const char *pszDir,
                           unsigned uLevel = RTLOGGRPFLAGS_LEVEL_2)
 {
+    RT_NOREF4(pThis, pDesc, pszDir, uLevel);
+
     /*
      * Unfortunately we cannot use our format handler here, we want R0 logging
      * as well.
@@ -1795,7 +1798,7 @@ static void e1kPrintTDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, const char* cszDir,
     {
         case E1K_DTYP_CONTEXT:
             E1kLogX(uLevel, ("%s %s Context Transmit Descriptor %s\n",
-                    pThis->szPrf, cszDir, cszDir));
+                    pThis->szPrf, pszDir, pszDir));
             E1kLogX(uLevel, ("        IPCSS=%02X IPCSO=%02X IPCSE=%04X TUCSS=%02X TUCSO=%02X TUCSE=%04X\n",
                     pDesc->context.ip.u8CSS, pDesc->context.ip.u8CSO, pDesc->context.ip.u16CSE,
                     pDesc->context.tu.u8CSS, pDesc->context.tu.u8CSO, pDesc->context.tu.u16CSE));
@@ -1812,7 +1815,7 @@ static void e1kPrintTDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, const char* cszDir,
             break;
         case E1K_DTYP_DATA:
             E1kLogX(uLevel, ("%s %s Data Transmit Descriptor (%d bytes) %s\n",
-                    pThis->szPrf, cszDir, pDesc->data.cmd.u20DTALEN, cszDir));
+                    pThis->szPrf, pszDir, pDesc->data.cmd.u20DTALEN, pszDir));
             E1kLogX(uLevel, ("        Address=%16LX DTALEN=%05X\n",
                     pDesc->data.u64BufAddr,
                     pDesc->data.cmd.u20DTALEN));
@@ -1835,7 +1838,7 @@ static void e1kPrintTDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, const char* cszDir,
             break;
         case E1K_DTYP_LEGACY:
             E1kLogX(uLevel, ("%s %s Legacy Transmit Descriptor (%d bytes) %s\n",
-                    pThis->szPrf, cszDir, pDesc->legacy.cmd.u16Length, cszDir));
+                    pThis->szPrf, pszDir, pDesc->legacy.cmd.u16Length, pszDir));
             E1kLogX(uLevel, ("        Address=%16LX DTALEN=%05X\n",
                     pDesc->data.u64BufAddr,
                     pDesc->legacy.cmd.u16Length));
@@ -1858,7 +1861,7 @@ static void e1kPrintTDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, const char* cszDir,
             break;
         default:
             E1kLog(("%s %s Invalid Transmit Descriptor %s\n",
-                    pThis->szPrf, cszDir, cszDir));
+                    pThis->szPrf, pszDir, pszDir));
             break;
     }
 }
@@ -3701,7 +3704,7 @@ DECLINLINE(bool) e1kXmitIsGsoBuf(PDMSCATTERGATHER const *pTxSg)
  * @param   addr        Physical address in guest context.
  * @thread  E1000_TX
  */
-DECLINLINE(void) e1kLoadDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr)
+DECLINLINE(void) e1kLoadDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
 {
     PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), addr, pDesc, sizeof(E1KTXDESC));
 }
@@ -3781,7 +3784,7 @@ DECLINLINE(bool) e1kTxDLazyLoad(PE1KSTATE pThis)
  * @param   addr        Physical address in guest context.
  * @thread  E1000_TX
  */
-DECLINLINE(void) e1kWriteBackDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr)
+DECLINLINE(void) e1kWriteBackDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
 {
     /* Only the last half of the descriptor has to be written back. */
     e1kPrintTDesc(pThis, pDesc, "^^^");
@@ -3934,6 +3937,8 @@ static void e1kTransmitFrame(PE1KSTATE pThis, bool fOnWorkerThread)
  */
 static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen, uint8_t cso, uint8_t css, uint16_t cse)
 {
+    RT_NOREF1(pThis);
+
     if (css >= u16PktLen)
     {
         E1kLog2(("%s css(%X) is greater than packet length-1(%X), checksum is not inserted\n",
@@ -4210,7 +4215,7 @@ static int e1kFallbackAddSegment(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u1
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC* pDesc, uint32_t cbFragment, bool fOnWorkerThread)
+static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, uint32_t cbFragment, bool fOnWorkerThread)
 {
     PPDMSCATTERGATHER pTxSg = pThis->CTX_SUFF(pTxSg);
     Assert(e1kGetDescType(pDesc) == E1K_DTYP_DATA);
@@ -4275,7 +4280,7 @@ static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC* pDesc, uint32_t cb
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC* pDesc, bool fOnWorkerThread)
+static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, bool fOnWorkerThread)
 {
 #ifdef VBOX_STRICT
     PPDMSCATTERGATHER pTxSg = pThis->CTX_SUFF(pTxSg);
@@ -4384,7 +4389,7 @@ static bool e1kAddToFrame(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint32_t cbFragmen
  * @param   addr        Physical address of the descriptor in guest memory.
  * @thread  E1000_TX
  */
-static void e1kDescReport(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr)
+static void e1kDescReport(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
 {
     /*
      * We fake descriptor write-back bursting. Descriptors are written back as they are
@@ -4469,7 +4474,7 @@ static void e1kDescReport(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr)
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr, bool fOnWorkerThread)
+static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
     uint32_t cbVTag = 0;
@@ -4729,7 +4734,7 @@ static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr, bool fO
  * @param   cbPacketSize    Size of the packet as previously computed.
  * @thread  E1000_TX
  */
-static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr,
+static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr,
                        bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
@@ -4877,7 +4882,7 @@ static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS addr,
     return rc;
 }
 
-DECLINLINE(void) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC* pDesc)
+DECLINLINE(void) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
 {
     if (pDesc->context.dw2.fTSE)
     {
@@ -5508,6 +5513,7 @@ static int e1kRegReadVFTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  */
 static int e1kRegReadUnimplemented(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
+    RT_NOREF3(pThis, offset, index);
     E1kLog(("%s At %08X read (00000000) attempt from unimplemented register %s (%s)\n",
             pThis->szPrf, offset, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
     *pu32Value = 0;
@@ -5870,7 +5876,7 @@ static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32V
  */
 PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pvUser, cb);
     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
 
@@ -5890,7 +5896,7 @@ PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pvUser, cb);
     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
 
@@ -6880,7 +6886,7 @@ static DECLCALLBACK(size_t) e1kFmtTxDesc(PFNRTSTROUTPUT pfnOutput,
                                          void *pvUser)
 {
     AssertReturn(strcmp(pszType, "e1ktxd") == 0, 0);
-    E1KTXDESC* pDesc = (E1KTXDESC*)pvValue;
+    E1KTXDESC *pDesc = (E1KTXDESC*)pvValue;
     if (!pDesc)
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "NULL_TXD");
 

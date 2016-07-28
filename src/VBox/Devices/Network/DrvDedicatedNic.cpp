@@ -258,6 +258,8 @@ PDMBOTHCBDECL(int) drvDedicatedNicUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCAT
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
     Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+#else
+    RT_NOREF1(pInterface);
 #endif
 
     if (pSgBuf)

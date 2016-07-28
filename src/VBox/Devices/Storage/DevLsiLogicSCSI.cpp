@@ -1687,7 +1687,7 @@ PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = Port - pThis->IOPortBase;
     int             rc;
-    RT_NOREF_PV(pvUser);
+    RT_NOREF2(pvUser, cb);
 
     if (!(offReg & 3))
     {
@@ -1764,7 +1764,7 @@ PDMBOTHCBDECL(int) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
     Assert(!(offReg & 3)); Assert(cb == 4);
-    RT_NOREF_PV(pvUser);
+    RT_NOREF2(pvUser, cb);
 
     return lsilogicRegisterRead(pThis, offReg, (uint32_t *)pv);
 }

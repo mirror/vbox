@@ -309,17 +309,19 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
 /**
  * Dump a packet to debug log.
  *
- * @param   pThis      The device state structure.
- * @param   cpPacket    The packet.
+ * @param   pThis       The device state structure.
+ * @param   pbPacket    The packet.
  * @param   cb          The size of the packet.
- * @param   cszText     A string denoting direction of packet transfer.
+ * @param   pszText     A string denoting direction of packet transfer.
  */
-DECLINLINE(void) vnetPacketDump(PVNETSTATE pThis, const uint8_t *cpPacket, size_t cb, const char *cszText)
+DECLINLINE(void) vnetPacketDump(PVNETSTATE pThis, const uint8_t *pbPacket, size_t cb, const char *pszText)
 {
 #ifdef DEBUG
     Log(("%s %s packet #%d (%d bytes):\n",
-         INSTANCE(pThis), cszText, ++pThis->u32PktNo, cb));
-    Log3(("%.*Rhxd\n", cb, cpPacket));
+         INSTANCE(pThis), pszText, ++pThis->u32PktNo, cb));
+    Log3(("%.*Rhxd\n", cb, pbPacket));
+#else
+    RT_NOREF4(pThis, pbPacket, cb, pszText);
 #endif
 }
 
@@ -364,7 +366,9 @@ DECLINLINE(void) vnetPrintFeatures(PVNETSTATE pThis, uint32_t fFeatures, const c
         if (s_aFeatures[i].uMask & fFeatures)
             Log3(("%s --> %s\n", INSTANCE(pThis), s_aFeatures[i].pcszDesc));
     }
-#endif /* DEBUG */
+#else  /* !DEBUG */
+    RT_NOREF3(pThis, fFeatures, pcszText);
+#endif /* !DEBUG */
 }
 
 static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(void *pvState)
@@ -766,7 +770,7 @@ static bool vnetAddressFilter(PVNETSTATE pThis, const void *pvBuf, size_t cb)
             return true;
 
     Log2(("%s vnetAddressFilter: failed all tests, returning false, packet dump follows:\n", INSTANCE(pThis)));
-    vnetPacketDump(pThis, (const uint8_t*)pvBuf, cb, "<-- Incoming");
+    vnetPacketDump(pThis, (const uint8_t *)pvBuf, cb, "<-- Incoming");
 
     return false;
 }
@@ -828,7 +832,7 @@ static int vnetHandleRxPacket(PVNETSTATE pThis, const void *pvBuf, size_t cb,
     else
         uHdrLen = sizeof(VNETHDR);
 
-    vnetPacketDump(pThis, (const uint8_t*)pvBuf, cb, "<-- Incoming");
+    vnetPacketDump(pThis, (const uint8_t *)pvBuf, cb, "<-- Incoming");
 
     unsigned int uOffset = 0;
     unsigned int nElem;
@@ -1225,7 +1229,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
                         uOffset += elem.aSegsOut[i].cb;
                     }
                     pSgBuf->cbUsed = uSize;
-                    vnetPacketDump(pThis, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
+                    vnetPacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
                     if (pGso)
                     {
                         /* Some guests (RHEL) may report HdrLen excluding transport layer header! */
