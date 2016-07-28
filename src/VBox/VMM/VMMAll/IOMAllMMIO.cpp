@@ -93,6 +93,7 @@ static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void
 static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRange, RTGCPHYS GCPhys,
                                               void const *pvValue, unsigned cbValue)
 {
+    RT_NOREF_PV(pVCpu);
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
                  && (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
                  VERR_IOM_MMIO_IPE_1);
@@ -597,6 +598,7 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
 static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
                                            RTGCPHYS GCPhysFault, void *pvUser)
 {
+    RT_NOREF_PV(uErrorCode);
     int rc = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)

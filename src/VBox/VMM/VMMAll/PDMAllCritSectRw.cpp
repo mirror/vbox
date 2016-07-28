@@ -160,6 +160,9 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
     NOREF(pSrcPos);
     NOREF(fNoVal);
 #endif
+#ifdef IN_RING3
+    NOREF(rcBusy);
+#endif
 
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
@@ -709,6 +712,9 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     NOREF(pSrcPos);
     NOREF(fNoVal);
+#endif
+#ifdef IN_RING3
+    NOREF(rcBusy);
 #endif
 
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)

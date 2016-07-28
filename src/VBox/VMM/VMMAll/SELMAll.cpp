@@ -63,6 +63,8 @@ selmGuestGDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
     NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
 
 #  ifdef IN_RING3
+    RT_NOREF_PV(pVM);
+
     VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 
@@ -121,6 +123,8 @@ selmGuestTSSWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
     NOREF(pvBuf); NOREF(GCPtr); NOREF(cbBuf); NOREF(enmOrigin); NOREF(pvUser); NOREF(pvPtr);
 
 #  ifdef IN_RING3
+    RT_NOREF_PV(pVM);
+
     /** @todo This can be optimized by checking for the ESP0 offset and tracking TR
      *        reloads in REM (setting VM_FF_SELM_SYNC_TSS if TR is reloaded). We
      *        should probably also deregister the virtual handler if TR.base/size
