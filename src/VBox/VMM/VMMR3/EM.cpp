@@ -754,7 +754,6 @@ VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
 {
     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
     longjmp(pVCpu->em.s.u.FatalLongJump, rc);
-    AssertReleaseMsgFailed(("longjmp returned!\n"));
 }
 
 
