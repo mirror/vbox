@@ -450,20 +450,20 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
         if (addr == 0x05)       /* Command register, bits 8-15. */
         {
             /* don't change reserved bits (11-15) */
-            val &= UINT32_C(~0xf8);
+            val &= ~UINT32_C(0xf8);
             d->config[addr] = val;
         }
         else if (addr == 0x06)  /* Status register, bits 0-7. */
         {
             /* don't change read-only bits => actually all lower bits are read-only */
-            val &= UINT32_C(~0xff);
+            val &= ~UINT32_C(0xff);
             /* status register, low part: clear bits by writing a '1' to the corresponding bit */
             d->config[addr] &= ~val;
         }
         else if (addr == 0x07)  /* Status register, bits 8-15. */
         {
             /* don't change read-only bits */
-            val &= UINT32_C(~0x06);
+            val &= ~UINT32_C(0x06);
             /* status register, high part: clear bits by writing a '1' to the corresponding bit */
             d->config[addr] &= ~val;
         }
