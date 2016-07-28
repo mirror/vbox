@@ -2767,6 +2767,7 @@
  */
 #define NIL_OFFSET   (~0U)
 
+
 /** @def NOREF
  * Keeps the compiler from bitching about an unused parameter, local variable,
  * or other stuff, will never use _Pragma are is thus more flexible.
@@ -2783,6 +2784,32 @@
 #else
 # define RT_NOREF_PV(var)       (void)(var)
 #endif
+
+/** @def RT_NOREF1
+ * RT_NOREF_PV shorthand taking on parameter.
+ */
+#define RT_NOREF1(var1)                                 RT_NOREF_PV(var1)
+/** @def RT_NOREF2
+ * RT_NOREF_PV shorthand taking two parameters.
+ */
+#define RT_NOREF2(var1, var2)                           RT_NOREF_PV(var1); RT_NOREF1(var2)
+/** @def RT_NOREF3
+ * RT_NOREF_PV shorthand taking three parameters.
+ */
+#define RT_NOREF3(var1, var2, var3)                     RT_NOREF_PV(var1); RT_NOREF2(var2, var3)
+/** @def RT_NOREF4
+ * RT_NOREF_PV shorthand taking four parameters.
+ */
+#define RT_NOREF4(var1, var2, var3, var4)               RT_NOREF_PV(var1); RT_NOREF3(var2, var3, var4)
+/** @def RT_NOREF5
+ * RT_NOREF_PV shorthand taking five parameters.
+ */
+#define RT_NOREF5(var1, var2, var3, var4, var5)         RT_NOREF_PV(var1); RT_NOREF4(var2, var3, var4, var5)
+/** @def RT_NOREF6
+ * RT_NOREF_PV shorthand taking six parameters.
+ */
+#define RT_NOREF6(var1, var2, var3, var4, var5, var6)   RT_NOREF_PV(var1); RT_NOREF5(var2, var3, var4, var5, var6)
+
 
 /** @def RT_BREAKPOINT
  * Emit a debug breakpoint instruction.
