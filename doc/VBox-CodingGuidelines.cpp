@@ -59,7 +59,7 @@
  *      - Typedefs are all uppercase and contain no underscores to distinguish
  *        them from defines.
  *
- *      - Pointer typedefs start with 'P'. If pointer to const then 'PC'.
+ *      - Pointer typedefs start with 'P'.
  *
  *      - Function typedefs start with 'FN'. If pointer to FN then 'PFN'.
  *
