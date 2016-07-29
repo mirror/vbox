@@ -511,6 +511,8 @@ public:
     _ATL_OBJMAP_ENTRY *m_pObjMap;
     HRESULT Init(_ATL_OBJMAP_ENTRY *p, HINSTANCE h, const GUID *pLibID = NULL) throw()
     {
+        RT_NOREF1(h);
+
         if (pLibID)
             m_LibID = *pLibID;
 
@@ -559,7 +561,7 @@ public:
 
             while (pEntry->pclsid)
             {
-                if ((pEntry->pfnGetClassObject) && rclsid == *pEntry->pclsid)
+                if (pEntry->pfnGetClassObject && rclsid == *pEntry->pclsid)
                 {
                     if (!pEntry->pCF)
                     {
@@ -821,13 +823,16 @@ public:
     }
     HRESULT GetIDsOfNames(REFIID riid, LPOLESTR *pwszNames, UINT cNames, LCID lcid, DISPID *pDispID)
     {
+        RT_NOREF1(riid); /* should be IID_NULL */
         HRESULT hrc = FetchTI(lcid);
         if (m_pTInfo)
             hrc = m_pTInfo->GetIDsOfNames(pwszNames, cNames, pDispID);
         return hrc;
     }
-    HRESULT Invoke(IDispatch *p, DISPID DispID, REFIID riid, LCID lcid, WORD iFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr)
+    HRESULT Invoke(IDispatch *p, DISPID DispID, REFIID riid, LCID lcid, WORD iFlags, DISPPARAMS *pDispParams,
+                   VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr)
     {
+        RT_NOREF1(riid); /* should be IID_NULL */
         HRESULT hrc = FetchTI(lcid);
         if (m_pTInfo)
             hrc = m_pTInfo->Invoke(p, DispID, iFlags, pDispParams, pVarResult, pExcepInfo, puArgErr);

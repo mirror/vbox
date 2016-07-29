@@ -2,6 +2,7 @@
 /** @file
  * VBoxUsbDev.cpp - USB device.
  */
+
 /*
  * Copyright (C) 2011-2016 Oracle Corporation
  *
@@ -13,11 +14,22 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxUsbCmn.h"
 #include <iprt/assert.h>
 #include <VBox/log.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBOXUSB_MEMTAG 'bUBV'
+
+
 
 DECLHIDDEN(PVOID) vboxUsbMemAlloc(SIZE_T cbBytes)
 {
@@ -96,6 +108,7 @@ static NTSTATUS vboxUsbDdiAddDevice(PDRIVER_OBJECT pDriverObject,
 
 static VOID vboxUsbDdiUnload(PDRIVER_OBJECT pDriverObject)
 {
+    RT_NOREF1(pDriverObject);
     LogRel(("VBoxUsb::DriverUnload. Built Date (%s) Time (%s)\n", __DATE__, __TIME__));
     VBoxDrvToolStrFree(&g_VBoxUsbGlobals.RegPath);
 
@@ -160,11 +173,13 @@ static NTSTATUS vboxUsbDispatchCreate(IN PDEVICE_OBJECT pDeviceObject, IN PIRP p
 static NTSTATUS vboxUsbDispatchClose(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp)
 {
     PVBOXUSBDEV_EXT pDevExt = (PVBOXUSBDEV_EXT)pDeviceObject->DeviceExtension;
+    NTSTATUS Status = STATUS_SUCCESS;
+#ifdef VBOX_STRICT
     PIO_STACK_LOCATION pSl = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT pFObj = pSl->FileObject;
-    NTSTATUS Status = STATUS_SUCCESS;
     Assert(pFObj);
     Assert(!pFObj->FileName.Length);
+#endif
     Status = vboxUsbRtClose(pDevExt, pIrp);
     if (NT_SUCCESS(Status))
     {
@@ -197,7 +212,7 @@ static NTSTATUS vboxUsbDispatchDeviceControl(IN PDEVICE_OBJECT pDeviceObject, IN
 
 static NTSTATUS vboxUsbDispatchCleanup(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp)
 {
-    PVBOXUSBDEV_EXT pDevExt = (PVBOXUSBDEV_EXT)pDeviceObject->DeviceExtension;
+    RT_NOREF1(pDeviceObject);
     NTSTATUS Status = STATUS_SUCCESS;
     Status = VBoxDrvToolIoComplete(pIrp, Status, 0);
     return Status;

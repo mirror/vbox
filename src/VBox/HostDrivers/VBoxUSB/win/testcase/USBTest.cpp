@@ -252,8 +252,11 @@ int usbMonitorInit()
         goto failure;
     }
 
-    if (version.u32Major != USBMON_MAJOR_VERSION ||
-        version.u32Minor <  USBMON_MINOR_VERSION)
+    if (   version.u32Major != USBMON_MAJOR_VERSION
+#if USBMON_MINOR_VERSION != 0
+        || version.u32Minor < USBMON_MINOR_VERSION
+#endif
+        )
     {
         printf("usbproxy: Filter driver version mismatch!!\n");
         rc = VERR_VERSION_MISMATCH;

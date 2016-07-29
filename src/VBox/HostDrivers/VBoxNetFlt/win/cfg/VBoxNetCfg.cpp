@@ -18,7 +18,6 @@
 
 #define _WIN32_DCOM
 
-
 #include <devguid.h>
 #include <stdio.h>
 #include <regstr.h>
@@ -37,8 +36,8 @@
 #include <iprt/win/winsock2.h>
 #include <Ws2tcpip.h>
 #include <ws2ipdef.h>
-#include <netioapi.h>
-#include <iphlpapi.h>
+#include <iprt/win/netioapi.h>
+#include <iprt/win/iphlpapi.h>
 
 
 #ifndef Assert   /** @todo r=bird: where would this be defined? */
@@ -497,8 +496,9 @@ static HRESULT vboxNetCfgWinEnumNetCfgComponents(IN INetCfg *pNetCfg,
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection(LPWSTR pGuid, PCWSTR NewName);
 
-static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext)
+static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pvContext)
 {
+    RT_NOREF1(pvContext);
     SP_REMOVEDEVICE_PARAMS rmdParams;
     memset(&rmdParams, 0, sizeof(SP_REMOVEDEVICE_PARAMS));
     rmdParams.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
@@ -673,9 +673,9 @@ static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, 
     return TRUE;
 }
 
-typedef BOOL (*VBOXNETCFGWIN_NETENUM_CALLBACK) (HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext);
+typedef BOOL (*PFNVBOXNETCFGWINNETENUMCALLBACK)(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPId,
-                                                        VBOXNETCFGWIN_NETENUM_CALLBACK callback, PVOID pContext)
+                                                        PFNVBOXNETCFGWINNETENUMCALLBACK pfnCallback, PVOID pvContext)
 {
     NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Searching for: %S\n", pwszPnPId));
 
@@ -689,7 +689,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPId,
                                                NULL             /* IN PVOID Reserved */);
     if (hDevInfo != INVALID_HANDLE_VALUE)
     {
-        DWORD winEr;
+        DWORD winEr = NO_ERROR;
 
         DWORD dwDevId = 0;
         size_t cPnPId = wcslen(pwszPnPId);
@@ -770,7 +770,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPId,
                 pCurId += cCurId - cPnPId;
                 if (!wcsnicmp(pCurId, pwszPnPId, cPnPId))
                 {
-                    if (!callback(hDevInfo, &Dev, pContext))
+                    if (!pfnCallback(hDevInfo, &Dev, pvContext))
                         break;
                 }
             }
@@ -1117,7 +1117,6 @@ static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, const GUID * p
 static HRESULT netIfWinIsHostOnly(IWbemClassObject * pAdapterConfig, BOOL * pbIsHostOnly)
 {
     VARIANT vtServiceName;
-    BOOL bIsHostOnly = FALSE;
     VariantInit(&vtServiceName);
 
     HRESULT hr = pAdapterConfig->Get(L"ServiceName", 0 /*lFlags*/, &vtServiceName, NULL /*pvtType*/, NULL /*plFlavor*/);
@@ -1197,6 +1196,7 @@ static HRESULT netIfWinGetIpSettings(IWbemClassObject * pAdapterConfig, ULONG *p
     return hr;
 }
 
+#if 0 /* unused */
 
 static HRESULT netIfWinHasIpSettings(IWbemClassObject * pAdapterConfig, SAFEARRAY * pCheckIp, SAFEARRAY * pCheckMask, bool *pFound)
 {
@@ -1271,6 +1271,8 @@ static HRESULT netIfWinWaitIpSettings(IWbemServices *pSvc, const GUID * pGuid, S
 
     return hr;
 }
+
+#endif /* unused */
 
 static HRESULT netIfWinCreateIWbemServices(IWbemServices ** ppSvc)
 {
@@ -1377,7 +1379,7 @@ static HRESULT netIfExecMethod(IWbemServices * pSvc, IWbemClassObject *pClass, B
 
 static HRESULT netIfWinCreateIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp)
 {
-    HRESULT hr;
+    HRESULT hr = S_OK; /* MSC maybe used uninitialized */
     SAFEARRAY * pIpArray = SafeArrayCreateVector(VT_BSTR, 0, cIp);
     if (pIpArray)
     {
@@ -1407,6 +1409,7 @@ static HRESULT netIfWinCreateIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp
     return hr;
 }
 
+#if 0 /* unused */
 static HRESULT netIfWinCreateIpArrayV4V6(SAFEARRAY **ppArray, BSTR Ip)
 {
     HRESULT hr;
@@ -1433,6 +1436,7 @@ static HRESULT netIfWinCreateIpArrayV4V6(SAFEARRAY **ppArray, BSTR Ip)
 
     return hr;
 }
+#endif
 
 
 static HRESULT netIfWinCreateIpArrayVariantV4(VARIANT * pIpAddresses, in_addr* aIp, UINT cIp)
@@ -1449,6 +1453,7 @@ static HRESULT netIfWinCreateIpArrayVariantV4(VARIANT * pIpAddresses, in_addr* a
     return hr;
 }
 
+#if 0 /* unused */
 static HRESULT netIfWinCreateIpArrayVariantV4V6(VARIANT * pIpAddresses, BSTR Ip)
 {
     HRESULT hr;
@@ -1462,8 +1467,9 @@ static HRESULT netIfWinCreateIpArrayVariantV4V6(VARIANT * pIpAddresses, BSTR Ip)
     }
     return hr;
 }
+#endif
 
-static HRESULT netIfWinEnableStatic(IWbemServices * pSvc, const GUID * pGuid, BSTR ObjPath, VARIANT * pIp, VARIANT * pMask)
+static HRESULT netIfWinEnableStatic(IWbemServices *pSvc, const GUID *pGuid, BSTR ObjPath, VARIANT *pIp, VARIANT *pMask)
 {
     ComPtr<IWbemClassObject> pClass;
     BSTR ClassName = SysAllocString(L"Win32_NetworkAdapterConfiguration");
@@ -1490,16 +1496,17 @@ static HRESULT netIfWinEnableStatic(IWbemServices * pSvc, const GUID * pGuid, BS
                     int winEr = varReturnValue.uintVal;
                     switch (winEr)
                     {
-                    case 0:
+                        case 0:
                         {
                             hr = S_OK;
 //                            bool bFound;
 //                            HRESULT tmpHr = netIfWinWaitIpSettings(pSvc, pGuid, pIp->parray, pMask->parray, 180, &bFound);
+                            NOREF(pGuid);
+                            break;
                         }
-                        break;
-                    default:
-                        hr = HRESULT_FROM_WIN32( winEr );
-                        break;
+                        default:
+                            hr = HRESULT_FROM_WIN32( winEr );
+                            break;
                     }
                 }
             }
@@ -1530,6 +1537,8 @@ static HRESULT netIfWinEnableStaticV4(IWbemServices * pSvc, const GUID * pGuid, 
     }
     return hr;
 }
+
+#if 0 /* unused */
 
 static HRESULT netIfWinEnableStaticV4V6(IWbemServices * pSvc, const GUID * pGuid, BSTR ObjPath, BSTR Ip, BSTR Mask)
 {
@@ -1619,6 +1628,8 @@ static HRESULT netIfWinSetGatewaysV4V6(IWbemServices * pSvc, BSTR ObjPath, BSTR 
     }
     return hr;
 }
+
+#endif /* unused */
 
 static HRESULT netIfWinEnableDHCP(IWbemServices * pSvc, BSTR ObjPath)
 {
@@ -2171,12 +2182,12 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
 
 static HRESULT vboxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, LPCWSTR pwszId, DWORD InfRmFlags)
 {
-    HRESULT hr = S_OK;
+    NOREF(pNc);
     NonStandardLog("Finding NetAdp driver package and trying to uninstall it ...\n");
 
     VBoxDrvCfgInfUninstallAllF(L"Net", pwszId, InfRmFlags);
     NonStandardLog("NetAdp is not installed currently\n");
-    return hr;
+    return S_OK;
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, IN LPCWSTR pwszId)
@@ -2290,7 +2301,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(PCWSTR DevNam
 {
     const WCHAR * pSuffix = wcsrchr( DevName, L'#' );
     ULONG cbSize = sizeof(VBOX_CONNECTION_NAME);
-    ULONG cbSufSize = 0;
 
     if (pSuffix)
     {
@@ -2316,6 +2326,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(PCWSTR DevNam
 
 static BOOL vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority(IN INetCfg *pNc, IN INetCfgComponent *pNcc, PVOID pContext)
 {
+    RT_NOREF1(pNc);
     INetCfgComponentBindings *pNetCfgBindings;
     GUID *pGuid = (GUID*)pContext;
 
@@ -2651,7 +2662,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
         do
         {
             BOOL ok;
-            DWORD ret = 0;
             GUID netGuid;
             SP_DEVINFO_DATA DeviceInfoData;
             DWORD index = 0;
@@ -2662,20 +2672,20 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
             DeviceInfoData.cbSize = sizeof (SP_DEVINFO_DATA);
 
             /* copy the net class GUID */
-            memcpy (&netGuid, &GUID_DEVCLASS_NET, sizeof (GUID_DEVCLASS_NET));
+            memcpy(&netGuid, &GUID_DEVCLASS_NET, sizeof (GUID_DEVCLASS_NET));
 
             /* return a device info set contains all installed devices of the Net class */
-            hDeviceInfo = SetupDiGetClassDevs (&netGuid, NULL, NULL, DIGCF_PRESENT);
+            hDeviceInfo = SetupDiGetClassDevs(&netGuid, NULL, NULL, DIGCF_PRESENT);
 
             if (hDeviceInfo == INVALID_HANDLE_VALUE)
-                SetErrBreak (("SetupDiGetClassDevs failed (0x%08X)", GetLastError()));
+                SetErrBreak(("SetupDiGetClassDevs failed (0x%08X)", GetLastError()));
 
             /* enumerate the driver info list */
             while (TRUE)
             {
                 TCHAR *deviceHwid;
 
-                ok = SetupDiEnumDeviceInfo (hDeviceInfo, index, &DeviceInfoData);
+                ok = SetupDiEnumDeviceInfo(hDeviceInfo, index, &DeviceInfoData);
 
                 if (!ok)
                 {
@@ -2689,13 +2699,13 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
                 }
 
                 /* try to get the hardware ID registry property */
-                ok = SetupDiGetDeviceRegistryProperty (hDeviceInfo,
-                                                       &DeviceInfoData,
-                                                       SPDRP_HARDWAREID,
-                                                       NULL,
-                                                       NULL,
-                                                       0,
-                                                       &size);
+                ok = SetupDiGetDeviceRegistryProperty(hDeviceInfo,
+                                                      &DeviceInfoData,
+                                                      SPDRP_HARDWAREID,
+                                                      NULL,
+                                                      NULL,
+                                                      0,
+                                                      &size);
                 if (!ok)
                 {
                     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
@@ -2704,17 +2714,17 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
                         continue;
                     }
 
-                    deviceHwid = (TCHAR *) malloc (size);
-                    ok = SetupDiGetDeviceRegistryProperty (hDeviceInfo,
-                                                           &DeviceInfoData,
-                                                           SPDRP_HARDWAREID,
-                                                           NULL,
-                                                           (PBYTE)deviceHwid,
-                                                           size,
-                                                           NULL);
+                    deviceHwid = (TCHAR *) malloc(size);
+                    ok = SetupDiGetDeviceRegistryProperty(hDeviceInfo,
+                                                          &DeviceInfoData,
+                                                          SPDRP_HARDWAREID,
+                                                          NULL,
+                                                          (PBYTE)deviceHwid,
+                                                          size,
+                                                          NULL);
                     if (!ok)
                     {
-                        free (deviceHwid);
+                        free(deviceHwid);
                         deviceHwid = NULL;
                         index++;
                         continue;
@@ -2729,9 +2739,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
 
                 for (TCHAR *t = deviceHwid;
                      t && *t && t < &deviceHwid[size / sizeof(TCHAR)];
-                     t += _tcslen (t) + 1)
+                     t += _tcslen(t) + 1)
                 {
-                    if (!_tcsicmp (DRIVERHWID, t))
+                    if (!_tcsicmp(DRIVERHWID, t))
                     {
                           /* get the device instance ID */
                           TCHAR devId[MAX_DEVICE_ID_LEN];
@@ -3492,21 +3502,20 @@ HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID)
 
 HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey)
 {
-    HRESULT rc = S_OK;
     HINSTANCE hModule = NULL;
-    NET_LUID luid;
-    int loopbackMetric;
-
-    rc = vboxLoadIpHelpFunctions(hModule);
-
+    HRESULT rc = vboxLoadIpHelpFunctions(hModule);
     if (SUCCEEDED(rc))
+    {
+        NET_LUID luid;
         rc = vboxNetCfgWinGetInterfaceLUID(hKey, &luid);
-
-    if (SUCCEEDED(rc))
-        rc = vboxNetCfgWinGetLoopbackMetric(&loopbackMetric);
-
-    if (SUCCEEDED(rc))
-        rc = vboxNetCfgWinSetInterfaceMetric(&luid, loopbackMetric - 1);
+        if (SUCCEEDED(rc))
+        {
+            int loopbackMetric;
+            rc = vboxNetCfgWinGetLoopbackMetric(&loopbackMetric);
+            if (SUCCEEDED(rc))
+                rc = vboxNetCfgWinSetInterfaceMetric(&luid, loopbackMetric - 1);
+        }
+    }
 
     g_pfnInitializeIpInterfaceEntry = NULL;
     g_pfnSetIpInterfaceEntry = NULL;

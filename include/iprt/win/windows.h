@@ -33,6 +33,9 @@
  */
 #pragma warning(push)
 #pragma warning(disable:4668)
+#ifndef __cplusplus
+# pragma warning(disable:4255) /* warning C4255: 'FARPROC' : no function prototype given: converting '()' to '(void)' */
+#endif
 
 #include <Windows.h>
 

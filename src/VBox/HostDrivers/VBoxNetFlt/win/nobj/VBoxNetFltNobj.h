@@ -37,7 +37,7 @@ class ATL_NO_VTABLE VBoxNetFltNobj :
 {
 public:
     VBoxNetFltNobj();
-    ~VBoxNetFltNobj();
+    virtual ~VBoxNetFltNobj();
 
     BEGIN_COM_MAP(VBoxNetFltNobj)
         COM_INTERFACE_ENTRY(INetCfgComponentControl)
@@ -70,4 +70,4 @@ private:
     BOOL mbInstalling;
 };
 
-#endif /* #ifndef ___VBoxNetFltNobj_h___ */
+#endif /* !___VBoxNetFltNobj_h___ */

@@ -48,7 +48,7 @@
 
 #include <iprt/nt/ntddk.h>
 #include <iprt/nt/ndis.h>
-#include <netioapi.h>
+#include <iprt/win/netioapi.h>
 #include <mstcpip.h>
 
 #define LogError(x) DbgPrint x
