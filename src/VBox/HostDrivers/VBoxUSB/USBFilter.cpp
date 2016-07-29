@@ -285,6 +285,7 @@ static int usbfilterValidateStringPattern(const char *psz)
      * This is only becomes important if we start doing
      * sets ([0-9]) and such like.
      */
+    RT_NOREF1(psz);
     return VINF_SUCCESS;
 }
 
@@ -949,7 +950,7 @@ USBLIB_DECL(bool) USBFilterMatchDevice(PCUSBFILTER pFilter, PUSBDEVICE pDevice)
                     case USBFILTERIDX_DEVICE_PROTOCOL:  u16Value = pDevice->bDeviceProtocol; break;
                     case USBFILTERIDX_BUS:              u16Value = pDevice->bBus; break;
                     case USBFILTERIDX_PORT:             u16Value = pDevice->bPort; break;
-                    default:                            u16Value = ~0; break;
+                    default:                            u16Value = UINT16_MAX; break;
 
                 }
                 switch (pFilter->aFields[i].enmMatch)

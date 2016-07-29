@@ -211,7 +211,7 @@ typedef USBFILTER *PUSBFILTER;
 typedef const USBFILTER *PCUSBFILTER;
 
 /** USBFILTER::u32Magic (Yasuhiro Nightow). */
-#define USBFILTER_MAGIC      0x19670408
+#define USBFILTER_MAGIC      UINT32_C(0x19670408)
 
 
 RT_C_DECLS_BEGIN
