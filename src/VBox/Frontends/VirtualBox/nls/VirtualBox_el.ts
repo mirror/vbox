@@ -1132,61 +1132,61 @@
     </message>
     <message>
         <source>True</source>
-        <translation>Εκδότης:               %1</translation>
+        <translation>Αληθινό</translation>
     </message>
     <message>
         <source>False</source>
-        <translation>Θέμα:              %1</translation>
+        <translation>Λάθος</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</source>
         <comment>key: value</comment>
-        <translation>Μη Έγκυρο Πριν:     %1</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;%1:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>Issuer</source>
-        <translation>Μη Έγκυρο Μετά:      %1</translation>
+        <translation>Εκδότης</translation>
     </message>
     <message>
         <source>Subject</source>
-        <translation>Σειριακός Αριθμός:        %1</translation>
+        <translation>Θέμα</translation>
     </message>
     <message>
         <source>Not Valid Before</source>
-        <translation>Αυτο-Υπογεγραμμένο:          %1</translation>
+        <translation>Μη Έγκυρο Πριν</translation>
     </message>
     <message>
         <source>Not Valid After</source>
-        <translation>Αληθινό</translation>
+        <translation>Μη Έγκυρο Μετά</translation>
     </message>
     <message>
         <source>Serial Number</source>
-        <translation>Λάθος</translation>
+        <translation>Σειριακός Αριθμός</translation>
     </message>
     <message>
         <source>Self-Signed</source>
-        <translation>Αρχή (CA):       %1</translation>
+        <translation>Αυτο-Υπογεγραμμένο</translation>
     </message>
     <message>
         <source>Authority (CA)</source>
-        <translation>Δημόσιος Αλγόριθμος:     %1 (%2)</translation>
+        <translation>Αρχή (CA)</translation>
     </message>
     <message>
         <source>Public Algorithm</source>
-        <translation>Αλγόριθμος Υπογραφής:     %1 (%2)</translation>
+        <translation>Δημόσιος Αλγόριθμος</translation>
     </message>
     <message>
         <source>%1 (%2)</source>
         <comment>value (clarification)</comment>
-        <translation>Αριθμός έκδοσης X.509: %1</translation>
+        <translation>%1 (%2)</translation>
     </message>
     <message>
         <source>Signature Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Αλγόριθμος Υπογραφής</translation>
     </message>
     <message>
         <source>X.509 Version Number</source>
-        <translation type="unfinished"></translation>
+        <translation>Αριθμός έκδοσης X.509</translation>
     </message>
 </context>
 <context>
@@ -8952,82 +8952,82 @@
     <message>
         <source>General</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Γενικά</translation>
+        <translation>Γενικά</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Προεπισκόπηση</translation>
+        <translation>Προεπισκόπηση</translation>
     </message>
     <message>
         <source>System</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Σύστημα</translation>
+        <translation>Σύστημα</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Οθόνη</translation>
+        <translation>Οθόνη</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Αποθήκευση</translation>
+        <translation>Αποθήκευση</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Ήχος</translation>
+        <translation>Ήχος</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Δίκτυο</translation>
+        <translation>Δίκτυο</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Σειριακές Θύρες</translation>
+        <translation>Σειριακές Θύρες</translation>
     </message>
     <message>
         <source>Parallel ports</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Παράλληλες Θύρες</translation>
+        <translation>Παράλληλες Θύρες</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Κοινοί φάκελοι</translation>
+        <translation>Κοινοί φάκελοι</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Περιβάλλον χρήστη</translation>
+        <translation>Περιβάλλον χρήστη</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished">Περιγραφή</translation>
+        <translation>Περιγραφή</translation>
     </message>
     <message>
         <source>Runtime attributes</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ιδιότητες Εκτέλεσης</translation>
     </message>
     <message>
         <source>Storage statistics</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Στατιστικά αποθήκευσης</translation>
     </message>
     <message>
         <source>Network statistics</source>
         <comment>InformationElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Στατιστικά δικτύου</translation>
     </message>
 </context>
 <context>
