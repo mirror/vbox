@@ -123,7 +123,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 # include <guiddef.h>
 # include <devguid.h>
 # include <objbase.h>
-//# include <setupapi.h>
+//# include <iprt/win/setupapi.h>
 # include <shlobj.h>
 # include <cfgmgr32.h>
 # include <tchar.h>

@@ -28,7 +28,7 @@
 #ifndef __WINE_ADVPUB_H
 #define __WINE_ADVPUB_H
 
-#include <setupapi.h>
+#include <iprt/win/setupapi.h>
 #include <cfgmgr32.h>
 
 #ifdef __cplusplus

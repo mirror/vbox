@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
-#include <setupapi.h>
+#include <iprt/win/setupapi.h>
 #include <newdev.h>
 
 #include <iprt/assert.h>

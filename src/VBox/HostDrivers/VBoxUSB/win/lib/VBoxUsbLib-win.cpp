@@ -38,7 +38,7 @@
 #include <VBox/VBoxDrvCfg-win.h>
 #include <stdio.h>
 #pragma warning (disable:4200) /* shuts up the empty array member warnings */
-#include <setupapi.h>
+#include <iprt/win/setupapi.h>
 #include <usbdi.h>
 #include <hidsdi.h>
 

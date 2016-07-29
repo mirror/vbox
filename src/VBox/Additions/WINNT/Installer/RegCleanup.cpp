@@ -29,7 +29,7 @@
 //#define _UNICODE
 
 #include <iprt/win/windows.h>
-#include <setupapi.h>
+#include <iprt/win/setupapi.h>
 #include <regstr.h>
 #include <DEVGUID.h>
 #include <stdio.h>

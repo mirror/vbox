@@ -24,7 +24,7 @@
 #include "VBoxBugReport.h"
 
 #include <netcfgx.h>
-#include <setupapi.h>
+#include <iprt/win/setupapi.h>
 #include <initguid.h>
 #include <devguid.h>
 #include <usbiodef.h>

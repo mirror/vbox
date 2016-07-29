@@ -63,7 +63,7 @@
 
 #if defined(VBOX_WITH_WIN_PARPORT_SUP) && defined(IN_RING3)
 # include <iprt/win/windows.h>
-# include <setupapi.h>
+# include <iprt/win/setupapi.h>
 # include <cfgmgr32.h>
 # include <iprt/mem.h>
 # include <iprt/ctype.h>
