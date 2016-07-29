@@ -619,6 +619,7 @@ static int supR3HardenedVerifyFileSignature(PCSUPINSTFILE pFile, PSUPVERIFIEDFIL
     return rc;
 
 # else  /* Not checking signatures. */
+    RT_NOREF4(pFile, pVerified, fFatal, fLeaveFileOpen);
     return VINF_SUCCESS;
 # endif /* Not checking signatures. */
 }
@@ -881,6 +882,7 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, const char *pszEx
     size_t const    cchProgNameExe = suplibHardenedStrLen(pszProgName);
 #ifndef RT_OS_DARWIN
     size_t const    cchProgNameDll = cchProgNameExe;
+    NOREF(fMainFlags);
 #else
     size_t const    cchProgNameDll = fMainFlags & SUPSECMAIN_FLAGS_OSX_VM_APP
                                    ? sizeof("VirtualBox") - 1
@@ -1246,6 +1248,7 @@ static int supR3HardenedQueryFsObjectByPath(char const *pszPath, PSUPR3HARDENEDF
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
     pFsObjState->chTodo = 0;
+    RT_NOREF2(pszPath, pErrInfo);
     return VINF_SUCCESS;
 
 #else
@@ -1288,6 +1291,7 @@ static int supR3HardenedQueryFsObjectByHandle(RTHCUINTPTR hNative, PSUPR3HARDENE
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
     pFsObjState->chTodo = 0;
+    RT_NOREF3(hNative, pszPath, pErrInfo);
     return VINF_SUCCESS;
 
 #else
@@ -1324,9 +1328,11 @@ static int supR3HardenedIsSameFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState1, P
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
+    RT_NOREF4(pFsObjState1, pFsObjState2, pszPath, pErrInfo);
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_OS2)
+    RT_NOREF4(pFsObjState1, pFsObjState2, pszPath, pErrInfo);
     return VINF_SUCCESS;
 
 #else
@@ -1509,10 +1515,12 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
+    RT_NOREF5(pszDirPath, cchDirPath, pFsObjState, fRecursive, pErrInfo);
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_OS2)
     /* No hardening here - it's a single user system. */
+    RT_NOREF5(pszDirPath, cchDirPath, pFsObjState, fRecursive, pErrInfo);
     return VINF_SUCCESS;
 
 #else
@@ -1733,7 +1741,10 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
             RTUtf16Free(pwszPath);
         }
         else
+        {
             rc = RTErrInfoSetF(pErrInfo, rc, "Error converting '%s' to UTF-16: %Rrc", pszFilename, rc);
+            hVerify = INVALID_HANDLE_VALUE;
+        }
     }
     else
     {
@@ -1759,6 +1770,8 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
 #  ifndef IN_SUP_R3_STATIC /* Not in VBoxCpuReport and friends. */
         rc = supHardenedWinVerifyImageByHandleNoName(hVerify, fFlags, pErrInfo);
 #  endif
+# else
+        RT_NOREF1(fMaybe3rdParty);
 # endif
         NtClose(hVerify);
     }
@@ -1767,6 +1780,8 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
                            "Error %u trying to open (or duplicate handle for) '%s'", RtlGetLastWin32Error(), pszFilename);
     if (RT_FAILURE(rc))
         return rc;
+#else
+    RT_NOREF1(fMaybe3rdParty);
 #endif
 
     return VINF_SUCCESS;

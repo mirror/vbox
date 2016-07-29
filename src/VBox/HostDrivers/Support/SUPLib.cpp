@@ -135,7 +135,7 @@ static RTR0PTR                  g_pvVMMR0 = NIL_RTR0PTR;
 /** PAGE_ALLOC_EX sans kernel mapping support indicator. */
 static bool                     g_fSupportsPageAllocNoKernel = true;
 /** Fake mode indicator. (~0 at first, 0 or 1 after first test) */
-uint32_t                        g_uSupFakeMode = ~0;
+uint32_t                        g_uSupFakeMode = UINT32_MAX;
 
 
 /*********************************************************************************************************************************
@@ -548,7 +548,7 @@ SUPR3DECL(int) SUPR3Term(bool fForced)
         {
             ASMAtomicWriteNullPtr((void * volatile *)&g_pSUPGlobalInfoPage);
             ASMAtomicWriteNullPtr((void * volatile *)&g_pSUPGlobalInfoPageR0);
-            ASMAtomicWriteSize(&g_HCPhysSUPGlobalInfoPage, NIL_RTHCPHYS);
+            ASMAtomicWriteU64(&g_HCPhysSUPGlobalInfoPage, NIL_RTHCPHYS);
             /* just a little safe guard against threads using the page. */
             RTThreadSleep(50);
         }
@@ -1521,6 +1521,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
     AssertPtr(pszMsg);
     AssertReturn(!phFile, VERR_NOT_IMPLEMENTED); /** @todo Implement this. The deal is that we make sure the
                                                      file is the same we verified after opening it. */
+    RT_NOREF2(pszFilename, pszMsg);
 
     /*
      * Only do the actual check in hardened builds.
@@ -1636,6 +1637,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, PRTERRINFO pEr
         LogRel(("supR3HardenedVerifyFile: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
     return rc;
 #else
+    RT_NOREF1(pszFilename);
     return VINF_SUCCESS;
 #endif
 }
@@ -2086,6 +2088,8 @@ SUPR3DECL(int) SUPR3TracerDeregisterModule(struct VTGOBJHDR *pVtgHdr)
 
 DECLASM(void) suplibTracerFireProbe(PVTGPROBELOC pProbeLoc, PSUPTRACERUMODFIREPROBE pReq)
 {
+    RT_NOREF1(pProbeLoc);
+
     pReq->Hdr.u32Cookie         = g_u32Cookie;
     pReq->Hdr.u32SessionCookie  = g_u32SessionCookie;
     Assert(pReq->Hdr.cbIn  == SUP_IOCTL_TRACER_UMOD_FIRE_PROBE_SIZE_IN);
