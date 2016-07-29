@@ -45,7 +45,7 @@ static void doMemWipeThoroughly(RTTEST hTest)
 {
     for (uint32_t p = 0; p < RTRandU32Ex(1, 64); p++)
     {
-        size_t cbAlloc = RTRandS32Ex(1, _1M) * sizeof(uint8_t);
+        uint32_t cbAlloc = RTRandS32Ex(1, _1M) * sizeof(uint8_t);
 
         RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Testing wipe #%.02RU32 (%u bytes) ...\n",
                      p + 1, cbAlloc);
@@ -68,7 +68,7 @@ static void doMemWipeThoroughly(RTTEST hTest)
                           cbAlloc);
             continue;
         }
-        size_t cbWipeRand = RTRandU32Ex(1, cbAlloc);
+        uint32_t cbWipeRand = RTRandU32Ex(1, cbAlloc);
         RTMemWipeThoroughly(pvWipe, RT_MIN(cbAlloc, cbWipeRand), p /* Passes */);
         if (!memcmp(pvWipe, pvBuf, cbAlloc))
             RTTestIFailed("Memory blocks must differ (%z bytes, 0x%p vs. 0x%p)!\n",

@@ -639,10 +639,10 @@ DECLINLINE(void) tstASMAtomicXchgU8Worker(uint8_t volatile *pu8)
     CHECKOP(ASMAtomicXchgU8(pu8, 0), 1, "%#x", uint8_t);
     CHECKVAL(*pu8, 0, "%#x");
 
-    CHECKOP(ASMAtomicXchgU8(pu8, 0xff), 0, "%#x", uint8_t);
+    CHECKOP(ASMAtomicXchgU8(pu8, UINT8_C(0xff)), 0, "%#x", uint8_t);
     CHECKVAL(*pu8, 0xff, "%#x");
 
-    CHECKOP(ASMAtomicXchgU8(pu8, 0x87), 0xffff, "%#x", uint8_t);
+    CHECKOP(ASMAtomicXchgU8(pu8, UINT8_C(0x87)), UINT8_C(0xff), "%#x", uint8_t);
     CHECKVAL(*pu8, 0x87, "%#x");
 }
 
@@ -1433,6 +1433,10 @@ void tstASMMemFirstMismatchingU8(RTTEST hTest)
                     pbBuf1[offEnd] = 0xff;
                     pbBuf2[offEnd] = 0xff;
                 }
+#ifdef _MSC_VER /* simple stupid compiler warnings */
+                else
+                    bSaved1 = bSaved2 = 0;
+#endif
 
                 uint8_t *pbRet = (uint8_t *)ASMMemFirstMismatchingU8(pbBuf1 + offStart, cb, bFiller1);
                 RTTESTI_CHECK(offNonZero - offStart < cb ? pbRet == &pbBuf1[offNonZero] : pbRet == NULL);
@@ -1666,7 +1670,7 @@ void tstASMByteSwap(void)
     u64In  = 0;
     u64Out = ASMByteSwapU64(u64In);
     CHECKVAL(u64Out, u64In, "%#018RX64");
-    u64In  = ~(uint64_t)0;
+    u64In  = UINT64_MAX;
     u64Out = ASMByteSwapU64(u64In);
     CHECKVAL(u64Out, u64In, "%#018RX64");
 
@@ -1685,7 +1689,7 @@ void tstASMByteSwap(void)
     u32In  = 0;
     u32Out = ASMByteSwapU32(u32In);
     CHECKVAL(u32Out, u32In, "%#010RX32");
-    u32In  = ~(uint32_t)0;
+    u32In  = UINT32_MAX;
     u32Out = ASMByteSwapU32(u32In);
     CHECKVAL(u32Out, u32In, "%#010RX32");
 
@@ -1704,7 +1708,7 @@ void tstASMByteSwap(void)
     u16In  = 0;
     u16Out = ASMByteSwapU16(u16In);
     CHECKVAL(u16Out, u16In, "%#06RX16");
-    u16In  = ~(uint16_t)0;
+    u16In  = UINT16_MAX;
     u16Out = ASMByteSwapU16(u16In);
     CHECKVAL(u16Out, u16In, "%#06RX16");
 }

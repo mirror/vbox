@@ -46,7 +46,7 @@ RTTEST              g_hTest;
 /** The test & service name. */
 char                g_szSrvName[64];
 /** The length of the service name.  */
-uint32_t            g_cchSrvName;
+size_t              g_cchSrvName;
 /** The base address of the service module. */
 void               *g_pvImageBase;
 

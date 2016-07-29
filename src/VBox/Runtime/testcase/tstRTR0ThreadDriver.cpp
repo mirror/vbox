@@ -48,6 +48,7 @@
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF3(argc, argv, envp);
 #ifndef VBOX
     RTPrintf("tstRTR0Thread: SKIPPED\n");
     return RTEXITCODE_SKIPPED;

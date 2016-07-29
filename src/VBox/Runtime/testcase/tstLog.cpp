@@ -63,17 +63,17 @@ int main()
     RTLogPrintf("%%RHp: %RHp\n", (RTGCPHYS)0x87654321);
     RTLogPrintf("%%RHv: %RHv\n", (RTGCPTR)0x87654321);
 
-    RTLogPrintf("%%RI8 : %RI8\n", (uint8_t)808);
+    RTLogPrintf("%%RI8 : %RI8\n", (uint8_t)88);
     RTLogPrintf("%%RI16: %RI16\n", (uint16_t)16016);
     RTLogPrintf("%%RI32: %RI32\n", _1G);
     RTLogPrintf("%%RI64: %RI64\n", _1E);
 
-    RTLogPrintf("%%RU8 : %RU8\n", (uint8_t)808);
+    RTLogPrintf("%%RU8 : %RU8\n", (uint8_t)88);
     RTLogPrintf("%%RU16: %RU16\n", (uint16_t)16016);
     RTLogPrintf("%%RU32: %RU32\n", _2G32);
     RTLogPrintf("%%RU64: %RU64\n", _2E);
 
-    RTLogPrintf("%%RX8 : %RX8 %#RX8\n",   (uint8_t)808, (uint8_t)808);
+    RTLogPrintf("%%RX8 : %RX8 %#RX8\n",   (uint8_t)88, (uint8_t)88);
     RTLogPrintf("%%RX16: %RX16 %#RX16\n", (uint16_t)16016, (uint16_t)16016);
     RTLogPrintf("%%RX32: %RX32 %#RX32\n", _2G32, _2G32);
     RTLogPrintf("%%RX64: %RX64 %#RX64\n", _2E, _2E);

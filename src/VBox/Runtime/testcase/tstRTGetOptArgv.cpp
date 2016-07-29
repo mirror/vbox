@@ -430,46 +430,47 @@ static void tst3(void)
 }
 
 
+/* Global to avoid weird C4640 warning about "construction of local static object is not thread-safe". */
+static const struct
+{
+    const char * const      apszArgs[5];
+    const char             *pszCmdLine;
+} g_aMscCrtTests[] =
+{
+    {
+        { "abcd", "a ", " b", " c ", NULL },
+        "abcd \"a \" \" b\" \" c \""
+    },
+    {
+        { "a\\\\\\b", "de fg", "h", NULL, NULL },
+        "a\\\\\\b \"de fg\" h"
+    },
+    {
+        { "a\\\"b", "c", "d", "\"", NULL },
+        "\"a\\\\\\\"b\" c d \"\\\"\""
+    },
+    {
+        { "a\\\\b c", "d", "e", " \\", NULL },
+        "\"a\\\\b c\" d e \" \\\\\""
+    },
+};
+
 static void tst2(void)
 {
     RTTestISub("RTGetOptArgvToString / MS_CRT");
 
-    static const struct
-    {
-        const char * const      apszArgs[5];
-        const char             *pszCmdLine;
-    } s_aMscCrtTests[] =
-    {
-        {
-            { "abcd", "a ", " b", " c ", NULL },
-            "abcd \"a \" \" b\" \" c \""
-        },
-        {
-            { "a\\\\\\b", "de fg", "h", NULL, NULL },
-            "a\\\\\\b \"de fg\" h"
-        },
-        {
-            { "a\\\"b", "c", "d", "\"", NULL },
-            "\"a\\\\\\\"b\" c d \"\\\"\""
-        },
-        {
-            { "a\\\\b c", "d", "e", " \\", NULL },
-            "\"a\\\\b c\" d e \" \\\\\""
-        },
-    };
-
-    for (size_t i = 0; i < RT_ELEMENTS(s_aMscCrtTests); i++)
+    for (size_t i = 0; i < RT_ELEMENTS(g_aMscCrtTests); i++)
     {
         char *pszCmdLine = NULL;
-        int rc = RTGetOptArgvToString(&pszCmdLine, s_aMscCrtTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+        int rc = RTGetOptArgvToString(&pszCmdLine, g_aMscCrtTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
         RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-        if (!strcmp(s_aMscCrtTests[i].pszCmdLine, pszCmdLine))
-            tstCheckNativeMsCrtToArgv(pszCmdLine, -1, s_aMscCrtTests[i].apszArgs);
+        if (!strcmp(g_aMscCrtTests[i].pszCmdLine, pszCmdLine))
+            tstCheckNativeMsCrtToArgv(pszCmdLine, -1, g_aMscCrtTests[i].apszArgs);
         else
             RTTestIFailed("g_aTest[%i] failed:\n"
                           " got      '%s'\n"
                           " expected '%s'\n",
-                          i, pszCmdLine, s_aMscCrtTests[i].pszCmdLine);
+                          i, pszCmdLine, g_aMscCrtTests[i].pszCmdLine);
         RTStrFree(pszCmdLine);
     }
 

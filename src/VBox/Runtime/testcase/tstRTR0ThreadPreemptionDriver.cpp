@@ -57,6 +57,7 @@ static bool volatile g_fTerminate = false;
  */
 static DECLCALLBACK(int) MyThreadProc(RTTHREAD hSelf, void *pvCpuIdx)
 {
+    RT_NOREF1(hSelf);
     RTCPUSET Affinity;
     RTCpuSetEmpty(&Affinity);
     RTCpuSetAddByIndex(&Affinity, (intptr_t)pvCpuIdx);
@@ -81,6 +82,7 @@ static DECLCALLBACK(int) MyThreadProc(RTTHREAD hSelf, void *pvCpuIdx)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF3(argc, argv, envp);
 #ifndef VBOX
     RTPrintf("tstSup: SKIPPED\n");
     return 0;

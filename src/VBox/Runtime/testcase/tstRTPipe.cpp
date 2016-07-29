@@ -251,7 +251,7 @@ static void tstRTPipe2(void)
 
     RTPIPE  hPipeR = (RTPIPE)1;
     RTPIPE  hPipeW = (RTPIPE)1;
-    RTTESTI_CHECK_RC(RTPipeCreate(&hPipeR, &hPipeW, ~0), VERR_INVALID_PARAMETER);
+    RTTESTI_CHECK_RC(RTPipeCreate(&hPipeR, &hPipeW, UINT32_MAX), VERR_INVALID_PARAMETER);
     RTTESTI_CHECK_RC(RTPipeCreate(NULL, &hPipeW, 0), VERR_INVALID_POINTER);
     RTTESTI_CHECK_RC(RTPipeCreate(&hPipeR, NULL, 0), VERR_INVALID_POINTER);
     RTTESTI_CHECK(hPipeR == (RTPIPE)1);
