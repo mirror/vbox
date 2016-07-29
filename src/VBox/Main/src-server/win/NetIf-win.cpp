@@ -39,7 +39,7 @@
 # include "devguid.h"
 #endif
 
-#include <iphlpapi.h>
+#include <iprt/win/iphlpapi.h>
 
 #include "Logging.h"
 #include "HostNetworkInterfaceImpl.h"

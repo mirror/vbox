@@ -32,7 +32,7 @@
 #endif
 #include <VBox/vmm/pdmdrv.h>
 #if defined (RT_OS_WINDOWS)
-#include <iphlpapi.h>
+#include <iprt/win/iphlpapi.h>
 #include <icmpapi.h>
 #endif
 

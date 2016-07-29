@@ -58,7 +58,7 @@
 #else
 # include <Winnls.h>
 # define _WINSOCK2API_
-# include <IPHlpApi.h>
+# include <iprt/win/iphlpapi.h>
 #endif
 #include <alias.h>
 

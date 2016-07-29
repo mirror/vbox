@@ -57,7 +57,7 @@
 #  define _WIN32_WINNT 0x0500
 # endif
 # include <iprt/win/winsock2.h>
-# include <iphlpapi.h>
+# include <iprt/win/iphlpapi.h>
 # include <ws2tcpip.h>
 # include <iprt/win/windows.h>
 # include <Ntsecapi.h>

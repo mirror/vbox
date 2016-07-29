@@ -76,7 +76,7 @@ typedef int socklen_t;
 
 
 # include <sys/timeb.h>
-# include <iphlpapi.h>
+# include <iprt/win/iphlpapi.h>
 
 /* We don't want the errno.h versions of these error defines. */
 # if defined(_MSC_VER) && _MSC_VER >= 1600

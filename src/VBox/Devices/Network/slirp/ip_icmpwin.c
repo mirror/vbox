@@ -19,7 +19,7 @@
 #include "ip_icmp.h"
 
 #include <winternl.h>           /* for PIO_APC_ROUTINE &c */
-#include <iphlpapi.h>
+#include <iprt/win/iphlpapi.h>
 #include <icmpapi.h>
 
 /*

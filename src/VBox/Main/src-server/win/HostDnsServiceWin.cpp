@@ -34,7 +34,7 @@
 #include <iprt/win/windows.h>
 #include <windns.h>
 #include <iptypes.h>
-#include <iphlpapi.h>
+#include <iprt/win/iphlpapi.h>
 
 #include <algorithm>
 #include <sstream>

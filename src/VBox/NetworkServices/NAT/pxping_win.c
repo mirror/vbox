@@ -33,7 +33,7 @@
 #undef IP6_STATS
 
 #include <winternl.h>           /* for PIO_APC_ROUTINE &c */
-#include <iphlpapi.h>
+#include <iprt/win/iphlpapi.h>
 #include <icmpapi.h>
 
 #include <stdio.h>
