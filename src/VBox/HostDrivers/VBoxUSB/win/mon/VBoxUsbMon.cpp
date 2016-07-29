@@ -912,36 +912,36 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
         {
             switch(pSl->Parameters.QueryDeviceRelations.Type)
             {
-            case BusRelations:
-            {
-                LOG(("BusRelations"));
+                case BusRelations:
+                    LOG(("BusRelations"));
 
-                if (pIoStatus->Status == STATUS_SUCCESS)
-                {
-                    PDEVICE_RELATIONS pRel = (PDEVICE_RELATIONS)pIoStatus->Information;
-                    LOG(("pRel = %p", pRel));
-                    if (VALID_PTR(pRel))
+                    if (pIoStatus->Status == STATUS_SUCCESS)
                     {
-                        for (unsigned i=0;i<pRel->Count;i++)
+                        PDEVICE_RELATIONS pRel = (PDEVICE_RELATIONS)pIoStatus->Information;
+                        LOG(("pRel = %p", pRel));
+                        if (VALID_PTR(pRel))
                         {
-                            if (VBoxUsbFltPdoIsFiltered(pDevObj))
-                                LOG(("New PDO %p", pRel->Objects[i]));
+                            for (unsigned i=0;i<pRel->Count;i++)
+                            {
+                                if (VBoxUsbFltPdoIsFiltered(pDevObj))
+                                    LOG(("New PDO %p", pRel->Objects[i]));
+                            }
                         }
+                        else
+                            LOG(("Invalid pointer %p", pRel));
                     }
-                    else
-                        LOG(("Invalid pointer %p", pRel));
-                }
-                break;
-            }
-            case TargetDeviceRelation:
-                LOG(("TargetDeviceRelation"));
-                break;
-            case RemovalRelations:
-                LOG(("RemovalRelations"));
-                break;
-            case EjectionRelations:
-                LOG(("EjectionRelations"));
-                break;
+                    break;
+                case TargetDeviceRelation:
+                    LOG(("TargetDeviceRelation"));
+                    break;
+                case RemovalRelations:
+                    LOG(("RemovalRelations"));
+                    break;
+                case EjectionRelations:
+                    LOG(("EjectionRelations"));
+                    break;
+                default:
+                    LOG(("QueryDeviceRelations.Type=%d", pSl->Parameters.QueryDeviceRelations.Type));
             }
             break;
         }
@@ -1594,7 +1594,8 @@ static NTSTATUS VBoxUsbMonGetDevice(PVBOXUSBMONCTX pContext, HVBOXUSBDEVUSR hDev
     return Status;
 }
 
-static NTSTATUS vboxUsbMonIoctlDispatch(PVBOXUSBMONCTX pContext, ULONG Ctl, PVOID pvBuffer, ULONG cbInBuffer, ULONG cbOutBuffer, ULONG_PTR* pInfo)
+static NTSTATUS vboxUsbMonIoctlDispatch(PVBOXUSBMONCTX pContext, ULONG Ctl, PVOID pvBuffer, ULONG cbInBuffer,
+                                        ULONG cbOutBuffer, ULONG_PTR *pInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     ULONG_PTR Info = 0;
@@ -1658,7 +1659,7 @@ static NTSTATUS vboxUsbMonIoctlDispatch(PVBOXUSBMONCTX pContext, ULONG Ctl, PVOI
             if (cbOutBuffer)
             {
                 /* we've validated that already */
-                Assert(cbOutBuffer == *pRc);
+                Assert(cbOutBuffer == (ULONG)*pRc);
                 *pRc = rc;
                 Info = sizeof (*pRc);
             }

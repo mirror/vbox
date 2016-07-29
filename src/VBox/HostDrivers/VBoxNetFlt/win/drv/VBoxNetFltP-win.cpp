@@ -1489,8 +1489,11 @@ static NDIS_STATUS vboxNetFltWinPtPnPEvent(IN NDIS_HANDLE hProtocolBindingContex
         case NetEventSetPower:
         {
             NDIS_DEVICE_POWER_STATE enmPowerState = *((PNDIS_DEVICE_POWER_STATE)pNetPnPEvent->Buffer);
-            return vboxNetFltWinPtPnPSetPower(pNetFlt, enmPowerState);
+            NDIS_STATUS rcNdis = vboxNetFltWinPtPnPSetPower(pNetFlt, enmPowerState);
+            LogFlowFunc(("LEAVE: pNetFlt (0x%p), NetEvent (%d), rcNdis=%#x\n", pNetFlt, pNetPnPEvent->NetEvent, rcNdis));
+            return rcNdis;
         }
+
         case NetEventReconfigure:
         {
             if (!pNetFlt)
@@ -1498,11 +1501,12 @@ static NDIS_STATUS vboxNetFltWinPtPnPEvent(IN NDIS_HANDLE hProtocolBindingContex
                 NdisReEnumerateProtocolBindings(g_VBoxNetFltGlobalsWin.Pt.hProtocol);
             }
         }
+        /** @todo r=bird: Is the fall thru intentional?? */
         default:
+            LogFlowFunc(("LEAVE: pNetFlt (0x%p), NetEvent (%d)\n", pNetFlt, pNetPnPEvent->NetEvent));
             return NDIS_STATUS_SUCCESS;
     }
 
-    LogFlowFunc(("LEAVE: pNetFlt (0x%p), NetEvent (%d)\n", pNetFlt, pNetPnPEvent->NetEvent));
 }
 
 #ifdef __cplusplus
