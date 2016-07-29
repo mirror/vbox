@@ -744,31 +744,16 @@ static NTSTATUS vboxUsbRtDispatchUsbSetConfig(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp
 
 static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t InterfaceNumber, int AlternateSetting)
 {
-    if (!pDevExt->Rt.uConfigValue)
-    {
-        AssertMsgFailed((__FUNCTION__": Can't select an interface without an active configuration\n"));
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    if (InterfaceNumber >= pDevExt->Rt.uNumInterfaces)
-    {
-        AssertMsgFailed((__FUNCTION__": InterfaceNumber %d too high!!\n", InterfaceNumber));
-        return STATUS_INVALID_PARAMETER;
-    }
-
+    AssertMsgReturn(pDevExt->Rt.uConfigValue, ("Can't select an interface without an active configuration\n"),
+                    STATUS_INVALID_PARAMETER);
+    AssertMsgReturn(InterfaceNumber < pDevExt->Rt.uNumInterfaces, ("InterfaceNumber %d too high!!\n", InterfaceNumber),
+                    STATUS_INVALID_PARAMETER);
     PUSB_CONFIGURATION_DESCRIPTOR pCfgDr = vboxUsbRtFindConfigDesc(pDevExt, pDevExt->Rt.uConfigValue);
-    if (!pCfgDr)
-    {
-        AssertMsgFailed((__FUNCTION__": configuration %d not found!!\n", pDevExt->Rt.uConfigValue));
-        return STATUS_INVALID_PARAMETER;
-    }
-
+    AssertMsgReturn(pCfgDr, ("configuration %d not found!!\n", pDevExt->Rt.uConfigValue),
+                    STATUS_INVALID_PARAMETER);
     PUSB_INTERFACE_DESCRIPTOR pIfDr = USBD_ParseConfigurationDescriptorEx(pCfgDr, pCfgDr, InterfaceNumber, AlternateSetting, -1, -1, -1);
-    if (!pIfDr)
-    {
-        AssertMsgFailed((__FUNCTION__": invalid interface %d or alternate setting %d\n", InterfaceNumber, AlternateSetting));
-        return STATUS_UNSUCCESSFUL;
-    }
+    AssertMsgReturn(pIfDr, ("invalid interface %d or alternate setting %d\n", InterfaceNumber, AlternateSetting),
+                    STATUS_UNSUCCESSFUL);
 
     USHORT uUrbSize = GET_SELECT_INTERFACE_REQUEST_SIZE(pIfDr->bNumEndpoints);
     ULONG uTotalIfaceInfoLength = GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints);
