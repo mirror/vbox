@@ -1338,7 +1338,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     /* 'Check for Updates' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+    if (gEDataManager->applicationUpdateEnabled())
+        pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     /* 'Reset Warnings' action goes 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
