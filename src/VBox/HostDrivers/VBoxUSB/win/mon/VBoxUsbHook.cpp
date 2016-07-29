@@ -2,6 +2,7 @@
 /** @file
  * Driver Dispatch Table Hooking API
  */
+
 /*
  * Copyright (C) 2011-2016 Oracle Corporation
  *
@@ -13,9 +14,19 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxUsbMon.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBOXUSBHOOK_MEMTAG 'HUBV'
+
 
 NTSTATUS VBoxUsbHookInstall(PVBOXUSBHOOK_ENTRY pHook)
 {
@@ -131,8 +142,10 @@ NTSTATUS VBoxUsbHookRequestPassDownHookSkip(PVBOXUSBHOOK_ENTRY pHook, PDEVICE_OB
     return pHook->pfnOldHandler(pDevObj, pIrp);
 }
 
-NTSTATUS VBoxUsbHookRequestMoreProcessingRequired(PVBOXUSBHOOK_ENTRY pHook, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVBOXUSBHOOK_REQUEST pRequest)
+NTSTATUS VBoxUsbHookRequestMoreProcessingRequired(PVBOXUSBHOOK_ENTRY pHook, PDEVICE_OBJECT pDevObj, PIRP pIrp,
+                                                  PVBOXUSBHOOK_REQUEST pRequest)
 {
+    RT_NOREF3(pHook, pDevObj, pIrp);
     Assert(!pRequest->bCompletionStopped);
     pRequest->bCompletionStopped = TRUE;
     return STATUS_MORE_PROCESSING_REQUIRED;

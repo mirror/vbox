@@ -79,11 +79,11 @@ VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegQueryValueDword(IN HANDLE hKey, IN PWCH
     UNICODE_STRING RtlStr;
     RtlInitUnicodeString(&RtlStr, pName);
     NTSTATUS Status = ZwQueryValueKey(hKey,
-                &RtlStr,
-                KeyValuePartialInformation,
-                &Buf.Info,
-                sizeof(Buf),
-                &cbBuf);
+                                      &RtlStr,
+                                      KeyValuePartialInformation,
+                                      &Buf.Info,
+                                      sizeof(Buf),
+                                      &cbBuf);
     if (Status == STATUS_SUCCESS)
     {
         if (Buf.Info.Type == REG_DWORD)

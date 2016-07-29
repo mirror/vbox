@@ -326,7 +326,7 @@ int VBoxUSBFilterRemove(VBOXUSBFILTER_CONTEXT Owner, uintptr_t uId)
     if (pCur)
     {
         void *pv = RTHandleTableFree(g_hHndTableFilters, pCur->uHnd);
-        Assert(pv == pCur);
+        Assert(pv == pCur); NOREF(pv);
         vboxUSBFilterFree(pCur);
         return VINF_SUCCESS;
     }
@@ -416,7 +416,7 @@ void VBoxUSBFilterRemoveOwner(VBOXUSBFILTER_CONTEXT Owner)
     {
         PVBOXUSBFILTER pNext = pToFree->pNext;
         void *pv = RTHandleTableFree(g_hHndTableFilters, pToFree->uHnd);
-        Assert(pv == pToFree);
+        Assert(pv == pToFree); NOREF(pv);
         vboxUSBFilterFree(pToFree);
         pToFree = pNext;
     }
@@ -502,7 +502,7 @@ VBOXUSBFILTER_CONTEXT VBoxUSBFilterMatchEx(PCUSBFILTER pDevice, uintptr_t *puId,
                     if (fRemoveFltIfOneShot)
                     {
                         void *pv = RTHandleTableFree(g_hHndTableFilters, pCur->uHnd);
-                        Assert(pv == pCur);
+                        Assert(pv == pCur); NOREF(pv);
                         vboxUSBFilterFree(pCur);
                     }
                     if (pfIsOneShot)
