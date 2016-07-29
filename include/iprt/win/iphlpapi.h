@@ -30,7 +30,7 @@
 #pragma warning(push)
 #pragma warning(disable:4668) /* 'NDIS_SUPPORT_NDIS6' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 
-#include <iprt/win/iphlpapi.h>
+#include <iphlpapi.h>
 
 #pragma warning(pop)
 
