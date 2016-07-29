@@ -782,8 +782,10 @@ typedef struct VBOXUSBFLTCHECKWALKER
     PVBOXUSBFLTCTX pContext;
 } VBOXUSBFLTCHECKWALKER, *PVBOXUSBFLTCHECKWALKER;
 
-static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo, PDEVICE_OBJECT pHubDo, PVOID pvContext)
+static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo,
+                                                         PDEVICE_OBJECT pHubDo, PVOID pvContext)
 {
+    RT_NOREF1(pHubDo);
     PVBOXUSBFLTCHECKWALKER pData = (PVBOXUSBFLTCHECKWALKER)pvContext;
     PVBOXUSBFLTCTX pContext = pData->pContext;
 
@@ -842,9 +844,10 @@ static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDE
                 bool fIsOneShot = false;
                 VBOXUSBFLT_LOCK_ACQUIRE();
                 PVBOXUSBFLTCTX pCtx = vboxUsbFltDevMatchLocked(&Device, &uId,
-                        false, /* do not remove a one-shot filter */
-                        &fFilter, &fIsOneShot);
+                                                               false, /* do not remove a one-shot filter */
+                                                               &fFilter, &fIsOneShot);
                 VBOXUSBFLT_LOCK_RELEASE();
+                NOREF(pCtx);
                 LOG(("Matching Info: Filter (0x%p), pCtx(0x%p), fFilter(%d), fIsOneShot(%d)", uId, pCtx, (int)fFilter, (int)fIsOneShot));
                 if (fFilter)
                 {
@@ -930,7 +933,7 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
     ASSERT_WARN(Irql == PASSIVE_LEVEL, ("irql==(%d)", Irql));
 
     VBOXUSBFLT_LOCK_ACQUIRE();
-    uint32_t cActiveFilters = pContext->cActiveFilters;
+
     pContext->bRemoved = TRUE;
     if (pContext->pChangeEvent)
     {
@@ -942,9 +945,7 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
         pContext->pChangeEvent = NULL;
     }
     else
-    {
         LOG(("no change event"));
-    }
     RemoveEntryList(&pContext->ListEntry);
 
     LOG(("removing owner filters"));
@@ -955,8 +956,8 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
     LOG(("enumerating devices.."));
     /* 2. check if there are devices owned */
     for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.DeviceList.Flink;
-            pEntry != &g_VBoxUsbFltGlobals.DeviceList;
-            pEntry = pEntry->Flink)
+         pEntry != &g_VBoxUsbFltGlobals.DeviceList;
+         pEntry = pEntry->Flink)
     {
         PVBOXUSBFLT_DEVICE pDevice = PVBOXUSBFLT_DEVICE_FROM_LE(pEntry);
         if (pDevice->pOwner != pContext)
@@ -983,6 +984,7 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
             LOG(("device does NOT need replug"));
         }
     }
+
     VBOXUSBFLT_LOCK_RELEASE();
 
     /* this should replug all devices that were either skipped or grabbed due to the context's */
@@ -1191,6 +1193,8 @@ static void vboxUsbDevToUserInfo(PVBOXUSBFLTCTX pContext, PVBOXUSBFLT_DEVICE pDe
         strcpy(pDevInfo->szObjName, pDevice->szObjName);
     }
     pDevInfo->fHighSpeed = pDevice->fHighSpeed;
+#else
+    RT_NOREF3(pContext, pDevice, pDevInfo);
 #endif
 }
 
@@ -1315,6 +1319,7 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
 
 NTSTATUS VBoxUsbFltPdoAddCompleted(PDEVICE_OBJECT pPdo)
 {
+    RT_NOREF1(pPdo);
     VBOXUSBFLT_LOCK_ACQUIRE();
     vboxUsbFltSignalChangeLocked();
     VBOXUSBFLT_LOCK_RELEASE();
@@ -1325,11 +1330,11 @@ BOOLEAN VBoxUsbFltPdoIsFiltered(PDEVICE_OBJECT pPdo)
 {
     VBOXUSBFLT_DEVSTATE enmState = VBOXUSBFLT_DEVSTATE_REMOVED;
     VBOXUSBFLT_LOCK_ACQUIRE();
+
     PVBOXUSBFLT_DEVICE pDevice = vboxUsbFltDevGetLocked(pPdo);
     if (pDevice)
-    {
         enmState = pDevice->enmState;
-    }
+
     VBOXUSBFLT_LOCK_RELEASE();
 
     return enmState >= VBOXUSBFLT_DEVSTATE_CAPTURING;
