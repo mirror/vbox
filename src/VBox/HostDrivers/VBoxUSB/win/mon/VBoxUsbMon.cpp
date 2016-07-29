@@ -2,6 +2,7 @@
 /** @file
  * VBox USB Monitor
  */
+
 /*
  * Copyright (C) 2011-2016 Oracle Corporation
  *
@@ -14,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxUsbMon.h"
 #include "../cmn/VBoxUsbIdc.h"
 #include <vbox/err.h>
@@ -21,6 +26,10 @@
 #include <excpt.h>
 #include <stdio.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /*
  * Note: Must match the VID & PID in the USB driver .inf file!!
  */
@@ -40,6 +49,13 @@
 
 #define szDeviceTextDescription          L"VirtualBox USB"
 
+
+#define VBOXUSBMON_MEMTAG 'MUBV'
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 typedef struct VBOXUSBMONINS
 {
     void * pvDummy;
@@ -91,9 +107,13 @@ typedef struct VBOXUSBMONGLOBALS
     PFILE_OBJECT pPreventUnloadFileObj;
 } VBOXUSBMONGLOBALS, *PVBOXUSBMONGLOBALS;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static VBOXUSBMONGLOBALS g_VBoxUsbMonGlobals;
 
-#define VBOXUSBMON_MEMTAG 'MUBV'
+
 
 PVOID VBoxUsbMonMemAlloc(SIZE_T cbBytes)
 {
