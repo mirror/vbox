@@ -39,7 +39,7 @@
 #include <iprt/win/winsock2.h>
 #include <iprt/win/windows.h>
 #include <Netcfgn.h>
-#include <Setupapi.h>
+#include <iprt/win/Setupapi.h>
 #include <VBox/cdefs.h>
 
 /** @defgroup grp_vboxnetcfgwin     The Windows Network Configration Library

@@ -99,5 +99,6 @@ static int VBoxNetFltUninstall()
 
 int __cdecl main(int argc, char **argv)
 {
+    RT_NOREF2(argc, argv);
     return VBoxNetFltUninstall();
 }

@@ -34,23 +34,25 @@
 
 #include <VBox/VBoxDrvCfg-win.h>
 
-static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char * msg, void * pvContext)
+static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext)
 {
+    RT_NOREF1(pvContext);
     switch (enmSeverity)
     {
         case VBOXDRVCFG_LOG_SEVERITY_FLOW:
         case VBOXDRVCFG_LOG_SEVERITY_REGULAR:
             break;
         case VBOXDRVCFG_LOG_SEVERITY_REL:
-            RTPrintf("%s", msg);
+            RTPrintf("%s", pszMsg);
             break;
         default:
             break;
     }
 }
 
-static DECLCALLBACK(void) vboxUsbPanic(void * pvPanic)
+static DECLCALLBACK(void) vboxUsbPanic(void *pvPanic)
 {
+    RT_NOREF1(pvPanic);
 #ifndef DEBUG_bird
     AssertFailed();
 #endif
