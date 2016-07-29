@@ -26,6 +26,12 @@
 # Short-Description: VirtualBox Linux kernel module
 ### END INIT INFO
 
+## @todo This file duplicates a lot of script with vboxadd.sh.  When making
+# changes please try to reduce differences between the two wherever possible.
+
+## @todo Remove the stop_vms target so that this script is only relevant to
+# kernel modules.  Nice but not urgent.
+
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
