@@ -28,8 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define _WIN32_WINNT 0x0500
-#include <Windows.h>
+#include <iprt/nt/nt.h>
 
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
@@ -38,13 +37,6 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/err.h>
-
-RT_C_DECLS_BEGIN
-/* from sysinternals. */
-NTSYSAPI LONG NTAPI NtSetTimerResolution(IN ULONG DesiredResolution, IN BOOLEAN SetResolution, OUT PULONG CurrentResolution);
-NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MinimumResolution, OUT PULONG MaximumResolution, OUT PULONG CurrentResolution);
-RT_C_DECLS_END
-
 
 
 int main(int argc, char **argv)
@@ -108,42 +100,43 @@ int main(int argc, char **argv)
     /*
      * Query the current resolution.
      */
-    ULONG   Cur = ~0;
-    ULONG   Min = ~0;
-    ULONG   Max = ~0;
-    LONG    Status;
+    ULONG    Cur = UINT32_MAX;
+    ULONG    Min = UINT32_MAX;
+    ULONG    Max = UINT32_MAX;
+    NTSTATUS rcNt = STATUS_SUCCESS;
     if (fVerbose || !u32NewRes)
     {
-        Status = NtQueryTimerResolution(&Min, &Max, &Cur);
-        if (Status >= 0)
+        rcNt = NtQueryTimerResolution(&Min, &Max, &Cur);
+        if (NT_SUCCESS(rcNt))
             RTMsgInfo("cur: %u (%u.%02u Hz)  min: %u (%u.%02u Hz)  max: %u (%u.%02u Hz)\n",
                       Cur, 10000000 / Cur, (10000000 / (Cur * 100)) % 100,
                       Min, 10000000 / Min, (10000000 / (Min * 100)) % 100,
                       Max, 10000000 / Max, (10000000 / (Max * 100)) % 100);
         else
-            RTMsgError("NTQueryTimerResolution failed with status %#x\n", Status);
+            RTMsgError("NTQueryTimerResolution failed with status %#x\n", rcNt);
     }
 
     if (u32NewRes)
     {
-        Status = NtSetTimerResolution(u32NewRes, TRUE, &Cur);
-        if (Status < 0)
-            RTMsgError("NTSetTimerResolution(%RU32,,) failed with status %#x\n", u32NewRes, Status);
+        rcNt = NtSetTimerResolution(u32NewRes, TRUE, &Cur);
+        if (!NT_SUCCESS(rcNt))
+            RTMsgError("NTSetTimerResolution(%RU32,,) failed with status %#x\n", u32NewRes, rcNt);
         else if (fVerbose)
         {
-            Cur = Min = Max = ~0;
-            Status = NtQueryTimerResolution(&Min, &Max, &Cur);
-            if (Status >= 0)
+            Cur = Min = Max = UINT32_MAX;
+            rcNt = NtQueryTimerResolution(&Min, &Max, &Cur);
+            if (NT_SUCCESS(rcNt))
                 RTMsgInfo("new: %u (%u.%02u Hz) requested %RU32 (%u.%02u Hz)\n",
                           Cur, 10000000 / Cur, (10000000 / (Cur * 100)) % 100,
                           u32NewRes, 10000000 / u32NewRes, (10000000 / (u32NewRes * 100)) % 100);
             else
-                RTMsgError("NTSetTimerResolution succeeded but the NTQueryTimerResolution call failed with status %#x (ignored)\n", Status);
-            Status = 0;
+                RTMsgError("NTSetTimerResolution succeeded but the NTQueryTimerResolution call failed with status %#x (ignored)\n",
+                           rcNt);
+            rcNt = STATUS_SUCCESS;
         }
     }
 
-    if (u32NewRes && Status >= 0)
+    if (u32NewRes && NT_SUCCESS(rcNt))
     {
         if (cSecsSleep == UINT32_MAX)
             for (;;)
@@ -153,6 +146,6 @@ int main(int argc, char **argv)
                 RTThreadSleep(1000);
     }
 
-    return Status >= 0 ? 0 : 1;
+    return NT_SUCCESS(rcNt) ? 0 : 1;
 }
 

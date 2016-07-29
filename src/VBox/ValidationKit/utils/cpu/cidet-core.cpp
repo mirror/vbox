@@ -318,6 +318,7 @@ int CidetCoreSetTargetMode(PCIDETCORE pThis, uint8_t bMode)
 
 bool CidetCoreIsEncodingCompatibleWithInstruction(PCIDETCORE pThis)
 {
+    RT_NOREF_PV(pThis);
     return true;
 }
 
@@ -726,6 +727,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uint
  */
 static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis, uint8_t iReg, bool f64Bit)
 {
+    RT_NOREF_PV(f64Bit);
     if (CidetInstrHasMrmRegOperand(pThis->pCurInstr))
     {
         pThis->aOperands[pThis->idxMrmRmOp].iReg            = 0;
@@ -1071,6 +1073,7 @@ static bool cidetCoreSetupNextBaseEncoding_SibIndex(PCIDETCORE pThis, uint8_t iR
  */
 static bool cidetCoreSetupNextBaseEncoding_SibScale(PCIDETCORE pThis, uint8_t iReg)
 {
+    RT_NOREF_PV(iReg);
     switch ((pThis->bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK)
     {
         case 0:
@@ -1319,6 +1322,7 @@ bool CidetCoreSetupFirstBaseEncoding(PCIDETCORE pThis)
  */
 bool CidetCoreSetupNextMemoryOperandConfig(PCIDETCORE pThis)
 {
+    RT_NOREF_PV(pThis);
     return false;
 }
 
@@ -1371,6 +1375,7 @@ bool CidetCoreSetupFirstMemoryOperandConfig(PCIDETCORE pThis)
  */
 bool CidetCoreSetupNextCodeBufferConfig(PCIDETCORE pThis)
 {
+    RT_NOREF_PV(pThis);
     return false;
 }
 
@@ -1910,7 +1915,7 @@ bool CidetCoreAssembleLength(PCIDETCORE pThis)
     /*
      * The opcode.
      */
-    uint8_t const *pbOpcode = pThis->pCurInstr->abOpcode;
+    //uint8_t const *pbOpcode = pThis->pCurInstr->abOpcode;
     switch (pThis->pCurInstr->cbOpcode)
     {
         case 3: off++;
@@ -1931,7 +1936,7 @@ bool CidetCoreAssembleLength(PCIDETCORE pThis)
             off++;
         if (pThis->idxMrmRmOp < RT_ELEMENTS(pThis->aOperands))
         {
-            uint64_t uDispValue = pThis->aOperands[pThis->idxMrmRmOp].uImmDispValue;
+            //uint64_t uDispValue = pThis->aOperands[pThis->idxMrmRmOp].uImmDispValue;
             switch (pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp)
             {
                 case 0: break;
@@ -1957,7 +1962,7 @@ bool CidetCoreAssembleLength(PCIDETCORE pThis)
     while (iOp-- > 0)
         if ((pThis->aOperands[iOp].fFlags & CIDET_OF_K_MASK) == CIDET_OF_K_IMM)
         {
-            uint64_t uImmValue = pThis->aOperands[iOp].uImmDispValue;
+            //uint64_t uImmValue = pThis->aOperands[iOp].uImmDispValue;
             switch (pThis->aOperands[iOp].cb)
             {
                 case 8:
@@ -2165,6 +2170,8 @@ bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
                                     szInstr, sizeof(szInstr));
         CIDET_DPRINTF(("%04u: %s", iSubTest, szInstr));
         Assert(cbInstr == pThis->cbInstr);
+#else
+        RT_NOREF_PV(iSubTest);
 #endif
         if (pThis->pfnSetupCodeBuf(pThis, &pThis->CodeBuf, pThis->abInstr))
         {

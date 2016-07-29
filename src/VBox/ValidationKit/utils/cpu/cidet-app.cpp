@@ -42,7 +42,7 @@
 #include <iprt/test.h>
 
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #else
 # define USE_SIGNALS
 # include <signal.h>
@@ -565,6 +565,7 @@ static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
 static int cidetAppAllocateAndConfigureOneBuffer(PCIDETAPP pThis, PCIDETAPPBUF pBuf, uint16_t idxBuf, bool fIsCode,
                                                  uint32_t fFlags)
 {
+    RT_NOREF_PV(pThis);
     static uint8_t const s_afBufProtToDefaultMemProt[] =
     {
         /* [0]  = */ RTMEM_PROT_NONE,
@@ -672,6 +673,7 @@ static void CidetAppDeleteBuffer(PCIDETAPPBUF pBuf)
 
 static bool CidetAppArmBuf(PCIDETAPP pThis, PCIDETAPPBUF pAppBuf)
 {
+    RT_NOREF_PV(pThis);
     uint8_t *pbUsingBuf = (pAppBuf->fUsingNormal ? pAppBuf->pbNormal : pAppBuf->pbLow);
     if (pAppBuf->fLastPageProt == pAppBuf->fDefaultProt)
     {
@@ -692,6 +694,7 @@ static bool CidetAppArmBuf(PCIDETAPP pThis, PCIDETAPPBUF pAppBuf)
 
 static bool CidetAppDearmBuf(PCIDETAPP pThis, PCIDETAPPBUF pAppBuf)
 {
+    RT_NOREF_PV(pThis);
     uint8_t *pbUsingBuf = (pAppBuf->fUsingNormal ? pAppBuf->pbNormal : pAppBuf->pbLow);
     int rc = RTMemProtect(pbUsingBuf, pAppBuf->cb, pAppBuf->fDefaultProt | RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     if (RT_FAILURE(rc))
@@ -1105,6 +1108,7 @@ static DECLCALLBACK(bool) CidetAppCbExecute(PCIDETCORE pThis)
  */
 static DECLCALLBACK(void) CidetAppCbFailureV(PCIDETCORE pThis, const char *pszMsg, va_list va)
 {
+    RT_NOREF_PV(pThis);
     RTTestIFailedV(pszMsg, va);
 }
 

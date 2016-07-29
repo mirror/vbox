@@ -2490,6 +2490,7 @@ static int txsDoExecHlp(PCTXSPKTHDR pPktHdr, uint32_t fFlags, const char *pszExe
                         const char *pszUsername, RTMSINTERVAL cMillies)
 {
     int     rc2;
+    RT_NOREF_PV(fFlags);
 
     /*
      * Input validation, filter out things we don't yet support..
@@ -3261,7 +3262,6 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
     bool        fAutoUpgrade    = true;
     bool        fDaemonize      = true;
     bool        fDaemonized     = false;
-    bool        fTransportFixed = false;
     const char *pszUpgrading    = NULL;
 
     /*
