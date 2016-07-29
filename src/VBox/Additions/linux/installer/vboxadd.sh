@@ -308,12 +308,11 @@ update_module_dependencies()
 cleanup_modules()
 {
     begin "Removing existing VirtualBox kernel modules"
-    # We no longer support DKMS, remove any leftovers.
-    for i in vboxguest vboxadd vboxsf vboxvfs vboxvideo; do
+    for i in ${OLDMODULES}; do
+        # We no longer support DKMS, remove any leftovers.
         rm -rf "/var/lib/dkms/${i}"*
-    done
-    for i in $OLDMODULES; do
-        find /lib/modules -name $i\* | xargs rm 2>/dev/null
+        # And remove old modules.
+        rm -f /lib/modules/*/misc/"${i}"*
     done
     # Remove leftover module folders.
     for i in /lib/modules/*/misc; do
