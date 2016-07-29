@@ -593,6 +593,10 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
         return Status;
     }
 
+/** @todo r=bird: Need to write a script for fixing these kind of clueless use
+ *        of AssertMsgFailed (into AssertMsgReturn).  The __FUNCTION__ is just
+ *        the topping it off - the assertion message includes function, file and
+ *        line number. Duh! */
     PUSB_CONFIGURATION_DESCRIPTOR pCfgDr = vboxUsbRtFindConfigDesc(pDevExt, uConfiguration);
     if (!pCfgDr)
     {
