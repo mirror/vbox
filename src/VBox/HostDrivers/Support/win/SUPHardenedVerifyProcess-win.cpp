@@ -723,7 +723,6 @@ static DECLCALLBACK(int) supHardNtVpGetImport(RTLDRMOD hLdrMod, const char *pszM
  *                              two scratch buffers).
  * @param   pImage              The image data collected during the address
  *                              space scan.
- * @param   hProcess            Handle to the process.
  */
 static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage)
 {
