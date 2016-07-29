@@ -155,11 +155,8 @@ static const char* vboxUsbDbgStrPnPMn(UCHAR uMn)
 
 void vboxUsbDbgPrintUnicodeString(PUNICODE_STRING pUnicodeString)
 {
-    PWSTR pStr = pUnicodeString->Buffer;
-    for (int i = 0; i < pUnicodeString->Length/2; ++i)
-    {
-        LOG(("%c", *pStr++));
-    }
+    RT_NOREF1(pUnicodeString);
+    Log(("%.*ls", pUnicodeString->Length / 2, pUnicodeString->Buffer));
 }
 
 /**
@@ -420,6 +417,7 @@ typedef struct VBOXUSBOBJNAMEPREFIXMATCHER
 
 static DECLCALLBACK(VOID) vboxUsbObjDevNamePrefixMatcher(PDEVICE_OBJECT pDo, PUNICODE_STRING pName, PVOID pvMatcher)
 {
+    RT_NOREF1(pDo);
     PVBOXUSBOBJNAMEPREFIXMATCHER pData = (PVBOXUSBOBJNAMEPREFIXMATCHER)pvMatcher;
     PUNICODE_STRING pNamePrefix = pData->pNamePrefix;
     ASSERT_WARN(!pData->fMatched, ("match flag already set!"));
@@ -437,6 +435,7 @@ typedef struct VBOXUSBOBJDRVOBJSEARCHER
 
 static DECLCALLBACK(BOOLEAN) vboxUsbObjDevObjSearcherWalker(PDEVICE_OBJECT pTopDo, PDEVICE_OBJECT pCurDo, PVOID pvContext)
 {
+    RT_NOREF1(pTopDo);
     PVBOXUSBOBJDRVOBJSEARCHER pData = (PVBOXUSBOBJDRVOBJSEARCHER)pvContext;
     ASSERT_WARN(!pData->pDevObj, ("non-null dev object (0x%p) on enter", pData->pDevObj));
     pData->pDevObj = NULL;
@@ -607,6 +606,7 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
         }
     }
 #else /* VBOX_USB3PORT */
+    RT_NOREF1(fFlags);
     PWSTR szwHubList;
     Status = IoGetDeviceInterfaces(&GUID_DEVINTERFACE_USB_HUB, NULL, 0, &szwHubList);
     if (Status != STATUS_SUCCESS)
@@ -654,6 +654,7 @@ typedef struct VBOXUSBMONFINDHUBWALKER
 
 static DECLCALLBACK(BOOLEAN) vboxUsbMonFindHubDrvObjWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo, PDEVICE_OBJECT pHubDo, PVOID pvContext)
 {
+    RT_NOREF2(pFile, pTopDo);
     PVBOXUSBMONFINDHUBWALKER pData = (PVBOXUSBMONFINDHUBWALKER)pvContext;
     PDRIVER_OBJECT pDrvObj = pHubDo->DriverObject;
 
@@ -672,9 +673,7 @@ static DECLCALLBACK(BOOLEAN) vboxUsbMonFindHubDrvObjWalker(PFILE_OBJECT pFile, P
 
 static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
 {
-    NTSTATUS Status = STATUS_UNSUCCESSFUL;
     UNICODE_STRING szStandardHubName;
-    PDRIVER_OBJECT pDrvObj = NULL;
     szStandardHubName.Length = 0;
     szStandardHubName.MaximumLength = 0;
     szStandardHubName.Buffer = 0;
@@ -684,13 +683,9 @@ static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
     VBOXUSBMONFINDHUBWALKER Data = {0};
     vboxUsbMonHubDevWalk(vboxUsbMonFindHubDrvObjWalker, &Data, VBOXUSBMONHUBWALK_F_ALL);
     if (Data.pDrvObj)
-    {
         LOG(("returning driver object 0x%p", Data.pDrvObj));
-    }
     else
-    {
         WARN(("no hub driver object found!"));
-    }
     return Data.pDrvObj;
 }
 
@@ -769,7 +764,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                     /* IRQL should be always passive here */
                     ASSERT_WARN(Iqrl == PASSIVE_LEVEL, ("irql is not PASSIVE"));
 
-                    switch (pSl->Parameters.QueryDeviceRelations.Type)
+                    switch (pSl->Parameters.QueryId.IdType)
                     {
                         case BusQueryInstanceID:
                             LOG(("BusQueryInstanceID"));
@@ -898,6 +893,10 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                             LOG(("PDO (0x%p) is NOT filtered", pDevObj));
                         }
                         break;
+
+                        default:
+                            /** @todo r=bird: handle BusQueryContainerID and whatever else we might see  */
+                            break;
                     }
                 }
                 else
@@ -1191,6 +1190,7 @@ static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG 
 
 static DECLCALLBACK(BOOLEAN) vboxUsbMonHookDrvObjWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo, PDEVICE_OBJECT pHubDo, PVOID pvContext)
 {
+    RT_NOREF3(pFile, pTopDo, pvContext);
     PDRIVER_OBJECT pDrvObj = pHubDo->DriverObject;
 
     /* First we try to figure out if we are already hooked to this driver. */
@@ -1518,6 +1518,7 @@ static NTSTATUS _stdcall VBoxUsbMonClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 static NTSTATUS _stdcall VBoxUsbMonCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
+    RT_NOREF1(pDevObj);
     PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT pFileObj = pStack->FileObject;
     NTSTATUS Status;
@@ -1865,6 +1866,7 @@ static NTSTATUS _stdcall VBoxUsbMonInternalDeviceControl(PDEVICE_OBJECT pDevObj,
  */
 static void _stdcall VBoxUsbMonUnload(PDRIVER_OBJECT pDrvObj)
 {
+    RT_NOREF1(pDrvObj);
     LOG(("VBoxUSBMonUnload pDrvObj (0x%p)", pDrvObj));
 
     IoReleaseRemoveLockAndWait(&g_VBoxUsbMonGlobals.RmLock, &g_VBoxUsbMonGlobals);
@@ -1873,21 +1875,17 @@ static void _stdcall VBoxUsbMonUnload(PDRIVER_OBJECT pDrvObj)
 
     UNICODE_STRING DosName;
     RtlInitUnicodeString(&DosName, USBMON_DEVICE_NAME_DOS);
-    NTSTATUS rc = IoDeleteSymbolicLink(&DosName);
+    IoDeleteSymbolicLink(&DosName);
 
     IoDeleteDevice(g_VBoxUsbMonGlobals.pDevObj);
 
     /* cleanup the logger */
     PRTLOGGER pLogger = RTLogRelSetDefaultInstance(NULL);
     if (pLogger)
-    {
         RTLogDestroy(pLogger);
-    }
     pLogger = RTLogSetDefaultInstance(NULL);
     if (pLogger)
-    {
         RTLogDestroy(pLogger);
-    }
 }
 
 RT_C_DECLS_BEGIN
@@ -1903,6 +1901,7 @@ RT_C_DECLS_END
  */
 NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
+    RT_NOREF1(pRegPath);
 #ifdef VBOX_USB_WITH_VERBOSE_LOGGING
     RTLogGroupSettings(0, "+default.e.l.f.l2.l3");
     RTLogDestinations(0, "debugger");
