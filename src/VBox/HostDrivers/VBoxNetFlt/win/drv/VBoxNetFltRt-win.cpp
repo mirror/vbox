@@ -2957,7 +2957,7 @@ static NTSTATUS vboxNetFltWinPtDevDispatch(IN PDEVICE_OBJECT pDevObj, IN PIRP pI
         case IRP_MJ_CLOSE:
             break;
         default:
-            Assert(0);
+            AssertFailed();
             break;
     }
 
@@ -3030,7 +3030,7 @@ static NDIS_STATUS vboxNetFltWinDevCreateReference(PVBOXNETFLTGLOBALS_WIN pGloba
     else
     {
         /* should never happen actually */
-        Assert(0);
+        AssertFailed();
         Status = NDIS_STATUS_FAILURE;
     }
     return Status;
@@ -3058,7 +3058,7 @@ static NDIS_STATUS vboxNetFltWinDevDereference(PVBOXNETFLTGLOBALS_WIN pGlobals)
     else
     {
         /* should never happen actually */
-        Assert(0);
+        AssertFailed();
         Status = NDIS_STATUS_FAILURE;
     }
     return Status;

@@ -2,6 +2,7 @@
 /** @file
  * USB Power state Handling
  */
+
 /*
  * Copyright (C) 2011-2016 Oracle Corporation
  *
@@ -41,7 +42,7 @@ static NTSTATUS vboxUsbPwrMnDefault(IN PVBOXUSBDEV_EXT pDevExt, IN PIRP pIrp)
 
 static NTSTATUS vboxUsbPwrMnPowerSequence(IN PVBOXUSBDEV_EXT pDevExt, IN PIRP pIrp)
 {
-    Assert(0);
+    AssertFailed();
     return vboxUsbPwrMnDefault(pDevExt, pIrp);
 }
 
@@ -86,12 +87,10 @@ static NTSTATUS vboxUsbPwrIoRequestDev(IN PVBOXUSBDEV_EXT pDevExt, IN PIRP pIrp)
         pDevCtx->pIrp = pIrp;
 
         Status = PoRequestPowerIrp(pDevExt->pPDO, pSl->MinorFunction, PwrState,
-                        vboxUsbPwrIoDeviceCompletion, pDevCtx, NULL);
+                                   vboxUsbPwrIoDeviceCompletion, pDevCtx, NULL);
         Assert(NT_SUCCESS(Status));
         if (NT_SUCCESS(Status))
-        {
             return STATUS_MORE_PROCESSING_REQUIRED;
-        }
 
         vboxUsbMemFree(pDevCtx);
     }
@@ -117,14 +116,11 @@ static NTSTATUS vboxUsbPwrIoPostSysCompletion(IN PDEVICE_OBJECT pDevObj, IN PIRP
         switch (pSl->MinorFunction)
         {
             case IRP_MN_SET_POWER:
-            {
                 pDevExt->DdiState.PwrState.PowerState.SystemState = pSl->Parameters.Power.State.SystemState;
                 break;
-            }
+
             default:
-            {
                 break;
-            }
         }
 
         return vboxUsbPwrIoRequestDev(pDevExt, pIrp);
@@ -287,7 +283,7 @@ static NTSTATUS vboxUsbPwrMnQueryPower(IN PVBOXUSBDEV_EXT pDevExt, IN PIRP pIrp)
         }
         default:
         {
-            Assert(0);
+            AssertFailed();
             return vboxUsbPwrMnDefault(pDevExt, pIrp);
         }
 
@@ -355,7 +351,7 @@ static NTSTATUS vboxUsbPwrMnSetPower(IN PVBOXUSBDEV_EXT pDevExt, IN PIRP pIrp)
         }
         default:
         {
-            Assert(0);
+            AssertFailed();
             return vboxUsbPwrMnDefault(pDevExt, pIrp);
         }
 
@@ -394,7 +390,7 @@ static NTSTATUS vboxUsbPwrDispatch(IN PVBOXUSBDEV_EXT pDevExt, IN PIRP pIrp)
         }
         default:
         {
-//            Assert(0);
+//            AssertFailed();
             return vboxUsbPwrMnDefault(pDevExt, pIrp);
         }
     }
@@ -434,3 +430,4 @@ DECLHIDDEN(NTSTATUS) vboxUsbDispatchPower(IN PDEVICE_OBJECT pDeviceObject, IN PI
         }
     }
 }
+

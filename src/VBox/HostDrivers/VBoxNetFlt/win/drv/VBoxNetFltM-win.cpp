@@ -485,7 +485,7 @@ static VOID vboxNetFltWinMpSendPackets(IN NDIS_HANDLE hMiniportAdapterContext,
     else
     {
         NDIS_HANDLE h = pNetFlt->u.s.WinIf.hMiniport;
-        Assert(0);
+        AssertFailed();
         if (h)
         {
             for (UINT i = 0; i < cNumberOfPackets; i++)
@@ -650,7 +650,7 @@ static NDIS_STATUS vboxNetFltWinMpHandlePowerState(PVBOXNETFLTINS pNetFlt, NDIS_
             && enmState != NdisDeviceStateD0)
     {
         /* invalid state transformation */
-        Assert(0);
+        AssertFailed();
         return NDIS_STATUS_FAILURE;
     }
 
@@ -1229,7 +1229,7 @@ static NDIS_STATUS vboxNetFltWinMpSetInformation(IN NDIS_HANDLE MiniportAdapterC
 #define VBOXNETFLTDUMP_STRCASE(_t) \
         case _t: return #_t;
 #define VBOXNETFLTDUMP_STRCASE_UNKNOWN() \
-        default: /*Assert(0);*/ return "Unknown";
+        default: /*AssertFailed();*/ return "Unknown";
 
 static const char* vboxNetFltWinMpDumpOid(ULONG oid)
 {
@@ -1381,7 +1381,7 @@ static NDIS_STATUS vboxNetFltWinMpTransferData(OUT PNDIS_PACKET Packet,
 #else
     LogFlowFunc(("ENTER: pNetFlt (0x%p)\n", hContext));
     /* should never be here */
-    Assert(0);
+    AssertFailed();
     LogFlowFunc(("LEAVE: pNetFlt (0x%p), Status (0x%x)\n", hContext, NDIS_STATUS_FAILURE));
     return NDIS_STATUS_FAILURE;
 #endif
