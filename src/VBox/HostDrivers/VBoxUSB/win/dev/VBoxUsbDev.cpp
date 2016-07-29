@@ -196,26 +196,15 @@ static NTSTATUS vboxUsbDispatchClose(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pI
 static NTSTATUS vboxUsbDispatchDeviceControl(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp)
 {
     PVBOXUSBDEV_EXT pDevExt = (PVBOXUSBDEV_EXT)pDeviceObject->DeviceExtension;
-    NTSTATUS Status = STATUS_INVALID_HANDLE;
     if (vboxUsbDdiStateRetainIfStarted(pDevExt))
-    {
         return vboxUsbRtDispatch(pDevExt, pIrp);
-    }
-    else
-    {
-        Status = STATUS_INVALID_DEVICE_STATE;
-    }
-
-    Status = VBoxDrvToolIoComplete(pIrp, Status, 0);
-    return Status;
+    return VBoxDrvToolIoComplete(pIrp, STATUS_INVALID_DEVICE_STATE, 0);
 }
 
 static NTSTATUS vboxUsbDispatchCleanup(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp)
 {
     RT_NOREF1(pDeviceObject);
-    NTSTATUS Status = STATUS_SUCCESS;
-    Status = VBoxDrvToolIoComplete(pIrp, Status, 0);
-    return Status;
+    return VBoxDrvToolIoComplete(pIrp, STATUS_SUCCESS, 0);
 }
 
 static NTSTATUS vboxUsbDevAccessDeviedDispatchStub(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp)
@@ -227,8 +216,7 @@ static NTSTATUS vboxUsbDevAccessDeviedDispatchStub(IN PDEVICE_OBJECT pDeviceObje
         return STATUS_DELETE_PENDING;
     }
 
-    NTSTATUS Status = STATUS_ACCESS_DENIED;
-    Status = VBoxDrvToolIoComplete(pIrp, Status, 0);
+    NTSTATUS Status = VBoxDrvToolIoComplete(pIrp, STATUS_ACCESS_DENIED, 0);
 
     vboxUsbDdiStateRelease(pDevExt);
 
