@@ -26,6 +26,7 @@
 # include <QTextDocument>
 
 /* GUI includes: */
+# include "UIIconPool.h"
 # include "UIInformationItem.h"
 # include "VBoxGlobal.h"
 
@@ -37,6 +38,9 @@ UIInformationItem::UIInformationItem(QObject *pParent)
     /* Create text-document: */
     m_pTextDocument = new QTextDocument(this);
     AssertPtrReturnVoid(m_pTextDocument);
+
+    /* Dummy initialization of icon-string (to avoid assertion in icon-pool when model is empty): */
+    m_strIcon = ":/machine_16px.png";
 }
 
 void UIInformationItem::setIcon(const QString &strIcon) const
@@ -149,12 +153,15 @@ void UIInformationItem::updateTextLayout() const
 {
     /* Details templates: */
     static const char *sSectionBoldTpl =
-        "<tr><td width=22 rowspan=%1 align=left><img width=16 height=16 src='%2'></td>"
+        "<tr><td width=22 rowspan=%1 align=left><img src=\"image://%2\" /></td>"
             "<td><b><nobr>%3</nobr></b></td></tr>"
             "%4";
     static const char *sSectionItemTpl2 =
         "<tr><td width=200><nobr>%1</nobr></td><td/><td>%2</td></tr>";
     const QString &sectionTpl = sSectionBoldTpl;
+
+    /* Initialize icon tag: */
+    const QString strIconTag = QString("image://%1").arg(m_strIcon);
 
     /* Compose details report: */
     QString report;
@@ -170,6 +177,9 @@ void UIInformationItem::updateTextLayout() const
                                 m_strName, /* title */
                                 item); /* items */
     }
+
+    /* Add pixmap to text-document as image resource: */
+    m_pTextDocument->addResource(QTextDocument::ImageResource, QUrl(strIconTag), UIIconPool::pixmap(m_strIcon));
 
     /* Set html-data: */
     m_pTextDocument->setHtml(report);
