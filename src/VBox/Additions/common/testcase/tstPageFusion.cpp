@@ -36,7 +36,7 @@
 *********************************************************************************************************************************/
 
 #ifdef RT_OS_WINDOWS
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <process.h> /* Needed for file version information. */
 #include <tlhelp32.h>
 #include <psapi.h>

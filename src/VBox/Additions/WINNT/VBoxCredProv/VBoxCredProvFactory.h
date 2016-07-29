@@ -18,7 +18,7 @@
 #ifndef ___VBOX_CREDPROV_FACTORY_H___
 #define ___VBOX_CREDPROV_FACTORY_H___
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 class VBoxCredProvFactory : public IClassFactory
 {

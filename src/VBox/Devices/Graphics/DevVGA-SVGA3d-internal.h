@@ -39,7 +39,7 @@
 #include "DevVGA-SVGA3d.h"
 
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 # ifdef VMSVGA3D_DIRECT3D
 #  include <d3d9.h>
 #  include <iprt/avl.h>

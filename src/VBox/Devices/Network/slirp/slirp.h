@@ -46,7 +46,7 @@ typedef int socklen_t;
 #include <VBox/log.h>
 #include <iprt/mem.h>
 #ifdef RT_OS_WINDOWS
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include <io.h>
 #endif
 #include <iprt/asm.h>

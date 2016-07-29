@@ -24,7 +24,7 @@
 
 #include <VBox/err.h>
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 struct SVCHlpMsg
 {

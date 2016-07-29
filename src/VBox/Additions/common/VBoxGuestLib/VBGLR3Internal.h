@@ -28,7 +28,7 @@
 #define ___VBGLR3Internal_h
 
 #if defined(RT_OS_WINDOWS) /** @todo explain why this is here. */
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>

@@ -33,7 +33,7 @@
 #include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>

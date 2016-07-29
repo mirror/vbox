@@ -63,7 +63,7 @@
 #include "VBoxNetBaseService.h"
 
 #ifdef RT_OS_WINDOWS /* WinMain */
-# include <Windows.h>
+# include <iprt/win/windows.h>
 # include <stdlib.h>
 #endif
 

@@ -28,7 +28,7 @@
 
 /* Windows includes: */
 #include <QApplication>
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <new> /* For bad_alloc. */
 
 #include "UIDnDDropSource_win.h"

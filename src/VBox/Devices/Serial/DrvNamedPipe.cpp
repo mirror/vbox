@@ -32,7 +32,7 @@
 #include "VBoxDD.h"
 
 #ifdef RT_OS_WINDOWS
-# include <windows.h>
+# include <iprt/win/windows.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <unistd.h>

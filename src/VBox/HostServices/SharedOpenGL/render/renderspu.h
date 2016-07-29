@@ -9,7 +9,7 @@
 
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <iprt/win/windows.h>
 #define RENDER_APIENTRY __stdcall
 #define snprintf _snprintf
 #elif defined(DARWIN)

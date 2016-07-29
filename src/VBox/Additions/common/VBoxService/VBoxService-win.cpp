@@ -25,7 +25,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <process.h>
 #include <aclapi.h>
 

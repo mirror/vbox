@@ -16,7 +16,7 @@
  */
 
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 
 /**

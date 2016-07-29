@@ -33,7 +33,7 @@
 #  undef _WIN32_WINNT
 #  define _WIN32_WINNT 0x501
 # endif
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include <psapi.h>
 # include <winternl.h>
 

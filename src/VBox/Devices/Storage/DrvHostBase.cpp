@@ -50,7 +50,7 @@ extern "C" char *getfullblkname(char *);
 
 #elif defined(RT_OS_WINDOWS)
 # define WIN32_NO_STATUS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 # include <dbt.h>
 # undef WIN32_NO_STATUS
 # include <ntstatus.h>

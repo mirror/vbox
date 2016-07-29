@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <stdio.h>      /* Needed for swprintf() */
 
 #include <VBox/VBoxGuestLib.h>

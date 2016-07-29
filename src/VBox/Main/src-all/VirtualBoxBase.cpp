@@ -24,7 +24,7 @@
 #include <typeinfo>
 
 #if !defined(VBOX_WITH_XPCOM)
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <dbghelp.h>
 #else /* !defined(VBOX_WITH_XPCOM) */
 /// @todo remove when VirtualBoxErrorInfo goes away from here

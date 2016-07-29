@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <VBoxHook.h>
 #include <VBox/VBoxGuestLib.h>
 #include <stdio.h>

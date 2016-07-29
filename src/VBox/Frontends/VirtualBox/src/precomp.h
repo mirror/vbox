@@ -217,7 +217,7 @@
  */
 #ifdef VBOX_WS_WIN
 # include <shlobj.h>
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 
 

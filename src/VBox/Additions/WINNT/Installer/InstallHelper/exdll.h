@@ -21,7 +21,7 @@
 #ifndef _EXDLL_H_
 #define _EXDLL_H_
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #if defined(__GNUC__)
 #define UNUSED __attribute__((unused))

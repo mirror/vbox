@@ -18,7 +18,7 @@
 #ifndef ___VBOX_CREDENTIALPROVIDER_H___
 #define ___VBOX_CREDENTIALPROVIDER_H___
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <credentialprovider.h>
 
 #include "VBoxCredProvUtils.h"

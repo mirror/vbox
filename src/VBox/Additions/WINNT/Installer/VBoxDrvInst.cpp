@@ -25,7 +25,7 @@
 
 #include <VBox/version.h>
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <setupapi.h>
 #include <stdio.h>
 #include <tchar.h>

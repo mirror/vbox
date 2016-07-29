@@ -27,7 +27,7 @@
 #include <iprt/x86.h>
 
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #else
 # ifdef RT_OS_DARWIN
 #  define _XOPEN_SOURCE

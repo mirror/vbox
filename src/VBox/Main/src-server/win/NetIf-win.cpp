@@ -31,7 +31,7 @@
 #define _WIN32_DCOM
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <tchar.h>
 
 #ifdef VBOX_WITH_NETFLT

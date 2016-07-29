@@ -1564,7 +1564,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
 #ifdef RT_OS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <iprt/win/windows.h>
 BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     (void) lpvReserved;

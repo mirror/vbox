@@ -73,7 +73,7 @@
 #endif
 #ifdef RT_OS_WINDOWS
 # ifndef CTL_CODE
-#  include <Windows.h>
+#  include <iprt/win/windows.h>
 # endif
 #endif
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)

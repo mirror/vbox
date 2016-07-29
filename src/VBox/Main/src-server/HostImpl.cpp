@@ -117,7 +117,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 
 #ifdef RT_OS_WINDOWS
 # define _WIN32_DCOM
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include <shellapi.h>
 # define INITGUID
 # include <guiddef.h>

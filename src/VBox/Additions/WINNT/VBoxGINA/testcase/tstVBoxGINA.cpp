@@ -16,7 +16,7 @@
  */
 
 #define UNICODE
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <stdio.h>
 
 int main(int argc, TCHAR* argv[])

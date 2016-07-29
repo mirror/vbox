@@ -746,7 +746,7 @@ static int suplibConvertWin32Err(int rc)
 {
     /* Conversion program (link with ntdll.lib from ddk):
         #define _WIN32_WINNT 0x0501
-        #include <windows.h>
+        #include <iprt/win/windows.h>
         #include <ntstatus.h>
         #include <winternl.h>
         #include <stdio.h>

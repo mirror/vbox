@@ -17,7 +17,7 @@
 
 /* 0x0501 for SPI_SETDROPSHADOW */
 #define _WIN32_WINNT 0x0501
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 #include "VBoxVRDP.h"

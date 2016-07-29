@@ -39,7 +39,7 @@
 /* External includes: */
 # if QT_VERSION < 0x050000
 #  ifdef VBOX_WS_WIN
-#   include <Windows.h>
+#   include <iprt/win/windows.h>
 #  endif /* VBOX_WS_WIN */
 # endif /* QT_VERSION < 0x050000 */
 

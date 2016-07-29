@@ -18,7 +18,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <windef.h>
 #include <winbase.h>
 #include <winsvc.h>

@@ -98,7 +98,7 @@ int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAG
 
 /* DevVGA-SVGA3d-shared.h: */
 #if defined(RT_OS_WINDOWS) && defined(IN_RING3)
-# include <Windows.h>
+# include <iprt/win/windows.h>
 
 # define WM_VMSVGA3D_WAKEUP                     (WM_APP+1)
 # define WM_VMSVGA3D_CREATEWINDOW               (WM_APP+2)

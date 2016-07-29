@@ -26,7 +26,7 @@
 #       define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
 #       define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
 #       pragma warning(disable : 4163)
-#include <windows.h>
+#include <iprt/win/windows.h>
 #       pragma warning(default : 4163)
 #       undef  _InterlockedExchange
 #       undef  _InterlockedExchangeAdd

@@ -22,7 +22,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <NTSecAPI.h>
 #define SECURITY_WIN32
 #include <Security.h>

@@ -16,7 +16,7 @@
  */
 
 #define _WIN32_WINNT 0x0500
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/assert.h>
 #include <iprt/ldr.h>

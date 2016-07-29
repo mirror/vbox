@@ -16,7 +16,7 @@
  */
 
 #include <malloc.h>
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/string.h>
 #include <VBox/Log.h>

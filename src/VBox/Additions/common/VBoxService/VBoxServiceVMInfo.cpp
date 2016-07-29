@@ -59,7 +59,7 @@
 # include <winsock2.h>
 # include <iphlpapi.h>
 # include <ws2tcpip.h>
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include <Ntsecapi.h>
 #else
 # define __STDC_LIMIT_MACROS

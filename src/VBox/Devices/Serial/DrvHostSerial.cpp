@@ -66,7 +66,7 @@
 # endif /* linux */
 
 #elif defined(RT_OS_WINDOWS)
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 
 #include "VBoxDD.h"

@@ -19,7 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <Wincrypt.h>
 
 #include <iprt/buildconfig.h>

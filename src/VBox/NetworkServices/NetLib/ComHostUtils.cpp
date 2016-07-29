@@ -57,7 +57,7 @@
 #include "../NetLib/VBoxNetBaseService.h"
 
 #ifdef RT_OS_WINDOWS /* WinMain */
-# include <Windows.h>
+# include <iprt/win/windows.h>
 # include <stdlib.h>
 # ifdef INET_ADDRSTRLEN
 /* On Windows INET_ADDRSTRLEN defined as 22 Ws2ipdef.h, because it include port number */

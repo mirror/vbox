@@ -19,7 +19,7 @@
 #ifndef ___VBoxDispMpInternal_h__
 #define ___VBoxDispMpInternal_h__
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #if 0
 HRESULT vboxDispMpInternalInit();

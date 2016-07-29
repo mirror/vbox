@@ -31,7 +31,7 @@
 #include <iprt/err.h>
 #include <VBox/log.h>
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <windns.h>
 #include <iptypes.h>
 #include <iphlpapi.h>

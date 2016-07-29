@@ -48,7 +48,7 @@
 #ifdef RT_OS_WINDOWS
 # define _WIN32_WINNT 0x0501
 # include <Objbase.h>                   /* CoInitializeEx */
-# include <Windows.h>                   /* ShellExecuteEx, ++ */
+# include <iprt/win/windows.h>                   /* ShellExecuteEx, ++ */
 # ifdef DEBUG
 #  include <Sddl.h>
 # endif

@@ -76,7 +76,7 @@
 # define _interlockedbittestandreset    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset
 # define _interlockedbittestandset64    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset64
 # define _interlockedbittestandreset64  they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset64
-# include <Windows.h>
+# include <iprt/win/windows.h>
 # include <winioctl.h>
 # include <ntddscsi.h>
 # pragma warning(default : 4163)

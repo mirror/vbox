@@ -19,7 +19,7 @@
 /* If defined, debug messages will be written to the debugger. */
 // #define AUTH_DEBUG
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <VBox/VBoxAuth.h>
 

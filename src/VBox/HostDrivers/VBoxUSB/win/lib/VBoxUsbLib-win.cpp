@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_USBPROXY
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #include <VBox/sup.h>
 #include <VBox/types.h>

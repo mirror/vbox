@@ -29,7 +29,7 @@
 # include <errno.h>
 
 # elif defined(RT_OS_WINDOWS)
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include <dbt.h>
 
 #elif defined(RT_OS_L4)

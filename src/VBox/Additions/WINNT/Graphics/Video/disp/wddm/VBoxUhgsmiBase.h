@@ -22,7 +22,7 @@
 #include <VBox/VBoxUhgsmi.h>
 #include <VBox/VBoxCrHgsmi.h>
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <D3dkmthk.h>
 //#include <D3dumddi.h>
 #include "common/wddm/VBoxMPIf.h"

@@ -22,7 +22,7 @@
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #ifdef RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif
 #if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
 # include <sys/resource.h>

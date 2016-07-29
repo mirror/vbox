@@ -25,7 +25,7 @@
 #include <iprt/list.h>
 
 #include <iprt/nt/nt-and-windows.h>
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include "HBDMgmt.h"
 

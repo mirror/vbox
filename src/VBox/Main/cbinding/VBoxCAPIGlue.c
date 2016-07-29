@@ -43,7 +43,7 @@
 # include <dlfcn.h>
 # include <pthread.h>
 #else /* WIN32 */
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #endif /* WIN32 */
 
 

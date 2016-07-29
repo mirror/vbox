@@ -26,7 +26,7 @@
 
 #include <VBox/version.h>
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <wchar.h>
 #include <stdio.h>
 
@@ -34,7 +34,7 @@
 #include <msiquery.h>
 
 #define _WIN32_DCOM
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <assert.h>
 #include <shellapi.h>
 #define INITGUID

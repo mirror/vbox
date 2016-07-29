@@ -17,7 +17,7 @@
 #ifndef ___VBoxNetFltNobj_h___
 #define ___VBoxNetFltNobj_h___
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #include "VBox/com/defs.h"
 #include "VBoxNetFltNobjT.h"

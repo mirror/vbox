@@ -21,7 +21,7 @@
  */
 
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <setupapi.h>
 #include <regstr.h>
 #include <DEVGUID.h>

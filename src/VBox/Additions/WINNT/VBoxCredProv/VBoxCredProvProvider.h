@@ -19,7 +19,7 @@
 #define ___VBOX_CREDPROV_PROVIDER_H___
 
 #include <credentialprovider.h>
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <strsafe.h>
 
 #include <VBox/VBoxGuestLib.h>

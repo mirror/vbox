@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>

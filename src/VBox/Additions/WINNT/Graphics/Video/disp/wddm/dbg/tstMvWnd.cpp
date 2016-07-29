@@ -10,7 +10,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include <windows.h>
+#include <iprt/win/windows.h>
 
 #define Assert(_m) do {} while (0)
 #define vboxVDbgPrint(_m) do {} while (0)

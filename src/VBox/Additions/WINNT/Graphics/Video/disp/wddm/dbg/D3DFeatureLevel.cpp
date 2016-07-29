@@ -16,7 +16,7 @@
  * D3D10 Feature Level and dumps it to stdout.
  */
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <D3D11.h>
 #include <stdio.h>
 

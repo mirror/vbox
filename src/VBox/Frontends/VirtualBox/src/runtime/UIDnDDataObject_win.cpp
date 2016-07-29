@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include <new> /* For bad_alloc. */
 #include <shlobj.h>
 

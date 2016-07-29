@@ -12,7 +12,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <windows.h>
+#include <iprt/win/windows.h>
 #define KDEXT_64BIT
 #include <wdbgexts.h>
 

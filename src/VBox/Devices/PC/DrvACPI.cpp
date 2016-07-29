@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_ACPI
 
 #ifdef RT_OS_WINDOWS
-# include <windows.h>
+# include <iprt/win/windows.h>
 #endif
 
 #include <VBox/vmm/pdmdrv.h>
