@@ -21,15 +21,7 @@
 
 #include <iprt/cdefs.h>
 
-RT_C_DECLS_BEGIN
-#ifdef RT_ARCH_X86
-# define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
-#endif
-#include <ntddk.h>
-#ifdef RT_ARCH_X86
-# undef _InterlockedAddLargeStatistic
-#endif
-RT_C_DECLS_END
+#include <iprt/nt/ntddk.h>
 
 #include <iprt/spinlock.h>
 #include <iprt/memobj.h>

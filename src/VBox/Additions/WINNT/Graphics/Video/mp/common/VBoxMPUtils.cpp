@@ -19,9 +19,7 @@
 #include "VBoxMPUtils.h"
 
 #ifdef VBOX_XPDM_MINIPORT
-RT_C_DECLS_BEGIN
-# include <ntddk.h>
-RT_C_DECLS_END
+# include <iprt/nt/ntddk.h>
 #endif
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
