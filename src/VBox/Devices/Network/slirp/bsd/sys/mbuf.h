@@ -622,7 +622,7 @@ m_free_fast(PNATState pData, struct mbuf *m)
 {
 	AssertMsg(SLIST_EMPTY(&m->m_pkthdr.tags), ("doing fast free of mbuf with tags"));
 
-	uma_zfree_arg(zone_mbuf, m, (void *)MB_NOTAGS);
+	uma_zfree_arg(zone_mbuf, m, (void *)(uintptr_t)MB_NOTAGS);
 }
 #endif
 

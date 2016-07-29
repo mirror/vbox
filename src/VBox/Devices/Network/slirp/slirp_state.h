@@ -143,7 +143,7 @@ typedef struct NATState
     int socket_snd;
     int soMaxConn;
 #ifdef RT_OS_WINDOWS
-    ULONG (WINAPI * pfGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
+    ULONG (WINAPI * pfnGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
 #endif
     struct dns_list_head pDnsList;
     struct dns_domain_list_head pDomainList;

@@ -47,7 +47,7 @@ static int get_dns_addr_domain(PNATState pData,
 
     /* determine size of buffer */
     size = 0;
-    ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
+    ret = pData->pfnGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
     if (ret != ERROR_BUFFER_OVERFLOW)
     {
         Log(("NAT: error %lu occurred on capacity detection operation\n", ret));
@@ -65,7 +65,7 @@ static int get_dns_addr_domain(PNATState pData,
         Log(("NAT: No memory available\n"));
         return -1;
     }
-    ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
+    ret = pData->pfnGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
     if (ret != ERROR_SUCCESS)
     {
         Log(("NAT: error %lu occurred on fetching adapters info\n", ret));

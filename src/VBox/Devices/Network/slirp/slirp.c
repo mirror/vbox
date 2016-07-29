@@ -235,7 +235,7 @@
 /*
  * Loging macros
  */
-#if VBOX_WITH_DEBUG_NAT_SOCKETS
+#ifdef VBOX_WITH_DEBUG_NAT_SOCKETS
 # if defined(RT_OS_WINDOWS)
 #  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)             \
    do {                                                                                \
@@ -253,7 +253,7 @@
                     CHECK_FD_SET(so, ign, nval) ? "RDNVAL":""));                   \
    } while (0)
 # endif /* !RT_OS_WINDOWS */
-#else /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
+#else  /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
 # define DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) do {} while (0)
 #endif /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
 
@@ -340,10 +340,10 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
         WSAStartup(MAKEWORD(2, 0), &Data);
 
-        rc = RTLdrLoadSystem("Iphlpapi.dll", /* :fNoUnload */ true, &hLdrMod);
+        rc = RTLdrLoadSystem("Iphlpapi.dll", true /*fNoUnload*/, &hLdrMod);
         if (RT_SUCCESS(rc))
         {
-            rc = RTLdrGetSymbol(hLdrMod, "GetAdaptersAddresses", (void **)&pData->pfGetAdaptersAddresses);
+            rc = RTLdrGetSymbol(hLdrMod, "GetAdaptersAddresses", (void **)&pData->pfnGetAdaptersAddresses);
             if (RT_FAILURE(rc))
                 LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll\n"));
 
@@ -410,7 +410,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         flags |= PKT_ALIAS_PUNCH_FW;
 #endif
         flags |= pData->i32AliasMode; /* do transparent proxying */
-        flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
+        flags = LibAliasSetMode(pData->proxy_alias, flags, ~0U);
         proxy_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load(pData);
@@ -1069,7 +1069,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 /* Finish connection first */
                 /* should we ignore return value? */
                 bool fRet = slirpConnectOrWrite(pData, so, true);
-                LogFunc(("fRet:%RTbool\n", fRet));
+                LogFunc(("fRet:%RTbool\n", fRet)); NOREF(fRet);
                 if (slirpVerifyAndFreeSocket(pData, so))
                     CONTINUE(tcp);
             }
@@ -1379,7 +1379,7 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
     static bool fWarnedIpv6;
     struct ethhdr *eh;
 
-    m->m_len = cbBuf;
+    m->m_len = (int)cbBuf; Assert((size_t)m->m_len == cbBuf);
     if (cbBuf < ETH_HLEN)
     {
         Log(("NAT: packet having size %d has been ignored\n", m->m_len));
@@ -1430,7 +1430,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
 {
     struct ethhdr *eh;
     uint8_t *mbuf = NULL;
-    size_t mlen = 0;
+    int mlen;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
     LogFlowFunc(("ENTER: pData:%p, eth_proto:%RX16, m:%p, flags:%d\n",
                 pData, eth_proto, m, flags));
