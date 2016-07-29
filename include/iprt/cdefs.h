@@ -2809,6 +2809,21 @@
  * RT_NOREF_PV shorthand taking six parameters.
  */
 #define RT_NOREF6(var1, var2, var3, var4, var5, var6)   RT_NOREF_PV(var1); RT_NOREF5(var2, var3, var4, var5, var6)
+/** @def RT_NOREF7
+ * RT_NOREF_PV shorthand taking seven parameters.
+ */
+#define RT_NOREF7(var1, var2, var3, var4, var5, var6, var7) \
+    RT_NOREF_PV(var1); RT_NOREF6(var2, var3, var4, var5, var6, var7)
+/** @def RT_NOREF8
+ * RT_NOREF_PV shorthand taking eight parameters.
+ */
+#define RT_NOREF8(var1, var2, var3, var4, var5, var6, var7, var8) \
+    RT_NOREF_PV(var1); RT_NOREF7(var2, var3, var4, var5, var6, var7, var8)
+/** @def RT_NOREF9
+ * RT_NOREF_PV shorthand taking nine parameters.
+ */
+#define RT_NOREF9(var1, var2, var3, var4, var5, var6, var7, var8, var9) \
+    RT_NOREF_PV(var1); RT_NOREF8(var2, var3, var4, var5, var6, var7, var8)
 
 
 /** @def RT_BREAKPOINT
