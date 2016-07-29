@@ -392,22 +392,24 @@ DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath);
 /**
  * Display a fatal error and try call TrustedError or quit.
  */
-DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va);
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                        const char *pszMsgFmt, va_list va);
 
 /**
  * Display a fatal error and try call TrustedError or quit.
  */
-DECLHIDDEN(void)   supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, ...);
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                       const char *pszMsgFmt, ...);
 
 /**
  * Display a fatal error and quit.
  */
-DECLHIDDEN(void)   supR3HardenedFatalV(const char *pszFormat, va_list va);
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalV(const char *pszFormat, va_list va);
 
 /**
  * Display a fatal error and quit.
  */
-DECLHIDDEN(void)   supR3HardenedFatal(const char *pszFormat, ...);
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatal(const char *pszFormat, ...);
 
 /**
  * Display an error which may or may not be fatal.

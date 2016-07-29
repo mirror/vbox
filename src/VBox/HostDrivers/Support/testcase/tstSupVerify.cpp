@@ -59,7 +59,7 @@ int main(int argc, char **argv)
         { "--dummy",            'd', RTGETOPT_REQ_NOTHING },
     };
 
-    bool fKeepLoaded = false;
+    //bool fKeepLoaded = false;
 
     int ch;
     RTGETOPTUNION ValueUnion;

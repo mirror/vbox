@@ -307,6 +307,7 @@ static DECLCALLBACK(const char *) supHardNtViRdrLogName(PRTLDRREADER pReader)
 /** @copydoc RTLDRREADER::pfnMap */
 static DECLCALLBACK(int) supHardNtViRdrMap(PRTLDRREADER pReader, const void **ppvBits)
 {
+    RT_NOREF2(pReader, ppvBits);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -314,6 +315,7 @@ static DECLCALLBACK(int) supHardNtViRdrMap(PRTLDRREADER pReader, const void **pp
 /** @copydoc RTLDRREADER::pfnUnmap */
 static DECLCALLBACK(int) supHardNtViRdrUnmap(PRTLDRREADER pReader, const void *pvBits)
 {
+    RT_NOREF2(pReader, pvBits);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -495,6 +497,7 @@ static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCR
 
     SUP_DPRINTF(("%ls: Owner is not trusted installer (%.*Rhxs)\n",
                  pwszName, ((uint8_t *)pOwner)[1] /*SubAuthorityCount*/ * sizeof(ULONG) + 8, pOwner));
+    RT_NOREF1(pwszName);
     return false;
 }
 
@@ -557,6 +560,7 @@ static bool supHardViUtf16PathIsEqual(PCRTUTF16 pwszLeft, const char *pszRight)
 }
 
 
+#if 0 /* unused */
 /**
  * Simple case insensitive UTF-16 / ASCII ends-with path predicate.
  *
@@ -572,6 +576,7 @@ static bool supHardViUtf16PathEndsWith(PCRTUTF16 pwsz, const char *pszSuffix)
         return supHardViUtf16PathIsEqual(pwsz + cwc - cchSuffix, pszSuffix);
     return false;
 }
+#endif
 
 
 /**
@@ -674,7 +679,7 @@ DECLHIDDEN(bool) supHardViUniStrPathStartsWithUniStr(UNICODE_STRING const *pUniS
 }
 
 
-
+#ifndef IN_RING0
 /**
  * Counts slashes in the given UTF-8 path string.
  *
@@ -690,6 +695,7 @@ static uint32_t supHardViUtf16PathCountSlashes(PCRTUTF16 pwsz)
             cSlashes++;
     return cSlashes;
 }
+#endif
 
 
 #ifdef VBOX_PERMIT_MORE
@@ -732,6 +738,8 @@ DECLHIDDEN(bool) supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName)
  */
 static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, uint32_t fFlags, HANDLE hFile, int rc)
 {
+    RT_NOREF1(hLdrMod);
+
     if (fFlags & (SUPHNTVI_F_REQUIRE_BUILD_CERT | SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING))
         return rc;
 
@@ -1036,6 +1044,8 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
                                              void const *pvSignature, size_t cbSignature,
                                              PRTERRINFO pErrInfo, void *pvUser)
 {
+    RT_NOREF2(hLdrMod, enmSignature);
+
     /*
      * Check out the input.
      */
@@ -1213,6 +1223,8 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      */
     if (!fAvoidWinVerifyTrust)
         rc = supHardenedWinVerifyImageTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, rc, pfWinVerifyTrust, pErrInfo);
+#else
+    RT_NOREF1(fAvoidWinVerifyTrust);
 #endif
 
 #ifdef IN_SUP_HARDENED_R3
@@ -1463,6 +1475,7 @@ static int supHardNtViCertStoreInit(PRTCRSTORE phStore,
                                     PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
     AssertReturn(*phStore == NIL_RTCRSTORE, VERR_WRONG_ORDER);
+    RT_NOREF1(pszErrorTag);
 
     int rc = RTCrStoreCreateInMem(phStore, cCerts1 + cCerts2);
     if (RT_FAILURE(rc))
@@ -2147,6 +2160,8 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg(pszProgName, kSupInitOp_Integrity, rc,
                               "WinVerifyTrust failed on stub executable: %s", ErrInfoStatic.szMsg);
+# else
+    RT_NOREF1(pszProgName);
 # endif
 
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0)) /* ntdll isn't signed on XP, assuming this is the case on W2K3 for now. */
@@ -2208,6 +2223,7 @@ static int supR3HardNtViNtToWinPath(PCRTUTF16 pwszNtName, PCRTUTF16 *ppwszWinPat
 static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PRTERRINFO pErrInfo,
                                            PFNWINVERIFYTRUST pfnWinVerifyTrust, HRESULT *phrcWinVerifyTrust)
 {
+    RT_NOREF1(fFlags);
     if (phrcWinVerifyTrust)
         *phrcWinVerifyTrust = S_OK;
 
@@ -2332,6 +2348,7 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
 static int supR3HardNtViCallWinVerifyTrustCatFile(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PRTERRINFO pErrInfo,
                                                   PFNWINVERIFYTRUST pfnWinVerifyTrust)
 {
+    RT_NOREF1(fFlags);
     SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: hFile=%p pwszName=%ls\n", hFile, pwszName));
 
     /*
@@ -2727,6 +2744,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName,
                         int rc2 = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust, NULL);
                         AssertMsg(RT_FAILURE_NP(rc2),
                                   ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
+                        RT_NOREF_PV(rc2);
                     }
                 }
 

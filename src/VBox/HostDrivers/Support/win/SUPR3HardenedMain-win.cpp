@@ -389,6 +389,7 @@ static void     supR3HardenedWinReInstallHooks(bool fFirst);
 DECLASM(void)   supR3HardenedEarlyProcessInitThunk(void);
 
 
+#if 0 /* unused */
 
 /**
  * Simple wide char search routine.
@@ -426,6 +427,8 @@ static size_t suplibHardenedWStrLen(PCRTUTF16 pwsz)
         pwszCur++;
     return pwszCur - pwsz;
 }
+
+#endif /* unused */
 
 
 /**
@@ -507,7 +510,7 @@ DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem
         return pvRet;
     }
     supR3HardenedFatal("RTStrToUtf16Ex failed on '%s': %Rrc", pszName, rc);
-    return NULL;
+    /* not reached */
 }
 
 
@@ -2107,8 +2110,7 @@ static VOID CALLBACK supR3HardenedDllNotificationCallback(ULONG ulReason, PCLDR_
             supR3HardenedFatal("supR3HardenedDllNotificationCallback: NtCreateFile failed on '%.*ls' / '%.*ls': %#x\n",
                                pData->Loaded.FullDllName->Length / sizeof(WCHAR), pData->Loaded.FullDllName->Buffer,
                                NtPathUniStr.Length / sizeof(WCHAR), NtPathUniStr.Buffer, rcNt);
-            RTNtPathFree(&NtPathUniStr, &hRootDir);
-            return;
+            /* not reached */
         }
 
         /* Do the screening. */
@@ -2124,8 +2126,7 @@ static VOID CALLBACK supR3HardenedDllNotificationCallback(ULONG ulReason, PCLDR_
             supR3HardenedFatal("supR3HardenedDllNotificationCallback: supR3HardenedScreenImage failed on '%.*ls' / '%.*ls': %#x\n",
                                pData->Loaded.FullDllName->Length / sizeof(WCHAR), pData->Loaded.FullDllName->Buffer,
                                NtPathUniStr.Length / sizeof(WCHAR), NtPathUniStr.Buffer, rcNt);
-            RTNtPathFree(&NtPathUniStr, &hRootDir);
-            return;
+            /* not reached */
         }
         RTNtPathFree(&NtPathUniStr, &hRootDir);
     }
@@ -2242,8 +2243,7 @@ static DECLCALLBACK(int) supR3HardenedWinParentWatcherThread(RTTHREAD hSelf, voi
     NtClose(hProcWait);
     SUP_DPRINTF(("supR3HardenedWinParentWatcherThread: Quitting: ExitCode=%#x rcNt=%#x\n", BasicInfo.ExitStatus, rcNt));
     suplibHardenedExit((RTEXITCODE)BasicInfo.ExitStatus);
-
-    return VINF_SUCCESS; /* won't be reached. */
+    /* not reached */
 }
 
 
@@ -3098,7 +3098,7 @@ static PRTUTF16 supR3HardNtChildConstructCmdLine(PUNICODE_STRING pString, int iW
     }
 
     *pwszDst = '\0';
-    SUPR3HARDENED_ASSERT(pwszDst - pwszCmdLine == cwcCmdLine);
+    SUPR3HARDENED_ASSERT((uintptr_t)(pwszDst - pwszCmdLine) == cwcCmdLine);
 
     if (pString)
     {
@@ -3167,7 +3167,7 @@ static void supR3HardenedWinKillChild(HANDLE hProcess, const char *pszWhere, int
      */
     va_start(va, pszFormat);
     supR3HardenedFatalMsgV(pszWhere, kSupInitOp_Misc, rc, pszFormat, va);
-    va_end(va);
+    /* not reached */
 }
 
 
@@ -3496,7 +3496,7 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
     uint64_t uMsTsOuterStart = supR3HardenedWinGetMilliTS();
     uint32_t cMsFudge        = g_fSupAdversaries ? 512 : 256;
     uint32_t cTotalFixes     = 0;
-    uint32_t cFixes;
+    uint32_t cFixes          = 0; /* (MSC wrongly thinks this maybe used uninitialized) */
     for (uint32_t iLoop = 0; iLoop < 16; iLoop++)
     {
         /*
@@ -3894,7 +3894,7 @@ static void supR3HardNtChildGatherData(PSUPR3HARDNTCHILD pThis)
  * @param   iWhich              Which respawn we're to check for, 1 being the
  *                              first one, and 2 the second and final.
  */
-static void supR3HardenedWinDoReSpawn(int iWhich)
+static DECL_NO_RETURN(void) supR3HardenedWinDoReSpawn(int iWhich)
 {
     NTSTATUS                        rcNt;
     PPEB                            pPeb              = NtCurrentPeb();
@@ -4126,7 +4126,8 @@ static void supR3HardenedWinDoReSpawn(int iWhich)
      * Wait for the process to terminate.
      */
     supR3HardNtChildWaitFor(&This, kSupR3WinChildReq_End, RT_INDEFINITE_WAIT, "the end");
-    SUPR3HARDENED_ASSERT(false); /* We're not supposed to get here! */
+    supR3HardenedFatal("supR3HardenedWinDoReSpawn: supR3HardNtChildWaitFor unexpectedly returned!\n");
+    /* not reached*/
 }
 
 
@@ -4187,7 +4188,6 @@ static void supR3HardenedWinLogObjDir(const char *pszDir)
         POBJECT_DIRECTORY_INFORMATION pObjDir = (POBJECT_DIRECTORY_INFORMATION)abBuffer;
         while (pObjDir->Name.Length != 0)
         {
-            WCHAR wcSaved = pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)];
             SUP_DPRINTF(("  %.*ls  %.*ls\n",
                          pObjDir->TypeName.Length / sizeof(WCHAR), pObjDir->TypeName.Buffer,
                          pObjDir->Name.Length / sizeof(WCHAR), pObjDir->Name.Buffer));
@@ -4562,8 +4562,7 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(int iWhich)
      * Respawn the process with kernel protection for the new process.
      */
     supR3HardenedWinDoReSpawn(iWhich);
-    SUPR3HARDENED_ASSERT(false); /* We're not supposed to get here! */
-    return RTEXITCODE_FAILURE;
+    /* not reached! */
 }
 
 
@@ -4966,6 +4965,8 @@ static char **suplibCommandLineToArgvWStub(PCRTUTF16 pawcCmdLine, size_t cwcCmdL
  */
 static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
 {
+    RT_NOREF1(fAdversarial);
+
     /*
      * Open the file.
      */
@@ -5657,7 +5658,7 @@ DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPIN
     {
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = -300000000; /* 30 second */
-        NTSTATUS rcNt = NtWaitForSingleObject(g_ProcParams.hEvtChild, FALSE /*Alertable*/, &Timeout);
+        /*NTSTATUS rcNt =*/ NtWaitForSingleObject(g_ProcParams.hEvtChild, FALSE /*Alertable*/, &Timeout);
     }
 }
 

@@ -88,7 +88,6 @@ int main(int argc, char **argv)
     }           enmWhat   = kSupLoggerCtl_Set;
 
     int ch;
-    int i = 1;
     RTGETOPTUNION Val;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);

@@ -41,6 +41,8 @@
 extern "C" __declspec(dllexport)
 BOOL __stdcall DllMainEntrypoint(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
 {
+    RT_NOREF1(pvReserved);
+
     switch (dwReason)
     {
         /*

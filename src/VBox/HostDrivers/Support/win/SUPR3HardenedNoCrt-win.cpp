@@ -140,7 +140,7 @@ static void supR3HardenedEarlyCompact(void)
             g_cSupR3HardenedEarlyHeaps--;
 
             NTSTATUS rcNt = NtFreeVirtualMemory(NtCurrentProcess(), &pvMem, &cbMem, MEM_RELEASE);
-            Assert(NT_SUCCESS(rcNt));
+            Assert(NT_SUCCESS(rcNt)); RT_NOREF_PV(rcNt);
             SUP_DPRINTF(("supR3HardenedEarlyCompact: Removed heap %#u (%#p LB %#zx)\n", iHeap, pvMem, cbMem));
         }
 }
@@ -229,7 +229,7 @@ static HANDLE supR3HardenedHeapInit(void)
     }
 
     supR3HardenedFatal("RtlCreateHeap failed.\n");
-    return NULL;
+    /* not reached */
 }
 
 
@@ -266,6 +266,7 @@ RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW_DEF
 
 RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
+    RT_NOREF1(pszTag);
     HANDLE hHeap = g_hSupR3HardenedHeap;
     if (!hHeap)
     {
@@ -284,6 +285,7 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 
 RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
+    RT_NOREF1(pszTag);
     HANDLE hHeap = g_hSupR3HardenedHeap;
     if (!hHeap)
     {

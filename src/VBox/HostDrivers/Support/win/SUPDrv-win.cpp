@@ -2839,6 +2839,8 @@ static bool supdrvNtProtectIsAssociatedCsrss(PSUPDRVNTPROTECT pNtProtect, PEPROC
  */
 static bool supdrvNtProtectIsFrigginThemesService(PSUPDRVNTPROTECT pNtProtect, PEPROCESS pAnnoyingProcess)
 {
+    RT_NOREF1(pNtProtect);
+
     /*
      * Check the process name.
      */
@@ -3184,6 +3186,8 @@ supdrvNtProtectCallback_ProcessCreateNotify(HANDLE hParentPid, HANDLE hNewPid, B
 static VOID __stdcall
 supdrvNtProtectCallback_ProcessCreateNotifyEx(PEPROCESS pNewProcess, HANDLE hNewPid, PPS_CREATE_NOTIFY_INFO pInfo)
 {
+    RT_NOREF1(pNewProcess);
+
     /*
      * Is it a new process that needs protection?
      */
@@ -3265,7 +3269,7 @@ AssertCompile((SUPDRV_NT_ALLOW_PROCESS_RIGHTS & SUPDRV_NT_EVIL_PROCESS_RIGHTS) =
 static OB_PREOP_CALLBACK_STATUS __stdcall
 supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMATION pOpInfo)
 {
-    Assert(pvUser == NULL);
+    Assert(pvUser == NULL); RT_NOREF1(pvUser);
     Assert(pOpInfo->Operation == OB_OPERATION_HANDLE_CREATE || pOpInfo->Operation == OB_OPERATION_HANDLE_DUPLICATE);
     Assert(pOpInfo->ObjectType == *PsProcessType);
 
@@ -3517,7 +3521,7 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
 static VOID __stdcall
 supdrvNtProtectCallback_ProcessHandlePost(PVOID pvUser, POB_POST_OPERATION_INFORMATION pOpInfo)
 {
-    Assert(pvUser == NULL);
+    Assert(pvUser == NULL); RT_NOREF1(pvUser);
     Assert(pOpInfo->Operation == OB_OPERATION_HANDLE_CREATE || pOpInfo->Operation == OB_OPERATION_HANDLE_DUPLICATE);
     Assert(pOpInfo->ObjectType == *PsProcessType);
 
@@ -3579,7 +3583,7 @@ AssertCompile((SUPDRV_NT_EVIL_THREAD_RIGHTS & SUPDRV_NT_ALLOWED_THREAD_RIGHTS) =
 static OB_PREOP_CALLBACK_STATUS __stdcall
 supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMATION pOpInfo)
 {
-    Assert(pvUser == NULL);
+    Assert(pvUser == NULL); RT_NOREF1(pvUser);
     Assert(pOpInfo->Operation == OB_OPERATION_HANDLE_CREATE || pOpInfo->Operation == OB_OPERATION_HANDLE_DUPLICATE);
     Assert(pOpInfo->ObjectType == *PsThreadType);
 
@@ -3727,7 +3731,7 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
 static VOID __stdcall
 supdrvNtProtectCallback_ThreadHandlePost(PVOID pvUser, POB_POST_OPERATION_INFORMATION pOpInfo)
 {
-    Assert(pvUser == NULL);
+    Assert(pvUser == NULL); RT_NOREF1(pvUser);
     Assert(pOpInfo->Operation == OB_OPERATION_HANDLE_CREATE || pOpInfo->Operation == OB_OPERATION_HANDLE_DUPLICATE);
     Assert(pOpInfo->ObjectType == *PsThreadType);
 
@@ -3825,7 +3829,7 @@ static void supdrvNtProtectRelease(PSUPDRVNTPROTECT pNtProtect)
         if (pNtProtect->fInTree)
         {
             PSUPDRVNTPROTECT pRemoved = (PSUPDRVNTPROTECT)RTAvlPVRemove(&g_NtProtectTree, pNtProtect->AvlCore.Key);
-            Assert(pRemoved == pNtProtect);
+            Assert(pRemoved == pNtProtect); RT_NOREF_PV(pRemoved);
             pNtProtect->fInTree = false;
         }
 
@@ -3845,7 +3849,7 @@ static void supdrvNtProtectRelease(PSUPDRVNTPROTECT pNtProtect)
                     if (pChild->fInTree)
                     {
                         PSUPDRVNTPROTECT pRemovedChild = (PSUPDRVNTPROTECT)RTAvlPVRemove(&g_NtProtectTree, pChild->AvlCore.Key);
-                        Assert(pRemovedChild == pChild);
+                        Assert(pRemovedChild == pChild); RT_NOREF_PV(pRemovedChild);
                         pChild->fInTree = false;
                     }
                 }
@@ -3918,7 +3922,7 @@ static int supdrvNtProtectVerifyStubForVmProcess(PSUPDRVNTPROTECT pNtProtect, PR
             if (enmStub == kSupDrvNtProtectKind_StubParent)
             {
                 uint32_t cRefs = ASMAtomicIncU32(&pNtStub->cRefs);
-                Assert(cRefs > 0 && cRefs < 1024);
+                Assert(cRefs > 0 && cRefs < 1024); RT_NOREF_PV(cRefs);
             }
             else
                 pNtStub = NULL;
@@ -4394,6 +4398,7 @@ DECLASM(void) supdrvNtQueryVirtualMemory_0x23(void);
 extern "C" NTSYSAPI NTSTATUS NTAPI ZwRequestWaitReplyPort(HANDLE, PVOID, PVOID);
 # endif
 
+
 /**
  * Initalizes the hardening bits.
  *
@@ -4562,18 +4567,21 @@ static NTSTATUS supdrvNtProtectInit(void)
                     static OB_OPERATION_REGISTRATION s_aObOperations[] =
                     {
                         {
-                            PsProcessType,
+                            0, /* PsProcessType - imported, need runtime init, better do it explicitly. */
                             OB_OPERATION_HANDLE_CREATE | OB_OPERATION_HANDLE_DUPLICATE,
                             supdrvNtProtectCallback_ProcessHandlePre,
                             supdrvNtProtectCallback_ProcessHandlePost,
                         },
                         {
-                            PsThreadType,
+                            0, /* PsThreadType - imported, need runtime init, better do it explicitly. */
                             OB_OPERATION_HANDLE_CREATE | OB_OPERATION_HANDLE_DUPLICATE,
                             supdrvNtProtectCallback_ThreadHandlePre,
                             supdrvNtProtectCallback_ThreadHandlePost,
                         },
                     };
+                    s_aObOperations[0].ObjectType = PsProcessType;
+                    s_aObOperations[1].ObjectType = PsThreadType;
+
                     static OB_CALLBACK_REGISTRATION s_ObCallbackReg =
                     {
                         /* .Version                     = */ OB_FLT_REGISTRATION_VERSION,

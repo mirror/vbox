@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP   LOG_GROUP_SUP
-#include <Windows.h>
+#include <iprt/win/windows.h>
 
 #include <VBox/log.h>
 #include <VBox/version.h>
