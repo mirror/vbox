@@ -17,7 +17,9 @@
 
 #ifndef ___VBoxUsbDev_h___
 #define ___VBoxUsbDev_h___
+
 #include "VBoxUsbCmn.h"
+#include <VBox/cdefs.h>
 #include <iprt/assert.h>
 
 typedef struct VBOXUSB_GLOBALS
@@ -44,7 +46,7 @@ typedef enum
 } ENMVBOXUSB_PNPSTATE;
 AssertCompile(sizeof (ENMVBOXUSB_PNPSTATE) == sizeof (uint32_t));
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
 DECLHIDDEN(VOID) vboxUsbPnPStateGbgChange(ENMVBOXUSB_PNPSTATE enmOld, ENMVBOXUSB_PNPSTATE enmNew);
 # define VBOXUSB_PNP_GBG_STATE_CHANGE(_old, _new) vboxUsbPnPStateGbgChange((_old), (_new))
 #else

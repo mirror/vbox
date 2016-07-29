@@ -301,17 +301,17 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegist
     return Status;
 }
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
 DECLHIDDEN(VOID) vboxUsbPnPStateGbgChange(ENMVBOXUSB_PNPSTATE enmOldState, ENMVBOXUSB_PNPSTATE enmNewState)
 {
     /* *ensure the state change is valid */
     switch (enmNewState)
     {
         case ENMVBOXUSB_PNPSTATE_STARTED:
-            Assert(enmOldState == ENMVBOXUSB_PNPSTATE_START_PENDING
-                    || ENMVBOXUSB_PNPSTATE_REMOVE_PENDING
-                    || ENMVBOXUSB_PNPSTATE_STOPPED
-                    || ENMVBOXUSB_PNPSTATE_STOP_PENDING);
+            Assert(   enmOldState == ENMVBOXUSB_PNPSTATE_START_PENDING
+                   || enmOldState == ENMVBOXUSB_PNPSTATE_REMOVE_PENDING
+                   || enmOldState == ENMVBOXUSB_PNPSTATE_STOPPED
+                   || enmOldState == ENMVBOXUSB_PNPSTATE_STOP_PENDING);
             break;
         case ENMVBOXUSB_PNPSTATE_STOP_PENDING:
             Assert(enmOldState == ENMVBOXUSB_PNPSTATE_STARTED);
@@ -326,11 +326,11 @@ DECLHIDDEN(VOID) vboxUsbPnPStateGbgChange(ENMVBOXUSB_PNPSTATE enmOldState, ENMVB
             Assert(enmOldState == ENMVBOXUSB_PNPSTATE_STARTED);
             break;
         case ENMVBOXUSB_PNPSTATE_REMOVED:
-            Assert(enmOldState == ENMVBOXUSB_PNPSTATE_REMOVE_PENDING
-                    || enmOldState == ENMVBOXUSB_PNPSTATE_SURPRISE_REMOVED);
+            Assert(   enmOldState == ENMVBOXUSB_PNPSTATE_REMOVE_PENDING
+                   || enmOldState == ENMVBOXUSB_PNPSTATE_SURPRISE_REMOVED);
             break;
         default:
-            AssertBreakpoint();
+            AssertFailed();
             break;
     }
 
