@@ -41,6 +41,7 @@
 # define NtQueryInformationThread       ZwQueryInformationThread
 # define NtQuerySystemInformation       ZwQuerySystemInformation
 # define NtQuerySecurityObject          ZwQuerySecurityObject
+# define NtSetInformationFile           ZwSetInformationFile
 # define NtClose                        ZwClose
 # define NtCreateFile                   ZwCreateFile
 # define NtReadFile                     ZwReadFile
@@ -1599,6 +1600,8 @@ typedef FILE_INFORMATION_CLASS *PFILE_INFORMATION_CLASS;
 NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FILE_INFORMATION_CLASS);
 NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryFile(HANDLE, HANDLE, PIO_APC_ROUTINE, PVOID, PIO_STATUS_BLOCK, PVOID, ULONG,
                                              FILE_INFORMATION_CLASS, BOOLEAN, PUNICODE_STRING, BOOLEAN);
+NTSYSAPI NTSTATUS NTAPI NtSetInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FILE_INFORMATION_CLASS);
+
 
 /** For use with KeyBasicInformation. */
 typedef struct _KEY_BASIC_INFORMATION
@@ -2366,6 +2369,9 @@ typedef struct _RTL_CRITICAL_SECTION
 } RTL_CRITICAL_SECTION;
 typedef RTL_CRITICAL_SECTION *PRTL_CRITICAL_SECTION;
 #endif
+
+/*NTSYSAPI ULONG NTAPI RtlNtStatusToDosError(NTSTATUS rcNt);*/
+
 
 RT_C_DECLS_END
 /** @} */
