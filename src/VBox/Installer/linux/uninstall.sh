@@ -55,13 +55,6 @@ fi
 
 # Remove kernel module installed
 if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
-    find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2> /dev/null
-    find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2> /dev/null
-    find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2> /dev/null
-    find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2> /dev/null
-    # Remove directories we have installed to in the past
-    find /lib/modules/`uname -r` -name vbox\* 2>/dev/null|xargs rmdir -p 2> /dev/null
-    find /lib/modules/`uname -r` -name misc\* 2>/dev/null|xargs rmdir -p 2> /dev/null
     rm -f /usr/src/vboxhost-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxdrv-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxnetflt-$INSTALL_VER 2> /dev/null
