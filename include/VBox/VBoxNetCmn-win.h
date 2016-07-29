@@ -2,6 +2,7 @@
 /** @file
  * VBoxNetCmn-win.h - NDIS6 Networking Driver Common Definitions, Windows-specific code.
  */
+
 /*
  * Copyright (C) 2014-2016 Oracle Corporation
  *
@@ -25,8 +26,9 @@
 
 DECLHIDDEN(void) vboxNetCmnWinDumpOidRequest(const char *pcszFunction, PNDIS_OID_REQUEST pRequest)
 {
-    char *pszType = "unknown";
-    char *pszOid  = "unknown";
+#ifdef LOG_ENABLED
+    const char *pszType;
+    const char *pszOid  = "unknown";
 
     switch (pRequest->RequestType)
     {
@@ -34,6 +36,7 @@ DECLHIDDEN(void) vboxNetCmnWinDumpOidRequest(const char *pcszFunction, PNDIS_OID
         case NdisRequestMethod: pszType = "method"; break;
         case NdisRequestQueryInformation: pszType = "query info"; break;
         case NdisRequestQueryStatistics: pszType = "query stats"; break;
+        default: pszType = "unknown";
     }
     switch (pRequest->DATA.SET_INFORMATION.Oid)
     {
@@ -133,4 +136,7 @@ DECLHIDDEN(void) vboxNetCmnWinDumpOidRequest(const char *pcszFunction, PNDIS_OID
         case OID_PNP_WAKE_UP_ERROR: pszOid = "OID_PNP_WAKE_UP_ERROR"; break;
     }
     Log(("%s: %s(0x%x) %s(0x%x)\n", pcszFunction, pszType, pRequest->RequestType, pszOid, pRequest->DATA.SET_INFORMATION.Oid));
+#else
+    RT_NOREF2(pcszFunction, pRequest);
+#endif
 }

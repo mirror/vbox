@@ -22,9 +22,7 @@
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 
-RT_C_DECLS_BEGIN
-#include <ndis.h>
-RT_C_DECLS_END
+#include <iprt/nt/ndis.h>
 
 #include "VBoxNetAdp-win.h"
 #include "VBox/VBoxNetCmn-win.h"
