@@ -59,7 +59,7 @@
  *      - Typedefs are all uppercase and contain no underscores to distinguish
  *        them from defines.
  *
- *      - Pointer typedefs start with 'P'.
+ *      - Pointer typedefs start with 'P'. If pointer to const then 'PC'.
  *
  *      - Function typedefs start with 'FN'. If pointer to FN then 'PFN'.
  *
@@ -510,7 +510,7 @@
  *        array of pages.
  *
  *      - The 'c' prefix means count.  For instance 'cbBlock' could be read,
- *        count of bytes in block.
+ *        count of bytes in block. (1)
  *
  *      - The 'cx' prefix means width (count of 'x' units).
  *
@@ -582,7 +582,7 @@
  *
  *      - The 'pcsz' prefix is used to indicate constant string pointers in
  *        parts of the code.  Most code uses 'psz' for const and non-const
- *        string pointers.
+ *        string pointers, so please ignore this one.
  *
  *      - The 'l' prefix means (signed) long.  We try avoid using this,
  *        expecially with the 'LONG' types in Main as these are not 'long' on
@@ -593,6 +593,10 @@
  *        expecially with the 'ULONG' types in Main as these are not 'unsigned
  *        long' on 64-bit non-Windows platforms and can cause confusion.
  *        Alternatives: 'u' or 'u32'.  [type]
+ *
+ *
+ * (1)  Except in the occasional 'pcsz' prefix, the 'c' prefix is never ever
+ *      used in the meaning 'const'.
  *
  *
  * @subsection sec_vbox_guideline_optional_misc     Misc / Advice / Stuff
