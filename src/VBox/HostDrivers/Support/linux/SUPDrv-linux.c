@@ -52,12 +52,7 @@
 #endif
 
 #include <linux/sched.h>
-#ifdef CONFIG_DEVFS_FS
-# include <linux/devfs_fs_kernel.h>
-#endif
-#ifdef CONFIG_VBOXDRV_AS_MISC
-# include <linux/miscdevice.h>
-#endif
+#include <linux/miscdevice.h>
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
 # include <linux/platform_device.h>
 #endif
@@ -78,15 +73,6 @@
 #   error Unsupported kernel version!
 #  endif
 # endif
-
-/* devfs defines */
-#if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
-# ifdef VBOX_WITH_HARDENING
-#  define VBOX_DEV_FMASK     (S_IWUSR | S_IRUSR)
-# else
-#  define VBOX_DEV_FMASK     (S_IRUGO | S_IWUGO)
-# endif
-#endif /* CONFIG_DEV_FS && !CONFIG_VBOXDEV_AS_MISC */
 
 #ifdef CONFIG_X86_HIGH_ENTRY
 # error "CONFIG_X86_HIGH_ENTRY is not supported by VBoxDrv at this time."
@@ -141,17 +127,6 @@ static void VBoxDevRelease(struct device *pDev);
  * Device extention & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
-
-#ifndef CONFIG_VBOXDRV_AS_MISC
-/** Module major number for vboxdrv. */
-#define DEVICE_MAJOR_SYS    234
-/** Saved major device number for vboxdrv. */
-static int                  g_iModuleMajorSys;
-/** Module major number for vboxdrvu. */
-#define DEVICE_MAJOR_USR    235
-/** Saved major device number for vboxdrvu. */
-static int                  g_iModuleMajorUsr;
-#endif /* !CONFIG_VBOXDRV_AS_MISC */
 
 /** Module parameter.
  * Not prefixed because the name is used by macros and the end of this file. */
@@ -219,7 +194,6 @@ static struct file_operations gFileOpsVBoxDrvUsr =
 #endif
 };
 
-#ifdef CONFIG_VBOXDRV_AS_MISC
 /** The miscdevice structure for vboxdrv. */
 static struct miscdevice gMiscDeviceSys =
 {
@@ -240,7 +214,6 @@ static struct miscdevice gMiscDeviceUsr =
     devfs_name: DEVICE_NAME_USR,
 # endif
 };
-#endif
 
 
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
@@ -334,7 +307,6 @@ static int __init VBoxDrvLinuxInit(void)
      * Check for synchronous/asynchronous TSC mode.
      */
     printk(KERN_DEBUG "vboxdrv: Found %u processor cores\n", (unsigned)RTMpGetOnlineCount());
-#ifdef CONFIG_VBOXDRV_AS_MISC
     rc = misc_register(&gMiscDeviceSys);
     if (rc)
     {
@@ -348,51 +320,6 @@ static int __init VBoxDrvLinuxInit(void)
         misc_deregister(&gMiscDeviceSys);
         return rc;
     }
-#else  /* !CONFIG_VBOXDRV_AS_MISC */
-    /*
-     * Register character devices and save the returned major numbers.
-     */
-    /* /dev/vboxdrv */
-    g_iModuleMajorSys = DEVICE_MAJOR_SYS;
-    rc = register_chrdev((dev_t)g_iModuleMajorSys, DEVICE_NAME_SYS, &gFileOpsVBoxDrvSys);
-    if (rc < 0)
-    {
-        Log(("register_chrdev() failed with rc=%#x for vboxdrv!\n", rc));
-        return rc;
-    }
-    if (DEVICE_MAJOR_SYS != 0)
-        g_iModuleMajorSys = DEVICE_MAJOR_SYS;
-    else
-        g_iModuleMajorSys = rc;
-
-    /* /dev/vboxdrvu */
-    /** @todo Use a minor number of this bugger (not sure if this code is used
-     *        though, so not bothering right now.) */
-    g_iModuleMajorUsr = DEVICE_MAJOR_USR;
-    rc = register_chrdev((dev_t)g_iModuleMajorUsr, DEVICE_NAME_USR, &gFileOpsVBoxDrvUsr);
-    if (rc < 0)
-    {
-        Log(("register_chrdev() failed with rc=%#x for vboxdrv!\n", rc));
-        return rc;
-    }
-    if (DEVICE_MAJOR_USR != 0)
-        g_iModuleMajorUsr = DEVICE_MAJOR_USR;
-    else
-        g_iModuleMajorUsr = rc;
-    rc = 0;
-
-# ifdef CONFIG_DEVFS_FS
-    /*
-     * Register a device entry
-     */
-    if (   devfs_mk_cdev(MKDEV(DEVICE_MAJOR_SYS, 0), S_IFCHR | VBOX_DEV_FMASK, DEVICE_NAME_SYS) != 0
-        || devfs_mk_cdev(MKDEV(DEVICE_MAJOR_USR, 0), S_IFCHR | VBOX_DEV_FMASK, DEVICE_NAME_USR) != 0)
-    {
-        Log(("devfs_register failed!\n"));
-        rc = -EINVAL;
-    }
-# endif
-#endif /* !CONFIG_VBOXDRV_AS_MISC */
     if (!rc)
     {
         /*
@@ -450,20 +377,10 @@ static int __init VBoxDrvLinuxInit(void)
         /*
          * Failed, cleanup and return the error code.
          */
-#if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
-        devfs_remove(DEVICE_NAME_SYS);
-        devfs_remove(DEVICE_NAME_USR);
-#endif
     }
-#ifdef CONFIG_VBOXDRV_AS_MISC
     misc_deregister(&gMiscDeviceSys);
     misc_deregister(&gMiscDeviceUsr);
     Log(("VBoxDrv::ModuleInit returning %#x (minor:%d & %d)\n", rc, gMiscDeviceSys.minor, gMiscDeviceUsr.minor));
-#else
-    unregister_chrdev(g_iModuleMajorUsr, DEVICE_NAME_USR);
-    unregister_chrdev(g_iModuleMajorSys, DEVICE_NAME_SYS);
-    Log(("VBoxDrv::ModuleInit returning %#x (major:%d & %d)\n", rc, g_iModuleMajorSys, g_iModuleMajorUsr));
-#endif
     return rc;
 }
 
@@ -484,20 +401,8 @@ static void __exit VBoxDrvLinuxUnload(void)
      * I Don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
      */
-#ifdef CONFIG_VBOXDRV_AS_MISC
     misc_deregister(&gMiscDeviceUsr);
     misc_deregister(&gMiscDeviceSys);
-#else  /* !CONFIG_VBOXDRV_AS_MISC */
-# ifdef CONFIG_DEVFS_FS
-    /*
-     * Unregister a device entry
-     */
-    devfs_remove(DEVICE_NAME_USR);
-    devfs_remove(DEVICE_NAME_SYS);
-# endif /* devfs */
-    unregister_chrdev(g_iModuleMajorUsr, DEVICE_NAME_USR);
-    unregister_chrdev(g_iModuleMajorSys, DEVICE_NAME_SYS);
-#endif /* !CONFIG_VBOXDRV_AS_MISC */
 
     /*
      * Destroy GIP, delete the device extension and terminate IPRT.
