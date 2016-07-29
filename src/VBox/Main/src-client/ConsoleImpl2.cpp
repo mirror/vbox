@@ -112,7 +112,7 @@
 #  include <net80211/ieee80211_ioctl.h>
 # endif
 # if defined(RT_OS_WINDOWS)
-#  include <Ntddndis.h>
+#  include <iprt/win/ntddndis.h>
 #  include <devguid.h>
 # else
 #  include <HostNetworkInterfaceImpl.h>

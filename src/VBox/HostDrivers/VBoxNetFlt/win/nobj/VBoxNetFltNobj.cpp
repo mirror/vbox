@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #include "VBoxNetFltNobj.h"
-#include <Ntddndis.h>
+#include <iprt/win/ntddndis.h>
 #include <assert.h>
 #include <stdio.h>
 
