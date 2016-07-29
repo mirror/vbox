@@ -2,6 +2,7 @@
 /** @file
  * USB PnP Handling
  */
+
 /*
  * Copyright (C) 2011-2016 Oracle Corporation
  *
@@ -13,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include "VBoxUsbCmn.h"
 
 static NTSTATUS vboxUsbPnPMnStartDevice(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp)
@@ -213,55 +215,41 @@ static NTSTATUS vboxUsbPnPMnDefault(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp)
 DECLHIDDEN(NTSTATUS) vboxUsbDispatchPnP(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp)
 {
     PVBOXUSBDEV_EXT pDevExt = (PVBOXUSBDEV_EXT)pDeviceObject->DeviceExtension;
-    ENMVBOXUSB_PNPSTATE enmState = vboxUsbPnPStateGet(pDevExt);
     if (!vboxUsbDdiStateRetainIfNotRemoved(pDevExt))
-    {
         return VBoxDrvToolIoComplete(pIrp, STATUS_DELETE_PENDING, 0);
-    }
 
     PIO_STACK_LOCATION pSl = IoGetCurrentIrpStackLocation(pIrp);
-
     switch (pSl->MinorFunction)
     {
         case IRP_MN_START_DEVICE:
-        {
             return vboxUsbPnPMnStartDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_QUERY_STOP_DEVICE:
-        {
             return vboxUsbPnPMnQueryStopDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_STOP_DEVICE:
-        {
             return vboxUsbPnPMnStopDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_CANCEL_STOP_DEVICE:
-        {
             return vboxUsbPnPMnCancelStopDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_QUERY_REMOVE_DEVICE:
-        {
             return vboxUsbPnPMnQueryRemoveDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_REMOVE_DEVICE:
-        {
             return vboxUsbPnPMnRemoveDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_CANCEL_REMOVE_DEVICE:
-        {
             return vboxUsbPnPMnCancelRemoveDevice(pDevExt, pIrp);
-        }
+
         case IRP_MN_SURPRISE_REMOVAL:
-        {
             return vboxUsbPnPMnSurpriseRemoval(pDevExt, pIrp);
-        }
+
         case IRP_MN_QUERY_CAPABILITIES:
-        {
             return vboxUsbPnPMnQueryCapabilities(pDevExt, pIrp);
-        }
+
         default:
-        {
             return vboxUsbPnPMnDefault(pDevExt, pIrp);
-        }
     }
 }
+

@@ -110,6 +110,7 @@ VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolRegSetValueDword(IN HANDLE hKey, IN PWCHAR
 
 static NTSTATUS vboxDrvToolIoCompletionSetEvent(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN PVOID pvContext)
 {
+    RT_NOREF2(pDevObj, pIrp);
     PKEVENT pEvent = (PKEVENT)pvContext;
     KeSetEvent(pEvent, 0, FALSE);
     return STATUS_MORE_PROCESSING_REQUIRED;

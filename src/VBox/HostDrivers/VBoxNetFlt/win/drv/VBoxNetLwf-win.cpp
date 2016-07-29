@@ -75,22 +75,6 @@ typedef struct VBOXNETFLTWIN
 #include "VBoxNetLwf-win.h"
 #include "VBox/VBoxNetCmn-win.h"
 
-/* Forward declarations */
-FILTER_ATTACH vboxNetLwfWinAttach;
-FILTER_DETACH vboxNetLwfWinDetach;
-FILTER_RESTART vboxNetLwfWinRestart;
-FILTER_PAUSE vboxNetLwfWinPause;
-FILTER_OID_REQUEST vboxNetLwfWinOidRequest;
-FILTER_OID_REQUEST_COMPLETE vboxNetLwfWinOidRequestComplete;
-//FILTER_CANCEL_OID_REQUEST vboxNetLwfWinCancelOidRequest;
-FILTER_STATUS vboxNetLwfWinStatus;
-//FILTER_NET_PNP_EVENT vboxNetLwfWinPnPEvent;
-FILTER_SEND_NET_BUFFER_LISTS vboxNetLwfWinSendNetBufferLists;
-FILTER_SEND_NET_BUFFER_LISTS_COMPLETE vboxNetLwfWinSendNetBufferListsComplete;
-FILTER_RECEIVE_NET_BUFFER_LISTS vboxNetLwfWinReceiveNetBufferLists;
-FILTER_RETURN_NET_BUFFER_LISTS vboxNetLwfWinReturnNetBufferLists;
-KSTART_ROUTINE vboxNetLwfWinInitIdcWorker;
-
 typedef enum {
     LwfState_Detached = 0,
     LwfState_Attaching,
@@ -209,10 +193,30 @@ typedef struct _VBOXNETLWF_OIDREQ {
 } VBOXNETLWF_OIDREQ;
 typedef VBOXNETLWF_OIDREQ *PVBOXNETLWF_OIDREQ;
 
-/* Forward declarations */
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static FILTER_ATTACH                            vboxNetLwfWinAttach;
+static FILTER_DETACH                            vboxNetLwfWinDetach;
+static FILTER_RESTART                           vboxNetLwfWinRestart;
+static FILTER_PAUSE                             vboxNetLwfWinPause;
+static FILTER_OID_REQUEST                       vboxNetLwfWinOidRequest;
+static FILTER_OID_REQUEST_COMPLETE              vboxNetLwfWinOidRequestComplete;
+//static FILTER_CANCEL_OID_REQUEST                vboxNetLwfWinCancelOidRequest;
+static FILTER_STATUS                            vboxNetLwfWinStatus;
+//static FILTER_NET_PNP_EVENT                     vboxNetLwfWinPnPEvent;
+static FILTER_SEND_NET_BUFFER_LISTS             vboxNetLwfWinSendNetBufferLists;
+static FILTER_SEND_NET_BUFFER_LISTS_COMPLETE    vboxNetLwfWinSendNetBufferListsComplete;
+static FILTER_RECEIVE_NET_BUFFER_LISTS          vboxNetLwfWinReceiveNetBufferLists;
+static FILTER_RETURN_NET_BUFFER_LISTS           vboxNetLwfWinReturnNetBufferLists;
+static KSTART_ROUTINE vboxNetLwfWinInitIdcWorker;
+
 static VOID vboxNetLwfWinUnloadDriver(IN PDRIVER_OBJECT pDriver);
-static int vboxNetLwfWinInitBase();
-static int vboxNetLwfWinFini();
+static int  vboxNetLwfWinInitBase(void);
+static int  vboxNetLwfWinFini(void);
+
+
 
 /**
  * Logs an error to the system event log.
@@ -278,6 +282,7 @@ static void vboxNetLwfLogErrorEvent(NTSTATUS uErrCode, NTSTATUS uReturnedStatus,
 }
 
 #ifdef DEBUG
+
 static const char *vboxNetLwfWinStatusToText(NDIS_STATUS code)
 {
     switch (code)
@@ -615,11 +620,11 @@ DECLINLINE(void) vboxNetLwfWinDumpPacket(PCINTNETSG pSG, const char *cszText)
 }
 
 #else /* !DEBUG */
-#define vboxNetLwfWinDumpFilterTypes(uFlags)
-#define vboxNetLwfWinDumpOffloadSettings(p)
-#define vboxNetLwfWinDumpSetOffloadSettings(p)
-#define vboxNetLwfWinDumpPackets(m,l)
-#define vboxNetLwfWinDumpPacket(p,t)
+# define vboxNetLwfWinDumpFilterTypes(uFlags)    do { } while (0)
+# define vboxNetLwfWinDumpOffloadSettings(p)     do { } while (0)
+# define vboxNetLwfWinDumpSetOffloadSettings(p)  do { } while (0)
+# define vboxNetLwfWinDumpPackets(m,l)           do { } while (0)
+# define vboxNetLwfWinDumpPacket(p,t)            do { } while (0)
 #endif /* !DEBUG */
 
 DECLINLINE(bool) vboxNetLwfWinChangeState(PVBOXNETLWF_MODULE pModuleCtx, uint32_t enmNew, uint32_t enmOld = LwfState_32BitHack)
@@ -647,6 +652,7 @@ DECLINLINE(bool) vboxNetLwfWinChangeState(PVBOXNETLWF_MODULE pModuleCtx, uint32_
         Log(("vboxNetLwfWinChangeState: state change %s -> %s\n",
              vboxNetLwfWinStateToText(enmPrevState),
              vboxNetLwfWinStateToText(enmNew)));
+        NOREF(enmPrevState);
     }
     return fSuccess;
 }
@@ -785,7 +791,7 @@ VOID vboxNetLwfWinOidRequestComplete(IN NDIS_HANDLE hModuleCtx,
     {
         /* NDIS is supposed to serialize requests */
         PNDIS_OID_REQUEST pPrev = ASMAtomicXchgPtrT(&pModuleCtx->pPendingRequest, NULL, PNDIS_OID_REQUEST);
-        Assert(pPrev == pRequest);
+        Assert(pPrev == pRequest); NOREF(pPrev);
 
         Log5(("vboxNetLwfWinOidRequestComplete: completed rq type=%d oid=%x\n", pRequest->RequestType, pRequest->DATA.QUERY_INFORMATION.Oid));
         vboxNetLwfWinCopyOidRequestResults(pRequest, pOriginal);
@@ -906,6 +912,7 @@ static NDIS_STATUS vboxNetLwfWinSetPacketFilter(PVBOXNETLWF_MODULE pModuleCtx, b
 
 static NTSTATUS vboxNetLwfWinDevDispatch(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
 {
+    RT_NOREF1(pDevObj);
     PIO_STACK_LOCATION pIrpSl = IoGetCurrentIrpStackLocation(pIrp);;
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1206,6 +1213,7 @@ static VOID vboxNetLwfWinDetach(IN NDIS_HANDLE hModuleCtx)
 
 static NDIS_STATUS vboxNetLwfWinPause(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILTER_PAUSE_PARAMETERS pParameters)
 {
+    RT_NOREF1(pParameters);
     LogFlow(("==>vboxNetLwfWinPause: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)hModuleCtx;
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Pausing, LwfState_Running);
@@ -1240,6 +1248,7 @@ static void vboxNetLwfWinIndicateOffload(PVBOXNETLWF_MODULE pModuleCtx, PNDIS_OF
 
 static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILTER_RESTART_PARAMETERS pParameters)
 {
+    RT_NOREF1(pParameters);
     LogFlow(("==>vboxNetLwfWinRestart: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)hModuleCtx;
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Restarting, LwfState_Paused);
@@ -1271,19 +1280,21 @@ DECLINLINE(void) vboxNetLwfWinFreeMdlChain(PMDL pMdl)
     while (pMdl)
     {
         pMdlNext = pMdl->Next;
-#ifndef VBOXNETLWF_SYNC_SEND
+# ifndef VBOXNETLWF_SYNC_SEND
         PUCHAR pDataBuf;
         ULONG cb = 0;
         NdisQueryMdl(pMdl, &pDataBuf, &cb, NormalPagePriority);
-#endif /* !VBOXNETLWF_SYNC_SEND */
+# endif /* !VBOXNETLWF_SYNC_SEND */
         NdisFreeMdl(pMdl);
         Log4(("vboxNetLwfWinFreeMdlChain: freed MDL 0x%p\n", pMdl));
-#ifndef VBOXNETLWF_SYNC_SEND
+# ifndef VBOXNETLWF_SYNC_SEND
         NdisFreeMemory(pDataBuf, 0, 0);
         Log4(("vboxNetLwfWinFreeMdlChain: freed data buffer 0x%p\n", pDataBuf));
-#endif /* !VBOXNETLWF_SYNC_SEND */
+# endif /* !VBOXNETLWF_SYNC_SEND */
         pMdl = pMdlNext;
     }
+#else  /* VBOXNETLWF_FIXED_SIZE_POOLS */
+    RT_NOREF1(pMdl);
 #endif /* VBOXNETLWF_FIXED_SIZE_POOLS */
 }
 
@@ -1615,7 +1626,6 @@ DECLINLINE(bool) vboxNetLwfWinIsRunning(PVBOXNETLWF_MODULE pModule)
 
 VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_LIST pBufLists, IN NDIS_PORT_NUMBER nPort, IN ULONG fFlags)
 {
-    size_t cb = 0;
     LogFlow(("==>vboxNetLwfWinSendNetBufferLists: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
     vboxNetLwfWinDumpPackets("vboxNetLwfWinSendNetBufferLists: got", pBufLists);
@@ -1692,7 +1702,6 @@ VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_L
 
 VOID vboxNetLwfWinSendNetBufferListsComplete(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_LIST pBufLists, IN ULONG fFlags)
 {
-    size_t cb = 0;
     LogFlow(("==>vboxNetLwfWinSendNetBufferListsComplete: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
     PNET_BUFFER_LIST pList = pBufLists;
@@ -1863,7 +1872,6 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
 
 VOID vboxNetLwfWinReturnNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_LIST pBufLists, IN ULONG fFlags)
 {
-    size_t cb = 0;
     LogFlow(("==>vboxNetLwfWinReturnNetBufferLists: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
     PNET_BUFFER_LIST pList = pBufLists;
@@ -1917,6 +1925,7 @@ VOID vboxNetLwfWinReturnNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER
  */
 DECLHIDDEN(NDIS_STATUS) vboxNetLwfWinRegister(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegistryPathStr)
 {
+    RT_NOREF1(pRegistryPathStr);
     NDIS_FILTER_DRIVER_CHARACTERISTICS FChars;
     NDIS_STRING FriendlyName;
     NDIS_STRING UniqueName;
@@ -2067,6 +2076,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegist
 
 static VOID vboxNetLwfWinUnloadDriver(IN PDRIVER_OBJECT pDriver)
 {
+    RT_NOREF1(pDriver);
     LogFlow(("==>vboxNetLwfWinUnloadDriver: driver=%p\n", pDriver));
     vboxNetLwfWinDevDestroy(&g_VBoxNetLwfGlobals);
     NdisFDeregisterFilterDriver(g_VBoxNetLwfGlobals.hFilterDriver);
@@ -2221,6 +2231,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 
 int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
+    RT_NOREF1(pvIfData);
     int rc = VINF_SUCCESS;
 
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)pThis->u.s.WinIf.hModuleCtx;
@@ -2239,9 +2250,9 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
         return VINF_SUCCESS;
     }
 
-    const char *pszDir = (fDst & INTNETTRUNKDIR_WIRE) ?
-        ( (fDst & INTNETTRUNKDIR_HOST) ? "intnet --> all" : "intnet --> wire" ) : "intnet --> host";
-    vboxNetLwfWinDumpPacket(pSG, pszDir);
+    vboxNetLwfWinDumpPacket(pSG,   !(fDst & INTNETTRUNKDIR_WIRE) ? "intnet --> host"
+                                 : !(fDst & INTNETTRUNKDIR_HOST) ? "intnet --> wire" : "intnet --> all");
+
     /*
      * There are two possible strategies to deal with incoming SGs:
      * 1) make a copy of data and complete asynchronously;
@@ -2315,6 +2326,7 @@ NDIS_IO_WORKITEM_FUNCTION vboxNetLwfWinToggleOffloading;
 VOID vboxNetLwfWinToggleOffloading(PVOID WorkItemContext, NDIS_HANDLE NdisIoWorkItemHandle)
 {
     /* WARNING! Call this with IRQL=Passive! */
+    RT_NOREF1(NdisIoWorkItemHandle);
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)WorkItemContext;
 
     if (ASMAtomicReadBool(&pModuleCtx->fActive))
@@ -2376,6 +2388,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
+    RT_NOREF1(pThis);
     LogFlow(("==>vboxNetFltOsDisconnectIt: instance=%p\n", pThis));
     LogFlow(("<==vboxNetFltOsDisconnectIt: return 0\n"));
     return VINF_SUCCESS;
@@ -2383,6 +2396,7 @@ int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 
 int vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 {
+    RT_NOREF1(pThis);
     LogFlow(("==>vboxNetFltOsConnectIt: instance=%p\n", pThis));
     LogFlow(("<==vboxNetFltOsConnectIt: return 0\n"));
     return VINF_SUCCESS;
@@ -2399,7 +2413,6 @@ static void __stdcall vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
                                                         IN MIB_NOTIFICATION_TYPE enmNotifType)
 {
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvCtx;
-    PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)pThis->u.s.WinIf.hModuleCtx;
 
     /* We are only interested in add or remove notifications. */
     bool fAdded;
@@ -2531,6 +2544,7 @@ static void vboxNetLwfWinReportCapabilities(PVBOXNETFLTINS pThis, PVBOXNETLWF_MO
 
 int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 {
+    RT_NOREF1(pvContext);
     LogFlow(("==>vboxNetFltOsInitInstance: instance=%p context=%p\n", pThis, pvContext));
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
     Log(("vboxNetFltOsInitInstance: trunk name=%s\n", pThis->szName));
@@ -2568,12 +2582,14 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 
 void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRTMAC pMac)
 {
+    RT_NOREF3(pThis, pvIfData, pMac);
     LogFlow(("==>vboxNetFltPortOsNotifyMacAddress: instance=%p data=%p mac=%RTmac\n", pThis, pvIfData, pMac));
     LogFlow(("<==vboxNetFltPortOsNotifyMacAddress\n"));
 }
 
 int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **ppvIfData)
 {
+    RT_NOREF3(pThis, pvIf, ppvIfData);
     LogFlow(("==>vboxNetFltPortOsConnectInterface: instance=%p if=%p data=%p\n", pThis, pvIf, ppvIfData));
     LogFlow(("<==vboxNetFltPortOsConnectInterface: return 0\n"));
     /* Nothing to do */
@@ -2582,6 +2598,7 @@ int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **pp
 
 int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 {
+    RT_NOREF2(pThis, pvIfData);
     LogFlow(("==>vboxNetFltPortOsDisconnectInterface: instance=%p data=%p\n", pThis, pvIfData));
     LogFlow(("<==vboxNetFltPortOsDisconnectInterface: return 0\n"));
     /* Nothing to do */
