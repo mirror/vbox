@@ -29,7 +29,7 @@
 #include <list>
 
 #define _WIN32_DCOM
-#include <winsock2.h>
+#include <iprt/win/winsock2.h>
 #include <ws2tcpip.h>
 #include <iprt/win/windows.h>
 #include <tchar.h>

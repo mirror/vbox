@@ -20,9 +20,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifndef RT_OS_WINDOWS
-#include <netinet/in.h>
+# include <netinet/in.h>
 #else
-# include <Winsock2.h>
+# include <iprt/win/winsock2.h>
 # include <Ws2ipdef.h>
 #endif
 

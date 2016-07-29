@@ -22,7 +22,7 @@
 
 #include <VBox/err.h>
 
-#include <Winsock2.h>
+#include <iprt/win/winsock2.h>
 #include <iprt/win/windows.h>
 
 #include <stdio.h>

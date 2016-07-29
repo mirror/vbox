@@ -34,7 +34,7 @@
 #include <Wbemidl.h>
 #include <comdef.h>
 
-#include <winsock2.h>
+#include <iprt/win/winsock2.h>
 #include <Ws2tcpip.h>
 #include <ws2ipdef.h>
 #include <netioapi.h>

@@ -19,7 +19,7 @@
 #define _LIBSLIRP_H
 
 #ifdef RT_OS_WINDOWS
-# include <winsock2.h>
+# include <iprt/win/winsock2.h>
 # ifdef __cplusplus
 extern "C" {
 # endif

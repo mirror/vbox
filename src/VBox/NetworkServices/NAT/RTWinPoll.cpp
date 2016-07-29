@@ -25,7 +25,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 
-#include <Winsock2.h>
+#include <iprt/win/winsock2.h>
 #include <iprt/win/windows.h>
 #include "winpoll.h"
 
@@ -54,7 +54,7 @@ RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready)
         if (pFds[i].fd == INVALID_SOCKET)
           continue;
 
-        /**
+        /*
          * POLLIN         Data other than high priority data may be read without blocking.
          * This is equivalent to ( POLLRDNORM | POLLRDBAND ).
          * POLLRDBAND     Priority data may be read without blocking.
@@ -63,7 +63,7 @@ RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready)
         if (pollEvents & POLLIN)
             eventMask |= FD_READ | FD_ACCEPT;
 
-        /**
+        /*
          * POLLOUT        Normal data may be written without blocking.  This is equivalent
          *  to POLLWRNORM.
          * POLLWRNORM     Normal data may be written without blocking.
@@ -71,7 +71,7 @@ RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready)
         if (pollEvents & POLLOUT)
             eventMask |= FD_WRITE | FD_CONNECT;
 
-        /**
+        /*
          * This is "moral" equivalent to POLLHUP.
          */
         eventMask |= FD_CLOSE;
