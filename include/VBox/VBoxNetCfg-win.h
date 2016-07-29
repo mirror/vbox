@@ -36,8 +36,8 @@
  */
 #define VBOXNETCFG_DELAYEDRENAME
 
-#include <winsock2.h>
-#include <Windows.h>
+#include <iprt/win/winsock2.h>
+#include <iprt/win/windows.h>
 #include <Netcfgn.h>
 #include <Setupapi.h>
 #include <VBox/cdefs.h>

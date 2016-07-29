@@ -27,7 +27,7 @@
 #ifndef ___VBox_VBoxDrvCfg_win_h
 #define ___VBox_VBoxDrvCfg_win_h
 
-#include <Windows.h>
+#include <iprt/win/windows.h>
 #include <VBox/cdefs.h>
 
 RT_C_DECLS_BEGIN

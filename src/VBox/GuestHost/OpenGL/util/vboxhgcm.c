@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox HGCM connection
  */
@@ -16,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #ifdef RT_OS_WINDOWS
-    #include <windows.h>
-    #include <ddraw.h>
+# include <iprt/win/windows.h>
+# include <ddraw.h>
 #else
-    #include <sys/ioctl.h>
-    #include <errno.h>
-    #include <fcntl.h>
-    #include <string.h>
-    #include <unistd.h>
+# include <sys/ioctl.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <string.h>
+# include <unistd.h>
 #endif
 
 #include "cr_error.h"

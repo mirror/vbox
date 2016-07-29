@@ -27,7 +27,7 @@
 #define ___VBox_com_EventQueue_h
 
 #ifndef VBOX_WITH_XPCOM
-# include <Windows.h>
+# include <iprt/win/windows.h>
 #else
 # include <nsEventQueueUtils.h>
 #endif

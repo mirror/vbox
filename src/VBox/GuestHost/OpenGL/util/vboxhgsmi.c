@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox HGCM connection
  */
@@ -15,17 +14,19 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 //#define IN_GUEST
-#ifdef IN_GUEST
+#ifdef IN_GUEST /* entire file */
+
 #ifdef RT_OS_WINDOWS
-    #include <windows.h>
-    #include <ddraw.h>
+# include <iprt/win/windows.h>
+# include <ddraw.h>
 #else
-    #include <sys/ioctl.h>
-    #include <errno.h>
-    #include <fcntl.h>
-    #include <string.h>
-    #include <unistd.h>
+# include <sys/ioctl.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <string.h>
+# include <unistd.h>
 #endif
 
 #include "cr_error.h"
