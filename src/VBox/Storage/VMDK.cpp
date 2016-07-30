@@ -1457,7 +1457,7 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
                           unsigned uStart,
                           const char *pszKey, const char *pszValue)
 {
-    char *pszTmp;
+    char *pszTmp = NULL; /* (MSC naturally cannot figure this isn't used uninitialized) */
     size_t cbKey = strlen(pszKey);
     unsigned uLast = 0;
 
@@ -1472,6 +1472,8 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
             if (*pszTmp == '=')
             {
                 pszTmp++;
+                /** @todo r=bird: Doesn't skipping trailing blanks here just cause unecessary
+                 *        bloat and potentially out of space error? */
                 while (*pszTmp == ' ' || *pszTmp == '\t')
                     pszTmp++;
                 break;
