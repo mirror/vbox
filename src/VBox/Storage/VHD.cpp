@@ -332,6 +332,8 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
                     }
                     memcpy(pvBuf, szPath, cb);
                 }
+                else
+                    cb = 0; /* (Shut up MSC) */
             }
             else
             {
@@ -915,6 +917,7 @@ DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBl
  */
 DECLINLINE(bool) vhdBlockBitmapSectorSet(PVHDIMAGE pImage, uint8_t *pu8Bitmap, uint32_t cBlockBitmapEntry)
 {
+    RT_NOREF1(pImage);
     uint32_t iBitmap = (cBlockBitmapEntry / 8); /* Byte in the block bitmap. */
 
     /*
@@ -987,6 +990,7 @@ static void vhdSetDiskGeometry(PVHDIMAGE pImage, uint64_t cbSize)
 
 static uint32_t vhdAllocateParentLocators(PVHDIMAGE pImage, VHDDynamicDiskHeader *pDDH, uint64_t u64Offset)
 {
+    RT_NOREF1(pImage);
     PVHDPLE pLocator = pDDH->ParentLocatorEntry;
 
     /*
@@ -1106,6 +1110,7 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
                           PFNVDPROGRESS pfnProgress, void *pvUser,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
+    RT_NOREF3(pszComment, pPCHSGeometry, pLCHSGeometry);
     int rc;
     VHDFooter Footer;
     RTTIMESPEC now;
@@ -1239,6 +1244,7 @@ out:
 static DECLCALLBACK(int) vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                          PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
+    RT_NOREF1(pVDIfsDisk);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     int rc;
     PVDIOSTORAGE pStorage;
@@ -2085,6 +2091,7 @@ out:
 static DECLCALLBACK(int) vhdGetComment(void *pBackendData, char *pszComment,
                                        size_t cbComment)
 {
+    RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
@@ -2103,6 +2110,7 @@ static DECLCALLBACK(int) vhdGetComment(void *pBackendData, char *pszComment,
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetComment} */
 static DECLCALLBACK(int) vhdSetComment(void *pBackendData, const char *pszComment)
 {
+    RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
@@ -2182,6 +2190,7 @@ static DECLCALLBACK(int) vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetModificationUuid} */
 static DECLCALLBACK(int) vhdGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
@@ -2200,6 +2209,7 @@ static DECLCALLBACK(int) vhdGetModificationUuid(void *pBackendData, PRTUUID pUui
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetModificationUuid} */
 static DECLCALLBACK(int) vhdSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
@@ -2270,6 +2280,7 @@ static DECLCALLBACK(int) vhdSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentModificationUuid} */
 static DECLCALLBACK(int) vhdGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
@@ -2288,6 +2299,7 @@ static DECLCALLBACK(int) vhdGetParentModificationUuid(void *pBackendData, PRTUUI
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentModificationUuid} */
 static DECLCALLBACK(int) vhdSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
@@ -2433,9 +2445,10 @@ static DECLCALLBACK(int) vhdCompact(void *pBackendData, unsigned uPercentStart,
                                     unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
                                     PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation)
 {
+    RT_NOREF2(pVDIfsDisk, pVDIfsImage);
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
-    void *pvBuf = NULL, *pvReplace = NULL;
+    void *pvBuf = NULL;
     uint32_t *paBlocks = NULL;
 
     DECLCALLBACKMEMBER(int, pfnParentRead)(void *, uint64_t, void *, size_t) = NULL;
@@ -2544,7 +2557,7 @@ static DECLCALLBACK(int) vhdCompact(void *pBackendData, unsigned uPercentStart,
 
                 if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)pImage->cbDataBlock * 8) == -1)
                 {
-                    paBat[i] = ~0;
+                    paBat[i] = UINT32_MAX;
                     paBlocks[idxBlock] = ~0U;
                     /* Adjust progress info, one block to be relocated. */
                     cBlocksToMove++;
@@ -2674,6 +2687,7 @@ static DECLCALLBACK(int) vhdResize(void *pBackendData, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                    PVDINTERFACE pVDIfsOperation)
 {
+    RT_NOREF4(uPercentSpan, uPercentStart, pVDIfsDisk, pVDIfsImage);
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
