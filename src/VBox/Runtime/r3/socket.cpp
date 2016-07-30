@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/winsock2.h>
-# include <ws2tcpip.h>
+# include <iprt/win/ws2tcpip.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/select.h>

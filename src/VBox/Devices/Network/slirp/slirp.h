@@ -22,7 +22,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/winsock2.h>
-# include <ws2tcpip.h>
+# include <iprt/win/ws2tcpip.h>
 typedef int socklen_t;
 #endif
 #ifdef RT_OS_OS2 /* temporary workaround, see ticket #127 */

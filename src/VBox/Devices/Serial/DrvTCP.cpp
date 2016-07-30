@@ -35,7 +35,7 @@
 #include "VBoxDD.h"
 
 #ifdef RT_OS_WINDOWS
-# include <ws2tcpip.h>
+# include <iprt/win/ws2tcpip.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <unistd.h>
