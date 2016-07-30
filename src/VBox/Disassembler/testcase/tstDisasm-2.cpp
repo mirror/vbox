@@ -170,6 +170,7 @@ static bool MyDisasIsValidInstruction(DISSTATE const *pDis)
  */
 static DECLCALLBACK(int) MyDisasInstrRead(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
+    RT_NOREF1(cbMaxRead);
     PMYDISSTATE pState   = (PMYDISSTATE)pDis;
     RTUINTPTR   uSrcAddr = pState->Dis.uInstrAddr + offInstr;
     if (RT_LIKELY(   pState->uNextAddr == uSrcAddr
@@ -181,7 +182,7 @@ static DECLCALLBACK(int) MyDisasInstrRead(PDISSTATE pDis, uint8_t offInstr, uint
         //size_t cbToRead    = cbMaxRead;
         size_t cbToRead    = cbMinRead;
         memcpy(&pState->Dis.abInstr[offInstr], pState->pbNext, cbToRead);
-        pState->Dis.cbCachedInstr = offInstr + cbToRead;
+        pState->Dis.cbCachedInstr = offInstr + (uint8_t)cbToRead;
         pState->pbNext    += cbToRead;
         pState->cbLeft    -= cbToRead;
         pState->uNextAddr += cbToRead;
@@ -238,6 +239,8 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
                          uint64_t uHighlightAddr, uint8_t *pbFile, size_t cbFile,
                          ASMSTYLE enmStyle, bool fListing, UNDEFOPHANDLING enmUndefOp)
 {
+    RT_NOREF1(fListing);
+
     /*
      * Initialize the CPU context.
      */
