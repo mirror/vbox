@@ -304,7 +304,7 @@ out:
 static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszFilename)
 {
     int      rc = VINF_SUCCESS;
-    uint32_t cb, cbMaxLen = RT_BE2H_U32(pLocator->u32DataSpace);
+    uint32_t cb, cbMaxLen = RT_BE2H_U32(pLocator->u32DataSpace); /* ugly. initialized variable on separate lines, please. */
     void     *pvBuf = RTMemTmpAllocZ(cbMaxLen);
     char     *pszTmp;
 
@@ -402,7 +402,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
     if (RT_SUCCESS(rc))
         rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                     RT_BE2H_U64(pLocator->u64DataOffset),
-                                    pvBuf, cb);
+                                    pvBuf, cb); /** @todo r=msc: 'cb' _IS_ used uninitialized in the VHD_PLATFORM_CODE_WI2K path! */
 
     if (pvBuf)
         RTMemTmpFree(pvBuf);
