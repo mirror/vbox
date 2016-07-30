@@ -1059,6 +1059,7 @@ static int vdiFlushImageIoCtx(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
  */
 static DECLCALLBACK(int) vdiDiscardBlockAsyncUpdate(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
 {
+    RT_NOREF1(rcReq);
     int rc = VINF_SUCCESS;
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     PVDIBLOCKDISCARDASYNC pDiscardAsync = (PVDIBLOCKDISCARDASYNC)pvUser;
@@ -2364,6 +2365,7 @@ static DECLCALLBACK(int) vdiCompact(void *pBackendData, unsigned uPercentStart,
                                     unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
                                     PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation)
 {
+    RT_NOREF2(pVDIfsDisk, pVDIfsImage);
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
     void *pvBuf = NULL, *pvTmp = NULL;
@@ -2378,8 +2380,6 @@ static DECLCALLBACK(int) vdiCompact(void *pBackendData, unsigned uPercentStart,
         pvParent = pIfParentState->Core.pvUser;
     }
 
-    PFNVDPROGRESS pfnProgress = NULL;
-    void *pvUser = NULL;
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     PVDINTERFACEQUERYRANGEUSE pIfQueryRangeUse = VDIfQueryRangeUseGet(pVDIfsOperation);
@@ -2614,12 +2614,9 @@ static DECLCALLBACK(int) vdiResize(void *pBackendData, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                    PVDINTERFACE pVDIfsOperation)
 {
+    RT_NOREF5(uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation);
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
-
-    PFNVDPROGRESS pfnProgress = NULL;
-    void *pvUser = NULL;
-    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     /*
      * Making the image smaller is not supported at the moment.
@@ -2975,7 +2972,6 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
     do
     {
-        bool fRepairHdr = false;
         bool fRepairBlockArray = false;
 
         rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
