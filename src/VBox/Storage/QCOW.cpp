@@ -33,8 +33,8 @@
 
 #include "VDBackends.h"
 
-/**
- * The QCOW backend implements support for the qemu copy on write format (short QCOW)
+/** @page pg_storage_qcow   QCOW Storage Backend
+ * The QCOW backend implements support for the qemu copy on write format (short QCOW).
  * There is no official specification available but the format is described
  * at http://people.gnome.org/~markmc/qcow-image-format.html for version 2
  * and http://people.gnome.org/~markmc/qcow-image-format-version-1.html for version 1.
@@ -52,7 +52,7 @@
 *   Structures in a QCOW image, big endian                                                                                       *
 *********************************************************************************************************************************/
 
-#pragma pack(1)
+#pragma pack(1) /* Completely unnecessary. */
 typedef struct QCowHeader
 {
     /** Magic value. */
