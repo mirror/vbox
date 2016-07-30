@@ -1217,7 +1217,7 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
  */
 static DECLCALLBACK(int) iscsiAttach(void *pvUser)
 {
-    int rc;
+    int rc = VINF_SUCCESS;      /* (MSC is used uninitialized) */
     uint32_t itt;
     uint32_t csg, nsg, substate;
     uint64_t isid_tsih;
@@ -1226,7 +1226,7 @@ static DECLCALLBACK(int) iscsiAttach(void *pvUser)
     bool transit;
     uint8_t pbChallenge[1024];  /* RFC3720 specifies this as maximum. */
     size_t cbChallenge = 0;     /* shut up gcc */
-    uint8_t bChapIdx;
+    uint8_t bChapIdx = 0;       /* (MSC is used uninitialized) */
     uint8_t aResponse[RTMD5HASHSIZE];
     uint32_t cnISCSIReq = 0;
     ISCSIREQ aISCSIReq[4];
@@ -1539,7 +1539,9 @@ restart:
                                     break;
                                 }
                                 rc = RTStrToUInt8Ex(pcszChapIdxTarget, &pszNext, 0, &bChapIdx);
-                                if ((rc > VINF_SUCCESS) || *pszNext != '\0')
+/** @todo r=bird: Unsafe use of pszNext on failure.  The code should probably
+ *        use RTStrToUInt8Full and check for rc != VINF_SUCCESS. */
+                                if (rc > VINF_SUCCESS || *pszNext != '\0')
                                 {
                                     rc = VERR_PARSE_ERROR;
                                     break;
@@ -3687,6 +3689,7 @@ static int iscsiCommandSync(PISCSIIMAGE pImage, PSCSIREQ pScsiReq, bool fRetry, 
     {
         if (fRetry)
         {
+            rc = VINF_SUCCESS; /* (MSC incorrectly thinks it can be uninitialized) */
             for (unsigned i = 0; i < 10; i++)
             {
                 rc = iscsiCommand(pImage, pScsiReq);
