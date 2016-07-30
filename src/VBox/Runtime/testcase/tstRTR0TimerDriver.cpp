@@ -50,9 +50,13 @@
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
 #ifndef VBOX
+    RT_NOREF3(argc, argv, envp);
     RTPrintf("tstRTR0Timer: SKIPPED\n");
     return RTEXITCODE_SKIPPED;
+
 #else
+    RT_NOREF1(envp);
+
     /*
      * Init.
      */

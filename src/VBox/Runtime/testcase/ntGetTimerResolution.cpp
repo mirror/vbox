@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #define _WIN32_WINNT 0x0500
 #include <iprt/win/windows.h>
+#include <iprt/types.h>
 #include <stdio.h>
 
 extern "C" {
@@ -40,9 +41,9 @@ NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MaximumResolution, OUT PUL
 
 int main()
 {
-    ULONG Min = ~0;
-    ULONG Max = ~0;
-    ULONG Cur = ~0;
+    ULONG Min = UINT32_MAX;
+    ULONG Max = UINT32_MAX;
+    ULONG Cur = UINT32_MAX;
     NtQueryTimerResolution(&Max, &Min, &Cur);
     printf("NtQueryTimerResolution -> Max=%08luns Min=%08luns Cur=%08luns\n", Min * 100, Max * 100, Cur * 100);
 

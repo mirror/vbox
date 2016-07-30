@@ -49,6 +49,7 @@ typedef struct SpawnerArgs
 
 DECLCALLBACK(int) SpawnerThread(RTTHREAD Thread, void *pvUser)
 {
+    RT_NOREF1(Thread);
     PSPAWNERARGS pArgs = (PSPAWNERARGS)pvUser;
     pArgs->Process = NIL_RTPROCESS;
     const char *apszArgs[3] = { pArgs->pszExe, "child", NULL };

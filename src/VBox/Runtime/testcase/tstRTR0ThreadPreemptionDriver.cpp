@@ -196,7 +196,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * Stay in ring-0 until preemption is pending.
      */
     RTTHREAD ahThreads[RTCPUSET_MAX_CPUS];
-    uint32_t cThreads = RTMpGetCount();
     RTCPUSET OnlineSet;
     RTMpGetOnlineSet(&OnlineSet);
     for (uint32_t i = 0; i < RT_ELEMENTS(ahThreads); i++)

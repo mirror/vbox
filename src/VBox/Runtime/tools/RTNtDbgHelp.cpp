@@ -210,10 +210,13 @@ static const char *symTypeName(SYM_TYPE enmType)
         case SymSym:        return "SymSym";
         case SymDia:        return "SymDia";
         case SymVirtual:    return "SymVirtual";
+        default:
+        {
+            static char s_szBuf[32];
+            RTStrPrintf(s_szBuf, sizeof(s_szBuf), "Unknown-%#x", enmType);
+            return s_szBuf;
+        }
     }
-    static char s_szBuf[32];
-    RTStrPrintf(s_szBuf, sizeof(s_szBuf), "Unknown-%#x", enmType);
-    return s_szBuf;
 }
 
 
@@ -319,7 +322,7 @@ int main(int argc, char **argv)
     };
 
     RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
-    const char *pszOutput   = "-";
+    //const char *pszOutput   = "-";
 
     int ch;
     RTGETOPTUNION ValueUnion;
