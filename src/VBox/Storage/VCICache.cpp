@@ -1684,17 +1684,17 @@ static DECLCALLBACK(int) vciRead(void *pBackendData, uint64_t uOffset, size_t cb
 static DECLCALLBACK(int) vciWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess)
 {
+    RT_NOREF5(pBackendData, uOffset, cbToWrite, pIoCtx, pcbWriteProcess);
     LogFlowFunc(("pBackendData=%#p uOffset=%llu cbToWrite=%zu pIoCtx=%#p pcbWriteProcess=%#p\n",
                  pBackendData, uOffset, cbToWrite, pIoCtx, pcbWriteProcess));
-    PVCICACHE pCache = (PVCICACHE)pBackendData;
+    //PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc = VINF_SUCCESS;
     uint64_t cBlocksToWrite = VCI_BYTE2BLOCK(cbToWrite);
-    uint64_t offBlockAddr  = VCI_BYTE2BLOCK(uOffset);
+    //uint64_t offBlockAddr  = VCI_BYTE2BLOCK(uOffset);
 
     AssertPtr(pCache);
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
-
     while (cBlocksToWrite)
     {
 
@@ -1709,11 +1709,11 @@ static DECLCALLBACK(int) vciWrite(void *pBackendData, uint64_t uOffset, size_t c
 /** @copydoc VDCACHEBACKEND::pfnFlush */
 static DECLCALLBACK(int) vciFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
+    RT_NOREF1(pIoCtx);
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
-    int rc = VINF_SUCCESS;
 
-    rc = vciFlushImage(pCache);
+    int rc = vciFlushImage(pCache);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1838,6 +1838,7 @@ out:
 static DECLCALLBACK(int) vciGetComment(void *pBackendData, char *pszComment,
                                        size_t cbComment)
 {
+    RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc;
@@ -1856,6 +1857,7 @@ static DECLCALLBACK(int) vciGetComment(void *pBackendData, char *pszComment,
 /** @copydoc VDCACHEBACKEND::pfnSetComment */
 static DECLCALLBACK(int) vciSetComment(void *pBackendData, const char *pszComment)
 {
+    RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc;
@@ -1879,6 +1881,7 @@ static DECLCALLBACK(int) vciSetComment(void *pBackendData, const char *pszCommen
 /** @copydoc VDCACHEBACKEND::pfnGetUuid */
 static DECLCALLBACK(int) vciGetUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc;
@@ -1897,6 +1900,7 @@ static DECLCALLBACK(int) vciGetUuid(void *pBackendData, PRTUUID pUuid)
 /** @copydoc VDCACHEBACKEND::pfnSetUuid */
 static DECLCALLBACK(int) vciSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc;
@@ -1921,6 +1925,7 @@ static DECLCALLBACK(int) vciSetUuid(void *pBackendData, PCRTUUID pUuid)
 /** @copydoc VDCACHEBACKEND::pfnGetModificationUuid */
 static DECLCALLBACK(int) vciGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc;
@@ -1939,6 +1944,7 @@ static DECLCALLBACK(int) vciGetModificationUuid(void *pBackendData, PRTUUID pUui
 /** @copydoc VDCACHEBACKEND::pfnSetModificationUuid */
 static DECLCALLBACK(int) vciSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc;
