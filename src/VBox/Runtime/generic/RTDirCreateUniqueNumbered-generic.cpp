@@ -34,10 +34,11 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/path.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 
 
-RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, signed int cchDigits, char chSep)
+RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, size_t cchDigits, char chSep)
 {
     /*
      * Validate input.
@@ -45,58 +46,97 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbSize, VERR_BUFFER_OVERFLOW);
     AssertReturn(cchDigits > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cchDigits < 64, VERR_INVALID_PARAMETER);
 
-    /* Check that there is sufficient space. */
+    /* Check that there is sufficient space.  */
     char *pszEnd = RTStrEnd(pszPath, cbSize);
     AssertReturn(pszEnd, VERR_BUFFER_OVERFLOW);
-    AssertReturn(cbSize - 1 - (pszEnd - pszPath) >= (size_t)cchDigits + (chSep ? 1 : 0), VERR_BUFFER_OVERFLOW);
     size_t cbLeft = cbSize - (pszEnd - pszPath);
+    AssertReturn(cbLeft > (chSep ? 1U : 0U) + cchDigits, VERR_BUFFER_OVERFLOW);
 
-    /* First try is to create the path without any numbers. */
+    /*
+     * First try the pretty name without any numbers appended.
+     */
     int rc = RTDirCreate(pszPath, fMode, 0);
-    if (   RT_SUCCESS(rc)
-        || rc != VERR_ALREADY_EXISTS)
+    if (RT_SUCCESS(rc))
         return rc;
-
-    /* If the separator value isn't zero, add it. */
-    if (chSep != '\0')
+    if (rc == VERR_ALREADY_EXISTS)
     {
-        cbLeft--;
-        *pszEnd++ = chSep;
-        *pszEnd   = '\0';
-    }
+        /*
+         * Already exist, apply template specification.
+         */
 
-    /* How many tries? Stay within somewhat sane limits. */
-    uint32_t cMaxTries;
-    if (cchDigits >= 8)
-        cMaxTries = 100 * _1M;
-    else
-    {
-        cMaxTries = 10;
-        for (int a = 0; a < cchDigits - 1; ++a)
-            cMaxTries *= 10;
-    }
-
-    /* Try cMaxTries - 1 times to create a directory with appended numbers. */
-    uint32_t i = 1;
-    while (i < cMaxTries)
-    {
-        /* Format the number with leading zero's. */
-        ssize_t rc2 = RTStrFormatU32(pszEnd, cbLeft, i, 10, cchDigits, 0, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
-        if (RT_FAILURE((int) rc2))
+        /* Max 10000 tries (like RTDirCreateTemp), but stop earlier if we haven't got enough digits to work with.  */
+        uint32_t cMaxTries;
+        switch (cchDigits)
         {
-            *pszPath = '\0';
-            return (int)rc2;
+            case 1:  cMaxTries =    30; break;
+            case 2:  cMaxTries =   300; break;
+            case 3:  cMaxTries =  2000; break;
+            default: cMaxTries = 10000; break;
         }
-        rc = RTDirCreate(pszPath, fMode, 0);
-        if (RT_SUCCESS(rc))
-            return rc;
-        ++i;
+
+        static uint64_t const s_aEndSeqs[] =
+        {
+            UINT64_C(0),
+            UINT64_C(9),
+            UINT64_C(99),
+            UINT64_C(999),
+            UINT64_C(9999),
+            UINT64_C(99999),
+            UINT64_C(999999),
+            UINT64_C(9999999),
+            UINT64_C(99999999),
+            UINT64_C(999999999),
+            UINT64_C(9999999999),
+            UINT64_C(99999999999),
+            UINT64_C(999999999999),
+            UINT64_C(9999999999999),
+            UINT64_C(99999999999999),
+            UINT64_C(999999999999999),
+            UINT64_C(9999999999999999),
+            UINT64_C(99999999999999999),
+            UINT64_C(999999999999999999),
+            UINT64_C(9999999999999999999),
+        };
+        uint64_t const uEndSeq = cchDigits < RT_ELEMENTS(s_aEndSeqs) ? s_aEndSeqs[cchDigits] : UINT64_MAX;
+
+        /* Add separator if requested. */
+        if (chSep != '\0')
+        {
+            *pszEnd++ = chSep;
+            *pszEnd   = '\0';
+            cbLeft--;
+        }
+
+        Assert(cbLeft > cchDigits);
+        uint64_t iSeq = UINT64_MAX;
+        for (uint32_t iTry = 0; iTry <= cMaxTries; iTry++)
+        {
+            /* Try sequentially first for a little bit, then switch to random numbers. */
+            if (iTry > 20)
+                iSeq = RTRandU64Ex(0, uEndSeq);
+            else
+            {
+                iSeq++;
+                if (iSeq < UINT64_MAX)
+                    iSeq %= uEndSeq + 1;
+            }
+            ssize_t cchRet = RTStrFormatU64(pszEnd, cbLeft, iSeq, 10 /*uiBase*/,
+                                            (int)cchDigits /*cchWidth*/, 0 /*cchPrecision*/, RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
+            Assert((size_t)cchRet == cchDigits); NOREF(cchRet);
+
+            rc = RTDirCreate(pszPath, fMode, 0);
+            if (RT_SUCCESS(rc))
+                return rc;
+            if (rc != VERR_ALREADY_EXISTS)
+                break;
+        }
     }
 
-    /* We've given up. */
+    /* We've given up or failed. */
     *pszPath = '\0';
-    return VERR_ALREADY_EXISTS;
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTDirCreateUniqueNumbered);
 

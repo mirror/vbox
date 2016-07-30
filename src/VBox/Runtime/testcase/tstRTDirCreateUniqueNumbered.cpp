@@ -58,7 +58,7 @@ static void tst1(size_t cTest, size_t cchDigits, char chSep)
     int rc = VERR_INTERNAL_ERROR;
     /* The test loop. */
     size_t i;
-    for (i = 0; i < cTimes; i++)
+    for (i = 0; i < cTimes + 1; i++)
     {
         char szName[RTPATH_MAX];
         RTTESTI_CHECK_RC(rc = RTPathAppend(strcpy(szName, g_szTempPath), sizeof(szName), "RTDirCreateUniqueNumbered"), VINF_SUCCESS);
@@ -117,9 +117,9 @@ int main()
     /*
      * Create some test directories.
      */
-    tst1(1, 1, 0  );
+    tst1(1, 1, '\0');
     tst1(2, 1, '-');
-    tst1(3, 2, 0  );
+    tst1(3, 2, '\0');
     tst1(4, 2, '-');
 
     /*

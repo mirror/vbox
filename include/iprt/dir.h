@@ -129,22 +129,30 @@ RTDECL(int) RTDirCreateTempSecure(char *pszTemplate);
 /**
  * Creates a new directory with a unique name by appending a number.
  *
- * First it is tried to create the directory without any numbers appended.
- * When this fails a number string is appended (starting with 1) separated by
- * the optional separator. The numbers are zero padded.
+ * This API differs from RTDirCreateTemp & RTDirCreateTempSecure in that it
+ * first tries to create the directory without any random bits, thus the best
+ * case result will be prettier.  It also differs in that it does not take a
+ * template, but is instead given a template description, and will only use
+ * digits for the filling.
+ *
+ * For sake of convenience and debugging , the current implementation
+ * starts at 0 and will increment sequentally for a while before switching to
+ * random numbers.
  *
  * On success @a pszPath contains the path created.
  *
  * @returns iprt status code.
- * @param   pszPath     Path to the directory to create.
- * @param   cbSize      The size of pszPath. Needs enough space for holding the
- *                      digits and the optional separator.
+ * @param   pszPath     The path to the directory.  On input the base template
+ *                      name.  On successful return, the unique directory we
+ *                      created.
+ * @param   cbSize      The size of the pszPath buffer.  Needs enough space for
+ *                      holding the digits and the optional separator.
  * @param   fMode       The mode of the new directory.
- * @param   cchDigits   How many digits should the number maximal have.
+ * @param   cchDigits   How many digits should the number have (zero padded).
  * @param   chSep       The separator used between the path and the number. Can
  *                      be zero. (optional)
  */
-RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, signed int cchDigits, char chSep);
+RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMode, size_t cchDigits, char chSep);
 
 /**
  * Removes a directory if empty.
