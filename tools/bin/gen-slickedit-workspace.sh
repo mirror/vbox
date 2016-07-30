@@ -296,6 +296,99 @@ my_generate_folder()
         "${MY_FILE}-Testcases.lst" "${MY_FILE}-Others.lst"
 }
 
+##
+# Function generating a project build config.
+#
+# @param    $1      The project file name.
+# @param    $2      Build config name.
+# @param    $3      Extra kBuild command line options, variant 1.
+# @param    $4      Extra kBuild command line options, variant 2.
+# @param    $4+     Include directories.
+# @param    $N      --end-includes
+my_generate_project_config()
+{
+    MY_FILE="${1}";
+    MY_CFG_NAME="${2}";
+    MY_KMK_EXTRAS1="${3}";
+    MY_KMK_EXTRAS2="${4}";
+    MY_KMK_EXTRAS3="${5}";
+    MY_KMK_EXTRAS4="${6}";
+    shift; shift; shift; shift; shift; shift;
+
+    echo '    <Config Name="'"${MY_CFG_NAME}"'" OutputFile="" CompilerConfigName="Latest Version">'             >> "${MY_FILE}"
+    echo '        <Menu>'                                                                                       >> "${MY_FILE}"
+
+    echo '            <Target Name="Compile" MenuCaption="&amp;Compile" CaptureOutputWith="ProcessBuffer"'      >> "${MY_FILE}"
+    echo '                    SaveOption="SaveCurrent" RunFromDir="%p" ClearProcessBuffer="1">'                 >> "${MY_FILE}"
+    echo -n '                <Exec CmdLine="'"${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS1}"' -C %p %n.o'              >> "${MY_FILE}"
+    if test -n "${MY_KMK_EXTRAS2}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS2} -C %p %n.o" >> "${MY_FILE}"
+    fi
+    if test -n "${MY_KMK_EXTRAS3}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS3} -C %p %n.o" >> "${MY_FILE}"
+    fi
+    if test -n "${MY_KMK_EXTRAS4}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS4} -C %p %n.o" >> "${MY_FILE}"
+    fi
+    echo  '"/>' >> "${MY_FILE}"
+    echo '            </Target>'                                                                                >> "${MY_FILE}"
+
+    echo '            <Target Name="Build" MenuCaption="&amp;Build"CaptureOutputWith="ProcessBuffer"'           >> "${MY_FILE}"
+    echo '                    SaveOption="SaveWorkspaceFiles" RunFromDir="%rw" ClearProcessBuffer="1">'         >> "${MY_FILE}"
+    echo -n '                <Exec CmdLine="'"${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS1}"' -C %rw'                  >> "${MY_FILE}"
+    if test -n "${MY_KMK_EXTRAS2}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS2} -C %rw" >> "${MY_FILE}"
+    fi
+    if test -n "${MY_KMK_EXTRAS3}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS3} -C %rw" >> "${MY_FILE}"
+    fi
+    if test -n "${MY_KMK_EXTRAS4}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS4} -C %rw" >> "${MY_FILE}"
+    fi
+    echo  '"/>' >> "${MY_FILE}"
+    echo '            </Target>'                                                                                >> "${MY_FILE}"
+
+    echo '            <Target Name="Rebuild" MenuCaption="&amp;Rebuild" CaptureOutputWith="ProcessBuffer"'      >> "${MY_FILE}"
+    echo '                    SaveOption="SaveWorkspaceFiles" RunFromDir="%rw" ClearProcessBuffer="1">'         >> "${MY_FILE}"
+    echo -n '                <Exec CmdLine="'"${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS1}"' -C %rw'                  >> "${MY_FILE}"
+    if test -n "${MY_KMK_EXTRAS2}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS2} -C %rw rebuild" >> "${MY_FILE}"
+    fi
+    if test -n "${MY_KMK_EXTRAS3}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS3} -C %rw rebuild" >> "${MY_FILE}"
+    fi
+    if test -n "${MY_KMK_EXTRAS4}"; then
+        echo -n " && ${MY_KMK_INVOCATION} ${MY_KMK_EXTRAS4} -C %rw rebuild" >> "${MY_FILE}"
+    fi
+    echo  '"/>' >> "${MY_FILE}"
+    echo '            </Target>'                                                                                >> "${MY_FILE}"
+
+    #echo '            <Target Name="Debug" MenuCaption="&amp;Debug" SaveOption="SaveNone" RunFromDir="%rw">'    >> "${MY_FILE}"
+    #echo '                <Exec/>'                                                                              >> "${MY_FILE}"
+    #echo '            </Target>'                                                                                >> "${MY_FILE}"
+    #echo '            <Target Name="Execute" MenuCaption="E&amp;xecute" SaveOption="SaveNone" RunFromDir="%rw">'>> "${MY_FILE}"
+    #echo '                <Exec/>'                                                                              >> "${MY_FILE}"
+    #echo '            </Target>'                                                                                >> "${MY_FILE}"
+    echo '        </Menu>'                                                                                      >> "${MY_FILE}"
+
+    #
+    # Include directories.
+    #
+    echo '        <Includes>'                                                                                   >> "${MY_FILE}"
+    while test $# -ge 1  -a  "${1}" != "--end-includes";
+    do
+        for f in $1;
+        do
+            my_abs_dir ${f}
+            echo '            <Include Dir="'"${MY_ABS_DIR}/"'"/>'                                              >> "${MY_FILE}"
+        done
+        shift
+    done
+    shift
+    echo '        </Includes>'                                                                                  >> "${MY_FILE}"
+    echo '    </Config>'                                                                                        >> "${MY_FILE}"
+}
+
 
 ##
 # Function generating a project.
@@ -333,45 +426,31 @@ my_generate_project()
     my_abs_dir "${MY_WRK_DIR}"                                                                                          >> "${MY_FILE}"
     echo '        WorkingDir="'"${MY_ABS_DIR}"'"'                                                                       >> "${MY_FILE}"
     echo '        >'                                                                                                    >> "${MY_FILE}"
-    echo '    <Config Name="Release" OutputFile="" CompilerConfigName="Latest Version">'                                >> "${MY_FILE}"
-    echo '        <Menu>'                                                                                               >> "${MY_FILE}"
-    echo '            <Target Name="Compile" MenuCaption="&amp;Compile" CaptureOutputWith="ProcessBuffer"'              >> "${MY_FILE}"
-    echo '                    SaveOption="SaveCurrent" RunFromDir="%p" ClearProcessBuffer="1">'                         >> "${MY_FILE}"
-    echo '                <Exec CmdLine="'"${MY_KMK_INVOCATION}"' -C %p %n.o"/>'                                        >> "${MY_FILE}"
-    echo '            </Target>'                                                                                        >> "${MY_FILE}"
-    echo '            <Target Name="Build" MenuCaption="&amp;Build"CaptureOutputWith="ProcessBuffer"'                   >> "${MY_FILE}"
-    echo '                    SaveOption="SaveWorkspaceFiles" RunFromDir="%rw" ClearProcessBuffer="1">'                 >> "${MY_FILE}"
-    echo '                <Exec CmdLine="'"${MY_KMK_INVOCATION}"' -C %rw"/>'                                            >> "${MY_FILE}"
-    echo '            </Target>'                                                                                        >> "${MY_FILE}"
-    echo '            <Target Name="Rebuild" MenuCaption="&amp;Rebuild" CaptureOutputWith="ProcessBuffer"'              >> "${MY_FILE}"
-    echo '                    SaveOption="SaveWorkspaceFiles" RunFromDir="%rw" ClearProcessBuffer="1">'                 >> "${MY_FILE}"
-    echo '                <Exec CmdLine="'"${MY_KMK_INVOCATION}"' -C %rw rebuild"/>'                                    >> "${MY_FILE}"
-    echo '            </Target>'                                                                                        >> "${MY_FILE}"
-    echo '            <Target Name="Debug" MenuCaption="&amp;Debug" SaveOption="SaveNone" RunFromDir="%rw">'            >> "${MY_FILE}"
-    echo '                <Exec/>'                                                                                      >> "${MY_FILE}"
-    echo '            </Target>'                                                                                        >> "${MY_FILE}"
-    echo '            <Target Name="Execute" MenuCaption="E&amp;xecute" SaveOption="SaveNone" RunFromDir="%rw">'        >> "${MY_FILE}"
-    echo '                <Exec/>'                                                                                      >> "${MY_FILE}"
-    echo '            </Target>'                                                                                        >> "${MY_FILE}"
-    echo '        </Menu>'                                                                                              >> "${MY_FILE}"
+    my_generate_project_config "${MY_FILE}" "Default" "" "" "" "" $*
+    my_generate_project_config "${MY_FILE}" "Debug + hardening"     "KBUILD_TYPE=debug VBOX_WITH_HARDENING=1"   "" "" "" $*
+    my_generate_project_config "${MY_FILE}" "Release + hardening"   "KBUILD_TYPE=release VBOX_WITH_HARDENING=1" "" "" "" $*
+    my_generate_project_config "${MY_FILE}" "Debug+Release + hardening" \
+        "KBUILD_TYPE=debug VBOX_WITH_HARDENING=1" \
+        "KBUILD_TYPE=release VBOX_WITH_HARDENING=1" \
+        "" "" $*
+    my_generate_project_config "${MY_FILE}" "Debug w/o hardening"   "KBUILD_TYPE=debug VBOX_WITHOUT_HARDENING=1"   "" "" $*
+    my_generate_project_config "${MY_FILE}" "Release w/o hardening" "KBUILD_TYPE=release VBOX_WITHOUT_HARDENING=1" "" "" $*
+    my_generate_project_config "${MY_FILE}" "Debug+Release w/o hardening" \
+        "KBUILD_TYPE=debug VBOX_WITHOUT_HARDENING=1" \
+        "KBUILD_TYPE=release VBOX_WITHOUT_HARDENING=1" \
+        "" "" $*
+    my_generate_project_config "${MY_FILE}" "Debug+Release with and without hardening" \
+        "KBUILD_TYPE=debug VBOX_WITH_HARDENING=1" \
+        "KBUILD_TYPE=release VBOX_WITH_HARDENING=1" \
+        "KBUILD_TYPE=debug VBOX_WITHOUT_HARDENING=1" \
+        "KBUILD_TYPE=release VBOX_WITHOUT_HARDENING=1" \
+        $*
 
-    #
-    # Include directories.
-    #
-    echo '        <Includes>'                                                                                           >> "${MY_FILE}"
     while test $# -ge 1  -a  "${1}" != "--end-includes";
     do
-        for f in $1;
-        do
-            my_abs_dir ${f}
-            echo '            <Include Dir="'"${MY_ABS_DIR}/"'"/>'                                                      >> "${MY_FILE}"
-        done
-        shift
-    done
-    shift
-    echo '        </Includes>'                                                                                          >> "${MY_FILE}"
-    echo '    </Config>'                                                                                                >> "${MY_FILE}"
-
+        shift;
+    done;
+    shift;
 
     #
     # Process directories+files and create folders.
