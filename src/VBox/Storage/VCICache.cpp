@@ -567,8 +567,6 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                     pBlkMap->cBlocksAllocData = BlkMap.cBlocksAllocData;
 
                     /* Load the bitmap and construct the range list. */
-                    uint32_t cBlocksFree = 0;
-                    uint32_t cBlocksAllocated = 0;
                     PVCIBLKRANGEDESC pRangeCur = (PVCIBLKRANGEDESC)RTMemAllocZ(sizeof(VCIBLKRANGEDESC));
 
                     if (pRangeCur)
@@ -901,6 +899,7 @@ static int vciBlkMapRealloc(PVCIBLKMAP pBlkMap, uint32_t cBlocksNew, uint64_t of
                  pBlkMap, cBlocksNew, offBlockAddrOld, poffBlockAddr));
 
     AssertMsgFailed(("Implement\n"));
+    RT_NOREF4(pBlkMap, cBlocksNew, offBlockAddrOld, poffBlockAddr);
 
     LogFlowFunc(("returns rc=%Rrc offBlockAddr=%llu\n", rc, *poffBlockAddr));
     return rc;
@@ -1293,6 +1292,7 @@ static int vciCreateImage(PVCICACHE pCache, uint64_t cbSize,
                           void *pvUser, unsigned uPercentStart,
                           unsigned uPercentSpan)
 {
+    RT_NOREF1(pszComment);
     VciHdr Hdr;
     VciTreeNode NodeRoot;
     int rc;
@@ -1450,6 +1450,7 @@ static int vciCreateImage(PVCICACHE pCache, uint64_t cbSize,
 static DECLCALLBACK(int) vciProbe(const char *pszFilename, PVDINTERFACE pVDIfsCache,
                                   PVDINTERFACE pVDIfsImage)
 {
+    RT_NOREF1(pVDIfsCache);
     VciHdr Hdr;
     PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;
@@ -1558,6 +1559,7 @@ static DECLCALLBACK(int) vciCreate(const char *pszFilename, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                    PVDINTERFACE pVDIfsOperation, void **ppBackendData)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p",
                  pszFilename, cbSize, uImageFlags, pszComment, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
