@@ -235,8 +235,10 @@ start()
         # acceleration support check.  This prevents an "Oh no, something has gone
         # wrong!" error when starting EL7 guests.
         if test -e /etc/selinux/config; then
-            semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
-            semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
+            if command -v semanage > /dev/null; then
+                semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
+                semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
+            done
             chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
             chcon -h  -t lib_t  "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
         fi
@@ -429,9 +431,9 @@ EOF
     if test -e /etc/selinux/config; then
         # This is correct.  semanage maps this to the real path, and it aborts
         # with an error, telling you what you should have typed, if you specify
-        # the real path.  The "chcon" is there as a back-up in case this is
-        # different on old guests.
-        semanage fcontext -a -t mount_exec_t "/usr/lib/$PACKAGE/mount.vboxsf"
+        # the real path.  The "chcon" is there as a back-up for old guests.
+        command -v semanage > /dev/null &&
+            semanage fcontext -a -t mount_exec_t "/usr/lib/$PACKAGE/mount.vboxsf"
         chcon -t mount_exec_t "$lib_path/$PACKAGE/mount.vboxsf"
     fi
     succ_msg
