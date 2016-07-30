@@ -1490,8 +1490,8 @@ static int vmdkDescSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
             size_t cbNewVal = strlen(pszValue);
             ssize_t cbDiff = cbNewVal - cbOldVal;
             /* Check for buffer overflow. */
-            if (    pDescriptor->aLines[pDescriptor->cLines]
-                -   pDescriptor->aLines[0] > (ptrdiff_t)pDescriptor->cbDescAlloc - cbDiff)
+            if (  pDescriptor->aLines[pDescriptor->cLines] - pDescriptor->aLines[0]
+                > (ptrdiff_t)pDescriptor->cbDescAlloc - cbDiff)
                 return vdIfError(pImage->pIfError, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too big in '%s'"), pImage->pszFilename);
 
             memmove(pszTmp + cbNewVal, pszTmp + cbOldVal,
