@@ -1079,7 +1079,6 @@ static const char *dmgXmlParseData(const char **ppszCur, uint8_t **ppbData, size
     ssize_t cbData = RTBase64DecodedSize(pszStart, (char **)&psz);
     if (cbData == -1)
         return *ppszCur;
-    const char *pszEnd = psz;
 
     REQUIRE_END_TAG(psz, "data");
 
@@ -1717,6 +1716,7 @@ static DECLCALLBACK(int) dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
 static DECLCALLBACK(int) dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                          PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
+    RT_NOREF1(pVDIfsDisk);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p penmType=%#p\n",
                  pszFilename, pVDIfsDisk, pVDIfsImage, penmType));
 
@@ -1870,6 +1870,8 @@ static DECLCALLBACK(int) dmgCreate(const char *pszFilename, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
                                    void **ppBackendData)
 {
+    RT_NOREF8(pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags);
+    RT_NOREF7(uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData);
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%u ppBackendData=%#p",
                  pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
     int rc = VERR_NOT_SUPPORTED;
@@ -1881,6 +1883,7 @@ static DECLCALLBACK(int) dmgCreate(const char *pszFilename, uint64_t cbSize,
 /** @interface_method_impl{VBOXHDDBACKEND,pfnRename} */
 static DECLCALLBACK(int) dmgRename(void *pBackendData, const char *pszFilename)
 {
+    RT_NOREF2(pBackendData, pszFilename);
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
     int rc = VERR_NOT_SUPPORTED;
 
@@ -1994,6 +1997,7 @@ static DECLCALLBACK(int) dmgWrite(void *pBackendData, uint64_t uOffset, size_t c
                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                   size_t *pcbPostRead, unsigned fWrite)
 {
+    RT_NOREF7(uOffset, cbToWrite, pIoCtx, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite);
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
                  pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
@@ -2015,6 +2019,7 @@ static DECLCALLBACK(int) dmgWrite(void *pBackendData, uint64_t uOffset, size_t c
 /** @interface_method_impl{VBOXHDDBACKEND,pfnFlush} */
 static DECLCALLBACK(int) dmgFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
+    RT_NOREF1(pIoCtx);
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2266,6 +2271,7 @@ out:
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetComment} */
 static DECLCALLBACK(int) dmgGetComment(void *pBackendData, char *pszComment, size_t cbComment)
 {
+    RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2284,6 +2290,7 @@ static DECLCALLBACK(int) dmgGetComment(void *pBackendData, char *pszComment, siz
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetComment} */
 static DECLCALLBACK(int) dmgSetComment(void *pBackendData, const char *pszComment)
 {
+    RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2307,6 +2314,7 @@ static DECLCALLBACK(int) dmgSetComment(void *pBackendData, const char *pszCommen
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetUuid} */
 static DECLCALLBACK(int) dmgGetUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2325,6 +2333,7 @@ static DECLCALLBACK(int) dmgGetUuid(void *pBackendData, PRTUUID pUuid)
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetUuid} */
 static DECLCALLBACK(int) dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2349,6 +2358,7 @@ static DECLCALLBACK(int) dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetModificationUuid} */
 static DECLCALLBACK(int) dmgGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2367,6 +2377,7 @@ static DECLCALLBACK(int) dmgGetModificationUuid(void *pBackendData, PRTUUID pUui
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetModificationUuid} */
 static DECLCALLBACK(int) dmgSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2390,6 +2401,7 @@ static DECLCALLBACK(int) dmgSetModificationUuid(void *pBackendData, PCRTUUID pUu
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentUuid} */
 static DECLCALLBACK(int) dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2408,6 +2420,7 @@ static DECLCALLBACK(int) dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentUuid} */
 static DECLCALLBACK(int) dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2431,6 +2444,7 @@ static DECLCALLBACK(int) dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 /** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentModificationUuid} */
 static DECLCALLBACK(int) dmgGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
@@ -2449,6 +2463,7 @@ static DECLCALLBACK(int) dmgGetParentModificationUuid(void *pBackendData, PRTUUI
 /** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentModificationUuid} */
 static DECLCALLBACK(int) dmgSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
