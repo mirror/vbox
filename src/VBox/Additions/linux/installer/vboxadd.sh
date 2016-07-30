@@ -238,7 +238,7 @@ start()
             if command -v semanage > /dev/null; then
                 semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
                 semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
-            done
+            fi
             chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
             chcon -h  -t lib_t  "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
         fi
