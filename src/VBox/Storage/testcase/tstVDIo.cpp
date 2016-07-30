@@ -508,12 +508,14 @@ const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
 
 static DECLCALLBACK(int) vdScriptCallbackPrint(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
+    NOREF(pvUser);
     RTPrintf(paScriptArgs[0].psz);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
+    NOREF(pvUser);
     RTPrintf("tstVDIo: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
     RTPrintf("\n");
@@ -521,6 +523,7 @@ static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, cons
 
 static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
+    NOREF(pvUser);
     RTPrintf("tstVDIo: ");
     RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
@@ -553,7 +556,6 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
     bool fDynamic = true;
     bool fIgnoreFlush = false;
     bool fHonorSame = false;
-    PVDIOBACKEND pIoBackend = NULL;
 
     pcszDisk = paScriptArgs[0].psz;
     if (!RTStrICmp(paScriptArgs[1].psz, "base"))
@@ -709,8 +711,6 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
     bool fRandomAcc = false;
     uint64_t cbIo = 0;
     uint64_t cbBlkSize = 0;
-    bool fDataProviderRnd = false;
-    bool fPrintStats = false;
     uint64_t offStart = 0;
     uint64_t offEnd = 0;
     unsigned cMaxReqs = 0;
@@ -1642,6 +1642,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDSCRIPTARG paScriptArgs, v
 
 static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
+    RT_NOREF1(paScriptArgs);
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
 
     if (pGlob->pIoRnd)
@@ -1766,10 +1767,10 @@ static DECLCALLBACK(int) vdScriptHandlerIoPatternDestroy(PVDSCRIPTARG paScriptAr
 
 static DECLCALLBACK(int) vdScriptHandlerSleep(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
-    int rc = VINF_SUCCESS;
+    RT_NOREF1(pvUser);
     uint64_t cMillies = paScriptArgs[0].u64;
 
-    rc = RTThreadSleep(cMillies);
+    int rc = RTThreadSleep(cMillies);
     return rc;
 }
 
@@ -1998,6 +1999,7 @@ static DECLCALLBACK(int) vdScriptHandlerDumpDiskInfo(PVDSCRIPTARG paScriptArgs, 
 
 static DECLCALLBACK(int) vdScriptHandlerPrintMsg(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
+    RT_NOREF1(pvUser);
     RTPrintf("%s\n", paScriptArgs[0].psz);
     return VINF_SUCCESS;
 }
@@ -2193,6 +2195,7 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
 
 static DECLCALLBACK(int) tstVDIoFileClose(void *pvUser, void *pStorage)
 {
+    RT_NOREF1(pvUser);
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
     RTMemFree(pIoStorage);
@@ -2241,6 +2244,7 @@ static DECLCALLBACK(int) tstVDIoFileDelete(void *pvUser, const char *pcszFilenam
 
 static DECLCALLBACK(int) tstVDIoFileMove(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
 {
+    RT_NOREF1(fMove);
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     bool fFound = false;
@@ -2275,6 +2279,7 @@ static DECLCALLBACK(int) tstVDIoFileMove(void *pvUser, const char *pcszSrc, cons
 
 static DECLCALLBACK(int) tstVDIoFileGetFreeSpace(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
 {
+    RT_NOREF2(pvUser, pcszFilename);
     AssertPtrReturn(pcbFreeSpace, VERR_INVALID_POINTER);
 
     *pcbFreeSpace = ~0ULL; /** @todo: Implement */
@@ -2283,6 +2288,7 @@ static DECLCALLBACK(int) tstVDIoFileGetFreeSpace(void *pvUser, const char *pcszF
 
 static DECLCALLBACK(int) tstVDIoFileGetModificationTime(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
 {
+    RT_NOREF2(pvUser, pcszFilename);
     AssertPtrReturn(pModificationTime, VERR_INVALID_POINTER);
 
     /** @todo: Implement */
@@ -2291,6 +2297,7 @@ static DECLCALLBACK(int) tstVDIoFileGetModificationTime(void *pvUser, const char
 
 static DECLCALLBACK(int) tstVDIoFileGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
 {
+    RT_NOREF1(pvUser);
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
     return VDIoBackendStorageGetSize(pIoStorage->pFile->pIoStorage, pcbSize);
@@ -2298,6 +2305,7 @@ static DECLCALLBACK(int) tstVDIoFileGetSize(void *pvUser, void *pStorage, uint64
 
 static DECLCALLBACK(int) tstVDIoFileSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
 {
+    RT_NOREF1(pvUser);
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
     return VDIoBackendStorageSetSize(pIoStorage->pFile->pIoStorage, cbSize);
@@ -2305,12 +2313,14 @@ static DECLCALLBACK(int) tstVDIoFileSetSize(void *pvUser, void *pStorage, uint64
 
 static DECLCALLBACK(int) tstVDIoFileSetAllocationSize(void *pvUser, void *pStorage, uint64_t cbSize, uint32_t fFlags)
 {
+    RT_NOREF4(pvUser, pStorage, cbSize, fFlags);
     return VERR_NOT_SUPPORTED;
 }
 
 static DECLCALLBACK(int) tstVDIoFileWriteSync(void *pvUser, void *pStorage, uint64_t uOffset,
                                               const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
 {
+    RT_NOREF1(pvUser);
     int rc = VINF_SUCCESS;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
@@ -2335,6 +2345,7 @@ static DECLCALLBACK(int) tstVDIoFileWriteSync(void *pvUser, void *pStorage, uint
 static DECLCALLBACK(int) tstVDIoFileReadSync(void *pvUser, void *pStorage, uint64_t uOffset,
                                              void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
+    RT_NOREF1(pvUser);
     int rc = VINF_SUCCESS;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
@@ -2358,6 +2369,7 @@ static DECLCALLBACK(int) tstVDIoFileReadSync(void *pvUser, void *pStorage, uint6
 
 static DECLCALLBACK(int) tstVDIoFileFlushSync(void *pvUser, void *pStorage)
 {
+    RT_NOREF1(pvUser);
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
     int rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_FLUSH, 0,
                                  0, NULL, NULL, true /* fSync */);
@@ -2370,8 +2382,8 @@ static DECLCALLBACK(int) tstVDIoFileReadAsync(void *pvUser, void *pStorage, uint
                                               size_t cbRead, void *pvCompletion,
                                               void **ppTask)
 {
+    RT_NOREF2(pvUser, ppTask);
     int rc = VINF_SUCCESS;
-    PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
     RTSGBUF SgBuf;
 
@@ -2392,8 +2404,8 @@ static DECLCALLBACK(int) tstVDIoFileWriteAsync(void *pvUser, void *pStorage, uin
                                                size_t cbWrite, void *pvCompletion,
                                                void **ppTask)
 {
+    RT_NOREF2(pvUser, ppTask);
     int rc = VINF_SUCCESS;
-    PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
     RTSGBUF SgBuf;
 
@@ -2412,8 +2424,8 @@ static DECLCALLBACK(int) tstVDIoFileWriteAsync(void *pvUser, void *pStorage, uin
 static DECLCALLBACK(int) tstVDIoFileFlushAsync(void *pvUser, void *pStorage, void *pvCompletion,
                                                void **ppTask)
 {
+    RT_NOREF2(pvUser, ppTask);
     int rc = VINF_SUCCESS;
-    PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
     rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_FLUSH, 0,
@@ -2449,7 +2461,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
                            ? pIoTest->offStart - pIoTest->offEnd
                            : pIoTest->offEnd - pIoTest->offStart;
 
-        pIoTest->u.Rnd.cBlocks = cbRange / cbBlkSize + ((cbRange % cbBlkSize) ? 1 : 0);
+        pIoTest->u.Rnd.cBlocks = (uint32_t)(cbRange / cbBlkSize + (cbRange % cbBlkSize ? 1 : 0));
         pIoTest->u.Rnd.cBlocksLeft = pIoTest->u.Rnd.cBlocks;
         pIoTest->u.Rnd.pbMapAccessed = (uint8_t *)RTMemAllocZ(pIoTest->u.Rnd.cBlocks / 8
                                                               + ((pIoTest->u.Rnd.cBlocks % 8)
@@ -2589,6 +2601,7 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
 
 static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
+    RT_NOREF1(rcReq);
     PVDIOREQ pIoReq = (PVDIOREQ)pvUser1;
     RTSEMEVENT hEventSem = (RTSEMEVENT)pvUser2;
     PVDDISK pDisk = (PVDDISK)pIoReq->pvUser;
