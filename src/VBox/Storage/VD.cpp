@@ -5896,8 +5896,6 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                                 unsigned *pcEntriesUsed)
 {
     int rc = VINF_SUCCESS;
-    PRTDIR pPluginDir = NULL;
-    unsigned cEntries = 0;
 
     LogFlowFunc(("cEntriesAlloc=%u pEntries=%#p pcEntriesUsed=%#p\n", cEntriesAlloc, pEntries, pcEntriesUsed));
     /* Check arguments. */
@@ -5929,7 +5927,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
         pEntries[i].pfnComposeName = g_apBackends[i]->pfnComposeName;
     }
 
-    LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
+    LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, g_cBackends));
     *pcEntriesUsed = g_cBackends;
     return rc;
 }
@@ -5983,7 +5981,6 @@ VBOXDDU_DECL(int) VDFilterInfo(unsigned cEntriesAlloc, PVDFILTERINFO pEntries,
                                unsigned *pcEntriesUsed)
 {
     int rc = VINF_SUCCESS;
-    unsigned cEntries = 0;
 
     LogFlowFunc(("cEntriesAlloc=%u pEntries=%#p pcEntriesUsed=%#p\n", cEntriesAlloc, pEntries, pcEntriesUsed));
     /* Check arguments. */
@@ -6011,7 +6008,7 @@ VBOXDDU_DECL(int) VDFilterInfo(unsigned cEntriesAlloc, PVDFILTERINFO pEntries,
         pEntries[i].paConfigInfo = g_apFilterBackends[i]->paConfigInfo;
     }
 
-    LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
+    LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, g_cFilterBackends));
     *pcEntriesUsed = g_cFilterBackends;
     return rc;
 }
@@ -11159,6 +11156,7 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
  */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
 {
+    RT_NOREF1(pConfig);
     *pszLocation = NULL;
     return VINF_SUCCESS;
 }
@@ -11168,6 +11166,7 @@ DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLoc
  */
 DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
 {
+    RT_NOREF1(pConfig);
     *pszName = NULL;
     return VINF_SUCCESS;
 }
