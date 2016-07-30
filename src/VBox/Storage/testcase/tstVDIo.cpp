@@ -547,17 +547,11 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    uint64_t cbSize = 0;
-    const char *pcszBackend = NULL;
-    const char *pcszImage = NULL;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
     bool fBase = false;
     bool fDynamic = true;
-    bool fIgnoreFlush = false;
-    bool fHonorSame = false;
 
-    pcszDisk = paScriptArgs[0].psz;
+    const char *pcszDisk = paScriptArgs[0].psz;
     if (!RTStrICmp(paScriptArgs[1].psz, "base"))
         fBase = true;
     else if (!RTStrICmp(paScriptArgs[1].psz, "diff"))
@@ -567,7 +561,7 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
         RTPrintf("Invalid image mode '%s' given\n", paScriptArgs[1].psz);
         rc = VERR_INVALID_PARAMETER;
     }
-    pcszImage = paScriptArgs[2].psz;
+    const char *pcszImage = paScriptArgs[2].psz;
     if (!RTStrICmp(paScriptArgs[3].psz, "fixed"))
         fDynamic = false;
     else if (!RTStrICmp(paScriptArgs[3].psz, "dynamic"))
@@ -577,10 +571,10 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
         RTPrintf("Invalid image type '%s' given\n", paScriptArgs[3].psz);
         rc = VERR_INVALID_PARAMETER;
     }
-    pcszBackend = paScriptArgs[4].psz;
-    cbSize = paScriptArgs[5].u64;
-    fIgnoreFlush = paScriptArgs[6].f;
-    fHonorSame = paScriptArgs[7].f;
+    const char *pcszBackend = paScriptArgs[4].psz;
+    uint64_t cbSize = paScriptArgs[5].u64;
+    bool fIgnoreFlush = paScriptArgs[6].f;
+    bool fHonorSame = paScriptArgs[7].f;
 
     if (RT_SUCCESS(rc))
     {
@@ -618,26 +612,17 @@ static DECLCALLBACK(int) vdScriptHandlerOpen(PVDSCRIPTARG paScriptArgs, void *pv
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszBackend = NULL;
-    const char *pcszImage = NULL;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    bool fShareable = false;
-    bool fReadonly = false;
-    bool fAsyncIo  = true;
-    bool fDiscard  = false;
-    bool fIgnoreFlush = false;
-    bool fHonorSame = false;
 
-    pcszDisk = paScriptArgs[0].psz;
-    pcszImage = paScriptArgs[1].psz;
-    pcszBackend = paScriptArgs[2].psz;
-    fShareable = paScriptArgs[3].f;
-    fReadonly = paScriptArgs[4].f;
-    fAsyncIo = paScriptArgs[5].f;
-    fDiscard = paScriptArgs[6].f;
-    fIgnoreFlush = paScriptArgs[7].f;
-    fHonorSame = paScriptArgs[8].f;
+    const char *pcszDisk = paScriptArgs[0].psz;
+    const char *pcszImage = paScriptArgs[1].psz;
+    const char *pcszBackend = paScriptArgs[2].psz;
+    bool fShareable = paScriptArgs[3].f;
+    bool fReadonly = paScriptArgs[4].f;
+    bool fAsyncIo = paScriptArgs[5].f;
+    bool fDiscard = paScriptArgs[6].f;
+    bool fIgnoreFlush = paScriptArgs[7].f;
+    bool fHonorSame = paScriptArgs[8].f;
 
     if (RT_SUCCESS(rc))
     {
@@ -687,7 +672,6 @@ static uint64_t tstVDIoGetSpeedKBs(uint64_t cbIo, uint64_t tsNano)
      * a result.
      */
     uint64_t cbIoTemp = cbIo;
-    uint64_t uSpeedKBs;
     unsigned cRounds = 0;
     while (cbIoTemp < tsNano)
     {
@@ -695,7 +679,7 @@ static uint64_t tstVDIoGetSpeedKBs(uint64_t cbIo, uint64_t tsNano)
         cRounds++;
     }
 
-    uSpeedKBs = ((cbIoTemp / tsNano) * RT_NS_1SEC) / 1024;
+    uint64_t uSpeedKBs = ((cbIoTemp / tsNano) * RT_NS_1SEC) / 1024;
 
     while (cRounds-- > 0)
         uSpeedKBs /= 1000;
@@ -707,22 +691,13 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    bool fAsync = false;
     bool fRandomAcc = false;
-    uint64_t cbIo = 0;
-    uint64_t cbBlkSize = 0;
-    uint64_t offStart = 0;
-    uint64_t offEnd = 0;
-    unsigned cMaxReqs = 0;
-    uint8_t uWriteChance = 0;
-    const char *pcszDisk = NULL;
-    const char *pcszPattern = NULL;
     PVDDISK pDisk = NULL;
     PVDPATTERN pPattern = NULL;
 
-    pcszDisk = paScriptArgs[0].psz;
-    fAsync   = paScriptArgs[1].f;
-    cMaxReqs = paScriptArgs[2].u64;
+    const char *pcszDisk = paScriptArgs[0].psz;
+    bool        fAsync   = paScriptArgs[1].f;
+    unsigned    cMaxReqs = (unsigned)paScriptArgs[2].u64;
     if (!RTStrICmp(paScriptArgs[3].psz, "seq"))
         fRandomAcc = false;
     else if (!RTStrICmp(paScriptArgs[3].psz, "rnd"))
@@ -732,12 +707,12 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
         RTPrintf("Invalid access mode '%s'\n", paScriptArgs[3].psz);
         rc = VERR_INVALID_PARAMETER;
     }
-    cbBlkSize = paScriptArgs[4].u64;
-    offStart = paScriptArgs[5].u64;
-    offEnd = paScriptArgs[6].u64;
-    cbIo = paScriptArgs[7].u64;
-    uWriteChance = (uint8_t)paScriptArgs[8].u64;
-    pcszPattern = paScriptArgs[9].psz;
+    uint64_t    cbBlkSize = paScriptArgs[4].u64;
+    uint64_t    offStart = paScriptArgs[5].u64;
+    uint64_t    offEnd = paScriptArgs[6].u64;
+    uint64_t    cbIo = paScriptArgs[7].u64;
+    uint8_t     uWriteChance = (uint8_t)paScriptArgs[8].u64;
+    const char *pcszPattern = paScriptArgs[9].psz;
 
     if (   RT_SUCCESS(rc)
         && fAsync
@@ -1021,12 +996,9 @@ static DECLCALLBACK(int) vdScriptHandlerFlush(PVDSCRIPTARG paScriptArgs, void *p
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    bool fAsync = false;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-
-    pcszDisk = paScriptArgs[0].psz;
-    fAsync   = paScriptArgs[1].f;
+    const char *pcszDisk = paScriptArgs[0].psz;
+    bool        fAsync   = paScriptArgs[1].f;
 
     if (RT_SUCCESS(rc))
     {
@@ -1068,14 +1040,10 @@ static DECLCALLBACK(int) vdScriptHandlerMerge(PVDSCRIPTARG paScriptArgs, void *p
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    unsigned nImageFrom = 0;
-    unsigned nImageTo = 0;
-
-    pcszDisk   = paScriptArgs[0].psz;
-    nImageFrom = paScriptArgs[1].u32;
-    nImageTo   = paScriptArgs[2].u32;
+    const char *pcszDisk   = paScriptArgs[0].psz;
+    unsigned    nImageFrom = paScriptArgs[1].u32;
+    unsigned    nImageTo   = paScriptArgs[2].u32;
 
     pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
     if (!pDisk)
@@ -1095,12 +1063,9 @@ static DECLCALLBACK(int) vdScriptHandlerCompact(PVDSCRIPTARG paScriptArgs, void 
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    unsigned nImage = 0;
-
-    pcszDisk = paScriptArgs[0].psz;
-    nImage   = paScriptArgs[1].u32;
+    const char *pcszDisk = paScriptArgs[0].psz;
+    unsigned    nImage   = paScriptArgs[1].u32;
 
     pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
     if (!pDisk)
@@ -1120,14 +1085,10 @@ static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDSCRIPTARG paScriptArgs, void 
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    bool fAsync = false;
-    const char *pcszRanges = NULL;
-
-    pcszDisk   = paScriptArgs[0].psz;
-    fAsync     = paScriptArgs[1].f;
-    pcszRanges = paScriptArgs[2].psz;
+    const char *pcszDisk   = paScriptArgs[0].psz;
+    bool        fAsync     = paScriptArgs[1].f;
+    const char *pcszRanges = paScriptArgs[2].psz;
 
     pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
     if (!pDisk)
@@ -1337,27 +1298,17 @@ static DECLCALLBACK(int) vdScriptHandlerCopy(PVDSCRIPTARG paScriptArgs, void *pv
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszDiskFrom = NULL;
-    const char *pcszDiskTo = NULL;
     PVDDISK pDiskFrom = NULL;
     PVDDISK pDiskTo = NULL;
-    unsigned nImageFrom = 0;
-    const char *pcszBackend = NULL;
-    const char *pcszFilename = NULL;
-    bool fMoveByRename = false;
-    uint64_t cbSize = 0;
-    unsigned nImageFromSame = VD_IMAGE_CONTENT_UNKNOWN;
-    unsigned nImageToSame = VD_IMAGE_CONTENT_UNKNOWN;
-
-    pcszDiskFrom   = paScriptArgs[0].psz;
-    pcszDiskTo     = paScriptArgs[1].psz;
-    nImageFrom     = paScriptArgs[2].u32;
-    pcszBackend    = paScriptArgs[3].psz;
-    pcszFilename   = paScriptArgs[4].psz;
-    fMoveByRename  = paScriptArgs[5].f;
-    cbSize         = paScriptArgs[6].u64;
-    nImageFromSame = paScriptArgs[7].u32;
-    nImageToSame   = paScriptArgs[8].u32;
+    const char *pcszDiskFrom   = paScriptArgs[0].psz;
+    const char *pcszDiskTo     = paScriptArgs[1].psz;
+    unsigned    nImageFrom     = paScriptArgs[2].u32;
+    const char *pcszBackend    = paScriptArgs[3].psz;
+    const char *pcszFilename   = paScriptArgs[4].psz;
+    bool        fMoveByRename  = paScriptArgs[5].f;
+    uint64_t    cbSize         = paScriptArgs[6].u64;
+    unsigned    nImageFromSame = paScriptArgs[7].u32;
+    unsigned    nImageToSame   = paScriptArgs[8].u32;
 
     pDiskFrom = tstVDIoGetDiskByName(pGlob, pcszDiskFrom);
     pDiskTo = tstVDIoGetDiskByName(pGlob, pcszDiskTo);
@@ -1426,12 +1377,9 @@ static DECLCALLBACK(int) vdScriptHandlerPrintFileSize(PVDSCRIPTARG paScriptArgs,
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    unsigned nImage = 0;
-
-    pcszDisk = paScriptArgs[0].psz;
-    nImage   = paScriptArgs[1].u32;
+    const char *pcszDisk = paScriptArgs[0].psz;
+    uint32_t nImage   = paScriptArgs[1].u32;
 
     pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
     if (pDisk)
@@ -1448,12 +1396,9 @@ static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, v
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    const char *pcszIoLog = NULL;
-
-    pcszDisk  = paScriptArgs[0].psz;
-    pcszIoLog = paScriptArgs[1].psz;
+    const char *pcszDisk  = paScriptArgs[0].psz;
+    const char *pcszIoLog = paScriptArgs[1].psz;
 
     pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
     if (pDisk)
@@ -1594,20 +1539,16 @@ static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, v
 
     return rc;
 }
-#endif
+#endif /* VBOX_TSTVDIO_WITH_LOG_REPLAY */
 
 
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    size_t cbPattern = 0;
-    uint64_t uSeed = 0;
-    const char *pcszSeeder = NULL;
-
-    cbPattern  = paScriptArgs[0].u64;
-    pcszSeeder = paScriptArgs[1].psz;
-    uSeed      = paScriptArgs[2].u64;
+    size_t cbPattern = (size_t)paScriptArgs[0].u64;
+    const char *pcszSeeder = paScriptArgs[1].psz;
+    uint64_t  uSeed = paScriptArgs[2].u64;
 
     if (pGlob->pIoRnd)
     {
@@ -1660,13 +1601,9 @@ static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromNumber(PVDSCRIPTARG p
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    size_t cbPattern = 0;
-    const char *pcszName = NULL;
-    uint64_t u64Pattern = 0;
-
-    pcszName   = paScriptArgs[0].psz;
-    cbPattern  = paScriptArgs[1].u64;
-    u64Pattern = paScriptArgs[2].u64;
+    const char *pcszName = paScriptArgs[0].psz;
+    size_t cbPattern  = (size_t)paScriptArgs[1].u64;
+    uint64_t u64Pattern = paScriptArgs[2].u64;
 
     PVDPATTERN pPattern = tstVDIoGetPatternByName(pGlob, pcszName);
     if (!pPattern)
@@ -1700,11 +1637,8 @@ static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromFile(PVDSCRIPTARG paS
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszName = NULL;
-    const char *pcszFile = NULL;
-
-    pcszName = paScriptArgs[0].psz;
-    pcszFile = paScriptArgs[1].psz;
+    const char *pcszName = paScriptArgs[0].psz;
+    const char *pcszFile = paScriptArgs[1].psz;
 
     PVDPATTERN pPattern = tstVDIoGetPatternByName(pGlob, pcszName);
     if (!pPattern)
@@ -1747,9 +1681,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoPatternDestroy(PVDSCRIPTARG paScriptAr
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszName = NULL;
-
-    pcszName = paScriptArgs[0].psz;
+    const char *pcszName = paScriptArgs[0].psz;
 
     PVDPATTERN pPattern = tstVDIoGetPatternByName(pGlob, pcszName);
     if (pPattern)
@@ -1778,11 +1710,8 @@ static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDSCRIPTARG paScriptArgs, void
 {
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
-    const char *pcszFile = NULL;
-    const char *pcszPathToDump = NULL;
-
-    pcszFile       = paScriptArgs[0].psz;
-    pcszPathToDump = paScriptArgs[1].psz;
+    const char *pcszFile       = paScriptArgs[0].psz;
+    const char *pcszPathToDump = paScriptArgs[1].psz;
 
     /* Check for the file. */
     PVDFILE pIt = NULL;
