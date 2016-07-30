@@ -233,6 +233,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
                           PFNVDPROGRESS pfnProgress, void *pvUser,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
+    RT_NOREF1(pszComment);
     int rc;
     RTFOFF cbFree = 0;
     int32_t fOpen;
@@ -306,6 +307,7 @@ out:
 static DECLCALLBACK(int) rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                          PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
+    RT_NOREF1(pVDIfsDisk);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;
@@ -332,50 +334,52 @@ static DECLCALLBACK(int) rawCheckIfValid(const char *pszFilename, PVDINTERFACE p
                                                       false /* fCreate */),
                            &pStorage);
     if (RT_SUCCESS(rc))
+    {
         rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
 
-    /* Try to guess the image type based on the extension. */
-    if (   RT_SUCCESS(rc)
-        && pszSuffix)
-    {
-        if (   !RTStrICmp(pszSuffix, ".iso")
-            || !RTStrICmp(pszSuffix, ".cdr")) /* DVD images. */
+        /* Try to guess the image type based on the extension. */
+        if (   RT_SUCCESS(rc)
+            && pszSuffix)
         {
-            /* Note that there are ISO images smaller than 1 MB; it is impossible to distinguish
-             * between raw floppy and CD images based on their size (and cannot be reliably done
-             * based on contents, either).
-             */
-            if (cbFile % 2048)
-                rc = VERR_VD_RAW_SIZE_MODULO_2048;
-            else if (cbFile <= 32768)
-                rc = VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL;
-            else
+            if (   !RTStrICmp(pszSuffix, ".iso")
+                || !RTStrICmp(pszSuffix, ".cdr")) /* DVD images. */
             {
-                *penmType = VDTYPE_DVD;
-                rc = VINF_SUCCESS;
+                /* Note that there are ISO images smaller than 1 MB; it is impossible to distinguish
+                 * between raw floppy and CD images based on their size (and cannot be reliably done
+                 * based on contents, either).
+                 */
+                if (cbFile % 2048)
+                    rc = VERR_VD_RAW_SIZE_MODULO_2048;
+                else if (cbFile <= 32768)
+                    rc = VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL;
+                else
+                {
+                    *penmType = VDTYPE_DVD;
+                    rc = VINF_SUCCESS;
+                }
             }
-        }
-        else if (   !RTStrICmp(pszSuffix, ".img")
-                 || !RTStrICmp(pszSuffix, ".ima")
-                 || !RTStrICmp(pszSuffix, ".dsk")
-                 || !RTStrICmp(pszSuffix, ".flp")
-                 || !RTStrICmp(pszSuffix, ".vfd")) /* Floppy images */
-        {
-            if (cbFile % 512)
-                rc = VERR_VD_RAW_SIZE_MODULO_512;
-            else if (cbFile > RAW_MAX_FLOPPY_IMG_SIZE)
-                rc = VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG;
-            else
+            else if (   !RTStrICmp(pszSuffix, ".img")
+                     || !RTStrICmp(pszSuffix, ".ima")
+                     || !RTStrICmp(pszSuffix, ".dsk")
+                     || !RTStrICmp(pszSuffix, ".flp")
+                     || !RTStrICmp(pszSuffix, ".vfd")) /* Floppy images */
             {
-                *penmType = VDTYPE_FLOPPY;
-                rc = VINF_SUCCESS;
+                if (cbFile % 512)
+                    rc = VERR_VD_RAW_SIZE_MODULO_512;
+                else if (cbFile > RAW_MAX_FLOPPY_IMG_SIZE)
+                    rc = VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG;
+                else
+                {
+                    *penmType = VDTYPE_FLOPPY;
+                    rc = VINF_SUCCESS;
+                }
             }
+            else
+                rc = VERR_VD_RAW_INVALID_HEADER;
         }
         else
             rc = VERR_VD_RAW_INVALID_HEADER;
     }
-    else
-        rc = VERR_VD_RAW_INVALID_HEADER;
 
     if (pStorage)
         vdIfIoIntFileClose(pIfIo, pStorage);
@@ -450,6 +454,7 @@ static DECLCALLBACK(int) rawCreate(const char *pszFilename, uint64_t cbSize,
                                    PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
                                    void **ppBackendData)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%u ppBackendData=%#p",
                  pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
     int rc;
@@ -618,6 +623,7 @@ static DECLCALLBACK(int) rawWrite(void *pBackendData, uint64_t uOffset, size_t c
                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                   size_t *pcbPostRead, unsigned fWrite)
 {
+    RT_NOREF1(fWrite);
     int rc = VINF_SUCCESS;
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
@@ -906,6 +912,7 @@ out:
 static DECLCALLBACK(int) rawGetComment(void *pBackendData, char *pszComment,
                                        size_t cbComment)
 {
+    RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -924,6 +931,7 @@ static DECLCALLBACK(int) rawGetComment(void *pBackendData, char *pszComment,
 /** @copydoc VBOXHDDBACKEND::pfnSetComment */
 static DECLCALLBACK(int) rawSetComment(void *pBackendData, const char *pszComment)
 {
+    RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -947,6 +955,7 @@ static DECLCALLBACK(int) rawSetComment(void *pBackendData, const char *pszCommen
 /** @copydoc VBOXHDDBACKEND::pfnGetUuid */
 static DECLCALLBACK(int) rawGetUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -965,6 +974,7 @@ static DECLCALLBACK(int) rawGetUuid(void *pBackendData, PRTUUID pUuid)
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
 static DECLCALLBACK(int) rawSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -989,6 +999,7 @@ static DECLCALLBACK(int) rawSetUuid(void *pBackendData, PCRTUUID pUuid)
 /** @copydoc VBOXHDDBACKEND::pfnGetModificationUuid */
 static DECLCALLBACK(int) rawGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -1007,6 +1018,7 @@ static DECLCALLBACK(int) rawGetModificationUuid(void *pBackendData, PRTUUID pUui
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
 static DECLCALLBACK(int) rawSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -1030,6 +1042,7 @@ static DECLCALLBACK(int) rawSetModificationUuid(void *pBackendData, PCRTUUID pUu
 /** @copydoc VBOXHDDBACKEND::pfnGetParentUuid */
 static DECLCALLBACK(int) rawGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -1048,6 +1061,7 @@ static DECLCALLBACK(int) rawGetParentUuid(void *pBackendData, PRTUUID pUuid)
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
 static DECLCALLBACK(int) rawSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -1071,6 +1085,7 @@ static DECLCALLBACK(int) rawSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 /** @copydoc VBOXHDDBACKEND::pfnGetParentModificationUuid */
 static DECLCALLBACK(int) rawGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
@@ -1089,6 +1104,7 @@ static DECLCALLBACK(int) rawGetParentModificationUuid(void *pBackendData, PRTUUI
 /** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
 static DECLCALLBACK(int) rawSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
+    RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
     int rc;
