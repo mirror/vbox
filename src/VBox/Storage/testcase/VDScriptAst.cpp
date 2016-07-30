@@ -346,7 +346,7 @@ DECLHIDDEN(PVDSCRIPTASTCORE) vdScriptAstNodeAlloc(VDSCRIPTASTCLASS enmClass)
     return pAstNode;
 }
 
-DECLHIDDEN(PVDSCRIPTASTIDE) vdScriptAstNodeIdeAlloc(unsigned cchIde)
+DECLHIDDEN(PVDSCRIPTASTIDE) vdScriptAstNodeIdeAlloc(size_t cchIde)
 {
     PVDSCRIPTASTIDE pAstNode = (PVDSCRIPTASTIDE)RTMemAllocZ(RT_OFFSETOF(VDSCRIPTASTIDE, aszIde[cchIde + 1]));
     if (pAstNode)

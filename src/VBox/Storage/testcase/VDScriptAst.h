@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox HDD container test utility - scripting engine, AST related structures.
  */
 
@@ -14,8 +13,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef _VDScriptAst_h__
-#define _VDScriptAst_h__
+
+#ifndef ___VDScriptAst_h___
+#define ___VDScriptAst_h___
 
 #include <iprt/list.h>
 
@@ -576,6 +576,7 @@ DECLHIDDEN(PVDSCRIPTASTCORE) vdScriptAstNodeAlloc(VDSCRIPTASTCLASS enmClass);
  *          NULL if out of memory.
  * @param   cchIde      Number of characters which can be stored in the node.
  */
-DECLHIDDEN(PVDSCRIPTASTIDE) vdScriptAstNodeIdeAlloc(unsigned cchIde);
+DECLHIDDEN(PVDSCRIPTASTIDE) vdScriptAstNodeIdeAlloc(size_t cchIde);
 
-#endif /* _VDScriptAst_h__ */
+#endif
+

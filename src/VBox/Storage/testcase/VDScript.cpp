@@ -467,7 +467,7 @@ DECLINLINE(void) vdScriptTokenizerSkipWhitespace(PVDTOKENIZER pTokenizer)
 static void vdScriptTokenizerGetIdeOrKeyword(PVDTOKENIZER pTokenizer, PVDSCRIPTTOKEN pToken)
 {
     char ch;
-    size_t cchIde = 0;
+    unsigned cchIde = 0;
     bool fIsKeyword = false;
     const char *pszIde = pTokenizer->pszInput;
 
@@ -513,7 +513,6 @@ static void vdScriptTokenizerGetIdeOrKeyword(PVDTOKENIZER pTokenizer, PVDSCRIPTT
  */
 static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTOKEN pToken)
 {
-    unsigned uBase = 10;
     char *pszNext = NULL;
 
     Assert(RT_C_IS_DIGIT(vdScriptTokenizerGetCh(pTokenizer)));
@@ -521,7 +520,7 @@ static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTO
     /* Let RTStrToUInt64Ex() do all the work, looks C compliant :). */
     pToken->enmClass = VDTOKENCLASS_NUMCONST;
     int rc = RTStrToUInt64Ex(pTokenizer->pszInput, &pszNext, 0, &pToken->Class.NumConst.u64);
-    Assert(RT_SUCCESS(rc) || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES);
+    Assert(RT_SUCCESS(rc) || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES); NOREF(rc);
     /** @todo: Handle number to big, throw a warning */
 
     unsigned cchNumber = pszNext - pTokenizer->pszInput;
@@ -562,7 +561,7 @@ static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTO
  */
 static void vdScriptTokenizerGetStringConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTOKEN pToken)
 {
-    size_t cchStr = 0;
+    unsigned cchStr = 0;
 
     Assert(vdScriptTokenizerGetCh(pTokenizer) == '\"');
     vdScriptTokenizerSkipCh(pTokenizer); /* Skip " */
@@ -626,7 +625,7 @@ static void vdScriptTokenizerGetOperatorOrPunctuator(PVDTOKENIZER pTokenizer, PV
             AssertRC(rc);
 
             pToken->enmClass = VDTOKENCLASS_OPERATORS;
-            pToken->Pos.iChEnd += g_aScriptOps[i].cchOp;
+            pToken->Pos.iChEnd += (unsigned)g_aScriptOps[i].cchOp;
 
             /** @todo: Make this prettier. */
             for (unsigned j = 0; j < g_aScriptOps[i].cchOp; j++)
@@ -642,7 +641,7 @@ static void vdScriptTokenizerGetOperatorOrPunctuator(PVDTOKENIZER pTokenizer, PV
         {
             if (!RTStrNCmp(g_aScriptPunctuators[i].pszOp, pTokenizer->pszInput, g_aScriptPunctuators[i].cchOp))
             {
-                pToken->Pos.iChEnd += g_aScriptPunctuators[i].cchOp;
+                pToken->Pos.iChEnd += (unsigned)g_aScriptPunctuators[i].cchOp;
                 pToken->enmClass = VDTOKENCLASS_PUNCTUATOR;
                 pToken->Class.Punctuator.chPunctuator = *g_aScriptPunctuators[i].pszOp;
 
@@ -886,9 +885,11 @@ static bool vdScriptTokenizerSkipIfIsOperatorEqual(PVDTOKENIZER pTokenizer, cons
  */
 static int vdScriptParserError(PVDSCRIPTCTXINT pThis, int rc, RT_SRC_POS_DECL, const char *pszFmt, ...)
 {
-    NOREF(pThis);
-    NOREF(pszFmt);
-    RTPrintf(pszFmt);
+    RT_NOREF1(pThis); RT_SRC_POS_NOREF();
+    va_list va;
+    va_start(va, pszFmt);
+    RTPrintfV(pszFmt, va);
+    va_end(va);
     return rc;
 }
 
@@ -917,7 +918,7 @@ static int vdScriptParseIde(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTIDE *ppAstNodeIde
         {
             rc = RTStrCopyEx(pAstNodeIde->aszIde, pToken->Class.Ide.cchIde + 1, pToken->Class.Ide.pszIde, pToken->Class.Ide.cchIde);
             AssertRC(rc);
-            pAstNodeIde->cchIde = pToken->Class.Ide.cchIde;
+            pAstNodeIde->cchIde = (unsigned)pToken->Class.Ide.cchIde;
 
             *ppAstNodeIde = pAstNodeIde;
             vdScriptTokenizerConsume(pThis->pTokenizer);
@@ -1425,7 +1426,6 @@ static int vdScriptParseTypeSpecifier(PVDSCRIPTCTXINT pThis, )
 static int vdScriptParseCastExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
 {
     int rc = VINF_SUCCESS;
-    PVDSCRIPTASTEXPR pExpr = NULL;
 
     LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
@@ -2513,6 +2513,7 @@ static int vdScriptParseFor(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTFOR pAstNodeFor)
 static int vdScriptParseDeclaration(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTDECL *ppAstNodeDecl)
 {
     int rc = VERR_NOT_IMPLEMENTED;
+    RT_NOREF2(pThis, ppAstNodeDecl);
     return rc;
 }
 
