@@ -467,6 +467,10 @@ DECLINLINE(void) setImageBlocksAllocated(PVDIHEADER ph, unsigned cBlocks)
     AssertFailed();
 }
 
+#ifdef _MSC_VER
+# pragma warning(disable:4366) /* (harmless "misalignment") */
+#endif
+
 DECLINLINE(PRTUUID) getImageCreationUUID(PVDIHEADER ph)
 {
     switch (GET_MAJOR_HEADER_VERSION(ph))
@@ -509,6 +513,10 @@ DECLINLINE(PRTUUID) getImageParentModificationUUID(PVDIHEADER ph)
     AssertFailed();
     return NULL;
 }
+
+#ifdef _MSC_VER
+# pragma warning(default:4366)
+#endif
 
 /**
  * Image structure

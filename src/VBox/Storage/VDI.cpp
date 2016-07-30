@@ -372,10 +372,16 @@ static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
     pHeader->u.v1plus.offData = RT_ALIGN_32(pHeader->u.v1plus.offBlocks + (pHeader->u.v1plus.cBlocks * sizeof(VDIIMAGEBLOCKPOINTER)), cbDataAlign);
 
     /* Init uuids. */
+#ifdef _MSC_VER
+# pragma warning(disable:4366) /* (harmless "misalignment") */
+#endif
     RTUuidCreate(&pHeader->u.v1plus.uuidCreate);
     RTUuidClear(&pHeader->u.v1plus.uuidModify);
     RTUuidClear(&pHeader->u.v1plus.uuidLinkage);
     RTUuidClear(&pHeader->u.v1plus.uuidParentModify);
+#ifdef _MSC_VER
+# pragma warning(default:4366)
+#endif
 
     /* Mark LCHS geometry not-calculated. */
     pHeader->u.v1plus.LCHSGeometry.cCylinders = 0;
