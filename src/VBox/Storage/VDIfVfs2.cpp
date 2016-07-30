@@ -166,6 +166,7 @@ static DECLCALLBACK(int) notImpl_FlushSync(void *pvUser, void *pvStorage)
 static DECLCALLBACK(int) vdIfFromVfs_Open(void *pvUser, const char *pszLocation, uint32_t fOpen,
                                           PFNVDCOMPLETED pfnCompleted, void **ppInt)
 {
+    RT_NOREF1(pszLocation);
     PVDIFFROMVFS pThis = (PVDIFFROMVFS)pvUser;
 
     /*
@@ -200,7 +201,7 @@ static DECLCALLBACK(int) vdIfFromVfs_Close(void *pvUser, void *pvStorage)
     AssertReturn(pThis->hVfsIos == (RTVFSIOSTREAM)pvStorage, VERR_INVALID_HANDLE);
     AssertReturn(pThis->fOpened, VERR_INVALID_HANDLE);
 
-    uint32_t cRefs = RTVfsIoStrmRelease(pThis->hVfsIos);
+    RTVfsIoStrmRelease(pThis->hVfsIos);
     pThis->hVfsIos = NIL_RTVFSIOSTREAM;
 
     return VINF_SUCCESS;

@@ -47,6 +47,7 @@ unsigned g_cErrors = 0;
 
 static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
+    RT_NOREF1(pvUser);
     g_cErrors++;
     RTPrintf("tstVD: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
@@ -55,6 +56,7 @@ static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, cons
 
 static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
+    RT_NOREF1(pvUser);
     RTPrintf("tstVD: ");
     RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
@@ -119,9 +121,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
 static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
 {
     int rc;
-    PVBOXHDD pVD = NULL;
-    VDGEOMETRY       PCHS = { 0, 0, 0 };
-    VDGEOMETRY       LCHS = { 0, 0, 0 };
+    PVBOXHDD         pVD = NULL;
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR VDIfError;
 
@@ -403,6 +403,8 @@ static void generateRandomSegments(PRNDCTX pCtx, PSEGMENT pSegment, uint32_t nSe
 
 static void mergeSegments(PSEGMENT pBaseSegment, PSEGMENT pDiffSegment, PSEGMENT pMergeSegment, uint32_t u32MaxLength)
 {
+    RT_NOREF1(u32MaxLength);
+
     while (pBaseSegment->u32Length > 0 || pDiffSegment->u32Length > 0)
     {
         if (pBaseSegment->u64Offset < pDiffSegment->u64Offset)

@@ -64,6 +64,7 @@ typedef VDIFVFSIOSFILE *PVDIFVFSIOSFILE;
 static DECLCALLBACK(int) vdIfVfsIos_Close(void *pvThis)
 {
     /* We don't close anything. */
+    RT_NOREF1(pvThis);
     return VINF_SUCCESS;
 }
 

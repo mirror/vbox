@@ -199,6 +199,7 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
 static DECLCALLBACK(int) vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
 {
     PVDIOBACKENDMEM pIoBackend = (PVDIOBACKENDMEM)pvUser;
+    RT_NOREF1(hThread);
 
     while (pIoBackend->fRunning)
     {

@@ -110,8 +110,8 @@ static PVDINTERFACE pVDIfs;
 
 static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
-    NOREF(pvUser);
-    NOREF(rc);
+    RT_NOREF2(pvUser, rc);
+    RT_SRC_POS_NOREF();
     RTMsgErrorV(pszFormat, va);
 }
 
@@ -476,7 +476,8 @@ typedef struct FILEIOSTATE
 static DECLCALLBACK(int) convInOpen(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
                                     void **ppStorage)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pvUser, pszLocation);
+
     /* Validate input. */
     AssertPtrReturn(ppStorage, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
@@ -669,7 +670,8 @@ static DECLCALLBACK(int) convInFlush(void *pvUser, void *pStorage)
 static DECLCALLBACK(int) convOutOpen(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
                                      void **ppStorage)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pvUser, pszLocation);
+
     /* Validate input. */
     AssertPtrReturn(ppStorage, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
@@ -1437,7 +1439,8 @@ static int handleCreateCache(HandlerArg *a)
 
 static DECLCALLBACK(bool) vdIfCfgCreateBaseAreKeysValid(void *pvUser, const char *pszzValid)
 {
-    return VINF_SUCCESS; /** @todo: Implement. */
+    RT_NOREF2(pvUser, pszzValid);
+    return VINF_SUCCESS; /** @todo Implement. */
 }
 
 static DECLCALLBACK(int) vdIfCfgCreateBaseQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
@@ -1577,7 +1580,6 @@ static int handleCreateBase(HandlerArg *a)
 static int handleRepair(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
     const char *pszFilename = NULL;
     char *pszBackend = NULL;
     const char *pszFormat  = NULL;
@@ -1646,7 +1648,6 @@ static int handleClearComment(HandlerArg *a)
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = NULL;
     const char *pszFilename = NULL;
-    bool fDryRun = false;
 
     /* Parse the command line. */
     static const RTGETOPTDEF s_aOptions[] =
@@ -1705,7 +1706,6 @@ static int handleClearResize(HandlerArg *a)
     PVBOXHDD pDisk = NULL;
     const char *pszFilename = NULL;
     uint64_t    cbNew = 0;
-    bool fDryRun = false;
     VDGEOMETRY LCHSGeometry, PCHSGeometry;
 
     memset(&LCHSGeometry, 0, sizeof(LCHSGeometry));

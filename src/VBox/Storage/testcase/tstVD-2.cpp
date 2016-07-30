@@ -45,6 +45,7 @@ static struct KeyValuePair {
 
 static DECLCALLBACK(bool) tstAreKeysValid(void *pvUser, const char *pszzValid)
 {
+    RT_NOREF2(pvUser, pszzValid);
     return true;
 }
 
@@ -58,6 +59,7 @@ static const char *tstGetValueByKey(const char *pszKey)
 
 static DECLCALLBACK(int) tstQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
 {
+    RT_NOREF1(pvUser);
     const char *pszValue = tstGetValueByKey(pszName);
     if (!pszValue)
         return VERR_CFGM_VALUE_NOT_FOUND;
@@ -67,6 +69,7 @@ static DECLCALLBACK(int) tstQuerySize(void *pvUser, const char *pszName, size_t 
 
 static DECLCALLBACK(int) tstQuery(void *pvUser, const char *pszName, char *pszValue, size_t cchValue)
 {
+    RT_NOREF1(pvUser);
     const char *pszTmp = tstGetValueByKey(pszName);
     if (!pszValue)
         return VERR_CFGM_VALUE_NOT_FOUND;

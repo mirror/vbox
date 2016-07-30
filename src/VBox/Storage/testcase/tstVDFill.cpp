@@ -41,6 +41,7 @@ RTRAND   g_hRand;
 
 static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
+    RT_NOREF1(pvUser);
     g_cErrors++;
     RTPrintf("tstVDFill: Error %Rrc at %s:%u (%s): ", rc, RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
@@ -49,6 +50,7 @@ static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, cons
 
 static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
+    RT_NOREF1(pvUser);
     RTPrintf("tstVDFill: ");
     RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
