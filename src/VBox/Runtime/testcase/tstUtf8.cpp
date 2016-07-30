@@ -1037,11 +1037,12 @@ static void testStrStr(RTTEST hTest)
 #define CHECK(expr, expect) \
     do { \
         const char *pszRet = expr; \
-        if (   (pszRet != NULL && (expect) == NULL) \
-            || (pszRet == NULL && (expect) != NULL) \
-            || strcmp(pszRet, (expect)) \
+        const char *pszExpect = (expect); \
+        if (   (pszRet != NULL && pszExpect == NULL) \
+            || (pszRet == NULL && pszExpect != NULL) \
+            || strcmp(pszRet, pszExpect) \
             ) \
-            RTTestFailed(hTest, "%d: %#x -> %s expected %s", __LINE__, #expr, pszRet, (expect)); \
+            RTTestFailed(hTest, "%d: %#x -> %s expected %s", __LINE__, #expr, pszRet, pszExpect); \
     } while (0)
 
 

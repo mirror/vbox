@@ -70,7 +70,7 @@ void PrintResult(uint64_t u64Ticks, uint64_t u64MaxTicks, uint64_t u64MinTicks, 
 # define ITERATE(preexpr, expr, postexpr, cIterations) \
     AssertCompile(((cIterations) % 8) == 0); \
     /* Min and max value. */ \
-    for (i = 0, u64MinTS = ~0, u64MaxTS = 0; i < (cIterations); i++) \
+    for (i = 0, u64MinTS = UINT64_MAX, u64MaxTS = 0; i < (cIterations); i++) \
     { \
         { preexpr } \
         uint64_t u64StartTS = ASMReadTSC(); \
@@ -123,7 +123,7 @@ void PrintResult(uint64_t cNs, uint64_t cNsMax, uint64_t cNsMin, unsigned cTimes
 }
 
 # define ITERATE(preexpr, expr, postexpr, cIterations) \
-    for (i = 0, u64TotalTS = 0, u64MinTS = ~0, u64MaxTS = 0; i < (cIterations); i++) \
+    for (i = 0, u64TotalTS = 0, u64MinTS = UINT64_MAX, u64MaxTS = 0; i < (cIterations); i++) \
     { \
         { preexpr } \
         uint64_t u64StartTS = RTTimeNanoTS(); \
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     uint64_t    u64TotalTS;
     uint64_t    u64MinTS;
     uint64_t    u64MaxTS;
-    unsigned    i;
+    uint32_t    i;
 
     RTEXITCODE rcExit = RTTestInitExAndCreate(argc, &argv, argc == 2 ? RTR3INIT_FLAGS_SUPLIB : 0, "tstRTPrf", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -160,53 +160,53 @@ int main(int argc, char **argv)
     /*
      * RTTimeNanoTS, RTTimeProgramNanoTS, RTTimeMilliTS, and RTTimeProgramMilliTS.
      */
-    ITERATE(RT_NOTHING, RTTimeNanoTS();, RT_NOTHING, _1M * 32);
+    ITERATE(RT_NOTHING, RTTimeNanoTS();, RT_NOTHING, _32M);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeNanoTS");
 
-    ITERATE(RT_NOTHING, RTTimeProgramNanoTS();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTTimeProgramNanoTS();, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeProgramNanoTS");
 
-    ITERATE(RT_NOTHING, RTTimeMilliTS();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTTimeMilliTS();, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeMilliTS");
 
-    ITERATE(RT_NOTHING, RTTimeProgramMilliTS();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTTimeProgramMilliTS();, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeProgramMilliTS");
 
     /*
      * RTTimeNow
      */
     RTTIMESPEC Time;
-    ITERATE(RT_NOTHING, RTTimeNow(&Time);, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTTimeNow(&Time);, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeNow");
 
     /*
      * RTLogDefaultInstance()
      */
-    ITERATE(RT_NOTHING, RTLogDefaultInstance();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTLogDefaultInstance();, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTLogDefaultInstance");
 
     /*
      * RTThreadSelf and RTThreadNativeSelf
      */
-    ITERATE(RT_NOTHING, RTThreadSelf();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTThreadSelf();, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTThreadSelf");
 
-    ITERATE(RT_NOTHING, RTThreadNativeSelf();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTThreadNativeSelf();, RT_NOTHING, UINT32_C(1000000));
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTThreadNativeSelf");
 
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     /*
      * Registers vs stack.
      */
-    ITERATE(RT_NOTHING, tstRTPRfARegisterAccess();, RT_NOTHING, 1000);
+    ITERATE(RT_NOTHING, tstRTPRfARegisterAccess();, RT_NOTHING, UINT32_C(1000));
     uint64_t const cRegTotal = u64TotalTS;
     //PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "Register only algorithm");
 
-    ITERATE(RT_NOTHING, tstRTPRfAMemoryAccess();, RT_NOTHING, 1000);
+    ITERATE(RT_NOTHING, tstRTPRfAMemoryAccess();, RT_NOTHING, UINT32_C(1000));
     uint64_t const cMemTotal = u64TotalTS;
     //PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "Memory only algorithm");
 
-    ITERATE(RT_NOTHING, tstRTPRfAMemoryUnalignedAccess();, RT_NOTHING, 1000);
+    ITERATE(RT_NOTHING, tstRTPRfAMemoryUnalignedAccess();, RT_NOTHING, UINT32_C(1000));
     uint64_t const cMemUnalignedTotal = u64TotalTS;
     //PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "Memory only algorithm");
 

@@ -51,7 +51,7 @@ static DECLCALLBACK(int) tstSemPingPongThread(RTTHREAD hThread, void *pvPP)
 {
     RT_NOREF_PV(hThread);
 
-    int rc;
+    int rc = VINF_SUCCESS; /* (MSC powers of deduction are rather weak. sigh) */
     PRTPINGPONG pPP = (PRTPINGPONG)pvPP;
     for (uint32_t i = 0; i < TSTSEMPINGPONG_ITERATIONS; i++)
     {
