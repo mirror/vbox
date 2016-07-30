@@ -56,6 +56,7 @@ extern "C" DECLEXPORT(int) DisasmTest1(void);
  */
 static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
+    RT_NOREF4(hLdrMod, pszModule, uSymbol, pvUser);
     if (     !strcmp(pszSymbol, "RTAssertMsg1Weak")     || !strcmp(pszSymbol, "_RTAssertMsg1Weak"))
         *pValue = (uintptr_t)RTAssertMsg1Weak;
     else if (!strcmp(pszSymbol, "RTAssertMsg2Weak")     || !strcmp(pszSymbol, "_RTAssertMsg2Weak"))

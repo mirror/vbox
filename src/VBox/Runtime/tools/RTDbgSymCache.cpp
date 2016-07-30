@@ -219,7 +219,6 @@ static int rtDbgSymCacheAddCreateUuidMapping(const char *pszCacheFile, PRTUUID p
     /*
      * Create the directories in the path.
      */
-    char chSaved = RTPATH_SLASH;
     for (unsigned i = 0; i < 6; i++, cch += 5)
     {
         Assert(szMapPath[cch] == '-');
@@ -575,6 +574,7 @@ static int rtDbgSymCacheAddImageFile(const char *pszPath, const char *pszExtraSu
 static int rtDbgSymCacheAddDebugMachO(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg)
 {
     /* This shouldn't happen, figure out what to do if it does. */
+    RT_NOREF_PV(pCfg);
     return RTMsgErrorRc(VERR_NOT_IMPLEMENTED,
                         "'%s' is an OS X image file, did you point me to a file inside a .dSYM or .sym file?",
                         pszPath);
@@ -591,6 +591,7 @@ static int rtDbgSymCacheAddDebugMachO(const char *pszPath, PCRTDBGSYMCACHEADDCFG
  */
 static int rtDbgSymCacheAddDebugPdb(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg, RTFILE hFile)
 {
+    RT_NOREF2(pCfg, hFile);
     return RTMsgErrorRc(VERR_NOT_IMPLEMENTED, "PDB support not implemented: '%s'", pszPath);
 }
 
@@ -1108,6 +1109,7 @@ static int rtDbgSymCacheAddDir(const char *pszPath, PCRTDBGSYMCACHEADDCFG pCfg)
 static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *pszCache, bool fRecursive,
                                             bool fOverwriteOnConflict)
 {
+    RT_NOREF1(fOverwriteOnConflict);
     RTDBGSYMCACHEADDCFG Cfg;
     Cfg.fRecursive      = fRecursive;
     Cfg.pszCache        = pszCache;
@@ -1195,7 +1197,7 @@ static RTEXITCODE rtDbgSymCacheCmdAdd(const char *pszArg0, int cArgs, char **pap
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc", rc);
 
-    uint32_t        cAdded = 0;
+    //uint32_t        cAdded = 0;
     RTGETOPTUNION   ValueUnion;
     int             chOpt;
     while ((chOpt = RTGetOpt(&State, &ValueUnion)) != 0)

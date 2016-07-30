@@ -59,7 +59,9 @@ static DECLCALLBACK(int) progress(unsigned uPercent, void *pvUser)
 {
 #ifdef TSTS3_SHOWPROGRESS
     RTTestIPrintf(RTTESTLVL_ALWAYS, " Progress for %s - %d%% done.\n", (char*)pvUser, (int)uPercent);
-#endif /* TSTS3_SHOWPROGRESS */
+#else
+    RT_NOREF2(uPercent, pvUser);
+#endif
     return VINF_SUCCESS;
 }
 

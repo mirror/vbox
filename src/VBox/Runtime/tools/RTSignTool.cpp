@@ -416,7 +416,6 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
         default:
             return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported signature type: %d", enmSignature);
     }
-    return VINF_SUCCESS;
 }
 
 /** Worker for HandleVerifyExe. */

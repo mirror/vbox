@@ -72,6 +72,7 @@ typedef struct TESTNEARSYM
  */
 static DECLCALLBACK(int) testEnumSymbol2(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser)
 {
+    RT_NOREF1(hLdrMod);
     PTESTNEARSYM pSym = (PTESTNEARSYM)pvUser;
 
     /* less or equal */
@@ -128,6 +129,8 @@ static DECLCALLBACK(int) MyGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINT
                                      char *pszBuf, size_t cchBuf, RTINTPTR *poff,
                                      void *pvUser)
 {
+    RT_NOREF3(pCpu, u32Sel, pvUser);
+
     if (   uAddress > RTLdrSize(g_hLdrMod) + g_uLoadAddr
         || uAddress < g_uLoadAddr)
         return VERR_SYMBOL_NOT_FOUND;
@@ -148,6 +151,7 @@ static DECLCALLBACK(int) MyGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINT
  */
 static DECLCALLBACK(int) MyReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
+    RT_NOREF1(cbMaxRead);
     uint8_t const *pbSrc = (uint8_t const *)((uintptr_t)pDis->uInstrAddr + (uintptr_t)pDis->pvUser + offInstr);
     memcpy(&pDis->abInstr[offInstr], pbSrc, cbMinRead);
     pDis->cbCachedInstr = offInstr + cbMinRead;
@@ -206,8 +210,10 @@ static bool MyDisBlock(DISCPUMODE enmCpuMode, RTHCUINTPTR pvCodeBlock, int32_t c
  * @param   pValue          Where to store the symbol value (address).
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
+static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol,
+                                       unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
+    RT_NOREF5(hLdrMod, pszModule, pszSymbol, uSymbol, pvUser);
 #if 1
     RTUINTPTR BaseAddr = *(PCRTUINTPTR)pvUser;
     *pValue = BaseAddr + UINT32_C(0x604020f0);
@@ -232,6 +238,7 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
  */
 static DECLCALLBACK(int) testEnumSymbol1(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser)
 {
+    RT_NOREF2(hLdrMod, pvUser);
     RTPrintf("  %RTptr %s (%d)\n", Value, pszSymbol, uSymbol);
     return VINF_SUCCESS;
 }

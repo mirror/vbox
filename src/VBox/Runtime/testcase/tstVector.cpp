@@ -77,7 +77,7 @@ RTVEC_DECLFN_DETACH(tstInstance, void *)
 
 RTVEC_DECL(tstSimple, void *)
 
-static void testVectorSimple(RTTEST hTest)
+static void testVectorSimple(void)
 {
     RTTestISub("Vector structure, no cleanup callback");
 
@@ -141,7 +141,7 @@ static void testVectorSimple(RTTEST hTest)
 
 RTVEC_DECL_DELETE(tstDelete, void *, deletePVoid)
 
-static void testVectorDelete(RTTEST hTest)
+static void testVectorDelete(void)
 {
     RTTestISub("Vector structure with cleanup by pointer callback");
 
@@ -180,7 +180,7 @@ static void testVectorDelete(RTTEST hTest)
 
 RTVEC_DECL_DELETE_BY_VALUE(tstDeleteValue, void *, deletePVoidValue)
 
-static void testVectorDeleteValue(RTTEST hTest)
+static void testVectorDeleteValue(void)
 {
     RTTestISub("Vector structure with cleanup by value callback");
 
@@ -227,9 +227,9 @@ int main()
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    testVectorSimple(hTest);
-    testVectorDelete(hTest);
-    testVectorDeleteValue(hTest);
+    testVectorSimple();
+    testVectorDelete();
+    testVectorDeleteValue();
 
     return RTTestSummaryAndDestroy(hTest);
 }

@@ -194,7 +194,7 @@ static void checkError(RTHTTP hHttp, int rc, const char *pszFile)
 
 int main(int argc, char **argv)
 {
-    unsigned cErrors = 0;
+    //unsigned cErrors = 0;
 
     RTR3InitExe(argc, &argv, 0);
 

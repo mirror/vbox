@@ -418,7 +418,6 @@ int main(int argc, char **argv)
         { "--duration",         'd', RTGETOPT_REQ_UINT32 },
         { "--calc-frequency",   'f', RTGETOPT_REQ_NOTHING },
     };
-    int iArg = 1;
     int ch;
     RTGETOPTUNION Value;
     RTGETOPTSTATE GetState;
