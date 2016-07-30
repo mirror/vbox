@@ -1019,6 +1019,7 @@ out:
  */
 static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
+    RT_NOREF1(pImage);
     int rc = VINF_SUCCESS;
     size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
     /** @todo r=bird: This code is unnecessarily confusing pointer states with
@@ -1614,6 +1615,7 @@ static int vmdkDescBaseSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 static void vmdkDescExtRemoveDummy(PVMDKIMAGE pImage,
                                    PVMDKDESCRIPTOR pDescriptor)
 {
+    RT_NOREF1(pImage);
     unsigned uEntry = pDescriptor->uFirstExtent;
     ssize_t cbDiff;
 
@@ -3857,6 +3859,7 @@ static int vmdkCreateStreamImage(PVMDKIMAGE pImage, uint64_t cbSize,
                                  PFNVDPROGRESS pfnProgress, void *pvUser,
                                  unsigned uPercentStart, unsigned uPercentSpan)
 {
+    RT_NOREF5(uImageFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan);
     int rc;
 
     rc = vmdkCreateExtents(pImage, 1);
@@ -4800,10 +4803,10 @@ static int vmdkAllocGrainGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOC
  */
 static int vmdkAllocGrainComplete(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
 {
+    RT_NOREF1(rcReq);
     int rc = VINF_SUCCESS;
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKGRAINALLOCASYNC pGrainAlloc = (PVMDKGRAINALLOCASYNC)pvUser;
-    PVMDKEXTENT pExtent = pGrainAlloc->pExtent;
 
     LogFlowFunc(("pBackendData=%#p pIoCtx=%#p pvUser=%#p rcReq=%Rrc\n",
                  pBackendData, pIoCtx, pvUser, rcReq));
@@ -4828,7 +4831,7 @@ static int vmdkAllocGrainComplete(void *pBackendData, PVDIOCTX pIoCtx, void *pvU
 static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOCTX pIoCtx,
                           uint64_t uSector, uint64_t cbWrite)
 {
-    PVMDKGTCACHE pCache = pImage->pGTCache;
+    PVMDKGTCACHE pCache = pImage->pGTCache; NOREF(pCache);
     uint64_t uGDIndex, uGTSector, uRGTSector;
     uint64_t uFileOffset;
     PVMDKGRAINALLOCASYNC pGrainAlloc = NULL;
