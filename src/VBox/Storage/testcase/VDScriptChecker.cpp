@@ -27,5 +27,6 @@
 
 DECLHIDDEN(int) vdScriptCtxCheck(PVDSCRIPTCTXINT pThis)
 {
+    RT_NOREF1(pThis);
     return VERR_NOT_IMPLEMENTED;
 }
