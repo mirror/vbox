@@ -33,15 +33,14 @@ else
 endif
 
 ifdef VBOX_WITH_HARDENING
- VBoxNetLwipNATHardened_SOURCES += VBoxNetNATHardened.cpp
+ VBoxNetLwipNATHardened_TEMPLATE = VBOXR3HARDENEDEXE
+ VBoxNetLwipNATHardened_NAME     = VBoxNetNAT
+ VBoxNetLwipNATHardened_DEFS     = SERVICE_NAME=\"VBoxNetNAT\"
+ VBoxNetLwipNATHardened_SOURCES  = VBoxNetNATHardened.cpp
  VBoxNetLwipNATHardened_SOURCES.win = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
- VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=\"VBoxNetNAT\"
- VBoxNetLwipNATHardened_TEMPLATE=VBOXR3HARDENEDEXE
- VBoxNetLwipNATHardened_NAME = VBoxNetNAT
  VBoxNetLwipNATHardened_LDFLAGS.win = /SUBSYSTEM:windows
 endif
 
-VBoxNetLwipNAT_TEMPLATE =
 VBoxNetLwipNAT_TEMPLATE := VBOXMAIN$(if-expr defined(VBOX_WITH_HARDENING),DLL,CLIENTEXE)
 VBoxNetLwipNAT_NAME = VBoxNetNAT
 VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} IPv6
