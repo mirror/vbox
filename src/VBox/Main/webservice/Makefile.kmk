@@ -206,32 +206,33 @@ TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(V
 
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
- #
- # vboxsoap - Library used by both the programs (save build time).
- #
- LIBRARIES += vboxsoap
- vboxsoap_TEMPLATE = VBOXWEBR3EXE
- vboxsoap_CXXFLAGS.win += -bigobj
- ifn1of ($(KBUILD_TARGET), win)
-  vboxsoap_CXXFLAGS += -Wno-shadow
- endif
- vboxsoap_INCS := \
-	$(VBOX_GSOAP_INCS) \
-	$(VBOXWEB_OUT_DIR) \
-	$(PATH_SUB_CURRENT)
- ifdef VBOX_WITH_WEBSERVICES_SSL
-  vboxsoap_DEFS += WITH_OPENSSL
-  vboxsoap_SDKS += VBOX_OPENSSL2
- endif
- ifdef VBOX_WITHOUT_SPLIT_SOAPC
-  vboxsoap_SOURCES = \
-	$(VBOXWEB_OUT_DIR)/soapC.cpp
- else
-  BLDPROGS += split-soapC
-  split-soapC_TEMPLATE = VBoxBldProg
-  split-soapC_SOURCES = split-soapC.cpp
+  #
+  # vboxsoap - Library used by both the programs (save build time).
+  #
+  LIBRARIES += vboxsoap
+  vboxsoap_TEMPLATE = VBOXWEBR3EXE
+  vboxsoap_CXXFLAGS += $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS)
+  vboxsoap_CXXFLAGS.win += -bigobj
+  ifn1of ($(KBUILD_TARGET), win)
+   vboxsoap_CXXFLAGS += -Wno-shadow
+  endif
+  vboxsoap_INCS := \
+  	$(VBOX_GSOAP_INCS) \
+  	$(VBOXWEB_OUT_DIR) \
+  	$(PATH_SUB_CURRENT)
+  ifdef VBOX_WITH_WEBSERVICES_SSL
+   vboxsoap_DEFS += WITH_OPENSSL
+   vboxsoap_SDKS += VBOX_OPENSSL2
+  endif
+  ifdef VBOX_WITHOUT_SPLIT_SOAPC
+   vboxsoap_SOURCES = \
+   	$(VBOXWEB_OUT_DIR)/soapC.cpp
+  else
+   BLDPROGS += split-soapC
+   split-soapC_TEMPLATE = VBoxBldProg
+   split-soapC_SOURCES = split-soapC.cpp
 
-  vboxsoap_SOURCES = \
+   vboxsoap_SOURCES = \
 	$(VBOXWEB_OUT_DIR)/soapC-1.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-2.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-3.cpp \
@@ -253,35 +254,50 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/soapC-19.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-20.cpp
   vboxsoap_CXXFLAGS += \
-	$(VBOX_GCC_Wno-vla)
- endif
- vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
- vboxsoap_SOURCES += \
-	$(VBOX_GSOAP_CXX_SOURCES)
- vboxsoap_ORDERDEPS = \
-	$(VBOXWEB_IDL_SRC) \
-	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
- ifn1of ($(KBUILD_TARGET), win)
-  $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = -Wno-format
-  # currently necessary when compiling against OpenSSL 1.0 due to a missing
-  # typecase from 'const v3_ext_method*' to 'aka v3_ext_method*'.
-  $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
+  	$(VBOX_GCC_Wno-vla)
+  endif
+  vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
+  vboxsoap_SOURCES += \
+  	$(VBOX_GSOAP_CXX_SOURCES)
+  vboxsoap_ORDERDEPS = \
+  	$(VBOXWEB_IDL_SRC) \
+  	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
+  ifn1of ($(KBUILD_TARGET), win)
+   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = -Wno-format
+   # currently necessary when compiling against OpenSSL 1.0 due to a missing
+   # typecase from 'const v3_ext_method*' to 'aka v3_ext_method*'.
+   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
 
- endif
- $(VBOXWEB_OUT_DIR)/soapC-3.cpp_CXXFLAGS.win.x86 = -Og- # VCC70 says "function too large".
+  endif
+  $(VBOXWEB_OUT_DIR)/soapC-3.cpp_CXXFLAGS.win.x86 = -Og- # VCC70 says "function too large".
 
-ifdef VBOX_SOAP_PRECOMPILED_HEADER
- # This'll save a few seconds, but the compiler invocation currently makes it impracticable. This will
- # be addressed in a future kBuild version, by adding PCH support or/and by adding some helpers to
- # gather the required data (DEFS,INCS,CXXTOOL,CXXFLAGS).
- vboxsoap_INTERMEDIATES += $(VBOXWEB_OUT_DIR)/soapH.h.gch
- vboxsoap_CXXFLAGS += -Winvalid-pch -H
- vboxsoap_CLEAN += $(VBOXWEB_OUT_DIR)/soapH.h.gch
+  if "$(KBUILD_TARGET)" == "win" && "$(VBOX_GSOAP_CXX_SOURCES)" != ""
+   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4668 # preprocessor / windows.h
+   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4211 # nonstandard extension used: redefined extern to static
+   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4310 # cast truncates constant value
+  endif
 
-$(VBOXWEB_OUT_DIR)/soapH.h.gch: $(VBOXWEB_OUT_DIR)/soapH.h
-	g++ -x c++-header -g -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -Wno-variadic-macros -pipe -O0 -fno-omit-frame-pointer -fno-strict-aliasing -fvisibility-inlines-hidden -fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN -mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -m32 -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/src/VBox/Main/webservice/gsoap -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/out/darwin.x86/debug/obj/src/VBox/Main -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/src/VBox/Main/webservice -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/include -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/out/darwin.x86/debug -DVBOX -DVBOX_WITH_DEBUGGER -DVBOX_WITH_DEBUGGER_GUI -DDEBUG -DDEBUG_bird -DDEBUG_USERNAME=bird -DRT_OS_DARWIN -D__DARWIN__ -DRT_ARCH_X86 -D__X86__ -DVBOX_WITH_HYBRID_32BIT_KERNEL -DIN_RING3 -DHC_ARCH_BITS=32 -DGC_ARCH_BITS=32 -DMAC_OS_X_VERSION_MIN_REQUIRED=1040 -DMAC_OS_X_VERSION_MAX_ALLOWED=1040 \
+  ifdef VBOX_SOAP_PRECOMPILED_HEADER
+   # This'll save a few seconds, but the compiler invocation currently makes it impracticable. This will
+   # be addressed in a future kBuild version, by adding PCH support or/and by adding some helpers to
+   # gather the required data (DEFS,INCS,CXXTOOL,CXXFLAGS).
+   vboxsoap_INTERMEDIATES += $(VBOXWEB_OUT_DIR)/soapH.h.gch
+   vboxsoap_CXXFLAGS += -Winvalid-pch -H
+   vboxsoap_CLEAN += $(VBOXWEB_OUT_DIR)/soapH.h.gch
+
+   $(VBOXWEB_OUT_DIR)/soapH.h.gch: $(VBOXWEB_OUT_DIR)/soapH.h
+	g++ -x c++-header -g -g -Wall -pedantic -Wno-long-long -Wno-trigraphs -Wno-variadic-macros -pipe -O0 -fno-omit-frame-pointer \
+		-fno-strict-aliasing -fvisibility-inlines-hidden -fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN \
+		-mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -m32 \
+		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/src/VBox/Main/webservice/gsoap \
+		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/out/darwin.x86/debug/obj/src/VBox/Main \
+		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/src/VBox/Main/webservice \
+		-I/Volumes/ScratchHFS/bird/vbox/svn/trunk/include -I/Volumes/ScratchHFS/bird/vbox/svn/trunk/out/darwin.x86/debug
+		\-DVBOX -DVBOX_WITH_DEBUGGER -DVBOX_WITH_DEBUGGER_GUI -DDEBUG -DDEBUG_bird -DDEBUG_USERNAME=bird -DRT_OS_DARWIN \
+		-D__DARWIN__ -DRT_ARCH_X86 -D__X86__ -DVBOX_WITH_HYBRID_32BIT_KERNEL -DIN_RING3 -DHC_ARCH_BITS=32 -DGC_ARCH_BITS=32 \
+		-DMAC_OS_X_VERSION_MIN_REQUIRED=1040 -DMAC_OS_X_VERSION_MAX_ALLOWED=1040 \
 		$< -o $@
-endif
+  endif
  endif # !VBOX_ONLY_SDK
 
 
@@ -700,14 +716,20 @@ GSOAPH_RELEVANT = $(VBOXWEB_GSOAPH_FROM_XSLT)
 # generate server and client code from gsoap pseudo-C header file
 $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 + $(VBOXWEB_OUT_DIR)/soapH.h \
-+ $(VBOXWEB_OUT_DIR)/soapStub.h \
++ $(VBOXWEB_SOAP_CLIENT_H) \
 + $(VBOXWEB_OUT_DIR)/soapC.cpp \
 + $(VBOXWEB_OUT_DIR)/soapClient.cpp \
 + $(VBOXWEB_OUT_DIR)/soapServer.cpp \
-: $(VBOXWEB_GSOAPH_FROM_GSOAP) $(VBOXWEB_GSOAPH_FROM_XSLT) $(VBOX_NSMAP) $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+: $(VBOXWEB_GSOAPH_FROM_GSOAP) $(VBOXWEB_GSOAPH_FROM_XSLT) $(VBOX_NSMAP) $(VBOX_PATH_WEBSERVICE)/stdsoap2.sed \
+		$(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,lots of files,$(GSOAPH_RELEVANT))
 	$(RM) -f $@
 	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -2 -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
+ifeq ($(KBUILD_TARGET),win) # MSC -Wall workaround.
+	$(CP) -f "$(VBOXWEB_SOAP_CLIENT_H)" "$(VBOXWEB_SOAP_CLIENT_H).tmp"
+	$(SED) -f $(VBOX_PATH_WEBSERVICE)/stdsoap2.sed --output "$(VBOXWEB_SOAP_CLIENT_H)" "$(VBOXWEB_SOAP_CLIENT_H).tmp"
+	$(RM) -f "$(VBOXWEB_SOAP_CLIENT_H).tmp"
+endif
 	$(APPEND) $@ done
 
 # Copy the generated headers and stuff.  This was split into a separate rule
