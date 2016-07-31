@@ -978,13 +978,12 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
 
     logStringW(hModule, L"CreateHostOnlyInterface: Creating host-only interface");
 
-    HRESULT hr;
-
+    HRESULT hr = E_FAIL;
     GUID guid;
     WCHAR wszMpInf[MAX_PATH];
     DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - (DWORD)wcslen(pwszInfName) - 1 - 1;
     LPCWSTR pwszInfPath = NULL;
-    bool bIsFile = false;
+    bool fIsFile = false;
     UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszMpInf, &cchMpInf);
     if (uErr == ERROR_SUCCESS)
     {
@@ -999,7 +998,7 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
 
             wcscat(wszMpInf, pwszInfName);
             pwszInfPath = wszMpInf;
-            bIsFile = true;
+            fIsFile = true;
 
             logStringW(hModule, L"CreateHostOnlyInterface: Resulting INF path = %s", pwszInfPath);
         }
@@ -1010,7 +1009,7 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
         logStringW(hModule, L"CreateHostOnlyInterface: Unable to retrieve VBox installation path, error = 0x%x", uErr);
 
     /* Make sure the inf file is installed. */
-    if (pwszInfPath != NULL && bIsFile)
+    if (pwszInfPath != NULL && fIsFile)
     {
         logStringW(hModule, L"CreateHostOnlyInterface: Calling VBoxDrvCfgInfInstall(%s)", pwszInfPath);
         hr = VBoxDrvCfgInfInstall(pwszInfPath);
@@ -1042,9 +1041,9 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
             logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinCreateHostOnlyNetworkInterface");
 #ifdef VBOXNETCFG_DELAYEDRENAME
             BSTR devId;
-            hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, bIsFile, &guid, &devId, NULL);
+            hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, fIsFile, &guid, &devId, NULL);
 #else /* !VBOXNETCFG_DELAYEDRENAME */
-            hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, bIsFile, &guid, NULL, NULL);
+            hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, fIsFile, &guid, NULL, NULL);
 #endif /* !VBOXNETCFG_DELAYEDRENAME */
             logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface returns 0x%x", hr);
             if (SUCCEEDED(hr))
@@ -1180,7 +1179,7 @@ static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LP
     WCHAR wszMpInf[MAX_PATH];
     DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - (DWORD)wcslen(pwszInfName) - 1 - 1;
     LPCWSTR pwszInfPath = NULL;
-    bool bIsFile = false;
+    bool fIsFile = false;
     UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszMpInf, &cchMpInf);
     if (uErr == ERROR_SUCCESS)
     {
@@ -1195,7 +1194,7 @@ static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LP
 
             wcscat(wszMpInf, pwszInfName);
             pwszInfPath = wszMpInf;
-            bIsFile = true;
+            fIsFile = true;
 
             logStringW(hModule, L"UpdateHostOnlyInterfaces: Resulting INF path = %s", pwszInfPath);
 
@@ -1368,10 +1367,10 @@ static bool isTAPDevice(const WCHAR *pwszGUID)
     return bIsTapDevice;
 }
 
-#define SetErrBreak(strAndArgs) \
+#define SetErrBreak(args) \
     if (1) { \
         rc = 0; \
-        logStringW(hModule, strAndArgs); \
+        logStringW args; \
         break; \
     } else do {} while (0)
 
@@ -1395,18 +1394,21 @@ int removeNetworkInterface(MSIHANDLE hModule, const WCHAR *pwszGUID)
                      pwszGUID);
             LONG lStatus = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszRegLocation, 0, KEY_READ, &hkeyNetwork);
             if ((lStatus != ERROR_SUCCESS) || !hkeyNetwork)
-                SetErrBreak((L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [1]", wszRegLocation));
+                SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [1]",
+                             wszRegLocation));
 
             lStatus = RegOpenKeyExW(hkeyNetwork, L"Connection", 0, KEY_READ, &hkeyConnection);
             if ((lStatus != ERROR_SUCCESS) || !hkeyConnection)
-                SetErrBreak((L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [2]", wszRegLocation));
+                SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [2]",
+                             wszRegLocation));
 
             DWORD len = sizeof(wszPnPInstanceId);
             DWORD dwKeyType;
             lStatus = RegQueryValueExW(hkeyConnection, L"PnPInstanceID", NULL,
                                        &dwKeyType, (LPBYTE)&wszPnPInstanceId[0], &len);
             if ((lStatus != ERROR_SUCCESS) || (dwKeyType != REG_SZ))
-                SetErrBreak((L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [3]", wszRegLocation));
+                SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [3]",
+                             wszRegLocation));
         }
         while (0);
 
@@ -1441,7 +1443,7 @@ int removeNetworkInterface(MSIHANDLE hModule, const WCHAR *pwszGUID)
             if (hDeviceInfo == INVALID_HANDLE_VALUE)
             {
                 logStringW(hModule, L"VBox HostInterfaces: SetupDiGetClassDevs failed (0x%08X)!", GetLastError());
-                SetErrBreak(L"VBox HostInterfaces: Uninstallation failed!");
+                SetErrBreak((hModule, L"VBox HostInterfaces: Uninstallation failed!"));
             }
 
             BOOL fFoundDevice = FALSE;
@@ -1544,26 +1546,24 @@ int removeNetworkInterface(MSIHANDLE hModule, const WCHAR *pwszGUID)
                 if (!fResult)
                 {
                     logStringW(hModule, L"VBox HostInterfaces: SetupDiSetSelectedDevice failed (0x%08X)!", GetLastError());
-                    SetErrBreak(L"VBox HostInterfaces: Uninstallation failed!");
+                    SetErrBreak((hModule, L"VBox HostInterfaces: Uninstallation failed!"));
                 }
 
                 fResult = SetupDiCallClassInstaller(DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
                 if (!fResult)
                 {
                     logStringW(hModule, L"VBox HostInterfaces: SetupDiCallClassInstaller (DIF_REMOVE) failed (0x%08X)!", GetLastError());
-                    SetErrBreak(L"VBox HostInterfaces: Uninstallation failed!");
+                    SetErrBreak((hModule, L"VBox HostInterfaces: Uninstallation failed!"));
                 }
             }
             else
-                SetErrBreak(L"VBox HostInterfaces: Host interface network device not found!");
-        }
-        while (0);
+                SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network device not found!"));
+        } while (0);
 
         /* clean up the device info set */
         if (hDeviceInfo != INVALID_HANDLE_VALUE)
             SetupDiDestroyDeviceInfoList(hDeviceInfo);
-    }
-    while (0);
+    } while (0);
     return rc;
 }
 
