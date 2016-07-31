@@ -32,6 +32,9 @@
 # include <unistd.h>
 # include <sys/poll.h>
 #endif
+#ifdef ___iprt_cdefs_h
+# error "not supposed to involve any IPRT or VBox headers here."
+#endif
 
 /**
  * Select between active event listener (defined) and passive event listener
@@ -431,9 +434,8 @@ static IEventListenerDemoVtblInt g_IEventListenerDemoVtblInt =
  *
  * @param   virtualBox ptr to IVirtualBox object
  * @param   session    ptr to ISession object
- * @param   id         identifies the machine to start
  */
-static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *session, BSTR machineId)
+static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *session)
 {
     IConsole *console = NULL;
     HRESULT rc;
@@ -445,33 +447,36 @@ static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *sessi
         rc = IConsole_get_EventSource(console, &es);
         if (SUCCEEDED(rc) && es)
         {
-            static const ULONG interestingEvents[] =
-                {
-                    VBoxEventType_OnMousePointerShapeChanged,
-                    VBoxEventType_OnMouseCapabilityChanged,
-                    VBoxEventType_OnKeyboardLedsChanged,
-                    VBoxEventType_OnStateChanged,
-                    VBoxEventType_OnAdditionsStateChanged,
-                    VBoxEventType_OnNetworkAdapterChanged,
-                    VBoxEventType_OnSerialPortChanged,
-                    VBoxEventType_OnParallelPortChanged,
-                    VBoxEventType_OnStorageControllerChanged,
-                    VBoxEventType_OnMediumChanged,
-                    VBoxEventType_OnVRDEServerChanged,
-                    VBoxEventType_OnUSBControllerChanged,
-                    VBoxEventType_OnUSBDeviceStateChanged,
-                    VBoxEventType_OnSharedFolderChanged,
-                    VBoxEventType_OnRuntimeError,
-                    VBoxEventType_OnCanShowWindow,
-                    VBoxEventType_OnShowWindow
-                };
+            static const ULONG s_auInterestingEvents[] =
+            {
+                VBoxEventType_OnMousePointerShapeChanged,
+                VBoxEventType_OnMouseCapabilityChanged,
+                VBoxEventType_OnKeyboardLedsChanged,
+                VBoxEventType_OnStateChanged,
+                VBoxEventType_OnAdditionsStateChanged,
+                VBoxEventType_OnNetworkAdapterChanged,
+                VBoxEventType_OnSerialPortChanged,
+                VBoxEventType_OnParallelPortChanged,
+                VBoxEventType_OnStorageControllerChanged,
+                VBoxEventType_OnMediumChanged,
+                VBoxEventType_OnVRDEServerChanged,
+                VBoxEventType_OnUSBControllerChanged,
+                VBoxEventType_OnUSBDeviceStateChanged,
+                VBoxEventType_OnSharedFolderChanged,
+                VBoxEventType_OnRuntimeError,
+                VBoxEventType_OnCanShowWindow,
+                VBoxEventType_OnShowWindow
+            };
             SAFEARRAY *interestingEventsSA = NULL;
             IEventListenerDemo *consoleListener = NULL;
 
             /* The VirtualBox API expects enum values as VT_I4, which in the
              * future can be hopefully relaxed. */
-            interestingEventsSA = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_I4, 0, sizeof(interestingEvents) / sizeof(interestingEvents[0]));
-            g_pVBoxFuncs->pfnSafeArrayCopyInParamHelper(interestingEventsSA, &interestingEvents, sizeof(interestingEvents));
+            interestingEventsSA = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_I4, 0,
+                                                                           sizeof(s_auInterestingEvents)
+                                                                         / sizeof(s_auInterestingEvents[0]));
+            g_pVBoxFuncs->pfnSafeArrayCopyInParamHelper(interestingEventsSA, &s_auInterestingEvents,
+                                                        sizeof(s_auInterestingEvents));
 
             consoleListener = calloc(1, sizeof(IEventListenerDemo));
             if (consoleListener)
@@ -498,9 +503,7 @@ static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *sessi
 #endif
 
                     while (!g_fStop)
-                    {
                         g_pVBoxFuncs->pfnProcessEventQueue(250);
-                    }
 
 #ifdef WIN32
                     SetConsoleCtrlHandler(ctrlCHandler, FALSE);
@@ -509,9 +512,7 @@ static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *sessi
 #endif
                 }
                 else
-                {
                     printf("Failed to register event listener.\n");
-                }
                 IEventSource_UnregisterListener(es, (IEventListener *)consoleListener);
 #ifdef WIN32
                 if (consoleListener->pUnkMarshaler)
@@ -520,16 +521,12 @@ static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *sessi
                 IEventListenerDemo_Release(consoleListener);
             }
             else
-            {
                 printf("Failed while allocating memory for console event listener.\n");
-            }
             g_pVBoxFuncs->pfnSafeArrayDestroy(interestingEventsSA);
             IEventSource_Release(es);
         }
         else
-        {
             printf("Failed to get the event source instance.\n");
-        }
         IConsole_Release(console);
     }
 }
@@ -541,47 +538,49 @@ static void registerActiveEventListener(IVirtualBox *virtualBox, ISession *sessi
  *
  * @param   virtualBox ptr to IVirtualBox object
  * @param   session    ptr to ISession object
- * @param   id         identifies the machine to start
  */
-static void registerPassiveEventListener(IVirtualBox *virtualBox, ISession *session, BSTR machineId)
+static void registerPassiveEventListener(ISession *session)
 {
     IConsole *console = NULL;
     HRESULT rc;
 
     rc = ISession_get_Console(session, &console);
-    if ((SUCCEEDED(rc)) && console)
+    if (SUCCEEDED(rc) && console)
     {
         IEventSource *es = NULL;
         rc = IConsole_get_EventSource(console, &es);
         if (SUCCEEDED(rc) && es)
         {
-            static const ULONG interestingEvents[] =
-                {
-                    VBoxEventType_OnMousePointerShapeChanged,
-                    VBoxEventType_OnMouseCapabilityChanged,
-                    VBoxEventType_OnKeyboardLedsChanged,
-                    VBoxEventType_OnStateChanged,
-                    VBoxEventType_OnAdditionsStateChanged,
-                    VBoxEventType_OnNetworkAdapterChanged,
-                    VBoxEventType_OnSerialPortChanged,
-                    VBoxEventType_OnParallelPortChanged,
-                    VBoxEventType_OnStorageControllerChanged,
-                    VBoxEventType_OnMediumChanged,
-                    VBoxEventType_OnVRDEServerChanged,
-                    VBoxEventType_OnUSBControllerChanged,
-                    VBoxEventType_OnUSBDeviceStateChanged,
-                    VBoxEventType_OnSharedFolderChanged,
-                    VBoxEventType_OnRuntimeError,
-                    VBoxEventType_OnCanShowWindow,
-                    VBoxEventType_OnShowWindow
-                };
+            static const ULONG s_auInterestingEvents[] =
+            {
+                VBoxEventType_OnMousePointerShapeChanged,
+                VBoxEventType_OnMouseCapabilityChanged,
+                VBoxEventType_OnKeyboardLedsChanged,
+                VBoxEventType_OnStateChanged,
+                VBoxEventType_OnAdditionsStateChanged,
+                VBoxEventType_OnNetworkAdapterChanged,
+                VBoxEventType_OnSerialPortChanged,
+                VBoxEventType_OnParallelPortChanged,
+                VBoxEventType_OnStorageControllerChanged,
+                VBoxEventType_OnMediumChanged,
+                VBoxEventType_OnVRDEServerChanged,
+                VBoxEventType_OnUSBControllerChanged,
+                VBoxEventType_OnUSBDeviceStateChanged,
+                VBoxEventType_OnSharedFolderChanged,
+                VBoxEventType_OnRuntimeError,
+                VBoxEventType_OnCanShowWindow,
+                VBoxEventType_OnShowWindow
+            };
             SAFEARRAY *interestingEventsSA = NULL;
             IEventListener *consoleListener = NULL;
 
             /* The VirtualBox API expects enum values as VT_I4, which in the
              * future can be hopefully relaxed. */
-            interestingEventsSA = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_I4, 0, sizeof(interestingEvents) / sizeof(interestingEvents[0]));
-            g_pVBoxFuncs->pfnSafeArrayCopyInParamHelper(interestingEventsSA, &interestingEvents, sizeof(interestingEvents));
+            interestingEventsSA = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_I4, 0,
+                                                                           sizeof(s_auInterestingEvents)
+                                                                         / sizeof(s_auInterestingEvents[0]));
+            g_pVBoxFuncs->pfnSafeArrayCopyInParamHelper(interestingEventsSA, &s_auInterestingEvents,
+                                                        sizeof(s_auInterestingEvents));
 
             rc = IEventSource_CreateListener(es, &consoleListener);
             if (SUCCEEDED(rc) && consoleListener)
@@ -642,23 +641,17 @@ static void registerPassiveEventListener(IVirtualBox *virtualBox, ISession *sess
 #endif
                 }
                 else
-                {
                     printf("Failed to register event listener.\n");
-                }
                 IEventSource_UnregisterListener(es, (IEventListener *)consoleListener);
                 IEventListener_Release(consoleListener);
             }
             else
-            {
                 printf("Failed to create an event listener instance.\n");
-            }
             g_pVBoxFuncs->pfnSafeArrayDestroy(interestingEventsSA);
             IEventSource_Release(es);
         }
         else
-        {
             printf("Failed to get the event source instance.\n");
-        }
         IConsole_Release(console);
     }
 }
@@ -674,16 +667,14 @@ static void registerPassiveEventListener(IVirtualBox *virtualBox, ISession *sess
 static void PrintErrorInfo(const char *pszExecutable, const char *pszErrorMsg, HRESULT rc)
 {
     IErrorInfo *ex;
-    HRESULT rc2 = S_OK;
+    HRESULT rc2;
     fprintf(stderr, "%s: %s (rc=%#010x)\n", pszExecutable, pszErrorMsg, (unsigned)rc);
     rc2 = g_pVBoxFuncs->pfnGetException(&ex);
     if (SUCCEEDED(rc2) && ex)
     {
         IVirtualBoxErrorInfo *ei;
         rc2 = IErrorInfo_QueryInterface(ex, &IID_IVirtualBoxErrorInfo, (void **)&ei);
-        if (FAILED(rc2))
-            ei = NULL;
-        if (ei)
+        if (SUCCEEDED(rc2) && ei != NULL)
         {
             /* got extended error info, maybe multiple infos */
             do
@@ -716,8 +707,7 @@ static void PrintErrorInfo(const char *pszExecutable, const char *pszErrorMsg, H
                     ei_next = NULL;
                 IVirtualBoxErrorInfo_Release(ei);
                 ei = ei_next;
-            }
-            while (ei);
+            } while (ei);
         }
 
         IErrorInfo_Release(ex);
@@ -812,10 +802,10 @@ static void startVM(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
             /* Kick off the event listener demo part, which is quite separate.
              * Ignore it if you need a more basic sample. */
 #ifdef USE_ACTIVE_EVENT_LISTENER
-            registerActiveEventListener(virtualBox, session, id);
-#else /* !USE_ACTIVE_EVENT_LISTENER */
-            registerPassiveEventListener(virtualBox, session, id);
-#endif /* !USE_ACTIVE_EVENT_LISTENER */
+            registerActiveEventListener(virtualBox, session);
+#else
+            registerPassiveEventListener(session);
+#endif
         }
         IProgress_Release(progress);
     }
@@ -871,7 +861,6 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
     /*
      * Iterate through the collection.
      */
-
     for (i = 0; i < machineCnt; ++i)
     {
         IMachine *machine      = machines[i];
@@ -899,9 +888,7 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
             g_pVBoxFuncs->pfnUtf8Free(machineName);
         }
         else
-        {
             printf("\tName:        <inaccessible>\n");
-        }
 
         {
             BSTR uuidUtf16;
@@ -957,9 +944,8 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
     /*
      * Let the user chose a machine to start.
      */
-
     printf("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
-        (unsigned)(machineCnt - 1));
+           (unsigned)(machineCnt - 1));
     fflush(stdout);
 
     if (scanf("%u", &start_id) == 1 && start_id < machineCnt)
@@ -979,15 +965,12 @@ static void listVMs(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
     /*
      * Don't forget to release the objects in the array.
      */
-
     for (i = 0; i < machineCnt; ++i)
     {
         IMachine *machine = machines[i];
 
         if (machine)
-        {
             IMachine_Release(machine);
-        }
     }
     g_pVBoxFuncs->pfnArrayOutFree(machines);
 }
@@ -1002,7 +985,8 @@ int main(int argc, char **argv)
     ULONG       revision         = 0;
     BSTR        versionUtf16     = NULL;
     BSTR        homefolderUtf16  = NULL;
-    HRESULT    rc;     /* Result code of various function (method) calls. */
+    HRESULT     rc;     /* Result code of various function (method) calls. */
+    (void)argc;
 
     printf("Starting main()\n");
 
@@ -1060,7 +1044,6 @@ int main(int argc, char **argv)
      */
 
     /* 1. Revision */
-
     rc = IVirtualBox_get_Revision(vbox, &revision);
     if (SUCCEEDED(rc))
         printf("\tRevision: %u\n", revision);
@@ -1068,7 +1051,6 @@ int main(int argc, char **argv)
         PrintErrorInfo(argv[0], "GetRevision() failed", rc);
 
     /* 2. Version */
-
     rc = IVirtualBox_get_Version(vbox, &versionUtf16);
     if (SUCCEEDED(rc))
     {
@@ -1082,7 +1064,6 @@ int main(int argc, char **argv)
         PrintErrorInfo(argv[0], "GetVersion() failed", rc);
 
     /* 3. Home Folder */
-
     rc = IVirtualBox_get_HomeFolder(vbox, &homefolderUtf16);
     if (SUCCEEDED(rc))
     {
@@ -1103,7 +1084,6 @@ int main(int argc, char **argv)
     /*
      * Do as mom told us: always clean up after yourself.
      */
-
 #ifdef USE_ACTIVE_EVENT_LISTENER
 # ifdef WIN32
     if (g_pTInfoIEventListener)

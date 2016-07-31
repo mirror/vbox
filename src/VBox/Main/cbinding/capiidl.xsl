@@ -95,9 +95,12 @@
 #define ___VirtualBox_CAPI_h
 
 #ifdef _WIN32
+# pragma warning(push)
+# pragma warning(disable:4668 4255) /* -Wall and windows.h */
 # undef COBJMACROS
 # define COBJMACROS
 # include "Windows.h"
+# pragma warning(pop)
 #endif /* _WIN32 */
 
 #ifdef WIN32

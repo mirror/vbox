@@ -68,18 +68,21 @@ VBoxUtf16ToUtf8(CBSTR pwszString, char **ppszString)
 static int
 VBoxUtf8ToUtf16(const char *pszString, BSTR *ppwszString)
 {
+    *ppwszString = NULL;
     if (!pszString)
-    {
-        *ppwszString = NULL;
         return VINF_SUCCESS;
-    }
 #ifdef VBOX_WITH_XPCOM
     return RTStrToUtf16(pszString, ppwszString);
 #else /* !VBOX_WITH_XPCOM */
     PRTUTF16 pwsz;
     int vrc = RTStrToUtf16(pszString, &pwsz);
-    *ppwszString = ::SysAllocString(pwsz);
-    RTUtf16Free(pwsz);
+    if (RT_SUCCESS(vrc))
+    {
+        *ppwszString = ::SysAllocString(pwsz);
+        if (!*ppwszString)
+            vrc = VERR_NO_STR_MEMORY;
+        RTUtf16Free(pwsz);
+    }
     return vrc;
 #endif /* !VBOX_WITH_XPCOM */
 }
@@ -101,9 +104,9 @@ VBoxUtf16Free(BSTR pwszString)
 {
 #ifdef VBOX_WITH_XPCOM
     RTUtf16Free(pwszString);
-#else /* !VBOX_WITH_XPCOM */
+#else
     ::SysFreeString(pwszString);
-#endif /* !VBOX_WITH_XPCOM */
+#endif
 }
 
 static void
@@ -119,9 +122,9 @@ VBoxComUnallocString(BSTR pwsz)
     {
 #ifdef VBOX_WITH_XPCOM
         nsMemory::Free(pwsz);
-#else /* !VBOX_WITH_XPCOM */
+#else
         ::SysFreeString(pwsz);
-#endif /* !VBOX_WITH_XPCOM */
+#endif
     }
 }
 
@@ -253,7 +256,7 @@ VBoxSafeArrayCopyInParamHelper(SAFEARRAY *psa, const void *pv, ULONG cb)
     memcpy(pData, pv, cb);
 #ifndef VBOX_WITH_XPCOM
     SafeArrayUnaccessData(psa);
-#endif /* !VBOX_WITH_XPCOM */
+#endif
     return S_OK;
 }
 
@@ -316,7 +319,7 @@ VBoxSafeArrayCopyOutParamHelper(void **ppv, ULONG *pcb, VARTYPE vt, SAFEARRAY *p
         *pcb = (ULONG)cbTotal;
 #ifndef VBOX_WITH_XPCOM
     SafeArrayUnaccessData(psa);
-#endif /* !VBOX_WITH_XPCOM */
+#endif
     return S_OK;
 }
 
