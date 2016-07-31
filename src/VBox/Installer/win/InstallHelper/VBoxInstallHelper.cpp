@@ -65,12 +65,12 @@
 #define MY_WTEXT(a_str)     MY_WTEXT_HLP(a_str)
 
 
-BOOL APIENTRY DllMain(HANDLE hModule,
-                      DWORD  ul_reason_for_call,
-                      LPVOID lpReserved)
+BOOL APIENTRY DllMain(HANDLE hModule, DWORD  uReason, LPVOID lpReserved)
 {
+    RT_NOREF3(hModule, uReason, lpReserved);
     return TRUE;
 }
+
 
 static void logString(MSIHANDLE hInstall, LPCSTR szString, ...)
 {
@@ -500,8 +500,9 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
 
 static MSIHANDLE g_hCurrentModule = NULL;
 
-static VOID vboxDrvLoggerCallback(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char * msg, void * pvContext)
+static VOID vboxDrvLoggerCallback(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext)
 {
+    RT_NOREF1(pvContext);
     switch (enmSeverity)
     {
         case VBOXDRVCFG_LOG_SEVERITY_FLOW:
@@ -509,7 +510,7 @@ static VOID vboxDrvLoggerCallback(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char * ms
             break;
         case VBOXDRVCFG_LOG_SEVERITY_REL:
             if (g_hCurrentModule)
-                logString(g_hCurrentModule, (LPCSTR)msg);
+                logString(g_hCurrentModule, pszMsg);
             break;
         default:
             break;
@@ -857,7 +858,6 @@ UINT __stdcall InstallNetLwf(MSIHANDLE hModule)
         uErr = doNetCfgInit(hModule, &pNetCfg, TRUE);
         if (uErr == ERROR_SUCCESS)
         {
-            WCHAR wszInfName[] = NETLWF_INF_NAME;
             WCHAR wszInf[MAX_PATH];
             DWORD cchInf = RT_ELEMENTS(wszInf) - sizeof(NETLWF_INF_NAME) - 1;
             UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszInf, &cchInf);
@@ -974,8 +974,7 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
 #ifdef VBOX_WITH_NETFLT
     netCfgLoggerEnable(hModule);
 
-    BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
-    bool bSetStaticIp = true;
+    BOOL fSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
     logStringW(hModule, L"CreateHostOnlyInterface: Creating host-only interface");
 
@@ -983,7 +982,7 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
 
     GUID guid;
     WCHAR wszMpInf[MAX_PATH];
-    DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - wcslen(pwszInfName) - 1 - 1;
+    DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - (DWORD)wcslen(pwszInfName) - 1 - 1;
     LPCWSTR pwszInfPath = NULL;
     bool bIsFile = false;
     UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszMpInf, &cchMpInf);
@@ -1074,8 +1073,8 @@ static UINT _createHostOnlyInterface(MSIHANDLE hModule, LPCWSTR pwszId, LPCWSTR 
 
     /* Restore original setup mode. */
     logStringW(hModule, L"CreateHostOnlyInterface: Almost done...");
-    if (bSetupModeInteractive)
-        SetupSetNonInteractiveMode(bSetupModeInteractive);
+    if (fSetupModeInteractive)
+        SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
 
@@ -1103,7 +1102,7 @@ static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 
     logStringW(hModule, L"RemoveHostOnlyInterfaces: Removing all host-only interfaces");
 
-    BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
+    BOOL fSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
     HRESULT hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(pwszId);
     if (SUCCEEDED(hr))
@@ -1121,8 +1120,8 @@ static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
         logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstall failed, hr = 0x%x", hr);
 
     /* Restore original setup mode. */
-    if (bSetupModeInteractive)
-        SetupSetNonInteractiveMode(bSetupModeInteractive);
+    if (fSetupModeInteractive)
+        SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
@@ -1143,7 +1142,7 @@ static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 
     logStringW(hModule, L"StopHostOnlyInterfaces: Stopping all host-only interfaces");
 
-    BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
+    BOOL fSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
     HRESULT hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(pwszId, VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE);
     if (SUCCEEDED(hr))
@@ -1154,8 +1153,8 @@ static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
         logStringW(hModule, L"StopHostOnlyInterfaces: Disabling host interfaces failed, hr = 0x%x", hr);
 
     /* Restore original setup mode. */
-    if (bSetupModeInteractive)
-        SetupSetNonInteractiveMode(bSetupModeInteractive);
+    if (fSetupModeInteractive)
+        SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
@@ -1176,10 +1175,10 @@ static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LP
 
     logStringW(hModule, L"UpdateHostOnlyInterfaces: Updating all host-only interfaces");
 
-    BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
+    BOOL fSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
     WCHAR wszMpInf[MAX_PATH];
-    DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - wcslen(pwszInfName) - 1 - 1;
+    DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - (DWORD)wcslen(pwszInfName) - 1 - 1;
     LPCWSTR pwszInfPath = NULL;
     bool bIsFile = false;
     UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszMpInf, &cchMpInf);
@@ -1235,8 +1234,8 @@ static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LP
         logStringW(hModule, L"UpdateHostOnlyInterfaces: Unable to retrieve VBox installation path, error = 0x%x", uErr);
 
     /* Restore original setup mode. */
-    if (bSetupModeInteractive)
-        SetupSetNonInteractiveMode(bSetupModeInteractive);
+    if (fSetupModeInteractive)
+        SetupSetNonInteractiveMode(fSetupModeInteractive);
 
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
@@ -1426,7 +1425,6 @@ int removeNetworkInterface(MSIHANDLE hModule, const WCHAR *pwszGUID)
 
         do
         {
-            DWORD ret = 0;
             GUID netGuid;
             SP_DEVINFO_DATA DeviceInfoData;
             DWORD index = 0;
