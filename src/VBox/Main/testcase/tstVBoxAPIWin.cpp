@@ -52,6 +52,7 @@
 
 
 #include <stdio.h>
+#include <iprt/win/windows.h>  /* Avoid -Wall warnings. */
 #include "VirtualBox.h"
 
 #define SAFE_RELEASE(x) \
@@ -255,7 +256,7 @@ int testStartVM(IVirtualBox *virtualBox)
 }
 
 
-int main(int argc, char *argv[])
+int main()
 {
     HRESULT rc;
     IVirtualBoxClient *virtualBoxClient;
