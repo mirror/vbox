@@ -47,8 +47,8 @@
 
 #ifdef RT_OS_WINDOWS
 # define _WIN32_WINNT 0x0501
+# include <iprt/win/windows.h>          /* ShellExecuteEx, ++ */
 # include <Objbase.h>                   /* CoInitializeEx */
-# include <iprt/win/windows.h>                   /* ShellExecuteEx, ++ */
 # ifdef DEBUG
 #  include <Sddl.h>
 # endif
@@ -295,6 +295,7 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
          return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to set directory permissions: %Rrc ('%s')", rc, pszDir);
 #else
      /** @todo TrustedInstaller? */
+     RT_NOREF1(pszDir);
 #endif
 
     return RTEXITCODE_SUCCESS;
@@ -338,6 +339,7 @@ static RTEXITCODE ValidateMemberOfExtPack(const char *pszName, RTVFSOBJTYPE enmT
  */
 static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTarball, const char *pszExtPackName)
 {
+    RT_NOREF2(pszTarball, pszExtPackName);
     RTMsgInfo("Validating unpacked extension pack...");
 
     RTERRINFOSTATIC ErrInfo;
@@ -489,6 +491,7 @@ static RTEXITCODE UnpackExtPackFile(const char *pszName, const char *pszDstFilen
 static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMANIFEST hValidManifest,
                                 const char *pszTarball)
 {
+    RT_NOREF1(pszTarball);
     RTMsgInfo("Unpacking extension pack into '%s'...", pszDirDst);
 
     /*
@@ -652,6 +655,8 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
                              const char *pszTarballDigest, RTFILE hTarballFile, RTFILE hTarballFileOpt,
                              const char *pszName, const char *pszMangledName, bool fReplace)
 {
+    RT_NOREF1(pszCertDir);
+
     /*
      * Do some basic validation of the tarball file.
      */
@@ -1232,6 +1237,7 @@ static void CopyFileToStdXxx(RTFILE hSrc, PRTSTREAM pDst, bool fComplain)
 static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **papszArgs, int cSuArgs, int cMyArgs,
                                          int iCmd, const char *pszDisplayInfoHack)
 {
+    RT_NOREF1(cMyArgs);
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
 #ifdef RT_OS_WINDOWS
     NOREF(iCmd);
@@ -1319,7 +1325,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
                         DWORD dwExitCode;
                         if (GetExitCodeProcess(Info.hProcess, &dwExitCode))
                         {
-                            if (dwExitCode >= 0 && dwExitCode < 128)
+                            if (dwExitCode < 128)
                                 rcExit = (RTEXITCODE)dwExitCode;
                             else
                                 rcExit = RTEXITCODE_FAILURE;
