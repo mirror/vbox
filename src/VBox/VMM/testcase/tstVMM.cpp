@@ -154,7 +154,7 @@ tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR I
 static DECLCALLBACK(int)
 tstVMMConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pUVM, pvUser);
     int rc = CFGMR3ConstructDefaultTree(pVM);
     if (RT_SUCCESS(rc))
     {
@@ -198,6 +198,8 @@ tstVMMConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
+
     /*
      * Init runtime and the test environment.
      */

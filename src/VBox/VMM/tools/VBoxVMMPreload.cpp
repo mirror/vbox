@@ -194,6 +194,7 @@ static RTEXITCODE LoadModules(void)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
     bool fExit = false;
     RTEXITCODE rcExit = ParseOptions(argc, argv, &fExit);
     if (rcExit == RTEXITCODE_SUCCESS && !fExit)
