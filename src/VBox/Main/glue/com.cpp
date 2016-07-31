@@ -17,7 +17,7 @@
 
 #if !defined (VBOX_WITH_XPCOM)
 
-# include <objbase.h>
+# include <iprt/win/objbase.h>
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 # include <stdlib.h>

@@ -24,7 +24,7 @@
 #include <shlobj.h>
 #include <cfgmgr32.h>
 #include <tchar.h>
-#include <objbase.h>
+#include <iprt/win/objbase.h>
 
 #include <crtdbg.h>
 #include <stdlib.h>

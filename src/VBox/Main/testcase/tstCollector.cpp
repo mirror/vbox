@@ -34,8 +34,8 @@
 #endif
 #ifdef RT_OS_WINDOWS
 # define _WIN32_DCOM
-# include <objidl.h>
-# include <objbase.h>
+# include <iprt/win/objidl.h>
+# include <iprt/win/objbase.h>
 # include "../src-server/win/PerformanceWin.cpp"
 #endif
 

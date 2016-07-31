@@ -19,7 +19,7 @@
 #if !defined(VBOX_WITH_XPCOM)
 
 # include <iprt/nt/nt-and-windows.h>
-# include <objbase.h>
+# include <iprt/win/objbase.h>
 
 #else /* !defined(VBOX_WITH_XPCOM) */
 

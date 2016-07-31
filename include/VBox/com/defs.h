@@ -74,26 +74,26 @@
 
 #if !defined(VBOX_WITH_XPCOM)
 
-#if defined(RT_OS_WINDOWS)
+#ifdef RT_OS_WINDOWS
 
 // Windows COM
 /////////////////////////////////////////////////////////////////////////////
 
-#include <objbase.h>
-#ifndef VBOX_COM_NO_ATL
+# include <iprt/win/objbase.h>
+# ifndef VBOX_COM_NO_ATL
 
 /* Do not use actual ATL, just provide a superficial lookalike ourselves. */
-# include <VBox/com/microatl.h>
-#endif /* VBOX_COM_NO_ATL */
+#  include <VBox/com/microatl.h>
+# endif /* VBOX_COM_NO_ATL */
 
-#define NS_DECL_ISUPPORTS
-#define NS_IMPL_ISUPPORTS1_CI(a, b)
+# define NS_DECL_ISUPPORTS
+# define NS_IMPL_ISUPPORTS1_CI(a, b)
 
 /* these are XPCOM only, one for every interface implemented */
-#define NS_DECL_ISUPPORTS
+# define NS_DECL_ISUPPORTS
 
 /** Returns @c true if @a rc represents a warning result code */
-#define SUCCEEDED_WARNING(rc)   (SUCCEEDED(rc) && (rc) != S_OK)
+# define SUCCEEDED_WARNING(rc)   (SUCCEEDED(rc) && (rc) != S_OK)
 
 /** Tests is a COM result code indicates that the process implementing the
  * interface is dead.

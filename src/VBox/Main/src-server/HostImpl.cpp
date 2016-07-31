@@ -122,7 +122,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 # define INITGUID
 # include <guiddef.h>
 # include <devguid.h>
-# include <objbase.h>
+# include <iprt/win/objbase.h>
 //# include <iprt/win/setupapi.h>
 # include <shlobj.h>
 # include <cfgmgr32.h>

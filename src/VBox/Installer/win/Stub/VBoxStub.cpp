@@ -30,7 +30,7 @@
 #include <io.h>
 #include <lmerr.h>
 #include <msiquery.h>
-#include <objbase.h>
+#include <iprt/win/objbase.h>
 
 #include <shlobj.h>
 #include <stdlib.h>
