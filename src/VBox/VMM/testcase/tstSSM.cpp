@@ -702,6 +702,8 @@ static void destroyFakeVM(PVM pVM)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
+
     /*
      * Init runtime and static data.
      */

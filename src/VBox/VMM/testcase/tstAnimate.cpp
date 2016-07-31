@@ -127,7 +127,39 @@ static int scriptDtrReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 
 
 
-
+/* variables - putting in global scope to avoid MSC warning C4640.  */
+static struct
+{
+    const char *pszVar;
+    int (*pfnHandler)(PVM pVM, char *pszVar, char *pszValue, void *pvUser);
+    PFNRT pvUser;
+} g_aVars[] =
+{
+    { "eax", scriptGPReg,  (PFNRT)CPUMSetGuestEAX },
+    { "ebx", scriptGPReg,  (PFNRT)CPUMSetGuestEBX },
+    { "ecx", scriptGPReg,  (PFNRT)CPUMSetGuestECX },
+    { "edx", scriptGPReg,  (PFNRT)CPUMSetGuestEDX },
+    { "esp", scriptGPReg,  (PFNRT)CPUMSetGuestESP },
+    { "ebp", scriptGPReg,  (PFNRT)CPUMSetGuestEBP },
+    { "esi", scriptGPReg,  (PFNRT)CPUMSetGuestESI },
+    { "edi", scriptGPReg,  (PFNRT)CPUMSetGuestEDI },
+    { "efl", scriptGPReg,  (PFNRT)CPUMSetGuestEFlags },
+    { "eip", scriptGPReg,  (PFNRT)CPUMSetGuestEIP },
+    { "ss",  scriptSelReg, (PFNRT)CPUMSetGuestSS },
+    { "cs",  scriptSelReg, (PFNRT)CPUMSetGuestCS },
+    { "ds",  scriptSelReg, (PFNRT)CPUMSetGuestDS },
+    { "es",  scriptSelReg, (PFNRT)CPUMSetGuestES },
+    { "fs",  scriptSelReg, (PFNRT)CPUMSetGuestFS },
+    { "gs",  scriptSelReg, (PFNRT)CPUMSetGuestGS },
+    { "cr0", scriptSysReg, (PFNRT)CPUMSetGuestCR0 },
+    { "cr2", scriptSysReg, (PFNRT)CPUMSetGuestCR2 },
+    { "cr3", scriptSysReg, (PFNRT)CPUMSetGuestCR3 },
+    { "cr4", scriptSysReg, (PFNRT)CPUMSetGuestCR4 },
+    { "ldtr",scriptSelReg, (PFNRT)CPUMSetGuestLDTR },
+    { "tr",  scriptSelReg, (PFNRT)CPUMSetGuestTR },
+    { "idtr",scriptDtrReg, (PFNRT)CPUMSetGuestIDTR },
+    { "gdtr",scriptDtrReg, (PFNRT)CPUMSetGuestGDTR }
+};
 
 
 static int scriptCommand(PVM pVM, const char *pszIn, size_t cch)
@@ -145,46 +177,12 @@ static int scriptCommand(PVM pVM, const char *pszIn, size_t cch)
         RTStrStripR(psz);
         char *pszValue = RTStrStrip(pszEqual + 1);
 
-        /* variables */
-        static struct
-        {
-            const char *pszVar;
-            int (*pfnHandler)(PVM pVM, char *pszVar, char *pszValue, void *pvUser);
-            PFNRT pvUser;
-        } aVars[] =
-        {
-            { "eax", scriptGPReg,  (PFNRT)CPUMSetGuestEAX },
-            { "ebx", scriptGPReg,  (PFNRT)CPUMSetGuestEBX },
-            { "ecx", scriptGPReg,  (PFNRT)CPUMSetGuestECX },
-            { "edx", scriptGPReg,  (PFNRT)CPUMSetGuestEDX },
-            { "esp", scriptGPReg,  (PFNRT)CPUMSetGuestESP },
-            { "ebp", scriptGPReg,  (PFNRT)CPUMSetGuestEBP },
-            { "esi", scriptGPReg,  (PFNRT)CPUMSetGuestESI },
-            { "edi", scriptGPReg,  (PFNRT)CPUMSetGuestEDI },
-            { "efl", scriptGPReg,  (PFNRT)CPUMSetGuestEFlags },
-            { "eip", scriptGPReg,  (PFNRT)CPUMSetGuestEIP },
-            { "ss",  scriptSelReg, (PFNRT)CPUMSetGuestSS },
-            { "cs",  scriptSelReg, (PFNRT)CPUMSetGuestCS },
-            { "ds",  scriptSelReg, (PFNRT)CPUMSetGuestDS },
-            { "es",  scriptSelReg, (PFNRT)CPUMSetGuestES },
-            { "fs",  scriptSelReg, (PFNRT)CPUMSetGuestFS },
-            { "gs",  scriptSelReg, (PFNRT)CPUMSetGuestGS },
-            { "cr0", scriptSysReg, (PFNRT)CPUMSetGuestCR0 },
-            { "cr2", scriptSysReg, (PFNRT)CPUMSetGuestCR2 },
-            { "cr3", scriptSysReg, (PFNRT)CPUMSetGuestCR3 },
-            { "cr4", scriptSysReg, (PFNRT)CPUMSetGuestCR4 },
-            { "ldtr",scriptSelReg, (PFNRT)CPUMSetGuestLDTR },
-            { "tr",  scriptSelReg, (PFNRT)CPUMSetGuestTR },
-            { "idtr",scriptDtrReg, (PFNRT)CPUMSetGuestIDTR },
-            { "gdtr",scriptDtrReg, (PFNRT)CPUMSetGuestGDTR }
-        };
-
         rc = -1;
-        for (unsigned i = 0; i < RT_ELEMENTS(aVars); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aVars); i++)
         {
-            if (!strcmp(psz, aVars[i].pszVar))
+            if (!strcmp(psz, g_aVars[i].pszVar))
             {
-                rc = aVars[i].pfnHandler(pVM, psz, pszValue, (void*)(uintptr_t)aVars[i].pvUser);
+                rc = g_aVars[i].pfnHandler(pVM, psz, pszValue, (void *)(uintptr_t)g_aVars[i].pvUser);
                 break;
             }
         }
@@ -331,6 +329,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
  */
 static DECLCALLBACK(int) cfgmR3CreateDefault(PUVM pUVM, PVM pVM, void *pvUser)
 {
+    RT_NOREF1(pUVM);
     uint64_t cbMem = *(uint64_t *)pvUser;
     int rc;
     int rcAll = VINF_SUCCESS;
@@ -624,6 +623,7 @@ static void syntax(void)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
     int rcRet = 1;
     int rc;
     RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);

@@ -290,7 +290,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     for (i = TSTMICROTEST_OVERHEAD; i < TSTMICROTEST_TRAP_FIRST; i++)
     {
         TSTMICROTEST enmTest = (TSTMICROTEST)i;
-        uint64_t    cMin = ~0;
+        uint64_t    cMin = UINT64_MAX;
         uint64_t    cMax = 0;
         uint64_t    cTotal = 0;
         unsigned    cSamples = 0;
@@ -345,6 +345,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
     int     rcRet = 0;                  /* error count. */
 
     RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);

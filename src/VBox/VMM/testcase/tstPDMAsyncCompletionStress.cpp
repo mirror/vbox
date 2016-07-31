@@ -131,7 +131,7 @@ typedef struct PDMACTESTFILE
     /** Size of a file segment. */
     size_t                     cbFileSegment;
     /** Maximum number of segments. */
-    unsigned                   cSegments;
+    size_t                     cSegments;
     /** Pointer to the array describing how the file is assembled
      * of the test pattern. Used for comparing read data to ensure
      * that no corruption occurred.
@@ -167,7 +167,7 @@ static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFIL
     while (cbLeft)
     {
         size_t cbCompare;
-        unsigned iSeg = off / pTestFile->cbFileSegment;
+        size_t iSeg = off / pTestFile->cbFileSegment;
         PPDMACTESTFILESEG pSeg = &pTestFile->paSegs[iSeg];
         uint8_t *pbTestPattern;
         unsigned offSeg = off - pSeg->off;
@@ -207,7 +207,7 @@ static void tstPDMACStressTestFileFillBuffer(PPDMACTESTFILE pTestFile, PPDMACTES
     while (cbLeft)
     {
         size_t cbFill;
-        unsigned iSeg = off / pTestFile->cbFileSegment;
+        size_t iSeg = off / pTestFile->cbFileSegment;
         PPDMACTESTFILESEG pSeg = &pTestFile->paSegs[iSeg];
         uint8_t *pbTestPattern;
         unsigned offSeg = off - pSeg->off;
@@ -574,6 +574,7 @@ static void tstPDMACStressTestPatternDestroy(void)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
     int rcRet = 0; /* error count */
 
     RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);

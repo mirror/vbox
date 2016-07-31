@@ -141,6 +141,8 @@ static void doStandaloneTests(void)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF3(argc, argv, envp);
+
     /*
      * Init runtime.
      */
