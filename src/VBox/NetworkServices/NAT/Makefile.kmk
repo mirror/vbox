@@ -26,14 +26,12 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
   include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Makefile.kmk
  endif
 
- ifdef VBOX_WITH_HARDENING
-  PROGRAMS += VBoxNetLwipNATHardened
-  DLLS += VBoxNetLwipNAT
- else
-  PROGRAMS += VBoxNetLwipNAT
- endif
 
  ifdef VBOX_WITH_HARDENING
+  #
+  # Hardened stub exe for VBoxNetLwipNAT.
+  #
+  PROGRAMS += VBoxNetLwipNATHardened
   VBoxNetLwipNATHardened_TEMPLATE = VBOXR3HARDENEDEXE
   VBoxNetLwipNATHardened_NAME     = VBoxNetNAT
   VBoxNetLwipNATHardened_DEFS     = SERVICE_NAME=\"VBoxNetNAT\"
@@ -42,21 +40,30 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
   VBoxNetLwipNATHardened_LDFLAGS.win = /SUBSYSTEM:windows
  endif
 
+
+ #
+ # VBoxNetLwipNAT.
+ #
+ ifdef VBOX_WITH_HARDENING
+  DLLS += VBoxNetLwipNAT
+ else
+  PROGRAMS += VBoxNetLwipNAT
+ endif
  VBoxNetLwipNAT_TEMPLATE := VBOXMAIN$(if-expr defined(VBOX_WITH_HARDENING),DLL,CLIENTEXE)
  VBoxNetLwipNAT_NAME = VBoxNetNAT
  VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} IPv6
  # VBoxNetLwipNAT_DEFS.linux += WITH_VALGRIND # instrument lwip memp.c
  VBoxNetLwipNAT_DEFS.win += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
  VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
-        $(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetBaseService.cpp \
-        $(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetPortForwardString.cpp \
-        $(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetIntIf.cpp \
-        $(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetUDP.cpp \
-        $(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetARP.cpp \
-        $(VBOX_PATH_NAT_SRC)/../NetLib/ComHostUtils.cpp
+ 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetBaseService.cpp \
+ 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetPortForwardString.cpp \
+ 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetIntIf.cpp \
+ 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetUDP.cpp \
+ 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetARP.cpp \
+ 	$(VBOX_PATH_NAT_SRC)/../NetLib/ComHostUtils.cpp
 
  VBoxNetLwipNAT_LIBS = \
-        $(LIB_RUNTIME)
+ 	$(LIB_RUNTIME)
  VBoxNetLwipNAT_LIBS.solaris += socket nsl
  VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
@@ -88,18 +95,18 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
  endif
 
  VBoxNetLwipNAT_SOURCES += \
-     proxy_pollmgr.c \
-     proxy_rtadvd.c \
-     proxy.c \
-     pxremap.c \
-     pxtcp.c \
-     pxudp.c \
-     pxdns.c \
-     fwtcp.c \
-     fwudp.c \
-     portfwd.c \
-     proxy_dhcp6ds.c \
-     proxy_tftpd.c
+ 	proxy_pollmgr.c \
+ 	proxy_rtadvd.c \
+ 	proxy.c \
+ 	pxremap.c \
+ 	pxtcp.c \
+ 	pxudp.c \
+ 	pxdns.c \
+ 	fwtcp.c \
+ 	fwudp.c \
+ 	portfwd.c \
+ 	proxy_dhcp6ds.c \
+ 	proxy_tftpd.c
 
  ifeq ($(KBUILD_TARGET),win)
   # unprivileged Icmp API
@@ -124,12 +131,11 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
  VBoxNetLwipNAT_SOURCES.win     += rtmon_win.c
 
  VBoxNetLwipNAT_SOURCES.win += \
-     RTWinPoll.cpp \
-     RTWinSocketPair.cpp
+ 	RTWinPoll.cpp \
+ 	RTWinSocketPair.cpp
 
  VBoxNetLwipNAT_INCS += . # for lwipopts.h
- $(eval $(call def_vbox_lwip_public, \
-     VBoxNetLwipNAT, $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new))
+ $(eval $(call def_vbox_lwip_public, VBoxNetLwipNAT, $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new))
 
  ifeq ($(KBUILD_TARGET),win)
   # Icon include file.
