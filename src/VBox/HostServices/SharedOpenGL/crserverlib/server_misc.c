@@ -587,7 +587,8 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
         }
         else
         {
-            GLuint pboId, dRow, sRow;
+            GLint dRow;
+            GLuint pboId, sRow;
             CRContext *ctx = crStateGetCurrent();
 
             gl->GenBuffersARB(1, &pboId);

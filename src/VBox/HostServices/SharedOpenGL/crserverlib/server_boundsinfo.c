@@ -234,9 +234,11 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 															GLint len, GLint num_opcodes )
 {
+#if 0
 	CRMuralInfo *mural = cr_server.curClient->currentMural;
 	char *data_ptr = (char*)(payload + ((num_opcodes + 3 ) & ~0x03));
 	unsigned int bx, by;
+#endif
 
 	/* Save current unpacker state */
 	crUnpackPush();
