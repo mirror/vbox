@@ -20,6 +20,13 @@
  */
 
 
+/** @todo
+ * Our appologies for the 256+ missing return code checks in this sample file.
+ *
+ * We strongly recomment users of the VBoxCAPI to check all return codes!
+ */
+
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
