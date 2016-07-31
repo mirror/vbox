@@ -37,13 +37,13 @@
 #define ___VBox_com_VirtualBox_h
 
 // generated VirtualBox COM library definition file
-#if !defined (VBOXCOM_NOINCLUDE)
-# if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOXCOM_NOINCLUDE)
+# if !defined(VBOX_WITH_XPCOM)
 #  include <VirtualBox.h>
 # else
 #  include <VirtualBox_XPCOM.h>
 # endif
-#endif // !defined (VBOXCOM_NOINCLUDE)
+#endif
 
 // for convenience
 #include "VBox/com/defs.h"
