@@ -258,42 +258,36 @@ int testStartVM(IVirtualBox *virtualBox)
 
 int main()
 {
-    HRESULT rc;
+    /* Initialize the COM subsystem. */
+    CoInitialize(NULL);
+
+    /* Instantiate the VirtualBox root object. */
     IVirtualBoxClient *virtualBoxClient;
-    IVirtualBox *virtualBox;
-
-    do
+    HRESULT rc = CoCreateInstance(CLSID_VirtualBoxClient, /* the VirtualBoxClient object */
+                                  NULL,                   /* no aggregation */
+                                  CLSCTX_INPROC_SERVER,   /* the object lives in the current process */
+                                  IID_IVirtualBoxClient,  /* IID of the interface */
+                                  (void**)&virtualBoxClient);
+    if (SUCCEEDED(rc))
     {
-        /* Initialize the COM subsystem. */
-        CoInitialize(NULL);
-
-        /* Instantiate the VirtualBox root object. */
-        rc = CoCreateInstance(CLSID_VirtualBoxClient, /* the VirtualBoxClient object */
-                              NULL,                   /* no aggregation */
-                              CLSCTX_INPROC_SERVER,   /* the object lives in the current process */
-                              IID_IVirtualBoxClient,  /* IID of the interface */
-                              (void**)&virtualBoxClient);
+        IVirtualBox *virtualBox;
+        rc = virtualBoxClient->get_VirtualBox(&virtualBox);
         if (SUCCEEDED(rc))
-            virtualBoxClient->get_VirtualBox(&virtualBox);
-
-        if (!SUCCEEDED(rc))
         {
-            printf("Error creating VirtualBox instance! rc = 0x%x\n", rc);
-            break;
+            listVMs(virtualBox);
+
+            testErrorInfo(virtualBox);
+
+            /* Enable the following line to get a VM started. */
+            //testStartVM(virtualBox);
+
+            /* Release the VirtualBox object. */
+            virtualBox->Release();
+            virtualBoxClient->Release();
         }
-
-        listVMs(virtualBox);
-
-        testErrorInfo(virtualBox);
-
-        /* Enable the following line to get a VM started. */
-        //testStartVM(virtualBox);
-
-        /* Release the VirtualBox object. */
-        virtualBox->Release();
-        virtualBoxClient->Release();
-
-    } while (0);
+        else
+            printf("Error creating VirtualBox instance! rc = 0x%x\n", rc);
+    }
 
     CoUninitialize();
     return 0;
