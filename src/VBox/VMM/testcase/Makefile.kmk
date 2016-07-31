@@ -245,8 +245,10 @@ tstGlobalConfig_LIBS    = $(LIB_RUNTIME)
 tstIEMCheckMc_TEMPLATE  = VBOXR3TSTEXE
 tstIEMCheckMc_SOURCES   = tstIEMCheckMc.cpp
 tstIEMCheckMc_LIBS      = $(LIB_RUNTIME)
-ifneq ($(KBUILD_TARGET),win)
-tstIEMCheckMc_CXXFLAGS  = -Wno-unused-parameter
+ifeq ($(KBUILD_TARGET),win)
+ tstIEMCheckMc_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -wd4189 # local variable is initialized but not used.
+else
+ tstIEMCheckMc_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS)
 endif
 
 #
