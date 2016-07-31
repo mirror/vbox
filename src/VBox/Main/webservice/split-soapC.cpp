@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/types.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,179 +23,189 @@
 #include <limits.h>
 
 
-int main(int argc, char *argv[])
+char *readfileIntoBuffer(const char *pszFile, size_t *pcbFile)
 {
-    int rc = 0;
-    FILE *pFileIn = NULL;
-    FILE *pFileOut = NULL;
-    char *pBuffer = NULL;
-
-    do
+    FILE *pFileIn = fopen(pszFile, "rb");
+    if (pFileIn)
     {
-        if (argc != 4)
-        {
-            fprintf(stderr, "split-soapC: Must be started with exactly three arguments,\n"
-                            "1) the input file, 2) the directory where to put the output files and\n"
-                            "3) the number chunks to create.\n");
-            rc = 2;
-            break;
-        }
-
-        char *pEnd = NULL;
-        unsigned long cChunk = strtoul(argv[3], &pEnd, 0);
-        if (cChunk == ULONG_MAX || cChunk == 0 || !argv[3] || *pEnd)
-        {
-            fprintf(stderr, "split-soapC: Given argument \"%s\" is not a valid chunk count.\n", argv[3]);
-            rc = 2;
-            break;
-        }
-
-        pFileIn = fopen(argv[1], "rb");
-        if (!pFileIn)
-        {
-            fprintf(stderr, "split-soapC: Cannot open file \"%s\" for reading.\n", argv[1]);
-            rc = 2;
-            break;
-        }
         int rc2 = fseek(pFileIn, 0, SEEK_END);
         long cbFileIn = ftell(pFileIn);
         int rc3 = fseek(pFileIn, 0, SEEK_SET);
-        if (rc3 == -1 || rc2 == -1 || cbFileIn < 0)
+        if (rc3 != -1 && rc2 != -1 && cbFileIn >= 0)
         {
+            char *pBuffer = (char *)malloc(cbFileIn + 1);
+            if (pBuffer)
+            {
+                size_t cbRead = fread(pBuffer, 1, cbFileIn, pFileIn);
+                if (cbRead == (size_t)cbFileIn)
+                {
+                    pBuffer[cbFileIn] = '\0';
+                    fclose(pFileIn);
+                    *pcbFile = (size_t)cbFileIn;
+                    return pBuffer;
+                }
+
+                fprintf(stderr, "split-soapC: Failed to read %ld bytes from input file.\n", cbFileIn);
+                free(pBuffer);
+            }
+            else
+                fprintf(stderr, "split-soapC: Failed to allocate %ld bytes.\n", cbFileIn);
+        }
+        else
             fprintf(stderr, "split-soapC: Seek failure.\n");
-            rc = 2;
-            break;
-        }
+        fclose(pFileIn);
+    }
+    else
+        fprintf(stderr, "split-soapC: Cannot open file \"%s\" for reading.\n", pszFile);
+    return NULL;
+}
 
-        if (!(pBuffer = (char*)malloc(cbFileIn + 1)))
+
+int main(int argc, char *argv[])
+{
+    /*
+     * Check argument count.
+     */
+    if (argc != 4)
+    {
+        fprintf(stderr, "split-soapC: Must be started with exactly three arguments,\n"
+                        "1) the input file, 2) the directory where to put the output files and\n"
+                        "3) the number chunks to create.\n");
+        return RTEXITCODE_SYNTAX;
+    }
+
+    /*
+     * Number of chunks (argv[3]).
+     */
+    char *pszEnd = NULL;
+    unsigned long cChunks = strtoul(argv[3], &pszEnd, 0);
+    if (cChunks == ULONG_MAX || cChunks == 0 || !argv[3] || *pszEnd)
+    {
+        fprintf(stderr, "split-soapC: Given argument \"%s\" is not a valid chunk count.\n", argv[3]);
+        return RTEXITCODE_SYNTAX;
+    }
+
+    /*
+     * Read the input file into a zero terminated memory buffer.
+     */
+    size_t cbFileIn;
+    char *pszBuffer = readfileIntoBuffer(argv[1], &cbFileIn);
+    if (!pszBuffer)
+        return RTEXITCODE_FAILURE;
+
+    /*
+     * Split the file.
+     */
+    RTEXITCODE    rcExit = RTEXITCODE_SUCCESS;
+    FILE         *pFileOut = NULL;
+    const char   *pszLine = pszBuffer;
+    size_t        cbChunk = cbFileIn / cChunks;
+    size_t        cFiles = 0;
+    size_t        cbLimit = 0;
+    size_t        cbWritten = 0;
+    unsigned long cIfNesting = 0;
+    unsigned long cBraceNesting = 0;
+    unsigned long cLinesSinceStaticMap = ~0UL / 2;
+    bool          fJustZero = false;
+
+    do
+    {
+        if (!pFileOut)
         {
-            fprintf(stderr, "split-soapC: Failed to allocate %ld bytes.\n", cbFileIn);
-            rc = 2;
-            break;
-        }
+            /* construct output filename */
+            char szFilename[1024];
+            sprintf(szFilename, "%s/soapC-%lu.cpp", argv[2], ++cFiles);
+            szFilename[sizeof(szFilename)-1] = '\0';
+            printf("info: soapC-%lu.cpp\n", cFiles);
 
-        if (fread(pBuffer, 1, cbFileIn, pFileIn) != (size_t)cbFileIn)
-        {
-            fprintf(stderr, "split-soapC: Failed to read %ld bytes from input file.\n", cbFileIn);
-            rc = 2;
-            break;
-        }
-        pBuffer[cbFileIn] = '\0';
-
-        const char *pLine = pBuffer;
-        unsigned long cbChunk = cbFileIn / cChunk;
-        unsigned long cFiles = 0;
-        unsigned long uLimit = 0;
-        unsigned long cbWritten = 0;
-        unsigned long cIfNesting = 0;
-        unsigned long cBraceNesting = 0;
-        unsigned long cLinesSinceStaticMap = ~0UL / 2;
-        bool fJustZero = false;
-
-        do
-        {
+            /* create output file */
+            pFileOut = fopen(szFilename, "wb");
             if (!pFileOut)
             {
-                /* construct output filename */
-                char szFilename[1024];
-                sprintf(szFilename, "%s/soapC-%lu.cpp", argv[2], ++cFiles);
-                szFilename[sizeof(szFilename)-1] = '\0';
-                printf("info: soapC-%lu.cpp\n", cFiles);
-
-                /* create output file */
-                if (!(pFileOut = fopen(szFilename, "wb")))
-                {
-                    fprintf(stderr, "split-soapC: Failed to open file \"%s\" for writing\n", szFilename);
-                    rc = 2;
-                    break;
-                }
-                if (cFiles > 1)
-                    fprintf(pFileOut, "#include \"soapH.h\"%s\n",
+                fprintf(stderr, "split-soapC: Failed to open file \"%s\" for writing\n", szFilename);
+                rcExit = RTEXITCODE_FAILURE;
+                break;
+            }
+            if (cFiles > 1)
+                fprintf(pFileOut, "#include \"soapH.h\"%s\n",
 #ifdef RT_OS_WINDOWS
-                                      "\r"
-#else /* !RT_OS_WINDOWS */
-                                      ""
-#endif /* !RT_OS_WINDOWS */
-                           );
-                uLimit += cbChunk;
-                cLinesSinceStaticMap = ~0UL / 2;
-            }
+                                  "\r"
+#else
+                                  ""
+#endif
+                       );
+            cbLimit += cbChunk;
+            cLinesSinceStaticMap = ~0UL / 2;
+        }
 
-            /* find begin of next line and print current line */
-            const char *pNextLine = strchr(pLine, '\n');
-            size_t cbLine;
-            if (pNextLine)
-            {
-                pNextLine++;
-                cbLine = pNextLine - pLine;
-            }
-            else
-                cbLine = strlen(pLine);
-            if (fwrite(pLine, 1, cbLine, pFileOut) != cbLine)
-            {
-                fprintf(stderr, "split-soapC: Failed to write to output file\n");
-                rc = 2;
-                break;
-            }
-            cbWritten += cbLine;
+        /* find begin of next line and print current line */
+        const char *pszNextLine = strchr(pszLine, '\n');
+        size_t cbLine;
+        if (pszNextLine)
+        {
+            pszNextLine++;
+            cbLine = pszNextLine - pszLine;
+        }
+        else
+            cbLine = strlen(pszLine);
+        if (fwrite(pszLine, 1, cbLine, pFileOut) != cbLine)
+        {
+            fprintf(stderr, "split-soapC: Failed to write to output file\n");
+            rcExit = RTEXITCODE_FAILURE;
+            break;
+        }
+        cbWritten += cbLine;
 
-            /* process nesting depth information */
-            if (!strncmp(pLine, "#if", 3))
-                cIfNesting++;
-            else if (!strncmp(pLine, "#endif", 6))
+        /* process nesting depth information */
+        if (!strncmp(pszLine, "#if", 3))
+            cIfNesting++;
+        else if (!strncmp(pszLine, "#endif", 6))
+        {
+            cIfNesting--;
+            if (!cBraceNesting && !cIfNesting)
+                fJustZero = true;
+        }
+        else
+        {
+            for (const char *p = pszLine; p < pszLine + cbLine; p++)
             {
-                cIfNesting--;
-                if (!cBraceNesting && !cIfNesting)
-                    fJustZero = true;
-            }
-            else
-            {
-                for (const char *p = pLine; p < pLine + cbLine; p++)
+                if (*p == '{')
+                    cBraceNesting++;
+                else if (*p == '}')
                 {
-                    if (*p == '{')
-                        cBraceNesting++;
-                    else if (*p == '}')
-                    {
-                        cBraceNesting--;
-                        if (!cBraceNesting && !cIfNesting)
-                            fJustZero = true;
-                    }
+                    cBraceNesting--;
+                    if (!cBraceNesting && !cIfNesting)
+                        fJustZero = true;
                 }
             }
+        }
 
-            /* look for static variables used for enum conversion. */
-            if (!strncmp(pLine, "static const struct soap_code_map", sizeof("static const struct soap_code_map") - 1))
-                cLinesSinceStaticMap = 0;
-            else
-                cLinesSinceStaticMap++;
+        /* look for static variables used for enum conversion. */
+        if (!strncmp(pszLine, "static const struct soap_code_map", sizeof("static const struct soap_code_map") - 1))
+            cLinesSinceStaticMap = 0;
+        else
+            cLinesSinceStaticMap++;
 
-            /* start a new output file if necessary and possible */
-            if (   cbWritten >= uLimit
-                && cIfNesting == 0
-                && fJustZero
-                && cFiles < cChunk
-                && cLinesSinceStaticMap > 150 /*hack!*/)
-            {
-                fclose(pFileOut);
-                pFileOut = NULL;
-            }
+        /* start a new output file if necessary and possible */
+        if (   cbWritten >= cbLimit
+            && cIfNesting == 0
+            && fJustZero
+            && cFiles < cChunks
+            && cLinesSinceStaticMap > 150 /*hack!*/)
+        {
+            fclose(pFileOut);
+            pFileOut = NULL;
+        }
 
-            if (rc)
-                break;
+        fJustZero = false;
+        pszLine = pszNextLine;
+    } while (pszLine);
 
-            fJustZero = false;
-            pLine = pNextLine;
-        } while (pLine);
+    printf("split-soapC: Created %lu files.\n", cFiles);
 
-        printf("split-soapC: Created %lu files.\n", cFiles);
-    } while (0);
-
-    if (pBuffer)
-        free(pBuffer);
-    if (pFileIn)
-        fclose(pFileIn);
+    free(pszBuffer);
     if (pFileOut)
         fclose(pFileOut);
 
-    return rc;
+    return rcExit;
 }
