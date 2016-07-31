@@ -1160,6 +1160,17 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+	$(MV) -f "$(VBoxCOM_0_OUTDIR)/VirtualBox.h" "$(VBoxCOM_0_OUTDIR)/VirtualBox.h.tmp"
+	$(APPEND) -nt "$(VBoxCOM_0_OUTDIR)/VirtualBox.h" \
+		'#pragma warning(push) /* -Wall and windows.h */' \
+		'#pragma warning(disable:4668)' \
+               ''
+	$(CAT_EXT) "$(VBoxCOM_0_OUTDIR)/VirtualBox.h.tmp" >> "$(VBoxCOM_0_OUTDIR)/VirtualBox.h"
+	$(APPEND) -n "$(VBoxCOM_0_OUTDIR)/VirtualBox.h" \
+		'' \
+		'#pragma warning(pop)' \
+               ''
+	$(RM) -f "$(VBoxCOM_0_OUTDIR)/VirtualBox.h.tmp"
 
 if defined(VBOX_WITH_MIDL_PROXY_STUB)
 # -Windows Server 2003 AMD64 SP1 does not like the result when using '/protocol all' and '/target NT51'.
