@@ -43,7 +43,7 @@ extern "C" {
 #define CR_MAX_WINDOWS 100
 #define CR_MAX_CLIENTS 64
 
-/*@todo must match MaxGuestMonitors from SchemaDefs.h*/
+/** @todo must match MaxGuestMonitors from SchemaDefs.h*/
 #define CR_MAX_GUEST_MONITORS VBOX_VIDEO_MAX_SCREENS
 
 typedef DECLCALLBACKPTR(void, PFNCRSERVERPRESENTFBO) (void *data, int32_t screenId, int32_t x, int32_t y, uint32_t w, uint32_t h);

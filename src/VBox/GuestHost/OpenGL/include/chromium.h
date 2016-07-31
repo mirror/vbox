@@ -38,7 +38,11 @@
 # endif
 # define WIN32_LEAN_AND_MEAN
 # define WGL_APIENTRY __stdcall
-# include <windows.h>
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
+#  include <windows.h>
+# endif
 #elif defined(DARWIN)
 /* nothing */
 #else
@@ -433,7 +437,7 @@ struct VBOXVR_SCR_COMPOSITOR_ENTRY;
 #define GL_FOG_COORDINATE_ARRAY_POINTER_EXT     0x8456
 #endif
 
-typedef void (*CR_GLXFuncPtr)();
+typedef void (*CR_GLXFuncPtr)(void);
 #ifndef GLX_ARB_get_proc_address
 #define GLX_ARB_get_proc_address 1
 CR_GLXFuncPtr glXGetProcAddressARB( const GLubyte *name );
@@ -795,7 +799,7 @@ extern void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, const vo
 extern void APIENTRY crWindowShow( GLint window, GLint flag );
 extern void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects);
 
-typedef int (CR_APIENTRY *CR_PROC)();
+typedef int (CR_APIENTRY *CR_PROC)(void);
 CR_PROC APIENTRY crGetProcAddress( const char *name );
 
 

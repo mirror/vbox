@@ -2567,11 +2567,11 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount)
 {
     int i;
 
-    if (sCount>CR_MAX_GUEST_MONITORS)
+    if (sCount > CR_MAX_GUEST_MONITORS)
         return VERR_INVALID_PARAMETER;
 
     /*Shouldn't happen yet, but to be safe in future*/
-    for (i=0; i<cr_server.screenCount; ++i)
+    for (i = 0; i < cr_server.screenCount; /*++i - unreachable code*/)
     {
         if (MAPPED(SCREEN(i)))
             WARN(("Screen count is changing, but screen[%i] is still mapped", i));
@@ -3572,9 +3572,7 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA
             WARN(("unsupported command"));
             return -1;
     }
-
-    WARN(("internal error"));
-    return -1;
+    /* not reached */
 }
 
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
@@ -3915,7 +3913,7 @@ static DECLCALLBACK(bool) crVBoxServerHasDataForScreen(uint32_t u32ScreenID)
 }
 
 
-static DECLCALLBACK(bool) crVBoxServerHasData()
+static DECLCALLBACK(bool) crVBoxServerHasData(void)
 {
     HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
     for (;
