@@ -1618,13 +1618,14 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 #      -wd4263: 'int VRDPChannelClipboard::SendPacket(const void *,uint32_t)' : member function does not override any base class virtual member function
 #               Probably useful, but impractical, just like the next one.
 #      -wd4264: 'int VRDPOutputCtx::SendPacket(void)' : no override available for virtual member function from base 'VRDPOutputCtx'; function is hidden
+#      -wd4738: storing 32-bit float result in memory, possible loss of performance
 # Want to enable these:
 #      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
 #      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
 #      -wd4100: 'identifier' : unreferenced formal parameter [level 4]
 VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
 	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324 -wd4505 \
-	-wd4263 -wd4264
+	-wd4263 -wd4264 -wd4738
 ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_VCC_WARN_ALL += -wd4100
 else
@@ -6300,10 +6301,10 @@ TEMPLATE_VBOXCROGLR3HOSTDLL_DEFS.win         = _WIN32_WINNT=0x0500 WINDOWS=1
 TEMPLATE_VBOXCROGLR3HOSTDLL_DEFS.linux       = Linux=1 _GNU_SOURCE
 TEMPLATE_VBOXCROGLR3HOSTDLL_DEFS.solaris     = SunOS=1 _GNU_SOURCE #GLEXT_64_TYPES_DEFINED
 TEMPLATE_VBOXCROGLR3HOSTDLL_DEFS.darwin      = DARWIN=1 GL_GLEXT_LEGACY _GNU_SOURCE VBOX_WITH_COCOA_QT
-TEMPLATE_VBOXCROGLR3HOSTDLL_LDFLAGS.darwin   = -framework AppKit
 TEMPLATE_VBOXCROGLR3HOSTDLL_DEFS.freebsd     = FreeBSD=1 _GNU_SOURCE
 TEMPLATE_VBOXCROGLR3HOSTDLL_INCS             = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
 TEMPLATE_VBOXCROGLR3HOSTDLL_SDKS.darwin      = DARWIN-OPENGL
+TEMPLATE_VBOXCROGLR3HOSTDLL_LDFLAGS.darwin   = -framework AppKit
 TEMPLATE_VBOXCROGLR3HOSTDLL_LDFLAGS.darwin  += \
 	-framework OpenGL \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
