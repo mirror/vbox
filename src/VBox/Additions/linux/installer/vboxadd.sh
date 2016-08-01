@@ -265,14 +265,11 @@ stop()
     if ! umount -a -t vboxsf 2>/dev/null; then
         fail "Cannot unmount vboxsf folders"
     fi
-    if running_vboxsf; then
-        rmmod vboxsf 2>/dev/null || fail "Cannot unload module vboxsf"
-    fi
-    if running_vboxguest; then
-        rmmod vboxguest 2>/dev/null || fail "Cannot unload module vboxguest"
-        rm -f $userdev || fail "Cannot unlink $userdev"
-        rm -f $dev || fail "Cannot unlink $dev"
-    fi
+    modprobe -q -r -a vboxvideo vboxsf vboxguest
+    egrep -q 'vboxguest|vboxsf|vboxvideo' /proc/modules &&
+        echo "You may need to restart your guest system to finish removing the guest drivers."
+    rm -f $userdev || fail "Cannot unlink $userdev"
+    rm -f $dev || fail "Cannot unlink $dev"
     succ_msg
     return 0
 }
