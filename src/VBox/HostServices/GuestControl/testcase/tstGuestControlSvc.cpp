@@ -153,17 +153,17 @@ static int testHost(const VBOXHGCMSVCFNTABLE *pTable)
 {
     RTTestSub(g_hTest, "Testing host commands ...");
 
-    static VBOXHGCMSVCPARM s_aParms[1];
-    s_aParms[0].setUInt32(1000 /* Context ID */);
+    VBOXHGCMSVCPARM aParms[1];
+    aParms[0].setUInt32(1000 /* Context ID */);
 
-    static CMDHOST s_aCmdHostAll[] =
+    CMDHOST aCmdHostAll[] =
     {
-        #if 0
+#if 0
         /** No client connected. */
         { 1024 /* Not existing command */, 0, 0, false, VERR_NOT_FOUND },
         { -1 /* Invalid command */, 0, 0, false, VERR_NOT_FOUND },
         { HOST_CANCEL_PENDING_WAITS, 1024, 0, false, VERR_NOT_FOUND },
-        { HOST_CANCEL_PENDING_WAITS, 0, &s_aParms[0], false, VERR_NOT_FOUND },
+        { HOST_CANCEL_PENDING_WAITS, 0, &aParms[0], false, VERR_NOT_FOUND },
 
         /** No client connected, valid command. */
         { HOST_CANCEL_PENDING_WAITS, 0, 0, false, VERR_NOT_FOUND },
@@ -175,9 +175,9 @@ static int testHost(const VBOXHGCMSVCFNTABLE *pTable)
 
         /** Client connected, valid parameters given. */
         { HOST_CANCEL_PENDING_WAITS, 0, 0, true, VINF_SUCCESS },
-        { HOST_CANCEL_PENDING_WAITS, 1024, &s_aParms[0], true, VINF_SUCCESS },
-        { HOST_CANCEL_PENDING_WAITS, 0, &s_aParms[0], true, VINF_SUCCESS},
-        #endif
+        { HOST_CANCEL_PENDING_WAITS, 1024, &aParms[0], true, VINF_SUCCESS },
+        { HOST_CANCEL_PENDING_WAITS, 0, &aParms[0], true, VINF_SUCCESS},
+#endif
 
         /** Client connected, invalid parameters given. */
         { HOST_EXEC_CMD, 1024, 0, true, VERR_INVALID_POINTER },
@@ -185,16 +185,16 @@ static int testHost(const VBOXHGCMSVCFNTABLE *pTable)
         { HOST_EXEC_CMD, -1, 0, true, VERR_INVALID_POINTER },
 
         /** Client connected, parameters given. */
-        { HOST_CANCEL_PENDING_WAITS, 1, &s_aParms[0], true, VINF_SUCCESS },
-        { HOST_EXEC_CMD, 1, &s_aParms[0], true, VINF_SUCCESS },
-        { HOST_EXEC_SET_INPUT, 1, &s_aParms[0], true, VINF_SUCCESS },
-        { HOST_EXEC_GET_OUTPUT, 1, &s_aParms[0], true, VINF_SUCCESS },
+        { HOST_CANCEL_PENDING_WAITS, 1, &aParms[0], true, VINF_SUCCESS },
+        { HOST_EXEC_CMD, 1, &aParms[0], true, VINF_SUCCESS },
+        { HOST_EXEC_SET_INPUT, 1, &aParms[0], true, VINF_SUCCESS },
+        { HOST_EXEC_GET_OUTPUT, 1, &aParms[0], true, VINF_SUCCESS },
 
         /** Client connected, unknown command + valid parameters given. */
-        { -1, 1, &s_aParms[0], true, VINF_SUCCESS }
+        { -1, 1, &aParms[0], true, VINF_SUCCESS }
     };
 
-    int rc = testHostCmd(pTable, &s_aCmdHostAll[0], RT_ELEMENTS(s_aCmdHostAll));
+    int rc = testHostCmd(pTable, &aCmdHostAll[0], RT_ELEMENTS(aCmdHostAll));
     RTTestSubDone(g_hTest);
     return rc;
 }
@@ -209,20 +209,20 @@ static int testClient(const VBOXHGCMSVCFNTABLE *pTable)
         VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
         /* No commands from host yet. */
-        static VBOXHGCMSVCPARM s_aParmsGuest[8];
-        s_aParmsGuest[0].setUInt32(0 /* Msg type */);
-        s_aParmsGuest[1].setUInt32(0 /* Parameters */);
+        VBOXHGCMSVCPARM aParmsGuest[8];
+        aParmsGuest[0].setUInt32(0 /* Msg type */);
+        aParmsGuest[1].setUInt32(0 /* Parameters */);
         pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_MSG_WAIT, 2, &s_aParmsGuest[0]);
+                        GUEST_MSG_WAIT, 2, &aParmsGuest[0]);
         RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VINF_SUCCESS, callHandle.rc);
 
         /* Host: Add a dummy command. */
-        static VBOXHGCMSVCPARM s_aParmsHost[8];
-        s_aParmsHost[0].setUInt32(1000 /* Context ID */);
-        s_aParmsHost[1].setString("foo.bar");
-        s_aParmsHost[2].setString("baz");
+        VBOXHGCMSVCPARM aParmsHost[8];
+        aParmsHost[0].setUInt32(1000 /* Context ID */);
+        aParmsHost[1].setString("foo.bar");
+        aParmsHost[2].setString("baz");
 
-        rc = pTable->pfnHostCall(pTable->pvService, HOST_EXEC_CMD, 3, &s_aParmsHost[0]);
+        rc = pTable->pfnHostCall(pTable->pvService, HOST_EXEC_CMD, 3, &aParmsHost[0]);
         RTTEST_CHECK_RC_RET(g_hTest, rc, VINF_SUCCESS, rc);
 
         /* Client: Disconnect again. */
@@ -238,7 +238,7 @@ static int testClient(const VBOXHGCMSVCFNTABLE *pTable)
 /*
  * Set environment variable "IPRT_TEST_MAX_LEVEL=all" to get more debug output!
  */
-int main(int argc, char **argv)
+int main()
 {
     RTEXITCODE rcExit  = RTTestInitAndCreate("tstGuestControlSvc", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)

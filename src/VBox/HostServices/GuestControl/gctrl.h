@@ -22,12 +22,12 @@
 
 namespace guestControl {
 
-/** @todo write docs! */
-int gctrlPrepareExecArgv(char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
-/** @todo write docs! */
-int gctrlAddToExecEnvv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
-/** @todo write docs! */
+//unused: /** @todo write docs! */
+//unused: int gctrlPrepareExecArgv(char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
+//unused: /** @todo write docs! */
+//unused: int gctrlAddToExecEnvv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
 #if 0
+/** @todo write docs! */
 int gctrlAllocateExecBlock(PVBOXGUESTCTRLEXECBLOCK *ppBlock,
                            const char *pszCmd, uint32_t fFlags,
                            uint32_t cArgs,    const char * const *papszArgs,
