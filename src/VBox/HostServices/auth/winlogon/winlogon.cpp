@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox External Authentication Library:
- * Windows Logon Authentication.
+ * VirtualBox External Authentication Library - Windows Logon Authentication.
  */
 
 /*
@@ -20,11 +19,11 @@
 // #define AUTH_DEBUG
 
 #include <iprt/win/windows.h>
-
 #include <VBox/VBoxAuth.h>
+#include <iprt/cdefs.h>
 
 #ifdef AUTH_DEBUG
-#include <stdio.h>
+# include <stdio.h>
 
 static void dprintfw(const WCHAR *fmt, ...)
 {
@@ -39,16 +38,16 @@ static void dprintfw(const WCHAR *fmt, ...)
 
    va_end(va);
 }
-#define DBGAUTH(a) dprintfw a
+# define DBGAUTH(a) dprintfw a
 #else
-#define DBGAUTH(a)
+# define DBGAUTH(a)
 #endif
 
-static WCHAR swszEmpty[] = { L"" };
+static WCHAR g_wszEmpty[] = { L"" };
 
 static void freeWideChar(WCHAR *pwszString)
 {
-    if (pwszString && pwszString != &swszEmpty[0])
+    if (pwszString && pwszString != &g_wszEmpty[0])
     {
         size_t cb = (wcslen(pwszString) + 1) * sizeof(WCHAR);
         SecureZeroMemory(pwszString, cb);
@@ -62,7 +61,7 @@ static WCHAR *utf8ToWideChar(const char *pszString)
      * Shortcut for empty strings.
      */
     if (!pszString || *pszString == 0)
-        return &swszEmpty[0];
+        return &g_wszEmpty[0];
 
     /*
      * Return NULL on errors.
@@ -97,34 +96,42 @@ static WCHAR *utf8ToWideChar(const char *pszString)
     return pwszString;
 }
 
+/* Prototype it to make sure we've got the right prototype. */
 extern "C"
 #if defined(_MSC_VER)
 __declspec(dllexport)
 #endif
-AuthResult AUTHCALL AuthEntry (const char *szCaller,
-                               PAUTHUUID pUuid,
-                               AuthGuestJudgement guestJudgement,
-                               const char *szUser,
-                               const char *szPassword,
-                               const char *szDomain,
-                               int fLogon,
-                               unsigned clientId)
+FNAUTHENTRY3 AuthEntry;
+
+/**
+ * @callback_method_impl{FNAUTHENTRY3}
+ */
+extern "C"
+AuthResult AUTHCALL AuthEntry(const char *pszCaller,
+                              PAUTHUUID pUuid,
+                              AuthGuestJudgement guestJudgement,
+                              const char *pszUser,
+                              const char *pszPassword,
+                              const char *pszDomain,
+                              int fLogon,
+                              unsigned clientId)
 {
+    RT_NOREF4(pszCaller, pUuid, guestJudgement, clientId);
     if (!fLogon)
     {
         /* Nothing to cleanup. The return code does not matter. */
         return AuthResultAccessDenied;
     }
 
-    LPWSTR lpwszUsername = utf8ToWideChar(szUser);
-    LPWSTR lpwszDomain   = utf8ToWideChar(szDomain);
-    LPWSTR lpwszPassword = utf8ToWideChar(szPassword);
+    LPWSTR pwszUsername = utf8ToWideChar(pszUser);
+    LPWSTR pwszDomain   = utf8ToWideChar(pszDomain);
+    LPWSTR pwszPassword = utf8ToWideChar(pszPassword);
 
     DBGAUTH((L"u[%ls], d[%ls], p[%ls]\n", lpwszUsername, lpwszDomain, lpwszPassword));
 
     AuthResult result = AuthResultAccessDenied;
 
-    if (lpwszUsername && lpwszDomain && lpwszPassword)
+    if (pwszUsername && pwszDomain && pwszPassword)
     {
         /* LOGON32_LOGON_INTERACTIVE is intended for users who will be interactively using the computer,
          * such as a user being logged on by a terminal server, remote shell, or similar process.
@@ -134,9 +141,9 @@ AuthResult AUTHCALL AuthEntry (const char *szCaller,
 
         HANDLE hToken;
 
-        BOOL fSuccess = LogonUserW(lpwszUsername,
-                                   lpwszDomain,
-                                   lpwszPassword,
+        BOOL fSuccess = LogonUserW(pwszUsername,
+                                   pwszDomain,
+                                   pwszPassword,
                                    dwLogonType,
                                    dwLogonProvider,
                                    &hToken);
@@ -155,12 +162,10 @@ AuthResult AUTHCALL AuthEntry (const char *szCaller,
         }
     }
 
-    freeWideChar(lpwszUsername);
-    freeWideChar(lpwszDomain);
-    freeWideChar(lpwszPassword);
+    freeWideChar(pwszUsername);
+    freeWideChar(pwszDomain);
+    freeWideChar(pwszPassword);
 
     return result;
 }
 
-/* Verify the function prototype. */
-static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;
