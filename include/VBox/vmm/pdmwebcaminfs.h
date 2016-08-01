@@ -53,7 +53,7 @@ typedef struct PDMIWEBCAMDOWN
      * @param pInterface  Pointer to the interface.
      * @param fReady      Whether the device is ready.
      */
-    DECLR3CALLBACKMEMBER(void, pfnWebcamDownReady,(PPDMIWEBCAMDOWN pInterface, bool fReady));
+    DECLR3CALLBACKMEMBER(void, pfnReady,(PPDMIWEBCAMDOWN pInterface, bool fReady));
 
     /**
      * Send a control request to the webcam.
@@ -67,8 +67,8 @@ typedef struct PDMIWEBCAMDOWN
      * @param pCtrl         The control data.
      * @param cbCtrl        The size of the control data.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWebcamDownControl,(PPDMIWEBCAMDOWN pInterface, void *pvUser, uint64_t idDevice,
-                                                    struct VRDEVIDEOINCTRLHDR const *pCtrl, uint32_t cbCtrl));
+    DECLR3CALLBACKMEMBER(int, pfnControl,(PPDMIWEBCAMDOWN pInterface, void *pvUser, uint64_t idDevice,
+                                          struct VRDEVIDEOINCTRLHDR const *pCtrl, uint32_t cbCtrl));
 } PDMIWEBCAMDOWN;
 /** Interface ID for PDMIWEBCAMDOWN. */
 #define PDMIWEBCAMDOWN_IID "0d29b9a1-f4cd-4719-a564-38d5634ba9f8"
@@ -92,9 +92,9 @@ typedef struct PDMIWEBCAMUP
      * @param   uVersion        The remote video input protocol version.
      * @param   fCapabilities   The remote video input protocol capabilities.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWebcamUpAttached,(PPDMIWEBCAMUP pInterface, uint64_t idDevice,
-                                                   struct VRDEVIDEOINDEVICEDESC const *pDeviceDesc, uint32_t cbDeviceDesc,
-                                                   uint32_t uVersion, uint32_t fCapabilities));
+    DECLR3CALLBACKMEMBER(int, pfnAttached,(PPDMIWEBCAMUP pInterface, uint64_t idDevice,
+                                           struct VRDEVIDEOINDEVICEDESC const *pDeviceDesc, uint32_t cbDeviceDesc,
+                                           uint32_t uVersion, uint32_t fCapabilities));
 
     /**
      * The webcam is not available anymore.
@@ -103,7 +103,7 @@ typedef struct PDMIWEBCAMUP
      * @param   idDevice        Unique id for the reported webcam assigned by the
      *                          driver.
      */
-    DECLR3CALLBACKMEMBER(void, pfnWebcamUpDetached,(PPDMIWEBCAMUP pInterface, uint64_t idDevice));
+    DECLR3CALLBACKMEMBER(void, pfnDetached,(PPDMIWEBCAMUP pInterface, uint64_t idDevice));
 
     /**
      * There is a control response or a control change for the webcam.
@@ -116,8 +116,8 @@ typedef struct PDMIWEBCAMUP
      * @param   pCtrl           The control data (defined in VRDE).
      * @param   cbCtrl          The size of the control data.
      */
-    DECLR3CALLBACKMEMBER(void, pfnWebcamUpControl,(PPDMIWEBCAMUP pInterface, bool fResponse, void *pvUser,
-                                                   uint64_t idDevice, struct VRDEVIDEOINCTRLHDR const *pCtrl, uint32_t cbCtrl));
+    DECLR3CALLBACKMEMBER(void, pfnControl,(PPDMIWEBCAMUP pInterface, bool fResponse, void *pvUser,
+                                           uint64_t idDevice, struct VRDEVIDEOINCTRLHDR const *pCtrl, uint32_t cbCtrl));
 
     /**
      * A new frame.
@@ -129,9 +129,9 @@ typedef struct PDMIWEBCAMUP
      * @param   pvFrame         Frame (image) data.
      * @param   cbFrame         Size of the image data.
      */
-    DECLR3CALLBACKMEMBER(void, pfnWebcamUpFrame,(PPDMIWEBCAMUP pInterface, uint64_t idDevice,
-                                                 struct VRDEVIDEOINPAYLOADHDR const *pHeader, uint32_t cbHeader,
-                                                 const void *pvFrame, uint32_t cbFrame));
+    DECLR3CALLBACKMEMBER(void, pfnFrame,(PPDMIWEBCAMUP pInterface, uint64_t idDevice,
+                                         struct VRDEVIDEOINPAYLOADHDR const *pHeader, uint32_t cbHeader,
+                                         const void *pvFrame, uint32_t cbFrame));
 } PDMIWEBCAMUP;
 /** Interface ID for PDMIWEBCAMUP. */
 #define PDMIWEBCAMUP_IID "6ac03e3c-f56c-4a35-80af-c13ce47a9dd7"
