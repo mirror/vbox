@@ -1019,38 +1019,15 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
     SetEvent(pClient->pCtx->hRenderEvent);
 }
 
-/*
-@StartHtml - pos before <html>
-@EndHtml - whole size of text excluding ending zero char
-@StartFragment - pos after <!--StartFragment-->
-@EndFragment - pos before <!--EndFragment-->
-@note: all values includes CR\LF inserted into text
-Calculations:
-Header length = format Length + (3*6('digits')) - 2('%s') = format length + 16 (control value - 183)
-EndHtml  = Header length + fragment length
-StartHtml = 105(constant)
-StartFragment = 143(constant)
-EndFragment  = Header length + fragment length - 40(ending length)
-*/
-const char pcszFormatSample[] =
-    "Version:1.0\r\n"
-    "StartHTML:000000101\r\n"
-    "EndHTML:%09d\r\n" // END HTML = Header length + fragment lengh
-"StartFragment:000000137\r\n"
-"EndFragment:%09d\r\n"
-"<html>\r\n"
-"<body>\r\n"
-"<!--StartFragment-->%s<!--EndFragment-->\r\n"
-"</body>\r\n"
-"</html>\r\n";
 
-/*
-* Extracts field value from CF_HTML struct
-* @src - source in CF_HTML format
-* @option - name of CF_HTML field
-* @value - extracted value of CF_HTML field
-* returns RC result code
-*/
+/**
+ * Extracts field value from CF_HTML struct
+ *
+ * @returns VBox status code
+ * @param   pcszSrc     source in CF_HTML format
+ * @param   pcszOption  Name of CF_HTML field
+ * @param   pcValue     Where to return extracted value of CF_HTML field
+ */
 int GetHeaderValue(const char *pcszSrc, const char *pcszOption, size_t *pcValue)
 {
     size_t cOptionLenght = 0;
@@ -1078,9 +1055,11 @@ int GetHeaderValue(const char *pcszSrc, const char *pcszOption, size_t *pcValue)
     return rc;
 }
 
-/*
+
+/**
  * Check that the source string contains CF_HTML struct
- * returns true if the @source string is in CF_HTML format
+ *
+ * @returns @c true if the @source string is in CF_HTML format
  */
 bool IsWindowsHTML(const char *pcszSource)
 {
@@ -1091,15 +1070,18 @@ bool IsWindowsHTML(const char *pcszSource)
 
 /*
  * Converts clipboard data from CF_HTML format to mimie clipboard format
+ *
  * Returns allocated buffer that contains html converted to text/html mime type
- * return result code
- * parameters - output buffer and size of output buffer
- * It allocates the buffer needed for storing converted fragment
- * Allocated buffer should be destroyed by RTMemFree after usage
+ *
+ * @returns VBox status code.
+ * @param   pcszSource  The input.
+ * @param   cch         The length of the input.
+ * @param   ppszOutput  Where to return the result.  Free using RTMemFree.
+ * @param   pcch        Where to the return length of the result (bytes/chars).
  */
 int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszOutput, size_t *pcch)
 {
-    char* result = NULL;
+    char *result = NULL;
 
     Assert(pcszSource);
     Assert(cch);
@@ -1145,28 +1127,33 @@ int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszO
         }
     }
 
-return VINF_SUCCESS;
+    return VINF_SUCCESS;
 }
 
 
 
 /*
-* Converts source Utf16 mime html clipboard data to Utf8 CF_HTML format
-* It allocates
-* Calculations:
-* Header length = format Length + (2*(10 - 5('%010d'))('digits')) - 2('%s') = format length + 8
-* EndHtml  = Header length + fragment length
-* StartHtml = 105(constant)
-* StartFragment = 141(constant) may vary if the header html content will be extended
-* EndFragment  = Header length + fragment length - 38(ending length)
-* @source: source buffer that contains utf-16 string in mime html format
-* @cb: size of source buffer in bytes
-* @output: allocated output buffer to put converted Utf8 CF_HTML clipboard data. This function allocates memory for this.
-* @pcch: size of allocated result buffer in bytes
-* @note: output buffer should be free using RTMemFree()
-* @note: Everything inside of fragment can be UTF8. Windows allows it. Everything in header should be Latin1.
-*/
-int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pszOutput, size_t *pcch)
+ * Converts source Utf16 mime html clipboard data to Utf8 CF_HTML format.
+ *
+ * It allocates
+ *
+ * Calculations:
+ *   Header length = format Length + (2*(10 - 5('%010d'))('digits')) - 2('%s') = format length + 8
+ *   EndHtml       = Header length + fragment length
+ *   StartHtml     = 105(constant)
+ *   StartFragment = 141(constant) may vary if the header html content will be extended
+ *   EndFragment   = Header length + fragment length - 38(ending length)
+ *
+ * @param   pcszSource  Source buffer that contains utf-16 string in mime html format
+ * @param   cb          Size of source buffer in bytes
+ * @param   ppszOutput  Where to return the allocated output buffer to put converted UTF-8
+ *                      CF_HTML clipboard data.  This function allocates memory for this.
+ * @param   pcch        Where to return the Size of allocated result buffer in bytes/chars.
+ *
+ * @note    output buffer should be free using RTMemFree()
+ * @note    Everything inside of fragment can be UTF8. Windows allows it. Everything in header should be Latin1.
+ */
+int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **ppszOutput, size_t *pcch)
 {
     Assert(pszOutput);
     Assert(pcch);
@@ -1175,7 +1162,7 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pszOutput, siz
 
     size_t cFragmentLength = 0;
 
-    char* pszBuf = (char*)pcszSource;
+    char *pszBuf = (char *)pcszSource;
 
     /* construct CF_HTML formatted string */
     char* pszResult = NULL;
@@ -1186,8 +1173,33 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pszOutput, siz
         return VERR_INVALID_PARAMETER;
     }
 
-    /* caluclate parameters of CF_HTML header */
-    size_t cHeaderLength = (sizeof(pcszFormatSample) - 1) + 8;
+    /*
+    @StartHtml - pos before <html>
+    @EndHtml - whole size of text excluding ending zero char
+    @StartFragment - pos after <!--StartFragment-->
+    @EndFragment - pos before <!--EndFragment-->
+    @note: all values includes CR\LF inserted into text
+    Calculations:
+    Header length = format Length + (3*6('digits')) - 2('%s') = format length + 16 (control value - 183)
+    EndHtml  = Header length + fragment length
+    StartHtml = 105(constant)
+    StartFragment = 143(constant)
+    EndFragment  = Header length + fragment length - 40(ending length)
+    */
+    static const char s_szFormatSample[] =
+        "Version:1.0\r\n"
+        "StartHTML:000000101\r\n"
+        "EndHTML:%09d\r\n" // END HTML = Header length + fragment lengh
+        "StartFragment:000000137\r\n"
+        "EndFragment:%09d\r\n"
+        "<html>\r\n"
+        "<body>\r\n"
+        "<!--StartFragment-->%s<!--EndFragment-->\r\n"
+        "</body>\r\n"
+        "</html>\r\n";
+
+    /* calculate parameters of CF_HTML header */
+    size_t cHeaderLength = (sizeof(s_szFormatSample) - 1) + 8;
     size_t cEndHtml = cHeaderLength + cFragmentLength;
     size_t cEndFragment = cHeaderLength + cFragmentLength - 38;
     pszResult = (char*)RTMemAlloc(cEndHtml + 1);
@@ -1198,7 +1210,7 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pszOutput, siz
     }
 
     /* format result CF_HTML string */
-    rc = RTStrPrintf(pszResult, cEndHtml + 1, pcszFormatSample, cEndHtml, cEndFragment, pszBuf);
+    rc = RTStrPrintf(pszResult, cEndHtml + 1, s_szFormatSample, cEndHtml, cEndFragment, pszBuf);
     if (rc == -1)
     {
         LogRelFlowFunc(("Error: cannot construct CF_HTML. rc = %Rrc.\n"));
@@ -1222,7 +1234,7 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pszOutput, siz
     }
 #endif
 
-    *pszOutput = pszResult;
+    *ppszOutput = pszResult;
     *pcch = rc + 1;
 
     return VINF_SUCCESS;
