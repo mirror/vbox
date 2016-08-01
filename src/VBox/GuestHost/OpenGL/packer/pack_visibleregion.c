@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Packing VisibleRegion information
  */
@@ -19,7 +20,7 @@
 #include "cr_error.h"
 
 #ifdef WINDOWS
-#include <windows.h>
+# include <iprt/win/windows.h>
 #endif
 
 void PACK_APIENTRY crPackWindowVisibleRegion( CR_PACKER_CONTEXT_ARGDECL GLint window, GLint cRects, const GLint * pRects )
@@ -53,3 +54,4 @@ void PACK_APIENTRY crPackWindowVisibleRegionSWAP( CR_PACKER_CONTEXT_ARGDECL  GLi
 {
     crError( "crPackWindowVisibleRegionSWAP unimplemented and shouldn't be called" );
 }
+

@@ -9,7 +9,11 @@ typedef unsigned long long iotimer64_t;
 typedef unsigned int iotimer32_t;
 #endif
 #else
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 #endif
 
 #ifdef __cplusplus

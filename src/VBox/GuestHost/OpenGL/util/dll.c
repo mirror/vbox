@@ -19,7 +19,11 @@
 #endif
 
 #ifdef WINDOWS
+# ifdef VBOX
+#  include <iprt/win/shlwapi.h>
+# else
 #include <Shlwapi.h>
+# endif
 #endif
 
 #ifdef DARWIN

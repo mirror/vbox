@@ -9,7 +9,11 @@
 
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 #endif
 
 #include <iprt/cdefs.h>

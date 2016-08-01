@@ -27,7 +27,7 @@
 #include <VBox/log.h>
 
 #ifdef RT_OS_WINDOWS
-# include <windows.h>
+# include <iprt/win/windows.h>
 # include "cr_environment.h"
 # include "cr_error.h"
 # include "VBox/VBoxGuestLib.h"

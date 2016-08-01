@@ -23,7 +23,11 @@ print """
 
 #include <stdio.h>
 #if defined(WINDOWS)
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 #include <process.h>
 #include <direct.h>
 #define SYSTEM_GL "opengl32.dll"

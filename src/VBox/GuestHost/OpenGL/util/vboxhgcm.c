@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
 # include <ddraw.h>
