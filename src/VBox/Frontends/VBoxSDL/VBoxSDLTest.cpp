@@ -17,10 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4121)
+#endif
 #if defined(RT_OS_WINDOWS) ///@todo someone please explain why we don't follow the book!
 # define _SDL_main_h
 #endif
 #include <SDL.h>
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/env.h>
@@ -243,8 +250,8 @@ static void bench(unsigned long w, unsigned long h, unsigned long bpp)
     else
     {
         /* no restriction */
-        guMaxScreenWidth  = ~0;
-        guMaxScreenHeight = ~0;
+        guMaxScreenWidth  = ~0U;
+        guMaxScreenHeight = ~0U;
     }
 
     newWidth  = RT_MIN(guMaxScreenWidth,  guGuestXRes);
