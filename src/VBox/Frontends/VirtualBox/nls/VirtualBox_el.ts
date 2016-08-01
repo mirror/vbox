@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Socratis Kalogrianitis, Anastasios Kazakis, Andreas Mastichis</translation>
+        <translation>Socratis Kalogrianitis, Anastasios Kazakis</translation>
     </message>
 </context>
 <context>
