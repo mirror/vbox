@@ -114,8 +114,9 @@ void libctf_init(void)
 static void *VBoxCtfMap64Fake(void *pvAddr, size_t cb, int fProt, int fFlags, int fd, int64_t offFile)
 {
 	off_t const offSaved = lseek(fd, 0, SEEK_CUR);
-	void *pvRet;
+	void *pvRet = NULL;
 	int err;
+	RT_NOREF2(fProt, fFlags);
 
 	Assert(pvAddr == NULL); NOREF(pvAddr);
 	Assert(fProt == PROT_READ);

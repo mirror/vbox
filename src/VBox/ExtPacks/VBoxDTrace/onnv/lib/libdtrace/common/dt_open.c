@@ -808,6 +808,7 @@ dt_get_sysinfo(int cmd, char *buf, size_t len)
 	while ((p = strchr(p, '.')) != NULL)
 		*p++ = '_';
 #else
+	RT_NOREF1(cmd);
 	snprintf(buf, len, "%s", "Unknown");
 #endif
 	return (buf);
@@ -1046,7 +1047,7 @@ alloc:
 		return (set_open_errno(dtp, errp, EDT_NOMEM));
 
 	for (i = 0; i < DTRACEOPT_MAX; i++)
-		dtp->dt_options[i] = DTRACEOPT_UNSET;
+		dtp->dt_options[i] = (uint64_t)DTRACEOPT_UNSET;
 
 	dtp->dt_cpp_argv[0] = (char *)strbasename(dtp->dt_cpp_path);
 

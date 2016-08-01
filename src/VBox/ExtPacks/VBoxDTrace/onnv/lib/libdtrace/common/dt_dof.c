@@ -406,6 +406,7 @@ dof_add_probe(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 
 	char buf[DT_TYPE_NAMELEN];
 	uint_t i;
+	RT_NOREF1(dhp);
 
 	dofpr.dofpr_addr = 0;
 	dofpr.dofpr_name = dof_add_string(ddo, prp->pr_name);

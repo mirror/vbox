@@ -157,8 +157,8 @@ typedef char                       *caddr_t;
 # define bcmp(a_p1, a_p2, a_cb)     (memcmp(a_p1, a_p2, a_cb))
 #endif
 #if defined(_MSC_VER) || defined(IN_RING0)
-# define snprintf                   RTStrPrintf
-# define vsnprintf                  RTStrPrintfV
+# define snprintf                   (int)RTStrPrintf    /** @todo wrong return value */
+# define vsnprintf                  (int)RTStrPrintfV   /** @todo wrong return value */
 #endif
 
 /*

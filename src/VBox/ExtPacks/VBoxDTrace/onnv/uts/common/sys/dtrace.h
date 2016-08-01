@@ -59,7 +59,11 @@ extern "C" {
 /*
  * DTrace Universal Constants and Typedefs
  */
+#ifdef VBOX
+#define	DTRACE_CPUALL		((processorid_t)-1)	/* all CPUs */
+#else
 #define	DTRACE_CPUALL		-1	/* all CPUs */
+#endif
 #define	DTRACE_IDNONE		0	/* invalid probe identifier */
 #define	DTRACE_EPIDNONE		0	/* invalid enabled probe identifier */
 #define	DTRACE_AGGIDNONE	0	/* invalid aggregation identifier */

@@ -222,7 +222,7 @@ dt_as(dt_pcb_t *pcb)
 	size_t n = 0;
 	uint_t i;
 
-	uint_t kmask, kbits, umask, ubits;
+	uint_t kmask VBDTMSC(0), kbits VBDTMSC(0), umask VBDTMSC(0), ubits VBDTMSC(0);
 	uint_t krel = 0, urel = 0, xlrefs = 0;
 
 	/*

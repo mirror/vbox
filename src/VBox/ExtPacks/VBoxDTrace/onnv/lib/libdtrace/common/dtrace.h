@@ -442,13 +442,13 @@ extern void dtrace_proc_continue(dtrace_hdl_t *, struct ps_prochandle *);
  * be flushed and not used subsequently by the client program.
  */
 
-#define	DTRACE_OBJ_EXEC	 ((const char *)0L)	/* primary executable file */
-#define	DTRACE_OBJ_RTLD	 ((const char *)1L)	/* run-time link-editor */
-#define	DTRACE_OBJ_CDEFS ((const char *)2L)	/* C include definitions */
-#define	DTRACE_OBJ_DDEFS ((const char *)3L)	/* D program definitions */
-#define	DTRACE_OBJ_EVERY ((const char *)-1L)	/* all known objects */
-#define	DTRACE_OBJ_KMODS ((const char *)-2L)	/* all kernel objects */
-#define	DTRACE_OBJ_UMODS ((const char *)-3L)	/* all user objects */
+#define	DTRACE_OBJ_EXEC	 ((const char *)(intptr_t)0L)	/* primary executable file */
+#define	DTRACE_OBJ_RTLD	 ((const char *)(intptr_t)1L)	/* run-time link-editor */
+#define	DTRACE_OBJ_CDEFS ((const char *)(intptr_t)2L)	/* C include definitions */
+#define	DTRACE_OBJ_DDEFS ((const char *)(intptr_t)3L)	/* D program definitions */
+#define	DTRACE_OBJ_EVERY ((const char *)(intptr_t)-1L)	/* all known objects */
+#define	DTRACE_OBJ_KMODS ((const char *)(intptr_t)-2L)	/* all kernel objects */
+#define	DTRACE_OBJ_UMODS ((const char *)(intptr_t)-3L)	/* all user objects */
 
 typedef struct dtrace_objinfo {
 	const char *dto_name;			/* object file scope name */

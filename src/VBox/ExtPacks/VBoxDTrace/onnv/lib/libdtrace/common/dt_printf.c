@@ -57,6 +57,7 @@ static const char g_aszDay[7][4] =
 static int
 pfcheck_addr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_pointer(dnp) || dt_node_is_integer(dnp));
 }
 
@@ -64,6 +65,7 @@ pfcheck_addr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_kaddr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_pointer(dnp) || dt_node_is_integer(dnp) ||
 	    dt_node_is_symaddr(dnp));
 }
@@ -74,6 +76,7 @@ pfcheck_uaddr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
 	dtrace_hdl_t *dtp = pfv->pfv_dtp;
 	dt_ident_t *idp = dt_idhash_lookup(dtp->dt_macros, "target");
+	RT_NOREF1(pfd);
 
 	if (dt_node_is_usymaddr(dnp))
 		return (1);
@@ -88,6 +91,7 @@ pfcheck_uaddr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_stack(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_stack(dnp));
 }
 
@@ -95,6 +99,7 @@ pfcheck_stack(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_time(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_integer(dnp) &&
 	    dt_node_type_size(dnp) == sizeof (uint64_t));
 }
@@ -108,6 +113,7 @@ pfcheck_str(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 	ctf_arinfo_t r;
 	ctf_id_t base;
 	uint_t kind;
+	RT_NOREF2(pfv, pfd);
 
 	if (dt_node_is_string(dnp))
 		return (1);
@@ -131,6 +137,7 @@ pfcheck_wstr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 
 	ctf_encoding_t e;
 	ctf_arinfo_t r;
+	RT_NOREF2(pfv, pfd);
 
 	return (kind == CTF_K_ARRAY && ctf_array_info(ctfp, base, &r) == 0 &&
 	    (base = ctf_type_resolve(ctfp, r.ctr_contents)) != CTF_ERR &&
@@ -142,6 +149,7 @@ pfcheck_wstr(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_csi(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_integer(dnp) &&
 	    dt_node_type_size(dnp) <= sizeof (int));
 }
@@ -150,6 +158,7 @@ pfcheck_csi(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_fp(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_float(dnp));
 }
 
@@ -157,6 +166,7 @@ pfcheck_fp(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_xint(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	return (dt_node_is_integer(dnp));
 }
 
@@ -164,6 +174,7 @@ pfcheck_xint(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_dint(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF2(pfv, pfd);
 	if (dnp->dn_flags & DT_NF_SIGNED)
 		pfd->pfd_flags |= DT_PFCONV_SIGNED;
 	else
@@ -179,6 +190,7 @@ pfcheck_xshort(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 	ctf_file_t *ctfp = dnp->dn_ctfp;
 	ctf_id_t type = ctf_type_resolve(ctfp, dnp->dn_type);
 	char n[DT_TYPE_NAMELEN];
+	RT_NOREF2(pfv, pfd);
 
 	return (ctf_type_name(ctfp, type, n, sizeof (n)) != NULL && (
 	    strcmp(n, "short") == 0 || strcmp(n, "signed short") == 0 ||
@@ -192,6 +204,7 @@ pfcheck_xlong(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 	ctf_file_t *ctfp = dnp->dn_ctfp;
 	ctf_id_t type = ctf_type_resolve(ctfp, dnp->dn_type);
 	char n[DT_TYPE_NAMELEN];
+	RT_NOREF2(pfv, pfd);
 
 	return (ctf_type_name(ctfp, type, n, sizeof (n)) != NULL && (
 	    strcmp(n, "long") == 0 || strcmp(n, "signed long") == 0 ||
@@ -205,6 +218,7 @@ pfcheck_xlonglong(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 	ctf_file_t *ctfp = dnp->dn_ctfp;
 	ctf_id_t type = dnp->dn_type;
 	char n[DT_TYPE_NAMELEN];
+	RT_NOREF2(pfv, pfd);
 
 	if (ctf_type_name(ctfp, ctf_type_resolve(ctfp, type), n,
 	    sizeof (n)) != NULL && (strcmp(n, "long long") == 0 ||
@@ -233,6 +247,7 @@ pfcheck_xlonglong(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 static int
 pfcheck_type(dt_pfargv_t *pfv, dt_pfargd_t *pfd, dt_node_t *dnp)
 {
+	RT_NOREF1(pfv);
 	return (ctf_type_compat(dnp->dn_ctfp, ctf_type_resolve(dnp->dn_ctfp,
 	    dnp->dn_type), pfd->pfd_conv->pfc_dctfp, pfd->pfd_conv->pfc_dtype));
 }
@@ -244,6 +259,7 @@ pfprint_sint(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 {
 	int64_t normal = (int64_t)unormal;
 	int32_t n = (int32_t)normal;
+	RT_NOREF1(pfd);
 
 	switch (size) {
 	case sizeof (int8_t):
@@ -269,6 +285,7 @@ pfprint_uint(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	uint32_t n = (uint32_t)normal;
+	RT_NOREF1(pfd);
 
 	switch (size) {
 	case sizeof (uint8_t):
@@ -304,7 +321,10 @@ pfprint_fp(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	double n = (double)normal;
+#ifndef _MSC_VER
 	long double ldn = (long double)normal;
+#endif
+	RT_NOREF1(pfd);
 
 	switch (size) {
 	case sizeof (float):
@@ -331,6 +351,7 @@ pfprint_addr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	char *s;
 	int n, len = 256;
 	uint64_t val;
+	RT_NOREF2(pfd, normal);
 
 	switch (size) {
 	case sizeof (uint32_t):
@@ -356,6 +377,7 @@ static int
 pfprint_mod(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+	RT_NOREF3(pfd, size, normal);
 	return (dt_print_mod(dtp, fp, format, (caddr_t)addr));
 }
 
@@ -364,6 +386,7 @@ static int
 pfprint_umod(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+	RT_NOREF3(pfd, size, normal);
 	return (dt_print_umod(dtp, fp, format, (caddr_t)addr));
 }
 
@@ -377,6 +400,7 @@ pfprint_uaddr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	uint64_t val, pid = 0;
 
 	dt_ident_t *idp = dt_idhash_lookup(dtp->dt_macros, "target");
+	RT_NOREF2(pfd, normal);
 
 	switch (size) {
 	case sizeof (uint32_t):
@@ -414,6 +438,7 @@ pfprint_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	const dtrace_recdesc_t *rec = pfd->pfd_rec;
 	caddr_t addr = (caddr_t)vaddr;
 	int err = 0;
+	RT_NOREF2(size, normal);
 
 	/*
 	 * We have stashed the value of the STACKINDENT option, and we will
@@ -490,6 +515,7 @@ pfprint_time(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	RTTIMESPEC 	TimeSpec;
 	RTTIME 		Time;
 	char 		buf[32];
+	RT_NOREF3(pfd, size, normal);
 
 	RTTimeLocalExplode(&Time, RTTimeSpecSetNano(&TimeSpec, *(uint64_t *)addr));
 	RTStrPrintf(buf, sizeof(buf), "%u %s %2u %02u:%02u:%02u",
@@ -521,6 +547,7 @@ pfprint_time822(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	RTTIMESPEC 	TimeSpec;
 	RTTIME 		Time;
 	char 		buf[64];
+	RT_NOREF3(pfd, size, normal);
 
 	RTTimeLocalExplode(&Time, RTTimeSpecSetNano(&TimeSpec, *(uint64_t *)addr));
 	RTStrPrintf(buf, sizeof(buf), "%s, %u %s %02u:%02u:%02u %s%u%s",
@@ -549,6 +576,7 @@ pfprint_port(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 #else
 	uint16_t uPortNet = *(uint16_t *)addr;
 	char buf[32];
+	RT_NOREF3(pfd, size, normal);
 
 	RTStrPrintf(buf, sizeof(buf), "%d", RT_N2H_U16(uPortNet));
 #endif
@@ -567,6 +595,7 @@ pfprint_inetaddr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	char buf[1024];
 	int e;
 #endif
+	RT_NOREF2(pfd, normal);
 
 	bcopy(addr, s, size);
 	s[size] = '\0';
@@ -592,6 +621,7 @@ pfprint_cstr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	char *s = alloca(size + 1);
+	RT_NOREF2(pfd, normal);
 
 	bcopy(addr, s, size);
 	s[size] = '\0';
@@ -604,6 +634,7 @@ pfprint_wstr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	wchar_t *ws = alloca(size + sizeof (wchar_t));
+	RT_NOREF2(pfd, normal);
 
 	bcopy(addr, ws, size);
 	ws[size / sizeof (wchar_t)] = L'\0';
@@ -617,6 +648,7 @@ pfprint_estr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 {
 	char *s;
 	int n;
+	RT_NOREF2(pfd, normal);
 
 	if ((s = strchr2esc(addr, size)) == NULL)
 		return (dt_set_errno(dtp, EDT_NOMEM));
@@ -654,6 +686,7 @@ static int
 pfprint_pct(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+	RT_NOREF5(format, pfd, addr, size, normal);
 	return (dt_printf(dtp, fp, "%%"));
 }
 
@@ -1103,7 +1136,7 @@ dt_printf_validate(dt_pfargv_t *pfv, uint_t flags,
 		int dync = 0;
 
 		char vname[64];
-		dt_node_t *vnp;
+		dt_node_t *vnp VBDTMSC(NULL);
 
 		if (pfc == NULL)
 			continue; /* no checking if argd is just a prefix */
@@ -1311,6 +1344,7 @@ pfprint_average(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	const uint64_t *data = addr;
+	RT_NOREF1(pfd);
 
 	if (size != sizeof (uint64_t) * 2)
 		return (dt_set_errno(dtp, EDT_DMISMATCH));
@@ -1325,6 +1359,7 @@ pfprint_stddev(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	const uint64_t *data = addr;
+	RT_NOREF1(pfd);
 
 	if (size != sizeof (uint64_t) * 4)
 		return (dt_set_errno(dtp, EDT_DMISMATCH));
@@ -1338,6 +1373,7 @@ static int
 pfprint_quantize(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+	RT_NOREF2(pfd, format);
 	return (dt_print_quantize(dtp, fp, addr, size, normal));
 }
 
@@ -1346,6 +1382,7 @@ static int
 pfprint_lquantize(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+	RT_NOREF2(pfd, format);
 	return (dt_print_lquantize(dtp, fp, addr, size, normal));
 }
 
@@ -1356,11 +1393,11 @@ dt_printf_format(dtrace_hdl_t *dtp, FILE *fp, const dt_pfargv_t *pfv,
 {
 	dt_pfargd_t *pfd = pfv->pfv_argv;
 	const dtrace_recdesc_t *recp = recs;
-	const dtrace_aggdata_t *aggdata;
+	const dtrace_aggdata_t *aggdata VBDTMSC(NULL);
 	dtrace_aggdesc_t *agg;
 	caddr_t lim = (caddr_t)buf + len, limit;
 	char format[64] = "%";
-	int i, aggrec, curagg = -1;
+	int i, aggrec VBDTMSC(0), curagg = -1;
 	uint64_t normal;
 
 	/*
@@ -1415,7 +1452,7 @@ dt_printf_format(dtrace_hdl_t *dtp, FILE *fp, const dt_pfargv_t *pfv,
 				 */
 				flags = DTRACE_BUFDATA_AGGFORMAT;
 
-				if (pfc == NULL && i == pfv->pfv_argc - 1)
+				if (pfc == NULL && VBDTCAST(uint_t)i == pfv->pfv_argc - 1)
 					flags |= DTRACE_BUFDATA_AGGLAST;
 
 				if (dt_buffered_flush(dtp, NULL, NULL,
@@ -1585,7 +1622,7 @@ dt_printf_format(dtrace_hdl_t *dtp, FILE *fp, const dt_pfargv_t *pfv,
 			 * element, inidicating that this is the last record
 			 * as appropriate.
 			 */
-			if (i == pfv->pfv_argc - 1)
+			if (VBDTCAST(uint_t)i == pfv->pfv_argc - 1)
 				flags |= DTRACE_BUFDATA_AGGLAST;
 
 			if (dt_buffered_flush(dtp, NULL,
@@ -1633,6 +1670,7 @@ dtrace_system(dtrace_hdl_t *dtp, FILE *fp, void *fmtdata,
     uint_t nrecs, const void *buf, size_t len)
 {
 	int rval = dtrace_sprintf(dtp, fp, fmtdata, recp, nrecs, buf, len);
+	RT_NOREF1(data);
 
 	if (rval == -1)
 		return (rval);
@@ -1766,6 +1804,7 @@ dtrace_fprintf(dtrace_hdl_t *dtp, FILE *fp, void *fmtdata,
     const dtrace_probedata_t *data, const dtrace_recdesc_t *recp,
     uint_t nrecs, const void *buf, size_t len)
 {
+	RT_NOREF1(data);
 	return (dt_printf_format(dtp, fp, fmtdata,
 	    recp, nrecs, buf, len, NULL, 0));
 }
@@ -1840,6 +1879,7 @@ dtrace_printf_format(dtrace_hdl_t *dtp, void *fmtdata, char *s, size_t len)
 	uint_t i;
 	size_t j;
 #endif
+	RT_NOREF1(dtp);
 
 	for (i = 0; i < pfv->pfv_argc; i++, pfd = pfd->pfd_next) {
 		const dt_pfconv_t *pfc = pfd->pfd_conv;
@@ -1919,7 +1959,7 @@ dt_fprinta(const dtrace_aggdata_t *adp, void *arg)
 	int id;
 
 	if (dt_printf_getint(dtp, recp++, nrecs--,
-	    adp->dtada_data, adp->dtada_size, &id) != 0 || pfw->pfw_aid != id)
+	    adp->dtada_data, adp->dtada_size, &id) != 0 || pfw->pfw_aid != VBDTCAST(uint_t)id)
 		return (0); /* no aggregation id or id does not match */
 
 	if (dt_printf_format(dtp, pfw->pfw_fp, pfw->pfw_argv,
@@ -1971,6 +2011,7 @@ dtrace_fprinta(dtrace_hdl_t *dtp, FILE *fp, void *fmtdata,
 	dt_pfwalk_t pfw;
 	int i, naggvars = 0;
 	dtrace_aggvarid_t *aggvars;
+	RT_NOREF2(data, len);
 
 	aggvars = alloca(nrecs * sizeof (dtrace_aggvarid_t));
 

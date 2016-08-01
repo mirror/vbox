@@ -495,6 +495,9 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 #ifndef VBOX
 	if (dtp->dt_fd >= 0)
 		return (ioctl(dtp->dt_fd, val, arg));
+
+	errno = EBADF;
+	return (-1);
 #else
 # if 1
 	rc = SUPR3TracerIoCtl(val, (uintptr_t)arg, &iRetVal);
@@ -548,11 +551,11 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 		}
 
 	}
-# endif
-#endif
 
 	errno = EBADF;
 	return (-1);
+# endif
+#endif
 }
 
 int
@@ -604,7 +607,7 @@ dt_write(dtrace_hdl_t *dtp, int fd, const void *buf, size_t n)
 		buf = (char *)buf + len;
 	}
 
-	if (resid == n && n != 0)
+	if ((size_t)resid == n && n != 0)
 		return (dt_set_errno(dtp, errno));
 
 	return (n - resid);
@@ -796,6 +799,7 @@ dt_alloc(dtrace_hdl_t *dtp, size_t size)
 void
 dt_free(dtrace_hdl_t *dtp, void *data)
 {
+	RT_NOREF1(dtp);
 	assert(dtp != NULL); /* ensure sane use of this interface */
 	free(data);
 }
@@ -995,6 +999,7 @@ dtrace_uaddr2str(dtrace_hdl_t *dtp, pid_t pid,
 	dt_proc_release(dtp, P);
 #else
 	char c[32];
+	RT_NOREF2(dtp, pid);
 	RTStrPrintf(c, sizeof (c), "0x%llx", addr);
 #endif
 

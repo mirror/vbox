@@ -484,6 +484,7 @@ dt_module_lookup_by_name(dtrace_hdl_t *dtp, const char *name)
 dt_module_t *
 dt_module_lookup_by_ctf(dtrace_hdl_t *dtp, ctf_file_t *ctfp)
 {
+	RT_NOREF1(dtp);
 	return (ctfp ? ctf_getspecific(ctfp) : NULL);
 }
 
@@ -524,7 +525,9 @@ dt_module_load_sect(dtrace_hdl_t *dtp, dt_module_t *dmp, ctf_sect_t *ctsp)
 	dt_dprintf("loaded %s [%s] (%lu bytes)\n",
 	    dmp->dm_name, ctsp->cts_name, (ulong_t)ctsp->cts_size);
 
-#endif /* !VBOX */
+#else  /* VBOX */
+	RT_NOREF3(dtp, dmp, ctsp);
+#endif /* VBOX */
 	return (0);
 }
 
@@ -641,7 +644,7 @@ dt_module_getctf(dtrace_hdl_t *dtp, dt_module_t *dmp)
 	 * returned to the compiler.  If we support mixed data models in the
 	 * future for combined kernel/user tracing, this can be removed.
 	 */
-	if (dtp->dt_conf.dtc_ctfmodel != model) {
+	if (dtp->dt_conf.dtc_ctfmodel != (uint_t)model) {
 		(void) dt_set_errno(dtp, EDT_DATAMODEL);
 		return (NULL);
 	}
@@ -692,6 +695,7 @@ err:
 void
 dt_module_unload(dtrace_hdl_t *dtp, dt_module_t *dmp)
 {
+	RT_NOREF1(dtp);
 	ctf_close(dmp->dm_ctfp);
 	dmp->dm_ctfp = NULL;
 
@@ -924,7 +928,9 @@ dt_module_update(dtrace_hdl_t *dtp, const char *name)
 
 	dt_dprintf("opened %d-bit module %s (%s) [%d]\n",
 	    bits, dmp->dm_name, dmp->dm_file, dmp->dm_modid);
-#endif /* !VBOX */
+#else  /* VBOX */
+	RT_NOREF2(dtp, name);
+#endif /* VBOX */
 }
 
 /*
@@ -1121,7 +1127,7 @@ dtrace_lookup_by_addr(dtrace_hdl_t *dtp, GElf_Addr addr,
     GElf_Sym *symp, dtrace_syminfo_t *sip)
 {
 	dt_module_t *dmp;
-	uint_t id;
+	uint_t id VBDTMSC(0);
 	const dtrace_vector_t *v = dtp->dt_vector;
 
 	if (v != NULL)

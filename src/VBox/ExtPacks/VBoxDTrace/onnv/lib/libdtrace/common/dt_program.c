@@ -90,6 +90,7 @@ dtrace_program_info(dtrace_hdl_t *dtp, dtrace_prog_t *pgp,
 	dt_stmt_t *stp;
 	dtrace_actdesc_t *ap;
 	dtrace_ecbdesc_t *last = NULL;
+	RT_NOREF1(dtp);
 
 	if (pip == NULL)
 		return;
@@ -408,6 +409,7 @@ dt_header_decl(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 	char *fname;
 	const char *p;
 	int i;
+	RT_NOREF1(dhp);
 
 	p = prp->pr_name;
 	for (i = 0; (p = strchr(p, '-')) != NULL; i++)
@@ -426,7 +428,7 @@ dt_header_decl(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 		    buf, sizeof (buf))) < 0)
 			return (dt_set_errno(dtp, errno));
 
-		if (i + 1 != prp->pr_nargc &&
+		if ((uint_t)i + 1 != prp->pr_nargc &&
 		    fprintf(infop->dthi_out, ", ") < 0)
 			return (dt_set_errno(dtp, errno));
 	}
@@ -459,6 +461,7 @@ dt_header_probe(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 	char *mname, *fname;
 	const char *p;
 	VBDTTYPE(uint_t,int) i;
+	RT_NOREF1(dhp);
 
 	p = prp->pr_name;
 	for (i = 0; (p = strchr(p, '-')) != NULL; i++)
@@ -584,7 +587,7 @@ int
 dtrace_program_header(dtrace_hdl_t *dtp, FILE *out, const char *fname)
 {
 	dt_provider_t *pvp;
-	char *mfname, *p;
+	char *mfname VBDTMSC(NULL), *p;
 
 	if (fname != NULL) {
 		if ((p = strrchr(fname, '/')) != NULL)

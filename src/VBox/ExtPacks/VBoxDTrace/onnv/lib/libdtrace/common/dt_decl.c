@@ -513,7 +513,7 @@ dt_decl_member(dt_node_t *dnp)
 	char n[DT_TYPE_NAMELEN];
 
 	dtrace_typeinfo_t dtt;
-	ctf_encoding_t cte;
+	ctf_encoding_t cte VBDTMSC({0});
 	ctf_id_t base;
 	uint_t kind;
 	ssize_t size;
@@ -652,6 +652,7 @@ done:
 static int
 dt_decl_hasmembers(const char *name, int value, void *private)
 {
+	RT_NOREF3(name, value, private);
 	return (1); /* abort search and return true if a member exists */
 }
 

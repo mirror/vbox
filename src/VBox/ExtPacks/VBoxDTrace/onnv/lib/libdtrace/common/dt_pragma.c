@@ -47,6 +47,7 @@ dt_pragma_apply(dt_idhash_t *dhp, dt_ident_t *idp)
 {
 	dt_idhash_t *php;
 	dt_ident_t *pdp;
+	RT_NOREF1(dhp);
 
 	if ((php = yypcb->pcb_pragmas) == NULL)
 		return; /* no pragmas pending for current compilation pass */
@@ -74,7 +75,7 @@ static void
 dt_pragma_attributes(const char *prname, dt_node_t *dnp)
 {
 	dtrace_hdl_t *dtp = yypcb->pcb_hdl;
-	dtrace_attribute_t attr, *a;
+	dtrace_attribute_t attr, *a VBDTMSC(NULL);
 	dt_provider_t *pvp;
 	const char *name, *part;
 	dt_ident_t *idp;
@@ -208,7 +209,7 @@ dt_pragma_depends(const char *prname, dt_node_t *cnp)
 {
 	dtrace_hdl_t *dtp = yypcb->pcb_hdl;
 	dt_node_t *nnp = cnp ? cnp->dn_list : NULL;
-	int found;
+	int found VBDTMSC(B_FALSE);
 	dt_lib_depend_t *dld;
 	char lib[MAXPATHLEN];
 
@@ -318,6 +319,7 @@ static void
 dt_pragma_ident(const char *prname, dt_node_t *dnp)
 {
 	/* ignore any #ident or #pragma ident lines */
+	RT_NOREF2(prname, dnp);
 }
 
 static void

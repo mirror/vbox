@@ -50,6 +50,7 @@ dt_xlator_create_member(const char *name, ctf_id_t type, ulong_t off, void *arg)
 	dt_xlator_t *dxp = arg;
 	dtrace_hdl_t *dtp = dxp->dx_hdl;
 	dt_node_t *enp, *mnp;
+	RT_NOREF1(off);
 
 	if ((enp = dt_node_xalloc(dtp, DT_NODE_XLATOR)) == NULL)
 		return (dt_set_errno(dtp, EDT_NOMEM));

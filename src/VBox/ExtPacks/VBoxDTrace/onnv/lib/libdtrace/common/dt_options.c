@@ -79,6 +79,7 @@ dt_opt_amin(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	char str[DTRACE_ATTR2STR_MAX];
 	dtrace_attribute_t attr;
+	RT_NOREF1(option);
 
 	if (arg == NULL || dtrace_str2attr(arg, &attr) == -1)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -129,6 +130,7 @@ static int
 dt_opt_core(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	static int enabled = 0;
+	RT_NOREF1(option);
 
 	if (arg != NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -143,6 +145,8 @@ dt_opt_core(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_cpp_hdrs(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg != NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -160,6 +164,7 @@ static int
 dt_opt_cpp_path(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	char *cpp;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -207,6 +212,7 @@ static int
 dt_opt_ctypes(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	int fd;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -223,6 +229,8 @@ dt_opt_ctypes(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_droptags(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF2(option, arg);
+
 	dtp->dt_droptags = 1;
 	return (0);
 }
@@ -232,6 +240,7 @@ static int
 dt_opt_dtypes(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	int fd;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -248,6 +257,8 @@ dt_opt_dtypes(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_debug(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg != NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -260,6 +271,7 @@ static int
 dt_opt_iregs(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	int n;
+	RT_NOREF2(arg, option);
 
 	if (arg == NULL || (n = atoi(arg)) <= 0)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -272,6 +284,7 @@ dt_opt_iregs(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_lazyload(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF2(arg, option);
 	dtp->dt_lazyload = 1;
 
 	return (0);
@@ -282,6 +295,7 @@ static int
 dt_opt_ld_path(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	char *ld;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -303,6 +317,7 @@ static int
 dt_opt_libdir(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	dt_dirpath_t *dp;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -321,6 +336,8 @@ dt_opt_libdir(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_linkmode(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -342,6 +359,8 @@ dt_opt_linkmode(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_linktype(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -359,6 +378,8 @@ dt_opt_linktype(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_evaltime(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -381,6 +402,7 @@ static int
 dt_opt_pgmax(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	int n;
+	RT_NOREF1(option);
 
 	if (arg == NULL || (n = atoi(arg)) < 0)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -393,6 +415,8 @@ dt_opt_pgmax(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_stdc(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -419,6 +443,7 @@ dt_opt_syslibdir(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	dt_dirpath_t *dp = dt_list_next(&dtp->dt_lib_path);
 	char *path;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -438,6 +463,7 @@ static int
 dt_opt_tree(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	int m;
+	RT_NOREF1(option);
 
 	if (arg == NULL || (m = atoi(arg)) <= 0)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -451,6 +477,7 @@ static int
 dt_opt_tregs(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	int n;
+	RT_NOREF1(option);
 
 	if (arg == NULL || (n = atoi(arg)) <= 0)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -463,6 +490,8 @@ dt_opt_tregs(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_xlate(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+	RT_NOREF1(option);
+
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
 
@@ -520,6 +549,7 @@ static int
 dt_opt_version(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	dt_version_t v;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -787,6 +817,7 @@ dt_opt_bufpolicy(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	dtrace_optval_t policy = DTRACEOPT_UNSET;
 	int i;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -821,6 +852,7 @@ dt_opt_bufresize(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	dtrace_optval_t policy = DTRACEOPT_UNSET;
 	int i;
+	RT_NOREF1(option);
 
 	if (arg == NULL)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));
@@ -844,7 +876,7 @@ int
 dt_options_load(dtrace_hdl_t *dtp)
 {
 	dof_hdr_t hdr, *dof;
-	dof_sec_t *sec;
+	dof_sec_t *sec VBDTMSC(NULL);
 	size_t offs;
 	VBDTTYPE(uint32_t,int) i;
 
@@ -866,7 +898,7 @@ dt_options_load(dtrace_hdl_t *dtp)
 	dof->dofh_loadsz = hdr.dofh_loadsz;
 
 	for (i = 0; i < DTRACEOPT_MAX; i++)
-		dtp->dt_options[i] = DTRACEOPT_UNSET;
+		dtp->dt_options[i] = (uint64_t)DTRACEOPT_UNSET;
 
 	if (dt_ioctl(dtp, DTRACEIOC_DOFGET, dof) == -1)
 		return (dt_set_errno(dtp, errno));
@@ -903,6 +935,7 @@ dt_opt_preallocate(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
 	dtrace_optval_t size;
 	void *p;
+	RT_NOREF1(option);
 
 	if (arg == NULL || dt_optval_parse(arg, &size) != 0)
 		return (dt_set_errno(dtp, EDT_BADOPTVAL));

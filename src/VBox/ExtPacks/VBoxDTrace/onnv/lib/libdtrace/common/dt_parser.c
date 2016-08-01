@@ -1010,7 +1010,7 @@ dt_node_is_ptrcompat(const dt_node_t *lp, const dt_node_t *rp,
 	ctf_id_t lref = CTF_ERR, rref = CTF_ERR;
 
 	int lp_is_void, rp_is_void, lp_is_int, rp_is_int, compat;
-	uint_t lkind, rkind;
+	uint_t lkind VBDTMSC(0), rkind VBDTMSC(0);
 	ctf_encoding_t e;
 	ctf_arinfo_t r;
 
@@ -1239,7 +1239,9 @@ dt_node_int(uintmax_t value)
 	xyerror(D_INT_OFLOW, "integer constant 0x%llx cannot be represented "
 	    "in any built-in integral type\n", (u_longlong_t)value);
 	/*NOTREACHED*/
+#ifndef _MSC_VER
 	return (NULL);		/* keep gcc happy */
+#endif
 }
 
 dt_node_t *
@@ -2359,7 +2361,7 @@ dt_node_inline(dt_node_t *expr)
 dt_node_t *
 dt_node_member(dt_decl_t *ddp, char *name, dt_node_t *expr)
 {
-	dtrace_typeinfo_t dtt;
+	dtrace_typeinfo_t dtt VBDTMSC({NULL});
 	dt_node_t *dnp;
 	int err;
 
@@ -2841,6 +2843,8 @@ dt_cook_var(dt_node_t *dnp, uint_t idflags)
 static dt_node_t *
 dt_cook_func(dt_node_t *dnp, uint_t idflags)
 {
+	RT_NOREF1(idflags);
+
 	dt_node_attr_assign(dnp,
 	    dt_ident_cook(dnp, dnp->dn_ident, &dnp->dn_args));
 
@@ -3939,6 +3943,7 @@ dt_cook_op3(dt_node_t *dnp, uint_t idflags)
 	dt_node_t *lp, *rp;
 	ctf_file_t *ctfp;
 	ctf_id_t type;
+	RT_NOREF1(idflags);
 
 	dnp->dn_expr = dt_node_cook(dnp->dn_expr, DT_IDFLG_REF);
 	lp = dnp->dn_left = dt_node_cook(dnp->dn_left, DT_IDFLG_REF);
@@ -4006,6 +4011,7 @@ static dt_node_t *
 dt_cook_aggregation(dt_node_t *dnp, uint_t idflags)
 {
 	dtrace_hdl_t *dtp = yypcb->pcb_hdl;
+	RT_NOREF1(idflags);
 
 	if (dnp->dn_aggfun != NULL) {
 		dnp->dn_aggfun = dt_node_cook(dnp->dn_aggfun, DT_IDFLG_REF);
@@ -4132,6 +4138,7 @@ dt_cook_inline(dt_node_t *dnp, uint_t idflags)
 
 	char n1[DT_TYPE_NAMELEN];
 	char n2[DT_TYPE_NAMELEN];
+	RT_NOREF1(idflags);
 
 	assert(dnp->dn_ident->di_flags & DT_IDFLG_INLINE);
 	assert(inp->din_root->dn_flags & DT_NF_COOKED);
@@ -4196,6 +4203,7 @@ dt_cook_xlator(dt_node_t *dnp, uint_t idflags)
 
 	dtrace_attribute_t attr = _dtrace_maxattr;
 	ctf_membinfo_t ctm;
+	RT_NOREF1(idflags);
 
 	/*
 	 * Before cooking each translator member, we push a reference to the
@@ -4353,6 +4361,7 @@ dt_cook_provider(dt_node_t *dnp, uint_t idflags)
 {
 	dt_provider_t *pvp = dnp->dn_provider;
 	dt_node_t *pnp;
+	RT_NOREF1(idflags);
 
 	/*
 	 * If we're declaring a provider for the first time and it is unknown
@@ -4391,6 +4400,7 @@ dt_cook_provider(dt_node_t *dnp, uint_t idflags)
 static dt_node_t *
 dt_cook_none(dt_node_t *dnp, uint_t idflags)
 {
+	RT_NOREF1(idflags);
 	return (dnp);
 }
 

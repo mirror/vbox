@@ -89,6 +89,7 @@ ctf_free(void *buf, size_t size)
 #ifndef VBOX
 	free(buf);
 #else
+    RT_NOREF1(size);
     RTMemFree(buf);
 #endif
 }

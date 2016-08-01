@@ -275,7 +275,7 @@ dtrace_work(dtrace_hdl_t *dtp, FILE *fp,
 {
 	int status = dtrace_status(dtp);
 	dtrace_optval_t policy = dtp->dt_options[DTRACEOPT_BUFPOLICY];
-	dtrace_workstatus_t rval;
+	dtrace_workstatus_t rval VBDTMSC(DTRACE_WORKSTATUS_ERROR);
 
 	switch (status) {
 	case DTRACE_STATUS_EXITED:

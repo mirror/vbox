@@ -410,7 +410,7 @@ static void
 dt_cg_store(dt_node_t *src, dt_irlist_t *dlp, dt_regset_t *drp, dt_node_t *dst)
 {
 	ctf_encoding_t e;
-	dif_instr_t instr;
+	dif_instr_t instr VBDTMSC(0);
 	size_t size;
 	int reg;
 
@@ -1916,7 +1916,7 @@ void
 dt_cg(dt_pcb_t *pcb, dt_node_t *dnp)
 {
 	dif_instr_t instr;
-	dt_xlator_t *dxp;
+	dt_xlator_t *dxp VBDTMSC(NULL);
 
 	if (pcb->pcb_regs == NULL && (pcb->pcb_regs =
 	    dt_regset_create(pcb->pcb_hdl->dt_conf.dtc_difintregs)) == NULL)

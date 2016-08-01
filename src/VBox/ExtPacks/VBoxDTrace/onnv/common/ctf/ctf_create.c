@@ -503,7 +503,7 @@ ctf_dtd_lookup(ctf_file_t *fp, ctf_id_t type)
 int
 ctf_discard(ctf_file_t *fp)
 {
-	ctf_dtdef_t *dtd, *ntd;
+	ctf_dtdef_t *dtd, *ntd VBDTMSC(NULL);
 
 	if (!(fp->ctf_flags & LCTF_RDWR))
 		return (ctf_set_errno(fp, ECTF_RDONLY));
@@ -1040,6 +1040,7 @@ membcmp(const char *name, ctf_id_t type, ulong_t offset, void *arg)
 {
 	ctf_bundle_t *ctb = arg;
 	ctf_membinfo_t ctm;
+	RT_NOREF1(type);
 
 	return (ctf_member_info(ctb->ctb_file, ctb->ctb_type,
 	    name, &ctm) == CTF_ERR || ctm.ctm_offset != offset);
@@ -1165,7 +1166,7 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		for (dtd = ctf_list_prev(&dst_fp->ctf_dtdefs); dtd != NULL &&
 		    dtd->dtd_type > dst_fp->ctf_dtoldid;
 		    dtd = ctf_list_prev(dtd)) {
-			if (CTF_INFO_KIND(dtd->dtd_data.ctt_info) == kind &&
+			if ((uint_t)CTF_INFO_KIND(dtd->dtd_data.ctt_info) == kind &&
 			    dtd->dtd_name != NULL &&
 			    strcmp(dtd->dtd_name, name) == 0)
 				return (dtd->dtd_type);

@@ -470,6 +470,7 @@ dt_idcook_regs(dt_node_t *dnp, dt_ident_t *idp, int argc, dt_node_t *ap)
 static void
 dt_idcook_type(dt_node_t *dnp, dt_ident_t *idp, int argc, dt_node_t *args)
 {
+	RT_NOREF2(argc, args);
 	if (idp->di_type == CTF_ERR) {
 		dtrace_hdl_t *dtp = yypcb->pcb_hdl;
 		dtrace_typeinfo_t dtt;
@@ -492,6 +493,7 @@ dt_idcook_type(dt_node_t *dnp, dt_ident_t *idp, int argc, dt_node_t *args)
 static void
 dt_idcook_thaw(dt_node_t *dnp, dt_ident_t *idp, int argc, dt_node_t *args)
 {
+	RT_NOREF2(argc, args);
 	if (idp->di_ctfp != NULL && idp->di_type != CTF_ERR)
 		dt_node_type_assign(dnp, idp->di_ctfp, idp->di_type);
 }
@@ -544,6 +546,7 @@ dt_iddtor_inline(dt_ident_t *idp)
 static void
 dt_iddtor_none(dt_ident_t *idp)
 {
+	RT_NOREF1(idp);
 	/* do nothing */
 }
 
@@ -564,6 +567,7 @@ dt_idsize_type(dt_ident_t *idp)
 static size_t
 dt_idsize_none(dt_ident_t *idp)
 {
+	RT_NOREF1(idp);
 	return (0);
 }
 
