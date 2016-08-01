@@ -228,6 +228,7 @@ static int vhcHandleCreate(VBOXHOSTCHCLIENT *pClient, uint32_t *pu32Handle)
 
 static void vhcInstanceDestroy(VBOXHOSTCHINSTANCE *pInstance)
 {
+    RT_NOREF1(pInstance);
     HOSTCHLOG(("HostChannel: destroy %p\n", pInstance));
 }
 
@@ -927,6 +928,7 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
 /* @thread provider */
 static DECLCALLBACK(void) HostChannelCallbackDeleted(void *pvCallbacks, void *pvChannel)
 {
+    RT_NOREF1(pvChannel);
     vhcCallbackCtxDelete((VBOXHOSTCHCALLBACKCTX *)pvCallbacks);
 }
 
@@ -966,6 +968,7 @@ int vboxHostChannelRegister(const char *pszName,
                             const VBOXHOSTCHANNELINTERFACE *pInterface,
                             uint32_t cbInterface)
 {
+    RT_NOREF1(cbInterface);
     int rc = VINF_SUCCESS;
 
     VBOXHOSTCHCTX *pCtx = &g_ctx;

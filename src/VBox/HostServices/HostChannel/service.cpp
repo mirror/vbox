@@ -167,7 +167,7 @@ static DECLCALLBACK(int) svcUnload(void *pvService)
 
 static DECLCALLBACK(int) svcDisconnect(void *pvService, uint32_t u32ClientID, void *pvClient)
 {
-    NOREF(pvService);
+    RT_NOREF2(pvService, u32ClientID);
 
     VBOXHOSTCHCLIENT *pClient = (VBOXHOSTCHCLIENT *)pvClient;
 
@@ -180,6 +180,7 @@ static DECLCALLBACK(int) svcDisconnect(void *pvService, uint32_t u32ClientID, vo
 
 static DECLCALLBACK(int) svcConnect(void *pvService, uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF1(pvService);
     VBOXHOSTCHCLIENT *pClient = (VBOXHOSTCHCLIENT *)pvClient;
 
     int rc = VINF_SUCCESS;
