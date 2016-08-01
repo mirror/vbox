@@ -154,7 +154,11 @@ dt_provider_xref(dtrace_hdl_t *dtp, dt_provider_t *pvp, id_t id)
 	size_t oldsize = BT_SIZEOFMAP(pvp->pv_xrmax);
 	size_t newsize = BT_SIZEOFMAP(dtp->dt_xlatorid);
 
+#ifdef VBOX /* range */
+	assert(id < dtp->dt_xlatorid);
+#else
 	assert(id >= 0 && id < dtp->dt_xlatorid);
+#endif
 
 	if (newsize > oldsize) {
 		ulong_t *xrefs = dt_zalloc(dtp, newsize);

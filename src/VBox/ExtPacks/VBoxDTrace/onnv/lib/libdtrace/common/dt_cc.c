@@ -151,7 +151,9 @@ dt_idpragma(dt_idhash_t *dhp, dt_ident_t *idp, void *ignored)
 	RT_NOREF2(dhp, ignored);
 	yylineno = idp->di_lineno;
 	xyerror(D_PRAGMA_UNUSED, "unused #pragma %s\n", (char *)idp->di_iarg);
+#ifndef _MSC_VER /* unreachable */
 	return (0);
+#endif
 }
 
 static dtrace_stmtdesc_t *

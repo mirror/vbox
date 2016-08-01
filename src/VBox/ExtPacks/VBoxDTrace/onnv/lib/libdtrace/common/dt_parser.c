@@ -4776,7 +4776,7 @@ dt_node_root(dt_node_t *dnp)
 }
 
 /*PRINTFLIKE3*/
-void
+DECL_NO_RETURN(void)
 dnerror(const dt_node_t *dnp, dt_errtag_t tag, const char *format, ...)
 {
 	int oldlineno = yylineno;
@@ -4809,7 +4809,7 @@ dnwarn(const dt_node_t *dnp, dt_errtag_t tag, const char *format, ...)
 }
 
 /*PRINTFLIKE2*/
-void
+DECL_NO_RETURN(void)
 xyerror(dt_errtag_t tag, const char *format, ...)
 {
 	va_list ap;
@@ -4843,7 +4843,7 @@ xyvwarn(dt_errtag_t tag, const char *format, va_list ap)
 }
 
 /*PRINTFLIKE1*/
-void
+DECL_NO_RETURN(void)
 yyerror(const char *format, ...)
 {
 	va_list ap;

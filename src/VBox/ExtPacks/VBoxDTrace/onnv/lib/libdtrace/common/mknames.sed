@@ -19,6 +19,7 @@ i\ */
 i\#include <dtrace.h>
 i\const char *dtrace_subrstr(dtrace_hdl_t *dtp, int subr)
 i\{
+i\    (void)dtp;
 i\    switch (subr)
 i\    {
 b end

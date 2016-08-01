@@ -353,7 +353,11 @@ out:
 dt_xlator_t *
 dt_xlator_lookup_id(dtrace_hdl_t *dtp, id_t id)
 {
+#ifdef VBOX /* range */
+	assert(id < dtp->dt_xlatorid);
+#else
 	assert(id >= 0 && id < dtp->dt_xlatorid);
+#endif
 	return (dtp->dt_xlatormap[id]);
 }
 
