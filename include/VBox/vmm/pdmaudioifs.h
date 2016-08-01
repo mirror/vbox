@@ -736,8 +736,6 @@ typedef struct PDMAUDIOCALLBACK
 
 /**
  * Audio connector interface (up).
- ** @todo Get rid of the separate XXXIn and XXXOut methods and unify the In/Out structs with a union,
- **       so that we only have one guest and one host stream ultimately.
  */
 typedef struct PDMIAUDIOCONNECTOR
 {
@@ -745,7 +743,6 @@ typedef struct PDMIAUDIOCONNECTOR
      * Retrieves the current configuration of the host audio backend.
      *
      * @returns VBox status code.
-     *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pCfg            Where to store the host audio backend configuration data.
      */
