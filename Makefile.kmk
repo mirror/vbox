@@ -256,15 +256,20 @@ else # VBOX_WITH_QTGUI_V5
      # For non-hardened builds we need to remove the RUNPATH. This stuff is
      # ugly but we need to prevent kBuild from hard-linking otherwise we
      # (indirectly) change the binaries in tools
+     ifneq ($(KBUILD_TARGET),solaris)
+      QT5_VERSION = 5.6.1
+     else
+      QT5_VERSION = 5.5.1
+     endif
      qt5-bin_SOURCES = \
-      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.5.5.1=>lib$(qtmod).so.5) \
+      $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)=>lib$(qtmod).so.5) \
       $(foreach lib,$(VBOX_QT_PLUGINS),$(qt5-bin_0_OUTDIR)/$(lib)=>$(lib))
       ifneq ($(KBUILD_TARGET),solaris)
        qt5-bin_SOURCES += \
         $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$(qt5-bin_0_OUTDIR)/$(lib)=>legacy/$(lib))
       endif # solaris
 
-$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.5.5.1): \
+$(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
 	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
 	$(call MSG_INST_FILE,$^,$@)
 	$(QUIET)$(CP) $^ $@
