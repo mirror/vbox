@@ -54,59 +54,60 @@
 static int iDirList = 0;
 static int iDirFile = 0;
 
-static const char *pszDirList[] =
+static const char *g_apszDirs[] =
 {
-"c:",
-"c:\\test dir",
-"c:\\test dir\\SUBDIR",
+    "c:",
+    "c:\\test dir",
+    "c:\\test dir\\SUBDIR",
 };
 
-static const char *pszDirListC[] =
+static const char *g_apszDirsC[] =
 {
-".",
-"..",
-"test dir"
+    ".",
+    "..",
+    "test dir"
 };
 
-static const char *pszDirListTestdir[] =
+static const char *g_apszTestdirEntries[] =
 {
-".",
-"..",
-"SUBDIR",
-"a.bat",
-"aTestJe.bat",
-"aTestje.bat",
-"b.bat",
-"c.bat",
-"d.bat",
-"e.bat",
-"f.bat",
-"g.bat",
-"h.bat",
-"x.bat",
-"z.bat",
+    ".",
+    "..",
+    "SUBDIR",
+    "a.bat",
+    "aTestJe.bat",
+    "aTestje.bat",
+    "b.bat",
+    "c.bat",
+    "d.bat",
+    "e.bat",
+    "f.bat",
+    "g.bat",
+    "h.bat",
+    "x.bat",
+    "z.bat",
 };
 
-static const char *pszDirListSUBDIR[] =
+static const char *g_apszSUBDIREntries[] =
 {
-".",
-"..",
-"a.bat",
-"aTestJe.bat",
-"aTestje.bat",
-"b.bat",
-"c.bat",
-"d.bat",
-"e.bat",
-"f.bat",
-"g.bat",
-"h.bat",
-"x.bat",
-"z.bat",
+    ".",
+    "..",
+    "a.bat",
+    "aTestJe.bat",
+    "aTestje.bat",
+    "b.bat",
+    "c.bat",
+    "d.bat",
+    "e.bat",
+    "f.bat",
+    "g.bat",
+    "h.bat",
+    "x.bat",
+    "z.bat",
 };
 
 int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter)
 {
+    RT_NOREF1(enmFilter);
     if (!strcmp(pszPath, "c:\\*"))
         iDirList = 1;
     else if (!strcmp(pszPath, "c:\\test dir\\*"))
@@ -122,69 +123,71 @@ int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter)
 
 int rtDirClose(PRTDIR pDir)
 {
+    RT_NOREF1(pDir);
     iDirFile = 0;
     return VINF_SUCCESS;
 }
 
 int rtDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
 {
-    NOREF(fFlags);
-    switch(iDirList)
+    RT_NOREF4(pDir, pcbDirEntry, enmAdditionalAttribs, fFlags);
+    switch (iDirList)
     {
-    case 1:
-        if (iDirFile == RT_ELEMENTS(pszDirListC))
-            return VERR_NO_MORE_FILES;
-        pDirEntry->cbName = (uint16_t)strlen(pszDirListC[iDirFile]);
-        strcpy(pDirEntry->szName, pszDirListC[iDirFile++]);
-        break;
-    case 2:
-        if (iDirFile == RT_ELEMENTS(pszDirListTestdir))
-            return VERR_NO_MORE_FILES;
-        pDirEntry->cbName = (uint16_t)strlen(pszDirListTestdir[iDirFile]);
-        strcpy(pDirEntry->szName, pszDirListTestdir[iDirFile++]);
-        break;
-    case 3:
-        if (iDirFile == RT_ELEMENTS(pszDirListSUBDIR))
-            return VERR_NO_MORE_FILES;
-        pDirEntry->cbName = (uint16_t)strlen(pszDirListSUBDIR[iDirFile]);
-        strcpy(pDirEntry->szName, pszDirListSUBDIR[iDirFile++]);
-        break;
+        case 1:
+            if (iDirFile == RT_ELEMENTS(g_apszDirsC))
+                return VERR_NO_MORE_FILES;
+            pDirEntry->cbName = (uint16_t)strlen(g_apszDirsC[iDirFile]);
+            strcpy(pDirEntry->szName, g_apszDirsC[iDirFile++]);
+            break;
+        case 2:
+            if (iDirFile == RT_ELEMENTS(g_apszTestdirEntries))
+                return VERR_NO_MORE_FILES;
+            pDirEntry->cbName = (uint16_t)strlen(g_apszTestdirEntries[iDirFile]);
+            strcpy(pDirEntry->szName, g_apszTestdirEntries[iDirFile++]);
+            break;
+        case 3:
+            if (iDirFile == RT_ELEMENTS(g_apszSUBDIREntries))
+                return VERR_NO_MORE_FILES;
+            pDirEntry->cbName = (uint16_t)strlen(g_apszSUBDIREntries[iDirFile]);
+            strcpy(pDirEntry->szName, g_apszSUBDIREntries[iDirFile++]);
+            break;
     }
     return VINF_SUCCESS;
 }
 
 int rtPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
+    RT_NOREF2(pObjInfo, enmAdditionalAttribs);
     int cMax;
-    const char **ppszDirList;
 
-    /* first try pszDirList */
-    for (unsigned int i=0;i<RT_ELEMENTS(pszDirList);i++)
+    /* first try g_apszDirs */
+    for (unsigned int i=0;i<RT_ELEMENTS(g_apszDirs);i++)
     {
-        if(!strcmp(pszPath, pszDirList[i]))
+        if(!strcmp(pszPath, g_apszDirs[i]))
             return VINF_SUCCESS;
     }
 
-    switch(iDirList)
+    const char **papszDirList;
+    switch (iDirList)
     {
-    case 1:
-        cMax = RT_ELEMENTS(pszDirListC);
-        ppszDirList = pszDirListC;
-        break;
-    case 2:
-        cMax = RT_ELEMENTS(pszDirListTestdir);
-        ppszDirList = pszDirListTestdir;
-        break;
-    case 3:
-        cMax = RT_ELEMENTS(pszDirListSUBDIR);
-        ppszDirList = pszDirListSUBDIR;
-        break;
-    default:
-        return VERR_FILE_NOT_FOUND;
+        case 1:
+            cMax = RT_ELEMENTS(g_apszDirsC);
+            papszDirList = g_apszDirsC;
+            break;
+        case 2:
+            cMax = RT_ELEMENTS(g_apszTestdirEntries);
+            papszDirList = g_apszTestdirEntries;
+            break;
+        case 3:
+            cMax = RT_ELEMENTS(g_apszSUBDIREntries);
+            papszDirList = g_apszSUBDIREntries;
+            break;
+        default:
+            return VERR_FILE_NOT_FOUND;
     }
-    for (int i=0;i<cMax;i++)
+    for (int i = 0; i < cMax; i++)
     {
-        if(!strcmp(pszPath, ppszDirList[i]))
+        if (!strcmp(pszPath, papszDirList[i]))
             return VINF_SUCCESS;
     }
     return VERR_FILE_NOT_FOUND;
