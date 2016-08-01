@@ -1172,7 +1172,7 @@ static int ConvertCFHtmlToMime(const char *pszSource, const uint32_t cch, char *
  */
 static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput)
 {
-    Assert(pszOutput);
+    Assert(ppszOutput);
     Assert(pcbOutput);
     Assert(pszSource);
     Assert(cb);
@@ -1243,7 +1243,7 @@ static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutp
 
     /* check 'EndFragment:' value */
     const char *pszRealEndFragment = RTStrStr(pszResult, s_szEndFragment);
-    Assert((pszRealEndFragment - pszResult) == offEndFragment);
+    Assert((size_t)(pszRealEndFragment - pszResult) == offEndFragment);
 #endif
 
     *ppszOutput = pszResult;

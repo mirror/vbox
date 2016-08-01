@@ -767,6 +767,7 @@ static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
  */
 static void testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
+    RT_NOREF1(pTable);
     uint64_t u64Timestamp;
     uint32_t u32Size;
     if (   g_AsyncNotification.callHandle.rc != VINF_SUCCESS
@@ -1004,7 +1005,7 @@ static void test4(void)
             VBOXHGCMSVCPARM aParms[4];
             aParms[0].setString(s_szProp);
             aParms[1].setPointer(pvBuf, cbBuf);
-            int rc = svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, RT_ELEMENTS(aParms), aParms);
+            svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
         }
@@ -1040,7 +1041,7 @@ static void test5(void)
             VBOXHGCMSVCPARM aParms[3];
             aParms[0].setString("*");
             aParms[1].setPointer(pvBuf, cbBuf);
-            int rc2 = svcTable.pfnHostCall(svcTable.pvService, ENUM_PROPS_HOST, RT_ELEMENTS(aParms), aParms);
+            svcTable.pfnHostCall(svcTable.pvService, ENUM_PROPS_HOST, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
         }
@@ -1107,7 +1108,7 @@ static void test6(void)
         {
             VBOXHGCMSVCPARM aParms[4];
             char            szBuffer[256];
-            aParms[0].setPointer(szProp, cchProp + 1);
+            aParms[0].setPointer(szProp, (uint32_t)cchProp + 1);
             aParms[1].setPointer(szBuffer, sizeof(szBuffer));
             RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, 4, aParms), VINF_SUCCESS);
         }
@@ -1135,7 +1136,7 @@ static void test6(void)
 
 
 
-int main(int argc, char **argv)
+int main()
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstGuestPropSvc", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
