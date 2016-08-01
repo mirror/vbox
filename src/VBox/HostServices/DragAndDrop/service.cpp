@@ -267,6 +267,7 @@ int DragAndDropService::uninit(void)
 
 int DragAndDropService::clientConnect(uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF1(pvClient);
     if (m_clientMap.size() >= UINT8_MAX) /* Don't allow too much clients at the same time. */
     {
         AssertMsgFailed(("Maximum number of clients reached\n"));
@@ -311,6 +312,8 @@ int DragAndDropService::clientConnect(uint32_t u32ClientID, void *pvClient)
 
 int DragAndDropService::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF1(pvClient);
+
     /* Client not found? Bail out early. */
     DnDClientMap::iterator itClient =  m_clientMap.find(u32ClientID);
     if (itClient == m_clientMap.end())
@@ -365,6 +368,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                                    void *pvClient, uint32_t u32Function,
                                    uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+    RT_NOREF1(pvClient);
     LogFlowFunc(("u32ClientID=%RU32, u32Function=%RU32, cParms=%RU32\n",
                  u32ClientID, u32Function, cParms));
 
