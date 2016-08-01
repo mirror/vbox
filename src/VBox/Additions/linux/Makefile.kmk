@@ -388,18 +388,15 @@ LnxAdd-init-scripts_EXEC_SOURCES = \
 
 # this file needs editing before it can be included in the generic installer.
 $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
-		$(VBOX_PATH_LNX_INST_SRC)run-inst.sh \
+		$(VBOX_PATH_LNX_ADD_INST)install.sh.in \
 		$(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(RM) -f -- $@
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 		-e "s;_SVNREV_;$(VBOX_SVN_REV);g" \
- 		-e "s;_PACKAGE_NAME_;VirtualBox Guest Additions;g" \
-		-e "s;_PACKAGE_;VBoxGuestAdditions;g" \
 		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		-e "s;_USERNAME_;$(USERNAME);g" \
 		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
-		-e "s;_UNINSTALL_SCRIPTS_;vboxadd-x11 vboxvfs vboxadd-timesync vboxadd-service vboxadd;g" \
 		--output $@ \
 		$<
 	$(QUIET)$(CHMOD) 0755 $@

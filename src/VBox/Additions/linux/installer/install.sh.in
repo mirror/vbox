@@ -24,8 +24,8 @@
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Note: These variable names must *not* clash with variables in $CONFIG_DIR/$CONFIG!
-PACKAGE="_PACKAGE_"
-PACKAGE_NAME="_PACKAGE_NAME_"
+PACKAGE="VBoxGuestAdditions"
+PACKAGE_NAME="VirtualBox Guest Additions"
 UNINSTALL="uninstall.sh"
 ROUTINES="routines.sh"
 ARCH="_ARCH_"
@@ -33,7 +33,7 @@ INSTALLATION_VER="_VERSION_"
 INSTALLATION_REV="_SVNREV_"
 BUILD_TYPE="_BUILDTYPE_"
 USERNAME="_USERNAME_"
-UNINSTALL_SCRIPTS="_UNINSTALL_SCRIPTS_"
+UNINSTALL_SCRIPTS="vboxadd-x11 vboxvfs vboxadd-timesync vboxadd-service vboxadd"
 
 INSTALLATION_DIR="/opt/$PACKAGE-$INSTALLATION_VER"
 CONFIG_DIR="/var/lib/$PACKAGE"
@@ -125,7 +125,7 @@ def_uninstall()
     test "$found" = 0 && return 0
     if ! test "$1" = "force" ; then
         cat 1>&2 << EOF
-You appear to have a version of the _PACKAGE_ software
+You appear to have a version of the VirtualBox Guest Additions
 on your system which was installed from a different source or using a
 different type of installer.  If you installed it from a package from your
 Linux distribution or if it is a default part of the system then we strongly
@@ -152,8 +152,13 @@ EOF
         delrunlevel "$i" 2>> "${LOGFILE}"
         remove_init_script "$i" 2>> "${LOGFILE}"
     done
-    for i in "/opt/$PACKAGE-"*/init/*; do
-      test -z "$NO_CLEANUP" && grep -q '^# *cleanup_script *$' "${i}" && "${i}" cleanup 1>&2 2>> "$LOGFILE"
+    for i in "/opt/$PACKAGE-"*/init; do
+      for j in $UNINSTALL_SCRIPTS; do
+        script="${i}/${j}"
+        test -x "${script}" && test -z "$NO_CLEANUP" &&
+          grep -q '^# *cleanup_script *$' "${script}" &&
+          "${script}" cleanup 1>&2 2>> "$LOGFILE"
+      done
     done
 
     # Get rid of any remaining files
@@ -415,7 +420,8 @@ if [ -n "${INSTALLATION_MODULES_LIST}" ]; then
 fi
 
 # Install, set up and start init scripts
-for i in "$INSTALLATION_DIR/init/"*; do
+for i in "$INSTALLATION_DIR/init/vboxadd" "$INSTALLATION_DIR/init/vboxadd-service" \
+    "$INSTALLATION_DIR/init/vboxadd-x11"; do
   if test -r "$i"; then
     install_init_script "$i" "`basename "$i"`" 2>> "${LOGFILE}"
     addrunlevel "`basename "$i"`" 2>> "${LOGFILE}"
@@ -462,7 +468,8 @@ fi
 test -r "$CONFIG_DIR/$CONFIG_FILES" || abort "Required file $CONFIG_FILES not found.  Aborting..."
 
 # Stop and clean up all services
-for i in "$INSTALLATION_DIR/init/"*; do
+for i in "$INSTALLATION_DIR/init/vboxadd-x11" "$INSTALLATION_DIR/init/vboxadd-service" \
+    "$INSTALLATION_DIR/init/vboxadd"; do
     if test -r "\$i"; then
         stop_init_script "\`basename "\$i"\`" 2>> "${LOGFILE}"
         test -z "\${NO_CLEANUP}" && grep -q '^# *cleanup_script *$' "\${i}" && "\${i}" cleanup 2>> "\$LOGFILE"
