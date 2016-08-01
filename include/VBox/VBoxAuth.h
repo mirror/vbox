@@ -26,6 +26,10 @@
 #ifndef ___VBox_vboxauth_h
 #define ___VBox_vboxauth_h
 
+/** @defgroup grp_vboxauth VirtualBox External Authentication Library Interface
+ * @{
+ */
+
 /* The following 2 enums are 32 bits values.*/
 typedef enum AuthResult
 {
@@ -45,23 +49,25 @@ typedef enum AuthGuestJudgement
     AuthGuestSizeHack      = 0x7fffffff
 } AuthGuestJudgement;
 
-/* UUID memory representation. Array of 16 bytes. */
+/** UUID memory representation. Array of 16 bytes.
+ *
+ * @note VirtualBox uses a consistent binary representation of UUIDs on all platforms. For this reason
+ * the integer fields comprising the UUID are stored as little endian values. If you want to pass such
+ * UUIDs to code which assumes that the integer fields are big endian (often also called network byte
+ * order), you need to adjust the contents of the UUID to e.g. achieve the same string representation.
+ *
+ * The required changes are:
+ *     - reverse the order of byte 0, 1, 2 and 3
+ *     - reverse the order of byte 4 and 5
+ *     - reverse the order of byte 6 and 7.
+ *
+ * Using this conversion you will get identical results when converting the binary UUID to the string
+ * representation.
+ */
 typedef unsigned char AUTHUUID[16];
 typedef AUTHUUID *PAUTHUUID;
-/*
-Note: VirtualBox uses a consistent binary representation of UUIDs on all platforms. For this reason
-the integer fields comprising the UUID are stored as little endian values. If you want to pass such
-UUIDs to code which assumes that the integer fields are big endian (often also called network byte
-order), you need to adjust the contents of the UUID to e.g. achieve the same string representation.
-The required changes are:
- * reverse the order of byte 0, 1, 2 and 3
- * reverse the order of byte 4 and 5
- * reverse the order of byte 6 and 7.
-Using this conversion you will get identical results when converting the binary UUID to the string
-representation.
-*/
 
-/* The library entry point calling convention. */
+/** The library entry point calling convention. */
 #ifdef _MSC_VER
 # define AUTHCALL __cdecl
 #elif defined(__GNUC__)
@@ -74,118 +80,117 @@ representation.
 /**
  * Authentication library entry point.
  *
- * Parameters:
- *
- *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
- *   guestJudgement   Result of the guest authentication.
- *   szUser           User name passed in by the client (UTF8).
- *   szPassword       Password passed in by the client (UTF8).
- *   szDomain         Domain passed in by the client (UTF8).
+ * @param  pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
+ * @param  guestJudgement   Result of the guest authentication.
+ * @param  szUser           User name passed in by the client (UTF8).
+ * @param  szPassword       Password passed in by the client (UTF8).
+ * @param  szDomain         Domain passed in by the client (UTF8).
  *
  * Return code:
  *
- *   AuthAccessDenied    Client access has been denied.
- *   AuthAccessGranted   Client has the right to use the
- *                       virtual machine.
- *   AuthDelegateToGuest Guest operating system must
- *                       authenticate the client and the
- *                       library must be called again with
- *                       the result of the guest
- *                       authentication.
+ * @retval AuthAccessDenied    Client access has been denied.
+ * @retval AuthAccessGranted   Client has the right to use the virtual machine.
+ * @retval AuthDelegateToGuest Guest operating system must
+ *                              authenticate the client and the
+ *                              library must be called again with
+ *                              the result of the guest
+ *                              authentication.
  */
-typedef AuthResult AUTHCALL AUTHENTRY(PAUTHUUID pUuid,
-                                      AuthGuestJudgement guestJudgement,
-                                      const char *szUser,
-                                      const char *szPassword,
-                                      const char *szDomain);
-
-
-typedef AUTHENTRY *PAUTHENTRY;
-
+typedef AuthResult AUTHCALL FNAUTHENTRY(PAUTHUUID pUuid,
+                                        AuthGuestJudgement guestJudgement,
+                                        const char *szUser,
+                                        const char *szPassword,
+                                        const char *szDomain);
+/** Pointer to a FNAUTHENTRY function. */
+typedef FNAUTHENTRY *PFNAUTHENTRY;
+/** @deprecated   */
+typedef FNAUTHENTRY  AUTHENTRY;
+/** @deprecated   */
+typedef PFNAUTHENTRY PAUTHENTRY;
+/** Name of the FNAUTHENTRY entry point. */
 #define AUTHENTRY_NAME "VRDPAuth"
 
 /**
  * Authentication library entry point version 2.
  *
- * Parameters:
+ * @param  pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
+ * @param  guestJudgement   Result of the guest authentication.
+ * @param  szUser           User name passed in by the client (UTF8).
+ * @param  szPassword       Password passed in by the client (UTF8).
+ * @param  szDomain         Domain passed in by the client (UTF8).
+ * @param  fLogon           Boolean flag. Indicates whether the entry point is
+ *                          called for a client logon or the client disconnect.
+ * @param  clientId         Server side unique identifier of the client.
  *
- *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
- *   guestJudgement   Result of the guest authentication.
- *   szUser           User name passed in by the client (UTF8).
- *   szPassword       Password passed in by the client (UTF8).
- *   szDomain         Domain passed in by the client (UTF8).
- *   fLogon           Boolean flag. Indicates whether the entry point is called
- *                    for a client logon or the client disconnect.
- *   clientId         Server side unique identifier of the client.
+ * @retval AuthAccessDenied    Client access has been denied.
+ * @retval AuthAccessGranted   Client has the right to use the virtual machine.
+ * @retval AuthDelegateToGuest Guest operating system must
+ *                             authenticate the client and the
+ *                             library must be called again with
+ *                             the result of the guest authentication.
  *
- * Return code:
- *
- *   AuthAccessDenied    Client access has been denied.
- *   AuthAccessGranted   Client has the right to use the
- *                       virtual machine.
- *   AuthDelegateToGuest Guest operating system must
- *                       authenticate the client and the
- *                       library must be called again with
- *                       the result of the guest
- *                       authentication.
- *
- * Note: When 'fLogon' is 0, only pUuid and clientId are valid and the return
- *       code is ignored.
+ * @note When @a fLogon is 0, only @a pUuid and @a clientId are valid and the
+ *       return code is ignored.
  */
-typedef AuthResult AUTHCALL AUTHENTRY2(PAUTHUUID pUuid,
-                                       AuthGuestJudgement guestJudgement,
-                                       const char *szUser,
-                                       const char *szPassword,
-                                       const char *szDomain,
-                                       int fLogon,
-                                       unsigned clientId);
-
-
-typedef AUTHENTRY2 *PAUTHENTRY2;
-
+typedef AuthResult AUTHCALL FNAUTHENTRY2(PAUTHUUID pUuid,
+                                         AuthGuestJudgement guestJudgement,
+                                         const char *szUser,
+                                         const char *szPassword,
+                                         const char *szDomain,
+                                         int fLogon,
+                                         unsigned clientId);
+/** Pointer to a FNAUTHENTRY2 function. */
+typedef FNAUTHENTRY2 *PFNAUTHENTRY2;
+/** @deprecated   */
+typedef FNAUTHENTRY2  AUTHENTRY2;
+/** @deprecated   */
+typedef PFNAUTHENTRY2 PAUTHENTRY2;
+/** Name of the FNAUTHENTRY2 entry point. */
 #define AUTHENTRY2_NAME "VRDPAuth2"
 
 /**
  * Authentication library entry point version 3.
  *
- * Parameters:
+ * @param  szCaller         The name of the component which calls the library (UTF8).
+ * @param  pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
+ * @param  guestJudgement   Result of the guest authentication.
+ * @param  szUser           User name passed in by the client (UTF8).
+ * @param  szPassword       Password passed in by the client (UTF8).
+ * @param  szDomain         Domain passed in by the client (UTF8).
+ * @param  fLogon           Boolean flag. Indicates whether the entry point is
+ *                          called for a client logon or the client disconnect.
+ * @param  clientId         Server side unique identifier of the client.
  *
- *   szCaller         The name of the component which calls the library (UTF8).
- *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
- *   guestJudgement   Result of the guest authentication.
- *   szUser           User name passed in by the client (UTF8).
- *   szPassword       Password passed in by the client (UTF8).
- *   szDomain         Domain passed in by the client (UTF8).
- *   fLogon           Boolean flag. Indicates whether the entry point is called
- *                    for a client logon or the client disconnect.
- *   clientId         Server side unique identifier of the client.
+ * @retval AuthResultAccessDenied    Client access has been denied.
+ * @retval AuthResultAccessGranted   Client has the right to use the
+ *                                   virtual machine.
+ * @retval AuthResultDelegateToGuest Guest operating system must
+ *                                   authenticate the client and the
+ *                                   library must be called again with
+ *                                   the result of the guest
+ *                                   authentication.
  *
- * Return code:
- *
- *   AuthResultAccessDenied    Client access has been denied.
- *   AuthResultAccessGranted   Client has the right to use the
- *                             virtual machine.
- *   AuthResultDelegateToGuest Guest operating system must
- *                             authenticate the client and the
- *                             library must be called again with
- *                             the result of the guest
- *                             authentication.
- *
- * Note: When 'fLogon' is 0, only pszCaller, pUuid and clientId are valid and the return
- *       code is ignored.
+ * @note When @a fLogon is 0, only @a pszCaller, @a pUuid and @a clientId are
+ *       valid and the return code is ignored.
  */
-typedef AuthResult AUTHCALL AUTHENTRY3(const char *szCaller,
-                                       PAUTHUUID pUuid,
-                                       AuthGuestJudgement guestJudgement,
-                                       const char *szUser,
-                                       const char *szPassword,
-                                       const char *szDomain,
-                                       int fLogon,
-                                       unsigned clientId);
+typedef AuthResult AUTHCALL FNAUTHENTRY3(const char *szCaller,
+                                         PAUTHUUID pUuid,
+                                         AuthGuestJudgement guestJudgement,
+                                         const char *szUser,
+                                         const char *szPassword,
+                                         const char *szDomain,
+                                         int fLogon,
+                                         unsigned clientId);
+/** Pointer to a FNAUTHENTRY3 function. */
+typedef FNAUTHENTRY3 *PFNAUTHENTRY3;
+/** @deprecated */
+typedef FNAUTHENTRY3  AUTHENTRY3;
+/** @deprecated */
+typedef PFNAUTHENTRY3 PAUTHENTRY3;
 
-
-typedef AUTHENTRY3 *PAUTHENTRY3;
-
+/** Name of the FNAUTHENTRY3 entry point. */
 #define AUTHENTRY3_NAME "AuthEntry"
+
+/** @} */
 
 #endif
