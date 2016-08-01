@@ -1554,7 +1554,7 @@ void crPixelCopy2D( GLsizei width, GLsizei height,
 
         /* handle the alignment */
         if (srcPacking->alignment != 1) {
-            i = ((long) src) % srcPacking->alignment;
+            i = ((intptr_t) src) % srcPacking->alignment;
             if (i)
                 src += srcPacking->alignment - i;
             i = (long) srcRowStrideBytes % srcPacking->alignment;
@@ -1563,7 +1563,7 @@ void crPixelCopy2D( GLsizei width, GLsizei height,
         }
 
         if (dstPacking->alignment != 1) {
-            i = ((long) dst) % dstPacking->alignment;
+            i = ((intptr_t) dst) % dstPacking->alignment;
             if (i)
                 dst += dstPacking->alignment - i;
             i = (long) dstRowStrideBytes % dstPacking->alignment;
