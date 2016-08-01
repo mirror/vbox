@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 # define VBOXCRHGSMI_DECL(a_Type) a_Type RTCALL
 #endif
 
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit();
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(void);
 VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate(void);
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiDestroy(PVBOXUHGSMI pHgsmi);
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
