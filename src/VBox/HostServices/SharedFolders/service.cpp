@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * Shared Folders: Host service entry points.
+ * Shared Folders - Host service entry points.
  */
 
 /*
@@ -31,7 +32,7 @@
 #define SHFL_SSM_VERSION                    3
 
 
-/* Shared Folders Host Service.
+/** @page pg_shfl_svc   Shared Folders Host Service
  *
  * Shared Folders map a host file system to guest logical filesystem.
  * A mapping represents 'host name'<->'guest name' translation and a root
@@ -83,10 +84,8 @@ static DECLCALLBACK(int) svcUnload (void *)
 
 static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF2(u32ClientID, pvClient);
     int rc = VINF_SUCCESS;
-
-    NOREF(u32ClientID);
-    NOREF(pvClient);
 
     Log(("SharedFolders host service: connected, u32ClientID = %u\n", u32ClientID));
 
@@ -95,6 +94,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 
 static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF1(u32ClientID);
     int rc = VINF_SUCCESS;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
@@ -113,6 +113,7 @@ static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvCl
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
 #ifndef UNITTEST  /* Read this as not yet tested */
+    RT_NOREF1(u32ClientID);
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
 
     Log(("SharedFolders host service: saving state, u32ClientID = %u\n", u32ClientID));
@@ -168,6 +169,8 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
         }
     }
 
+#else
+    RT_NOREF3(u32ClientID, pvClient, pSSM);
 #endif
     return VINF_SUCCESS;
 }
@@ -175,6 +178,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
 #ifndef UNITTEST  /* Read this as not yet tested */
+    RT_NOREF1(u32ClientID);
     uint32_t        nrMappings;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
     uint32_t        len, version;
@@ -285,12 +289,15 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         }
     }
     Log(("SharedFolders host service: successfully loaded state\n"));
+#else
+    RT_NOREF3(u32ClientID, pvClient, pSSM);
 #endif
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+    RT_NOREF1(u32ClientID);
     int rc = VINF_SUCCESS;
 
     Log(("SharedFolders host service: svcCall: u32ClientID = %u, fn = %u, cParms = %u, pparms = %p\n", u32ClientID, u32Function, cParms, paParms));
@@ -299,10 +306,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
     bool fAsynchronousProcessing = false;
 
-#ifdef DEBUG
-    uint32_t i;
-
-    for (i = 0; i < cParms; i++)
+#ifdef LOG_ENABLED
+    for (uint32_t i = 0; i < cParms; i++)
     {
         /** @todo parameters other than 32 bit */
         Log(("    pparms[%d]: type %u, value %u\n", i, paParms[i].type, paParms[i].u.uint32));
