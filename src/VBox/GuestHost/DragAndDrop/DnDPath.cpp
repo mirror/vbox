@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DnD: Path handling.
+ * DnD - Path handling.
  */
 
 /*
@@ -37,15 +37,20 @@ int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
 {
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
+    RT_NOREF1(cbPath);
     /* Filter out characters not allowed on Windows platforms, put in by
        RTTimeSpecToString(). */
     /** @todo Use something like RTPathSanitize() when available. Later. */
-    RTUNICP aCpSet[] =
-        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
-          0xa0, 0xd7af, '\0' };
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, aCpSet, '_' /* Replacement */);
+    static const RTUNICP s_aCpSet[] =
+    {
+        ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
+        0xa0, 0xd7af, '\0'
+    };
+    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_aCpSet, '_' /* Replacement */);
     if (cReplaced < 0)
         rc = VERR_INVALID_UTF8_ENCODING;
+#else
+    RT_NOREF2(pszPath, cbPath);
 #endif
     return rc;
 }
@@ -53,6 +58,7 @@ int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
 int DnDPathSanitize(char *pszPath, size_t cbPath)
 {
     /** @todo */
+    RT_NOREF2(pszPath, cbPath);
     return VINF_SUCCESS;
 }
 

@@ -110,7 +110,7 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, uint32_t fFlags)
     do
     {
         char pszDropDir[RTPATH_MAX];
-        size_t cchDropDir = RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath);
+        RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath);
 
         /** @todo On Windows we also could use the registry to override
          *        this path, on Posix a dotfile and/or a guest property
@@ -228,8 +228,7 @@ int DnDDroppedFiles::Rollback(void)
         rc2 = RTFileDelete(this->m_lstFiles.at(i).c_str());
         if (RT_SUCCESS(rc2))
             this->m_lstFiles.removeAt(i);
-
-        if (RT_SUCCESS(rc))
+        else if (RT_SUCCESS(rc))
            rc = rc2;
         /* Keep going. */
     }
@@ -239,8 +238,7 @@ int DnDDroppedFiles::Rollback(void)
         rc2 = RTDirRemove(this->m_lstDirs.at(i).c_str());
         if (RT_SUCCESS(rc2))
             this->m_lstDirs.removeAt(i);
-
-        if (RT_SUCCESS(rc))
+        else if (RT_SUCCESS(rc))
             rc = rc2;
         /* Keep going. */
     }
@@ -257,10 +255,9 @@ int DnDDroppedFiles::Rollback(void)
              * Might return VERR_DIR_NOT_EMPTY or similar. */
             rc2 = RTDirRemove(this->m_strPathAbs.c_str());
         }
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
-
-    if (RT_SUCCESS(rc))
-        rc = rc2;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

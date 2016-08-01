@@ -133,6 +133,7 @@ int DnDURIObject::Open(Dest enmDest, uint64_t fOpen /* = 0 */, uint32_t fMode /*
 int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
                          uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */, uint32_t fFlags /* = 0 */)
 {
+    Assert(fFlags == 0); RT_NOREF1(fFlags);
     int rc = VINF_SUCCESS;
 
     switch (enmDest)
