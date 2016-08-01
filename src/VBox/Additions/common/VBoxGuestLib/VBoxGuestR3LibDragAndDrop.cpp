@@ -769,13 +769,11 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr,
                                   void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
 {
-    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
-    AssertReturn(cbData,      VERR_INVALID_PARAMETER);
-    /* pcbDataRecv is optional. */
-
-    int rc;
+    AssertPtrReturn(pCtx,            VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,          VERR_INVALID_POINTER);
+    AssertReturn(cbData,             VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pcbDataRecv, VERR_INVALID_POINTER);
 
     LogFlowFunc(("pvDate=%p, cbData=%RU32\n", pvData, cbData));
 
@@ -785,90 +783,102 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = HOST_DND_HG_SND_DATA;
 
-    do
+    int rc;
+    if (pCtx->uProtocol < 3)
     {
-        uint32_t cbDataRecv;
+        Msg.hdr.cParms  = 5;
 
-        if (pCtx->uProtocol < 3)
+        Msg.u.v1.uScreenId.SetUInt32(0);
+        Msg.u.v1.pvFormat.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
+        Msg.u.v1.cbFormat.SetUInt32(0);
+        Msg.u.v1.pvData.SetPtr(pvData, cbData);
+        Msg.u.v1.cbData.SetUInt32(0);
+
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        if (RT_SUCCESS(rc))
         {
-            Msg.hdr.cParms  = 5;
-
-            Msg.u.v1.uScreenId.SetUInt32(0);
-            Msg.u.v1.pvFormat.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
-            Msg.u.v1.cbFormat.SetUInt32(0);
-            Msg.u.v1.pvData.SetPtr(pvData, cbData);
-            Msg.u.v1.cbData.SetUInt32(0);
-
-            rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-            if (RT_SUCCESS(rc))
+            rc = Msg.hdr.result;
+            if (   RT_SUCCESS(rc)
+                || rc == VERR_BUFFER_OVERFLOW)
             {
-                rc = Msg.hdr.result;
-                if (   RT_SUCCESS(rc)
-                    || rc == VERR_BUFFER_OVERFLOW)
-                {
-                    rc = Msg.u.v1.uScreenId.GetUInt32(&pDataHdr->uScreenId);
-                    AssertRC(rc);
+                /** @todo r=bird: The VERR_BUFFER_OVERFLOW case is probably broken as the
+                 *        status isn't returned to the caller (vbglR3DnDHGRecvDataLoop).
+                 *        This was the case before fixing the uninitalized variable.  As
+                 *        other V0-2 protocol functions have been marked deprecated, it's
+                 *        probably a good idea to just remove this code and tell the 1-2 users
+                 *        to upgrade the host instead.  Unused and untested weird code like this
+                 *        is just hard+costly to maintain and liability.
+                 *        (VERR_BUFFER_OVERFLOW == weird, no disrespect intended) */
 
-                    /*
-                     * In case of VERR_BUFFER_OVERFLOW get the data sizes required
-                     * for the format + data blocks.
-                     */
+                /* Unmarshal the whole message first. */
+                rc = Msg.u.v1.uScreenId.GetUInt32(&pDataHdr->uScreenId);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
                     uint32_t cbFormatRecv;
                     rc = Msg.u.v1.cbFormat.GetUInt32(&cbFormatRecv);
                     AssertRC(rc);
-                    if (cbFormatRecv >= pDataHdr->cbMetaFmt)
+                    if (RT_SUCCESS(rc))
                     {
-                        rc = VERR_TOO_MUCH_DATA;
-                        break;
+                        uint32_t cbDataRecv;
+                        rc = Msg.u.v1.cbData.GetUInt32(&cbDataRecv);
+                        AssertRC(rc);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * In case of VERR_BUFFER_OVERFLOW get the data sizes required
+                             * for the format + data blocks.
+                             */
+                            if (   cbFormatRecv >= pDataHdr->cbMetaFmt
+                                || cbDataRecv   >= pDataHdr->cbMeta)
+                                rc = VERR_TOO_MUCH_DATA;
+                            else
+                            {
+                                pDataHdr->cbMetaFmt = cbFormatRecv;
+                                if (pcbDataRecv)
+                                    *pcbDataRecv = cbDataRecv;
+                                LogFlowFuncLeaveRC(rc);
+                                return rc;
+                            }
+                        }
                     }
-
-                    rc = Msg.u.v1.cbData.GetUInt32(&cbDataRecv);
-                    AssertRC(rc);
-                    if (cbDataRecv >= pDataHdr->cbMeta)
-                    {
-                        rc = VERR_TOO_MUCH_DATA;
-                        break;
-                    }
-
-                    pDataHdr->cbMetaFmt = cbFormatRecv;
                 }
             }
-
-            if (RT_FAILURE(rc))
-                break;
         }
-        else /* Protocol v3 and up. */
+    }
+    else /* Protocol v3 and up. */
+    {
+        Msg.hdr.cParms = 5;
+
+        Msg.u.v3.uContext.SetUInt32(0);
+        Msg.u.v3.pvData.SetPtr(pvData, cbData);
+        Msg.u.v3.cbData.SetUInt32(0);
+        Msg.u.v3.pvChecksum.SetPtr(NULL, 0);
+        Msg.u.v3.cbChecksum.SetUInt32(0);
+
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        if (RT_SUCCESS(rc))
         {
-            Msg.hdr.cParms = 5;
-
-            Msg.u.v3.uContext.SetUInt32(0);
-            Msg.u.v3.pvData.SetPtr(pvData, cbData);
-            Msg.u.v3.cbData.SetUInt32(0);
-            Msg.u.v3.pvChecksum.SetPtr(NULL, 0);
-            Msg.u.v3.cbChecksum.SetUInt32(0);
-
-            rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+            rc = Msg.hdr.result;
             if (RT_SUCCESS(rc))
             {
-                rc = Msg.hdr.result;
+                uint32_t cbDataRecv;
+                rc = Msg.u.v3.cbData.GetUInt32(&cbDataRecv);
+                AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = Msg.u.v3.cbData.GetUInt32(&cbDataRecv);
-                    AssertRC(rc);
+                    /** @todo Use checksum for validating the received data. */
+                    if (pcbDataRecv)
+                        *pcbDataRecv = cbDataRecv;
+                    LogFlowFuncLeaveRC(rc);
+                    return rc;
                 }
-
-                /** @todo Use checksum for validating the received data. */
             }
 
-            if (RT_FAILURE(rc))
-                break;
         }
+    }
 
-        if (pcbDataRecv)
-            *pcbDataRecv = cbDataRecv;
-
-    } while (0);
-
+    /* failure */
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -924,8 +934,7 @@ static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 }
 
 /** @todo Deprecated function; will be removed. */
-static int vbglR3DnDHGRecvMoreData(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                   void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
+static int vbglR3DnDHGRecvMoreData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
 {
     AssertPtrReturn(pCtx,        VERR_INVALID_POINTER);
     AssertPtrReturn(pvData,      VERR_INVALID_POINTER);
@@ -977,7 +986,7 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHD
         if (!cbDataTmp)
             return VERR_NO_MEMORY;
 
-        /**
+        /*
          * Protocols < v3 contain the header information in every HOST_DND_HG_SND_DATA
          * message, so do the actual retrieving immediately.
          *
@@ -1468,13 +1477,11 @@ VBGLR3DECL(int) VbglR3DnDRecvNextMsg(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCM
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    uint32_t       uMsg      = 0;
-    uint32_t       uNumParms = 0;
-
-    const uint32_t cbDataMax   = pCtx->cbMaxChunkSize;
     const uint32_t cbFormatMax = pCtx->cbMaxChunkSize;
 
-    int rc = vbglR3DnDGetNextMsgType(pCtx, &uMsg, &uNumParms, true /* fWait */);
+    uint32_t       uMsg   = 0;
+    uint32_t       cParms = 0;
+    int rc = vbglR3DnDGetNextMsgType(pCtx, &uMsg, &cParms, true /* fWait */);
     if (RT_SUCCESS(rc))
     {
         /* Check for VM session change. */
