@@ -110,16 +110,16 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
         }
 
         Assert(cbLeft > cchDigits);
-        uint64_t iSeq = UINT64_MAX;
         for (uint32_t iTry = 0; iTry <= cMaxTries; iTry++)
         {
             /* Try sequentially first for a little bit, then switch to random numbers. */
+            uint64_t iSeq;
             if (iTry > 20)
                 iSeq = RTRandU64Ex(0, uEndSeq);
             else
             {
-                iSeq++;
-                if (iSeq < UINT64_MAX)
+                iSeq = iTry;
+                if (uEndSeq < UINT64_MAX)
                     iSeq %= uEndSeq + 1;
             }
             ssize_t cchRet = RTStrFormatU64(pszEnd, cbLeft, iSeq, 10 /*uiBase*/,
