@@ -304,7 +304,8 @@ out:
 static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszFilename)
 {
     int      rc = VINF_SUCCESS;
-    uint32_t cb, cbMaxLen = RT_BE2H_U32(pLocator->u32DataSpace); /* ugly. initialized variable on separate lines, please. */
+    uint32_t cb = 0;
+    uint32_t cbMaxLen = RT_BE2H_U32(pLocator->u32DataSpace);
     void     *pvBuf = RTMemTmpAllocZ(cbMaxLen);
     char     *pszTmp;
 
@@ -332,8 +333,6 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
                     }
                     memcpy(pvBuf, szPath, cb);
                 }
-                else
-                    cb = 0; /* (Shut up MSC) */
             }
             else
             {
@@ -354,7 +353,10 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             /* Update plain absolute name. */
             rc = RTPathAbs(pszFilename, (char *)pvBuf, cbMaxLen);
             if (RT_SUCCESS(rc))
-                pLocator->u32DataLength = RT_H2BE_U32((uint32_t)strlen((const char *)pvBuf));
+            {
+                cb = (uint32_t)strlen((const char *)pvBuf);
+                pLocator->u32DataLength = RT_H2BE_U32(cb);
+            }
             break;
         case VHD_PLATFORM_CODE_W2RU:
             if (RTPathStartsWithRoot(pszFilename))
@@ -400,9 +402,12 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
     }
 
     if (RT_SUCCESS(rc))
+    {
+        Assert(cb > 0);
         rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                     RT_BE2H_U64(pLocator->u64DataOffset),
-                                    pvBuf, cb); /** @todo r=msc: 'cb' _IS_ used uninitialized in the VHD_PLATFORM_CODE_WI2K path! */
+                                    pvBuf, cb);
+    }
 
     if (pvBuf)
         RTMemTmpFree(pvBuf);
