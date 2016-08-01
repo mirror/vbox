@@ -6,14 +6,16 @@
 
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
+# ifdef VBOX
+#  include <iprt/win/winsock2.h>
+# else /* !VBOX */
 #pragma warning( push, 3 )
 #include <winsock2.h>
 #pragma warning( pop )
 #pragma warning( disable : 4514 )
 #pragma warning( disable : 4127 )
-# ifndef VBOX
 typedef int ssize_t;
-# endif
+# endif /* !VBOX */
 #else
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -59,7 +61,9 @@ typedef int socklen_t;
 #endif
 
 #ifdef WINDOWS
+# undef EADDRINUSE
 #define EADDRINUSE   WSAEADDRINUSE
+# undef ECONNREFUSED
 #define ECONNREFUSED WSAECONNREFUSED
 #endif
 

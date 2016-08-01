@@ -65,7 +65,7 @@ for func_name in keys:
     print '\tif (func && ((SPUGenericFunction)dispatch->%s!=func))' % func_name
     print '\t{'
     print '\t\tcrDebug("%%s changed from %%p to %%p", "gl%s", dispatch->%s, func);' % (func_name, func_name)
-    print '\t\tcrSPUChangeInterface(dispatch, dispatch->%s, func);' % func_name
+    print '\t\tcrSPUChangeInterface(dispatch, (void *)dispatch->%s, func);' % func_name
     print '\t}\n'
 print """
 }

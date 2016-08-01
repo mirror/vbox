@@ -591,7 +591,7 @@ static GLuint crStateFramebufferTextureCheck(GLenum target, GLenum attachment, G
     }
 
     CRSTATE_CHECKERR_RET(level<0, GL_INVALID_VALUE, "level<0", 0);
-    CRSTATE_CHECKERR_RET(level>maxtexsizelog2, GL_INVALID_VALUE, "level too big", 0);
+    CRSTATE_CHECKERR_RET((GLuint)level>maxtexsizelog2, GL_INVALID_VALUE, "level too big", 0);
 
 #ifdef IN_GUEST
     for (i = 0; i < cFBOs; ++i)
@@ -702,7 +702,7 @@ crStateFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarge
         return;
     }
 
-    CRSTATE_CHECKERR(zoffset>(g->limits.max3DTextureSize-1), GL_INVALID_VALUE, "zoffset too big");
+    CRSTATE_CHECKERR(zoffset>((GLint)g->limits.max3DTextureSize-1), GL_INVALID_VALUE, "zoffset too big");
     CRSTATE_CHECKERR(textarget!=GL_TEXTURE_3D, GL_INVALID_OPERATION, "textarget");
 
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);

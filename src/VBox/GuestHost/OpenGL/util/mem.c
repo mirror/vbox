@@ -63,6 +63,7 @@ void *crAllocDebug( unsigned int nbytes, const char *file, int line )
 		fprintf(stderr, "crAllocDebug(%d bytes) in %s at %d\n", nbytes, file, line);
 	return _crAlloc(nbytes);
 #else
+	RT_NOREF2(file, line);
 	return crAlloc(nbytes);
 #endif
 }
@@ -93,6 +94,7 @@ void *crCallocDebug( unsigned int nbytes, const char *file, int line )
 		fprintf(stderr, "crCallocDebug(%d bytes) in %s at %d\n", nbytes, file, line);
 	return _crCalloc(nbytes);
 #else
+	RT_NOREF2(file, line);
 	return crCalloc(nbytes);
 #endif
 }

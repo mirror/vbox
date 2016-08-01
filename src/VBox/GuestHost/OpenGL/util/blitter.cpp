@@ -192,13 +192,13 @@ void CrMBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, bool f
         srcY = 0;
     }
 
-    if (srcX >= pSrc->width)
+    if ((GLuint)srcX >= pSrc->width)
     {
         WARN(("ups"));
         return;
     }
 
-    if (srcY >= pSrc->height)
+    if ((GLuint)srcY >= pSrc->height)
     {
         WARN(("ups"));
         return;
@@ -217,10 +217,10 @@ void CrMBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, bool f
     int32_t UnscaledSrcWidth = UnscaledCopyRect.xRight - UnscaledCopyRect.xLeft;
     int32_t UnscaledSrcHeight = UnscaledCopyRect.yBottom - UnscaledCopyRect.yTop;
 
-    if (UnscaledSrcWidth + srcX > pSrc->width)
+    if (UnscaledSrcWidth + srcX > (GLint)pSrc->width)
         UnscaledSrcWidth = pSrc->width - srcX;
 
-    if (UnscaledSrcHeight + srcY > pSrc->height)
+    if (UnscaledSrcHeight + srcY > (GLint)pSrc->height)
         UnscaledSrcHeight = pSrc->height - srcY;
 
     uint8_t *pu8Src = ((uint8_t*)pSrc->pvData) + pSrc->pitch * (!fSrcInvert ? srcY : pSrc->height - srcY - 1) + srcX * 4;

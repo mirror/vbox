@@ -1856,7 +1856,6 @@ void crDumpNamedTGAV(GLint w, GLint h, GLvoid *data, const char* fname, va_list 
 void crDumpNamedTGAF(GLint w, GLint h, GLvoid *data, const char* fname, ...)
 {
     va_list va;
-    int rc;
     va_start(va, fname);
     crDumpNamedTGAV(w, h, data, fname, va);
     va_end(va);

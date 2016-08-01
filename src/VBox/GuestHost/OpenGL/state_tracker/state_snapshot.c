@@ -54,7 +54,7 @@ static int32_t crStateAllocAndSSMR3GetMem(PSSMHANDLE pSSM, void **pBuffer, size_
 {
     CRASSERT(pSSM && pBuffer && cbBuffer>0);
 
-    *pBuffer = crAlloc(cbBuffer);
+    *pBuffer = crAlloc((unsigned int /* this case is just so stupid */)cbBuffer);
     if (!*pBuffer)
         return VERR_NO_MEMORY;
 
@@ -778,7 +778,7 @@ static int32_t crSateLoadEvalCoeffs1D(CREvaluator1D *pEval, GLboolean bReallocMe
             size = pEval[i].order * gleval_sizes[i] * sizeof(GLfloat);
             if (bReallocMem)
             {
-                pEval[i].coeff = (GLfloat*) crAlloc(size);
+                pEval[i].coeff = (GLfloat*) crAlloc((unsigned int /* this case is just so stupid */)size);
                 if (!pEval[i].coeff) return VERR_NO_MEMORY;
             }
             rc = SSMR3GetMem(pSSM, pEval[i].coeff, size);
@@ -801,7 +801,7 @@ static int32_t crSateLoadEvalCoeffs2D(CREvaluator2D *pEval, GLboolean bReallocMe
             size = pEval[i].uorder * pEval[i].vorder * gleval_sizes[i] * sizeof(GLfloat);
             if (bReallocMem)
             {
-                pEval[i].coeff = (GLfloat*) crAlloc(size);
+                pEval[i].coeff = (GLfloat*) crAlloc((unsigned int /* this case is just so stupid */)size);
                 if (!pEval[i].coeff) return VERR_NO_MEMORY;
             }
             rc = SSMR3GetMem(pSSM, pEval[i].coeff, size);
@@ -1454,8 +1454,7 @@ static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM, uint32_t u32
             }
         }
     }
-
-    return rc;
+    /* not reached*/
 }
 
 
@@ -2649,7 +2648,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
                 } else itemsize = sizeof(GLfloat);
 
                 datasize = crStateGetUniformSize(pProgram->pUniforms[k].type)*itemsize;
-                pProgram->pUniforms[k].data = crAlloc(datasize);
+                pProgram->pUniforms[k].data = crAlloc((unsigned int /* this case is just so stupid */)datasize);
                 if (!pProgram->pUniforms[k].data) return VERR_NO_MEMORY;
 
                 rc = SSMR3GetMem(pSSM, pProgram->pUniforms[k].data, datasize);

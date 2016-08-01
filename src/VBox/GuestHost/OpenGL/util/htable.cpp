@@ -1,7 +1,8 @@
 /* $Id$ */
-
 /** @file
  * uint32_t handle to void simple table impl
+ *
+ * @todo Why couldn't you simply use iprt/handletable.h?
  */
 
 /*
@@ -15,6 +16,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>
 #include "cr_spu.h"
@@ -161,8 +163,7 @@ VBOXHTABLEDECL(CRHTABLE_HANDLE) CrHTablePut(PCRHTABLE pTbl, void* pvData)
             return crHTableIndex2Handle(i);
         }
     }
-    WARN(("should not be here"));
-    return CRHTABLE_HANDLE_INVALID;
+    /* not reached */
 }
 
 VBOXHTABLEDECL(void*) CrHTableRemove(PCRHTABLE pTbl, CRHTABLE_HANDLE hHandle)

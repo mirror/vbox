@@ -571,18 +571,20 @@ void crHashtableWalkKeys( CRHashTable *h, CRHashIdWalkKeys walkFunc , void *data
 GLuint crHashtableAllocKeys( CRHashTable *h,  GLsizei range)
 {
     GLuint res;
-    int i;
 
 #ifdef CHROMIUM_THREADSAFE
     crLockMutex(&h->mutex);
 #endif
     res = crHashIdPoolAllocBlock (h->idPool, range);
 #ifdef DEBUG_misha
-    Assert(res);
-    for (i = 0; i < range; ++i)
     {
-        void *search = crHashtableSearch( h, res+i );
-        Assert(!search);
+        int i;
+        Assert(res);
+        for (i = 0; i < range; ++i)
+        {
+            void *search = crHashtableSearch( h, res+i );
+            Assert(!search);
+        }
     }
 #endif
 #ifdef CHROMIUM_THREADSAFE

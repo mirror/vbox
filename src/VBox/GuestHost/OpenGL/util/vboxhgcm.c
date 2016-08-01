@@ -1465,26 +1465,19 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return RT_SUCCESS(rc);
         }
-        else
-        {
-            crDebug("HGCM connect failed with rc=0x%x\n", info.result);
+        crDebug("HGCM connect failed with rc=0x%x\n", info.result);
 
-            VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
-            return FALSE;
-        }
-    }
-    else
-    {
-#ifdef RT_OS_WINDOWS
-        DWORD winEr = GetLastError();
-        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", winEr);
-#else
-        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", errno);
-#endif
         VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return FALSE;
     }
-
+#ifdef RT_OS_WINDOWS
+    {
+        DWORD winEr = GetLastError();
+        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", winEr);
+    }
+#else
+    crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", errno);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
     return FALSE;
 
@@ -2013,7 +2006,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
 static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI_BUFFER pBuf, uint32_t offStart, unsigned int len)
 {
     int rc;
-    int32_t callRes;
+    int32_t callRes = VINF_SUCCESS; /* Shut up MSC. */
     VBOXUHGSMI_BUFFER_SUBMIT aSubmit[2];
 
 #ifdef IN_GUEST

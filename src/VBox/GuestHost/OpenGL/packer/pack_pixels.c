@@ -117,7 +117,7 @@ void PACK_APIENTRY crPackBitmap(GLsizei width, GLsizei height,
     const int noimagedata = (bitmap == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     unsigned char *data_ptr;
     int data_length = 0;
-    GLubyte *destBitmap = NULL;
+    /*GLubyte *destBitmap = NULL; - unused */
     int packet_length = 
         sizeof( width ) + 
         sizeof( height ) +
@@ -209,7 +209,7 @@ crPackGetTexImage( GLenum target, GLint level, GLenum format, GLenum type,
 {
     CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
-    (void) pc;
+    (void) pc; (void) packstate;
     CR_GET_BUFFERED_POINTER( pc, 40 );
     WRITE_DATA( 0, GLint, 40 );
     WRITE_DATA( 4, GLenum, CR_GETTEXIMAGE_EXTEND_OPCODE );

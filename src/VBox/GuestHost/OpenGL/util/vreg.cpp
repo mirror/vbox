@@ -729,9 +729,11 @@ static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinNonintersectedCb(PVBOX
     return pNext;
 }
 
+#if 0 /* unused */
 static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinIntersectedCb(PVBOXVR_LIST pList1, PVBOXVR_REG pReg1, PCRTRECT pRect2,
                                                                         void *pvContext, PPRTLISTNODE ppNext)
 {
+    RT_NOREF1(ppNext);
     PVBOXVR_CBDATA_SUBST pData = (PVBOXVR_CBDATA_SUBST)pvContext;
     pData->fChanged = true;
 
@@ -752,6 +754,7 @@ static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinIntersectedCb(PVBOXVR_
 
     return &pReg1->ListEntry;
 }
+#endif
 
 static int vboxVrListIntersectNoJoin(PVBOXVR_LIST pList, PCVBOXVR_LIST pList2, bool *pfChanged)
 {

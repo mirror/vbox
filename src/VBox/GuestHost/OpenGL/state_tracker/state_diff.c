@@ -142,7 +142,7 @@ void crStateFreeFBImageLegacy(CRContext *to)
 
 int crStateAcquireFBImage(CRContext *to, CRFBData *data)
 {
-    CRBufferState *pBuf = &to->buffer;
+    /*CRBufferState *pBuf = &to->buffer; - unused */
     CRPixelPackState packing = to->client.pack;
     uint32_t i;
 
@@ -279,7 +279,7 @@ int crStateAcquireFBImage(CRContext *to, CRFBData *data)
 void crStateApplyFBImage(CRContext *to, CRFBData *data)
 {
     {
-        CRBufferState *pBuf = &to->buffer;
+        /*CRBufferState *pBuf = &to->buffer; - unused */
         CRPixelPackState unpack = to->client.unpack;
         uint32_t i;
 
@@ -596,7 +596,7 @@ void crStateSyncHWErrorState(CRContext *ctx)
     }
 }
 
-GLenum crStateCleanHWErrorState()
+GLenum crStateCleanHWErrorState(void)
 {
     GLenum err;
     while ((err = diff_api.GetError()) != GL_NO_ERROR)

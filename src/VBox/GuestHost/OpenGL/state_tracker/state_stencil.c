@@ -41,8 +41,10 @@ static GLint crStateStencilBufferGetIdxAndCount(CRStencilState *s, GLenum face, 
             crStateError(__LINE__,__FILE__,GL_INVALID_ENUM, "crStateStencilBufferGetIdxAndCount");
             return 0;
     }
+#ifndef VBOX /* unreachable */
     crError("should never be here!");
     return 0;
+#endif
 }
 
 void crStateStencilBufferInit(CRStencilBufferState *s)

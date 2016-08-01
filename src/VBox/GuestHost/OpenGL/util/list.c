@@ -2,6 +2,9 @@
 #include "cr_error.h"
 #include "cr_mem.h"
 
+#ifndef CR_TESTING_LIST			/* vbox */
+# define CR_TESTING_LIST 0      	/* vbox */
+#endif  				/* vbox */
 #if CR_TESTING_LIST
 #include <stdio.h>
 #include <stdlib.h>

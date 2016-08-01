@@ -249,6 +249,7 @@ void crInitBarrier(CRbarrier *b, unsigned int count)
 void crFreeBarrier(CRbarrier *b)
 {
     /* XXX anything to do? */
+    (void)b;
 }
 
 
@@ -257,6 +258,7 @@ void crWaitBarrier(CRbarrier *b)
 #ifdef WINDOWS
     DWORD dwEvent
         = WaitForMultipleObjects( b->count, b->hEvents, FALSE, INFINITE );
+    (void)dwEvent;
 #else
     pthread_mutex_lock( &(b->mutex) );
     b->waiting++;
@@ -275,6 +277,7 @@ void crWaitBarrier(CRbarrier *b)
 void crInitSemaphore(CRsemaphore *s, unsigned int count)
 {
 #ifdef WINDOWS
+    (void) s; (void) count;
     crWarning("CRsemaphore functions not implemented on Windows");
 #else
     sem_init(s, 0, count);
@@ -286,6 +289,7 @@ void crWaitSemaphore(CRsemaphore *s)
 {
 #ifdef WINDOWS
     /* to do */
+    (void) s;
 #else
     sem_wait(s);
 #endif
@@ -296,6 +300,7 @@ void crSignalSemaphore(CRsemaphore *s)
 {
 #ifdef WINDOWS
     /* to do */
+    (void) s;
 #else
     sem_post(s);
 #endif
