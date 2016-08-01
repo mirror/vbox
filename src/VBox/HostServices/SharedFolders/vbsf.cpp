@@ -451,7 +451,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
             if (cErrors < 32)
             {
                 LogRel(("SharedFolders host service: Cannot open '%s' -- too many open files.\n", pszPath));
-#if defined RT_OS_LINUX || RT_OS_SOLARIS
+#if defined RT_OS_LINUX || defined(RT_OS_SOLARIS)
                 if (cErrors < 1)
                     LogRel(("SharedFolders host service: Try to increase the limit for open files (ulimit -n)\n"));
 #endif
