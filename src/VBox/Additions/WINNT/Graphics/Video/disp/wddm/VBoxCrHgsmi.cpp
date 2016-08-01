@@ -45,7 +45,7 @@ static int vboxCrHgsmiInitPerform(VBOXDISPKMT_CALLBACKS *pCallbacks)
     return -1;
 }
 
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit()
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(void)
 {
     if (!g_bVBoxKmtCallbacksInited)
     {
