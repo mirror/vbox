@@ -15849,7 +15849,7 @@ dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 		dtrace_xcall(desc.dtbd_cpu,
 		    (dtrace_xcall_t)dtrace_buffer_switch, buf);
 #else
-		if ((int32_t)desc.dtbd_cpu == DTRACE_CPUALL)
+		if (desc.dtbd_cpu == DTRACE_CPUALL)
 		    RTMpOnAll(dtrace_buffer_switch_wrapper, buf, NULL);
 		else
 		    RTMpOnSpecific(desc.dtbd_cpu, dtrace_buffer_switch_wrapper, buf, NULL);
