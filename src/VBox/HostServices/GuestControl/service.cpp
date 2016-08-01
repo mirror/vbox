@@ -790,8 +790,8 @@ typedef struct ClientState
         return rc;
     }
 
-    int SendReply(const ClientConnection *pConnection,
-                        HostCommand      *pHostCmd)
+    int SendReply(ClientConnection const *pConnection,
+                  HostCommand            *pHostCmd)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
         AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
