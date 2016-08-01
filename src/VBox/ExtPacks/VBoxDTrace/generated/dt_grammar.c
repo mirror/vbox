@@ -1873,7 +1873,7 @@ yyparse ()
 
 
 
-#define YYPOPSTACK(N)   do { (yyvsp -= (N); yyssp -= (N); } while (0)
+#define YYPOPSTACK(N)   (yyvsp -= (N), yyssp -= (N))
 
   YYSIZE_T yystacksize = YYINITDEPTH;
 
