@@ -1161,7 +1161,6 @@ static int vgsvcVMInfoWriteNetwork(void)
     freeifaddrs(pIfHead);
 
 #else /* !RT_OS_WINDOWS && !RT_OS_FREEBSD */
-    int rc;
     /*
      * Use SIOCGIFCONF to get a list of interface/protocol configurations.
      *
