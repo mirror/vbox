@@ -1138,6 +1138,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 m_pManager->clear();
 
                 fSendToGuest = true;
+                rc = VINF_SUCCESS;
                 break;
             }
 
@@ -1180,6 +1181,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             default:
             {
                 fSendToGuest = true;
+                rc = VINF_SUCCESS;
                 break;
             }
         }
