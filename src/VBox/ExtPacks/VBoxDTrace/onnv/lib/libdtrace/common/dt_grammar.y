@@ -26,6 +26,10 @@
 
 #ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#else
+# ifdef _MSC_VER
+#  pragma warning(disable:4255 4702)
+# endif
 #endif
 
 #include <dt_impl.h>

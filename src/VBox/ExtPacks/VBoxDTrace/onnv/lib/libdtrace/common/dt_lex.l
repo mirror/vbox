@@ -43,6 +43,9 @@
 #  undef UINT32_MAX
 #  undef UINT64_MAX
 # endif
+# ifdef _MSC_VER
+#  pragma warning(disable:4668 4131 4255)
+# endif
 # include <iprt/ctype.h>
 # define isdigit(a_ch) RT_C_IS_DIGIT(a_ch)
 #endif /* VBOX */
