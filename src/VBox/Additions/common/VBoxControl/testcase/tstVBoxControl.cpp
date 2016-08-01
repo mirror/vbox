@@ -82,6 +82,7 @@ VBGLR3DECL(int)     VbglR3GuestPropRead(HGCMCLIENTID idClient,
                                         char **ppszFlags,
                                         uint32_t *pcbBufActual)
 {
+    RT_NOREF2(pvBuf, cbBuf);
     RTPrintf("Called GET_PROP, client %d, name %s...\n",
              idClient, pszName);
     static char szValue[] = "Value";
@@ -119,6 +120,7 @@ VBGLR3DECL(int)     VbglR3GuestPropEnum(HGCMCLIENTID idClient,
                                         uint64_t *pu64Timestamp,
                                         char const **ppszFlags)
 {
+    RT_NOREF2(ppaszPatterns, cPatterns);
     RTPrintf("Called ENUM_PROPS, client %d...\n", idClient);
     AssertPtrReturn(ppHandle, VERR_INVALID_POINTER);
     static VBGLR3GUESTPROPENUM Handle = { 0 };
@@ -143,6 +145,7 @@ VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
                                             uint64_t *pu64Timestamp,
                                             char const **ppszFlags)
 {
+    RT_NOREF1(pHandle);
     RTPrintf("Called enumerate next...\n");
     AssertReturn(VALID_PTR(ppszName) || VALID_PTR(ppszValue) || VALID_PTR(ppszFlags),
                  VERR_INVALID_POINTER);
@@ -159,6 +162,7 @@ VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
 
 VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle)
 {
+    RT_NOREF1(pHandle);
     RTPrintf("Called enumerate free...\n");
 }
 
@@ -174,6 +178,7 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(HGCMCLIENTID idClient,
                                         char **ppszFlags,
                                         uint32_t *pcbBufActual)
 {
+    RT_NOREF2(pvBuf, cbBuf);
     if (u32Timeout == RT_INDEFINITE_WAIT)
         RTPrintf("Called GET_NOTIFICATION, client %d, patterns %s, timestamp %llu,\n"
                  "    timeout RT_INDEFINITE_WAIT...\n",
