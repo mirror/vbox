@@ -804,7 +804,7 @@ typedef struct PDMUSBINS
  * Checks the structure versions of the USB device instance and USB device
  * helpers, returning if they are incompatible.
  *
- * This is for use in the constructor.
+ * This shall be the first statement of the constructor!
  *
  * @param   pUsbIns     The USB device instance pointer.
  */
@@ -824,18 +824,18 @@ typedef struct PDMUSBINS
  * Quietly checks the structure versions of the USB device instance and
  * USB device helpers, returning if they are incompatible.
  *
- * This is for use in the destructor.
+ * This shall be invoked as the first statement in the destructor!
  *
  * @param   pUsbIns     The USB device instance pointer.
  */
-#define PDMUSB_CHECK_VERSIONS_RETURN_QUIET(pUsbIns) \
+#define PDMUSB_CHECK_VERSIONS_RETURN_VOID(pUsbIns) \
     do \
     { \
         PPDMUSBINS pUsbInsTypeCheck = (pUsbIns); NOREF(pUsbInsTypeCheck); \
         if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION) )) \
-        { /* likely */ } else return VERR_PDM_USBINS_VERSION_MISMATCH; \
-        if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLPR3_VERSION) )) \
-        { /* likely */ } else return VERR_PDM_USBHLPR3_VERSION_MISMATCH; \
+        { /* likely */ } else return; \
+        if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLP_VERSION) )) \
+        { /* likely */ } else return; \
     } while (0)
 
 
