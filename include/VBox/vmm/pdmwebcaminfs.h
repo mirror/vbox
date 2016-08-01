@@ -40,12 +40,12 @@ struct VRDEVIDEOINCTRLHDR;
  */
 
 /** Pointer to the web camera driver up interface. */
-typedef struct PDMIWEBCAMDOWN *PPDMIWEBCAMDOWN;
+typedef struct PDMIWEBCAMDRV *PPDMIWEBCAMDRV;
 /**
  * Web camera driver up (facing in the direction of the device) interface.
  * @todo correct name.
  */
-typedef struct PDMIWEBCAMDOWN
+typedef struct PDMIWEBCAMDRV
 {
     /**
      * The PDM device is ready to get webcam notifications.
@@ -53,7 +53,7 @@ typedef struct PDMIWEBCAMDOWN
      * @param pInterface  Pointer to the interface.
      * @param fReady      Whether the device is ready.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReady,(PPDMIWEBCAMDOWN pInterface, bool fReady));
+    DECLR3CALLBACKMEMBER(void, pfnReady,(PPDMIWEBCAMDRV pInterface, bool fReady));
 
     /**
      * Send a control request to the webcam.
@@ -67,11 +67,11 @@ typedef struct PDMIWEBCAMDOWN
      * @param pCtrl         The control data.
      * @param cbCtrl        The size of the control data.
      */
-    DECLR3CALLBACKMEMBER(int, pfnControl,(PPDMIWEBCAMDOWN pInterface, void *pvUser, uint64_t idDevice,
+    DECLR3CALLBACKMEMBER(int, pfnControl,(PPDMIWEBCAMDRV pInterface, void *pvUser, uint64_t idDevice,
                                           struct VRDEVIDEOINCTRLHDR const *pCtrl, uint32_t cbCtrl));
-} PDMIWEBCAMDOWN;
-/** Interface ID for PDMIWEBCAMDOWN. */
-#define PDMIWEBCAMDOWN_IID "0d29b9a1-f4cd-4719-a564-38d5634ba9f8"
+} PDMIWEBCAMDRV;
+/** Interface ID for PDMIWEBCAMDRV. */
+#define PDMIWEBCAMDRV_IID "0d29b9a1-f4cd-4719-a564-38d5634ba9f8"
 
 
 /** Pointer to the web camera driver/device down interface. */

@@ -45,7 +45,7 @@ typedef struct EMWEBCAMDRV
 {
     EMWEBCAMREMOTE *pRemote;
     PPDMIWEBCAMDEV  pIWebcamUp;
-    PDMIWEBCAMDOWN IWebcamDown;
+    PDMIWEBCAMDRV   IWebcamDrv;
 } EMWEBCAMDRV, *PEMWEBCAMDRV;
 
 typedef struct EMWEBCAMREQCTX
@@ -55,12 +55,12 @@ typedef struct EMWEBCAMREQCTX
 } EMWEBCAMREQCTX;
 
 
-static DECLCALLBACK(void) drvEmWebcamReady(PPDMIWEBCAMDOWN pInterface,
+static DECLCALLBACK(void) drvEmWebcamReady(PPDMIWEBCAMDRV pInterface,
                                            bool fReady)
 {
     NOREF(fReady);
 
-    PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDown);
+    PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDrv);
     EMWEBCAMREMOTE *pRemote = pThis->pRemote;
 
     LogFlowFunc(("pRemote:%p\n", pThis->pRemote));
@@ -76,13 +76,13 @@ static DECLCALLBACK(void) drvEmWebcamReady(PPDMIWEBCAMDOWN pInterface,
     }
 }
 
-static DECLCALLBACK(int) drvEmWebcamControl(PPDMIWEBCAMDOWN pInterface,
+static DECLCALLBACK(int) drvEmWebcamControl(PPDMIWEBCAMDRV pInterface,
                                             void *pvUser,
                                             uint64_t u64DeviceId,
                                             const struct VRDEVIDEOINCTRLHDR *pCtrl,
                                             uint32_t cbCtrl)
 {
-    PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDown);
+    PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDrv);
     EMWEBCAMREMOTE *pRemote = pThis->pRemote;
 
     LogFlowFunc(("pRemote:%p, u64DeviceId %lld\n", pRemote, u64DeviceId));
@@ -362,7 +362,7 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     LogFlowFunc(("pszIID:%s\n", pszIID));
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIWEBCAMDOWN, &pThis->IWebcamDown);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIWEBCAMDRV, &pThis->IWebcamDrv);
     return NULL;
 }
 
@@ -413,8 +413,8 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
 
     pDrvIns->IBase.pfnQueryInterface = drvQueryInterface;
 
-    pThis->IWebcamDown.pfnReady   = drvEmWebcamReady;
-    pThis->IWebcamDown.pfnControl = drvEmWebcamControl;
+    pThis->IWebcamDrv.pfnReady   = drvEmWebcamReady;
+    pThis->IWebcamDrv.pfnControl = drvEmWebcamControl;
 
     return VINF_SUCCESS;
 }
