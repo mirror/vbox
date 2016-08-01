@@ -38,7 +38,7 @@
 
 #if 0 && defined(RT_OS_WINDOWS) /* Enable for windows API reference results. */
 # define TSTRTURI_WITH_WINDOWS_REFERENCE_RESULTS
-# include <Shlwapi.h>
+# include <iprt/win/shlwapi.h>
 # include <iprt/stream.h>
 #endif
 

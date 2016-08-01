@@ -26,7 +26,7 @@
 #define PROXY_DELEGATION                                                                             /* see generated dlldata.c */
 #include <iprt/nt/nt-and-windows.h>
 #include <rpcproxy.h>
-#include <Shlwapi.h>
+#include <iprt/win/shlwapi.h>
 #include <stdio.h>
 
 #include "VirtualBox.h"

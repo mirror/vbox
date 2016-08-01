@@ -29,10 +29,7 @@
 #include <ShlGuid.h>
 #include <strsafe.h>
 
-#pragma warning(push)
-#pragma warning(disable : 4995)
-#include <Shlwapi.h>
-#pragma warning(pop)
+#include <iprt/win/shlwapi.h>
 
 #include <iprt/string.h>
 
