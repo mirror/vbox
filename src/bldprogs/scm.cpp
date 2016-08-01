@@ -612,6 +612,7 @@ static int scmSettingsBaseVerifyString(const char *pszOptions)
 static int scmSettingsBaseLoadFromDocument(PSCMSETTINGSBASE pBase, PSCMSTREAM pStream)
 {
     /** @todo Editor and SCM settings directives in documents.  */
+    RT_NOREF2(pBase, pStream);
     return VINF_SUCCESS;
 }
 
@@ -1473,7 +1474,7 @@ static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsS
                 rc = scmProcessDirTree(szBuf, pSettingsStack);
 
             PSCMSETTINGS pPopped = scmSettingsStackPop(&pSettingsStack);
-            Assert(pPopped == pSettings);
+            Assert(pPopped == pSettings); RT_NOREF_PV(pPopped);
             scmSettingsDestroy(pSettings);
         }
         else

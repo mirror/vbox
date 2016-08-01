@@ -362,6 +362,7 @@ bool rewrite_AdjustTrailingLines(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
  */
 bool rewrite_SvnNoExecutable(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
+    RT_NOREF2(pIn, pOut);
     if (   !pSettings->fSetSvnExecutable
         || !ScmSvnIsInWorkingCopy(pState))
         return false;
@@ -388,6 +389,7 @@ bool rewrite_SvnNoExecutable(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
  */
 bool rewrite_SvnKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
+    RT_NOREF2(pIn, pOut);
     if (   !pSettings->fSetSvnKeywords
         || !ScmSvnIsInWorkingCopy(pState))
         return false;
@@ -438,6 +440,8 @@ bool rewrite_SvnKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PC
  */
 bool rewrite_Makefile_kup(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
+    RT_NOREF2(pOut, pSettings);
+
     /* These files should be zero bytes. */
     if (pIn->cb == 0)
         return false;
@@ -461,6 +465,7 @@ bool rewrite_Makefile_kup(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, P
  */
 bool rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
+    RT_NOREF4(pState, pIn, pOut, pSettings);
     return false;
 }
 
@@ -680,6 +685,7 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
 bool rewrite_C_and_CPP(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
 
+    RT_NOREF4(pState, pIn, pOut, pSettings);
     return false;
 }
 

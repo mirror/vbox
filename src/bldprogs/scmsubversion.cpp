@@ -393,9 +393,9 @@ int RTProcExecToString(const char *pszExec, const char * const *papszArgs, RTENV
              * Create the process.
              */
             RTPROCESS hProc;
-            rc = RTProcCreateEx(g_szSvnPath,
+            rc = RTProcCreateEx(pszExec,
                                 papszArgs,
-                                RTENV_DEFAULT,
+                                hEnv,
                                 0 /*fFlags*/,
                                 NULL /*phStdIn*/,
                                 phChildStdOut,
@@ -528,11 +528,11 @@ int RTProcExec(const char *pszExec, const char * const *papszArgs, RTENV hEnv, u
     /*
      * Create the process.
      */
-    RTPROCESS hProc;
+    RTPROCESS hProc = NIL_RTPROCESS;
     if (RT_SUCCESS(rc))
-        rc = RTProcCreateEx(g_szSvnPath,
+        rc = RTProcCreateEx(pszExec,
                             papszArgs,
-                            RTENV_DEFAULT,
+                            hEnv,
                             0 /*fFlags*/,
                             aph[0],
                             aph[1],
@@ -813,11 +813,11 @@ static void scmSvnFindSvnBinary(PSCMRWSTATE pState)
     if (RT_SUCCESS(rc))
     {
         char *pszStripped = RTStrStrip(pszVersion);
-        if (RTStrVersionCompare(pszVersion, "1.8") >= 0)
+        if (RTStrVersionCompare(pszStripped, "1.8") >= 0)
             g_enmSvnVersion = kScmSvnVersion_1_8;
-        else if (RTStrVersionCompare(pszVersion, "1.7") >= 0)
+        else if (RTStrVersionCompare(pszStripped, "1.7") >= 0)
             g_enmSvnVersion = kScmSvnVersion_1_7;
-        else if (RTStrVersionCompare(pszVersion, "1.6") >= 0)
+        else if (RTStrVersionCompare(pszStripped, "1.6") >= 0)
             g_enmSvnVersion = kScmSvnVersion_1_6;
         else
             g_enmSvnVersion = kScmSvnVersion_Ancient;
