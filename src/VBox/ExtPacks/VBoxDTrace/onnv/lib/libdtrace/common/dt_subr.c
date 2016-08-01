@@ -853,6 +853,26 @@ dt_basename(char *str)
 ulong_t
 dt_popc(ulong_t x)
 {
+#ifdef VBOX
+# if ARCH_BITS == 32
+    x = x - ((x >> 1) & UINT32_C(0x55555555));
+    x = (x & UINT32_C(0x33333333)) + ((x >> 2) & UINT32_C(0x33333333));
+    x = (x + (x >> 4)) & UINT32_C(0x0F0F0F0F);
+    x = x + (x >> 8);
+    x = x + (x >> 16);
+    return (x & 0x3F);
+# elif ARCH_BITS == 64
+    x = x - ((x >> 1) & UINT64_C(0x5555555555555555));
+    x = (x & UINT64_C(0x3333333333333333)) + ((x >> 2) & UINT64_C(0x3333333333333333));
+    x = (x + (x >> 4)) & UINT64_C(0x0F0F0F0F0F0F0F0F);
+    x = x + (x >> 8);
+    x = x + (x >> 16);
+    x = x + (x >> 32);
+    return (x & 0x7F);
+# else
+#  error "ARCH_BITS"
+# endif
+#else  /* !VBOX */
 #ifdef _ILP32
 	x = x - ((x >> 1) & 0x55555555UL);
 	x = (x & 0x33333333UL) + ((x >> 2) & 0x33333333UL);
@@ -870,6 +890,7 @@ dt_popc(ulong_t x)
 	x = x + (x >> 32);
 	return (x & 0x7F);
 #endif
+#endif /* !VBOX */
 }
 
 /*
