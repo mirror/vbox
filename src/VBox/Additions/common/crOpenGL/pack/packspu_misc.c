@@ -93,12 +93,12 @@ void PACKSPU_APIENTRY packspu_ChromiumParametervCR(GLenum target, GLenum type, G
         packspuFlush( (void *) thread );
 }
 
-GLboolean packspuSyncOnFlushes()
+GLboolean packspuSyncOnFlushes(void)
 {
-    GLint buffer;
-
-    /*Seems to still cause issues, always sync for now*/
+#if 1 /*Seems to still cause issues, always sync for now*/
     return 1;
+#else
+    GLint buffer;
 
     crStateGetIntegerv(GL_DRAW_BUFFER, &buffer);
     /*Usually buffer==GL_BACK, so put this extra check to simplify boolean eval on runtime*/
@@ -109,6 +109,7 @@ GLboolean packspuSyncOnFlushes()
                 || buffer == GL_FRONT_AND_BACK
                 || buffer == GL_LEFT
                 || buffer == GL_RIGHT);
+#endif
 }
 
 void PACKSPU_APIENTRY packspu_DrawBuffer(GLenum mode)
@@ -847,3 +848,4 @@ void PACKSPU_APIENTRY packspu_VBoxPresentComposition(GLint win, const struct VBO
 void PACKSPU_APIENTRY packspu_StringMarkerGREMEDY(GLsizei len, const GLvoid *string)
 {
 }
+
