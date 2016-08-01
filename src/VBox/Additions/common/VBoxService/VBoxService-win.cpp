@@ -459,14 +459,14 @@ static VOID WINAPI vgsvcWinCtrlHandler(DWORD dwControl)
 static DWORD WINAPI vgsvcWinCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
 #endif
 {
-    DWORD rcRet = NO_ERROR;
-
 #ifdef TARGET_NT4
     VGSvcVerbose(2, "Control handler: Control=%#x\n", dwControl);
 #else
+    RT_NOREF1(lpContext);
     VGSvcVerbose(2, "Control handler: Control=%#x, EventType=%#x\n", dwControl, dwEventType);
 #endif
 
+    DWORD rcRet = NO_ERROR;
     switch (dwControl)
     {
         case SERVICE_CONTROL_INTERROGATE:
@@ -523,6 +523,7 @@ static DWORD WINAPI vgsvcWinCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVO
 
 static void WINAPI vgsvcWinMain(DWORD argc, LPTSTR *argv)
 {
+    RT_NOREF2(argc, argv);
     VGSvcVerbose(2, "Registering service control handler ...\n");
 #ifdef TARGET_NT4
     g_hWinServiceStatus = RegisterServiceCtrlHandler(VBOXSERVICE_NAME, vgsvcWinCtrlHandler);

@@ -55,6 +55,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
@@ -185,27 +186,31 @@ static void vgsvcPageSharingRegisterModule(PVGSVCPGSHKNOWNMOD pModule, bool fVal
 
     unsigned i;
     UINT     cbFileVersion;
-    char    *lpszFileVersion;
+    char    *pszFileVersion = NULL; /* Shut up MSC */
     unsigned cTranslationBlocks = cbTranslate/sizeof(struct LANGANDCODEPAGE);
 
-    for(i = 0; i < cTranslationBlocks; i++)
+    pModule->szFileVersion[0] = '\0';
+    for (i = 0; i < cTranslationBlocks; i++)
     {
         /* Fetch file version string. */
         char   szFileVersionLocation[256];
 
+/** @todo r=bird: Mixing ANSI and TCHAR crap again.  This code is a mess.  We
+ * always use the wide version of the API and convert to UTF-8/whatever. */
+
         sprintf(szFileVersionLocation, TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"), lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
-        fRet = VerQueryValue(pVersionInfo, szFileVersionLocation, (LPVOID *)&lpszFileVersion, &cbFileVersion);
+        fRet = VerQueryValue(pVersionInfo, szFileVersionLocation, (LPVOID *)&pszFileVersion, &cbFileVersion);
         if (fRet)
+        {
+            RTStrCopy(pModule->szFileVersion, sizeof(pModule->szFileVersion), pszFileVersion);
             break;
+        }
     }
     if (i == cTranslationBlocks)
     {
         VGSvcVerbose(3, "vgsvcPageSharingRegisterModule: no file version found!\n");
         goto end;
     }
-
-    _snprintf(pModule->szFileVersion, sizeof(pModule->szFileVersion), "%s", lpszFileVersion);
-    pModule->szFileVersion[RT_ELEMENTS(pModule->szFileVersion) - 1] = 0;
 
     unsigned idxRegion = 0;
 
@@ -360,7 +365,7 @@ static void vgsvcPageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *pp
                 VGSvcVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
                 VGSvcVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
                 VGSvcVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
-                VGSvcVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
+                VGSvcVerbose(3, "\n     base address   = %#010p", (uintptr_t) ModuleInfo.modBaseAddr );
                 VGSvcVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
 
                 pRec = &pModule->Core;
@@ -509,7 +514,7 @@ static void vgsvcPageSharingInspectGuest(void)
 
                     VGSvcVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
                     VGSvcVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
-                    VGSvcVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
+                    VGSvcVerbose(3, "\n     base address   = %#010p", (uintptr_t)pModule->Info.modBaseAddr );
                     VGSvcVerbose(3, "\n     flags          = 0x%08X",         pSystemModules->Modules[i].Flags);
                     VGSvcVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
 

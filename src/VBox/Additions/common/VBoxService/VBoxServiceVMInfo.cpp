@@ -935,7 +935,6 @@ static int vgsvcVMInfoWriteUsers(void)
  */
 static int vgsvcVMInfoWriteNetwork(void)
 {
-    int         rc = VINF_SUCCESS;
     uint32_t    cIfsReported = 0;
     char        szPropPath[256];
 
@@ -1093,7 +1092,7 @@ static int vgsvcVMInfoWriteNetwork(void)
     struct ifaddrs *pIfHead = NULL;
 
     /* Get all available interfaces */
-    rc = getifaddrs(&pIfHead);
+    int rc = getifaddrs(&pIfHead);
     if (rc < 0)
     {
         rc = RTErrConvertFromErrno(errno);
@@ -1162,6 +1161,7 @@ static int vgsvcVMInfoWriteNetwork(void)
     freeifaddrs(pIfHead);
 
 #else /* !RT_OS_WINDOWS && !RT_OS_FREEBSD */
+    int rc;
     /*
      * Use SIOCGIFCONF to get a list of interface/protocol configurations.
      *
@@ -1171,7 +1171,7 @@ static int vgsvcVMInfoWriteNetwork(void)
     int sd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sd < 0)
     {
-        rc = RTErrConvertFromErrno(errno);
+        int rc = RTErrConvertFromErrno(errno);
         VGSvcError("VMInfo/Network: Failed to get a socket: Error %Rrc\n", rc);
         return rc;
     }
@@ -1181,7 +1181,7 @@ static int vgsvcVMInfoWriteNetwork(void)
     int             cbBuf   = s_cbBuf;
     char           *pchBuf;
     struct ifconf   IfConf;
-    rc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
     for (;;)
     {
         pchBuf = (char *)RTMemTmpAllocZ(cbBuf);

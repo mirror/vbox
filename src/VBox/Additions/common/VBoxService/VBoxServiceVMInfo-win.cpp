@@ -140,6 +140,8 @@ static OSVERSIONINFOEXA                         g_WinVersion;
  */
 static DECLCALLBACK(int) vgsvcWinVmInfoInitOnce(void *pvIgnored)
 {
+    RT_NOREF1(pvIgnored);
+
     /* SECUR32 */
     RTLDRMOD hLdrMod;
     int rc = RTLdrLoadSystem("secur32.dll", true, &hLdrMod);
@@ -348,6 +350,7 @@ static int vgsvcVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc, TOK
             default:
                 VGSvcError("Token class not implemented: %d\n", tkClass);
                 rc = VERR_NOT_IMPLEMENTED;
+                dwTokenInfoSize = 0; /* Shut up MSC. */
                 break;
         }
 
@@ -630,6 +633,8 @@ static void vgsvcVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paP
  * @param   puTerminalSession   Where to return terminal session number.
  *                              Optional.
  */
+/** @todo r=bird: The 'Has' indicates a predicate function, which this is
+ *        not.  Predicate functions always returns bool. */
 static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
                                                   PULONG puTerminalSession)
 {
@@ -639,7 +644,7 @@ static uint32_t vgsvcVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVM
         return 0;
     }
     if (!g_pfnLsaGetLogonSessionData)
-        return VERR_NOT_SUPPORTED;
+        return 0;
 
     PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
     NTSTATUS rcNt = g_pfnLsaGetLogonSessionData(pSession, &pSessionData);
@@ -797,7 +802,6 @@ static bool vgsvcVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSe
      * remotely over native RDP.
      */
     bool fFoundUser = false;
-    DWORD dwErr = NO_ERROR;
     if (   IsValidSid(pSessionData->Sid)
         && (   (SECURITY_LOGON_TYPE)pSessionData->LogonType == Interactive
             || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive
@@ -972,44 +976,47 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
 
             rc = RTLocalIpcSessionWrite(hSession, &ipcHdr, sizeof(ipcHdr));
 
-            VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
             if (RT_SUCCESS(rc))
-                rc = RTLocalIpcSessionRead(hSession, &ipcRes, sizeof(ipcRes), NULL /* Exact read */);
-            if (   RT_SUCCESS(rc)
-                /* If uLastInput is set to UINT32_MAX VBoxTray was not able to retrieve the
-                 * user's last input time. This might happen when running on Windows NT4 or older. */
-                && ipcRes.uLastInput != UINT32_MAX)
             {
-                userState = (ipcRes.uLastInput * 1000) < g_uVMInfoUserIdleThresholdMS
-                          ? VBoxGuestUserState_InUse
-                          : VBoxGuestUserState_Idle;
+                VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
+                rc = RTLocalIpcSessionRead(hSession, &ipcRes, sizeof(ipcRes), NULL /* Exact read */);
+                if (   RT_SUCCESS(rc)
+                    /* If uLastInput is set to UINT32_MAX VBoxTray was not able to retrieve the
+                     * user's last input time. This might happen when running on Windows NT4 or older. */
+                    && ipcRes.uLastInput != UINT32_MAX)
+                {
+                    userState = (ipcRes.uLastInput * 1000) < g_uVMInfoUserIdleThresholdMS
+                              ? VBoxGuestUserState_InUse
+                              : VBoxGuestUserState_Idle;
 
-                rc = VGSvcUserUpdateF(pCache, pszUser, pszDomain, "UsageState",
-                                      userState == VBoxGuestUserState_InUse ? "InUse" : "Idle");
+                    rc = VGSvcUserUpdateF(pCache, pszUser, pszDomain, "UsageState",
+                                          userState == VBoxGuestUserState_InUse ? "InUse" : "Idle");
 
-                /*
-                 * Note: vboxServiceUserUpdateF can return VINF_NO_CHANGE in case there wasn't anything
-                 *       to update. So only report the user's status to host when we really got something
-                 *       new.
-                 */
-                fReportToHost = rc == VINF_SUCCESS;
-                VGSvcVerbose(4, "User '%s' (domain '%s') is idle for %RU32, fReportToHost=%RTbool\n",
-                             pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInput, fReportToHost);
+                    /*
+                     * Note: vboxServiceUserUpdateF can return VINF_NO_CHANGE in case there wasn't anything
+                     *       to update. So only report the user's status to host when we really got something
+                     *       new.
+                     */
+                    fReportToHost = rc == VINF_SUCCESS;
+                    VGSvcVerbose(4, "User '%s' (domain '%s') is idle for %RU32, fReportToHost=%RTbool\n",
+                                 pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInput, fReportToHost);
 
 #if 0 /* Do we want to write the idle time as well? */
-                    /* Also write the user's current idle time, if there is any. */
-                    if (userState == VBoxGuestUserState_Idle)
-                        rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", "%RU32", ipcRes.uLastInputMs);
-                    else
-                        rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", NULL /* Delete property */);
+                        /* Also write the user's current idle time, if there is any. */
+                        if (userState == VBoxGuestUserState_Idle)
+                            rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", "%RU32", ipcRes.uLastInputMs);
+                        else
+                            rc = vgsvcUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs", NULL /* Delete property */);
 
-                    if (RT_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
+#endif
+                }
+#ifdef DEBUG
+                else if (RT_SUCCESS(rc) && ipcRes.uLastInput == UINT32_MAX)
+                    VGSvcVerbose(4, "Last input for user '%s' is not supported, skipping\n", pszUser, rc);
 #endif
             }
 #ifdef DEBUG
-            else if (ipcRes.uLastInput == UINT32_MAX)
-                VGSvcVerbose(4, "Last input for user '%s' is not supported, skipping\n", pszUser, rc);
-
             VGSvcVerbose(4, "Getting last input for user '%s' ended with rc=%Rrc\n", pszUser, rc);
 #endif
             int rc2 = RTLocalIpcSessionClose(hSession);
@@ -1155,7 +1162,7 @@ int VGSvcVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList
 
                     /* Retrieve assigned processes of current session. */
                     uint32_t cCurSessionProcs = vgsvcVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs,
-                                                                                        NULL /* Terminal session ID */);
+                                                                                  NULL /* Terminal session ID */);
                     /* Don't return here when current session does not have assigned processes
                      * anymore -- in that case we have to search through the unique users list below
                      * and see if got a stale user/session entry. */
