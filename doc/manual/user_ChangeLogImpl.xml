@@ -20,6 +20,22 @@
           default settings handling right</para>
       </listitem>
 
+      <listitem>
+        <para>Linux installer: fixed some scripting issues (bugs #15701
+           and #15702)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: made the video driver work on 32-bit guests
+           with large video memory sizes (bug #15621)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: converted a failure message to an informational
+           one when drivers could not be stopped during upgrade (bug
+           #15692)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
