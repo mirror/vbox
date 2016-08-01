@@ -33,6 +33,10 @@
 #include "../../WINNT/Graphics/Video/common/wddm/VBoxMPIf.h"
 #endif
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+# include <VBox/VBoxCrHgsmi.h>
+#endif
+
 /**
  * If you change this, see the comments in tilesortspu_context.c
  */

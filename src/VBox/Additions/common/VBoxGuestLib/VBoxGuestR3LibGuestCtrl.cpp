@@ -735,7 +735,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
                                            char     *pszDisposition,   uint32_t cbDisposition,
                                            char     *pszSharing,       uint32_t cbSharing,
                                            uint32_t *puCreationMode,
-                                           uint64_t *puOffset)
+                                           uint64_t *poffAt)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 7, VERR_INVALID_PARAMETER);
@@ -749,7 +749,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
     AssertPtrReturn(pszSharing, VERR_INVALID_POINTER);
     AssertReturn(cbSharing, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puCreationMode, VERR_INVALID_POINTER);
-    AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
+    AssertPtrReturn(poffAt, VERR_INVALID_POINTER);
 
     HGCMMsgFileOpen Msg;
 
@@ -778,7 +778,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.creationmode.GetUInt32(puCreationMode);
-            Msg.offset.GetUInt64(puOffset);
+            Msg.offset.GetUInt64(poffAt);
         }
     }
     return rc;
@@ -860,7 +860,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
 
 
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                             uint32_t *puHandle, uint32_t *puToRead, uint64_t *puOffset)
+                                             uint32_t *puHandle, uint32_t *puToRead, uint64_t *poffAt)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -892,7 +892,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
-            Msg.offset.GetUInt64(puOffset);
+            Msg.offset.GetUInt64(poffAt);
             Msg.size.GetUInt32(puToRead);
         }
     }
@@ -943,7 +943,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
 
 
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle,
-                                              void *pvData, uint32_t cbData, uint32_t *pcbSize, uint64_t *puOffset)
+                                              void *pvData, uint32_t cbData, uint32_t *pcbSize, uint64_t *poffAt)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -979,6 +979,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.size.GetUInt32(pcbSize);
+            Msg.offset.GetUInt64(poffAt);
         }
     }
     return rc;
@@ -986,14 +987,14 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
 
 
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                           uint32_t *puHandle, uint32_t *puSeekMethod, uint64_t *puOffset)
+                                           uint32_t *puHandle, uint32_t *puSeekMethod, uint64_t *poffAt)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(puSeekMethod, VERR_INVALID_POINTER);
-    AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
+    AssertPtrReturn(poffAt, VERR_INVALID_POINTER);
 
     HGCMMsgFileSeek Msg;
 
@@ -1020,7 +1021,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.method.GetUInt32(puSeekMethod);
-            Msg.offset.GetUInt64(puOffset);
+            Msg.offset.GetUInt64(poffAt);
         }
     }
     return rc;
