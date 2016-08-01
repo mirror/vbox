@@ -779,7 +779,10 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     SSMR3PutU32 (pSSM, UINT32_C (0x80000002));
     int rc = SSMR3PutStructEx (pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
     AssertRCReturn (rc, rc);
-#endif /* !UNIT_TEST */
+
+#else  /* UNIT_TEST */
+    RT_NOREF3(u32ClientID, pvClient, pSSM);
+#endif /* UNIT_TEST */
     return VINF_SUCCESS;
 }
 
@@ -848,7 +851,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         rc = SSMR3GetStructEx (pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
         AssertRCReturn (rc, rc);
     }
-    else if (lenOrVer == (SSMR3HandleHostBits (pSSM) == 64 ? 72 : 48))
+    else if (lenOrVer == (SSMR3HandleHostBits (pSSM) == 64 ? 72U : 48U))
     {
         /**
          * SSM descriptor table for the CLIPSAVEDSTATEDATA structure.
@@ -898,12 +901,15 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     /* Actual host data are to be reported to guest (SYNC). */
     vboxClipboardSync (pClient);
 
-#endif /* !UNIT_TEST */
+#else  /* UNIT_TEST*/
+    RT_NOREF3(u32ClientID, pvClient, pSSM);
+#endif /* UNIT_TEST */
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) extCallback (uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData)
 {
+    RT_NOREF2(pvData, cbData);
     if (g_pClient != NULL)
     {
         switch (u32Function)

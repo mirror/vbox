@@ -1090,21 +1090,21 @@ bool IsWindowsHTML(const char *pcszSource)
 
 
 /*
-* Converts clipboard data from CF_HTML format to mimie clipboard format
-* Returns allocated buffer that contains html converted to text/html mime type
-* return result code
-* parameters - output buffer and size of output buffer
-* It allocates the buffer needed for storing converted fragment
-* Allocated buffer should be destroyed by RTMemFree after usage
-*/
-int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszOutput, size_t *pcCh)
+ * Converts clipboard data from CF_HTML format to mimie clipboard format
+ * Returns allocated buffer that contains html converted to text/html mime type
+ * return result code
+ * parameters - output buffer and size of output buffer
+ * It allocates the buffer needed for storing converted fragment
+ * Allocated buffer should be destroyed by RTMemFree after usage
+ */
+int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszOutput, size_t *pcch)
 {
     char* result = NULL;
 
     Assert(pcszSource);
     Assert(cch);
     Assert(ppszOutput);
-    Assert(pcCh);
+    Assert(pcch);
 
     size_t cStartOffset, cEndOffset;
     int rc = GetHeaderValue(pcszSource, "StartFragment:", &cStartOffset);
@@ -1122,7 +1122,7 @@ int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszO
     if (cStartOffset > 0 && cEndOffset > 0 && cEndOffset > cStartOffset)
     {
         size_t cSubstrlen = cEndOffset - cStartOffset;
-        result = (char*)RTMemAlloc(cSubstrlen + 1);
+        result = (char *)RTMemAlloc(cSubstrlen + 1);
         if (result)
         {
             RT_BZERO(result, cSubstrlen + 1);
@@ -1130,7 +1130,7 @@ int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszO
             if (RT_SUCCESS(rc))
             {
                 *ppszOutput = result;
-                *pcCh = cSubstrlen + 1;
+                *pcch = cSubstrlen + 1;
             }
             else
             {
@@ -1166,10 +1166,10 @@ return VINF_SUCCESS;
 * @note: output buffer should be free using RTMemFree()
 * @note: Everything inside of fragment can be UTF8. Windows allows it. Everything in header should be Latin1.
 */
-int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pcszOutput, size_t *pcCh)
+int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pszOutput, size_t *pcch)
 {
-    Assert(pcszOutput);
-    Assert(pcCh);
+    Assert(pszOutput);
+    Assert(pcch);
     Assert(pcszSource);
     Assert(cb);
 
@@ -1222,8 +1222,8 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **pcszOutput, si
     }
 #endif
 
-    *pcszOutput = pszResult;
-    *pcCh = rc+1;
+    *pszOutput = pszResult;
+    *pcch = rc + 1;
 
     return VINF_SUCCESS;
 }
