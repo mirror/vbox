@@ -138,6 +138,7 @@ static void *dt_compile(dtrace_hdl_t *, int, dtrace_probespec_t, void *,
 static int
 dt_idreset(dt_idhash_t *dhp, dt_ident_t *idp, void *ignored)
 {
+	RT_NOREF2(dhp, ignored);
 	idp->di_flags &= ~(DT_IDFLG_REF | DT_IDFLG_MOD |
 	    DT_IDFLG_DIFR | DT_IDFLG_DIFW);
 	return (0);
@@ -147,6 +148,7 @@ dt_idreset(dt_idhash_t *dhp, dt_ident_t *idp, void *ignored)
 static int
 dt_idpragma(dt_idhash_t *dhp, dt_ident_t *idp, void *ignored)
 {
+	RT_NOREF2(dhp, ignored);
 	yylineno = idp->di_lineno;
 	xyerror(D_PRAGMA_UNUSED, "unused #pragma %s\n", (char *)idp->di_iarg);
 	return (0);
@@ -857,6 +859,7 @@ static void
 dt_action_symmod_args(dtrace_hdl_t *dtp, dtrace_actdesc_t *ap,
     dt_node_t *dnp, dtrace_actkind_t kind)
 {
+	RT_NOREF1(dtp);
 	assert(kind == DTRACEACT_SYM || kind == DTRACEACT_MOD ||
 	    kind == DTRACEACT_USYM || kind == DTRACEACT_UMOD ||
 	    kind == DTRACEACT_UADDR);
@@ -880,6 +883,7 @@ static void
 dt_action_ftruncate(dtrace_hdl_t *dtp, dt_node_t *dnp, dtrace_stmtdesc_t *sdp)
 {
 	dtrace_actdesc_t *ap = dt_stmt_action(dtp, sdp);
+	RT_NOREF1(dnp);
 
 	/*
 	 * Library actions need a DIFO that serves as an argument.  As
@@ -896,6 +900,7 @@ static void
 dt_action_stop(dtrace_hdl_t *dtp, dt_node_t *dnp, dtrace_stmtdesc_t *sdp)
 {
 	dtrace_actdesc_t *ap = dt_stmt_action(dtp, sdp);
+	RT_NOREF1(dnp);
 
 	ap->dtad_kind = DTRACEACT_STOP;
 	ap->dtad_arg = 0;
@@ -906,6 +911,7 @@ static void
 dt_action_breakpoint(dtrace_hdl_t *dtp, dt_node_t *dnp, dtrace_stmtdesc_t *sdp)
 {
 	dtrace_actdesc_t *ap = dt_stmt_action(dtp, sdp);
+	RT_NOREF1(dnp);
 
 	ap->dtad_kind = DTRACEACT_BREAKPOINT;
 	ap->dtad_arg = 0;
@@ -916,6 +922,7 @@ static void
 dt_action_panic(dtrace_hdl_t *dtp, dt_node_t *dnp, dtrace_stmtdesc_t *sdp)
 {
 	dtrace_actdesc_t *ap = dt_stmt_action(dtp, sdp);
+	RT_NOREF1(dnp);
 
 	ap->dtad_kind = DTRACEACT_PANIC;
 	ap->dtad_arg = 0;
@@ -1094,7 +1101,7 @@ dt_compile_agg(dtrace_hdl_t *dtp, dt_node_t *dnp, dtrace_stmtdesc_t *sdp)
 	dt_ident_t *aid, *fid;
 	dt_node_t *anp, *incr = NULL;
 	dtrace_actdesc_t *ap;
-	uint_t n = 1, argmax;
+	uint_t n = 1, argmax VBDTMSC(0);
 	uint64_t arg = 0;
 
 	/*
@@ -1729,7 +1736,9 @@ err:
 	free(argv);
 	(void) fclose(ofp);
 	return (NULL);
+
 #else  /* VBOX */
+	RT_NOREF1(ifp);
 	(void) dt_set_errno(dtp, EDT_CPPERR);
 	return (NULL);
 #endif /* VBOX */
@@ -1990,7 +1999,8 @@ dt_load_libs_dir(dtrace_hdl_t *dtp, const char *path)
 	while (RT_SUCCESS(RTDirRead(pDir, &DirEntry, 0))) {
 		struct FakeDirEntry {
 			const char *d_name;
-		} FakeDirEntry = { DirEntry.szName }, *dp = &FakeDirEntry;
+		} FakeDirEntry, *dp = &FakeDirEntry;
+		FakeDirEntry.d_name = DirEntry.szName;
 #endif
 		if ((p = strrchr(dp->d_name, '.')) == NULL || strcmp(p, ".d"))
 			continue; /* skip any filename not ending in .d */

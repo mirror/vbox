@@ -91,6 +91,7 @@ dt_aggregate_countcmp(int64_t *lhs, int64_t *rhs)
 static void
 dt_aggregate_min(int64_t *existing, int64_t *new, size_t size)
 {
+	RT_NOREF1(size);
 	if (*new < *existing)
 		*existing = *new;
 }
@@ -99,6 +100,7 @@ dt_aggregate_min(int64_t *existing, int64_t *new, size_t size)
 static void
 dt_aggregate_max(int64_t *existing, int64_t *new, size_t size)
 {
+	RT_NOREF1(size);
 	if (*new > *existing)
 		*existing = *new;
 }
@@ -140,6 +142,7 @@ dt_aggregate_lquantize(int64_t *existing, int64_t *new, size_t size)
 	int64_t arg = *existing++;
 	uint16_t levels = DTRACE_LQUANTIZE_LEVELS(arg);
 	int i;
+	RT_NOREF1(size);
 
 	for (i = 0; i <= levels + 1; i++)
 		existing[i] = existing[i] + new[i + 1];
@@ -221,7 +224,7 @@ dt_aggregate_quantizedcmp(int64_t *lhs, int64_t *rhs)
 {
 	int nbuckets = DTRACE_QUANTIZE_NBUCKETS, i;
 	long double ltotal = 0, rtotal = 0;
-	int64_t lzero, rzero;
+	int64_t lzero VBDTMSC(0), rzero VBDTMSC(0);
 
 	for (i = 0; i < nbuckets; i++) {
 		int64_t bucketval = DTRACE_QUANTIZE_BUCKETVAL(i);
@@ -277,6 +280,8 @@ dt_aggregate_usym(dtrace_hdl_t *dtp, uint64_t *data)
 
 	dt_proc_unlock(dtp, P);
 	dt_proc_release(dtp, P);
+#else
+	RT_NOREF2(dtp, data);
 #endif
 }
 
@@ -302,6 +307,8 @@ dt_aggregate_umod(dtrace_hdl_t *dtp, uint64_t *data)
 
 	dt_proc_unlock(dtp, P);
 	dt_proc_release(dtp, P);
+#else
+	RT_NOREF2(dtp, data);
 #endif
 }
 
@@ -574,7 +581,7 @@ hashnext:
 					return (dt_set_errno(dtp, EDT_NOMEM));
 				}
 
-				if (j == cpu) {
+				if ((unsigned)j == cpu) {
 					bcopy(&addr[rec->dtrd_offset],
 					    percpu[j], rec->dtrd_size);
 				} else {
@@ -815,7 +822,7 @@ dt_aggregate_valcmp(const void *lhs, const void *rhs)
 	dtrace_aggdesc_t *ragg = rh->dtahe_data.dtada_desc;
 	caddr_t ldata = lh->dtahe_data.dtada_data;
 	caddr_t rdata = rh->dtahe_data.dtada_data;
-	dtrace_recdesc_t *lrec, *rrec;
+	dtrace_recdesc_t *lrec VBDTMSC(NULL), *rrec VBDTMSC(NULL);
 	int64_t *laddr, *raddr;
 	int rval, i;
 
@@ -1376,7 +1383,7 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
     int naggvars, dtrace_aggregate_walk_joined_f *func, void *arg)
 {
 	dt_aggregate_t *agp = &dtp->dt_aggregate;
-	dt_ahashent_t *h, **sorted = NULL, ***bundle, **nbundle;
+	dt_ahashent_t *h, **sorted = NULL, ***bundle VBDTMSC(NULL), **nbundle;
 	const dtrace_aggdata_t **data;
 	dt_ahashent_t *zaggdata = NULL;
 	dt_ahash_t *hash = &agp->dtat_hash;

@@ -143,6 +143,7 @@ typedef char                       *caddr_t;
 #define VBDTSTATIC              static
 #define VBDTUNASS(a_Value)      = a_Value
 #define VBDTGCC(a_Value)        = a_Value
+#define VBDTMSC(a_Value)        = a_Value
 
 /*
  * string

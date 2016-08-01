@@ -153,7 +153,7 @@ typedef struct dtrace_stmtdesc {
 	dtrace_actdesc_t *dtsd_action_last;	/* last action in action list */
 	void *dtsd_aggdata;			/* aggregation data */
 	void *dtsd_fmtdata;			/* type-specific output data */
-	void (*dtsd_callback)();		/* callback function for EPID */
+	void (*dtsd_callback)(void);		/* callback function for EPID */
 	void *dtsd_data;			/* callback data pointer */
 	dtrace_attribute_t dtsd_descattr;	/* probedesc attributes */
 	dtrace_attribute_t dtsd_stmtattr;	/* statement attributes */
