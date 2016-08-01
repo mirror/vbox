@@ -32,7 +32,6 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  # without waiting for any thread synchronisation.
  tstGuestControlSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_CONTROL_TEST_NOTHREAD
  tstGuestControlSvc_SOURCES  = \
- 	../gctrl.cpp \
 	../service.cpp \
 	tstGuestControlSvc.cpp
  tstGuestControlSvc_LIBS     = $(LIB_RUNTIME)

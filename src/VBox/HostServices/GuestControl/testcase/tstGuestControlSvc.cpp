@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * Testcase for the guest control service.
  */
 
@@ -24,8 +23,6 @@
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/test.h>
-
-#include "../gctrl.h"
 
 
 /*********************************************************************************************************************************

@@ -82,7 +82,6 @@
 #include <string>
 #include <list>
 
-#include "gctrl.h"
 
 namespace guestControl {
 
