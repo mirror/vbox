@@ -41,10 +41,12 @@ typedef FNADDCLIPBOARDFORMATLISTENER *PFNADDCLIPBOARDFORMATLISTENER;
 typedef BOOL WINAPI FNREMOVECLIPBOARDFORMATLISTENER(HWND);
 typedef FNREMOVECLIPBOARDFORMATLISTENER *PFNREMOVECLIPBOARDFORMATLISTENER;
 
-/*Forward declarations*/
-int ConvertMimeToCFHTML(const char *source, size_t cb, char **output, size_t *pcch);
-int ConvertCFHtmlToMime(const char *source, const uint32_t cch, char **output, size_t *pcch);
-bool IsWindowsHTML(const char *source);
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int ConvertCFHtmlToMime(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pch);
+static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
+static bool IsWindowsHTML(const char *source);
 
 
 #ifndef WM_CLIPBOARDUPDATE
@@ -204,38 +206,46 @@ static int vboxOpenClipboard(HWND hwnd)
 }
 
 
+/** @todo Someone please explain the protocol wrt overflows...  */
 static void vboxClipboardGetData (uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
                                   void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
 {
     dprintf (("vboxClipboardGetData.\n"));
 
-    *pcbActualDst = cbSrc;
-
     LogFlow(("vboxClipboardGetData cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
 
-    if (cbSrc > cbDst)
+    if (   u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
+        && IsWindowsHTML((const char *)pvSrc))
     {
-        /* Do not copy data. The dst buffer is not enough. */
-        return;
+        /** @todo r=bird: Why the double conversion? */
+        char *pszBuf = NULL;
+        uint32_t cbBuf = 0;
+        int rc = ConvertCFHtmlToMime((const char*)pvSrc, cbSrc, &pszBuf, &cbBuf);
+        if (RT_SUCCESS(rc))
+        {
+            *pcbActualDst = cbBuf;
+            if (cbBuf > cbDst)
+            {
+                /* Do not copy data. The dst buffer is not enough. */
+                RTMemFree(pszBuf);
+                return;
+            }
+            memcpy(pvDst, pszBuf, cbBuf);
+            RTMemFree(pszBuf);
+        }
+        else
+            *pcbActualDst = 0;
     }
-
-    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML &&
-                            IsWindowsHTML((const char*)pvSrc))
+    else
     {
-        char* buffer = NULL;
-        size_t cbuf = 0;
-        ConvertCFHtmlToMime((const char*)pvSrc, cbSrc, (char**)&buffer, &cbuf);
-        if (cbuf > cbDst)
+        *pcbActualDst = cbSrc;
+
+        if (cbSrc > cbDst)
         {
             /* Do not copy data. The dst buffer is not enough. */
             return;
         }
-        memcpy(pvDst, buffer, cbuf);
-        *pcbActualDst = cbuf;
-        RTMemFree(buffer);
-    }
-    else
-    {
+
         memcpy(pvDst, pvSrc, cbSrc);
     }
 
@@ -668,8 +678,9 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     return rc;
 }
 
-DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD ThreadSelf, void *pInstance)
+DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF2(hThreadSelf, pvUser);
     /* Create a window and make it a clipboard viewer. */
     int rc = VINF_SUCCESS;
 
@@ -777,7 +788,7 @@ void vboxClipboardDestroy (void)
 
     if (g_ctx.hwnd)
     {
-        int rc = PostMessage (g_ctx.hwnd, WM_CLOSE, 0, 0);
+        PostMessage (g_ctx.hwnd, WM_CLOSE, 0, 0);
     }
 
     CloseHandle (g_ctx.hRenderEvent);
@@ -818,6 +829,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
+    RT_NOREF1(pClient);
     Log(("vboxClipboardDisconnect\n"));
 
     g_ctx.pClient = NULL;
@@ -986,30 +998,29 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
 
     if (cb > 0)
     {
-        char* pszResult = NULL;
-        size_t cch;
+        char *pszResult = NULL;
 
-        if(u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML &&
-            !IsWindowsHTML((const char*)pv))
+        if (   u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
+            && !IsWindowsHTML((const char*)pv))
         {
             /* check that this is not already CF_HTML */
-            int rc = ConvertMimeToCFHTML((const char*)pv, cb, &pszResult, &cch);
+            uint32_t cbResult;
+            int rc = ConvertMimeToCFHTML((const char *)pv, cb, &pszResult, &cbResult);
             if (RT_SUCCESS(rc))
             {
-                if (pszResult != NULL && cch != 0)
+                if (pszResult != NULL && cbResult != 0)
                 {
-                    pClient->data.pv = pszResult;
-                    pClient->data.cb = cch;
+                    pClient->data.pv        = pszResult;
+                    pClient->data.cb        = cbResult;
                     pClient->data.u32Format = u32Format;
                 }
             }
         }
         else
         {
-            pClient->data.pv = RTMemAlloc (cb);
+            pClient->data.pv = RTMemDup(pv, cb);
             if (pClient->data.pv)
             {
-                memcpy (pClient->data.pv, pv, cb);
                 pClient->data.cb = cb;
                 pClient->data.u32Format = u32Format;
             }
@@ -1024,33 +1035,24 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_
  * Extracts field value from CF_HTML struct
  *
  * @returns VBox status code
- * @param   pcszSrc     source in CF_HTML format
- * @param   pcszOption  Name of CF_HTML field
- * @param   pcValue     Where to return extracted value of CF_HTML field
+ * @param   pszSrc      source in CF_HTML format
+ * @param   pszOption   Name of CF_HTML field
+ * @param   puValue     Where to return extracted value of CF_HTML field
  */
-int GetHeaderValue(const char *pcszSrc, const char *pcszOption, size_t *pcValue)
+static int GetHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue)
 {
-    size_t cOptionLenght = 0;
     int rc = VERR_INVALID_PARAMETER;
 
-    Assert(pcszSrc);
-    Assert(pcszOption);
+    Assert(pszSrc);
+    Assert(pszOption);
 
-    char* pcszOptionValue = RTStrStr(pcszSrc, pcszOption);
-    if (pcszOptionValue)
+    const char *pszOptionValue = RTStrStr(pszSrc, pszOption);
+    if (pszOptionValue)
     {
-        rc = RTStrNLenEx(pcszOption, RTSTR_MAX, &cOptionLenght);
-        Assert(cOptionLenght);
-        if (RT_SUCCESS(rc))
-        {
-            int32_t tmpValue;
-            rc = RTStrToInt32Ex(pcszOptionValue + cOptionLenght, NULL, 10, &tmpValue);
-            if (RT_SUCCESS(rc))
-            {
-                *pcValue = tmpValue;
-                rc = VINF_SUCCESS;
-            }
-        }
+        size_t cchOption = strlen(pszOption);
+        Assert(cchOption);
+
+        rc = RTStrToUInt32Ex(pszOptionValue + cchOption, NULL, 10, puValue);
     }
     return rc;
 }
@@ -1061,10 +1063,10 @@ int GetHeaderValue(const char *pcszSrc, const char *pcszOption, size_t *pcValue)
  *
  * @returns @c true if the @source string is in CF_HTML format
  */
-bool IsWindowsHTML(const char *pcszSource)
+static bool IsWindowsHTML(const char *pszSource)
 {
-    return RTStrStr(pcszSource, "Version:") != NULL
-        && RTStrStr(pcszSource, "StartHTML:") != NULL;
+    return RTStrStr(pszSource, "Version:") != NULL
+        && RTStrStr(pszSource, "StartHTML:") != NULL;
 }
 
 
@@ -1074,66 +1076,81 @@ bool IsWindowsHTML(const char *pcszSource)
  * Returns allocated buffer that contains html converted to text/html mime type
  *
  * @returns VBox status code.
- * @param   pcszSource  The input.
+ * @param   pszSource   The input.
  * @param   cch         The length of the input.
  * @param   ppszOutput  Where to return the result.  Free using RTMemFree.
- * @param   pcch        Where to the return length of the result (bytes/chars).
+ * @param   pcbOutput   Where to the return length of the result (bytes/chars).
  */
-int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszOutput, size_t *pcch)
+static int ConvertCFHtmlToMime(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput)
 {
-    char *result = NULL;
-
-    Assert(pcszSource);
+    Assert(pszSource);
     Assert(cch);
     Assert(ppszOutput);
-    Assert(pcch);
+    Assert(pcbOutput);
 
-    size_t cStartOffset, cEndOffset;
-    int rc = GetHeaderValue(pcszSource, "StartFragment:", &cStartOffset);
-    if (!RT_SUCCESS(rc))
+    uint32_t offStart;
+    int rc = GetHeaderValue(pszSource, "StartFragment:", &offStart);
+    if (RT_SUCCESS(rc))
     {
-        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected StartFragment. rc = %Rrc.\n", rc));
-        return VERR_INVALID_PARAMETER;
-    }
-    rc = GetHeaderValue(pcszSource, "EndFragment:", &cEndOffset);
-    if (!RT_SUCCESS(rc))
-    {
-        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc.\n", rc));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (cStartOffset > 0 && cEndOffset > 0 && cEndOffset > cStartOffset)
-    {
-        size_t cSubstrlen = cEndOffset - cStartOffset;
-        result = (char *)RTMemAlloc(cSubstrlen + 1);
-        if (result)
+        uint32_t offEnd;
+        rc = GetHeaderValue(pszSource, "EndFragment:", &offEnd);
+        if (RT_SUCCESS(rc))
         {
-            RT_BZERO(result, cSubstrlen + 1);
-            rc = RTStrCopyEx(result, cSubstrlen + 1, pcszSource + cStartOffset, cSubstrlen);
-            if (RT_SUCCESS(rc))
+            if (   offStart > 0
+                && offEnd > 0
+                && offEnd > offStart
+                && offEnd <= cch)
             {
-                *ppszOutput = result;
-                *pcch = cSubstrlen + 1;
+                uint32_t cchSubStr = offEnd - offStart;
+                char *pszResult = (char *)RTMemAlloc(cchSubStr + 1);
+                if (pszResult)
+                {
+                    rc = RTStrCopyEx(pszResult, cchSubStr + 1, pszSource + offStart, cchSubStr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *ppszOutput = pszResult;
+                        *pcbOutput  = (uint32_t)(cchSubStr + 1);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc\n", rc));
+                        RTMemFree(pszResult);
+                    }
+                }
+                else
+                {
+                    LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment.\n"));
+                    rc = VERR_NO_MEMORY;
+                }
             }
             else
             {
-                LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc\n", rc));
-                return rc;
+                LogRelFlowFunc(("Error: CF_HTML out of bounds - offStart=%#x offEnd=%#x cch=%#x\n", offStart, offEnd, cch));
+                rc = VERR_INVALID_PARAMETER;
             }
         }
         else
         {
-            LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment.\n"));
-            return VERR_NO_MEMORY;
+            LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc.\n", rc));
+            rc = VERR_INVALID_PARAMETER;
         }
     }
+    else
+    {
+        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected StartFragment. rc = %Rrc.\n", rc));
+        rc = VERR_INVALID_PARAMETER;
+    }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
 
 /*
- * Converts source Utf16 mime html clipboard data to Utf8 CF_HTML format.
+ * Converts source UTF-8 MIME HTML clipboard data to UTF-8 CF_HTML format.
+ *
+ * This is just encapsulation work, slapping a header on the data.
  *
  * It allocates
  *
@@ -1144,29 +1161,26 @@ int ConvertCFHtmlToMime(const char *pcszSource, const uint32_t cch, char **ppszO
  *   StartFragment = 141(constant) may vary if the header html content will be extended
  *   EndFragment   = Header length + fragment length - 38(ending length)
  *
- * @param   pcszSource  Source buffer that contains utf-16 string in mime html format
+ * @param   pszSource   Source buffer that contains utf-16 string in mime html format
  * @param   cb          Size of source buffer in bytes
  * @param   ppszOutput  Where to return the allocated output buffer to put converted UTF-8
  *                      CF_HTML clipboard data.  This function allocates memory for this.
- * @param   pcch        Where to return the Size of allocated result buffer in bytes/chars.
+ * @param   pcbOutput   Where to return the size of allocated result buffer in bytes/chars, including zero terminator
  *
  * @note    output buffer should be free using RTMemFree()
  * @note    Everything inside of fragment can be UTF8. Windows allows it. Everything in header should be Latin1.
  */
-int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **ppszOutput, size_t *pcch)
+static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput)
 {
     Assert(pszOutput);
-    Assert(pcch);
-    Assert(pcszSource);
+    Assert(pcbOutput);
+    Assert(pszSource);
     Assert(cb);
 
-    size_t cFragmentLength = 0;
-
-    char *pszBuf = (char *)pcszSource;
-
     /* construct CF_HTML formatted string */
-    char* pszResult = NULL;
-    int rc = RTStrNLenEx(pszBuf, RTSTR_MAX, &cFragmentLength);
+    char *pszResult = NULL;
+    size_t cchFragment;
+    int rc = RTStrNLenEx(pszSource, cb, &cchFragment);
     if (!RT_SUCCESS(rc))
     {
         LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc.\n"));
@@ -1187,22 +1201,26 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **ppszOutput, si
     EndFragment  = Header length + fragment length - 40(ending length)
     */
     static const char s_szFormatSample[] =
-        "Version:1.0\r\n"
-        "StartHTML:000000101\r\n"
-        "EndHTML:%09d\r\n" // END HTML = Header length + fragment lengh
-        "StartFragment:000000137\r\n"
-        "EndFragment:%09d\r\n"
-        "<html>\r\n"
-        "<body>\r\n"
-        "<!--StartFragment-->%s<!--EndFragment-->\r\n"
-        "</body>\r\n"
-        "</html>\r\n";
+    /*   0:   */ "Version:1.0\r\n"
+    /*  13:   */ "StartHTML:000000101\r\n"
+    /*  34:   */ "EndHTML:%0000009u\r\n" // END HTML = Header length + fragment length
+    /*  53:   */ "StartFragment:000000137\r\n"
+    /*  78:   */ "EndFragment:%0000009u\r\n"
+    /* 101:   */ "<html>\r\n"
+    /* 109:   */ "<body>\r\n"
+    /* 117:   */ "<!--StartFragment-->"
+    /* 137:   */ "%s"
+    /* 137+2: */ "<!--EndFragment-->\r\n"
+    /* 157+2: */ "</body>\r\n"
+    /* 166+2: */ "</html>\r\n";
+    /* 175+2: */
+    AssertCompile(sizeof(s_szFormatSample) == 175+2+1);
 
     /* calculate parameters of CF_HTML header */
-    size_t cHeaderLength = (sizeof(s_szFormatSample) - 1) + 8;
-    size_t cEndHtml = cHeaderLength + cFragmentLength;
-    size_t cEndFragment = cHeaderLength + cFragmentLength - 38;
-    pszResult = (char*)RTMemAlloc(cEndHtml + 1);
+    size_t cchHeader      = sizeof(s_szFormatSample) - 1;
+    size_t offEndHtml     = cchHeader + cchFragment;
+    size_t offEndFragment = cchHeader + cchFragment - 38; /* 175-137 = 38 */
+    pszResult = (char *)RTMemAlloc(offEndHtml + 1);
     if (pszResult == NULL)
     {
         LogRelFlowFunc(("Error: Cannot allocate memory for result buffer. rc = %Rrc.\n"));
@@ -1210,32 +1228,27 @@ int ConvertMimeToCFHTML(const char *pcszSource, size_t cb, char **ppszOutput, si
     }
 
     /* format result CF_HTML string */
-    rc = RTStrPrintf(pszResult, cEndHtml + 1, s_szFormatSample, cEndHtml, cEndFragment, pszBuf);
-    if (rc == -1)
-    {
-        LogRelFlowFunc(("Error: cannot construct CF_HTML. rc = %Rrc.\n"));
-        return VERR_CANT_CREATE;
-    }
-    Assert(cEndHtml == rc);
+    size_t cchFormatted = RTStrPrintf(pszResult, offEndHtml + 1,
+                                      s_szFormatSample, offEndHtml, offEndFragment, pszSource);
+    Assert(offEndHtml == cchFormatted); NOREF(cchFormatted);
 
-#ifdef DEBUG
-    {
-        /*Control calculations. check consistency.*/
-        const char pcszStartFragment[] = "<!--StartFragment-->";
-        const char pcszEndFragment[] = "<!--EndFragment-->";
+#ifdef VBOX_STRICT
+    /* Control calculations. check consistency.*/
+    static const char s_szStartFragment[] = "<!--StartFragment-->";
+    static const char s_szEndFragment[] = "<!--EndFragment-->";
 
-        /* check 'StartFragment:' value */
-        const char* pcszRealStartFragment = RTStrStr(pszResult, pcszStartFragment);
-        Assert((pcszRealStartFragment + sizeof(pcszStartFragment) - 1) - pszResult == 137);//141);
+    /* check 'StartFragment:' value */
+    const char *pszRealStartFragment = RTStrStr(pszResult, s_szStartFragment);
+    Assert(&pszRealStartFragment[sizeof(s_szStartFragment) - 1] - pszResult == 137);
 
-        /* check 'EndFragment:' value */
-        const char* pcszRealEndFragment = RTStrStr(pszResult, pcszEndFragment);
-        Assert((pcszRealEndFragment - pszResult) == cEndFragment);
-    }
+    /* check 'EndFragment:' value */
+    const char *pszRealEndFragment = RTStrStr(pszResult, s_szEndFragment);
+    Assert((pszRealEndFragment - pszResult) == offEndFragment);
 #endif
 
     *ppszOutput = pszResult;
-    *pcch = rc + 1;
+    *pcbOutput = (uint32_t)cchFormatted + 1;
+    Assert(*pcbOutput == cchFormatted + 1);
 
     return VINF_SUCCESS;
 }
