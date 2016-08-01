@@ -258,6 +258,8 @@ int VBoxUSBFilterAdd(PCUSBFILTER pFilter, VBOXUSBFILTER_CONTEXT Owner, uintptr_t
 
         VBOXUSBFILTERMGR_UNLOCK();
     }
+    else
+        RTMemFree(pNew);
 
     return rc;
 }
