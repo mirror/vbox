@@ -46,8 +46,6 @@
 
 #include "SysHlp.h"
 
-#pragma pack(4) /** @todo r=bird: What do we need packing for here? None of these structures are shared between drivers AFAIK. */
-
 struct _VBGLPHYSHEAPBLOCK;
 typedef struct _VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
 struct _VBGLPHYSHEAPCHUNK;
@@ -123,8 +121,6 @@ typedef struct VBGLDATA
 #endif
 } VBGLDATA;
 
-
-#pragma pack()
 
 #ifndef VBGL_DECL_DATA
 extern VBGLDATA g_vbgldata;
