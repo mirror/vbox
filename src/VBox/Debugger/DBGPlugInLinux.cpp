@@ -371,7 +371,7 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
         uint32_t offInstr = 0;
         bool fRet = false;
         DISSTATE DisState;
-        unsigned idxAddressesUsed = 0;
+        unsigned cAddressesUsed = 0;
         struct { size_t cb; RTGCPTR GCPtrOrigSrc; } aAddresses[5];
         RT_ZERO(DisState);
         RT_ZERO(aAddresses);
@@ -419,14 +419,14 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                                 && DISUSE_IS_EFFECTIVE_ADDR(DisState.Param1.fUse))
                             {
                                 RTGCPTR GCPtrLogBuf = 0;
-                                size_t cbLogBuf = 0;
+                                uint32_t cbLogBuf = 0;
 
                                 /*
                                  * We can stop disassembling now and inspect all registers, look for a valid kernel address first.
                                  * Only one of the accessed registers should hold a valid kernel address.
                                  * For the log size look for the biggest non kernel address.
                                  */
-                                for (unsigned i = 0; i < idxAddressesUsed; i++)
+                                for (unsigned i = 0; i < cAddressesUsed; i++)
                                 {
                                     DBGFADDRESS AddrVal;
                                     union { uint8_t abVal[8]; uint32_t u32Val; uint64_t u64Val; } Val;
@@ -513,15 +513,15 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                                     else
                                         AssertMsgFailedBreakStmt(("Invalid displacement\n"), rc = VERR_INVALID_STATE);
 
-                                    if (idxAddressesUsed < RT_ELEMENTS(aAddresses))
+                                    if (cAddressesUsed < RT_ELEMENTS(aAddresses))
                                     {
                                         /* movsxd reads always 32bits. */
                                         if (DisState.pCurInstr->uOpcode == OP_MOVSXD)
-                                            aAddresses[idxAddressesUsed].cb = sizeof(uint32_t);
+                                            aAddresses[cAddressesUsed].cb = sizeof(uint32_t);
                                         else
-                                            aAddresses[idxAddressesUsed].cb = DisState.Param2.cb;
-                                        aAddresses[idxAddressesUsed].GCPtrOrigSrc = GCPtrVal;
-                                        idxAddressesUsed++;
+                                            aAddresses[cAddressesUsed].cb = DisState.Param2.cb;
+                                        aAddresses[cAddressesUsed].GCPtrOrigSrc = GCPtrVal;
+                                        cAddressesUsed++;
                                     }
                                     else
                                     {
@@ -563,7 +563,7 @@ static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RT
 {
     int rc = VINF_SUCCESS;
 
-    struct { void *pvVar; size_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
+    struct { void *pvVar; uint32_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
     {
         { pGCPtrLogBuf, sizeof(RTGCPTR),  pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t), "log_buf_addr_get" },
         { pcbLogBuf,    sizeof(uint32_t), sizeof(uint32_t),                                    "log_buf_len_get" }
@@ -573,7 +573,7 @@ static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RT
         RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
         Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
         rc = dbgDiggerLinuxDisassembleSimpleGetter(pThis, pUVM, hMod, aSymbols[i].pszSymbol,
-                                                   aSymbols[i].pvVar,  aSymbols[i].cbGuest);
+                                                   aSymbols[i].pvVar, aSymbols[i].cbGuest);
     }
 
     return rc;
@@ -621,6 +621,7 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
                                              uint32_t fFlags, uint32_t cMessages,
                                              char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
+    RT_NOREF2(fFlags, cMessages);
     int rc = VINF_SUCCESS;
     RTGCPTR  GCPtrLogBuf;
     uint32_t cbLogBuf;
@@ -734,6 +735,7 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
                                                uint32_t fFlags, uint32_t cMessages,
                                                char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
+    RT_NOREF1(fFlags);
     int rc = VINF_SUCCESS;
     RTGCPTR  GCPtrLogBuf;
     uint32_t cbLogBuf;
@@ -1047,6 +1049,7 @@ static void dbgDiggerLinuxCfgDbDestroy(PDBGDIGGERLINUX pThis)
  */
 static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
+    RT_NOREF1(pUVM);
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     switch (enmIf)
     {
@@ -1092,6 +1095,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, void *pvData, ch
  */
 static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
 {
+    RT_NOREF1(pUVM);
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
 
@@ -1728,7 +1732,7 @@ static bool dbgDiggerLinuxIsLikelyNameFragment(PUVM pUVM, PCDBGFADDRESS pHitAddr
  * @param   pabNeedle           The needle to use for searching.
  * @param   cbNeedle            Size of the needle in bytes.
  */
-static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, uint8_t const *pabNeedle, size_t cbNeedle)
+static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, uint8_t const *pabNeedle, uint8_t cbNeedle)
 {
     int rc = VINF_SUCCESS;
 
@@ -2274,7 +2278,7 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
  */
 static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PUVM pUVM, void *pvData)
 {
-
+    RT_NOREF2(pUVM, pvData);
 }
 
 
@@ -2283,6 +2287,7 @@ static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PUVM pUVM, void *pvData)
  */
 static DECLCALLBACK(int)  dbgDiggerLinuxConstruct(PUVM pUVM, void *pvData)
 {
+    RT_NOREF1(pUVM);
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     pThis->IDmesg.u32Magic = DBGFOSIDMESG_MAGIC;
     pThis->IDmesg.pfnQueryKernelLog = dbgDiggerLinuxIDmsg_QueryKernelLog;

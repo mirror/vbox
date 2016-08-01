@@ -250,7 +250,6 @@ int DBGDiggerCommonParseElfMod(PUVM pUVM, const char *pszModName, const char *ps
     else
     {
         /* Add the segments and fill in the translation table. */
-        RTGCPTR uRvaNext = 0;
         for (unsigned i = 0; i < cSegs; i++)
             if (paShdrs[i].sh_flags & SHF_ALLOC)
             {
