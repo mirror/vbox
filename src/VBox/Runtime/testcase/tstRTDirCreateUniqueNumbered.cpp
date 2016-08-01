@@ -52,7 +52,7 @@ static void tst1(size_t cTest, size_t cchDigits, char chSep)
         cTimes *= 10;
 
     /* Allocate the result array. */
-    char **papszNames = (char **)RTMemTmpAllocZ(cTimes * sizeof(char *));
+    char **papszNames = (char **)RTMemTmpAllocZ((cTimes + 1) * sizeof(char *));
     RTTESTI_CHECK_RETV(papszNames != NULL);
 
     int rc = VERR_INTERNAL_ERROR;
