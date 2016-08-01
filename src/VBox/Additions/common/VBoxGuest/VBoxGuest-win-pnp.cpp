@@ -54,6 +54,7 @@ RT_C_DECLS_END
  */
 static NTSTATUS vgdrvNtPnpIrpComplete(PDEVICE_OBJECT pDevObj, PIRP pIrp, PKEVENT pEvent)
 {
+    RT_NOREF2(pDevObj, pIrp);
     KeSetEvent(pEvent, 0, FALSE);
     return STATUS_MORE_PROCESSING_REQUIRED;
 }
@@ -392,6 +393,7 @@ NTSTATUS vgdrvNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 static NTSTATUS vgdrvNtPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN PVOID pContext)
 {
 #ifdef VBOX_STRICT
+    RT_NOREF1(pDevObj);
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pContext;
     PIO_STACK_LOCATION  pIrpSp  = IoGetCurrentIrpStackLocation(pIrp);
 
@@ -412,13 +414,17 @@ static NTSTATUS vgdrvNtPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN
                             {
                                 case PowerDeviceD0:
                                     break;
+                                default: /* Shut up MSC */ break;
                             }
                             break;
+                        default: /* Shut up MSC */ break;
                     }
                     break;
             }
         }
     }
+#else
+    RT_NOREF3(pDevObj, pIrp, pContext);
 #endif
 
     return STATUS_SUCCESS;
@@ -530,6 +536,14 @@ NTSTATUS vgdrvNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                         case PowerActionHibernate:
 
                             Log(("vgdrvNtPower: Power action hibernate!\n"));
+                            break;
+
+                        case PowerActionWarmEject:
+                            Log(("vgdrvNtPower: PowerActionWarmEject!\n"));
+                            break;
+
+                        default:
+                            Log(("vgdrvNtPower: %d\n", enmPowerAction));
                             break;
                     }
 
