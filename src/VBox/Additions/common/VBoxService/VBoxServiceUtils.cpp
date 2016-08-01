@@ -55,7 +55,7 @@ int VGSvcReadProp(uint32_t u32ClientId, const char *pszPropName, char **ppszValu
 
     uint32_t    cbBuf = _1K;
     void       *pvBuf = NULL;
-    int         rc;
+    int         rc    = VINF_SUCCESS;  /* MSC can't figure out the loop */
 
     *ppszValue = NULL;
 

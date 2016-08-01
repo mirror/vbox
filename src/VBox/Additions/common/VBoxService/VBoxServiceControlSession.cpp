@@ -509,6 +509,7 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
 
                 default:
                     rc = VERR_NOT_SUPPORTED;
+                    uSeekMethodIprt = RTFILE_SEEK_BEGIN; /* Shut up MSC */
                     break;
             }
 
@@ -757,8 +758,10 @@ static int vgsvcGstCtrlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession, 
     uint32_t fFlags;
     uint32_t cbSize;
 
+#if 0 /* unused */
     uint32_t uStatus = INPUT_STS_UNDEFINED; /* Status sent back to the host. */
     uint32_t cbWritten = 0; /* Number of bytes written to the guest. */
+#endif
 
     /*
      * Ask the host for the input data.
@@ -1085,81 +1088,78 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     RT_ZERO(ProcessStatus);
 
     int rcWait;
-    if (RT_SUCCESS(rc))
+    uint32_t uTimeoutsMS = 30 * 1000; /** @todo Make this configurable. Later. */
+    uint64_t u64TimeoutStart = 0;
+
+    for (;;)
     {
-        uint32_t uTimeoutsMS = 30 * 1000; /** @todo Make this configurable. Later. */
-        uint64_t u64TimeoutStart = 0;
+        rcWait = RTProcWaitNoResume(pThread->hProcess, RTPROCWAIT_FLAGS_NOBLOCK, &ProcessStatus);
+        if (RT_UNLIKELY(rcWait == VERR_INTERRUPTED))
+            continue;
 
-        for (;;)
+        if (   rcWait == VINF_SUCCESS
+            || rcWait == VERR_PROCESS_NOT_FOUND)
         {
-            rcWait = RTProcWaitNoResume(pThread->hProcess, RTPROCWAIT_FLAGS_NOBLOCK, &ProcessStatus);
-            if (RT_UNLIKELY(rcWait == VERR_INTERRUPTED))
-                continue;
+            fProcessAlive = false;
+            break;
+        }
+        AssertMsgBreak(rcWait == VERR_PROCESS_RUNNING,
+                       ("Got unexpected rc=%Rrc while waiting for session process termination\n", rcWait));
 
-            if (   rcWait == VINF_SUCCESS
-                || rcWait == VERR_PROCESS_NOT_FOUND)
+        if (ASMAtomicReadBool(&pThread->fShutdown))
+        {
+            if (!u64TimeoutStart)
             {
-                fProcessAlive = false;
-                break;
-            }
-            AssertMsgBreak(rcWait == VERR_PROCESS_RUNNING,
-                           ("Got unexpected rc=%Rrc while waiting for session process termination\n", rcWait));
+                VGSvcVerbose(3, "Notifying guest session process (PID=%RU32, session ID=%RU32) ...\n",
+                             pThread->hProcess, uSessionID);
 
-            if (ASMAtomicReadBool(&pThread->fShutdown))
-            {
-                if (!u64TimeoutStart)
+                VBGLR3GUESTCTRLCMDCTX hostCtx =
                 {
-                    VGSvcVerbose(3, "Notifying guest session process (PID=%RU32, session ID=%RU32) ...\n",
-                                 pThread->hProcess, uSessionID);
+                    /* .idClient  = */  uClientID,
+                    /* .idContext = */  VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID),
+                    /* .uProtocol = */  pThread->StartupInfo.uProtocol,
+                    /* .cParams   = */  2
+                };
+                rc = VbglR3GuestCtrlSessionClose(&hostCtx, 0 /* fFlags */);
+                if (RT_FAILURE(rc))
+                {
+                    VGSvcError("Unable to notify guest session process (PID=%RU32, session ID=%RU32), rc=%Rrc\n",
+                               pThread->hProcess, uSessionID, rc);
 
-                    VBGLR3GUESTCTRLCMDCTX hostCtx =
+                    if (rc == VERR_NOT_SUPPORTED)
                     {
-                        /* .idClient  = */  uClientID,
-                        /* .idContext = */  VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID),
-                        /* .uProtocol = */  pThread->StartupInfo.uProtocol,
-                        /* .cParams   = */  2
-                    };
-                    rc = VbglR3GuestCtrlSessionClose(&hostCtx, 0 /* fFlags */);
-                    if (RT_FAILURE(rc))
-                    {
-                        VGSvcError("Unable to notify guest session process (PID=%RU32, session ID=%RU32), rc=%Rrc\n",
-                                   pThread->hProcess, uSessionID, rc);
-
-                        if (rc == VERR_NOT_SUPPORTED)
-                        {
-                            /* Terminate guest session process in case it's not supported by a too old host. */
-                            rc = RTProcTerminate(pThread->hProcess);
-                            VGSvcVerbose(3, "Terminating guest session process (PID=%RU32) ended with rc=%Rrc\n",
-                                         pThread->hProcess, rc);
-                        }
-                        break;
+                        /* Terminate guest session process in case it's not supported by a too old host. */
+                        rc = RTProcTerminate(pThread->hProcess);
+                        VGSvcVerbose(3, "Terminating guest session process (PID=%RU32) ended with rc=%Rrc\n",
+                                     pThread->hProcess, rc);
                     }
+                    break;
+                }
 
-                    VGSvcVerbose(3, "Guest session ID=%RU32 thread was asked to terminate, waiting for session process to exit (%RU32ms timeout) ...\n",
-                                 uSessionID, uTimeoutsMS);
-                    u64TimeoutStart = RTTimeMilliTS();
-                    continue; /* Don't waste time on waiting. */
-                }
-                if (RTTimeMilliTS() - u64TimeoutStart > uTimeoutsMS)
-                {
-                     VGSvcVerbose(3, "Guest session ID=%RU32 process did not shut down within time\n", uSessionID);
-                     break;
-                }
+                VGSvcVerbose(3, "Guest session ID=%RU32 thread was asked to terminate, waiting for session process to exit (%RU32ms timeout) ...\n",
+                             uSessionID, uTimeoutsMS);
+                u64TimeoutStart = RTTimeMilliTS();
+                continue; /* Don't waste time on waiting. */
             }
-
-            RTThreadSleep(100); /* Wait a bit. */
+            if (RTTimeMilliTS() - u64TimeoutStart > uTimeoutsMS)
+            {
+                 VGSvcVerbose(3, "Guest session ID=%RU32 process did not shut down within time\n", uSessionID);
+                 break;
+            }
         }
 
-        if (!fProcessAlive)
+        RTThreadSleep(100); /* Wait a bit. */
+    }
+
+    if (!fProcessAlive)
+    {
+        VGSvcVerbose(2, "Guest session process (ID=%RU32) terminated with rc=%Rrc, reason=%d, status=%d\n",
+                     uSessionID, rcWait, ProcessStatus.enmReason, ProcessStatus.iStatus);
+        if (ProcessStatus.iStatus == RTEXITCODE_INIT)
         {
-            VGSvcVerbose(2, "Guest session process (ID=%RU32) terminated with rc=%Rrc, reason=%d, status=%d\n",
-                         uSessionID, rcWait, ProcessStatus.enmReason, ProcessStatus.iStatus);
-            if (ProcessStatus.iStatus == RTEXITCODE_INIT)
-            {
-                VGSvcError("Guest session process (ID=%RU32) failed to initialize. Here some hints:\n", uSessionID);
-                VGSvcError("- Is logging enabled and the output directory is read-only by the guest session user?\n");
-                /** @todo Add more here. */
-            }
+            VGSvcError("Guest session process (ID=%RU32) failed to initialize. Here some hints:\n", uSessionID);
+            VGSvcError("- Is logging enabled and the output directory is read-only by the guest session user?\n");
+            /** @todo Add more here. */
         }
     }
 
@@ -1649,6 +1649,8 @@ int VGSvcGstCtrlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSessio
 static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSESSIONSTARTUPINFO pSessionStartupInfo,
                                                        PVBOXSERVICECTRLSESSIONTHREAD pSessionThread, uint32_t uCtrlSessionThread)
 {
+    RT_NOREF1(uCtrlSessionThread);
+
     /*
      * Is this an anonymous session?  Anonymous sessions run with the same
      * privileges as the main VBoxService executable.
@@ -1829,53 +1831,52 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
             }
         }
 #else
-        RTHANDLE hStdIn;
-        if (RT_SUCCESS(rc))
-            rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
         if (RT_SUCCESS(rc))
         {
-            hStdIn.enmType = RTHANDLETYPE_FILE;
-
-            RTHANDLE hStdOutAndErr;
-            rc = RTFileOpenBitBucket(&hStdOutAndErr.u.hFile, RTFILE_O_WRITE);
+            RTHANDLE hStdIn;
+            rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
             if (RT_SUCCESS(rc))
             {
-                hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
+                hStdIn.enmType = RTHANDLETYPE_FILE;
 
-                const char *pszUser;
-# ifdef RT_OS_WINDOWS
-                /* If a domain name is given, construct an UPN (User Principle Name) with
-                 * the domain name built-in, e.g. "joedoe@example.com". */
-                char *pszUserUPN = NULL;
-                if (strlen(pSessionThread->StartupInfo.szDomain))
+                RTHANDLE hStdOutAndErr;
+                rc = RTFileOpenBitBucket(&hStdOutAndErr.u.hFile, RTFILE_O_WRITE);
+                if (RT_SUCCESS(rc))
                 {
-                    int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s",
-                                                 pSessionThread->StartupInfo.szUser,
-                                                 pSessionThread->StartupInfo.szDomain);
-                    if (cbUserUPN > 0)
+                    hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
+
+                    const char *pszUser = pSessionThread->StartupInfo.szUser;
+# ifdef RT_OS_WINDOWS
+                    /* If a domain name is given, construct an UPN (User Principle Name) with
+                     * the domain name built-in, e.g. "joedoe@example.com". */
+                    char *pszUserUPN = NULL;
+                    if (strlen(pSessionThread->StartupInfo.szDomain))
                     {
-                        pszUser = pszUserUPN;
-                        VGSvcVerbose(3, "Using UPN: %s\n", pszUserUPN);
+                        int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s",
+                                                     pSessionThread->StartupInfo.szUser,
+                                                     pSessionThread->StartupInfo.szDomain);
+                        if (cbUserUPN > 0)
+                        {
+                            pszUser = pszUserUPN;
+                            VGSvcVerbose(3, "Using UPN: %s\n", pszUserUPN);
+                        }
                     }
+# endif
+
+                    rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
+                                        &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
+                                        !fAnonymous ? pszUser : NULL,
+                                        !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
+                                        &pSessionThread->hProcess);
+# ifdef RT_OS_WINDOWS
+                    if (pszUserUPN)
+                        RTStrFree(pszUserUPN);
+# endif
+                    RTFileClose(hStdOutAndErr.u.hFile);
                 }
 
-                if (!pszUserUPN) /* Fallback */
-# endif
-                    pszUser = pSessionThread->StartupInfo.szUser;
-
-                rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
-                                    &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
-                                    !fAnonymous ? pszUser : NULL,
-                                    !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
-                                    &pSessionThread->hProcess);
-# ifdef RT_OS_WINDOWS
-                if (pszUserUPN)
-                    RTStrFree(pszUserUPN);
-# endif
-                RTFileClose(hStdOutAndErr.u.hFile);
+                RTFileClose(hStdIn.u.hFile);
             }
-
-            RTFileClose(hStdIn.u.hFile);
         }
 #endif
     }
@@ -2012,6 +2013,7 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
  */
 int VGSvcGstCtrlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t uTimeoutMS, uint32_t fFlags)
 {
+    RT_NOREF1(fFlags);
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     /** @todo Validate closing flags. */
 
