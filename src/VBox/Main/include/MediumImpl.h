@@ -387,9 +387,6 @@ private:
     friend class ImportTask;
     friend class EncryptTask;
 
-    HRESULT i_startThread(Medium::Task *pTask);
-    HRESULT i_runNow(Medium::Task *pTask);
-
     HRESULT i_taskCreateBaseHandler(Medium::CreateBaseTask &task);
     HRESULT i_taskCreateDiffHandler(Medium::CreateDiffTask &task);
     HRESULT i_taskMergeHandler(Medium::MergeTask &task);
