@@ -240,6 +240,7 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
  */
 static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpMinus\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
@@ -278,6 +279,7 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
  */
 static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpPluss\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
@@ -305,6 +307,7 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
  */
 static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpBooleanNot\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
@@ -347,6 +350,7 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
  */
 static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpBitwiseNot\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
@@ -385,6 +389,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCA
  */
 static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpVar: %s\n", pArg->u.pszString));
     AssertReturn(pArg->enmType == DBGCVAR_TYPE_SYMBOL, VERR_DBGC_PARSE_BUG);
 
@@ -492,6 +497,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
  */
 DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpAddrFlat\n"));
     DBGCVARTYPE enmType = DBGCVAR_ISHCPOINTER(pArg->enmType) ? DBGCVAR_TYPE_HC_FLAT : DBGCVAR_TYPE_GC_FLAT;
     return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, enmType, true /*fConvSyms*/, pResult);
@@ -503,6 +509,7 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
  */
 DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpAddrPhys\n"));
     DBGCVARTYPE enmType = DBGCVAR_ISHCPOINTER(pArg->enmType) ? DBGCVAR_TYPE_HC_PHYS : DBGCVAR_TYPE_GC_PHYS;
     return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, enmType, true /*fConvSyms*/, pResult);
@@ -514,6 +521,7 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
  */
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpAddrPhys\n"));
     return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, DBGCVAR_TYPE_HC_PHYS, true /*fConvSyms*/, pResult);
 }
@@ -524,6 +532,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enm
  */
 DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult)
 {
+    RT_NOREF1(enmCat);
     LogFlow(("dbgcOpAddrHost\n"));
     return DBGCCmdHlpConvert(&pDbgc->CmdHlp, pArg, DBGCVAR_TYPE_HC_FLAT, true /*fConvSyms*/, pResult);
 }

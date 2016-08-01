@@ -35,7 +35,7 @@
 PCDBGCSYM dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol)
 {
     /** @todo externally registered symbols. */
-    NOREF(pDbgc);
+    RT_NOREF2(pDbgc, pszSymbol);
     return NULL;
 }
 

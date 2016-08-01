@@ -136,6 +136,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData);
 static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
                                                              char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
+    RT_NOREF1(fFlags);
     PDBGDIGGERDARWIN pData = RT_FROM_MEMBER(pThis, DBGDIGGERDARWIN, IDmesg);
 
     if (cMessages < 1)
@@ -306,6 +307,7 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
  */
 static DECLCALLBACK(void *) dbgDiggerDarwinQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
+    RT_NOREF1(pUVM);
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
     switch (enmIf)
     {
@@ -351,6 +353,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinQueryVersion(PUVM pUVM, void *pvData, c
  */
 static DECLCALLBACK(void)  dbgDiggerDarwinTerm(PUVM pUVM, void *pvData)
 {
+    RT_NOREF1(pUVM);
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
 
     pThis->fValid = false;
@@ -411,6 +414,7 @@ static bool dbgDiggerDarwinIsValidSegOrSectName(const char *pszName, size_t cbNa
 
 static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t uModAddr, const char *pszName, bool *pf64Bit)
 {
+    RT_NOREF1(pThis);
     union
     {
         uint8_t             ab[2 * X86_PAGE_4K_SIZE];
@@ -602,7 +606,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     if (hAs != NIL_RTDBGAS)
     {
-        uint64_t uRvaNext = 0;
+        //uint64_t uRvaNext = 0; - what was this?
         uint32_t cLinked  = 0;
         iSeg = cSegs;
         while (iSeg-- > 0) /* HACK: Map in reverse order to avoid replacing __TEXT. */
@@ -944,6 +948,7 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
  */
 static DECLCALLBACK(void)  dbgDiggerDarwinDestruct(PUVM pUVM, void *pvData)
 {
+    RT_NOREF2(pUVM, pvData);
 
 }
 
@@ -953,6 +958,7 @@ static DECLCALLBACK(void)  dbgDiggerDarwinDestruct(PUVM pUVM, void *pvData)
  */
 static DECLCALLBACK(int)  dbgDiggerDarwinConstruct(PUVM pUVM, void *pvData)
 {
+    RT_NOREF1(pUVM);
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
 
     pThis->IDmesg.u32Magic = DBGFOSIDMESG_MAGIC;

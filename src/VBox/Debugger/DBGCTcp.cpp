@@ -278,6 +278,8 @@ DBGDECL(int)    DBGCTcpCreate(PUVM pUVM, void **ppvData)
  */
 DBGDECL(int) DBGCTcpTerminate(PUVM pUVM, void *pvData)
 {
+    RT_NOREF1(pUVM);
+
     /*
      * Destroy the server instance if any.
      */

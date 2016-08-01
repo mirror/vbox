@@ -659,7 +659,7 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
      * Pick out the optional arguments.
      */
     uint64_t iHitTrigger = 0;
-    uint64_t iHitDisable = ~0;
+    uint64_t iHitDisable = UINT64_MAX;
     const char *pszCmds = NULL;
     unsigned iArg = 3;
     if (iArg < cArgs && paArgs[iArg].enmType == DBGCVAR_TYPE_NUMBER)
@@ -1000,7 +1000,7 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
      * Pick out the optional arguments.
      */
     uint64_t iHitTrigger = 0;
-    uint64_t iHitDisable = ~0;
+    uint64_t iHitDisable = UINT64_MAX;
     const char *pszCmds = NULL;
     unsigned iArg = 1;
     if (iArg < cArgs && paArgs[iArg].enmType == DBGCVAR_TYPE_NUMBER)
@@ -1060,7 +1060,7 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
      * Pick out the optional arguments.
      */
     uint64_t iHitTrigger = 0;
-    uint64_t iHitDisable = ~0;
+    uint64_t iHitDisable = UINT64_MAX;
     const char *pszCmds = NULL;
     unsigned iArg = 1;
     if (iArg < cArgs && paArgs[iArg].enmType == DBGCVAR_TYPE_NUMBER)
@@ -2819,7 +2819,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      * hierarchy to find the intended PDE.
      */
     unsigned    iEntry = ~0U;           /* The page directory index. ~0U for 'dpta'. */
-    DBGCVAR     VarGCPtr;               /* The GC address corresponding to the current PDE (iEntry != ~0U). */
+    DBGCVAR     VarGCPtr = { NULL, };   /* The GC address corresponding to the current PDE (iEntry != ~0U). */
     DBGCVAR     VarPDEAddr;             /* The address of the current PDE. */
     unsigned    cEntries;               /* The number of entries to display. */
     unsigned    cEntriesMax;            /* The max number of entries to display. */
@@ -3726,9 +3726,6 @@ static DECLCALLBACK(int) dbgcCmdDumpTypeInfoCallback(uint32_t off, const char *p
  */
 static DECLCALLBACK(int) dbgcCmdDumpTypeInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    int   rc;
-
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType == DBGCVAR_TYPE_STRING);
@@ -3848,9 +3845,6 @@ static DECLCALLBACK(int) dbgcCmdDumpTypedValCallback(uint32_t off, const char *p
  */
 static DECLCALLBACK(int) dbgcCmdDumpTypedVal(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    int   rc;
-
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 2 || cArgs == 3);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType == DBGCVAR_TYPE_STRING);
@@ -3862,7 +3856,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTypedVal(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
      * Make DBGF address and fix the range.
      */
     DBGFADDRESS Address;
-    rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[1], &Address);
+    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[1], &Address);
     if (RT_FAILURE(rc))
         return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "VarToDbgfAddr(,%Dv,)\n", &paArgs[1]);
 
@@ -4024,15 +4018,12 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
  */
 static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    unsigned iArg;
-
     /*
      * Validate input.
      */
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs >= 2);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
-    for (iArg = 1; iArg < cArgs; iArg++)
+    for (unsigned iArg = 1; iArg < cArgs; iArg++)
         DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[iArg].enmType == DBGCVAR_TYPE_NUMBER);
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
@@ -4053,7 +4044,7 @@ static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
      * Do setting.
      */
     DBGCVAR Addr = paArgs[0];
-    for (iArg = 1;;)
+    for (unsigned iArg = 1;;)
     {
         size_t cbWritten;
         int rc = pCmdHlp->pfnMemWrite(pCmdHlp, &paArgs[iArg].u, cbElement, &Addr, &cbWritten);
@@ -4287,6 +4278,8 @@ static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pAdd
  */
 static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF2(pCmd, paArgs);
+
     /* check that the parser did what it's supposed to do. */
     //if (    cArgs <= 2
     //    &&  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
@@ -4692,6 +4685,7 @@ static DECLCALLBACK(int) dbgcCmdEventCtrl(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
  */
 static DECLCALLBACK(int) dbgcCmdEventCtrlReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF1(pCmd);
     uint32_t            cEventCfgs = 0;
     DBGFEVENTCONFIG     aEventCfgs[DBGFEVENT_END];
     uint32_t            cIntCfgs   = 0;
@@ -4807,6 +4801,7 @@ void dbgcEventTerm(PDBGC pDbgc)
 
 static void dbgcEventDisplay(PDBGCCMDHLP pCmdHlp, const char *pszName, DBGCEVTSTATE enmDefault, PDBGCEVTCFG const *ppEvtCfg)
 {
+    RT_NOREF1(enmDefault);
     PDBGCEVTCFG pEvtCfg = *ppEvtCfg;
 
     const char *pszState;
@@ -4876,6 +4871,7 @@ static void dbgcEventDisplayRange(PDBGCCMDHLP pCmdHlp, const char *pszBaseNm, DB
  */
 static DECLCALLBACK(int) dbgcCmdEventCtrlList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF2(pCmd, pUVM);
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     if (cArgs == 0)
@@ -5192,6 +5188,7 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                         PDBGCVAR pResult)
 {
+    RT_NOREF1(pUVM);
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
     AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
@@ -5213,6 +5210,7 @@ static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, P
 static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
+    RT_NOREF1(pUVM);
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
     AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
@@ -5234,6 +5232,7 @@ static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
+    RT_NOREF1(pUVM);
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
     AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
@@ -5255,6 +5254,7 @@ static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
+    RT_NOREF1(pUVM);
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
     AssertReturn(DBGCVAR_ISPOINTER(paArgs[0].enmType), VERR_DBGC_PARSE_BUG);
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);

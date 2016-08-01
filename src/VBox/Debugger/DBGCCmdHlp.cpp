@@ -790,6 +790,7 @@ static DECLCALLBACK(int) dbgcHlpVarToDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVa
  */
 static DECLCALLBACK(int) dbgcHlpVarFromDbgfAddr(PDBGCCMDHLP pCmdHlp, PCDBGFADDRESS pAddress, PDBGCVAR pResult)
 {
+    RT_NOREF1(pCmdHlp);
     AssertPtrReturn(pAddress, VERR_INVALID_POINTER);
     AssertReturn(DBGFADDRESS_IS_VALID(pAddress), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pResult,  VERR_INVALID_POINTER);
@@ -912,6 +913,7 @@ static DECLCALLBACK(int) dbgcHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, b
 static DECLCALLBACK(int) dbgcHlpVarGetRange(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t cbElement, uint64_t cbDefault,
                                             uint64_t *pcbRange)
 {
+    RT_NOREF1(pCmdHlp);
 /** @todo implement this properly, strings/symbols are not resolved now. */
     switch (pVar->enmRangeType)
     {

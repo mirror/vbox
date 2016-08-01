@@ -590,6 +590,7 @@ static void dbgcPrintHelpFunction(PDBGCCMDHLP pCmdHlp, PCDBGCFUNC pFunc, bool fE
 static void dbgcCmdHelpCommandsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCCMD paCmds, uint32_t cCmds, bool fExternal,
                                       const char *pszDescFmt, ...)
 {
+    RT_NOREF1(pDbgc);
     if (pszDescFmt)
     {
         va_list va;
@@ -628,6 +629,7 @@ static void dbgcCmdHelpCommands(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcHi
 static void dbgcCmdHelpFunctionsWorker(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, PCDBGCFUNC paFuncs, size_t cFuncs, bool fExternal,
                                        const char *pszDescFmt, ...)
 {
+    RT_NOREF1(pDbgc);
     if (pszDescFmt)
     {
         va_list va;
@@ -667,6 +669,7 @@ static void dbgcCmdHelpFunctions(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcH
 
 static void dbgcCmdHelpOperators(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcHits)
 {
+    RT_NOREF1(pDbgc);
     DBGCCmdHlpPrintf(pCmdHlp, !*pcHits ? "Operators:\n" : "\nOperators:\n");
     *pcHits += 1;
 
@@ -705,6 +708,7 @@ static void dbgcCmdHelpAll(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcHits)
 
 static void dbgcCmdHelpSummary(PDBGC pDbgc, PDBGCCMDHLP pCmdHlp, uint32_t *pcHits)
 {
+    RT_NOREF1(pDbgc);
     *pcHits += 1;
     DBGCCmdHlpPrintf(pCmdHlp,
                      "\n"
@@ -902,6 +906,8 @@ static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
  */
 static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF2(pUVM, pCmd);
+
     /* check that the parser did what it's supposed to do. */
     if (    cArgs != 1
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
@@ -1151,6 +1157,8 @@ static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
  */
 static DECLCALLBACK(int) dbgcCmdLogFlush(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF3(pCmdHlp, pUVM, paArgs);
+
     RTLogFlush(NULL);
     PRTLOGGER pLogRel = RTLogRelGetDefaultInstance();
     if (pLogRel)
@@ -1684,6 +1692,7 @@ static DECLCALLBACK(int) dbgcCmdShowVars(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
  */
 static DECLCALLBACK(int) dbgcCmdLoadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF1(pUVM);
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
@@ -1716,6 +1725,7 @@ static DECLCALLBACK(int) dbgcCmdLoadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  */
 static DECLCALLBACK(int) dbgcCmdUnloadPlugIn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    RT_NOREF1(pUVM);
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
