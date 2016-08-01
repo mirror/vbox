@@ -901,8 +901,10 @@ void testClose(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
+
 int vbsfClose(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
+    RT_NOREF1(root);
     int rc = VINF_SUCCESS;
 
     LogFlow(("vbsfClose: pClient = %p, Handle = %RX64\n",
@@ -1045,8 +1047,10 @@ void testFlush(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
+
 int vbsfFlush(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
+    RT_NOREF1(root);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int rc = VINF_SUCCESS;
 
@@ -1337,8 +1341,10 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
     return rc;
 }
 
-int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags,
+                      uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
+    RT_NOREF2(root, flags);
     uint32_t type = vbsfQueryHandleType(pClient, Handle);
     int            rc = VINF_SUCCESS;
     SHFLFSOBJINFO   *pObjInfo = (SHFLFSOBJINFO *)pBuffer;
@@ -1384,8 +1390,10 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
     return rc;
 }
 
-static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags,
+                           uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
+    RT_NOREF2(root, flags);
     uint32_t type = vbsfQueryHandleType(pClient, Handle);
     int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
@@ -1479,8 +1487,10 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
 }
 
 
-static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
+static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags,
+                            uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
+    RT_NOREF2(root, flags);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
@@ -1526,6 +1536,7 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
 
 int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
+    RT_NOREF2(root, flags);
     int            rc = VINF_SUCCESS;
     SHFLVOLINFO   *pSFDEntry;
     char          *pszFullPath = NULL;
@@ -1651,8 +1662,10 @@ void testLock(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
+
 int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
+    RT_NOREF1(root);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     uint32_t        fRTLock = 0;
     int             rc;
@@ -1707,6 +1720,7 @@ int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
 
 int vbsfUnlock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
+    RT_NOREF1(root);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int             rc;
 
@@ -1880,7 +1894,6 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
 
     char *pszFullNewPath = NULL;
     char *pszFullOldPath = NULL;
-    const char *pszOldPath = (const char *)pOldPath->String.utf8;
 
     /* XXX: no support for UCS2 at the moment. */
     if (!BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
