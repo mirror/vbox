@@ -163,6 +163,7 @@ VBGLR3DECL(int) VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, uint64_t *puPa
     }
     return rc;
 #else
+    RT_NOREF3(pPage, pfShared, puPageFlags);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

@@ -59,7 +59,7 @@ VBGLR3DECL(int) VbglR3GuestUserReportState(const char *pszUser, const char *pszD
 
     uint32_t cbBase   = sizeof(VMMDevReportGuestUserState);
     uint32_t cbUser   = (uint32_t)strlen(pszUser) + 1; /* Include terminating zero */
-    uint32_t cbDomain = pszDomain ? strlen(pszDomain) + 1 /* Ditto */ : 0;
+    uint32_t cbDomain = pszDomain ? (uint32_t)strlen(pszDomain) + 1 /* Ditto */ : 0;
 
     /* Allocate enough space for all fields. */
     uint32_t cbSize = cbBase

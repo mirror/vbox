@@ -84,6 +84,7 @@ int vbglLockLinear(void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess,
     {
         __try {
             /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
+            RT_NOREF1(fFlags);  /** @todo fFlags on windows */
             MmProbeAndLockPages(pMdl,
                                 /** @todo (fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER? UserMode: KernelMode */
                                 KernelMode,
@@ -231,6 +232,7 @@ int vbglDriverOpen(VBGLDRIVER *pDriver)
 # ifdef RT_OS_WINDOWS
 static NTSTATUS vbglDriverIOCtlCompletion(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp, IN PVOID Context)
 {
+    RT_NOREF2(DeviceObject, Irp);
     Log(("VBGL completion %x\n", Irp));
 
     KEVENT *pEvent = (KEVENT *)Context;
