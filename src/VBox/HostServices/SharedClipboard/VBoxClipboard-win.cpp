@@ -1147,7 +1147,7 @@ static int ConvertCFHtmlToMime(const char *pszSource, const uint32_t cch, char *
 
 
 
-/*
+/**
  * Converts source UTF-8 MIME HTML clipboard data to UTF-8 CF_HTML format.
  *
  * This is just encapsulation work, slapping a header on the data.
