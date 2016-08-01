@@ -409,6 +409,8 @@ private:
     RTREQQUEUE mhReqQNotifyHost;
     static DECLCALLBACK(int) threadNotifyHost(RTTHREAD self, void *pvUser);
 #endif
+
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Service);
 };
 
 
@@ -471,7 +473,7 @@ int Service::validateName(const char *pszName, uint32_t cbName)
  */
 int Service::validateValue(const char *pszValue, uint32_t cbValue)
 {
-    LogFlowFunc(("cbValue=%d\n", cbValue));
+    LogFlowFunc(("cbValue=%d\n", cbValue)); RT_NOREF1(pszValue);
 
     int rc = VINF_SUCCESS;
     if (RT_SUCCESS(rc) && cbValue == 0)
@@ -511,56 +513,57 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         )
         rc = VERR_INVALID_PARAMETER;
     /** @todo validate the array sizes... */
-
-    for (unsigned i = 0; RT_SUCCESS(rc) && papszNames[i] != NULL; ++i)
+    else
     {
-        if (   !RT_VALID_PTR(papszNames[i])
-            || !RT_VALID_PTR(papszValues[i])
-            || !RT_VALID_PTR(papszFlags[i])
-            )
-            rc = VERR_INVALID_POINTER;
-        else
+        for (unsigned i = 0; RT_SUCCESS(rc) && papszNames[i] != NULL; ++i)
         {
-            uint32_t fFlagsIgn;
-            rc = validateFlags(papszFlags[i], &fFlagsIgn);
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Add the properties.  No way to roll back here.
-         */
-        for (unsigned i = 0; papszNames[i] != NULL; ++i)
-        {
-            uint32_t fFlags;
-            rc = validateFlags(papszFlags[i], &fFlags);
-            AssertRCBreak(rc);
-
-            Property *pProp = getPropertyInternal(papszNames[i]);
-            if (pProp)
-            {
-                /* Update existing property. */
-                pProp->mValue     = papszValues[i];
-                pProp->mTimestamp = pau64Timestamps[i];
-                pProp->mFlags     = fFlags;
-            }
+            if (   !RT_VALID_PTR(papszNames[i])
+                || !RT_VALID_PTR(papszValues[i])
+                || !RT_VALID_PTR(papszFlags[i])
+                )
+                rc = VERR_INVALID_POINTER;
             else
             {
-                /* Create a new property */
-                pProp = new Property(papszNames[i], papszValues[i], pau64Timestamps[i], fFlags);
-                if (!pProp)
+                uint32_t fFlagsIgn;
+                rc = validateFlags(papszFlags[i], &fFlagsIgn);
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Add the properties.  No way to roll back here.
+             */
+            for (unsigned i = 0; papszNames[i] != NULL; ++i)
+            {
+                uint32_t fFlags;
+                rc = validateFlags(papszFlags[i], &fFlags);
+                AssertRCBreak(rc);
+
+                Property *pProp = getPropertyInternal(papszNames[i]);
+                if (pProp)
                 {
-                    rc = VERR_NO_MEMORY;
-                    break;
+                    /* Update existing property. */
+                    pProp->mValue     = papszValues[i];
+                    pProp->mTimestamp = pau64Timestamps[i];
+                    pProp->mFlags     = fFlags;
                 }
-                if (RTStrSpaceInsert(&mhProperties, &pProp->mStrCore))
-                    mcProperties++;
                 else
                 {
-                    delete pProp;
-                    rc = VERR_INTERNAL_ERROR_3;
-                    AssertFailedBreak();
+                    /* Create a new property */
+                    pProp = new Property(papszNames[i], papszValues[i], pau64Timestamps[i], fFlags);
+                    if (!pProp)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    if (RTStrSpaceInsert(&mhProperties, &pProp->mStrCore))
+                        mcProperties++;
+                    else
+                    {
+                        delete pProp;
+                        rc = VERR_INTERNAL_ERROR_3;
+                        AssertFailedBreak();
+                    }
                 }
             }
         }
@@ -585,8 +588,9 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int         rc;
     const char *pcszName = NULL;        /* shut up gcc */
-    char       *pchBuf;
-    uint32_t    cbName, cbBuf;
+    char       *pchBuf = NULL;          /* shut up MSC */
+    uint32_t    cbName;
+    uint32_t    cbBuf = 0;              /* shut up MSC */
 
     /*
      * Get and validate the parameters
@@ -1021,17 +1025,18 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
             buffer += szFlags;
             buffer += '\0';
             u64Timestamp = prop.mTimestamp;
+
+            /* Write out the data. */
+            if (RT_SUCCESS(rc))
+            {
+                paParms[1].setUInt64(u64Timestamp);
+                paParms[3].setUInt32((uint32_t)buffer.size());
+                if (buffer.size() <= cbBuf)
+                    buffer.copy(pchBuf, cbBuf);
+                else
+                    rc = VERR_BUFFER_OVERFLOW;
+            }
         }
-    }
-    /* Write out the data. */
-    if (RT_SUCCESS(rc))
-    {
-        paParms[1].setUInt64(u64Timestamp);
-        paParms[3].setUInt32((uint32_t)buffer.size());
-        if (buffer.size() <= cbBuf)
-            buffer.copy(pchBuf, cbBuf);
-        else
-            rc = VERR_BUFFER_OVERFLOW;
     }
     return rc;
 }
@@ -1060,63 +1065,64 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
      * Get the HGCM function arguments and perform basic verification.
      */
     LogFlowThisFunc(("\n"));
-    if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
+    if (   cParms != 4  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(paParms[0].getString(&pszPatterns, &cchPatterns))  /* patterns */
         || RT_FAILURE(paParms[1].getUInt64(&u64Timestamp))  /* timestamp */
         || RT_FAILURE(paParms[2].getBuffer((void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
-
-    if (RT_SUCCESS(rc))
+    else
+    {
         LogFlow(("pszPatterns=%s, u64Timestamp=%llu\n", pszPatterns, u64Timestamp));
 
-    /*
-     * If no timestamp was supplied or no notification was found in the queue
-     * of old notifications, enqueue the request in the waiting queue.
-     */
-    Property prop;
-    if (RT_SUCCESS(rc) && u64Timestamp != 0)
-        rc = getOldNotification(pszPatterns, u64Timestamp, &prop);
-    if (RT_SUCCESS(rc))
-    {
-        if (prop.isNull())
-        {
-            /*
-             * Check if the client already had the same request.
-             * Complete the old request with an error in this case.
-             * Protection against clients, which cancel and resubmits requests.
-             */
-            CallList::iterator it = mGuestWaiters.begin();
-            while (it != mGuestWaiters.end())
-            {
-                const char *pszPatternsExisting;
-                uint32_t cchPatternsExisting;
-                int rc3 = it->mParms[0].getString(&pszPatternsExisting, &cchPatternsExisting);
-
-                if (   RT_SUCCESS(rc3)
-                    && u32ClientId == it->u32ClientId
-                    && RTStrCmp(pszPatterns, pszPatternsExisting) == 0)
-                {
-                    /* Complete the old request. */
-                    mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
-                    it = mGuestWaiters.erase(it);
-                }
-                else
-                    ++it;
-            }
-
-            mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GET_NOTIFICATION,
-                                              cParms, paParms, rc));
-            rc = VINF_HGCM_ASYNC_EXECUTE;
-        }
         /*
-         * Otherwise reply at once with the enqueued notification we found.
+         * If no timestamp was supplied or no notification was found in the queue
+         * of old notifications, enqueue the request in the waiting queue.
          */
-        else
+        Property prop;
+        if (RT_SUCCESS(rc) && u64Timestamp != 0)
+            rc = getOldNotification(pszPatterns, u64Timestamp, &prop);
+        if (RT_SUCCESS(rc))
         {
-            int rc2 = getNotificationWriteOut(cParms, paParms, prop);
-            if (RT_FAILURE(rc2))
-                rc = rc2;
+            if (prop.isNull())
+            {
+                /*
+                 * Check if the client already had the same request.
+                 * Complete the old request with an error in this case.
+                 * Protection against clients, which cancel and resubmits requests.
+                 */
+                CallList::iterator it = mGuestWaiters.begin();
+                while (it != mGuestWaiters.end())
+                {
+                    const char *pszPatternsExisting;
+                    uint32_t cchPatternsExisting;
+                    int rc3 = it->mParms[0].getString(&pszPatternsExisting, &cchPatternsExisting);
+
+                    if (   RT_SUCCESS(rc3)
+                        && u32ClientId == it->u32ClientId
+                        && RTStrCmp(pszPatterns, pszPatternsExisting) == 0)
+                    {
+                        /* Complete the old request. */
+                        mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
+                        it = mGuestWaiters.erase(it);
+                    }
+                    else
+                        ++it;
+                }
+
+                mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GET_NOTIFICATION,
+                                                  cParms, paParms, rc));
+                rc = VINF_HGCM_ASYNC_EXECUTE;
+            }
+            /*
+             * Otherwise reply at once with the enqueued notification we found.
+             */
+            else
+            {
+                int rc2 = getNotificationWriteOut(cParms, paParms, prop);
+                if (RT_FAILURE(rc2))
+                    rc = rc2;
+            }
         }
     }
 
@@ -1424,6 +1430,7 @@ void Service::dbgInfoShow(PCDBGFINFOHLP pHlp)
  */
 void Service::dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF1(pszArgs);
     SELF *pSelf = reinterpret_cast<SELF *>(pvUser);
     pSelf->dbgInfoShow(pHlp);
 }
@@ -1518,8 +1525,9 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
 
 #ifdef ASYNC_HOST_NOTIFY
 /* static */
-DECLCALLBACK(int) Service::threadNotifyHost(RTTHREAD self, void *pvUser)
+DECLCALLBACK(int) Service::threadNotifyHost(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF1(hThreadSelf);
     Service *pThis = (Service *)pvUser;
     int rc = VINF_SUCCESS;
 
