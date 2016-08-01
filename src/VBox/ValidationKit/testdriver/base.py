@@ -849,12 +849,19 @@ class TestDriverBase(object): # pylint: disable=R0902
         else:
             reporter.log('TESTBOX_TIMEOUT_ABS not found in the environment');
 
-
         # Distance from secTimeoutAbs that timeouts should be adjusted to.
         self.secTimeoutFudge = 30;
 
         # List of sub-test drivers (SubTestDriverBase derivatives).
         self.aoSubTstDrvs    = [];
+
+        # Use the scratch path for temporary files.
+        if self.sHost in ['win', 'os2']:
+            os.environ['TMP']     = self.sScratchPath;
+            os.environ['TEMP']    = self.sScratchPath;
+        os.environ['TMPDIR']      = self.sScratchPath;
+        os.environ['IPRT_TMPDIR'] = self.sScratchPath; # IPRT/VBox specific.
+
 
     def dump(self):
         """
