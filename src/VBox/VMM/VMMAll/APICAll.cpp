@@ -726,7 +726,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
      * interrupt is being sent by an APIC.
      *
      * The 'receive illegal vector' will be set on the target APIC when the interrupt
-     * gets generated, see APICPostInterrupt().
+     * gets generated, see apicPostInterrupt().
      *
      * See Intel spec. 10.5.3 "Error Handling".
      */
@@ -1528,7 +1528,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
      * the LVT entry when the delivery mode is 'fixed'[1] or update it in addition to signaling the
      * error or not signal the error at all. For now, we'll allow setting illegal vectors into the LVT
      * but set the 'send illegal vector' error here. The 'receive illegal vector' error will be set if
-     * the interrupt for the vector happens to be generated, see APICPostInterrupt().
+     * the interrupt for the vector happens to be generated, see apicPostInterrupt().
      *
      * [1] See Intel spec. 10.5.2 "Valid Interrupt Vectors".
      */
