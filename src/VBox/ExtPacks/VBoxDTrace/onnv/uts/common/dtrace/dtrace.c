@@ -593,7 +593,9 @@ static intptr_t dtrace_buffer_reserve(dtrace_buffer_t *, size_t, size_t,
 static int dtrace_state_option(dtrace_state_t *, dtrace_optid_t,
     dtrace_optval_t);
 static int dtrace_ecb_create_enable(dtrace_probe_t *, void *);
+#ifndef VBOX
 static void dtrace_helper_provider_destroy(dtrace_helper_provider_t *);
+#endif
 
 /*
  * DTrace Probe Context Functions
@@ -1233,6 +1235,7 @@ dtrace_priv_proc_common_nocd(VBDTVOID)
 #endif
 }
 
+#ifndef VBOX
 static int
 dtrace_priv_proc_destructive(dtrace_state_t *state)
 {
@@ -1257,6 +1260,7 @@ bad:
 
 	return (0);
 }
+#endif /* !VBOX */
 
 static int
 dtrace_priv_proc_control(dtrace_state_t *state)
@@ -5716,6 +5720,7 @@ dtrace_action_chill(dtrace_mstate_t *mstate, hrtime_t val)
 
 #endif /* !VBOX */
 
+#ifndef VBOX
 static void
 dtrace_action_ustack(dtrace_mstate_t *mstate, dtrace_state_t *state,
     uint64_t *buf, uint64_t arg)
@@ -5836,6 +5841,7 @@ dtrace_action_ustack(dtrace_mstate_t *mstate, dtrace_state_t *state,
 out:
 	mstate->dtms_scratch_ptr = old;
 }
+#endif /* !VBOX */
 
 #ifdef VBOX
 extern void dtrace_probe6(dtrace_id_t, uintptr_t arg0, uintptr_t arg1,
@@ -7841,6 +7847,7 @@ dtrace_probe_provide(dtrace_probedesc_t *desc, dtrace_provider_t *prv)
 	} while (all && (prv = prv->dtpv_next) != NULL);
 }
 
+#ifndef VBOX
 /*
  * Iterate over each probe, and call the Framework-to-Provider API function
  * denoted by offs.
@@ -7881,6 +7888,7 @@ dtrace_probe_foreach(uintptr_t offs)
 
 	dtrace_interrupt_enable(cookie);
 }
+#endif /* !VBOX */
 
 static int
 dtrace_probe_enable(const dtrace_probedesc_t *desc, dtrace_enabling_t *enab)
@@ -8052,6 +8060,8 @@ dtrace_helper_provide(dof_helper_t *dhp, pid_t pid)
 	dtrace_enabling_matchall();
 }
 
+#ifndef VBOX
+
 static void
 dtrace_helper_provider_remove_one(dof_helper_t *dhp, dof_sec_t *sec, pid_t pid)
 {
@@ -8099,6 +8109,8 @@ dtrace_helper_provider_remove(dof_helper_t *dhp, pid_t pid)
 		dtrace_helper_provider_remove_one(dhp, sec, pid);
 	}
 }
+
+#endif /* !VBOX */
 
 /*
  * DTrace Meta Provider-to-Framework API Functions
@@ -8646,6 +8658,7 @@ dtrace_difo_validate(dtrace_difo_t *dp, dtrace_vstate_t *vstate, uint_t nregs,
 	return (err);
 }
 
+#ifndef VBOX
 /*
  * Validate a DTrace DIF object that it is to be used as a helper.  Helpers
  * are much more constrained than normal DIFOs.  Specifically, they may
@@ -8800,6 +8813,7 @@ dtrace_difo_validate_helper(dtrace_difo_t *dp)
 
 	return (err);
 }
+#endif /* !VBOX */
 
 /*
  * Returns 1 if the expression in the DIF object can be cached on a per-thread
@@ -9143,6 +9157,7 @@ dtrace_difo_init(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 	dtrace_difo_hold(dp);
 }
 
+#ifndef VBOX
 static dtrace_difo_t *
 dtrace_difo_duplicate(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 {
@@ -9186,6 +9201,7 @@ dtrace_difo_duplicate(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 	dtrace_difo_init(new, vstate);
 	return (new);
 }
+#endif
 
 static void
 dtrace_difo_destroy(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
@@ -11022,6 +11038,7 @@ dtrace_enabling_addlike(dtrace_enabling_t *enab, dtrace_ecbdesc_t *ecb,
 	dtrace_enabling_add(enab, new);
 }
 
+#ifndef VBOX
 static void
 dtrace_enabling_dump(dtrace_enabling_t *enab)
 {
@@ -11035,6 +11052,7 @@ dtrace_enabling_dump(dtrace_enabling_t *enab)
 		    desc->dtpd_func, desc->dtpd_name);
 	}
 }
+#endif /* !VBOX */
 
 static void
 dtrace_enabling_destroy(dtrace_enabling_t *enab)
@@ -11530,6 +11548,7 @@ dtrace_dof_copyin(uintptr_t uarg, int *errp)
 	return (dof);
 }
 
+#ifndef VBOX
 static dof_hdr_t *
 dtrace_dof_property(const char *name)
 {
@@ -11579,6 +11598,7 @@ dtrace_dof_property(const char *name)
 	return (NULL);
 #endif /* VBOX */
 }
+#endif /* !VBOX */
 
 static void
 dtrace_dof_destroy(dof_hdr_t *dof)
@@ -14738,8 +14758,6 @@ dtrace_module_unloaded(struct modctl *ctl)
 	mutex_exit(&dtrace_provider_lock);
 }
 
-#endif /* !VBOX */
-
 VBDTSTATIC void
 dtrace_suspend(void)
 {
@@ -14752,6 +14770,8 @@ dtrace_resume(void)
 	dtrace_probe_foreach(offsetof(dtrace_pops_t, dtps_resume));
 }
 
+#endif /* !VBOX */
+
 #ifdef VBOX
 typedef enum {
     CPU_INVALID,
@@ -14760,6 +14780,7 @@ typedef enum {
 } cpu_setup_t;
 #endif
 
+#ifndef VBOX
 
 static int
 dtrace_cpu_setup(cpu_setup_t what, processorid_t cpu)
@@ -14820,12 +14841,12 @@ dtrace_cpu_setup(cpu_setup_t what, processorid_t cpu)
 	return (0);
 }
 
-#ifndef VBOX
 static void
 dtrace_cpu_setup_initial(processorid_t cpu)
 {
 	(void) dtrace_cpu_setup(CPU_CONFIG, cpu);
 }
+
 #endif /* !VBOX */
 
 static void
