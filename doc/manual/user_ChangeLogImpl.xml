@@ -26,6 +26,11 @@
       </listitem>
 
       <listitem>
+        <para>Windows hosts: fixed corrupted mouse pointers with some Linux
+          and Solaris guests (bug #15665)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux Additions: made the video driver work on 32-bit guests
            with large video memory sizes (bug #15621)</para>
       </listitem>
