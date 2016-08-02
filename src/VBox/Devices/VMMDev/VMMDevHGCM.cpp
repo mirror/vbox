@@ -2672,7 +2672,7 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 }
 
 /** @thread EMT */
-int vmmdevHGCMLoadStateDone(PVMMDEV pThis, PSSMHANDLE pSSM)
+int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
 {
     LogFlowFunc(("\n"));
 

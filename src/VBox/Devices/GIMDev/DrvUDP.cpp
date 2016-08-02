@@ -170,6 +170,7 @@ static DECLCALLBACK(void) drvUDPDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvUDPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF1(fFlags);
     PDRVUDP pThis = PDMINS_2_DATA(pDrvIns, PDRVUDP);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
@@ -202,15 +203,11 @@ static DECLCALLBACK(int) drvUDPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      */
     rc = RTUdpCreateClientSocket(pThis->pszServerAddress, pThis->uServerPort, NULL, &pThis->hSocket);
     if (RT_SUCCESS(rc))
-    {
-        LogRel(("DrvUDP#%u: Connected socket to %s:%u\n", pThis->pDrvIns->iInstance, pThis->pszServerAddress,
-                pThis->uServerPort));
-    }
+        LogRel(("DrvUDP#%u: Connected socket to %s:%u\n",
+                pThis->pDrvIns->iInstance, pThis->pszServerAddress, pThis->uServerPort));
     else
-    {
-        LogRel(("DrvUDP#%u: Failed to create/connect socket to %s:%u rc=%Rrc\n", pThis->pDrvIns->iInstance,
-                pThis->pszServerAddress, pThis->uServerPort, rc));
-    }
+        LogRel(("DrvUDP#%u: Failed to create/connect socket to %s:%u rc=%Rrc\n",
+                pThis->pDrvIns->iInstance, pThis->pszServerAddress, pThis->uServerPort, rc));
     return VINF_SUCCESS;
 }
 

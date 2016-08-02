@@ -31,7 +31,7 @@ DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOX
 
 int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
 int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32Version);
-int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
+int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState);
 
 void vmmdevHGCMDestroy(PVMMDEV pThis);
 RT_C_DECLS_END
