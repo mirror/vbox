@@ -45,12 +45,17 @@ typedef struct DRVTSTMOUSE
     bool                        fAbs;
     /** Is multi-touch mode currently supported? */
     bool                        fMT;
-} DRVTSTMOUSE, *PDRVTSTMOUSE;
+} DRVTSTMOUSE;
+typedef DRVTSTMOUSE *PDRVTSTMOUSE;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static PDMUSBHLP   g_tstUsbHlp;
 /** Global mouse driver variable.
  * @todo To be improved some time. */
-static DRVTSTMOUSE s_drvTstMouse;
+static DRVTSTMOUSE g_drvTstMouse;
 
 
 /** @interface_method_impl{PDMUSBHLPR3,pfnVMSetErrorV} */
@@ -67,22 +72,15 @@ static DECLCALLBACK(int) tstVMSetErrorV(PPDMUSBINS pUsbIns, int rc,
 /** @interface_method_impl{PDMUSBHLPR3,pfnDriverAttach} */
 /** @todo We currently just take the driver interface from the global
  * variable.  This is sufficient for a unit test but still a bit sad. */
-static DECLCALLBACK(int) tstDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun,
-                                         PPDMIBASE pBaseInterface,
-                                         PPDMIBASE *ppBaseInterface,
-                                         const char *pszDesc)
+static DECLCALLBACK(int) tstDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE pBaseInterface,
+                                         PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
-    NOREF(iLun);
-    NOREF(pszDesc);
-    s_drvTstMouse.pDrvBase = pBaseInterface;
-    s_drvTstMouse.pDrv = PDMIBASE_QUERY_INTERFACE(pBaseInterface,
-                                                  PDMIMOUSEPORT);
-    *ppBaseInterface = &s_drvTstMouse.IBase;
+    RT_NOREF3(pUsbIns, iLun, pszDesc);
+    g_drvTstMouse.pDrvBase = pBaseInterface;
+    g_drvTstMouse.pDrv = PDMIBASE_QUERY_INTERFACE(pBaseInterface, PDMIMOUSEPORT);
+    *ppBaseInterface = &g_drvTstMouse.IBase;
     return VINF_SUCCESS;
 }
-
-
-static PDMUSBHLP s_tstUsbHlp;
 
 
 /**
@@ -91,9 +89,9 @@ static PDMUSBHLP s_tstUsbHlp;
 static DECLCALLBACK(void *) tstMouseQueryInterface(PPDMIBASE pInterface,
                                                    const char *pszIID)
 {
-    PDRVTSTMOUSE pThis = RT_FROM_MEMBER(pInterface, DRVTSTMOUSE, IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSECONNECTOR, &pThis->IConnector);
+    PDRVTSTMOUSE pUsbIns = RT_FROM_MEMBER(pInterface, DRVTSTMOUSE, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pUsbIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSECONNECTOR, &pUsbIns->IConnector);
     return NULL;
 }
 
@@ -112,13 +110,14 @@ static DECLCALLBACK(void) tstMouseReportModes(PPDMIMOUSECONNECTOR pInterface,
 
 
 static int tstMouseConstruct(int iInstance, const char *pcszMode,
-                             uint8_t u8CoordShift, PPDMUSBINS *ppThis)
+                             uint8_t u8CoordShift, PPDMUSBINS *ppThis,
+                             uint32_t uInstanceVersion = PDM_USBINS_VERSION)
 {
     int rc = VERR_NO_MEMORY;
-    PPDMUSBINS pThis = (PPDMUSBINS)RTMemAllocZ(  sizeof(*pThis)
+    PPDMUSBINS pUsbIns = (PPDMUSBINS)RTMemAllocZ(  sizeof(*pUsbIns)
                                                + g_UsbHidMou.cbInstance);
     PCFGMNODE pCfg = NULL;
-    if (pThis)
+    if (pUsbIns)
     pCfg = CFGMR3CreateTree(NULL);
     if (pCfg)
         rc = CFGMR3InsertString(pCfg, "Mode", pcszMode);
@@ -126,58 +125,102 @@ static int tstMouseConstruct(int iInstance, const char *pcszMode,
         rc = CFGMR3InsertInteger(pCfg, "CoordShift", u8CoordShift);
     if (RT_SUCCESS(rc))
     {
-        s_drvTstMouse.pDrv = NULL;
-        s_drvTstMouse.pDrvBase = NULL;
-        pThis->iInstance = iInstance;
-        pThis->pHlpR3 = &s_tstUsbHlp;
-        rc = g_UsbHidMou.pfnConstruct(pThis, iInstance, pCfg, NULL);
+        g_drvTstMouse.pDrv     = NULL;
+        g_drvTstMouse.pDrvBase = NULL;
+        pUsbIns->u32Version = uInstanceVersion;
+        pUsbIns->iInstance  = iInstance;
+        pUsbIns->pHlpR3     = &g_tstUsbHlp;
+        rc = g_UsbHidMou.pfnConstruct(pUsbIns, iInstance, pCfg, NULL);
         if (RT_SUCCESS(rc))
         {
-           *ppThis = pThis;
+           *ppThis = pUsbIns;
            return rc;
         }
     }
     /* Failure */
     if (pCfg)
         CFGMR3DestroyTree(pCfg);
-    if (pThis)
-        RTMemFree(pThis);
+    if (pUsbIns)
+        RTMemFree(pUsbIns);
     return rc;
 }
 
 
 static void testConstructAndDestruct(RTTEST hTest)
 {
-    PPDMUSBINS pThis;
     RTTestSub(hTest, "simple construction and destruction");
-    int rc = tstMouseConstruct(0, "relative", 1, &pThis);
-    RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pThis)
-        g_UsbHidMou.pfnDestruct(pThis);
+
+    /*
+     * Normal check first.
+     */
+    PPDMUSBINS pUsbIns = NULL;
+    RTTEST_CHECK_RC(hTest, tstMouseConstruct(0, "relative", 1, &pUsbIns), VINF_SUCCESS);
+    if (pUsbIns)
+        g_UsbHidMou.pfnDestruct(pUsbIns);
+
+    /*
+     * Modify the dev hlp version.
+     */
+    static struct
+    {
+        int         rc;
+        uint32_t    uInsVersion;
+        uint32_t    uHlpVersion;
+    } const s_aVersionTests[] =
+    {
+        {  VERR_PDM_USBHLPR3_VERSION_MISMATCH, PDM_USBINS_VERSION, 0 },
+        {  VERR_PDM_USBHLPR3_VERSION_MISMATCH, PDM_USBINS_VERSION, PDM_USBHLP_VERSION - PDM_VERSION_MAKE(0, 1, 0) },
+        {  VERR_PDM_USBHLPR3_VERSION_MISMATCH, PDM_USBINS_VERSION, PDM_USBHLP_VERSION + PDM_VERSION_MAKE(0, 1, 0) },
+        {  VERR_PDM_USBHLPR3_VERSION_MISMATCH, PDM_USBINS_VERSION, PDM_USBHLP_VERSION + PDM_VERSION_MAKE(0, 1, 1) },
+        {  VERR_PDM_USBHLPR3_VERSION_MISMATCH, PDM_USBINS_VERSION, PDM_USBHLP_VERSION + PDM_VERSION_MAKE(1, 0, 0) },
+        {  VERR_PDM_USBHLPR3_VERSION_MISMATCH, PDM_USBINS_VERSION, PDM_USBHLP_VERSION - PDM_VERSION_MAKE(1, 0, 0) },
+        {  VINF_SUCCESS,                       PDM_USBINS_VERSION, PDM_USBHLP_VERSION + PDM_VERSION_MAKE(0, 0, 1) },
+        {  VERR_PDM_USBINS_VERSION_MISMATCH,   PDM_USBINS_VERSION - PDM_VERSION_MAKE(0, 1, 0), PDM_USBHLP_VERSION },
+        {  VERR_PDM_USBINS_VERSION_MISMATCH,   PDM_USBINS_VERSION + PDM_VERSION_MAKE(0, 1, 0), PDM_USBHLP_VERSION },
+        {  VERR_PDM_USBINS_VERSION_MISMATCH,   PDM_USBINS_VERSION + PDM_VERSION_MAKE(0, 1, 1), PDM_USBHLP_VERSION },
+        {  VERR_PDM_USBINS_VERSION_MISMATCH,   PDM_USBINS_VERSION + PDM_VERSION_MAKE(1, 0, 0), PDM_USBHLP_VERSION },
+        {  VERR_PDM_USBINS_VERSION_MISMATCH,   PDM_USBINS_VERSION - PDM_VERSION_MAKE(1, 0, 0), PDM_USBHLP_VERSION },
+        {  VINF_SUCCESS,                       PDM_USBINS_VERSION + PDM_VERSION_MAKE(0, 0, 1), PDM_USBHLP_VERSION },
+        {  VINF_SUCCESS,
+           PDM_USBINS_VERSION + PDM_VERSION_MAKE(0, 0, 1),         PDM_USBHLP_VERSION + PDM_VERSION_MAKE(0, 0, 1) },
+    };
+    bool const fSavedMayPanic = RTAssertSetMayPanic(false);
+    bool const fSavedQuiet    = RTAssertSetQuiet(true);
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aVersionTests); i++)
+    {
+        g_tstUsbHlp.u32Version = g_tstUsbHlp.u32TheEnd = s_aVersionTests[i].uHlpVersion;
+        pUsbIns = NULL;
+        RTTEST_CHECK_RC(hTest, tstMouseConstruct(0, "relative", 1, &pUsbIns, s_aVersionTests[i].uInsVersion),
+                        s_aVersionTests[i].rc);
+    }
+    RTAssertSetMayPanic(fSavedMayPanic);
+    RTAssertSetQuiet(fSavedQuiet);
+
+    g_tstUsbHlp.u32Version = g_tstUsbHlp.u32TheEnd = PDM_USBHLP_VERSION;
 }
 
 
 static void testSendPositionRel(RTTEST hTest)
 {
-    PPDMUSBINS pThis = NULL;
+    PPDMUSBINS pUsbIns = NULL;
     VUSBURB Urb;
     RTTestSub(hTest, "sending a relative position event");
-    int rc = tstMouseConstruct(0, "relative", 1, &pThis);
+    int rc = tstMouseConstruct(0, "relative", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
-        rc = g_UsbHidMou.pfnUsbReset(pThis, false);
-    if (RT_SUCCESS(rc) && !s_drvTstMouse.pDrv)
+        rc = g_UsbHidMou.pfnUsbReset(pUsbIns, false);
+    if (RT_SUCCESS(rc) && !g_drvTstMouse.pDrv)
         rc = VERR_PDM_MISSING_INTERFACE;
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (RT_SUCCESS(rc))
     {
-        s_drvTstMouse.pDrv->pfnPutEvent(s_drvTstMouse.pDrv, 123, -16, 1, -1, 3);
+        g_drvTstMouse.pDrv->pfnPutEvent(g_drvTstMouse.pDrv, 123, -16, 1, -1, 3);
         Urb.EndPt = 0x01;
-        rc = g_UsbHidMou.pfnUrbQueue(pThis, &Urb);
+        rc = g_UsbHidMou.pfnUrbQueue(pUsbIns, &Urb);
     }
     if (RT_SUCCESS(rc))
     {
-        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pThis, 0);
+        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pUsbIns, 0);
         if (pUrb)
         {
             if (pUrb == &Urb)
@@ -195,26 +238,26 @@ static void testSendPositionRel(RTTEST hTest)
             rc = VERR_GENERAL_FAILURE;
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pThis)
-        g_UsbHidMou.pfnDestruct(pThis);
+    if (pUsbIns)
+        g_UsbHidMou.pfnDestruct(pUsbIns);
 }
 
 
 static void testSendPositionAbs(RTTEST hTest)
 {
-    PPDMUSBINS pThis = NULL;
+    PPDMUSBINS pUsbIns = NULL;
     VUSBURB Urb;
     RTTestSub(hTest, "sending an absolute position event");
-    int rc = tstMouseConstruct(0, "absolute", 1, &pThis);
+    int rc = tstMouseConstruct(0, "absolute", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
     {
-        rc = g_UsbHidMou.pfnUsbReset(pThis, false);
+        rc = g_UsbHidMou.pfnUsbReset(pUsbIns, false);
     }
     if (RT_SUCCESS(rc))
     {
-        if (s_drvTstMouse.pDrv)
-            s_drvTstMouse.pDrv->pfnPutEventAbs(s_drvTstMouse.pDrv, 300, 200, 1,
+        if (g_drvTstMouse.pDrv)
+            g_drvTstMouse.pDrv->pfnPutEventAbs(g_drvTstMouse.pDrv, 300, 200, 1,
                                                3, 3);
         else
             rc = VERR_PDM_MISSING_INTERFACE;
@@ -222,11 +265,11 @@ static void testSendPositionAbs(RTTEST hTest)
     if (RT_SUCCESS(rc))
     {
         Urb.EndPt = 0x01;
-        rc = g_UsbHidMou.pfnUrbQueue(pThis, &Urb);
+        rc = g_UsbHidMou.pfnUrbQueue(pUsbIns, &Urb);
     }
     if (RT_SUCCESS(rc))
     {
-        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pThis, 0);
+        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pUsbIns, 0);
         if (pUrb)
         {
             if (pUrb == &Urb)
@@ -245,27 +288,27 @@ static void testSendPositionAbs(RTTEST hTest)
             rc = VERR_GENERAL_FAILURE;
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pThis)
-        g_UsbHidMou.pfnDestruct(pThis);
+    if (pUsbIns)
+        g_UsbHidMou.pfnDestruct(pUsbIns);
 }
 
 #if 0
 /** @todo PDM interface was updated. This is not working anymore. */
 static void testSendPositionMT(RTTEST hTest)
 {
-    PPDMUSBINS pThis = NULL;
+    PPDMUSBINS pUsbIns = NULL;
     VUSBURB Urb;
     RTTestSub(hTest, "sending a multi-touch position event");
-    int rc = tstMouseConstruct(0, "multitouch", 1, &pThis);
+    int rc = tstMouseConstruct(0, "multitouch", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
     {
-        rc = g_UsbHidMou.pfnUsbReset(pThis, false);
+        rc = g_UsbHidMou.pfnUsbReset(pUsbIns, false);
     }
     if (RT_SUCCESS(rc))
     {
-        if (s_drvTstMouse.pDrv)
-            s_drvTstMouse.pDrv->pfnPutEventMT(s_drvTstMouse.pDrv, 300, 200, 2,
+        if (g_drvTstMouse.pDrv)
+            g_drvTstMouse.pDrv->pfnPutEventMT(g_drvTstMouse.pDrv, 300, 200, 2,
                                               3);
         else
             rc = VERR_PDM_MISSING_INTERFACE;
@@ -273,11 +316,11 @@ static void testSendPositionMT(RTTEST hTest)
     if (RT_SUCCESS(rc))
     {
         Urb.EndPt = 0x01;
-        rc = g_UsbHidMou.pfnUrbQueue(pThis, &Urb);
+        rc = g_UsbHidMou.pfnUrbQueue(pUsbIns, &Urb);
     }
     if (RT_SUCCESS(rc))
     {
-        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pThis, 0);
+        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pUsbIns, 0);
         if (pUrb)
         {
             if (pUrb == &Urb)
@@ -296,8 +339,8 @@ static void testSendPositionMT(RTTEST hTest)
             rc = VERR_GENERAL_FAILURE;
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
-    if (pThis)
-        g_UsbHidMou.pfnDestruct(pThis);
+    if (pUsbIns)
+        g_UsbHidMou.pfnDestruct(pUsbIns);
 }
 #endif
 
@@ -312,11 +355,13 @@ int main()
         return rc;
     RTTestBanner(hTest);
     /* Set up our faked PDMUSBHLP interface. */
-    s_tstUsbHlp.pfnVMSetErrorV  = tstVMSetErrorV;
-    s_tstUsbHlp.pfnDriverAttach = tstDriverAttach;
+    g_tstUsbHlp.u32Version      = PDM_USBHLP_VERSION;
+    g_tstUsbHlp.pfnVMSetErrorV  = tstVMSetErrorV;
+    g_tstUsbHlp.pfnDriverAttach = tstDriverAttach;
+    g_tstUsbHlp.u32TheEnd       = PDM_USBHLP_VERSION;
     /* Set up our global mouse driver */
-    s_drvTstMouse.IBase.pfnQueryInterface = tstMouseQueryInterface;
-    s_drvTstMouse.IConnector.pfnReportModes = tstMouseReportModes;
+    g_drvTstMouse.IBase.pfnQueryInterface = tstMouseQueryInterface;
+    g_drvTstMouse.IConnector.pfnReportModes = tstMouseReportModes;
 
     /*
      * Run the tests.
