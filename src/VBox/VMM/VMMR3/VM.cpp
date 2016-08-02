@@ -96,13 +96,6 @@
 
 
 /*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-/** Pointer to the list of VMs. */
-static PUVM         g_pUVMsHead = NULL;
-
-
-/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int                  vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUVM *ppUVM);
@@ -118,7 +111,6 @@ static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat
 static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
 #endif
 static void                 vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
-static void                 vmR3AtDtor(PVM pVM);
 static bool                 vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
 static void                 vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
 static int                  vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, ...);

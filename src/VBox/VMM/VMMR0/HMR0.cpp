@@ -216,6 +216,7 @@ static int hmR0FirstRcGetStatus(PHMR0FIRSTRC pFirstRc)
 
 
 #ifdef VBOX_STRICT
+# ifndef DEBUG_bird
 /**
  * Get the CPU ID on which the failure status code was reported.
  *
@@ -226,6 +227,7 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 {
     return pFirstRc->idCpu;
 }
+# endif
 #endif /* VBOX_STRICT */
 
 

@@ -772,11 +772,6 @@ DECLCALLBACK(DECLEXPORT(uint64_t))  tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA 
 DECLCALLBACK(DECLEXPORT(uint64_t))  tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic,
                                                                uint16_t iCpuSet, uint16_t iGipCpu);
 
-#ifdef IN_RING3
-static const char *     tmR3GetTSCModeNameEx(TMTSCMODE enmMode);
-#endif
-
-
 /**
  * Try take the timer lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
  *

@@ -209,6 +209,7 @@ static bool vbCpuRepSupportsX2Apic(void)
 
 
 
+#if 0 /* unused */
 static bool msrProberWrite(uint32_t uMsr, uint64_t uValue)
 {
     bool fGp;
@@ -216,6 +217,7 @@ static bool msrProberWrite(uint32_t uMsr, uint64_t uValue)
     AssertRC(rc);
     return RT_SUCCESS(rc) && !fGp;
 }
+#endif
 
 
 static bool msrProberRead(uint32_t uMsr, uint64_t *puValue)
@@ -298,6 +300,7 @@ static int msrProberModifyBitChanges(uint32_t uMsr, uint64_t *pfIgnMask, uint64_
 }
 
 
+#if 0 /* currently unused */
 /**
  * Tries to modify one bit.
  *
@@ -338,6 +341,7 @@ static int msrProberModifyBit(uint32_t uMsr, unsigned iBit)
 
     return 0;
 }
+#endif
 
 
 /**

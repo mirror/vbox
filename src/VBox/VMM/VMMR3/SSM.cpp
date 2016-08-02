@@ -2828,6 +2828,8 @@ static int ssmR3StrmCheckAndFlush(PSSMSTRM pStrm)
 }
 #endif /* !SSM_STANDALONE */
 
+
+#if !defined(SSM_STANDALONE) || defined(LOG_ENABLED)
 /**
  * Tell current stream position.
  *
@@ -2838,6 +2840,7 @@ static uint64_t ssmR3StrmTell(PSSMSTRM pStrm)
 {
     return pStrm->offCurStream + pStrm->off;
 }
+#endif
 
 
 /**

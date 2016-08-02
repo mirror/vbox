@@ -43,6 +43,7 @@ static int Usage(void)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF1(envp);
     RTR3InitExe(argc, &argv, 0);
 
     /*

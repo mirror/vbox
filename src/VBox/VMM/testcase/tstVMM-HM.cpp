@@ -40,7 +40,7 @@ VMMR3DECL(int) VMMDoHmTest(PVM pVM);
 
 static DECLCALLBACK(int) tstVmmHmConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pUVM, pvUser);
 
     /*
      * Get root node first.
