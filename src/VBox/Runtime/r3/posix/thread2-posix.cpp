@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
-#if defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
 # include <sched.h>
 #endif
 
@@ -62,7 +62,7 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
         pthread_yield_np();
 #elif defined(RT_OS_FREEBSD) /* void pthread_yield */
         pthread_yield();
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_NETBSD)
         sched_yield();
 #else
         if (!pthread_yield())
@@ -101,7 +101,7 @@ RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
         pthread_yield_np();
 #elif defined(RT_OS_FREEBSD) /* void pthread_yield */
         pthread_yield();
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_NETBSD)
         sched_yield();
 #else
         if (!pthread_yield())
@@ -130,7 +130,7 @@ RTDECL(bool) RTThreadYield(void)
 #endif
 #ifdef RT_OS_DARWIN
     pthread_yield_np();
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_NETBSD)
     sched_yield();
 #else
     pthread_yield();
