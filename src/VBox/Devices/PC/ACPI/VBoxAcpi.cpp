@@ -390,11 +390,12 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void **ppvPtr, size_t *pcbDsdt)
 }
 
 /** No docs, lazy coder. */
-int acpiCleanupDsdt(PPDMDEVINS pDevIns,  void *pvPtr)
+int acpiCleanupDsdt(PPDMDEVINS pDevIns, void *pvPtr)
 {
 #ifdef VBOX_WITH_DYNAMIC_DSDT
     return cleanupDynamicDsdt(pDevIns, pvPtr);
 #else
+    RT_NOREF1(pDevIns);
     if (pvPtr)
         RTMemFree(pvPtr);
     return VINF_SUCCESS;
@@ -457,6 +458,7 @@ int acpiPrepareSsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbSsdt)
 /** No docs, lazy coder. */
 int acpiCleanupSsdt(PPDMDEVINS pDevIns, void *pvPtr)
 {
+    RT_NOREF1(pDevIns);
     if (pvPtr)
         RTMemFree(pvPtr);
     return VINF_SUCCESS;

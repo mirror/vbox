@@ -477,6 +477,7 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 static DECLCALLBACK(void) rtcCmosBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF1(pszArgs);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
 
     pHlp->pfnPrintf(pHlp,
@@ -501,6 +502,7 @@ static DECLCALLBACK(void) rtcCmosBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  */
 static DECLCALLBACK(void) rtcCmosBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF1(pszArgs);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
 
     pHlp->pfnPrintf(pHlp, "Second CMOS bank, offsets 0x80 - 0xFF\n");
@@ -523,6 +525,7 @@ static DECLCALLBACK(void) rtcCmosBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
  */
 static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF1(pszArgs);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     uint8_t u8Sec   = from_bcd(pThis, pThis->cmos_data[RTC_SECONDS]);
     uint8_t u8Min   = from_bcd(pThis, pThis->cmos_data[RTC_MINUTES]);
@@ -550,6 +553,7 @@ static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
  */
 static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF2(pTimer, pvUser);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
     Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
@@ -631,6 +635,7 @@ static void rtc_next_second(struct my_tm *tm)
  */
 static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF2(pTimer, pvUser);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
     Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
@@ -691,6 +696,7 @@ static void rtc_copy_date(PRTCSTATE pThis)
  */
 static DECLCALLBACK(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF2(pTimer, pvUser);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
     Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
@@ -738,6 +744,7 @@ static DECLCALLBACK(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  */
 static DECLCALLBACK(int) rtcLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    RT_NOREF1(uPass);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
 
     SSMR3PutU8(    pSSM, pThis->irq);
@@ -1037,6 +1044,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF1(offDelta);
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
 
     pThis->pDevInsRC        = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1064,6 +1072,8 @@ static DECLCALLBACK(void) rtcReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF1(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PRTCSTATE   pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     int         rc;
     Assert(iInstance == 0);

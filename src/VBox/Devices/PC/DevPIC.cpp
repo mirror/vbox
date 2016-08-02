@@ -882,6 +882,7 @@ static DECLCALLBACK(void)  picReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) picRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF1(offDelta);
     PDEVPIC         pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
     unsigned        i;
 
@@ -897,6 +898,8 @@ static DECLCALLBACK(void) picRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    RT_NOREF1(iInstance);
     PDEVPIC         pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
     int             rc;
     bool            fGCEnabled;

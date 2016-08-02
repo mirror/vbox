@@ -226,6 +226,7 @@ typedef DEVPCBIOS *PDEVPCBIOS;
  */
 static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    RT_NOREF5(pDevIns, pvUser, Port, pu32, cb);
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -235,6 +236,8 @@ static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    RT_NOREF1(pvUser);
+
     /*
      * Bochs BIOS char printing.
      */
@@ -336,6 +339,7 @@ static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, unsigned off)
  */
 static DECLCALLBACK(bool) pcbiosFw_IsHardReset(PPDMDEVINS pDevIns, uint32_t fFlags)
 {
+    RT_NOREF1(fFlags);
     PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     if (pThis->fCheckShutdownStatusForSoftReset)
     {
@@ -465,10 +469,10 @@ static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo,
  */
 static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIMEDIA pHardDisk, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDMMEDIAGEOMETRY LCHSGeometry;
-    int rc = VINF_SUCCESS;
+    RT_NOREF1(pBase);
 
-    rc = pHardDisk->pfnBiosGetLCHSGeometry(pHardDisk, &LCHSGeometry);
+    PDMMEDIAGEOMETRY LCHSGeometry;
+    int rc = pHardDisk->pfnBiosGetLCHSGeometry(pHardDisk, &LCHSGeometry);
     if (   rc == VERR_PDM_GEOMETRY_NOT_SET
         || LCHSGeometry.cCylinders == 0
         || LCHSGeometry.cHeads == 0
@@ -926,7 +930,8 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcbiosMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
-    PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    RT_NOREF1(enmCtx);
+    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosMemSetup:\n"));
 
     if (pThis->u8IOAPIC)
@@ -1074,6 +1079,7 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, const char *psz
  */
 static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF1(iInstance);
     PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     int         rc;
     int         cb;
@@ -1563,7 +1569,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         const uint8_t  *pu8LanBootBinary = NULL;
         uint64_t        cbLanBootBinary;
-        uint64_t        cbFileLanBoot;
+        uint64_t        cbFileLanBoot = 0;
 
         /*
          * Open the LAN boot ROM and figure it size.

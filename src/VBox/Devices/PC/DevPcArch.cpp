@@ -145,6 +145,7 @@ SeeAlso: #P0416,#P0417,MSR 00001000h
 static DECLCALLBACK(int)
 pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    RT_NOREF1(pvUser);
     if (cb == 1)
     {
         *pu32 = PDMDevHlpA20IsEnabled(pDevIns) << 1;
@@ -188,6 +189,8 @@ pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
  */
 static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF1(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVPCARCH  pThis = PDMINS_2_DATA(pDevIns, PDEVPCARCH);
     int         rc;
     Assert(iInstance == 0);

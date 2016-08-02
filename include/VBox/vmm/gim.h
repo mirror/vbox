@@ -138,7 +138,7 @@ typedef struct GIMDEBUG
     /** The debug I/O stream driver. */
     PPDMISTREAM             pDbgDrvStream;
     /** Number of bytes pending to be read from the receive buffer. */
-    uint32_t                cbDbgRecvBufRead;
+    size_t                  cbDbgRecvBufRead;
     /** The flag synchronizing reads of the receive buffer from EMT. */
     volatile bool           fDbgRecvBufRead;
     /** The receive thread wakeup semaphore. */
