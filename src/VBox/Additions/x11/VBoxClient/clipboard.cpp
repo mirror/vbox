@@ -84,9 +84,9 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
  * @retval  pcb       On success, this contains the number of bytes of data
  *                    returned
  */
-int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format,
-                          void **ppv, uint32_t *pcb)
+int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
+    RT_NOREF1(pCtx);
     int rc = VINF_SUCCESS;
     uint32_t cb = 1024;
     void *pv = RTMemAlloc(cb);
@@ -147,9 +147,9 @@ struct _CLIPREADCBREQ
  */
 void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
 {
-    int rc;
+    RT_NOREF1(pCtx);
     LogRelFlowFunc(("u32Formats=%d\n", u32Formats));
-    rc = VbglR3ClipboardReportFormats(g_ctx.client, u32Formats);
+    int rc = VbglR3ClipboardReportFormats(g_ctx.client, u32Formats);
     LogRelFlowFunc(("rc=%Rrc\n", rc));
 }
 
@@ -163,10 +163,9 @@ void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
  *                   succeeded (see @a rc)
  * @param  cb        the size of the data in @a pv
  */
-void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
-                                    CLIPREADCBREQ *pReq, void *pv,
-                                    uint32_t cb)
+void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
+    RT_NOREF1(pCtx);
     if (RT_SUCCESS(rc))
         vboxClipboardSendData(pReq->u32Format, pv, cb);
     else
@@ -286,11 +285,10 @@ static const char *getPidFilePath()
 
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
-    int rc;
+    RT_NOREF2(ppInterface, fDaemonised);
 
-    NOREF(ppInterface);
     /* Initialise the guest library. */
-    rc = VbglR3InitUser();
+    int rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     rc = vboxClipboardConnect();

@@ -54,12 +54,14 @@ extern void vbclFatalError(char *psz)
 extern "C" Display *XOpenDisplay(const char *display_name);
 Display *XOpenDisplay(const char *display_name)
 {
+    RT_NOREF1(display_name);
     return TEST_DISPLAY;
 }
 
 extern "C" int XCloseDisplay(Display *display);
 int XCloseDisplay(Display *display)
 {
+    RT_NOREF1(display);
     Assert(display == TEST_DISPLAY);
     return 0;
 }
@@ -70,10 +72,10 @@ enum
     ATOM_DESKTOP_PROP
 };
 
-extern "C" Atom XInternAtom(Display *display, const char *atom_name,
-                            Bool only_if_exists);
-Atom XInternAtom(Display *display, const char *atom_name, Bool only_if_exists)
+extern "C" Atom XInternAtom(Display *display, const char *atom_name, Bool only_if_exists);
+Atom            XInternAtom(Display *display, const char *atom_name, Bool only_if_exists)
 {
+    RT_NOREF2(only_if_exists, display);
     Assert(display == TEST_DISPLAY);
     if (!RTStrCmp(atom_name, WM_TYPE_PROP))
         return (Atom) ATOM_PROP;
@@ -95,14 +97,15 @@ extern "C" int XGetWindowProperty(Display *display, Window w, Atom property,
                                   unsigned long *nitems_return,
                                   unsigned long *bytes_after_return,
                                   unsigned char **prop_return);
-int XGetWindowProperty(Display *display, Window w, Atom property,
-                       long long_offset, long long_length, Bool delProp,
-                       Atom req_type, Atom *actual_type_return,
-                       int *actual_format_return,
-                       unsigned long *nitems_return,
-                       unsigned long *bytes_after_return,
-                       unsigned char **prop_return)
+int            XGetWindowProperty(Display *display, Window w, Atom property,
+                                  long long_offset, long long_length, Bool delProp,
+                                  Atom req_type, Atom *actual_type_return,
+                                  int *actual_format_return,
+                                  unsigned long *nitems_return,
+                                  unsigned long *bytes_after_return,
+                                  unsigned char **prop_return)
 {
+    RT_NOREF2(display, long_length);
     Assert(display == TEST_DISPLAY);
     Atom atomType = XInternAtom (display, WM_TYPE_PROP, true);
     Atom atomTypeDesktop = XInternAtom (display, WM_TYPE_DESKTOP_PROP, true);
@@ -129,39 +132,43 @@ int XGetWindowProperty(Display *display, Window w, Atom property,
     return 0;
 }
 
+#if 0 /* unused */
 /** Sets the current set of properties for all mock X11 windows */
 static void smlsSetDesktopWindow(Window hWin)
 {
     g_hSmlsDesktopWindow = hWin;
 }
+#endif
 
-extern "C" Bool XShapeQueryExtension (Display *dpy, int *event_basep,
-                                      int *error_basep);
-Bool XShapeQueryExtension (Display *dpy, int *event_basep, int *error_basep)
+extern "C" Bool XShapeQueryExtension(Display *dpy, int *event_basep, int *error_basep);
+Bool            XShapeQueryExtension(Display *dpy, int *event_basep, int *error_basep)
 {
+    RT_NOREF3(dpy, event_basep, error_basep);
     Assert(dpy == TEST_DISPLAY);
     return true;
 }
 
 /* We silently ignore this for now. */
 extern "C" int XSelectInput(Display *display, Window w, long event_mask);
-int XSelectInput(Display *display, Window w, long event_mask)
+int            XSelectInput(Display *display, Window w, long event_mask)
 {
+    RT_NOREF3(display,  w,  event_mask);
     Assert(display == TEST_DISPLAY);
     return 0;
 }
 
 /* We silently ignore this for now. */
-extern "C" void XShapeSelectInput(Display *display, Window w,
-                                  unsigned long event_mask);
-void XShapeSelectInput(Display *display, Window w, unsigned long event_mask)
+extern "C" void XShapeSelectInput(Display *display, Window w, unsigned long event_mask);
+void            XShapeSelectInput(Display *display, Window w, unsigned long event_mask)
 {
+    RT_NOREF3(display, w, event_mask);
     Assert(display == TEST_DISPLAY);
 }
 
 extern "C" Window XDefaultRootWindow(Display *display);
 Window XDefaultRootWindow(Display *display)
 {
+    RT_NOREF1(display);
     Assert(display == TEST_DISPLAY);
     return TEST_ROOT;
 }
@@ -178,6 +185,7 @@ Status XQueryTree(Display *display, Window w, Window *root_return,
                   Window *parent_return, Window **children_return,
                   unsigned int *nchildren_return)
 {
+    RT_NOREF1(display);
     Assert(display == TEST_DISPLAY);
     AssertReturn(w == TEST_ROOT, False);  /* We support nothing else */
     AssertPtrReturn(children_return, False);
@@ -196,6 +204,7 @@ Status XQueryTree(Display *display, Window w, Window *root_return,
 extern "C" Window XmuClientWindow(Display *dpy, Window win);
 Window XmuClientWindow(Display *dpy, Window win)
 {
+    RT_NOREF1(dpy);
     Assert(dpy == TEST_DISPLAY);
     return win;
 }
@@ -205,6 +214,7 @@ extern "C" Status XGetWindowAttributes(Display *display, Window w,
 Status XGetWindowAttributes(Display *display, Window w,
                             XWindowAttributes *window_attributes_return)
 {
+    RT_NOREF1(display);
     Assert(display == TEST_DISPLAY);
     AssertPtrReturn(window_attributes_return, 1);
     for (unsigned i = 0; i < g_cSmlsWindows; ++i)
@@ -223,6 +233,7 @@ extern "C" Status XGetWMNormalHints(Display *display, Window w,
 Status XGetWMNormalHints(Display *display, Window w,
                          XSizeHints *hints_return, long *supplied_return)
 {
+    RT_NOREF4(display, w, hints_return, supplied_return);
     Assert(display == TEST_DISPLAY);
     return 1;
 }
@@ -247,6 +258,7 @@ extern "C" XRectangle *XShapeGetRectangles (Display *dpy, Window window,
 XRectangle *XShapeGetRectangles (Display *dpy, Window window, int kind,
                                  int *count, int *ordering)
 {
+    RT_NOREF2(dpy, kind);
     Assert(dpy == TEST_DISPLAY);
     if ((window != g_SmlsShapedWindow) || (window == 0))
         return NULL;  /* Probably not correct, but works for us. */
@@ -272,6 +284,7 @@ static Window g_SmlsEventWindow = 0;
 extern "C" int XNextEvent(Display *display, XEvent *event_return);
 int XNextEvent(Display *display, XEvent *event_return)
 {
+    RT_NOREF1(display);
     Assert(display == TEST_DISPLAY);
     event_return->xany.type = g_SmlsEventType;
     event_return->xany.window = g_SmlsEventWindow;
@@ -291,6 +304,7 @@ extern "C" Status XSendEvent(Display *display, Window w, Bool propagate,
 Status XSendEvent(Display *display, Window w, Bool propagate,
                   long event_mask, XEvent *event_send)
 {
+    RT_NOREF5(display, w, propagate, event_mask, event_send);
     Assert(display == TEST_DISPLAY);
     AssertFailedReturn(0);
 }
@@ -299,6 +313,7 @@ Status XSendEvent(Display *display, Window w, Bool propagate,
 extern "C" int XFlush(Display *display);
 int XFlush(Display *display)
 {
+    RT_NOREF1(display);
     Assert(display == TEST_DISPLAY);
     AssertFailedReturn(0);
 }
@@ -309,6 +324,7 @@ static bool g_fNotified = false;
 /** Dummy host call-back. */
 static void sendRegionUpdate(RTRECT *pRects, size_t cRects)
 {
+    RT_NOREF2(pRects, cRects);
     g_fNotified = true;
 }
 

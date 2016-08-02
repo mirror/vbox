@@ -190,8 +190,9 @@ int SeamlessMain::nextStateChangeEvent(void)
 /**
  * The actual X11 window configuration change monitor thread function.
  */
-int SeamlessMain::x11MonitorThread(RTTHREAD self, void *pvUser)
+int SeamlessMain::x11MonitorThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF1(hThreadSelf);
     SeamlessMain *pHost = (SeamlessMain *)pvUser;
     int rc = VINF_SUCCESS;
 
@@ -332,6 +333,7 @@ static int init(struct VBCLSERVICE **ppInterface)
 
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
+    RT_NOREF1(fDaemonised);
     struct SEAMLESSSERVICE *pSelf = getClassFromInterface(ppInterface);
     int rc;
 

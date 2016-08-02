@@ -57,15 +57,16 @@ struct VBCLSERVICE
 };
 
 /** Default handler for various struct VBCLSERVICE member functions. */
-static int VBClServiceDefaultHandler(struct VBCLSERVICE **pSelf)
+DECLINLINE(int) VBClServiceDefaultHandler(struct VBCLSERVICE **pSelf)
 {
+    RT_NOREF1(pSelf);
     return VINF_SUCCESS;
 }
 
 /** Default handler for the struct VBCLSERVICE clean-up member function.
  * Usually used because the service is cleaned up automatically when the user
  * process/X11 exits. */
-static void VBClServiceDefaultCleanup(struct VBCLSERVICE **ppInterface)
+DECLINLINE(void) VBClServiceDefaultCleanup(struct VBCLSERVICE **ppInterface)
 {
     NOREF(ppInterface);
 }

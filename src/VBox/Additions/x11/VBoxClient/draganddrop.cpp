@@ -920,9 +920,9 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndStatusWindow]))
             {
                 bool fAcceptDrop     = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 0); /* Does the target accept the drop? */
-                bool fWantsPosition  = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 1); /* Does the target want XdndPosition messages? */
                 RTCString strActions = xAtomToString( e.xclient.data.l[XdndStatusAction]);
-
+#ifdef LOG_ENABLED
+                bool fWantsPosition  = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 1); /* Does the target want XdndPosition messages? */
                 char *pszWndName = wndX11GetNameA(e.xclient.data.l[XdndStatusWindow]);
                 AssertPtr(pszWndName);
 
@@ -936,11 +936,12 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
 
                 RTStrFree(pszWndName);
 
-                uint16_t x = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
-                uint16_t y = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
-                uint16_t w = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
-                uint16_t h = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
-                LogFlowThisFunc(("\tReported dead area: x=%RU16, y=%RU16, w=%RU16, h=%RU16\n", x, y, w, h));
+                uint16_t x  = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
+                uint16_t y  = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
+                uint16_t cx = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
+                uint16_t cy = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
+                LogFlowThisFunc(("\tReported dead area: x=%RU16, y=%RU16, cx=%RU16, cy=%RU16\n", x, y, cx, cy));
+#endif
 
                 uint32_t uAction = DND_IGNORE_ACTION; /* Default is ignoring. */
                 /** @todo Compare this with the allowed actions. */
@@ -951,6 +952,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
             }
             else if (e.xclient.message_type == xAtom(XA_XdndFinished))
             {
+#ifdef LOG_ENABLED
                 bool fSucceeded = ASMBitTest(&e.xclient.data.l[XdndFinishedFlags], 0);
 
                 char *pszWndName = wndX11GetNameA(e.xclient.data.l[XdndFinishedWindow]);
@@ -962,6 +964,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                                  xAtomToString(e.xclient.data.l[XdndFinishedAction]).c_str()));
 
                 RTStrFree(pszWndName);
+#endif
 
                 reset();
             }
@@ -1071,14 +1074,14 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                     reset();
                     break;
                 }
-
-                int32_t lPos      = e.xclient.data.l[XdndPositionXY];
+#ifdef LOG_ENABLED
+                int32_t iPos      = e.xclient.data.l[XdndPositionXY];
                 Atom    atmAction = m_curVer >= 2 /* Actions other than "copy" or only supported since protocol version 2. */
                                   ? e.xclient.data.l[XdndPositionAction] : xAtom(XA_XdndActionCopy);
-
                 LogFlowThisFunc(("XA_XdndPosition: wndProxy=%#x, wndCur=%#x, x=%RI32, y=%RI32, strAction=%s\n",
-                                 m_wndProxy.hWnd, m_wndCur, RT_HIWORD(lPos), RT_LOWORD(lPos),
+                                 m_wndProxy.hWnd, m_wndCur, RT_HIWORD(iPos), RT_LOWORD(iPos),
                                  xAtomToString(atmAction).c_str()));
+#endif
 
                 bool fAcceptDrop = true;
 
@@ -1165,6 +1168,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
 
 int DragInstance::onX11MotionNotify(const XEvent &e)
 {
+    RT_NOREF1(e);
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
 
     return VINF_SUCCESS;
@@ -1181,6 +1185,7 @@ int DragInstance::onX11MotionNotify(const XEvent &e)
  */
 int DragInstance::onX11SelectionClear(const XEvent &e)
 {
+    RT_NOREF1(e);
     LogFlowThisFunc(("mode=%RU32, state=%RU32\n", m_enmMode, m_enmState));
 
     return VINF_SUCCESS;
@@ -1331,6 +1336,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
                                  xAtomToString(pReq->target).c_str(),
                                  pReq->requestor,
                                  gX11->xErrorToString(xRc).c_str()));
+                    NOREF(xRc);
                 }
             }
             /* Anything else. */
@@ -1854,6 +1860,12 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
  */
 int DragInstance::hgDrop(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAction)
 {
+
+
+    /** @todo r=bird: Please, stop using 'u32' as a prefix unless you've got a _real_ _important_ reason for needing the bit count. */
+
+
+    RT_NOREF3(u32xPos, u32yPos, uDefaultAction);
     LogFlowThisFunc(("wndCur=%#x, wndProxy=%#x, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy.hWnd, m_enmMode, m_enmState));
     LogFlowThisFunc(("u32xPos=%RU32, u32yPos=%RU32, uAction=%RU32\n", u32xPos, u32yPos, uDefaultAction));
 
@@ -2294,7 +2306,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
     if (RT_FAILURE(rc))
     {
         int rc2 = VbglR3DnDGHSendError(&m_dndCtx, rc);
-        LogFlowThisFunc(("Sending error to host resulted in %Rrc\n", rc2));
+        LogFlowThisFunc(("Sending error to host resulted in %Rrc\n", rc2)); NOREF(rc2);
         /* This is not fatal for us, just ignore. */
     }
 
@@ -2505,7 +2517,7 @@ int DragInstance::proxyWinShow(int *piRootX /* = NULL */, int *piRootY /* = NULL
                                     &iRootX, &iRootY, &iChildX, &iChildY, &iMask);
 
     LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=0x%x, wndChild=0x%x, iRootX=%d, iRootY=%d\n",
-                     RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY));
+                     RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY)); NOREF(fInRootWnd);
 
     if (piRootX)
         *piRootX = iRootX;
@@ -2764,6 +2776,7 @@ int DragInstance::toAtomList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomLi
  */
 int DragInstance::toAtomList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const
 {
+    RT_NOREF1(lstAtoms);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
@@ -3029,6 +3042,7 @@ int DragAndDropService::init(void)
  */
 int DragAndDropService::run(bool fDaemonised /* = false */)
 {
+    RT_NOREF1(fDaemonised);
     LogFlowThisFunc(("fDaemonised=%RTbool\n", fDaemonised));
 
     int rc;

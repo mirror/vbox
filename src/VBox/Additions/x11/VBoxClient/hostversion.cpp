@@ -75,10 +75,10 @@ static int showNotify(const char *pcHeader, const char *pcBody)
 
         DBusMessageIter iter;
         DBusMessageIter array;
-        DBusMessageIter dict;
-        DBusMessageIter value;
-        DBusMessageIter variant;
-        DBusMessageIter data;
+        /*DBusMessageIter dict; - unused */
+        /*DBusMessageIter value; - unused */
+        /*DBusMessageIter variant; - unused */
+        /*DBusMessageIter data; - unused */
 
         /* Format: UINT32 org.freedesktop.Notifications.Notify
          *         (STRING app_name, UINT32 replaces_id, STRING app_icon, STRING summary, STRING body,
@@ -100,12 +100,9 @@ static int showNotify(const char *pcHeader, const char *pcBody)
         dbus_error_init(&err);
 
         DBusMessage *reply;
-        reply = dbus_connection_send_with_reply_and_block(conn, msg,
-            30 * 1000 /* 30 seconds timeout */, &err);
+        reply = dbus_connection_send_with_reply_and_block(conn, msg, 30 * 1000 /* 30 seconds timeout */, &err);
         if (dbus_error_is_set(&err))
-        {
             LogRel(("D-BUS returned an error while sending the notification: %s", err.message));
-        }
         else if (reply)
         {
             dbus_connection_flush(conn);
