@@ -130,8 +130,6 @@ PSUPDRVSESSION                  g_pSession;
 /** R0 SUP Functions used for resolving referenced to the SUPR0 module. */
 PSUPQUERYFUNCS                  g_pSupFunctions;
 
-/** VMMR0 Load Address. */
-static RTR0PTR                  g_pvVMMR0 = NIL_RTR0PTR;
 /** PAGE_ALLOC_EX sans kernel mapping support indicator. */
 static bool                     g_fSupportsPageAllocNoKernel = true;
 /** Fake mode indicator. (~0 at first, 0 or 1 after first test) */
@@ -142,8 +140,6 @@ uint32_t                        g_uSupFakeMode = UINT32_MAX;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int supInitFake(PSUPDRVSESSION *ppSession);
-static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase);
-static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
 
 
 /** Touch a range of pages. */

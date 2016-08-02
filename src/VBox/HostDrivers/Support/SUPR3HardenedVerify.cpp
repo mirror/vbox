@@ -641,6 +641,9 @@ static int supR3HardenedVerifyFileSignature(PCSUPINSTFILE pFile, PSUPVERIFIEDFIL
  */
 static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFileOpen, bool fVerifyAll)
 {
+#ifndef RT_OS_WINDOWS
+    RT_NOREF1(fVerifyAll);
+#endif
     PCSUPINSTFILE pFile = &g_aSupInstallFiles[iFile];
     PSUPVERIFIEDFILE pVerified = &g_aSupVerifiedFiles[iFile];
 
