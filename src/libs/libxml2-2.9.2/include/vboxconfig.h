@@ -9,7 +9,7 @@
 #undef SUPPORT_IP6
 
 /* Define if getaddrinfo is there */
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
 # define HAVE_GETADDRINFO 1
 #else
 # undef HAVE_GETADDRINFO
