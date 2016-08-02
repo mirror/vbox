@@ -1023,10 +1023,11 @@ int PrintHeader(const char *argv0, const char *pszBaseDir)
     {
         memset(szBuf, 0, sizeof(szBuf));
 #ifdef _MSC_VER
-        _getcwd(szBuf, sizeof(szBuf));
+        if (!_getcwd(szBuf, sizeof(szBuf)))
 #else
-        getcwd(szBuf, sizeof(szBuf));
+        if (!getcwd(szBuf, sizeof(szBuf)))
 #endif
+            return RTEXITCODE_FAILURE;
         pszBaseDir = szBuf;
     }
 
