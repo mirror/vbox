@@ -49,7 +49,7 @@
 # define pthread_yield() pthread_yield_np()
 #endif
 
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_NETBSD)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
 # include <sched.h>
 # define pthread_yield() sched_yield()
 #endif
