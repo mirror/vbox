@@ -155,9 +155,8 @@ int main(int argc, char **argv)
      * AssertCompile so it's kind of related.
      */
 #ifdef RT_COMPILER_SUPPORTS_VA_ARGS
-# ifdef _MSC_VER
-    AssertCompile(RT_COUNT_VA_ARGS(RT_NOTHING) == 0);
-# else
+# if 0
+    AssertCompile(RT_COUNT_VA_ARGS() == 0);
     AssertCompile(RT_COUNT_VA_ARGS(RT_NOTHING) == 1);
 # endif
     AssertCompile(RT_COUNT_VA_ARGS(asdf) == 1);
