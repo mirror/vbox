@@ -82,9 +82,9 @@ typedef AUTHUUID *PAUTHUUID;
  *
  * @param  pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
  * @param  guestJudgement   Result of the guest authentication.
- * @param  szUser           User name passed in by the client (UTF8).
- * @param  szPassword       Password passed in by the client (UTF8).
- * @param  szDomain         Domain passed in by the client (UTF8).
+ * @param  pszUser          User name passed in by the client (UTF8).
+ * @param  pszPassword      Password passed in by the client (UTF8).
+ * @param  pszDomain        Domain passed in by the client (UTF8).
  *
  * Return code:
  *
@@ -98,9 +98,9 @@ typedef AUTHUUID *PAUTHUUID;
  */
 typedef AuthResult AUTHCALL FNAUTHENTRY(PAUTHUUID pUuid,
                                         AuthGuestJudgement guestJudgement,
-                                        const char *szUser,
-                                        const char *szPassword,
-                                        const char *szDomain);
+                                        const char *pszUser,
+                                        const char *pszPassword,
+                                        const char *pszDomain);
 /** Pointer to a FNAUTHENTRY function. */
 typedef FNAUTHENTRY *PFNAUTHENTRY;
 /** @deprecated   */
@@ -115,9 +115,9 @@ typedef PFNAUTHENTRY PAUTHENTRY;
  *
  * @param  pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
  * @param  guestJudgement   Result of the guest authentication.
- * @param  szUser           User name passed in by the client (UTF8).
- * @param  szPassword       Password passed in by the client (UTF8).
- * @param  szDomain         Domain passed in by the client (UTF8).
+ * @param  pszUser          User name passed in by the client (UTF8).
+ * @param  pszPassword      Password passed in by the client (UTF8).
+ * @param  pszDomain        Domain passed in by the client (UTF8).
  * @param  fLogon           Boolean flag. Indicates whether the entry point is
  *                          called for a client logon or the client disconnect.
  * @param  clientId         Server side unique identifier of the client.
@@ -134,9 +134,9 @@ typedef PFNAUTHENTRY PAUTHENTRY;
  */
 typedef AuthResult AUTHCALL FNAUTHENTRY2(PAUTHUUID pUuid,
                                          AuthGuestJudgement guestJudgement,
-                                         const char *szUser,
-                                         const char *szPassword,
-                                         const char *szDomain,
+                                         const char *pszUser,
+                                         const char *pszPassword,
+                                         const char *pszDomain,
                                          int fLogon,
                                          unsigned clientId);
 /** Pointer to a FNAUTHENTRY2 function. */
@@ -151,12 +151,12 @@ typedef PFNAUTHENTRY2 PAUTHENTRY2;
 /**
  * Authentication library entry point version 3.
  *
- * @param  szCaller         The name of the component which calls the library (UTF8).
+ * @param  pszCaller        The name of the component which calls the library (UTF8).
  * @param  pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
  * @param  guestJudgement   Result of the guest authentication.
- * @param  szUser           User name passed in by the client (UTF8).
- * @param  szPassword       Password passed in by the client (UTF8).
- * @param  szDomain         Domain passed in by the client (UTF8).
+ * @param  pszUser          User name passed in by the client (UTF8).
+ * @param  pszPassword      Password passed in by the client (UTF8).
+ * @param  pszDomain        Domain passed in by the client (UTF8).
  * @param  fLogon           Boolean flag. Indicates whether the entry point is
  *                          called for a client logon or the client disconnect.
  * @param  clientId         Server side unique identifier of the client.
@@ -173,12 +173,12 @@ typedef PFNAUTHENTRY2 PAUTHENTRY2;
  * @note When @a fLogon is 0, only @a pszCaller, @a pUuid and @a clientId are
  *       valid and the return code is ignored.
  */
-typedef AuthResult AUTHCALL FNAUTHENTRY3(const char *szCaller,
+typedef AuthResult AUTHCALL FNAUTHENTRY3(const char *pszCaller,
                                          PAUTHUUID pUuid,
                                          AuthGuestJudgement guestJudgement,
-                                         const char *szUser,
-                                         const char *szPassword,
-                                         const char *szDomain,
+                                         const char *pszUser,
+                                         const char *pszPassword,
+                                         const char *pszDomain,
                                          int fLogon,
                                          unsigned clientId);
 /** Pointer to a FNAUTHENTRY3 function. */
