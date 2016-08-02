@@ -581,6 +581,7 @@ static int getSmcKeyOs(char *pabKey, uint32_t cbKey)
 /** @callback_method_impl{DEVSMCKEYGETTER, OSK0 and OSK1} */
 static uint8_t scmKeyGetOSKs(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF1(bCmd);
     Assert(SMC4CH_EQ(&pKeyDesc->Key, "OSK0") || SMC4CH_EQ(&pKeyDesc->Key, "OSK1"));
     const char *pszSrc = pThis->szOsk0And1;
     if (SMC4CH_EQ(&pKeyDesc->Key, "OSK1"))
@@ -593,6 +594,7 @@ static uint8_t scmKeyGetOSKs(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd,
 /** @callback_method_impl{DEVSMCKEYGETTER, \#KEY} */
 static uint8_t scmKeyGetKeyCount(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF3(pThis, bCmd, pKeyDesc);
     Assert(pKeyDesc == &g_aSmcKeys[SMC_KEYIDX_FIRST_ENUM]);
     uint32_t cKeys = RT_ELEMENTS(g_aSmcKeys) - SMC_KEYIDX_FIRST_ENUM;
     pCurKey->Value.u32 = RT_H2BE_U32(cKeys);
@@ -603,6 +605,7 @@ static uint8_t scmKeyGetKeyCount(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t b
 /** @callback_method_impl{DEVSMCKEYGETTER, REV - Source revision.} */
 static uint8_t scmKeyGetRevision(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF3(pThis, bCmd, pKeyDesc);
 #ifdef VBOX_WITH_SMC_2_x
     pCurKey->Value.ab[0] = 0x02;
     pCurKey->Value.ab[1] = 0x03;
@@ -626,6 +629,7 @@ static uint8_t scmKeyGetRevision(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t b
 /** @callback_method_impl{DEVSMCKEYGETTER, $Adr - SMC address.} */
 static uint8_t scmKeyGetDollarAddress(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF3(pThis, bCmd, pKeyDesc);
     pCurKey->Value.u32 = RT_H2BE_U32(SMC_PORT_FIRST);
     return VINF_SUCCESS;
 }
@@ -634,6 +638,7 @@ static uint8_t scmKeyGetDollarAddress(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint
 /** @callback_method_impl{DEVSMCKEYGETTER, $Num - Some kind of number.} */
 static uint8_t scmKeyGetDollarNumber(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(bCmd, pKeyDesc);
     pCurKey->Value.ab[0] = pThis->bDollaryNumber;
     return VINF_SUCCESS;
 }
@@ -641,6 +646,7 @@ static uint8_t scmKeyGetDollarNumber(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8
 /** @callback_method_impl{DEVSMCKEYPUTTER, $Num - Some kind of number.} */
 static uint8_t scmKeyPutDollarNumber(PDEVSMC pThis, PCDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(bCmd, pKeyDesc);
     Log(("scmKeyPutDollarNumber: %#x -> %#x\n", pThis->bDollaryNumber, pCurKey->Value.ab[0]));
     pThis->bDollaryNumber = pCurKey->Value.ab[0];
     return VINF_SUCCESS;
@@ -651,6 +657,7 @@ static uint8_t scmKeyPutDollarNumber(PDEVSMC pThis, PCDEVSMCCURKEY pCurKey, uint
 /** @callback_method_impl{DEVSMCKEYGETTER, MSSD - Machine Shutdown reason.} */
 static uint8_t scmKeyGetShutdownReason(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(bCmd, pKeyDesc);
     pCurKey->Value.ab[0] = pThis->bShutdownReason;
     return SMC_STATUS_CD_SUCCESS;
 }
@@ -659,6 +666,7 @@ static uint8_t scmKeyGetShutdownReason(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uin
 /** @callback_method_impl{DEVSMCKEYPUTTER, MSSD - Machine Shutdown reason.} */
 static uint8_t scmKeyPutShutdownReason(PDEVSMC pThis, PCDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(bCmd, pKeyDesc);
     Log(("scmKeyPutShutdownReason: %#x -> %#x\n", pThis->bShutdownReason, pCurKey->Value.ab[0]));
     pThis->bShutdownReason = pCurKey->Value.ab[0];
     return SMC_STATUS_CD_SUCCESS;
@@ -668,6 +676,7 @@ static uint8_t scmKeyPutShutdownReason(PDEVSMC pThis, PCDEVSMCCURKEY pCurKey, ui
 /** @callback_method_impl{DEVSMCKEYGETTER, MSSD - Ninja timer action job.} */
 static uint8_t scmKeyGetNinjaTimerAction(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(bCmd, pKeyDesc);
     pCurKey->Value.ab[0] = pThis->bNinjaActionTimerJob;
     return SMC_STATUS_CD_SUCCESS;
 }
@@ -676,6 +685,7 @@ static uint8_t scmKeyGetNinjaTimerAction(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, u
 /** @callback_method_impl{DEVSMCKEYPUTTER, NATJ - Ninja timer action job.} */
 static uint8_t scmKeyPutNinjaTimerAction(PDEVSMC pThis, PCDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(bCmd, pKeyDesc);
     Log(("scmKeyPutNinjaTimerAction: %#x -> %#x\n", pThis->bNinjaActionTimerJob, pCurKey->Value.ab[0]));
     pThis->bNinjaActionTimerJob = pCurKey->Value.ab[0];
     return SMC_STATUS_CD_SUCCESS;
@@ -686,6 +696,7 @@ static uint8_t scmKeyPutNinjaTimerAction(PDEVSMC pThis, PCDEVSMCCURKEY pCurKey, 
 /** @callback_method_impl{DEVSMCKEYGETTER, Generic one getter.} */
 static uint8_t scmKeyGetOne(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(pThis, bCmd);
     memset(&pCurKey->Value.ab[0], 0, pKeyDesc->cbValue);
     pCurKey->Value.ab[pKeyDesc->cbValue - 1] = 1;
     return SMC_STATUS_CD_SUCCESS;
@@ -696,6 +707,7 @@ static uint8_t scmKeyGetOne(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, 
 /** @callback_method_impl{DEVSMCKEYGETTER, Generic zero getter.} */
 static uint8_t scmKeyGetZero(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
 {
+    RT_NOREF2(pThis, bCmd);
     memset(&pCurKey->Value.ab[0], 0, pKeyDesc->cbValue);
     return SMC_STATUS_CD_SUCCESS;
 }
@@ -705,10 +717,9 @@ static uint8_t scmKeyGetZero(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd,
  * Looks up a key and copies its value and attributes into the CurKey.
  *
  * @returns Key index on success, UINT32_MAX on failure.
- * @param   pThis       The SMC instance data.
  * @param   uKeyValue   The key value (DEVSMC4CHID.u32).
  */
-static uint32_t smcKeyLookup(PDEVSMC pThis, uint32_t uKeyValue)
+static uint32_t smcKeyLookup(uint32_t uKeyValue)
 {
     uint32_t iKey = RT_ELEMENTS(g_aSmcKeys);
     while (iKey-- > 0)
@@ -730,7 +741,7 @@ static uint8_t smcKeyGetByName(PDEVSMC pThis)
 #ifdef LOG_ENABLED
     uint32_t const uKeyValueLog = RT_H2LE_U32(pThis->CurKey.Key.u32);
 #endif
-    uint32_t iKey = smcKeyLookup(pThis, pThis->CurKey.Key.u32);
+    uint32_t iKey = smcKeyLookup(pThis->CurKey.Key.u32);
     if (iKey != UINT32_MAX)
     {
         if (   g_aSmcKeys[iKey].cbValue == pThis->CurKey.cbValue
@@ -817,7 +828,7 @@ static uint8_t smcKeyGetAttrByName(PDEVSMC pThis)
 #ifdef LOG_ENABLED
     uint32_t const uKeyValueLog = RT_H2LE_U32(pThis->CurKey.Key.u32);
 #endif
-    uint32_t iKey = smcKeyLookup(pThis, pThis->CurKey.Key.u32);
+    uint32_t iKey = smcKeyLookup(pThis->CurKey.Key.u32);
     if (iKey != UINT32_MAX)
     {
         pThis->CurKey.Type    = g_aSmcKeys[iKey].Type;
@@ -850,11 +861,13 @@ static uint8_t smcKeyGetAttrByName(PDEVSMC pThis)
 
 static uint8_t smcKeyPutPrepare(PDEVSMC pThis)
 {
+    RT_NOREF1(pThis);
     return 0;
 }
 
 static uint8_t smcKeyPutValue(PDEVSMC pThis)
 {
+    RT_NOREF1(pThis);
     return 0;
 }
 
@@ -868,6 +881,7 @@ static uint8_t smcKeyPutValue(PDEVSMC pThis)
  */
 static int smcRegData_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
 {
+    RT_NOREF1(uReg);
     switch (pThis->bCmd)
     {
         case SMC_CMD_GET_KEY_VALUE:
@@ -957,6 +971,7 @@ static int smcRegData_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
  */
 static int smcRegData_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
 {
+    RT_NOREF1(uReg);
     switch (pThis->bCmd)
     {
         /*
@@ -1142,6 +1157,7 @@ static int smcRegGen_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
  */
 static int smcRegFF_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
 {
+    RT_NOREF3(pThis, uReg, bValue);
     Log(("SMC: %#04x: Writing %#x to unknown register!\n", uReg, bValue));
     return VINF_SUCCESS;
 }
@@ -1156,6 +1172,7 @@ static int smcRegFF_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
  */
 static int smcRegFF_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
 {
+    RT_NOREF2(pThis, uReg);
     Log(("SMC: %#04x: Reading from unknown register!\n", uReg));
     *pbValue = 0xff;
     return VINF_SUCCESS;
@@ -1259,6 +1276,7 @@ static const struct
 /** @callback_method_impl{FNIOMIOPORTOUT} */
 PDMBOTHCBDECL(int) smcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    RT_NOREF1(pvUser);
 #ifndef IN_RING3
     if (cb > 1)
         return VINF_IOM_R3_IOPORT_WRITE;
@@ -1300,6 +1318,7 @@ PDMBOTHCBDECL(int) smcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 /** @callback_method_impl{FNIOMIOPORTIN} */
 PDMBOTHCBDECL(int) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    RT_NOREF1(pvUser);
 #ifndef IN_RING3
     if (cb > 1)
         return VINF_IOM_R3_IOPORT_READ;
@@ -1351,6 +1370,7 @@ PDMBOTHCBDECL(int) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 static DECLCALLBACK(int) smcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    RT_NOREF2(pSSM, pThis);
 
     /** @todo */
 
@@ -1363,6 +1383,7 @@ static DECLCALLBACK(int) smcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 {
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    RT_NOREF2(pSSM, pThis);
 
     /* Fend off unsupported versions. */
     if (   uVersion != SMC_SAVED_STATE_VERSION
@@ -1387,6 +1408,7 @@ static DECLCALLBACK(int) smcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF1(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
     Assert(iInstance == 0);

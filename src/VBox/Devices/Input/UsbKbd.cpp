@@ -497,6 +497,7 @@ static void usbHidLinkDone(PUSBHID pThis, PVUSBURB pUrb)
  */
 static int usbHidCompleteStall(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb, const char *pszWhy)
 {
+    RT_NOREF1(pszWhy);
     Log(("usbHidCompleteStall/#%u: pUrb=%p:%s: %s\n", pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, pszWhy));
 
     pUrb->enmStatus = VUSBSTATUS_STALL;
@@ -1150,6 +1151,7 @@ static DECLCALLBACK(int) usbHidUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsign
  */
 static DECLCALLBACK(int) usbHidUsbSetInterface(PPDMUSBINS pUsbIns, uint8_t bInterfaceNumber, uint8_t bAlternateSetting)
 {
+    RT_NOREF3(pUsbIns, bInterfaceNumber, bAlternateSetting);
     LogFlow(("usbHidUsbSetInterface/#%u: bInterfaceNumber=%u bAlternateSetting=%u\n", pUsbIns->iInstance, bInterfaceNumber, bAlternateSetting));
     Assert(bAlternateSetting == 0);
     return VINF_SUCCESS;
@@ -1162,6 +1164,7 @@ static DECLCALLBACK(int) usbHidUsbSetInterface(PPDMUSBINS pUsbIns, uint8_t bInte
 static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t bConfigurationValue,
                                                    const void *pvOldCfgDesc, const void *pvOldIfState, const void *pvNewCfgDesc)
 {
+    RT_NOREF3(pvOldCfgDesc, pvOldIfState, pvNewCfgDesc);
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidUsbSetConfiguration/#%u: bConfigurationValue=%u\n", pUsbIns->iInstance, bConfigurationValue));
     Assert(bConfigurationValue == 1);
@@ -1190,7 +1193,7 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
  */
 static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS pUsbIns)
 {
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID); RT_NOREF_PV(pThis);
     LogFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
     return &g_UsbHidDescCache;
 }
@@ -1201,6 +1204,7 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS pU
  */
 static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 {
+    RT_NOREF1(fResetOnLinux);
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
     RTCritSectEnter(&pThis->CritSect);
@@ -1217,6 +1221,7 @@ static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
  */
 static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
 {
+    PDMUSB_CHECK_VERSIONS_RETURN_VOID(pUsbIns);
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));
 
@@ -1241,6 +1246,8 @@ static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
  */
 static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal)
 {
+    RT_NOREF1(pCfgGlobal);
+    PDMUSB_CHECK_VERSIONS_RETURN(pUsbIns);
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     Log(("usbHidConstruct/#%u:\n", iInstance));
 

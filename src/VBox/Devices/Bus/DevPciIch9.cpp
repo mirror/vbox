@@ -1942,8 +1942,6 @@ static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus
 static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 {
     PICH9PCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
-    PVM             pVM = PDMDevHlpGetVM(pDevIns);
-    Assert(pVM);
 
     /*
      * Set the start addresses.
@@ -1962,9 +1960,7 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
      * Init the devices.
      */
     for (int i = 0; i < 256; i++)
-    {
         ich9pciBiosInitDevice(pGlobals, 0, i);
-    }
 
     return VINF_SUCCESS;
 }
@@ -2516,10 +2512,9 @@ static DECLCALLBACK(void) ich9pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
 }
 
 
-static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
-                                          int        iInstance,
-                                          PCFGMNODE  pCfg)
+static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE  pCfg)
 {
+    RT_NOREF1(iInstance);
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 

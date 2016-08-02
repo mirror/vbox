@@ -324,6 +324,7 @@ VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVSc
                                        PCRTSGSEG paSGList, uint8_t *pbSense,
                                        size_t cbSense, void *pvVScsiReqUser)
 {
+    RT_NOREF1(cbSGList);
     PVSCSIDEVICEINT pVScsiDevice = (PVSCSIDEVICEINT)hVScsiDevice;
     PVSCSIREQINT    pVScsiReq    = NULL;
 

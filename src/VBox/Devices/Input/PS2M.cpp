@@ -834,7 +834,8 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
  */
 static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PPS2M       pThis = (PS2M *)pvUser; NOREF(pDevIns);
+    RT_NOREF2(pDevIns, pTimer);
+    PPS2M       pThis = (PS2M *)pvUser;
     uint32_t    uHaveEvents;
 
     /* Grab the lock to avoid races with PutEvent(). */
@@ -867,7 +868,8 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
  */
 static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PPS2M pThis = (PS2M *)pvUser; NOREF(pDevIns);
+    RT_NOREF2(pDevIns, pTimer);
+    PPS2M pThis = (PS2M *)pvUser;
 
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 
@@ -941,6 +943,7 @@ static DECLCALLBACK(void *) ps2mQueryInterface(PPDMIBASE pInterface, const char 
 static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
                               int32_t dz, int32_t dw, uint32_t fButtons)
 {
+    RT_NOREF1(dw);
     int             rc = VINF_SUCCESS;
 
     /* Update internal accumulators and button state. */
@@ -1078,8 +1081,6 @@ int PS2MAttach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 
 void PS2MSaveState(PPS2M pThis, PSSMHANDLE pSSM)
 {
-    uint32_t    cPressed = 0;
-
     LogFlowFunc(("Saving PS2M state\n"));
 
     /* Save the core auxiliary device state. */
@@ -1171,15 +1172,15 @@ void PS2MReset(PPS2M pThis)
 
 void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
 {
+    RT_NOREF2(pDevIns, offDelta);
     LogFlowFunc(("Relocating PS2M\n"));
     pThis->pDelayTimerRC    = TMTimerRCPtr(pThis->pDelayTimerR3);
     pThis->pThrottleTimerRC = TMTimerRCPtr(pThis->pThrottleTimerR3);
-    NOREF(offDelta);
 }
 
 int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
 {
-    int     rc;
+    RT_NOREF1(iInstance);
 
     LogFlowFunc(("iInstance=%d\n", iInstance));
 
@@ -1203,8 +1204,8 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
      * Create the input rate throttling timer. Does not use virtual time!
      */
     PTMTIMER pTimer;
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2mThrottleTimer, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Throttle Timer", &pTimer);
+    int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2mThrottleTimer, pThis,
+                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Throttle Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 

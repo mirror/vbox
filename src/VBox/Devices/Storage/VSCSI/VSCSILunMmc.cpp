@@ -127,7 +127,7 @@ static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint
 /* Fabricate session information. */
 static int mmcReadTOCMulti(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer, bool fMSF)
 {
-    PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
+    RT_NOREF1(cbMaxTransfer);
     uint8_t         aReply[32];
     uint8_t         *pbBuf = aReply;
 
@@ -171,8 +171,7 @@ static DECLCALLBACK(int) vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
 
 static DECLCALLBACK(int) vscsiLunMmcDestroy(PVSCSILUNINT pVScsiLun)
 {
-    PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
-
+    RT_NOREF1(pVScsiLun);
     return VINF_SUCCESS;
 }
 
@@ -367,7 +366,6 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         }
         case SCSI_LOG_SENSE:
         {
-            uint16_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
             uint8_t uPageCode = pVScsiReq->pbCDB[2] & 0x3f;
             uint8_t uSubPageCode = pVScsiReq->pbCDB[3];
 

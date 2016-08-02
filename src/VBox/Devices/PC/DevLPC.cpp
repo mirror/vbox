@@ -78,6 +78,7 @@ typedef struct
 
 static uint32_t rcba_ram_readl(LPCState* s, RTGCPHYS addr)
 {
+    RT_NOREF1(s);
     Log(("rcba_read at %llx\n", (uint64_t)addr));
     int32_t iIndex = (addr - RCBA_BASE);
     uint32_t value = 0;
@@ -104,6 +105,7 @@ static uint32_t rcba_ram_readl(LPCState* s, RTGCPHYS addr)
 
 static void rcba_ram_writel(LPCState* s, RTGCPHYS addr, uint32_t value)
 {
+    RT_NOREF2(s, value);
     Log(("rcba_write %llx = %#x\n", (uint64_t)addr, value));
     int32_t iIndex = (addr - RCBA_BASE);
 
@@ -132,6 +134,7 @@ static void rcba_ram_writel(LPCState* s, RTGCPHYS addr, uint32_t value)
  */
 PDMBOTHCBDECL(int)  lpcMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
+    RT_NOREF2(pvUser, cb);
     LPCState *s = PDMINS_2_DATA(pDevIns, LPCState*);
     Assert(cb == 4); Assert(!(GCPhysAddr & 3));
     *(uint32_t*)pv = rcba_ram_readl(s, GCPhysAddr);
@@ -152,6 +155,7 @@ PDMBOTHCBDECL(int)  lpcMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  */
 PDMBOTHCBDECL(int) lpcMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
+    RT_NOREF1(pvUser);
     LPCState *s = PDMINS_2_DATA(pDevIns, LPCState*);
 
     switch (cb)
@@ -181,6 +185,7 @@ PDMBOTHCBDECL(int) lpcMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  */
 static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF1(pszArgs);
     LPCState   *pThis = PDMINS_2_DATA(pDevIns, LPCState *);
     LogFlow(("lpcInfo: \n"));
 
@@ -209,6 +214,8 @@ static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF2(iInstance, pCfg);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     LPCState   *pThis = PDMINS_2_DATA(pDevIns, LPCState *);
     int         rc;
     Assert(iInstance == 0);

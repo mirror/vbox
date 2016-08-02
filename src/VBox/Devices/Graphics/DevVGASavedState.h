@@ -37,7 +37,7 @@
         { \
             uint64_t uMarker; \
             int rcMarker = SSMR3GetU64(pSSM, &uMarker); \
-            AssertLogRelRCReturn(rc, rc); \
+            AssertLogRelRCReturn(rcMarker, rcMarker); \
             AssertLogRelMsgReturn(uMarker == VGA_SAVED_STATE_MAKE_MARKER(uSub), \
                                   ("Bad VGA marker: expected %llx, got %llx\n", VGA_SAVED_STATE_MAKE_MARKER(uSub), uMarker), \
                                   VERR_SSM_DATA_UNIT_FORMAT_CHANGED); \

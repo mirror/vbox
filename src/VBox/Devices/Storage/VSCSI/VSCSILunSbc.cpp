@@ -427,7 +427,6 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         }
         case SCSI_LOG_SENSE:
         {
-            uint16_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
             uint8_t uPageCode = pVScsiReq->pbCDB[2] & 0x3f;
             uint8_t uSubPageCode = pVScsiReq->pbCDB[3];
 
