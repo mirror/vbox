@@ -58,9 +58,6 @@ static const VDFILEEXTENSION s_aVdiFileExtensions[] =
 static unsigned getPowerOfTwo(unsigned uNumber);
 static void vdiInitPreHeader(PVDIPREHEADER pPreHdr);
 static int  vdiValidatePreHeader(PVDIPREHEADER pPreHdr);
-static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
-                          const char *pszComment, uint64_t cbDisk,
-                          uint32_t cbBlock, uint32_t cbBlockExtra);
 static int  vdiValidateHeader(PVDIHEADER pHeader);
 static void vdiSetupImageDesc(PVDIIMAGEDESC pImage);
 static int  vdiUpdateHeader(PVDIIMAGEDESC pImage);

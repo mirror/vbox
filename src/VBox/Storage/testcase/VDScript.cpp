@@ -308,7 +308,9 @@ static int vdScriptParseStatement(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTSTMT *ppAst
 static int vdScriptParseExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr);
 static int vdScriptParseAssignmentExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr);
 static int vdScriptParseCastExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr);
+#if 0 /* unused */
 static int vdScriptParseConstExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr);
+#endif
 
 /**
  * Returns whether the tokenizer reached the end of the stream.
@@ -704,6 +706,7 @@ static PVDTOKENIZER vdScriptTokenizerCreate(const char *pszInput)
     return pTokenizer;
 }
 
+#if 0 /** @todo unused */
 /**
  * Destroys a given tokenizer state.
  *
@@ -714,6 +717,7 @@ static void vdScriptTokenizerDestroy(PVDTOKENIZER pTokenizer)
 {
     RTMemFree(pTokenizer);
 }
+#endif
 
 /**
  * Get the current token in the input stream.
@@ -1302,6 +1306,7 @@ static int vdScriptParseUnaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR 
     return rc;
 }
 
+#if 0 /* unused */
 /**
  * Parse a storage class specifier.
  *
@@ -1333,7 +1338,9 @@ static void vdScriptParseStorageClassSpecifier(PVDSCRIPTCTXINT pThis, PVDSCRIPTA
     else if (vdScriptTokenizerSkipIfIsKeywordEqual(pThis->pTokenizer, VDSCRIPTTOKENKEYWORD_REGISTER))
         *penmStorageClass = VDSCRIPTASTSTORAGECLASS_REGISTER;
 }
+#endif /* unused */
 
+#if 0 /* unused */
 /**
  * Parse a type qualifier.
  *
@@ -1359,6 +1366,7 @@ static void vdScriptParseTypeQualifier(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTTYPEQU
     else if (vdScriptTokenizerSkipIfIsKeywordEqual(pThis->pTokenizer, VDSCRIPTTOKENKEYWORD_VOLATILE))
         *penmTypeQualifier = VDSCRIPTASTTYPEQUALIFIER_VOLATILE;
 }
+#endif /* unused */
 
 #if 0
 /**
@@ -2058,6 +2066,7 @@ static int vdScriptParseCondExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *
     return vdScriptParseLogicalOrExpression(pThis, ppAstNodeExpr);
 }
 
+#if 0 /* unused */
 /**
  * Parse a constant expression.
  *
@@ -2073,6 +2082,7 @@ static int vdScriptParseConstExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR 
 {
     return vdScriptParseCondExpression(pThis, ppAstNodeExpr);
 }
+#endif
 
 /**
  * Parse an assignment expression.

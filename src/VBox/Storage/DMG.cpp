@@ -431,13 +431,17 @@ static const VDFILEEXTENSION s_aDmgFileExtensions[] =
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#if 0 /* unused */
 static void dmgUdifFtrHost2FileEndian(PDMGUDIF pUdif);
+#endif
 static void dmgUdifFtrFile2HostEndian(PDMGUDIF pUdif);
 
 static void dmgUdifIdHost2FileEndian(PDMGUDIFID pId);
 static void dmgUdifIdFile2HostEndian(PDMGUDIFID pId);
 
+#if 0 /* unused */
 static void dmgUdifCkSumHost2FileEndian(PDMGUDIFCKSUM pCkSum);
+#endif
 static void dmgUdifCkSumFile2HostEndian(PDMGUDIFCKSUM pCkSum);
 static bool dmgUdifCkSumIsValid(PCDMGUDIFCKSUM pCkSum, const char *pszPrefix);
 
@@ -588,6 +592,7 @@ static void dmgSwapEndianUdif(PDMGUDIF pUdif)
 }
 
 
+#if 0 /* unused */
 /**
  * Swaps endian from host cpu to file.
  * @param   pUdif       The structure.
@@ -599,6 +604,7 @@ static void dmgUdifFtrHost2FileEndian(PDMGUDIF pUdif)
     dmgUdifCkSumHost2FileEndian(&pUdif->DataCkSum);
     dmgUdifCkSumHost2FileEndian(&pUdif->MasterCkSum);
 }
+#endif
 
 
 /**
@@ -740,6 +746,7 @@ static void dmgSwapEndianUdifCkSum(PDMGUDIFCKSUM pCkSum, uint32_t u32Kind, uint3
 }
 
 
+#if 0 /* unused */
 /**
  * Swaps endian from host cpu to file.
  * @param   pCkSum      The structure.
@@ -748,6 +755,7 @@ static void dmgUdifCkSumHost2FileEndian(PDMGUDIFCKSUM pCkSum)
 {
     dmgSwapEndianUdifCkSum(pCkSum, pCkSum->u32Kind, pCkSum->cBits);
 }
+#endif
 
 
 /**

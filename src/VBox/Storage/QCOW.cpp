@@ -451,6 +451,7 @@ static void qcowTableConvertFromHostEndianess(uint64_t *paTblImg, uint64_t *paTb
     }
 }
 
+#if 0 /* unused */
 /**
  * Convert refcount table entries from little endian to host endianess.
  *
@@ -466,7 +467,9 @@ static void qcowRefcountTableConvertToHostEndianess(uint16_t *paTbl, uint32_t cE
         paTbl++;
     }
 }
+#endif
 
+#if 0 /* unused */
 /**
  * Convert table entries from host to little endian format.
  *
@@ -485,6 +488,7 @@ static void qcowRefcountTableConvertFromHostEndianess(uint16_t *paTblImg, uint16
         paTblImg++;
     }
 }
+#endif
 
 /**
  * Creates the L2 table cache.

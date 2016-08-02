@@ -506,12 +506,14 @@ const VDSCRIPTCALLBACK g_aScriptActions[] =
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
 
+#if 0 /* unused */
 static DECLCALLBACK(int) vdScriptCallbackPrint(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
     NOREF(pvUser);
     RTPrintf(paScriptArgs[0].psz);
     return VINF_SUCCESS;
 }
+#endif /* unused */
 
 static DECLCALLBACK(void) tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {

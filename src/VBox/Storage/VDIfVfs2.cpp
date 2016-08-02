@@ -142,14 +142,16 @@ static DECLCALLBACK(int) notImpl_SetSize(void *pvUser, void *pvStorage, uint64_t
     return VERR_NOT_IMPLEMENTED;
 }
 
+#if 0  /* unused */
 /** @interface_method_impl{VDINTERFACEIO,pfnWriteSync}  */
 static DECLCALLBACK(int) notImpl_WriteSync(void *pvUser, void *pvStorage, uint64_t off, const void *pvBuf,
                                            size_t cbWrite, size_t *pcbWritten)
 {
-    NOREF(pvUser); NOREF(pvStorage); NOREF(off); NOREF(pvBuf); NOREF(cbWrite); NOREF(pcbWritten);
+    RT_NOREF6(pvUser, pvStorage, off, pvBuf, cbWrite, pcbWritten)
     Log(("%s\n",  __FUNCTION__));
     return VERR_NOT_IMPLEMENTED;
 }
+#endif
 
 /** @interface_method_impl{VDINTERFACEIO,pfnFlushSync}  */
 static DECLCALLBACK(int) notImpl_FlushSync(void *pvUser, void *pvStorage)

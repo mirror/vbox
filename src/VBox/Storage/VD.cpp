@@ -1601,10 +1601,12 @@ static size_t vdIoCtxCopy(PVDIOCTX pIoCtxDst, PVDIOCTX pIoCtxSrc, size_t cbData)
     return RTSgBufCopy(&pIoCtxDst->Req.Io.SgBuf, &pIoCtxSrc->Req.Io.SgBuf, cbData);
 }
 
+#if 0 /* unused */
 static int vdIoCtxCmp(PVDIOCTX pIoCtx1, PVDIOCTX pIoCtx2, size_t cbData)
 {
     return RTSgBufCmp(&pIoCtx1->Req.Io.SgBuf, &pIoCtx2->Req.Io.SgBuf, cbData);
 }
+#endif
 
 static size_t vdIoCtxCopyTo(PVDIOCTX pIoCtx, const uint8_t *pbData, size_t cbData)
 {
@@ -5587,6 +5589,7 @@ static DECLCALLBACK(int) vdIOIntReadMetaLimited(void *pvUser, PVDIOSTORAGE pStor
     return pInterfaceIo->pfnReadSync(NULL, pStorage->pStorage, uOffset, pvBuffer, cbBuffer, NULL);
 }
 
+#if 0 /* unsed */
 static int vdIOIntMetaXferReleaseLimited(void *pvUser, PVDMETAXFER pMetaXfer)
 {
     /* This is a NOP in this case. */
@@ -5594,6 +5597,7 @@ static int vdIOIntMetaXferReleaseLimited(void *pvUser, PVDMETAXFER pMetaXfer)
     NOREF(pMetaXfer);
     return VINF_SUCCESS;
 }
+#endif
 
 static DECLCALLBACK(int) vdIOIntFlushLimited(void *pvUser, PVDIOSTORAGE pStorage,
                                              PVDIOCTX pIoCtx,

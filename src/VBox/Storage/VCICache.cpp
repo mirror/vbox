@@ -492,6 +492,7 @@ static int vciBlkMapCreate(uint64_t cBlocks, PVCIBLKMAP *ppBlkMap, uint32_t *pcB
     return rc;
 }
 
+#if 0 /** @todo unsued vciBlkMapDestroy */
 /**
  * Frees a block map.
  *
@@ -517,6 +518,7 @@ static void vciBlkMapDestroy(PVCIBLKMAP pBlkMap)
 
     LogFlowFunc(("returns\n"));
 }
+#endif
 
 /**
  * Loads the block map from the specified medium and creates all necessary
@@ -666,8 +668,8 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                         LogFlowFunc(("return success\n"));
                         return VINF_SUCCESS;
                     }
-                    else
-                        RTMemFree(pBlkMap);
+
+                    RTMemFree(pBlkMap);
                 }
                 else
                     rc = VERR_NO_MEMORY;
@@ -774,6 +776,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
     return rc;
 }
 
+#if 0 /* unused */
 /**
  * Finds the range block describing the given block address.
  *
@@ -791,6 +794,7 @@ static PVCIBLKRANGEDESC vciBlkMapFindByBlock(PVCIBLKMAP pBlkMap, uint64_t offBlo
 
     return pBlk;
 }
+#endif
 
 /**
  * Allocates the given number of blocks in the bitmap and returns the start block address.
@@ -881,6 +885,7 @@ static int vciBlkMapAllocate(PVCIBLKMAP pBlkMap, uint32_t cBlocks, uint32_t fFla
     return rc;
 }
 
+#if 0 /* unused */
 /**
  * Try to extend the space of an already allocated block.
  *
@@ -904,7 +909,9 @@ static int vciBlkMapRealloc(PVCIBLKMAP pBlkMap, uint32_t cBlocksNew, uint64_t of
     LogFlowFunc(("returns rc=%Rrc offBlockAddr=%llu\n", rc, *poffBlockAddr));
     return rc;
 }
+#endif /* unused */
 
+#if 0 /* unused */
 /**
  * Frees a range of blocks.
  *
@@ -986,6 +993,7 @@ static void vciBlkMapFree(PVCIBLKMAP pBlkMap, uint64_t offBlockAddr, uint32_t cB
 
     LogFlowFunc(("returns\n"));
 }
+#endif /* unused */
 
 /**
  * Converts a tree node from the image to the in memory structure.

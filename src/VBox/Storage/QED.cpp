@@ -344,6 +344,7 @@ static void qedTableConvertToHostEndianess(uint64_t *paTbl, uint32_t cEntries)
     }
 }
 
+#if defined(RT_BIG_ENDIAN)
 /**
  * Convert table entries from host to little endian format.
  *
@@ -362,6 +363,7 @@ static void qedTableConvertFromHostEndianess(uint64_t *paTblImg, uint64_t *paTbl
         paTblImg++;
     }
 }
+#endif
 
 /**
  * Creates the L2 table cache.
@@ -559,6 +561,7 @@ static void qedL2TblCacheEntryInsert(PQEDIMAGE pImage, PQEDL2CACHEENTRY pL2Entry
     }
 }
 
+#if 0 /* unused */
 /**
  * Fetches the L2 from the given offset trying the LRU cache first and
  * reading it from the image after a cache miss.
@@ -610,6 +613,7 @@ static int qedL2TblCacheFetch(PQEDIMAGE pImage, uint64_t offL2Tbl, PQEDL2CACHEEN
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
+#endif
 
 /**
  * Fetches the L2 from the given offset trying the LRU cache first and
