@@ -280,6 +280,28 @@ public:
         return lrc;
     }
 
+    /**
+     * Implementation code for the "create base" task.
+     * Used as function for execution from a standalone thread.
+     *
+     * @note When the task is executed by this method,
+     *     IProgress::notifyComplete() is called for the progress
+     *     object associated with this task when the task is
+     *     finished signal the operation completion for other
+     *     threads asynchronously waiting for it.
+     */
+    void handler()
+    {
+        HRESULT lrc = executeTask();
+        if(SUCCEEDED(lrc))
+        {
+            ComPtr<Progress> pProgress = GetProgressObject();
+            /* complete the progress if run asynchronously */
+            if (!pProgress.isNull())
+                pProgress->i_notifyComplete(lrc);
+        }
+    }
+
     PVDINTERFACE mVDOperationIfaces;
 
     const ComObjPtr<Medium> mMedium;
@@ -331,7 +353,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
 };
 
 class Medium::CreateDiffTask : public Medium::Task
@@ -370,7 +391,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     AutoCaller mTargetCaller;
     bool mfKeepMediumLockList;
 };
@@ -433,7 +453,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     AutoCaller mTargetCaller;
     AutoCaller mParentCaller;
     bool mfKeepSourceMediumLockList;
@@ -468,7 +487,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     bool mfKeepMediumLockList;
 };
 
@@ -497,7 +515,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     bool mfKeepMediumLockList;
 };
 
@@ -529,7 +546,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     bool mfKeepMediumLockList;
 };
 
@@ -557,7 +573,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     bool mfKeepMediumLockList;
 };
 
@@ -585,7 +600,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     bool mfKeepMediumLockList;
 };
 
@@ -632,7 +646,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     AutoCaller mTargetCaller;
     AutoCaller mParentForTargetCaller;
     bool mfKeepMediumLockList;
@@ -687,7 +700,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     bool mfKeepSourceMediumLockList;
 };
 
@@ -752,7 +764,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     AutoCaller mParentCaller;
     bool mfKeepTargetMediumLockList;
 };
@@ -805,7 +816,6 @@ public:
 
 private:
     HRESULT executeTask();
-    void handler();
     AutoCaller mParentCaller;
 };
 
@@ -966,270 +976,6 @@ HRESULT Medium::ImportTask::executeTask()
 HRESULT Medium::EncryptTask::executeTask()
 {
     return mMedium->i_taskEncryptHandler(*this);
-}
-
-/**
- * Implementation code for the "create base" task. 
- * Used as function for execution from a standalone thread.
- *
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */ 
-void Medium::CreateBaseTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "create diff" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it. 
- */
-void Medium::CreateDiffTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "clone" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::CloneTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "move" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::MoveTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "compact" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::CompactTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "resize" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::ResizeTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "reset" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::ResetTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "delete" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::DeleteTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "merge" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::MergeTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "export" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::ExportTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "import" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::ImportTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
-}
-
-/**
- * Implementation code for the "encrypt" task. 
- * Used as function for execution from a standalone thread. 
- * 
- * @note When the task is executed by this method, 
- *     IProgress::notifyComplete() is called for the progress
- *     object associated with this task when the task is
- *     finished signal the operation completion for other
- *     threads asynchronously waiting for it.
- */
-void Medium::EncryptTask::handler()
-{
-    HRESULT lrc = executeTask();
-    if(SUCCEEDED(lrc))
-    {
-       ComPtr<Progress> pProgress = GetProgressObject();
-    /* complete the progress if run asynchronously */
-    if (!pProgress.isNull())
-        pProgress->i_notifyComplete(lrc);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
