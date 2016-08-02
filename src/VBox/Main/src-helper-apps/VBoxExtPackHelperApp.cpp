@@ -1419,6 +1419,8 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
 
 #else
 
+    RT_NOREF2(pszExecPath, pszDisplayInfoHack);
+
     /*
      * Several of the alternatives below will require a command line.
      */

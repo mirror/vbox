@@ -214,7 +214,7 @@ ifdef VBOX_GSOAP_INSTALLED
   vboxsoap_CXXFLAGS += $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS)
   vboxsoap_CXXFLAGS.win += -bigobj
   ifn1of ($(KBUILD_TARGET), win)
-   vboxsoap_CXXFLAGS += -Wno-shadow
+   vboxsoap_CXXFLAGS += -Wno-shadow -Wno-parentheses
   endif
   vboxsoap_INCS := \
   	$(VBOX_GSOAP_INCS) \

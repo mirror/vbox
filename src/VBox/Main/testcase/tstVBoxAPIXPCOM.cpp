@@ -432,7 +432,7 @@ void createVM(IVirtualBox *virtualBox)
 // main
 ///////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+int main()
 {
     /*
      * Check that PRUnichar is equal in size to what compiler composes L""
