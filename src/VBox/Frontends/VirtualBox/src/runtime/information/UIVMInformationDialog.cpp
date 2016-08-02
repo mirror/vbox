@@ -188,13 +188,7 @@ void UIVMInformationDialog::prepareThis()
     prepareCentralWidget();
 
     /* Configure handlers: */
-    //connect(m_pMachineWindow->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment&)), this, SLOT(sltUpdateDetails()));
-    //connect(m_pMachineWindow->uisession(), SIGNAL(sigSharedFolderChange()), this, SLOT(sltUpdateDetails()));
-    /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are more than one screens. */
-    //connect(m_pMachineWindow->machineView(), SIGNAL(sigFrameBufferResize()), this, SLOT(sltProcessStatistics()));
     connect(m_pTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
-    //connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateDetails()));
-    //connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
 
     /* Retranslate: */
     retranslateUi();
