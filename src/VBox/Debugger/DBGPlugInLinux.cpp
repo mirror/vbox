@@ -565,8 +565,8 @@ static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RT
 
     struct { void *pvVar; uint32_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
     {
-        { pGCPtrLogBuf, sizeof(RTGCPTR),  pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t), "log_buf_addr_get" },
-        { pcbLogBuf,    sizeof(uint32_t), sizeof(uint32_t),                                    "log_buf_len_get" }
+        { pGCPtrLogBuf, (uint32_t)sizeof(RTGCPTR),  (uint32_t)(pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t)), "log_buf_addr_get" },
+        { pcbLogBuf,    (uint32_t)sizeof(uint32_t), (uint32_t)sizeof(uint32_t),                                      "log_buf_len_get" }
     };
     for (uint32_t i = 0; i < RT_ELEMENTS(aSymbols) && RT_SUCCESS(rc); i++)
     {

@@ -88,11 +88,8 @@ typedef DBGDIGGEROS2 *PDBGDIGGEROS2;
 static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, void *pvData);
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
 
-
+#if 0 /* unused */
 /**
  * Process a PE image found in guest memory.
  *
@@ -114,6 +111,7 @@ static void dbgDiggerOS2ProcessImage(PDBGDIGGEROS2 pThis, PUVM pUVM, const char 
 
     /* To be implemented.*/
 }
+#endif
 
 
 /**
