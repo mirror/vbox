@@ -517,7 +517,7 @@ static void kbd_save(PSSMHANDLE pSSM, KBDState *s)
     SSMR3PutU8(pSSM, s->dbbout);
 
     /* terminator */
-    SSMR3PutU32(pSSM, ~0);
+    SSMR3PutU32(pSSM, UINT32_MAX);
 }
 
 static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)

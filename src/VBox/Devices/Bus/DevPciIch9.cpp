@@ -1146,7 +1146,7 @@ static DECLCALLBACK(int) ich9pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     for (int i = 0; i < PCI_APIC_IRQ_PINS; i++)
         SSMR3PutU32(pSSM, pThis->uaPciApicIrqLevels[i]);
 
-    SSMR3PutU32(pSSM, ~0);        /* separator */
+    SSMR3PutU32(pSSM, UINT32_MAX);  /* separator */
 
     return ich9pciR3CommonSaveExec(&pThis->aPciBus, pSSM);
 }

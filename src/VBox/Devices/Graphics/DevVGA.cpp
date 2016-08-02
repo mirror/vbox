@@ -1869,9 +1869,9 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
       /* if the cursor position changed, we update the old and new
          chars */
         if (pThis->cursor_offset < CH_ATTR_SIZE)
-            pThis->last_ch_attr[pThis->cursor_offset] = ~0;
+            pThis->last_ch_attr[pThis->cursor_offset] = UINT32_MAX;
         if (cursor_offset < CH_ATTR_SIZE)
-            pThis->last_ch_attr[cursor_offset] = ~0;
+            pThis->last_ch_attr[cursor_offset] = UINT32_MAX;
         pThis->cursor_offset = cursor_offset;
         pThis->cursor_start = pThis->cr[0xa];
         pThis->cursor_end = pThis->cr[0xb];
@@ -4594,8 +4594,6 @@ static DECLCALLBACK(int) vgaPortQueryStatusLed(PPDMILEDPORTS pInterface, unsigne
             AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
             return VERR_PDM_NO_SUCH_LUN;
     }
-
-    return VERR_PDM_LUN_NOT_FOUND;
 }
 
 /* -=-=-=-=-=- Ring 3: Dummy IDisplayConnector -=-=-=-=-=- */

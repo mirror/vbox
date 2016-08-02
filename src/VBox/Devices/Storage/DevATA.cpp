@@ -2508,6 +2508,7 @@ static bool atapiR3ReadTrackInformationSS(ATADevState *s)
 
 static uint32_t atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 3*4)
         return 0;
 
@@ -2526,6 +2527,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, u
 
 static uint32_t atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 12)
         return 0;
 
@@ -2541,6 +2543,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *
 
 static uint32_t atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 8)
         return 0;
 
@@ -2555,6 +2558,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8
 
 static uint32_t atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 8)
         return 0;
 
@@ -2570,6 +2574,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s
 
 static uint32_t atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 12)
         return 0;
 
@@ -2586,6 +2591,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s
 
 static uint32_t atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 8)
         return 0;
 
@@ -2600,6 +2606,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t
 
 static uint32_t atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 4)
         return 0;
 
@@ -2612,6 +2619,7 @@ static uint32_t atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s
 
 static uint32_t atapiR3GetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
+    RT_NOREF1(s);
     if (cbBuf < 8)
         return 0;
 
@@ -5267,6 +5275,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
             pBuffer = pCtl->pRedoDMABuffer;
             cbBuffer = pCtl->cbRedoDMABuffer;
             fLastDesc = pCtl->fRedoDMALastDesc;
+            DMADesc.pBuffer = DMADesc.cbBuffer = 0; /* Shut up MSC. */
         }
         else
         {
@@ -5431,8 +5440,9 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
  * the middle of a PIO transfer" question.  The solution was to use an ASM,
  * which is what's there now.
  */
-static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF1(hThreadSelf);
     const ATARequest *pReq;
     uint64_t        u64TS = 0; /* shut up gcc */
     uint64_t        uWait;
@@ -6109,6 +6119,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                               RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF1(cb);
     PCIATAState *pThis = PCIDEV_2_PCIATASTATE(pPciDev);
     int         rc = VINF_SUCCESS;
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
@@ -6677,7 +6688,8 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ataR3SaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    RT_NOREF1(pSSM);
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     /* sanity - the suspend notification will wait on the async stuff. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
@@ -6692,7 +6704,8 @@ static DECLCALLBACK(int) ataR3SaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ataR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    RT_NOREF1(uPass);
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
     SSMR3PutU8(pSSM, pThis->u8Type);
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
@@ -6788,7 +6801,7 @@ static DECLCALLBACK(int) ataR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         }
     }
 
-    return SSMR3PutU32(pSSM, ~0); /* sanity/terminator */
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
 /**

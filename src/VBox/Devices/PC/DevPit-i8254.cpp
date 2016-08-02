@@ -585,8 +585,7 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
 {
     int64_t expire_time;
     int irq_level;
-    PTMTIMER pTimer = pChan->CTX_SUFF(pPit)->channels[0].CTX_SUFF(pTimer);
-    Assert(TMTimerIsLockOwner(pTimer));
+    Assert(TMTimerIsLockOwner(pChan->CTX_SUFF(pPit)->channels[0].CTX_SUFF(pTimer)));
 
     if (!pChan->CTX_SUFF(pTimer))
         return;
@@ -821,7 +820,6 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
          * Port 40-42h - Channel Data Ports.
          */
         PPITCHANNEL pChan = &pThis->channels[Port];
-        uint8_t const write_state = pChan->write_state;
         DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
         switch (pChan->write_state)
         {
@@ -899,7 +897,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    NOREF(pvUser);
+    RT_NOREF2(pvUser, Port);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
@@ -994,6 +992,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) pitLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    RT_NOREF1(uPass);
     PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
     SSMR3PutIOPort(pSSM, pThis->IOPortBaseCfg);
     SSMR3PutU8(    pSSM, pThis->channels[0].irq);
@@ -1163,6 +1162,7 @@ static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
  */
 static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF1(pszArgs);
     PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
     unsigned    i;
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
@@ -1235,6 +1235,7 @@ static DECLCALLBACK(void *) pitQueryInterface(PPDMIBASE pInterface, const char *
  */
 static DECLCALLBACK(void) pitRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF1(offDelta);
     PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
     LogFlow(("pitRelocate: \n"));
 
