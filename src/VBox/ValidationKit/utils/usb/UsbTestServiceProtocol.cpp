@@ -98,17 +98,17 @@ DECLHIDDEN(void) utsProtocolReqH2N(PUTSPKTHDR pPktHdr)
 
 DECLHIDDEN(void) utsProtocolReqN2H(PUTSPKTHDR pPktHdr)
 {
-
+    RT_NOREF1(pPktHdr);
 }
 
 
 DECLHIDDEN(void) utsProtocolRepH2N(PUTSPKTSTS pPktHdr)
 {
-
+    RT_NOREF1(pPktHdr);
 }
 
 
 DECLHIDDEN(void) utsProtocolRepN2H(PUTSPKTSTS pPktHdr)
 {
-
+    RT_NOREF1(pPktHdr);
 }

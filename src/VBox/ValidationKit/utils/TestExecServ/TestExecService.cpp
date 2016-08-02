@@ -755,7 +755,6 @@ static int txsDoUnpackFile(PCTXSPKTHDR pPktHdr)
     char *pszDirectory = NULL;
 
     /* Packet cursor. */
-    const char *pchEnd = (const char *)pPktHdr + pPktHdr->cb;
     const char *pch = (const char *)(pPktHdr + 1);
 
     if (txsIsStringValid(pPktHdr, "file", pch, &pszFile, &pch, &rc))

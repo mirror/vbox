@@ -466,6 +466,7 @@ static int utsReplyRC(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, int rcOperation, 
                            szOperation, rcOperation, pPktHdr->achOpcode);
 }
 
+#if 0 /* unused */
 /**
  * Signal a bad packet minum size.
  *
@@ -479,6 +480,7 @@ static int utsReplyBadMinSize(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, size_t cb
     return utsReplyFailure(pClient, pPktHdr, "BAD SIZE", VERR_INVALID_PARAMETER, "Expected at least %zu bytes, got %u (opcode '%.8s')",
                            cbMin, pPktHdr->cb, pPktHdr->achOpcode);
 }
+#endif
 
 /**
  * Signal a bad packet exact size.
@@ -494,6 +496,7 @@ static int utsReplyBadSize(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, size_t cb)
                            cb, pPktHdr->cb, pPktHdr->achOpcode);
 }
 
+#if 0 /* unused */
 /**
  * Deals with a command that isn't implemented yet.
  * @returns IPRT status code of the send.
@@ -504,6 +507,7 @@ static int utsReplyNotImplemented(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
 {
     return utsReplyFailure(pClient, pPktHdr, "NOT IMPL", VERR_NOT_IMPLEMENTED, "Opcode '%.8s' is not implemented", pPktHdr->achOpcode);
 }
+#endif
 
 /**
  * Deals with a unknown command.
@@ -1073,10 +1077,11 @@ static void utsClientDestroy(PUTSCLIENT pClient)
  */
 static DECLCALLBACK(int) utsClientWorker(RTTHREAD hThread, void *pvUser)
 {
-    unsigned   cClientsMax = 0;
-    unsigned   cClientsCur = 0;
-    PUTSCLIENT *papClients = NULL;
-    RTPOLLSET hPollSet;
+    RT_NOREF2(hThread, pvUser);
+    unsigned    cClientsMax = 0;
+    unsigned    cClientsCur = 0;
+    PUTSCLIENT *papClients  = NULL;
+    RTPOLLSET   hPollSet;
 
     int rc = RTPollSetCreate(&hPollSet);
     if (RT_FAILURE(rc))

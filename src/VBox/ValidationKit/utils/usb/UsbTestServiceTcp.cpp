@@ -87,8 +87,10 @@ static uint32_t             g_uTcpBindPort          = UTS_TCP_DEF_BIND_PORT;
 
 /** Pointer to the TCP server instance. */
 static PRTTCPSERVER         g_pTcpServer            = NULL;
+#if 0 /* unused */
 /** Stop connecting attempts when set. */
 static bool                 g_fTcpStopConnecting    = false;
+#endif
 
 
 
@@ -174,6 +176,7 @@ static DECLCALLBACK(void) utsTcpNotifyBye(PUTSTRANSPORTCLIENT pClient)
 static DECLCALLBACK(void) utsTcpNotifyHowdy(PUTSTRANSPORTCLIENT pClient)
 {
     /* nothing to do here */
+    RT_NOREF1(pClient);
 }
 
 /**
@@ -359,6 +362,7 @@ static DECLCALLBACK(int) utsTcpPollSetAdd(RTPOLLSET hPollSet, PUTSTRANSPORTCLIEN
  */
 static DECLCALLBACK(int) utsTcpPollSetRemove(RTPOLLSET hPollSet, PUTSTRANSPORTCLIENT pClient, uint32_t idStart)
 {
+    RT_NOREF1(pClient);
     return RTPollSetRemove(hPollSet, idStart);
 }
 
