@@ -786,6 +786,7 @@ static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
     return rc;
 }
 
+#if 0 /* unused */
 /**
  * Parse the specified settings file creating a new settings struct from it.
  *
@@ -812,6 +813,7 @@ static int scmSettingsCreateFromFile(PSCMSETTINGS *ppSettings, const char *pszFi
     *ppSettings = NULL;
     return rc;
 }
+#endif
 
 
 /**
