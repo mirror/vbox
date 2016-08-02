@@ -316,6 +316,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
 #else
     /** @todo implement me */
     rc = VERR_NOT_IMPLEMENTED;
+    RT_NOREF1(ppszPath);
 #endif
     return rc;
 }

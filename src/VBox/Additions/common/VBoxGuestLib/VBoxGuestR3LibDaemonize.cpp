@@ -199,7 +199,10 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, uns
     }
 
     if (!fNoChDir)
-        chdir("/");
+    {
+        int rcShutUpGcc = chdir("/");
+        RT_NOREF_PV(rcShutUpGcc);
+    }
 
     /*
      * Change the umask - this is non-standard daemon() behavior.

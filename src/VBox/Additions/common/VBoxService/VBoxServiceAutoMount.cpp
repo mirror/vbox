@@ -321,7 +321,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
 #elif defined(RT_OS_LINUX)
         unsigned long fFlags = MS_NODEV;
 
-        const char *szOptions = { "rw" };
+        /*const char *szOptions = { "rw" }; - ??? */
         struct vbsf_mount_info_new mntinf;
 
         mntinf.nullchar     = '\0';

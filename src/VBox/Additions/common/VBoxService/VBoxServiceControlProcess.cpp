@@ -49,8 +49,6 @@ using namespace guestControl;
 *********************************************************************************************************************************/
 static int                  vgsvcGstCtrlProcessAssignPID(PVBOXSERVICECTRLPROCESS pThread, uint32_t uPID);
 static int                  vgsvcGstCtrlProcessLock(PVBOXSERVICECTRLPROCESS pProcess);
-static int                  vgsvcGstCtrlProcessRequest(PVBOXSERVICECTRLPROCESS pProcess, const PVBGLR3GUESTCTRLCMDCTX pHostCtx,
-                                                       PFNRT pfnFunction, unsigned cArgs, ...);
 static int                  vgsvcGstCtrlProcessSetupPipe(const char *pszHowTo, int fd, PRTHANDLE ph, PRTHANDLE *pph,
                                                          PRTPIPE phPipe);
 static int                  vgsvcGstCtrlProcessUnlock(PVBOXSERVICECTRLPROCESS pProcess);
@@ -303,6 +301,7 @@ static int vgsvcGstCtrlProcessPollsetCloseInput(PVBOXSERVICECTRLPROCESS pProcess
 }
 
 
+#ifdef DEBUG
 /**
  * Names a poll handle ID.
  *
@@ -329,6 +328,7 @@ static const char *vgsvcGstCtrlProcessPollHandleToString(uint32_t idPollHnd)
             return "unknown";
     }
 }
+#endif /* DEBUG */
 
 
 /**
@@ -846,6 +846,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
 }
 
 
+#if 0 /* unused */
 /**
  * Initializes a pipe's handle and pipe object.
  *
@@ -864,6 +865,7 @@ static int vgsvcGstCtrlProcessInitPipe(PRTHANDLE ph, PRTPIPE phPipe)
 
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**
@@ -1214,6 +1216,9 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
                                             const char *pszAsUser, const char *pszPassword, const char *pszDomain,
                                             PRTPROCESS phProcess)
 {
+#ifndef RT_OS_WINDOWS
+    RT_NOREF1(pszDomain);
+#endif
     AssertPtrReturn(pszExec, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     /* phStdIn is optional. */

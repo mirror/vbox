@@ -119,6 +119,7 @@ static void pam_vbox_writesyslog(char *pszBuf)
  */
 static void pam_vbox_error(pam_handle_t *hPAM, const char *pszFormat, ...)
 {
+    RT_NOREF1(hPAM);
     va_list va;
     char *buf;
     va_start(va, pszFormat);
@@ -140,6 +141,7 @@ static void pam_vbox_error(pam_handle_t *hPAM, const char *pszFormat, ...)
  */
 static void pam_vbox_log(pam_handle_t *hPAM, const char *pszFormat, ...)
 {
+    RT_NOREF1(hPAM);
     if (g_verbosity)
     {
         va_list va;
@@ -304,6 +306,7 @@ static int pam_vbox_init(pam_handle_t *hPAM)
  */
 static void pam_vbox_shutdown(pam_handle_t *hPAM)
 {
+    RT_NOREF1(hPAM);
     VbglR3Term();
 }
 
@@ -551,12 +554,13 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
  * Thread function waiting for credentials to arrive.
  *
  * @return  IPRT status code.
- * @param   ThreadSelf              Thread struct to this thread.
+ * @param   hThreadSelf             Thread handle.
  * @param   pvUser                  Pointer to a PAMVBOXTHREAD structure providing
  *                                  required data used / set by the thread.
  */
-static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF1(hThreadSelf);
     PPAMVBOXTHREAD pUserData = (PPAMVBOXTHREAD)pvUser;
     AssertPtr(pUserData);
 
@@ -676,6 +680,7 @@ static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD ThreadSelf, void *pvUser)
  */
 static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint32_t uTimeoutMS)
 {
+    RT_NOREF1(uClientID);
     PAMVBOXTHREAD threadData;
     threadData.hPAM = hPAM;
     threadData.uTimeoutMS = uTimeoutMS;
@@ -701,9 +706,10 @@ static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint3
 }
 
 
-DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
-                                    int argc, const char **argv)
+DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
+    RT_NOREF1(iFlags);
+
     /* Parse arguments. */
     for (int i = 0; i < argc; i++)
     {
@@ -847,6 +853,7 @@ DECLEXPORT(int) pam_sm_setcred(pam_handle_t *hPAM, int iFlags, int argc, const c
 
 DECLEXPORT(int) pam_sm_acct_mgmt(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
+    RT_NOREF3(iFlags, argc, argv);
     pam_vbox_log(hPAM, "pam_vbox_acct_mgmt called\n");
     return PAM_SUCCESS;
 }
@@ -854,6 +861,7 @@ DECLEXPORT(int) pam_sm_acct_mgmt(pam_handle_t *hPAM, int iFlags, int argc, const
 
 DECLEXPORT(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
+    RT_NOREF3(iFlags, argc, argv);
     pam_vbox_log(hPAM, "pam_vbox_open_session called\n");
     RTPrintf("This session was provided by VirtualBox Guest Additions. Have a lot of fun!\n");
     return PAM_SUCCESS;
@@ -862,6 +870,7 @@ DECLEXPORT(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, co
 
 DECLEXPORT(int) pam_sm_close_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
+    RT_NOREF3(iFlags, argc, argv);
     pam_vbox_log(hPAM, "pam_vbox_close_session called\n");
     return PAM_SUCCESS;
 }
@@ -869,6 +878,7 @@ DECLEXPORT(int) pam_sm_close_session(pam_handle_t *hPAM, int iFlags, int argc, c
 
 DECLEXPORT(int) pam_sm_chauthtok(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
+    RT_NOREF3(iFlags, argc, argv);
     pam_vbox_log(hPAM, "pam_vbox_sm_chauthtok called\n");
     return PAM_SUCCESS;
 }
