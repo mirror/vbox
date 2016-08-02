@@ -67,12 +67,14 @@ static int VBoxHGCMParmUInt32Get(VBOXHGCMSVCPARM *pParm, uint32_t *pu32)
     return VERR_INVALID_PARAMETER;
 }
 
+#if 0 /* unused */
 static void VBoxHGCMParmPtrSet(VBOXHGCMSVCPARM *pParm, void *pv, uint32_t cb)
 {
     pParm->type             = VBOX_HGCM_SVC_PARM_PTR;
     pParm->u.pointer.size   = cb;
     pParm->u.pointer.addr   = pv;
 }
+#endif
 
 static int VBoxHGCMParmPtrGet(VBOXHGCMSVCPARM *pParm, void **ppv, uint32_t *pcb)
 {

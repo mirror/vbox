@@ -125,7 +125,7 @@ extern int testRTDirClose(PRTDIR pDir)
 }
 
 static char testRTDirCreatePath[256];
-static RTFMODE testRTDirCreateMode;
+//static RTFMODE testRTDirCreateMode; - unused
 
 extern int testRTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 {

@@ -453,6 +453,7 @@ struct _CLIPBACKEND
 
 void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats)
 {
+    RT_NOREF1(u32Formats);
     CLIPBACKEND *pBackend = pClient->pCtx->pBackend;
     if (   (u32Msg == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA)
         && !pBackend->writeData.timeout)
@@ -472,6 +473,7 @@ void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, 
 
 CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool)
 {
+    RT_NOREF1(pFrontend);
     return (CLIPBACKEND *)RTMemAllocZ(sizeof(CLIPBACKEND));
 }
 
@@ -482,11 +484,13 @@ void ClipDestructX11(CLIPBACKEND *pBackend)
 
 int ClipStartX11(CLIPBACKEND *pBackend, bool)
 {
+    RT_NOREF1(pBackend);
     return VINF_SUCCESS;
 }
 
 int ClipStopX11(CLIPBACKEND *pBackend)
 {
+    RT_NOREF1(pBackend);
     return VINF_SUCCESS;
 }
 

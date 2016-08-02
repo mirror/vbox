@@ -1714,6 +1714,7 @@ int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
 #else
     Log(("vbsfLock: Pretend success handle=%x\n", Handle));
     rc = VINF_SUCCESS;
+    RT_NOREF2(offset,  length);
 #endif
     return rc;
 }
@@ -1744,6 +1745,7 @@ int vbsfUnlock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 #else
     Log(("vbsfUnlock: Pretend success handle=%x\n", Handle));
     rc = VINF_SUCCESS;
+    RT_NOREF2(offset,  length);
 #endif
 
     return rc;
