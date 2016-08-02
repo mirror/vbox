@@ -2040,7 +2040,7 @@ VBOX_CHECK_IMPORTS ?= $(PATH_OBJ)/VBoxCheckImports/VBoxCheckImports$(HOSTSUFF_EX
 # GNU tar if present.
 if1of ($(KBUILD_TARGET), linux os2 win)
  VBOX_GTAR ?= tar
-else if1of ($(KBUILD_TARGET), freebsd solaris)
+else if1of ($(KBUILD_TARGET), freebsd netbsd solaris)
  VBOX_GTAR ?= gtar
 endif
 
