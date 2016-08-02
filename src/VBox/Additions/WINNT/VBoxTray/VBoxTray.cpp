@@ -144,6 +144,8 @@ HWND                  g_hwndToolWindow;
 NOTIFYICONDATA        g_NotifyIconData;
 DWORD                 g_dwMajorVersion;
 
+uint32_t              g_fGuestDisplaysChanged = 0;
+
 static PRTLOGGER      g_pLoggerRelease = NULL;
 static uint32_t       g_cHistory = 10;                   /* Enable log rotation, 10 files. */
 static uint32_t       g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
@@ -1164,6 +1166,8 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         }
 
         case WM_DISPLAYCHANGE:
+            ASMAtomicUoWriteU32(&g_fGuestDisplaysChanged, 1);
+            // No break or return is intentional here.
         case WM_VBOX_SEAMLESS_UPDATE:
         {
             if (VBoxCapsEntryIsEnabled(VBOXCAPS_ENTRY_IDX_SEAMLESS))

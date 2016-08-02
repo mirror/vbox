@@ -188,6 +188,7 @@ typedef struct _VBOXGLOBALMESSAGE
 
 extern HWND         g_hwndToolWindow;
 extern HINSTANCE    g_hInstance;
+extern uint32_t     g_fGuestDisplaysChanged;
 
 #endif /* !___VBOXTRAY_H */
 

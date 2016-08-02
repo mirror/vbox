@@ -4928,6 +4928,16 @@ DxgkDdiEscape(
                 Status = vboxUmdDumpBuf((PVBOXDISPIFESCAPE_DBGDUMPBUF)pEscapeHdr, pEscape->PrivateDriverDataSize);
                 break;
             }
+            case VBOXESC_GUEST_DISPLAYCHANGED:
+            {
+                LOG(("=> VBOXESC_GUEST_DISPLAYCHANGED"));
+
+                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                {
+                    vboxWddmDisplaySettingsCheckPos(pDevExt, i);
+                }
+                break;
+            }
             default:
                 WARN(("unsupported escape code (0x%x)", pEscapeHdr->escapeCode));
                 break;

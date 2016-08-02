@@ -1010,6 +1010,19 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
         }
         else
         {
+            // Checking once a second whether or not WM_DISPLAYCHANGED happened.
+            if (ASMAtomicXchgU32(&g_fGuestDisplaysChanged, 0))
+            {
+                // XPDM driver has VBoxDispDrvNotify to receive such a notifications
+                if (pCtx->pEnv->dispIf.enmMode >= VBOXDISPIF_MODE_WDDM)
+                {
+                    VBOXDISPIFESCAPE EscapeHdr = { 0 };
+                    EscapeHdr.escapeCode = VBOXESC_GUEST_DISPLAYCHANGED;
+
+                    DWORD err = VBoxDispIfEscapeInOut(&pCtx->pEnv->dispIf, &EscapeHdr, 0);
+                    LogFlowFunc(("VBoxDispIfEscapeInOut returned %d\n", err));
+                }
+            }
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             RTThreadSleep(10);
 
