@@ -971,7 +971,7 @@ typedef struct VMSVGA3DSTATE
 static SSMFIELD const g_aVMSVGA3DSTATEFields[] =
 {
 # ifdef VMSVGA3D_OPENGL
-    SSMFIELD_ENTRY(                 VMSVGA3DSTATE, rdGLVersion), /** @todo Why are we saving the GL version?? */
+    SSMFIELD_ENTRY(                 VMSVGA3DSTATE, rsGLVersion), /** @todo Why are we saving the GL version?? */
 # endif
     SSMFIELD_ENTRY(                 VMSVGA3DSTATE, cContexts),
     SSMFIELD_ENTRY(                 VMSVGA3DSTATE, cSurfaces),
