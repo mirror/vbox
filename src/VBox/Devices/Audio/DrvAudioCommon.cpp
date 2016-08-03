@@ -630,6 +630,7 @@ uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOSTREAMCFG pCfg)
  */
 int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath)
 {
+    RT_NOREF(cbPath);
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     /* Filter out characters not allowed on Windows platforms, put in by
@@ -651,7 +652,7 @@ int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath)
     if (cReplaced < 0)
         rc = VERR_INVALID_UTF8_ENCODING;
 #else
-    RT_NOREF()
+    RT_NOREF(pszPath);
 #endif
     return rc;
 }
@@ -678,7 +679,7 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
     do
     {
         char szFilePath[RTPATH_MAX];
-        size_t cchFilePath = RTStrPrintf(szFilePath, sizeof(szFilePath), "%s", pszPath);
+        RTStrPrintf(szFilePath, sizeof(szFilePath), "%s", pszPath);
 
         /* Create it when necessary. */
         if (!RTDirExists(szFilePath))
@@ -755,7 +756,7 @@ int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fO
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     /** @todo Validate fOpen flags. */
     AssertPtrReturn(pProps,  VERR_INVALID_POINTER);
-    /** @todo Validate fFlags flags. */
+    RT_NOREF(fFlags); /** @todo Validate fFlags flags. */
 
     Assert(pProps->cChannels);
     Assert(pProps->uHz);
@@ -860,7 +861,7 @@ int DrvAudioHlpWAVFileClose(PPDMAUDIOFILE pFile)
  */
 size_t DrvAudioHlpWAVFileGetDataSize(PPDMAUDIOFILE pFile)
 {
-    AssertPtrReturn(pFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(pFile, 0);
 
     Assert(pFile->enmType == PDMAUDIOFILETYPE_WAV);
 
@@ -878,8 +879,6 @@ size_t DrvAudioHlpWAVFileGetDataSize(PPDMAUDIOFILE pFile)
  * @param   pvBuf               Audio data to write.
  * @param   cbBuf               Size (in bytes) of audio data to write.
  * @param   fFlags              Additional write flags. Not being used at the moment and must be 0.
- *
- * @remark
  */
 int DrvAudioHlpWAVFileWrite(PPDMAUDIOFILE pFile, const void *pvBuf, size_t cbBuf, uint32_t fFlags)
 {
