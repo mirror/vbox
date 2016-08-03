@@ -144,6 +144,13 @@ typedef struct RTTESTINT
     size_t              cXmlElements;
     /** XML element stack. */
     const char         *apszXmlElements[10];
+
+    /** Number of times assertions has been disabled and quieted. */
+    uint32_t volatile   cAssertionsDisabledAndQuieted;
+    /** Saved RTAssertSetQuiet return code. */
+    bool                fAssertSavedQuiet;
+    /** Saved RTAssertSetMayPanic return code. */
+    bool                fAssertSavedMayPanic;
 } RTTESTINT;
 /** Pointer to a test instance. */
 typedef RTTESTINT *PRTTESTINT;
@@ -268,6 +275,9 @@ RTR3DECL(int) RTTestCreateEx(const char *pszTest, uint32_t fFlags, RTTESTLVL enm
     pTest->hXmlPipe         = NIL_RTPIPE;
     pTest->hXmlFile         = NIL_RTFILE;
     pTest->cXmlElements     = 0;
+    pTest->cAssertionsDisabledAndQuieted = 0;
+    pTest->fAssertSavedMayPanic          = true;
+    pTest->fAssertSavedQuiet             = false;
 
     rc = RTCritSectInit(&pTest->Lock);
     if (RT_SUCCESS(rc))
@@ -1758,5 +1768,42 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...)
     int cch = RTTestFailureDetailsV(hTest, pszFormat, va);
     va_end(va);
     return cch;
+}
+
+
+RTR3DECL(int) RTTestDisableAssertions(RTTEST hTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN(pTest);
+
+    uint32_t cTimes = ASMAtomicIncU32(&pTest->cAssertionsDisabledAndQuieted);
+    if (cTimes >= 2 && cTimes <= 8)
+        return VINF_SUCCESS;
+    if (cTimes > 8)
+    {
+        RTAssertSetMayPanic(pTest->fAssertSavedMayPanic);
+        RTAssertSetQuiet(pTest->fAssertSavedQuiet);
+        Assert(cTimes <= 8);
+    }
+    pTest->fAssertSavedMayPanic = RTAssertSetMayPanic(false);
+    pTest->fAssertSavedQuiet    = RTAssertSetQuiet(true);
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTTestRestoreAssertions(RTTEST hTest)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN(pTest);
+
+    uint32_t cTimes = ASMAtomicDecU32(&pTest->cAssertionsDisabledAndQuieted);
+    if (cTimes == 0)
+    {
+        RTAssertSetMayPanic(pTest->fAssertSavedMayPanic);
+        RTAssertSetQuiet(pTest->fAssertSavedQuiet);
+    }
+    else
+        AssertStmt(cTimes < UINT32_MAX / 2, ASMAtomicIncU32(&pTest->cAssertionsDisabledAndQuieted));
+    return VINF_SUCCESS;
 }
 

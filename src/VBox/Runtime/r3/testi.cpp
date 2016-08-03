@@ -174,3 +174,15 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...)
     return cch;
 }
 
+
+RTR3DECL(int) RTTestIDisableAssertions(void)
+{
+    return RTTestDisableAssertions(NIL_RTTEST);
+}
+
+
+RTR3DECL(int) RTTestIRestoreAssertions(void)
+{
+    return RTTestRestoreAssertions(NIL_RTTEST);
+}
+

@@ -635,6 +635,27 @@ RTR3DECL(int) RTTestFailureDetailsV(RTTEST hTest, const char *pszFormat, va_list
  */
 RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
+/**
+ * Disables and shuts up assertions.
+ *
+ * Max 8 nestings.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @sa      RTAssertSetMayPanic, RTAssertSetQuiet.
+ */
+RTR3DECL(int) RTTestDisableAssertions(RTTEST hTest);
+
+/**
+ * Restores the previous call to RTTestDisableAssertions.
+ *
+ * @returns IPRT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ */
+RTR3DECL(int) RTTestRestoreAssertions(RTTEST hTest);
+
 
 /** @def RTTEST_CHECK
  * Check whether a boolean expression holds true.
@@ -1091,6 +1112,23 @@ RTR3DECL(int) RTTestIFailureDetailsV(const char *pszFormat, va_list va) RT_IPRT_
  * @param   ...         Arguments.
  */
 RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+/**
+ * Disables and shuts up assertions.
+ *
+ * Max 8 nestings.
+ *
+ * @returns IPRT status code.
+ * @sa      RTAssertSetMayPanic, RTAssertSetQuiet.
+ */
+RTR3DECL(int) RTTestIDisableAssertions(void);
+
+/**
+ * Restores the previous call to RTTestDisableAssertions.
+ *
+ * @returns IPRT status code.
+ */
+RTR3DECL(int) RTTestIRestoreAssertions(void);
 
 
 /** @def RTTESTI_CHECK
