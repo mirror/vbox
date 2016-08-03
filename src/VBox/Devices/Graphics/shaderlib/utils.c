@@ -18,7 +18,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#include <windows.h>
+#include <iprt/win/windows.h>
 #include "wined3d_private.h"
 
 
@@ -79,6 +79,7 @@ UINT wined3d_log2i(UINT32 x)
  * and the user preferences in wined3d_settings. */
 void select_shader_mode(const struct wined3d_gl_info *gl_info, int *ps_selected, int *vs_selected)
 {
+    RT_NOREF(gl_info);
     *vs_selected = SHADER_GLSL;
     *ps_selected = SHADER_GLSL;
 }
@@ -102,10 +103,12 @@ const char *debug_glerror(GLenum error) {
 
 void dump_color_fixup_desc(struct color_fixup_desc fixup)
 {
+    RT_NOREF(fixup);
 }
 
 void context_release(struct wined3d_context *context)
 {
+    RT_NOREF(context);
 }
 
 static void CDECL wined3d_do_nothing(void)
@@ -117,21 +120,24 @@ void (* CDECL wine_tsx11_unlock_ptr)(void) = wined3d_do_nothing;
 
 LPVOID      WINAPI VBoxHeapAlloc(HANDLE hHeap, DWORD heaptype,SIZE_T size)
 {
+    RT_NOREF(hHeap, heaptype);
     return RTMemAllocZ(size);
 }
 
 BOOL        WINAPI VBoxHeapFree(HANDLE hHeap, DWORD heaptype,LPVOID ptr)
 {
+    RT_NOREF(hHeap, heaptype);
     RTMemFree(ptr);
     return TRUE;
 }
 
-LPVOID      WINAPI VBoxHeapReAlloc(HANDLE hHeap,DWORD heaptype,LPVOID ptr ,SIZE_T size)
+LPVOID      WINAPI VBoxHeapReAlloc(HANDLE hHeap, DWORD heaptype, LPVOID ptr, SIZE_T size)
 {
+    RT_NOREF(hHeap, heaptype);
     return RTMemRealloc(ptr, size);
 }
 
-void VBoxDebugBreak()
+void VBoxDebugBreak(void)
 {
     AssertFailed();
 }
