@@ -96,18 +96,19 @@ DECLINLINE(unsigned) iobufMgrGetBinCount(size_t cbMin, size_t cbMax)
     return u32Max - u32Min + 1;
 }
 
-DECLINLINE(uint32_t) iobufMgrGetObjCount(size_t cbMem, unsigned cBins, size_t cbMin)
+DECLINLINE(uint32_t) iobufMgrGetObjCount(size_t cbMem, unsigned cBins, size_t cbMinBin)
 {
-    uint32_t cObjCnt = 0;
-    uint32_t cbBin = cbMin;
+    size_t cObjs = 0;
+    size_t cbBin = cbMinBin;
 
     while (cBins-- > 0)
     {
-        cObjCnt += cbMem / cbBin;
+        cObjs += cbMem / cbBin;
         cbBin <<= 1; /* The size doubles for every bin. */
     }
 
-    return cObjCnt;
+    Assert((uint32_t)cObjs == cObjs);
+    return (uint32_t)cObjs;
 }
 
 DECLHIDDEN(int) IOBUFMgrCreate(PIOBUFMGR phIoBufMgr, size_t cbMax, uint32_t fFlags)
@@ -144,7 +145,7 @@ DECLHIDDEN(int) IOBUFMgrCreate(PIOBUFMGR phIoBufMgr, size_t cbMax, uint32_t fFla
                 && RT_SUCCESS(rc))
             {
                 /* Init the bins. */
-                uint32_t iObj = 0;
+                size_t   iObj  = 0;
                 uint32_t cbBin = IOBUFMGR_BIN_SIZE_MIN;
                 for (unsigned i = 0; i < cBins; i++)
                 {
@@ -261,7 +262,7 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
                 {
                     iBinCur--;
                     pBinCur = &pThis->paBins[iBinCur];
-                    pBinCur->papvFree[pBinCur->iFree] = pbMem + (RT_BIT(iBinCur + pThis->u32OrderMin));
+                    pBinCur->papvFree[pBinCur->iFree] = pbMem + (size_t)RT_BIT(iBinCur + pThis->u32OrderMin); /* (RT_BIT causes weird MSC warning without cast) */
                     pBinCur->iFree++;
                 }
 
@@ -279,8 +280,8 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
 
     /*
      * If we didn't find something in the higher bins try to accumulate as much as possible from the smaller bins.
-     * @todo: Defragment in case there is enough memory free but we can't find something in our bin.
      */
+    /** @todo Defragment in case there is enough memory free but we can't find something in our bin. */
     if (   pBin->iFree == 0
         && iBin > 0)
     {
@@ -293,7 +294,7 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
             {
                 pBin->iFree--;
                 pSeg->pvSeg = pBin->papvFree[pBin->iFree];
-                pSeg->cbSeg = RT_BIT_32(iBin + pThis->u32OrderMin);
+                pSeg->cbSeg = (size_t)RT_BIT_32(iBin + pThis->u32OrderMin);
                 AssertPtr(pSeg->pvSeg);
                 cbAlloc = pSeg->cbSeg;
                 break;
@@ -305,7 +306,7 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
     {
         pBin->iFree--;
         pSeg->pvSeg = pBin->papvFree[pBin->iFree];
-        pSeg->cbSeg = RT_BIT_32(u32Order);
+        pSeg->cbSeg = (size_t)RT_BIT_32(u32Order);
         cbAlloc = pSeg->cbSeg;
         AssertPtr(pSeg->pvSeg);
     }
@@ -327,7 +328,7 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
     if (RT_SUCCESS(rc))
     {
         unsigned iSeg = 0;
-        unsigned cbLeft = cbIoBuf;
+        size_t   cbLeft = cbIoBuf;
         PRTSGSEG pSeg = &pIoBufDesc->Int.aSegs[0];
 
         while (   iSeg < RT_ELEMENTS(pIoBufDesc->Int.aSegs)
@@ -381,7 +382,7 @@ DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc)
             PIOBUFMGRBIN pBin = &pThis->paBins[iBin];
             pBin->papvFree[pBin->iFree] = pSeg->pvSeg;
             pBin->iFree++;
-            pThis->cbFree += RT_BIT_32(u32Order);
+            pThis->cbFree += (size_t)RT_BIT_32(u32Order);
         }
         RTCritSectLeave(&pThis->CritSectAlloc);
     }

@@ -297,6 +297,7 @@ static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uin
 
 static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
+    RT_NOREF(pTrackList, pbCDB, pvBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -312,6 +313,7 @@ static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const
 static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t iTrack,
                                                 bool fMSF, const uint8_t *pbBuf, uint32_t cbBuffer)
 {
+    RT_NOREF(iTrack, cbBuffer); /** @todo unused parameters */
     int rc = VINF_SUCCESS;
     unsigned cbToc = atapiBE2H_U16(pbBuf);
     uint8_t iTrackFirst = pbBuf[2];
@@ -396,16 +398,19 @@ static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const u
 
 static int atapiTrackListUpdateFromReadTrackInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
+    RT_NOREF(pTrackList, pbCDB, pvBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
 static int atapiTrackListUpdateFromReadDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
+    RT_NOREF(pTrackList, pbCDB, pvBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
 static int atapiTrackListUpdateFromReadDiscInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
+    RT_NOREF(pTrackList, pbCDB, pvBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
