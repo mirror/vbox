@@ -50,7 +50,7 @@
 <xsl:template match="*"/>
 
 <xsl:template match="idl">
-  <xsl:for-each select="library/result">
+  <xsl:for-each select="library/application/result">
     <xsl:text>{ "</xsl:text>
     <xsl:choose>
       <xsl:when test="contains(normalize-space(desc/text()), '. ')">
