@@ -1567,7 +1567,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  */
 #define LogRelMax12(a_cMax, a)      LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, a)
 
-/** @def LogRelFlow
+/** @def LogRelMaxFlow
  * Logging of execution flow with a max number of log entries.
  */
 #define LogRelMaxFlow(a_cMax, a)    LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
