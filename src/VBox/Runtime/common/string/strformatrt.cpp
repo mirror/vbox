@@ -709,6 +709,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     {
                         const char *pszStart;
                         const char *psz = pszStart = va_arg(*pArgs, const char *);
+                        int cAngle = 0;
+
                         if (!VALID_PTR(psz))
                             return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
 
@@ -719,11 +721,21 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 psz++;
                                 while ((ch = *psz) != '\0' && (RT_C_IS_BLANK(ch) || ch == '('))
                                     psz++;
-                                if (ch)
+                                if (ch && cAngle == 0)
                                     pszStart = psz;
                             }
                             else if (ch == '(')
                                 break;
+                            else if (ch == '<')
+                            {
+                                cAngle++;
+                                psz++;
+                            }
+                            else if (ch == '>')
+                            {
+                                cAngle--;
+                                psz++;
+                            }
                             else
                                 psz++;
                         }
