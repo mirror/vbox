@@ -1146,7 +1146,7 @@ typedef struct VDINTERFACETCPNET
      * Destroys the socket.
      *
      * @return iprt status code.
-     * @param  Sock       Socket descriptor.
+     * @param  Sock       Socket handle (/ pointer).
      */
     DECLR3CALLBACKMEMBER(int, pfnSocketDestroy, (VDSOCKET Sock));
 
@@ -1154,7 +1154,7 @@ typedef struct VDINTERFACETCPNET
      * Connect as a client to a TCP port.
      *
      * @return  iprt status code.
-     * @param   Sock            Socket descriptor.
+     * @param   Sock            Socket handle (/ pointer)..
      * @param   pszAddress      The address to connect to.
      * @param   uPort           The port to connect to.
      * @param   cMillies        Number of milliseconds to wait for the connect attempt to complete.
@@ -1169,7 +1169,7 @@ typedef struct VDINTERFACETCPNET
      * Close a TCP connection.
      *
      * @return  iprt status code.
-     * @param   Sock            Socket descriptor.
+     * @param   Sock            Socket handle (/ pointer).
      */
     DECLR3CALLBACKMEMBER(int, pfnClientClose, (VDSOCKET Sock));
 
@@ -1178,7 +1178,7 @@ typedef struct VDINTERFACETCPNET
      *
      * @returns true if the socket is connected.
      *          false otherwise.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      */
     DECLR3CALLBACKMEMBER(bool, pfnIsClientConnected, (VDSOCKET Sock));
 
@@ -1187,7 +1187,7 @@ typedef struct VDINTERFACETCPNET
      * Checks if the socket is ready for reading.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   cMillies    Number of milliseconds to wait for the socket.
      *                      Use RT_INDEFINITE_WAIT to wait for ever.
      */
@@ -1197,7 +1197,7 @@ typedef struct VDINTERFACETCPNET
      * Receive data from a socket.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pvBuffer    Where to put the data we read.
      * @param   cbBuffer    Read buffer size.
      * @param   pcbRead     Number of bytes read.
@@ -1210,7 +1210,7 @@ typedef struct VDINTERFACETCPNET
      * Send data to a socket.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pvBuffer    Buffer to write data to socket.
      * @param   cbBuffer    How much to write.
      */
@@ -1220,7 +1220,7 @@ typedef struct VDINTERFACETCPNET
      * Send data from scatter/gather buffer to a socket.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pSgBuffer   Scatter/gather buffer to write data to socket.
      */
     DECLR3CALLBACKMEMBER(int, pfnSgWrite, (VDSOCKET Sock, PCRTSGBUF pSgBuffer));
@@ -1229,7 +1229,7 @@ typedef struct VDINTERFACETCPNET
      * Receive data from a socket - not blocking.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pvBuffer    Where to put the data we read.
      * @param   cbBuffer    Read buffer size.
      * @param   pcbRead     Number of bytes read.
@@ -1240,7 +1240,7 @@ typedef struct VDINTERFACETCPNET
      * Send data to a socket - not blocking.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pvBuffer    Buffer to write data to socket.
      * @param   cbBuffer    How much to write.
      * @param   pcbWritten  Number of bytes written.
@@ -1251,7 +1251,7 @@ typedef struct VDINTERFACETCPNET
      * Send data from scatter/gather buffer to a socket - not blocking.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pSgBuffer   Scatter/gather buffer to write data to socket.
      * @param   pcbWritten  Number of bytes written.
      */
@@ -1261,7 +1261,7 @@ typedef struct VDINTERFACETCPNET
      * Flush socket write buffers.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      */
     DECLR3CALLBACKMEMBER(int, pfnFlush, (VDSOCKET Sock));
 
@@ -1269,7 +1269,7 @@ typedef struct VDINTERFACETCPNET
      * Enables or disables delaying sends to coalesce packets.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   fEnable     When set to true enables coalescing.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetSendCoalescing, (VDSOCKET Sock, bool fEnable));
@@ -1278,7 +1278,7 @@ typedef struct VDINTERFACETCPNET
      * Gets the address of the local side.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pAddr       Where to store the local address on success.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetLocalAddress, (VDSOCKET Sock, PRTNETADDR pAddr));
@@ -1287,7 +1287,7 @@ typedef struct VDINTERFACETCPNET
      * Gets the address of the other party.
      *
      * @return  iprt status code.
-     * @param   Sock        Socket descriptor.
+     * @param   Sock        Socket handle (/ pointer).
      * @param   pAddr       Where to store the peer address on success.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetPeerAddress, (VDSOCKET Sock, PRTNETADDR pAddr));
@@ -1298,7 +1298,7 @@ typedef struct VDINTERFACETCPNET
      *
      * @return  iprt status code.
      * @retval  VERR_INTERRUPTED if the thread was woken up by a pfnPoke call.
-     * @param   Sock        Socket descriptor.
+     * @param   hVdSock     VD Socket handle(/pointer).
      * @param   fEvents     Mask of events to wait for.
      * @param   pfEvents    Where to store the received events.
      * @param   cMillies    Number of milliseconds to wait for the socket.
@@ -1311,7 +1311,7 @@ typedef struct VDINTERFACETCPNET
      * Wakes up the thread waiting in pfnSelectOneEx.
      *
      * @return iprt status code.
-     * @param  Sock        Socket descriptor.
+     * @param  hVdSock      VD Socket handle(/pointer).
      */
     DECLR3CALLBACKMEMBER(int, pfnPoke, (VDSOCKET Sock));
 
