@@ -63,7 +63,7 @@ static DECLCALLBACK(int) tstVMSetErrorV(PPDMUSBINS pUsbIns, int rc,
                                         RT_SRC_POS_DECL, const char *pszFormat,
                                         va_list va)
 {
-    NOREF(pUsbIns);
+    RT_NOREF(pUsbIns);
     RTPrintf("Error: %s:%u:%s:", RT_SRC_POS_ARGS);
     RTPrintfV(pszFormat, va);
     return rc;

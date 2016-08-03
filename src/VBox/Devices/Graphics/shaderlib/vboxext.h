@@ -1,7 +1,9 @@
 /* $Id$ */
 /** @file
- *
  * VBox extension to Wine D3D
+ */
+
+/*
  *
  * Copyright (C) 2011-2016 Oracle Corporation
  *
@@ -13,17 +15,18 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef ___VBOXEXT_H__
-#define ___VBOXEXT_H__
+
+#ifndef ___VBOXEXT_H___
+#define ___VBOXEXT_H___
 
 #ifdef VBOX_WINE_WITHOUT_LIBWINE
-# include <windows.h>
+# include <iprt/win/windows.h>
 #endif
 
 #include <iprt/list.h>
 
-HRESULT VBoxExtCheckInit();
-HRESULT VBoxExtCheckTerm();
+HRESULT VBoxExtCheckInit(void);
+HRESULT VBoxExtCheckTerm(void);
 #if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
 # ifndef VBOX_WITH_WDDM
 /* Windows destroys HDC created by a given thread when the thread is terminated
@@ -154,4 +157,5 @@ DECLINLINE(void) VBoxExtCacheTerm(PVBOXEXT_HASHCACHE pCache)
     VBoxExtCacheCleanup(pCache);
 }
 
-#endif /* #ifndef ___VBOXEXT_H__*/
+#endif
+
