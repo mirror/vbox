@@ -641,6 +641,7 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
  */
 static DECLCALLBACK(int) drvR3IntNetXmitWakeUp(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hXmitEvt);
 }
@@ -871,11 +872,12 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
  * Asynchronous I/O thread for handling receive.
  *
  * @returns VINF_SUCCESS (ignored).
- * @param   ThreadSelf      Thread handle.
+ * @param   hThreadSelf     Thread handle.
  * @param   pvUser          Pointer to a DRVINTNET structure.
  */
-static DECLCALLBACK(int) drvR3IntNetRecvThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvR3IntNetRecvThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     PDRVINTNET pThis = (PDRVINTNET)pvUser;
     LogFlow(("drvR3IntNetRecvThread: pThis=%p\n", pThis));
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
@@ -933,6 +935,8 @@ static DECLCALLBACK(RTRCPTR) drvR3IntNetIBaseRC_QueryInterface(PPDMIBASERC pInte
 
 #if 0
     PDMIBASERC_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpRC);
+#else
+    RT_NOREF(pThis, pszIID);
 #endif
     return NIL_RTRCPTR;
 }
@@ -1148,6 +1152,7 @@ static DECLCALLBACK(void) drvR3IntNetPowerOn(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvR3IntNetRelocate(PPDMDRVINS pDrvIns, RTGCINTPTR offDelta)
 {
     /* nothing to do here yet */
+    RT_NOREF(pDrvIns, offDelta);
 }
 
 
@@ -1185,7 +1190,7 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
         AbortWaitReq.hIf          = pThis->hIf;
         AbortWaitReq.fNoMoreWaits = true;
         int rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_ABORT_WAIT, &AbortWaitReq, sizeof(AbortWaitReq));
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_SEM_DESTROYED, ("%Rrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_SEM_DESTROYED, ("%Rrc\n", rc)); RT_NOREF_PV(rc);
     }
 
     /*
@@ -1346,9 +1351,10 @@ static int drvIntNetR3CfgGetPolicy(PPDMDRVINS pDrvIns, const char *pszName, PCDR
  */
 static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.

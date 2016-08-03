@@ -278,6 +278,7 @@ static DECLCALLBACK(void)  drvMouseQueueReset(PPDMDRVINS pDrvIns)
 {
     //PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     /** @todo purge the queue on reset. */
+    RT_NOREF(pDrvIns);
 }
 
 

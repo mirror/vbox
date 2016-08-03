@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox storage devices: Floppy disk controller
+ * VBox storage devices - Floppy disk controller
  */
 
 /*
