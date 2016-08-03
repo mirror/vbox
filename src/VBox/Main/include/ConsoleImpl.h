@@ -59,10 +59,6 @@ class DisplayMouseInterface;
 # include <VBox/HostServices/GuestPropertySvc.h>  /* For the property notification callback */
 #endif
 
-#ifdef RT_OS_WINDOWS
-# include "../src-server/win/VBoxComEvents.h"
-#endif
-
 struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 

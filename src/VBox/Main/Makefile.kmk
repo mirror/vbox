@@ -427,7 +427,6 @@ VBoxSVC_SOURCES.win = \
 	src-server/win/svchlp.cpp \
 	src-server/win/HostPowerWin.cpp \
 	src-server/win/VBoxSVC.rc \
-	src-server/win/VBoxComEvents.cpp \
 	src-server/win/HostDnsServiceWin.cpp
 
 VBoxSVC_SOURCES.linux = \
