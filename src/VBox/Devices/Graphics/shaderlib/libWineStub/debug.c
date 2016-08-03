@@ -31,9 +31,15 @@
 #include "wine/port.h"
 
 #include "initguid.h"
+#ifdef VBOX
+# include <iprt/win/objbase.h>
+# include <wine/wined3d.h>
+# include <iprt/win/windows.h>
+#else
 #include <objbase.h>
 #include <wine/wined3d.h>
 #include <windows.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

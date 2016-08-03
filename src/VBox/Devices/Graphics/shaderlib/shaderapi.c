@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
@@ -143,9 +144,10 @@ SHADERDECL(int) ShaderInitLib(PVBOXVMSVGASHADERIF pVBoxShaderIf)
 
     /* Dynamically load all GL core functions. */
 #ifdef RT_OS_WINDOWS
-# define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(GetModuleHandle("opengl32.dll"), #pfn);
+    HANDLE hOpenGl32 = GetModuleHandle("opengl32.dll");
+# define USE_GL_FUNC(pfn) *(FARPROC *)(&pfn) = GetProcAddress(hOpenGl32, #pfn);
 #else
-# define USE_GL_FUNC(pfn) pfn = (void*)OGLGETPROCADDRESS(#pfn);
+# define USE_GL_FUNC(pfn) pfn = (void *)OGLGETPROCADDRESS(#pfn);
 #endif
     GL_FUNCS_GEN;
 #undef USE_GL_FUNC
@@ -153,7 +155,7 @@ SHADERDECL(int) ShaderInitLib(PVBOXVMSVGASHADERIF pVBoxShaderIf)
     /* Dynamically load all GL extension functions. */
 #define USE_GL_FUNC(type, pfn, ext, replace) \
 { \
-    gl_info->pfn = (void*)OGLGETPROCADDRESS(#pfn); \
+    gl_info->pfn = (type)OGLGETPROCADDRESS(#pfn); \
 }
     GL_EXT_FUNCS_GEN;
 
@@ -203,6 +205,7 @@ struct wined3d_context *context_get_current(void)
 
 struct wined3d_context *context_acquire(IWineD3DDeviceImpl *This, IWineD3DSurface *target, enum ContextUsage usage)
 {
+    RT_NOREF(This, target, usage);
     return g_pCurrentContext;
 }
 
@@ -321,7 +324,7 @@ SHADERDECL(int) ShaderCreateVertexShader(void *pShaderContext, const uint32_t *p
         return VERR_NO_MEMORY;
     }
 
-    hr = vertexshader_init(object, This, pShaderData, NULL, NULL, NULL);
+    hr = vertexshader_init(object, This, (DWORD const *)pShaderData, NULL, NULL, NULL);
     if (FAILED(hr))
     {
         Log(("Failed to initialize vertex shader, hr %#x.\n", hr));
@@ -355,7 +358,7 @@ SHADERDECL(int) ShaderCreatePixelShader(void *pShaderContext, const uint32_t *pS
         return VERR_NO_MEMORY;
     }
 
-    hr = pixelshader_init(object, This, pShaderData, NULL, NULL, NULL);
+    hr = pixelshader_init(object, This, (DWORD const *)pShaderData, NULL, NULL, NULL);
     if (FAILED(hr))
     {
         Log(("Failed to initialize pixel shader, hr %#x.\n", hr));

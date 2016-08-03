@@ -29,6 +29,9 @@
 
 #pragma warning(push)
 #pragma warning(disable:4668) /* '__midl' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+#if !defined(__cplusplus)
+# pragma warning(disable:4255) /* 'FARPROC' : no function prototype given: converting '()' to '(void)' */
+#endif
 
 #include <objbase.h>
 
