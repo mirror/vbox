@@ -296,11 +296,12 @@ static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, con
  * Receive thread loop.
  *
  * @returns 0 on success.
- * @param   ThreadSelf  Thread handle to this thread.
+ * @param   hThreadSelf Thread handle to this thread.
  * @param   pvUser      User argument.
  */
-static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     PDRVNAMEDPIPE   pThis = (PDRVNAMEDPIPE)pvUser;
     int             rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -522,8 +523,9 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
 
     /*
      * Init the static parts.

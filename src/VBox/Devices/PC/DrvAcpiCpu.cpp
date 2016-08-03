@@ -47,6 +47,7 @@ static DECLCALLBACK(void *) drvACPICpuQueryInterface(PPDMIBASE pInterface, const
  */
 static DECLCALLBACK(int) drvACPICpuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*

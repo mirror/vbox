@@ -102,7 +102,9 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const ch
 
 /* -=-=-=-=- ICharConnector -=-=-=-=- */
 
-/** @copydoc PDMICHARCONNECTOR::pfnWrite */
+/**
+ * @interface_method_impl{PDMICHARCONNECTOR,pfnWrite}
+ */
 static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite)
 {
     PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface);
@@ -122,9 +124,14 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void 
     return VINF_SUCCESS;
 }
 
-/** @copydoc PDMICHARCONNECTOR::pfnSetParameters */
-static DECLCALLBACK(int) drvCharSetParameters(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
+
+/**
+ * @interface_method_impl{PDMICHARCONNECTOR,pfnSetParameters}
+ */
+static DECLCALLBACK(int) drvCharSetParameters(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity,
+                                              unsigned cDataBits,  unsigned cStopBits)
 {
+    RT_NOREF(pInterface, Bps, chParity, cDataBits, cStopBits);
     /*PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface); - unused*/
 
     LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
@@ -138,11 +145,12 @@ static DECLCALLBACK(int) drvCharSetParameters(PPDMICHARCONNECTOR pInterface, uns
  * Send thread loop - pushes data down thru the driver chain.
  *
  * @returns 0 on success.
- * @param   ThreadSelf  Thread handle to this thread.
+ * @param   hThreadSelf Thread handle to this thread.
  * @param   pvUser      User argument.
  */
-static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     PDRVCHAR pThis = (PDRVCHAR)pvUser;
 
     int rc = VINF_SUCCESS;
@@ -188,17 +196,19 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
+
 /* -=-=-=-=- receive thread -=-=-=-=- */
 
 /**
  * Receive thread loop.
  *
  * @returns 0 on success.
- * @param   ThreadSelf  Thread handle to this thread.
+ * @param   hThreadSelf Thread handle to this thread.
  * @param   pvUser      User argument.
  */
-static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     PDRVCHAR    pThis = (PDRVCHAR)pvUser;
     char        abBuffer[256];
     char       *pbRemaining = abBuffer;
@@ -253,33 +263,28 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
+
 /**
- * Set the modem lines.
- *
- * @returns VBox status code
- * @param pInterface        Pointer to the interface structure.
- * @param RequestToSend     Set to true if this control line should be made active.
- * @param DataTerminalReady Set to true if this control line should be made active.
+ * @callback_method_impl{PDMICHARCONNECTOR,pfnSetModemLines}
  */
-static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHARCONNECTOR pInterface, bool RequestToSend, bool DataTerminalReady)
+static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHARCONNECTOR pInterface, bool fRequestToSend, bool fDataTerminalReady)
 {
     /* Nothing to do here. */
+    RT_NOREF(pInterface, fRequestToSend, fDataTerminalReady);
     return VINF_SUCCESS;
 }
 
+
 /**
- * Sets the TD line into break condition.
- *
- * @returns VBox status code.
- * @param   pInterface  Pointer to the interface structure containing the called function pointer.
- * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
- * @thread  Any thread.
+ * @callback_method_impl{PDMICHARCONNECTOR,pfnSetBreak}
  */
 static DECLCALLBACK(int) drvCharSetBreak(PPDMICHARCONNECTOR pInterface, bool fBreak)
 {
     /* Nothing to do here. */
+    RT_NOREF(pInterface, fBreak);
     return VINF_SUCCESS;
 }
+
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
@@ -344,9 +349,10 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(pCfg);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init basic data members and interfaces.
