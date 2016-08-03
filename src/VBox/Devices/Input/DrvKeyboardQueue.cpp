@@ -350,7 +350,7 @@ static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
 {
     //PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     /** @todo purge the queue on reset. */
-    RT_NOREF(pDrVIns);
+    RT_NOREF(pDrvIns);
 }
 
 
