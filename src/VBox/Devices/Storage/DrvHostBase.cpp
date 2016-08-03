@@ -148,7 +148,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
     if (    pThis->fMediaPresent
         &&  pThis->ppScsiTaskDI
         &&  pThis->cbBlock)
-#elif RT_OS_FREEBSD
+#elif defined(RT_OS_FREEBSD)
     if (    pThis->fMediaPresent
         &&  pThis->cbBlock)
 #else
