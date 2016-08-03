@@ -863,7 +863,7 @@ typedef struct VMSVGA3DSTATE
 #endif
 
 #ifdef VMSVGA3D_OPENGL
-    float                   fGLVersion;
+    float                   rsGLVersion;
     /* Current active context. */
     uint32_t                idActiveContext;
 
@@ -950,7 +950,7 @@ typedef struct VMSVGA3DSTATE
      * bunch of others when using a OpenGL core profile instead of a legacy one */
     R3PTRTYPE(char *)       pszOtherExtensions;
     /** The version of the other GL profile. */
-    float                   fOtherGLVersion;
+    float                   rsOtherGLVersion;
 
     /** Shader talk back interface. */
     VBOXVMSVGASHADERIF      ShaderIf;
