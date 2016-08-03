@@ -1544,6 +1544,7 @@ static void pcnetStop(PPCNETSTATE pThis)
 }
 
 #ifdef IN_RING3
+
 static DECLCALLBACK(void) pcnetWakeupReceive(PPDMDEVINS pDevIns)
 {
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
@@ -1554,9 +1555,11 @@ static DECLCALLBACK(void) pcnetWakeupReceive(PPDMDEVINS pDevIns)
 
 static DECLCALLBACK(bool) pcnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
+    RT_NOREF(pItem);
     pcnetWakeupReceive(pDevIns);
     return true;
 }
+
 #endif /* IN_RING3 */
 
 
@@ -3793,6 +3796,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
  */
 static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns, pTimer);
     PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
@@ -3808,6 +3812,7 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
  */
 static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns, pTimer);
     PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
@@ -3826,6 +3831,7 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer,
  */
 static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pTimer, pvUser);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     int         rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
@@ -3862,6 +3868,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                         RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion, cb, enmType);
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     RTIOPORT    Port    = (RTIOPORT)GCPhysAddress;
@@ -3913,6 +3920,7 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRe
 static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                       RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion, cb, enmType);
     PPCNETSTATE pThis = PCIDEV_2_PCNETSTATE(pPciDev);
     int         rc;
 
@@ -4205,6 +4213,7 @@ static void pcnetSaveConfig(PPCNETSTATE pThis, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pcnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    RT_NOREF(uPass);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     pcnetSaveConfig(pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
@@ -4217,6 +4226,7 @@ static DECLCALLBACK(int) pcnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(int) pcnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
 
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
@@ -4400,6 +4410,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(int) pcnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     int rc = VINF_SUCCESS;
     if (pThis->fSharedRegion)
@@ -4691,6 +4702,7 @@ static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     Log(("#%d pcnetDetach:\n", PCNET_INST_NR));
 
@@ -4720,6 +4732,7 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     LogFlow(("#%d pcnetAttach:\n", PCNET_INST_NR));
 
@@ -4804,6 +4817,7 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF(offDelta);
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     pThis->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pXmitQueueRC  = PDMQueueRCPtr(pThis->pXmitQueueR3);
