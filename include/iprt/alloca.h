@@ -48,7 +48,7 @@
 
 #else
 # include <stdlib.h>
-# if !defined(RT_OS_DARWIN) && !defined(RT_OS_FREEBSD)
+# if !defined(RT_OS_DARWIN) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_NETBSD)
 #  include <malloc.h>
 # endif
 # if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
