@@ -2067,7 +2067,6 @@ int main()
     GEN_CHECK_OFF(NVME, fR0Enabled);
     GEN_CHECK_OFF(NVME, enmState);
     GEN_CHECK_OFF(NVME, u32IntrMask);
-    GEN_CHECK_OFF(NVME, u32IntrSts);
     GEN_CHECK_OFF(NVME, aIntrVecs);
     GEN_CHECK_OFF(NVME, u32IoCompletionQueueEntrySize);
     GEN_CHECK_OFF(NVME, u32IoSubmissionQueueEntrySize);
