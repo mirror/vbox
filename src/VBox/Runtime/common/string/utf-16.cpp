@@ -298,32 +298,68 @@ RTDECL(bool) RTUtf16IsValidEncoding(PCRTUTF16 pwsz)
 RT_EXPORT_SYMBOL(RTUtf16IsValidEncoding);
 
 
-RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement)
+/**
+ * Helper for RTUtf16PurgeComplementSet.
+ *
+ * @returns true if @a Cp is valid, false if not.
+ * @param   Cp              The code point to validate.
+ * @param   puszValidPairs  Pair of valid code point sets.
+ * @param   cValidPairs     Number of pairs.
+ */
+DECLINLINE(bool) rtUtf16PurgeIsInSet(RTUNICP Cp, PCRTUNICP puszValidPairs, uint32_t cValidPairs)
 {
-    size_t cReplacements = 0;
+    while (cValidPairs-- > 0)
+    {
+        if (   Cp >= puszValidPairs[0]
+            && Cp <= puszValidPairs[1])
+            return true;
+        puszValidPairs += 2;
+    }
+    return false;
+}
+
+
+RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidPairs, char chReplacement)
+{
     AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);
-    /* Validate the encoding. */
+
+    /*
+     * Calc valid pairs and check that we've got an even number.
+     */
+    uint32_t cValidPairs = 0;
+    while (puszValidPairs[cValidPairs * 2])
+    {
+        AssertReturn(puszValidPairs[cValidPairs * 2 + 1], -1);
+        AssertMsg(puszValidPairs[cValidPairs * 2] <= puszValidPairs[cValidPairs * 2 + 1],
+                  ("%#x vs %#x\n", puszValidPairs[cValidPairs * 2], puszValidPairs[cValidPairs * 2 + 1]));
+        cValidPairs++;
+    }
+
+    /*
+     * Do the replacing.
+     */
+    ssize_t cReplacements = 0;
     for (;;)
     {
+        PRTUTF16 pwszCur = pwsz;
         RTUNICP Cp;
-        PCRTUNICP pCp;
-        PRTUTF16 pwszOld = pwsz;
-        if (RT_FAILURE(RTUtf16GetCpEx((PCRTUTF16 *)&pwsz, &Cp)))
-            return -1;
-        if (!Cp)
-            break;
-        for (pCp = puszValidSet; *pCp; pCp += 2)
+        int rc = RTUtf16GetCpEx((PCRTUTF16 *)&pwsz, &Cp);
+        if (RT_SUCCESS(rc))
         {
-            AssertReturn(*(pCp + 1), -1);
-            if (*pCp <= Cp && *(pCp + 1) >= Cp) /* No, I won't do * and ++. */
+            if (Cp)
+            {
+                if (!rtUtf16PurgeIsInSet(Cp, puszValidPairs, cValidPairs))
+                {
+                    for (; pwszCur != pwsz; ++pwszCur)
+                        *pwszCur = chReplacement;
+                    ++cReplacements;
+                }
+            }
+            else
                 break;
         }
-        if (!*pCp)
-        {
-            for (; pwszOld != pwsz; ++pwszOld)
-                *pwszOld = chReplacement;
-            ++cReplacements;
-        }
+        else
+            return -1;
     }
     return cReplacements;
 }

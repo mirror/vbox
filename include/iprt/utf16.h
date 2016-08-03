@@ -530,19 +530,23 @@ RTDECL(bool) RTUtf16IsValidEncoding(PCRTUTF16 pwsz);
 
 /**
  * Sanitise a (valid) UTF-16 string by replacing all characters outside a white
- * list in-place by an ASCII replacement character.  Multi-byte characters will
- * be replaced byte by byte.
+ * list in-place by an ASCII replacement character.
  *
- * @returns The number of code points replaced, or a negative value if the
- *          string is not correctly encoded.  In this last case the string
- *          may be partially processed.
+ * Surrogate paris will be replaced by two chars.
+ *
+ * @returns The number of code points replaced.  In the case of an incorrectly
+ *          encoded string -1 will be returned, and the string is not completely
+ *          processed.  In the case of puszValidPairs having an odd number of
+ *          code points, -1 will be also return but without any modification to
+ *          the string.
  * @param   pwsz           The string to sanitise.
- * @param   puszValidSet   A zero-terminated array of pairs of Unicode points.
+ * @param   puszValidPairs A zero-terminated array of pairs of Unicode points.
  *                         Each pair is the start and end point of a range,
  *                         and the union of these ranges forms the white list.
  * @param   chReplacement  The ASCII replacement character.
+ * @sa      RTStrPurgeComplementSet
  */
-RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement);
+RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidPairs, char chReplacement);
 
 /**
  * Translate a UTF-16 string into a UTF-8 allocating the result buffer (default

@@ -726,8 +726,9 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz);
 
 /**
  * Sanitizes a (valid) UTF-8 string by replacing all characters outside a white
- * list in-place by an ASCII replacement character.  Multi-byte characters will
- * be replaced byte by byte.
+ * list in-place by an ASCII replacement character.
+ *
+ * Multi-byte characters will be replaced byte by byte.
  *
  * @returns The number of code points replaced.  In the case of an incorrectly
  *          encoded string -1 will be returned, and the string is not completely
