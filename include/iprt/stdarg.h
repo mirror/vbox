@@ -33,6 +33,8 @@
 # include <iprt/cdefs.h>
 # if defined(RT_OS_FREEBSD) && defined(_KERNEL)
 #  include <machine/stdarg.h>
+# elif defined(RT_OS_NETBSD) && defined(_KERNEL)
+#  include <sys/stdarg.h>
 # elif defined(RT_OS_SOLARIS) && defined(_KERNEL) && defined(__GNUC__)
 #  include <stdarg.h>
 #  if __GNUC__ >= 4 /* System headers refers to __builtin_stdarg_start. */
