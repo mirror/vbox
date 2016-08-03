@@ -1212,8 +1212,7 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDS
     return hr;
 }
 
-static int dsoundDevAdd(PRTLISTANCHOR pList, LPGUID lpGUID,
-                        LPCWSTR lpwstrDescription, PDSOUNDDEV *ppDev)
+static int dsoundDevAdd(PRTLISTANCHOR pList, LPGUID lpGUID, LPCWSTR lpwstrDescription, PDSOUNDDEV *ppDev)
 {
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
     AssertPtrReturn(lpGUID, VERR_INVALID_POINTER);
@@ -1258,8 +1257,7 @@ static void dsoundLogDevice(const char *pszType, LPGUID lpGUID, LPCWSTR lpwstrDe
     RTStrFree(pszGUID);
 }
 
-static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDescription,
-                                                 LPCWSTR lpwstrModule, PVOID lpContext)
+static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDescription, LPCWSTR lpwstrModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pCtx, FALSE);
@@ -1284,8 +1282,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDe
     return TRUE;
 }
 
-static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID lpGUID, LPCWSTR lpwstrDescription,
-                                                LPCWSTR lpwstrModule, PVOID lpContext)
+static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID lpGUID, LPCWSTR lpwstrDescription, LPCWSTR lpwstrModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pCtx, FALSE);
@@ -1369,7 +1366,7 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDSOUNDENUMCBCTX pEnmCtx
  * @param   pCfg                Where to store the backend configuration. Optional.
  * @param   fEnum               Enumeration flags.
  */
-void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum)
+static void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum)
 {
     AssertPtrReturnVoid(pThis);
     /* pCfg is optional. */
@@ -1409,7 +1406,7 @@ void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg
     LogFlowFuncLeaveRC(rc);
 }
 
-void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
+static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
 {
     dsoundUpdateStatusInternalEx(pThis, NULL /* pCfg */, 0 /* fEnum */);
 }
