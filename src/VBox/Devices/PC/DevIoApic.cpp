@@ -842,50 +842,63 @@ PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 
 
 #ifdef IN_RING3
+
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
+    RT_NOREF(pDesc);
     pValue->u32 = ioapicGetIndex(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
     return VINF_SUCCESS;
 }
 
+
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
 static DECLCALLBACK(int) ioapicDbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    RT_NOREF(pDesc, pfMask);
     ioapicSetIndex(PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u8);
     return VINF_SUCCESS;
 }
 
+
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
+    RT_NOREF(pDesc);
     pValue->u32 = ioapicGetData((PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC)));
     return VINF_SUCCESS;
 }
 
+
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
 static DECLCALLBACK(int) ioapicDbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    RT_NOREF(pDesc, pfMask);
      return ioapicSetData(PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32);
 }
+
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
+    RT_NOREF(pvUser, pDesc);
     pValue->u32 = ioapicGetVersion();
     return VINF_SUCCESS;
 }
 
+
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
+    RT_NOREF(pvUser, pDesc);
+# if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
     pValue->u32 = ioapicGetArb(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
-#else
+# else
     pValue->u32 = UINT32_C(0xffffffff);
-#endif
+# endif
     return VINF_SUCCESS;
 }
+
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
@@ -896,15 +909,18 @@ static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, 
     return VINF_SUCCESS;
 }
 
+
 /** @interface_method_impl{DBGFREGDESC,pfnSet} */
 static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    RT_NOREF(pfMask);
     PIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
     /* No locks, no checks, just do it. */
     Assert(pDesc->offRegister < RT_ELEMENTS(pThis->au64RedirTable));
     pThis->au64RedirTable[pDesc->offRegister] = pValue->u64;
     return VINF_SUCCESS;
 }
+
 
 /** IOREDTBLn sub fields. */
 static DBGFREGSUBFIELD const g_aRteSubs[] =
@@ -917,12 +933,13 @@ static DBGFREGSUBFIELD const g_aRteSubs[] =
     { "remote_irr",   14,  1,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
     { "trigger_mode", 15,  1,  0,  0, NULL, NULL },
     { "mask",         16,  1,  0,  0, NULL, NULL },
-#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_ICH9
+# if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_ICH9
     { "ext_dest_id",  48,  8,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
-#endif
+# endif
     { "dest",         56,  8,  0,  0, NULL, NULL },
     DBGFREGSUBFIELD_TERMINATOR()
 };
+
 
 /** Register descriptors for DBGF. */
 static DBGFREGDESC const g_aRegDesc[] =
@@ -930,9 +947,9 @@ static DBGFREGDESC const g_aRegDesc[] =
     { "index",      DBGFREG_END, DBGFREGVALTYPE_U8,  0,  0, ioapicDbgReg_GetIndex, ioapicDbgReg_SetIndex,    NULL, NULL },
     { "data",       DBGFREG_END, DBGFREGVALTYPE_U32, 0,  0, ioapicDbgReg_GetData,  ioapicDbgReg_SetData,     NULL, NULL },
     { "version",    DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_GetVersion, NULL, NULL, NULL },
-#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
+# if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
     { "arb",        DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_GetArb,     NULL, NULL, NULL },
-#endif
+# endif
     { "rte0",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  0, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
     { "rte1",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  1, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
     { "rte2",       DBGFREG_END, DBGFREGVALTYPE_U64, 0,  2, ioapicDbgReg_GetRte, ioapicDbgReg_SetRte, NULL, &g_aRteSubs[0] },
@@ -966,6 +983,7 @@ static DBGFREGDESC const g_aRegDesc[] =
  */
 static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
     PCIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3DbgInfo: pThis=%p pszArgs=%s\n", pThis, pszArgs));
 
@@ -981,11 +999,11 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "    Pin Assert Reg. Support = %RTbool\n", IOAPIC_VER_HAS_PRQ(uVer));
     pHlp->pfnPrintf(pHlp, "    Max. Redirection Entry  = %u\n",      IOAPIC_VER_GET_MRE(uVer));
 
-#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
+# if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
     uint32_t const uArb = ioapicGetArb();
     pHlp->pfnPrintf(pHlp, "  Arbitration             = %#RX32\n", uArb);
     pHlp->pfnPrintf(pHlp, "    Arbitration ID          = %#x\n",     IOAPIC_ARB_GET_ID(uArb));
-#endif
+# endif
 
     pHlp->pfnPrintf(pHlp, "  Current index           = %#x\n",     ioapicGetIndex(pThis));
 
@@ -1115,6 +1133,7 @@ static DECLCALLBACK(void) ioapicR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ioapicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF(offDelta);
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3Relocate: pThis=%p offDelta=%RGi\n", pThis, offDelta));
 
@@ -1132,13 +1151,15 @@ static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
     LogFlow(("IOAPIC: ioapicR3Destruct: pThis=%p\n", pThis));
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-#ifndef IOAPIC_WITH_PDM_CRITSECT
+# ifndef IOAPIC_WITH_PDM_CRITSECT
     /*
      * Destroy the RTE critical section.
      */
     if (PDMCritSectIsInitialized(&pThis->CritSect))
         PDMR3CritSectDelete(&pThis->CritSect);
-#endif
+# else
+    RT_NOREF_PV(pThis);
+# endif
 
     return VINF_SUCCESS;
 }
@@ -1149,6 +1170,7 @@ static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3Construct: pThis=%p iInstance=%d\n", pThis, iInstance));
     Assert(iInstance == 0);
@@ -1187,14 +1209,14 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
-#ifndef IOAPIC_WITH_PDM_CRITSECT
+# ifndef IOAPIC_WITH_PDM_CRITSECT
     /*
      * Setup the critical section to protect concurrent writes to the RTEs.
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "IOAPIC");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("IOAPIC: Failed to create critical section. rc=%Rrc"), rc);
-#endif
+# endif
 
     /*
      * Register the IOAPIC.
@@ -1272,7 +1294,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = PDMDevHlpDBGFRegRegister(pDevIns, g_aRegDesc); AssertRC(rc);
     AssertRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
@@ -1295,7 +1317,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "/Devices/IOAPIC/LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "/Devices/IOAPIC/LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
-#endif
+# endif
 
     /*
      * Init. the device state.

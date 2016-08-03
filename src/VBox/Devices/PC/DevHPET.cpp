@@ -1307,6 +1307,7 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     HPET   *pThis = PDMINS_2_DATA(pDevIns, HPET *);
 
