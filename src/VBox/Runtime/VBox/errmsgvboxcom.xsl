@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 
 <!--
- *  A template to generate a C header that will contain all result code
- *  definitions as entires of the const RTCOMERRMSG array (for use in the
- *  %Rhrc format specifier) as they are defined in the VirtualBox interface
- *  definition file (src/VBox/Main/idl/VirtualBox.xidl).
+    A template to generate a C header that will contain all result code
+    definitions as entires of the const RTCOMERRMSG array (for use in the
+    %Rhrc format specifier) as they are defined in the VirtualBox interface
+    definition file (src/VBox/Main/idl/VirtualBox.xidl).
 
-    Copyright (C) 2006-2015 Oracle Corporation
+    Copyright (C) 2006-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
