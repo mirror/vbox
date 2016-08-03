@@ -725,20 +725,22 @@ RTDECL(bool) RTStrIsValidEncoding(const char *psz);
 RTDECL(size_t) RTStrPurgeEncoding(char *psz);
 
 /**
- * Sanitise a (valid) UTF-8 string by replacing all characters outside a white
+ * Sanitizes a (valid) UTF-8 string by replacing all characters outside a white
  * list in-place by an ASCII replacement character.  Multi-byte characters will
  * be replaced byte by byte.
  *
- * @returns The number of code points replaced, or a negative value if the
- *          string is not correctly encoded.  In this last case the string
- *          may be partially processed.
+ * @returns The number of code points replaced.  In the case of an incorrectly
+ *          encoded string -1 will be returned, and the string is not completely
+ *          processed.  In the case of puszValidPairs having an odd number of
+ *          code points, -1 will be also return but without any modification to
+ *          the string.
  * @param   psz            The string to sanitise.
- * @param   puszValidSet   A zero-terminated array of pairs of Unicode points.
+ * @param   puszValidPairs A zero-terminated array of pairs of Unicode points.
  *                         Each pair is the start and end point of a range,
  *                         and the union of these ranges forms the white list.
  * @param   chReplacement  The ASCII replacement character.
  */
-RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement);
+RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidPairs, char chReplacement);
 
 /**
  * Gets the number of code points the string is made up of, excluding

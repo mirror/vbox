@@ -873,8 +873,9 @@ void TstRTStrPurgeComplementSet(RTTEST hTest)
         char szCopy[MAX_IN_STRING];
         ssize_t cReplacements;
         AssertRC(RTStrCopy(szCopy, RT_ELEMENTS(szCopy), aTests[i].pcszIn));
-        cReplacements = RTStrPurgeComplementSet(szCopy, aTests[i].pcCpSet,
-                                                aTests[i].chReplacement);
+        RTTestDisableAssertions(hTest);
+        cReplacements = RTStrPurgeComplementSet(szCopy, aTests[i].pcCpSet, aTests[i].chReplacement);
+        RTTestRestoreAssertions(hTest);
         if (cReplacements != aTests[i].cExpected)
             RTTestFailed(hTest, "#%u: expected %lld, actual %lld\n", i,
                          (long long) aTests[i].cExpected,

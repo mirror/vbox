@@ -1196,7 +1196,8 @@ typedef struct PDMICHARCONNECTOR
      * @param   cStopBits       Number of stop bits.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParameters,(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits));
+    DECLR3CALLBACKMEMBER(int, pfnSetParameters,(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity,
+                                                unsigned cDataBits, unsigned cStopBits));
 
     /**
      * Set the state of the modem lines.

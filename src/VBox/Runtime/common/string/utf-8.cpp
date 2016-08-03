@@ -363,31 +363,68 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz)
 RT_EXPORT_SYMBOL(RTStrPurgeEncoding);
 
 
-RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement)
+/**
+ * Helper for RTStrPurgeComplementSet.
+ *
+ * @returns true if @a Cp is valid, false if not.
+ * @param   Cp              The code point to validate.
+ * @param   puszValidPairs  Pair of valid code point sets.
+ * @param   cValidPairs     Number of pairs.
+ */
+DECLINLINE(bool) rtStrPurgeIsInSet(RTUNICP Cp, PCRTUNICP puszValidPairs, uint32_t cValidPairs)
 {
-    size_t cReplacements = 0;
+    while (cValidPairs-- > 0)
+    {
+        if (   Cp >= puszValidPairs[0]
+            && Cp <= puszValidPairs[1])
+            return true;
+        puszValidPairs += 2;
+    }
+    return false;
+}
+
+
+RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidPairs, char chReplacement)
+{
     AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);
+
+    /*
+     * Calc valid pairs and check that we've got an even number.
+     */
+    uint32_t cValidPairs = 0;
+    while (puszValidPairs[cValidPairs * 2])
+    {
+        AssertReturn(puszValidPairs[cValidPairs * 2 + 1], -1);
+        AssertMsg(puszValidPairs[cValidPairs * 2] <= puszValidPairs[cValidPairs * 2 + 1],
+                  ("%#x vs %#x\n", puszValidPairs[cValidPairs * 2], puszValidPairs[cValidPairs * 2 + 1]));
+        cValidPairs++;
+    }
+
+    /*
+     * Do the replacing.
+     */
+    ssize_t cReplacements = 0;
     for (;;)
     {
-        RTUNICP Cp;
-        PCRTUNICP pCp;
-        char *pszOld = psz;
-        if (RT_FAILURE(RTStrGetCpEx((const char **)&psz, &Cp)))
-            return -1;
-        if (!Cp)
-            break;
-        for (pCp = puszValidSet; *pCp; pCp += 2)
+        char    *pszCur = psz;
+        RTUNICP  Cp;
+        int rc = RTStrGetCpEx((const char **)&psz, &Cp);
+        if (RT_SUCCESS(rc))
         {
-            AssertReturn(*(pCp + 1), -1);
-            if (*pCp <= Cp && *(pCp + 1) >= Cp) /* No, I won't do * and ++. */
+            if (Cp)
+            {
+                if (!rtStrPurgeIsInSet(Cp, puszValidPairs, cValidPairs))
+                {
+                    for (; pszCur != psz; ++pszCur)
+                        *pszCur = chReplacement;
+                    ++cReplacements;
+                }
+            }
+            else
                 break;
         }
-        if (!*pCp)
-        {
-            for (; pszOld != psz; ++pszOld)
-                *pszOld = chReplacement;
-            ++cReplacements;
-        }
+        else
+            return -1;
     }
     return cReplacements;
 }
