@@ -5298,8 +5298,6 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                 Log2(("%s: DMA desc %#010x: addr=%#010x size=%#010x orig_size=%#010x\n", __FUNCTION__,
                        (int)pDesc, pBuffer, cbBuffer, RT_LE2H_U32(DMADesc.cbBuffer) & 0xfffe));
 
-                PCIATAState *pATAState = PDMINS_2_DATA(pDevIns, PCIATAState *);
-                AssertPtr(pATAState);
                 if (uTxDir == PDMMEDIATXDIR_FROM_DEVICE)
                     PDMDevHlpPCIPhysWrite(pDevIns, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
                 else
@@ -6119,7 +6117,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                               RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF1(cb);
+    RT_NOREF(iRegion, cb, enmType);
     PCIATAState *pThis = PCIDEV_2_PCIATASTATE(pPciDev);
     int         rc = VINF_SUCCESS;
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
@@ -6390,23 +6388,18 @@ DECLINLINE(void) ataR3RelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
 static DECLCALLBACK(void) ataR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER  pCtl;
-    ATADevState    *pIf;
-    unsigned        iController;
-    unsigned        iInterface;
-
     AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
-              ("PIIX3IDE: Device does not support hotplugging\n"));
+              ("PIIX3IDE: Device does not support hotplugging\n")); RT_NOREF(fFlags);
 
     /*
      * Locate the controller and stuff.
      */
-    iController = iLUN / RT_ELEMENTS(pThis->aCts[0].aIfs);
+    unsigned iController = iLUN / RT_ELEMENTS(pThis->aCts[0].aIfs);
     AssertReleaseMsg(iController < RT_ELEMENTS(pThis->aCts), ("iController=%d iLUN=%d\n", iController, iLUN));
-    pCtl = &pThis->aCts[iController];
+    PATACONTROLLER  pCtl = &pThis->aCts[iController];
 
-    iInterface  = iLUN % RT_ELEMENTS(pThis->aCts[0].aIfs);
-    pIf = &pCtl->aIfs[iInterface];
+    unsigned iInterface  = iLUN % RT_ELEMENTS(pThis->aCts[0].aIfs);
+    ATADevState *pIf = &pCtl->aIfs[iInterface];
 
     /*
      * Zero some important members.
