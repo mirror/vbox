@@ -34,6 +34,7 @@
  */
 #if !(defined(RT_OS_LINUX) && defined(__KERNEL__))  \
   && !(defined(RT_OS_FREEBSD) && defined(_KERNEL)) \
+  && !(defined(RT_OS_NETBSD) && defined(_KERNEL)) \
   && RT_MSC_PREREQ_EX(RT_MSC_VER_VS2010, 1 /*non-msc*/) \
   && !defined(__IBMC__) \
   && !defined(__IBMCPP__) \
@@ -70,6 +71,16 @@
 # endif /* 64-bit darwin kludge. */
 
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
+
+# ifndef __STDC_CONSTANT_MACROS
+#  define __STDC_CONSTANT_MACROS
+# endif
+# ifndef __STDC_LIMIT_MACROS
+#  define __STDC_LIMIT_MACROS
+# endif
+# include <sys/stdint.h>
+
+#elif defined(RT_OS_NETBSD) && defined(_KERNEL)
 
 # ifndef __STDC_CONSTANT_MACROS
 #  define __STDC_CONSTANT_MACROS
