@@ -121,8 +121,6 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_LPC,
     /** LsiLogic SCSI controller Device group. */
     LOG_GROUP_DEV_LSILOGICSCSI,
-    /** NE2000 Device group. */
-    LOG_GROUP_DEV_NE2000,
     /** NVMe Device group. */
     LOG_GROUP_DEV_NVME,
     /** USB OHCI Device group. */
@@ -841,7 +839,6 @@ typedef enum LOGGROUP
     "DEV_KBD",      \
     "DEV_LPC",      \
     "DEV_LSILOGICSCSI", \
-    "DEV_NE2000",   \
     "DEV_NVME",     \
     "DEV_OHCI",     \
     "DEV_PARALLEL", \
@@ -892,7 +889,7 @@ typedef enum LOGGROUP
     "DRV_RAW_IMAGE", \
     "DRV_SCSI",     \
     "DRV_SCSIHOST", \
-    "DRV_TELNETSERVER", \
+    "DRV_TCP", \
     "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN",      \
     "DRV_UDP", \
