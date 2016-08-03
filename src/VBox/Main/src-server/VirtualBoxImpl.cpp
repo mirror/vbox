@@ -1405,25 +1405,39 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
  */
 void sanitiseMachineFilename(Utf8Str &strName)
 {
-    /** Set of characters which should be safe for use in filenames: some basic
+    /* Set of characters which should be safe for use in filenames: some basic
      * ASCII, Unicode from Latin-1 alphabetic to the end of Hangul.  We try to
      * skip anything that could count as a control character in Windows or
      * *nix, or be otherwise difficult for shells to handle (I would have
      * preferred to remove the space and brackets too).  We also remove all
-     * characters which need UTF-16 surrogate pairs for Windows's benefit. */
-    RTUNICP aCpSet[] =
-        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
-          0xa0, 0xd7af, '\0' };
+     * characters which need UTF-16 surrogate pairs for Windows's benefit.
+     */
+    static RTUNICP const s_uszValidRangePairs[] =
+    {
+        ' ', ' ',
+        '(', ')',
+        '-', '.',
+        '0', '9',
+        'A', 'Z',
+        'a', 'z',
+        '_', '_',
+        0xa0, 0xd7af,
+        '\0'
+    };
+
     char *pszName = strName.mutableRaw();
-    ssize_t cReplacements = RTStrPurgeComplementSet(pszName, aCpSet, '_');
+    ssize_t cReplacements = RTStrPurgeComplementSet(pszName, s_uszValidRangePairs, '_');
     Assert(cReplacements >= 0);
     NOREF(cReplacements);
+
     /* No leading dot or dash. */
     if (pszName[0] == '.' || pszName[0] == '-')
         pszName[0] = '_';
+
     /* No trailing dot. */
     if (pszName[strName.length() - 1] == '.')
         pszName[strName.length() - 1] = '_';
+
     /* Mangle leading and trailing spaces. */
     for (size_t i = 0; pszName[i] == ' '; ++i)
        pszName[i] = '_';

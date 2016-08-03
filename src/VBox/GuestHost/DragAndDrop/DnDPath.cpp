@@ -38,15 +38,21 @@ int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     RT_NOREF1(cbPath);
-    /* Filter out characters not allowed on Windows platforms, put in by
-       RTTimeSpecToString(). */
-    /** @todo Use something like RTPathSanitize() when available. Later. */
-    static const RTUNICP s_aCpSet[] =
+    /* Replace out characters not allowed on Windows platforms, put in by RTTimeSpecToString(). */
+    /** @todo Use something like RTPathSanitize() if available later some time. */
+    static const RTUNICP s_uszValidRangePairs[] =
     {
-        ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
-        0xa0, 0xd7af, '\0'
+        ' ', ' ',
+        '(', ')',
+        '-', '.',
+        '0', '9',
+        'A', 'Z',
+        'a', 'z',
+        '_', '_',
+        0xa0, 0xd7af,
+        '\0'
     };
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_aCpSet, '_' /* Replacement */);
+    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_uszValidRangePairs, '_' /* chReplacement */);
     if (cReplaced < 0)
         rc = VERR_INVALID_UTF8_ENCODING;
 #else

@@ -634,13 +634,24 @@ int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath)
 #ifdef RT_OS_WINDOWS
     /* Filter out characters not allowed on Windows platforms, put in by
        RTTimeSpecToString(). */
-    /** @todo Use something like RTPathSanitize() when available. Later. */
-    RTUNICP aCpSet[] =
-        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
-          0xa0, 0xd7af, '\0' };
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, aCpSet, '_' /* Replacement */);
+    /** @todo Use something like RTPathSanitize() if available later some time. */
+    static RTUNICP const s_uszValidRangePairs[] =
+    {
+        ' ', ' ',
+        '(', ')',
+        '-', '.',
+        '0', '9',
+        'A', 'Z',
+        'a', 'z',
+        '_', '_',
+        0xa0, 0xd7af,
+        '\0'
+    };
+    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_uszValidRangePairs, '_' /* Replacement */);
     if (cReplaced < 0)
         rc = VERR_INVALID_UTF8_ENCODING;
+#else
+    RT_NOREF()
 #endif
     return rc;
 }
