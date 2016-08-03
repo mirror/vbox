@@ -2786,44 +2786,96 @@
 #endif
 
 /** @def RT_NOREF1
- * RT_NOREF_PV shorthand taking on parameter.
- */
+ * RT_NOREF_PV shorthand taking on parameter. */
 #define RT_NOREF1(var1)                                 RT_NOREF_PV(var1)
 /** @def RT_NOREF2
- * RT_NOREF_PV shorthand taking two parameters.
- */
+ * RT_NOREF_PV shorthand taking two parameters. */
 #define RT_NOREF2(var1, var2)                           RT_NOREF_PV(var1); RT_NOREF1(var2)
 /** @def RT_NOREF3
- * RT_NOREF_PV shorthand taking three parameters.
- */
+ * RT_NOREF_PV shorthand taking three parameters. */
 #define RT_NOREF3(var1, var2, var3)                     RT_NOREF_PV(var1); RT_NOREF2(var2, var3)
 /** @def RT_NOREF4
- * RT_NOREF_PV shorthand taking four parameters.
- */
+ * RT_NOREF_PV shorthand taking four parameters. */
 #define RT_NOREF4(var1, var2, var3, var4)               RT_NOREF_PV(var1); RT_NOREF3(var2, var3, var4)
 /** @def RT_NOREF5
- * RT_NOREF_PV shorthand taking five parameters.
- */
+ * RT_NOREF_PV shorthand taking five parameters. */
 #define RT_NOREF5(var1, var2, var3, var4, var5)         RT_NOREF_PV(var1); RT_NOREF4(var2, var3, var4, var5)
 /** @def RT_NOREF6
- * RT_NOREF_PV shorthand taking six parameters.
- */
+ * RT_NOREF_PV shorthand taking six parameters.  */
 #define RT_NOREF6(var1, var2, var3, var4, var5, var6)   RT_NOREF_PV(var1); RT_NOREF5(var2, var3, var4, var5, var6)
 /** @def RT_NOREF7
- * RT_NOREF_PV shorthand taking seven parameters.
- */
+ * RT_NOREF_PV shorthand taking seven parameters.  */
 #define RT_NOREF7(var1, var2, var3, var4, var5, var6, var7) \
     RT_NOREF_PV(var1); RT_NOREF6(var2, var3, var4, var5, var6, var7)
 /** @def RT_NOREF8
- * RT_NOREF_PV shorthand taking eight parameters.
- */
+ * RT_NOREF_PV shorthand taking eight parameters.  */
 #define RT_NOREF8(var1, var2, var3, var4, var5, var6, var7, var8) \
     RT_NOREF_PV(var1); RT_NOREF7(var2, var3, var4, var5, var6, var7, var8)
 /** @def RT_NOREF9
- * RT_NOREF_PV shorthand taking nine parameters.
- */
+ * RT_NOREF_PV shorthand taking nine parameters.  */
 #define RT_NOREF9(var1, var2, var3, var4, var5, var6, var7, var8, var9) \
     RT_NOREF_PV(var1); RT_NOREF8(var2, var3, var4, var5, var6, var7, var8)
+/** @def RT_NOREF10
+ * RT_NOREF_PV shorthand taking ten parameters.  */
+#define RT_NOREF10(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10) \
+    RT_NOREF_PV(var1); RT_NOREF_PV(var2); RT_NOREF_PV(var3); RT_NOREF_PV(var4); RT_NOREF_PV(var5); RT_NOREF_PV(var6); \
+    RT_NOREF_PV(var7); RT_NOREF_PV(var8); RT_NOREF_PV(var9); RT_NOREF_PV(var10)
+/** @def RT_NOREF11
+ * RT_NOREF_PV shorthand taking eleven parameters.  */
+#define RT_NOREF11(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11) \
+    RT_NOREF_PV(var1); RT_NOREF10(var2, var3, var4, var5, var6, var7, var8, var9, var10)
+/** @def RT_NOREF12
+ * RT_NOREF_PV shorthand taking twelve parameters.  */
+#define RT_NOREF12(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12) \
+    RT_NOREF_PV(var1); RT_NOREF11(var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12)
+/** @def RT_NOREF13
+ * RT_NOREF_PV shorthand taking thirteen parameters.  */
+#define RT_NOREF13(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13) \
+    RT_NOREF_PV(var1); RT_NOREF12(var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13)
+/** @def RT_NOREF14
+ * RT_NOREF_PV shorthand taking fourteen parameters.  */
+#define RT_NOREF14(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14) \
+    RT_NOREF_PV(var1); RT_NOREF13(var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14)
+/** @def RT_NOREF15
+ * RT_NOREF_PV shorthand taking fifteen parameters.  */
+#define RT_NOREF15(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15) \
+    RT_NOREF_PV(var1); RT_NOREF14(var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15)
+/** @def RT_NOREF16
+ * RT_NOREF_PV shorthand taking fifteen parameters.  */
+#define RT_NOREF16(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15, var16) \
+    RT_NOREF_PV(var1); RT_NOREF15(var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15, var16)
+/** @def RT_NOREF17
+ * RT_NOREF_PV shorthand taking seventeen parameters.  */
+#define RT_NOREF17(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17) \
+    RT_NOREF_PV(v1); RT_NOREF16(v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17)
+/** @def RT_NOREF18
+ * RT_NOREF_PV shorthand taking eighteen parameters.  */
+#define RT_NOREF18(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18) \
+    RT_NOREF_PV(v1); RT_NOREF17(v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18)
+/** @def RT_NOREF19
+ * RT_NOREF_PV shorthand taking nineteen parameters.  */
+#define RT_NOREF19(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19) \
+    RT_NOREF_PV(v1); RT_NOREF18(v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19)
+/** @def RT_NOREF20
+ * RT_NOREF_PV shorthand taking twenty parameters.  */
+#define RT_NOREF20(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20) \
+    RT_NOREF_PV(v1); RT_NOREF19(v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20)
+/** @def RT_NOREF21
+ * RT_NOREF_PV shorthand taking twentyone parameters.  */
+#define RT_NOREF21(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21) \
+    RT_NOREF_PV(v1); RT_NOREF20(v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21)
+/** @def RT_NOREF22
+ * RT_NOREF_PV shorthand taking twentytwo parameters.  */
+#define RT_NOREF22(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22) \
+    RT_NOREF_PV(v1); RT_NOREF21(v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22)
+
+/** @def RT_NOREF
+ * RT_NOREF_PV variant using the variadic macro feature of C99.
+ * @remarks Only use this in sources */
+#ifdef RT_COMPILER_SUPPORTS_VA_ARGS
+# define RT_NOREF(...) \
+    RT_UNPACK_CALL(RT_CONCAT(RT_NOREF, RT_EXPAND(RT_COUNT_VA_ARGS(__VA_ARGS__))),(__VA_ARGS__))
+#endif
 
 
 /** @def RT_BREAKPOINT
