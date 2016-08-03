@@ -66,6 +66,11 @@ protected:
 
 private slots:
 
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /** Handles host-screen available-area change. */
+    void sltHandleHostScreenAvailableAreaChange();
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
     /** Handles selector-window context-menu call for passed @a position. */
     void sltShowSelectorWindowContextMenu(const QPoint &position);
 

@@ -28,6 +28,9 @@
 # include <QTimer>
 # if QT_VERSION >= 0x050000
 #  include <QStandardPaths>
+#  ifdef VBOX_WS_X11
+#   include <QDesktopWidget>
+#  endif /* VBOX_WS_X11 */
 # else /* QT_VERSION < 0x050000 */
 #  include <QDesktopServices>
 # endif /* QT_VERSION < 0x050000 */
@@ -133,6 +136,19 @@ UISelectorWindow::~UISelectorWindow()
 {
     m_spInstance = 0;
 }
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
+{
+    /* Prevent handling if fake screen detected: */
+    if (vboxGlobal().isFakeScreenDetected())
+        return;
+
+    /* Restore the geometry cached by the window: */
+    resize(m_geometry.size());
+    move(m_geometry.topLeft());
+}
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 {
@@ -1065,6 +1081,12 @@ bool UISelectorWindow::event(QEvent *pEvent)
         /* Handle every Resize and Move we keep track of the geometry. */
         case QEvent::Resize:
         {
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+            /* Prevent handling if fake screen detected: */
+            if (vboxGlobal().isFakeScreenDetected())
+                break;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
@@ -1074,6 +1096,12 @@ bool UISelectorWindow::event(QEvent *pEvent)
         }
         case QEvent::Move:
         {
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+            /* Prevent handling if fake screen detected: */
+            if (vboxGlobal().isFakeScreenDetected())
+                break;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
             {
 #ifdef VBOX_WS_MAC
@@ -1694,6 +1722,11 @@ void UISelectorWindow::prepareWidgets()
 
 void UISelectorWindow::prepareConnections()
 {
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /* Desktop event handlers: */
+    connect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenAvailableAreaChange()));
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
     /* Medium enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltHandleMediumEnumerationFinish()));
 
