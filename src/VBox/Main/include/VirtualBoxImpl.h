@@ -57,6 +57,7 @@ namespace settings
     class MainConfigFile;
     struct MediaRegistry;
 }
+
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxWrap
 #ifdef RT_OS_WINDOWS
@@ -89,7 +90,7 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    /* public initializer/uninitializer for internal purposes only */
+    // public initializer/uninitializer for internal purposes only
     HRESULT init();
     HRESULT initMachines();
     HRESULT initMedia(const Guid &uuidMachineRegistry,
@@ -97,7 +98,7 @@ public:
                       const Utf8Str &strMachineFolder);
     void uninit();
 
-    /* public methods only for internal purposes */
+    // public methods only for internal purposes
 
     /**
      * Override of the default locking class to be used for validating lock
