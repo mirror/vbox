@@ -80,7 +80,6 @@
 
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
-# include "win/VBoxComEvents.h"
 # include "ThreadTask.h"
 # include "tchar.h"
 #endif
