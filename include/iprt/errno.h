@@ -34,6 +34,8 @@
 #  include <linux/errno.h>
 # elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
 #  include <sys/errno.h>
+# elif defined(RT_OS_NETBSD) && defined(_KERNEL)
+#  include <sys/errno.h>
 # else
 #  include <errno.h>
 # endif
