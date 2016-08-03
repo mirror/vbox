@@ -463,6 +463,7 @@ class PlatformMSCOM(PlatformBase):
         self.flushGenPyCache(win32com.client.gencache)
         win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
         win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
+        win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBoxClient')
 
         self.oIntCv = threading.Condition()
         self.fInterrupted = False
@@ -506,7 +507,8 @@ class PlatformMSCOM(PlatformBase):
     def getVirtualBox(self):
         import win32com
         from win32com.client import Dispatch
-        return win32com.client.Dispatch("VirtualBox.VirtualBox")
+        client = win32com.client.Dispatch("VirtualBox.VirtualBoxClient")
+        return client.virtualBox
 
     def getType(self):
         return 'MSCOM'
@@ -737,7 +739,8 @@ class PlatformXPCOM(PlatformBase):
 
     def getVirtualBox(self):
         import xpcom.components
-        return xpcom.components.classes["@virtualbox.org/VirtualBox;1"].createInstance()
+        client = xpcom.components.classes["@virtualbox.org/VirtualBoxClient;1"].createInstance()
+        return client.virtualBox
 
     def getType(self):
         return 'XPCOM'
