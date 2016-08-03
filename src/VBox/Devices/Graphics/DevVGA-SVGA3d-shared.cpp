@@ -77,11 +77,12 @@ int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, 
  * The async window handling thread
  *
  * @returns VBox status code.
- * @param   pDevIns     The VGA device instance.
- * @param   pThread     The send thread.
+ * @param   hThreadSelf     This thread.
+ * @param   pvUser          Request sempahore handle.
  */
-DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     RTSEMEVENT      WndRequestSem = (RTSEMEVENT)pvUser;
     WNDCLASSEX      wc;
 
@@ -169,8 +170,8 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser)
             }
             if (msg.message == WM_VMSVGA3D_DESTROYWINDOW)
             {
-                BOOL ret = DestroyWindow((HWND)msg.wParam);
-                Assert(ret);
+                BOOL fRc = DestroyWindow((HWND)msg.wParam);
+                Assert(fRc); NOREF(fRc);
                 /* Signal to the caller that we're done. */
                 RTSemEventSignal(WndRequestSem);
                 continue;
@@ -191,8 +192,8 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser)
                 pCS->cx = rectClient.right - rectClient.left;
                 pCS->cy = rectClient.bottom - rectClient.top;
 #endif
-                BOOL ret = SetWindowPos(hwnd, 0, pCS->x, pCS->y, pCS->cx, pCS->cy, SWP_NOZORDER | SWP_NOMOVE);
-                Assert(ret);
+                BOOL fRc = SetWindowPos(hwnd, 0, pCS->x, pCS->y, pCS->cx, pCS->cy, SWP_NOZORDER | SWP_NOMOVE);
+                Assert(fRc); NOREF(fRc);
 
                 /* Signal to the caller that we're done. */
                 RTSemEventSignal(WndRequestSem);

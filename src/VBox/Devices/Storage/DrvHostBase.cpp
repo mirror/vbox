@@ -354,7 +354,7 @@ static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIMEDIA pInterface, void *pv, s
 
     RTMemFree(pv);
 
-    LogFlowFunc(("returns %Rrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 

@@ -35,7 +35,7 @@
                                         * the guest without a need to port IO.
                                         */
 
-typedef struct _HGSMIBUFFERLOCATION
+typedef struct HGSMIBUFFERLOCATION
 {
     HGSMIOFFSET offLocation;
     HGSMISIZE   cbLocation;
@@ -44,24 +44,24 @@ AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 
 /* HGSMI setup and configuration data structures. */
 /* host->guest commands pending, should be accessed under FIFO lock only */
-#define HGSMIHOSTFLAGS_COMMANDS_PENDING    0x1
+#define HGSMIHOSTFLAGS_COMMANDS_PENDING    UINT32_C(0x1)
 /* IRQ is fired, should be accessed under VGAState::lock only  */
-#define HGSMIHOSTFLAGS_IRQ                 0x2
+#define HGSMIHOSTFLAGS_IRQ                 UINT32_C(0x2)
 #ifdef VBOX_WITH_WDDM
 /* one or more guest commands is completed, should be accessed under FIFO lock only */
-# define HGSMIHOSTFLAGS_GCOMMAND_COMPLETED 0x4
+# define HGSMIHOSTFLAGS_GCOMMAND_COMPLETED UINT32_C(0x4)
 /* watchdog timer interrupt flag (used for debugging), should be accessed under VGAState::lock only */
-# define HGSMIHOSTFLAGS_WATCHDOG           0x8
+# define HGSMIHOSTFLAGS_WATCHDOG           UINT32_C(0x8)
 #endif
 /* vsync interrupt flag, should be accessed under VGAState::lock only */
-#define HGSMIHOSTFLAGS_VSYNC               0x10
+#define HGSMIHOSTFLAGS_VSYNC               UINT32_C(0x10)
 /** monitor hotplug flag, should be accessed under VGAState::lock only */
-#define HGSMIHOSTFLAGS_HOTPLUG             0x20
+#define HGSMIHOSTFLAGS_HOTPLUG             UINT32_C(0x20)
 /** Cursor capability state change flag, should be accessed under
  * VGAState::lock only.  @see VBVACONF32. */
-#define HGSMIHOSTFLAGS_CURSOR_CAPABILITIES 0x40
+#define HGSMIHOSTFLAGS_CURSOR_CAPABILITIES UINT32_C(0x40)
 
-typedef struct _HGSMIHOSTFLAGS
+typedef struct HGSMIHOSTFLAGS
 {
     /* host flags can be accessed and modified in multiple threads concurrently,
      * e.g. CrOpenGL HGCM and GUI threads when to completing HGSMI 3D and Video Accel respectively,

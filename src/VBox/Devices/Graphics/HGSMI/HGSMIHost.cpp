@@ -90,10 +90,10 @@
 #define VBOXHGSMI_STATE_FIFOSTART_MAGIC 0x9abcdef1
 #define VBOXHGSMI_STATE_FIFOSTOP_MAGIC 0x1fedcba9
 
-#define VBOXHGSMI_SAVE_START(_pSSM)     do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_START_MAGIC);      AssertRC(rc2);}while(0)
-#define VBOXHGSMI_SAVE_STOP(_pSSM)      do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_STOP_MAGIC);       AssertRC(rc2);}while(0)
-#define VBOXHGSMI_SAVE_FIFOSTART(_pSSM) do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTART_MAGIC);  AssertRC(rc2);}while(0)
-#define VBOXHGSMI_SAVE_FIFOSTOP(_pSSM)  do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTOP_MAGIC);   AssertRC(rc2);}while(0)
+#define VBOXHGSMI_SAVE_START(_pSSM)     do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_START_MAGIC);     AssertRC(rc2); }while(0)
+#define VBOXHGSMI_SAVE_STOP(_pSSM)      do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_STOP_MAGIC);      AssertRC(rc2); }while(0)
+#define VBOXHGSMI_SAVE_FIFOSTART(_pSSM) do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTART_MAGIC); AssertRC(rc2); }while(0)
+#define VBOXHGSMI_SAVE_FIFOSTOP(_pSSM)  do{ int rc2 = SSMR3PutU32(_pSSM, VBOXHGSMI_STATE_FIFOSTOP_MAGIC);  AssertRC(rc2); }while(0)
 
 #define VBOXHGSMI_LOAD_CHECK(_pSSM, _v) \
     do{ \
@@ -303,10 +303,8 @@ static HGSMIOFFSET hgsmiProcessGuestCmdCompletion(HGSMIINSTANCE *pIns)
 
         if (RTListIsEmpty(&pIns->guestCmdCompleted))
         {
-            if(pIns->pHGFlags)
-            {
+            if (pIns->pHGFlags)
                 ASMAtomicAndU32(&pIns->pHGFlags->u32HostFlags, ~HGSMIHOSTFLAGS_GCOMMAND_COMPLETED);
-            }
         }
 
         hgsmiFIFOUnlock(pIns);
@@ -354,7 +352,7 @@ static bool hgsmiProcessHostCmdCompletion(HGSMIINSTANCE *pIns,
     VM_ASSERT_EMT(pIns->pVM);
 
     int rc = hgsmiFIFOLock(pIns);
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Search the Read list for the given buffer offset. */
         HGSMIHOSTFIFOENTRY *pEntry = NULL;
@@ -391,7 +389,7 @@ static bool hgsmiProcessHostCmdCompletion(HGSMIINSTANCE *pIns,
         }
 
         hgsmiFIFOUnlock(pIns);
-        if(!bCompleteFirst)
+        if (!bCompleteFirst)
             LogRel(("HGSMI[%s]: ignored invalid write to the host FIFO: 0x%08X!!!\n", pIns->pszName, offBuffer));
     }
     return false;
@@ -419,10 +417,10 @@ HGSMIOFFSET HGSMIHostRead (HGSMIINSTANCE *pIns)
 
     VM_ASSERT_EMT(pIns->pVM);
 
-    AssertPtrReturn(pIns->pHGFlags, VERR_WRONG_ORDER);
+    AssertPtrReturn(pIns->pHGFlags, HGSMIOFFSET_VOID);
     int rc = hgsmiFIFOLock(pIns);
     AssertRC(rc);
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Get the host FIFO head entry. */
         HGSMIHOSTFIFOENTRY *pEntry = RTListGetFirst(&pIns->hostFIFO, HGSMIHOSTFIFOENTRY, nodeEntry);
@@ -453,6 +451,7 @@ HGSMIOFFSET HGSMIHostRead (HGSMIINSTANCE *pIns)
             /* Return the buffer offset of the host FIFO head. */
             return pEntry->offBuffer;
         }
+
         hgsmiFIFOUnlock(pIns);
     }
     /* Special value that means there is no host buffers to be processed. */
@@ -722,7 +721,7 @@ static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
 
     HGSMIINSTANCE *pIns = pEntry->pIns;
     int rc = hgsmiFIFOLock (pIns);
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTListNodeRemove(&pEntry->nodeEntry);
         hgsmiFIFOUnlock (pIns);
@@ -730,7 +729,7 @@ static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
         void *pvData = HGSMIBufferDataFromOffset(&pIns->hostHeap.area, pEntry->offBuffer);
 
         rc = hgsmiHostHeapLock (pIns);
-        if(RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Deallocate the host heap memory. */
             hgsmiHostHeapDataFree(&pIns->hostHeap, pvData);
@@ -1291,14 +1290,14 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
               0:
               hgsmiHostHeapHandleLocationOffset(&pIns->hostHeap);
     rc = SSMR3PutU32 (pSSM, off);
-    if(off != HGSMIOFFSET_VOID)
+    if (off != HGSMIOFFSET_VOID)
     {
         SSMR3PutU32 (pSSM, hgsmiHostHeapOffset(&pIns->hostHeap));
         SSMR3PutU32 (pSSM, hgsmiHostHeapSize(&pIns->hostHeap));
         /* need save mem pointer to calculate offset on restore */
         SSMR3PutU64 (pSSM, (uint64_t)(uintptr_t)pIns->area.pu8Base);
         rc = hgsmiFIFOLock (pIns);
-        if(RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFO, pSSM); AssertRC(rc);
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFORead, pSSM); AssertRC(rc);
@@ -1326,7 +1325,7 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 
 int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    if(u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
+    if (u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
         return VINF_SUCCESS;
 
     VBOXHGSMI_LOAD_START(pSSM);
@@ -1345,10 +1344,9 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
     AssertLogRelRCReturn(rc, rc);
     pIns->pHGFlags = (off != HGSMIOFFSET_VOID) ? (HGSMIHOSTFLAGS*)HGSMIOffsetToPointer (&pIns->area, off) : NULL;
 
-    HGSMIHOSTHEAP hHeap = pIns->hostHeap;
     rc = SSMR3GetU32(pSSM, &off);
     AssertLogRelRCReturn(rc, rc);
-    if(off != HGSMIOFFSET_VOID)
+    if (off != HGSMIOFFSET_VOID)
     {
         /* There is a saved heap. */
         if (u32HeapType == HGSMI_HEAP_TYPE_NULL)
@@ -1369,7 +1367,7 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
         if (RT_SUCCESS(rc))
         {
             rc = hgsmiFIFOLock (pIns);
-            if(RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = hgsmiHostLoadFifoLocked (pIns, &pIns->hostFIFO, pSSM);
                 if (RT_SUCCESS(rc))
@@ -1439,11 +1437,10 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
  * Channels management.
  */
 
-static int hgsmiChannelMapCreate (PHGSMIINSTANCE pIns,
-                                  const char *pszChannel,
-                                  uint8_t *pu8Channel)
+static int hgsmiChannelMapCreate(PHGSMIINSTANCE pIns, const char *pszChannel, uint8_t *pu8Channel)
 {
-    /* @todo later */
+    RT_NOREF(pIns, pszChannel, pu8Channel);
+    /** @todo later */
     return VERR_NOT_SUPPORTED;
 }
 
@@ -1477,11 +1474,11 @@ int HGSMIHostChannelRegister(PHGSMIINSTANCE pIns,
 
 /* Register a new HGSMI channel by name.
  */
-int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
-                              const char *pszChannel,
-                              PFNHGSMICHANNELHANDLER pfnChannelHandler,
-                              void *pvChannelHandler,
-                              uint8_t *pu8Channel)
+int HGSMIChannelRegisterName(PHGSMIINSTANCE pIns,
+                             const char *pszChannel,
+                             PFNHGSMICHANNELHANDLER pfnChannelHandler,
+                             void *pvChannelHandler,
+                             uint8_t *pu8Channel)
 {
     LogFlowFunc(("pIns %p, pszChannel %s, pfnChannelHandler %p, pvChannelHandler %p, pu8Channel %p\n",
                   pIns, pszChannel, pfnChannelHandler, pvChannelHandler, pu8Channel));
@@ -1590,7 +1587,7 @@ static DECLCALLBACK(int) hgsmiChannelHandler (void *pvHandler, uint16_t u16Chann
             }
 
             HGSMIBUFFERLOCATION *pLoc = (HGSMIBUFFERLOCATION *)pvBuffer;
-            if(pLoc->cbLocation != sizeof(HGSMIHOSTFLAGS))
+            if (pLoc->cbLocation != sizeof(HGSMIHOSTFLAGS))
             {
                 rc = VERR_INVALID_PARAMETER;
                 break;
@@ -1704,19 +1701,22 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
 uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
 {
     uint32_t flags = 0;
-    if(pIns->pHGFlags)
+    if (pIns->pHGFlags)
     {
         /* treat the abandoned commands as read.. */
-        while(HGSMIHostRead (pIns) != HGSMIOFFSET_VOID)  {}
+        while (HGSMIHostRead(pIns) != HGSMIOFFSET_VOID)
+        {}
         flags = pIns->pHGFlags->u32HostFlags;
         pIns->pHGFlags->u32HostFlags = 0;
     }
 
     /* .. and complete them */
-    while(hgsmiProcessHostCmdCompletion (pIns, 0, true)) {}
+    while (hgsmiProcessHostCmdCompletion(pIns, 0, true))
+    {}
 
 #ifdef VBOX_WITH_WDDM
-    while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID) {}
+    while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID)
+    {}
 #endif
 
     hgsmiHostHeapDestroy(&pIns->hostHeap);
@@ -1793,7 +1793,7 @@ int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns,
     int rc = hgsmiGuestCommandComplete (pIns, offBuffer);
     if (RT_SUCCESS (rc))
     {
-        if(bDoIrq)
+        if (bDoIrq)
         {
             /* Now guest can read the FIFO, the notification is informational. */
             hgsmiNotifyGuest (pIns);

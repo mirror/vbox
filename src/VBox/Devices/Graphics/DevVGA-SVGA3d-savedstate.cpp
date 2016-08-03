@@ -148,6 +148,7 @@ static int vmsvga3dLoadReinitContext(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext)
 
 int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
+    RT_NOREF(uVersion, uPass);
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     int            rc;
@@ -426,6 +427,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 
 static int vmsvga3dSaveContext(PVGASTATE pThis, PSSMHANDLE pSSM, PVMSVGA3DCONTEXT pContext)
 {
+    RT_NOREF(pThis);
     uint32_t cid = pContext->id;
 
     /* Save the id first. */
@@ -845,7 +847,8 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-uint32_t vmsvga3dSaveShaderConst(PVMSVGA3DCONTEXT pContext, uint32_t reg, SVGA3dShaderType type, SVGA3dShaderConstType ctype, uint32_t val1, uint32_t val2, uint32_t val3, uint32_t val4)
+int vmsvga3dSaveShaderConst(PVMSVGA3DCONTEXT pContext, uint32_t reg, SVGA3dShaderType type, SVGA3dShaderConstType ctype,
+                            uint32_t val1, uint32_t val2, uint32_t val3, uint32_t val4)
 {
     /* Choose a sane upper limit. */
     AssertReturn(reg < _32K, VERR_INVALID_PARAMETER);
