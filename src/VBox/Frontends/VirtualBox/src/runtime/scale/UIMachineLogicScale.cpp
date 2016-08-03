@@ -77,6 +77,10 @@ void UIMachineLogicScale::sltInvokePopupMenu()
 void UIMachineLogicScale::sltHostScreenAvailableAreaChange()
 {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /* Prevent handling if fake screen detected: */
+    if (vboxGlobal().isFakeScreenDetected())
+        return;
+
     /* Make sure all machine-window(s) have previous but normalized geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         pMachineWindow->restoreCachedGeometry();

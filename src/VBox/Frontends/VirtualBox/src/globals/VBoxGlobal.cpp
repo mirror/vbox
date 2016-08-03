@@ -48,6 +48,9 @@
 # ifdef VBOX_GUI_WITH_PIDFILE
 #  include <QTextStream>
 # endif /* VBOX_GUI_WITH_PIDFILE */
+# if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#  include <QScreen>
+# endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -403,6 +406,20 @@ const QRect VBoxGlobal::availableGeometry(const QPoint &point) const
     /* Redirect call to existing wrapper: */
     return availableGeometry(screenNumber(point));
 }
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+bool VBoxGlobal::isFakeScreenDetected() const
+{
+    // WORKAROUND:
+    // In 5.6.1 Qt devs taught the XCB plugin to silently swap last detached screen
+    // with a fake one, and there is no API-way to distinguish fake from real one
+    // because all they do is erasing output for the last real screen, keeping
+    // all other screen attributes stale. Gladly output influencing screen name
+    // so we can use that horrible workaround to detect a fake XCB screen.
+    return    qApp->screens().size() == 0 /* zero-screen case is impossible after 5.6.1 */
+           || (qApp->screens().size() == 1 && qApp->screens().first()->name() == ":0.0");
+}
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.

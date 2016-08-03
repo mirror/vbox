@@ -171,6 +171,11 @@ public:
         const QRect screenGeometry(const QPoint &point) const;
         /** Returns the available-geometry of the host-screen which contains @a point. */
         const QRect availableGeometry(const QPoint &point) const;
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+        /** Qt5: X11: Returns whether no or fake screen detected. */
+        bool isFakeScreenDetected() const;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
     /** @} */
 
     VBoxGlobalSettings &settings() { return gset; }

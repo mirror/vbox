@@ -461,6 +461,12 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
     {
         case QEvent::Resize:
         {
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+            /* Prevent handling if fake screen detected: */
+            if (vboxGlobal().isFakeScreenDetected())
+                break;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
             QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
             if (!isMaximizedChecked())
             {
@@ -475,6 +481,12 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
         }
         case QEvent::Move:
         {
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+            /* Prevent handling if fake screen detected: */
+            if (vboxGlobal().isFakeScreenDetected())
+                break;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
             if (!isMaximizedChecked())
             {
                 m_normalGeometry.moveTo(geometry().x(), geometry().y());
