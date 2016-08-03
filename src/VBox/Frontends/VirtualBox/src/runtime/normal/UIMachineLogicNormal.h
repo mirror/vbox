@@ -68,6 +68,9 @@ private slots:
     /** Handles guest-screen resize requests. */
     void sltHandleActionTriggerViewScreenResize(int iIndex, const QSize &size);
 
+    /** Handles host-screen available-area change. */
+    virtual void sltHostScreenAvailableAreaChange() /* override */;
+
 private:
 
     /* Prepare helpers: */

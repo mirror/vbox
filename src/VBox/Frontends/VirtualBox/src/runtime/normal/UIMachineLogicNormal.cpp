@@ -250,6 +250,18 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenResize(int iIndex, co
                              false, 0, 0, size.width(), size.height(), 0);
 }
 
+void UIMachineLogicNormal::sltHostScreenAvailableAreaChange()
+{
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /* Make sure all machine-window(s) have previous but normalized geometry: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->restoreCachedGeometry();
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
+    /* Call to base-class: */
+    UIMachineLogic::sltHostScreenAvailableAreaChange();
+}
+
 void UIMachineLogicNormal::prepareActionConnections()
 {
     /* Call to base-class: */

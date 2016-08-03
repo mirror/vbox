@@ -74,6 +74,18 @@ void UIMachineLogicScale::sltInvokePopupMenu()
 }
 #endif /* !VBOX_WS_MAC */
 
+void UIMachineLogicScale::sltHostScreenAvailableAreaChange()
+{
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /* Make sure all machine-window(s) have previous but normalized geometry: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->restoreCachedGeometry();
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
+    /* Call to base-class: */
+    UIMachineLogic::sltHostScreenAvailableAreaChange();
+}
+
 void UIMachineLogicScale::prepareActionGroups()
 {
     /* Call to base-class: */
