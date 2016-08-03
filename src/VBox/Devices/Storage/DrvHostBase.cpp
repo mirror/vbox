@@ -329,10 +329,10 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 /** @copydoc PDMIBLOCK::pfnIoBufAlloc */
 static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
 {
+    RT_NOREF(pInterface);
     LogFlowFunc(("\n"));
-    int rc;
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
 
+    int rc;
     void *pvNew = RTMemAlloc(cb);
     if (RT_LIKELY(pvNew))
     {
@@ -349,15 +349,13 @@ static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIMEDIA pInterface, size_t cb,
 /** @copydoc PDMIBLOCK::pfnIoBufFree */
 static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
 {
+    RT_NOREF(pInterface, cb);
     LogFlowFunc(("\n"));
-    int rc = VINF_SUCCESS;
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
 
-    NOREF(cb);
     RTMemFree(pv);
 
     LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -479,6 +477,7 @@ static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 /** @copydoc PDMIMOUNT::pfnUnmount */
 static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
+    RT_NOREF(fEject);
     /* While we're not mountable (see drvHostBaseMount), we're unmountable. */
     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
     RTCritSectEnter(&pThis->CritSect);
@@ -1587,7 +1586,7 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
     /*
      * Signal the waiting EMT thread that everything went fine.
      */
-    ASMAtomicXchgSize(&pThis->hwndDeviceChange, hwnd);
+    ASMAtomicXchgPtr((void * volatile *)&pThis->hwndDeviceChange, hwnd);
     RTThreadUserSignal(ThreadSelf);
     if (!hwnd)
     {
@@ -1675,6 +1674,7 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
  */
 static DECLCALLBACK(int) drvHostBaseLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: drvHostBaseMediaThread:\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
     RTCritSectEnter(&pThis->CritSect);

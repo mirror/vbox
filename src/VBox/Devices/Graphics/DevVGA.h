@@ -696,7 +696,7 @@ void     VBVAOnResume(PVGASTATE pThis);
 bool VBVAIsPaused(PVGASTATE pVGAState);
 bool VBVAIsEnabled(PVGASTATE pVGAState);
 
-void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags);
+void VBVARaiseIrq(PVGASTATE pVGAState, uint32_t fFlags);
 
 int VBVAInfoView(PVGASTATE pVGAState, const VBVAINFOVIEW *pView);
 int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen);
@@ -705,17 +705,17 @@ int VBVAGetInfoViewAndScreen(PVGASTATE pVGAState, uint32_t u32ViewIndex, VBVAINF
 /* @return host-guest flags that were set on reset
  * this allows the caller to make further cleaning when needed,
  * e.g. reset the IRQ */
-uint32_t HGSMIReset (PHGSMIINSTANCE pIns);
+uint32_t HGSMIReset(PHGSMIINSTANCE pIns);
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 DECLCALLBACK(int) vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
-int vbvaVHWAConstruct (PVGASTATE pVGAState);
-int vbvaVHWAReset (PVGASTATE pVGAState);
+int vbvaVHWAConstruct(PVGASTATE pVGAState);
+int vbvaVHWAReset(PVGASTATE pVGAState);
 
 void vbvaTimerCb(PVGASTATE pVGAState);
 
-int vboxVBVASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
-int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+int vboxVBVASaveStatePrep(PPDMDEVINS pDevIns);
+int vboxVBVASaveStateDone(PPDMDEVINS pDevIns);
 # endif
 
 #ifdef VBOX_WITH_HGSMI
@@ -735,9 +735,9 @@ DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface
                                             struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd);
 # endif
 
-int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
-int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version);
-int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+int vboxVBVASaveStateExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+int vboxVBVALoadStateExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version);
+int vboxVBVALoadStateDone(PPDMDEVINS pDevIns);
 
 DECLCALLBACK(int) vgaUpdateDisplayAll(PVGASTATE pThis, bool fFailOnResize);
 DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,

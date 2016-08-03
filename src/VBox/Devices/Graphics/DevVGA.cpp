@@ -5495,7 +5495,7 @@ static void vgaR3SaveConfig(PVGASTATE pThis, PSSMHANDLE pSSM)
 
 
 /**
- * @copydoc FNSSMDEVLIVEEXEC
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
  */
 static DECLCALLBACK(int) vgaR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -5507,28 +5507,35 @@ static DECLCALLBACK(int) vgaR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
 
 /**
- * @copydoc FNSSMDEVSAVEPREP
+ * @callback_method_impl{FNSSMDEVSAVEPREP}
  */
 static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    return vboxVBVASaveStatePrep(pDevIns, pSSM);
+    RT_NOREF(pSSM);
+    return vboxVBVASaveStatePrep(pDevIns);
 #else
-    return VINF_SUCCESS;
-#endif
-}
-
-static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    return vboxVBVASaveStateDone(pDevIns, pSSM);
-#else
+    RT_NOREF(pDevIns, pSSM);
     return VINF_SUCCESS;
 #endif
 }
 
 /**
- * @copydoc FNSSMDEVSAVEEXEC
+ * @callback_method_impl{FNSSMDEVSAVEDONE}
+ */
+static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    RT_NOREF(pSSM);
+    return vboxVBVASaveStateDone(pDevIns);
+#else
+    RT_NOREF(pDevIns, pSSM);
+    return VINF_SUCCESS;
+#endif
+}
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -5677,7 +5684,7 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 #ifdef VBOX_WITH_HGSMI
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    rc = vboxVBVALoadStateDone(pDevIns, pSSM);
+    rc = vboxVBVALoadStateDone(pDevIns);
     AssertRCReturn(rc, rc);
 # ifdef VBOX_WITH_VDMA
     rc = vboxVDMASaveLoadDone(pThis->pVdma);
