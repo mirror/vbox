@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio: Mixing buffer to convert audio samples to/from different
- *             rates / formats.
+ * VBox audio - Mixing buffer to convert audio samples to/from different rates / formats.
  */
 
 /*
@@ -81,5 +80,5 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufDbgPrintChain(PPDMAUDIOMIXBUF pMixBuf);
 #endif
 
-#endif /* AUDIO_MIXBUF_H */
+#endif
 
