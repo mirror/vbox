@@ -163,6 +163,16 @@ void UIMachineWindowScale::showInNecessaryMode()
     m_pMachineView->setFocus();
 }
 
+void UIMachineWindowScale::restoreCachedGeometry()
+{
+    /* Restore the geometry cached by the window: */
+    resize(m_normalGeometry.size());
+    move(m_normalGeometry.topLeft());
+
+    /* Adjust machine-view accordingly: */
+    adjustMachineViewSize();
+}
+
 bool UIMachineWindowScale::event(QEvent *pEvent)
 {
     switch (pEvent->type())

@@ -85,6 +85,10 @@ public:
     /** Returns the machine name. */
     const QString& machineName() const;
 
+    /** Restores cached window geometry.
+      * @note Reimplemented in sub-classes. Base implementation does nothing. */
+    virtual void restoreCachedGeometry() {}
+
     /** Adjusts machine-window size to correspond current machine-view size.
       * @param fAdjustPosition determines whether is it necessary to adjust position too.
       * @note  Reimplemented in sub-classes. Base implementation does nothing. */

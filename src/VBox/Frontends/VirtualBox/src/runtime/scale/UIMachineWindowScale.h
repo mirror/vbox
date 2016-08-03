@@ -53,6 +53,9 @@ private:
     /** Updates visibility according to visual-state. */
     void showInNecessaryMode();
 
+    /** Restores cached window geometry. */
+    virtual void restoreCachedGeometry() /* override */;
+
     /** Common @a pEvent handler. */
     bool event(QEvent *pEvent);
 #ifdef VBOX_WS_WIN

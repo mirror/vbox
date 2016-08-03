@@ -512,6 +512,16 @@ void UIMachineWindowNormal::showInNecessaryMode()
     m_pMachineView->setFocus();
 }
 
+void UIMachineWindowNormal::restoreCachedGeometry()
+{
+    /* Restore the geometry cached by the window: */
+    resize(m_normalGeometry.size());
+    move(m_normalGeometry.topLeft());
+
+    /* Adjust machine-view accordingly: */
+    adjustMachineViewSize();
+}
+
 void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
 {
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
