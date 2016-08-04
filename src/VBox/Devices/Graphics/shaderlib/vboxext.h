@@ -20,7 +20,11 @@
 #define ___VBOXEXT_H___
 
 #ifdef VBOX_WINE_WITHOUT_LIBWINE
-# include <iprt/win/windows.h>
+# ifdef _MSC_VER
+#  include <iprt/win/windows.h>
+# else
+#  include <windows.h>
+# endif
 #endif
 
 #include <iprt/list.h>

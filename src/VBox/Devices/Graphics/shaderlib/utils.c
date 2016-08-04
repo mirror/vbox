@@ -18,7 +18,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#ifdef RT_OS_WINDOWS
+#ifdef _MSC_VER
 # include <iprt/win/windows.h>
 #else
 # include <windows.h>

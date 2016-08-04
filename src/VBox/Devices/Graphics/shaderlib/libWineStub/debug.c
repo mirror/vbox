@@ -34,7 +34,11 @@
 #ifdef VBOX
 # include <iprt/win/objbase.h>
 # include <wine/wined3d.h>
-# include <iprt/win/windows.h>
+# ifdef _MSC_VER
+#  include <iprt/win/windows.h>
+# else
+#  include <windows.h>
+# endif
 #else
 #include <objbase.h>
 #include <wine/wined3d.h>

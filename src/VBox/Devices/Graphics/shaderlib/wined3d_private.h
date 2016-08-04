@@ -46,7 +46,12 @@
 #include "wingdi.h"
 #include "winuser.h"
 #else
-# include <iprt/win/windows.h>
+# ifdef _MSC_VER
+#  include <iprt/win/windows.h>
+# else
+#  include <windows.h>
+#  undef cdecl /* see windef.h */
+# endif
 #endif
 #include "wine/debug.h"
 #include "wine/unicode.h"
@@ -79,7 +84,6 @@
 # define VBoxTlsRefGetImpl(_tls) (TlsGetValue((DWORD)(_tls)))
 # define VBoxTlsRefSetImpl(_tls, _val) (TlsSetValue((DWORD)(_tls), (_val)))
 # define VBoxTlsRefAssertImpl Assert
-# undef cdecl /* see windef.h */
 # include <VBox/VBoxVideo3D.h>
 #endif
 
