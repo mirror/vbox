@@ -1780,7 +1780,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
     PPDMAUDIOMIXBUF pParent = pMixBuf->pParent;
 
-    AUDMIXBUF_LOG(("%s: enmFmt=%ld, pvBuf=%p, cbBuf=%RU32 (%RU32 samples)\n",
+    AUDMIXBUF_LOG(("%s: enmFmt=%d, pvBuf=%p, cbBuf=%RU32 (%RU32 samples)\n",
                    pMixBuf->pszName, enmFmt, pvBuf, cbBuf, AUDIOMIXBUF_B2S(pMixBuf, cbBuf)));
 
     if (   pParent
