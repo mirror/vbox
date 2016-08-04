@@ -2746,11 +2746,8 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
                     pVGAState->pVdma = pVdma;
                     int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
                     return VINF_SUCCESS;
-
-                    RTCritSectDelete(&pVdma->CalloutCritSect);
                 }
-                else
-                    WARN(("RTCritSectInit failed %d\n", rc));
+                WARN(("RTCritSectInit failed %d\n", rc));
 
                 VBoxVBVAExHSTerm(&pVdma->CmdVbva);
             }
