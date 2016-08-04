@@ -178,6 +178,7 @@ err_t sys_mbox_new(sys_mbox_t *pvMbox, int size)
 {
     int rc;
     struct sys_mbox *mbox = NULL;
+    RT_NOREF(size); /** @todo safe to ignore this? */
 
     if (pvMbox == NULL)
         return ERR_ARG;
@@ -325,8 +326,8 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *pvMbox, void **msg, u32_t timeout)
     RTMSINTERVAL cMillies;
     uint64_t tsStart, tsEnd;
     struct sys_mbox *mbox = NULL;
+
     if (!pvMbox || !*pvMbox) return 0;
-    AssertReturn(pvMbox && *pvMbox, ERR_ARG);
     mbox = (struct sys_mbox*)*pvMbox;
 
     tsStart = RTTimeMilliTS();
@@ -492,11 +493,14 @@ struct sys_timeouts *sys_arch_timeouts(void)
  * Internal: thread main function adapter, dropping the first parameter. Needed
  * to make lwip thread main function compatible with IPRT thread main function.
  */
-static DECLCALLBACK(int) sys_thread_adapter(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) sys_thread_adapter(RTTHREAD hThreadSelf, void *pvUser)
 {
     THREADLOCALSTORAGE *tls = (THREADLOCALSTORAGE *)pvUser;
+    RT_NOREF(hThreadSelf);
+
     tls->thread(tls->arg);
-    return 0;
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -510,6 +514,8 @@ sys_thread_t sys_thread_new(const char*name, lwip_thread_fn thread, void *arg, i
 #endif
     unsigned id;
     RTTHREAD tid;
+
+    RT_NOREF(prio, stacksize, name);
 
 #if SYS_LIGHTWEIGHT_PROT
     SYS_ARCH_PROTECT(old_level);

@@ -448,7 +448,12 @@ ip6_reass(struct pbuf *p)
 
   /* Adjust datagram length by adding preceding header lengths. */
   unfrag_len = (u8_t *)p->payload - (u8_t *)ipr->iphdr0;
+# ifndef VBOX
   ipr->datagram_len += unfrag_len - IP6_HLEN + IP6_FRAG_HLEN;
+# else
+  LWIP_ASSERT("overflow", (s16_t)unfrag_len == (ssize_t)unfrag_len); /* s16_t because of pbuf_header call */
+  ipr->datagram_len += (u16_t)(unfrag_len - IP6_HLEN + IP6_FRAG_HLEN);
+# endif
 
   /* Set payload length in ip header. */
   ipr->iphdr._plen = htons(ipr->datagram_len);
@@ -473,7 +478,11 @@ ip6_reass(struct pbuf *p)
   ip6_reass_pbufcount -= pbuf_clen(p);
 
   /* Move pbuf back to IPv6 header. */
+# ifndef VBOX
   if (pbuf_header(p, unfrag_len) != 0) {
+# else
+  if (pbuf_header(p, (s16_t)unfrag_len) != 0) {
+# endif
     LWIP_ASSERT("ip6_reass: moving p->payload to ip6 header failed\n", 0);
     goto nullreturn;
   }
