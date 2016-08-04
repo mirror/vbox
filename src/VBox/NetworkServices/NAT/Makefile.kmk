@@ -49,24 +49,11 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
  else
   PROGRAMS += VBoxNetLwipNAT
  endif
- VBoxNetLwipNAT_TEMPLATE := VBOXMAIN$(if-expr defined(VBOX_WITH_HARDENING),DLL,CLIENTEXE)
- VBoxNetLwipNAT_NAME = VBoxNetNAT
- VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} IPv6
- # VBoxNetLwipNAT_DEFS.linux += WITH_VALGRIND # instrument lwip memp.c
- VBoxNetLwipNAT_DEFS.win += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
- VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
- 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetBaseService.cpp \
- 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetPortForwardString.cpp \
- 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetIntIf.cpp \
- 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetUDP.cpp \
- 	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetARP.cpp \
- 	$(VBOX_PATH_NAT_SRC)/../NetLib/ComHostUtils.cpp
-
- VBoxNetLwipNAT_LIBS = \
- 	$(LIB_RUNTIME)
- VBoxNetLwipNAT_LIBS.solaris += socket nsl
- VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
-
+ VBoxNetLwipNAT_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBOXMAINDLL,VBOXMAINCLIENTEXE)
+ VBoxNetLwipNAT_NAME     := VBoxNetNAT
+ VBoxNetLwipNAT_DEFS      = IPv6
+ # VBoxNetLwipNAT_DEFS.linux = WITH_VALGRIND # instrument lwip memp.c
+ VBoxNetLwipNAT_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
  # Convince Solaris headers to expose socket stuff we need.
  #
  # Setting _XOPEN_SOURCE to either 500 or 600 would always work, but
@@ -94,7 +81,18 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
   VBoxNetLwipNAT_DEFS.solaris += __EXTENSIONS__=1
  endif
 
- VBoxNetLwipNAT_SOURCES += \
+ # (current dir is for for lwipopts.h)
+ VBoxNetLwipNAT_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
+
+ VBoxNetLwipNAT_SOURCES = \
+ 	VBoxNetLwipNAT.cpp \
+ 	../NetLib/VBoxNetBaseService.cpp \
+ 	../NetLib/VBoxNetPortForwardString.cpp \
+ 	../NetLib/VBoxNetIntIf.cpp \
+ 	../NetLib/VBoxNetUDP.cpp \
+ 	../NetLib/VBoxNetARP.cpp \
+ 	../NetLib/ComHostUtils.cpp \
+ 	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES)) \
  	proxy_pollmgr.c \
  	proxy_rtadvd.c \
  	proxy.c \
@@ -109,12 +107,25 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
  	proxy_tftpd.c
 
  ifeq ($(KBUILD_TARGET),win)
-  # unprivileged Icmp API
-  VBoxNetLwipNAT_SOURCES += pxping_win.c
+  VBoxNetLwipNAT_SOURCES += pxping_win.c # unprivileged Icmp API
  else
-  # raw sockets
-  VBoxNetLwipNAT_SOURCES += pxping.c
+  VBoxNetLwipNAT_SOURCES += pxping.c     # raw sockets
  endif
+
+ VBoxNetLwipNAT_SOURCES.darwin  += rtmon_bsd.c
+ VBoxNetLwipNAT_SOURCES.freebsd += rtmon_bsd.c
+ VBoxNetLwipNAT_SOURCES.linux   += rtmon_linux.c
+ VBoxNetLwipNAT_SOURCES.solaris += rtmon_bsd.c
+ VBoxNetLwipNAT_SOURCES.win     += \
+ 	rtmon_win.c \
+ 	RTWinPoll.cpp \
+ 	RTWinSocketPair.cpp
+
+ VBoxNetLwipNAT_LIBS = \
+ 	$(LIB_RUNTIME)
+ VBoxNetLwipNAT_LIBS.solaris += socket nsl
+
+ VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
  # ifeq ($(VBOX_WITH_HARDENING),)
  #  ifn1of ($(KBUILD_TARGET), darwin win)
@@ -123,19 +134,6 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
  #   VBoxNetLwipNAT_SOURCES += getrawsock.c
  #  endif
  # endif
-
- VBoxNetLwipNAT_SOURCES.darwin  += rtmon_bsd.c
- VBoxNetLwipNAT_SOURCES.freebsd += rtmon_bsd.c
- VBoxNetLwipNAT_SOURCES.linux   += rtmon_linux.c
- VBoxNetLwipNAT_SOURCES.solaris += rtmon_bsd.c
- VBoxNetLwipNAT_SOURCES.win     += rtmon_win.c
-
- VBoxNetLwipNAT_SOURCES.win += \
- 	RTWinPoll.cpp \
- 	RTWinSocketPair.cpp
-
- VBoxNetLwipNAT_INCS += . # for lwipopts.h
- $(eval $(call def_vbox_lwip_public, VBoxNetLwipNAT, $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new))
 
  ifeq ($(KBUILD_TARGET),win)
   # Icon include file.

@@ -1,6 +1,8 @@
 # $Id$
 ## @file
-# Adds sources list and defines required to LWIP pre-1.5.0 compilation
+# Define the include dirs and source files for LWIP pre-1.5.0.
+#
+# This file is included by Devices/Makefile.kmk and NetworkServices/NAT/Makefile.kmk.
 #
 
 #
@@ -94,50 +96,6 @@ LWIP_SOURCES += \
 #     src/netif/ppp/vj.c
 
 
-
-define _def_vbox_lwip_use # VAR_BaseName, path/to/lwip/dir
-  $(strip $1)_SOURCES += $(foreach file, $(LWIP_SOURCES), $(strip $2)/$(file))
-endef
-
-
-define def_vbox_lwip_flags # PROTO_BaseName, VAR_BaseName, path/to/lwip/dir
-  # add anything configured for the component via PROTO_BaseName
-  $(foreach suffix, INCS DEFS,
-    $(if $(value $(strip $1)_LWIP_$(suffix)), $(eval $(strip $2)_$(suffix) += $(value $(strip $1)_LWIP_$(suffix)) ),))
-
-  # add lwip's own includes
-  $(strip $2)_INCS += $(foreach incdir, $(LWIP_INCS), $(strip $3)/$(incdir))
-endef
-
-
-###
-### Call this if you want to expose lwip to your component as a whole.
-### In this case individual lwip files (added to _SOURCES of your
-### component) will pick up lwip includes etc from your component
-### settings.
-###
-### This is, for example, how NetworkServices/NAT uses it.
-###
-define def_vbox_lwip_public # VAR_BaseName, path/to/lwip/dir
-  $(eval $(call _def_vbox_lwip_use, $1, $2))
-  $(eval $(call def_vbox_lwip_flags, $1, $1, $2))
-endef
-
-
-###
-### Call this if you want to expose lwip only to a few selected files.
-### In this case each lwip file is configured with lwip includes etc
-### separately and you are supposed to call def_vbox_lwip_flags
-### yourself for those of your files that use lwip.
-###
-### This is, for example, how Devices uses it.
-###
-define def_vbox_lwip_private # VAR_BaseName, path/to/lwip/dir
-  $(eval $(call _def_vbox_lwip_use, $1, $2))
-  $(foreach file, $(LWIP_SOURCES), $(eval $(call def_vbox_lwip_flags, $1, $(strip $2)/$(file), $2)))
-endef
-
-
 ifeq ($(USERNAME), vvl)
 $(foreach lwip_file, $(LWIP_SOURCES), $(eval $(lwip_file)_DEFS=RTMEM_WRAP_TO_EF_APIS))
 
@@ -149,4 +107,3 @@ LWIPTEST_SOURCES= Network/lwip-new/test/unit/core/test_mem.c \
     Network/lwip-new/test/unit/tcp/test_tcp_oos.c \
     Network/lwip-new/test/unit/udp/test_udp.c
 endif
-
