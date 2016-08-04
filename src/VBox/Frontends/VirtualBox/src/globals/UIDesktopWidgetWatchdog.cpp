@@ -15,16 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QDesktopWidget>
+# include <QApplication>
+# include <QDesktopWidget>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIDesktopWidgetWatchdog.h"
+# include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 
 /* Other VBox includes: */
-#include <iprt/assert.h>
+# include <iprt/assert.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 /** QWidget extension used as
@@ -54,6 +60,11 @@ private:
     /** Holds the index of the host-screen this window created for. */
     int m_iHostScreenIndex;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIInvisibleWindow implementation.                                                                                      *
+*********************************************************************************************************************************/
 
 UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
     : QWidget(0, Qt::Window | Qt::FramelessWindowHint)
@@ -86,6 +97,11 @@ void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)
     emit sigHostScreenAvailableGeometryCalculated(m_iHostScreenIndex, QRect(x(), y(), width(), height()));
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIDesktopWidgetWatchdog implementation.                                                                                *
+*********************************************************************************************************************************/
+
 UIDesktopWidgetWatchdog::UIDesktopWidgetWatchdog(QObject *pParent)
     : QObject(pParent)
     , m_pDesktopWidget(QApplication::desktop())
@@ -101,7 +117,7 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
     cleanup();
 }
 
-const QRect     UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
+const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= m_cHostScreenCount)
@@ -160,17 +176,20 @@ void UIDesktopWidgetWatchdog::sltRecalculateHostScreenAvailableGeometry(int iHos
     UIInvisibleWindow *pWorker = new UIInvisibleWindow(iHostScreenIndex);
     AssertPtrReturnVoid(pWorker);
     {
-        /* Remember created worker: */
+        /* Remember created worker (replace if necessary): */
         if (m_availableGeometryWorkers.value(iHostScreenIndex))
             delete m_availableGeometryWorkers.value(iHostScreenIndex);
         m_availableGeometryWorkers[iHostScreenIndex] = pWorker;
+
         /* Get the screen-geometry: */
         const QRect hostScreenGeometry = screenGeometry(iHostScreenIndex);
         /* Use the screen-geometry as the temporary value for available-geometry: */
         m_availableGeometryData[iHostScreenIndex] = hostScreenGeometry;
+
         /* Connect worker listener: */
         connect(pWorker, SIGNAL(sigHostScreenAvailableGeometryCalculated(int, QRect)),
                 this, SLOT(sltHandleHostScreenAvailableGeometryCalculated(int, QRect)));
+
         /* Place worker to corresponding host-screen: */
         pWorker->move(hostScreenGeometry.topLeft());
         /* And finally, maximize it: */
