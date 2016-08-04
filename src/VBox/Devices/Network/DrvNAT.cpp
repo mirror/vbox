@@ -649,7 +649,7 @@ static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
  */
 static DECLCALLBACK(void) drvNATNetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    RT_NOREF(pInterface, fPromiscuous)
+    RT_NOREF(pInterface, fPromiscuous);
     LogFlow(("drvNATNetworkUp_SetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
 }
@@ -869,7 +869,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         DWORD dwEvent = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE,
                                                  slirp_get_timeout_ms(pThis->pNATState),
                                                  /* :fAlertable */ TRUE);
-        if (   (dwEvent < WSA_WAIT_EVENT_0 || dwEvent > WSA_WAIT_EVENT_0 + nFDs - 1)
+        AssertCompile(WSA_WAIT_EVENT_0 == 0);
+        if (   (/*dwEvent < WSA_WAIT_EVENT_0 ||*/ dwEvent > WSA_WAIT_EVENT_0 + nFDs - 1)
             && dwEvent != WSA_WAIT_TIMEOUT && dwEvent != WSA_WAIT_IO_COMPLETION)
         {
             int error = WSAGetLastError();
