@@ -100,16 +100,8 @@ DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BAS
     }
     else
     {
-        if (!cbLock)
-        {
-            Assert(0);
-            return VERR_INVALID_PARAMETER;
-        }
-        if (offLock + cbLock > pBuf->cbBuffer)
-        {
-            Assert(0);
-            return VERR_INVALID_PARAMETER;
-        }
+        AssertReturn(cbLock, VERR_INVALID_PARAMETER);
+        AssertReturn(offLock + cbLock <= pBuf->cbBuffer, VERR_INVALID_PARAMETER);
 
         uint32_t iFirstPage = offLock >> 12;
         uint32_t iAfterLastPage = (cbLock + 0xfff) >> 12;
@@ -159,16 +151,10 @@ DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint
                                         D3DDDI_PATCHLOCATIONLIST *pPatchLocationList, UINT PatchLocationListSize)
 {
     const uint32_t cbDmaCmd = RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[cBuffers]);
-    if (*pCommandBufferSize < cbDmaCmd)
-    {
-        Assert(0);
-        return VERR_GENERAL_FAILURE;
-    }
-    if (AllocationListSize < cBuffers)
-    {
-        Assert(0);
-        return VERR_GENERAL_FAILURE;
-    }
+    RT_NOREF(pPatchLocationList, PatchLocationListSize);
+
+    AssertReturn(*pCommandBufferSize >= cbDmaCmd, VERR_GENERAL_FAILURE);
+    AssertReturn(AllocationListSize >= cBuffers, VERR_GENERAL_FAILURE);
 
     *pCommandBufferSize = cbDmaCmd;
 

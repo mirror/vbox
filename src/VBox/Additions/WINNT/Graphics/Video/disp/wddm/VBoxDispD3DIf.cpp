@@ -60,7 +60,7 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
 #endif
     if (!pD3D->hD3DLib)
     {
-        DWORD winErr = GetLastError(); NOREF(winErr)
+        DWORD winErr = GetLastError(); NOREF(winErr);
         WARN((__FUNCTION__": LoadLibrary failed, winErr = (%d)", winErr));
         return E_FAIL;
     }
@@ -1277,11 +1277,10 @@ HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFor
 
 void VBoxDispD3DGlobalClose(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats)
 {
+    RT_NOREF(pD3D, pFormats);
     vboxDispD3DGlobalLock();
     --g_cVBoxDispD3DGlobalOpens;
     if (!g_cVBoxDispD3DGlobalOpens)
-    {
         vboxDispD3DGlobalDoClose(&g_VBoxDispD3DGlobalD3D);
-    }
     vboxDispD3DGlobalUnlock();
 }

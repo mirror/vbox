@@ -130,7 +130,7 @@ DECLINLINE(IDirect3DDevice9*) VBoxD3DIfDeviceGet(PVBOXWDDMDISP_DEVICE pDevice)
 #endif
 
     HRESULT hr = VBoxD3DIfDeviceCreateDummy(pDevice);
-    Assert(hr == S_OK);
+    Assert(hr == S_OK); NOREF(hr);
     Assert(pDevice->pDevice9If);
     return pDevice->pDevice9If;
 }

@@ -220,7 +220,7 @@ void VBoxD3DIfLockUnlockMemSynch(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKED_RECT
 
     if (!pRect)
     {
-        if (pAlloc->SurfDesc.pitch == pLockInfo->Pitch)
+        if (pAlloc->SurfDesc.pitch == (UINT)pLockInfo->Pitch)
         {
             Assert(pAlloc->SurfDesc.cbSize);
             if (bToLockInfo)
@@ -281,7 +281,7 @@ void VBoxD3DIfLockUnlockMemSynch(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKED_RECT
             srcPitch = (uint32_t)pLockInfo->Pitch;
         }
 
-        if (pRect->right - pRect->left == pAlloc->SurfDesc.width && srcPitch == dstPitch)
+        if (pRect->right - pRect->left == (LONG)pAlloc->SurfDesc.width && srcPitch == dstPitch)
         {
             uint32_t cbSize = vboxWddmCalcSize(pAlloc->SurfDesc.pitch, pRect->bottom - pRect->top, pAlloc->SurfDesc.format);
             memcpy(pvDst, pvSrc, cbSize);
@@ -290,7 +290,7 @@ void VBoxD3DIfLockUnlockMemSynch(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKED_RECT
         {
             uint32_t pitch = RT_MIN(srcPitch, dstPitch);
             uint32_t cbCopyLine = vboxWddmCalcRowSize(pRect->left, pRect->right, pAlloc->SurfDesc.format);
-            Assert(pitch);
+            Assert(pitch); NOREF(pitch);
             uint32_t cRows = vboxWddmCalcNumRows(pRect->top, pRect->bottom, pAlloc->SurfDesc.format);
             for (UINT j = 0; j < cRows; ++j)
             {
@@ -430,7 +430,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
     if (VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags))
     {
         PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
-        IDirect3DBaseTexture9 *pD3DIfTex;
+        IDirect3DBaseTexture9 *pD3DIfTex = NULL; /* Shut up MSC. */
         HANDLE hSharedHandle = pAllocation->hSharedHandle;
         void **pavClientMem = NULL;
         VBOXDISP_D3DIFTYPE enmD3DIfType = VBOXDISP_D3DIFTYPE_UNDEFINED;
@@ -569,7 +569,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
         {
             PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
             HANDLE hSharedHandle = pAllocation->hSharedHandle;
-            IDirect3DSurface9* pD3D9Surf;
+            IDirect3DSurface9 *pD3D9Surf = NULL; /* Shut up MSC. */
             if (
 #ifdef VBOX_WITH_CROGL
                     (pDevice->pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT) ||
@@ -643,9 +643,10 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
                 pAllocation->hSharedHandle = hSharedHandle;
                 hr = S_OK;
                 continue;
-
+#if 0 /* unreachable */
                 /* fail branch */
                 pD3D9Surf->Release();
+#endif
             }
 
             for (UINT j = 0; j < i; ++j)
