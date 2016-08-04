@@ -333,9 +333,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
          * Different OSes have different socket options for DF.  We
          * can't use IP_HDRINCL here as it's only valid for SOCK_RAW.
          */
-#     define USE_DF_OPTION(_Optname)                    \
-        const int dfopt = _Optname;                     \
-        const char * const dfoptname = #_Optname;
+#     define USE_DF_OPTION(_Optname) \
+        const int dfopt = _Optname
 #if   defined(IP_MTU_DISCOVER)
         USE_DF_OPTION(IP_MTU_DISCOVER);
 #elif defined(IP_DONTFRAG)      /* Solaris 11+, FreeBSD */
@@ -433,7 +432,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     ui = mtod(m, struct udpiphdr *);
     memset(ui->ui_x1, 0, 9);
     ui->ui_pr = IPPROTO_UDP;
-    ui->ui_len = RT_H2N_U16(mlen - sizeof(struct ip));
+    ui->ui_len = RT_H2N_U16((uint16_t)(mlen - sizeof(struct ip)));
     /* XXXXX Check for from-one-location sockets, or from-any-location sockets */
     ui->ui_src = saddr->sin_addr;
     ui->ui_dst = daddr->sin_addr;

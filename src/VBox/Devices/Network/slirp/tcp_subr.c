@@ -314,7 +314,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 }
 
 void
-tcp_drain()
+tcp_drain(void)
 {
     /* XXX */
 }

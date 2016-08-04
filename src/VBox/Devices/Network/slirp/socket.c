@@ -134,7 +134,7 @@ static void sorecvfrom_icmp_unix(PNATState, struct socket *);
 #endif /* !RT_OS_WINDOWS */
 
 void
-so_init()
+so_init(void)
 {
 }
 
@@ -162,7 +162,7 @@ solookup(struct socket *head, struct in_addr laddr,
  * insque() it into the correct linked-list
  */
 struct socket *
-socreate()
+socreate(void)
 {
     struct socket *so;
 
@@ -240,7 +240,7 @@ soread(PNATState pData, struct socket *so)
 {
     int n, nn, lss, total;
     struct sbuf *sb = &so->so_snd;
-    size_t len = sb->sb_datalen - sb->sb_cc;
+    u_int len = sb->sb_datalen - sb->sb_cc;
     struct iovec iov[2];
     int mss = so->so_tcpcb->t_maxseg;
 
@@ -391,7 +391,7 @@ soread(PNATState pData, struct socket *so)
      * a close will be detected on next iteration.
      * A return of -1 wont (shouldn't) happen, since it didn't happen above
      */
-    if (n == 2 && nn == iov[0].iov_len)
+    if (n == 2 && (unsigned)nn == iov[0].iov_len)
     {
         int ret;
         ret = recv(so->s, iov[1].iov_base, iov[1].iov_len, 0);
@@ -529,7 +529,7 @@ sowrite(PNATState pData, struct socket *so)
 {
     int n, nn;
     struct sbuf *sb = &so->so_rcv;
-    size_t len = sb->sb_cc;
+    u_int len = sb->sb_cc;
     struct iovec iov[2];
 
     STAM_PROFILE_START(&pData->StatIOwrite, a);
@@ -633,7 +633,7 @@ sowrite(PNATState pData, struct socket *so)
     }
 
 #ifndef HAVE_READV
-    if (n == 2 && nn == iov[0].iov_len)
+    if (n == 2 && (unsigned)nn == iov[0].iov_len)
     {
         int ret;
         ret = send(so->s, iov[1].iov_base, iov[1].iov_len, 0);
@@ -693,7 +693,7 @@ sorecvfrom(PNATState pData, struct socket *so)
     else
 #endif /* !RT_OS_WINDOWS */
     {
-        static uint8_t au8Buf[64 * 1024];
+        static char achBuf[64 * 1024];
 
         /* A "normal" UDP packet */
         struct sockaddr_in addr;
@@ -723,8 +723,8 @@ sorecvfrom(PNATState pData, struct socket *so)
         iov[0].iov_len = M_TRAILINGSPACE(m);
 
         /* large packets will spill into a temp buffer */
-        iov[1].iov_base = au8Buf;
-        iov[1].iov_len = sizeof(au8Buf);
+        iov[1].iov_base = achBuf;
+        iov[1].iov_len = sizeof(achBuf);
 
 #if !defined(RT_OS_WINDOWS)
         {
@@ -741,11 +741,12 @@ sorecvfrom(PNATState pData, struct socket *so)
 #else  /* RT_OS_WINDOWS */
         {
             DWORD nbytes; /* NB: can't use nread b/c of different size */
-            DWORD flags;
+            DWORD flags = 0;
             int status;
-
-            flags = 0;
-            status = WSARecvFrom(so->s, iov, 2, &nbytes, &flags,
+            AssertCompile(sizeof(WSABUF) == sizeof(struct iovec));
+            AssertCompileMembersSameSizeAndOffset(WSABUF, len, struct iovec, iov_len);
+            AssertCompileMembersSameSizeAndOffset(WSABUF, buf, struct iovec, iov_base);
+            status = WSARecvFrom(so->s, (WSABUF *)&iov[0], 2, &nbytes, &flags,
                                  (struct sockaddr *)&addr, &addrlen,
                                  NULL, NULL);
             if (status != SOCKET_ERROR)
