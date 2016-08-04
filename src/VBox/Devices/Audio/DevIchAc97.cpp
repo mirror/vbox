@@ -493,7 +493,7 @@ static void ichac97StreamUpdateStatus(PAC97STATE pThis, PAC97STREAM pStream, uin
     PAC97BMREGS pRegs   = &pStream->Regs;
 
     bool fSignal = false;
-    int  iIRQL;
+    int  iIRQL = 0;
 
     uint32_t new_mask = new_sr & AC97_SR_INT_MASK;
     uint32_t old_mask = pRegs->sr  & AC97_SR_INT_MASK;
@@ -1387,6 +1387,7 @@ static void ichac97TimerMaybeStop(PAC97STATE pThis)
 
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
     Assert(pThis == PDMINS_2_DATA(pDevIns, PAC97STATE));
     AssertPtr(pThis);
@@ -1394,8 +1395,6 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
     uint64_t cTicksNow     = TMTimerGet(pTimer);
-    uint64_t cTicksElapsed = cTicksNow  - pThis->uTimerTS;
-    uint64_t cTicksPerSec  = TMTimerGetFreq(pTimer);
 
     LogFlowFuncEnter();
 
@@ -1624,9 +1623,9 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                               uint32_t *pu32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32Val, unsigned cbVal)
 {
+    RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
     /* Get the index of the NABMBAR port. */
@@ -1777,6 +1776,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
 static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
                                                 uint32_t u32Val, unsigned cbVal)
 {
+    RT_NOREF(pDevIns);
     PAC97STATE  pThis   = (PAC97STATE)pvUser;
 
     /* Get the index of the NABMBAR register. */
@@ -1917,6 +1917,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
  */
 static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32Val, unsigned cbVal)
 {
+    RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
     switch (cbVal)
@@ -1961,9 +1962,9 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
-                                               void *pvUser, RTIOPORT Port, uint32_t u32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32Val, unsigned cbVal)
 {
+    RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
     switch (cbVal)
@@ -2097,9 +2098,10 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb,
-                                          PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int)
+ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(cb, enmType);
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PAC97STATE  pThis   = RT_FROM_MEMBER(pPciDev, AC97STATE, PciDev);
     RTIOPORT    Port    = (RTIOPORT)GCPhysAddress;
@@ -2142,6 +2144,7 @@ DECLINLINE(PAC97STREAM) ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID)
 #ifdef IN_RING3
 static int ichac97SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
+    RT_NOREF(pDevIns);
     PAC97BMREGS pRegs = &pStream->Regs;
 
     SSMR3PutU32(pSSM, pRegs->bdbar);
@@ -2196,6 +2199,7 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 static int ichac97LoadStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
+    RT_NOREF(pDevIns);
     PAC97BMREGS pRegs = &pStream->Regs;
 
     SSMR3GetU32(pSSM, &pRegs->bdbar);
@@ -2400,6 +2404,7 @@ static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER pDrv, unsigned uLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
     /*
@@ -2479,6 +2484,7 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
 
 static DECLCALLBACK(void) ichac97Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
+    RT_NOREF(pDevIns, uLUN, fFlags);
     LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 }
 
@@ -2547,6 +2553,7 @@ static int ichac97Reattach(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t uLUN, con
  */
 static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
     /* NB: This must be done *before* any possible failure (and running the destructor). */
@@ -2586,7 +2593,6 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * in the Linux kernel; Linux makes no attempt to measure the data rate and assumes
      * 48 kHz rate, which is exactly what we need. Same goes for AD1981B.
      */
-    bool fChipAD1980 = false;
     if (!strcmp(szCodec, "STAC9700"))
         pThis->uCodecModel = AC97_CODEC_STAC9700;
     else if (!strcmp(szCodec, "AD1980"))
