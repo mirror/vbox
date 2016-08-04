@@ -912,6 +912,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  */
 static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
     drvNATNotifyNATThread(pThis, "drvNATAsyncIoWakeup");
@@ -947,6 +948,7 @@ static DECLCALLBACK(int) drvNATReqQueueInterrupt()
 
 static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     Assert(pThis != NULL);
 
@@ -965,6 +967,7 @@ static DECLCALLBACK(int) drvNATHostResWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  */
 int slirp_can_output(void *pvUser)
 {
+    RT_NOREF(pvUser);
     return 1;
 }
 
@@ -979,8 +982,6 @@ void slirp_urg_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int c
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
     Assert(pThis);
-
-    PRTREQ pReq = NULL;
 
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
@@ -1015,8 +1016,6 @@ void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 
     LogFlow(("slirp_output BEGIN %p %d\n", pu8Buf, cb));
     Log6(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
-
-    PRTREQ pReq = NULL;
 
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
@@ -1183,6 +1182,8 @@ static void drvNATSetMac(PDRVNAT pThis)
         RTMAC Mac;
         pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, &Mac);
     }
+#else
+    RT_NOREF(pThis);
 #endif
 }
 
@@ -1192,8 +1193,9 @@ static void drvNATSetMac(PDRVNAT pThis)
  * Otherwise the guest is not reachable until it performs a DHCP request or an ARP request
  * (usually done during guest boot).
  */
-static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     drvNATSetMac(pThis);
     return VINF_SUCCESS;
@@ -1313,6 +1315,7 @@ static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, con
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
 static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pMappingsCfg)
 {
+    RT_NOREF(iInstance);
     int rc = VINF_SUCCESS;
     LogFlowFunc(("ENTER: iInstance:%d\n", iInstance));
     for (PCFGMNODE pNode = CFGMR3GetFirstChild(pMappingsCfg); pNode; pNode = CFGMR3GetNextChild(pNode))
@@ -1338,6 +1341,7 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
             fPattern = true;
         }
         struct in_addr HostIP;
+        RT_ZERO(HostIP);
         GETIP_DEF(rc, pThis, pNode, HostIP, INADDR_ANY);
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         {
@@ -1360,6 +1364,8 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
  */
 static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, PRTNETADDRIPV4 pNetwork)
 {
+    RT_NOREF(pNetwork); /** @todo figure why pNetwork isn't used */
+
     /*
      * Enumerate redirections.
      */
@@ -1414,10 +1420,12 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
 
         /* host address ("BindIP" name is rather unfortunate given "HostPort" to go with it) */
         struct in_addr BindIP;
+        RT_ZERO(BindIP);
         GETIP_DEF(rc, pThis, pNode, BindIP, INADDR_ANY);
 
         /* guest address */
         struct in_addr GuestIP;
+        RT_ZERO(GuestIP);
         GETIP_DEF(rc, pThis, pNode, GuestIP, INADDR_ANY);
 
         /*
@@ -1501,9 +1509,10 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     LogFlow(("drvNATConstruct:\n"));
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.
