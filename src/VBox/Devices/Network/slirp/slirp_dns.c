@@ -30,15 +30,13 @@
 # define _WINSOCK2API_
 # include <iprt/win/iphlpapi.h>
 
-static int get_dns_addr_domain(PNATState pData,
-                               const char **ppszDomain)
+static int get_dns_addr_domain(PNATState pData)
 {
-    ULONG flags = GAA_FLAG_INCLUDE_PREFIX; /*GAA_FLAG_INCLUDE_ALL_INTERFACES;*/ /* all interfaces registered in NDIS */
+    //ULONG flags = GAA_FLAG_INCLUDE_PREFIX; /*GAA_FLAG_INCLUDE_ALL_INTERFACES;*/ /* all interfaces registered in NDIS */
     PIP_ADAPTER_ADDRESSES pAdapterAddr = NULL;
     PIP_ADAPTER_ADDRESSES pAddr = NULL;
     PIP_ADAPTER_DNS_SERVER_ADDRESS pDnsAddr = NULL;
     ULONG size;
-    int wlen = 0;
     char *pszSuffix;
     struct dns_domain_entry *pDomain = NULL;
     ULONG ret = ERROR_SUCCESS;
@@ -153,7 +151,7 @@ static int get_dns_addr_domain(PNATState pData,
 
 #include "resolv_conf_parser.h"
 
-static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
+static int get_dns_addr_domain(PNATState pData)
 {
     struct rcp_state st;
     int rc;
@@ -221,9 +219,6 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
         LIST_INSERT_HEAD(&pData->pDomainList, pDomain, dd_list);
     }
 
-    if (ppszDomain && st.rcps_domain != 0)
-        *ppszDomain = RTStrDup(st.rcps_domain);
-
     return 0;
 }
 
@@ -243,10 +238,8 @@ int slirpInitializeDnsSettings(PNATState pData)
          * Some distributions haven't got /etc/resolv.conf
          * so we should other way to configure DNS settings.
          */
-        if (get_dns_addr_domain(pData, NULL) < 0)
-        {
+        if (get_dns_addr_domain(pData) < 0)
             pData->fUseHostResolver = true;
-        }
         else
         {
             pData->fUseHostResolver = false;

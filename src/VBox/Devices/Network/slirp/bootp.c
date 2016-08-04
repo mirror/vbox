@@ -591,21 +591,17 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, int fDhcpDi
         offReply = dhcp_send_offer(pData, bp, bc, m);
         return offReply;
     }
-    else
-    {
-        bc = find_addr(pData, &daddr, bp->bp_hwaddr);
-        if (!bc)
-        {
-            LogRel(("NAT: DHCP Inform was ignored no boot client was found\n"));
-            return -1;
-        }
 
-        LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr.s_addr));
-        offReply = dhcp_send_ack(pData, bp, bc, m, /* fDhcpRequest=*/ 0);
-        return offReply;
+    bc = find_addr(pData, &daddr, bp->bp_hwaddr);
+    if (!bc)
+    {
+        LogRel(("NAT: DHCP Inform was ignored no boot client was found\n"));
+        return -1;
     }
 
-    return -1;
+    LogRel(("NAT: DHCP offered IP address %RTnaipv4\n", bc->addr.s_addr));
+    offReply = dhcp_send_ack(pData, bp, bc, m, /* fDhcpRequest=*/ 0);
+    return offReply;
 }
 
 static int dhcp_decode_release(PNATState pData, struct bootp_t *bp)
@@ -616,6 +612,7 @@ static int dhcp_decode_release(PNATState pData, struct bootp_t *bp)
             bp->bp_ciaddr.s_addr));
     return 0;
 }
+
 /**
  * fields for discovering t
  * Field      DHCPDISCOVER          DHCPREQUEST           DHCPDECLINE,

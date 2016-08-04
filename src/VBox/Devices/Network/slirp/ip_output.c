@@ -173,7 +173,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         ip->ip_sum = cksum(m, hlen);
 
         if (!(m->m_flags & M_SKIP_FIREWALL)){
-            struct m_tag *t;
             STAM_PROFILE_START(&pData->StatALIAS_output, b);
             rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), m_length(m, NULL));
             if (rc == PKT_ALIAS_IGNORED)
@@ -292,7 +291,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
 send_or_free:
         if (!(m->m_flags & M_SKIP_FIREWALL)){
-            /* @todo: We can't alias all fragments because the way libalias processing
+            /** @todo We can't alias all fragments because the way libalias processing
              * the fragments brake the sequence. libalias put alias_address to the source
              * address of IP header of fragment, while IP header of the first packet is
              * is unmodified. That confuses guest's TCP/IP stack and guest drop the sequence.
@@ -301,7 +300,6 @@ send_or_free:
              * Here we need investigate what should be done to avoid such behavior and find right
              * solution.
              */
-            struct m_tag *t;
             int rcLa;
 
             rcLa = LibAliasOut(pData->proxy_alias, mtod(m, char *), m->m_len);

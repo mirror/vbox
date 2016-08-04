@@ -129,7 +129,10 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
     }
     fd_nonblock(pData->icmp_socket.s);
     NSOCK_INC();
+
 #else /* RT_OS_WINDOWS */
+    RT_NOREF(iIcmpCacheLimit);
+
     if (icmpwin_init(pData) != 0)
         return 1;
 #endif /* RT_OS_WINDOWS */
@@ -617,6 +620,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     struct ip *oip, *ip;
     struct icmp *icp;
     void *payload;
+    RT_NOREF(minsize);
 
     LogFlow(("icmp_error: msrc = %p, msrc_len = %d\n",
              (void *)msrc, msrc ? msrc->m_len : 0));

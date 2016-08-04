@@ -76,7 +76,7 @@ sbreserve(PNATState pData, struct sbuf *sb, int size)
     if (sb->sb_data)
     {
         /* Already alloced, realloc if necessary */
-        if (sb->sb_datalen != size)
+        if (sb->sb_datalen != (u_int)size)
         {
             sb->sb_wptr =
             sb->sb_rptr =

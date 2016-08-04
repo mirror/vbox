@@ -90,8 +90,11 @@ void
 fd_nonblock(int fd)
 {
 # ifdef FIONBIO
+#  ifdef RT_OS_WINDOWS
+    u_long opt = 1;
+#  else
     int opt = 1;
-
+#  endif
     ioctlsocket(fd, FIONBIO, &opt);
 # else /* !FIONBIO */
     int opt;
@@ -170,7 +173,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
             Assert(it->magic == ITEM_MAGIC);
             rc = 0;
             if (zone->pfInit)
-                rc = zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
+                rc = zone->pfInit(zone->pData, (void *)&it[1], (int /*sigh*/)zone->size, M_DONTWAIT);
             if (rc == 0)
             {
                 zone->cur_items++;
@@ -199,7 +202,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
         /* we're on a sub-zone, we need get a chunk from the master zone and split
          * it into sub-zone conforming chunks.
          */
-        sub_area = slirp_uma_alloc(zone->master_zone, zone->master_zone->size, NULL, 0);
+        sub_area = slirp_uma_alloc(zone->master_zone, (int /*sigh*/)zone->master_zone->size, NULL, 0);
         if (!sub_area)
         {
             /* No room on master */
@@ -252,11 +255,11 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     LIST_REMOVE(it, list);
     if (zone->pfFini)
     {
-        zone->pfFini(zone->pData, item, zone->size);
+        zone->pfFini(zone->pData, item, (int /*sigh*/)zone->size);
     }
     if (zone->pfDtor)
     {
-        zone->pfDtor(zone->pData, item, zone->size, NULL);
+        zone->pfDtor(zone->pData, item, (int /*sigh*/)zone->size, NULL);
     }
     LIST_INSERT_HEAD(&zone->free_items, it, list);
     zone->cur_items--;
@@ -387,11 +390,11 @@ void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
         return NULL;
     }
     RTCritSectEnter(&zone->csZone);
-    mem = zone->pfAlloc(zone, zone->size, NULL, 0);
+    mem = zone->pfAlloc(zone, (int /*sigh*/)zone->size, NULL, 0);
     if (mem != NULL)
     {
         if (zone->pfCtor)
-            zone->pfCtor(zone->pData, mem, zone->size, args, M_DONTWAIT);
+            zone->pfCtor(zone->pData, mem, (int /*sigh*/)zone->size, args, M_DONTWAIT);
     }
     RTCritSectLeave(&zone->csZone);
     LogFlowFunc(("LEAVE: %p\n", mem));
@@ -493,7 +496,7 @@ void *uma_zalloc(uma_zone_t zone, int len)
 struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_t *pcbBuf)
 {
     struct mbuf *m;
-    size_t size = MCLBYTES;
+    int size = MCLBYTES;
     LogFlowFunc(("ENTER: cbMin:%d, ppvBuf:%p, pcbBuf:%p\n", cbMin, ppvBuf, pcbBuf));
 
     if (cbMin < MCLBYTES)
