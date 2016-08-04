@@ -102,7 +102,7 @@ static PVBOXDISPMPLOGGER vboxDispMpLoggerGet()
     return NULL;
 }
 
-VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerInit()
+VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerInit(void)
 {
     PVBOXDISPMPLOGGER pLogger = vboxDispMpLoggerGet();
     if (!pLogger)
@@ -110,7 +110,7 @@ VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerInit()
     return VINF_SUCCESS;
 }
 
-VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerTerm()
+VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerTerm(void)
 {
     if (ASMAtomicCmpXchgU32((volatile uint32_t *)&g_VBoxDispMpLogger.enmState, VBOXDISPMPLOGGER_STATE_UNINITIALIZING, VBOXDISPMPLOGGER_STATE_INITIALIZED))
     {
@@ -125,7 +125,7 @@ VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerTerm()
     return VERR_NOT_SUPPORTED;
 }
 
-VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(char * szString)
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(const char *pszString)
 {
     PVBOXDISPMPLOGGER pLogger = vboxDispMpLoggerGet();
     if (!pLogger)
@@ -135,13 +135,13 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(char * szString)
     HRESULT hr = vboxDispKmtOpenAdapter(&pLogger->KmtCallbacks, &Adapter);
     if (hr == S_OK)
     {
-        uint32_t cbString = (uint32_t)strlen(szString) + 1;
+        uint32_t cbString = (uint32_t)strlen(pszString) + 1;
         uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
         PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
         if (pCmd)
         {
             pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
-            memcpy(pCmd->aStringBuf, szString, cbString);
+            memcpy(pCmd->aStringBuf, pszString, cbString);
 
             D3DKMT_ESCAPE EscapeData = {0};
             EscapeData.hAdapter = Adapter.hAdapter;
@@ -172,7 +172,7 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(char * szString)
     }
 }
 
-VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(char * szString, ...)
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(const char *pszString, ...)
 {
     PVBOXDISPMPLOGGER pLogger = vboxDispMpLoggerGet();
     if (!pLogger)
@@ -180,8 +180,8 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(char * szString, ...)
 
     char szBuffer[4096] = {0};
     va_list pArgList;
-    va_start(pArgList, szString);
-    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
+    va_start(pArgList, pszString);
+    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), pszString, pArgList);
     va_end(pArgList);
 
     VBoxDispMpLoggerLog(szBuffer);

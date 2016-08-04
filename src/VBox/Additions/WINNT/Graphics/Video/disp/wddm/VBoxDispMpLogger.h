@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Display backdoor logger API
  */
@@ -20,6 +19,7 @@
  * can not do CreateFile/Read/Write by default
  * this is why we use miniport escape functionality to issue backdoor log string to the miniport
  * and submit it to host via standard r0 backdoor logging api accordingly */
+
 #ifndef ___VBoxDispMpLogger_h__
 #define ___VBoxDispMpLogger_h__
 
@@ -39,14 +39,15 @@
 
 RT_C_DECLS_BEGIN
 
-VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerInit();
+VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerInit(void);
 
-VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerTerm();
+VBOXDISPMPLOGGER_DECL(int) VBoxDispMpLoggerTerm(void);
 
-VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(char * szString);
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLog(const char *pszString);
 
-VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(char * szString, ...);
+VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerLogF(const char *pszString, ...);
 
 RT_C_DECLS_END
 
 #endif /* #ifndef ___VBoxDispMpLogger_h__ */
+
