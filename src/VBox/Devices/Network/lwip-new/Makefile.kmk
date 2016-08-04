@@ -96,21 +96,14 @@ LWIP_SOURCES += \
 
 
 define _def_vbox_lwip_use # VAR_BaseName, path/to/lwip/dir
-  $(strip $1)_SOURCES += \
-        $(foreach file, $(LWIP_SOURCES), $(strip $2)/$(file))
-
-  # if individual lwip files need special settings, add them here:
-  # $(strip $2)/src/foo/bar.c_CFLAGS += -magic
+  $(strip $1)_SOURCES += $(foreach file, $(LWIP_SOURCES), $(strip $2)/$(file))
 endef
 
 
 define def_vbox_lwip_flags # PROTO_BaseName, VAR_BaseName, path/to/lwip/dir
   # add anything configured for the component via PROTO_BaseName
   $(foreach suffix, INCS DEFS,
-    $(if $(value $(strip $1)_LWIP_$(suffix)),
-      $(eval #
-        $(strip $2)_$(suffix) += $(value $(strip $1)_LWIP_$(suffix))
-      )))
+    $(if $(value $(strip $1)_LWIP_$(suffix)), $(eval $(strip $2)_$(suffix) += $(value $(strip $1)_LWIP_$(suffix)) ),))
 
   # add lwip's own includes
   $(strip $2)_INCS += $(foreach incdir, $(LWIP_INCS), $(strip $3)/$(incdir))
@@ -141,8 +134,7 @@ endef
 ###
 define def_vbox_lwip_private # VAR_BaseName, path/to/lwip/dir
   $(eval $(call _def_vbox_lwip_use, $1, $2))
-  $(foreach file, $(LWIP_SOURCES), \
-    $(eval $(call def_vbox_lwip_flags, $1, $(strip $2)/$(file), $2)))
+  $(foreach file, $(LWIP_SOURCES), $(eval $(call def_vbox_lwip_flags, $1, $(strip $2)/$(file), $2)))
 endef
 
 
@@ -157,3 +149,4 @@ LWIPTEST_SOURCES= Network/lwip-new/test/unit/core/test_mem.c \
     Network/lwip-new/test/unit/tcp/test_tcp_oos.c \
     Network/lwip-new/test/unit/udp/test_udp.c
 endif
+
