@@ -984,6 +984,7 @@ static DECLCALLBACK(unsigned) ohciRhGetAvailablePorts(PVUSBIROOTHUBPORT pInterfa
  */
 static DECLCALLBACK(uint32_t) ohciRhGetUSBVersions(PVUSBIROOTHUBPORT pInterface)
 {
+    RT_NOREF(pInterface);
     return VUSB_STDVER_11;
 }
 
@@ -1034,6 +1035,7 @@ static DECLCALLBACK(int) ohciRhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE
  */
 static DECLCALLBACK(void) ohciRhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort)
 {
+    RT_NOREF(pDev);
     POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     LogFlow(("ohciRhDetach: pDev=%p uPort=%u\n", pDev, uPort));
     PDMCritSectEnter(pThis->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
@@ -1585,6 +1587,8 @@ DECLINLINE(void) ohciWriteTd(POHCI pThis, uint32_t TdAddr, PCOHCITD pTd, const c
               TdOld.be   != pTd->be   ? "*" : "", pTd->be,
               pszLogMsg));
     }
+#else
+    RT_NOREF(pszLogMsg);
 #endif
     ohciPutDWords(pThis, TdAddr, (uint32_t *)pTd, sizeof(*pTd) >> 2);
 }
@@ -1620,6 +1624,8 @@ DECLINLINE(void) ohciWriteITd(POHCI pThis, uint32_t ITdAddr, PCOHCIITD pITd, con
               (ITdOld.aPSW[6] >> 12) != (pITd->aPSW[6] >> 12) ? "*" : "", pITd->aPSW[6] >> 12,  (ITdOld.aPSW[6] & 0xfff) != (pITd->aPSW[6] & 0xfff) ? "*" : "", pITd->aPSW[6] & 0xfff,
               (ITdOld.aPSW[7] >> 12) != (pITd->aPSW[7] >> 12) ? "*" : "", pITd->aPSW[7] >> 12,  (ITdOld.aPSW[7] & 0xfff) != (pITd->aPSW[7] & 0xfff) ? "*" : "", pITd->aPSW[7] & 0xfff));
     }
+#else
+    RT_NOREF(pszLogMsg);
 #endif
     ohciPutDWords(pThis, ITdAddr, (uint32_t *)pITd, sizeof(*pITd) / sizeof(uint32_t));
 }
@@ -2397,7 +2403,7 @@ static uint32_t ohciVUsbStatus2OhciStatus(VUSBSTATUS enmStatus)
  *
  * In general, all URBs should have status OK.
  */
-static void ohciRhXferCompleteIsochronousURB(POHCI pThis, PVUSBURB pUrb, POHCIED pEd, int cFmAge)
+static void ohciRhXferCompleteIsochronousURB(POHCI pThis, PVUSBURB pUrb /*, POHCIED pEd , int cFmAge*/)
 {
     /*
      * Copy the data back (if IN operation) and update the TDs.
@@ -2552,6 +2558,8 @@ static void ohciRhXferCompleteIsochronousURB(POHCI pThis, PVUSBURB pUrb, POHCIED
  */
 static void ohciRhXferCompleteGeneralURB(POHCI pThis, PVUSBURB pUrb, POHCIED pEd, int cFmAge)
 {
+    RT_NOREF(cFmAge);
+
     /*
      * Copy the data back (if IN operation) and update the TDs.
      */
@@ -2747,7 +2755,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
      * When appropriate also copy data back to the guest memory.
      */
     if (pUrb->enmType == VUSBXFERTYPE_ISOC)
-        ohciRhXferCompleteIsochronousURB(pThis, pUrb, &Ed, cFmAge);
+        ohciRhXferCompleteIsochronousURB(pThis, pUrb /*, &Ed , cFmAge*/);
     else
         ohciRhXferCompleteGeneralURB(pThis, pUrb, &Ed, cFmAge);
 
@@ -2831,8 +2839,11 @@ static DECLCALLBACK(bool) ohciRhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB
 /**
  * Service a general transport descriptor.
  */
-static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint32_t EdAddr, uint32_t TdAddr, uint32_t *pNextTdAddr, const char *pszListName)
+static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint32_t EdAddr, uint32_t TdAddr,
+                          uint32_t *pNextTdAddr, const char *pszListName)
 {
+    RT_NOREF(pszListName);
+
     /*
      * Read the TD and setup the buffer data.
      */
@@ -2942,6 +2953,8 @@ static bool ohciServiceHeadTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, u
 static bool ohciServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint32_t EdAddr,
                                   uint32_t TdAddr, uint32_t *pNextTdAddr, const char *pszListName)
 {
+    RT_NOREF(pszListName);
+
     /*
      * Read the TDs involved in this URB.
      */
@@ -4054,6 +4067,7 @@ static void bump_frame_number(POHCI pThis)
  */
 static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameNo)
 {
+    RT_NOREF(u32FrameNo);
     POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
 
     RTCritSectEnter(&pThis->CritSect);
@@ -4110,6 +4124,7 @@ static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, u
  */
 static DECLCALLBACK(void) ohciFrameBoundaryTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns, pTimer, pvUser);
 }
 
 /**
@@ -5333,6 +5348,7 @@ PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
  */
 static DECLCALLBACK(int) ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion, enmType);
     POHCI pThis = (POHCI)pPciDev;
     int rc = PDMDevHlpMMIORegister(pThis->CTX_SUFF(pDevIns), GCPhysAddress, cb, NULL /*pvUser*/,
                                    IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED
@@ -5369,6 +5385,7 @@ static DECLCALLBACK(int) ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCP
  */
 static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
     POHCIROOTHUB pRh = &pThis->RootHub;
     LogFlow(("ohciR3SavePrep: \n"));
@@ -5454,17 +5471,16 @@ static DECLCALLBACK(int) ohciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
-    POHCIROOTHUB pRh = &pThis->RootHub;
-    OHCIROOTHUB Rh;
-    unsigned i;
     LogFlow(("ohciR3SaveDone: \n"));
 
     /*
      * NULL the dev pointers.
      */
-    Rh = *pRh;
-    for (i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
+    POHCIROOTHUB pRh = &pThis->RootHub;
+    OHCIROOTHUB Rh = *pRh;
+    for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
     {
         if (   pRh->aPorts[i].pDev
             && !VUSBIDevIsSavedStateSupported(pRh->aPorts[i].pDev))
@@ -5474,7 +5490,7 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Attach the devices.
      */
-    for (i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
     {
         PVUSBIDEVICE pDev = Rh.aPorts[i].pDev;
         if (   pDev
@@ -5498,22 +5514,20 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    int rc = VINF_SUCCESS;
+    RT_NOREF(pSSM);
     POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
     LogFlow(("ohciR3LoadPrep:\n"));
     if (!pThis->pLoad)
     {
-        POHCIROOTHUB pRh = &pThis->RootHub;
-        OHCILOAD Load;
-        unsigned i;
-
         /*
          * Detach all devices which are present in this session. Save them in the load
          * structure so we can reattach them after restoring the guest.
          */
+        POHCIROOTHUB pRh = &pThis->RootHub;
+        OHCILOAD Load;
         Load.pTimer = NULL;
         Load.cDevs = 0;
-        for (i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
         {
             PVUSBIDEVICE pDev = pRh->aPorts[i].pDev;
             if (   pDev
@@ -5538,7 +5552,7 @@ static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
     /* else: we ASSUME no device can be attached or detach in the period
      *       between a state load and the pLoad stuff is processed. */
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -5728,6 +5742,7 @@ static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(int) ohciR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
     LogFlow(("ohciR3LoadDone:\n"));
 
@@ -5753,6 +5768,7 @@ static DECLCALLBACK(int) ohciR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns);
     POHCI pThis = (POHCI)pvUser;
     POHCILOAD pLoad = pThis->pLoad;
     POHCIROOTHUB pRh = &pThis->RootHub;
@@ -5829,6 +5845,7 @@ static DECLCALLBACK(void) ohciR3Resume(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ohciR3InfoRegs(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
     POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
     uint32_t val, ctl, status;
 
@@ -5885,6 +5902,7 @@ static DECLCALLBACK(void) ohciR3InfoRegs(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
  */
 static DECLCALLBACK(void) ohciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF(offDelta);
     POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pEndOfFrameTimerRC = TMTimerRCPtr(pThis->pEndOfFrameTimerR3);
