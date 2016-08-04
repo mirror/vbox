@@ -356,7 +356,6 @@ static int copy_interface(PVUSBINTERFACE pIf, uint8_t ifnum,
     PVUSBDESCINTERFACEEX cur_if = NULL;
     uint32_t altmap[4] = {0,};
     uint8_t *tmp, *end = buf + len;
-    uint8_t *orig_desc = buf;
     uint8_t alt;
     int state;
     size_t num_ep = 0;
@@ -761,6 +760,7 @@ static DECLCALLBACK(int) usbProxyDevWakeup(PPDMUSBINS pUsbIns)
 /** @interface_method_impl{PDMUSBREG,pfnDestruct} */
 static DECLCALLBACK(void) usbProxyDestruct(PPDMUSBINS pUsbIns)
 {
+    PDMUSB_CHECK_VERSIONS_RETURN_VOID(pUsbIns);
     PUSBPROXYDEV pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
     Log(("usbProxyDestruct: destroying pProxyDev=%s\n", pUsbIns->pszName));
 
@@ -858,6 +858,8 @@ static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, PCFGMN
 /** @interface_method_impl{PDMUSBREG,pfnConstruct} */
 static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal)
 {
+    PDMUSB_CHECK_VERSIONS_RETURN(pUsbIns);
+    RT_NOREF(iInstance);
     PUSBPROXYDEV pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
     LogFlow(("usbProxyConstruct: pUsbIns=%p iInstance=%d\n", pUsbIns, iInstance));
 

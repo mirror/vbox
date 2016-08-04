@@ -78,7 +78,7 @@ typedef struct
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int usbProxyWinSetInterface(PUSBPROXYDEV p, int ifnum, int setting);
+static int usbProxyWinSetInterface(PUSBPROXYDEV p, int iIf, int setting);
 
 /**
  * Converts the given Windows error code to VBox handling unplugged devices.
@@ -89,7 +89,9 @@ static int usbProxyWinSetInterface(PUSBPROXYDEV p, int ifnum, int setting);
  */
 static int usbProxyWinHandleUnpluggedDevice(PUSBPROXYDEV pProxyDev, DWORD dwErr)
 {
+#ifdef LOG_ENABLED
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
+#endif
 
     if (   dwErr == ERROR_INVALID_HANDLE_STATE
         || dwErr == ERROR_BAD_COMMAND)
@@ -109,6 +111,7 @@ static int usbProxyWinHandleUnpluggedDevice(PUSBPROXYDEV pProxyDev, DWORD dwErr)
  */
 static DECLCALLBACK(int) usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
 {
+    RT_NOREF(pvBackend);
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     int rc = VINF_SUCCESS;
@@ -139,8 +142,11 @@ static DECLCALLBACK(int) usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *psz
             DWORD           cbReturned = 0;
             if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_GET_VERSION, NULL, 0, &version, sizeof(version), &cbReturned, NULL))
             {
-                if (!(    version.u32Major != USBDRV_MAJOR_VERSION
-                      ||  version.u32Minor <  USBDRV_MINOR_VERSION))
+                if (    version.u32Major == USBDRV_MAJOR_VERSION
+#if USBDRV_MINOR_VERSION != 0
+                    &&  version.u32Minor >=  USBDRV_MINOR_VERSION
+#endif
+                   )
                 {
                     USBSUP_CLAIMDEV in;
                     in.bInterfaceNumber = 0;
@@ -244,6 +250,7 @@ static DECLCALLBACK(void) usbProxyWinClose(PUSBPROXYDEV pProxyDev)
 
 static DECLCALLBACK(int) usbProxyWinReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
+    RT_NOREF(fResetOnLinux);
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
     DWORD cbReturned;
     int  rc;
@@ -301,7 +308,7 @@ static DECLCALLBACK(int) usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
     return usbProxyWinHandleUnpluggedDevice(pProxyDev, GetLastError());
 }
 
-static DECLCALLBACK(int) usbProxyWinClaimInterface(PUSBPROXYDEV pProxyDev, int ifnum)
+static DECLCALLBACK(int) usbProxyWinClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
     /* Called just before we use an interface. Needed on Linux to claim
      * the interface from the OS, since even when proxying the host OS
@@ -310,22 +317,20 @@ static DECLCALLBACK(int) usbProxyWinClaimInterface(PUSBPROXYDEV pProxyDev, int i
      */
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
-    pPriv->bInterfaceNumber = ifnum;
+    pPriv->bInterfaceNumber = iIf;
 
     Assert(pPriv);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) usbProxyWinReleaseInterface(PUSBPROXYDEV pProxyDev, int ifnum)
+static DECLCALLBACK(int) usbProxyWinReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
+    RT_NOREF(pProxyDev, iIf);
     /* The opposite of claim_interface. */
-    PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
-
-    Assert(pPriv);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int setting)
+static DECLCALLBACK(int) usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int setting)
 {
     /* Select an alternate setting for an interface, the same applies
      * here as for set_config, you may convert this in to a control
@@ -337,8 +342,8 @@ static DECLCALLBACK(int) usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifn
 
     Assert(pPriv);
 
-    Log(("usbproxy: Select interface of %x to %d/%d\n", pPriv->hDev, ifnum, setting));
-    in.bInterfaceNumber  = ifnum;
+    Log(("usbproxy: Select interface of %x to %d/%d\n", pPriv->hDev, iIf, setting));
+    in.bInterfaceNumber  = iIf;
     in.bAlternateSetting = setting;
 
     /* Here we just need to assert reset signalling on the USB device */
@@ -558,7 +563,8 @@ static DECLCALLBACK(PVUSBURB) usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINT
         {
             /* Wait for the wakeup call. */
             DWORD cMilliesWait = cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies;
-            DWORD rc = WaitForMultipleObjects(1, &pPriv->hEventWakeup, FALSE, cMilliesWait);
+            DWORD dwRc = WaitForMultipleObjects(1, &pPriv->hEventWakeup, FALSE, cMilliesWait);
+            NOREF(dwRc);
         }
 
         return NULL;
@@ -629,7 +635,8 @@ again:
         return NULL;
     }
 
-    if (rc >= WAIT_OBJECT_0 && rc < WAIT_OBJECT_0 + cQueuedUrbs)
+    AssertCompile(WAIT_OBJECT_0 == 0);
+    if (/*rc >= WAIT_OBJECT_0 && */ rc < WAIT_OBJECT_0 + cQueuedUrbs)
     {
         RTCritSectEnter(&pPriv->CritSect);
         unsigned iUrb = rc - WAIT_OBJECT_0;
