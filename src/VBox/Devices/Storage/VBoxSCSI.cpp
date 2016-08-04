@@ -349,6 +349,7 @@ int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, i
 int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
                        uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
+    RT_NOREF(pDevIns);
     LogFlowFunc(("pDevIns=%#p pVBoxSCSI=%#p iRegister=%d cTransfers=%u cb=%u\n",
                  pDevIns, pVBoxSCSI, iRegister, *pcTransfers, cb));
 
@@ -406,6 +407,8 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
 int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
                         uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
+    RT_NOREF(pDevIns);
+
     /*
      * Check preconditions, fall back to non-string I/O handler.
      */

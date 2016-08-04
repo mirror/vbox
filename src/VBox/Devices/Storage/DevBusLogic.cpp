@@ -1075,13 +1075,13 @@ static void buslogicR3InitializeLocalRam(PBUSLOGIC pBusLogic)
     pBusLogic->LocalRam.structured.autoSCSIData.fLevelSensitiveInterrupt = true;
     pBusLogic->LocalRam.structured.autoSCSIData.fParityCheckingEnabled = true;
     pBusLogic->LocalRam.structured.autoSCSIData.fExtendedTranslation = true; /* Same as in geometry register. */
-    pBusLogic->LocalRam.structured.autoSCSIData.u16DeviceEnabledMask = ~0; /* All enabled. Maybe mask out non present devices? */
-    pBusLogic->LocalRam.structured.autoSCSIData.u16WidePermittedMask = ~0;
-    pBusLogic->LocalRam.structured.autoSCSIData.u16FastPermittedMask = ~0;
-    pBusLogic->LocalRam.structured.autoSCSIData.u16SynchronousPermittedMask = ~0;
-    pBusLogic->LocalRam.structured.autoSCSIData.u16DisconnectPermittedMask = ~0;
+    pBusLogic->LocalRam.structured.autoSCSIData.u16DeviceEnabledMask = UINT16_MAX; /* All enabled. Maybe mask out non present devices? */
+    pBusLogic->LocalRam.structured.autoSCSIData.u16WidePermittedMask = UINT16_MAX;
+    pBusLogic->LocalRam.structured.autoSCSIData.u16FastPermittedMask = UINT16_MAX;
+    pBusLogic->LocalRam.structured.autoSCSIData.u16SynchronousPermittedMask = UINT16_MAX;
+    pBusLogic->LocalRam.structured.autoSCSIData.u16DisconnectPermittedMask = UINT16_MAX;
     pBusLogic->LocalRam.structured.autoSCSIData.fStrictRoundRobinMode = pBusLogic->fStrictRoundRobinMode;
-    pBusLogic->LocalRam.structured.autoSCSIData.u16UltraPermittedMask = ~0;
+    pBusLogic->LocalRam.structured.autoSCSIData.u16UltraPermittedMask = UINT16_MAX;
     /** @todo calculate checksum? */
 }
 
@@ -1674,12 +1674,9 @@ static void buslogicR3SenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
  */
 static int buslogicR3SenseBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 {
-    PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
-    uint32_t   cbSenseBuffer;
-
     pTaskState->pbSenseBuffer = NULL;
 
-    cbSenseBuffer = buslogicR3ConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
+    uint32_t cbSenseBuffer = buslogicR3ConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
     if (cbSenseBuffer)
     {
         pTaskState->pbSenseBuffer = (uint8_t *)RTMemAllocZ(cbSenseBuffer);
@@ -2551,12 +2548,12 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
  */
 static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    int rc;
+    RT_NOREF(pvUser, cb);
     PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     Assert(cb == 1);
 
-    rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pu32);
+    int rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pu32);
 
     //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
     //      __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_BIOS_IO_PORT), rc));
@@ -2577,11 +2574,9 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUs
  */
 static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    int rc;
+    RT_NOREF(pvUser, cb);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n",
-          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
 
     /*
      * If there is already a request form the BIOS pending ignore this write
@@ -2592,7 +2587,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 
     Assert(cb == 1);
 
-    rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
+    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
@@ -2615,6 +2610,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
                                                       uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
+    RT_NOREF(pvUser);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
@@ -2647,6 +2643,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *
 static DECLCALLBACK(int) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
                                                      uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
+    RT_NOREF(pvUser);
     PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
@@ -2769,6 +2766,7 @@ static void buslogicR3RedoSetWarning(PBUSLOGIC pThis, int rc)
 static DECLCALLBACK(int) buslogicR3MmioMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                            RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion);
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     int   rc = VINF_SUCCESS;
@@ -2838,6 +2836,7 @@ static DECLCALLBACK(int) buslogicR3MmioMap(PPCIDEVICE pPciDev, /*unsigned*/ int 
 static DECLCALLBACK(int) buslogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest,
                                                               int rcCompletion, bool fRedo, int rcReq)
 {
+    RT_NOREF(pInterface);
     int rc;
     PBUSLOGICTASKSTATE pTaskState = (PBUSLOGICTASKSTATE)pSCSIRequest->pvUser;
     PBUSLOGICDEVICE pBusLogicDevice = pTaskState->CTX_SUFF(pTargetDevice);
@@ -2990,7 +2989,7 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKST
             pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.c.abCDB;
             if (pTaskState->DataSeg.cbSeg)
             {
-                pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->DataSeg.cbSeg;
+                pTaskState->PDMScsiRequest.cbScatterGather       = (uint32_t)pTaskState->DataSeg.cbSeg;
                 pTaskState->PDMScsiRequest.cScatterGatherEntries = 1;
                 pTaskState->PDMScsiRequest.paScatterGatherHead   = &pTaskState->DataSeg;
             }
@@ -3181,6 +3180,7 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
  */
 static DECLCALLBACK(bool) buslogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
+    RT_NOREF(pItem);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
@@ -3231,6 +3231,7 @@ static void buslogicR3Kick(PBUSLOGIC pThis)
 /** @callback_method_impl{FNSSMDEVLIVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    RT_NOREF(uPass);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     /* Save the device config. */
@@ -3310,12 +3311,13 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         pTaskState = pTaskState->pRedoNext;
     }
 
-    return SSMR3PutU32(pSSM, ~0);
+    return SSMR3PutU32(pSSM, UINT32_MAX);
 }
 
 /** @callback_method_impl{FNSSMDEVLOADDONE}  */
 static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     buslogicR3RegisterISARange(pThis, pThis->uISABaseCode);
@@ -3431,7 +3433,7 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         uint32_t u32;
         rc = SSMR3GetU32(pSSM, &u32);
         if (RT_SUCCESS(rc))
-            AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
 
     return rc;
@@ -3510,6 +3512,7 @@ static DECLCALLBACK(void *) buslogicR3StatusQueryInterface(PPDMIBASE pInterface,
  */
 static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pDevIns);
     PBUSLOGIC pThis = (PBUSLOGIC)pThread->pvUser;
     int rc = VINF_SUCCESS;
 
@@ -3566,6 +3569,7 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
  */
 static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
 }
@@ -3808,6 +3812,7 @@ static DECLCALLBACK(void) buslogicR3Resume(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) buslogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PBUSLOGIC       pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[iLUN];
 
@@ -3909,6 +3914,7 @@ static DECLCALLBACK(void) buslogicR3Reset(PPDMDEVINS pDevIns)
 
 static DECLCALLBACK(void) buslogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF(offDelta);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
