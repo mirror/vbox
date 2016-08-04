@@ -49,7 +49,7 @@ typedef struct DEBUGAUDIOSTREAM
         {
             /** Timestamp of last played samples. */
             uint64_t   tsLastPlayed;
-            uint64_t   csPlayBuffer;
+            uint64_t   cMaxSamplesInPlayBuffer;
             uint8_t   *pu8PlayBuffer;
         } Out;
     };
@@ -128,8 +128,8 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         pDbgStream->Out.tsLastPlayed  = 0;
-        pDbgStream->Out.csPlayBuffer  = _1K;
-        pDbgStream->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pDbgStream->Out.csPlayBuffer << Props.cShift);
+        pDbgStream->Out.cMaxSamplesInPlayBuffer = _1K;
+        pDbgStream->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pDbgStream->Out.cMaxSamplesInPlayBuffer << Props.cShift);
         if (!pDbgStream->Out.pu8PlayBuffer)
             rc = VERR_NO_MEMORY;
     }
@@ -152,7 +152,7 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pcSamples)
-            *pcSamples = pDbgStream->Out.csPlayBuffer;
+            *pcSamples = pDbgStream->Out.cMaxSamplesInPlayBuffer;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -183,7 +183,7 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
         cSamplesPlayed = cLive;*/
 
     uint32_t cSamplesPlayed = 0;
-    uint32_t cSamplesAvail  = RT_MIN(AudioMixBufUsed(&pStream->MixBuf), pDbgStream->Out.csPlayBuffer);
+    uint32_t cSamplesAvail  = RT_MIN(AudioMixBufUsed(&pStream->MixBuf), pDbgStream->Out.cMaxSamplesInPlayBuffer);
     while (cSamplesAvail)
     {
         uint32_t cSamplesRead = 0;
