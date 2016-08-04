@@ -784,12 +784,12 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 }
 
 /**
- * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamAddRef}
+ * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamRetain}
  */
-static DECLCALLBACK(uint32_t) drvAudioStreamAddRef(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvAudioStreamRetain(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-   AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-   AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+   AssertPtrReturn(pInterface, UINT32_MAX);
+   AssertPtrReturn(pStream,    UINT32_MAX);
 
    NOREF(pInterface);
 
@@ -801,8 +801,8 @@ static DECLCALLBACK(uint32_t) drvAudioStreamAddRef(PPDMIAUDIOCONNECTOR pInterfac
  */
 static DECLCALLBACK(uint32_t) drvAudioStreamRelease(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
 {
-   AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-   AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+   AssertPtrReturn(pInterface, UINT32_MAX);
+   AssertPtrReturn(pStream,    UINT32_MAX);
 
    NOREF(pInterface);
 
@@ -1867,8 +1867,6 @@ static DECLCALLBACK(int) drvAudioStreamSetVolume(PPDMIAUDIOCONNECTOR pInterface,
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pVol,       VERR_INVALID_POINTER);
 
-    PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
     LogFlowFunc(("%s: volL=%RU32, volR=%RU32, fMute=%RTbool\n", pStream->szName, pVol->uLeft, pVol->uRight, pVol->fMuted));
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
@@ -2149,7 +2147,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pThis->IAudioConnector.pfnGetStatus         = drvAudioGetStatus;
     pThis->IAudioConnector.pfnStreamCreate      = drvAudioStreamCreate;
     pThis->IAudioConnector.pfnStreamDestroy     = drvAudioStreamDestroy;
-    pThis->IAudioConnector.pfnStreamAddRef      = drvAudioStreamAddRef;
+    pThis->IAudioConnector.pfnStreamRetain      = drvAudioStreamRetain;
     pThis->IAudioConnector.pfnStreamRelease     = drvAudioStreamRelease;
     pThis->IAudioConnector.pfnStreamControl     = drvAudioStreamControl;
     pThis->IAudioConnector.pfnStreamRead        = drvAudioStreamRead;

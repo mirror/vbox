@@ -2152,7 +2152,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             rc2 = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, &CfgHost, pCfg, &pDrv->Out.pStream);
             if (RT_SUCCESS(rc2))
-                pDrv->pConnector->pfnStreamAddRef(pDrv->pConnector, pDrv->Out.pStream);
+                pDrv->pConnector->pfnStreamRetain(pDrv->pConnector, pDrv->Out.pStream);
         }
 
         LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc2));

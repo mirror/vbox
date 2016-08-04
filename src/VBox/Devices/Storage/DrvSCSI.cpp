@@ -239,6 +239,7 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
 
 static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize)
 {
+    RT_NOREF(hVScsiLun);
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
     *pcbSize = pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
@@ -249,6 +250,7 @@ static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser,
 
 static DECLCALLBACK(int) drvscsiGetSectorSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint32_t *pcbSectorSize)
 {
+    RT_NOREF(hVScsiLun);
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
     *pcbSectorSize = pThis->pDrvMedia->pfnGetSectorSize(pThis->pDrvMedia);
@@ -257,6 +259,7 @@ static DECLCALLBACK(int) drvscsiGetSectorSize(VSCSILUN hVScsiLun, void *pvScsiLu
 }
 static DECLCALLBACK(int) drvscsiSetLock(VSCSILUN hVScsiLun, void *pvScsiLunUser, bool fLocked)
 {
+    RT_NOREF(hVScsiLun);
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
     if (fLocked)
@@ -323,10 +326,9 @@ static DECLCALLBACK(int) drvscsiTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInte
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
-                                                   void *pvScsiLunUser,
-                                                   VSCSIIOREQ hVScsiIoReq)
+static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq)
 {
+    RT_NOREF(hVScsiLun);
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
@@ -453,11 +455,9 @@ static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
     return rc;
 }
 
-static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun,
-                                                void *pvScsiLunUser,
-                                                uint64_t *pfFeatures)
+static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pfFeatures)
 {
-    int rc = VINF_SUCCESS;
+    RT_NOREF(hVScsiLun);
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
     *pfFeatures = 0;
@@ -477,9 +477,9 @@ static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun,
 }
 
 static DECLCALLBACK(void) drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
-                                                   void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible,
-                                                   int rcReq)
+                                                   void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible, int rcReq)
 {
+    RT_NOREF(hVScsiDevice);
     PDRVSCSI pThis = (PDRVSCSI)pVScsiDeviceUser;
 
     ASMAtomicDecU32(&pThis->StatIoDepth);
@@ -566,6 +566,7 @@ static bool drvscsiAsyncIOLoopNoPendingDummy(PDRVSCSI pThis, uint32_t cMillies)
 
 static DECLCALLBACK(int) drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     PRTREQ pReq;
     int rc;

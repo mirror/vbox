@@ -775,16 +775,16 @@ typedef struct PDMIAUDIOCONNECTOR
     /**
      * Adds a reference to the specified audio stream.
      *
-     * @returns New reference count.
+     * @returns New reference count. UINT32_MAX on error.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream adding the reference to.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamAddRef, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamRetain, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Releases a reference from the specified stream.
      *
-     * @returns New reference count.
+     * @returns New reference count. UINT32_MAX on error.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream releasing a reference from.
      */

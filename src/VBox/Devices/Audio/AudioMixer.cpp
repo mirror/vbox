@@ -128,6 +128,7 @@ int AudioMixerCreateSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR 
  */
 int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
 {
+    RT_NOREF(fFlags);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     /** @todo Add fFlags validation. */
     AssertPtrReturn(ppMixer, VERR_INVALID_POINTER);
@@ -175,6 +176,7 @@ int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
  */
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
     PAUDMIXSINK pSink;
     unsigned    iSink = 0;
 
@@ -490,7 +492,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
 
         /* Increase the stream's reference count to let others know
          * we're reyling on it to be around now. */
-        pConn->pfnStreamAddRef(pConn, pStream);
+        pConn->pfnStreamRetain(pConn, pStream);
     }
 
     if (RT_SUCCESS(rc))
@@ -762,6 +764,7 @@ uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink)
  */
 int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
+    RT_NOREF(enmOp);
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf,    VERR_INVALID_PARAMETER);
@@ -1079,7 +1082,6 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         PPDMIAUDIOCONNECTOR pConn = pMixStream->pConn;
         AssertPtr(pConn);
 
-        uint32_t cPlayed   = 0;
         uint32_t cCaptured = 0;
 
         int rc2 = pConn->pfnStreamIterate(pConn, pStream);
@@ -1256,6 +1258,7 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
  */
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
+    RT_NOREF(enmOp);
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
 
@@ -1319,6 +1322,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
  */
 int AudioMixerStreamCtl(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl)
 {
+    RT_NOREF(fCtl);
     AssertPtrReturn(pMixStream, VERR_INVALID_POINTER);
     /** @todo Validate fCtl. */
 

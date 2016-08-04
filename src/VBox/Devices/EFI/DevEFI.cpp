@@ -53,7 +53,14 @@
 #include "../PC/DevFwCommon.h"
 
 /* EFI includes */
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4668)
+#endif
 #include <ProcessorBind.h>
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 #include <Common/UefiBaseTypes.h>
 #include <Common/PiFirmwareVolume.h>
 #include <Common/PiFirmwareFile.h>
@@ -1049,6 +1056,7 @@ static bool efiInfoNvramIsUtf16(PCEFIVAR pEfiVar, bool *pfZeroTerm)
  */
 static DECLCALLBACK(void) efiInfoNvram(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
@@ -1212,6 +1220,8 @@ static void efiVBoxDbgScript(PDEVEFI pThis, const char *pszFormat, ...)
         va_end(va);
         RTStrmClose(pStrm);
     }
+# else
+    RT_NOREF(pThis, pszFormat);
 # endif
 }
 #endif /* IN_RING3 */
@@ -1228,6 +1238,7 @@ static void efiVBoxDbgScript(PDEVEFI pThis, const char *pszFormat, ...)
  */
 static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
 {
+    RT_NOREF(cb);
     switch (u32 & EFI_IMAGE_EVT_CMD_MASK)
     {
         case EFI_IMAGE_EVT_CMD_START_LOAD32:
@@ -1341,6 +1352,7 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
  */
 static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    RT_NOREF(pvUser);
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     Log4(("EFI in: %x %x\n", Port, cb));
 
@@ -1426,6 +1438,7 @@ static const char *efiDbgPointName(EFIDBGPOINT enmDbgPoint)
  */
 static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    RT_NOREF(pvUser);
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     int     rc    = VINF_SUCCESS;
     Log4(("efi: out %x %x %d\n", Port, u32, cb));
@@ -1768,6 +1781,7 @@ static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
+    RT_NOREF(enmCtx);
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
 
     /*
@@ -1953,7 +1967,6 @@ static int efiParseFirmware(PDEVEFI pThis)
 
     AssertLogRelMsgReturn(!(pThis->cbEfiRom & PAGE_OFFSET_MASK), ("%RX64\n", pThis->cbEfiRom), VERR_INVALID_PARAMETER);
 
-    uint8_t const * const pbFwVolEnd = pThis->pu8EfiRom + pFwVolHdr->FvLength;
     pThis->GCLoadAddress = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
 
     return VINF_SUCCESS;
@@ -1968,6 +1981,8 @@ static int efiParseFirmware(PDEVEFI pThis)
  */
 static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
 {
+    RT_NOREF(pCfg);
+
     /*
      * Read the entire firmware volume into memory.
      */
@@ -2103,9 +2118,10 @@ static int efiParseDeviceString(PDEVEFI pThis, const char *pszDeviceProps)
  */
 static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVEFI     pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     int         rc;
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     Assert(iInstance == 0);
 
