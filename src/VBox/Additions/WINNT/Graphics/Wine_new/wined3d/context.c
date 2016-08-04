@@ -1341,7 +1341,7 @@ BOOL context_set_current(struct wined3d_context *ctx)
 }
 
 #if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
-void context_clear_on_thread_detach()
+void context_clear_on_thread_detach(void)
 {
     /* In theory, we should do context_set_current(NULL) here,
      * but since it may result in calling a context dtor, it should be done under wined3d lock.

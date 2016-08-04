@@ -199,6 +199,7 @@ enum wined3d_gl_extension
 typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 PGLFNCHROMIUMPARAMETERUCR pglChromiumParameteriCR;
 
+struct VBOXUHGSMI;
 HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
 void (WINAPI *pVBoxCtxChromiumParameteriCR)(HGLRC , GLenum , GLint) DECLSPEC_HIDDEN;
 void (WINAPI *pVBoxFlushToHost)(HGLRC) DECLSPEC_HIDDEN;

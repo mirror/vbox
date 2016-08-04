@@ -38,10 +38,14 @@
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
 #define COBJMACROS
+#ifndef VBOX
 #include "windef.h"
 #include "winbase.h"
 #include "wingdi.h"
 #include "wine/debug.h"
+#else
+# include <iprt/win/windows.h>
+#endif
 #include "d3d8.h"
 #include "wine/wined3d.h"
 

@@ -39,6 +39,11 @@ TEMPLATE_VBoxGuestWineDLL_DEFS = $(TEMPLATE_VBOXGUESTR3NPDLL_DEFS) \
 	BIN_TO_DATADIR=\"\"
 
 TEMPLATE_VBoxGuestWineDLL_DEFS.x86 = __i386__
+#  -wd4100: unreferenced format parameter
+#  -wd4204: nonstandard extension used : non-constant initializer
+#  -wd4245: '=' : conversion from 'int' to 'DWORD', signed/unsigned mismatch
+#  -wd4305: 'function' : truncation from 'double' to 'GLclampf'
+TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS) -wd4100  -wd4204 -wd4245 -wd4305
 
 #
 # Template for building the D3D[89] stuff.
@@ -51,6 +56,7 @@ TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_USING_WINDDK_W7_OR_LATER
 TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.x86   = __i386__
 #TEMPLATE_VBoxGuestWineD3DxDLL_INCS.x86   = vbox/libWineStub/include
 TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_WINE_WITH_IPRT
+TEMPLATE_VBoxGuestWineD3DxDLL_CFLAGS = -wd4100  -wd4204 -wd4245 -wd4305
 TEMPLATE_VBoxGuestWineD3DxDLL_LIBS = \
  	$(VBOX_LIB_IPRT_GUEST_R3) \
  	$(VBOX_LIB_VBGL_R3)
