@@ -4793,7 +4793,7 @@ static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint
 }
 
 
-/** @copydoc PDMIDISPLAYPORT::pfnQueryVideoMode */
+/** @interface_method_impl{PDMIDISPLAYPORT,pfnQueryVideoMode} */
 static DECLCALLBACK(int) vgaPortQueryVideoMode(PPDMIDISPLAYPORT pInterface, uint32_t *pcBits, uint32_t *pcx, uint32_t *pcy)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);

@@ -5232,7 +5232,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnSetSGPhys */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnSetSGPhys} */
 static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5241,7 +5241,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitc
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnReportMacAddress */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnReportMacAddress} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortReportMacAddress(PINTNETTRUNKSWPORT pSwitchPort, PCRTMAC pMacAddr)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5267,7 +5267,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportMacAddress(PINTNETTRUNKSWPORT
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnReportPromiscuousMode */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnReportPromiscuousMode} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortReportPromiscuousMode(PINTNETTRUNKSWPORT pSwitchPort, bool fPromiscuous)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5293,7 +5293,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportPromiscuousMode(PINTNETTRUNKS
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnReportGsoCapabilities */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnReportGsoCapabilities} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKSWPORT pSwitchPort,
                                                                    uint32_t fGsoCapabilities, uint32_t fDst)
 {
@@ -5312,7 +5312,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKS
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnReportNoPreemptDsts */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnReportNoPreemptDsts} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortReportNoPreemptDsts(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5322,7 +5322,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportNoPreemptDsts(PINTNETTRUNKSWP
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnDisconnect */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnDisconnect} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT pIfPort,
                                                         PFNINTNETTRUNKIFPORTRELEASEBUSY pfnReleaseBusy)
 {
@@ -5381,7 +5381,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwit
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnPreRecv */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnPreRecv} */
 static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWPORT pSwitchPort,
                                                                  void const *pvSrc, size_t cbSrc, uint32_t fSrc)
 {
@@ -5423,7 +5423,7 @@ static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWP
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnRecv */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnRecv} */
 static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, void *pvIf, PINTNETSG pSG, uint32_t fSrc)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5539,7 +5539,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnSGRetain */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnSGRetain} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5556,7 +5556,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitch
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnSGRelease */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnSGRelease} */
 static DECLCALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
@@ -5578,7 +5578,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitc
 }
 
 
-/** @copydoc INTNETTRUNKSWPORT::pfnNotifyHostAddress */
+/** @interface_method_impl{INTNETTRUNKSWPORT,pfnNotifyHostAddress} */
 static DECLCALLBACK(void) intnetR0NetworkNotifyHostAddress(PINTNETTRUNKSWPORT pSwitchPort,
                                                            bool fAdded,
                                                            INTNETADDRTYPE enmType, const void *pvAddr)

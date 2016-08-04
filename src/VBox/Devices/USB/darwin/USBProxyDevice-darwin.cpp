@@ -1601,7 +1601,7 @@ static DECLCALLBACK(int) usbProxyDarwinClearHaltedEp(PUSBPROXYDEV pProxyDev, uns
 
 
 /**
- * @copydoc USBPROXYBACK::pfnUrbQueue
+ * @interface_method_impl{USBPROXYBACK,pfnUrbQueue}
  */
 static DECLCALLBACK(int) usbProxyDarwinUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {

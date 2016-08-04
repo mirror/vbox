@@ -132,7 +132,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 
 /* -=-=-=-=- IBlock -=-=-=-=- */
 
-/** @copydoc PDMIBLOCK::pfnRead */
+/** @interface_method_impl{PDMIBLOCK,pfnRead} */
 static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -208,7 +208,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
 }
 
 
-/** @copydoc PDMIBLOCK::pfnWrite */
+/** @interface_method_impl{PDMIBLOCK,pfnWrite} */
 static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -254,7 +254,7 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, c
 }
 
 
-/** @copydoc PDMIBLOCK::pfnFlush */
+/** @interface_method_impl{PDMIBLOCK,pfnFlush} */
 static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 {
     int rc;
@@ -281,7 +281,7 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 }
 
 
-/** @copydoc PDMIBLOCK::pfnIsReadOnly */
+/** @interface_method_impl{PDMIBLOCK,pfnIsReadOnly} */
 static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -289,7 +289,7 @@ static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIMEDIA pInterface)
 }
 
 
-/** @copydoc PDMIBLOCK::pfnGetSize */
+/** @interface_method_impl{PDMIBLOCK,pfnGetSize} */
 static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -305,7 +305,7 @@ static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 }
 
 
-/** @copydoc PDMIBLOCK::pfnGetType */
+/** @interface_method_impl{PDMIBLOCK,pfnGetType} */
 static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -314,7 +314,7 @@ static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 }
 
 
-/** @copydoc PDMIBLOCK::pfnGetUuid */
+/** @interface_method_impl{PDMIBLOCK,pfnGetUuid} */
 static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -326,7 +326,7 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 }
 
 
-/** @copydoc PDMIBLOCK::pfnIoBufAlloc */
+/** @interface_method_impl{PDMIBLOCK,pfnIoBufAlloc} */
 static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
 {
     RT_NOREF(pInterface);
@@ -346,7 +346,7 @@ static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIMEDIA pInterface, size_t cb,
     return rc;
 }
 
-/** @copydoc PDMIBLOCK::pfnIoBufFree */
+/** @interface_method_impl{PDMIBLOCK,pfnIoBufFree} */
 static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
 {
     RT_NOREF(pInterface, cb);
@@ -359,7 +359,7 @@ static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIMEDIA pInterface, void *pv, s
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnBiosGetPCHSGeometry */
+/** @interface_method_impl{PDMIBLOCKBIOS,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -387,7 +387,7 @@ static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnBiosSetPCHSGeometry */
+/** @interface_method_impl{PDMIBLOCKBIOS,pfnBiosSetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -411,7 +411,7 @@ static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnGetLCHSGeometry */
+/** @interface_method_impl{PDMIBLOCKBIOS,pfnGetLCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -439,7 +439,7 @@ static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnSetLCHSGeometry */
+/** @interface_method_impl{PDMIBLOCKBIOS,pfnSetLCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -463,7 +463,7 @@ static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 }
 
 
-/** @copydoc PDMIBLOCKBIOS::pfnIsVisible */
+/** @interface_method_impl{PDMIBLOCKBIOS,pfnIsVisible} */
 static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -474,7 +474,7 @@ static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 
 /* -=-=-=-=- IMount -=-=-=-=- */
 
-/** @copydoc PDMIMOUNT::pfnUnmount */
+/** @interface_method_impl{PDMIMOUNT,pfnUnmount} */
 static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
     RT_NOREF(fEject);
@@ -514,7 +514,7 @@ static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, 
 }
 
 
-/** @copydoc PDMIMOUNT::pfnIsMounted */
+/** @interface_method_impl{PDMIMOUNT,pfnIsMounted} */
 static DECLCALLBACK(bool) drvHostBaseIsMounted(PPDMIMOUNT pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
@@ -527,7 +527,7 @@ static DECLCALLBACK(bool) drvHostBaseIsMounted(PPDMIMOUNT pInterface)
 }
 
 
-/** @copydoc PDMIMOUNT::pfnIsLocked */
+/** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(int) drvHostBaseLock(PPDMIMOUNT pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
@@ -550,7 +550,7 @@ static DECLCALLBACK(int) drvHostBaseLock(PPDMIMOUNT pInterface)
 }
 
 
-/** @copydoc PDMIMOUNT::pfnIsLocked */
+/** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(int) drvHostBaseUnlock(PPDMIMOUNT pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
@@ -573,7 +573,7 @@ static DECLCALLBACK(int) drvHostBaseUnlock(PPDMIMOUNT pInterface)
 }
 
 
-/** @copydoc PDMIMOUNT::pfnIsLocked */
+/** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(bool) drvHostBaseIsLocked(PPDMIMOUNT pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);

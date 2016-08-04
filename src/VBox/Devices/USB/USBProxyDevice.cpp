@@ -567,7 +567,7 @@ static void usbProxyDevEditOutMaskedIfs(PUSBPROXYDEV pProxyDev)
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbReset
+ * @interface_method_impl{PDMUSBREG,pfnUsbReset}
  *
  * USB Device Proxy: Call OS specific code to reset the device.
  */
@@ -586,7 +586,7 @@ static DECLCALLBACK(int) usbProxyDevReset(PPDMUSBINS pUsbIns, bool fResetOnLinux
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbGetDescriptorCache
+ * @interface_method_impl{PDMUSBREG,pfnUsbGetDescriptorCache}
  */
 static DECLCALLBACK(PCPDMUSBDESCCACHE) usbProxyDevGetDescriptorCache(PPDMUSBINS pUsbIns)
 {
@@ -596,7 +596,7 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbProxyDevGetDescriptorCache(PPDMUSBINS 
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbSetConfiguration
+ * @interface_method_impl{PDMUSBREG,pfnUsbSetConfiguration}
  *
  * USB Device Proxy: Release claimed interfaces, tell the OS+device about the config change, claim the new interfaces.
  */
@@ -669,7 +669,7 @@ static DECLCALLBACK(int) usbProxyDevSetConfiguration(PPDMUSBINS pUsbIns, uint8_t
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbSetInterface
+ * @interface_method_impl{PDMUSBREG,pfnUsbSetInterface}
  *
  * USB Device Proxy: Call OS specific code to select alternate interface settings.
  */
@@ -684,7 +684,7 @@ static DECLCALLBACK(int) usbProxyDevSetInterface(PPDMUSBINS pUsbIns, uint8_t bIn
 
 
 /**
- * @copydoc PDMUSBREG::pfnUsbClearHaltedEndpoint
+ * @interface_method_impl{PDMUSBREG,pfnUsbClearHaltedEndpoint}
  *
  * USB Device Proxy: Call OS specific code to clear the endpoint.
  */
@@ -699,7 +699,7 @@ static DECLCALLBACK(int) usbProxyDevClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsi
 
 
 /**
- * @copydoc PDMUSBREG::pfnUrbQueue
+ * @interface_method_impl{PDMUSBREG,pfnUrbQueue}
  *
  * USB Device Proxy: Call OS specific code.
  */
@@ -717,7 +717,7 @@ static DECLCALLBACK(int) usbProxyDevUrbQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 
 
 /**
- * @copydoc PDMUSBREG::pfnUrbCancel
+ * @interface_method_impl{PDMUSBREG,pfnUrbCancel}
  *
  * USB Device Proxy: Call OS specific code.
  */
@@ -729,7 +729,7 @@ static DECLCALLBACK(int) usbProxyDevUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 
 
 /**
- * @copydoc PDMUSBREG::pfnUrbReap
+ * @interface_method_impl{PDMUSBREG,pfnUrbReap}
  *
  * USB Device Proxy: Call OS specific code.
  */
@@ -746,7 +746,7 @@ static DECLCALLBACK(PVUSBURB) usbProxyDevUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVA
 
 
 /**
- * @copydoc PDMUSBREG::pfnWakeup
+ * @interface_method_impl{PDMUSBREG,pfnWakeup}
  *
  * USB Device Proxy: Call OS specific code.
  */
@@ -758,7 +758,7 @@ static DECLCALLBACK(int) usbProxyDevWakeup(PPDMUSBINS pUsbIns)
 }
 
 
-/** @copydoc PDMUSBREG::pfnDestruct */
+/** @interface_method_impl{PDMUSBREG,pfnDestruct} */
 static DECLCALLBACK(void) usbProxyDestruct(PPDMUSBINS pUsbIns)
 {
     PUSBPROXYDEV pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
@@ -855,7 +855,7 @@ static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, PCFGMN
 }
 
 
-/** @copydoc PDMUSBREG::pfnConstruct */
+/** @interface_method_impl{PDMUSBREG,pfnConstruct} */
 static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal)
 {
     PUSBPROXYDEV pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);

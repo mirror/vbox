@@ -755,7 +755,7 @@ static int drvdiskintReadAfterWriteVerify(PDRVDISKINTEGRITY pThis, PDRVDISKAIORE
 *   Media interface methods                                                                                                      *
 *********************************************************************************************************************************/
 
-/** @copydoc PDMIMEDIA::pfnRead */
+/** @interface_method_impl{PDMIMEDIA,pfnRead} */
 static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
                                         uint64_t off, void *pvBuf, size_t cbRead)
 {
@@ -800,7 +800,7 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnWrite */
+/** @interface_method_impl{PDMIMEDIA,pfnWrite} */
 static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
                                          uint64_t off, const void *pvBuf,
                                          size_t cbWrite)
@@ -970,7 +970,7 @@ static DECLCALLBACK(int) drvdiskintStartWrite(PPDMIMEDIAASYNC pInterface, uint64
     return rc;
 }
 
-/** @copydoc PDMIMEDIAASYNC::pfnStartFlush */
+/** @interface_method_impl{PDMIMEDIAASYNC,pfnStartFlush} */
 static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
 {
     int rc = VINF_SUCCESS;
@@ -1007,7 +1007,7 @@ static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *
     return rc;
 }
 
-/** @copydoc PDMIMEDIAASYNC::pfnStartDiscard */
+/** @interface_method_impl{PDMIMEDIAASYNC,pfnStartDiscard} */
 static DECLCALLBACK(int) drvdiskintStartDiscard(PPDMIMEDIAASYNC pInterface, PCRTRANGE paRanges, unsigned cRanges, void *pvUser)
 {
     int rc = VINF_SUCCESS;
@@ -1043,7 +1043,7 @@ static DECLCALLBACK(int) drvdiskintStartDiscard(PPDMIMEDIAASYNC pInterface, PCRT
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnFlush */
+/** @interface_method_impl{PDMIMEDIA,pfnFlush} */
 static DECLCALLBACK(int) drvdiskintFlush(PPDMIMEDIA pInterface)
 {
     int rc = VINF_SUCCESS;
@@ -1068,21 +1068,21 @@ static DECLCALLBACK(int) drvdiskintFlush(PPDMIMEDIA pInterface)
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnGetSize */
+/** @interface_method_impl{PDMIMEDIA,pfnGetSize} */
 static DECLCALLBACK(uint64_t) drvdiskintGetSize(PPDMIMEDIA pInterface)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
     return pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
 }
 
-/** @copydoc PDMIMEDIA::pfnIsReadOnly */
+/** @interface_method_impl{PDMIMEDIA,pfnIsReadOnly} */
 static DECLCALLBACK(bool) drvdiskintIsReadOnly(PPDMIMEDIA pInterface)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
     return pThis->pDrvMedia->pfnIsReadOnly(pThis->pDrvMedia);
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosGetPCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvdiskintBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
                                                        PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
@@ -1090,7 +1090,7 @@ static DECLCALLBACK(int) drvdiskintBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
     return pThis->pDrvMedia->pfnBiosGetPCHSGeometry(pThis->pDrvMedia, pPCHSGeometry);
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosSetPCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetPCHSGeometry} */
 static DECLCALLBACK(int) drvdiskintBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
                                                        PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
@@ -1098,7 +1098,7 @@ static DECLCALLBACK(int) drvdiskintBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
     return pThis->pDrvMedia->pfnBiosSetPCHSGeometry(pThis->pDrvMedia, pPCHSGeometry);
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosGetLCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetLCHSGeometry} */
 static DECLCALLBACK(int) drvdiskintBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
                                                        PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
@@ -1106,7 +1106,7 @@ static DECLCALLBACK(int) drvdiskintBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
     return pThis->pDrvMedia->pfnBiosGetLCHSGeometry(pThis->pDrvMedia, pLCHSGeometry);
 }
 
-/** @copydoc PDMIMEDIA::pfnBiosSetLCHSGeometry */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetLCHSGeometry} */
 static DECLCALLBACK(int) drvdiskintBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
                                                   PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
@@ -1114,21 +1114,21 @@ static DECLCALLBACK(int) drvdiskintBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
     return pThis->pDrvMedia->pfnBiosSetLCHSGeometry(pThis->pDrvMedia, pLCHSGeometry);
 }
 
-/** @copydoc PDMIMEDIA::pfnGetUuid */
+/** @interface_method_impl{PDMIMEDIA,pfnGetUuid} */
 static DECLCALLBACK(int) drvdiskintGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
     return pThis->pDrvMedia->pfnGetUuid(pThis->pDrvMedia, pUuid);
 }
 
-/** @copydoc PDMIMEDIA::pfnGetSectorSize */
+/** @interface_method_impl{PDMIMEDIA,pfnGetSectorSize} */
 static DECLCALLBACK(uint32_t) drvdiskintGetSectorSize(PPDMIMEDIA pInterface)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
     return pThis->pDrvMedia->pfnGetSectorSize(pThis->pDrvMedia);
 }
 
-/** @copydoc PDMIMEDIA::pfnDiscard */
+/** @interface_method_impl{PDMIMEDIA,pfnDiscard} */
 static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges, unsigned cRanges)
 {
     int rc = VINF_SUCCESS;
@@ -1155,7 +1155,7 @@ static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRa
     return rc;
 }
 
-/** @copydoc PDMIMEDIA::pfnIoBufAlloc */
+/** @interface_method_impl{PDMIMEDIA,pfnIoBufAlloc} */
 static DECLCALLBACK(int) drvdiskintIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
 {
     LogFlowFunc(("\n"));
@@ -1164,7 +1164,7 @@ static DECLCALLBACK(int) drvdiskintIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, 
     return pThis->pDrvMedia->pfnIoBufAlloc(pThis->pDrvMedia, cb, ppvNew);
 }
 
-/** @copydoc PDMIMEDIA::pfnIoBufFree */
+/** @interface_method_impl{PDMIMEDIA,pfnIoBufFree} */
 static DECLCALLBACK(int) drvdiskintIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
 {
     LogFlowFunc(("\n"));
@@ -1173,7 +1173,7 @@ static DECLCALLBACK(int) drvdiskintIoBufFree(PPDMIMEDIA pInterface, void *pv, si
     return pThis->pDrvMedia->pfnIoBufFree(pThis->pDrvMedia, pv, cb);
 }
 
-/** @copydoc PDMIMEDIA::pfnReadPcBios */
+/** @interface_method_impl{PDMIMEDIA,pfnReadPcBios} */
 static DECLCALLBACK(int) drvdiskintReadPcBios(PPDMIMEDIA pInterface,
                                               uint64_t off, void *pvBuf, size_t cbRead)
 {

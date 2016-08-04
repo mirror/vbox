@@ -375,7 +375,7 @@ static DECLCALLBACK(int) drvscsihostAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTH
 
 /* -=-=-=-=- ISCSIConnector -=-=-=-=- */
 
-/** @copydoc PDMISCSICONNECTOR::pfnSCSIRequestSend. */
+/** @interface_method_impl{PDMISCSICONNECTOR,pfnSCSIRequestSend}. */
 static DECLCALLBACK(int) drvscsihostRequestSend(PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest)
 {
     int rc;

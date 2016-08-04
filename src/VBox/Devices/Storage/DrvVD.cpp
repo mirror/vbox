@@ -2425,7 +2425,7 @@ static DECLCALLBACK(int) drvvdIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t 
 
 /* -=-=-=-=- IMount -=-=-=-=- */
 
-/** @copydoc PDMIMOUNT::pfnUnmount */
+/** @interface_method_impl{PDMIMOUNT,pfnUnmount} */
 static DECLCALLBACK(int) drvvdUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
     RT_NOREF(fEject);
@@ -2459,14 +2459,14 @@ static DECLCALLBACK(int) drvvdUnmount(PPDMIMOUNT pInterface, bool fForce, bool f
 }
 
 
-/** @copydoc PDMIMOUNT::pfnIsMounted */
+/** @interface_method_impl{PDMIMOUNT,pfnIsMounted} */
 static DECLCALLBACK(bool) drvvdIsMounted(PPDMIMOUNT pInterface)
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMount);
     return pThis->pDisk != NULL;
 }
 
-/** @copydoc PDMIMOUNT::pfnLock */
+/** @interface_method_impl{PDMIMOUNT,pfnLock} */
 static DECLCALLBACK(int) drvvdLock(PPDMIMOUNT pInterface)
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMount);
@@ -2475,7 +2475,7 @@ static DECLCALLBACK(int) drvvdLock(PPDMIMOUNT pInterface)
     return VINF_SUCCESS;
 }
 
-/** @copydoc PDMIMOUNT::pfnUnlock */
+/** @interface_method_impl{PDMIMOUNT,pfnUnlock} */
 static DECLCALLBACK(int) drvvdUnlock(PPDMIMOUNT pInterface)
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMount);
@@ -2484,7 +2484,7 @@ static DECLCALLBACK(int) drvvdUnlock(PPDMIMOUNT pInterface)
     return VINF_SUCCESS;
 }
 
-/** @copydoc PDMIMOUNT::pfnIsLocked */
+/** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(bool) drvvdIsLocked(PPDMIMOUNT pInterface)
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMount);

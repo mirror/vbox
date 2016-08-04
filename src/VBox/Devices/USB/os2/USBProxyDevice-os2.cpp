@@ -700,7 +700,7 @@ static bool usbProxyOs2ClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
 
 
 /**
- * @copydoc USBPROXYBACK::pfnUrbQueue
+ * @interface_method_impl{USBPROXYBACK,pfnUrbQueue}
  */
 static int usbProxyOs2UrbQueue(PVUSBURB pUrb)
 {

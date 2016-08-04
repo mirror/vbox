@@ -685,7 +685,7 @@ static DECLCALLBACK(int) usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, un
 }
 
 /**
- * @copydoc USBPROXYBACK::pfnUrbQueue
+ * @interface_method_impl{USBPROXYBACK,pfnUrbQueue}
  */
 static DECLCALLBACK(int) usbProxyFreeBSDUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {

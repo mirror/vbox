@@ -97,7 +97,7 @@ typedef struct DRVNAMEDPIPE
 *********************************************************************************************************************************/
 
 
-/** @copydoc PDMISTREAM::pfnRead */
+/** @interface_method_impl{PDMISTREAM,pfnRead} */
 static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
@@ -193,7 +193,7 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
 }
 
 
-/** @copydoc PDMISTREAM::pfnWrite */
+/** @interface_method_impl{PDMISTREAM,pfnWrite} */
 static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;

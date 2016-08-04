@@ -124,7 +124,7 @@ static int solarisExitRootMode(uid_t *pEffUserID);
 #endif
 
 
-/** @copydoc PDMIMOUNT::pfnUnmount */
+/** @interface_method_impl{PDMIMOUNT,pfnUnmount} */
 static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
     PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
@@ -414,7 +414,7 @@ static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 #endif /* USE_MEDIA_POLLING */
 
 
-/** @copydoc PDMIMEDIA::pfnSendCmd */
+/** @interface_method_impl{PDMIMEDIA,pfnSendCmd} */
 static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t *pbCmd,
                                            PDMMEDIATXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
                                            uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)

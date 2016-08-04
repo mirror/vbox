@@ -4105,7 +4105,7 @@ static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_
 }
 
 /**
- * @copydoc VUSBIROOTHUBPORT::pfnFramerateChanged.
+ * @interface_method_impl{VUSBIROOTHUBPORT,pfnFramerateChanged}.
  */
 static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameRate)
 {

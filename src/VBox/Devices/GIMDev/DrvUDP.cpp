@@ -67,7 +67,7 @@ typedef struct DRVUDP
 *********************************************************************************************************************************/
 
 
-/** @copydoc PDMISTREAM::pfnRead */
+/** @interface_method_impl{PDMISTREAM,pfnRead} */
 static DECLCALLBACK(int) drvUDPRead(PPDMISTREAM pInterface, void *pvBuf, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
@@ -91,7 +91,7 @@ static DECLCALLBACK(int) drvUDPRead(PPDMISTREAM pInterface, void *pvBuf, size_t 
 }
 
 
-/** @copydoc PDMISTREAM::pfnWrite */
+/** @interface_method_impl{PDMISTREAM,pfnWrite} */
 static DECLCALLBACK(int) drvUDPWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;

@@ -234,7 +234,7 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
 }
 
 /**
- * @copydoc PDMIACPICONNECTOR::pfnQueryBatteryStatus
+ * @interface_method_impl{PDMIACPICONNECTOR,pfnQueryBatteryStatus}
  */
 static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface, bool *pfPresent,
                                                    PPDMACPIBATCAPACITY penmRemainingCapacity,

@@ -100,7 +100,7 @@ typedef struct DRVTCP
 *********************************************************************************************************************************/
 
 
-/** @copydoc PDMISTREAM::pfnRead */
+/** @interface_method_impl{PDMISTREAM,pfnRead} */
 static DECLCALLBACK(int) drvTCPRead(PPDMISTREAM pInterface, void *pvBuf, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
@@ -142,7 +142,7 @@ static DECLCALLBACK(int) drvTCPRead(PPDMISTREAM pInterface, void *pvBuf, size_t 
 }
 
 
-/** @copydoc PDMISTREAM::pfnWrite */
+/** @interface_method_impl{PDMISTREAM,pfnWrite} */
 static DECLCALLBACK(int) drvTCPWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;

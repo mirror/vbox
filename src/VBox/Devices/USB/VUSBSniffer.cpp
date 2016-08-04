@@ -76,7 +76,7 @@ static PCVUSBSNIFFERFMT s_aVUsbSnifferFmts[] =
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-/** @copydoc VUSBSNIFFERSTRM::pfnWrite. */
+/** @interface_method_impl{VUSBSNIFFERSTRM,pfnWrite}. */
 static DECLCALLBACK(int) vusbSnifferStrmWrite(PVUSBSNIFFERSTRM pStrm, const void *pvBuf, size_t cbBuf)
 {
     PVUSBSNIFFERINT pThis = RT_FROM_MEMBER(pStrm, VUSBSNIFFERINT, Strm);

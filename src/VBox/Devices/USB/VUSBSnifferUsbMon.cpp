@@ -69,7 +69,7 @@ static const char *s_apszFileExts[] =
 *********************************************************************************************************************************/
 
 
-/** @copydoc VUSBSNIFFERFMT::pfnInit */
+/** @interface_method_impl{VUSBSNIFFERFMT,pfnInit} */
 static DECLCALLBACK(int) vusbSnifferFmtUsbMonInit(PVUSBSNIFFERFMTINT pThis, PVUSBSNIFFERSTRM pStrm)
 {
     pThis->pStrm = pStrm;
@@ -77,14 +77,14 @@ static DECLCALLBACK(int) vusbSnifferFmtUsbMonInit(PVUSBSNIFFERFMTINT pThis, PVUS
 }
 
 
-/** @copydoc VUSBSNIFFERFMT::pfnDestroy */
+/** @interface_method_impl{VUSBSNIFFERFMT,pfnDestroy} */
 static DECLCALLBACK(void) vusbSnifferFmtUsbMonDestroy(PVUSBSNIFFERFMTINT pThis)
 {
 
 }
 
 
-/** @copydoc VUSBSNIFFERFMT::pfnRecordEvent */
+/** @interface_method_impl{VUSBSNIFFERFMT,pfnRecordEvent} */
 static DECLCALLBACK(int) vusbSnifferFmtUsbMonRecordEvent(PVUSBSNIFFERFMTINT pThis, PVUSBURB pUrb, VUSBSNIFFEREVENT enmEvent)
 {
     char aszLineBuf[512];

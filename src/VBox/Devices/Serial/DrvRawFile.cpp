@@ -63,7 +63,7 @@ typedef struct DRVRAWFILE
 
 /* -=-=-=-=- PDMISTREAM -=-=-=-=- */
 
-/** @copydoc PDMISTREAM::pfnWrite */
+/** @interface_method_impl{PDMISTREAM,pfnWrite} */
 static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;

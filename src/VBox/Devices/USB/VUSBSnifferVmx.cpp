@@ -110,7 +110,7 @@ static int vusbSnifferFmtVmxLogData(PVUSBSNIFFERFMTINT pThis, PRTTIME pTime, uin
     return rc;
 }
 
-/** @copydoc VUSBSNIFFERFMT::pfnInit */
+/** @interface_method_impl{VUSBSNIFFERFMT,pfnInit} */
 static DECLCALLBACK(int) vusbSnifferFmtVmxInit(PVUSBSNIFFERFMTINT pThis, PVUSBSNIFFERSTRM pStrm)
 {
     pThis->pStrm = pStrm;
@@ -118,14 +118,14 @@ static DECLCALLBACK(int) vusbSnifferFmtVmxInit(PVUSBSNIFFERFMTINT pThis, PVUSBSN
 }
 
 
-/** @copydoc VUSBSNIFFERFMT::pfnDestroy */
+/** @interface_method_impl{VUSBSNIFFERFMT,pfnDestroy} */
 static DECLCALLBACK(void) vusbSnifferFmtVmxDestroy(PVUSBSNIFFERFMTINT pThis)
 {
     NOREF(pThis);
 }
 
 
-/** @copydoc VUSBSNIFFERFMT::pfnRecordEvent */
+/** @interface_method_impl{VUSBSNIFFERFMT,pfnRecordEvent} */
 static DECLCALLBACK(int) vusbSnifferFmtVmxRecordEvent(PVUSBSNIFFERFMTINT pThis, PVUSBURB pUrb, VUSBSNIFFEREVENT enmEvent)
 {
     RTTIMESPEC TimeNow;
