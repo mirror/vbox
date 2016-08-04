@@ -147,12 +147,7 @@ void UIDesktopWidgetWatchdog::sltUpdateHostScreenConfiguration(int cHostScreenCo
     m_cHostScreenCount = cHostScreenCount != -1 ? cHostScreenCount : m_pDesktopWidget->screenCount();
 
     /* Cleanup existing workers first: */
-    foreach (QWidget *pWorker, m_availableGeometryWorkers)
-        if (pWorker)
-            pWorker->disconnect();
-    qDeleteAll(m_availableGeometryWorkers);
-    m_availableGeometryWorkers.clear();
-    m_availableGeometryData.clear();
+    cleanupExistingWorkers();
 
     /* Resize workers vectors to new host-screen count: */
     m_availableGeometryWorkers.resize(m_cHostScreenCount);
@@ -228,10 +223,14 @@ void UIDesktopWidgetWatchdog::cleanup()
     disconnect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltRecalculateHostScreenAvailableGeometry(int)));
 
     /* Cleanup existing workers finally: */
-    foreach (QWidget *pWorker, m_availableGeometryWorkers)
-        if (pWorker)
-            pWorker->disconnect();
+    cleanupExistingWorkers();
+}
+
+void UIDesktopWidgetWatchdog::cleanupExistingWorkers()
+{
+    /* Destroy existing workers: */
     qDeleteAll(m_availableGeometryWorkers);
+    /* And clear their vectors: */
     m_availableGeometryWorkers.clear();
     m_availableGeometryData.clear();
 }

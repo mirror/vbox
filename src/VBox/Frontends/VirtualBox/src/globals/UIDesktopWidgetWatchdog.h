@@ -66,6 +66,9 @@ private:
     /** Cleanup routine. */
     void cleanup();
 
+    /** Cleanups existing workers. */
+    void cleanupExistingWorkers();
+
     /** Holds the desktop-widget reference pointer. */
     QDesktopWidget *m_pDesktopWidget;
 
