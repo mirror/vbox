@@ -22,8 +22,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEV_VIRTUALKD
+#define LOG_GROUP LOG_GROUP_DEV // LOG_GROUP_DEV_VIRTUALKD
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/path.h>
 
@@ -82,6 +83,7 @@ typedef struct VIRTUALKD
 
 static DECLCALLBACK(int) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    RT_NOREF(pvUser, Port, cb);
     VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
 
     if (pThis->fOpenChannelDetected)
@@ -91,13 +93,14 @@ static DECLCALLBACK(int) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         pThis->fChannelDetectSuccessful = true;
     }
     else
-        *pu32 = -1;
+        *pu32 = UINT32_MAX;
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    RT_NOREF(pvUser, cb);
     VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
 
     if (Port == 0x5659)
@@ -146,10 +149,28 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
+
+    delete pThis->pKDClient;
+    if (pThis->hLib != NIL_RTLDRMOD)
+        RTLdrClose(pThis->hLib);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
 
     pThis->fOpenChannelDetected = false;
@@ -167,13 +188,7 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     char szPath[RTPATH_MAX] = "";
     CFGMR3QueryString(pCfg, "Path", szPath, sizeof(szPath));
 
-    RTPathAppend(szPath, sizeof(szPath),
-#if HC_ARCH_BITS == 64
-        "kdclient64.dll"
-#else
-        "kdclient.dll"
-#endif
-        );
+    RTPathAppend(szPath, sizeof(szPath), HC_ARCH_BITS == 64 ?  "kdclient64.dll" : "kdclient.dll");
     int rc = RTLdrLoad(szPath, &pThis->hLib);
     if (RT_FAILURE(rc))
     {
@@ -208,19 +223,6 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     return VINF_SUCCESS;
 }
 
-/**
- * @interface_method_impl{PDMDEVREG,pfnDestruct}
- */
-static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
-{
-    VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
-
-    delete pThis->pKDClient;
-    if (pThis->hLib != NIL_RTLDRMOD)
-        RTLdrClose(pThis->hLib);
-
-    return VINF_SUCCESS;
-}
 
 /**
  * The device registration structure.
@@ -276,3 +278,4 @@ const PDMDEVREG g_DeviceVirtualKD =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
+
