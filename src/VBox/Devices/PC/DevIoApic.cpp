@@ -619,7 +619,10 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
         }
 
         IOAPIC_UNLOCK(pThis);
+#ifdef DEBUG_ramshankar
+        /* Seems this can trigger if the guest reprograms the I/O APIC before an EOI, see @bugref{8386#c37}. */
         AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
+#endif
     }
     else
         STAM_COUNTER_INC(&pThis->StatEoiContention);
