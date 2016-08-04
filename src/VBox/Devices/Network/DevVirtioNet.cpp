@@ -538,6 +538,7 @@ static void vnetTempLinkDown(PVNETSTATE pThis)
  */
 static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pTimer);
     PVNETSTATE pThis = (PVNETSTATE)pvUser;
 
     int rc = vnetCsEnter(pThis, VERR_SEM_BUSY);
@@ -558,6 +559,7 @@ static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  */
 static DECLCALLBACK(bool) vnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
+    RT_NOREF(pItem);
     vnetWakeupReceive(pDevIns);
     return true;
 }
@@ -1067,6 +1069,7 @@ static DECLCALLBACK(int) vnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
 
 static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
 {
+    RT_NOREF(pQueue);
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     Log(("%s Receive buffers has been added, waking up receive thread.\n", INSTANCE(pThis)));
     vnetWakeupReceive(pThis->VPCI.CTX_SUFF(pDevIns));
@@ -1319,7 +1322,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
 
     if (TMTimerIsActive(pThis->CTX_SUFF(pTxTimer)))
     {
-        int rc = TMTimerStop(pThis->CTX_SUFF(pTxTimer));
+        TMTimerStop(pThis->CTX_SUFF(pTxTimer));
         Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, re-enable notification and flush TX queue\n", INSTANCE(pThis)));
         vnetTransmitPendingPackets(pThis, pQueue, false /*fOnWorkerThread*/);
         if (RT_FAILURE(vnetCsEnter(pThis, VERR_SEM_BUSY)))
@@ -1349,6 +1352,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
  */
 static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns, pTimer);
     PVNETSTATE pThis = (PVNETSTATE)pvUser;
 
     uint32_t u32MicroDiff = (uint32_t)((RTTimeNanoTS() - pThis->u64NanoTS)/1000);
@@ -1537,7 +1541,6 @@ static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
     VQUEUEELEM elem;
     while (vqueueGet(&pThis->VPCI, pQueue, &elem))
     {
-        unsigned int uOffset = 0;
         if (elem.nOut < 1 || elem.aSegsOut[0].cb < sizeof(VNETCTLHDR))
         {
             Log(("%s vnetQueueControl: The first 'out' segment is not the header! (%u < 1 || %u < %u).\n",
@@ -1601,6 +1604,7 @@ static void vnetSaveConfig(PVNETSTATE pThis, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    RT_NOREF(uPass);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
     vnetSaveConfig(pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
@@ -1612,6 +1616,7 @@ static DECLCALLBACK(int) vnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
  */
 static DECLCALLBACK(int) vnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
 
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
@@ -1660,6 +1665,7 @@ static DECLCALLBACK(int) vnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
 
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
@@ -1738,6 +1744,7 @@ static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
  */
 static DECLCALLBACK(int) vnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
 
     if (pThis->pDrv)
@@ -1759,9 +1766,9 @@ static DECLCALLBACK(int) vnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion,
-                                 RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion);
     PVNETSTATE pThis = PDMINS_2_DATA(pPciDev->pDevIns, PVNETSTATE);
     int       rc;
 
@@ -1798,6 +1805,7 @@ static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion,
  */
 static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
     Log(("%s vnetDetach:\n", INSTANCE(pThis)));
 
@@ -1825,6 +1833,7 @@ static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
  */
 static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
     LogFlow(("%s vnetAttach:\n",  INSTANCE(pThis)));
 
@@ -2065,7 +2074,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->pTxTimerRC = TMTimerRCPtr(pThis->pTxTimerR3);
 
     pThis->u32i = pThis->u32AvgDiff = pThis->u32MaxDiff = 0;
-    pThis->u32MinDiff = ~0;
+    pThis->u32MinDiff = UINT32_MAX;
 #endif /* VNET_TX_DELAY */
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->VPCI.IBase, &pThis->pDrvBase, "Network Port");

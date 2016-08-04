@@ -2688,6 +2688,7 @@ static int e1kRegWriteCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
  */
 static int e1kRegWriteEECD(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
+    RT_NOREF(offset, index);
 #ifdef IN_RING3
     /* So far we are concerned with lower byte only */
     if ((EECD & EECD_EE_GNT) || pThis->eChip == E1K_CHIP_82543GC)
@@ -2706,7 +2707,7 @@ static int e1kRegWriteEECD(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
 
     return VINF_SUCCESS;
 #else /* !IN_RING3 */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(offset); RT_NOREF_PV(index); RT_NOREF_PV(value);
+    RT_NOREF(pThis, value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
@@ -3190,8 +3191,8 @@ DECLINLINE(uint32_t) e1kGetTxLen(PE1KSTATE pThis)
 }
 
 #ifdef IN_RING3
-#ifdef E1K_TX_DELAY
 
+# ifdef E1K_TX_DELAY
 /**
  * Transmit Delay Timer handler.
  *
@@ -3208,17 +3209,17 @@ static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     Assert(PDMCritSectIsOwner(&pThis->csTx));
 
     E1K_INC_ISTAT_CNT(pThis->uStatTxDelayExp);
-#ifdef E1K_INT_STATS
+#  ifdef E1K_INT_STATS
     uint64_t u64Elapsed = RTTimeNanoTS() - pThis->u64ArmedAt;
     if (u64Elapsed > pThis->uStatMaxTxDelay)
         pThis->uStatMaxTxDelay = u64Elapsed;
-#endif
+#  endif
     int rc = e1kXmitPending(pThis, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
 }
-#endif /* E1K_TX_DELAY */
+# endif /* E1K_TX_DELAY */
 
-#ifdef E1K_USE_TX_TIMERS
+# ifdef E1K_USE_TX_TIMERS
 
 /**
  * Transmit Interrupt Delay Timer handler.
@@ -3236,9 +3237,9 @@ static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
 
     E1K_INC_ISTAT_CNT(pThis->uStatTID);
     /* Cancel absolute delay timer as we have already got attention */
-#ifndef E1K_NO_TAD
+#  ifndef E1K_NO_TAD
     e1kCancelTimer(pThis, pThis->CTX_SUFF(pTADTimer));
-#endif /* E1K_NO_TAD */
+#  endif /* E1K_NO_TAD */
     e1kRaiseInterrupt(pThis, ICR_TXDW);
 }
 
@@ -3262,8 +3263,8 @@ static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
     e1kRaiseInterrupt(pThis, ICR_TXDW);
 }
 
-#endif /* E1K_USE_TX_TIMERS */
-#ifdef E1K_USE_RX_TIMERS
+# endif /* E1K_USE_TX_TIMERS */
+# ifdef E1K_USE_RX_TIMERS
 
 /**
  * Receive Interrupt Delay Timer handler.
@@ -3305,7 +3306,7 @@ static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
     e1kRaiseInterrupt(pThis, ICR_RXT0);
 }
 
-#endif /* E1K_USE_RX_TIMERS */
+# endif /* E1K_USE_RX_TIMERS */
 
 /**
  * Late Interrupt Timer handler.
@@ -3317,15 +3318,16 @@ static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  */
 static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns, pTimer);
     PE1KSTATE pThis = (PE1KSTATE )pvUser;
 
     STAM_PROFILE_ADV_START(&pThis->StatLateIntTimer, a);
     STAM_COUNTER_INC(&pThis->StatLateInts);
     E1K_INC_ISTAT_CNT(pThis->uStatIntLate);
-#if 0
+# if 0
     if (pThis->iStatIntLost > -100)
         pThis->iStatIntLost--;
-#endif
+# endif
     e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, 0);
     STAM_PROFILE_ADV_STOP(&pThis->StatLateIntTimer, a);
 }
@@ -3340,6 +3342,7 @@ static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  */
 static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns, pTimer);
     PE1KSTATE pThis = (PE1KSTATE )pvUser;
 
     /*
@@ -5309,7 +5312,7 @@ static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCO
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     E1kLog2(("%s e1kTxQueueConsumer:\n", pThis->szPrf));
 
-    int rc = e1kXmitPending(pThis, false /*fOnWorkerThread*/);
+    int rc = e1kXmitPending(pThis, false /*fOnWorkerThread*/); NOREF(rc);
 #ifndef DEBUG_andy /** @todo r=andy Happens for me a lot, mute this for me. */
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
 #endif
@@ -5321,6 +5324,7 @@ static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCO
  */
 static DECLCALLBACK(bool) e1kCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
+    RT_NOREF(pItem);
     e1kWakeupReceive(pDevIns);
     return true;
 }
@@ -6015,11 +6019,9 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort
  */
 static void e1kDumpState(PE1KSTATE pThis)
 {
+    RT_NOREF(pThis);
     for (int i = 0; i < E1K_NUM_OF_32BIT_REGS; ++i)
-    {
-        E1kLog2(("%s %8.8s = %08x\n", pThis->szPrf,
-                g_aE1kRegMap[i].abbrev, pThis->auRegs[i]));
-    }
+        E1kLog2(("%s %8.8s = %08x\n", pThis->szPrf, g_aE1kRegMap[i].abbrev, pThis->auRegs[i]));
 # ifdef E1K_INT_STATS
     LogRel(("%s Interrupt attempts: %d\n", pThis->szPrf, pThis->uStatIntTry));
     LogRel(("%s Interrupts raised : %d\n", pThis->szPrf, pThis->uStatInt));
@@ -6068,6 +6070,7 @@ static void e1kDumpState(PE1KSTATE pThis)
  */
 static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion);
     PE1KSTATE pThis = PDMINS_2_DATA(pPciDev->pDevIns, E1KSTATE*);
     int       rc;
 
@@ -6578,6 +6581,7 @@ static void e1kSaveConfig(PE1KSTATE pThis, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    RT_NOREF(uPass);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     e1kSaveConfig(pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
@@ -6588,6 +6592,7 @@ static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
     int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
@@ -6692,6 +6697,7 @@ static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
     int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
@@ -6810,6 +6816,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
     /* Update promiscuous mode */
@@ -6847,6 +6854,7 @@ static DECLCALLBACK(size_t) e1kFmtRxDesc(PFNRTSTROUTPUT pfnOutput,
                                          unsigned fFlags,
                                          void *pvUser)
 {
+    RT_NOREF(cchWidth,  cchPrecision,  fFlags, pvUser);
     AssertReturn(strcmp(pszType, "e1krxd") == 0, 0);
     E1KRXDESC* pDesc = (E1KRXDESC*)pvValue;
     if (!pDesc)
@@ -6885,6 +6893,7 @@ static DECLCALLBACK(size_t) e1kFmtTxDesc(PFNRTSTROUTPUT pfnOutput,
                                          unsigned fFlags,
                                          void *pvUser)
 {
+    RT_NOREF(cchWidth, cchPrecision, fFlags, pvUser);
     AssertReturn(strcmp(pszType, "e1ktxd") == 0, 0);
     E1KTXDESC *pDesc = (E1KTXDESC*)pvValue;
     if (!pDesc)
@@ -6984,6 +6993,7 @@ static int e1kInitDebugHelpers(void)
  */
 static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     unsigned  i;
     // bool        fRcvRing = false;
@@ -7144,6 +7154,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     Log(("%s e1kR3Detach:\n", pThis->szPrf));
 
@@ -7180,6 +7191,7 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     LogFlow(("%s e1kR3Attach:\n",  pThis->szPrf));
 
@@ -7294,6 +7306,7 @@ static DECLCALLBACK(void) e1kR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) e1kR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    RT_NOREF(offDelta);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     pThis->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pTxQueueRC    = PDMQueueRCPtr(pThis->pTxQueueR3);

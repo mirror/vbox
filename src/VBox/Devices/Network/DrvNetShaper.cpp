@@ -312,6 +312,7 @@ static DECLCALLBACK(RTR0PTR) drvR3NetShaperIBaseR0_QueryInterface(PPDMIBASER0 pI
  */
 static DECLCALLBACK(RTRCPTR) drvR3NetShaperIBaseRC_QueryInterface(PPDMIBASERC pInterface, const char *pszIID)
 {
+    RT_NOREF(pInterface, pszIID);
     return NIL_RTRCPTR;
 }
 
@@ -337,6 +338,7 @@ static DECLCALLBACK(void *) drvR3NetShaperIBase_QueryInterface(PPDMIBASE pInterf
  */
 static DECLCALLBACK(void) drvR3NetShaperDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDRVNETSHAPER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSHAPER);
 
     LogFlow(("drvNetShaperDetach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));

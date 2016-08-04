@@ -916,8 +916,9 @@ int vpciDestruct(VPCISTATE* pState)
  */
 void vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    VPCISTATE* pState = PDMINS_2_DATA(pDevIns, VPCISTATE*);
-    pState->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
+    RT_NOREF(offDelta);
+    VPCISTATE *pState = PDMINS_2_DATA(pDevIns, VPCISTATE*);
+    pState->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     // TBD
 }
 
