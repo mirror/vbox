@@ -1551,7 +1551,7 @@ static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCT
             iDir = AMPLIFIER_IN;
             break;
         default:
-            AssertMsgFailedReturn(("Invalid mixer control %ld\n", enmMixerCtl), VERR_INVALID_PARAMETER);
+            AssertMsgFailedReturn(("Invalid mixer control %d\n", enmMixerCtl), VERR_INVALID_PARAMETER);
             break;
     }
 
@@ -3030,7 +3030,7 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
             break;
         }
         default:
-            AssertMsgFailed(("Mixer control %ld not implemented\n", enmMixerCtl));
+            AssertMsgFailed(("Mixer control %d not implemented\n", enmMixerCtl));
             rc = VERR_NOT_IMPLEMENTED;
             break;
     }
