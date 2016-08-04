@@ -650,6 +650,8 @@ static int getDefaultIfaceName(char *pszName)
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF(envp);
+
     /*
      * Init the runtime and parse the arguments.
      */
@@ -705,7 +707,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     int rc;
     int ch;
-    int iArg = 1;
     RTGETOPTUNION Value;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
