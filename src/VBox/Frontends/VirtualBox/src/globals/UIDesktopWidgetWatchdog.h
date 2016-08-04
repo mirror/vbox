@@ -88,9 +88,6 @@ private:
     /** Cleanups existing workers. */
     void cleanupExistingWorkers();
 
-    /** Holds the desktop-widget reference pointer. */
-    QDesktopWidget *m_pDesktopWidget;
-
     /** Holds current host-screen available-geometries. */
     QVector<QRect> m_availableGeometryData;
     /** Holds current workers determining host-screen available-geometries. */

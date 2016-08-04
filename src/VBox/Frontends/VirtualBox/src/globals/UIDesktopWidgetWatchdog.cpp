@@ -107,7 +107,6 @@ void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)
 
 UIDesktopWidgetWatchdog::UIDesktopWidgetWatchdog(QObject *pParent)
     : QObject(pParent)
-    , m_pDesktopWidget(QApplication::desktop())
 {
     /* Prepare: */
     prepare();
@@ -129,18 +128,18 @@ const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1
 {
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
-        iHostScreenIndex = m_pDesktopWidget->primaryScreen();
+        iHostScreenIndex = QApplication::desktop()->primaryScreen();
     AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
 
     /* Redirect call to desktop-widget: */
-    return m_pDesktopWidget->screenGeometry(iHostScreenIndex);
+    return QApplication::desktop()->screenGeometry(iHostScreenIndex);
 }
 
 const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
-        iHostScreenIndex = m_pDesktopWidget->primaryScreen();
+        iHostScreenIndex = QApplication::desktop()->primaryScreen();
     AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
 
     /* Return cached available-geometry: */
@@ -203,12 +202,12 @@ void UIDesktopWidgetWatchdog::prepare()
 {
     /* Prepare connections: */
 #if QT_VERSION < 0x050000
-    connect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
+    connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
 #else /* QT_VERSION >= 0x050000 */
     connect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
     connect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
 #endif /* QT_VERSION >= 0x050000 */
-    connect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
+    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
 
     /* Update host-screen configuration: */
     updateHostScreenConfiguration();
@@ -218,12 +217,12 @@ void UIDesktopWidgetWatchdog::cleanup()
 {
     /* Cleanup connections: */
 #if QT_VERSION < 0x050000
-    disconnect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
+    disconnect(QApplication::desktop(), SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
 #else /* QT_VERSION >= 0x050000 */
     disconnect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
     disconnect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
 #endif /* QT_VERSION >= 0x050000 */
-    disconnect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
+    disconnect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
 
     /* Cleanup existing workers finally: */
     cleanupExistingWorkers();
@@ -251,7 +250,7 @@ void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenI
 {
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
-        iHostScreenIndex = m_pDesktopWidget->primaryScreen();
+        iHostScreenIndex = QApplication::desktop()->primaryScreen();
     AssertReturnVoid(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount());
 
     /* Create invisible frame-less window worker: */
