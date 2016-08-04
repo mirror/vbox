@@ -457,7 +457,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
         return VERR_NO_MEMORY;
     }
 
-    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %s, %RU8 channels, %RU32Hz)\n",
+    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%d, %s, %RU8 channels, %RU32Hz)\n",
                  pSink->pszName, fFlags, pCfg->enmDir, DrvAudioHlpAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
 
     /*
@@ -536,7 +536,7 @@ static PDMAUDIOSTREAMCMD audioMixerSinkToStreamCmd(AUDMIXSINKCMD enmCmd)
         default:                     break;
     }
 
-    AssertMsgFailed(("Unsupported sink command %ld\n", enmCmd));
+    AssertMsgFailed(("Unsupported sink command %d\n", enmCmd));
     return PDMAUDIOSTREAMCMD_UNKNOWN;
 }
 
@@ -581,7 +581,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
         audioMixerSinkReset(pSink);
 
-    LogFlowFunc(("[%s]: enmCmd=%ld, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pSink->fStatus, rc));
+    LogFlowFunc(("[%s]: enmCmd=%d, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pSink->fStatus, rc));
     return rc;
 }
 
@@ -1272,7 +1272,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
               ("Can't write to a sink which is not an output sink\n"));
 
-    LogFlowFunc(("%s: enmOp=%ld, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
+    LogFlowFunc(("%s: enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
 
     uint32_t cbProcessed;
 
@@ -1326,7 +1326,7 @@ int AudioMixerStreamCtl(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint
     AssertPtrReturn(pMixStream, VERR_INVALID_POINTER);
     /** @todo Validate fCtl. */
 
-    LogFlowFunc(("[%s] enmCmd=%ld\n", pMixStream->pszName, enmCmd));
+    LogFlowFunc(("[%s] enmCmd=%d\n", pMixStream->pszName, enmCmd));
 
     return pMixStream->pConn->pfnStreamControl(pMixStream->pConn, pMixStream->pStream, enmCmd);
 }
