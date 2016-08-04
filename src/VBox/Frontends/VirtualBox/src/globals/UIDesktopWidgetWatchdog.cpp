@@ -108,7 +108,6 @@ void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)
 UIDesktopWidgetWatchdog::UIDesktopWidgetWatchdog(QObject *pParent)
     : QObject(pParent)
     , m_pDesktopWidget(QApplication::desktop())
-    , m_cHostScreenCount(-1)
 {
     /* Prepare: */
     prepare();
@@ -120,12 +119,18 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
     cleanup();
 }
 
+int UIDesktopWidgetWatchdog::screenCount() const
+{
+    /* Redirect call to desktop-widget: */
+    return QApplication::desktop()->screenCount();
+}
+
 const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
-    if (iHostScreenIndex < 0 || iHostScreenIndex >= m_cHostScreenCount)
+    if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
         iHostScreenIndex = m_pDesktopWidget->primaryScreen();
-    AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < m_cHostScreenCount, QRect());
+    AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
 
     /* Redirect call to desktop-widget: */
     return m_pDesktopWidget->screenGeometry(iHostScreenIndex);
@@ -134,9 +139,9 @@ const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1
 const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
-    if (iHostScreenIndex < 0 || iHostScreenIndex >= m_cHostScreenCount)
+    if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
         iHostScreenIndex = m_pDesktopWidget->primaryScreen();
-    AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < m_cHostScreenCount, QRect());
+    AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
 
     /* Return cached available-geometry: */
     return m_availableGeometryData.value(iHostScreenIndex);
@@ -156,7 +161,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(int cHostScreenCou
 
 void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
 {
-//    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", m_pDesktopWidget->screenCount());
+//    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", screenCount());
 
     /* Update host-screen configuration: */
     updateHostScreenConfiguration();
@@ -164,7 +169,7 @@ void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
 
 void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
 {
-//    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", m_pDesktopWidget->screenCount());
+//    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", screenCount());
 
     /* Update host-screen configuration: */
     updateHostScreenConfiguration();
@@ -227,26 +232,27 @@ void UIDesktopWidgetWatchdog::cleanup()
 void UIDesktopWidgetWatchdog::updateHostScreenConfiguration(int cHostScreenCount /* = -1 */)
 {
     /* Acquire new host-screen count: */
-    m_cHostScreenCount = cHostScreenCount != -1 ? cHostScreenCount : m_pDesktopWidget->screenCount();
+    if (cHostScreenCount == -1)
+        cHostScreenCount = screenCount();
 
     /* Cleanup existing workers first: */
     cleanupExistingWorkers();
 
     /* Resize workers vectors to new host-screen count: */
-    m_availableGeometryWorkers.resize(m_cHostScreenCount);
-    m_availableGeometryData.resize(m_cHostScreenCount);
+    m_availableGeometryWorkers.resize(cHostScreenCount);
+    m_availableGeometryData.resize(cHostScreenCount);
 
     /* Update host-screen available-geometry for each particular host-screen: */
-    for (int iHostScreenIndex = 0; iHostScreenIndex < m_cHostScreenCount; ++iHostScreenIndex)
+    for (int iHostScreenIndex = 0; iHostScreenIndex < cHostScreenCount; ++iHostScreenIndex)
         updateHostScreenAvailableGeometry(iHostScreenIndex);
 }
 
 void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenIndex)
 {
     /* Make sure index is valid: */
-    if (iHostScreenIndex < 0 || iHostScreenIndex >= m_cHostScreenCount)
+    if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
         iHostScreenIndex = m_pDesktopWidget->primaryScreen();
-    AssertReturnVoid(iHostScreenIndex >= 0 && iHostScreenIndex < m_cHostScreenCount);
+    AssertReturnVoid(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount());
 
     /* Create invisible frame-less window worker: */
     UIInvisibleWindow *pWorker = new UIInvisibleWindow(iHostScreenIndex);

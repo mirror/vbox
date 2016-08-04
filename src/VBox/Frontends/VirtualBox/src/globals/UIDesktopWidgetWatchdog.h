@@ -43,6 +43,9 @@ public:
     /** Destructs watchdog. */
     ~UIDesktopWidgetWatchdog();
 
+    /** Returns the host-screen count. */
+    int screenCount() const;
+
     /** Returns the geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
     const QRect screenGeometry(int iHostScreenIndex = -1) const;
@@ -88,8 +91,6 @@ private:
     /** Holds the desktop-widget reference pointer. */
     QDesktopWidget *m_pDesktopWidget;
 
-    /** Holds current host-screen count. */
-    int m_cHostScreenCount;
     /** Holds current host-screen available-geometries. */
     QVector<QRect> m_availableGeometryData;
     /** Holds current workers determining host-screen available-geometries. */
