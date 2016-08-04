@@ -1832,7 +1832,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
             AssertMsg(pStream->Cfg.cChannels == pStreamPrev->Cfg.cChannels,
                       ("%RU8 vs. %RU8 channels\n", pStream->Cfg.cChannels, pStreamPrev->Cfg.cChannels));
             AssertMsg(pStream->Cfg.enmFormat == pStreamPrev->Cfg.enmFormat,
-                      ("%ld vs. %ld format\n", pStream->Cfg.enmFormat, pStreamPrev->Cfg.enmFormat));
+                      ("%d vs. %d format\n", pStream->Cfg.enmFormat, pStreamPrev->Cfg.enmFormat));
         }
 #endif
         PPDMIAUDIOCONNECTOR pConn = pDrv->pConnector;
