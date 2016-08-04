@@ -3848,7 +3848,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
 
         if (pStreamCfg->enmDir == PDMAUDIODIR_IN)
         {
-            LogFunc(("enmRecSource=%ld\n", pStreamCfg->DestSource.Source));
+            LogFunc(("enmRecSource=%d\n", pStreamCfg->DestSource.Source));
 
             switch (pStreamCfg->DestSource.Source)
             {
@@ -3867,7 +3867,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
         }
         else if (pStreamCfg->enmDir == PDMAUDIODIR_OUT)
         {
-            LogFunc(("enmPlaybackDest=%ld\n", pStreamCfg->DestSource.Dest));
+            LogFunc(("enmPlaybackDest=%d\n", pStreamCfg->DestSource.Dest));
 
             switch (pStreamCfg->DestSource.Dest)
             {
@@ -3948,7 +3948,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
         rc = hdaMixerAddStream(pThis, pSink, pCfg);
 
         AssertPtr(pSink->pMixSink);
-        LogFlowFunc(("Sink=%s, enmMixerCtl=%ld\n", pSink->pMixSink->pszName, enmMixerCtl));
+        LogFlowFunc(("Sink=%s, enmMixerCtl=%d\n", pSink->pMixSink->pszName, enmMixerCtl));
     }
     else
         rc = VERR_NOT_FOUND;
@@ -4010,7 +4010,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     break;
 #endif
                 default:
-                    AssertMsgFailed(("Mixer control %ld not implemented\n", enmMixerCtl));
+                    AssertMsgFailed(("Mixer control %d not implemented\n", enmMixerCtl));
                     break;
             }
 
@@ -4029,7 +4029,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
     else
         rc = VERR_NOT_FOUND;
 
-    LogFlowFunc(("enmMixerCtl=%ld, rc=%Rrc\n", enmMixerCtl, rc));
+    LogFlowFunc(("enmMixerCtl=%d, rc=%Rrc\n", enmMixerCtl, rc));
     return rc;
 }
 
@@ -4042,14 +4042,13 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
  * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
  * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
  */
-static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis,
-                                           PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
+static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
     LogFlowFunc(("enmMixerCtl=%RU32, uSD=%RU8, uChannel=%RU8\n", enmMixerCtl, uSD, uChannel));
 
     if (uSD == 0) /* Stream number 0 is reserved. */
     {
-        LogFlowFunc(("Invalid SDn (%RU8) number for mixer control %ld, ignoring\n", uSD, enmMixerCtl));
+        LogFlowFunc(("Invalid SDn (%RU8) number for mixer control %d, ignoring\n", uSD, enmMixerCtl));
         return VINF_SUCCESS;
     }
     /* uChannel is optional. */
