@@ -174,7 +174,7 @@ static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *p
         if (hIconv == (iconv_t)-1)
         {
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
-            /* Some systems don't grok empty codeset strings, so help it find the current codeset. */
+            /* Some systems don't grok empty codeset strings, so help them find the current codeset. */
             if (!*pszInputCS)
                 pszInputCS = rtStrGetLocaleCodeset();
             if (!*pszOutputCS)
@@ -305,7 +305,7 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
          * Create conversion object.
          */
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
-        /* Solaris doesn't grok empty codeset strings, so help it find the current codeset. */
+        /* Some systems don't grok empty codeset strings, so help them find the current codeset. */
         if (!*pszInputCS)
             pszInputCS = rtStrGetLocaleCodeset();
         if (!*pszOutputCS)
