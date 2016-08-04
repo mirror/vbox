@@ -21,6 +21,11 @@
       </listitem>
 
       <listitem>
+        <para>API: when creating new VMs, do not enable VRDE by default (5.1.0
+          regression)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux installer: fixed some scripting issues (bugs #15701
            and #15702)</para>
       </listitem>
