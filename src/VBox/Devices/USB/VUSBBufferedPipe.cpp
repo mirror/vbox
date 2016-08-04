@@ -283,8 +283,9 @@ static int vusbBufferedPipeStream(PVUSBBUFFEREDPIPEINT pThis)
  */
 static int vusbBufferedPipeSetParamsFromDescriptor(PVUSBBUFFEREDPIPEINT pThis, PCVUSBDESCENDPOINT pDesc)
 {
-    int rc = VINF_SUCCESS;
-    unsigned cbPktMax, uInterval, uMult;
+    unsigned cbPktMax;
+    unsigned uInterval;
+    unsigned uMult;
 
     if (pThis->enmSpeed == VUSB_SPEED_HIGH)
     {
@@ -307,22 +308,19 @@ static int vusbBufferedPipeSetParamsFromDescriptor(PVUSBBUFFEREDPIPEINT pThis, P
     {
         /** @todo: Implement for super speed and up if it turns out to be required, at the moment it looks
          * like we don't need it. */
-        rc = VERR_NOT_SUPPORTED;
+        return VERR_NOT_SUPPORTED;
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        pThis->uInterval = uInterval;
-        pThis->cbPktSize = cbPktMax * uMult;
-        pThis->uEndPt    = pDesc->bEndpointAddress & 0xf;
+    pThis->uInterval = uInterval;
+    pThis->cbPktSize = cbPktMax * uMult;
+    pThis->uEndPt    = pDesc->bEndpointAddress & 0xf;
 
-        unsigned cPackets = pThis->cLatencyMs / pThis->uInterval;
-        cPackets = RT_MAX(cPackets, 1); /* At least one packet. */
-        pThis->cbRingBufData = pThis->cbPktSize * cPackets;
-        pThis->cIsocDesc     = cPackets / 8 + ((cPackets % 8) ? 1 : 0);
-    }
+    unsigned cPackets = pThis->cLatencyMs / pThis->uInterval;
+    cPackets = RT_MAX(cPackets, 1); /* At least one packet. */
+    pThis->cbRingBufData = pThis->cbPktSize * cPackets;
+    pThis->cIsocDesc     = cPackets / 8 + ((cPackets % 8) ? 1 : 0);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -409,7 +407,8 @@ DECLHIDDEN(int) vusbBufferedPipeSubmitUrb(VUSBBUFFEREDPIPE hBuffer, PVUSBURB pUr
             for (unsigned i = idxIsocPkt; i < pUrb->cIsocPkts && pIsocDesc->cIsocPkts < RT_ELEMENTS(pIsocDesc->aIsocPkts); i++)
             {
                 pIsocDesc->aIsocPkts[pIsocDesc->cIsocPkts].enmStatus = VUSBSTATUS_NOT_ACCESSED;
-                pIsocDesc->aIsocPkts[pIsocDesc->cIsocPkts].off = pIsocDesc->cbTotal;
+                pIsocDesc->aIsocPkts[pIsocDesc->cIsocPkts].off = (uint16_t)pIsocDesc->cbTotal;
+                Assert(pIsocDesc->aIsocPkts[pIsocDesc->cIsocPkts].off == pIsocDesc->cbTotal);
                 pIsocDesc->aIsocPkts[pIsocDesc->cIsocPkts].cb  = pUrb->aIsocPkts[i].cb;
                 pIsocDesc->cbTotal += pUrb->aIsocPkts[i].cb;
                 pIsocDesc->cIsocPkts++;
