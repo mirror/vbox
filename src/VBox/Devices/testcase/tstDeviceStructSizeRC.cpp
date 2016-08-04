@@ -2060,9 +2060,9 @@ int main()
     GEN_CHECK_OFF(NVME, cWrkThrdsMax);
     GEN_CHECK_OFF(NVME, cCompQueuesWaitersMax);
     GEN_CHECK_OFF(NVME, cNamespaces);
-    GEN_CHECK_OFF(NVME, aszSerialNumber);
-    GEN_CHECK_OFF(NVME, aszModelNumber);
-    GEN_CHECK_OFF(NVME, aszFirmwareRevision);
+    GEN_CHECK_OFF(NVME, szSerialNumber);
+    GEN_CHECK_OFF(NVME, szModelNumber);
+    GEN_CHECK_OFF(NVME, szFirmwareRevision);
     GEN_CHECK_OFF(NVME, fRCEnabled);
     GEN_CHECK_OFF(NVME, fR0Enabled);
     GEN_CHECK_OFF(NVME, enmState);
