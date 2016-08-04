@@ -790,6 +790,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             oExecutor = remoteexecutor.RemoteExecutor(None, lstBinaryPaths, self.sScratchPath);
             self.oStorCfg = storagecfg.StorageCfg(oExecutor, utils.getHostOs(), oDiskCfg);
 
+            # Try to cleanup any leftovers from a previous run first.
+            fRc = self.oStorCfg.cleanupLeftovers();
+            if not fRc:
+                reporter.error('Failed to cleanup any leftovers from a previous run');
+
             if self.fTestHost:
                 reporter.testStart('Host');
                 if self.fUseScratch:
