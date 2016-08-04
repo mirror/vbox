@@ -75,7 +75,7 @@ static int tstSingle(RTTEST hTest)
     int8_t  samples8 [2] = { 0x12, 0x34 };
     int16_t samples16[2] = { 0xAA, 0xBB };
     int32_t samples32[2] = { 0xCC, 0xDD };
-    int64_t samples64[2] = { 0xEE, 0xFF };
+    /* int64_t samples64[2] = { 0xEE, 0xFF }; - unused */
 
     RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0, &samples8, sizeof(samples8), &written));
     RTTESTI_CHECK(written == 0 /* Samples */);
@@ -110,7 +110,7 @@ static int tstSingle(RTTEST hTest)
     RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&mb, &samples16, sizeof(samples16), &written));
     RTTESTI_CHECK(written == 1);
     RTTESTI_CHECK(AudioMixBufFree(&mb) == 0);
-    RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_S2B(&mb, 0));
+    RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_S2B(&mb, 0U));
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize);
 
     /* Circular reads. */
@@ -205,14 +205,7 @@ static int tstParentChild(RTTEST hTest)
     int16_t samples[32] = { 0xAA, 0xBB };
     uint32_t read , written, mixed;
 
-    uint32_t cChild1Free     = cBufSize;
-    uint32_t cChild1Mixed    = 0;
-    uint32_t cSamplesParent1 = cSamples;
     uint32_t cSamplesChild1  = cSamples;
-
-    uint32_t cChild2Free     = cBufSize;
-    uint32_t cChild2Mixed    = 0;
-    uint32_t cSamplesParent2 = cSamples;
     uint32_t cSamplesChild2  = cSamples;
 
     uint32_t t = RTRandU32() % 1024;
@@ -325,8 +318,6 @@ static int tstConversion8(RTTEST hTest)
     char        achBuf[256];
     uint32_t    read, written, mixed, temp;
 
-    uint32_t cChildFree     = cBufSize;
-    uint32_t cChildMixed    = 0;
     uint32_t cSamplesChild  = 16;
     uint32_t cSamplesParent = cSamplesChild * 2 - 2;
     uint32_t cSamplesRead   = 0;
@@ -428,8 +419,6 @@ static int tstConversion16(RTTEST hTest)
     char        achBuf[256];
     uint32_t    read, written, mixed, temp;
 
-    uint32_t cChildFree     = cBufSize;
-    uint32_t cChildMixed    = 0;
     uint32_t cSamplesChild  = 16;
     uint32_t cSamplesParent = cSamplesChild * 2 - 2;
     uint32_t cSamplesRead   = 0;
@@ -518,8 +507,6 @@ static int tstVolume(RTTEST hTest)
     char        achBuf[256];
     uint32_t    read, written, mixed;
 
-    uint32_t cChildFree     = cBufSize;
-    uint32_t cChildMixed    = 0;
     uint32_t cSamplesChild  = 8;
     uint32_t cSamplesParent = cSamplesChild;
     uint32_t cSamplesRead;
