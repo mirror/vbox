@@ -1207,7 +1207,7 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
 
 
 #ifdef IN_RING3
-static void efiVBoxDbgScript(PDEVEFI pThis, const char *pszFormat, ...)
+static void efiVBoxDbgScript(const char *pszFormat, ...)
 {
 # ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     PRTSTREAM pStrm;
@@ -1221,7 +1221,7 @@ static void efiVBoxDbgScript(PDEVEFI pThis, const char *pszFormat, ...)
         RTStrmClose(pStrm);
     }
 # else
-    RT_NOREF(pThis, pszFormat);
+    RT_NOREF(pszFormat);
 # endif
 }
 #endif /* IN_RING3 */
@@ -1269,14 +1269,14 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
                         LogRel(("EFI: VBoxDbg> loadimage32 '%.*s.efi' %#llx LB %#llx\n",
                                 pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0, pThis->ImageEvt.cb0));
                         if (pThis->ImageEvt.offName > 4)
-                            efiVBoxDbgScript(pThis, "loadimage32 '%.*s.efi' %#llx\n",
+                            efiVBoxDbgScript("loadimage32 '%.*s.efi' %#llx\n",
                                              pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0);
                         break;
                     case EFI_IMAGE_EVT_CMD_START_LOAD64:
                         LogRel(("EFI: VBoxDbg> loadimage64 '%.*s.efi' %#llx LB %#llx\n",
                                 pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0, pThis->ImageEvt.cb0));
                         if (pThis->ImageEvt.offName > 4)
-                            efiVBoxDbgScript(pThis, "loadimage64 '%.*s.efi' %#llx\n",
+                            efiVBoxDbgScript("loadimage64 '%.*s.efi' %#llx\n",
                                              pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0);
                         break;
                     case EFI_IMAGE_EVT_CMD_START_UNLOAD32:
@@ -1287,7 +1287,7 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
                                 &pThis->ImageEvt.szName[pThis->ImageEvt.offNameLastComponent],
                                 pThis->ImageEvt.uAddr0, pThis->ImageEvt.cb0));
                         if (pThis->ImageEvt.offName > 4)
-                            efiVBoxDbgScript(pThis, "unload '%.*s.efi'\n",
+                            efiVBoxDbgScript("unload '%.*s.efi'\n",
                                              pThis->ImageEvt.offName - 4 - pThis->ImageEvt.offNameLastComponent,
                                              &pThis->ImageEvt.szName[pThis->ImageEvt.offNameLastComponent]);
                         break;

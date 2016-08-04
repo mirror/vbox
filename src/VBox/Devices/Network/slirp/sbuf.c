@@ -112,7 +112,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     int mlen = 0;
 
     STAM_PROFILE_START(&pData->StatIOSBAppend_pf, a);
-    LogFlow(("sbappend: so = %lx, m = %lx, m->m_len = %d\n", (long)so, (long)m, m ? m->m_len : 0));
+    LogFlow(("sbappend: so = %p, m = %p, m->m_len = %d\n", so, m, m ? m->m_len : 0));
 
     STAM_COUNTER_INC(&pData->StatIOSBAppend);
     /* Shouldn't happen, but...  e.g. foreign host closes connection */

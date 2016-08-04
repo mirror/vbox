@@ -639,13 +639,13 @@ sowrite(PNATState pData, struct socket *so)
         ret = send(so->s, iov[1].iov_base, iov[1].iov_len, 0);
         if (ret > 0)
             nn += ret;
-        STAM_STATS({
-            if (ret > 0 && ret != iov[1].iov_len)
-            {
-                STAM_COUNTER_INC(&pData->StatIOWrite_rest);
-                STAM_COUNTER_ADD(&pData->StatIOWrite_rest_bytes, (iov[1].iov_len - ret));
-            }
-        });
+# ifdef VBOX_WITH_STATISTICS
+        if (ret > 0 && ret != (ssize_t)iov[1].iov_len)
+        {
+            STAM_COUNTER_INC(&pData->StatIOWrite_rest);
+            STAM_COUNTER_ADD(&pData->StatIOWrite_rest_bytes, (iov[1].iov_len - ret));
+        }
+#endif
     }
     Log2(("%s: wrote(2) nn = %d bytes\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn));
 #endif
@@ -678,7 +678,7 @@ sowrite(PNATState pData, struct socket *so)
 void
 sorecvfrom(PNATState pData, struct socket *so)
 {
-    LogFlowFunc(("sorecvfrom: so = %lx\n", (long)so));
+    LogFlowFunc(("sorecvfrom: so = %p\n", so));
 
 #ifdef RT_OS_WINDOWS
     /* ping is handled with ICMP API in ip_icmpwin.c */
@@ -839,7 +839,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     caddr_t buf = 0;
     int mlen;
 
-    LogFlowFunc(("sosendto: so = %R[natsock], m = %lx\n", so, (long)m));
+    LogFlowFunc(("sosendto: so = %R[natsock], m = %p\n", so, m));
 
     memset(&addr, 0, sizeof(struct sockaddr));
 #ifdef RT_OS_DARWIN

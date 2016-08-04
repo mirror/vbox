@@ -122,7 +122,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      * If not enough data to reflect UDP length, drop.
      */
     len = RT_N2H_U16((u_int16_t)uh->uh_ulen);
-    Assert((ip->ip_len + iphlen == m_length(m, NULL)));
+    Assert(ip->ip_len + iphlen == (ssize_t)m_length(m, NULL));
 
     if (ip->ip_len != len)
     {
@@ -471,8 +471,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     struct socket *pSocketClone = NULL;
 #endif
     Assert(so->so_type == IPPROTO_UDP);
-    LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n",
-                 so, (long)m, addr->sin_addr.s_addr));
+    LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n", so, m, addr->sin_addr.s_addr));
 
     if (so->so_laddr.s_addr == INADDR_ANY)
     {

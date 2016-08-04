@@ -97,7 +97,7 @@ ip_input(PNATState pData, struct mbuf *m)
 
     STAM_PROFILE_START(&pData->StatIP_input, a);
 
-    LogFlowFunc(("ENTER: m = %lx\n", (long)m));
+    LogFlowFunc(("ENTER: m = %p\n", m));
     ip = mtod(m, struct ip *);
     Log2(("ip_dst=%RTnaipv4(len:%d) m_len = %d\n", ip->ip_dst, RT_N2H_U16(ip->ip_len), m->m_len));
 

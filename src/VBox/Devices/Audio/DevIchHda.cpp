@@ -5189,10 +5189,11 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  * @callback_method_impl{FNRTSTRFORMATTYPE}
  */
 static DECLCALLBACK(size_t) hdaDbgFmtBDLE(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                           const char *pszType, void const *pvValue,
-                                           int cchWidth, int cchPrecision, unsigned fFlags,
-                                           void *pvUser)
+                                          const char *pszType, void const *pvValue,
+                                          int cchWidth, int cchPrecision, unsigned fFlags,
+                                          void *pvUser)
 {
+    RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
     PHDABDLE pBDLE = (PHDABDLE)pvValue;
     return RTStrFormat(pfnOutput,  pvArgOutput, NULL, 0,
                        "BDLE(idx:%RU32, off:%RU32, fifow:%RU32, IOC:%RTbool, DMA[%RU32 bytes @ 0x%x])",
@@ -5208,6 +5209,7 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDCTL(PFNRTSTROUTPUT pfnOutput, void *pvArg
                                            int cchWidth, int cchPrecision, unsigned fFlags,
                                            void *pvUser)
 {
+    RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
     uint32_t uSDCTL = (uint32_t)(uintptr_t)pvValue;
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                        "SDCTL(raw:%#x, DIR:%s, TP:%RTbool, STRIPE:%x, DEIE:%RTbool, FEIE:%RTbool, IOCE:%RTbool, RUN:%RTbool, RESET:%RTbool)",
@@ -5230,6 +5232,7 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDFIFOS(PFNRTSTROUTPUT pfnOutput, void *pvA
                                              int cchWidth, int cchPrecision, unsigned fFlags,
                                              void *pvUser)
 {
+    RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
     uint32_t uSDFIFOS = (uint32_t)(uintptr_t)pvValue;
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SDFIFOS(raw:%#x, sdfifos:%RU8 B)", uSDFIFOS, hdaSDFIFOSToBytes(uSDFIFOS));
 }
@@ -5242,6 +5245,7 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDFIFOW(PFNRTSTROUTPUT pfnOutput, void *pvA
                                              int cchWidth, int cchPrecision, unsigned fFlags,
                                              void *pvUser)
 {
+    RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
     uint32_t uSDFIFOW = (uint32_t)(uintptr_t)pvValue;
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SDFIFOW(raw: %#0x, sdfifow:%d B)", uSDFIFOW, hdaSDFIFOWToBytes(uSDFIFOW));
 }
@@ -5254,6 +5258,7 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDSTS(PFNRTSTROUTPUT pfnOutput, void *pvArg
                                            int cchWidth, int cchPrecision, unsigned fFlags,
                                            void *pvUser)
 {
+    RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
     uint32_t uSdSts = (uint32_t)(uintptr_t)pvValue;
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                        "SDSTS(raw:%#0x, fifordy:%RTbool, dese:%RTbool, fifoe:%RTbool, bcis:%RTbool)",
@@ -5264,7 +5269,7 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDSTS(PFNRTSTROUTPUT pfnOutput, void *pvArg
                        RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)));
 }
 
-static int hdaDbgLookupRegByName(PHDASTATE pThis, const char *pszArgs)
+static int hdaDbgLookupRegByName(const char *pszArgs)
 {
     int iReg = 0;
     for (; iReg < HDA_NUM_REGS; ++iReg)
@@ -5288,7 +5293,7 @@ static void hdaDbgPrintRegister(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaInd
 static DECLCALLBACK(void) hdaDbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    int iHdaRegisterIndex = hdaDbgLookupRegByName(pThis, pszArgs);
+    int iHdaRegisterIndex = hdaDbgLookupRegByName(pszArgs);
     if (iHdaRegisterIndex != -1)
         hdaDbgPrintRegister(pThis, pHlp, iHdaRegisterIndex);
     else
@@ -5329,7 +5334,7 @@ static void hdaDbgPrintBDLE(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iIdx)
     uint64_t u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, iIdx),
                                       HDA_STREAM_REG(pThis, BDPU, iIdx));
     uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, iIdx);
-    uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, iIdx);
+    /*uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, iIdx); - unused */
 
     if (!u64BaseDMA)
         return;
@@ -5371,6 +5376,7 @@ static void hdaDbgPrintBDLE(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iIdx)
 
 static int hdaDbgLookupStrmIdx(PHDASTATE pThis, const char *pszArgs)
 {
+    RT_NOREF(pThis, pszArgs);
     /** @todo Add args parsing. */
     return -1;
 }

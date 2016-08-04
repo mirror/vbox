@@ -2271,10 +2271,9 @@ static int vmmdevReqHandler_SetCpuHotPlugStatus(PVMMDEV pThis, VMMDevRequestHead
  * Handles VMMDevReq_LogString.
  *
  * @returns VBox status code that the guest should see.
- * @param   pThis           The VMMDev instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
-static int vmmdevReqHandler_LogString(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
+static int vmmdevReqHandler_LogString(VMMDevRequestHeader *pReqHdr)
 {
     VMMDevReqLogString *pReq = (VMMDevReqLogString *)pReqHdr;
     AssertMsgReturn(pReq->header.size >= sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
@@ -2718,7 +2717,7 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 
 #ifdef DEBUG
         case VMMDevReq_LogString:
-            pReqHdr->rc = vmmdevReqHandler_LogString(pThis, pReqHdr);
+            pReqHdr->rc = vmmdevReqHandler_LogString(pReqHdr);
             break;
 #endif
 

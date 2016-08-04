@@ -308,8 +308,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 
     STAM_PROFILE_START(&pData->StatTCP_input, counter_input);
 
-    LogFlow(("tcp_input: m = %8lx, iphlen = %2d, inso = %R[natsock]\n",
-             (long)m, iphlen, inso));
+    LogFlow(("tcp_input: m = %p, iphlen = %2d, inso = %R[natsock]\n", m, iphlen, inso));
 
     if (inso != NULL)
     {
@@ -1257,7 +1256,7 @@ close:
                 if (ti->ti_len == 0 && tiwin == tp->snd_wnd)
                 {
                     tcpstat.tcps_rcvdupack++;
-                    Log2((" dup ack  m = %lx, so = %lx\n", (long)m, (long)so));
+                    Log2((" dup ack  m = %p, so = %p\n", m, so));
                     /*
                      * If we have outstanding data (other than
                      * a window probe), this is a completely

@@ -2936,6 +2936,7 @@ static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecur
 
 static DECLCALLBACK(void) codecDbgListNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    RT_NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp, "HDA LINK / INPUTS\n");
 
     CODECDBGINFO dbgInfo;
@@ -2959,7 +2960,7 @@ static DECLCALLBACK(void) codecDbgListNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp,
 
 static DECLCALLBACK(void) codecDbgSelector(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-
+    RT_NOREF(pThis, pHlp, pszArgs);
 }
 #endif
 

@@ -126,8 +126,7 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
 {
     register int tlen;
 
-    LogFlowFunc(("ENTER: tp = %R[tcpcb793], ti = %lx, m = %lx, ack = %u, seq = %u, flags = %x\n",
-                 tp, (long)ti, (long)m, ack, seq, flags));
+    LogFlowFunc(("ENTER: tp = %R[tcpcb793], ti = %p, m = %p, ack = %u, seq = %u, flags = %x\n", tp, ti, m, ack, seq, flags));
 
     if (m == 0)
     {

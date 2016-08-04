@@ -435,7 +435,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
     /* int code; */
 
-    LogFlowFunc(("ENTER: m = %lx, m_len = %d\n", (long)m, m ? m->m_len : 0));
+    LogFlowFunc(("ENTER: m = %p, m_len = %d\n", m, m ? m->m_len : 0));
 
     icmpstat.icps_received++;
 

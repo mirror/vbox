@@ -957,9 +957,9 @@ const char * SCSISenseExtText(uint8_t uASC, uint8_t uASCQ)
 /**
  * Log the write parameters mode page into a given buffer.
  */
-static int scsiLogWriteParamsModePage(char *pszBuffer, size_t cchBuffer,
-                                      uint8_t *pbModePage, size_t cbModePage)
+static int scsiLogWriteParamsModePage(char *pszBuffer, size_t cchBuffer, uint8_t *pbModePage, size_t cbModePage)
 {
+    RT_NOREF(cbModePage);
     size_t cch = 0;
     const char *pcsz = NULL;
 
@@ -1119,16 +1119,15 @@ int SCSILogModePage(char *pszBuffer, size_t cchBuffer, uint8_t *pbModePage,
  * @param  pbCueSheet    The cue sheet buffer.
  * @param  cbCueSheet    Size of the cue sheet buffer in bytes.
  */
-int SCSILogCueSheet(char *pszBuffer, size_t cchBuffer, uint8_t *pbCueSheet,
-                    size_t cbCueSheet)
+int SCSILogCueSheet(char *pszBuffer, size_t cchBuffer, uint8_t *pbCueSheet, size_t cbCueSheet)
 {
     int rc = VINF_SUCCESS;
     size_t cch = 0;
-    unsigned cCueSheetEntries = cbCueSheet / 8;
+    size_t cCueSheetEntries = cbCueSheet / 8;
 
     AssertReturn(cbCueSheet % 8 == 0, VERR_INVALID_PARAMETER);
 
-    for (unsigned i = 0; i < cCueSheetEntries; i++)
+    for (size_t i = 0; i < cCueSheetEntries; i++)
     {
         cch = RTStrPrintf(pszBuffer, cchBuffer,
                           "CTL/ADR=%#x TNO=%#x INDEX=%#x DATA=%#x SCMS=%#x TIME=%u:%u:%u\n",
