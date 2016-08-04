@@ -49,11 +49,11 @@ public:
 
 private slots:
 
-    /** Updates host-screen configuration according to new @a cHostScreenCount. */
-    void sltUpdateHostScreenConfiguration(int cHostScreenCount);
+    /** Handles host-screen count change to @a cHostScreenCount. */
+    void sltHandleHostScreenCountChanged(int cHostScreenCount);
 
-    /** Recalculates available-geometry for the host-screen with @a iHostScreenIndex. */
-    void sltRecalculateHostScreenAvailableGeometry(int iHostScreenIndex);
+    /** Handles resize for the host-screen with @a iHostScreenIndex. */
+    void sltHandleHostScreenResized(int iHostScreenIndex);
 
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry);
@@ -66,11 +66,11 @@ private:
     void cleanup();
 
     /** Updates host-screen configuration according to new @a cHostScreenCount.
-      * @note cHostScreenCount can be equal to -1 which means we have to acquire it ourselves. */
+      * @note If cHostScreenCount is equal to -1 we have to acquire it ourselves. */
     void updateHostScreenConfiguration(int cHostScreenCount = -1);
 
-    /** Recalculates available-geometry for the host-screen with @a iHostScreenIndex. */
-    void recalculateHostScreenAvailableGeometry(int iHostScreenIndex);
+    /** Update available-geometry for the host-screen with @a iHostScreenIndex. */
+    void updateHostScreenAvailableGeometry(int iHostScreenIndex);
 
     /** Cleanups existing workers. */
     void cleanupExistingWorkers();
