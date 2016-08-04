@@ -253,7 +253,7 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
     int rc = VINF_SUCCESS;
     char *pszTftpRRQRaw;
     size_t idxTftpRRQRaw = 0;
-    int cbTftpRRQRaw = 0;
+    ssize_t cbTftpRRQRaw = 0;
     int fWithArg = 0;
     int idxOptionArg = 0;
     AssertPtrReturn(pTftpSession, VERR_INVALID_PARAMETER);
@@ -262,7 +262,7 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
     LogFlowFunc(("pTftpSession:%p, pcTftpIpHeader:%p\n", pTftpSession, pcTftpIpHeader));
     pszTftpRRQRaw = (char *)&pcTftpIpHeader->Core;
     cbTftpRRQRaw = RT_H2N_U16(pcTftpIpHeader->UdpHdr.uh_ulen) + sizeof(struct ip) - RT_OFFSETOF(TFTPIPHDR, Core);
-    while(cbTftpRRQRaw)
+    while (cbTftpRRQRaw)
     {
         idxTftpRRQRaw = RTStrNLen(pszTftpRRQRaw, 512 - idxTftpRRQRaw) + 1;
         if (RTStrNLen((char *)pTftpSession->pszFilename, TFTP_FILENAME_MAX) == 0)
@@ -326,7 +326,7 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
             }
         }
         pszTftpRRQRaw += idxTftpRRQRaw;
-        cbTftpRRQRaw -= idxTftpRRQRaw;
+        cbTftpRRQRaw  -= idxTftpRRQRaw;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -537,7 +537,7 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
 DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const char *pszOptName, uint64_t u64OptValue)
 {
     char aszOptionBuffer[256];
-    size_t iOptLength = 0;
+    size_t iOptLength;
     int rc = VINF_SUCCESS;
     int cbMBufCurrent = pMBuf->m_len;
     LogFlowFunc(("pMBuf:%p, pszOptName:%s, u16OptValue:%ld\n", pMBuf, pszOptName, u64OptValue));
@@ -545,14 +545,14 @@ DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const c
     AssertPtrReturn(pszOptName, VERR_INVALID_PARAMETER);
 
     RT_ZERO(aszOptionBuffer);
-    iOptLength += RTStrPrintf(aszOptionBuffer, 256 , "%s", pszOptName) + 1;
+    iOptLength  = RTStrPrintf(aszOptionBuffer, 256 , "%s", pszOptName) + 1;
     iOptLength += RTStrPrintf(aszOptionBuffer + iOptLength, 256 - iOptLength , "%llu", u64OptValue) + 1;
     if (iOptLength > M_TRAILINGSPACE(pMBuf))
         rc = VERR_BUFFER_OVERFLOW; /* buffer too small */
     else
     {
-        pMBuf->m_len += iOptLength;
-        m_copyback(pData, pMBuf, cbMBufCurrent, iOptLength, aszOptionBuffer);
+        pMBuf->m_len += (int)iOptLength;
+        m_copyback(pData, pMBuf, cbMBufCurrent, (int)iOptLength, aszOptionBuffer);
     }
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -608,6 +608,7 @@ DECLINLINE(int) tftpSendError(PNATState pData,
 {
     struct mbuf *m = NULL;
     PTFTPIPHDR pTftpIpHeader = NULL;
+    u_int cbMsg = (u_int)strlen(msg) + 1; /* ending zero */
 
     LogFlowFunc(("ENTER: errorcode: %RX16, msg: %s\n", errorcode, msg));
     m = slirpTftpMbufAlloc(pData);
@@ -618,15 +619,14 @@ DECLINLINE(int) tftpSendError(PNATState pData,
     }
 
     m->m_data += if_maxlinkhdr;
-    m->m_len = sizeof(TFTPIPHDR)
-             + strlen(msg) + 1; /* ending zero */
+    m->m_len = sizeof(TFTPIPHDR) + cbMsg;
     m->m_pkthdr.header = mtod(m, void *);
     pTftpIpHeader = mtod(m, PTFTPIPHDR);
 
     pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_ERROR);
     pTftpIpHeader->Core.u16TftpOpCode = RT_H2N_U16(errorcode);
 
-    m_copyback(pData, m, sizeof(TFTPIPHDR), strlen(msg) + 1 /* copy ending zerro*/, (c_caddr_t)msg);
+    m_copyback(pData, m, sizeof(TFTPIPHDR), cbMsg, (c_caddr_t)msg);
 
     tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
 

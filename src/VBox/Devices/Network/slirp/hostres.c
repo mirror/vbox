@@ -174,7 +174,7 @@ struct mbuf *
 hostresolver(PNATState pData, struct mbuf *m, uint32_t src, uint16_t sport)
 {
     struct response *res;
-    size_t mlen;
+    u_int mlen;
     int rc;
 
     rc = verify_header(pData, &m);
@@ -379,7 +379,7 @@ hostres_slirp_reply(struct response *res)
     m->m_data += sizeof(struct ip) + sizeof(struct udphdr);
 
     m->m_len = 0;
-    ok = m_append(pData, m, res->end, (c_caddr_t)res->buf);
+    ok = m_append(pData, m, (int)res->end, (c_caddr_t)res->buf);
     if (!ok)
     {
         m_freem(pData, m);
@@ -535,7 +535,7 @@ respond(struct response *res)
      */
     if (off < res->qlen)
     {
-        int trailer = res->qlen - off;
+        ssize_t trailer = res->qlen - off;
 
         LogDbg(("NAT: hostres: question %zu < mlen %zu\n", off, res->qlen));
 
@@ -750,7 +750,7 @@ resolve(struct response *res, uint16_t qtype, size_t qname)
 #endif
 
   out:
-    pHdr->ancount = RT_H2N_U16(nanswers);
+    pHdr->ancount = RT_H2N_U16((uint16_t)nanswers);
     return VINF_SUCCESS;
 }
 
@@ -767,7 +767,6 @@ resolve_reverse(struct response *res, uint16_t qtype, size_t qname,
     size_t oend;
     size_t nanswers;
     ssize_t nbytes;
-    int i;
 
     pHdr = (struct dnsmsg_header *)res->buf;
     nanswers = 0;
@@ -790,7 +789,7 @@ resolve_reverse(struct response *res, uint16_t qtype, size_t qname,
      * we reply with the answer from the map, the answer will be lost.
      */
     {
-        PDNSMAPPINGENTRY pReverseMapping = getDNSMapByAddr(res->pData, &in_addr_arpa.s_addr);
+        PDNSMAPPINGENTRY pReverseMapping = getDNSMapByAddr(res->pData, (const uint32_t *)&in_addr_arpa.s_addr);
         if (pReverseMapping != NULL)
         {
             LogDbg(("NAT: hostres: %RTnaipv4 resolved from mapping\n",
@@ -812,7 +811,11 @@ resolve_reverse(struct response *res, uint16_t qtype, size_t qname,
 
     if (h == NULL)
     {
+#ifdef RT_OS_WINDOWS
+        h = gethostbyaddr((const char *)&in_addr_arpa, sizeof(struct in_addr), AF_INET);
+#else
         h = gethostbyaddr(&in_addr_arpa, sizeof(struct in_addr), AF_INET);
+#endif
     }
 
     if (h == NULL)
@@ -847,7 +850,7 @@ resolve_reverse(struct response *res, uint16_t qtype, size_t qname,
     }
 
   out:
-    pHdr->ancount = RT_H2N_U16(nanswers);
+    pHdr->ancount = RT_H2N_U16((uint16_t)nanswers);
     return VINF_SUCCESS;
 }
 
@@ -1188,6 +1191,7 @@ get_in_addr_arpa(struct in_addr *paddr, struct label *root)
     RTNETADDRIPV4 addr;
     struct label *l;
     int i;
+    RT_ZERO(addr); /* makes MSC happy*/
 
     l = root;
     if (l == NULL || labelstrcmp(l, "arpa") != 0)

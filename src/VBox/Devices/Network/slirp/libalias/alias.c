@@ -161,7 +161,7 @@ twowords(void *p)
 {
     uint8_t *c = p;
 
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef RT_LITTLE_ENDIAN //BYTE_ORDER == LITTLE_ENDIAN
     uint16_t s1 = ((uint16_t)c[1] << 8) + (uint16_t)c[0];
     uint16_t s2 = ((uint16_t)c[3] << 8) + (uint16_t)c[2];
 #else
@@ -976,7 +976,7 @@ TcpAliasOut(struct libalias *la, struct ip *pip, int maxpacketsize, int create)
 {
     int proxy_type, error;
     u_short dest_port;
-    u_short proxy_server_port;
+    u_short proxy_server_port = 0; /* Shut up MSC. */
     struct in_addr dest_address;
     struct in_addr proxy_server_address;
     struct tcphdr *tc;

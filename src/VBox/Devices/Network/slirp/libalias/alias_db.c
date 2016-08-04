@@ -2277,7 +2277,7 @@ InitPacketAliasLog(struct libalias *la)
             return (ENOMEM); /* log initialization failed */
 #else
         Log2(("NAT: PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n"));
-        la->logDesc = (void *)1; /* XXX: in vbox we don't use this param */
+        la->logDesc = (void *)(uintptr_t)1; /* XXX: in vbox we don't use this param */
 #endif
         la->packetAliasMode |= PKT_ALIAS_LOG;
     }
