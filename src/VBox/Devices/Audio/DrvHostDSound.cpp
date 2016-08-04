@@ -252,7 +252,7 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
             break;
 
         default:
-            AssertMsgFailed(("Wave format %ld not supported\n", pCfg->enmFormat));
+            AssertMsgFailed(("Wave format %d not supported\n", pCfg->enmFormat));
             return VERR_NOT_SUPPORTED;
     }
 
@@ -304,12 +304,12 @@ static int dsoundGetPosOut(PDRVHOSTDSOUND   pThis,
     return rc;
 }
 
-static char *dsoundGUIDToUtf8StrA(LPCGUID lpGUID)
+static char *dsoundGUIDToUtf8StrA(LPCGUID pGUID)
 {
-    if (lpGUID)
+    if (pGUID)
     {
         LPOLESTR lpOLEStr;
-        HRESULT hr = StringFromCLSID(*lpGUID, &lpOLEStr);
+        HRESULT hr = StringFromCLSID(*pGUID, &lpOLEStr);
         if (SUCCEEDED(hr))
         {
             char *pszGUID;
@@ -548,7 +548,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
     AssertPtrReturn(pThis, E_POINTER);
     AssertPtrReturn(pDSoundStream, E_POINTER);
 
-    DSLOG(("DSound: pDSoundStream=%p, cbBufferOut=%ld, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
+    DSLOG(("DSound: pDSoundStream=%p, cbBufferOut=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
            pDSoundStream,
            pThis->cfg.cbBufferOut,
            pDSoundStream->Stream.Props.uHz,
@@ -1015,7 +1015,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
     AssertPtrReturn(pThis, E_POINTER);
     AssertPtrReturn(pDSoundStream, E_POINTER);
 
-    DSLOG(("DSound: pDSoundStream=%p, cbBufferIn=%ld, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
+    DSLOG(("DSound: pDSoundStream=%p, cbBufferIn=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
            pDSoundStream,
            pThis->cfg.cbBufferIn,
            pDSoundStream->Stream.Props.uHz,
@@ -1212,19 +1212,19 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDS
     return hr;
 }
 
-static int dsoundDevAdd(PRTLISTANCHOR pList, LPGUID lpGUID, LPCWSTR lpwstrDescription, PDSOUNDDEV *ppDev)
+static int dsoundDevAdd(PRTLISTANCHOR pList, LPGUID pGUID, LPCWSTR pwszDescription, PDSOUNDDEV *ppDev)
 {
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrReturn(lpGUID, VERR_INVALID_POINTER);
-    AssertPtrReturn(lpwstrDescription, VERR_INVALID_POINTER);
+    AssertPtrReturn(pGUID, VERR_INVALID_POINTER);
+    AssertPtrReturn(pwszDescription, VERR_INVALID_POINTER);
 
     PDSOUNDDEV pDev = (PDSOUNDDEV)RTMemAlloc(sizeof(DSOUNDDEV));
     if (!pDev)
         return VERR_NO_MEMORY;
 
-    int rc = RTUtf16ToUtf8(lpwstrDescription, &pDev->pszName);
+    int rc = RTUtf16ToUtf8(pwszDescription, &pDev->pszName);
     if (RT_SUCCESS(rc))
-        memcpy(&pDev->Guid, lpGUID, sizeof(GUID));
+        memcpy(&pDev->Guid, pGUID, sizeof(GUID));
 
     if (RT_SUCCESS(rc))
         RTListAppend(pList, &pDev->Node);
@@ -1248,32 +1248,31 @@ static void dsoundDeviceRemove(PDSOUNDDEV pDev)
     }
 }
 
-static void dsoundLogDevice(const char *pszType, LPGUID lpGUID, LPCWSTR lpwstrDescription, LPCWSTR lpwstrModule)
+static void dsoundLogDevice(const char *pszType, LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule)
 {
-    char *pszGUID = dsoundGUIDToUtf8StrA(lpGUID);
+    char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
     /* This always has to be in the release log. */
-    LogRel(("DSound: %s: GUID: %s [%ls] (Module: %ls)\n",
-            pszType, pszGUID? pszGUID: "{?}", lpwstrDescription, lpwstrModule));
+    LogRel(("DSound: %s: GUID: %s [%ls] (Module: %ls)\n", pszType, pszGUID ? pszGUID : "{?}", pwszDescription, pwszModule));
     RTStrFree(pszGUID);
 }
 
-static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDescription, LPCWSTR lpwstrModule, PVOID lpContext)
+static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pCtx, FALSE);
     AssertPtrReturn(pCtx->pDrv, FALSE);
 
-    if (!lpGUID)
+    if (!pGUID)
         return TRUE;
 
-    AssertPtrReturn(lpwstrDescription, FALSE);
-    /* Do not care about lpwstrModule. */
+    AssertPtrReturn(pwszDescription, FALSE);
+    /* Do not care about pwszModule. */
 
     if (pCtx->fFlags & DSOUNDENUMCBFLAGS_LOG)
-        dsoundLogDevice("Output", lpGUID, lpwstrDescription, lpwstrModule);
+        dsoundLogDevice("Output", pGUID, pwszDescription, pwszModule);
 
     int rc = dsoundDevAdd(&pCtx->pDrv->lstDevOutput,
-                          lpGUID, lpwstrDescription, NULL /* ppDev */);
+                          pGUID, pwszDescription, NULL /* ppDev */);
     if (RT_FAILURE(rc))
         return FALSE; /* Abort enumeration. */
 
@@ -1282,20 +1281,20 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID lpGUID, LPCWSTR lpwstrDe
     return TRUE;
 }
 
-static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID lpGUID, LPCWSTR lpwstrDescription, LPCWSTR lpwstrModule, PVOID lpContext)
+static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
     AssertPtrReturn(pCtx, FALSE);
     AssertPtrReturn(pCtx->pDrv, FALSE);
 
-    if (!lpGUID)
+    if (!pGUID)
         return TRUE;
 
     if (pCtx->fFlags & DSOUNDENUMCBFLAGS_LOG)
-        dsoundLogDevice("Input", lpGUID, lpwstrDescription, lpwstrModule);
+        dsoundLogDevice("Input", pGUID, pwszDescription, pwszModule);
 
     int rc = dsoundDevAdd(&pCtx->pDrv->lstDevInput,
-                          lpGUID, lpwstrDescription, NULL /* ppDev */);
+                          pGUID, pwszDescription, NULL /* ppDev */);
     if (RT_FAILURE(rc))
         return FALSE; /* Abort enumeration. */
 
