@@ -2631,6 +2631,7 @@ static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
         default:
             AssertMsgFailed(("Unsupported bits per sample %x\n",
                              EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT)));
+            enmFmt = PDMAUDIOFMT_INVALID;
             rc = VERR_NOT_SUPPORTED;
             break;
     }
@@ -2982,10 +2983,11 @@ static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
  */
 DECLINLINE(int) hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t iReg, uint32_t u32Value)
 {
+    RT_NOREF(pThis, iReg, u32Value);
     AssertPtr(pThis);   /* don't bother returning errors */
     AssertPtr(pStream);
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     /* Check if the SD's RUN bit is set. */
     uint32_t u32SDCTL = HDA_STREAM_REG(pThis, CTL, pStream->u8SD);
     bool fIsRunning   = RT_BOOL(u32SDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
@@ -2993,12 +2995,12 @@ DECLINLINE(int) hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t 
     {
         LogFunc(("[SD%RU8]: Warning: Cannot write to register 0x%x (0x%x) when RUN bit is set (%R[sdctl])\n",
                  pStream->u8SD, iReg, u32Value, u32SDCTL));
-# ifdef DEBUG_andy
+#  ifdef DEBUG_andy
         AssertFailed();
-# endif
+#  endif
         return VERR_ACCESS_DENIED;
     }
-#endif
+# endif
 
     /** @todo r=bird: Why on EARTH are we using mutexes?  USE CRITICAL SECTIONS!! */
     return RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
@@ -3490,7 +3492,9 @@ static bool hdaStreamTransferIsComplete(PHDASTATE pThis, PHDASTREAM pStream, boo
     bool fIsComplete = false;
 
     PHDABDLE       pBDLE   = &pStream->State.BDLE;
+#ifdef LOG_ENABLED
     const uint32_t u32LPIB = HDA_STREAM_REG(pThis, LPIB, pStream->u8SD);
+#endif
 
     /* Check if the current BDLE entry is complete (full). */
     if (pBDLE->State.u32BufOff >= pBDLE->u32BufSize)
@@ -3655,7 +3659,9 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
          */
         if (cbBuf >= hdaStreamGetFIFOW(pThis, pStream))
         {
+#if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
             PHDASTREAMMAPPING pMapping            = &pStream->State.Mapping;
+#endif
 
             /** @todo Which channel is which? */
 #ifdef VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
@@ -3700,7 +3706,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
             /*
              * Write data to according mixer sinks.
              */
-            rc2 = AudioMixerSinkWrite(pThis->SinkFront.pMixSink, AUDMIXOP_COPY, pvDataFront,     cbDataFront,
+            rc2 = AudioMixerSinkWrite(pThis->SinkFront.pMixSink, AUDMIXOP_COPY, pvDataFront,     (uint32_t)cbDataFront,
                                       NULL /* pcbWritten */);
             AssertRC(rc2);
 #ifdef VBOX_WITH_HDA_51_SURROUND
@@ -4160,14 +4166,14 @@ static void hdaTimerMaybeStop(PHDASTATE pThis)
 
 static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns);
     PHDASTATE pThis = (PHDASTATE)pvUser;
     Assert(pThis == PDMINS_2_DATA(pDevIns, PHDASTATE));
     AssertPtr(pThis);
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
-    uint64_t cTicksNow     = TMTimerGet(pTimer);
-    uint64_t cTicksElapsed = cTicksNow - pThis->uTimerTS;
+    uint64_t cTicksNow = TMTimerGet(pTimer);
 
     LogFlowFuncEnter();
 
@@ -4372,9 +4378,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
 
     /* State sanity checks. */
     Assert(pStream->State.fInReset == false);
-
-    uint32_t u32LPIB = HDA_STREAM_REG(pThis, LPIB, pStream->u8SD);
-    Assert(u32LPIB <= pStream->u32CBL);
+    Assert(HDA_STREAM_REG(pThis, LPIB, pStream->u8SD) <= pStream->u32CBL);
 
     bool fInterrupt = false;
 
@@ -4756,13 +4760,12 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb,
-                                           PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int)
+hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
+    RT_NOREF(iRegion, enmType);
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PHDASTATE   pThis = RT_FROM_MEMBER(pPciDev, HDASTATE, PciDev);
-    RTIOPORT    Port = (RTIOPORT)GCPhysAddress;
-    int         rc;
 
     /*
      * 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word.
@@ -4771,11 +4774,9 @@ static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGC
      * writing though, we have to do it all ourselves because of sideeffects.
      */
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
-    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                 IOMMMIO_FLAGS_READ_DWORD
-                               | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                               hdaMMIOWrite, hdaMMIORead, "HDA");
-
+    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   hdaMMIOWrite, hdaMMIORead, "HDA");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4804,8 +4805,10 @@ static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGC
 
 static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
 {
+    RT_NOREF(pDevIns);
+#ifdef DEBUG
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-
+#endif
     LogFlowFunc(("[SD%RU8]\n", pStrm->u8SD));
 
     /* Save stream ID. */
@@ -4878,14 +4881,13 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, HDA_MAX_STREAMS);
 
     /* Save stream states. */
-    int rc;
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
-        rc = hdaSaveStream(pDevIns, pSSM, &pThis->aStreams[i]);
+        int rc = hdaSaveStream(pDevIns, pSSM, &pThis->aStreams[i]);
         AssertRCReturn(rc, rc);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -5619,6 +5621,7 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
  */
 static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
     /*
@@ -5697,6 +5700,7 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
 
 static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
+    RT_NOREF(pDevIns, uLUN, fFlags);
     LogFunc(("iLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 }
 
@@ -5791,9 +5795,10 @@ static int hdaReattach(PHDASTATE pThis, PHDADRIVER pDrv, uint8_t uLUN, const cha
  */
 static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
     Assert(iInstance == 0);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validations.
