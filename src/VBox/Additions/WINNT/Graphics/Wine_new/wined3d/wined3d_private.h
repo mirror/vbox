@@ -53,10 +53,10 @@
 #include "wingdi.h"
 #include "winuser.h"
 #else
-#include <windows.h>
-#ifndef DUMMYUNIONNAME1
-# define DUMMYUNIONNAME1 u1
-#endif
+# include <iprt/win/windows.h>
+# ifndef DUMMYUNIONNAME1
+#  define DUMMYUNIONNAME1 u1
+# endif
 #endif
 #include "wine/debug.h"
 #include "wine/unicode.h"
@@ -71,7 +71,7 @@
 #include "wine/wgl_driver.h"
 
 #ifdef VBOX
-#include "vboxext.h"
+# include "vboxext.h"
 #endif
 
 #ifdef VBOX_WITH_WDDM
@@ -1381,7 +1381,7 @@ void context_state_fb(struct wined3d_context *context,
 void context_surface_update(struct wined3d_context *context, const struct wined3d_surface *surface) DECLSPEC_HIDDEN;
 
 #if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
-void context_clear_on_thread_detach();
+void context_clear_on_thread_detach(void);
 #endif
 #if defined(VBOX_WINE_WITH_SINGLE_CONTEXT)
 struct wined3d_context *context_find_create(struct wined3d_device *device,
