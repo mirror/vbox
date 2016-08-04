@@ -155,7 +155,7 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
     uint32_t cSamplesToRead = 0;
     AudioMixBufReadCirc(&pStream->MixBuf, pNullStream->pbPlayBuffer,
-                        AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesPlayed), &cSamplesToReadRead);
+                        AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesPlayed), &cSamplesToRead);
     AudioMixBufFinish(&pStream->MixBuf, cSamplesToRead);
 
     if (pcSamplesPlayed)
