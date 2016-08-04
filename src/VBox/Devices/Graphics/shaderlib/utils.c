@@ -18,7 +18,11 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
-#include <iprt/win/windows.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+#else
+# include <windows.h>
+#endif
 #include "wined3d_private.h"
 
 
