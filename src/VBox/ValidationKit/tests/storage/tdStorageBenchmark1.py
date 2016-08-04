@@ -261,12 +261,15 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asStorageCtrls    = self.asStorageCtrlsDef;
         self.asDiskFormatsDef  = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'QCOW', 'iSCSI'];
         self.asDiskFormats     = self.asDiskFormatsDef;
+        self.asDiskVariantsDef = ['Dynamic', 'Fixed', 'Split2G'];
+        self.asDiskVariants    = self.asDiskVariantsDef;
         self.asTestsDef        = ['iozone', 'fio'];
         self.asTests           = self.asTestsDef;
         self.asIscsiTargetsDef = [ ]; # @todo: Configure one target for basic iSCSI testing
         self.asIscsiTargets    = self.asIscsiTargetsDef;
         self.fTestHost         = False;
         self.fUseScratch       = False;
+        self.fRecreateStorCfg  = True;
         self.oStorCfg          = None;
 
     #
@@ -281,9 +284,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('  --cpu-counts    <c1[:c2[:]]');
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.acCpusDef)));
         reporter.log('  --storage-ctrls <type1[:type2[:...]]>');
-        reporter.log('      Default: %s' % (':'.join(self.asStorageCtrls)));
+        reporter.log('      Default: %s' % (':'.join(self.asStorageCtrlsDef)));
         reporter.log('  --disk-formats  <type1[:type2[:...]]>');
-        reporter.log('      Default: %s' % (':'.join(self.asDiskFormats)));
+        reporter.log('      Default: %s' % (':'.join(self.asDiskFormatsDef)));
+        reporter.log('  --disk-variants <variant1[:variant2[:...]]>');
+        reporter.log('      Default: %s' % (':'.join(self.asDiskVariantsDef)));
         reporter.log('  --iscsi-targets     <target1[:target2[:...]]>');
         reporter.log('      Default: %s' % (':'.join(self.asIscsiTargets)));
         reporter.log('  --tests         <test1[:test2[:...]]>');
@@ -300,6 +305,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('  --use-scratch');
         reporter.log('      Use the scratch directory for testing instead of setting up');
         reporter.log('      fresh volumes on dedicated disks (for development)');
+        reporter.log('  --always-wipe-storage-cfg');
+        reporter.log('      Recreate the host storage config before each test');
+        reporter.log('  --dont-wipe-storage-cfg');
+        reporter.log('      Don\' recreate the host storage config before each test');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -329,6 +338,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--disk-formats" takes a colon separated list of disk formats');
             self.asDiskFormats = asArgs[iArg].split(':');
+        elif asArgs[iArg] == '--disk-variants':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('The "--disk-variants" takes a colon separated list of disk variants');
+            self.asDiskVariants = asArgs[iArg].split(':');
         elif asArgs[iArg] == '--iscsi-targets':
             iArg += 1;
             if iArg >= len(asArgs):
@@ -357,6 +371,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             self.fTestHost = True;
         elif asArgs[iArg] == '--use-scratch':
             self.fUseScratch = True;
+        elif asArgs[iArg] == '--always-wipe-storage-cfg':
+            self.fRecreateStorCfg = True;
+        elif asArgs[iArg] == '--dont-wipe-storage-cfg':
+            self.fRecreateStorCfg = False;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -465,6 +483,47 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         _ = oSession;
         return lstDisks;
 
+    def getDiskFormatVariantsForTesting(self, sDiskFmt, asVariants):
+        """
+        Returns a list of disk variants for testing supported by the given
+        disk format and selected for testing.
+        """
+        lstDskFmts = self.oVBoxMgr.getArray(self.oVBox.systemProperties, 'mediumFormats');
+        for oDskFmt in lstDskFmts:
+            if oDskFmt.id == sDiskFmt:
+                lstDskVariants = [];
+                lstCaps = self.oVBoxMgr.getArray(oDskFmt, 'capabilities');
+                for eCap in lstCaps:
+                    if    eCap == vboxcon.MediumFormatCapabilities_CreateDynamic \
+                       and 'Dynamic' in asVariants:
+                        lstDskVariants.append('Dynamic');
+                    elif     eCap == vboxcon.MediumFormatCapabilities_CreateFixed \
+                         and 'Fixed' in asVariants:
+                        lstDskVariants.append('Fixed');
+                    elif    eCap == vboxcon.MediumFormatCapabilities_CreateSplit2G \
+                         and 'Split2G' in asVariants:
+                        lstDskVariants.append('Split2G');
+                    elif eCap == vboxcon.MediumFormatCapabilities_TcpNetworking:
+                        lstDskVariants.append('Network'); # Solely for iSCSI to get a non empty list
+
+                return lstDskVariants;
+
+        return [];
+
+    def convDiskToMediumVariant(self, sDiskVariant):
+        """
+        Returns a tuple of medium variant flags matching the given disk variant.
+        """
+        tMediumVariant = None;
+        if sDiskVariant == 'Dynamic':
+            tMediumVariant = (vboxcon.MediumVariant_Standard, );
+        elif sDiskVariant == 'Fixed':
+            tMediumVariant = (vboxcon.MediumVariant_Fixed, );
+        elif sDiskVariant == 'Split2G':
+            tMediumVariant = (vboxcon.MediumVariant_Fixed, vboxcon.MediumVariant_VmdkSplit2G);
+
+        return tMediumVariant;
+
     def testBenchmark(self, sTargetOs, sBenchmark, sMountpoint, oExecutor):
         """
         Runs the given benchmark on the test host.
@@ -508,7 +567,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         for sTest in self.asTests:
             self.testBenchmark(sTargetOs, sTest, sMountPoint, oExecutor);
 
-    def test1OneCfg(self, sVmName, eStorageController, sDiskFormat, sDiskPath, cCpus, fHwVirt, fNestedPaging):
+    def test1OneCfg(self, sVmName, eStorageController, sDiskFormat, sDiskVariant, \
+                    sDiskPath, cCpus, fHwVirt, fNestedPaging):
         """
         Runs the specified VM thru test #1.
 
@@ -562,9 +622,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     else:
                         reporter.log('attached "%s" to %s' % (sDiskPath, oSession.sName));
             else:
+                tMediumVariant = self.convDiskToMediumVariant(sDiskVariant);
                 fRc = fRc and oSession.createAndAttachHd(sDiskPath, sDiskFormat, _ControllerTypeToName(eStorageController), \
                                                          cb = 300*1024*1024*1024, iPort = 0, iDevice = iDevice, \
-                                                         fImmutable = False);
+                                                         fImmutable = False, tMediumVariant = tMediumVariant);
             fRc = fRc and oSession.enableVirtEx(fHwVirt);
             fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
             fRc = fRc and oSession.setCpuCount(cCpus);
@@ -626,7 +687,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return fRc;
 
-    def testBenchmarkOneVM(self, sVmName):
+    def testBenchmarkOneVM(self, sVmName, sMountPoint = None):
         """
         Runs one VM thru the various benchmark configurations.
         """
@@ -663,7 +724,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         asPaths = [ self.sScratchPath ];
                     else:
                         # Create a new default storage config on the host
-                        sMountPoint = self.prepareStorage(self.oStorCfg);
+                        if sMountPoint is None:
+                            sMountPoint = self.prepareStorage(self.oStorCfg);
                         if sMountPoint is not None:
                             # Create a directory where every normal user can write to.
                             self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0777);
@@ -673,43 +735,44 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                             fRc = False;
                             reporter.testFailure('Failed to prepare storage for VM');
 
-                for sPath in asPaths:
-                    reporter.testStart('%s' % (sPath));
+                asVariants = self.getDiskFormatVariantsForTesting(sDiskFormat, self.asDiskVariants);
+                for sVariant in asVariants:
+                    reporter.testStart('%s' % (sVariant));
+                    for sPath in asPaths:
+                        if sDiskFormat == "iSCSI":
+                            sPath = sPath;
+                        else:
+                            sPath = sPath + "/test.disk";
 
-                    if sDiskFormat == "iSCSI":
-                        sPath = sPath;
-                    else:
-                        sPath = sPath + "/test.disk";
+                        for cCpus in self.acCpus:
+                            if cCpus == 1:  reporter.testStart('1 cpu');
+                            else:           reporter.testStart('%u cpus' % (cCpus));
 
-                    for cCpus in self.acCpus:
-                        if cCpus == 1:  reporter.testStart('1 cpu');
-                        else:           reporter.testStart('%u cpus' % (cCpus));
+                            for sVirtMode in self.asVirtModes:
+                                if sVirtMode == 'raw' and (cCpus > 1 or sVmName == 'tst-storage'):
+                                    continue;
+                                hsVirtModeDesc = {};
+                                hsVirtModeDesc['raw']       = 'Raw-mode';
+                                hsVirtModeDesc['hwvirt']    = 'HwVirt';
+                                hsVirtModeDesc['hwvirt-np'] = 'NestedPaging';
+                                reporter.testStart(hsVirtModeDesc[sVirtMode]);
 
-                        for sVirtMode in self.asVirtModes:
-                            if sVirtMode == 'raw' and (cCpus > 1 or sVmName == 'tst-storage'):
-                                continue;
-                            hsVirtModeDesc = {};
-                            hsVirtModeDesc['raw']       = 'Raw-mode';
-                            hsVirtModeDesc['hwvirt']    = 'HwVirt';
-                            hsVirtModeDesc['hwvirt-np'] = 'NestedPaging';
-                            reporter.testStart(hsVirtModeDesc[sVirtMode]);
+                                fHwVirt       = sVirtMode != 'raw';
+                                fNestedPaging = sVirtMode == 'hwvirt-np';
+                                fRc = self.test1OneCfg(sVmName, eStorageCtrl, sDiskFormat, sVariant, sPath, \
+                                                       cCpus, fHwVirt, fNestedPaging)  and  fRc and True; # pychecker hack.
+                                reporter.testDone(); # Virt mode
 
-                            fHwVirt       = sVirtMode != 'raw';
-                            fNestedPaging = sVirtMode == 'hwvirt-np';
-                            fRc = self.test1OneCfg(sVmName, eStorageCtrl, sDiskFormat, sPath, \
-                                                   cCpus, fHwVirt, fNestedPaging)  and  fRc and True; # pychecker hack.
-                            reporter.testDone();
-
-                        reporter.testDone();
-                    reporter.testDone();
+                            reporter.testDone(); # CPU count
+                    reporter.testDone(); # Disk variant
 
                 # Cleanup storage area
-                if sDiskFormat != 'iSCSI' and not self.fUseScratch:
+                if sDiskFormat != 'iSCSI' and not self.fUseScratch and self.fRecreateStorCfg:
                     self.cleanupStorage(self.oStorCfg);
 
-                reporter.testDone();
-            reporter.testDone();
-        reporter.testDone();
+                reporter.testDone(); # Disk format
+            reporter.testDone(); # Controller
+        reporter.testDone(); # VM
         return fRc;
 
     def test1(self):
@@ -741,13 +804,22 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     fRc = False;
                 reporter.testDone();
             else:
-                # Loop thru the test VMs.
-                for sVM in self.asTestVMs:
-                    # run test on the VM.
-                    if not self.testBenchmarkOneVM(sVM):
+                # Create the storage space first if it is not done before every test.
+                sMountPoint = None;
+                if not self.fRecreateStorCfg:
+                    reporter.testStart('Create host storage');
+                    sMountPoint = self.prepareStorage(self.oStorCfg);
+                    if sMountPoint is None:
+                        reporter.testFailure('Failed to prepare host storage');
                         fRc = False;
-                    else:
-                        fRc = True;
+                    reporter.testDone();
+
+                if fRc:
+                    # Loop thru the test VMs.
+                    for sVM in self.asTestVMs:
+                        # run test on the VM.
+                        if not self.testBenchmarkOneVM(sVM, sMountPoint):
+                            fRc = False;
         else:
             fRc = False;
 
