@@ -329,7 +329,6 @@ static RTIOPORT drvHostParallelGetWinHostIoPortsSub(const DEVINST DevInst)
 
     /* Get handle of the first logical configuration. */
     LOG_CONF  hFirstLogConf;
-    short     wHeaderSize = sizeof(IO_DES);
     CONFIGRET rcCm = CM_Get_First_Log_Conf(&hFirstLogConf, DevInst, ALLOC_LOG_CONF);
     if (rcCm != CR_SUCCESS)
         rcCm = CM_Get_First_Log_Conf(&hFirstLogConf, DevInst, BOOT_LOG_CONF);
@@ -529,11 +528,10 @@ static int drvHostParallelGetWinHostIoPorts(PDRVHOSTPARALLEL pThis)
  */
 static int drvHostParallelSetMode(PDRVHOSTPARALLEL pThis, PDMPARALLELPORTMODE enmMode)
 {
-    int iMode = 0;
-    int rc = VINF_SUCCESS;
     LogFlowFunc(("mode=%d\n", enmMode));
-
 # ifndef VBOX_WITH_WIN_PARPORT_SUP
+    int rc = VINF_SUCCESS;
+    int iMode = 0;
     int rcLnx;
     if (pThis->enmModeCur != enmMode)
     {
@@ -563,6 +561,7 @@ static int drvHostParallelSetMode(PDRVHOSTPARALLEL pThis, PDMPARALLELPORTMODE en
 
     return rc;
 # else  /* VBOX_WITH_WIN_PARPORT_SUP */
+    RT_NOREF(pThis, enmMode);
     return VINF_SUCCESS;
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
 }
@@ -588,14 +587,11 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 /**
  * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnWrite}
  */
-static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t cbWrite,
-                                              PDMPARALLELPORTMODE enmMode)
+static DECLCALLBACK(int)
+drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t cbWrite, PDMPARALLELPORTMODE enmMode)
 {
-    PPDMDRVINS          pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    //PDRVHOSTPARALLEL    pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
+    PDRVHOSTPARALLEL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
     int rc = VINF_SUCCESS;
-    int rcLnx = 0;
 
     LogFlowFunc(("pvBuf=%#p cbWrite=%d\n", pvBuf, cbWrite));
 
@@ -603,6 +599,7 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
     if (RT_FAILURE(rc))
         return rc;
 # ifndef VBOX_WITH_WIN_PARPORT_SUP
+    int rcLnx = 0;
     if (enmMode == PDM_PARALLEL_PORT_MODE_SPP)
     {
         /* Set the data lines directly. */
@@ -637,10 +634,10 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
 /**
  * @interface_method_impl{PDMIHOSTPARALLELCONNECTOR,pfnRead}
  */
-static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t cbRead,
-                                             PDMPARALLELPORTMODE enmMode)
+static DECLCALLBACK(int)
+drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t cbRead, PDMPARALLELPORTMODE enmMode)
 {
-    PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
+    PDRVHOSTPARALLEL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
     int rc = VINF_SUCCESS;
 
 # ifndef VBOX_WITH_WIN_PARPORT_SUP
@@ -665,6 +662,7 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
         rc = RTErrConvertFromErrno(errno);
 
 # else  /* VBOX_WITH_WIN_PARPORT_SUP */
+    RT_NOREF(enmMode);
     if (pThis->PortDirectData != 0)
     {
         while (cbRead > 0)
@@ -869,11 +867,11 @@ static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, 
  */
 static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
 #ifndef VBOX_WITH_WIN_PARPORT_SUP
+    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     if (pThis->hFileDevice != NIL_RTFILE)
         ioctl(RTFileToNative(pThis->hFileDevice), PPRELEASE);
 
@@ -910,10 +908,11 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
-
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
+    PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+
 
     /*
      * Init basic data members and interfaces.
