@@ -136,6 +136,7 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
                                   const char *pszCaptureFilename, const char *pszFmt,
                                   const char *pszDesc)
 {
+    RT_NOREF(pszDesc);
     int rc = VINF_SUCCESS;
     PVUSBSNIFFERINT pThis = NULL;
     PCVUSBSNIFFERFMT pFmt = NULL;

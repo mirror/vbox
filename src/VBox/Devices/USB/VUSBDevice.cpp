@@ -110,7 +110,7 @@ static PVUSBINTERFACESTATE vusbDevFindIfState(PVUSBDEV pDev, int iIf)
     return NULL;
 }
 
-static PCVUSBDESCINTERFACEEX vusbDevFindAltIfDesc(PVUSBDEV pDev, PCVUSBINTERFACESTATE pIfState, int iAlt)
+static PCVUSBDESCINTERFACEEX vusbDevFindAltIfDesc(PCVUSBINTERFACESTATE pIfState, int iAlt)
 {
     for (uint32_t i = 0; i < pIfState->pIf->cSettings; i++)
         if (pIfState->pIf->paSettings[i].Core.bAlternateSetting == iAlt)
@@ -307,6 +307,7 @@ bool vusbDevDoSelectConfig(PVUSBDEV pDev, PCVUSBDESCCONFIGEX pCfgDesc)
  */
 static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt, pbBuf, pcbBuf);
     unsigned iCfg = pSetup->wValue & 0xff;
 
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_DEVICE)
@@ -359,6 +360,7 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
  */
 static bool vusbDevStdReqGetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt);
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_DEVICE)
     {
         Log(("vusb: error: %s: GET_CONFIGURATION - invalid request (dir) !!!\n", pDev->pUsbIns->pszName));
@@ -401,6 +403,7 @@ static bool vusbDevStdReqGetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
  */
 static bool vusbDevStdReqGetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt);
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_INTERFACE)
     {
         Log(("vusb: error: %s: GET_INTERFACE - invalid request (dir) !!!\n", pDev->pUsbIns->pszName));
@@ -447,6 +450,7 @@ static bool vusbDevStdReqGetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
  */
 static bool vusbDevStdReqSetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt, pbBuf, pcbBuf);
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_INTERFACE)
     {
         Log(("vusb: error: %s: SET_INTERFACE - invalid request (dir) !!!\n", pDev->pUsbIns->pszName));
@@ -475,7 +479,7 @@ static bool vusbDevStdReqSetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
         return false;
     }
     uint8_t iAlt = pSetup->wValue;
-    PCVUSBDESCINTERFACEEX pIfDesc = vusbDevFindAltIfDesc(pDev, pIfState, iAlt);
+    PCVUSBDESCINTERFACEEX pIfDesc = vusbDevFindAltIfDesc(pIfState, iAlt);
     if (!pIfDesc)
     {
         LogFlow(("vusbDevStdReqSetInterface: error: %s: couldn't find alt interface %u.%u !!!\n", pDev->pUsbIns->pszName, iIf, iAlt));
@@ -509,6 +513,7 @@ static bool vusbDevStdReqSetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
  */
 static bool vusbDevStdReqSetAddress(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt, pbBuf, pcbBuf);
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) != VUSB_TO_DEVICE)
     {
         Log(("vusb: error: %s: SET_ADDRESS - invalid request (dir) !!!\n", pDev->pUsbIns->pszName));
@@ -540,6 +545,7 @@ static bool vusbDevStdReqSetAddress(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup,
  */
 static bool vusbDevStdReqClearFeature(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(pbBuf, pcbBuf);
     switch (pSetup->bmRequestType & VUSB_RECIP_MASK)
     {
         case VUSB_TO_DEVICE:
@@ -574,6 +580,7 @@ static bool vusbDevStdReqClearFeature(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
  */
 static bool vusbDevStdReqSetFeature(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(pDev, EndPt, pbBuf, pcbBuf);
     switch (pSetup->bmRequestType & VUSB_RECIP_MASK)
     {
         case VUSB_TO_DEVICE:
@@ -598,6 +605,7 @@ static bool vusbDevStdReqSetFeature(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup,
 
 static bool vusbDevStdReqGetStatus(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt);
     if (*pcbBuf != 2)
     {
         LogFlow(("vusbDevStdReqGetStatus: %s: buffer is too small! (%d)\n", pDev->pUsbIns->pszName, *pcbBuf));
@@ -831,6 +839,7 @@ static void ReadCachedDeviceDesc(PCVUSBDESCDEVICE pDevDesc, uint8_t *pbBuf, uint
  */
 static bool vusbDevStdReqGetDescriptor(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, uint8_t *pbBuf, uint32_t *pcbBuf)
 {
+    RT_NOREF(EndPt);
     if ((pSetup->bmRequestType & VUSB_RECIP_MASK) == VUSB_TO_DEVICE)
     {
         switch (pSetup->wValue >> 8)
@@ -1167,7 +1176,7 @@ static DECLCALLBACK(int) vusbDevUrbIoThread(RTTHREAD hThread, void *pvUser)
 
         /* Process any URBs waiting to be cancelled first. */
         int rc = RTReqQueueProcess(pDev->hReqQueueSync, 0); /* Don't wait if there is nothing to do. */
-        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
+        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT); NOREF(rc);
     }
 
     return VINF_SUCCESS;
@@ -1356,6 +1365,7 @@ static void vusbDevResetDone(PVUSBDEV pDev, int rc, PFNVUSBRESETDONE pfnDone, vo
  */
 static DECLCALLBACK(void) vusbDevResetDoneTimer(PPDMUSBINS pUsbIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pUsbIns, pTimer);
     PVUSBDEV        pDev  = (PVUSBDEV)pvUser;
     PVUSBRESETARGS  pArgs = (PVUSBRESETARGS)pDev->pvArgs;
     Assert(pDev->pUsbIns == pUsbIns);
@@ -1431,8 +1441,10 @@ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer,
  *                          on the EMT thread.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vusbIDeviceReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
+static DECLCALLBACK(int) vusbIDeviceReset(PVUSBIDEVICE pDevice, bool fResetOnLinux,
+                                          PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
 {
+    RT_NOREF(pVM);
     PVUSBDEV pDev = (PVUSBDEV)pDevice;
     Assert(!pfnDone || pVM);
     LogFlow(("vusb: reset: [%s]/%i\n", pDev->pUsbIns->pszName, pDev->i16Port));
@@ -1655,7 +1667,7 @@ DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFu
             && (fFlags & VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC))
         {
             int rc2 = RTReqQueueProcess(pDev->hReqQueueSync, 0);
-            Assert(RT_SUCCESS(rc2) || rc2 == VERR_TIMEOUT);
+            Assert(RT_SUCCESS(rc2) || rc2 == VERR_TIMEOUT); NOREF(rc2);
         }
         else
             vusbDevUrbIoThreadWakeup(pDev);

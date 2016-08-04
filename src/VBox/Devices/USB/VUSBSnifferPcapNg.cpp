@@ -428,19 +428,18 @@ static int vusbSnifferBlockNew(PVUSBSNIFFERFMTINT pThis, PDumpFileBlockHdr pBloc
  * @param   pvOption        Raw data for the option.
  * @param   cbOption        Size of the optiob data.
  */
-static int vusbSnifferAddOption(PVUSBSNIFFERFMTINT pThis, uint16_t u16OptionCode, const void *pvOption, uint16_t cbOption)
+static int vusbSnifferAddOption(PVUSBSNIFFERFMTINT pThis, uint16_t u16OptionCode, const void *pvOption, size_t cbOption)
 {
-    int rc = VINF_SUCCESS;
+    AssertStmt((uint16_t)cbOption == cbOption, cbOption = UINT16_MAX);
     DumpFileOptionHdr OptHdr;
-
     OptHdr.u16OptionCode   = u16OptionCode;
-    OptHdr.u16OptionLength = cbOption;
-    rc = vusbSnifferBlockAddData(pThis, &OptHdr, sizeof(OptHdr));
+    OptHdr.u16OptionLength = (uint16_t)cbOption;
+    int rc = vusbSnifferBlockAddData(pThis, &OptHdr, sizeof(OptHdr));
     if (   RT_SUCCESS(rc)
         && u16OptionCode != DUMPFILE_OPTION_CODE_END
         && cbOption != 0)
     {
-        rc = vusbSnifferBlockAddData(pThis, pvOption, cbOption);
+        rc = vusbSnifferBlockAddData(pThis, pvOption, (uint16_t)cbOption);
         if (RT_SUCCESS(rc))
             rc = vusbSnifferBlockAlign(pThis);
     }
@@ -560,20 +559,14 @@ static DECLCALLBACK(void) vusbSnifferFmtPcanNgDestroy(PVUSBSNIFFERFMTINT pThis)
 /** @interface_method_impl{VUSBSNIFFERFMT,pfnRecordEvent} */
 static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThis, PVUSBURB pUrb, VUSBSNIFFEREVENT enmEvent)
 {
-    int rc = VINF_SUCCESS;
     DumpFileEpb Epb;
     DumpFileUsbHeaderLnxMmapped UsbHdr;
-    DumpFileUsbSetup UsbSetup;
-    RTTIMESPEC TimeNow;
-    uint64_t u64TimestampEvent;
-    size_t cbUrbLength = 0;
-    uint32_t cbDataLength = 0;
     uint32_t cbCapturedLength = sizeof(UsbHdr);
-    uint32_t cIsocPkts = 0;
     uint8_t *pbData = NULL;
 
+    RTTIMESPEC TimeNow;
     RTTimeNow(&TimeNow);
-    u64TimestampEvent = RTTimeSpecGetNano(&TimeNow);
+    uint64_t u64TimestampEvent = RTTimeSpecGetNano(&TimeNow);
 
     /* Start with the enhanced packet block. */
     Epb.Hdr.u32BlockType        = DUMPFILE_EPB_BLOCK_TYPE;
@@ -583,6 +576,7 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThi
     Epb.u32TimestampLow         = u64TimestampEvent & UINT32_C(0xffffffff);
 
     UsbHdr.u64Id = (uint64_t)pUrb; /** @todo: check whether the pointer is a good ID. */
+    uint32_t cbUrbLength;
     switch (enmEvent)
     {
         case VUSBSNIFFEREVENT_SUBMIT:
@@ -596,41 +590,44 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThi
         case VUSBSNIFFEREVENT_ERROR_SUBMIT:
         case VUSBSNIFFEREVENT_ERROR_COMPLETE:
             UsbHdr.u8EventType = DUMPFILE_USB_EVENT_TYPE_ERROR;
+            cbUrbLength = 0;
             break;
         default:
             AssertMsgFailed(("Invalid event type %d\n", enmEvent));
+            cbUrbLength = 0;
     }
-    cbDataLength = cbUrbLength;
+    uint32_t cbDataLength = cbUrbLength;
     pbData = &pUrb->abData[0];
 
+    uint32_t cIsocPkts = 0;
     switch (pUrb->enmType)
     {
         case VUSBXFERTYPE_ISOC:
         {
-            int32_t i32ErrorCount = 0;
+            int32_t cErrors = 0;
 
             UsbHdr.u8TransferType = 0;
             cIsocPkts = pUrb->cIsocPkts;
             for (unsigned i = 0; i < cIsocPkts; i++)
                 if (   pUrb->aIsocPkts[i].enmStatus != VUSBSTATUS_OK
                     && pUrb->aIsocPkts[i].enmStatus != VUSBSTATUS_NOT_ACCESSED)
-                    i32ErrorCount++;
+                    cErrors++;
 
-            UsbHdr.u.IsoRec.i32ErrorCount = i32ErrorCount;
+            UsbHdr.u.IsoRec.i32ErrorCount = cErrors;
             UsbHdr.u.IsoRec.i32NumDesc    = pUrb->cIsocPkts;
             cbCapturedLength += cIsocPkts * sizeof(DumpFileUsbIsoDesc);
             break;
         }
         case VUSBXFERTYPE_BULK:
-                UsbHdr.u8TransferType = 3;
-                break;
+            UsbHdr.u8TransferType = 3;
+            break;
         case VUSBXFERTYPE_INTR:
-                UsbHdr.u8TransferType = 1;
-                break;
+            UsbHdr.u8TransferType = 1;
+            break;
         case VUSBXFERTYPE_CTRL:
         case VUSBXFERTYPE_MSG:
-                UsbHdr.u8TransferType = 2;
-                break;
+            UsbHdr.u8TransferType = 2;
+            break;
         default:
             AssertMsgFailed(("invalid transfer type %d\n", pUrb->enmType));
     }
@@ -683,7 +680,7 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThi
         UsbHdr.u8SetupFlag  = '-'; /* Follow usbmon source here. */
 
     /* Write the packet to the capture file. */
-    rc = vusbSnifferBlockNew(pThis, &Epb.Hdr, sizeof(Epb));
+    int rc = vusbSnifferBlockNew(pThis, &Epb.Hdr, sizeof(Epb));
     if (RT_SUCCESS(rc))
         rc = vusbSnifferBlockAddData(pThis, &UsbHdr, sizeof(UsbHdr));
 
