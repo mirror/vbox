@@ -143,6 +143,54 @@ void UIDesktopWidgetWatchdog::sltUpdateHostScreenConfiguration(int cHostScreenCo
 {
 //    printf("UIDesktopWidgetWatchdog::sltUpdateHostScreenConfiguration(%d)\n", cHostScreenCount);
 
+    /* Update host-screen configuration: */
+    updateHostScreenConfiguration(cHostScreenCount);
+}
+
+void UIDesktopWidgetWatchdog::sltRecalculateHostScreenAvailableGeometry(int iHostScreenIndex)
+{
+//    printf("UIDesktopWidgetWatchdog::sltRecalculateHostScreenAvailableGeometry(%d)\n", iHostScreenIndex);
+
+    /* Recalculate host-screen available-geometry: */
+    recalculateHostScreenAvailableGeometry(iHostScreenIndex);
+}
+
+void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry)
+{
+//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(%d): %dx%d x %dx%d\n",
+//           iHostScreenIndex, availableGeometry.x(), availableGeometry.y(), availableGeometry.width(), availableGeometry.height());
+
+    /* Apply received data: */
+    m_availableGeometryData[iHostScreenIndex] = availableGeometry;
+    /* Forget finished worker: */
+    AssertPtrReturnVoid(m_availableGeometryWorkers.value(iHostScreenIndex));
+    m_availableGeometryWorkers.value(iHostScreenIndex)->disconnect();
+    m_availableGeometryWorkers.value(iHostScreenIndex)->deleteLater();
+    m_availableGeometryWorkers[iHostScreenIndex] = 0;
+}
+
+void UIDesktopWidgetWatchdog::prepare()
+{
+    /* Prepare connections: */
+    connect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltUpdateHostScreenConfiguration(int)));
+    connect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltRecalculateHostScreenAvailableGeometry(int)));
+
+    /* Update host-screen configuration: */
+    updateHostScreenConfiguration();
+}
+
+void UIDesktopWidgetWatchdog::cleanup()
+{
+    /* Cleanup connections: */
+    disconnect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltUpdateHostScreenConfiguration(int)));
+    disconnect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltRecalculateHostScreenAvailableGeometry(int)));
+
+    /* Cleanup existing workers finally: */
+    cleanupExistingWorkers();
+}
+
+void UIDesktopWidgetWatchdog::updateHostScreenConfiguration(int cHostScreenCount /* = -1 */)
+{
     /* Acquire new host-screen count: */
     m_cHostScreenCount = cHostScreenCount != -1 ? cHostScreenCount : m_pDesktopWidget->screenCount();
 
@@ -155,13 +203,11 @@ void UIDesktopWidgetWatchdog::sltUpdateHostScreenConfiguration(int cHostScreenCo
 
     /* Calculate host-screen available-geometry for each particular host-screen: */
     for (int iHostScreenIndex = 0; iHostScreenIndex < m_cHostScreenCount; ++iHostScreenIndex)
-        sltRecalculateHostScreenAvailableGeometry(iHostScreenIndex);
+        recalculateHostScreenAvailableGeometry(iHostScreenIndex);
 }
 
-void UIDesktopWidgetWatchdog::sltRecalculateHostScreenAvailableGeometry(int iHostScreenIndex)
+void UIDesktopWidgetWatchdog::recalculateHostScreenAvailableGeometry(int iHostScreenIndex)
 {
-//    printf("UIDesktopWidgetWatchdog::sltRecalculateHostScreenAvailableGeometry(%d)\n", iHostScreenIndex);
-
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= m_cHostScreenCount)
         iHostScreenIndex = m_pDesktopWidget->primaryScreen();
@@ -190,40 +236,6 @@ void UIDesktopWidgetWatchdog::sltRecalculateHostScreenAvailableGeometry(int iHos
         /* And finally, maximize it: */
         pWorker->showMaximized();
     }
-}
-
-void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry)
-{
-//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(%d): %dx%d x %dx%d\n",
-//           iHostScreenIndex, availableGeometry.x(), availableGeometry.y(), availableGeometry.width(), availableGeometry.height());
-
-    /* Apply received data: */
-    m_availableGeometryData[iHostScreenIndex] = availableGeometry;
-    /* Forget finished worker: */
-    AssertPtrReturnVoid(m_availableGeometryWorkers.value(iHostScreenIndex));
-    m_availableGeometryWorkers.value(iHostScreenIndex)->disconnect();
-    m_availableGeometryWorkers.value(iHostScreenIndex)->deleteLater();
-    m_availableGeometryWorkers[iHostScreenIndex] = 0;
-}
-
-void UIDesktopWidgetWatchdog::prepare()
-{
-    /* Prepare connections: */
-    connect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltUpdateHostScreenConfiguration(int)));
-    connect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltRecalculateHostScreenAvailableGeometry(int)));
-
-    /* Update host-screen configuration: */
-    sltUpdateHostScreenConfiguration();
-}
-
-void UIDesktopWidgetWatchdog::cleanup()
-{
-    /* Cleanup connections: */
-    disconnect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltUpdateHostScreenConfiguration(int)));
-    disconnect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltRecalculateHostScreenAvailableGeometry(int)));
-
-    /* Cleanup existing workers finally: */
-    cleanupExistingWorkers();
 }
 
 void UIDesktopWidgetWatchdog::cleanupExistingWorkers()

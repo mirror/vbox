@@ -49,9 +49,8 @@ public:
 
 private slots:
 
-    /** Updates host-screen configuration according to new @a cHostScreenCount.
-      * @note cHostScreenCount can be equal to -1 which means we have to acquire it ourselves. */
-    void sltUpdateHostScreenConfiguration(int cHostScreenCount = -1);
+    /** Updates host-screen configuration according to new @a cHostScreenCount. */
+    void sltUpdateHostScreenConfiguration(int cHostScreenCount);
 
     /** Recalculates available-geometry for the host-screen with @a iHostScreenIndex. */
     void sltRecalculateHostScreenAvailableGeometry(int iHostScreenIndex);
@@ -65,6 +64,13 @@ private:
     void prepare();
     /** Cleanup routine. */
     void cleanup();
+
+    /** Updates host-screen configuration according to new @a cHostScreenCount.
+      * @note cHostScreenCount can be equal to -1 which means we have to acquire it ourselves. */
+    void updateHostScreenConfiguration(int cHostScreenCount = -1);
+
+    /** Recalculates available-geometry for the host-screen with @a iHostScreenIndex. */
+    void recalculateHostScreenAvailableGeometry(int iHostScreenIndex);
 
     /** Cleanups existing workers. */
     void cleanupExistingWorkers();
