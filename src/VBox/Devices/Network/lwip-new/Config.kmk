@@ -95,15 +95,3 @@ LWIP_SOURCES += \
 #     src/netif/ppp/randm.c \
 #     src/netif/ppp/vj.c
 
-
-ifeq ($(USERNAME), vvl)
-$(foreach lwip_file, $(LWIP_SOURCES), $(eval $(lwip_file)_DEFS=RTMEM_WRAP_TO_EF_APIS))
-
-LWIPTEST_SOURCES= Network/lwip-new/test/unit/core/test_mem.c \
-    Network/lwip-new/test/unit/etharp/test_etharp.c \
-    Network/lwip-new/test/unit/lwip_unittests.c \
-    Network/lwip-new/test/unit/tcp/tcp_helper.c \
-    Network/lwip-new/test/unit/tcp/test_tcp.c \
-    Network/lwip-new/test/unit/tcp/test_tcp_oos.c \
-    Network/lwip-new/test/unit/udp/test_udp.c
-endif
