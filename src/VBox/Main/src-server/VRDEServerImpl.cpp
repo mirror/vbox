@@ -89,6 +89,8 @@ HRESULT VRDEServer::init(Machine *aParent)
 
     mData.allocate();
 
+    mData->fEnabled = false;
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
