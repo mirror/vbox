@@ -85,6 +85,7 @@ static DECLCALLBACK(void) usbProxyVrdpClose(PUSBPROXYDEV pProxyDev)
 
 static DECLCALLBACK(int) usbProxyVrdpReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
+    RT_NOREF(fResetOnLinux);
     LogFlow(("usbProxyVrdpReset: pProxyDev = %p\n", pProxyDev));
 
     PUSBPROXYDEVVRDP pDevVrdp = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVVRDP);
