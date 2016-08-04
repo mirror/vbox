@@ -5542,7 +5542,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
 #ifdef VBOX_WITH_VDMA
-    vboxVDMASaveStateExecPrep(pThis->pVdma, pSSM);
+    vboxVDMASaveStateExecPrep(pThis->pVdma);
 #endif
 
     vgaR3SaveConfig(pThis, pSSM);
@@ -5569,7 +5569,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_VDMA
-    vboxVDMASaveStateExecDone(pThis->pVdma, pSSM);
+    vboxVDMASaveStateExecDone(pThis->pVdma);
 #endif
 
     VGA_SAVED_STATE_PUT_MARKER(pSSM, 5);
@@ -5680,6 +5680,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pSSM);
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_HGSMI
