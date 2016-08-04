@@ -66,11 +66,11 @@ struct RTSEMMUTEXINTERNAL
 #endif
 };
 
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_NETBSD)
 /**
  * This function emulate pthread_mutex_timedlock on Mac OS X
  */
-static int DarwinPthreadMutexTimedlock(pthread_mutex_t * mutex, const struct timespec * pTsAbsTimeout)
+static int rtSemFallbackPthreadMutexTimedlock(pthread_mutex_t * mutex, const struct timespec * pTsAbsTimeout)
 {
     int rc = 0;
     struct timeval tv;
@@ -297,10 +297,10 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
         }
 
         /* take mutex */
-#ifndef RT_OS_DARWIN
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_NETBSD)
         int rc = pthread_mutex_timedlock(&pThis->Mutex, &ts);
 #else
-        int rc = DarwinPthreadMutexTimedlock(&pThis->Mutex, &ts);
+        int rc = rtSemFallbackPthreadMutexTimedlock(&pThis->Mutex, &ts);
 #endif
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
