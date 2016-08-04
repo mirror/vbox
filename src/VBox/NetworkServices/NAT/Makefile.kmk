@@ -23,7 +23,7 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
 
  # XXX: do not depend on order
  ifndef LWIP_SOURCES
-  include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Config.kmk
  endif
 
 

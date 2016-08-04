@@ -408,16 +408,14 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_INIP
   VBoxDD_DEFS           += VBOX_WITH_INIP
   VBoxDD_SOURCES        += \
-        Network/DevINIP.cpp
+  	Network/DevINIP.cpp
   # XXX: do not depend on order
   ifndef LWIP_SOURCES
-    include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
+   include $(PATH_SUB_CURRENT)/Network/lwip-new/Config.kmk
   endif
   VBoxDD_LWIP_INCS += Network # for lwipopts.h
-  $(eval $(call def_vbox_lwip_private, \
-                    VBoxDD, Network/lwip-new))
-  $(eval $(call def_vbox_lwip_flags, \
-                    VBoxDD, Network/DevINIP.cpp, Network/lwip-new))
+  $(eval $(call def_vbox_lwip_private, VBoxDD, Network/lwip-new))
+  $(eval $(call def_vbox_lwip_flags,   VBoxDD, Network/DevINIP.cpp, Network/lwip-new))
  endif # VBOX_WITH_INIP
 
  ifdef VBOX_WITH_E1000
