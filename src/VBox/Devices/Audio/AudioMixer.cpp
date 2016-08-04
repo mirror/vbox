@@ -1164,7 +1164,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
             }
         }
 
-        Log3Func(("\t%s: cPlayed=%RU32, cCaptured=%RU32\n", pMixStream->pStream->szName, cPlayed, cCaptured));
+        Log3Func(("\t%s: cCaptured=%RU32\n", pMixStream->pStream->szName, cCaptured));
     }
 
     /* All streams disabled and the sink is in pending disable mode? */
