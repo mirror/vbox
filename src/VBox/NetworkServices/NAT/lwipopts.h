@@ -18,6 +18,7 @@
 #ifndef _VBOX_NETNAT_LWIP_OPTS_H_
 #define _VBOX_NETNAT_LWIP_OPTS_H_
 
+#include <VBox/cdefs.h>     /* For VBOX_STRICT. */
 #include <iprt/mem.h>
 #include <iprt/alloca.h>    /* This may include malloc.h (msc), which is something that has
                              * to be done before redefining any of the functions therein. */
@@ -192,5 +193,10 @@
 #define malloc(x) RTMemAlloc(x)
 #define realloc(x,y) RTMemRealloc((x), (y))
 #define free(x) RTMemFree(x)
+
+/* Align VBOX_STRICT and LWIP_NOASSERT. */
+#ifndef VBOX_STRICT
+# define LWIP_NOASSERT 1
+#endif
 
 #endif /* _VBOX_NETNAT_LWIP_OPTS_H_ */

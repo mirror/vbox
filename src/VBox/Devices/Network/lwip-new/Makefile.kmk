@@ -114,11 +114,6 @@ define def_vbox_lwip_flags # PROTO_BaseName, VAR_BaseName, path/to/lwip/dir
 
   # add lwip's own includes
   $(strip $2)_INCS += $(foreach incdir, $(LWIP_INCS), $(strip $3)/$(incdir))
-
-  # disable lwip assertions for some build types
-  $(strip $2)_DEFS.release  += LWIP_NOASSERT
-  $(strip $2)_DEFS.profile  += LWIP_NOASSERT
-  $(strip $2)_DEFS.kprofile += LWIP_NOASSERT
 endef
 
 
