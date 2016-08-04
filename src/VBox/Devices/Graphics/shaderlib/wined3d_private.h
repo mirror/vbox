@@ -46,7 +46,7 @@
 #include "wingdi.h"
 #include "winuser.h"
 #else
-#include <iprt/win/windows.h>
+# include <iprt/win/windows.h>
 #endif
 #include "wine/debug.h"
 #include "wine/unicode.h"

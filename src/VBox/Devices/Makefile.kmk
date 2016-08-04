@@ -1452,6 +1452,11 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  VBoxSVGA3D_LDFLAGS.darwin += \
  	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSVGA3D.dylib
  $(call VBOX_SET_VER_INFO_DLL,VBoxSVGA3D,VirtualBox VMSVGA 3D)
+ #  -wd4100: unreferenced format parameter
+ #  -wd4204: nonstandard extension used : non-constant initializer
+ #  -wd4245: '=' : conversion from 'int' to 'DWORD', signed/unsigned mismatch
+ #  -wd4305: 'function' : truncation from 'double' to 'GLclampf'
+ VBoxSVGA3D_CFLAGS.win = -wd4100  -wd4204 -wd4245 -wd4305
 
  #
  # The Objective C code needs to be separate since the shaderlib redefines most

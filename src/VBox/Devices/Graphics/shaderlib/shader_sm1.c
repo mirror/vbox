@@ -423,7 +423,7 @@ static const struct wined3d_sm1_opcode_info *shader_get_opcode(const struct wine
 
     while (opcode_table[i].handler_idx != WINED3DSIH_TABLE_SIZE)
     {
-        if ((code & WINED3DSI_OPCODE_MASK) == opcode_table[i].opcode
+        if ((code & WINED3DSI_OPCODE_MASK) == (DWORD)opcode_table[i].opcode
                 && shader_version >= opcode_table[i].min_version
                 && (!opcode_table[i].max_version || shader_version <= opcode_table[i].max_version))
         {

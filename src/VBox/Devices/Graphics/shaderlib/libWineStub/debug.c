@@ -176,7 +176,7 @@ static void parse_options( const char *str )
         {
             for (i = 0; i < sizeof(debug_classes)/sizeof(debug_classes[0]); i++)
             {
-                int len = strlen(debug_classes[i]);
+                int len = (int)strlen(debug_classes[i]);
                 if (len != (p - opt)) continue;
                 if (!memcmp( opt, debug_classes[i], len ))  /* found it */
                 {
@@ -317,7 +317,7 @@ int wine_dbg_log( enum __wine_debug_class cls, struct __wine_debug_channel *chan
 #if !defined(VBOX_WITH_VMSVGA) || defined(RT_OS_WINDOWS)
 int interlocked_xchg_add( int *dest, int incr )
 {
-    return InterlockedExchangeAdd(dest, incr);
+    return InterlockedExchangeAdd((LONG *)dest, incr);
 }
 #endif
 
@@ -346,7 +346,7 @@ static void release_temp_buffer( char *buffer, size_t size )
 /* default implementation of wine_dbgstr_an */
 static const char *default_dbgstr_an( const char *str, int n )
 {
-    static const char hex[16] = "0123456789abcdef";
+    static const char hex[16+1] = "0123456789abcdef";
     char *dst, *res;
     size_t size;
 
@@ -357,7 +357,7 @@ static const char *default_dbgstr_an( const char *str, int n )
         sprintf( res, "#%04x", LOWORD(str) );
         return res;
     }
-    if (n == -1) n = strlen(str);
+    if (n == -1) n = (int)strlen(str);
     if (n < 0) n = 0;
     size = 10 + min( 300, n * 4 );
     dst = res = funcs.get_temp_buffer( size );

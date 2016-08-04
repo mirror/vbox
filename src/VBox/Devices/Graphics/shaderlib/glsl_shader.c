@@ -2013,7 +2013,7 @@ static void shader_glsl_color_correction(const struct wined3d_shader_instruction
     if (is_complex_fixup(fixup))
     {
         enum complex_fixup complex_fixup = get_complex_fixup(fixup);
-        FIXME("Complex fixup (%#x) not supported\n",complex_fixup);
+        FIXME("Complex fixup (%#x) not supported\n",complex_fixup); (void)complex_fixup;
         return;
     }
 
@@ -3639,8 +3639,8 @@ static void shader_glsl_texm3x3vspec(const struct wined3d_shader_instruction *in
  */
 static void shader_glsl_texbem(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl *)ins->ctx->shader;
-    IWineD3DDeviceImpl *deviceImpl = (IWineD3DDeviceImpl *)shader->baseShader.device;
+    /*IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl *)ins->ctx->shader;
+    IWineD3DDeviceImpl *deviceImpl = (IWineD3DDeviceImpl *)shader->baseShader.device; - unused */
     const struct wined3d_gl_info *gl_info = ins->ctx->gl_info;
     const struct shader_glsl_ctx_priv *priv = ins->ctx->backend_data;
     glsl_sample_function_t sample_function;
