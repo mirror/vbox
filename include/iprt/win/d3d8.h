@@ -1,5 +1,5 @@
 /** @file
- * Safe way to include d3d9.h.
+ * Safe way to include d3d8.h.
  */
 
 /*
@@ -24,8 +24,8 @@
  */
 
 
-#ifndef ___iprt_win_d3d9_h___
-#define ___iprt_win_d3d9_h___
+#ifndef ___iprt_win_d3d8_h___
+#define ___iprt_win_d3d8_h___
 
 #ifdef _MSC_VER
 # pragma warning(push)
@@ -34,11 +34,12 @@
 # pragma warning(disable:4255) /* warning C4255: 'ObGetFilterVersion' : no function prototype given: converting '()' to '(void)' */
 #endif
 
-#include <d3d9.h>
+#include <d3d8.h>
 
 #ifdef _MSC_VER
 # pragma warning(pop)
 #endif
+
 
 #endif
 
