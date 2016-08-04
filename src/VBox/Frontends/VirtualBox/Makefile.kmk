@@ -539,7 +539,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/extensions/QITableView.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
-	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/medium/UIMediumEnumerator.cpp \
@@ -567,9 +566,15 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 endif
 
 VirtualBox_QT_MOCSRCS.darwin += \
-    src/platform/darwin/UIWindowMenuManager.cpp
+	src/platform/darwin/UIWindowMenuManager.cpp
 VirtualBox_QT_MOCSRCS.win += \
 	src/extensions/QIFileDialog.cpp
+VirtualBox_QT_MOCSRCS.linux += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
+VirtualBox_QT_MOCSRCS.solaris += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
+VirtualBox_QT_MOCSRCS.freebsd += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
 
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \

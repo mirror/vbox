@@ -20,11 +20,12 @@
 
 /* Qt includes: */
 #include <QObject>
-#include <QVector>
-#include <QRect>
+#ifdef VBOX_WS_X11
+# include <QVector>
+# include <QRect>
+#endif /* VBOX_WS_X11 */
 
 /* Forward declarations: */
-class QDesktopWidget;
 #if QT_VERSION >= 0x050000
 class QScreen;
 #endif /* QT_VERSION >= 0x050000 */
@@ -65,8 +66,10 @@ private slots:
     /** Handles resize for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenResized(int iHostScreenIndex);
 
+#ifdef VBOX_WS_X11
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry);
+#endif /* VBOX_WS_X11 */
 
 private:
 
@@ -75,6 +78,7 @@ private:
     /** Cleanup routine. */
     void cleanup();
 
+#ifdef VBOX_WS_X11
     /** Updates host-screen configuration according to new @a cHostScreenCount.
       * @note If cHostScreenCount is equal to -1 we have to acquire it ourselves. */
     void updateHostScreenConfiguration(int cHostScreenCount = -1);
@@ -89,6 +93,7 @@ private:
     QVector<QRect> m_availableGeometryData;
     /** Holds current workers determining host-screen available-geometries. */
     QVector<QWidget*> m_availableGeometryWorkers;
+#endif /* VBOX_WS_X11 */
 };
 
 #endif /* !___UIDesktopWidgetWatchdog_h___ */
