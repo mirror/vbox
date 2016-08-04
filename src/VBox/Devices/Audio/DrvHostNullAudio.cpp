@@ -63,8 +63,8 @@ typedef struct NULLAUDIOSTREAMOUT
 {
     PDMAUDIOSTREAM      Stream;
     uint64_t            u64TicksLast;
-    uint64_t            csPlayBuffer;
-    uint8_t            *pu8PlayBuffer;
+    uint64_t            cMaxSamplesInPlayBuffer;
+    uint8_t            *pbPlayBuffer;
 } NULLAUDIOSTREAMOUT;
 typedef NULLAUDIOSTREAMOUT *PNULLAUDIOSTREAMOUT;
 
@@ -151,14 +151,15 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
     if (cSamplesPlayed > cLive)
         cSamplesPlayed = cLive;
 
-    cSamplesPlayed = RT_MIN(cSamplesPlayed, pNullStream->csPlayBuffer);
+    cSamplesPlayed = RT_MIN(cSamplesPlayed, pNullStream->cMaxSamplesInPlayBuffer);
 
-    uint32_t csRead = 0;
-    AudioMixBufReadCirc(&pStream->MixBuf, pNullStream->pu8PlayBuffer, AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesPlayed), &csRead);
-    AudioMixBufFinish(&pStream->MixBuf, csRead);
+    uint32_t cSamplesToRead = 0;
+    AudioMixBufReadCirc(&pStream->MixBuf, pNullStream->pbPlayBuffer,
+                        AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesPlayed), &cSamplesToReadRead);
+    AudioMixBufFinish(&pStream->MixBuf, cSamplesToRead);
 
     if (pcSamplesPlayed)
-        *pcSamplesPlayed = csRead;
+        *pcSamplesPlayed = cSamplesToRead;
 
     return VINF_SUCCESS;
 }
@@ -215,12 +216,12 @@ static int nullCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg,
     {
         PNULLAUDIOSTREAMOUT pNullStream = RT_FROM_MEMBER(pStream, NULLAUDIOSTREAMOUT, Stream);
         pNullStream->u64TicksLast  = 0;
-        pNullStream->csPlayBuffer  = _1K;
-        pNullStream->pu8PlayBuffer = (uint8_t *)RTMemAlloc(_1K << pStream->Props.cShift);
-        if (pNullStream->pu8PlayBuffer)
+        pNullStream->cMaxSamplesInPlayBuffer = _1K;
+        pNullStream->pbPlayBuffer = (uint8_t *)RTMemAlloc(_1K << pStream->Props.cShift);
+        if (pNullStream->pbPlayBuffer)
         {
             if (pcSamples)
-                *pcSamples = pNullStream->csPlayBuffer;
+                *pcSamples = pNullStream->cMaxSamplesInPlayBuffer;
         }
         else
             rc = VERR_NO_MEMORY;
@@ -263,10 +264,10 @@ static int nullDestroyStreamOut(PPDMAUDIOSTREAM pStream)
 {
     PNULLAUDIOSTREAMOUT pNullStream = RT_FROM_MEMBER(pStream, NULLAUDIOSTREAMOUT, Stream);
     if (   pNullStream
-        && pNullStream->pu8PlayBuffer)
+        && pNullStream->pbPlayBuffer)
     {
-        RTMemFree(pNullStream->pu8PlayBuffer);
-        pNullStream->pu8PlayBuffer = NULL;
+        RTMemFree(pNullStream->pbPlayBuffer);
+        pNullStream->pbPlayBuffer = NULL;
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
