@@ -528,13 +528,13 @@ mb_dtor_mbuf(PNATState pData, void *mem, int size, void *arg)
 #endif
 {
 	struct mbuf *m;
-	unsigned long flags;
+	uintptr_t flags;
 #ifdef VBOX
-    NOREF(pData);
+	NOREF(pData);
 #endif
 
 	m = (struct mbuf *)mem;
-	flags = (unsigned long)arg;
+	flags = (uintptr_t)arg;
 
 	if ((flags & MB_NOTAGS) == 0 && (m->m_flags & M_PKTHDR) != 0)
 		m_tag_delete_chain(m, NULL);
@@ -543,8 +543,8 @@ mb_dtor_mbuf(PNATState pData, void *mem, int size, void *arg)
 #ifdef INVARIANTS
 	trash_dtor(mem, size, arg);
 #elif defined(VBOX)
-    NOREF(size);
-    NOREF(arg);
+	NOREF(size);
+	NOREF(arg);
 #endif
 }
 

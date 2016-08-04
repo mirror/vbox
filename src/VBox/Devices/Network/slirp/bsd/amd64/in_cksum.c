@@ -102,13 +102,13 @@ in_cksumdata(const void *buf, int len)
 	int offset;
 	union q_util q_util;
 
-	if ((3 & (long) lw) == 0 && len == 20) {
+	if ((3 & (intptr_t) lw) == 0 && len == 20) {
 	     sum = (u_int64_t) lw[0] + lw[1] + lw[2] + lw[3] + lw[4];
 	     REDUCE32;
 	     return sum;
 	}
 
-	if ((offset = 3 & (long) lw) != 0) {
+	if ((offset = 3 & (intptr_t) lw) != 0) {
 		const u_int32_t *masks = in_masks + (offset << 2);
 		lw = (u_int32_t *) (((RTHCUINTPTR) lw) - offset);
 		sum = *lw++ & masks[len >= 3 ? 3 : len];
@@ -224,7 +224,7 @@ in_cksum_skip(struct mbuf *m, int len, int skip)
 skip_start:
 		if (len < mlen)
 			mlen = len;
-		if ((clen ^ (long) addr) & 1)
+		if ((clen ^ (intptr_t) addr) & 1)
 		    sum += in_cksumdata(addr, mlen) << 8;
 		else
 		    sum += in_cksumdata(addr, mlen);

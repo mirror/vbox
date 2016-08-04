@@ -218,7 +218,7 @@ nbt_alias_handler(PNATState pData, int type)
     handlers[2].fingerprint = &fingerprint2;
     handlers[2].protohandler = &protohandler2out;
 
-    handlers[3].pri = EOH;
+    handlers[3].pri = (u_int)EOH;
 #endif /* VBOX */
 
     switch (type) {
