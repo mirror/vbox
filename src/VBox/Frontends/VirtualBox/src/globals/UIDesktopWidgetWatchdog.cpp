@@ -22,6 +22,9 @@
 /* Qt includes: */
 # include <QApplication>
 # include <QDesktopWidget>
+# if QT_VERSION >= 0x050000
+#  include <QScreen>
+# endif /* QT_VERSION >= 0x050000 */
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -139,6 +142,8 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* =
     return m_availableGeometryData.value(iHostScreenIndex);
 }
 
+#if QT_VERSION < 0x050000
+
 void UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(int cHostScreenCount)
 {
 //    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(%d)\n", cHostScreenCount);
@@ -146,6 +151,26 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(int cHostScreenCou
     /* Update host-screen configuration: */
     updateHostScreenConfiguration(cHostScreenCount);
 }
+
+#else /* QT_VERSION >= 0x050000 */
+
+void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
+{
+//    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", m_pDesktopWidget->screenCount());
+
+    /* Update host-screen configuration: */
+    updateHostScreenConfiguration();
+}
+
+void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
+{
+//    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", m_pDesktopWidget->screenCount());
+
+    /* Update host-screen configuration: */
+    updateHostScreenConfiguration();
+}
+
+#endif /* QT_VERSION >= 0x050000 */
 
 void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(int iHostScreenIndex)
 {
@@ -172,7 +197,12 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int
 void UIDesktopWidgetWatchdog::prepare()
 {
     /* Prepare connections: */
+#if QT_VERSION < 0x050000
     connect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
+#else /* QT_VERSION >= 0x050000 */
+    connect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
+    connect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
+#endif /* QT_VERSION >= 0x050000 */
     connect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
 
     /* Update host-screen configuration: */
@@ -182,7 +212,12 @@ void UIDesktopWidgetWatchdog::prepare()
 void UIDesktopWidgetWatchdog::cleanup()
 {
     /* Cleanup connections: */
+#if QT_VERSION < 0x050000
     disconnect(m_pDesktopWidget, SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
+#else /* QT_VERSION >= 0x050000 */
+    disconnect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
+    disconnect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
+#endif /* QT_VERSION >= 0x050000 */
     disconnect(m_pDesktopWidget, SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
 
     /* Cleanup existing workers finally: */
