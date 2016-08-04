@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBoxVideo Display D3D User mode dll
  */
@@ -22,27 +21,7 @@
 /* D3D headers */
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
-
-#       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
-#       define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
-#       define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
-#       define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandset      _interlockedbittestandset_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandreset    _interlockedbittestandreset_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
-#       pragma warning(disable : 4163)
-#include <D3D9.h>
-#       pragma warning(default : 4163)
-#       undef  _InterlockedExchange
-#       undef  _InterlockedExchangeAdd
-#       undef  _InterlockedCompareExchange
-#       undef  _InterlockedAddLargeStatistic
-#       undef  _interlockedbittestandset
-#       undef  _interlockedbittestandreset
-#       undef  _interlockedbittestandset64
-#       undef  _interlockedbittestandreset64
-
+#include <iprt/win/d3d9.h>
 #include "../../../Wine_new/vbox/VBoxWineEx.h"
 
 /* D3D functionality the VBOXDISPD3D provides */
@@ -102,8 +81,8 @@ typedef struct VBOXWDDMDISP_D3D
     UINT cMaxSimRTs;
 } VBOXWDDMDISP_D3D, *PVBOXWDDMDISP_D3D;
 
-void VBoxDispD3DGlobalInit();
-void VBoxDispD3DGlobalTerm();
+void VBoxDispD3DGlobalInit(void);
+void VBoxDispD3DGlobalTerm(void);
 HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats);
 void VBoxDispD3DGlobalClose(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats);
 

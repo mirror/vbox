@@ -334,24 +334,24 @@ static HRESULT vboxExtTerm()
 /* wine serializes all calls to us, so no need for any synchronization here */
 static DWORD g_cVBoxExtInits = 0;
 
-static DWORD vboxExtAddRef()
+static DWORD vboxExtAddRef(void)
 {
     return ++g_cVBoxExtInits;
 }
 
-static DWORD vboxExtRelease()
+static DWORD vboxExtRelease(void)
 {
     DWORD cVBoxExtInits = --g_cVBoxExtInits;
     Assert(cVBoxExtInits < UINT32_MAX/2);
     return cVBoxExtInits;
 }
 
-static DWORD vboxExtGetRef()
+static DWORD vboxExtGetRef(void)
 {
     return g_cVBoxExtInits;
 }
 
-HRESULT VBoxExtCheckInit()
+HRESULT VBoxExtCheckInit(void)
 {
     HRESULT hr = S_OK;
     if (!vboxExtGetRef())
@@ -367,7 +367,7 @@ HRESULT VBoxExtCheckInit()
     return S_OK;
 }
 
-HRESULT VBoxExtCheckTerm()
+HRESULT VBoxExtCheckTerm(void)
 {
     HRESULT hr = S_OK;
     if (vboxExtGetRef() == 1)

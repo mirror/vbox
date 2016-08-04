@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBoxVideo Display D3D User mode dll
  */
@@ -88,8 +87,8 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE
 #define VBOXUHGSMIESCBASE_GET_BUFFER(_p) VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE)
 #define VBOXUHGSMDXALLOCBASE_GET_BUFFER(_p) VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE)
 
-DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pPrivate, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags,
-                                    D3DDDICB_LOCKFLAGS *pfFlags, UINT *pNumPages)
+DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pPrivate, uint32_t offLock, uint32_t cbLock,
+                                         VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, D3DDDICB_LOCKFLAGS *pfFlags, UINT *pNumPages)
 {
     PVBOXUHGSMI_BUFFER pBuf = &pPrivate->BasePrivate.Base;
     D3DDDICB_LOCKFLAGS fLockFlags;
@@ -142,7 +141,8 @@ DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BAS
     return VINF_SUCCESS;
 }
 
-DECLINLINE(void) vboxUhgsmiBaseDxAllocInfoFill(D3DDDI_ALLOCATIONINFO *pDdiAllocInfo, VBOXWDDM_ALLOCINFO *pAllocInfo, uint32_t cbBuffer, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType)
+DECLINLINE(void) vboxUhgsmiBaseDxAllocInfoFill(D3DDDI_ALLOCATIONINFO *pDdiAllocInfo, VBOXWDDM_ALLOCINFO *pAllocInfo,
+                                               uint32_t cbBuffer, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType)
 {
     memset(pDdiAllocInfo, 0, sizeof (*pDdiAllocInfo));
     pDdiAllocInfo->pPrivateDriverData = pAllocInfo;
@@ -154,9 +154,9 @@ DECLINLINE(void) vboxUhgsmiBaseDxAllocInfoFill(D3DDDI_ALLOCATIONINFO *pDdiAllocI
 }
 
 DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers,
-        VOID* pCommandBuffer, UINT *pCommandBufferSize,
-        D3DDDI_ALLOCATIONLIST *pAllocationList, UINT AllocationListSize,
-        D3DDDI_PATCHLOCATIONLIST *pPatchLocationList, UINT PatchLocationListSize)
+                                        VOID *pCommandBuffer, UINT *pCommandBufferSize,
+                                        D3DDDI_ALLOCATIONLIST *pAllocationList, UINT AllocationListSize,
+                                        D3DDDI_PATCHLOCATIONLIST *pPatchLocationList, UINT PatchLocationListSize)
 {
     const uint32_t cbDmaCmd = RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, aBufInfos[cBuffers]);
     if (*pCommandBufferSize < cbDmaCmd)
@@ -214,6 +214,7 @@ int vboxUhgsmiKmtEscBufferInit(PVBOXUHGSMI_PRIVATE_BASE pPrivate, PVBOXUHGSMI_BU
 DECLCALLBACK(int) vboxUhgsmiBaseEscBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers);
 DECLCALLBACK(int) vboxUhgsmiBaseEscBufferDestroy(PVBOXUHGSMI_BUFFER pBuf);
 DECLCALLBACK(int) vboxUhgsmiBaseEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf, VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType, PVBOXUHGSMI_BUFFER* ppBuf);
+
 DECLINLINE(void) vboxUhgsmiBaseInit(PVBOXUHGSMI_PRIVATE_BASE pHgsmi, PFNVBOXCRHGSMI_ESCAPE pfnEscape)
 {
     pHgsmi->Base.pfnBufferCreate = vboxUhgsmiBaseEscBufferCreate;

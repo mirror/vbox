@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBoxVideo Display D3D User mode dll
  */
@@ -61,7 +60,7 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
 #endif
     if (!pD3D->hD3DLib)
     {
-        DWORD winErr = GetLastError();
+        DWORD winErr = GetLastError(); NOREF(winErr)
         WARN((__FUNCTION__": LoadLibrary failed, winErr = (%d)", winErr));
         return E_FAIL;
     }
@@ -1145,7 +1144,7 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
         return hr;
     }
 
-#if DEBUG
+#ifdef DEBUG
     vboxDispCheckCapsLevel(pCaps);
 #endif
 
@@ -1201,7 +1200,7 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
 
     pCaps->MaxVertexW = 10000000000.f; /* Required by D3D feature level 9.3. */
 
-#if DEBUG
+#ifdef DEBUG
     vboxDispCheckCapsLevel(pCaps);
 #endif
 
