@@ -745,8 +745,10 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
  *
  * @param   pUrb        The URB to submit.
  */
-static void vusbMsgDoTransfer(PVUSBURB pUrb, PVUSBSETUP pSetup, PVUSBCTRLEXTRA pExtra, PVUSBPIPE pPipe, PVUSBDEV pDev)
+static void vusbMsgDoTransfer(PVUSBURB pUrb, PVUSBSETUP pSetup, PVUSBCTRLEXTRA pExtra, PVUSBPIPE pPipe)
 {
+    RT_NOREF(pPipe);
+
     /*
      * Mark this transfer as sent (cleared at setup time).
      */
@@ -903,7 +905,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
 
             /* pre-buffer our output if it's device-to-host */
             if (pSetup->bmRequestType & VUSB_DIR_TO_HOST)
-                vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe, pDev);
+                vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe);
             else if (pSetup->wLength)
             {
                 LogFlow(("%s: vusbUrbSubmitCtrl: stage=SETUP - to dev: need data\n", pUrb->pszDesc));
@@ -918,7 +920,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
             else
             {
                 LogFlow(("%s: vusbUrbSubmitCtrl: stage=SETUP - to dev: sending\n", pUrb->pszDesc));
-                vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe, pDev);
+                vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe);
             }
             break;
 
@@ -991,7 +993,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
                     &&  pExtra->pbCur - pbData >= pSetup->wLength)
                 {
                     LogFlow(("%s: vusbUrbSubmitCtrl: stage=DATA - to dev: sending\n", pUrb->pszDesc));
-                    vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe, pDev);
+                    vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe);
                     break;
                 }
             }
@@ -1014,7 +1016,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
             else
             {
                 LogFlow(("%s: vusbUrbSubmitCtrl: stage=STATUS - to dev: sending\n", pUrb->pszDesc));
-                vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe, pDev);
+                vusbMsgDoTransfer(pUrb, pSetup, pExtra, pPipe);
             }
             break;
     }
@@ -1248,9 +1250,7 @@ void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies)
     PVUSBURBVUSB pVUsbUrb = RTListGetFirst(pUrbLst, VUSBURBVUSBINT, NdLst);
     while (pVUsbUrb)
     {
-        PVUSBURB pUrb = pVUsbUrb->pUrb;
-
-        vusbUrbAssert(pUrb);
+        vusbUrbAssert(pVUsbUrb->pUrb);
         PVUSBURBVUSB pVUsbUrbNext = RTListGetNext(pUrbLst, pVUsbUrb, VUSBURBVUSBINT, NdLst);
         PVUSBDEV pDev = pVUsbUrb->pDev;
 

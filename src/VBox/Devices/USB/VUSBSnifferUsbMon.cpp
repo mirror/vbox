@@ -80,7 +80,7 @@ static DECLCALLBACK(int) vusbSnifferFmtUsbMonInit(PVUSBSNIFFERFMTINT pThis, PVUS
 /** @interface_method_impl{VUSBSNIFFERFMT,pfnDestroy} */
 static DECLCALLBACK(void) vusbSnifferFmtUsbMonDestroy(PVUSBSNIFFERFMTINT pThis)
 {
-
+    RT_NOREF(pThis);
 }
 
 

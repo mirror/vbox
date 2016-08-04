@@ -451,8 +451,6 @@ static int vusbSnifferAddOption(PVUSBSNIFFERFMTINT pThis, uint16_t u16OptionCode
 /** @interface_method_impl{VUSBSNIFFERFMT,pfnInit} */
 static DECLCALLBACK(int) vusbSnifferFmtPcanNgInit(PVUSBSNIFFERFMTINT pThis, PVUSBSNIFFERSTRM pStrm)
 {
-    int rc = VINF_SUCCESS;
-
     pThis->pStrm       = pStrm;
     pThis->cbBlockCur  = 0;
     pThis->cbBlockMax  = 0;
@@ -469,7 +467,7 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgInit(PVUSBSNIFFERFMTINT pThis, PVUS
     Shb.u64SectionLength        = UINT64_C(0xffffffffffffffff); /* -1 */
 
     /* Write the blocks. */
-    rc = vusbSnifferBlockNew(pThis, &Shb.Hdr, sizeof(Shb));
+    int rc = vusbSnifferBlockNew(pThis, &Shb.Hdr, sizeof(Shb));
     if (RT_SUCCESS(rc))
     {
         const char *pszOpt = RTBldCfgTargetDotArch();
