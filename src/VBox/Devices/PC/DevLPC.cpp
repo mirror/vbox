@@ -310,10 +310,10 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* E4h-EBh   FDVCT     Feature Vector Description */
 
     /* F0h-F3h RCBA Root Complex Base Address */
-    pThis->dev.config[0xf0] = (uint8_t)(RCBA_BASE | 1); /* enabled */
-    pThis->dev.config[0xf1] = (uint8_t)(RCBA_BASE >> 8);
-    pThis->dev.config[0xf2] = (uint8_t)(RCBA_BASE >> 16);
-    pThis->dev.config[0xf3] = (uint8_t)(RCBA_BASE >> 24);
+    pThis->dev.config[0xf0] = RT_BYTE1(RCBA_BASE | 1); /* enabled */
+    pThis->dev.config[0xf1] = RT_BYTE2(RCBA_BASE);
+    pThis->dev.config[0xf2] = RT_BYTE3(RCBA_BASE);
+    pThis->dev.config[0xf3] = RT_BYTE4(RCBA_BASE);
 
     rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
     if (RT_FAILURE(rc))
