@@ -304,7 +304,7 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
         /*
          * Create conversion object.
          */
-#ifdef RT_OS_SOLARIS
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
         /* Solaris doesn't grok empty codeset strings, so help it find the current codeset. */
         if (!*pszInputCS)
             pszInputCS = rtStrGetLocaleCodeset();
