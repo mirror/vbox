@@ -2813,6 +2813,30 @@ RT_C_DECLS_END
             AssertMsg(expr, ("%s = %#RX64 (%RI64)", #var, (uint64_t)var, (int64_t)var)); \
     } while (0)
 
+#ifdef RT_OS_WINDOWS
+
+/** @def AssertNtStatus
+ * Asserts that the NT_SUCCESS() returns true for the given NTSTATUS value.
+ *
+ * @param   a_rcNt  The NTSTATUS to check.  Will be evaluated twice and
+ *                  subjected to NOREF().
+ * @sa      AssertRC()
+ */
+# define AssertNtStatus(a_rcNt) \
+    do { AssertMsg(NT_SUCCESS(a_rcNt), ("%#x\n", (a_rcNt))); NOREF(a_rcNt); } while (0)
+
+/** @def AssertNtStatusSuccess
+ * Asserts that the given NTSTATUS value equals STATUS_SUCCESS.
+ *
+ * @param   a_rcNt  The NTSTATUS to check.  Will be evaluated twice and
+ *                  subjected to NOREF().
+ * @sa      AssertRCSuccess()
+ */
+# define AssertNtStatusSuccess(a_rcNt) \
+    do { AssertMsg((a_rcNt) == STATUS_SUCCESS, ("%#x\n", (a_rcNt))); NOREF(a_rcNt); } while (0)
+
+#endif /* RT_OS_WINDOWS */
+
 /** @} */
 
 /** @} */
