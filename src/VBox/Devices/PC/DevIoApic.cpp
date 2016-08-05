@@ -133,18 +133,22 @@ Controller" */
 #define IOAPIC_RTE_GET_DELIVERY_MODE(a_Reg)     (((a_Reg) >> 8)  & 0x7)
 /** Redirection table entry - Gets the vector. */
 #define IOAPIC_RTE_GET_VECTOR(a_Reg)            ((a_Reg) & IOAPIC_RTE_VECTOR)
+
+#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
 /** Redirection table entry - Valid write mask. */
 #define IOAPIC_RTE_VALID_WRITE_MASK             (  IOAPIC_RTE_DEST     | IOAPIC_RTE_MASK      | IOAPIC_RTE_TRIGGER_MODE \
                                                  | IOAPIC_RTE_POLARITY | IOAPIC_RTE_DEST_MODE | IOAPIC_RTE_DELIVERY_MODE \
                                                  | IOAPIC_RTE_VECTOR)
-
-#if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
 /** Redirection table entry - Valid read mask. */
 # define IOAPIC_RTE_VALID_READ_MASK             (  IOAPIC_RTE_DEST       | IOAPIC_RTE_MASK          | IOAPIC_RTE_TRIGGER_MODE \
                                                  | IOAPIC_RTE_REMOTE_IRR | IOAPIC_RTE_POLARITY      | IOAPIC_RTE_DELIVERY_STATUS \
                                                  | IOAPIC_RTE_DEST_MODE  | IOAPIC_RTE_DELIVERY_MODE | IOAPIC_RTE_VECTOR)
 #elif IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_ICH9
-/** Redirection table entry - Valid read mask. */
+/** Redirection table entry - Valid write mask (incl. remote IRR). */
+#define IOAPIC_RTE_VALID_WRITE_MASK             (  IOAPIC_RTE_DEST       | IOAPIC_RTE_MASK      | IOAPIC_RTE_TRIGGER_MODE \
+                                                 | IOAPIC_RTE_REMOTE_IRR | IOAPIC_RTE_POLARITY  | IOAPIC_RTE_DEST_MODE \
+                                                 | IOAPIC_RTE_DELIVERY_MODE | IOAPIC_RTE_VECTOR)
+/** Redirection table entry - Valid read mask (incl. ExtDestID). */
 # define IOAPIC_RTE_VALID_READ_MASK             (  IOAPIC_RTE_DEST            | IOAPIC_RTE_EXT_DEST_ID | IOAPIC_RTE_MASK \
                                                  | IOAPIC_RTE_TRIGGER_MODE    | IOAPIC_RTE_REMOTE_IRR  | IOAPIC_RTE_POLARITY \
                                                  | IOAPIC_RTE_DELIVERY_STATUS | IOAPIC_RTE_DEST_MODE   | IOAPIC_RTE_DELIVERY_MODE \
@@ -619,10 +623,7 @@ PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
         }
 
         IOAPIC_UNLOCK(pThis);
-#ifdef DEBUG_ramshankar
-        /* Seems this can trigger if the guest reprograms the I/O APIC before an EOI, see @bugref{8386#c37}. */
         AssertMsg(fRemoteIrrCleared, ("Failed to clear remote IRR for vector %#x (%u)\n", u8Vector, u8Vector));
-#endif
     }
     else
         STAM_COUNTER_INC(&pThis->StatEoiContention);
