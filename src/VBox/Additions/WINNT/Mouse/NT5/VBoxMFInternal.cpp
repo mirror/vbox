@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Mouse filter internal functions
  */
@@ -16,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#undef WIN9X_COMPAT_SPINLOCK
 #define WIN9X_COMPAT_SPINLOCK /* Avoid duplicate _KeInitializeSpinLock@4 error on x86. */
 #include <iprt/asm.h>
 #include "VBoxMF.h"
@@ -78,8 +78,7 @@ static NTSTATUS vboxGdcSubmitAsync(ULONG uCtl, PVOID pvBuffer, SIZE_T cbBuffer, 
 {
     NTSTATUS Status;
     PIRP pIrp;
-    KIRQL Irql = KeGetCurrentIrql();
-    Assert(Irql == PASSIVE_LEVEL);
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
 
     pIrp = IoBuildDeviceIoControlRequest(uCtl, g_ctx.Gdc.pDo, NULL, 0, NULL, 0, TRUE, pEvent, pIoStatus);
     if (!pIrp)
@@ -118,6 +117,7 @@ static NTSTATUS vboxGdcSubmit(ULONG uCtl, PVOID pvBuffer, SIZE_T cbBuffer)
 
 static DECLCALLBACK(void) vboxNewProtMouseEventCb(void *pvContext)
 {
+    RT_NOREF(pvContext);
     PVBOXMOUSE_DEVEXT pDevExt = (PVBOXMOUSE_DEVEXT)ASMAtomicUoReadPtr((void * volatile *)&g_ctx.pCurrentDevExt);
     if (pDevExt)
     {

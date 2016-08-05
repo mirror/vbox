@@ -971,14 +971,12 @@ static NTSTATUS I8042OpenClose(PDEVICE_OBJECT pDevObj, PIRP Irp)
  */
 static VOID CtrlRetriesExceededDpc(PKDPC Dpc, PDEVICE_OBJECT pDevObj, PIRP Irp, PVOID pCtx)
 {
-    NOREF(Dpc);
-    NOREF(pCtx);
-    PDEVEXT pDevExt = (PDEVEXT)pDevObj->DeviceExtension;
+    RT_NOREF(Dpc, pCtx);
 
     Irp->IoStatus.Status = STATUS_IO_TIMEOUT;
 
     IoStartNextPacket(pDevObj, FALSE);
-    IoCompleteRequest (Irp, IO_KEYBOARD_INCREMENT);
+    IoCompleteRequest(Irp, IO_KEYBOARD_INCREMENT);
 }
 
 static UCHAR TypematicPeriod[] =
@@ -1090,6 +1088,7 @@ static VOID I8042StartIo(PDEVICE_OBJECT pDevObj, PIRP Irp)
  */
 static VOID CtrlTimeoutDpc(PKDPC Dpc, PDEVICE_OBJECT pDevObj, PVOID SystemContext1, PVOID SystemContext2)
 {
+    RT_NOREF(Dpc, SystemContext1, SystemContext2);
     PDEVEXT pDevExt = (PDEVEXT)pDevObj->DeviceExtension;
 
     KIRQL cancelIrql;
@@ -1573,7 +1572,10 @@ static BOOLEAN KbdIntHandler(PKINTERRUPT Interrupt, PVOID pCtx)
                                                             != (OUTPUT_BUFFER_FULL))
         {
             if (pDevExt->KeyboardEnableCount == 0)
+            {
                 UCHAR scanCode = I8X_GET_DATA_BYTE(pDevExt->DevRegs[i8042Dat]);
+                NOREF(scanCode);
+            }
             return FALSE;
         }
     }
@@ -1715,6 +1717,7 @@ static VOID KbdGetRegstry(PINITEXT pInit, PUNICODE_STRING RegistryPath,
                                                    &controllerType, NULL,
                                                    &peripheralType, NULL,
                                                    KbdCallOut, pInit);
+        NOREF(status); /* how diligent of us */
 
         if (pDevExt->HardwarePresent & KEYBOARD_HARDWARE_PRESENT)
         {
@@ -1746,7 +1749,6 @@ static VOID KbdGetRegstry(PINITEXT pInit, PUNICODE_STRING RegistryPath,
 static VOID MouGetRegstry(PINITEXT pInit, PUNICODE_STRING RegistryPath,
                           PUNICODE_STRING KeyboardDeviceName, PUNICODE_STRING PointerDeviceName)
 {
-    PDEVEXT pDevExt = &pInit->DevExt;
     NTSTATUS status = STATUS_SUCCESS;
     INTERFACE_TYPE interfaceType;
     CONFIGURATION_TYPE controllerType = PointerController;
@@ -1788,13 +1790,13 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
     PHYSICAL_ADDRESS Phys;
     BOOLEAN fConflict;
 
-    UNICODE_STRING KbdNameFull;
-    UNICODE_STRING MouNameFull;
-    UNICODE_STRING KbdNameBase;
-    UNICODE_STRING MouNameBase;
-    UNICODE_STRING DevNameSuff;
-    UNICODE_STRING resourceDeviceClass;
-    UNICODE_STRING registryPath;
+    UNICODE_STRING KbdNameFull          = { 0, 0, NULL };
+    UNICODE_STRING MouNameFull          = { 0, 0, NULL };
+    UNICODE_STRING KbdNameBase          = { 0, 0, NULL };
+    UNICODE_STRING MouNameBase          = { 0, 0, NULL };
+    UNICODE_STRING DevNameSuff          = { 0, 0, NULL };
+    UNICODE_STRING resourceDeviceClass  = { 0, 0, NULL };
+    UNICODE_STRING registryPath         = { 0, 0, NULL };
 
 #define NAME_MAX 256
     WCHAR keyboardBuffer[NAME_MAX];
@@ -1810,15 +1812,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
     }
 
     RtlZeroMemory(pInit, sizeof(INITEXT));
-    KbdNameFull.MaximumLength = 0;
-    KbdNameFull.Length = 0;
-    MouNameFull.MaximumLength = 0;
-    MouNameFull.Length = 0;
-    DevNameSuff.MaximumLength = 0;
-    DevNameSuff.Length = 0;
-    resourceDeviceClass.MaximumLength = 0;
-    resourceDeviceClass.Length = 0;
-    registryPath.MaximumLength = 0;
     RtlZeroMemory(keyboardBuffer, NAME_MAX * sizeof(WCHAR));
     KbdNameBase.Buffer = keyboardBuffer;
     KbdNameBase.Length = 0;
@@ -2928,6 +2921,7 @@ static NTSTATUS KbdCallOut(PVOID pCtx, PUNICODE_STRING PathName,
                            CONFIGURATION_TYPE uCtrlType, ULONG uCtrlNr, PKEY_VALUE_FULL_INFORMATION *pCtrlInf,
                            CONFIGURATION_TYPE uPrfType, ULONG uPrfNr, PKEY_VALUE_FULL_INFORMATION *pPrfInf)
 {
+    RT_NOREF(PathName, pBusInf, uCtrlType, uCtrlNr, uPrfType, uPrfNr);
     UNICODE_STRING unicodeIdentifier;
     GetDevIdentifier(pPrfInf, &unicodeIdentifier);
 
@@ -3080,6 +3074,7 @@ static NTSTATUS MouCallOut(PVOID pCtx, PUNICODE_STRING PathName,
                            CONFIGURATION_TYPE uCtrlType, ULONG uCtrlNr, PKEY_VALUE_FULL_INFORMATION *pCtrlInf,
                            CONFIGURATION_TYPE uPrfType, ULONG uPrfNr, PKEY_VALUE_FULL_INFORMATION *pPrfInf)
 {
+    RT_NOREF(PathName, pBusInf, uCtrlType, uCtrlNr, uPrfType, uPrfNr);
     NTSTATUS status = STATUS_SUCCESS;
 
     UNICODE_STRING unicodeIdentifier;
