@@ -31,7 +31,11 @@
 #define __WINE_WINE_DEBUG_H
 
 #include <stdarg.h>
+#ifndef VBOX_WINE_WITHOUT_LIBWINE
 #include <windef.h>
+#else
+# include <iprt/win/windows.h>
+#endif
 #ifndef GUID_DEFINED
 #include <guiddef.h>
 #endif

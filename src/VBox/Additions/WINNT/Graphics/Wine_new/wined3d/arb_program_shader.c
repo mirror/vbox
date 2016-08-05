@@ -4231,7 +4231,7 @@ static GLuint shader_arb_generate_vshader(const struct wined3d_shader *shader,
 
     /* Base Declarations */
     shader_generate_arb_declarations(shader, reg_maps, buffer, gl_info,
-            &priv_ctx.vs_clipplanes, &priv_ctx);
+            (DWORD *)&priv_ctx.vs_clipplanes, &priv_ctx);
 
     for(i = 0; i < MAX_CONST_I; i++)
     {

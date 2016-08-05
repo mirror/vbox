@@ -98,7 +98,9 @@ HRESULT resource_init(struct wined3d_resource *resource, struct wined3d_device *
 #endif
         )
 {
+#ifndef VBOX_WITH_WDDM
     const struct wined3d *d3d = device->wined3d;
+#endif
 
     resource->ref = 1;
     resource->device = device;
@@ -183,7 +185,9 @@ HRESULT resource_init(struct wined3d_resource *resource, struct wined3d_device *
 
 void resource_cleanup(struct wined3d_resource *resource)
 {
+#ifndef VBOX_WITH_WDDM
     const struct wined3d *d3d = resource->device->wined3d;
+#endif
     struct private_data *data;
     struct list *e1, *e2;
     HRESULT hr;

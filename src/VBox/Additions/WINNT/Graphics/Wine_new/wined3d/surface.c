@@ -654,7 +654,7 @@ static HRESULT d3dfmt_get_conv(const struct wined3d_surface *surface, BOOL need_
 void surface_setup_location_onopen(struct wined3d_surface *surface)
 {
     struct wined3d_device *device = surface->resource.device;
-    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+//    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     DWORD alloc_flag = SFLAG_ALLOCATED;
 //    DWORD alloc_flag = srgb ? SFLAG_SRGBALLOCATED : SFLAG_ALLOCATED;
     enum wined3d_conversion_type convert;
@@ -748,7 +748,7 @@ static void surface_bind(struct wined3d_surface *surface, struct wined3d_context
 #ifdef VBOX_WITH_WDDM
             if (VBOXSHRC_IS_SHARED_OPENED(surface))
             {
-                struct wined3d_gl_info *gl_info = &surface->resource.device->adapter->gl_info;
+                //struct wined3d_gl_info *gl_info = &surface->resource.device->adapter->gl_info;
                 ERR("should not be here!");
                 surface->texture_name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(surface);
                 Assert(surface->texture_name);

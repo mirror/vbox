@@ -370,9 +370,11 @@ static BOOL buffer_find_decl(struct wined3d_buffer *This)
     const struct wined3d_state *state = &device->stateBlock->state;
     BOOL support_d3dcolor = adapter->gl_info.supported[ARB_VERTEX_ARRAY_BGRA];
     BOOL support_xyzrhw = adapter->d3d_info.xyzrhw;
-    UINT stride_this_run = 0;
 #ifdef VBOX_WITH_WINE_FIX_BUFOFFSET
-    UINT offset_this_run = 0;
+    DWORD stride_this_run = 0;
+    DWORD offset_this_run = 0;
+#else
+    UINT stride_this_run = 0;
 #endif
     BOOL ret = FALSE;
 
@@ -865,9 +867,12 @@ void CDECL wined3d_buffer_preload(struct wined3d_buffer *buffer)
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context *context;
     BOOL decl_changed = FALSE;
+#ifndef VBOX_WITH_WINE_FIX_BUFOFFSET
     unsigned int i, j;
+#endif
     BYTE *data;
 #ifdef VBOX_WITH_WINE_FIX_BUFOFFSET
+    unsigned int j;
     BYTE *cur_ptr;
     UINT conv_start, conv_end;
 #endif

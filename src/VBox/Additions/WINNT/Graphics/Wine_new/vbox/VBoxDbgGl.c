@@ -303,7 +303,7 @@ void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, struct wined3d_dev
     {
         GLint curTex = 0;
         int iLevel;
-        struct gl_texture *pGlTex;
+        struct gl_texture const *pGlTex;
         const struct wined3d_texture *pTexture = (const struct wined3d_texture*)pDevice->stateBlock->state.textures[iStage];
 
         if (CheckTexUnit != iStage + GL_TEXTURE0)
@@ -347,6 +347,7 @@ void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, struct wined3d_dev
 
             Assert(surface->texture_target == pTexture->target);
             Assert(surface->texture_name == (pTexture->flags & WINED3D_TEXTURE_IS_SRGB) ? pTexture->texture_srgb.name : pTexture->texture_rgb.name);
+            NOREF(surface);
 #if 0
             if (pSurf->flags & SFLAG_INSYSMEM && !pSurf->Flags & SFLAG_PBO)
             {

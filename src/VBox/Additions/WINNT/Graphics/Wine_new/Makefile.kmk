@@ -43,7 +43,14 @@ TEMPLATE_VBoxGuestWineDLL_DEFS.x86 = __i386__
 #  -wd4204: nonstandard extension used : non-constant initializer
 #  -wd4245: '=' : conversion from 'int' to 'DWORD', signed/unsigned mismatch
 #  -wd4305: 'function' : truncation from 'double' to 'GLclampf'
-TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(filter-out -WX,$(TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS)) -wd4100  -wd4204 -wd4245 -wd4305
+#  -wd4305: 'function' : truncation from 'double' to 'GLclampf'
+#  -wd4018: '>' : signed/unsigned mismatch
+#  -wd4389: '!=' : signed/unsigned mismatch
+#  -wd4221: nonstandard extension used : 'render_targets' : cannot be initialized using address of automatic variable 'dst_surface'
+#  -wd4334: '<<' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
+#  -wd4267: 'function' : conversion from 'size_t' to 'GLsizei', possible loss of data
+TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(filter-out -WX,$(TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS)) \
+	-wd4100  -wd4204 -wd4245 -wd4305 -wd4018 -wd4389 -wd4221 -wd4334 -wd4267
 
 #
 # Template for building the D3D[89] stuff.

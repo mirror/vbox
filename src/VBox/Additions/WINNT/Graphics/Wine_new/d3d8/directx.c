@@ -35,10 +35,14 @@
 
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
+#ifndef VBOX
 #include "windef.h"
 #include "winbase.h"
 #include "wingdi.h"
 #include "winuser.h"
+#else
+# include <iprt/win/windows.h>
+#endif
 #include "wine/debug.h"
 #include "wine/unicode.h"
 
@@ -415,7 +419,7 @@ BOOL d3d8_init(struct d3d8 *d3d8)
 {
     DWORD flags = WINED3D_LEGACY_DEPTH_BIAS | WINED3D_VIDMEM_ACCOUNTING;
 
-    d3d8->IDirect3D8_iface.lpVtbl = &d3d8_vtbl;
+    d3d8->IDirect3D8_iface.lpVtbl = (struct IDirect3D8Vtbl *)&d3d8_vtbl;
     d3d8->refcount = 1;
 
     wined3d_mutex_lock();

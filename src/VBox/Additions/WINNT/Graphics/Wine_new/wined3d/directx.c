@@ -1774,7 +1774,9 @@ static UINT d3d_level_from_gl_info(const struct wined3d_gl_info *gl_info)
 static enum wined3d_pci_device select_card_nvidia_binary(const struct wined3d_gl_info *gl_info,
         const char *gl_renderer)
 {
+#ifndef VBOX_WITH_WDDM
     UINT d3d_level = d3d_level_from_gl_info(gl_info);
+#endif
     unsigned int i;
 
 #ifndef VBOX_WITH_WDDM
@@ -1876,6 +1878,7 @@ static enum wined3d_pci_device select_card_nvidia_binary(const struct wined3d_gl
         return PCI_DEVICE_NONE;
     }
 
+#ifndef VBOX_WITH_WDDM
     /* Both the GeforceFX, 6xxx and 7xxx series support D3D9. The last two types have more
      * shader capabilities, so we use the shader capabilities to distinguish between FX and 6xxx/7xxx.
      */
@@ -1972,12 +1975,15 @@ static enum wined3d_pci_device select_card_nvidia_binary(const struct wined3d_gl
     }
 
     return CARD_NVIDIA_RIVA_TNT; /* Riva TNT, Vanta */
+#endif /* !VBOX_WITH_WDDM */
 }
 
 static enum wined3d_pci_device select_card_amd_binary(const struct wined3d_gl_info *gl_info,
         const char *gl_renderer)
 {
+#ifndef VBOX_WITH_WDDM
     UINT d3d_level = d3d_level_from_gl_info(gl_info);
+#endif
 
     /* See http://developer.amd.com/drivers/pc_vendor_id/Pages/default.aspx
      *
@@ -2072,6 +2078,7 @@ static enum wined3d_pci_device select_card_amd_binary(const struct wined3d_gl_in
         return PCI_DEVICE_NONE;
     }
 
+#ifndef VBOX_WITH_WDDM
     if (d3d_level >= 9)
     {
         /* Radeon R5xx */
@@ -2109,6 +2116,7 @@ static enum wined3d_pci_device select_card_amd_binary(const struct wined3d_gl_in
     }
 
     return PCI_DEVICE_NONE;
+#endif /*!VBOX_WITH_WDDM*/
 }
 
 static enum wined3d_pci_device select_card_intel(const struct wined3d_gl_info *gl_info,
@@ -2650,7 +2658,7 @@ static void parse_extension_string(struct wined3d_gl_info *gl_info, const char *
 
 static void load_gl_funcs(struct wined3d_gl_info *gl_info)
 {
-#define USE_GL_FUNC(pfn) (*(PROC *)(&gl_info->gl_ops.ext.p_##pfn)) = wglGetProcAddress(#pfn);
+#define USE_GL_FUNC(pfn) (*(PROC *)&gl_info->gl_ops.ext.p_##pfn) = wglGetProcAddress(#pfn);
     GL_EXT_FUNCS_GEN;
 #undef USE_GL_FUNC
 
@@ -5342,7 +5350,7 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
 # define USE_GL_FUNC(f) (*(FARPROC *)&(gl_info->gl_ops.gl.p_##f)) = GetProcAddress(mod_gl, #f);
         ALL_WGL_FUNCS
 # undef USE_GL_FUNC
-        gl_info->gl_ops.wgl.p_wglSwapBuffers = (void *)GetProcAddress(mod_gl, "wglSwapBuffers");
+        *(FARPROC *)&gl_info->gl_ops.wgl.p_wglSwapBuffers = GetProcAddress(mod_gl, "wglSwapBuffers");
     }
 #else
     /* To bypass the opengl32 thunks retrieve functions from the WGL driver instead of opengl32 */

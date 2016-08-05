@@ -35,6 +35,9 @@
 
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
+#ifdef VBOX
+# include "d3d8_private.h" /* Must include windows stuff with COBJMACROS defined. */
+#endif
 #include "windef.h"
 #include "winbase.h"
 #include "winuser.h"
@@ -2464,7 +2467,7 @@ static HRESULT WINAPI d3d8_device_GetVertexShaderFunction(IDirect3DDevice8 *ifac
         return D3D_OK;
     }
 
-    hr = wined3d_shader_get_byte_code(shader_impl->wined3d_shader, data, data_size);
+    hr = wined3d_shader_get_byte_code(shader_impl->wined3d_shader, data, (UINT *)data_size);
     wined3d_mutex_unlock();
 
     return hr;
@@ -2708,7 +2711,7 @@ static HRESULT WINAPI d3d8_device_GetPixelShaderFunction(IDirect3DDevice8 *iface
         return D3DERR_INVALIDCALL;
     }
 
-    hr = wined3d_shader_get_byte_code(shader_impl->wined3d_shader, data, data_size);
+    hr = wined3d_shader_get_byte_code(shader_impl->wined3d_shader, data, (UINT *)data_size);
     wined3d_mutex_unlock();
 
     return hr;
@@ -3070,7 +3073,7 @@ HRESULT device_init(struct d3d8_device *device, struct d3d8 *parent, struct wine
     struct wined3d_swapchain_desc swapchain_desc;
     HRESULT hr;
 
-    device->IDirect3DDevice8_iface.lpVtbl = &d3d8_device_vtbl;
+    device->IDirect3DDevice8_iface.lpVtbl = (struct IDirect3DDevice8Vtbl *)&d3d8_device_vtbl;
     device->device_parent.ops = &d3d8_wined3d_device_parent_ops;
     device->ref = 1;
     device->handle_table.entries = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,

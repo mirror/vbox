@@ -207,7 +207,8 @@ GLint (WINAPI *pVBoxGetWindowId)(HDC)  DECLSPEC_HIDDEN;
 GLint (WINAPI *pVBoxGetContextId)(HGLRC)  DECLSPEC_HIDDEN;
 
 
-#define VBOX_USE_GL_FUNC(pfn) p##pfn = (void *)wglGetProcAddress(#pfn);
+/* Right, we just have to do things our own way some undisclosed reason. sigh. */
+#define VBOX_USE_GL_FUNC(pfn) (*(PROC *)&(p##pfn)) = wglGetProcAddress(#pfn);
 
 # define VBOX_GL_FUNCS_GEN \
         VBOX_USE_FUNC(VBoxCreateContext) \
