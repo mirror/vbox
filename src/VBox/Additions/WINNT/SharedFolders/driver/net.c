@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox Windows Guest Shared Folders
- *
- * File System Driver network redirector subsystem routines
+ * VirtualBox Windows Guest Shared Folders - File System Driver network redirector subsystem routines
  */
 
 /*
@@ -22,6 +19,7 @@
 
 NTSTATUS VBoxMRxUpdateNetRootState(IN OUT PMRX_NET_ROOT pNetRoot)
 {
+    RT_NOREF(pNetRoot);
     Log(("VBOXSF: MRxUpdateNetRootState\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
@@ -245,19 +243,18 @@ l_Exit:
     return Status;
 }
 
-NTSTATUS VBoxMRxFinalizeVNetRoot(IN PMRX_V_NET_ROOT pVNetRoot,
-                                 IN PBOOLEAN ForceDisconnect)
+NTSTATUS VBoxMRxFinalizeVNetRoot(IN PMRX_V_NET_ROOT pVNetRoot, IN PBOOLEAN ForceDisconnect)
 {
-    Log(("VBOXSF: MRxFinalizeVNetRoot: V_NET_ROOT %p, NET_ROOT %p\n",
-         pVNetRoot, pVNetRoot->pNetRoot));
+    RT_NOREF(pVNetRoot, ForceDisconnect);
+    Log(("VBOXSF: MRxFinalizeVNetRoot: V_NET_ROOT %p, NET_ROOT %p\n", pVNetRoot, pVNetRoot->pNetRoot));
 
     return STATUS_SUCCESS;
 }
 
-NTSTATUS VBoxMRxFinalizeNetRoot(IN PMRX_NET_ROOT pNetRoot,
-                                IN PBOOLEAN ForceDisconnect)
+NTSTATUS VBoxMRxFinalizeNetRoot(IN PMRX_NET_ROOT pNetRoot, IN PBOOLEAN ForceDisconnect)
 {
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(pNetRoot);
+    RT_NOREF(pNetRoot, ForceDisconnect);
 
     Log(("VBOXSF: MRxFinalizeNetRoot: NET_ROOT %p\n", pNetRoot));
 
@@ -398,10 +395,10 @@ static VOID vbsfExecuteCreateSrvCall(PMRX_SRVCALL_CALLBACK_CONTEXT pCallbackCont
     SrvCalldownStructure->CallBack(SCCBC);
 }
 
-NTSTATUS VBoxMRxCreateSrvCall(PMRX_SRV_CALL pSrvCall,
-                              PMRX_SRVCALL_CALLBACK_CONTEXT pCallbackContext)
+NTSTATUS VBoxMRxCreateSrvCall(PMRX_SRV_CALL pSrvCall, PMRX_SRVCALL_CALLBACK_CONTEXT pCallbackContext)
 {
     PMRX_SRVCALLDOWN_STRUCTURE SrvCalldownStructure = (PMRX_SRVCALLDOWN_STRUCTURE)(pCallbackContext->SrvCalldownStructure);
+    RT_NOREF(pSrvCall);
 
     Log(("VBOXSF: MRxCreateSrvCall: %p.\n", pSrvCall));
 
@@ -434,9 +431,9 @@ NTSTATUS VBoxMRxCreateSrvCall(PMRX_SRV_CALL pSrvCall,
     return STATUS_PENDING;
 }
 
-NTSTATUS VBoxMRxFinalizeSrvCall (PMRX_SRV_CALL pSrvCall,
-                                 BOOLEAN Force)
+NTSTATUS VBoxMRxFinalizeSrvCall(PMRX_SRV_CALL pSrvCall, BOOLEAN Force)
 {
+    RT_NOREF(Force);
     Log(("VBOXSF: MRxFinalizeSrvCall %p, ctx = %p.\n", pSrvCall, pSrvCall->Context));
 
     pSrvCall->Context = NULL;
@@ -444,12 +441,9 @@ NTSTATUS VBoxMRxFinalizeSrvCall (PMRX_SRV_CALL pSrvCall,
     return STATUS_SUCCESS;
 }
 
-NTSTATUS VBoxMRxSrvCallWinnerNotify(IN PMRX_SRV_CALL pSrvCall,
-                                    IN BOOLEAN ThisMinirdrIsTheWinner,
-                                    IN OUT PVOID pSrvCallContext)
+NTSTATUS VBoxMRxSrvCallWinnerNotify(IN PMRX_SRV_CALL pSrvCall, IN BOOLEAN ThisMinirdrIsTheWinner, IN OUT PVOID pSrvCallContext)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
+    RT_NOREF(ThisMinirdrIsTheWinner, pSrvCallContext);
     Log(("VBOXSF: MRxSrvCallWinnerNotify: pSrvCall %p, pSrvCall->Ctx %p, winner %d, context %p\n",
          pSrvCall, pSrvCall->Context, ThisMinirdrIsTheWinner, pSrvCallContext));
 
