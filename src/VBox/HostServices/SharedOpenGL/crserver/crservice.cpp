@@ -31,7 +31,6 @@
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 #include <VBox/com/array.h>
-#if 0
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/errorprint.h>
@@ -1593,5 +1592,4 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
     return TRUE;
 }
-#endif
 #endif
