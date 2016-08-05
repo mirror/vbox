@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Miniport registry related functions
  */
@@ -19,9 +18,9 @@
 #include "common/VBoxMPCommon.h"
 
 static VP_STATUS
-VBoxMPQueryNamedValueCB(PVOID HwDeviceExtension, PVOID Context,
-                        PWSTR ValueName, PVOID ValueData, ULONG ValueLength)
+VBoxMPQueryNamedValueCB(PVOID HwDeviceExtension, PVOID Context, PWSTR ValueName, PVOID ValueData, ULONG ValueLength)
 {
+    RT_NOREF(HwDeviceExtension, ValueName);
     PAGED_CODE();
 
     if (!ValueLength || !Context)
@@ -44,6 +43,7 @@ VP_STATUS VBoxMPCmnRegInit(IN PVBOXMP_DEVEXT pExt, OUT VBOXMPCMNREGISTRY *pReg)
 
 VP_STATUS VBoxMPCmnRegFini(IN VBOXMPCMNREGISTRY Reg)
 {
+    RT_NOREF(Reg);
     return NO_ERROR;
 }
 

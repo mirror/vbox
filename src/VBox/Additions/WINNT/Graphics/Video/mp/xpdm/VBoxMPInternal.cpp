@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Miniport internal functions
  */
@@ -85,7 +84,7 @@ static DECLCALLBACK(int) VBoxVbvaInitInfoDisplayCB(void *pvData, struct VBVAINFO
     PVBOXMP_DEVEXT pExt, pPrimaryExt = (PVBOXMP_DEVEXT) pvData;
     unsigned i;
 
-    for (i=0, pExt=pPrimaryExt; i<cViews && pExt; i++, pExt=pExt->pNext)
+    for (i = 0, pExt=pPrimaryExt; i < cViews && pExt; i++, pExt = pExt->pNext)
     {
         p[i].u32ViewIndex     = pExt->iDevice;
         p[i].u32ViewOffset    = pExt->ulFrameBufferOffset;
@@ -99,7 +98,7 @@ static DECLCALLBACK(int) VBoxVbvaInitInfoDisplayCB(void *pvData, struct VBVAINFO
                                     0;
     }
 
-    if (i == VBoxCommonFromDeviceExt(pPrimaryExt)->cDisplays && pExt == NULL)
+    if (i == (unsigned)VBoxCommonFromDeviceExt(pPrimaryExt)->cDisplays && pExt == NULL)
     {
         return VINF_SUCCESS;
     }
@@ -110,6 +109,7 @@ static DECLCALLBACK(int) VBoxVbvaInitInfoDisplayCB(void *pvData, struct VBVAINFO
 
 void VBoxCreateDisplays(PVBOXMP_DEVEXT pExt, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
 {
+    RT_NOREF(pConfigInfo);
     LOGF_ENTER();
 
     PVBOXMP_COMMON pCommon = VBoxCommonFromDeviceExt(pExt);

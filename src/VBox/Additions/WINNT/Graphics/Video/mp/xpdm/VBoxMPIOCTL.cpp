@@ -40,6 +40,7 @@
  */
 BOOLEAN VBoxMPResetDevice(PVBOXMP_DEVEXT pExt, PSTATUS_BLOCK pStatus)
 {
+    RT_NOREF(pStatus);
     LOGF_ENTER();
 
     if (pExt->iDevice>0)
@@ -277,6 +278,7 @@ BOOLEAN VBoxMPQueryAvailModes(PVBOXMP_DEVEXT pExt, PVIDEO_MODE_INFORMATION pMode
  */
 BOOLEAN VBoxMPSetColorRegisters(PVBOXMP_DEVEXT pExt, PVIDEO_CLUT pClut, PSTATUS_BLOCK pStatus)
 {
+    RT_NOREF(pExt);
     LONG entry;
 
     LOGF_ENTER();
@@ -410,6 +412,7 @@ BOOLEAN VBoxMPQueryPointerPosition(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_POSITION 
  */
 BOOLEAN VBoxMPQueryPointerCapabilities(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_CAPABILITIES pCaps, PSTATUS_BLOCK pStatus)
 {
+    RT_NOREF(pExt);
     LOGF_ENTER();
 
     pStatus->Information = sizeof(VIDEO_POINTER_CAPABILITIES);
@@ -419,8 +422,8 @@ BOOLEAN VBoxMPQueryPointerCapabilities(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_CAPAB
     pCaps->MaxWidth  = 64;
     pCaps->MaxHeight = 64;
     /* Not used by our display driver */
-    pCaps->HWPtrBitmapStart = -1;
-    pCaps->HWPtrBitmapEnd   = -1;
+    pCaps->HWPtrBitmapStart = ~(ULONG)0;
+    pCaps->HWPtrBitmapEnd   = ~(ULONG)0;
 
     LOGF_LEAVE();
     return TRUE;
