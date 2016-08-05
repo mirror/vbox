@@ -27,14 +27,17 @@
 # include <QTimer>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
 # include "UISession.h"
 # include "UIActionPoolRuntime.h"
 # include "UIMachineLogic.h"
 # include "UIMachineWindow.h"
 # include "UIMachineViewNormal.h"
-# include "UIExtraDataManager.h"
 # include "UIFrameBuffer.h"
+# include "UIExtraDataManager.h"
+# include "UIDesktopWidgetWatchdog.h"
+
+/* Other VBox includes: */
+# include "VBox/log.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -254,7 +257,7 @@ QSize UIMachineViewNormal::sizeHint() const
 
 QRect UIMachineViewNormal::workingArea() const
 {
-    return vboxGlobal().availableGeometry(this);
+    return gpDesktop->availableGeometry(this);
 }
 
 QSize UIMachineViewNormal::calculateMaxGuestSize() const

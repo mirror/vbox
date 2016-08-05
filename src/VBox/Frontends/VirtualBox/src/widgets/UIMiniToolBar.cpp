@@ -41,6 +41,7 @@
 # include "UIMiniToolBar.h"
 # include "UIAnimationFramework.h"
 # include "UIIconPool.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_X11
 #  include "UIExtraDataManager.h"
@@ -641,8 +642,8 @@ void UIMiniToolBar::sltAdjust()
     QRect workingArea;
     switch (m_geometryType)
     {
-        case GeometryType_Available: workingArea = vboxGlobal().availableGeometry(iHostScreen); break;
-        case GeometryType_Full:      workingArea = vboxGlobal().screenGeometry(iHostScreen); break;
+        case GeometryType_Available: workingArea = gpDesktop->availableGeometry(iHostScreen); break;
+        case GeometryType_Full:      workingArea = gpDesktop->screenGeometry(iHostScreen); break;
     }
     Q_UNUSED(workingArea);
 

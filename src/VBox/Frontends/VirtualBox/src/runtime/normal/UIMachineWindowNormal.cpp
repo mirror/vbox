@@ -28,6 +28,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIMachineWindowNormal.h"
 # include "UIActionPoolRuntime.h"
 # include "UIExtraDataManager.h"
@@ -391,8 +392,8 @@ void UIMachineWindowNormal::loadSettings()
         else
         {
             /* Get available geometry, for screen with (x,y) coords if possible: */
-            QRect availableGeo = !geo.isNull() ? vboxGlobal().availableGeometry(QPoint(geo.x(), geo.y())) :
-                                                 vboxGlobal().availableGeometry(this);
+            QRect availableGeo = !geo.isNull() ? gpDesktop->availableGeometry(QPoint(geo.x(), geo.y())) :
+                                                 gpDesktop->availableGeometry(this);
 
             /* Normalize to the optimal size: */
             normalizeGeometry(true /* adjust position */);
@@ -463,7 +464,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
         {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
             /* Prevent handling if fake screen detected: */
-            if (vboxGlobal().isFakeScreenDetected())
+            if (gpDesktop->isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
@@ -483,7 +484,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
         {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
             /* Prevent handling if fake screen detected: */
-            if (vboxGlobal().isFakeScreenDetected())
+            if (gpDesktop->isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
@@ -570,10 +571,10 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
 
     /* Calculate common bound region: */
     QRegion region;
-    for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
+    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
     {
         /* Get enumerated screen's available area: */
-        QRect rect = vboxGlobal().availableGeometry(iScreenIndex);
+        QRect rect = gpDesktop->availableGeometry(iScreenIndex);
 #ifdef VBOX_WS_WIN
         /* On Windows host window can exceed the available
          * area in maximized/sticky-borders state: */

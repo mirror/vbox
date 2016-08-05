@@ -28,6 +28,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
 # include "UISession.h"
@@ -1436,7 +1437,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
             case QEvent::Move:
             {
                 /* Get current host-screen number: */
-                const int iCurrentHostScreenNumber = vboxGlobal().screenNumber(this);
+                const int iCurrentHostScreenNumber = gpDesktop->screenNumber(this);
                 if (m_iHostScreenNumber != iCurrentHostScreenNumber)
                 {
                     /* Recache current host screen: */

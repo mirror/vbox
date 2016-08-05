@@ -41,6 +41,7 @@
 # include "UIMessageCenter.h"
 # include "UISpecialControls.h"
 # include "UIVMLogViewer.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "VBoxGlobal.h"
 # include "VBoxUtils.h"
 
@@ -1012,7 +1013,7 @@ void UIVMLogViewer::loadSettings()
     /* Restore window geometry: */
     {
         /* Getting available geometry to calculate default geometry: */
-        const QRect desktopRect = vboxGlobal().availableGeometry(this);
+        const QRect desktopRect = gpDesktop->availableGeometry(this);
         int iDefaultWidth = desktopRect.width() / 2;
         int iDefaultHeight = desktopRect.height() * 3 / 4;
 

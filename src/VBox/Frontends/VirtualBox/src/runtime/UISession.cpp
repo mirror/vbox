@@ -30,6 +30,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UISession.h"
 # include "UIMachine.h"
@@ -840,7 +841,7 @@ void UISession::sltCheckIfHostDisplayChanged()
     LogRelFlow(("GUI: UISession::sltCheckIfHostDisplayChanged()\n"));
 
     /* Check if display count changed: */
-    if (vboxGlobal().screenCount() != m_hostScreens.size())
+    if (gpDesktop->screenCount() != m_hostScreens.size())
     {
         /* Reset watchdog: */
         m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
@@ -850,9 +851,9 @@ void UISession::sltCheckIfHostDisplayChanged()
     else
     {
         /* Check if at least one display geometry changed: */
-        for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
+        for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
         {
-            if (vboxGlobal().screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
+            if (gpDesktop->screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
             {
                 /* Reset watchdog: */
                 m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
@@ -2196,8 +2197,8 @@ void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer)
 void UISession::updateHostScreenData()
 {
     m_hostScreens.clear();
-    for (int iScreenIndex = 0; iScreenIndex < vboxGlobal().screenCount(); ++iScreenIndex)
-        m_hostScreens << vboxGlobal().screenGeometry(iScreenIndex);
+    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
+        m_hostScreens << gpDesktop->screenGeometry(iScreenIndex);
 }
 
 void UISession::updateActionRestrictions()

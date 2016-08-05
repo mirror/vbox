@@ -38,6 +38,7 @@
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* GUI includes: */
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMainEventListener.h"
 # include "VBoxGlobalSettings.h"
@@ -2427,8 +2428,8 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
-                                          vboxGlobal().availableGeometry();
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
 #ifdef VBOX_WS_WIN
@@ -3639,8 +3640,8 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
-                                          vboxGlobal().availableGeometry();
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
 #ifdef VBOX_WS_WIN
@@ -3798,8 +3799,8 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
     /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
-                                          vboxGlobal().availableGeometry();
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
 
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
 #ifdef VBOX_WS_WIN
@@ -3917,8 +3918,8 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defau
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
 #ifdef VBOX_WS_WIN
     /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? vboxGlobal().availableGeometry(QPoint(iX, iY)) :
-                                          vboxGlobal().availableGeometry();
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
 
     /* Make sure resulting geometry is within current bounds: */
     if (!availableGeometry.contains(geometry))

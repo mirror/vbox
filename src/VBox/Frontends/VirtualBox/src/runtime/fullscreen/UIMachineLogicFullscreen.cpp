@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIMessageCenter.h"
 # include "UISession.h"
 # include "UIActionPoolRuntime.h"
@@ -765,9 +766,9 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
         {
             /* Variables to compare: */
             const int iWantedHostScreenIndex = hostScreenForGuestScreen((int)uScreenID);
-            const int iCurrentHostScreenIndex = vboxGlobal().screenNumber(pMachineWindow);
+            const int iCurrentHostScreenIndex = gpDesktop->screenNumber(pMachineWindow);
             const QSize frameBufferSize((int)uisession()->frameBuffer(uScreenID)->width(), (int)uisession()->frameBuffer(uScreenID)->height());
-            const QSize screenSize = vboxGlobal().screenGeometry(iWantedHostScreenIndex).size();
+            const QSize screenSize = gpDesktop->screenGeometry(iWantedHostScreenIndex).size();
 
             /* If that window
              * 1. shouldn't really be shown or

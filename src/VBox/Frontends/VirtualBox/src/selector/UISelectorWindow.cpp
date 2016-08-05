@@ -66,6 +66,7 @@
 # include "UIGDetails.h"
 # include "UIVMItem.h"
 # include "UIExtraDataManager.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
@@ -141,7 +142,7 @@ UISelectorWindow::~UISelectorWindow()
 void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
 {
     /* Prevent handling if fake screen detected: */
-    if (vboxGlobal().isFakeScreenDetected())
+    if (gpDesktop->isFakeScreenDetected())
         return;
 
     /* Restore the geometry cached by the window: */
@@ -1083,7 +1084,7 @@ bool UISelectorWindow::event(QEvent *pEvent)
         {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
             /* Prevent handling if fake screen detected: */
-            if (vboxGlobal().isFakeScreenDetected())
+            if (gpDesktop->isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
@@ -1098,7 +1099,7 @@ bool UISelectorWindow::event(QEvent *pEvent)
         {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
             /* Prevent handling if fake screen detected: */
-            if (vboxGlobal().isFakeScreenDetected())
+            if (gpDesktop->isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 

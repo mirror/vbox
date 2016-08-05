@@ -32,6 +32,7 @@
 # include "UISession.h"
 # include "UIMessageCenter.h"
 # include "UIExtraDataManager.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -98,7 +99,7 @@ void UIMultiScreenLayout::update()
                 /* Get top-left corner position: */
                 QPoint topLeftPosition(geo.topLeft());
                 /* Check which host-screen the position belongs to: */
-                iHostScreen = vboxGlobal().screenNumber(topLeftPosition);
+                iHostScreen = gpDesktop->screenNumber(topLeftPosition);
                 /* Revalidate: */
                 fValid =    iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
                          && m_screenMap.key(iHostScreen, -1) == -1; /* Not taken already? */
@@ -256,7 +257,7 @@ void UIMultiScreenLayout::sltHandleScreenLayoutChange(int iRequestedGuestScreen,
 
 void UIMultiScreenLayout::calculateHostMonitorCount()
 {
-    m_cHostScreens = vboxGlobal().screenCount();
+    m_cHostScreens = gpDesktop->screenCount();
 }
 
 void UIMultiScreenLayout::calculateGuestScreenCount()
@@ -295,9 +296,9 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
     {
         QRect screen;
         if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
-            screen = vboxGlobal().availableGeometry(screenLayout.value(iGuestScreen, 0));
+            screen = gpDesktop->availableGeometry(screenLayout.value(iGuestScreen, 0));
         else
-            screen = vboxGlobal().screenGeometry(screenLayout.value(iGuestScreen, 0));
+            screen = gpDesktop->screenGeometry(screenLayout.value(iGuestScreen, 0));
         KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
         display.GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin, monitorStatus);
         usedBits += screen.width() * /* display width */

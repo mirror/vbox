@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UISession.h"
 # include "UIMachineLogic.h"
@@ -111,8 +112,8 @@ void UIMachineWindowScale::loadSettings()
         else
         {
             /* Get available geometry, for screen with (x,y) coords if possible: */
-            QRect availableGeo = !geo.isNull() ? vboxGlobal().availableGeometry(QPoint(geo.x(), geo.y())) :
-                                                 vboxGlobal().availableGeometry(this);
+            QRect availableGeo = !geo.isNull() ? gpDesktop->availableGeometry(QPoint(geo.x(), geo.y())) :
+                                                 gpDesktop->availableGeometry(this);
 
             /* Resize to default size: */
             resize(640, 480);
@@ -181,7 +182,7 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
         {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
             /* Prevent handling if fake screen detected: */
-            if (vboxGlobal().isFakeScreenDetected())
+            if (gpDesktop->isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
@@ -200,7 +201,7 @@ bool UIMachineWindowScale::event(QEvent *pEvent)
         {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
             /* Prevent handling if fake screen detected: */
-            if (vboxGlobal().isFakeScreenDetected())
+            if (gpDesktop->isFakeScreenDetected())
                 break;
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 

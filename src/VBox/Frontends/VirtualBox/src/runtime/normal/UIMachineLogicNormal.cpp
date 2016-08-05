@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIMessageCenter.h"
 # include "UISession.h"
 # include "UIActionPoolRuntime.h"
@@ -254,7 +255,7 @@ void UIMachineLogicNormal::sltHostScreenAvailableAreaChange()
 {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
     /* Prevent handling if fake screen detected: */
-    if (vboxGlobal().isFakeScreenDetected())
+    if (gpDesktop->isFakeScreenDetected())
         return;
 
     /* Make sure all machine-window(s) have previous but normalized geometry: */

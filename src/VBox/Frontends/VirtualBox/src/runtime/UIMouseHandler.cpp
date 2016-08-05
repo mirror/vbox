@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
@@ -183,7 +184,7 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
         QRect visibleRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
         QPoint visibleRectanglePos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
         visibleRectangle.translate(visibleRectanglePos);
-        visibleRectangle = visibleRectangle.intersected(vboxGlobal().availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
+        visibleRectangle = visibleRectangle.intersected(gpDesktop->availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
 
 #ifdef VBOX_WS_WIN
         /* Move the mouse to the center of the visible area: */
@@ -1118,7 +1119,7 @@ void UIMouseHandler::updateMouseCursorClipping()
         /* Get full-viewport-rectangle in global coordinates: */
         viewportRectangle.translate(viewportRectangleGlobalPos);
         /* Trim full-viewport-rectangle by available geometry: */
-        viewportRectangle = viewportRectangle.intersected(vboxGlobal().availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
+        viewportRectangle = viewportRectangle.intersected(gpDesktop->availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
         /* Trim partial-viewport-rectangle by top-most windows: */
         QRegion viewportRegion(viewportRectangle);
         QRegion topMostRegion(NativeWindowSubsystem::areaCoveredByTopMostWindows());

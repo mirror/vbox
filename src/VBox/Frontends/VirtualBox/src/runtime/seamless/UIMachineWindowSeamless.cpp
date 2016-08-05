@@ -25,6 +25,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UISession.h"
 # include "UIActionPoolRuntime.h"
@@ -173,7 +174,7 @@ void UIMachineWindowSeamless::placeOnScreen()
     /* Get corresponding host-screen: */
     const int iHostScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
-    const QRect workingArea = vboxGlobal().availableGeometry(iHostScreen);
+    const QRect workingArea = gpDesktop->availableGeometry(iHostScreen);
 
     /* Set appropriate geometry for window: */
     resize(workingArea.size());
