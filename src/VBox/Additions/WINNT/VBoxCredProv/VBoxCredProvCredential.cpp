@@ -23,7 +23,7 @@
 # include <ntstatus.h>
 # define WIN32_NO_STATUS
 #endif
-#include <intsafe.h>
+#include <iprt/win/intsafe.h>
 
 #include "VBoxCredentialProvider.h"
 
@@ -753,14 +753,15 @@ VBoxCredProvCredential::GetSubmitButtonValue(DWORD dwFieldID, DWORD *pdwAdjacent
  *
  * @return  HRESULT
  * @param   dwFieldID               Field to set value for.
- * @param   pcwzString              Actual value to set.
+ * @param   pwszValue               Actual value to set.
  */
 HRESULT
-VBoxCredProvCredential::SetStringValue(DWORD dwFieldID, PCWSTR pcwzString)
+VBoxCredProvCredential::SetStringValue(DWORD dwFieldID, PCWSTR pwszValue)
 {
+    RT_NOREF(dwFieldID, pwszValue);
 #ifdef DEBUG
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetStringValue: dwFieldID=%ld, pcwzString=%ls\n",
-                        dwFieldID, pcwzString);
+                        dwFieldID, pwszValue);
 #endif
 
     /* Do more things here later. */
@@ -946,7 +947,24 @@ VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
 
                 if (SUCCEEDED(hr))
                 {
-                    ULONG ulAuthPackage;
+                    ULONG ulAuthPackage = 0;
+/** @todo r=bird: The code flow here looks wrong.  The fact that ulAuthPackage
+ *        wasn't initialized if LsaConnectUntrusted fails, but still used and
+ *        we seemingly even succeed the operation as a whole.  Unfortunately,
+ *        the code does not have any comments what-so-family-ever to
+ *        enlighten us as to wtf (f == family) this Lsa stuff is doing and
+ *        why it appear to be kind of optional...
+ *
+ *        I'm pretty sure this code if broken.  And if it is, it's because the
+ *        stupid, stupid, code structure where you repeat state checks to avoid
+ *        hugging the right margin.  The function is too long already, so the
+ *        right way to deal with that is to split up the work into several
+ *        functions with simplier control flow.
+ */
+#pragma message("TODO: Investigate code flow around ulAuthPackage!")
+#ifdef DEBUG_andy
+# error "fix this ASAP, it's been here since the r76490 rewrite"
+#endif
 
                     HANDLE hLsa;
                     NTSTATUS s = LsaConnectUntrusted(&hLsa);
@@ -970,8 +988,7 @@ VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
 
                         if (SUCCEEDED(hr))
                         {
-                            s = LsaLookupAuthenticationPackage(hLsa, &lsaszKerberosName,
-                                                               &ulAuthPackage);
+                            s = LsaLookupAuthenticationPackage(hLsa, &lsaszKerberosName, &ulAuthPackage);
                             if (FAILED(HRESULT_FROM_NT(s)))
                             {
                                 hr = HRESULT_FROM_NT(s);
@@ -1022,6 +1039,7 @@ VBoxCredProvCredential::ReportResult(NTSTATUS ntStatus,
                                      PWSTR *ppwszOptionalStatusText,
                                      CREDENTIAL_PROVIDER_STATUS_ICON *pcpsiOptionalStatusIcon)
 {
+    RT_NOREF(ntStatus, ntSubStatus, ppwszOptionalStatusText, pcpsiOptionalStatusIcon);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::ReportResult: ntStatus=%ld, ntSubStatus=%ld\n",
                         ntStatus, ntSubStatus);
     return S_OK;

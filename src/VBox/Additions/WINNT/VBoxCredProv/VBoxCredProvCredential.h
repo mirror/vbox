@@ -73,7 +73,7 @@ public:
     IFACEMETHODIMP GetComboBoxValueAt(DWORD dwFieldID, DWORD dwItem, PWSTR *ppwszItem);
     IFACEMETHODIMP GetSubmitButtonValue(DWORD dwFieldID, DWORD *pdwAdjacentTo);
 
-    IFACEMETHODIMP SetStringValue(DWORD dwFieldID, PCWSTR pcwzString);
+    IFACEMETHODIMP SetStringValue(DWORD dwFieldID, PCWSTR pwszValue);
     IFACEMETHODIMP SetCheckboxValue(DWORD dwFieldID, BOOL fChecked);
     IFACEMETHODIMP SetComboBoxSelectedValue(DWORD dwFieldID, DWORD dwSelectedItem);
     IFACEMETHODIMP CommandLinkClicked(DWORD dwFieldID);

@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #include <new> /* For bad_alloc. */
 
+#include <iprt/win/windows.h>
 #include <credentialprovider.h>
 
 #include <iprt/err.h>
