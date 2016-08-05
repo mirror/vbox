@@ -89,7 +89,7 @@ struct VBOXVR_SCR_COMPOSITOR_ENTRY;
 #define CR_RENDER_DEFAULT_CONTEXT_ID (INT32_MAX-1)
 #define CR_RENDER_DEFAULT_WINDOW_ID (INT32_MAX-1)
 
-#if defined(IN_GUEST) && (WINDOWS) && defined(VBOX_WITH_WDDM)
+#if defined(IN_GUEST) && defined(RT_OS_WINDOWS) && defined(VBOX_WITH_WDDM)
 # ifdef VBOX_WDDM_WOW64
 #  define VBOX_MODNAME_DISPD3D "VBoxDispD3D-x86"
 # else
