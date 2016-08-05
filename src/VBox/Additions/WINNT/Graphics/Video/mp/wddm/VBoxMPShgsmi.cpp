@@ -74,7 +74,7 @@ const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchEvent(PVBOXSHGSMI pHeap, PVOI
 {
     PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader(pvBuff);
     pHeader->u64Info1 = (uint64_t)vboxSHGSMICompletionSetEvent;
-    pHeader->u64Info2 = (uint64_t)hEventSem;
+    pHeader->u64Info2 = (uintptr_t)hEventSem;
     pHeader->fFlags   = VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ;
 
     return vboxSHGSMICommandPrepAsynch(pHeap, pHeader);
@@ -125,8 +125,8 @@ const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, PVOID pvB
 {
     fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
     PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
-    pHeader->u64Info1 = (uint64_t)pfnCompletion;
-    pHeader->u64Info2 = (uint64_t)pvCompletion;
+    pHeader->u64Info1 = (uintptr_t)pfnCompletion;
+    pHeader->u64Info2 = (uintptr_t)pvCompletion;
     pHeader->fFlags = fFlags;
 
     return vboxSHGSMICommandPrepAsynch (pHeap, pHeader);
@@ -138,8 +138,8 @@ const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchIrq(PVBOXSHGSMI pHeap, PVOID 
 {
     fFlags |= VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ | VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ;
     PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
-    pHeader->u64Info1 = (uint64_t)pfnCompletion;
-    pHeader->u64Info2 = (uint64_t)pvCompletion;
+    pHeader->u64Info1 = (uintptr_t)pfnCompletion;
+    pHeader->u64Info2 = (uintptr_t)pvCompletion;
     /* we must assign rather than or because flags field does not get zeroed on command creation */
     pHeader->fFlags = fFlags;
 
@@ -243,8 +243,8 @@ int VBoxSHGSMICommandProcessCompletion (PVBOXSHGSMI pHeap, VBOXSHGSMIHEADER* pCu
             pfnCompletion = pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback, &pvCompletion);
             if (pfnCompletion)
             {
-                pCur->u64Info1 = (uint64_t)pfnCompletion;
-                pCur->u64Info2 = (uint64_t)pvCompletion;
+                pCur->u64Info1 = (uintptr_t)pfnCompletion;
+                pCur->u64Info2 = (uintptr_t)pvCompletion;
                 pCur->fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
             }
             else

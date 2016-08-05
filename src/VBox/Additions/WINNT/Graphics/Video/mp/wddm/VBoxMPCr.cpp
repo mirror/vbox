@@ -394,13 +394,13 @@ static void* vboxMpCrShgsmiTransportCmdCreateReadAsync(PVBOXMP_CRSHGSMITRANSPORT
     pBufCmd->offBuffer = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
     pBufCmd->cbBuffer = sizeof (*pCmd);
     pBufCmd->u32GuestData = 0;
-    pBufCmd->u64GuestData = (uint64_t)pfnCompletion;
+    pBufCmd->u64GuestData = (uintptr_t)pfnCompletion;
 
     pBufCmd = &pBody->aBuffers[1];
     pBufCmd->offBuffer = vboxMpCrShgsmiTransportBufOffset(pCon, pWbDr->pvBuf);
     pBufCmd->cbBuffer = pWbDr->cbBuf;
     pBufCmd->u32GuestData = 0;
-    pBufCmd->u64GuestData = (uint64_t)pWbDr;
+    pBufCmd->u64GuestData = (uintptr_t)pWbDr;
 
     return VBOXMP_CRSHGSMICON_DR_GET_CMDCTX(pHdr, cBuffers, sizeof (VBOXMP_CRHGSMICMD_READ), void);
 }
@@ -624,7 +624,7 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT p
     pBufCmd->offBuffer = vboxVdmaCBufDrPtrOffset(&pDevExt->u.primary.Vdma, pCmd);
     pBufCmd->cbBuffer = sizeof (*pCmd);
     pBufCmd->u32GuestData = 0;
-    pBufCmd->u64GuestData = (uint64_t)pfnCompletion;
+    pBufCmd->u64GuestData = (uintptr_t)pfnCompletion;
 
     pBufCmd = &pBody->aBuffers[1];
     pBufCmd->offBuffer = vboxMpCrShgsmiTransportBufOffset(pCon, pvBuffer);
@@ -636,7 +636,7 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT p
     pBufCmd->offBuffer = vboxMpCrShgsmiTransportBufOffset(pCon, pWbDr->pvBuf);
     pBufCmd->cbBuffer = pWbDr->cbBuf;
     pBufCmd->u32GuestData = 0;
-    pBufCmd->u64GuestData = (uint64_t)pWbDr;
+    pBufCmd->u64GuestData = (uintptr_t)pWbDr;
 
     return VBOXMP_CRSHGSMICON_DR_GET_CMDCTX(pHdr, cBuffers, sizeof (VBOXMP_CRHGSMICMD_WRITEREAD), void);
 }
@@ -675,8 +675,8 @@ static void * vboxMpCrShgsmiTransportCmdVbvaCreateWriteAsync(PVBOXMP_DEVEXT pDev
     pBufCmd->cbBuffer = cbBuffer;
 
     uint64_t*pu64Completion = VBOXMP_CRSHGSMICON_CMD_GET_CMDCTX(pCmd, cBuffers, sizeof (VBOXMP_CRHGSMICMD_WRITE), uint64_t);
-    *pu64Completion = (uint64_t)pfnCompletion;
-    return (void*)(pu64Completion+1);
+    *pu64Completion = (uintptr_t)pfnCompletion;
+    return pu64Completion + 1;
 }
 
 void* vboxMpCrShgsmiTransportCmdVdmaCreateWriteAsync(PVBOXMP_DEVEXT pDevExt, uint32_t u32ClientID, void *pvBuffer,
@@ -718,7 +718,7 @@ void* vboxMpCrShgsmiTransportCmdVdmaCreateWriteAsync(PVBOXMP_DEVEXT pDevExt, uin
     pBufCmd->offBuffer = vboxVdmaCBufDrPtrOffset(&pDevExt->u.primary.Vdma, pCmd);
     pBufCmd->cbBuffer = sizeof (*pCmd);
     pBufCmd->u32GuestData = 0;
-    pBufCmd->u64GuestData = (uint64_t)pfnCompletion;
+    pBufCmd->u64GuestData = (uintptr_t)pfnCompletion;
 
     pBufCmd = &pBody->aBuffers[1];
     pBufCmd->offBuffer = vboxMpCrShgsmiBufferOffset(pDevExt, pvBuffer);
@@ -953,7 +953,7 @@ static int vboxMpCrCtlConSetPID(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID
     parms.hdr.cParms      = SHCRGL_CPARMS_SET_PID;
 
     parms.u64PID.type     = VMMDevHGCMParmType_64bit;
-    parms.u64PID.u.value64 = (uint64_t)PsGetCurrentProcessId();
+    parms.u64PID.u.value64 = (uintptr_t)PsGetCurrentProcessId();
 
     Assert(parms.u64PID.u.value64);
 

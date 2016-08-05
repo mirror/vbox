@@ -1253,7 +1253,7 @@ int vboxCmdVbvaConConnect(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
     pConnect->Connect.Hdr.u32CmdClientId = 0;
     pConnect->Connect.u32MajorVersion = crVersionMajor;
     pConnect->Connect.u32MinorVersion = crVersionMinor;
-    pConnect->Connect.u64Pid = (uint64_t)PsGetCurrentProcessId();
+    pConnect->Connect.u64Pid = (uintptr_t)PsGetCurrentProcessId();
 
     int rc = vboxCmdVbvaCtlSubmitSync(pHGSMICtx, &pConnect->Hdr);
     if (RT_SUCCESS(rc))
