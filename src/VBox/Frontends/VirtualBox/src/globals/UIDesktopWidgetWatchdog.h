@@ -55,15 +55,34 @@ public:
     /** Destructs watchdog. */
     ~UIDesktopWidgetWatchdog();
 
-    /** Returns the host-screen count. */
+    /** Returns the number of host-screens currently available on the system. */
     int screenCount() const;
+
+    /** Returns the index of the screen which contains contains @a pWidget. */
+    int screenNumber(const QWidget *pWidget) const;
+    /** Returns the index of the screen which contains contains @a point. */
+    int screenNumber(const QPoint &point) const;
 
     /** Returns the geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
     const QRect screenGeometry(int iHostScreenIndex = -1) const;
+    /** Returns the geometry of the host-screen which contains @a pWidget. */
+    const QRect screenGeometry(const QWidget *pWidget) const;
+    /** Returns the geometry of the host-screen which contains @a point. */
+    const QRect screenGeometry(const QPoint &point) const;
+
     /** Returns the available-geometry of the host-screen with @a iHostScreenIndex.
       * @note The default screen is used if @a iHostScreenIndex is -1. */
     const QRect availableGeometry(int iHostScreenIndex = -1) const;
+    /** Returns the available-geometry of the host-screen which contains @a pWidget. */
+    const QRect availableGeometry(const QWidget *pWidget) const;
+    /** Returns the available-geometry of the host-screen which contains @a point. */
+    const QRect availableGeometry(const QPoint &point) const;
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /** Qt5: X11: Returns whether no or fake screen detected. */
+    bool isFakeScreenDetected() const;
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 private slots:
 

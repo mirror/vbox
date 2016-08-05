@@ -125,6 +125,18 @@ int UIDesktopWidgetWatchdog::screenCount() const
     return QApplication::desktop()->screenCount();
 }
 
+int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
+{
+    /* Redirect call to QDesktopWidget: */
+    return QApplication::desktop()->screenNumber(pWidget);
+}
+
+int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point) const
+{
+    /* Redirect call to QDesktopWidget: */
+    return QApplication::desktop()->screenNumber(point);
+}
+
 const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
@@ -136,14 +148,24 @@ const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1
     return QApplication::desktop()->screenGeometry(iHostScreenIndex);
 }
 
+const QRect UIDesktopWidgetWatchdog::screenGeometry(const QWidget *pWidget) const
+{
+    /* Redirect call to wrapper above: */
+    return screenGeometry(screenNumber(pWidget));
+}
+
+const QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
+{
+    /* Redirect call to wrapper above: */
+    return screenGeometry(screenNumber(point));
+}
+
 const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
     /* Make sure index is valid: */
     if (iHostScreenIndex < 0 || iHostScreenIndex >= screenCount())
         iHostScreenIndex = QApplication::desktop()->primaryScreen();
     AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
-
-    Q_UNUSED(iHostScreenIndex);
 
 #ifdef VBOX_WS_X11
     /* Return cached available-geometry: */
@@ -153,6 +175,32 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* =
     return QApplication::desktop()->availableGeometry(iHostScreenIndex);
 #endif /* !VBOX_WS_X11 */
 }
+
+const QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) const
+{
+    /* Redirect call to wrapper above: */
+    return availableGeometry(screenNumber(pWidget));
+}
+
+const QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
+{
+    /* Redirect call to wrapper above: */
+    return availableGeometry(screenNumber(point));
+}
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+bool UIDesktopWidgetWatchdog::isFakeScreenDetected() const
+{
+    // WORKAROUND:
+    // In 5.6.1 Qt devs taught the XCB plugin to silently swap last detached screen
+    // with a fake one, and there is no API-way to distinguish fake from real one
+    // because all they do is erasing output for the last real screen, keeping
+    // all other screen attributes stale. Gladly output influencing screen name
+    // so we can use that horrible workaround to detect a fake XCB screen.
+    return    qApp->screens().size() == 0 /* zero-screen case is impossible after 5.6.1 */
+           || (qApp->screens().size() == 1 && qApp->screens().first()->name() == ":0.0");
+}
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 void UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(int cHostScreenCount)
 {
