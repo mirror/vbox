@@ -88,7 +88,7 @@ static int rtSemFallbackPthreadMutexTimedlock(pthread_mutex_t * mutex, const str
             if (ts.tv_nsec < 0)
             {
                 ts.tv_sec--;
-                ts.tv_nsec += RT_NS_1SEC;
+                ts.tv_nsec += 1000000000;
             }
 
             if (   ts.tv_sec > 0
@@ -281,17 +281,17 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
         struct timeval      tv = {0,0};
         gettimeofday(&tv, NULL);
         ts.tv_sec = tv.tv_sec;
-        ts.tv_nsec = tv.tv_usec * RT_NS_1US;
+        ts.tv_nsec = tv.tv_usec * 1000;
 #else
         clock_gettime(CLOCK_REALTIME, &ts);
 #endif
         if (cMillies != 0)
         {
-            ts.tv_nsec += (cMillies % RT_MS_1SEC) * RT_NS_1MS;
-            ts.tv_sec  += cMillies / RT_MS_1SEC;
-            if (ts.tv_nsec >= RT_NS_1SEC)
+            ts.tv_nsec += (cMillies % 1000) * 1000000;
+            ts.tv_sec  += cMillies / 1000;
+            if (ts.tv_nsec >= 1000000000)
             {
-                ts.tv_nsec -= RT_NS_1SEC;
+                ts.tv_nsec -= 1000000000;
                 ts.tv_sec++;
             }
         }
