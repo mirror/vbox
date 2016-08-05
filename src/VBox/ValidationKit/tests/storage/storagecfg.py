@@ -535,5 +535,5 @@ class StorageCfg(object):
         """
         Tries to cleanup any leftover pools and volumes from a failed previous run.
         """
-        return self.oStorOs.cleanupPoolsAndVolumes('pool', 'vol');
+        return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
 
