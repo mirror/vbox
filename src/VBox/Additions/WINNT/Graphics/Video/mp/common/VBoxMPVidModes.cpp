@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Miniport video modes related functions
  */
@@ -35,6 +34,8 @@ static VIDEO_MODE_INFORMATION g_CustomVideoModes[VBOX_VIDEO_MAX_SCREENS] = { 0 }
 static BOOLEAN
 VBoxMPValidateVideoModeParamsGuest(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t xres, uint32_t yres, uint32_t bpp)
 {
+    RT_NOREF(iDisplay, xres, yres);
+
     switch (bpp)
     {
         case 32:
@@ -499,6 +500,7 @@ VBoxMPFillModesTable(PVBOXMP_DEVEXT pExt, int iDisplay, PVIDEO_MODE_INFORMATION 
 static BOOLEAN VBoxMPIsStartingUp(PVBOXMP_DEVEXT pExt, uint32_t iDisplay)
 {
 #ifdef VBOX_XPDM_MINIPORT
+    RT_NOREF(iDisplay);
     return (pExt->CurrentMode == 0);
 #else
     VBOXWDDM_SOURCE *pSource = &pExt->aSources[iDisplay];
