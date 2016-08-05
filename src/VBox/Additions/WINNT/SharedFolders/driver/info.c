@@ -1470,10 +1470,11 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
         case FilePositionInformation:
         {
+#ifdef LOG_ENABLED
             PFILE_POSITION_INFORMATION pInfo = (PFILE_POSITION_INFORMATION)pInfoBuffer;
-
             Log(("VBOXSF: MrxSetFileInfo: FilePositionInformation: CurrentByteOffset = 0x%RX64. Unsupported!\n",
                  pInfo->CurrentByteOffset.QuadPart));
+#endif
 
             Status = STATUS_INVALID_PARAMETER;
             break;
@@ -1522,10 +1523,11 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
         case FileLinkInformation:
         {
+#ifdef LOG_ENABLED
             PFILE_LINK_INFORMATION pInfo = (PFILE_LINK_INFORMATION )pInfoBuffer;
-
             Log(("VBOXSF: MrxSetFileInfo: FileLinkInformation: ReplaceIfExists = %d, RootDirectory = 0x%x = [%.*ls]. Not implemented!\n",
                  pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
+#endif
 
             Status = STATUS_NOT_IMPLEMENTED;
             break;
@@ -1533,10 +1535,11 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
         case FileRenameInformation:
         {
+#ifdef LOG_ENABLED
             PFILE_RENAME_INFORMATION pInfo = (PFILE_RENAME_INFORMATION)pInfoBuffer;
-
             Log(("VBOXSF: MrxSetFileInfo: FileRenameInformation: ReplaceIfExists = %d, RootDirectory = 0x%x = [%.*ls]\n",
                  pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
+#endif
 
             Status = vbsfRename(RxContext, FileRenameInformation, pInfoBuffer, RxContext->Info.Length);
             break;
@@ -1559,6 +1562,7 @@ end:
 
 NTSTATUS VBoxMRxSetFileInfoAtCleanup(IN PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxSetFileInfoAtCleanup\n"));
     return STATUS_SUCCESS;
 }

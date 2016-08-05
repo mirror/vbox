@@ -236,7 +236,9 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
 
     int vboxRC;
 
+#ifdef LOG_ENABLED
     BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
+#endif
     LONGLONG FileSize;
 
     RxGetFileSizeWithLock((PFCB)capFcb, &FileSize);
@@ -356,7 +358,9 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
 
     int vboxRC;
 
+#ifdef LOG_ENABLED
     BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
+#endif
     LONGLONG FileSize;
 
     RxGetFileSizeWithLock((PFCB)capFcb, &FileSize);
@@ -496,10 +500,10 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
     return Status;
 }
 
-NTSTATUS VBoxMRxCompleteBufferingStateChangeRequest(IN OUT PRX_CONTEXT RxContext,
-                                                    IN OUT PMRX_SRV_OPEN SrvOpen,
-                                                    IN PVOID pContext)
+NTSTATUS VBoxMRxCompleteBufferingStateChangeRequest(IN OUT PRX_CONTEXT RxContext, IN OUT PMRX_SRV_OPEN SrvOpen,
+                                                    IN PVOID pvContext)
 {
+    RT_NOREF(RxContext, SrvOpen, pvContext);
     Log(("VBOXSF: MRxCompleteBufferingStateChangeRequest: not implemented\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
@@ -583,10 +587,11 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     return Status;
 }
 
-NTSTATUS VBoxMRxExtendStub(IN OUT struct _RX_CONTEXT * RxContext,
-                           IN OUT PLARGE_INTEGER pNewFileSize,
+NTSTATUS VBoxMRxExtendStub(IN OUT struct _RX_CONTEXT * RxContext, IN OUT PLARGE_INTEGER pNewFileSize,
                            OUT PLARGE_INTEGER pNewAllocationSize)
 {
+    RT_NOREF(RxContext);
+
     /* Note: On Windows hosts vbsfSetEndOfFile returns ACCESS_DENIED if the file has been
      *       opened in APPEND mode. Writes to a file will extend it anyway, therefore it is
      *       better to not call the host at all and tell the caller that the file was extended.
