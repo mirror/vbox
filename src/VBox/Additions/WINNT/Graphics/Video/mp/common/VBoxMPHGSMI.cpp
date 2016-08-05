@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Miniport HGSMI related functions
  */
@@ -41,9 +40,10 @@ static HGSMIENV g_hgsmiEnvMP =
 };
 
 /**
- * Helper function to register secondary displays (DualView). Note that this will not
- * be available on pre-XP versions, and some editions on XP will fail because they are
- * intentionally crippled.
+ * Helper function to register secondary displays (DualView).
+ *
+ * Note that this will not be available on pre-XP versions, and some editions on
+ * XP will fail because they are intentionally crippled.
  *
  * HGSMI variant is a bit different because it uses only HGSMI interface (VBVA channel)
  * to talk to the host.
@@ -55,9 +55,6 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
      * but we currently freely mix and match those (failure == rc > 0) and iprt
      * ones (failure == rc < 0) anyway.  This needs to be fully reviewed and
      * fixed. */
-    int rc = VINF_SUCCESS;
-    uint32_t offVRAMBaseMapping, cbMapping, offGuestHeapMemory, cbGuestHeapMemory,
-             offHostFlags, offVRAMHostArea, cbHostArea;
     LOGF_ENTER();
 
     memset(pCommon, 0, sizeof(*pCommon));
@@ -66,6 +63,115 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
     pCommon->cbVRAM    = cbVRAM;
     pCommon->cDisplays = 1;
     pCommon->bHGSMI    = VBoxHGSMIIsSupported();
+
+#if 1 /* Style that works for MSC and is easier to read. */
+
+    if (pCommon->bHGSMI)
+    {
+        uint32_t offVRAMBaseMapping, cbMapping, offGuestHeapMemory, cbGuestHeapMemory, offHostFlags;
+        VBoxHGSMIGetBaseMappingInfo(pCommon->cbVRAM, &offVRAMBaseMapping,
+                                    &cbMapping, &offGuestHeapMemory,
+                                    &cbGuestHeapMemory, &offHostFlags);
+
+        /* Map the adapter information. It will be needed for HGSMI IO. */
+        int rc = VBoxMPCmnMapAdapterMemory(pCommon, &pCommon->pvAdapterInformation, offVRAMBaseMapping, cbMapping);
+        if (RT_SUCCESS(rc))
+        {
+            /* Setup an HGSMI heap within the adapter information area. */
+            rc = VBoxHGSMISetupGuestContext(&pCommon->guestCtx,
+                                            pCommon->pvAdapterInformation,
+                                            cbGuestHeapMemory,
+                                              offVRAMBaseMapping
+                                            + offGuestHeapMemory,
+                                            &g_hgsmiEnvMP);
+            if (RT_SUCCESS(rc))
+            {
+                if (pCommon->bHGSMI) /* Paranoia caused by the structure of the original code, probably unnecessary. */
+                {
+                    /* Setup the host heap and the adapter memory. */
+                    uint32_t offVRAMHostArea, cbHostArea;
+                    VBoxHGSMIGetHostAreaMapping(&pCommon->guestCtx, pCommon->cbVRAM,
+                                                offVRAMBaseMapping, &offVRAMHostArea,
+                                                &cbHostArea);
+                    if (cbHostArea)
+                    {
+                        /* Map the heap region.
+                         *
+                         * Note: the heap will be used for the host buffers submitted to the guest.
+                         *       The miniport driver is responsible for reading FIFO and notifying
+                         *       display drivers.
+                         */
+                        pCommon->cbMiniportHeap = cbHostArea;
+                        rc = VBoxMPCmnMapAdapterMemory(pCommon, &pCommon->pvMiniportHeap, offVRAMHostArea, cbHostArea);
+                        if (RT_SUCCESS(rc))
+                        {
+                            VBoxHGSMISetupHostContext(&pCommon->hostCtx,
+                                                      pCommon->pvAdapterInformation,
+                                                      offHostFlags,
+                                                      pCommon->pvMiniportHeap,
+                                                      offVRAMHostArea, cbHostArea);
+
+                            if (pCommon->bHGSMI) /* Paranoia caused by the structure of the original code, probably unnecessary. */
+                            {
+                                /* Setup the information for the host. */
+                                rc = VBoxHGSMISendHostCtxInfo(&pCommon->guestCtx,
+                                                              offVRAMBaseMapping + offHostFlags,
+                                                              fCaps,
+                                                              offVRAMHostArea,
+                                                              pCommon->cbMiniportHeap);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /* Check whether the guest supports multimonitors. */
+                                    if (pCommon->bHGSMI)
+                                    {
+                                        /* Query the configured number of displays. */
+                                        pCommon->cDisplays = VBoxHGSMIGetMonitorCount(&pCommon->guestCtx);
+                                        LOGF_LEAVE();
+                                        return;
+                                    }
+                                }
+                                else
+                                    pCommon->bHGSMI = false;
+                            }
+                        }
+                        else
+                        {
+                            pCommon->pvMiniportHeap = NULL;
+                            pCommon->cbMiniportHeap = 0;
+                            pCommon->bHGSMI = false;
+                        }
+                    }
+                    else
+                    {
+                        /* Host has not requested a heap. */
+                        pCommon->pvMiniportHeap = NULL;
+                        pCommon->cbMiniportHeap = 0;
+                    }
+                }
+            }
+            else
+            {
+                LOG(("HGSMIHeapSetup failed rc = %d", rc));
+                pCommon->bHGSMI = false;
+            }
+        }
+        else
+        {
+            LOG(("VBoxMPCmnMapAdapterMemory failed rc = %d", rc));
+            pCommon->bHGSMI = false;
+        }
+    }
+
+    if (!pCommon->bHGSMI)
+        VBoxFreeDisplaysHGSMI(pCommon);
+
+
+#else /* MSC isn't able to keep track of what's initialized and what's not with this style of code.  Nor
+         is it clear whether bHGSMI can be modified by the calls made by the code or just the code itself,
+         which makes it hard to figure out!  This makes this coding style hard to maintain. */
+    int rc = VINF_SUCCESS;
+    uint32_t offVRAMBaseMapping, cbMapping, offGuestHeapMemory, cbGuestHeapMemory,
+             offHostFlags, offVRAMHostArea, cbHostArea;
 
     if (pCommon->bHGSMI)
     {
@@ -142,7 +248,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
         /* Setup the information for the host. */
         rc = VBoxHGSMISendHostCtxInfo(&pCommon->guestCtx,
                                       offVRAMBaseMapping + offHostFlags,
-                                      fCaps, offVRAMHostArea,
+                                      fCaps,
+                                      offVRAMHostArea,
                                       pCommon->cbMiniportHeap);
 
         if (RT_FAILURE(rc))
@@ -161,6 +268,7 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
     {
         VBoxFreeDisplaysHGSMI(pCommon);
     }
+#endif
 
     LOGF_LEAVE();
 }
@@ -186,3 +294,4 @@ void VBoxFreeDisplaysHGSMI(PVBOXMP_COMMON pCommon)
     VBoxMPCmnSyncToVideoIRQ(pCommon, VBoxUnmapAdpInfoCallback, pCommon);
     VBoxMPCmnUnmapAdapterMemory(pCommon, &pCommon->pvAdapterInformation);
 }
+
