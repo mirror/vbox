@@ -1,7 +1,4 @@
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\Makefile.kup
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\src\Makefile.kup
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\src\api\Makefile.kup
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\src\core\Makefile.kup
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\src\core\ipv4\Makefile.kup
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\src\core\ipv6\Makefile.kup
-E:\vbox\svn\trunk\src\VBox\Devices\Network\lwip-new\src\core\snmp\Makefile.kup
+src/      - The source code for the lwIP TCP/IP stack.
+doc/      - The documentation for lwIP.
+
+See also the FILES file in each subdirectory.
