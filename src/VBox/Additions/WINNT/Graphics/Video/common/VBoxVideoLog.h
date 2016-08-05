@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Video drivers, logging helper
  */

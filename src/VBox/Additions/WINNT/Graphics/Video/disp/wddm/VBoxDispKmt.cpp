@@ -1,7 +1,6 @@
 /* $Id$ */
-
 /** @file
- * VBoxVideo Display D3D User mode dll
+ * VBoxVideo Display D3D User Mode Dll.
  */
 
 /*
@@ -22,9 +21,6 @@
 #include <iprt/assert.h>
 #include <iprt/log.h>
 
-#ifndef NT_SUCCESS
-# define NT_SUCCESS(_Status) ((_Status) >= 0)
-#endif
 
 /**
  * Loads a system DLL.
@@ -381,7 +377,7 @@ HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTE
     Info.enmType = enmType;
     Info.crVersionMajor = crVersionMajor;
     Info.crVersionMinor = crVersionMinor;
-    Info.hUmEvent = (uint64_t)hEvent;
+    Info.hUmEvent = (uintptr_t)hEvent;
     Info.u64UmInfo = u64UmInfo;
     D3DKMT_CREATECONTEXT ContextData = {0};
     ContextData.hDevice = pDevice->hDevice;

@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver, internal header
  */
@@ -24,7 +23,7 @@
 #include <VBox/log.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
-#include <windef.h>
+#include <iprt/win/windef.h>
 #include <wingdi.h>
 #include <winddi.h>
 #include <ntddvdeo.h>

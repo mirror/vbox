@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBoxVideo Display D3D User mode dll
  */
@@ -90,6 +89,7 @@ void vboxDispCmSessionCtxAdd(PVBOXDISPCM_SESSION pSession, PVBOXWDDMDISP_CONTEXT
 
 void vboxDispCmSessionCtxRemoveLocked(PVBOXDISPCM_SESSION pSession, PVBOXWDDMDISP_CONTEXT pContext)
 {
+    RT_NOREF(pSession);
     RTListNodeRemove(&pContext->ListNode);
 }
 
@@ -137,8 +137,8 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
         Info.enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
         fIsCrContext = FALSE;
     }
-    Info.hUmEvent = (uint64_t)g_pVBoxCmMgr.Session.hEvent;
-    Info.u64UmInfo = (uint64_t)pContext;
+    Info.hUmEvent = (uintptr_t)g_pVBoxCmMgr.Session.hEvent;
+    Info.u64UmInfo = (uintptr_t)pContext;
 
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
@@ -329,6 +329,7 @@ HRESULT vboxDispCmCmdInterruptWait()
 
 void vboxDispCmLog(LPCSTR pszMsg)
 {
+    RT_NOREF(pszMsg);
     PVBOXDISPCM_SESSION pSession = &g_pVBoxCmMgr.Session;
 
     EnterCriticalSection(&pSession->CritSect);
@@ -337,8 +338,7 @@ void vboxDispCmLog(LPCSTR pszMsg)
     Assert(pContext);
     if (pContext)
     {
-        PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
-        Assert(pDevice);
+        Assert(pContext->pDevice);
         vboxVDbgPrint(("%s", pszMsg));
     }
     LeaveCriticalSection(&pSession->CritSect);

@@ -14,33 +14,20 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef __VBoxDispD3DBase_h_
-#define __VBoxDispD3DBase_h_
 
-#       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
-#       define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
-#       define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
-#       define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandset      _interlockedbittestandset_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandreset    _interlockedbittestandreset_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
-#       define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
-#       pragma warning(disable : 4163)
-#include <iprt/win/windows.h>
-#       pragma warning(default : 4163)
-#       undef  _InterlockedExchange
-#       undef  _InterlockedExchangeAdd
-#       undef  _InterlockedCompareExchange
-#       undef  _InterlockedAddLargeStatistic
-#       undef  _interlockedbittestandset
-#       undef  _interlockedbittestandreset
-#       undef  _interlockedbittestandset64
-#       undef  _interlockedbittestandreset64
+#ifndef ___VBoxDispD3DBase_h
+#define ___VBoxDispD3DBase_h
+
+/* Include nt-and-windows.h here so we get NT_SUCCESS, but don't try if
+   something windowsy is already included because that'll cause conflicts. */
+#ifndef STATUS_WAIT_0
+# include <iprt/nt/nt-and-windows.h>
+#endif
 
 #include <d3d9types.h>
 //#include <d3dtypes.h>
 #include <D3dumddi.h>
 #include <d3dhal.h>
 
+#endif
 
-#endif /* #ifndef __VBoxDispD3DBase_h_ */
