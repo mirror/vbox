@@ -45,6 +45,7 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetClientID(PVBOXUHGSMI pHgsmi, uint32_t *pu32ClientID);
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetHostCaps(PVBOXUHGSMI pHgsmi, uint32_t *pu32HostCaps);
+struct VBoxGuestHGCMCallInfo;
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConCall(PVBOXUHGSMI pHgsmi, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
 
 RT_C_DECLS_END

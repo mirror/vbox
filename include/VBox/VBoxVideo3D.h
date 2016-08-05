@@ -1,5 +1,4 @@
 /** @file
- *
  * VirtualBox 3D common tooling
  */
 
@@ -94,6 +93,7 @@ struct VBOXTLSREFDATA_DUMMY
 #define VBoxTlsRefAddRef(_p) do { \
         int cRefs = ASMAtomicIncS32(&(_p)->cTlsRefs); \
         VBoxTlsRefAssertImpl(cRefs > 1 || (_p)->enmTlsRefState == VBOXTLSREFDATA_STATE_DESTROYING); \
+        RT_NOREF(cRefs); \
     } while (0)
 
 #define VBoxTlsRefCountGet(_p) (ASMAtomicReadS32(&(_p)->cTlsRefs))
