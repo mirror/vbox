@@ -501,9 +501,6 @@ tcp_listen_input(struct tcp_pcb_listen *pcb, struct pbuf *syn)
 {
   struct tcp_pcb *npcb;
   err_t rc;
-#ifdef VBOX
-  (void)syn;
-#endif
 
   if (flags & TCP_RST) {
     /* An incoming RST should be ignored. Return. */
@@ -608,6 +605,8 @@ tcp_listen_input(struct tcp_pcb_listen *pcb, struct pbuf *syn)
        * tcp_proxy_accept_confirm(). */
       return ERR_OK;
     }
+#else
+    LWIP_UNUSED_ARG(syn);
 #endif
 
     snmp_inc_tcppassiveopens();
