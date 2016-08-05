@@ -1,8 +1,9 @@
 /* $Id$ */
 /** @file
- *
  * VBox extension to Wine D3D - shared resource
- *
+ */
+
+/*
  * Copyright (C) 2010-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -13,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef ___vboxsharedrc_h___
 #define ___vboxsharedrc_h___
 
@@ -20,8 +22,8 @@
 #define VBOXSHRC_F_SHARED_OPENED       0x00000002 /* if set shared rc is opened, otherwise it is created */
 
 #define VBOXSHRC_GET_SHAREFLAFS(_o) ((_o)->resource.sharerc_flags)
-#define VBOXSHRC_GET_SHAREHANDLE(_o) ((HANDLE)(_o)->resource.sharerc_handle)
-#define VBOXSHRC_SET_SHAREHANDLE(_o, _h) ((_o)->resource.sharerc_handle = (DWORD)(_h))
+#define VBOXSHRC_GET_SHAREHANDLE(_o) ((HANDLE)(uintptr_t)(_o)->resource.sharerc_handle)
+#define VBOXSHRC_SET_SHAREHANDLE(_o, _h) ((_o)->resource.sharerc_handle = (DWORD)(uintptr_t)(_h))
 #define VBOXSHRC_COPY_SHAREDATA(_oDst, _oSrc) do { \
         VBOXSHRC_GET_SHAREFLAFS(_oDst) = VBOXSHRC_GET_SHAREFLAFS(_oSrc);   \
         VBOXSHRC_SET_SHAREHANDLE(_oDst, VBOXSHRC_GET_SHAREHANDLE(_oSrc)); \

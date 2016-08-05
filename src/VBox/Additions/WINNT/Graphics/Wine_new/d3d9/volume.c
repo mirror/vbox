@@ -293,7 +293,7 @@ HRESULT volume_init(struct d3d9_volume *volume, struct d3d9_device *device, UINT
 {
     HRESULT hr;
 
-    volume->IDirect3DVolume9_iface.lpVtbl = &d3d9_volume_vtbl;
+    volume->IDirect3DVolume9_iface.lpVtbl = (struct IDirect3DVolume9Vtbl *)&d3d9_volume_vtbl;
     volume->refcount = 1;
 
     hr = wined3d_volume_create(device->wined3d_device, width, height, depth, usage & WINED3DUSAGE_MASK,
@@ -317,7 +317,7 @@ struct d3d9_volume *unsafe_impl_from_IDirect3DVolume9(IDirect3DVolume9 *iface)
 {
     if (!iface)
         return NULL;
-    assert(iface->lpVtbl == (const IDirect3DVolume9Vtbl *)&d3d9_volume_vtbl);
+    assert(iface->lpVtbl == (IDirect3DVolume9Vtbl *)&d3d9_volume_vtbl);
     return CONTAINING_RECORD(iface, struct d3d9_volume, IDirect3DVolume9_iface);
 }
 #endif

@@ -388,7 +388,7 @@ static HRESULT vertexdeclaration_init(struct d3d9_vertex_declaration *declaratio
         return hr;
     }
 
-    declaration->IDirect3DVertexDeclaration9_iface.lpVtbl = &d3d9_vertex_declaration_vtbl;
+    declaration->IDirect3DVertexDeclaration9_iface.lpVtbl = (struct IDirect3DVertexDeclaration9Vtbl *)&d3d9_vertex_declaration_vtbl;
     declaration->refcount = 1;
 
     element_count = wined3d_element_count + 1;

@@ -43,7 +43,7 @@ TEMPLATE_VBoxGuestWineDLL_DEFS.x86 = __i386__
 #  -wd4204: nonstandard extension used : non-constant initializer
 #  -wd4245: '=' : conversion from 'int' to 'DWORD', signed/unsigned mismatch
 #  -wd4305: 'function' : truncation from 'double' to 'GLclampf'
-TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS) -wd4100  -wd4204 -wd4245 -wd4305
+TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(filter-out -WX,$(TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS)) -wd4100  -wd4204 -wd4245 -wd4305
 
 #
 # Template for building the D3D[89] stuff.

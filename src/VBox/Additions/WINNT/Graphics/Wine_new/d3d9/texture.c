@@ -1327,7 +1327,7 @@ HRESULT texture_init(struct d3d9_texture *texture, struct d3d9_device *device,
     DWORD surface_flags = 0;
     HRESULT hr;
 
-    texture->IDirect3DBaseTexture9_iface.lpVtbl = (const IDirect3DBaseTexture9Vtbl *)&d3d9_texture_2d_vtbl;
+    texture->IDirect3DBaseTexture9_iface.lpVtbl = (/*const*/ IDirect3DBaseTexture9Vtbl *)&d3d9_texture_2d_vtbl;
     texture->refcount = 1;
 
     desc.resource_type = WINED3D_RTYPE_TEXTURE;
@@ -1377,7 +1377,7 @@ HRESULT cubetexture_init(struct d3d9_texture *texture, struct d3d9_device *devic
     DWORD surface_flags = 0;
     HRESULT hr;
 
-    texture->IDirect3DBaseTexture9_iface.lpVtbl = (const IDirect3DBaseTexture9Vtbl *)&d3d9_texture_cube_vtbl;
+    texture->IDirect3DBaseTexture9_iface.lpVtbl = (/*const*/ IDirect3DBaseTexture9Vtbl *)&d3d9_texture_cube_vtbl;
     texture->refcount = 1;
 
     desc.resource_type = WINED3D_RTYPE_CUBE_TEXTURE;
@@ -1426,7 +1426,7 @@ HRESULT volumetexture_init(struct d3d9_texture *texture, struct d3d9_device *dev
     struct wined3d_resource_desc desc;
     HRESULT hr;
 
-    texture->IDirect3DBaseTexture9_iface.lpVtbl = (const IDirect3DBaseTexture9Vtbl *)&d3d9_texture_3d_vtbl;
+    texture->IDirect3DBaseTexture9_iface.lpVtbl = (/*const*/ IDirect3DBaseTexture9Vtbl *)&d3d9_texture_3d_vtbl;
     texture->refcount = 1;
 
     desc.resource_type = WINED3D_RTYPE_VOLUME_TEXTURE;

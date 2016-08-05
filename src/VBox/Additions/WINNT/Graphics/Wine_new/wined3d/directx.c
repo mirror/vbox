@@ -320,7 +320,7 @@ static void wined3d_create_fake_gl_context_attribs(struct wined3d_fake_gl_ctx *f
 {
     HGLRC new_ctx;
 
-    if (!(gl_info->p_wglCreateContextAttribsARB = (void *)wglGetProcAddress("wglCreateContextAttribsARB")))
+    if (!(*(PROC *)&gl_info->p_wglCreateContextAttribsARB = wglGetProcAddress("wglCreateContextAttribsARB")))
         return;
 
     if (!(new_ctx = gl_info->p_wglCreateContextAttribsARB(fake_gl_ctx->dc, NULL, ctx_attribs)))
@@ -2650,7 +2650,7 @@ static void parse_extension_string(struct wined3d_gl_info *gl_info, const char *
 
 static void load_gl_funcs(struct wined3d_gl_info *gl_info)
 {
-#define USE_GL_FUNC(pfn) gl_info->gl_ops.ext.p_##pfn = (void *)wglGetProcAddress(#pfn);
+#define USE_GL_FUNC(pfn) (*(PROC *)(&gl_info->gl_ops.ext.p_##pfn)) = wglGetProcAddress(#pfn);
     GL_EXT_FUNCS_GEN;
 #undef USE_GL_FUNC
 
@@ -2989,7 +2989,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter)
     if (!gl_info->supported[EXT_TEXTURE3D] && gl_version >= MAKEDWORD_VERSION(1, 2))
     {
         TRACE("GL CORE: GL_EXT_texture3D support.\n");
-        gl_info->gl_ops.ext.p_glTexImage3DEXT = (void *)gl_info->gl_ops.ext.p_glTexImage3D;
+        *(FARPROC *)&gl_info->gl_ops.ext.p_glTexImage3DEXT = (FARPROC)gl_info->gl_ops.ext.p_glTexImage3D;
         gl_info->gl_ops.ext.p_glTexSubImage3DEXT = gl_info->gl_ops.ext.p_glTexSubImage3D;
         gl_info->supported[EXT_TEXTURE3D] = TRUE;
     }
@@ -5323,7 +5323,7 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
             return FALSE;
         }
 
-        pDrvValidateVersion = (void*)GetProcAddress(mod_gl, "DrvValidateVersion");
+        *(FARPROC *)&pDrvValidateVersion = GetProcAddress(mod_gl, "DrvValidateVersion");
         if(!pDrvValidateVersion) {
             ERR("Can't get DrvValidateVersion\n");
             FreeLibrary(mod_gl);
@@ -5335,11 +5335,11 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
             return FALSE;
         }
 
-#  define VBOX_USE_FUNC(f) p##f = (void *)GetProcAddress(mod_gl, #f);
+#  define VBOX_USE_FUNC(f) (*(FARPROC *)&(p##f)) = GetProcAddress(mod_gl, #f);
         VBOX_GL_FUNCS_GEN
 #  undef VBOX_USE_FUNC
 # endif
-# define USE_GL_FUNC(f) gl_info->gl_ops.gl.p_##f = (void *)GetProcAddress(mod_gl, #f);
+# define USE_GL_FUNC(f) (*(FARPROC *)&(gl_info->gl_ops.gl.p_##f)) = GetProcAddress(mod_gl, #f);
         ALL_WGL_FUNCS
 # undef USE_GL_FUNC
         gl_info->gl_ops.wgl.p_wglSwapBuffers = (void *)GetProcAddress(mod_gl, "wglSwapBuffers");

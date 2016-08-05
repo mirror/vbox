@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox D3D8/9 dll switcher
  */

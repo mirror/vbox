@@ -53,6 +53,8 @@ typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_CREATEVOLUMETEXTURE(IDirect
             void **pavClientMem);
 typedef FNVBOXWINEEXD3DDEV9_CREATEVOLUMETEXTURE *PFNVBOXWINEEXD3DDEV9_CREATEVOLUMETEXTURE;
 
+struct VBOXBOX3D;
+struct VBOXPOINT3D;
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_VOLBLT(IDirect3DDevice9Ex *iface,
                                                     IDirect3DVolume9 *pSourceVolume, IDirect3DVolume9 *pDestinationVolume,
                                                     const struct VBOXBOX3D *pSrcBoxArg,

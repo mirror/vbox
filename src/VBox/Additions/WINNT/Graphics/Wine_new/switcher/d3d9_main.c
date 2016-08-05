@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox D3D8 dll switcher
  */
@@ -16,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "d3d9.h"
+#include "iprt/win/d3d9.h"
 #include "switcher.h"
 
 typedef void (WINAPI *DebugSetMuteProc)(void);

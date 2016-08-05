@@ -2485,6 +2485,7 @@ HRESULT __cdecl wined3d_volume_unmap(struct wined3d_volume *volume);
 HRESULT __cdecl wined3d_device_flush(struct wined3d_device *device);
 HRESULT __cdecl wined3d_device_flush_to_host(struct wined3d_device *device);
 HRESULT __cdecl wined3d_device_finish(struct wined3d_device *device);
+struct VBOXPOINT3D;
 HRESULT __cdecl wined3d_device_blt_vol(struct wined3d_device *device, struct wined3d_volume *src, struct wined3d_volume *dst, const struct wined3d_box *pSrcBoxArg, const struct VBOXPOINT3D *pDstPoin3D);
 HRESULT __cdecl wined3d_device_blt_voltex(struct wined3d_device *device, struct wined3d_texture *src, struct wined3d_texture *dst, const struct wined3d_box *pSrcBoxArg, const struct VBOXPOINT3D *pDstPoin3D);
 HRESULT __cdecl wined3d_device_get_host_id(struct wined3d_device *device, int32_t *pid);
