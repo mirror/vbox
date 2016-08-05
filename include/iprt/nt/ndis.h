@@ -27,13 +27,18 @@
 #ifndef ___iprt_nt_ndis_h___
 #define ___iprt_nt_ndis_h___
 
-#pragma warning(push)
-#pragma warning(disable:4668) /* warning C4668: 'NDIS_WRAPPER' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4668) /* warning C4668: 'NDIS_WRAPPER' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+#endif
+
 RT_C_DECLS_BEGIN
 #include <ndis.h>
 RT_C_DECLS_END
-#pragma warning(pop)
 
+#ifndef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #endif
 
