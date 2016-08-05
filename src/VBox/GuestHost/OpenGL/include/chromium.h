@@ -22,8 +22,9 @@
 
 #ifdef IN_RING0
 # include <common/VBoxMPUtils.h>
-# define WINGDIAPI
+# define WINGDIAPI /* gl/gl.h is using this (wingdi.h defines it a __declspec(dllimport) normaly).  */
 #endif
+
 /*
  * We effectively wrap gl.h, glu.h, etc, just like GLUT
  */
@@ -76,6 +77,10 @@
 #endif
 
 #include "cr_glext.h"
+
+#ifdef IN_RING0
+# undef WINGDIAPI /* don't want it clashing with wingdi.h should it be included. */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
