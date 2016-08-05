@@ -76,9 +76,9 @@
 # include "UIModalWindowManager.h"
 # include "UIIconPool.h"
 # include "UIVirtualBoxEventHandler.h"
+# include "UIDesktopWidgetWatchdog.h"
 # ifdef VBOX_WS_X11
 #  include "UIHostComboEditor.h"
-#  include "UIDesktopWidgetWatchdog.h"
 #  ifndef VBOX_OSE
 #   include "VBoxLicenseViewer.h"
 #  endif /* VBOX_OSE */
@@ -236,7 +236,6 @@ VBoxGlobal::VBoxGlobal()
 #ifdef VBOX_WS_X11
     , m_fCompositingManagerRunning(false)
     , m_enmWindowManagerType(X11WMType_Unknown)
-    , m_pDesktopWidgetWatchdog(0)
 #endif /* VBOX_WS_X11 */
 #if defined(DEBUG_bird)
     , mAgressiveCaching(false)
@@ -361,9 +360,9 @@ const QRect VBoxGlobal::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef VBOX_WS_X11
     /* Make sure desktop-widget watchdog already created: */
-    AssertPtrReturn(m_pDesktopWidgetWatchdog, QApplication::desktop()->screenGeometry(iHostScreenIndex));
+    AssertPtrReturn(gpDesktop, QApplication::desktop()->screenGeometry(iHostScreenIndex));
     /* Redirect call to UIDesktopWidgetWatchdog: */
-    return m_pDesktopWidgetWatchdog->screenGeometry(iHostScreenIndex);
+    return gpDesktop->screenGeometry(iHostScreenIndex);
 #endif /* VBOX_WS_X11 */
 
     /* Redirect call to QDesktopWidget: */
@@ -374,9 +373,9 @@ const QRect VBoxGlobal::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
 #ifdef VBOX_WS_X11
     /* Make sure desktop-widget watchdog already created: */
-    AssertPtrReturn(m_pDesktopWidgetWatchdog, QApplication::desktop()->availableGeometry(iHostScreenIndex));
+    AssertPtrReturn(gpDesktop, QApplication::desktop()->availableGeometry(iHostScreenIndex));
     /* Redirect call to UIDesktopWidgetWatchdog: */
-    return m_pDesktopWidgetWatchdog->availableGeometry(iHostScreenIndex);
+    return gpDesktop->availableGeometry(iHostScreenIndex);
 #endif /* VBOX_WS_X11 */
 
     /* Redirect call to QDesktopWidget: */
@@ -3988,10 +3987,8 @@ void VBoxGlobal::prepare()
     m_osRelease = determineOsRelease();
 #endif /* VBOX_WS_MAC */
 
-#ifdef VBOX_WS_X11
-    /* Create desktop-widget watchdog instance: */
-    m_pDesktopWidgetWatchdog = new UIDesktopWidgetWatchdog(this);
-#endif /* VBOX_WS_X11 */
+    /* Create desktop-widget watchdog: */
+    UIDesktopWidgetWatchdog::create();
 
     /* Create message-center: */
     UIMessageCenter::create();
@@ -4489,6 +4486,9 @@ void VBoxGlobal::cleanup()
     UIPopupCenter::destroy();
     /* Destroy message-center: */
     UIMessageCenter::destroy();
+
+    /* Destroy desktop-widget watchdog: */
+    UIDesktopWidgetWatchdog::destroy();
 
     mValid = false;
 }

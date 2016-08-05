@@ -65,9 +65,6 @@ class UIMediumEnumerator;
 class UIMedium;
 class UIIconPoolGeneral;
 class UIThreadPool;
-#ifdef VBOX_WS_X11
-class UIDesktopWidgetWatchdog;
-#endif /* VBOX_WS_X11 */
 
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
@@ -577,12 +574,6 @@ private:
     bool m_fCompositingManagerRunning;
     /** X11: Holds the type of the Window Manager we are running under. */
     X11WMType m_enmWindowManagerType;
-
-    /** @name Host-screen geometry stuff
-      * @{ */
-        /** X11: Holds the desktop-widget watchdog instance aware of host-screen geometry changes. */
-        UIDesktopWidgetWatchdog *m_pDesktopWidgetWatchdog;
-    /** @} */
 #endif /* VBOX_WS_X11 */
 
     /** The --aggressive-caching / --no-aggressive-caching option. */
