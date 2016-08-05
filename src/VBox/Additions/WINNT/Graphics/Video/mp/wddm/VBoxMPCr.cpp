@@ -27,12 +27,12 @@
 CR_CAPS_INFO g_VBoxMpCrHostCapsInfo;
 static uint32_t g_VBoxMpCr3DSupported = 0;
 
-uint32_t VBoxMpCrGetHostCaps()
+uint32_t VBoxMpCrGetHostCaps(void)
 {
     return g_VBoxMpCrHostCapsInfo.u32Caps;
 }
 
-bool VBoxMpCrCtlConIs3DSupported()
+bool VBoxMpCrCtlConIs3DSupported(void)
 {
     return !!g_VBoxMpCr3DSupported;
 }
@@ -1046,7 +1046,7 @@ int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo
     return rc;
 }
 
-void VBoxMpCrCtlConInit()
+void VBoxMpCrCtlConInit(void)
 {
     g_VBoxMpCr3DSupported = 0;
     memset(&g_VBoxMpCrHostCapsInfo, 0, sizeof (g_VBoxMpCrHostCapsInfo));

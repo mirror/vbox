@@ -109,8 +109,11 @@ DECLINLINE(VBOXVIDEOOFFSET) vboxWddmVramAddrToOffset(PVBOXMP_DEVEXT pDevExt, PHY
     return (VBOXVIDEOOFFSET)Addr.QuadPart - pCommon->phVRAM.QuadPart;
 }
 
-DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation,
+                                       D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
+    RT_NOREF(srcId);
+
     /* vboxWddmAssignPrimary can not be run in reentrant order, so safely do a direct unlocked check here */
     if (pSource->pPrimaryAllocation == pAllocation)
         return;

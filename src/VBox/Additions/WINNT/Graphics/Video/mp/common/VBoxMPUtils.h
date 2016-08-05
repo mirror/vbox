@@ -36,7 +36,6 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
-RT_C_DECLS_BEGIN
 #ifdef VBOX_XPDM_MINIPORT
 # include <dderror.h>
 # include <devioctl.h>
@@ -44,11 +43,10 @@ RT_C_DECLS_BEGIN
 # undef PAGE_SIZE
 # undef PAGE_SHIFT
 # include <iprt/nt/ntddk.h>
-# include <dispmprt.h>
+# include <iprt/nt/dispmprt.h>
 # include <ntddvdeo.h>
 # include <dderror.h>
 #endif
-RT_C_DECLS_END
 
 /*Windows version identifier*/
 typedef enum

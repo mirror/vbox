@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef ___VBoxMPCr_h__
 #define ___VBoxMPCr_h__
 
@@ -27,9 +28,9 @@ typedef struct VBOXMP_CRCTLCON
     uint32_t cCrCtlRefs;
 } VBOXMP_CRCTLCON, *PVBOXMP_CRCTLCON;
 
-void VBoxMpCrCtlConInit();
+void VBoxMpCrCtlConInit(void);
 
-bool VBoxMpCrCtlConIs3DSupported();
+bool VBoxMpCrCtlConIs3DSupported(void);
 
 int VBoxMpCrCtlConConnect(PVBOXMP_DEVEXT pDevExt, PVBOXMP_CRCTLCON pCrCtlCon,
         uint32_t crVersionMajor, uint32_t crVersionMinor,
@@ -92,7 +93,9 @@ DECLINLINE(void) VBoxMpCrPackerInit(PVBOXMP_CRPACKER pPacker)
 }
 
 DECLINLINE(void) VBoxMpCrPackerTerm(PVBOXMP_CRPACKER pPacker)
-{}
+{
+    RT_NOREF(pPacker);
+}
 
 DECLINLINE(void) VBoxMpCrPackerTxBufferInit(PVBOXMP_CRPACKER pPacker, void *pvBuffer, uint32_t cbBuffer, uint32_t cCommands)
 {
@@ -188,18 +191,19 @@ DECLINLINE(int) VBoxMpCrUnpackerRxBufferProcess(void *pvBuffer, uint32_t cbBuffe
 
 DECLINLINE(void*) VBoxMpCrCmdRxReadbackData(CRMessageReadback *pRx)
 {
-    return (void*)(pRx+1);
+    return pRx + 1;
 }
 
 DECLINLINE(uint32_t) VBoxMpCrCmdRxReadbackDataSize(CRMessageReadback *pRx, uint32_t cbRx)
 {
-    return cbRx - sizeof (*pRx);
+    RT_NOREF(pRx);
+    return cbRx - sizeof(*pRx);
 }
 int VBoxMpCrCmdRxReadbackHandler(CRMessageReadback *pRx, uint32_t cbRx);
 int VBoxMpCrCmdRxHandler(CRMessageHeader *pRx, uint32_t cbRx);
 
 /* must be called after calling VBoxMpCrCtlConIs3DSupported only */
-uint32_t VBoxMpCrGetHostCaps();
+uint32_t VBoxMpCrGetHostCaps(void);
 
 #define VBOXMP_CRCMD_HEADER_SIZE sizeof (CRMessageOpcodes)
 /* last +4 below is 4-aligned command opcode size (i.e. ((1 + 3) & ~3)) */

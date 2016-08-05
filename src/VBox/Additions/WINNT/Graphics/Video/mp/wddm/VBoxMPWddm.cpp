@@ -36,7 +36,7 @@
 /* Uncomment this in order to enable dumping regions guest wants to display on DxgkDdiPresentNew(). */
 //#define VBOX_WDDM_DUMP_REGIONS_ON_PRESENT
 
-#define VBOXWDDM_DUMMY_DMABUFFER_SIZE (sizeof (VBOXCMDVBVA_HDR) / 2)
+#define VBOXWDDM_DUMMY_DMABUFFER_SIZE (sizeof(VBOXCMDVBVA_HDR) / 2)
 
 DWORD g_VBoxLogUm = 0;
 #ifdef VBOX_WDDM_WIN8

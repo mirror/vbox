@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Miniport device extension header
  */
@@ -23,9 +22,9 @@
 #include <VBox/VBoxVideoGuest.h>
 
 #ifdef VBOX_XPDM_MINIPORT
-# include <miniport.h>
+# include <iprt/nt/miniport.h>
 # include <ntddvdeo.h>
-# include <video.h>
+# include <iprt/nt/video.h>
 # include "common/xpdm/VBoxVideoPortAPI.h"
 #endif
 
@@ -248,6 +247,7 @@ DECLINLINE(ULONG) vboxWddmVramCpuVisibleSegmentSize(PVBOXMP_DEVEXT pDevExt)
 /* 128 MB */
 DECLINLINE(ULONG) vboxWddmVramCpuInvisibleSegmentSize(PVBOXMP_DEVEXT pDevExt)
 {
+    RT_NOREF(pDevExt);
     return 128 * 1024 * 1024;
 }
 

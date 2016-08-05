@@ -47,9 +47,9 @@
 #pragma warning(disable:4163)
 #pragma warning(disable:4668) /* warning C4668: 'WHEA_DOWNLEVEL_TYPE_NAMES' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 #pragma warning(disable:4255) /* warning C4255: 'ObGetFilterVersion' : no function prototype given: converting '()' to '(void)' */
-RT_C_DECLS_BEGIN
+/*RT_C_DECLS_BEGIN - no longer necessary it seems */
 #include <ntddk.h>
-RT_C_DECLS_END
+/*RT_C_DECLS_END - no longer necessary it seems */
 #pragma warning(pop)
 
 #undef  _InterlockedExchange

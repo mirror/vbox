@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox Host Guest Shared Memory Interface (HGSMI).
  * OS-independent guest structures.
  */
@@ -26,19 +25,17 @@
  */
 
 
-#ifndef __HGSMI_GUEST_h__
-#define __HGSMI_GUEST_h__
+#ifndef ___VBox_VBoxVideoGuest_h___
+#define ___VBox_VBoxVideoGuest_h___
 
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
 #include <VBox/VBoxVideo.h>
 
 #ifdef VBOX_XPDM_MINIPORT
-RT_C_DECLS_BEGIN
-# include "miniport.h"
-# include "ntddvdeo.h"
-# include <Video.h>
-RT_C_DECLS_END
+# include <iprt/nt/miniport.h>
+# include <ntddvdeo.h> /* sdk, clean */
+# include <iprt/nt/Video.h>
 #elif defined VBOX_GUESTR3XORGMOD
 # include <compiler.h>
 #else
@@ -344,4 +341,5 @@ RTDECL(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 
 RT_C_DECLS_END
 
-#endif /* __HGSMI_GUEST_h__*/
+#endif
+

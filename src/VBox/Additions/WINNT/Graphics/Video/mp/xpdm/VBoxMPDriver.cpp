@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Miniport driver interface functions
  */
@@ -16,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxMPInternal.h"
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxGuestLib.h>
@@ -26,8 +28,12 @@
 #include <iprt/initterm.h>
 #include <VBox/version.h>
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /* Resource list */
-VIDEO_ACCESS_RANGE  VBoxLegacyVGAResourceList[] =
+static VIDEO_ACCESS_RANGE  g_aVBoxLegacyVGAResources[] =
 {
     { 0x000003B0, 0x00000000, 0x0000000C, 1, 1, 1, 0 }, /* VGA regs (0x3B0-0x3BB) */
     { 0x000003C0, 0x00000000, 0x00000020, 1, 1, 1, 0 }, /* VGA regs (0x3C0-0x3DF) */
@@ -35,10 +41,11 @@ VIDEO_ACCESS_RANGE  VBoxLegacyVGAResourceList[] =
 };
 
 /* Card info for property dialog */
-static WCHAR VBoxChipType[] = L"VBOX";
-static WCHAR VBoxDACType[] = L"Integrated RAMDAC";
-static WCHAR VBoxAdapterString[] = L"VirtualBox Video Adapter";
-static WCHAR VBoxBiosString[] = L"Version 0xB0C2 or later";
+static WCHAR g_wszVBoxChipType[]      = L"VBOX";
+static WCHAR g_wszVBoxDACType[]       = L"Integrated RAMDAC";
+static WCHAR g_wszVBoxAdapterString[] = L"VirtualBox Video Adapter";
+static WCHAR g_wszVBoxBiosString[]    = L"Version 0xB0C2 or later";
+
 
 /* Checks if we have a device supported by our driver and initialize
  * our driver/card specific information.
@@ -48,6 +55,7 @@ static VP_STATUS
 VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR ArgumentString,
                    IN OUT PVIDEO_PORT_CONFIG_INFO ConfigInfo, OUT PUCHAR Again)
 {
+    RT_NOREF(HwContext,  ArgumentString, Again);
     PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
     VP_STATUS rc;
     USHORT DispiId;
@@ -80,19 +88,19 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
 
     /* Write hw information to registry, so that it's visible in windows property dialog */
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.ChipType",
-                                        VBoxChipType, sizeof(VBoxChipType));
+                                        g_wszVBoxChipType, sizeof(g_wszVBoxChipType));
     VBOXMP_WARN_VPS(rc);
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.DacType",
-                                        VBoxDACType, sizeof(VBoxDACType));
+                                        g_wszVBoxDACType, sizeof(g_wszVBoxDACType));
     VBOXMP_WARN_VPS(rc);
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.MemorySize",
                                         &cbVRAM, sizeof(ULONG));
     VBOXMP_WARN_VPS(rc);
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.AdapterString",
-                                        VBoxAdapterString, sizeof(VBoxAdapterString));
+                                        g_wszVBoxAdapterString, sizeof(g_wszVBoxAdapterString));
     VBOXMP_WARN_VPS(rc);
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.BiosString",
-                                        VBoxBiosString, sizeof(VBoxBiosString));
+                                        g_wszVBoxBiosString, sizeof(g_wszVBoxBiosString));
     VBOXMP_WARN_VPS(rc);
 
     /* Call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up
@@ -363,7 +371,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
         {
             STARTIO_IN(VIDEO_POINTER_POSITION, pPos);
 
-            /** @todo set pointer position*/
+            NOREF(pPos); /** @todo set pointer position*/
             bResult = VBoxMPEnablePointer(pExt, TRUE, pStatus);
             break;
         }
@@ -391,7 +399,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
         {
             STARTIO_OUT(VIDEO_POINTER_ATTRIBUTES, pPointerAttrs);
 
-            /* Not Implemented */
+            NOREF(pPointerAttrs); /* Not Implemented */
             pStatus->Status = ERROR_INVALID_FUNCTION;
 
             bResult = FALSE;
@@ -591,6 +599,7 @@ VBoxDrvSetPowerState(PVOID HwDeviceExtension, ULONG HwId, PVIDEO_POWER_MANAGEMEN
     LOGF_ENTER();
 
     /*Not implemented*/
+    RT_NOREF(HwDeviceExtension, HwId, VideoPowerControl);
 
     LOGF_LEAVE();
     return NO_ERROR;
@@ -604,6 +613,7 @@ VBoxDrvGetPowerState(PVOID HwDeviceExtension, ULONG HwId, PVIDEO_POWER_MANAGEMEN
     LOGF_ENTER();
 
     /*Not implemented*/
+    RT_NOREF(HwDeviceExtension, HwId, VideoPowerControl);
 
     LOGF_LEAVE();
     return NO_ERROR;
@@ -615,6 +625,7 @@ VBoxDrvGetVideoChildDescriptor(PVOID HwDeviceExtension, PVIDEO_CHILD_ENUM_INFO C
                                PVIDEO_CHILD_TYPE VideoChildType, PUCHAR pChildDescriptor, PULONG pUId,
                                PULONG pUnused)
 {
+    RT_NOREF(pChildDescriptor, pUnused);
     PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
 
     PAGED_CODE();
@@ -639,6 +650,7 @@ VBoxDrvGetVideoChildDescriptor(PVOID HwDeviceExtension, PVIDEO_CHILD_ENUM_INFO C
 static BOOLEAN
 VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 {
+    RT_NOREF(Columns, Rows);
     PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
 
     LOGF_ENTER();
@@ -674,6 +686,7 @@ VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 #ifdef VBOX_WITH_VIDEOHWACCEL
 static VOID VBoxMPHGSMIDpc(IN PVOID  HwDeviceExtension, IN PVOID  Context)
 {
+    NOREF(Context);
     PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
 
     VBoxHGSMIProcessHostQueue(&VBoxCommonFromDeviceExt(pExt)->hostCtx);
@@ -753,8 +766,8 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     vhwData.HwDeviceExtensionSize = sizeof(VBOXMP_DEVEXT);
 
     /*Claim legacy VGA resource ranges*/
-    vhwData.HwLegacyResourceList  = VBoxLegacyVGAResourceList;
-    vhwData.HwLegacyResourceCount = RT_ELEMENTS(VBoxLegacyVGAResourceList);
+    vhwData.HwLegacyResourceList  = g_aVBoxLegacyVGAResources;
+    vhwData.HwLegacyResourceCount = RT_ELEMENTS(g_aVBoxLegacyVGAResources);
 
     /*Size of this structure changes between windows/ddk versions,
      *so we query current version and report the expected size
