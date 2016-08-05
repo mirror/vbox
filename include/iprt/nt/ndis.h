@@ -36,7 +36,7 @@ RT_C_DECLS_BEGIN
 #include <ndis.h>
 RT_C_DECLS_END
 
-#ifndef _MSC_VER
+#ifdef _MSC_VER
 # pragma warning(pop)
 #endif
 
