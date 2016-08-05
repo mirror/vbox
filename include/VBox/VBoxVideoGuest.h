@@ -201,6 +201,45 @@ DECLINLINE(void) VBoxHGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx)
     VBoxVideoCmnPortWriteUlong(pCtx->port, HGSMIOFFSET_VOID);
 }
 
+/** @todo r=bird: WHY
+ *
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *  T H E   H E C K   I S   T H I S   H E A D E R   U S I N G   R T D E C L?
+ *
+ *   */
 RTDECL(void)     VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
                                           void *pvMem);
 RTDECL(void)     VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx);
