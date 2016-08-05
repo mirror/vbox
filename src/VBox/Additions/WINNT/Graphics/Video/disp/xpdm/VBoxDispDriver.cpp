@@ -676,13 +676,15 @@ HSURF APIENTRY VBoxDispDrvEnableSurface(DHPDEV dhpdev)
             iFormat = BMF_32BPP;
             break;
         }
+        default:
+            AssertMsgFailedReturn(("ulBitsPerPel=%#x\n", pDev->mode.ulBitsPerPel), NULL);
     }
 
     size.cx = pDev->mode.ulWidth;
     size.cy = pDev->mode.ulHeight;
 
     pDev->surface.hBitmap = EngCreateBitmap(size, pDev->mode.lScanlineStride, iFormat,
-                                            pDev->mode.lScanlineStride>0 ? BMF_TOPDOWN:0,
+                                            pDev->mode.lScanlineStride > 0 ? BMF_TOPDOWN:0,
                                             pDev->memInfo.FrameBufferBase);
     if (!pDev->surface.hBitmap)
     {
@@ -1045,6 +1047,7 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
 /* Obsolete, NT4 specific. Called to set display offset in virtual desktop */
 BOOL APIENTRY VBoxDispDrvOffset(SURFOBJ* pso, LONG x, LONG y, FLONG flReserved)
 {
+    RT_NOREF(flReserved);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     LOGF(("%x %x %x\n", x, y, flReserved));
 

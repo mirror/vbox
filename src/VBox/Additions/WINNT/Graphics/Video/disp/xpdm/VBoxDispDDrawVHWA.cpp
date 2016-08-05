@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver, DirectDraw callbacks VHWA related
  */
@@ -20,8 +19,9 @@
 #include "VBoxDispDDraw.h"
 #include <iprt/asm.h>
 
-static DECLCALLBACK(void) VBoxDispVHWASurfBltCompletion(PVBOXDISPDEV pDev, VBOXVHWACMD * pCmd, void * pContext)
+static DECLCALLBACK(void) VBoxDispVHWASurfBltCompletion(PVBOXDISPDEV pDev, VBOXVHWACMD *pCmd, void *pvContext)
 {
+    RT_NOREF(pvContext);
     VBOXVHWACMD_SURF_BLT *pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_BLT);
     PVBOXVHWASURFDESC pSrcDesc = (PVBOXVHWASURFDESC)pBody->SrcGuestSurfInfo;
     PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)pBody->DstGuestSurfInfo;
@@ -32,8 +32,9 @@ static DECLCALLBACK(void) VBoxDispVHWASurfBltCompletion(PVBOXDISPDEV pDev, VBOXV
     VBoxDispVHWACommandRelease(pDev, pCmd);
 }
 
-static DECLCALLBACK(void) VBoxDispVHWASurfFlipCompletion(PVBOXDISPDEV pDev, VBOXVHWACMD * pCmd, void * pContext)
+static DECLCALLBACK(void) VBoxDispVHWASurfFlipCompletion(PVBOXDISPDEV pDev, VBOXVHWACMD *pCmd, void *pvContext)
 {
+    RT_NOREF(pvContext);
     VBOXVHWACMD_SURF_FLIP *pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
     PVBOXVHWASURFDESC pCurrDesc = (PVBOXVHWASURFDESC)pBody->CurrGuestSurfInfo;
     PVBOXVHWASURFDESC pTargDesc = (PVBOXVHWASURFDESC)pBody->TargGuestSurfInfo;
@@ -69,20 +70,20 @@ int VBoxDispVHWAUpdateDDHalInfo(PVBOXDISPDEV pDev, DD_HALINFO *pHalInfo)
 
     if (VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT) && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTSTRETCH))
     {
-        pHalInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTSTRETCHX|DDFXCAPS_BLTSTRETCHY|
-                                     DDFXCAPS_BLTSTRETCHXN|DDFXCAPS_BLTSTRETCHYN|
-                                     DDFXCAPS_BLTSHRINKX|DDFXCAPS_BLTSHRINKY|
-                                     DDFXCAPS_BLTSHRINKXN|DDFXCAPS_BLTSHRINKYN|
-                                     DDFXCAPS_BLTARITHSTRETCHY;
+        pHalInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTSTRETCHX  | DDFXCAPS_BLTSTRETCHY
+                                   | DDFXCAPS_BLTSTRETCHXN | DDFXCAPS_BLTSTRETCHYN
+                                   | DDFXCAPS_BLTSHRINKX   | DDFXCAPS_BLTSHRINKY
+                                   | DDFXCAPS_BLTSHRINKXN  | DDFXCAPS_BLTSHRINKYN
+                                   | DDFXCAPS_BLTARITHSTRETCHY;
     }
 
     if (VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY) && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAYSTRETCH))
     {
-        pHalInfo->ddCaps.dwFXCaps |= DDFXCAPS_OVERLAYSTRETCHX|DDFXCAPS_OVERLAYSTRETCHY|
-                                     DDFXCAPS_OVERLAYSTRETCHXN|DDFXCAPS_OVERLAYSTRETCHYN|
-                                     DDFXCAPS_OVERLAYSHRINKX|DDFXCAPS_OVERLAYSHRINKY|
-                                     DDFXCAPS_OVERLAYSHRINKXN|DDFXCAPS_OVERLAYSHRINKYN|
-                                     DDFXCAPS_OVERLAYARITHSTRETCHY;
+        pHalInfo->ddCaps.dwFXCaps |= DDFXCAPS_OVERLAYSTRETCHX  | DDFXCAPS_OVERLAYSTRETCHY
+                                   | DDFXCAPS_OVERLAYSTRETCHXN | DDFXCAPS_OVERLAYSTRETCHYN
+                                   | DDFXCAPS_OVERLAYSHRINKX   | DDFXCAPS_OVERLAYSHRINKY
+                                   | DDFXCAPS_OVERLAYSHRINKXN  | DDFXCAPS_OVERLAYSHRINKYN
+                                   | DDFXCAPS_OVERLAYARITHSTRETCHY;
     }
 
     pHalInfo->ddCaps.dwCKeyCaps = VBoxDispVHWAToDDCKEYCAPS(pDev->vhwa.colorKeyCaps);

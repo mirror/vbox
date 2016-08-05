@@ -178,8 +178,6 @@ DWORD APIENTRY VBoxDispDDCreateSurface(PDD_CREATESURFACEDATA lpCreateSurface)
                 VBoxDispVHWACommandSubmit(pDev, pCmd);
                 if (RT_SUCCESS(pCmd->rc))
                 {
-                    uint32_t surfSizeX = pBody->SurfInfo.sizeX;
-                    uint32_t surfSizeY = pBody->SurfInfo.sizeY;
                     pDesc->hHostHandle = pBody->SurfInfo.hSurf;
 
                     if(!!(pSurf->ddsCaps.dwCaps & DDSCAPS_OVERLAY)

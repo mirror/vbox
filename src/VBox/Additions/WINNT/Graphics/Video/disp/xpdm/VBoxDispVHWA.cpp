@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox XPDM Display driver
  */
@@ -26,7 +25,7 @@ static void VBoxDispVHWACommandFree(PVBOXDISPDEV pDev, VBOXVHWACMD* pCmd)
     VBoxHGSMIBufferFree(&pDev->hgsmi.ctx, pCmd);
 }
 
-static void VBoxDispVHWACommandRetain(PVBOXDISPDEV pDev, VBOXVHWACMD* pCmd)
+static void VBoxDispVHWACommandRetain(VBOXVHWACMD* pCmd)
 {
     ASMAtomicIncU32(&pCmd->cRefs);
 }
@@ -36,7 +35,7 @@ static void VBoxDispVHWACommandSubmitAsynchByEvent(PVBOXDISPDEV pDev, VBOXVHWACM
     pCmd->GuestVBVAReserved1 = (uintptr_t)pEvent;
     pCmd->GuestVBVAReserved2 = 0;
     /* ensure the command is not removed until we're processing it */
-    VBoxDispVHWACommandRetain(pDev, pCmd);
+    VBoxDispVHWACommandRetain(pCmd);
 
     /* complete it asynchronously by setting event */
     pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT;
@@ -196,6 +195,7 @@ void VBoxDispVHWACommandCheckHostCmds(PVBOXDISPDEV pDev)
 
 static DECLCALLBACK(void) VBoxDispVHWACommandCompletionCallbackEvent(PVBOXDISPDEV pDev, VBOXVHWACMD * pCmd, void * pContext)
 {
+    RT_NOREF(pCmd);
     VBOXPEVENT pEvent = (VBOXPEVENT)pContext;
     LONG oldState = pDev->vpAPI.VideoPortProcs.pfnSetEvent(pDev->vpAPI.pContext, pEvent);
     Assert(!oldState);
@@ -206,7 +206,7 @@ void VBoxDispVHWACommandSubmitAsynch (PVBOXDISPDEV pDev, VBOXVHWACMD* pCmd, PFNV
 {
     pCmd->GuestVBVAReserved1 = (uintptr_t)pfnCompletion;
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
-    VBoxDispVHWACommandRetain(pDev, pCmd);
+    VBoxDispVHWACommandRetain(pCmd);
 
     VBoxHGSMIBufferSubmit(&pDev->hgsmi.ctx, pCmd);
 
@@ -219,8 +219,9 @@ void VBoxDispVHWACommandSubmitAsynch (PVBOXDISPDEV pDev, VBOXVHWACMD* pCmd, PFNV
     VBoxDispVHWACommandRelease(pDev, pCmd);
 }
 
-static DECLCALLBACK(void) VBoxDispVHWAFreeCmdCompletion(PVBOXDISPDEV pDev, VBOXVHWACMD * pCmd, void * pContext)
+static DECLCALLBACK(void) VBoxDispVHWAFreeCmdCompletion(PVBOXDISPDEV pDev, VBOXVHWACMD *pCmd, void *pvContext)
 {
+    RT_NOREF(pvContext);
     VBoxDispVHWACommandRelease(pDev, pCmd);
 }
 
@@ -228,7 +229,7 @@ void VBoxDispVHWACommandSubmitAsynchAndComplete (PVBOXDISPDEV pDev, VBOXVHWACMD*
 {
     pCmd->GuestVBVAReserved1 = (uintptr_t)VBoxDispVHWAFreeCmdCompletion;
 
-    VBoxDispVHWACommandRetain(pDev, pCmd);
+    VBoxDispVHWACommandRetain(pCmd);
 
     pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION;
 

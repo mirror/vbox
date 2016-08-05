@@ -189,6 +189,7 @@ VBoxDispDrvEnableDirectDraw(DHPDEV dhpdev, DD_CALLBACKS *pCallBacks, DD_SURFACEC
 
 VOID APIENTRY VBoxDispDrvDisableDirectDraw(DHPDEV  dhpdev)
 {
+    RT_NOREF(dhpdev);
     LOGF_ENTER();
     LOGF_LEAVE();
     return;
