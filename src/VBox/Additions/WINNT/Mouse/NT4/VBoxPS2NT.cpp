@@ -2479,7 +2479,7 @@ fail:
  */
 static NTSTATUS KbdInitHw(PDEVICE_OBJECT pDevObj)
 {
-    NTSTATUS status;
+    NTSTATUS status = STATUS_SUCCESS; /* Shut up MSC. */
     BOOLEAN fWaitForAck = TRUE;
     PDEVEXT pDevExt = (PDEVEXT)pDevObj->DeviceExtension;
 
@@ -2494,22 +2494,19 @@ retry:
         status = GetBytePoll(KbdDevType, pDevExt, &byte);
         if (NT_SUCCESS(status))
             break;
-        else
+        if (status == STATUS_IO_TIMEOUT)
         {
-            if (status == STATUS_IO_TIMEOUT)
-            {
-                LARGE_INTEGER nextQuery, difference, tenSeconds;
-                KeStallExecutionProcessor(50);
-                KeQueryTickCount(&nextQuery);
-                difference.QuadPart = nextQuery.QuadPart - startOfSpin.QuadPart;
-                tenSeconds.QuadPart = 10*10*1000*1000;
-                ASSERT(KeQueryTimeIncrement() <= MAXLONG);
-                if (difference.QuadPart*KeQueryTimeIncrement() >= tenSeconds.QuadPart)
-                    break;
-            }
-            else
+            LARGE_INTEGER nextQuery, difference, tenSeconds;
+            KeStallExecutionProcessor(50);
+            KeQueryTickCount(&nextQuery);
+            difference.QuadPart = nextQuery.QuadPart - startOfSpin.QuadPart;
+            tenSeconds.QuadPart = 10*10*1000*1000;
+            ASSERT(KeQueryTimeIncrement() <= MAXLONG);
+            if (difference.QuadPart*KeQueryTimeIncrement() >= tenSeconds.QuadPart)
                 break;
         }
+        else
+            break;
     }
 
     if (!NT_SUCCESS(status))
@@ -2541,8 +2538,8 @@ retry:
     if (status == STATUS_SUCCESS)
     {
         status = PutBytePoll(i8042Dat, TRUE /*=wait*/, KbdDevType, pDevExt,
-                                  ConvertTypematic(pDevExt->Cfg.KeyRepeatCurrent.Rate,
-                                                   pDevExt->Cfg.KeyRepeatCurrent.Delay));
+                             ConvertTypematic(pDevExt->Cfg.KeyRepeatCurrent.Rate,
+                                              pDevExt->Cfg.KeyRepeatCurrent.Delay));
         /* ignore errors */
     }
 
@@ -2670,7 +2667,7 @@ static VOID HwGetRegstry(PINITEXT pInit, PUNICODE_STRING RegistryPath,
 
 {
     PRTL_QUERY_REGISTRY_TABLE aQuery = NULL;
-    UNICODE_STRING parametersPath;
+    UNICODE_STRING parametersPath = { 0, 0, NULL }; /* Shut up MSC (actually badly structured code is a fault, but whatever). */
     UNICODE_STRING defaultPointerName;
     UNICODE_STRING defaultKeyboardName;
     USHORT   defaultResendIterations = 3;
@@ -3213,7 +3210,7 @@ static const UCHAR s_ucCommands[] =
 
 static NTSTATUS MouFindWheel(PDEVICE_OBJECT pDevObj)
 {
-    NTSTATUS status;
+    NTSTATUS status = STATUS_SUCCESS; /* Shut up MSC. */
     PDEVEXT pDevExt = (PDEVEXT) pDevObj->DeviceExtension;
 
     if (!pDevExt->Cfg.EnableWheelDetection)
@@ -3231,7 +3228,7 @@ static NTSTATUS MouFindWheel(PDEVICE_OBJECT pDevObj)
         KeStallExecutionProcessor(50);
     }
 
-    UCHAR byte;
+    UCHAR byte = UINT8_MAX;
     for (unsigned i = 0; i < 5; i++)
     {
         status = GetBytePoll(CtrlDevType, pDevExt, &byte);
