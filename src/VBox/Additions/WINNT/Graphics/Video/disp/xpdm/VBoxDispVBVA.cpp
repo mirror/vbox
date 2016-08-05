@@ -328,7 +328,7 @@ int VBoxDispVBVAInit(PVBOXDISPDEV pDev)
     LOGF_ENTER();
 
     /* Check if HGSMI is supported and obtain necessary info */
-    rc = VBoxDispMPQueryHGSMIInfo(pDev->hDriver, &info);
+    int rc = VBoxDispMPQueryHGSMIInfo(pDev->hDriver, &info);
     if (RT_SUCCESS(rc))
     {
         rc = VBoxDispMPQueryHGSMICallbacks(pDev->hDriver, &callbacks);
@@ -581,6 +581,7 @@ static void vbvaReportDirtyClip(PVBOXDISPDEV pDev, CLIPOBJ *pco, RECTL *prcl)
 void vbvaDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo,
                    LONG x1, LONG y1, LONG x2, LONG y2, RECTL *prclBounds, MIX mix)
 {
+    RT_NOREF(pbo, x1, y1, x2, y2, mix);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     vbvaReportDirtyClip(pDev, pco, prclBounds);
 }
@@ -588,6 +589,7 @@ void vbvaDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo,
 void vbvaDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
                        BRUSHOBJ  *pbo, POINTL *pptlBrushOrg, LINEATTRS *plineattrs, MIX mix)
 {
+    RT_NOREF(pco, pxo, pbo, pptlBrushOrg, plineattrs, mix);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     vbvaReportDirtyPath(pDev, ppo);
 }
@@ -595,12 +597,14 @@ void vbvaDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
 void vbvaDrvFillPath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL *pptlBrushOrg,
                      MIX mix, FLONG flOptions)
 {
+    RT_NOREF(pco, pbo, pptlBrushOrg, mix, flOptions);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     vbvaReportDirtyPath(pDev, ppo);
 }
 
 void vbvaDrvPaint(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL *pptlBrushOrg, MIX mix)
 {
+    RT_NOREF(pbo, pptlBrushOrg, mix);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     vbvaReportDirtyClip(pDev, pco, NULL);
 }
@@ -609,12 +613,14 @@ void vbvaDrvTextOut(SURFOBJ *pso, STROBJ *pstro, FONTOBJ *pfo, CLIPOBJ *pco,
                     RECTL *prclExtra, RECTL *prclOpaque, BRUSHOBJ *pboFore,
                     BRUSHOBJ *pboOpaque, POINTL *pptlOrg, MIX mix)
 {
+    RT_NOREF(pfo, prclExtra, pboFore, pboOpaque, pptlOrg, mix);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
-    vbvaReportDirtyClip(pDev, pco, prclOpaque? prclOpaque: &pstro->rclBkGround);
+    vbvaReportDirtyClip(pDev, pco, prclOpaque ? prclOpaque : &pstro->rclBkGround);
 }
 
 void vbvaDrvSaveScreenBits(SURFOBJ *pso, ULONG iMode, ULONG_PTR ident, RECTL *prcl)
 {
+    RT_NOREF(ident);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
 
     Assert(iMode == SS_RESTORE || iMode == SS_SAVE);
@@ -625,6 +631,7 @@ void vbvaDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
                    RECTL *prclTrg, POINTL *pptlSrc, POINTL *pptlMask, BRUSHOBJ *pbo, POINTL *pptlBrush,
                    ROP4 rop4)
 {
+    RT_NOREF(psoSrc, psoMask, pxlo, pptlSrc, pptlMask, pbo, pptlBrush, rop4);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)psoTrg->dhpdev;
     vbvaReportDirtyClip(pDev, pco, prclTrg);
 }
@@ -633,13 +640,14 @@ void vbvaDrvStretchBlt(SURFOBJ *psoDest, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIP
                        COLORADJUSTMENT *pca, POINTL *pptlHTOrg, RECTL *prclDest, RECTL *prclSrc,
                        POINTL *pptlMask, ULONG iMode)
 {
+    RT_NOREF(psoSrc, psoMask, pxlo, pca, pptlHTOrg, prclSrc, pptlMask, iMode);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)psoDest->dhpdev;
     vbvaReportDirtyClip(pDev, pco, prclDest);
 }
 
-void vbvaDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo,
-                     RECTL *prclDest, POINTL *pptlSrc)
+void vbvaDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo, RECTL *prclDest, POINTL *pptlSrc)
 {
+    RT_NOREF(psoSrc, pxlo, pptlSrc);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)psoDest->dhpdev;
     vbvaReportDirtyClip(pDev, pco, prclDest);
 }
