@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox Windows Guest Shared Folders
- *
- * File System Driver helpers
+ * VirtualBox Windows Guest Shared Folders - File System Driver helpers
  */
 
 /*
@@ -17,19 +14,20 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef __VBSFHLP__H
 #define __VBSFHLP__H
 
-#include <ntifs.h>
-#include <ntverp.h>
+#include <iprt/nt/nt.h> /* includes ntifs.h and wdm.h */
+#include <iprt/win/ntverp.h>
 
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLibSharedFolders.h>
 
 
-void vbsfHlpSleep (ULONG ulMillies);
-NTSTATUS vbsfHlpCreateDriveLetter (WCHAR Letter, UNICODE_STRING *pDeviceName);
-NTSTATUS vbsfHlpDeleteDriveLetter (WCHAR Letter);
+void     vbsfHlpSleep(ULONG ulMillies);
+NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName);
+NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter);
 
 /**
  * Convert VBox IRT file attributes to NT file attributes
@@ -38,7 +36,7 @@ NTSTATUS vbsfHlpDeleteDriveLetter (WCHAR Letter);
  * @param   fMode       IRT file attributes
  *
  */
-uint32_t VBoxToNTFileAttributes (uint32_t fMode);
+uint32_t VBoxToNTFileAttributes(uint32_t fMode);
 
 /**
  * Convert VBox IRT file attributes to NT file attributes
@@ -47,7 +45,7 @@ uint32_t VBoxToNTFileAttributes (uint32_t fMode);
  * @param   fMode       IRT file attributes
  *
  */
-uint32_t NTToVBoxFileAttributes (uint32_t fMode);
+uint32_t NTToVBoxFileAttributes(uint32_t fMode);
 
 /**
  * Convert VBox error code to NT status code
@@ -56,15 +54,16 @@ uint32_t NTToVBoxFileAttributes (uint32_t fMode);
  * @param   vboxRC          VBox error code
  *
  */
-NTSTATUS VBoxErrorToNTStatus (int vboxRC);
+NTSTATUS VBoxErrorToNTStatus(int vboxRC);
 
-PVOID vbsfAllocNonPagedMem (ULONG ulSize);
-void vbsfFreeNonPagedMem (PVOID lpMem);
+PVOID    vbsfAllocNonPagedMem(ULONG ulSize);
+void     vbsfFreeNonPagedMem(PVOID lpMem);
 
-#if defined(DEBUG) || defined (LOG_ENABLED)
+#if defined(DEBUG) || defined(LOG_ENABLED)
 PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction);
 #endif
 
 NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
 
-#endif /* __VBSFHLP__H */
+#endif /* !__VBSFHLP__H */
+
