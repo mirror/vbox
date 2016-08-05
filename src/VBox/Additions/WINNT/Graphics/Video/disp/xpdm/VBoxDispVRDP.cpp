@@ -981,6 +981,7 @@ void vrdpDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo,
 void vrdpDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
                        BRUSHOBJ  *pbo, POINTL *pptlBrushOrg, LINEATTRS *plineattrs, MIX mix)
 {
+    RT_NOREF(pxo,  pptlBrushOrg);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
 
     /*
@@ -1060,7 +1061,8 @@ void vrdpDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
         PATHDATA pd;
         BOOL bMore;
         VRDEORDERPOLYLINE order;
-        VRDEORDERPOINT ptStart;
+        /** @todo it is not immediately obvious how we're sure ptStart isn't used uninitialized. */
+        VRDEORDERPOINT ptStart = { 0, 0 }; /* Shut up MSC */
         VRDEORDERBOUNDS bounds;
 
         order.rgb = vrdpColor2RGB(pso, pbo->iSolidColor);
@@ -1072,7 +1074,8 @@ void vrdpDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
 
         do {
             POINTFIX *pptfx;
-            VRDEORDERPOINT pt;
+            /** @todo it is not immediately obvious how we're sure pt isn't used uninitialized. */
+            VRDEORDERPOINT pt = {0, 0}; /* Shut up MSC */
 
             bMore = PATHOBJ_bEnum (ppo, &pd);
 
@@ -1166,23 +1169,24 @@ void vrdpDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
     return;
 }
 
-void vrdpDrvFillPath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL *pptlBrushOrg,
-                     MIX mix, FLONG flOptions)
+void vrdpDrvFillPath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL *pptlBrushOrg, MIX mix, FLONG flOptions)
 {
+    RT_NOREF(pbo, pptlBrushOrg, mix, flOptions);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     vrdpReportDirtyPath(pDev, pco, ppo);
 }
 
 void vrdpDrvPaint(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL *pptlBrushOrg, MIX mix)
 {
+    RT_NOREF(pbo, pptlBrushOrg, mix);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
     vrdpReportDirtyClip(pDev, pco, NULL);
 }
 
-void vrdpDrvTextOut(SURFOBJ *pso, STROBJ *pstro, FONTOBJ *pfo, CLIPOBJ *pco,
-                    RECTL *prclExtra, RECTL *prclOpaque, BRUSHOBJ *pboFore,
-                    BRUSHOBJ *pboOpaque, POINTL *pptlOrg, MIX mix)
+void vrdpDrvTextOut(SURFOBJ *pso, STROBJ *pstro, FONTOBJ *pfo, CLIPOBJ *pco, RECTL *prclExtra, RECTL *prclOpaque,
+                    BRUSHOBJ *pboFore, BRUSHOBJ *pboOpaque, POINTL *pptlOrg, MIX mix)
 {
+    RT_NOREF(pptlOrg,  mix);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
 
     /*
@@ -1323,9 +1327,9 @@ void vrdpDrvSaveScreenBits(SURFOBJ *pso, ULONG iMode, ULONG_PTR ident, RECTL *pr
 #define ROP3_NEED_DST(__rop3)   (((((__rop3) >> 1) ^ (__rop3)) & 0x55) != 0)
 
 void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *pco, XLATEOBJ *pxlo,
-                   RECTL *prclTrg, POINTL *pptlSrc, POINTL *pptlMask, BRUSHOBJ *pbo, POINTL *pptlBrush,
-                   ROP4 rop4)
+                   RECTL *prclTrg, POINTL *pptlSrc, POINTL *pptlMask, BRUSHOBJ *pbo, POINTL *pptlBrush, ROP4 rop4)
 {
+    RT_NOREF(psoMask, pxlo, pptlMask);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)psoTrg->dhpdev;
 
     /*
@@ -1539,9 +1543,9 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
 }
 
 void vrdpDrvStretchBlt(SURFOBJ *psoDest, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *pco, XLATEOBJ *pxlo,
-                       COLORADJUSTMENT *pca, POINTL *pptlHTOrg, RECTL *prclDest, RECTL *prclSrc,
-                       POINTL *pptlMask, ULONG iMode)
+                       COLORADJUSTMENT *pca, POINTL *pptlHTOrg, RECTL *prclDest, RECTL *prclSrc, POINTL *pptlMask, ULONG iMode)
 {
+    RT_NOREF(psoSrc, psoMask, pxlo, pca, pptlHTOrg, prclSrc, pptlMask, iMode);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)psoDest->dhpdev;
     vrdpReportDirtyClip(pDev, pco, prclDest);
 }
@@ -1552,9 +1556,9 @@ void vrdpDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *
     vrdpDrvBitBlt(psoDest, psoSrc, NULL, pco, pxlo, prclDest, pptlSrc, NULL, NULL, NULL, 0xCCCC);
 }
 
-BOOL vrdpDrvRealizeBrush(BRUSHOBJ *pbo, SURFOBJ *psoTarget, SURFOBJ *psoPattern, SURFOBJ *psoMask,
-                        XLATEOBJ *pxlo, ULONG iHatch)
+BOOL vrdpDrvRealizeBrush(BRUSHOBJ *pbo, SURFOBJ *psoTarget, SURFOBJ *psoPattern, SURFOBJ *psoMask, XLATEOBJ *pxlo, ULONG iHatch)
 {
+    RT_NOREF(psoMask, iHatch);
     BOOL bRc = FALSE;
 
     LOGF(("psoMask = %p, iHatch = %d", psoMask, iHatch));

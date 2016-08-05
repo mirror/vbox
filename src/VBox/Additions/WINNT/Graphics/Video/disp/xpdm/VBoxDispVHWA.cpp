@@ -198,7 +198,7 @@ static DECLCALLBACK(void) VBoxDispVHWACommandCompletionCallbackEvent(PVBOXDISPDE
     RT_NOREF(pCmd);
     VBOXPEVENT pEvent = (VBOXPEVENT)pContext;
     LONG oldState = pDev->vpAPI.VideoPortProcs.pfnSetEvent(pDev->vpAPI.pContext, pEvent);
-    Assert(!oldState);
+    Assert(!oldState); NOREF(oldState);
 }
 
 /* do not wait for completion */
