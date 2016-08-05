@@ -113,69 +113,78 @@ public:
         return ulTemp;
     }
 
-    HRESULT STDMETHODCALLTYPE GetTypeInfoCount(unsigned int FAR* pctinfo)
+    HRESULT STDMETHODCALLTYPE GetTypeInfoCount(unsigned int FAR *pctInfo)
     {
+        RT_NOREF(pctInfo);
         return E_NOTIMPL;
     }
 
-    HRESULT STDMETHODCALLTYPE GetTypeInfo(unsigned int iTInfo, LCID lcid, ITypeInfo FAR* FAR* ppTInfo)
+    HRESULT STDMETHODCALLTYPE GetTypeInfo(unsigned int iTInfo, LCID lcid, ITypeInfo FAR * FAR *ppTInfo)
     {
+        RT_NOREF(iTInfo, lcid, ppTInfo);
         return E_NOTIMPL;
     }
 
-    HRESULT STDMETHODCALLTYPE GetIDsOfNames(REFIID riid,
-                                            OLECHAR FAR* FAR* rgszNames, unsigned int cNames,
-                                            LCID lcid, DISPID FAR* rgDispId)
+    HRESULT STDMETHODCALLTYPE GetIDsOfNames(REFIID riid, OLECHAR FAR * FAR *rgszNames, unsigned int cNames,
+                                            LCID lcid, DISPID FAR *rgDispId)
     {
+        RT_NOREF(riid, rgszNames, cNames, lcid, rgDispId);
         return E_NOTIMPL;
     }
 
-    HRESULT STDMETHODCALLTYPE Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags,
-                                     DISPPARAMS FAR* pDispParams, VARIANT FAR* parResult, EXCEPINFO FAR* pExcepInfo,
-                                     unsigned int FAR* puArgErr)
+    HRESULT STDMETHODCALLTYPE Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS FAR *pDispParams,
+                                     VARIANT FAR *parResult, EXCEPINFO FAR *pExcepInfo, unsigned int FAR *puArgErr)
     {
+        RT_NOREF(dispIdMember, riid, lcid, wFlags, pDispParams, parResult, pExcepInfo, puArgErr);
         return E_NOTIMPL;
     }
 
     /* ISensLogon methods */
     STDMETHODIMP Logon(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: Logon\n");
         return S_OK;
     }
 
     STDMETHODIMP Logoff(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: Logoff\n");
         return S_OK;
     }
 
     STDMETHODIMP StartShell(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: Logon\n");
         return S_OK;
     }
 
     STDMETHODIMP DisplayLock(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: DisplayLock\n");
         return S_OK;
     }
 
     STDMETHODIMP DisplayUnlock(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: DisplayUnlock\n");
         return S_OK;
     }
 
     STDMETHODIMP StartScreenSaver(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: StartScreenSaver\n");
         return S_OK;
     }
 
     STDMETHODIMP StopScreenSaver(BSTR bstrUserName)
     {
+        RT_NOREF(bstrUserName);
         VBoxCredProvVerbose(0, "VBoxCredProvSensLogon: StopScreenSaver\n");
         return S_OK;
     }
@@ -211,7 +220,7 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
         AssertPtr(g_pIEventSystem);
         AssertPtr(g_pISensLogon);
 
-        IEventSubscription *pIEventSubscription;
+        IEventSubscription *pIEventSubscription = NULL;
         int i;
         for (i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
         {
@@ -505,11 +514,12 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
                 && g_fSENSEnabled)
             {
                 HRESULT hRes = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+                RT_NOREF(hRes); /* probably a great idea to ignore this */
                 VBoxCredentialProviderRegisterSENS();
             }
-#else
+#else  /* !VBOX_WITH_WIN_SENS */
             VBoxCredProvVerbose(0, "VBoxCredentialProviderCreate: SENS support is disabled\n");
-#endif /* VBOX_WITH_WIN_SENS */
+#endif /* !VBOX_WITH_WIN_SENS */
         }
         catch (std::bad_alloc &ex)
         {
@@ -534,8 +544,7 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
  * @param   ppvInterface        Receives the interface pointer on successful
  *                              object creation.
  */
-HRESULT __stdcall DllGetClassObject(REFCLSID classID, REFIID interfaceID,
-                                    void **ppvInterface)
+HRESULT __stdcall DllGetClassObject(REFCLSID classID, REFIID interfaceID, void **ppvInterface)
 {
     VBoxCredProvVerbose(0, "DllGetClassObject (refs=%ld)\n",
                         g_cDllRefs);
