@@ -522,6 +522,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t c
     }
     return VERR_NO_MEMORY;
 #else   /* IPRT_TARGET_NT4 */
+    RT_NOREF(ppMem, cb, PhysHighest);
     return VERR_NOT_SUPPORTED;
 #endif  /* IPRT_TARGET_NT4 */
 }

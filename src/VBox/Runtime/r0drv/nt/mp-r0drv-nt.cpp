@@ -373,23 +373,23 @@ static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID Sy
 static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2,
                              RT_NT_CPUID enmCpuid, RTCPUID idCpu, RTCPUID idCpu2, uint32_t *pcHits)
 {
+#ifdef IPRT_TARGET_NT4
+    RT_NOREF(pfnWorker, pvUser1, pvUser2, enmCpuid, idCpu, idCpu2, pcHits);
+    /* g_pfnrtNt* are not present on NT anyway. */
+    return VERR_NOT_SUPPORTED;
+
+#else  /* !IPRT_TARGET_NT4 */
     PRTMPARGS pArgs;
     KDPC     *paExecCpuDpcs;
 
-#if 0
+# if 0
     /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL according to MSDN, but the
      * driver verifier doesn't complain...
      */
     AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
-#endif
+# endif
 
-#ifdef IPRT_TARGET_NT4
-    KAFFINITY Mask;
-    /* g_pfnrtNt* are not present on NT anyway. */
-    return VERR_NOT_SUPPORTED;
-#else
     KAFFINITY Mask = KeQueryActiveProcessors();
-#endif
 
     /* KeFlushQueuedDpcs is not present in Windows 2000; import it dynamically so we can just fail this call. */
     if (!g_pfnrtNtKeFlushQueuedDpcs)
@@ -504,6 +504,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
         ExFreePool(pArgs);
 
     return VINF_SUCCESS;
+#endif /* */
 }
 
 

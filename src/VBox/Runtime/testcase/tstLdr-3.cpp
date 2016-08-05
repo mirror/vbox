@@ -262,7 +262,7 @@ static int testDisasNear(uint64_t uAddr)
         uint8_t *pbCode = (uint8_t *)g_pvBits + (NearSym.aSyms[0].Value - g_uLoadAddr);
         MyDisBlock(enmDisCpuMode, (uintptr_t)pbCode,
                    RT_MAX(NearSym.aSyms[1].Value - NearSym.aSyms[0].Value, 0x20000),
-                   NearSym.aSyms[0].Value - (RTUINTPTR)pbCode,
+                   NearSym.aSyms[0].Value - (uintptr_t)pbCode,
                    NearSym.aSyms[0].Value,
                    NearSym.Addr);
     }

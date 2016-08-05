@@ -472,19 +472,20 @@ int main()
         CHECK42("%RTptr", (RTUINTPTR)0x84342134, "84342134");
     }
 
-    if (sizeof(RTCCUINTREG) == 8)
-    {
-        CHECK42("%RTreg", (RTCCUINTREG)0, "0000000000000000");
-        CHECK42("%RTreg", ~(RTCCUINTREG)0, "ffffffffffffffff");
-        CHECK42("%RTreg", (RTCCUINTREG)0x84342134, "0000000084342134");
-        CHECK42("%RTreg", (RTCCUINTREG)0x23484342134ULL, "0000023484342134");
-    }
-    else
-    {
-        CHECK42("%RTreg", (RTCCUINTREG)0, "00000000");
-        CHECK42("%RTreg", ~(RTCCUINTREG)0, "ffffffff");
-        CHECK42("%RTreg", (RTCCUINTREG)0x84342134, "84342134");
-    }
+#if ARCH_BITS == 64
+    AssertCompileSize(RTCCUINTREG, 8);
+    CHECK42("%RTreg", (RTCCUINTREG)0, "0000000000000000");
+    CHECK42("%RTreg", ~(RTCCUINTREG)0, "ffffffffffffffff");
+    CHECK42("%RTreg", (RTCCUINTREG)0x84342134, "0000000084342134");
+    CHECK42("%RTreg", (RTCCUINTREG)0x23484342134ULL, "0000023484342134");
+#elif ARCH_BITS == 32
+    AssertCompileSize(RTCCUINTREG, 4);
+    CHECK42("%RTreg", (RTCCUINTREG)0, "00000000");
+    CHECK42("%RTreg", ~(RTCCUINTREG)0, "ffffffff");
+    CHECK42("%RTreg", (RTCCUINTREG)0x84342134, "84342134");
+#else
+# error ARCH_BITS
+#endif
 
     CHECK42("%RTsel", (RTSEL)0x543, "0543");
     CHECK42("%RTsel", (RTSEL)0xf8f8, "f8f8");

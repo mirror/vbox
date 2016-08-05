@@ -129,7 +129,7 @@ static uint64_t rtTimerNtQueryInterruptTime(void)
     {
         InterruptTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High1Time;
         InterruptTime.LowPart  = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.LowPart;
-    } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High2Time != InterruptTime.HighPart);
+    } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High2Time != (LONG)InterruptTime.HighPart);
     return InterruptTime.QuadPart;
 # endif
 }
