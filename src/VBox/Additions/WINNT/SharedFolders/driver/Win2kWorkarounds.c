@@ -156,6 +156,7 @@ static volatile PFNPSGETPROCESSIMAGEFILENAME g_pfnPsGetProcessImageFileName = Re
 
 static LPSTR __stdcall Fake_PsGetProcessImageFileName(PEPROCESS pProcess)
 {
+    RT_NOREF(pProcess);
     Log(("Fake_PsGetProcessImageFileName: %p\n", pProcess));
     return "Fake_PsGetProcessImageFileName";
 }

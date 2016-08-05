@@ -58,6 +58,8 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
     ULONG CreateDisposition;
     SHFLCREATEPARMS *pCreateParms = NULL;
 
+    RT_NOREF(EaBuffer);
+
     if (EaLength)
     {
         Log(("VBOXSF: vbsfProcessCreate: Unsupported: extended attributes!\n"));
@@ -474,6 +476,8 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     SHFLHANDLE Handle = SHFL_HANDLE_NIL;
     PMRX_VBOX_FOBX pVBoxFobx;
 
+    RT_NOREF(__C_Fobx); /* RxCaptureFobx */
+
     Log(("VBOXSF: MRxCreate: name ptr %p length=%d, SrvOpen->Flags 0x%08X\n",
          RemainingName, RemainingName->Length, SrvOpen->Flags));
 
@@ -604,28 +608,30 @@ Exit:
     return Status;
 }
 
-NTSTATUS VBoxMRxComputeNewBufferingState(IN OUT PMRX_SRV_OPEN pMRxSrvOpen,
-                                         IN PVOID pMRxContext,
-                                         OUT PULONG pNewBufferingState)
+NTSTATUS VBoxMRxComputeNewBufferingState(IN OUT PMRX_SRV_OPEN pMRxSrvOpen, IN PVOID pMRxContext, OUT PULONG pNewBufferingState)
 {
+    RT_NOREF(pMRxSrvOpen, pMRxContext, pNewBufferingState);
     Log(("VBOXSF: MRxComputeNewBufferingState\n"));
     return STATUS_NOT_SUPPORTED;
 }
 
 NTSTATUS VBoxMRxDeallocateForFcb(IN OUT PMRX_FCB pFcb)
 {
+    RT_NOREF(pFcb);
     Log(("VBOXSF: MRxDeallocateForFcb\n"));
     return STATUS_SUCCESS;
 }
 
 NTSTATUS VBoxMRxDeallocateForFobx(IN OUT PMRX_FOBX pFobx)
 {
+    RT_NOREF(pFobx);
     Log(("VBOXSF: MRxDeallocateForFobx\n"));
     return STATUS_SUCCESS;
 }
 
 NTSTATUS VBoxMRxTruncate(IN PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxTruncate\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
@@ -634,8 +640,7 @@ NTSTATUS VBoxMRxCleanupFobx(IN PRX_CONTEXT RxContext)
 {
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(RxContext->pFobx);
 
-    Log(("VBOXSF: MRxCleanupFobx: pVBoxFobx = %p, Handle = 0x%RX64\n",
-          pVBoxFobx, pVBoxFobx? pVBoxFobx->hFile: 0));
+    Log(("VBOXSF: MRxCleanupFobx: pVBoxFobx = %p, Handle = 0x%RX64\n", pVBoxFobx, pVBoxFobx? pVBoxFobx->hFile: 0));
 
     if (!pVBoxFobx)
         return STATUS_INVALID_PARAMETER;
@@ -645,6 +650,7 @@ NTSTATUS VBoxMRxCleanupFobx(IN PRX_CONTEXT RxContext)
 
 NTSTATUS VBoxMRxForceClosed(IN PMRX_SRV_OPEN pSrvOpen)
 {
+    RT_NOREF(pSrvOpen);
     Log(("VBOXSF: MRxForceClosed\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
@@ -769,7 +775,6 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
     PMRX_SRV_OPEN pSrvOpen = capFobx->pSrvOpen;
 
-    int vboxRC = 0;
     PUNICODE_STRING RemainingName = NULL;
 
     Log(("VBOXSF: MRxCloseSrvOpen: capFcb = %p, capFobx = %p, pVBoxFobx = %p, pSrvOpen = %p\n",
@@ -857,9 +862,9 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
 }
 
 NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
-                       IN FILE_INFORMATION_CLASS FileInformationClass,
-                       IN PVOID pBuffer,
-                       IN ULONG BufferLength)
+                    IN FILE_INFORMATION_CLASS FileInformationClass,
+                    IN PVOID pBuffer,
+                    IN ULONG BufferLength)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -877,6 +882,8 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     int vboxRC;
     PSHFLSTRING SrcPath = 0, DestPath = 0;
     ULONG flags;
+
+    RT_NOREF(FileInformationClass, pBuffer, BufferLength);
 
     Assert(FileInformationClass == FileRenameInformation);
 
@@ -930,12 +937,14 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
 
 NTSTATUS VBoxMRxShouldTryToCollapseThisOpen(IN PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxShouldTryToCollapseThisOpen\n"));
     return STATUS_MORE_PROCESSING_REQUIRED;
 }
 
 NTSTATUS VBoxMRxCollapseOpen(IN OUT PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxCollapseOpen\n"));
     return STATUS_MORE_PROCESSING_REQUIRED;
 }
