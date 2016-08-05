@@ -37,6 +37,17 @@ class UIDesktopWidgetWatchdog : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies about host-screen count change to @a cHostScreenCount. */
+    void sigHostScreenCountChanged(int cHostScreenCount);
+
+    /** Notifies about resize for the host-screen with @a iHostScreenIndex. */
+    void sigHostScreenResized(int iHostScreenIndex);
+
+    /** Notifies about work-area resize for the host-screen with @a iHostScreenIndex. */
+    void sigHostScreenWorkAreaResized(int iHostScreenIndex);
+
 public:
 
     /** Constructs watchdog for the @a pParent being passed into the base-class. */
@@ -65,6 +76,9 @@ private slots:
 
     /** Handles resize for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenResized(int iHostScreenIndex);
+
+    /** Handles work-area resize for the host-screen with @a iHostScreenIndex. */
+    void sltHandleHostScreenWorkAreaResized(int iHostScreenIndex);
 
 #ifdef VBOX_WS_X11
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */
