@@ -400,7 +400,7 @@ static void ioapicSignalIntrForRte(PIOAPIC pThis, uint8_t idxRte)
         uint8_t const  u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
         uint32_t const u32TagSrc      = pThis->au32TagSrc[idxRte];
 
-        Log2(("IOAPIC: Signaling %s-triggered interrupt. Dest=%#x DestMode=%s Vector=%#x (%u)",
+        Log2(("IOAPIC: Signaling %s-triggered interrupt. Dest=%#x DestMode=%s Vector=%#x (%u)\n",
               u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE ? "edge" : "level", u8Dest,
               u8DestMode == IOAPIC_RTE_DEST_MODE_PHYSICAL ? "physical" : "logical", u8Vector, u8Vector));
 
