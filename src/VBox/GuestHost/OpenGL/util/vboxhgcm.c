@@ -1632,14 +1632,7 @@ bool _crVBoxHGSMIInit()
     if (bHasHGSMI < 0)
     {
         int rc;
-#ifndef VBOX_CRHGSMI_WITH_D3DDEV
-        rc = VBoxCrHgsmiInit(CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
-#else
-        VBOXCRHGSMI_CALLBACKS Callbacks;
-        Callbacks.pfnClientCreate = _crVBoxHGSMIClientCreate;
-        Callbacks.pfnClientDestroy = _crVBoxHGSMIClientDestroy;
-        rc = VBoxCrHgsmiInit(&Callbacks);
-#endif
+        rc = VBoxCrHgsmiInit();
         if (RT_SUCCESS(rc))
             bHasHGSMI = 1;
         else
