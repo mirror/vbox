@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -20,17 +19,17 @@
 #include <iprt/semaphore.h>
 
 /* SHGSMI */
-DECLINLINE(void) vboxSHGSMICommandRetain (PVBOXSHGSMIHEADER pCmd)
+DECLINLINE(void) vboxSHGSMICommandRetain(PVBOXSHGSMIHEADER pCmd)
 {
     ASMAtomicIncU32(&pCmd->cRefs);
 }
 
-void vboxSHGSMICommandFree (PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER pCmd)
+void vboxSHGSMICommandFree(PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER pCmd)
 {
     VBoxSHGSMIHeapFree(pHeap, pCmd);
 }
 
-DECLINLINE(void) vboxSHGSMICommandRelease (PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER pCmd)
+DECLINLINE(void) vboxSHGSMICommandRelease(PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER pCmd)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pCmd->cRefs);
     Assert(cRefs < UINT32_MAX / 2);
@@ -40,64 +39,67 @@ DECLINLINE(void) vboxSHGSMICommandRelease (PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER 
 
 static DECLCALLBACK(void) vboxSHGSMICompletionSetEvent(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext)
 {
+    RT_NOREF(pHeap, pvCmd);
     RTSemEventSignal((RTSEMEVENT)pvContext);
 }
 
 DECLCALLBACK(void) vboxSHGSMICompletionCommandRelease(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext)
 {
-    vboxSHGSMICommandRelease (pHeap, VBoxSHGSMIBufferHeader(pvCmd));
+    RT_NOREF(pvContext);
+    vboxSHGSMICommandRelease(pHeap, VBoxSHGSMIBufferHeader(pvCmd));
 }
 
 /* do not wait for completion */
-DECLINLINE(const VBOXSHGSMIHEADER*) vboxSHGSMICommandPrepAsynch (PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER pHeader)
+DECLINLINE(const VBOXSHGSMIHEADER *) vboxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, PVBOXSHGSMIHEADER pHeader)
 {
+    RT_NOREF(pHeap);
     /* ensure the command is not removed until we're processing it */
     vboxSHGSMICommandRetain(pHeader);
     return pHeader;
 }
 
-DECLINLINE(void) vboxSHGSMICommandDoneAsynch (PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
+DECLINLINE(void) vboxSHGSMICommandDoneAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
 {
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pHeader->fFlags) & VBOXSHGSMI_FLAG_HG_ASYNCH))
     {
         PFNVBOXSHGSMICMDCOMPLETION pfnCompletion = (PFNVBOXSHGSMICMDCOMPLETION)pHeader->u64Info1;
         if (pfnCompletion)
-            pfnCompletion(pHeap, VBoxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info2);
+            pfnCompletion(pHeap, VBoxSHGSMIBufferData(pHeader), (PVOID)pHeader->u64Info2);
     }
 
     vboxSHGSMICommandRelease(pHeap, (PVBOXSHGSMIHEADER)pHeader);
 }
 
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchEvent (PVBOXSHGSMI pHeap, PVOID pvBuff, RTSEMEVENT hEventSem)
+const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchEvent(PVBOXSHGSMI pHeap, PVOID pvBuff, RTSEMEVENT hEventSem)
 {
-    PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
+    PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader(pvBuff);
     pHeader->u64Info1 = (uint64_t)vboxSHGSMICompletionSetEvent;
     pHeader->u64Info2 = (uint64_t)hEventSem;
     pHeader->fFlags   = VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ;
 
-    return vboxSHGSMICommandPrepAsynch (pHeap, pHeader);
+    return vboxSHGSMICommandPrepAsynch(pHeap, pHeader);
 }
 
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepSynch (PVBOXSHGSMI pHeap, PVOID pCmd)
+const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepSynch(PVBOXSHGSMI pHeap, PVOID pCmd)
 {
     RTSEMEVENT hEventSem;
     int rc = RTSemEventCreate(&hEventSem);
     Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
     {
-        return VBoxSHGSMICommandPrepAsynchEvent (pHeap, pCmd, hEventSem);
+        return VBoxSHGSMICommandPrepAsynchEvent(pHeap, pCmd, hEventSem);
     }
     return NULL;
 }
 
-void VBoxSHGSMICommandDoneAsynch (PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER * pHeader)
+void VBoxSHGSMICommandDoneAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER * pHeader)
 {
     vboxSHGSMICommandDoneAsynch(pHeap, pHeader);
 }
 
-int VBoxSHGSMICommandDoneSynch (PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
+int VBoxSHGSMICommandDoneSynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
 {
-    VBoxSHGSMICommandDoneAsynch (pHeap, pHeader);
+    VBoxSHGSMICommandDoneAsynch(pHeap, pHeader);
     RTSEMEVENT hEventSem = (RTSEMEVENT)pHeader->u64Info2;
     int rc = RTSemEventWait(hEventSem, RT_INDEFINITE_WAIT);
     AssertRC(rc);
@@ -106,7 +108,7 @@ int VBoxSHGSMICommandDoneSynch (PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHead
     return rc;
 }
 
-void VBoxSHGSMICommandCancelAsynch (PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
+void VBoxSHGSMICommandCancelAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
 {
     vboxSHGSMICommandRelease(pHeap, (PVBOXSHGSMIHEADER)pHeader);
 }
@@ -118,7 +120,8 @@ void VBoxSHGSMICommandCancelSynch (PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pH
     RTSemEventDestroy(hEventSem);
 }
 
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynch (PVBOXSHGSMI pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, PVOID pvCompletion, uint32_t fFlags)
+const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION pfnCompletion,
+                                                    PVOID pvCompletion, uint32_t fFlags)
 {
     fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
     PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
@@ -129,7 +132,9 @@ const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynch (PVBOXSHGSMI pHeap, PVOID pv
     return vboxSHGSMICommandPrepAsynch (pHeap, pHeader);
 }
 
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchIrq (PVBOXSHGSMI pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletion, PVOID pvCompletion, uint32_t fFlags)
+const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchIrq(PVBOXSHGSMI pHeap, PVOID pvBuff,
+                                                       PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletion, PVOID pvCompletion,
+                                                       uint32_t fFlags)
 {
     fFlags |= VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ | VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ;
     PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
@@ -200,7 +205,8 @@ void VBoxSHGSMITerm(PVBOXSHGSMI pHeap)
 void* VBoxSHGSMICommandAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo)
 {
     /* Issue the flush command. */
-    PVBOXSHGSMIHEADER pHeader = (PVBOXSHGSMIHEADER)VBoxSHGSMIHeapAlloc(pHeap, cbData + sizeof (VBOXSHGSMIHEADER), u8Channel, u16ChannelInfo);
+    PVBOXSHGSMIHEADER pHeader = (PVBOXSHGSMIHEADER)VBoxSHGSMIHeapAlloc(pHeap, cbData + sizeof (VBOXSHGSMIHEADER), u8Channel,
+                                                                       u16ChannelInfo);
     Assert(pHeader);
     if (pHeader)
     {

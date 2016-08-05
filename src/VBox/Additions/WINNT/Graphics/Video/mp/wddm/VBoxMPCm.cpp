@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -127,8 +126,10 @@ static PVBOXVIDEOCM_CMD_CTL_KM vboxVideoCmCmdCreateKm(PVBOXVIDEOCM_CTX pContext,
     return pCmd;
 }
 
-static DECLCALLBACK(VOID) vboxVideoCmCmdCbSetEventAndDereference(PVBOXVIDEOCM_CTX pContext, PVBOXVIDEOCM_CMD_CTL_KM pCmd, PVOID pvContext)
+static DECLCALLBACK(VOID) vboxVideoCmCmdCbSetEventAndDereference(PVBOXVIDEOCM_CTX pContext, PVBOXVIDEOCM_CMD_CTL_KM pCmd,
+                                                                 PVOID pvContext)
 {
+    RT_NOREF(pContext);
     PKEVENT pEvent = (PKEVENT)pvContext;
     KeSetEvent(pEvent, 0, FALSE);
     ObDereferenceObject(pEvent);
@@ -220,7 +221,8 @@ void vboxVideoCmCmdSubmit(void *pvCmd, uint32_t cbSize)
     vboxVideoCmCmdPostByHdr(pHdr->pContext->pSession, pHdr, cbSize);
 }
 
-NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOLEAN bEntireSession, PFNVBOXVIDEOCMCMDVISITOR pfnVisitor, PVOID pvVisitor)
+NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOLEAN bEntireSession, PFNVBOXVIDEOCMCMDVISITOR pfnVisitor,
+                             PVOID pvVisitor)
 {
     PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
     PLIST_ENTRY pCurEntry = NULL;
@@ -396,7 +398,8 @@ bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEO
 }
 
 /* the session gets destroyed once the last context is removed from it */
-NTSTATUS vboxVideoCmSessionCreateLocked(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *ppSession, PKEVENT pUmEvent, PVBOXVIDEOCM_CTX pContext)
+NTSTATUS vboxVideoCmSessionCreateLocked(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *ppSession, PKEVENT pUmEvent,
+                                        PVBOXVIDEOCM_CTX pContext)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
     PVBOXVIDEOCM_SESSION pSession = (PVBOXVIDEOCM_SESSION)vboxWddmMemAllocZero(sizeof (VBOXVIDEOCM_SESSION));
@@ -500,6 +503,7 @@ NTSTATUS vboxVideoCmInit(PVBOXVIDEOCM_MGR pMgr)
 
 NTSTATUS vboxVideoCmTerm(PVBOXVIDEOCM_MGR pMgr)
 {
+    RT_NOREF(pMgr);
     Assert(IsListEmpty(&pMgr->SessionList));
     return STATUS_SUCCESS;
 }
@@ -564,7 +568,6 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     LIST_ENTRY DetachedList;
     LIST_ENTRY DetachedPpList;
     PLIST_ENTRY pCurEntry = NULL;
-    uint32_t cbCmdsReturned = 0;
     uint32_t cbRemainingCmds = 0;
     uint32_t cbRemainingFirstCmd = 0;
     uint32_t cbData = cbCmd - sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD);

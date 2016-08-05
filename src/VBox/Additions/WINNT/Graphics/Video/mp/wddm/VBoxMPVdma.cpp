@@ -141,7 +141,6 @@ NTSTATUS vboxVdmaPipeDestruct(PVBOXVDMAPIPE pPipe)
 
 NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
 {
-    PLIST_ENTRY pEntry = NULL;
     KIRQL OldIrql;
     NTSTATUS Status = STATUS_SUCCESS;
     VBOXVDMAPIPE_STATE enmState = VBOXVDMAPIPE_STATE_CLOSED;
@@ -318,6 +317,7 @@ typedef struct VBOXMP_VDMACR_WRITECOMPLETION
 
 static DECLCALLBACK(void) vboxVdmaCrWriteCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvCtx)
 {
+    RT_NOREF(rc);
     PVBOXMP_VDMACR_WRITECOMPLETION pData = (PVBOXMP_VDMACR_WRITECOMPLETION)pvCtx;
     void* pvBufferToFree = pData->pvBufferToFree;
     if (pvBufferToFree)
@@ -471,8 +471,9 @@ static NTSTATUS vboxVdmaProcessVRegCmdLegacy(PVBOXMP_DEVEXT pDevExt,
     const VBOXWDDM_RECTS_INFO *pRects = &pContextRects->UpdateRects;
     NTSTATUS Status = STATUS_SUCCESS;
     int rc;
-    bool fCurChanged = FALSE, fCurRectChanged = FALSE;
-    POINT CurPos;
+    bool fCurChanged = FALSE;
+    bool fCurRectChanged = FALSE;
+    POINT CurPos = { 0, 0 }; /* MSC is confused (me too), maybe used uninitialized. */
     RTRECT *pVRectsBuff = NULL;
     uint32_t cVRectsBuff = 0;
     VBOXWDDM_CTXLOCK_DATA
@@ -810,7 +811,7 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOC_DATA pS
 
         uint32_t cbSrcLine = vboxWddmCalcRowSize(pSrcRect->left, pSrcRect->right, pSrcAlloc->SurfDesc.format);
         uint32_t offSrcStart = vboxWddmCalcOffXYrd(pSrcRect->left, pSrcRect->top, pSrcAlloc->SurfDesc.pitch, pSrcAlloc->SurfDesc.format);
-        Assert(cbSrcLine <= pSrcAlloc->SurfDesc.pitch);
+        Assert(cbSrcLine <= pSrcAlloc->SurfDesc.pitch); NOREF(cbSrcLine);
         uint32_t cbSrcSkip = pSrcAlloc->SurfDesc.pitch;
         const uint8_t * pvSrcStart = pvSrcSurf + offSrcStart;
 
@@ -1256,10 +1257,10 @@ static NTSTATUS vboxVdmaProcessVRegTexPresent(PVBOXMP_DEVEXT pDevExt,
                         {
                             RTRECT Rect;
                             VBoxVrListRectsGet(&pSource->VrList, 1, &Rect);
-                            if (Rect.xLeft == 0
-                                    && Rect.yTop == 0
-                                    && Rect.xRight == pDstAllocData->SurfDesc.width
-                                    && Rect.yBottom == pDstAllocData->SurfDesc.height)
+                            if (   Rect.xLeft   == 0
+                                && Rect.yTop    == 0
+                                && Rect.xRight  == (int32_t)pDstAllocData->SurfDesc.width
+                                && Rect.yBottom == (int32_t)pDstAllocData->SurfDesc.height)
                             {
                                 pSource->fHas3DVrs = FALSE;
                             }
@@ -1467,6 +1468,7 @@ NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pConte
 
 NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF)
 {
+    RT_NOREF(pContext);
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_ALLOCATION pAlloc = pCF->ClrFill.Alloc.pAlloc;
 #ifdef VBOX_WITH_CROGL
@@ -1509,16 +1511,17 @@ static int vboxWddmVdmaSubmitVbva(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, H
     }
     return rc;
 }
-#define vboxWddmVdmaSubmit vboxWddmVdmaSubmitVbva
+# define vboxWddmVdmaSubmit vboxWddmVdmaSubmitVbva
 #else
 static int vboxWddmVdmaSubmitHgsmi(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, HGSMIOFFSET offDr)
 {
+    RT_NOREF(pInfo);
     VBoxVideoCmnPortWriteUlong(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port, offDr);
     /* Make the compiler aware that the host has changed memory. */
     ASMCompilerBarrier();
     return VINF_SUCCESS;
 }
-#define vboxWddmVdmaSubmit vboxWddmVdmaSubmitHgsmi
+# define vboxWddmVdmaSubmit vboxWddmVdmaSubmitHgsmi
 #endif
 
 static int vboxVdmaInformHost(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMA_CTL_TYPE enmCtl)
@@ -1731,16 +1734,18 @@ PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingD
 
 static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext)
 {
+    RT_NOREF(pHeap);
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;
     PVBOXVDMAINFO pInfo = &pDevExt->u.primary.Vdma;
 
-    vboxVdmaCBufDrFree (pInfo, (PVBOXVDMACBUF_DR)pvCmd);
+    vboxVdmaCBufDrFree(pInfo, (PVBOXVDMACBUF_DR)pvCmd);
 }
 
-static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext, void **ppvCompletion)
+static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *pvCmd,
+                                                                            void *pvContext, void **ppvCompletion)
 {
+    RT_NOREF(pHeap, ppvCompletion);
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;
-    PVBOXVDMAINFO pVdma = &pDevExt->u.primary.Vdma;
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvCmd;
 
     DXGK_INTERRUPT_TYPE enmComplType;
@@ -1858,6 +1863,7 @@ DECLINLINE(BOOLEAN) vboxVdmaDdiCmdCanComplete(PVBOXMP_DEVEXT pDevExt, UINT u32No
 
 DECLCALLBACK(VOID) vboxVdmaDdiCmdCompletionCbFree(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
+    RT_NOREF(pDevExt, pvContext);
     vboxWddmMemFree(pCmd);
 }
 
