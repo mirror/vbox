@@ -154,9 +154,9 @@ NTSTATUS VBoxMRxFsCtl(IN OUT PRX_CONTEXT RxContext);
 NTSTATUS VBoxMRxIoCtl(IN OUT PRX_CONTEXT RxContext);
 NTSTATUS VBoxMRxNotifyChangeDirectory(IN OUT PRX_CONTEXT RxContext);
 
-NTSTATUS VBoxMRxExtendStub(IN OUT struct _RX_CONTEXT * RxContext,
-                           IN OUT PLARGE_INTEGER pNewFileSize,
-                           OUT PLARGE_INTEGER pNewAllocationSize);
+ULONG NTAPI VBoxMRxExtendStub(IN OUT struct _RX_CONTEXT * RxContext,
+                              IN OUT PLARGE_INTEGER pNewFileSize,
+                              OUT PLARGE_INTEGER pNewAllocationSize);
 NTSTATUS VBoxMRxCompleteBufferingStateChangeRequest(IN OUT PRX_CONTEXT RxContext,
                                                     IN OUT PMRX_SRV_OPEN SrvOpen,
                                                     IN PVOID pContext);

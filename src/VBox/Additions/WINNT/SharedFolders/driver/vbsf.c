@@ -407,7 +407,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     NTSTATUS Status;
     UNICODE_STRING VBoxMRxName;
     UNICODE_STRING UserModeDeviceName;
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension;
+    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = NULL;
     ULONG i;
     int vboxRC;
     VBGLSFCLIENT hgcmClient;
@@ -479,7 +479,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         if (Status!=STATUS_SUCCESS)
         {
             Log(("VBOXSF: DriverEntry: RxRegisterMinirdr failed: 0x%08X\n", Status ));
-            try_return(Status);
+            try_return((void)Status);
         }
 
         /* Init the device extension.
@@ -511,7 +511,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         {
             Log(("VBOXSF: DriverEntry: IoCreateSymbolicLink: 0x%08X\n",
                  Status));
-            try_return(Status);
+            try_return((void)Status);
         }
         Log(("VBOXSF: DriverEntry: Symbolic link created.\n"));
 
@@ -535,6 +535,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         goto failure;
     }
 
+    AssertPtr(pDeviceExtension);
     pDeviceExtension->hgcmClient = hgcmClient;
 
     /* The redirector driver must intercept the IOCTL to avoid VBOXSVR name resolution
@@ -570,6 +571,7 @@ NTSTATUS VBoxMRxStart(PRX_CONTEXT RxContext, IN OUT PRDBSS_DEVICE_OBJECT RxDevic
 {
     NTSTATUS Status;
     MRX_VBOX_STATE CurrentState;
+    RT_NOREF(RxContext, RxDeviceObject);
 
     Log(("VBOXSF: MRxStart\n"));
 
@@ -596,6 +598,7 @@ NTSTATUS VBoxMRxStart(PRX_CONTEXT RxContext, IN OUT PRDBSS_DEVICE_OBJECT RxDevic
 
 NTSTATUS VBoxMRxStop(PRX_CONTEXT RxContext, IN OUT PRDBSS_DEVICE_OBJECT RxDeviceObject)
 {
+    RT_NOREF(RxContext, RxDeviceObject);
     Log(("VBOXSF: MRxStop\n"));
     return STATUS_SUCCESS;
 }
@@ -1461,30 +1464,35 @@ NTSTATUS VBoxMRxQueryEaInfo(IN OUT PRX_CONTEXT RxContext)
 
 NTSTATUS VBoxMRxSetEaInfo(IN OUT PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxSetEaInfo\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS VBoxMRxFsCtl (IN OUT PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxFsCtl\n"));
     return STATUS_INVALID_DEVICE_REQUEST;
 }
 
 NTSTATUS VBoxMRxNotifyChangeDirectory(IN OUT PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxNotifyChangeDirectory\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS VBoxMRxQuerySdInfo(IN OUT PRX_CONTEXT RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxQuerySdInfo\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS VBoxMRxSetSdInfo(IN OUT struct _RX_CONTEXT * RxContext)
 {
+    RT_NOREF(RxContext);
     Log(("VBOXSF: MRxSetSdInfo\n"));
     return STATUS_NOT_IMPLEMENTED;
 }
@@ -1494,10 +1502,12 @@ NTSTATUS VBoxMRxSetSdInfo(IN OUT struct _RX_CONTEXT * RxContext)
  */
 NTSTATUS WmlTinySystemControl(IN OUT PVOID pWmiLibInfo, IN PVOID pDevObj, IN PVOID pIrp)
 {
+    RT_NOREF(pWmiLibInfo, pDevObj, pIrp);
     return STATUS_WMI_GUID_NOT_FOUND;
 }
 
 ULONG WmlTrace(IN ULONG ulType, IN PVOID pTraceUuid, IN ULONG64 ullLogger, ...)
 {
+    RT_NOREF(ulType, pTraceUuid, ullLogger);
     return STATUS_SUCCESS;
 }
