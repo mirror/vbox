@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -82,11 +81,11 @@ VBOXWDDM_HANDLE vboxWddmHTablePut(PVBOXWDDM_HTABLE pTbl, PVOID pvData)
     if (pTbl->cSize == pTbl->cData)
     {
         NTSTATUS Status = vboxWddmHTableRealloc(pTbl, pTbl->cSize + RT_MAX(10, pTbl->cSize/4));
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status != STATUS_SUCCESS)
             return VBOXWDDM_HANDLE_INVALID;
     }
-    for (UINT i = pTbl->iNext2Search; ; ++i, i %= pTbl->cSize)
+    for (UINT i = pTbl->iNext2Search; ; i = (i + 1) % pTbl->cSize)
     {
         Assert(i < pTbl->cSize);
         if (!pTbl->paData[i])
@@ -99,8 +98,7 @@ VBOXWDDM_HANDLE vboxWddmHTablePut(PVBOXWDDM_HTABLE pTbl, PVOID pvData)
             return vboxWddmHTableIndex2Handle(i);
         }
     }
-    Assert(0);
-    return VBOXWDDM_HANDLE_INVALID;
+    /* not reached */
 }
 
 PVOID vboxWddmHTableRemove(PVBOXWDDM_HTABLE pTbl, VBOXWDDM_HANDLE hHandle)
@@ -334,12 +332,12 @@ static BOOLEAN vboxWddmSwapchainCtxAddLocked(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_C
     return FALSE;
 }
 
-static VOID vboxWddmSwapchainCtxRemoveLocked(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
+static VOID vboxWddmSwapchainCtxRemoveLocked(PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     Assert(pSwapchain->hSwapchainKm);
     Assert(pSwapchain->pContext);
-    void * pTst = vboxWddmHTableRemove(&pContext->Swapchains, pSwapchain->hSwapchainKm);
-    Assert(pTst == pSwapchain);
+    void *pvTst = vboxWddmHTableRemove(&pContext->Swapchains, pSwapchain->hSwapchainKm);
+    Assert((PVBOXWDDM_SWAPCHAIN)pvTst == pSwapchain); NOREF(pvTst);
     RemoveEntryList(&pSwapchain->DevExtListEntry);
     pSwapchain->hSwapchainKm = NULL;
     VBoxVrListClear(&pSwapchain->VisibleRegions);
@@ -364,7 +362,7 @@ VOID vboxWddmSwapchainCtxRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pConte
 {
     VBOXWDDM_CTXLOCK_DATA
     VBOXWDDM_CTXLOCK_LOCK(pDevExt);
-    vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
+    vboxWddmSwapchainCtxRemoveLocked(pContext, pSwapchain);
     VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
 }
 
@@ -383,7 +381,7 @@ VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             break;
 
         /* yes, we can call remove locked even when using iterator */
-        vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
+        vboxWddmSwapchainCtxRemoveLocked(pContext, pSwapchain);
 
         VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
         /* we must not do vboxWddmSwapchainDestroy inside a context mutex */
@@ -396,7 +394,8 @@ VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 }
 
 /* process the swapchain info passed from user-mode display driver & synchronizes the driver state with it */
-NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXDISPIFESCAPE_SWAPCHAININFO pSwapchainInfo, UINT cbSize)
+NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext,
+                                    PVBOXDISPIFESCAPE_SWAPCHAININFO pSwapchainInfo, UINT cbSize)
 {
     if (cbSize < RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[0]))
     {
@@ -434,12 +433,14 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             /* ensure we do not overflow the 32bit buffer size value */
             if (VBOXWDDM_ARRAY_MAXELEMENTSU32(VBOXWDDM_ALLOCATION) < pSwapchainInfo->SwapchainInfo.cAllocs)
             {
-                WARN(("number of allocations passed in too big (%d), max is (%d)", pSwapchainInfo->SwapchainInfo.cAllocs, VBOXWDDM_ARRAY_MAXELEMENTSU32(VBOXWDDM_ALLOCATION)));
+                WARN(("number of allocations passed in too big (%d), max is (%d)",
+                      pSwapchainInfo->SwapchainInfo.cAllocs, VBOXWDDM_ARRAY_MAXELEMENTSU32(VBOXWDDM_ALLOCATION)));
                 Status = STATUS_INVALID_PARAMETER;
                 break;
             }
 
-            apAlloc = (PVBOXWDDM_ALLOCATION *)vboxWddmMemAlloc(sizeof (PVBOXWDDM_ALLOCATION) * pSwapchainInfo->SwapchainInfo.cAllocs);
+            apAlloc = (PVBOXWDDM_ALLOCATION *)vboxWddmMemAlloc(  sizeof(PVBOXWDDM_ALLOCATION)
+                                                               * pSwapchainInfo->SwapchainInfo.cAllocs);
             Assert(apAlloc);
             if (!apAlloc)
             {
@@ -469,7 +470,8 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
         if (pSwapchainInfo->SwapchainInfo.hSwapchainKm)
         {
             VBOXWDDM_CTXLOCK_LOCK(pDevExt);
-            pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableGet(&pContext->Swapchains, (VBOXWDDM_HANDLE)pSwapchainInfo->SwapchainInfo.hSwapchainKm);
+            pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableGet(&pContext->Swapchains,
+                                                                (VBOXWDDM_HANDLE)pSwapchainInfo->SwapchainInfo.hSwapchainKm);
             Assert(pSwapchain);
             if (!pSwapchain)
             {
@@ -496,8 +498,8 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             }
 
             VBOXWDDM_CTXLOCK_LOCK(pDevExt);
-            BOOLEAN bRc = vboxWddmSwapchainCtxAddLocked(pDevExt, pContext, pSwapchain);
-            Assert(bRc);
+            BOOLEAN fRc = vboxWddmSwapchainCtxAddLocked(pDevExt, pContext, pSwapchain);
+            Assert(fRc); NOREF(fRc);
         }
         else
         {
@@ -527,7 +529,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
         }
         else
         {
-            vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
+            vboxWddmSwapchainCtxRemoveLocked(pContext, pSwapchain);
         }
 
         VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
@@ -544,7 +546,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             pSwapchainInfo->SwapchainInfo.hSwapchainKm = 0;
         }
 
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
     } while (0);
 
     /* cleanup */
@@ -556,6 +558,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 
 NTSTATUS vboxWddmSwapchainCtxInit(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)
 {
+    RT_NOREF(pDevExt);
     NTSTATUS Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
     if (!NT_SUCCESS(Status))
     {
@@ -609,7 +612,6 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PVBOXMP_DEVEXT pDevExt, D3DDDI_V
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PWCHAR pSuffix;
-    bool bFallback = false;
     const WCHAR* pKeyPrefix;
     UINT cbKeyPrefix;
     UNICODE_STRING* pVGuid = vboxWddmVGuidGet(pDevExt);
@@ -692,8 +694,8 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
             WARN(("ZwQueryValueKey failed, Status 0x%x", Status));
         }
 
-        NTSTATUS tmpStatus = ZwClose(hKey);
-        Assert(tmpStatus == STATUS_SUCCESS);
+        NTSTATUS rcNt2 = ZwClose(hKey);
+        AssertNtStatusSuccess(rcNt2);
     }
     else
     {
@@ -706,7 +708,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
         WARN(("failed to acquire the VideoID, falling back to the old impl"));
 
     Status = vboxWddmRegOpenKey(&hKey, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY, GENERIC_READ);
-    //Assert(Status == STATUS_SUCCESS);
+    //AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         struct
@@ -722,7 +724,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
         {
             RtlZeroMemory(&Buf, sizeof (Buf));
             Status = ZwEnumerateKey(hKey, i, KeyBasicInformation, &Buf, sizeof (Buf), &ResultLength);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             /* we should not encounter STATUS_NO_MORE_ENTRIES here since this would mean we did not find our entry */
             if (Status != STATUS_SUCCESS)
                 break;
@@ -733,7 +735,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
             pSubBuf += Buf.Name.NameLength/2;
             memcpy(pSubBuf, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY, sizeof (VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY));
             Status = vboxWddmRegOpenKey(&hSubKey, KeyBuf, GENERIC_READ);
-            //Assert(Status == STATUS_SUCCESS);
+            //AssertNtStatusSuccess(Status);
             if (Status == STATUS_SUCCESS)
             {
                 struct
@@ -774,14 +776,14 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
                     }
                 }
 
-                NTSTATUS tmpStatus = ZwClose(hSubKey);
-                Assert(tmpStatus == STATUS_SUCCESS);
+                NTSTATUS rcNt2 = ZwClose(hSubKey);
+                AssertNtStatusSuccess(rcNt2);
             }
             else
                 break;
         }
-        NTSTATUS tmpStatus = ZwClose(hKey);
-        Assert(tmpStatus == STATUS_SUCCESS);
+        NTSTATUS rcNt2 = ZwClose(hKey);
+        AssertNtStatusSuccess(rcNt2);
     }
 
     return Status;
@@ -803,16 +805,17 @@ NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK f
     return vboxWddmRegOpenKeyEx(phKey, NULL, pName, fAccess);
 }
 
-NTSTATUS vboxWddmRegOpenDisplaySettingsKey(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, OUT PHANDLE phKey)
+NTSTATUS vboxWddmRegOpenDisplaySettingsKey(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId,
+                                           OUT PHANDLE phKey)
 {
     WCHAR Buf[512];
     ULONG cbBuf = sizeof(Buf);
     NTSTATUS Status = vboxWddmRegQueryDisplaySettingsKeyName(pDevExt, VidPnSourceId, cbBuf, Buf, &cbBuf);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         Status = vboxWddmRegOpenKey(phKey, Buf, GENERIC_READ);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if(Status == STATUS_SUCCESS)
             return STATUS_SUCCESS;
     }
@@ -828,7 +831,7 @@ NTSTATUS vboxWddmRegDisplaySettingsQueryRelX(HANDLE hKey, int * pResult)
 {
     DWORD dwVal;
     NTSTATUS Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELX, &dwVal);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         *pResult = (int)dwVal;
@@ -841,7 +844,7 @@ NTSTATUS vboxWddmRegDisplaySettingsQueryRelY(HANDLE hKey, int * pResult)
 {
     DWORD dwVal;
     NTSTATUS Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELY, &dwVal);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         *pResult = (int)dwVal;
@@ -855,24 +858,24 @@ NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
     HANDLE hKey;
     NTSTATUS Status = vboxWddmRegOpenDisplaySettingsKey(pDevExt, VidPnSourceId, &hKey);
-    //Assert(Status == STATUS_SUCCESS);
+    //AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         int x, y;
         Status = vboxWddmRegDisplaySettingsQueryRelX(hKey, &x);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status == STATUS_SUCCESS)
         {
             Status = vboxWddmRegDisplaySettingsQueryRelY(hKey, &y);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             if (Status == STATUS_SUCCESS)
             {
                 pPos->x = x;
                 pPos->y = y;
             }
         }
-        NTSTATUS tmpStatus = ZwClose(hKey);
-        Assert(tmpStatus == STATUS_SUCCESS);
+        NTSTATUS rcNt2 = ZwClose(hKey);
+        AssertNtStatusSuccess(rcNt2);
     }
 
     return Status;
@@ -913,8 +916,8 @@ NTSTATUS vboxWddmRegDrvFlagsSet(PVBOXMP_DEVEXT pDevExt, DWORD fVal)
     if (!NT_SUCCESS(Status))
         WARN(("vboxWddmRegSetValueDword failed, Status = 0x%x", Status));
 
-    NTSTATUS tmpStatus = ZwClose(hKey);
-    Assert(tmpStatus == STATUS_SUCCESS);
+    NTSTATUS rcNt2 = ZwClose(hKey);
+    AssertNtStatusSuccess(rcNt2);
 
     return Status;
 }
@@ -937,8 +940,8 @@ DWORD vboxWddmRegDrvFlagsGet(PVBOXMP_DEVEXT pDevExt, DWORD fDefault)
         dwVal = fDefault;
     }
 
-    NTSTATUS tmpStatus = ZwClose(hKey);
-    Assert(tmpStatus == STATUS_SUCCESS);
+    NTSTATUS rcNt2 = ZwClose(hKey);
+    AssertNtStatusSuccess(rcNt2);
 
     return dwVal;
 }
@@ -992,7 +995,7 @@ UNICODE_STRING* vboxWddmVGuidGet(PVBOXMP_DEVEXT pDevExt)
     WCHAR VideoGuidBuf[512];
     ULONG cbVideoGuidBuf = sizeof (VideoGuidBuf);
     NTSTATUS Status = vboxWddmRegQueryVideoGuidString(pDevExt ,cbVideoGuidBuf, VideoGuidBuf, &cbVideoGuidBuf);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         PWCHAR pBuf = (PWCHAR)vboxWddmMemAllocZero(cbVideoGuidBuf);
@@ -1172,7 +1175,7 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
         Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
                 (PVOID*)&pSynchEvent,
                 NULL);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         Assert(pSynchEvent);
     }
 
@@ -1181,7 +1184,10 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
         PVOID BaseVa = pMgr->pvData + pAlloc->offData - pMgr->offData;
         SIZE_T cbLength = pAlloc->cbData;
 
-        PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmMemAllocZero(sizeof (*pAllocRef) + sizeof (PFN_NUMBER) * ADDRESS_AND_SIZE_TO_SPAN_PAGES(BaseVa, cbLength));
+        PVBOXVIDEOCM_ALLOC_REF pAllocRef;
+        pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmMemAllocZero(  sizeof(*pAllocRef)
+                                                                 +   sizeof(PFN_NUMBER)
+                                                                   * ADDRESS_AND_SIZE_TO_SPAN_PAGES(BaseVa, cbLength));
         if (pAllocRef)
         {
             pAllocRef->cRefs = 1;
@@ -1251,7 +1257,8 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
     return Status;
 }
 
-NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle, PVBOXVIDEOCM_ALLOC *ppAlloc)
+NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle,
+                                    PVBOXVIDEOCM_ALLOC *ppAlloc)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     ExAcquireFastMutex(&pContext->Mutex);
@@ -1279,7 +1286,8 @@ NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDIS
     return Status;
 }
 
-static PVBOXVIDEOCM_ALLOC_REF vboxVideoAMgrCtxAllocRefAcquire(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle)
+static PVBOXVIDEOCM_ALLOC_REF vboxVideoAMgrCtxAllocRefAcquire(PVBOXVIDEOCM_ALLOC_CONTEXT pContext,
+                                                              VBOXDISP_KMHANDLE hSesionHandle)
 {
     ExAcquireFastMutex(&pContext->Mutex);
     PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmHTableGet(&pContext->AllocTable, hSesionHandle);
@@ -1293,7 +1301,9 @@ static VOID vboxVideoAMgrCtxAllocRefRelease(PVBOXVIDEOCM_ALLOC_REF pRef)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pRef->cRefs);
     Assert(cRefs < UINT32_MAX/2);
-    Assert(cRefs >= 1); /* we do not do cleanup-on-zero here, instead we wait for the cRefs to reach 1 in vboxVideoAMgrCtxAllocUnmap before unmapping */
+    Assert(cRefs >= 1); /* we do not do cleanup-on-zero here, instead we wait for the cRefs to reach 1 in
+                           vboxVideoAMgrCtxAllocUnmap before unmapping */
+    NOREF(cRefs);
 }
 
 
@@ -1340,6 +1350,7 @@ NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXD
 #ifdef VBOX_WITH_CRHGSMI
 static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
+    RT_NOREF(pCmd);
     /* we should be called from our DPC routine */
     Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
 
@@ -1365,12 +1376,14 @@ static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PVBOXMP_DEVEXT pDev
 }
 
 /* submits a set of chromium uhgsmi buffers to host for processing */
-NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_CONTEXT pContext, UINT cBuffers, VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *paBuffers)
+NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_CONTEXT pContext, UINT cBuffers,
+                                     VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *paBuffers)
 {
     /* ensure we do not overflow the 32bit buffer size value */
     if (VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXVDMACMD_CHROMIUM_CMD, aBuffers) < cBuffers)
     {
-        WARN(("number of buffers passed too big (%d), max is (%d)", cBuffers, VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXVDMACMD_CHROMIUM_CMD, aBuffers)));
+        WARN(("number of buffers passed too big (%d), max is (%d)",
+              cBuffers, VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXVDMACMD_CHROMIUM_CMD, aBuffers)));
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -1470,11 +1483,11 @@ NTSTATUS vboxVideoAMgrCreate(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr
 
     ExInitializeFastMutex(&pMgr->Mutex);
     NTSTATUS Status = vboxWddmHTableCreate(&pMgr->AllocTable, 64);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         Status = vboxMmInit(&pMgr->Mm, BYTES_TO_PAGES(cbData));
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status == STATUS_SUCCESS)
         {
             PHYSICAL_ADDRESS PhysicalAddress = {0};
@@ -1501,6 +1514,7 @@ NTSTATUS vboxVideoAMgrCreate(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr
 
 NTSTATUS vboxVideoAMgrDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr)
 {
+    RT_NOREF(pDevExt);
     MmUnmapIoSpace(pMgr->pvData, pMgr->cbData);
     vboxMmTerm(&pMgr->Mm);
     vboxWddmHTableDestroy(&pMgr->AllocTable);
@@ -1514,7 +1528,7 @@ NTSTATUS vboxVideoAMgrCtxCreate(PVBOXVIDEOCM_ALLOC_MGR pMgr, PVBOXVIDEOCM_ALLOC_
     {
         ExInitializeFastMutex(&pCtx->Mutex);
         Status = vboxWddmHTableCreate(&pCtx->AllocTable, 32);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status == STATUS_SUCCESS)
         {
             pCtx->pMgr = pMgr;
@@ -1542,7 +1556,7 @@ NTSTATUS vboxVideoAMgrCtxDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pCtx)
         Assert(0);
 
         Status = vboxVideoAMgrCtxAllocDestroy(pCtx, pRef->hSessionHandle);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status != STATUS_SUCCESS)
             break;
         //        vboxWddmHTableIterRemoveCur(&Iter);
@@ -1559,6 +1573,7 @@ NTSTATUS vboxVideoAMgrCtxDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pCtx)
 
 VOID vboxWddmSleep(uint32_t u32Val)
 {
+    RT_NOREF(u32Val);
     LARGE_INTEGER Interval;
     Interval.QuadPart = -(int64_t) 2 /* ms */ * 10000;
 
@@ -1672,6 +1687,7 @@ NTSTATUS vboxUmdDumpBuf(PVBOXDISPIFESCAPE_DBGDUMPBUF pBuf, uint32_t cbBuffer)
             g_bVBoxUmdD3DCAPS9IsInited = TRUE;
             vboxUmdDumpD3DCAPS9(pBuf->aBuf, &pBuf->Flags);
         }
+        default: break; /* Shuts up MSC. */
     }
 
     return Status;
@@ -1706,7 +1722,9 @@ BOOLEAN vboxShRcTreePut(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
     return (BOOLEAN)bRc;
 }
 
-#define PVBOXWDDM_ALLOCATION_FROM_SHRCTREENODE(_p) ((PVBOXWDDM_ALLOCATION)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXWDDM_ALLOCATION, ShRcTreeEntry)))
+#define PVBOXWDDM_ALLOCATION_FROM_SHRCTREENODE(_p) \
+    ((PVBOXWDDM_ALLOCATION)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXWDDM_ALLOCATION, ShRcTreeEntry)))
+
 PVBOXWDDM_ALLOCATION vboxShRcTreeGet(PVBOXMP_DEVEXT pDevExt, HANDLE hSharedRc)
 {
     ExAcquireFastMutex(&pDevExt->ShRcTreeMutex);
@@ -1788,7 +1806,8 @@ NTSTATUS vboxWddmThreadCreate(PKTHREAD * ppThread, PKSTART_ROUTINE pStartRoutine
 static int vboxWddmWdProgram(PVBOXMP_DEVEXT pDevExt, uint32_t cMillis)
 {
     int rc = VINF_SUCCESS;
-    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
+    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
+                                                               sizeof(VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
     if (pCmd)
     {
         pCmd->enmCtl = VBOXVDMA_CTL_TYPE_WATCHDOG;
@@ -2032,6 +2051,7 @@ static VOID vboxWddmSlVSyncDpc(
   __in_opt  PVOID SystemArgument2
 )
 {
+    RT_NOREF(Dpc, SystemArgument1, SystemArgument2);
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)DeferredContext;
     Assert(!pDevExt->fVSyncInVBlank);
     ASMAtomicWriteU32(&pDevExt->fVSyncInVBlank, 1);
@@ -2070,6 +2090,7 @@ NTSTATUS VBoxWddmSlTerm(PVBOXMP_DEVEXT pDevExt)
 }
 
 #ifdef VBOX_WDDM_WIN8
+
 void vboxWddmDiInitDefault(DXGK_DISPLAY_INFORMATION *pInfo, PHYSICAL_ADDRESS PhAddr, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     pInfo->Width = 1024;
@@ -2100,7 +2121,8 @@ void vboxWddmDiToAllocData(PVBOXMP_DEVEXT pDevExt, const DXGK_DISPLAY_INFORMATIO
             vboxWddmVramAddrToOffset(pDevExt, pInfo->PhysicAddress));
 }
 
-void vboxWddmDmSetupDefaultVramLocation(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId, VBOXWDDM_SOURCE *paSources)
+void vboxWddmDmSetupDefaultVramLocation(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId,
+                                        VBOXWDDM_SOURCE *paSources)
 {
     PVBOXWDDM_SOURCE pSource = &paSources[ModifiedVidPnSourceId];
     AssertRelease(g_VBoxDisplayOnly);
@@ -2112,4 +2134,6 @@ void vboxWddmDmSetupDefaultVramLocation(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRE
     if (vboxWddmAddrSetVram(&pSource->AllocData.Addr, 1, offVram))
         pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
 }
-#endif
+
+#endif /* VBOX_WDDM_WIN8 */
+

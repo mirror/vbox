@@ -32,6 +32,9 @@
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable:4668) /* warning C4668: 'DBG' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+# ifndef __cplusplus
+#  pragma warning(disable:4255) /* video.h(1776) : warning C4255: 'VideoPortGetCurrentIrql' : no function prototype given: converting '()' to '(void)' */
+# endif
 #endif
 
 RT_C_DECLS_BEGIN

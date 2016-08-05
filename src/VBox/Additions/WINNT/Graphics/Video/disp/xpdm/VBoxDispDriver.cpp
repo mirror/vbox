@@ -499,6 +499,7 @@ VBoxDispDrvEnablePDEV(DEVMODEW *pdm, LPWSTR pwszLogAddress, ULONG cPat, HSURF *p
                       ULONG cjDevInfo, DEVINFO  *pdi,
                       HDEV  hdev, PWSTR pwszDeviceName, HANDLE hDriver)
 {
+    RT_NOREF(hdev);
     PVBOXDISPDEV pDev = NULL;
     GDIINFO gdiInfo;
     DEVINFO devInfo;
@@ -782,6 +783,7 @@ VBoxDispDrvRealizeBrush(BRUSHOBJ *pbo, SURFOBJ *psoTarget, SURFOBJ *psoPattern, 
 
 ULONG APIENTRY VBoxDispDrvDitherColor(DHPDEV dhpdev, ULONG iMode, ULONG rgb, ULONG *pul)
 {
+    RT_NOREF(dhpdev, iMode, rgb, pul);
     ULONG rc;
     LOGF_ENTER();
 

@@ -2013,7 +2013,7 @@ NTSTATUS vboxVidPnEnumSourceModes(D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceMod
             if (!pfnCallback(hNewVidPnSourceModeSet, pVidPnSourceModeSetInterface,
                     pNewVidPnSourceModeInfo, pContext))
             {
-                Assert(Status == STATUS_SUCCESS);
+                AssertNtStatusSuccess(Status);
                 if (Status == STATUS_SUCCESS)
                     pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hNewVidPnSourceModeSet, pNextVidPnSourceModeInfo);
                 else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
@@ -2068,7 +2068,7 @@ NTSTATUS vboxVidPnEnumTargetModes(D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetMod
             if (!pfnCallback(hNewVidPnTargetModeSet, pVidPnTargetModeSetInterface,
                     pNewVidPnTargetModeInfo, pContext))
             {
-                Assert(Status == STATUS_SUCCESS);
+                AssertNtStatusSuccess(Status);
                 if (Status == STATUS_SUCCESS)
                     pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hNewVidPnTargetModeSet, pNextVidPnTargetModeInfo);
                 else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
@@ -2121,7 +2121,7 @@ NTSTATUS vboxVidPnEnumTargetsForSource(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPNTOP
         {
             D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId;
             Status = pVidPnTopologyInterface->pfnEnumPathTargetsFromSource(hVidPnTopology, VidPnSourceId, i, &VidPnTargetId);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             if (Status == STATUS_SUCCESS)
             {
                 if (!pfnCallback(pDevExt, hVidPnTopology, pVidPnTopologyInterface, VidPnSourceId, VidPnTargetId, cTgtPaths, pContext))
@@ -2293,12 +2293,12 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PVBOXMP_DEVEXT pDevExt, D3DK
     D3DKMDT_HVIDPNTARGETMODESET hVidPnTargetModeSet;
     CONST DXGK_VIDPNTARGETMODESET_INTERFACE* pVidPnTargetModeSetInterface;
     NTSTATUS Status = pInfo->pVidPnInterface->pfnAcquireTargetModeSet(pInfo->hVidPn, VidPnTargetId, &hVidPnTargetModeSet, &pVidPnTargetModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         CONST D3DKMDT_VIDPN_TARGET_MODE* pPinnedVidPnTargetModeInfo;
         Status = pVidPnTargetModeSetInterface->pfnAcquirePinnedModeInfo(hVidPnTargetModeSet, &pPinnedVidPnTargetModeInfo);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status == STATUS_SUCCESS)
         {
             VBOXWDDM_SOURCE *pSource = &pInfo->paSources[VidPnSourceId];
@@ -2350,7 +2350,7 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
                 VidPnSourceId,
                 &hCurVidPnSourceModeSet,
                 &pCurVidPnSourceModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         CONST D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo;
@@ -2360,13 +2360,13 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
         {
             Assert(pPinnedVidPnSourceModeInfo);
             Status = vboxVidPnCommitSourceMode(pDevExt, pPinnedVidPnSourceModeInfo, pAllocation, VidPnSourceId, paSources);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             if (Status == STATUS_SUCCESS)
             {
                 D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
                 CONST DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
                 Status = pVidPnInterface->pfnGetTopology(hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-                Assert(Status == STATUS_SUCCESS);
+                AssertNtStatusSuccess(Status);
                 if (Status == STATUS_SUCCESS)
                 {
                     VBOXVIDPNCOMMITTARGETMODE TgtModeInfo = {0};
@@ -2382,7 +2382,7 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
                     if (Status == STATUS_SUCCESS)
                     {
                         Status = TgtModeInfo.Status;
-                        Assert(Status == STATUS_SUCCESS);
+                        AssertNtStatusSuccess(Status);
                     }
                     else if (Status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY)
                     {
@@ -2402,7 +2402,7 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
         else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
         {
             Status = vboxVidPnCommitSourceMode(pDevExt, NULL, pAllocation, VidPnSourceId, paSources);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
         }
         else
             WARN(("pfnAcquirePinnedModeInfo failed Status(0x%x)", Status));
@@ -2930,7 +2930,7 @@ void vboxVidPnDumpPinnedSourceMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
                         VidPnSourceId,
                         &hCurVidPnSourceModeSet,
                         &pCurVidPnSourceModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         CONST D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo;
@@ -2981,13 +2981,13 @@ void vboxVidPnDumpSourceModeSet(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hVi
                         VidPnSourceId,
                         &hCurVidPnSourceModeSet,
                         &pCurVidPnSourceModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
 
         Status = vboxVidPnEnumSourceModes(hCurVidPnSourceModeSet, pCurVidPnSourceModeSetInterface,
                 vboxVidPnDumpSourceModeSetEnum, NULL);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status != STATUS_SUCCESS)
         {
             LOGREL_EXACT(("ERROR enumerating Source Modes(0x%x)\n", Status));
@@ -3023,13 +3023,13 @@ void vboxVidPnDumpTargetModeSet(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hVi
                         VidPnTargetId,
                         &hCurVidPnTargetModeSet,
                         &pCurVidPnTargetModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
 
         Status = vboxVidPnEnumTargetModes(hCurVidPnTargetModeSet, pCurVidPnTargetModeSetInterface,
                 vboxVidPnDumpTargetModeSetEnum, NULL);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status != STATUS_SUCCESS)
         {
             LOGREL_EXACT(("ERROR enumerating Target Modes(0x%x)\n", Status));
@@ -3054,7 +3054,7 @@ void vboxVidPnDumpPinnedTargetMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
                         VidPnTargetId,
                         &hCurVidPnTargetModeSet,
                         &pCurVidPnTargetModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         CONST D3DKMDT_VIDPN_TARGET_MODE* pPinnedVidPnTargetModeInfo;
@@ -3144,12 +3144,12 @@ void vboxVidPnDumpVidPn(const char * pPrefix, PVBOXMP_DEVEXT pDevExt, D3DKMDT_HV
     D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
     const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
     NTSTATUS Status = pVidPnInterface->pfnGetTopology(hVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
                                         vboxVidPnDumpPathEnum, &CbData);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
     }
 
     for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)

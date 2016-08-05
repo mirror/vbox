@@ -846,11 +846,13 @@ static int vboxCmdVbvaDdiNotifyPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbv
 
 static int vboxCmdVbvaFlush(PVBOXMP_DEVEXT pDevExt, HGSMIGUESTCOMMANDCONTEXT *pCtx, bool fBufferOverflow)
 {
+    RT_NOREF(pDevExt);
+
     /* Issue the flush command. */
     VBVACMDVBVAFLUSH *pFlush = (VBVACMDVBVAFLUSH*)VBoxHGSMIBufferAlloc(pCtx,
-                                   sizeof (VBVACMDVBVAFLUSH),
-                                   HGSMI_CH_VBVA,
-                                   VBVA_CMDVBVA_FLUSH);
+                                                                       sizeof(VBVACMDVBVAFLUSH),
+                                                                       HGSMI_CH_VBVA,
+                                                                       VBVA_CMDVBVA_FLUSH);
     if (!pFlush)
     {
         WARN(("VBoxHGSMIBufferAlloc failed\n"));
@@ -917,7 +919,7 @@ static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *p
                             &context,
                             0, /* IN ULONG MessageNumber */
                             &bRet);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
 
     if (pu32FenceSubmitted)
         *pu32FenceSubmitted = context.u32FenceSubmitted;
@@ -930,6 +932,7 @@ static uint32_t vboxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *p
 
 static DECLCALLBACK(void) voxCmdVbvaFlushCb(struct VBVAEXBUFFERCONTEXT *pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, void *pvFlush)
 {
+    NOREF(pCtx);
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvFlush;
 
     vboxCmdVbvaCheckCompleted(pDevExt, NULL,  true /*fPingHost*/, pHGSMICtx, true /*fBufferOverflow*/, NULL, NULL);
@@ -1301,14 +1304,16 @@ int vboxCmdVbvaConDisconnect(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t u32Cl
 }
 
 int VBoxCmdVbvaConConnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva,
-        uint32_t crVersionMajor, uint32_t crVersionMinor,
-        uint32_t *pu32ClientID)
+                          uint32_t crVersionMajor, uint32_t crVersionMinor,
+                          uint32_t *pu32ClientID)
 {
+    RT_NOREF(pVbva);
     return vboxCmdVbvaConConnect(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, crVersionMajor, crVersionMinor, pu32ClientID);
 }
 
 int VBoxCmdVbvaConDisconnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32ClientID)
 {
+    RT_NOREF(pVbva);
     return vboxCmdVbvaConDisconnect(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, u32ClientID);
 }
 

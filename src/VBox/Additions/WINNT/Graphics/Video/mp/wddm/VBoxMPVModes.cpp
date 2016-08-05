@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -310,7 +309,6 @@ int voxWddmVModesInitForTarget(PVBOXMP_DEVEXT pExt, VBOXWDDM_VMODES *pModes, uin
      * Give up on the first error encountered.
      */
     VBOXMPCMNREGISTRY Registry;
-    int fPrefSet=0;
     VP_STATUS vpRc;
 
     vpRc = VBoxMPCmnRegInit(pExt, &Registry);
@@ -613,7 +611,7 @@ NTSTATUS VBoxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, uint32_t i
         if (RT_SUCCESS(rc))
         {
             Status = KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             return STATUS_SUCCESS;
         }
 

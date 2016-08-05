@@ -132,7 +132,7 @@ NTSTATUS vboxVdmaPipeDestruct(PVBOXVDMAPIPE pPipe)
             || pPipe->enmState == VBOXVDMAPIPE_STATE_CREATED);
     /* ensure the pipe is closed */
     NTSTATUS Status = vboxVdmaPipeCltClose(pPipe);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
 
     Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSED);
 
@@ -169,14 +169,14 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
 
         if (!bListEmpty)
         {
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             break;
         }
 
         if (enmState == VBOXVDMAPIPE_STATE_OPENNED)
         {
             Status = KeWaitForSingleObject(&pPipe->Event, Executive, KernelMode, FALSE, NULL /* PLARGE_INTEGER Timeout */);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             if (Status != STATUS_SUCCESS)
                 break;
         }
@@ -854,7 +854,7 @@ static NTSTATUS vboxVdmaGgDmaBlt(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_BLT pBlt)
 
             Status = vboxVdmaGgDmaBltPerform(pDevExt, &pBlt->SrcAlloc.pAlloc->AllocData, &SrcRect,
                     &pBlt->DstAlloc.pAlloc->AllocData, &pBlt->DstRects.UpdateRects.aRects[i]);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             if (Status != STATUS_SUCCESS)
                 return Status;
         }
@@ -863,7 +863,7 @@ static NTSTATUS vboxVdmaGgDmaBlt(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_BLT pBlt)
     {
         Status = vboxVdmaGgDmaBltPerform(pDevExt, &pBlt->SrcAlloc.pAlloc->AllocData, &pBlt->SrcRect,
                 &pBlt->DstAlloc.pAlloc->AllocData, &pBlt->DstRects.ContextRect);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status != STATUS_SUCCESS)
             return Status;
     }
@@ -2045,7 +2045,7 @@ NTSTATUS vboxVdmaDdiCmdCompleted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, 
             &context,
             0, /* IN ULONG MessageNumber */
             &bNeedDps);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     return Status;
 }
 
@@ -2075,7 +2075,7 @@ NTSTATUS vboxVdmaDdiCmdSubmitted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd)
             &context,
             0, /* IN ULONG MessageNumber */
             &bRc);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     return Status;
 }
 
@@ -2112,7 +2112,7 @@ static NTSTATUS vboxVdmaDdiCmdFenceNotifyComplete(PVBOXMP_DEVEXT pDevExt, uint32
             &context,
             0, /* IN ULONG MessageNumber */
             &bRet);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     return Status;
 }
 
@@ -2127,7 +2127,7 @@ NTSTATUS vboxVdmaDdiCmdFenceComplete(PVBOXMP_DEVEXT pDevExt, uint32_t u32NodeOrd
     {
         vboxVdmaDdiCmdInit(pCmd, u32NodeOrdinal, u32FenceId, vboxVdmaDdiCmdCompletionCbFree, NULL);
         NTSTATUS Status = vboxVdmaDdiCmdCompleted(pDevExt, pCmd, enmComplType);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status == STATUS_SUCCESS)
             return STATUS_SUCCESS;
         vboxWddmMemFree(pCmd);

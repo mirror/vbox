@@ -435,7 +435,7 @@ NTSTATUS vboxVideoCmCtxAdd(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_CTX pContext, HAN
     NTSTATUS Status = ObReferenceObjectByHandle(hUmEvent, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
         (PVOID*)&pUmEvent,
         NULL);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         KIRQL OldIrql;
@@ -458,12 +458,12 @@ NTSTATUS vboxVideoCmCtxAdd(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_CTX pContext, HAN
         if (!bFound)
         {
             Status = vboxVideoCmSessionCreateLocked(pMgr, &pSession, pUmEvent, pContext);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
         }
         else
         {
             /* Status = */vboxVideoCmSessionCtxAdd(pSession, pContext);
-            /*Assert(Status == STATUS_SUCCESS);*/
+            /*AssertNtStatusSuccess(Status);*/
         }
 
         KeReleaseSpinLock(&pMgr->SynchLock, OldIrql);

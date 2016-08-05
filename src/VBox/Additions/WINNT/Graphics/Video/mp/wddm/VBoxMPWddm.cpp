@@ -835,7 +835,7 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
         offset = ulAvailable - ulSize;
 
         NTSTATUS Status = vboxVideoAMgrCreate(pDevExt, &pDevExt->AllocMgr, offset, ulSize);
-        Assert(Status == STATUS_SUCCESS);
+        AssertNtStatusSuccess(Status);
         if (Status != STATUS_SUCCESS)
         {
             offset = ulAvailable;
@@ -1041,7 +1041,7 @@ NTSTATUS DxgkDdiAddDevice(
                                   cbRegKeyBuf,
                                   RegKeyBuf,
                                   &cbRegKeyBuf);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         pDevExt = (PVBOXMP_DEVEXT)vboxWddmMemAllocZero(VBOXWDDM_ROUNDBOUND(sizeof(VBOXMP_DEVEXT), 8) + cbRegKeyBuf);
@@ -1857,7 +1857,7 @@ static VOID DxgkDdiDpcRoutineNew(
                 &context,
                 0, /* IN ULONG MessageNumber */
                 &bRet);
-        Assert(Status == STATUS_SUCCESS); NOREF(Status);
+        AssertNtStatusSuccess(Status); NOREF(Status);
 
     //    if (context.data.bNotifyDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
@@ -1900,7 +1900,7 @@ static VOID DxgkDdiDpcRoutineLegacy(
             &context,
             0, /* IN ULONG MessageNumber */
             &bRet);
-    Assert(Status == STATUS_SUCCESS); NOREF(Status);
+    AssertNtStatusSuccess(Status); NOREF(Status);
 
 //    if (context.data.bNotifyDpc)
     pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
@@ -3233,7 +3233,7 @@ NTSTATUS vboxWddmCallIsr(PVBOXMP_DEVEXT pDevExt)
             &context,
             0, /* IN ULONG MessageNumber */
             &bRet);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     return Status;
 }
 
@@ -3535,7 +3535,7 @@ DxgkDdiSubmitCommandLegacy(
         case VBOXVDMACMD_TYPE_DMA_NOP:
         {
             Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, DXGK_INTERRUPT_DMA_COMPLETED);
-            Assert(Status == STATUS_SUCCESS);
+            AssertNtStatusSuccess(Status);
             break;
         }
         default:
@@ -4391,7 +4391,7 @@ DxgkDdiEscape(
                         && pEscape->PrivateDriverDataSize == RT_OFFSETOF(VBOXDISPIFESCAPE_UHGSMI_SUBMIT, aBuffers[pEscapeHdr->u32CmdSpecific]))
                 {
                     Status = vboxVideoAMgrCtxAllocSubmit(pDevExt, &pContext->AllocContext, pEscapeHdr->u32CmdSpecific, pSubmit->aBuffers);
-                    Assert(Status == STATUS_SUCCESS);
+                    AssertNtStatusSuccess(Status);
                 }
                 else
                     Status = STATUS_BUFFER_TOO_SMALL;
@@ -4415,7 +4415,7 @@ DxgkDdiEscape(
                 if (pEscape->PrivateDriverDataSize == sizeof (VBOXDISPIFESCAPE_UHGSMI_ALLOCATE))
                 {
                     Status = vboxVideoAMgrCtxAllocCreate(&pContext->AllocContext, &pAlocate->Alloc);
-                    Assert(Status == STATUS_SUCCESS);
+                    AssertNtStatusSuccess(Status);
                 }
                 else
                     Status = STATUS_BUFFER_TOO_SMALL;
@@ -4438,7 +4438,7 @@ DxgkDdiEscape(
                 if (pEscape->PrivateDriverDataSize == sizeof (VBOXDISPIFESCAPE_UHGSMI_DEALLOCATE))
                 {
                     Status = vboxVideoAMgrCtxAllocDestroy(&pContext->AllocContext, pDealocate->hAlloc);
-                    Assert(Status == STATUS_SUCCESS);
+                    AssertNtStatusSuccess(Status);
                 }
                 else
                     Status = STATUS_BUFFER_TOO_SMALL;
@@ -4639,7 +4639,7 @@ DxgkDdiEscape(
                 /* set swapchain information */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 Status = vboxWddmSwapchainCtxEscape(pDevExt, pContext, (PVBOXDISPIFESCAPE_SWAPCHAININFO)pEscapeHdr, pEscape->PrivateDriverDataSize);
-                Assert(Status == STATUS_SUCCESS);
+                AssertNtStatusSuccess(Status);
                 break;
             }
 #endif
@@ -5082,7 +5082,7 @@ DxgkDdiQueryCurrentFenceLegacy(
             &context,
             0, /* IN ULONG MessageNumber */
             &bRet);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
     if (Status == STATUS_SUCCESS)
     {
         pCurrentFence->CurrentFence = context.uLastCompletedCmdFenceId;
@@ -6838,12 +6838,12 @@ DxgkDdiCreateContext(
                         if (Status == STATUS_SUCCESS)
                         {
                             Status = vboxWddmSwapchainCtxInit(pDevExt, pContext);
-                            Assert(Status == STATUS_SUCCESS);
+                            AssertNtStatusSuccess(Status);
                             if (Status == STATUS_SUCCESS)
                             {
                                 pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
                                 Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
-                                Assert(Status == STATUS_SUCCESS);
+                                AssertNtStatusSuccess(Status);
                                 if (Status == STATUS_SUCCESS)
                                 {
                                     if (pInfo->crVersionMajor || pInfo->crVersionMinor)

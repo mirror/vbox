@@ -55,23 +55,23 @@ DECLINLINE(void) vbvaVhwaCommandRelease(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCm
     }
 }
 
-DECLINLINE(void) vbvaVhwaCommandRetain(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
+DECLINLINE(void) vbvaVhwaCommandRetain(VBOXVHWACMD *pCmd)
 {
     ASMAtomicIncU32(&pCmd->cRefs);
 }
 
 /* do not wait for completion */
-void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext)
+void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void *pContext)
 {
     pCmd->GuestVBVAReserved1 = (uintptr_t)pfnCompletion;
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
-    vbvaVhwaCommandRetain(pDevExt, pCmd);
+    vbvaVhwaCommandRetain(pCmd);
 
     VBoxHGSMIBufferSubmit(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pCmd);
 
-    if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
-            || ((pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION)
-                    && (pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED)))
+    if(   !(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
+       || (   (pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION)
+           && (pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED) ) )
     {
         /* the command is completed */
         pfnCompletion(pDevExt, pCmd, pContext);
@@ -82,6 +82,7 @@ void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, PFNV
 
 static DECLCALLBACK(void) vboxVhwaCompletionSetEvent(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD * pCmd, void * pvContext)
 {
+    RT_NOREF(pDevExt,  pCmd);
     RTSemEventSignal((RTSEMEVENT)pvContext);
 }
 
@@ -94,7 +95,7 @@ void vboxVhwaCommandSubmitAsynchByEvent(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCm
 void vboxVhwaCommandCheckCompletion(PVBOXMP_DEVEXT pDevExt)
 {
     NTSTATUS Status = vboxWddmCallIsr(pDevExt);
-    Assert(Status == STATUS_SUCCESS);
+    AssertNtStatusSuccess(Status);
 }
 
 VBOXVHWACMD* vboxVhwaCommandCreate(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd)
@@ -183,8 +184,9 @@ int vboxVhwaCommandSubmit(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
 }
 
 #ifndef VBOXVHWA_WITH_SHGSMI
-static DECLCALLBACK(void) vboxVhwaCompletionFreeCmd(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD * pCmd, void * pContext)
+static DECLCALLBACK(void) vboxVhwaCompletionFreeCmd(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD *pCmd, void *pvContext)
 {
+    RT_NOREF(pvContext);
     vboxVhwaCommandFree(pDevExt, pCmd);
 }
 
@@ -532,9 +534,10 @@ int vboxVhwaHlpDestroySurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSurf
 }
 
 int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION pSurf,
-        uint32_t fFlags, uint32_t cBackBuffers, uint32_t fSCaps,
-        D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+                               uint32_t fFlags, uint32_t cBackBuffers, uint32_t fSCaps,
+                               D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
+    RT_NOREF(VidPnSourceId);
     memset(pInfo, 0, sizeof(VBOXVHWA_SURFACEDESC));
 
 #if 0

@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -73,23 +72,23 @@ DECLEXPORT(int)  crMemcmp( const void *p1, const void *p2, unsigned int bytes )
 
 DECLEXPORT(void) crDebug(const char *format, ... )
 {
-
+    RT_NOREF(format);
 }
 
 #ifndef DEBUG_misha
 DECLEXPORT(void) crWarning(const char *format, ... )
 {
-
+    RT_NOREF(format);
 }
 #endif
 
 DECLEXPORT(void) crInfo(const char *format, ... )
 {
-
+    RT_NOREF(format);
 }
 
 DECLEXPORT(void) crError(const char *format, ... )
 {
-
+    RT_NOREF(format);
 }
 
