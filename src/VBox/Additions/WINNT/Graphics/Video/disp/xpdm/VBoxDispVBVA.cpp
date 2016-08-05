@@ -319,30 +319,27 @@ static HGSMIENV g_hgsmiEnvDisp =
 
 int VBoxDispVBVAInit(PVBOXDISPDEV pDev)
 {
-    int rc;
-    DWORD dwrc;
-    ULONG cbReturned;
-    QUERYHGSMIRESULT info;
-    HGSMIQUERYCALLBACKS callbacks;
-    HGSMIQUERYCPORTPROCS portProcs;
     LOGF_ENTER();
 
     /* Check if HGSMI is supported and obtain necessary info */
+    QUERYHGSMIRESULT info;
     int rc = VBoxDispMPQueryHGSMIInfo(pDev->hDriver, &info);
     if (RT_SUCCESS(rc))
     {
+        HGSMIQUERYCALLBACKS callbacks;
         rc = VBoxDispMPQueryHGSMICallbacks(pDev->hDriver, &callbacks);
         if (RT_SUCCESS(rc))
         {
+            HGSMIQUERYCPORTPROCS portProcs;
             rc = VBoxDispMPHGSMIQueryPortProcs(pDev->hDriver, &portProcs);
-        }
-    }
-    if (RT_SUCCESS(rc))
-    {
-        pDev->hgsmi.bSupported = TRUE;
+            if (RT_SUCCESS(rc))
+            {
+                pDev->hgsmi.bSupported = TRUE;
 
-        pDev->hgsmi.mp = callbacks;
-        pDev->vpAPI = portProcs;
+                pDev->hgsmi.mp = callbacks;
+                pDev->vpAPI = portProcs;
+            }
+        }
     }
 
     if (pDev->hgsmi.bSupported)
@@ -351,8 +348,9 @@ int VBoxDispVBVAInit(PVBOXDISPDEV pDev)
 
         memset(&HandlerReg, 0, sizeof(HandlerReg));
         HandlerReg.u8Channel = HGSMI_CH_VBVA;
-        dwrc = EngDeviceIoControl(pDev->hDriver, IOCTL_VIDEO_HGSMI_HANDLER_ENABLE, &HandlerReg, sizeof(HandlerReg),
-                                  0, NULL, &cbReturned);
+        ULONG cbReturned;
+        DWORD dwrc = EngDeviceIoControl(pDev->hDriver, IOCTL_VIDEO_HGSMI_HANDLER_ENABLE, &HandlerReg, sizeof(HandlerReg),
+                                        0, NULL, &cbReturned);
         VBOX_WARN_WINERR(dwrc);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -620,7 +618,7 @@ void vbvaDrvTextOut(SURFOBJ *pso, STROBJ *pstro, FONTOBJ *pfo, CLIPOBJ *pco,
 
 void vbvaDrvSaveScreenBits(SURFOBJ *pso, ULONG iMode, ULONG_PTR ident, RECTL *prcl)
 {
-    RT_NOREF(ident);
+    RT_NOREF(iMode, ident);
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
 
     Assert(iMode == SS_RESTORE || iMode == SS_SAVE);
