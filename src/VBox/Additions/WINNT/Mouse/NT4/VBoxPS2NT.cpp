@@ -1778,6 +1778,7 @@ static VOID MouGetRegstry(PINITEXT pInit, PUNICODE_STRING RegistryPath,
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
 {
     PDEVICE_OBJECT pPortDevObj = NULL;
+    PDEVEXT pDevExt = NULL;
     NTSTATUS status = STATUS_SUCCESS;
     KIRQL IrqlCoord = 0;
     ULONG IntVecKbd;
@@ -1789,6 +1790,9 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
     ULONG addressSpace;
     PHYSICAL_ADDRESS Phys;
     BOOLEAN fConflict;
+
+    ULONG resourceListSize = 0;
+    PCM_RESOURCE_LIST resources = NULL;
 
     UNICODE_STRING KbdNameFull          = { 0, 0, NULL };
     UNICODE_STRING MouNameFull          = { 0, 0, NULL };
@@ -1894,12 +1898,10 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
     if (!NT_SUCCESS(status))
         goto fail;
 
-    PDEVEXT pDevExt = (PDEVEXT)pPortDevObj->DeviceExtension;
+    pDevExt = (PDEVEXT)pPortDevObj->DeviceExtension;
     *pDevExt = pInit->DevExt;
     pDevExt->pDevObj = pPortDevObj;
 
-    ULONG resourceListSize = 0;
-    PCM_RESOURCE_LIST resources = NULL;
     CreateResList(pDevExt, &resources, &resourceListSize);
 
     RtlInitUnicodeString(&resourceDeviceClass, NULL);
