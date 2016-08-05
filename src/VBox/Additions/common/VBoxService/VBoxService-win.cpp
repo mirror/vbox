@@ -196,6 +196,8 @@ static RTEXITCODE vgsvcWinSetDesc(SC_HANDLE hService)
         VGSvcError("Cannot set the service description! Error: %ld\n", GetLastError());
         return RTEXITCODE_FAILURE;
     }
+#else
+    RT_NOREF(hService);
 #endif
     return RTEXITCODE_SUCCESS;
 }

@@ -208,7 +208,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         pDrvObj->MajorFunction[IRP_MJ_READ]                    = vgdrvNtNotSupportedStub;
         pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vgdrvNtNotSupportedStub;
 #ifdef TARGET_NT4
-        rc = vgdrvNt4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
+        rc = vgdrvNt4CreateDevice(pDrvObj, pRegPath);
 #else
         pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vgdrvNtPnP;
         pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vgdrvNtPower;
@@ -467,8 +467,8 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
 
         IoInitializeDpcRequest(pDevExt->pDeviceObject, vgdrvNtDpcHandler);
 #ifdef TARGET_NT4
-        ULONG uInterruptVector;
-        KIRQL irqLevel;
+        ULONG uInterruptVector = UINT32_MAX;
+        KIRQL irqLevel = UINT8_MAX;
         /* Get an interrupt vector. */
         /* Only proceed if the device provides an interrupt. */
         if (   pDevExt->interruptLevel
@@ -621,7 +621,7 @@ static void vgdrvNtUnload(PDRIVER_OBJECT pDrvObj)
      */
     UNICODE_STRING DosName;
     RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
-    NTSTATUS rc = IoDeleteSymbolicLink(&DosName);
+    IoDeleteSymbolicLink(&DosName);
 
     IoDeleteDevice(pDrvObj->DeviceObject);
 #else  /* !TARGET_NT4 */
