@@ -75,8 +75,7 @@ void crPackSetBuffer( CRPackContext *pc, CRPackBuffer *buffer )
 
 #ifndef IN_RING0
 /* This is useful for debugging packer problems */
-void crPackSetBufferDEBUG( const char *file, int line,
-													 CRPackContext *pc, CRPackBuffer *buffer)
+void crPackSetBufferDEBUG( const char *file, int line, CRPackContext *pc, CRPackBuffer *buffer)
 						   
 {
 	crPackSetBuffer( pc, buffer );

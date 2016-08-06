@@ -96,6 +96,7 @@ struct CRPackContext_t
 # define CR_PACKER_CONTEXT_ARGSINGLEDECL void
 # define CR_PACKER_CONTEXT_ARGDECL
 # define CR_PACKER_CONTEXT_ARG
+# define CR_PACKER_CONTEXT_ARG_NOREF()  do {} while (0)
 # define CR_PACKER_CONTEXT_ARGCTX(C)
 # ifdef CHROMIUM_THREADSAFE
 extern CRtsd _PackerTSD;
@@ -113,6 +114,7 @@ extern uint32_t cr_packer_cmd_blocks_enabled;
 # define CR_PACKER_CONTEXT_ARGSINGLEDECL CRPackContext *_pCtx
 # define CR_PACKER_CONTEXT_ARGDECL CR_PACKER_CONTEXT_ARGSINGLEDECL,
 # define CR_PACKER_CONTEXT_ARG _pCtx,
+# define CR_PACKER_CONTEXT_ARG_NOREF() RT_NOREF_PV(_pCtx)
 # define CR_PACKER_CONTEXT_ARGCTX(C) C,
 # define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = _pCtx
 # define CR_LOCK_PACKER_CONTEXT(PC)

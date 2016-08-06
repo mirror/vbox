@@ -21,8 +21,16 @@
 #include "cr_compiler.h"
 
 #ifdef IN_RING0
+
+# ifndef VBOXVIDEOLOG_H
+#  undef WARN     /* VBoxMpUtils.h includes common/VBoxVideoLog.h which */
+#  undef LOG      /* uncondtionally redefines these three macros. */
+#  undef LOGREL
+# endif
 # include <common/VBoxMPUtils.h>
+
 # define WINGDIAPI /* gl/gl.h is using this (wingdi.h defines it a __declspec(dllimport) normaly).  */
+
 #endif
 
 /*
@@ -35,7 +43,7 @@
 
 #if defined(WINDOWS)
 # ifdef IN_RING0
-#  error "should not happen!"
+#  error "should not happen!" /* bird: This is certifiably insane, in my opinion. */
 # endif
 # define WIN32_LEAN_AND_MEAN
 # define WGL_APIENTRY __stdcall
@@ -55,7 +63,9 @@
 #include <GL/gl.h>
 
 #ifndef WINDOWS
+# ifndef RT_OS_WINDOWS /* If we don't need it in ring-3, we probably not need it in ring-0 either (triggers warnings). */
 #include <GL/glu.h>
+# endif /* !RT_OS_WINDOWS */
 #endif
 
 
