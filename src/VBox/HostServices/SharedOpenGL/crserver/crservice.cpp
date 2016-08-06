@@ -1502,9 +1502,9 @@ static DECLCALLBACK(int) svcHostCall(void *, uint32_t u32Function, uint32_t cPar
                     WARN(("svcHostCall: invalid function %d", pCtl->enmType));
                     return VERR_INVALID_PARAMETER;
             }
-            WARN(("should not be here!"));
-            return VERR_INTERNAL_ERROR;
+            /* not reached. */
         }
+
         default:
             if (g_u32fCrHgcmDisabled)
             {
