@@ -163,6 +163,7 @@ void VBoxDnDWnd::Destroy(void)
         int rc = RTThreadWait(hThread, 60 * 1000 /* Timeout in ms */, &rcThread);
         LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
                      rc, rcThread));
+        NOREF(rc);
     }
 
     reset();
@@ -746,8 +747,7 @@ int VBoxDnDWnd::UnregisterAsDropTarget(void)
     if (SUCCEEDED(hr))
     {
         ULONG cRefs = pDropTarget->Release();
-
-        Assert(cRefs == 0);
+        Assert(cRefs == 0); NOREF(cRefs);
         pDropTarget = NULL;
     }
 
@@ -948,6 +948,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
  */
 int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
 {
+    RT_NOREF(uAction);
     int rc;
 
     uint32_t uActionNotify = DND_IGNORE_ACTION;
@@ -1149,8 +1150,8 @@ int VBoxDnDWnd::OnHgCancel(void)
  */
 int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 {
-    LogFlowThisFunc(("mMode=%ld, mState=%ld, uScreenID=%RU32\n",
-                     mMode, mState, uScreenID));
+    RT_NOREF(uScreenID);
+    LogFlowThisFunc(("mMode=%ld, mState=%ld, uScreenID=%RU32\n", mMode, mState, uScreenID));
 
     if (mMode == Unknown)
         setMode(GH);
@@ -1296,9 +1297,9 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
  * @param   cbFormat                Size (in bytes) of format string.
  * @param   uDefAction              Default action on the host.
  */
-int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
-                            uint32_t uDefAction)
+int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat, uint32_t uDefAction)
 {
+    RT_NOREF(uDefAction);
     AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
     AssertReturn(cbFormat,     VERR_INVALID_PARAMETER);
 
@@ -1360,7 +1361,7 @@ void VBoxDnDWnd::PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     LogFlowFunc(("Posting message %u\n"));
     BOOL fRc = ::PostMessage(hWnd, uMsg, wParam, lParam);
-    Assert(fRc);
+    Assert(fRc); NOREF(fRc);
 }
 
 /**
@@ -1758,8 +1759,6 @@ DECLCALLBACK(void) VBoxDnDDestroy(void *pInstance)
     PVBOXDNDCONTEXT pCtx = (PVBOXDNDCONTEXT)pInstance;
     AssertPtr(pCtx);
 
-    int rc = VINF_SUCCESS;
-
     /** @todo At the moment we only have one DnD proxy window. */
     Assert(pCtx->lstWnd.size() == 1);
     VBoxDnDWnd *pWnd = pCtx->lstWnd.first();
@@ -1770,9 +1769,12 @@ DECLCALLBACK(void) VBoxDnDDestroy(void *pInstance)
     }
 
     if (pCtx->hEvtQueueSem != NIL_RTSEMEVENT)
+    {
         RTSemEventDestroy(pCtx->hEvtQueueSem);
+        pCtx->hEvtQueueSem = NIL_RTSEMEVENT;
+    }
 
-    LogFunc(("Destroyed pInstance=%p, rc=%Rrc\n", pInstance, rc));
+    LogFunc(("Destroyed pInstance=%p\n", pInstance));
 }
 
 DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
