@@ -31,8 +31,7 @@ VBoxSF_SDKS.amd64  = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 
 VBoxSF_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxSF_LDFLAGS.amd64 = -Entry:DriverEntry
-VBoxSF_CFLAGS      = -wd4005
-VBoxSF_SOURCES     =  \
+VBoxSF_SOURCES     = \
 	file.c \
 	info.c \
 	vbsf.c \
