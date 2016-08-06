@@ -68,7 +68,7 @@
             __FILE__, __LINE__);
 
 #define XML_URN_PUBID "urn:publicid:"
-#define XML_CATAL_BREAK ((xmlChar *) -1)
+#define XML_CATAL_BREAK ((xmlChar *)/*vbox:*/(intptr_t) -1)
 #ifndef XML_XML_DEFAULT_CATALOG
 #define XML_XML_DEFAULT_CATALOG "file:///etc/xml/catalog"
 #endif

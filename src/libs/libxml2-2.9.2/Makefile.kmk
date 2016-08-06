@@ -85,7 +85,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
 endif
 
 LIBRARIES += VBox-libxml2-static
-VBox-libxml2-static_TEMPLATE = VBOXR3STATIC
+VBox-libxml2-static_TEMPLATE = VBoxR3StaticNonPedantic
 VBox-libxml2-static_EXTENDS = VBox-libxml2
 
 
