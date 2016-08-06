@@ -1249,7 +1249,7 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 
         int rc2 = VbglR3DnDGHSendAckPending(&mDnDCtx,
                                             uDefAction, uAllActions,
-                                            strFormats.c_str(), strFormats.length() + 1 /* Include termination */);
+                                            strFormats.c_str(), (uint32_t)strFormats.length() + 1 /* Include termination */);
         if (RT_FAILURE(rc2))
         {
             char szMsg[256]; /* Sizes according to MSDN. */
@@ -1326,7 +1326,8 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat, uint32_t u
         {
             /** @todo Respect uDefAction. */
             void *pvData    = pDropTarget->DataMutableRaw();
-            uint32_t cbData = pDropTarget->DataSize();
+            uint32_t cbData = (uint32_t)pDropTarget->DataSize();
+            Assert(cbData == pDropTarget->DataSize());
 
             if (   pvData
                 && cbData)

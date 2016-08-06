@@ -312,7 +312,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
         } \
     } while (0)
 
-#define VBOXVDBG_DUMP_RECTS_INIT(_d) DWORD vboxVDbgDumpRects = _d;
+#define VBOXVDBG_DUMP_RECTS_INIT(_d) DWORD vboxVDbgDumpRects = _d; NOREF(vboxVDbgDumpRects)
 #define VBOXVDBG_DUMP_RECTS_FORCE() vboxVDbgDumpRects = 1;
 #define VBOXVDBG_DUMP_RECTS_FORCED() (!!vboxVDbgDumpRects)
 

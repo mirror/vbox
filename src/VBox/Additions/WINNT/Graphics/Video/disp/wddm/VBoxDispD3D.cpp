@@ -644,7 +644,7 @@ static void vboxWddmDbgSynchMemCheck(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKED_
     Assert(pAlloc->pvMem);
     int iRc = 0;
 
-    if (pAlloc->SurfDesc.pitch == pLockInfo->Pitch)
+    if (pAlloc->SurfDesc.pitch == (UINT)pLockInfo->Pitch)
     {
         Assert(pAlloc->SurfDesc.cbSize);
         iRc = memcmp(pLockInfo->pBits, pAlloc->pvMem, pAlloc->SurfDesc.cbSize);
