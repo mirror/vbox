@@ -169,25 +169,25 @@ DWORD APIENTRY NPGetCaps(DWORD nIndex)
     return rc;
 }
 
-DWORD APIENTRY NPLogonNotify(PLUID lpLogonId,
-                             LPCWSTR lpAuthentInfoType,
-                             LPVOID lpAuthentInfo,
-                             LPCWSTR lpPreviousAuthentInfoType,
-                             LPVOID lpPreviousAuthentInfo,
-                             LPWSTR lpStationName,
+DWORD APIENTRY NPLogonNotify(PLUID pLogonId,
+                             LPCWSTR pAuthentInfoType,
+                             LPVOID pAuthentInfo,
+                             LPCWSTR pPreviousAuthentInfoType,
+                             LPVOID pPreviousAuthentInfo,
+                             LPWSTR pStationName,
                              LPVOID StationHandle,
-                             LPWSTR *lpLogonScript)
+                             LPWSTR *pLogonScript)
 {
     Log(("VBOXNP: NPLogonNotify\n"));
-    *lpLogonScript = NULL;
+    *pLogonScript = NULL;
     return WN_SUCCESS;
 }
 
-DWORD APIENTRY NPPasswordChangeNotify(LPCWSTR lpAuthentInfoType,
-                                      LPVOID lpAuthentInfo,
-                                      LPCWSTR lpPreviousAuthentInfoType,
-                                      LPVOID lpPreviousAuthentInfo,
-                                      LPWSTR lpStationName,
+DWORD APIENTRY NPPasswordChangeNotify(LPCWSTR pAuthentInfoType,
+                                      LPVOID pAuthentInfo,
+                                      LPCWSTR pPreviousAuthentInfoType,
+                                      LPVOID pPreviousAuthentInfo,
+                                      LPWSTR pStationName,
                                       LPVOID StationHandle,
                                       DWORD dwChangeInfo)
 {
@@ -197,18 +197,18 @@ DWORD APIENTRY NPPasswordChangeNotify(LPCWSTR lpAuthentInfoType,
     return WN_NOT_SUPPORTED;
 }
 
-DWORD APIENTRY NPAddConnection(LPNETRESOURCE lpNetResource,
-                               LPWSTR lpPassword,
-                               LPWSTR lpUserName)
+DWORD APIENTRY NPAddConnection(LPNETRESOURCE pNetResource,
+                               LPWSTR pPassword,
+                               LPWSTR pUserName)
 {
     Log(("VBOXNP: NPAddConnection\n"));
-    return NPAddConnection3(NULL, lpNetResource, lpPassword, lpUserName, 0);
+    return NPAddConnection3(NULL, pNetResource, pPassword, pUserName, 0);
 }
 
 DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
-                                LPNETRESOURCE lpNetResource,
-                                LPWSTR lpPassword,
-                                LPWSTR lpUserName,
+                                LPNETRESOURCE pNetResource,
+                                LPWSTR pPassword,
+                                LPWSTR pUserName,
                                 DWORD dwFlags)
 {
     DWORD dwStatus = WN_SUCCESS;
@@ -217,13 +217,13 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
     BOOLEAN fLocalName = TRUE;
 
     Log(("VBOXNP: NPAddConnection3: dwFlags = 0x%x\n", dwFlags));
-    Log(("VBOXNP: NPAddConnection3: Local Name:  %ls\n", lpNetResource->lpLocalName ));
-    Log(("VBOXNP: NPAddConnection3: Remote Name: %ls\n", lpNetResource->lpRemoteName ));
+    Log(("VBOXNP: NPAddConnection3: Local Name:  %ls\n", pNetResource->lpLocalName ));
+    Log(("VBOXNP: NPAddConnection3: Remote Name: %ls\n", pNetResource->lpRemoteName ));
 
-    if (   lpNetResource->dwType != RESOURCETYPE_DISK
-        && lpNetResource->dwType != RESOURCETYPE_ANY)
+    if (   pNetResource->dwType != RESOURCETYPE_DISK
+        && pNetResource->dwType != RESOURCETYPE_ANY)
     {
-        Log(("VBOXNP: NPAddConnection3: Incorrect net resource type %d\n", lpNetResource->dwType));
+        Log(("VBOXNP: NPAddConnection3: Incorrect net resource type %d\n", pNetResource->dwType));
         return WN_BAD_NETNAME;
     }
 
@@ -232,17 +232,17 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
     lstrcpy(ConnectionName, DD_MRX_VBOX_FS_DEVICE_NAME_U);
     lstrcat(ConnectionName, L"\\;");
 
-    if (lpNetResource->lpLocalName == NULL)
+    if (pNetResource->lpLocalName == NULL)
     {
         LocalName[0] = L'\0';
         fLocalName = FALSE;
     }
     else
     {
-        if (   lpNetResource->lpLocalName[0]
-            && lpNetResource->lpLocalName[1] == L':')
+        if (   pNetResource->lpLocalName[0]
+            && pNetResource->lpLocalName[1] == L':')
         {
-            LocalName[0] = vboxToUpper(lpNetResource->lpLocalName[0]);
+            LocalName[0] = vboxToUpper(pNetResource->lpLocalName[0]);
             LocalName[1] = L':';
             LocalName[2] = L'\0';
 
@@ -258,14 +258,14 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
     if (dwStatus == WN_SUCCESS)
     {
         /* Append the remote name. */
-        if (   lpNetResource->lpRemoteName
-            && lpNetResource->lpRemoteName[0] == L'\\'
-            && lpNetResource->lpRemoteName[1] == L'\\' )
+        if (   pNetResource->lpRemoteName
+            && pNetResource->lpRemoteName[0] == L'\\'
+            && pNetResource->lpRemoteName[1] == L'\\' )
         {
             /* No need for (lstrlen + 1), because 'lpNetResource->lpRemoteName' leading \ is not copied. */
-            if (lstrlen(ConnectionName) + lstrlen(lpNetResource->lpRemoteName) <= sizeof(ConnectionName) / sizeof(WCHAR))
+            if (lstrlen(ConnectionName) + lstrlen(pNetResource->lpRemoteName) <= sizeof(ConnectionName) / sizeof(WCHAR))
             {
-                lstrcat(ConnectionName, &lpNetResource->lpRemoteName[1]);
+                lstrcat(ConnectionName, &pNetResource->lpRemoteName[1]);
             }
             else
             {
@@ -309,7 +309,7 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
                 {
                     if (   fLocalName
                         && !DefineDosDevice(DDD_RAW_TARGET_PATH | DDD_NO_BROADCAST_SYSTEM,
-                                            lpNetResource->lpLocalName,
+                                            pNetResource->lpLocalName,
                                             ConnectionName))
                     {
                         dwStatus = GetLastError();
@@ -332,24 +332,24 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
     return dwStatus;
 }
 
-DWORD APIENTRY NPCancelConnection(LPWSTR lpName,
+DWORD APIENTRY NPCancelConnection(LPWSTR pName,
                                   BOOL fForce)
 {
     DWORD dwStatus = WN_NOT_CONNECTED;
 
     Log(("VBOXNP: NPCancelConnection: Name = %ls\n",
-         lpName));
+         pName));
 
-    if (lpName && lpName[0] != 0)
+    if (pName && pName[0] != 0)
     {
         WCHAR ConnectionName[256];
 
-        if (lpName[1] == L':')
+        if (pName[1] == L':')
         {
             WCHAR RemoteName[128];
             WCHAR LocalName[3];
 
-            LocalName[0] = vboxToUpper(lpName[0]);
+            LocalName[0] = vboxToUpper(pName[0]);
             LocalName[1] = L':';
             LocalName[2] = L'\0';
 
@@ -403,29 +403,29 @@ DWORD APIENTRY NPCancelConnection(LPWSTR lpName,
         {
             BOOLEAN Verifier;
 
-            Verifier  = ( lpName[0] == L'\\' );
-            Verifier &= ( lpName[1] == L'V' ) || ( lpName[1] == L'v' );
-            Verifier &= ( lpName[2] == L'B' ) || ( lpName[2] == L'b' );
-            Verifier &= ( lpName[3] == L'O' ) || ( lpName[3] == L'o' );
-            Verifier &= ( lpName[4] == L'X' ) || ( lpName[4] == L'x' );
-            Verifier &= ( lpName[5] == L'S' ) || ( lpName[5] == L's' );
+            Verifier  = ( pName[0] == L'\\' );
+            Verifier &= ( pName[1] == L'V' ) || ( pName[1] == L'v' );
+            Verifier &= ( pName[2] == L'B' ) || ( pName[2] == L'b' );
+            Verifier &= ( pName[3] == L'O' ) || ( pName[3] == L'o' );
+            Verifier &= ( pName[4] == L'X' ) || ( pName[4] == L'x' );
+            Verifier &= ( pName[5] == L'S' ) || ( pName[5] == L's' );
             /* Both vboxsvr & vboxsrv are now accepted */
-            if (( lpName[6] == L'V' ) || ( lpName[6] == L'v'))
+            if (( pName[6] == L'V' ) || ( pName[6] == L'v'))
             {
-                Verifier &= ( lpName[6] == L'V' ) || ( lpName[6] == L'v' );
-                Verifier &= ( lpName[7] == L'R' ) || ( lpName[7] == L'r' );
+                Verifier &= ( pName[6] == L'V' ) || ( pName[6] == L'v' );
+                Verifier &= ( pName[7] == L'R' ) || ( pName[7] == L'r' );
             }
             else
             {
-                Verifier &= ( lpName[6] == L'R' ) || ( lpName[6] == L'r' );
-                Verifier &= ( lpName[7] == L'V' ) || ( lpName[7] == L'v' );
+                Verifier &= ( pName[6] == L'R' ) || ( pName[6] == L'r' );
+                Verifier &= ( pName[7] == L'V' ) || ( pName[7] == L'v' );
             }
-            Verifier &= ( lpName[8] == L'\\') || ( lpName[8] == 0 );
+            Verifier &= ( pName[8] == L'\\') || ( pName[8] == 0 );
 
             if (Verifier)
             {
                 /* Full remote path */
-                if (lstrlen(DD_MRX_VBOX_FS_DEVICE_NAME_U) + 2 + lstrlen(lpName) + 1 > sizeof(ConnectionName) / sizeof(WCHAR))
+                if (lstrlen(DD_MRX_VBOX_FS_DEVICE_NAME_U) + 2 + lstrlen(pName) + 1 > sizeof(ConnectionName) / sizeof(WCHAR))
                 {
                     dwStatus = WN_BAD_NETNAME;
                 }
@@ -433,7 +433,7 @@ DWORD APIENTRY NPCancelConnection(LPWSTR lpName,
                 {
                     lstrcpy(ConnectionName, DD_MRX_VBOX_FS_DEVICE_NAME_U);
                     lstrcat(ConnectionName, L"\\;");
-                    lstrcat(ConnectionName, lpName);
+                    lstrcat(ConnectionName, pName);
 
                     dwStatus = vbsfIOCTL(IOCTL_MRX_VBOX_DELCONN,
                                          ConnectionName,
@@ -454,28 +454,28 @@ DWORD APIENTRY NPCancelConnection(LPWSTR lpName,
     return dwStatus;
 }
 
-DWORD APIENTRY NPGetConnection(LPWSTR lpLocalName,
-                               LPWSTR lpRemoteName,
-                               LPDWORD lpBufferSize)
+DWORD APIENTRY NPGetConnection(LPWSTR pLocalName,
+                               LPWSTR pRemoteName,
+                               LPDWORD pBufferSize)
 {
     DWORD dwStatus = WN_NOT_CONNECTED;
 
     WCHAR RemoteName[128];
     ULONG cbOut = 0;
 
-    Log(("VBOXNP: NPGetConnection: lpLocalName = %ls\n",
-         lpLocalName));
+    Log(("VBOXNP: NPGetConnection: pLocalName = %ls\n",
+         pLocalName));
 
-    if (lpLocalName && lpLocalName[0] != 0)
+    if (pLocalName && pLocalName[0] != 0)
     {
-        if (lpLocalName[1] == L':')
+        if (pLocalName[1] == L':')
         {
             WCHAR LocalName[3];
 
             cbOut = sizeof(RemoteName) - sizeof(WCHAR);
             RemoteName[cbOut / sizeof(WCHAR)] = 0;
 
-            LocalName[0] = vboxToUpper(lpLocalName[0]);
+            LocalName[0] = vboxToUpper(pLocalName[0]);
             LocalName[1] = L':';
             LocalName[2] = L'\0';
 
@@ -487,7 +487,7 @@ DWORD APIENTRY NPGetConnection(LPWSTR lpLocalName,
 
             if (dwStatus != NO_ERROR)
             {
-                /* The device specified by lpLocalName is not redirected by this provider. */
+                /* The device specified by pLocalName is not redirected by this provider. */
                 dwStatus = WN_NOT_CONNECTED;
             }
             else
@@ -511,27 +511,27 @@ DWORD APIENTRY NPGetConnection(LPWSTR lpLocalName,
 
         DWORD len = sizeof(WCHAR) + cbRemoteName; /* Including the leading '\'. */
 
-        if (*lpBufferSize >= len)
+        if (*pBufferSize >= len)
         {
-            lpRemoteName[0] = L'\\';
-            CopyMemory(&lpRemoteName[1], RemoteName, cbRemoteName);
+            pRemoteName[0] = L'\\';
+            CopyMemory(&pRemoteName[1], RemoteName, cbRemoteName);
 
-            Log(("VBOXNP: NPGetConnection: returning lpRemoteName: %ls\n",
-                 lpRemoteName));
+            Log(("VBOXNP: NPGetConnection: returning pRemoteName: %ls\n",
+                 pRemoteName));
         }
         else
         {
-            if (*lpBufferSize != 0)
+            if (*pBufferSize != 0)
             {
                 /* Log only real errors. Do not log a 0 bytes try. */
-                Log(("VBOXNP: NPGetConnection: Buffer overflow: *lpBufferSize = %d, len = %d\n",
-                     *lpBufferSize, len));
+                Log(("VBOXNP: NPGetConnection: Buffer overflow: *pBufferSize = %d, len = %d\n",
+                     *pBufferSize, len));
             }
 
             dwStatus = WN_MORE_DATA;
         }
 
-        *lpBufferSize = len;
+        *pBufferSize = len;
     }
 
     if ((dwStatus != WN_SUCCESS) &&
@@ -544,42 +544,42 @@ DWORD APIENTRY NPGetConnection(LPWSTR lpLocalName,
     return dwStatus;
 }
 
-static const WCHAR *vboxSkipServerPrefix(const WCHAR *lpRemoteName, const WCHAR *lpPrefix)
+static const WCHAR *vboxSkipServerPrefix(const WCHAR *pRemoteName, const WCHAR *pPrefix)
 {
-    while (*lpPrefix)
+    while (*pPrefix)
     {
-        if (vboxToUpper(*lpPrefix) != vboxToUpper(*lpRemoteName))
+        if (vboxToUpper(*pPrefix) != vboxToUpper(*pRemoteName))
         {
             /* Not a prefix */
             return NULL;
         }
 
-        lpPrefix++;
-        lpRemoteName++;
+        pPrefix++;
+        pRemoteName++;
     }
 
-    return lpRemoteName;
+    return pRemoteName;
 }
 
-static const WCHAR *vboxSkipServerName(const WCHAR *lpRemoteName)
+static const WCHAR *vboxSkipServerName(const WCHAR *pRemoteName)
 {
     int cLeadingBackslashes = 0;
-    while (*lpRemoteName == L'\\')
+    while (*pRemoteName == L'\\')
     {
-        lpRemoteName++;
+        pRemoteName++;
         cLeadingBackslashes++;
     }
 
     if (cLeadingBackslashes == 0 || cLeadingBackslashes == 2)
     {
-        const WCHAR *lpAfterPrefix = vboxSkipServerPrefix(lpRemoteName, MRX_VBOX_SERVER_NAME_U);
+        const WCHAR *pAfterPrefix = vboxSkipServerPrefix(pRemoteName, MRX_VBOX_SERVER_NAME_U);
 
-        if (!lpAfterPrefix)
+        if (!pAfterPrefix)
         {
-            lpAfterPrefix = vboxSkipServerPrefix(lpRemoteName, MRX_VBOX_SERVER_NAME_ALT_U);
+            pAfterPrefix = vboxSkipServerPrefix(pRemoteName, MRX_VBOX_SERVER_NAME_ALT_U);
         }
 
-        return lpAfterPrefix;
+        return pAfterPrefix;
     }
 
     return NULL;
@@ -604,13 +604,13 @@ typedef struct _NPENUMCTX
 DWORD APIENTRY NPOpenEnum(DWORD dwScope,
                           DWORD dwType,
                           DWORD dwUsage,
-                          LPNETRESOURCE lpNetResource,
+                          LPNETRESOURCE pNetResource,
                           LPHANDLE lphEnum)
 {
     DWORD dwStatus;
 
-    Log(("VBOXNP: NPOpenEnum: dwScope 0x%08X, dwType 0x%08X, dwUsage 0x%08X, lpNetResource %p\n",
-         dwScope, dwType, dwUsage, lpNetResource));
+    Log(("VBOXNP: NPOpenEnum: dwScope 0x%08X, dwType 0x%08X, dwUsage 0x%08X, pNetResource %p\n",
+         dwScope, dwType, dwUsage, pNetResource));
 
     if (dwUsage == 0)
     {
@@ -629,10 +629,10 @@ DWORD APIENTRY NPOpenEnum(DWORD dwScope,
     }
     else
     {
-        if (lpNetResource && lpNetResource->lpRemoteName)
+        if (pNetResource && pNetResource->lpRemoteName)
         {
-            Log(("VBOXNP: NPOpenEnum: lpRemoteName %ls\n",
-                 lpNetResource->lpRemoteName));
+            Log(("VBOXNP: NPOpenEnum: pRemoteName %ls\n",
+                 pNetResource->lpRemoteName));
         }
 
         switch (dwScope)
@@ -641,9 +641,9 @@ DWORD APIENTRY NPOpenEnum(DWORD dwScope,
                      * NpEnumResource will return NO_MORE_ENTRIES.
                      */
             {
-                if (lpNetResource == NULL || lpNetResource->lpRemoteName == NULL)
+                if (pNetResource == NULL || pNetResource->lpRemoteName == NULL)
                 {
-                    /* If it is NULL or if the lpRemoteName field of the NETRESOURCE is NULL,
+                    /* If it is NULL or if the pRemoteName field of the NETRESOURCE is NULL,
                      * the provider should enumerate the top level of its network.
                      * But system shares can't be on top level.
                      */
@@ -651,9 +651,9 @@ DWORD APIENTRY NPOpenEnum(DWORD dwScope,
                     break;
                 }
 
-                const WCHAR *lpAfterName = vboxSkipServerName(lpNetResource->lpRemoteName);
-                if (   lpAfterName == NULL
-                    || (*lpAfterName != L'\\' && *lpAfterName != 0))
+                const WCHAR *pAfterName = vboxSkipServerName(pNetResource->lpRemoteName);
+                if (   pAfterName == NULL
+                    || (*pAfterName != L'\\' && *pAfterName != 0))
                 {
                     dwStatus = WN_NOT_CONTAINER;
                     break;
@@ -672,19 +672,19 @@ DWORD APIENTRY NPOpenEnum(DWORD dwScope,
             }
             case RESOURCE_GLOBALNET: /* All resources on the network. */
             {
-                if (lpNetResource == NULL || lpNetResource->lpRemoteName == NULL)
+                if (pNetResource == NULL || pNetResource->lpRemoteName == NULL)
                 {
-                    /* If it is NULL or if the lpRemoteName field of the NETRESOURCE is NULL,
+                    /* If it is NULL or if the pRemoteName field of the NETRESOURCE is NULL,
                      * the provider should enumerate the top level of its network.
                      */
                     pCtx->fRoot = true;
                 }
                 else
                 {
-                    /* Enumerate lpNetResource->lpRemoteName container, which can be only the VBOXSVR container. */
-                    const WCHAR *lpAfterName = vboxSkipServerName(lpNetResource->lpRemoteName);
-                    if (   lpAfterName == NULL
-                        || (*lpAfterName != L'\\' && *lpAfterName != 0))
+                    /* Enumerate pNetResource->lpRemoteName container, which can be only the VBOXSVR container. */
+                    const WCHAR *pAfterName = vboxSkipServerName(pNetResource->lpRemoteName);
+                    if (   pAfterName == NULL
+                        || (*pAfterName != L'\\' && *pAfterName != 0))
                     {
                         dwStatus = WN_NOT_CONTAINER;
                         break;
@@ -747,8 +747,8 @@ DWORD APIENTRY NPOpenEnum(DWORD dwScope,
 
 DWORD APIENTRY NPEnumResource(HANDLE hEnum,
                               LPDWORD lpcCount,
-                              LPVOID lpBuffer,
-                              LPDWORD lpBufferSize)
+                              LPVOID pBuffer,
+                              LPDWORD pBufferSize)
 {
     DWORD dwStatus = WN_SUCCESS;
     NPENUMCTX *pCtx = (NPENUMCTX *)hEnum;
@@ -761,8 +761,8 @@ DWORD APIENTRY NPEnumResource(HANDLE hEnum,
 
     ULONG cbEntry = 0;
 
-    Log(("VBOXNP: NPEnumResource: hEnum %p, lpcCount %p, lpBuffer %p, lpBufferSize %p.\n",
-         hEnum, lpcCount, lpBuffer, lpBufferSize));
+    Log(("VBOXNP: NPEnumResource: hEnum %p, lpcCount %p, pBuffer %p, pBufferSize %p.\n",
+         hEnum, lpcCount, pBuffer, pBufferSize));
 
     if (pCtx == NULL)
     {
@@ -770,19 +770,19 @@ DWORD APIENTRY NPEnumResource(HANDLE hEnum,
         return WN_BAD_HANDLE;
     }
 
-    if (lpcCount == NULL || lpBuffer == NULL)
+    if (lpcCount == NULL || pBuffer == NULL)
     {
         Log(("VBOXNP: NPEnumResource: WN_BAD_VALUE\n"));
         return WN_BAD_VALUE;
     }
 
-    Log(("VBOXNP: NPEnumResource: *lpcCount 0x%x, *lpBufferSize 0x%x, pCtx->index %d\n",
-         *lpcCount, *lpBufferSize, pCtx->index));
+    Log(("VBOXNP: NPEnumResource: *lpcCount 0x%x, *pBufferSize 0x%x, pCtx->index %d\n",
+         *lpcCount, *pBufferSize, pCtx->index));
 
-    LPNETRESOURCE pNetResource = (LPNETRESOURCE)lpBuffer;
-    ULONG cbRemaining = *lpBufferSize;
+    LPNETRESOURCE pNetResource = (LPNETRESOURCE)pBuffer;
+    ULONG cbRemaining = *pBufferSize;
     ULONG cEntriesCopied = 0;
-    PWCHAR pStrings = (PWCHAR)((PBYTE)lpBuffer + *lpBufferSize);
+    PWCHAR pStrings = (PWCHAR)((PBYTE)pBuffer + *pBufferSize);
     PWCHAR pDst;
 
     if (pCtx->dwScope == RESOURCE_CONNECTED)
@@ -861,7 +861,7 @@ DWORD APIENTRY NPEnumResource(HANDLE hEnum,
                     pNetResource->lpProvider = pDst;
                     CopyMemory(pDst, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
 
-                    Log(("VBOXNP: NPEnumResource: lpRemoteName: %ls\n",
+                    Log(("VBOXNP: NPEnumResource: pRemoteName: %ls\n",
                          pNetResource->lpRemoteName));
 
                     cEntriesCopied++;
@@ -1006,7 +1006,7 @@ DWORD APIENTRY NPEnumResource(HANDLE hEnum,
                         pNetResource->lpProvider = pDst;
                         CopyMemory(pDst, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
 
-                        Log(("VBOXNP: NPEnumResource: lpRemoteName: %ls\n",
+                        Log(("VBOXNP: NPEnumResource: pRemoteName: %ls\n",
                              pNetResource->lpRemoteName));
 
                         cEntriesCopied++;
@@ -1046,7 +1046,7 @@ DWORD APIENTRY NPEnumResource(HANDLE hEnum,
         {
             Log(("VBOXNP: NPEnumResource: More Data Needed - %d\n",
                  cbEntry));
-            *lpBufferSize = cbEntry;
+            *pBufferSize = cbEntry;
             dwStatus = WN_MORE_DATA;
         }
     }
@@ -1073,30 +1073,30 @@ DWORD APIENTRY NPCloseEnum(HANDLE hEnum)
     return WN_SUCCESS;
 }
 
-DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
-                                   LPVOID lpBuffer,
-                                   LPDWORD lpBufferSize)
+DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE pNetResource,
+                                   LPVOID pBuffer,
+                                   LPDWORD pBufferSize)
 {
-    Log(("VBOXNP: NPGetResourceParent: lpNetResource %p, lpBuffer %p, lpBufferSize %p\n",
-         lpNetResource, lpBuffer, lpBufferSize));
+    Log(("VBOXNP: NPGetResourceParent: pNetResource %p, pBuffer %p, pBufferSize %p\n",
+         pNetResource, pBuffer, pBufferSize));
 
-    /* Construct a new NETRESOURCE which is syntactically a parent of lpNetResource,
+    /* Construct a new NETRESOURCE which is syntactically a parent of pNetResource,
      * then call NPGetResourceInformation to actually fill the buffer.
      */
-    if (!lpNetResource || !lpNetResource->lpRemoteName || !lpBufferSize)
+    if (!pNetResource || !pNetResource->lpRemoteName || !pBufferSize)
     {
         return WN_BAD_NETNAME;
     }
 
-    const WCHAR *lpAfterName = vboxSkipServerName(lpNetResource->lpRemoteName);
-    if (   lpAfterName == NULL
-        || (*lpAfterName != L'\\' && *lpAfterName != 0))
+    const WCHAR *pAfterName = vboxSkipServerName(pNetResource->lpRemoteName);
+    if (   pAfterName == NULL
+        || (*pAfterName != L'\\' && *pAfterName != 0))
     {
         Log(("VBOXNP: NPGetResourceParent: WN_BAD_NETNAME\n"));
         return WN_BAD_NETNAME;
     }
 
-    DWORD RemoteNameLength = lstrlen(lpNetResource->lpRemoteName);
+    DWORD RemoteNameLength = lstrlen(pNetResource->lpRemoteName);
 
     DWORD cbEntry = sizeof (NETRESOURCE);
     cbEntry += (RemoteNameLength + 1) * sizeof (WCHAR);
@@ -1109,7 +1109,7 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
     }
 
     pParent->lpRemoteName = (WCHAR *)((PBYTE)pParent + sizeof (NETRESOURCE));
-    lstrcpy(pParent->lpRemoteName, lpNetResource->lpRemoteName);
+    lstrcpy(pParent->lpRemoteName, pNetResource->lpRemoteName);
 
     /* Remove last path component of the pParent->lpRemoteName. */
     WCHAR *pLastSlash = pParent->lpRemoteName + RemoteNameLength;
@@ -1135,16 +1135,16 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
         || pLastSlash == pParent->lpRemoteName + 1)
     {
         /* It is a leading backslash. Construct "no parent" NETRESOURCE. */
-        NETRESOURCE *pNetResource = (NETRESOURCE *)lpBuffer;
+        NETRESOURCE *pNetResource = (NETRESOURCE *)pBuffer;
 
         cbEntry = sizeof(NETRESOURCE);
         cbEntry += sizeof(MRX_VBOX_PROVIDER_NAME_U); /* remote name */
         cbEntry += sizeof(MRX_VBOX_PROVIDER_NAME_U); /* provider name */
 
-        if (cbEntry > *lpBufferSize)
+        if (cbEntry > *pBufferSize)
         {
             Log(("VBOXNP: NPGetResourceParent: WN_MORE_DATA 0x%x\n", cbEntry));
-            *lpBufferSize = cbEntry;
+            *pBufferSize = cbEntry;
             dwStatus = WN_MORE_DATA;
         }
         else
@@ -1155,7 +1155,7 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
             pNetResource->dwDisplayType = RESOURCEDISPLAYTYPE_NETWORK;
             pNetResource->dwUsage = RESOURCEUSAGE_CONTAINER;
 
-            WCHAR *pStrings = (WCHAR *)((PBYTE)lpBuffer + *lpBufferSize);
+            WCHAR *pStrings = (WCHAR *)((PBYTE)pBuffer + *pBufferSize);
             pStrings = (PWCHAR)((PBYTE)pStrings - (cbEntry - sizeof(NETRESOURCE)));
 
             pNetResource->lpRemoteName = pStrings;
@@ -1167,7 +1167,7 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
             pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
             Log(("VBOXNP: NPGetResourceParent: no parent, strings %p/%p\n",
-                 pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+                 pStrings, (PBYTE)pBuffer + *pBufferSize));
         }
     }
     else
@@ -1175,8 +1175,8 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
         /* Make the parent remote name and get its information. */
         *pLastSlash = 0;
 
-        LPWSTR lpSystem = NULL;
-        dwStatus = NPGetResourceInformation (pParent, lpBuffer, lpBufferSize, &lpSystem);
+        LPWSTR pSystem = NULL;
+        dwStatus = NPGetResourceInformation (pParent, pBuffer, pBufferSize, &pSystem);
     }
 
     if (pParent)
@@ -1187,34 +1187,34 @@ DWORD APIENTRY NPGetResourceParent(LPNETRESOURCE lpNetResource,
     return dwStatus;
 }
 
-DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
-                                        LPVOID lpBuffer,
-                                        LPDWORD lpBufferSize,
+DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE pNetResource,
+                                        LPVOID pBuffer,
+                                        LPDWORD pBufferSize,
                                         LPWSTR *lplpSystem)
 {
-    Log(("VBOXNP: NPGetResourceInformation: lpNetResource %p, lpBuffer %p, lpBufferSize %p, lplpSystem %p\n",
-         lpNetResource, lpBuffer, lpBufferSize, lplpSystem));
+    Log(("VBOXNP: NPGetResourceInformation: pNetResource %p, pBuffer %p, pBufferSize %p, lplpSystem %p\n",
+         pNetResource, pBuffer, pBufferSize, lplpSystem));
 
-    if (   lpNetResource == NULL
-        || lpNetResource->lpRemoteName == NULL
-        || lpBufferSize == NULL)
+    if (   pNetResource == NULL
+        || pNetResource->lpRemoteName == NULL
+        || pBufferSize == NULL)
     {
         Log(("VBOXNP: NPGetResourceInformation: WN_BAD_VALUE\n"));
         return WN_BAD_VALUE;
     }
 
-    Log(("VBOXNP: NPGetResourceInformation: lpRemoteName %ls, *lpBufferSize 0x%x\n",
-         lpNetResource->lpRemoteName, *lpBufferSize));
+    Log(("VBOXNP: NPGetResourceInformation: pRemoteName %ls, *pBufferSize 0x%x\n",
+         pNetResource->lpRemoteName, *pBufferSize));
 
-    const WCHAR *lpAfterName = vboxSkipServerName(lpNetResource->lpRemoteName);
-    if (   lpAfterName == NULL
-        || (*lpAfterName != L'\\' && *lpAfterName != 0))
+    const WCHAR *pAfterName = vboxSkipServerName(pNetResource->lpRemoteName);
+    if (   pAfterName == NULL
+        || (*pAfterName != L'\\' && *pAfterName != 0))
     {
         Log(("VBOXNP: NPGetResourceInformation: WN_BAD_NETNAME\n"));
         return WN_BAD_NETNAME;
     }
 
-    if (lpNetResource->dwType != 0 && lpNetResource->dwType != RESOURCETYPE_DISK)
+    if (pNetResource->dwType != 0 && pNetResource->dwType != RESOURCETYPE_DISK)
     {
         /* The caller passed in a nonzero dwType that does not match
          * the actual type of the network resource.
@@ -1225,28 +1225,28 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
     /*
      * If the input remote resource name was "\\server\share\dir1\dir2",
      * then the output NETRESOURCE contains information about the resource "\\server\share".
-     * The lpRemoteName, lpProvider, dwType, dwDisplayType, and dwUsage fields are returned
+     * The pRemoteName, pProvider, dwType, dwDisplayType, and dwUsage fields are returned
      * containing values, all other fields being set to NULL.
      */
     DWORD cbEntry;
-    WCHAR *pStrings = (WCHAR *)((PBYTE)lpBuffer + *lpBufferSize);
-    NETRESOURCE *pNetResourceInfo = (NETRESOURCE *)lpBuffer;
+    WCHAR *pStrings = (WCHAR *)((PBYTE)pBuffer + *pBufferSize);
+    NETRESOURCE *pNetResourceInfo = (NETRESOURCE *)pBuffer;
 
     /* Check what kind of the resource is that by parsing path components.
-     * lpAfterName points to first WCHAR after a valid server name.
+     * pAfterName points to first WCHAR after a valid server name.
      */
 
-    if (lpAfterName[0] == 0 || lpAfterName[1] == 0)
+    if (pAfterName[0] == 0 || pAfterName[1] == 0)
     {
         /* "\\VBOXSVR" or "\\VBOXSVR\" */
         cbEntry = sizeof(NETRESOURCE);
         cbEntry += 2 * sizeof(WCHAR) + sizeof(MRX_VBOX_SERVER_NAME_U); /* \\ + server name */
         cbEntry += sizeof(MRX_VBOX_PROVIDER_NAME_U); /* provider name */
 
-        if (cbEntry > *lpBufferSize)
+        if (cbEntry > *pBufferSize)
         {
             Log(("VBOXNP: NPGetResourceInformation: WN_MORE_DATA 0x%x\n", cbEntry));
-            *lpBufferSize = cbEntry;
+            *pBufferSize = cbEntry;
             return WN_MORE_DATA;
         }
 
@@ -1268,8 +1268,8 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
         CopyMemory (pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
         pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
-        Log(("VBOXNP: NPGetResourceInformation: lpRemoteName: %ls, strings %p/%p\n",
-             pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+        Log(("VBOXNP: NPGetResourceInformation: pRemoteName: %ls, strings %p/%p\n",
+             pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)pBuffer + *pBufferSize));
 
         if (lplpSystem)
         {
@@ -1279,10 +1279,10 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
         return WN_SUCCESS;
     }
 
-    /* *lpAfterName == L'\\', could be share or share + path.
+    /* *pAfterName == L'\\', could be share or share + path.
      * Check if there are more path components after the share name.
      */
-    const WCHAR *lp = lpAfterName + 1;
+    const WCHAR *lp = pAfterName + 1;
     while (*lp && *lp != L'\\')
     {
         lp++;
@@ -1293,13 +1293,13 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
         /* It is a share only: \\vboxsvr\share */
         cbEntry = sizeof(NETRESOURCE);
         cbEntry += 2 * sizeof(WCHAR) + sizeof(MRX_VBOX_SERVER_NAME_U); /* \\ + server name with trailing nul */
-        cbEntry += (DWORD)((lp - lpAfterName) * sizeof(WCHAR)); /* The share name with leading \\ */
+        cbEntry += (DWORD)((lp - pAfterName) * sizeof(WCHAR)); /* The share name with leading \\ */
         cbEntry += sizeof(MRX_VBOX_PROVIDER_NAME_U); /* provider name */
 
-        if (cbEntry > *lpBufferSize)
+        if (cbEntry > *pBufferSize)
         {
             Log(("VBOXNP: NPGetResourceInformation: WN_MORE_DATA 0x%x\n", cbEntry));
-            *lpBufferSize = cbEntry;
+            *pBufferSize = cbEntry;
             return WN_MORE_DATA;
         }
 
@@ -1316,15 +1316,15 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
         *pStrings++ = L'\\';
         CopyMemory(pStrings, MRX_VBOX_SERVER_NAME_U, sizeof(MRX_VBOX_SERVER_NAME_U) - sizeof (WCHAR));
         pStrings += sizeof(MRX_VBOX_SERVER_NAME_U) / sizeof(WCHAR) - 1;
-        CopyMemory (pStrings, lpAfterName, (lp - lpAfterName + 1) * sizeof(WCHAR));
-        pStrings += lp - lpAfterName + 1;
+        CopyMemory (pStrings, pAfterName, (lp - pAfterName + 1) * sizeof(WCHAR));
+        pStrings += lp - pAfterName + 1;
 
         pNetResourceInfo->lpProvider = pStrings;
         CopyMemory(pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
         pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
-        Log(("VBOXNP: NPGetResourceInformation: lpRemoteName: %ls, strings %p/%p\n",
-             pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+        Log(("VBOXNP: NPGetResourceInformation: pRemoteName: %ls, strings %p/%p\n",
+             pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)pBuffer + *pBufferSize));
 
         if (lplpSystem)
         {
@@ -1337,14 +1337,14 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
     /* \\vboxsvr\share\path */
     cbEntry = sizeof(NETRESOURCE);
     cbEntry += 2 * sizeof(WCHAR) + sizeof(MRX_VBOX_SERVER_NAME_U); /* \\ + server name with trailing nul */
-    cbEntry += (DWORD)((lp - lpAfterName) * sizeof(WCHAR)); /* The share name with leading \\ */
+    cbEntry += (DWORD)((lp - pAfterName) * sizeof(WCHAR)); /* The share name with leading \\ */
     cbEntry += sizeof(MRX_VBOX_PROVIDER_NAME_U); /* provider name */
     cbEntry += (lstrlen(lp) + 1) * sizeof (WCHAR); /* path string for lplpSystem */
 
-    if (cbEntry > *lpBufferSize)
+    if (cbEntry > *pBufferSize)
     {
         Log(("VBOXNP: NPGetResourceInformation: WN_MORE_DATA 0x%x\n", cbEntry));
-        *lpBufferSize = cbEntry;
+        *pBufferSize = cbEntry;
         return WN_MORE_DATA;
     }
 
@@ -1362,8 +1362,8 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
     *pStrings++ = L'\\';
     CopyMemory (pStrings, MRX_VBOX_SERVER_NAME_U, sizeof(MRX_VBOX_SERVER_NAME_U) - sizeof (WCHAR));
     pStrings += sizeof(MRX_VBOX_SERVER_NAME_U) / sizeof(WCHAR) - 1;
-    CopyMemory(pStrings, lpAfterName, (lp - lpAfterName) * sizeof(WCHAR));
-    pStrings += lp - lpAfterName;
+    CopyMemory(pStrings, pAfterName, (lp - pAfterName) * sizeof(WCHAR));
+    pStrings += lp - pAfterName;
     *pStrings++ = 0;
 
     pNetResourceInfo->lpProvider = pStrings;
@@ -1378,17 +1378,17 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
     lstrcpy(pStrings, lp);
     pStrings += lstrlen(lp) + 1;
 
-    Log(("VBOXNP: NPGetResourceInformation: lpRemoteName: %ls, strings %p/%p\n",
-         pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+    Log(("VBOXNP: NPGetResourceInformation: pRemoteName: %ls, strings %p/%p\n",
+         pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)pBuffer + *pBufferSize));
     Log(("VBOXNP: NPGetResourceInformation: *lplpSystem: %ls\n", *lplpSystem));
 
     return WN_SUCCESS;
 }
 
-DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
+DWORD APIENTRY NPGetUniversalName(LPCWSTR pLocalPath,
                                   DWORD dwInfoLevel,
-                                  LPVOID lpBuffer,
-                                  LPDWORD lpBufferSize)
+                                  LPVOID pBuffer,
+                                  LPDWORD pBufferSize)
 {
     DWORD dwStatus;
 
@@ -1398,11 +1398,11 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
 
     WCHAR LocalDrive[3];
 
-    const WCHAR *lpRemainingPath;
-    WCHAR *lpString;
+    const WCHAR *pRemainingPath;
+    WCHAR *pString;
 
-    Log(("VBOXNP: NPGetUniversalName: lpLocalPath = %ls, InfoLevel = %d, *lpBufferSize = %d\n",
-         lpLocalPath, dwInfoLevel, *lpBufferSize));
+    Log(("VBOXNP: NPGetUniversalName: pLocalPath = %ls, InfoLevel = %d, *pBufferSize = %d\n",
+         pLocalPath, dwInfoLevel, *pBufferSize));
 
     /* Check is input parameter is OK. */
     if (   dwInfoLevel != UNIVERSAL_NAME_INFO_LEVEL
@@ -1414,36 +1414,36 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
     }
 
     /* The 'lpLocalPath' is "X:\something". Extract the "X:" to pass to NPGetConnection. */
-    if (   lpLocalPath == NULL
-        || lpLocalPath[0] == 0
-        || lpLocalPath[1] != L':')
+    if (   pLocalPath == NULL
+        || pLocalPath[0] == 0
+        || pLocalPath[1] != L':')
     {
-        Log(("VBOXNP: NPGetUniversalName: Bad lpLocalPath.\n"));
+        Log(("VBOXNP: NPGetUniversalName: Bad pLocalPath.\n"));
         return WN_BAD_LOCALNAME;
     }
 
-    LocalDrive[0] = lpLocalPath[0];
-    LocalDrive[1] = lpLocalPath[1];
+    LocalDrive[0] = pLocalPath[0];
+    LocalDrive[1] = pLocalPath[1];
     LocalDrive[2] = 0;
 
     /* Length of the original path without the driver letter, including trailing NULL. */
-    lpRemainingPath = &lpLocalPath[2];
-    RemainingPathLength = (DWORD)((wcslen(lpRemainingPath) + 1) * sizeof(WCHAR));
+    pRemainingPath = &pLocalPath[2];
+    RemainingPathLength = (DWORD)((wcslen(pRemainingPath) + 1) * sizeof(WCHAR));
 
     /* Build the required structure in place of the supplied buffer. */
     if (dwInfoLevel == UNIVERSAL_NAME_INFO_LEVEL)
     {
-        LPUNIVERSAL_NAME_INFOW pUniversalNameInfo = (LPUNIVERSAL_NAME_INFOW)lpBuffer;
+        LPUNIVERSAL_NAME_INFOW pUniversalNameInfo = (LPUNIVERSAL_NAME_INFOW)pBuffer;
 
         BufferRequired = sizeof (UNIVERSAL_NAME_INFOW);
 
-        if (*lpBufferSize >= BufferRequired)
+        if (*pBufferSize >= BufferRequired)
         {
             /* Enough place for the structure. */
-            pUniversalNameInfo->lpUniversalName = (PWCHAR)((PBYTE)lpBuffer + sizeof(UNIVERSAL_NAME_INFOW));
+            pUniversalNameInfo->lpUniversalName = (PWCHAR)((PBYTE)pBuffer + sizeof(UNIVERSAL_NAME_INFOW));
 
             /* At least so many bytes are available for obtaining the remote name. */
-            RemoteNameLength = *lpBufferSize - BufferRequired;
+            RemoteNameLength = *pBufferSize - BufferRequired;
         }
         else
         {
@@ -1478,36 +1478,36 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
         /* And for required place for remaining path. */
         BufferRequired += RemainingPathLength;
 
-        if (*lpBufferSize < BufferRequired)
+        if (*pBufferSize < BufferRequired)
         {
             Log(("VBOXNP: NPGetUniversalName: WN_MORE_DATA BufferRequired: %d\n",
                  BufferRequired));
-            *lpBufferSize = BufferRequired;
+            *pBufferSize = BufferRequired;
             return WN_MORE_DATA;
         }
 
         /* Enough memory in the buffer. Add '\' and remaining path to the remote name. */
-        lpString = &pUniversalNameInfo->lpUniversalName[RemoteNameLength / sizeof (WCHAR)];
-        lpString--; /* Trailing NULL */
+        pString = &pUniversalNameInfo->lpUniversalName[RemoteNameLength / sizeof (WCHAR)];
+        pString--; /* Trailing NULL */
 
-        CopyMemory(lpString, lpRemainingPath, RemainingPathLength);
+        CopyMemory(pString, pRemainingPath, RemainingPathLength);
     }
     else
     {
-        LPREMOTE_NAME_INFOW pRemoteNameInfo = (LPREMOTE_NAME_INFOW)lpBuffer;
-        WCHAR *lpDelimiter;
+        LPREMOTE_NAME_INFOW pRemoteNameInfo = (LPREMOTE_NAME_INFOW)pBuffer;
+        WCHAR *pDelimiter;
 
         BufferRequired = sizeof (REMOTE_NAME_INFOW);
 
-        if (*lpBufferSize >= BufferRequired)
+        if (*pBufferSize >= BufferRequired)
         {
             /* Enough place for the structure. */
-            pRemoteNameInfo->lpUniversalName = (PWCHAR)((PBYTE)lpBuffer + sizeof(REMOTE_NAME_INFOW));
+            pRemoteNameInfo->lpUniversalName = (PWCHAR)((PBYTE)pBuffer + sizeof(REMOTE_NAME_INFOW));
             pRemoteNameInfo->lpConnectionName = NULL;
             pRemoteNameInfo->lpRemainingPath = NULL;
 
             /* At least so many bytes are available for obtaining the remote name. */
-            RemoteNameLength = *lpBufferSize - BufferRequired;
+            RemoteNameLength = *pBufferSize - BufferRequired;
         }
         else
         {
@@ -1539,44 +1539,44 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
         /* And for required place for remaining path as a part of the universal name. */
         BufferRequired += RemainingPathLength;
 
-        /* lpConnectionName, which is the remote name. */
+        /* pConnectionName, which is the remote name. */
         BufferRequired += RemoteNameLength;
 
-        /* lpRemainingPath. */
+        /* pRemainingPath. */
         BufferRequired += RemainingPathLength;
 
-        if (*lpBufferSize < BufferRequired)
+        if (*pBufferSize < BufferRequired)
         {
             Log(("VBOXNP: NPGetUniversalName: WN_MORE_DATA BufferRequired: %d\n",
                  BufferRequired));
-            *lpBufferSize = BufferRequired;
+            *pBufferSize = BufferRequired;
             return WN_MORE_DATA;
         }
 
         /* Enough memory in the buffer. Add \ and remaining path to the remote name. */
-        lpString = &pRemoteNameInfo->lpUniversalName[RemoteNameLength / sizeof (WCHAR)];
-        lpString--; /* Trailing NULL */
+        pString = &pRemoteNameInfo->lpUniversalName[RemoteNameLength / sizeof (WCHAR)];
+        pString--; /* Trailing NULL */
 
-        lpDelimiter = lpString; /* Delimiter between the remote name and the remaining path.
+        pDelimiter = pString; /* Delimiter between the remote name and the remaining path.
                                  * May be 0 if the remaining path is empty.
                                  */
 
-        CopyMemory( lpString, lpRemainingPath, RemainingPathLength);
-        lpString += RemainingPathLength / sizeof (WCHAR);
+        CopyMemory( pString, pRemainingPath, RemainingPathLength);
+        pString += RemainingPathLength / sizeof (WCHAR);
 
-        *lpDelimiter = 0; /* Keep NULL terminated remote name. */
+        *pDelimiter = 0; /* Keep NULL terminated remote name. */
 
-        pRemoteNameInfo->lpConnectionName = lpString;
-        CopyMemory( lpString, pRemoteNameInfo->lpUniversalName, RemoteNameLength);
-        lpString += RemoteNameLength / sizeof (WCHAR);
+        pRemoteNameInfo->lpConnectionName = pString;
+        CopyMemory( pString, pRemoteNameInfo->lpUniversalName, RemoteNameLength);
+        pString += RemoteNameLength / sizeof (WCHAR);
 
-        pRemoteNameInfo->lpRemainingPath = lpString;
-        CopyMemory( lpString, lpRemainingPath, RemainingPathLength);
+        pRemoteNameInfo->lpRemainingPath = pString;
+        CopyMemory( pString, pRemainingPath, RemainingPathLength);
 
         /* If remaining path was not empty, restore the delimiter in the universal name. */
         if (RemainingPathLength > sizeof(WCHAR))
         {
-           *lpDelimiter = L'\\';
+           *pDelimiter = L'\\';
         }
     }
 
