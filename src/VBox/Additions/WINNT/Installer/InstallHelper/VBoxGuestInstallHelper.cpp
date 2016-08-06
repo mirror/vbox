@@ -23,7 +23,10 @@
 #include <stdlib.h>
 #include <tchar.h>
 #include <strsafe.h>
+#pragma warning(push)
+#pragma warning(disable: 4995) /* warning C4995: 'lstrcpyA': name was marked as #pragma deprecated */
 #include "exdll.h"
+#pragma warning(pop)
 
 #include <iprt/err.h>
 #include <iprt/initterm.h>
@@ -220,9 +223,9 @@ static HMODULE loadSystemDll(const char *pszName)
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
  */
-VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
-                                    TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
 {
+    NOREF(hwndParent);
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
@@ -251,7 +254,7 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
             hr = vboxChar2WCharAlloc(szFile, &pwszFile);
             if (SUCCEEDED(hr))
             {
-                if (g_pfnSfcFileException(0, pwszFile, -1) != 0)
+                if (g_pfnSfcFileException(0, pwszFile, UINT32_MAX) != 0)
                     hr = HRESULT_FROM_WIN32(GetLastError());
                 vboxChar2WCharFree(pwszFile);
             }
@@ -273,9 +276,9 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
  */
-VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
-                                             TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
 {
+    NOREF(hwndParent);
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
@@ -289,7 +292,7 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
             /* Assume the file is invalid. */
             hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
 
-            BYTE byOffsetPE; /* Absolute offset of PE signature. */
+            BYTE offPeHdr = 0; /* Absolute offset of PE signature. */
 
             /* Do some basic validation. */
             /* Check for "MZ" header (DOS stub). */
@@ -301,10 +304,17 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
                 if (!fseek(pFh, 60L /*0x3C*/, SEEK_SET))
                 {
                     /* Read actual offset of PE signature. */
-                    if (fread(&byOffsetPE, sizeof(BYTE), 1, pFh) == 1)
+/** @todo r=bird: You've obviously no clue about the structure you're messing with here.  The field is NOT a BYTE
+ * field but a int32_t/uint32_t!  The MZ header is defined as IMAGE_DOS_HEADER by windows.h (well, winnt.h), and the
+ * field you're accessing is e_lfanew.  Please rewrite this hack to use the structures!  (Also, the MZ structure is
+ * OPTIONAL, just in case you didn't know.)  */
+#ifdef DEBUG_andy
+# error "Fix this"
+#endif
+                    if (fread(&offPeHdr, sizeof(BYTE), 1, pFh) == 1)
                     {
                         /* ... and seek to it. */
-                        if (!fseek(pFh, byOffsetPE, SEEK_SET))
+                        if (!fseek(pFh, offPeHdr, SEEK_SET))
                         {
                             /* Validate PE signature. */
                             if (fread(byBuf, sizeof(BYTE), 4, pFh) == 4)
@@ -320,7 +330,7 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
             /* Validation successful? */
             if (SUCCEEDED(hr))
             {
-                BYTE byOffsetCOFF = byOffsetPE + 0x4; /* Skip PE signature. */
+                BYTE offFileHeaderMachineField = offPeHdr + 0x4; /* Skip PE signature. */
 
                 /** @todo When we need to do more stuff here, we probably should
                  *        mmap the file w/ a struct so that we easily could access
@@ -328,7 +338,7 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
 
                 /* Jump to machine type (first entry, 2 bytes):
                  * Use absolute PE offset retrieved above. */
-                if (!fseek(pFh, byOffsetCOFF, SEEK_SET))
+                if (!fseek(pFh, offFileHeaderMachineField, SEEK_SET))
                 {
                     WORD wMachineType;
                     if (fread(&wMachineType, 1,
@@ -375,9 +385,9 @@ VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
  */
-VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size,
-                                       TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
 {
+    NOREF(hwndParent);
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
@@ -401,6 +411,7 @@ VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size,
                         WORD wLanguageID = HIWORD(*(DWORD*)pvInfo);
 
                         TCHAR szQuery[MAX_PATH];
+#pragma warning(suppress:4995) /* warning C4995: '_sntprintf': name was marked as #pragma deprecated */
                         _sntprintf(szQuery, sizeof(szQuery), _T("StringFileInfo\\%04X%04X\\CompanyName"),
                                    wCodePage,wLanguageID);
 
@@ -437,9 +448,9 @@ VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size,
  * @param   variables           The actual variable string.
  * @param   stacktop            Pointer to a pointer to the current stack.
  */
-VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
-                                               TCHAR *variables, stack_t **stacktop)
+VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size, TCHAR *variables, stack_t **stacktop)
 {
+    NOREF(hwndParent);
     EXDLL_INIT();
 
     char szMsg[256];
@@ -504,8 +515,9 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
     SUCCEEDED(hr) ? pushstring("0") : pushstring("1");
 }
 
-BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID lpReserved)
+BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID pReserved)
 {
+    RT_NOREF(uReason, pReserved);
     g_hInstance = (HINSTANCE)hInst;
     return TRUE;
 }
