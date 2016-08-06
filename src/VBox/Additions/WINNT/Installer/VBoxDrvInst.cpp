@@ -23,6 +23,7 @@
 # define UNICODE
 #endif
 
+#include <iprt/cdefs.h>
 #include <VBox/version.h>
 
 #include <iprt/win/windows.h>
@@ -103,13 +104,9 @@ bool GetErrorMsg(DWORD dwLastError, _TCHAR *pszMsg, DWORD dwBufSize)
         _sntprintf(pszMsg, dwBufSize / sizeof(TCHAR), _T("Unknown error!\n"), dwLastError);
         return false;
     }
-    else
-    {
-        _TCHAR *p = _tcschr(pszMsg, _T('\r'));
-        if (p != NULL)
-            *p = _T('\0');
-    }
-
+    _TCHAR *p = _tcschr(pszMsg, _T('\r'));
+    if (p != NULL)
+        *p = _T('\0');
     return true;
 }
 
@@ -433,6 +430,7 @@ static UINT WINAPI vboxDrvInstExecuteInfFileCallback(PVOID Context,
  */
 int ExecuteInfFile(const _TCHAR *pszSection, int iMode, const _TCHAR *pszInf)
 {
+    RT_NOREF(iMode);
     _tprintf(_T("Installing from INF-File: %ws (Section: %ws) ...\n"),
              pszInf, pszSection);
 
@@ -1249,7 +1247,7 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
                      && argc >= 8)
             {
                 HKEY hRootKey = HKEY_LOCAL_MACHINE;  /** @todo needs to be expanded (argv[3]) */
-                DWORD dwValSize;
+                DWORD dwValSize = 0;
                 BYTE *pbVal = NULL;
                 DWORD dwVal;
 

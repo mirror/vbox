@@ -1,7 +1,9 @@
+/* $Id$ */
 /** @file
- *
  * delinvalid - remove "InvalidDisplay" key on NT4
- *
+ */
+
+/*
  * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -26,6 +28,9 @@
  There seems to be a subtle problem with the VirtualBox util.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 //#define _UNICODE
 
 #include <iprt/win/windows.h>
@@ -38,14 +43,7 @@
 #include "string.h"
 
 
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-/////////////////////////////////////////////////////////////////////////////
-
-
-BOOL isNT4 (void)
+BOOL isNT4(void)
 {
     OSVERSIONINFO OSversion;
 
@@ -67,7 +65,7 @@ BOOL isNT4 (void)
     return FALSE;
 }
 
-int main (int argc, char **argv)
+int main()
 {
     int rc = 0;
 
@@ -87,3 +85,4 @@ int main (int argc, char **argv)
 
     return rc;
 }
+
