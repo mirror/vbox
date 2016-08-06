@@ -23,7 +23,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Template for building wine stuff.
 #
 TEMPLATE_VBoxGuestWineDLL = Template for building a wine DLL.
-TEMPLATE_VBoxGuestWineDLL_EXTENDS = VBOXGUESTR3NPDLL
+TEMPLATE_VBoxGuestWineDLL_EXTENDS = VBOXGUESTR3DLL
 TEMPLATE_VBoxGuestWineDLL_DEFS = $(TEMPLATE_VBOXGUESTR3NPDLL_DEFS) \
 	__WINESRC__ \
 	WINE_UNICODE_API="" \
