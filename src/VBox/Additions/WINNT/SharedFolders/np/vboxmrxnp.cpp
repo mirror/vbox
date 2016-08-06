@@ -178,6 +178,8 @@ DWORD APIENTRY NPLogonNotify(PLUID pLogonId,
                              LPVOID StationHandle,
                              LPWSTR *pLogonScript)
 {
+    RT_NOREF(pLogonId, pAuthentInfoType, pAuthentInfo, pPreviousAuthentInfoType, pPreviousAuthentInfo, pStationName,
+             StationHandle, pLogonScript);
     Log(("VBOXNP: NPLogonNotify\n"));
     *pLogonScript = NULL;
     return WN_SUCCESS;
@@ -191,6 +193,8 @@ DWORD APIENTRY NPPasswordChangeNotify(LPCWSTR pAuthentInfoType,
                                       LPVOID StationHandle,
                                       DWORD dwChangeInfo)
 {
+    RT_NOREF(pAuthentInfoType, pAuthentInfo, pPreviousAuthentInfoType, pPreviousAuthentInfo, pStationName,
+             StationHandle, dwChangeInfo);
     Log(("VBOXNP: NPPasswordChangeNotify\n"));
 
     SetLastError(WN_NOT_SUPPORTED);
@@ -211,6 +215,7 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
                                 LPWSTR pUserName,
                                 DWORD dwFlags)
 {
+    RT_NOREF(hwndOwner, pPassword, pUserName, dwFlags);
     DWORD dwStatus = WN_SUCCESS;
     WCHAR ConnectionName[256];
     WCHAR LocalName[3];
@@ -335,6 +340,7 @@ DWORD APIENTRY NPAddConnection3(HWND hwndOwner,
 DWORD APIENTRY NPCancelConnection(LPWSTR pName,
                                   BOOL fForce)
 {
+    RT_NOREF(fForce);
     DWORD dwStatus = WN_NOT_CONNECTED;
 
     Log(("VBOXNP: NPCancelConnection: Name = %ls\n",
@@ -1058,7 +1064,6 @@ DWORD APIENTRY NPEnumResource(HANDLE hEnum,
 
 DWORD APIENTRY NPCloseEnum(HANDLE hEnum)
 {
-    DWORD dwStatus = WN_SUCCESS;
     NPENUMCTX *pCtx = (NPENUMCTX *)hEnum;
 
     Log(("VBOXNP: NPCloseEnum: hEnum %p\n",
@@ -1586,8 +1591,9 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR pLocalPath,
 
 BOOL WINAPI DllMain(HINSTANCE hDLLInst,
                     DWORD fdwReason,
-                    LPVOID lpvReserved)
+                    LPVOID pvReserved)
 {
+    RT_NOREF(hDLLInst, pvReserved);
     BOOL fReturn = TRUE;
 
     switch (fdwReason)
