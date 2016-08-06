@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id$ */
 /** @file
  * tstVBoxGINA.cpp - Simple testcase for invoking VBoxGINA.dll.
  */
@@ -19,7 +19,7 @@
 #include <iprt/win/windows.h>
 #include <stdio.h>
 
-int main(int argc, TCHAR* argv[])
+int main()
 {
     DWORD dwErr;
 
@@ -29,7 +29,7 @@ int main(int argc, TCHAR* argv[])
      *   release version in "C:\Windows\system32".
      */
 
-    HMODULE hMod = LoadLibrary(L"VBoxGINA.dll");
+    HMODULE hMod = LoadLibraryW(L"VBoxGINA.dll");
     if (!hMod)
     {
         dwErr = GetLastError();
@@ -58,3 +58,4 @@ int main(int argc, TCHAR* argv[])
 
     return dwErr == ERROR_SUCCESS ? 0 : 1;
 }
+

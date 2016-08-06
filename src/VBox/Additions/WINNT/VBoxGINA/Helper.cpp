@@ -144,6 +144,7 @@ RTTHREAD gThreadPoller = NIL_RTTHREAD;
  */
 static DECLCALLBACK(int) credentialsPoller(RTTHREAD ThreadSelf, void *pvUser)
 {
+    RT_NOREF(pvUser);
     VBoxGINAVerbose(0, "VBoxGINA::credentialsPoller\n");
 
     do

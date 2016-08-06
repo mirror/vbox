@@ -161,6 +161,7 @@ int credentialsToUI(HWND hwndDlg,
                     HWND hwndUserId, HWND hwndPassword, HWND hwndDomain,
                     PCRTUTF16 pwszUser, PCRTUTF16 pwszPassword, PCRTUTF16 pwszDomain)
 {
+    RT_NOREF(hwndDlg);
     BOOL bIsFQDN = FALSE;
     wchar_t szUserFQDN[512]; /* VMMDEV_CREDENTIALS_STRLEN + 255 bytes max. for FQDN */
     if (hwndDomain)
@@ -473,24 +474,24 @@ INT_PTR CALLBACK MyWlxLockedSASDlgProc(HWND   hwndDlg,  // handle to dialog box
 
 int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
                                HANDLE  hInst,
-                               LPWSTR  lpszTemplate,
+                               LPWSTR  pszTemplate,
                                HWND    hwndOwner,
                                DLGPROC dlgprc,
                                LPARAM  dwInitParam)
 {
-    VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: lpszTemplate=%ls\n", lpszTemplate);
+    VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: pszTemplate=%ls\n", pszTemplate);
 
     VBoxGINAReportStatus(VBoxGuestFacilityStatus_Active);
 
     //
     // We only know MSGINA dialogs by identifiers.
     //
-    if (!HIWORD((int)(void*)lpszTemplate))
+    if (((uintptr_t)pszTemplate >> 16) == 0)
     {
         //
         // Hook appropriate dialog boxes as necessary.
         //
-        switch ((DWORD) lpszTemplate)
+        switch ((DWORD)(uintptr_t)pszTemplate)
         {
             case IDD_WLXDIAPLAYSASNOTICE_DIALOG:
                 VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: SAS notice dialog displayed; not handled\n");
@@ -501,7 +502,7 @@ int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
             {
                 VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: returning hooked SAS logged out dialog\n");
                 g_pfnWlxLoggedOutSASDlgProc = dlgprc;
-                return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
+                return g_pfnWlxDialogBoxParam(hWlx, hInst, pszTemplate, hwndOwner,
                                               MyWlxLoggedOutSASDlgProc, dwInitParam);
             }
 
@@ -514,20 +515,20 @@ int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
             {
                 VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: returning hooked SAS locked dialog\n");
                 g_pfnWlxLockedSASDlgProc = dlgprc;
-                return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
+                return g_pfnWlxDialogBoxParam(hWlx, hInst, pszTemplate, hwndOwner,
                                               MyWlxLockedSASDlgProc, dwInitParam);
             }
 
             /** @todo Add other hooking stuff here. */
 
             default:
-                VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: dialog %ld not handled\n", (DWORD)lpszTemplate);
+                VBoxGINAVerbose(0, "VBoxGINA::MyWlxDialogBoxParam: dialog %p (%u) not handled\n",
+                                pszTemplate, (DWORD)(uintptr_t)pszTemplate);
                 break;
         }
     }
 
     /* The rest will be redirected. */
-    return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate,
-                                  hwndOwner, dlgprc, dwInitParam);
+    return g_pfnWlxDialogBoxParam(hWlx, hInst, pszTemplate, hwndOwner, dlgprc, dwInitParam);
 }
 

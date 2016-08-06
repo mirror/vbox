@@ -77,8 +77,9 @@ PGWLXDISCONNECTNOTIFY GWlxDisconnectNotify;
  */
 BOOL WINAPI DllMain(HINSTANCE hInstance,
                     DWORD     dwReason,
-                    LPVOID    lpReserved)
+                    LPVOID    pReserved)
 {
+    RT_NOREF(pReserved);
     switch (dwReason)
     {
         case DLL_PROCESS_ATTACH:
@@ -473,6 +474,7 @@ VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
  */
 BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
 {
+    RT_NOREF(pWlxContext);
     VBoxGINAVerbose(0, "VBoxGINA::WlxScreenSaverNotify, pSecure=%d\n",
                     pSecure ? *pSecure : 0);
 
@@ -601,6 +603,7 @@ VOID WINAPI WlxDisconnectNotify(PVOID pWlxContext)
  */
 void WnpScreenSaverStop(PWLX_NOTIFICATION_INFO pInfo)
 {
+    RT_NOREF(pInfo);
     VBoxGINAVerbose(0, "VBoxGINA::WnpScreenSaverStop\n");
 
     /*
