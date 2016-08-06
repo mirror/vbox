@@ -49,7 +49,7 @@ static void WriteLog(const char *pszFormat, ...);
 #endif /* !DEBUG */
 
 
-static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
+static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
                                         LONG idObject, LONG idChild,
                                         DWORD dwEventThread, DWORD dwmsEventTime)
 {
@@ -103,7 +103,7 @@ static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hw
     }
 }
 
-static void CALLBACK VBoxHandleDesktopEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
+static void CALLBACK VBoxHandleDesktopEvent(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
                                             LONG idObject, LONG idChild,
                                             DWORD dwEventThread, DWORD dwmsEventTime)
 {
