@@ -57,7 +57,7 @@ cidet-app_DEFS.linux = CIDET_REDUCED_CTX
 cidet-app_LIBS = $(PATH_STAGE_LIB)/DisasmR3Static$(VBOX_SUFF_LIB)
 
 #PROGRAMS += rdtsc
-#rdtsc_TEMPLATE = rdtsc
+#rdtsc_TEMPLATE = VBoxValidationKitR3
 #rdtsc_SOURCES  = rdtsc.cpp rdtsc-asm.asm
 
 
