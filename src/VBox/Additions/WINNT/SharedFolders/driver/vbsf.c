@@ -45,11 +45,9 @@ static NTSTATUS VBoxMRxFsdDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PIO_STACK_LOCATION IrpSp = IoGetCurrentIrpStackLocation(Irp);
-    UCHAR MajorFunctionCode = IrpSp->MajorFunction;
-    ULONG MinorFunctionCode = IrpSp->MinorFunction;
 
     Log(("VBOXSF: MRxFsdDispatch: major %d, minor %d: %s\n",
-         MajorFunctionCode, MinorFunctionCode, MajorFunctionString(MajorFunctionCode, MinorFunctionCode)));
+         IrpSp->MajorFunction, IrpSp->MinorFunction, MajorFunctionString(IrpSp->MajorFunction, IrpSp->MinorFunction)));
 
     if (DeviceObject != (PDEVICE_OBJECT)VBoxMRxDeviceObject)
     {
@@ -1120,7 +1118,7 @@ static NTSTATUS vbsfVerifyConnectionName(PUNICODE_STRING ConnectionName)
     return Status;
 }
 
-static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName)
+static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName, NTSTATUS *prcNt)
 {
     NTSTATUS Status;
     IO_STATUS_BLOCK IoStatusBlock;
@@ -1158,8 +1156,9 @@ static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName)
     if (   Status != STATUS_SUCCESS
         || Handle == INVALID_HANDLE_VALUE)
     {
-        Log(("VBOXSF: vbsfOpenConnectionHandle: ZwCreateFile failed status 0x%08X or invalid handle!\n",
-             Status));
+        Log(("VBOXSF: vbsfOpenConnectionHandle: ZwCreateFile failed status 0x%08X or invalid handle!\n", Status));
+        if (prcNt)
+            *prcNt = !NT_SUCCESS(Status) ? Status : STATUS_UNSUCCESSFUL;
         Handle = INVALID_HANDLE_VALUE;
     }
 
@@ -1213,7 +1212,7 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
         FileName.Length = (USHORT)cbConnectName;
         FileName.MaximumLength = (USHORT)cbConnectName;
 
-        Handle = vbsfOpenConnectionHandle(&FileName);
+        Handle = vbsfOpenConnectionHandle(&FileName, NULL);
 
         if (Handle != INVALID_HANDLE_VALUE)
         {
@@ -1348,8 +1347,7 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
         FileName.Length = (USHORT)cbConnectName;
         FileName.MaximumLength = (USHORT)cbConnectName;
 
-        Handle = vbsfOpenConnectionHandle(&FileName);
-
+        Handle = vbsfOpenConnectionHandle(&FileName, &Status);
         if (Handle != INVALID_HANDLE_VALUE)
         {
             PFILE_OBJECT pFileObject;
@@ -1379,64 +1377,64 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
             }
 
             ZwClose(Handle);
-        }
 
-        if (NT_SUCCESS(Status))
-        {
-            PWCHAR pwc;
-            ULONG i;
-
-            /* Skip the "\Device\VBoxMiniRdr\;X:" of the string "\Device\VBoxMiniRdr\;X:\vboxsrv\sf" */
-            pwc = pwcConnectName;
-            for (i = 0; i < cbConnectName; i += sizeof(WCHAR))
+            if (NT_SUCCESS(Status))
             {
-                if (*pwc == L':')
+                PWCHAR pwc;
+                ULONG i;
+
+                /* Skip the "\Device\VBoxMiniRdr\;X:" of the string "\Device\VBoxMiniRdr\;X:\vboxsrv\sf" */
+                pwc = pwcConnectName;
+                for (i = 0; i < cbConnectName; i += sizeof(WCHAR))
                 {
-                    break;
-                }
-                pwc++;
-            }
-
-            if (i >= sizeof(WCHAR) && i < cbConnectName)
-            {
-                pwc--;
-
-                if (*pwc >= L'A' && *pwc <= L'Z')
-                {
-                    uint32_t idx = *pwc - L'A';
-
-                    if (idx >= RTL_NUMBER_OF(pDeviceExtension->cLocalConnections))
+                    if (*pwc == L':')
                     {
-                        Log(("VBOXSF: vbsfDeleteConnection: Index 0x%x is invalid!\n",
-                             idx));
-                        Status = STATUS_BAD_NETWORK_NAME;
+                        break;
                     }
-                    else
+                    pwc++;
+                }
+
+                if (i >= sizeof(WCHAR) && i < cbConnectName)
+                {
+                    pwc--;
+
+                    if (*pwc >= L'A' && *pwc <= L'Z')
                     {
-                        ExAcquireFastMutex(&pDeviceExtension->mtxLocalCon);
-                        fMutexAcquired = TRUE;
+                        uint32_t idx = *pwc - L'A';
 
-                        pDeviceExtension->cLocalConnections[idx] = FALSE;
-
-                        /* Free saved name */
-                        if (pDeviceExtension->wszLocalConnectionName[idx])
+                        if (idx >= RTL_NUMBER_OF(pDeviceExtension->cLocalConnections))
                         {
-                            vbsfFreeNonPagedMem(pDeviceExtension->wszLocalConnectionName[idx]);
-                            pDeviceExtension->wszLocalConnectionName[idx] = NULL;
+                            Log(("VBOXSF: vbsfDeleteConnection: Index 0x%x is invalid!\n",
+                                 idx));
+                            Status = STATUS_BAD_NETWORK_NAME;
                         }
+                        else
+                        {
+                            ExAcquireFastMutex(&pDeviceExtension->mtxLocalCon);
+                            fMutexAcquired = TRUE;
 
-                        ExReleaseFastMutex(&pDeviceExtension->mtxLocalCon);
-                        fMutexAcquired = FALSE;
+                            pDeviceExtension->cLocalConnections[idx] = FALSE;
 
-                        Log(("VBOXSF: vbsfDeleteConnection: deleted index 0x%x\n",
-                             idx));
+                            /* Free saved name */
+                            if (pDeviceExtension->wszLocalConnectionName[idx])
+                            {
+                                vbsfFreeNonPagedMem(pDeviceExtension->wszLocalConnectionName[idx]);
+                                pDeviceExtension->wszLocalConnectionName[idx] = NULL;
+                            }
+
+                            ExReleaseFastMutex(&pDeviceExtension->mtxLocalCon);
+                            fMutexAcquired = FALSE;
+
+                            Log(("VBOXSF: vbsfDeleteConnection: deleted index 0x%x\n",
+                                 idx));
+                        }
                     }
                 }
-            }
-            else
-            {
-                Log(("VBOXSF: vbsfCreateConnection: bad format\n"));
-                Status = STATUS_BAD_NETWORK_NAME;
+                else
+                {
+                    Log(("VBOXSF: vbsfCreateConnection: bad format\n"));
+                    Status = STATUS_BAD_NETWORK_NAME;
+                }
             }
         }
     }
