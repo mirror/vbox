@@ -24,7 +24,7 @@ if1of ($(KBUILD_TARGET),os2 win)
  # only required for vbox-img
  LIBRARIES += VBox-liblzf-static
 endif
-VBox-liblzf_TEMPLATE = VBoxR3RuntimeDll
+VBox-liblzf_TEMPLATE = VBoxR3RuntimeDllNonPedantic
 VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.
 VBox-liblzf_DEFS = ULTRA_FAST=1 HLOG=12
 VBox-liblzf_DEFS.x86 = STRICT_ALIGN=0
@@ -33,7 +33,7 @@ VBox-liblzf_SOURCES = \
 	lzf_c.c \
 	lzf_d.c
 
-VBox-liblzf-static_TEMPLATE   = VBOXR3STATIC
+VBox-liblzf-static_TEMPLATE   = VBoxR3StaticNonPedantic
 VBox-liblzf-static_BLD_TYPE   = $(VBox-liblzf_BLD_TYPE)
 VBox-liblzf-static_DEFS       = $(VBox-liblzf_DEFS)
 VBox-liblzf-static_DEFS.x86   = $(VBox-liblzf_DEFS.x86)
@@ -42,7 +42,7 @@ VBox-liblzf-static_SOURCES    = $(VBox-liblzf_SOURCES)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
  LIBRARIES += VBox-liblzf-x86
- VBox-liblzf-x86_TEMPLATE = VBoxR3Dll-x86
+ VBox-liblzf-x86_TEMPLATE = VBoxR3DllNonPedantic-x86
  VBox-liblzf-x86_EXTENDS = VBox-liblzf
 endif
 
