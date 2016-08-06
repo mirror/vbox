@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox Windows Guest Shared Folders
- *
- * Network provider dll
+ * VirtualBox Windows Guest Shared Folders - Network provider dll
  */
 
 /*
@@ -19,8 +16,6 @@
  */
 
 #include <iprt/win/windows.h>
-#include <windef.h>
-#include <winbase.h>
 #include <winsvc.h>
 #include <winnetwk.h>
 #include <npapi.h>
@@ -1235,7 +1230,7 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
      */
     DWORD cbEntry;
     WCHAR *pStrings = (WCHAR *)((PBYTE)lpBuffer + *lpBufferSize);
-    NETRESOURCE *pNetResource = (NETRESOURCE *)lpBuffer;
+    NETRESOURCE *pNetResourceInfo = (NETRESOURCE *)lpBuffer;
 
     /* Check what kind of the resource is that by parsing path components.
      * lpAfterName points to first WCHAR after a valid server name.
@@ -1255,26 +1250,26 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
             return WN_MORE_DATA;
         }
 
-        memset(pNetResource, 0, sizeof (*pNetResource));
+        memset(pNetResourceInfo, 0, sizeof (*pNetResourceInfo));
 
-        pNetResource->dwType = RESOURCETYPE_ANY;
-        pNetResource->dwDisplayType = RESOURCEDISPLAYTYPE_SERVER;
-        pNetResource->dwUsage = RESOURCEUSAGE_CONTAINER;
+        pNetResourceInfo->dwType = RESOURCETYPE_ANY;
+        pNetResourceInfo->dwDisplayType = RESOURCEDISPLAYTYPE_SERVER;
+        pNetResourceInfo->dwUsage = RESOURCEUSAGE_CONTAINER;
 
         pStrings = (PWCHAR)((PBYTE)pStrings - (cbEntry - sizeof(NETRESOURCE)));
 
-        pNetResource->lpRemoteName = pStrings;
+        pNetResourceInfo->lpRemoteName = pStrings;
         *pStrings++ = L'\\';
         *pStrings++ = L'\\';
         CopyMemory (pStrings, MRX_VBOX_SERVER_NAME_U, sizeof(MRX_VBOX_SERVER_NAME_U));
         pStrings += sizeof(MRX_VBOX_SERVER_NAME_U) / sizeof(WCHAR);
 
-        pNetResource->lpProvider = pStrings;
+        pNetResourceInfo->lpProvider = pStrings;
         CopyMemory (pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
         pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
         Log(("VBOXNP: NPGetResourceInformation: lpRemoteName: %ls, strings %p/%p\n",
-             pNetResource->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+             pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
 
         if (lplpSystem)
         {
@@ -1308,15 +1303,15 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
             return WN_MORE_DATA;
         }
 
-        memset(pNetResource, 0, sizeof (*pNetResource));
+        memset(pNetResourceInfo, 0, sizeof (*pNetResourceInfo));
 
-        pNetResource->dwType = RESOURCETYPE_DISK;
-        pNetResource->dwDisplayType = RESOURCEDISPLAYTYPE_SHARE;
-        pNetResource->dwUsage = RESOURCEUSAGE_CONNECTABLE;
+        pNetResourceInfo->dwType = RESOURCETYPE_DISK;
+        pNetResourceInfo->dwDisplayType = RESOURCEDISPLAYTYPE_SHARE;
+        pNetResourceInfo->dwUsage = RESOURCEUSAGE_CONNECTABLE;
 
         pStrings = (PWCHAR)((PBYTE)pStrings - (cbEntry - sizeof(NETRESOURCE)));
 
-        pNetResource->lpRemoteName = pStrings;
+        pNetResourceInfo->lpRemoteName = pStrings;
         *pStrings++ = L'\\';
         *pStrings++ = L'\\';
         CopyMemory(pStrings, MRX_VBOX_SERVER_NAME_U, sizeof(MRX_VBOX_SERVER_NAME_U) - sizeof (WCHAR));
@@ -1324,12 +1319,12 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
         CopyMemory (pStrings, lpAfterName, (lp - lpAfterName + 1) * sizeof(WCHAR));
         pStrings += lp - lpAfterName + 1;
 
-        pNetResource->lpProvider = pStrings;
+        pNetResourceInfo->lpProvider = pStrings;
         CopyMemory(pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
         pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
         Log(("VBOXNP: NPGetResourceInformation: lpRemoteName: %ls, strings %p/%p\n",
-             pNetResource->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+             pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
 
         if (lplpSystem)
         {
@@ -1353,16 +1348,16 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
         return WN_MORE_DATA;
     }
 
-    memset(pNetResource, 0, sizeof (*pNetResource));
+    memset(pNetResourceInfo, 0, sizeof (*pNetResourceInfo));
 
-    pNetResource->dwType = RESOURCETYPE_DISK;
-    pNetResource->dwDisplayType = RESOURCEDISPLAYTYPE_SHARE;
-    pNetResource->dwUsage = RESOURCEUSAGE_CONNECTABLE;
+    pNetResourceInfo->dwType = RESOURCETYPE_DISK;
+    pNetResourceInfo->dwDisplayType = RESOURCEDISPLAYTYPE_SHARE;
+    pNetResourceInfo->dwUsage = RESOURCEUSAGE_CONNECTABLE;
 
     pStrings = (PWCHAR)((PBYTE)pStrings - (cbEntry - sizeof(NETRESOURCE)));
 
     /* The server + share. */
-    pNetResource->lpRemoteName = pStrings;
+    pNetResourceInfo->lpRemoteName = pStrings;
     *pStrings++ = L'\\';
     *pStrings++ = L'\\';
     CopyMemory (pStrings, MRX_VBOX_SERVER_NAME_U, sizeof(MRX_VBOX_SERVER_NAME_U) - sizeof (WCHAR));
@@ -1371,7 +1366,7 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
     pStrings += lp - lpAfterName;
     *pStrings++ = 0;
 
-    pNetResource->lpProvider = pStrings;
+    pNetResourceInfo->lpProvider = pStrings;
     CopyMemory(pStrings, MRX_VBOX_PROVIDER_NAME_U, sizeof(MRX_VBOX_PROVIDER_NAME_U));
     pStrings += sizeof(MRX_VBOX_PROVIDER_NAME_U) / sizeof(WCHAR);
 
@@ -1384,7 +1379,7 @@ DWORD APIENTRY NPGetResourceInformation(LPNETRESOURCE lpNetResource,
     pStrings += lstrlen(lp) + 1;
 
     Log(("VBOXNP: NPGetResourceInformation: lpRemoteName: %ls, strings %p/%p\n",
-         pNetResource->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
+         pNetResourceInfo->lpRemoteName, pStrings, (PBYTE)lpBuffer + *lpBufferSize));
     Log(("VBOXNP: NPGetResourceInformation: *lplpSystem: %ls\n", *lplpSystem));
 
     return WN_SUCCESS;

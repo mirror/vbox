@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Windows Guest Shared Folders.
- *
- * File System Driver initialization and generic routines
+ * VirtualBox Windows Guest Shared Folders - File System Driver initialization and generic routines
  */
 
 /*
