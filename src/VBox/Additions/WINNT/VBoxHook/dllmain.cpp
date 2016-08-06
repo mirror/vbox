@@ -30,7 +30,7 @@
  */
 BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID pvReserved)
 {
-    RT_NOREF(hDLLInst, pvReserved)
+    RT_NOREF(hDLLInst, pvReserved);
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
