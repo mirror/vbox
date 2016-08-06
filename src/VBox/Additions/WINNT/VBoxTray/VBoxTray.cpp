@@ -66,7 +66,7 @@
 static int vboxStInit(HWND hWnd);
 static void vboxStTerm(void);
 /* @returns true on "IsActiveConsole" state change */
-static BOOL vboxStHandleEvent(WPARAM EventID, LPARAM SessionID);
+static BOOL vboxStHandleEvent(WPARAM EventID);
 static BOOL vboxStIsActiveConsole();
 static BOOL vboxStCheckTimer(WPARAM wEvent);
 
@@ -168,7 +168,7 @@ static VBOXSERVICEINFO g_aServices[] =
 };
 
 /* The global message table. */
-static VBOXGLOBALMESSAGE s_vboxGlobalMessageTable[] =
+static VBOXGLOBALMESSAGE g_vboxGlobalMessageTable[] =
 {
     /* Windows specific stuff. */
     {
@@ -194,6 +194,7 @@ static VBOXGLOBALMESSAGE s_vboxGlobalMessageTable[] =
  */
 static int vboxTrayGlMsgTaskbarCreated(WPARAM wParam, LPARAM lParam)
 {
+    RT_NOREF(wParam, lParam);
     return vboxTrayCreateTrayIcon();
 }
 
@@ -980,6 +981,8 @@ static int vboxTrayServiceMain(void)
  */
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    RT_NOREF(hPrevInstance, lpCmdLine, nCmdShow);
+
     /* Note: Do not use a global namespace ("Global\\") for mutex name here,
      * will blow up NT4 compatibility! */
     HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxTray");
@@ -1098,7 +1101,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         {
             LogFunc(("Tool window created\n"));
 
-            int rc = vboxTrayRegisterGlobalMessages(&s_vboxGlobalMessageTable[0]);
+            int rc = vboxTrayRegisterGlobalMessages(&g_vboxGlobalMessageTable[0]);
             if (RT_FAILURE(rc))
                 LogFunc(("Error registering global window messages, rc=%Rrc\n", rc));
             return 0;
@@ -1190,7 +1193,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         case WM_WTSSESSION_CHANGE:
         {
             BOOL fOldAllowedState = VBoxConsoleIsAllowed();
-            if (vboxStHandleEvent(wParam, lParam))
+            if (vboxStHandleEvent(wParam))
             {
                 if (!VBoxConsoleIsAllowed() != !fOldAllowedState)
                     VBoxConsoleEnable(!fOldAllowedState);
@@ -1201,7 +1204,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         default:
         {
             /* Handle all globally registered window messages. */
-            if (vboxTrayHandleGlobalMessages(&s_vboxGlobalMessageTable[0], uMsg,
+            if (vboxTrayHandleGlobalMessages(&g_vboxGlobalMessageTable[0], uMsg,
                                              wParam, lParam))
             {
                 return 0; /* We handled the message. @todo Add return value!*/
@@ -1343,8 +1346,7 @@ static void vboxStTerm(void)
     {
         if (!gVBoxSt.pfnWTSUnRegisterSessionNotification(gVBoxSt.hWTSAPIWnd))
         {
-            DWORD dwErr = GetLastError();
-            LogFlowFunc(("WTSAPI32 load failed, error = %08X\n", dwErr));
+            LogFlowFunc(("WTSAPI32 load failed, error = %08X\n", GetLastError()));
         }
     }
 
@@ -1386,8 +1388,7 @@ static BOOL vboxStCheckTimer(WPARAM wEvent)
     }
     else
     {
-        DWORD dwErr = GetLastError();
-        LogFlowFunc(("timer WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
+        LogFlowFunc(("timer WTSRegisterSessionNotification failed, error = %08X\n", GetLastError()));
         Assert(gVBoxSt.fIsConsole == TRUE);
         Assert(gVBoxSt.enmConnectState == WTSActive);
     }
@@ -1396,8 +1397,9 @@ static BOOL vboxStCheckTimer(WPARAM wEvent)
 }
 
 
-static BOOL vboxStHandleEvent(WPARAM wEvent, LPARAM SessionID)
+static BOOL vboxStHandleEvent(WPARAM wEvent)
 {
+    RT_NOREF(wEvent);
     LogFlowFunc(("WTS Event: %s\n", vboxStDbgGetString(wEvent)));
     BOOL fOldIsActiveConsole = vboxStIsActiveConsole();
 
@@ -1406,7 +1408,7 @@ static BOOL vboxStHandleEvent(WPARAM wEvent, LPARAM SessionID)
     return !vboxStIsActiveConsole() != !fOldIsActiveConsole;
 }
 
-static BOOL vboxStIsActiveConsole()
+static BOOL vboxStIsActiveConsole(void)
 {
     return (gVBoxSt.enmConnectState == WTSActive && gVBoxSt.fIsConsole);
 }
@@ -1454,7 +1456,7 @@ static BOOL vboxDtCalculateIsInputDesktop()
     }
     else
     {
-        DWORD dwErr = GetLastError();
+//        DWORD dwErr = GetLastError();
 //        LogFlowFunc(("pfnOpenInputDesktop for Seamless failed, last error = %08X\n", dwErr));
     }
     return fIsInputDt;
@@ -1536,10 +1538,7 @@ static int vboxDtInit()
                         Assert((uintptr_t)hModHook != ~(uintptr_t)0);
                         fRc = gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker(hModHook);
                         if (!fRc)
-                        {
-                            DWORD dwErr = GetLastError();
-                            LogFlowFunc(("pfnVBoxHookInstallActiveDesktopTracker failed, last error = %08X\n", dwErr));
-                        }
+                            LogFlowFunc(("pfnVBoxHookInstallActiveDesktopTracker failed, last error = %08X\n", GetLastError()));
                     }
 
                     if (!fRc)
@@ -1682,6 +1681,7 @@ static VBOXCAPS gVBoxCaps;
 
 static DECLCALLBACK(void) vboxCapsOnEnableSeamless(struct VBOXCAPS *pConsole, struct VBOXCAPS_ENTRY *pCap, BOOL fEnabled)
 {
+    RT_NOREF(pConsole, pCap);
     if (fEnabled)
     {
         Log(("vboxCapsOnEnableSeamless: ENABLED\n"));

@@ -23,20 +23,23 @@
 
 #include <malloc.h>
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #ifdef DEBUG_misha
-#define WARN(_m) do { \
+# define WARN(_m) do { \
             Assert(0); \
             Log(_m); \
         } while (0)
-#define WARN_FUNC(_m) do { \
+# define WARN_FUNC(_m) do { \
             Assert(0); \
             LogFunc(_m); \
         } while (0)
 #else
-#define WARN(_m) do { \
+# define WARN(_m) do { \
             Log(_m); \
         } while (0)
-#define WARN_FUNC(_m) do { \
+# define WARN_FUNC(_m) do { \
             LogFunc(_m); \
         } while (0)
 #endif
@@ -51,6 +54,10 @@
 # define NT_SUCCESS(_Status) ((_Status) >= 0)
 #endif
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 typedef struct VBOXDISPIF_OP
 {
     PCVBOXDISPIF pIf;
@@ -58,11 +65,6 @@ typedef struct VBOXDISPIF_OP
     VBOXDISPKMT_DEVICE Device;
     VBOXDISPKMT_CONTEXT Context;
 } VBOXDISPIF_OP;
-
-static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL fEnable, DISPLAY_DEVICE * paDisplayDevices, DEVMODE *paDeviceMode, UINT devModes);
-static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes);
-static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, UINT cIds, UINT *pIds, BOOL fEnable);
-static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp);
 
 /*
  * APIs specific to Win7 and above WDDM architecture. Not available for Vista WDDM.
@@ -87,6 +89,18 @@ typedef struct VBOXDISPIF_WDDM_DISPCFG
     UINT32 cModeInfoArray;
     DISPLAYCONFIG_MODE_INFO *pModeInfoArray;
 } VBOXDISPIF_WDDM_DISPCFG;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL fEnable, DISPLAY_DEVICE * paDisplayDevices,
+                                         DEVMODE *paDeviceModes, UINT devModes);
+static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup,
+                                     DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes);
+static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, UINT cIds, UINT *pIds, BOOL fEnable);
+static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp);
+
 
 static DWORD vboxDispIfWddmDcCreate(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT32 fFlags)
 {
@@ -216,12 +230,13 @@ static DWORD vboxDispIfWddmDcQueryNumDisplays(UINT32 *pcDisplays)
     return ERROR_SUCCESS;
 }
 
+#define VBOX_WDDM_DC_SEARCH_PATH_ANY (~(UINT)0)
 static int vboxDispIfWddmDcSearchPath(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT srcId, UINT trgId)
 {
     for (UINT iter = 0; iter < pCfg->cPathInfoArray; ++iter)
     {
-        if ((srcId == ~0UL || pCfg->pPathInfoArray[iter].sourceInfo.id == srcId)
-                && (trgId == ~0UL || pCfg->pPathInfoArray[iter].targetInfo.id == trgId))
+        if (   (srcId == VBOX_WDDM_DC_SEARCH_PATH_ANY || pCfg->pPathInfoArray[iter].sourceInfo.id == srcId)
+            && (trgId == VBOX_WDDM_DC_SEARCH_PATH_ANY || pCfg->pPathInfoArray[iter].targetInfo.id == trgId))
         {
             return (int)iter;
         }
@@ -283,8 +298,6 @@ static DWORD vboxDispIfWddmDcSettingsModeAdd(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT
 
 static DWORD vboxDispIfWddmDcSettingsUpdate(VBOXDISPIF_WDDM_DISPCFG *pCfg, int idx, DEVMODE *pDeviceMode, BOOL fInvalidateSrcMode, BOOL fEnable)
 {
-    UINT Id = pCfg->pPathInfoArray[idx].sourceInfo.id;
-
     if (fInvalidateSrcMode)
         pCfg->pPathInfoArray[idx].sourceInfo.modeInfoIdx = DISPLAYCONFIG_PATH_MODE_IDX_INVALID;
     else if (pDeviceMode)
@@ -444,7 +457,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
         int idx = vboxDispIfWddmDcSearchPath(pCfg, i, i);
         if (idx < 0)
         {
-            idx = vboxDispIfWddmDcSearchPath(pCfg, -1, i);
+            idx = vboxDispIfWddmDcSearchPath(pCfg, VBOX_WDDM_DC_SEARCH_PATH_ANY, i);
             if (idx >= 0)
             {
                 WARN(("VBoxTray:(WDDM) different source and target paare enabled, this is something we would not expect\n"));
@@ -471,7 +484,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
             if (idx < 0)
             {
                 WARN(("VBoxTray:(WDDM) %d %d path not supported\n", i, i));
-                idx = vboxDispIfWddmDcSearchPath(pCfg, -1, i);
+                idx = vboxDispIfWddmDcSearchPath(pCfg, VBOX_WDDM_DC_SEARCH_PATH_ANY, i);
                 if (idx < 0)
                 {
                     WARN(("VBoxTray:(WDDM) %d %d path not supported\n", -1, i));
@@ -604,6 +617,7 @@ DWORD VBoxDispIfTerm(PVBOXDISPIF pIf)
 
 static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData, int iDirection)
 {
+    RT_NOREF(pIf);
     HDC  hdc = GetDC(HWND_DESKTOP);
     VOID *pvData = cbData ? VBOXDISPIFESCAPE_DATA(pEscape, VOID) : NULL;
     int iRet = ExtEscape(hdc, pEscape->escapeCode,
@@ -614,7 +628,7 @@ static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
     ReleaseDC(HWND_DESKTOP, hdc);
     if (iRet > 0)
         return VINF_SUCCESS;
-    else if (iRet == 0)
+    if (iRet == 0)
         return ERROR_NOT_SUPPORTED;
     /* else */
     return ERROR_GEN_FAILURE;
@@ -989,8 +1003,7 @@ static HRESULT vboxRrWndCreate(HWND *phWnd)
 
         if (!RegisterClassEx(&wc))
         {
-            DWORD winErr = GetLastError();
-            WARN_FUNC(("RegisterClass failed, winErr(%d)\n", winErr));
+            WARN_FUNC(("RegisterClass failed, winErr(%d)\n", GetLastError()));
             hr = E_FAIL;
         }
     }
@@ -1013,8 +1026,7 @@ static HRESULT vboxRrWndCreate(HWND *phWnd)
         }
         else
         {
-            DWORD winErr = GetLastError();
-            WARN_FUNC(("CreateWindowEx failed, winErr(%d)\n", winErr));
+            WARN_FUNC(("CreateWindowEx failed, winErr(%d)\n", GetLastError()));
             hr = E_FAIL;
         }
     }
@@ -1043,8 +1055,8 @@ static HRESULT vboxRrWndInit()
 HRESULT vboxRrWndTerm()
 {
     PVBOXRR pMon = &g_VBoxRr;
-    HRESULT tmpHr = vboxRrWndDestroy(pMon->hWnd);
-    Assert(tmpHr == S_OK);
+    HRESULT hrTmp = vboxRrWndDestroy(pMon->hWnd);
+    Assert(hrTmp == S_OK); NOREF(hrTmp);
 
     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
     UnregisterClass(VBOXRRWND_NAME, hInstance);
@@ -1077,8 +1089,8 @@ HRESULT vboxRrRun()
     {
         DWORD winErr = GetLastError();
         WARN_FUNC(("SetEvent failed, winErr = (%d)", winErr));
-        HRESULT tmpHr = HRESULT_FROM_WIN32(winErr);
-        Assert(tmpHr != S_OK);
+        HRESULT hrTmp = HRESULT_FROM_WIN32(winErr);
+        Assert(hrTmp != S_OK); NOREF(hrTmp);
     }
 
     do
@@ -1132,6 +1144,7 @@ HRESULT vboxRrRun()
 
 static DWORD WINAPI vboxRrRunnerThread(void *pvUser)
 {
+    RT_NOREF(pvUser);
     HRESULT hr = vboxRrWndInit();
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -1237,17 +1250,17 @@ VOID VBoxRrTerm()
 
 static DWORD vboxDispIfWddmInit(PCVBOXDISPIF pIf)
 {
+    RT_NOREF(pIf);
     HRESULT hr = VBoxRrInit();
     if (SUCCEEDED(hr))
-    {
         return ERROR_SUCCESS;
-    }
     WARN(("VBoxTray: VBoxRrInit failed hr 0x%x\n", hr));
     return hr;
 }
 
 static void vboxDispIfWddmTerm(PCVBOXDISPIF pIf)
 {
+    RT_NOREF(pIf);
     VBoxRrTerm();
 }
 
@@ -1364,6 +1377,7 @@ static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId,
 
 DWORD vboxDispIfCancelPendingResizeWDDM(PCVBOXDISPIF const pIf)
 {
+    RT_NOREF(pIf);
     Log(("VBoxTray: cancelling pending resize\n"));
     VBoxRrRetryStop();
     return NO_ERROR;
@@ -1511,6 +1525,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 
 static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UINT *pIds, BOOL fEnabled, BOOL fSetTopology, DEVMODE *pDeviceMode)
 {
+    RT_NOREF(pIf);
     VBOXDISPIF_WDDM_DISPCFG DispCfg;
 
     DWORD winEr;
@@ -1579,7 +1594,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     {
         UINT Id = pChangeIds[i];
         /* re-query paths */
-        iPath = vboxDispIfWddmDcSearchPath(&DispCfg, -1, Id);
+        iPath = vboxDispIfWddmDcSearchPath(&DispCfg, VBOX_WDDM_DC_SEARCH_PATH_ANY, Id);
         if (iPath < 0)
         {
             WARN(("VBoxTray: (WDDM) path index not found while it should"));
@@ -1662,8 +1677,10 @@ static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, 
     return winEr;
 }
 
-static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL fEnable, DISPLAY_DEVICE * paDisplayDevices, DEVMODE *paDeviceMode, UINT devModes)
+static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL fEnable, DISPLAY_DEVICE *paDisplayDevices,
+                                         DEVMODE *paDeviceModes, UINT devModes)
 {
+    RT_NOREF(paDisplayDevices, devModes);
     VBOXDISPIF_WDDM_DISPCFG DispCfg;
     DWORD winEr;
     int iPath;
@@ -1729,7 +1746,7 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
 
     Assert(fEnable);
 
-    winEr = vboxDispIfWddmDcSettingsUpdate(&DispCfg, iPath, &paDeviceMode[Id], FALSE, fEnable);
+    winEr = vboxDispIfWddmDcSettingsUpdate(&DispCfg, iPath, &paDeviceModes[Id], FALSE, fEnable);
     if (winEr != ERROR_SUCCESS)
     {
         WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcSettingsUpdate\n"));
@@ -1976,6 +1993,7 @@ DWORD VBoxDispIfResizeStarted(PCVBOXDISPIF const pIf)
 
 static DWORD vboxDispIfSwitchToXPDM_NT4(PVBOXDISPIF pIf)
 {
+    RT_NOREF(pIf);
     return NO_ERROR;
 }
 
@@ -2098,21 +2116,21 @@ DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_
 
 static DWORD vboxDispIfSeamlessCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSeamless, HANDLE hEvent)
 {
+    RT_NOREF(hEvent);
     HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pSeamless->modeData.wddm.Adapter);
     if (SUCCEEDED(hr))
     {
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
+#ifndef VBOX_DISPIF_WITH_OPCONTEXT
+        return ERROR_SUCCESS;
+#else
         hr = vboxDispKmtCreateDevice(&pSeamless->modeData.wddm.Adapter, &pSeamless->modeData.wddm.Device);
         if (SUCCEEDED(hr))
         {
             hr = vboxDispKmtCreateContext(&pSeamless->modeData.wddm.Device, &pSeamless->modeData.wddm.Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS,
                     0, 0, hEvent, 0ULL);
             if (SUCCEEDED(hr))
-#endif
                 return ERROR_SUCCESS;
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
-            else
-                WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
+            WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
             vboxDispKmtDestroyDevice(&pSeamless->modeData.wddm.Device);
         }
@@ -2120,7 +2138,7 @@ static DWORD vboxDispIfSeamlessCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEA
             WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
         vboxDispKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
-#endif
+#endif /* VBOX_DISPIF_WITH_OPCONTEXT */
     }
 
     return hr;
