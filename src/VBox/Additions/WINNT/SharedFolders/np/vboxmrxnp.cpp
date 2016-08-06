@@ -44,7 +44,7 @@ static WCHAR vboxToUpper(WCHAR wc)
      * or specifies a single character. If the high-order word of this
      * parameter is zero, the low-order word must contain a single character to be converted.
      */
-    return (WCHAR)CharUpper((LPTSTR)wc);
+    return (WCHAR)(uintptr_t)CharUpper((LPTSTR)(uintptr_t)wc);
 }
 
 static DWORD vbsfIOCTL(ULONG IoctlCode,
