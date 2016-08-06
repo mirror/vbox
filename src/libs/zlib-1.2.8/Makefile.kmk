@@ -23,7 +23,7 @@ if1of ($(KBUILD_TARGET),os2 win)
  # only required for vbox-img
  LIBRARIES += VBox-zlib-static
 endif
-VBox-zlib_TEMPLATE = VBoxR3RuntimeDll
+VBox-zlib_TEMPLATE = VBoxR3RuntimeDllNonPedantic
 VBox-zlib_DEFS = verbose=-1 NO_VIZ=1
 VBox-zlib_SOURCES = \
 	adler32.c \
@@ -42,13 +42,13 @@ VBox-zlib_SOURCES = \
 	inftrees.c \
 	inffast.c
 
-VBox-zlib-static_TEMPLATE = VBOXR3STATIC
+VBox-zlib-static_TEMPLATE = VBoxR3StaticNonPedantic
 VBox-zlib-static_DEFS = $(VBox-zlib_DEFS)
 VBox-zlib-static_SOURCES = $(VBox-zlib_SOURCES)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
  LIBRARIES += VBox-zlib-x86
- VBox-zlib-x86_TEMPLATE = VBoxR3Dll-x86
+ VBox-zlib-x86_TEMPLATE = VBoxR3DllNonPedantic-x86
  VBox-zlib-x86_EXTENDS = VBox-zlib
 endif
 

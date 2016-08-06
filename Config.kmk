@@ -1588,6 +1588,10 @@ endif
 VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 
+VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
+VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
+
+
 # Disabled Visual C++ warnings, W4:
 #      -wd4065: switch statement contains 'default' but no 'case' labels
 #      -wd4996: deprecated / insecure.
@@ -1633,6 +1637,11 @@ else
  VBOX_VCC_WARN_ALL += -WX # temp
 endif
 VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+
+# Disable pedantic warnings for NP/NonPedantic templates.
+#      -wd4131: 'bi_flush' : uses old-style declarator
+#      -wd4255: 'tr_static_init' : no function prototype given: converting '()' to '(void)'
+VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255
 
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
@@ -4654,6 +4663,22 @@ else
  endif
 endif
 
+#
+# Non-pedantic variation of VBoxR3Static
+#
+TEMPLATE_VBoxR3StaticNonPedantic            = VBox Static Ring-3 EXE, non-pedantic.
+TEMPLATE_VBoxR3StaticNonPedantic_EXTENDS   = VBoxR3Static
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxR3StaticNonPedantic_CXXFLAGS = $(filter-out $(VBOX_VCC_WERR), $(TEMPLATE_VBOXR3_CXXFLAGS)) $(VBOX_VCC_NON_PEDANTIC)
+ TEMPLATE_VBoxR3StaticNonPedantic_CFLAGS   = $(filter-out $(VBOX_VCC_WERR), $(TEMPLATE_VBOXR3_CFLAGS))   $(VBOX_VCC_NON_PEDANTIC)
+else # gcc:
+ TEMPLATE_VBoxR3StaticNonPedantic_TOOL     = $(VBOX_GCC_TOOL)
+ TEMPLATE_VBoxR3StaticNonPedantic_CXXFLAGS = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_CXXFLAGS)) \
+ 	$(VBOX_GCC_NON_PEDANTIC_CXX)
+ TEMPLATE_VBoxR3StaticNonPedantic_CFLAGS   = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBOXR3_CFLAGS)) \
+ 	$(VBOX_GCC_NON_PEDANTIC_CXX)
+endif
+
 
 #
 # Same as VBOXR3EXE but without C++ exceptions.
@@ -4918,9 +4943,9 @@ TEMPLATE_VBOXR3NPEXE_EXTENDS             = VBOXR3EXE
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NPEXE_TOOL               = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NPEXE_CXXFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) \
- 	-Wno-sign-compare
+ 	$(VBOX_GCC_NON_PEDANTIC_CXX)
  TEMPLATE_VBOXR3NPEXE_CFLAGS             = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBOXR3EXE_CFLAGS)) \
- 	-Wno-sign-compare -Werror-implicit-function-declaration
+ 	$(VBOX_GCC_NON_PEDANTIC_C)
 endif
 
 
@@ -4935,9 +4960,9 @@ TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_CXXFLAGS)) \
- 	-Wno-sign-compare
+ 	$(VBOX_GCC_NON_PEDANTIC_CXX)
  TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBOXR3_CFLAGS)) \
-	-Wno-sign-compare -Werror-implicit-function-declaration
+	$(VBOX_GCC_NON_PEDANTIC_C)
  TEMPLATE_VBOXR3NP_OBJCFLAGS             = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic -Wstrict-prototypes,$(TEMPLATE_VBOXR3_OBJCFLAGS))
  TEMPLATE_VBOXR3NP_OBJCXXFLAGS           = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) -pedantic,$(TEMPLATE_VBOXR3_OBJCXXFLAGS))
 endif
@@ -4949,12 +4974,15 @@ endif
 #
 TEMPLATE_VBoxR3DllNonPedantic               = VBox ring-3 Non-pedantic, with warnings.
 TEMPLATE_VBoxR3DllNonPedantic_EXTENDS       = VBOXR3
-ifneq ($(KBUILD_TARGET),win) # (only gcc)
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(filter-out $(VBOX_VCC_WERR), $(TEMPLATE_VBOXR3_CXXFLAGS)) $(VBOX_VCC_NON_PEDANTIC)
+ TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(filter-out $(VBOX_VCC_WERR), $(TEMPLATE_VBOXR3_CFLAGS))   $(VBOX_VCC_NON_PEDANTIC)
+else # gcc:
  TEMPLATE_VBoxR3DllNonPedantic_TOOL         = $(VBOX_GCC_TOOL)
  TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_CXX),$(TEMPLATE_VBOXR3_CXXFLAGS)) \
- 	-Wno-sign-compare
+ 	$(VBOX_GCC_NON_PEDANTIC_CXX)
  TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(filter-out $(VBOX_GCC_WERR) $(VBOX_GCC_WARN_MASOCHISTIC) $(VBOX_GCC_PEDANTIC_C)  ,$(TEMPLATE_VBOXR3_CFLAGS)) \
-	-Wno-sign-compare -Werror-implicit-function-declaration
+	$(VBOX_GCC_NON_PEDANTIC_C)
 endif
 
 # x86 edition of the above template for use on AMD64 targets.
