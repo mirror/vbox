@@ -14,6 +14,12 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <iprt/win/windows.h>
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
@@ -36,12 +42,12 @@ using namespace DragAndDropSvc;
 
 #include <iprt/cpp/mtlist.h>
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /* Enable this define to see the proxy window(s) when debugging
  * their behavior. Don't have this enabled in release builds! */
 #ifdef DEBUG
@@ -54,19 +60,34 @@ using namespace DragAndDropSvc;
 /** @todo Merge this with messages from VBoxTray.h. */
 #define WM_VBOXTRAY_DND_MESSAGE       WM_APP + 401
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Function pointer for SendInput(). This only is available starting
  *  at NT4 SP3+. */
 typedef BOOL (WINAPI *PFNSENDINPUT)(UINT, LPINPUT, int);
 typedef BOOL (WINAPI* PFNENUMDISPLAYMONITORS)(HDC, LPCRECT, MONITORENUMPROC, LPARAM);
 
-/** Static pointer to SendInput() function. */
-static PFNSENDINPUT s_pfnSendInput = NULL;
-static PFNENUMDISPLAYMONITORS s_pfnEnumDisplayMonitors = NULL;
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Static pointer to SendInput() function. */
+static PFNSENDINPUT             g_pfnSendInput = NULL;
+static PFNENUMDISPLAYMONITORS   g_pfnEnumDisplayMonitors = NULL;
+
+static VBOXDNDCONTEXT           g_Ctx = { 0 };
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-static VBOXDNDCONTEXT g_Ctx = { 0 };
+
+
 
 VBoxDnDWnd::VBoxDnDWnd(void)
     : hThread(NIL_RTTHREAD),
@@ -339,9 +360,9 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
  *                                  bounding box to build.
  */
 /* static */
-BOOL CALLBACK VBoxDnDWnd::MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
-                                          LPRECT lprcMonitor, LPARAM lParam)
+BOOL CALLBACK VBoxDnDWnd::MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM lParam)
 {
+    RT_NOREF(hMonitor, hdcMonitor);
     LPRECT pRect = (LPRECT)lParam;
     AssertPtrReturn(pRect, FALSE);
 
@@ -1188,9 +1209,12 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
 #endif
 
         /** @todo Multi-monitor setups? */
+#if 0 /* unused */
         int iScreenX = GetSystemMetrics(SM_CXSCREEN) - 1;
         int iScreenY = GetSystemMetrics(SM_CYSCREEN) - 1;
+#endif
 
+        /** @todo What the family are these statics doing there?!?  */
         static LONG px = p.x;
         if (px <= 0)
             px = 1;
@@ -1406,9 +1430,9 @@ int VBoxDnDWnd::makeFullscreen(void)
     HDC hDC = GetDC(NULL /* Entire screen */);
     if (hDC)
     {
-        fRc = s_pfnEnumDisplayMonitors
+        fRc = g_pfnEnumDisplayMonitors
             /* EnumDisplayMonitors is not available on NT4. */
-            ? s_pfnEnumDisplayMonitors(hDC, NULL, VBoxDnDWnd::MonitorEnumProc, (LPARAM)&r):
+            ? g_pfnEnumDisplayMonitors(hDC, NULL, VBoxDnDWnd::MonitorEnumProc, (LPARAM)&r):
               FALSE;
 
         if (!fRc)
@@ -1490,7 +1514,7 @@ int VBoxDnDWnd::mouseMove(int x, int y, DWORD dwMouseInputFlags)
     Input[0].mi.dy      = y * (65535 / iScreenY);
 
     int rc;
-    if (s_pfnSendInput(1 /* Number of inputs */,
+    if (g_pfnSendInput(1 /* Number of inputs */,
                        Input, sizeof(INPUT)))
     {
 #ifdef DEBUG_andy
@@ -1531,7 +1555,7 @@ int VBoxDnDWnd::mouseRelease(void)
     INPUT Input[1] = { 0 };
     Input[0].type       = INPUT_MOUSE;
     Input[0].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    if (!s_pfnSendInput(1, Input, sizeof(INPUT)))
+    if (!g_pfnSendInput(1, Input, sizeof(INPUT)))
     {
         DWORD dwErr = GetLastError();
         rc = RTErrConvertFromWin32(dwErr);
@@ -1655,10 +1679,10 @@ DECLCALLBACK(int) VBoxDnDInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 
     if (RT_SUCCESS(rc))
     {
-        s_pfnSendInput = (PFNSENDINPUT)
+        g_pfnSendInput = (PFNSENDINPUT)
             RTLdrGetSystemSymbol("User32.dll", "SendInput");
-        fSupportedOS = !RT_BOOL(s_pfnSendInput == NULL);
-        s_pfnEnumDisplayMonitors = (PFNENUMDISPLAYMONITORS)
+        fSupportedOS = !RT_BOOL(g_pfnSendInput == NULL);
+        g_pfnEnumDisplayMonitors = (PFNENUMDISPLAYMONITORS)
             RTLdrGetSystemSymbol("User32.dll", "EnumDisplayMonitors");
         /* g_pfnEnumDisplayMonitors is optional. */
 
@@ -1754,6 +1778,10 @@ DECLCALLBACK(void) VBoxDnDDestroy(void *pInstance)
 
 DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 {
+    RT_NOREF(pfShutdown); /** @todo r=bird: Why isn't pfShutdown used by VBoxDnDWorker? */
+#ifdef DEBUG_andy
+# error "Why isn't pfShutdown used by VBoxDnDWorker?"
+#endif
     AssertPtr(pInstance);
     LogFlowFunc(("pInstance=%p\n", pInstance));
 
