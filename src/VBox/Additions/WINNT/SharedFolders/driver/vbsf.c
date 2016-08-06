@@ -1464,7 +1464,7 @@ NTSTATUS VBoxMRxSetEaInfo(IN OUT PRX_CONTEXT RxContext)
     return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS VBoxMRxFsCtl (IN OUT PRX_CONTEXT RxContext)
+NTSTATUS VBoxMRxFsCtl(IN OUT PRX_CONTEXT RxContext)
 {
     RT_NOREF(RxContext);
     Log(("VBOXSF: MRxFsCtl\n"));

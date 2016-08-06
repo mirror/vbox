@@ -29,6 +29,9 @@
  */
 #include <iprt/nt/nt.h> /* includes ntifs.h + wdm.h */
 #include <iprt/win/windef.h>
+#ifndef INVALID_HANDLE_VALUE
+# define INVALID_HANDLE_VALUE RTNT_INVALID_HANDLE_VALUE /* (The rx.h definition causes warnings for amd64)  */
+#endif
 #include <iprt/nt/rx.h>
 
 /*
