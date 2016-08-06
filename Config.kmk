@@ -1643,8 +1643,19 @@ VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 #      -wd4255: 'tr_static_init' : no function prototype given: converting '()' to '(void)'
 #      -wd4668: '_WIN32_WCE' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'/
 #      -wd4100: 'cinfo' : unreferenced formal parameter
+#      -wd4189: 'sz' : local variable is initialized but not referenced
+#      -wd4132: 'xmlStringComment' : const object should be initialized
+#      -wd4152: nonstandard extension, function/data pointer conversion in expression
+#      -wd4702: unreachable code
+#      -wd4057: '=' : 'xmlChar *' differs in indirection to slightly different base types from 'char *'
+#      -wd4296: '>=' : expression is always true
+#      -wd4389: '==' : signed/unsigned mismatch
+#      -wd4018: '<=' : signed/unsigned mismatch
+#      -wd4245: '=' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
 #      -wd4267: '+=' : conversion from 'size_t' to 'long', possible loss of data
-VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668 -wd4100  -wd4267
+#      -wd4295: 'vendor_string' : array is too small to include a terminating null character
+VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668 -wd4100 -wd4189 -wd4132 -wd4152 -wd4702 -wd4057 -wd4296 -wd4389 -wd4018 -wd4245 \
+	-wd4267 -wd4295
 
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
