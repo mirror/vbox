@@ -93,7 +93,11 @@ VBoxGuestR0LibBase_SOURCES  = \
 #
 # VBoxGuestR3Lib
 #
+if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) ## @todo use VBoxGuestR3Lib everywhere
+VBoxGuestR3Lib_TEMPLATE    = VBoxGuestR3Lib
+else
 VBoxGuestR3Lib_TEMPLATE    = VBOXGUESTR3LIB
+endif
 VBoxGuestR3Lib_DEFS        = \
 	VBOX_WITH_HGCM \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
@@ -152,7 +156,11 @@ VBoxGuestR3LibAdditions.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 #
 # VBoxGuestR3LibShared - a PIC variant of VBoxGuestR3Lib for linking into .so/.dll/.dylib.
 #
+if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) ## @todo use VBoxGuestR3Lib everywhere
+VBoxGuestR3LibShared_TEMPLATE = VBoxGuestR3Dll
+else
 VBoxGuestR3LibShared_TEMPLATE = VBOXGUESTR3DLL
+endif
 VBoxGuestR3LibShared_DEFS    := $(VBoxGuestR3Lib_DEFS)
 VBoxGuestR3LibShared_SOURCES := $(VBoxGuestR3Lib_SOURCES)
 VBoxGuestR3LibShared_INST    := $(INST_ADDITIONS_LIB)

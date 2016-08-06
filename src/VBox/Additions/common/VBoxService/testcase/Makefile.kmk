@@ -26,7 +26,7 @@ PROGRAMS.win += tstUserInfo
 #
 # tstUserInfo
 #
-tstUserInfo_TEMPLATE    = NewVBoxGuestR3Exe
+tstUserInfo_TEMPLATE    = VBoxGuestR3Exe
 tstUserInfo_SOURCES     = \
 	tstUserInfo.cpp
 

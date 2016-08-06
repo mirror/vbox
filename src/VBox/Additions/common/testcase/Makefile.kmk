@@ -26,7 +26,7 @@ PROGRAMS += tstPageFusion
 #
 # tstPageFusion
 #
-tstPageFusion_TEMPLATE      = NewVBoxGuestR3Exe
+tstPageFusion_TEMPLATE      = VBoxGuestR3Exe
 tstPageFusion_DEFS.win     += _WIN32_WINNT=0x0501
 tstPageFusion_SOURCES       = \
 	tstPageFusion.cpp

@@ -60,7 +60,11 @@ endif
 #
 # VBoxService
 #
+if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) ## @todo use VBoxGuestR3Exe everywhere
+VBoxService_TEMPLATE      = VBoxGuestR3Exe
+else
 VBoxService_TEMPLATE      = NewVBoxGuestR3Exe
+endif
 
 # Define features to be activate.
 VBoxService_DEFS         += \
@@ -184,7 +188,7 @@ endif
 #
 # VBoxServiceNT - NT4 version of VBoxService.
 #
-VBoxServiceNT_TEMPLATE = NewVBoxGuestR3Exe
+VBoxServiceNT_TEMPLATE = VBoxGuestR3Exe
 VBoxServiceNT_EXTENDS  = VBoxService
 VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4 VBOX_WITH_VBOXSERVICE_MANAGEMENT
 
