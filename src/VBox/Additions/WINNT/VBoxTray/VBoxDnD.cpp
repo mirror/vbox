@@ -1214,11 +1214,10 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         int iScreenY = GetSystemMetrics(SM_CYSCREEN) - 1;
 #endif
 
-        /** @todo What the family are these statics doing there?!?  */
-        static LONG px = p.x;
+        LONG px = p.x;
         if (px <= 0)
             px = 1;
-        static LONG py = p.y;
+        LONG py = p.y;
         if (py <= 0)
             py = 1;
 
