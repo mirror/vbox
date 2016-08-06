@@ -23,8 +23,8 @@ include $(KBUILD_PATH)/subheader.kmk
 # Template for building wine stuff.
 #
 TEMPLATE_VBoxGuestWineDLL = Template for building a wine DLL.
-TEMPLATE_VBoxGuestWineDLL_EXTENDS = VBOXGUESTR3DLL
-TEMPLATE_VBoxGuestWineDLL_DEFS = $(TEMPLATE_VBOXGUESTR3NPDLL_DEFS) \
+TEMPLATE_VBoxGuestWineDLL_EXTENDS = VBoxGuestR3Dll
+TEMPLATE_VBoxGuestWineDLL_DEFS = $(TEMPLATE_VBoxGuestR3Dll_DEFS) \
 	__WINESRC__ \
 	WINE_UNICODE_API="" \
 	_REENTRANT \
@@ -49,14 +49,14 @@ TEMPLATE_VBoxGuestWineDLL_DEFS.x86 = __i386__
 #  -wd4221: nonstandard extension used : 'render_targets' : cannot be initialized using address of automatic variable 'dst_surface'
 #  -wd4334: '<<' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
 #  -wd4267: 'function' : conversion from 'size_t' to 'GLsizei', possible loss of data
-TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(filter-out -WX,$(TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS)) \
+TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(filter-out -WX,$(TEMPLATE_VBoxGuestR3Dll_CFLAGS)) \
 	-wd4100  -wd4204 -wd4245 -wd4305 -wd4018 -wd4389 -wd4221 -wd4334 -wd4267
 
 #
 # Template for building the D3D[89] stuff.
 #
 TEMPLATE_VBoxGuestWineD3DxDLL = Template for building the D3D8/9 stuff.
-TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS    = VBOXGUESTR3NPDLL
+TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS    = VBoxGuestR3Dll
 TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS_BY = appending
 TEMPLATE_VBoxGuestWineD3DxDLL_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_USING_WINDDK_W7_OR_LATER

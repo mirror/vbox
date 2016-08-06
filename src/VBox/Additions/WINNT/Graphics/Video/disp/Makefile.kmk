@@ -83,7 +83,7 @@ ifdef VBOX_WITH_WDDM
 # VBoxDispD3D - Windows Guest Additions WDDM R3 Display Driver
 #
 DLLS += VBoxDispD3D
-VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
+VBoxDispD3D_TEMPLATE = VBoxGuestR3Dll
 VBoxDispD3D_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP LOG_TO_BACKDOOR LOG_TO_BACKDOOR_DRV VBOX_WITH_HGCM D3D_UMD_INTERFACE_VERSION=0x000C
 ifdef DEBUG_misha
@@ -146,7 +146,7 @@ ifdef VBOX_WITH_CRHGSMI
 # VBoxCrHgsmi - Chromium HGSMI API library
 #
 LIBRARIES += VBoxCrHgsmi
-VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
+VBoxCrHgsmi_TEMPLATE    = VBoxGuestR3Lib
 VBoxCrHgsmi_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 #use same defines as VBoxDispD3D to ensure structure definitions match
 VBoxCrHgsmi_DEFS        = $(subst VBOXWDDMDISP,IN_VBOXCRHGSMI,$(VBoxDispD3D_DEFS))
@@ -163,7 +163,7 @@ VBoxCrHgsmi_SOURCES     = \
 # 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
 #
 LIBRARIES.amd64 += VBoxCrHgsmi-x86
-VBoxCrHgsmi-x86_TEMPLATE    = VBOXGUESTR3LIB
+VBoxCrHgsmi-x86_TEMPLATE    = VBoxGuestR3Lib
 VBoxCrHgsmi-x86_EXTENDS = VBoxCrHgsmi
 VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
 VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
@@ -173,7 +173,7 @@ endif #VBOX_WITH_CRHGSMI
 # VBoxDispMpLogger - display backdoor logger library
 #
 LIBRARIES += VBoxDispMpLogger
-VBoxDispMpLogger_TEMPLATE    = VBOXGUESTR3LIB
+VBoxDispMpLogger_TEMPLATE    = VBoxGuestR3Lib
 VBoxDispMpLogger_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
 VBoxDispMpLogger_INCS        = ../../../include ..
@@ -184,7 +184,7 @@ VBoxDispMpLogger_SOURCES     = \
 # 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
 #
 LIBRARIES.amd64 += VBoxDispMpLogger-x86
-VBoxDispMpLogger-x86_TEMPLATE    = VBOXGUESTR3LIB
+VBoxDispMpLogger-x86_TEMPLATE    = VBoxGuestR3Lib
 VBoxDispMpLogger-x86_EXTENDS = VBoxDispMpLogger
 VBoxDispMpLogger-x86_BLD_TRG_ARCH = x86
 VBoxDispMpLogger-x86_DEFS = $(VBoxDispMpLogger_DEFS) VBOX_WDDM_WOW64

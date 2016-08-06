@@ -30,7 +30,7 @@ VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
 PROGRAMS += VBoxDrvInst
-VBoxDrvInst_TEMPLATE= NewVBoxGuestR3Exe
+VBoxDrvInst_TEMPLATE= VBoxGuestR3Exe
 VBoxDrvInst_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
 VBoxDrvInst_DEFS   += VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_WDDM
@@ -46,14 +46,14 @@ VBoxDrvInst_SOURCES = \
 	VBoxDrvInst.rc
 
 PROGRAMS += VBoxGuestDrvInst
-VBoxGuestDrvInst_TEMPLATE= NewVBoxGuestR3Exe
+VBoxGuestDrvInst_TEMPLATE= VBoxGuestR3Exe
 VBoxGuestDrvInst_DEFS    =  _WIN32_WINNT=0x0400 UNICODE
 VBoxGuestDrvInst_SOURCES = \
 	VBoxGuestDrvInst.cpp \
 	VBoxGuestDrvInst.rc
 
 PROGRAMS += RegCleanup
-RegCleanup_TEMPLATE = NewVBoxGuestR3Exe
+RegCleanup_TEMPLATE = VBoxGuestR3Exe
 RegCleanup_DEFS     = _WIN32_WINNT=0x0400 UNICODE
 RegCleanup_SOURCES  = \
 	RegCleanup.cpp \

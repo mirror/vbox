@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 VBOX_WITH_WIN_SENS := 1
 
 DLLS += VBoxCredProv
-VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
+VBoxCredProv_TEMPLATE    = VBoxGuestR3Dll
 VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
 ifdef VBOX_WITH_WIN_SENS
  VBoxCredProv_DEFS      += VBOX_WITH_WIN_SENS

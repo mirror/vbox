@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstCredentialProvider
-tstCredentialProvider_TEMPLATE = NewVBoxGuestR3Exe
+tstCredentialProvider_TEMPLATE = VBoxGuestR3Exe
 tstCredentialProvider_SOURCES  = \
 	tstCredentialProvider.cpp
 tstCredentialProvider_LIBS     = \

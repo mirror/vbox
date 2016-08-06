@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstVBoxGINA
-tstVBoxGINA_TEMPLATE = NewVBoxGuestR3Exe
+tstVBoxGINA_TEMPLATE = VBoxGuestR3Exe
 tstVBoxGINA_SOURCES  = \
 	tstVBoxGINA.cpp
 

@@ -6105,6 +6105,21 @@ TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
 	$(TEMPLATE_VBOXGUESTR3EXE_LIBS)
 
 #
+# Template for building normal R3 programs for the guest additions, strict.
+#
+TEMPLATE_VBoxGuestR3Exe = VBox Guest Program w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3Exe_EXTENDS  = NewVBoxGuestR3Exe
+TEMPLATE_VBoxGuestR3Exe_EXTENDS_BY = appending
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxGuestR3Exe_CFLAGS      += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Exe_CXXFLAGS    += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxGuestR3Exe_LDFLAGS     += $(VBOX_VCC_LD_WERR)
+else ifeq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
+ TEMPLATE_VBoxGuestR3Exe_CFLAGS      += $(VBOX_GCC_WERR)
+ TEMPLATE_VBoxGuestR3Exe_CXXFLAGS    += $(VBOX_GCC_WERR)
+endif
+
+#
 # Template for building R3 (dynamic) libraries for the guest additions.
 #
 TEMPLATE_VBOXGUESTR3DLL           = VBox Guest User Dynamic Libraries
@@ -6127,7 +6142,7 @@ TEMPLATE_NewVBoxGuestR3Dll_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
-	$(TEMPLATE_VBOXGUESTR3EXE_LIBS)
+	$(TEMPLATE_VBOXGUESTR3DLL_LIBS)
 
 #
 # Template for building normal R3 (dynamic) libraries for the guest additions, strict.

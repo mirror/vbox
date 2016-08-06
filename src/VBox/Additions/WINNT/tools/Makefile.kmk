@@ -19,7 +19,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxCertUtil
 
-VBoxCertUtil_TEMPLATE = NewVBoxGuestR3Exe
+VBoxCertUtil_TEMPLATE = VBoxGuestR3Exe
 VBoxCertUtil_SOURCES = \
     VBoxCertUtil.cpp \
     VBoxCertUtil.rc
