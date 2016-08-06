@@ -16,6 +16,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <iprt/win/windows.h>
 #include "VBoxTray.h"
 #include "VBoxTrayMsg.h"
@@ -40,7 +44,9 @@
 #include <VBox/log.h>
 
 
-
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * IPC context data.
  */
@@ -57,8 +63,6 @@ typedef struct VBOXIPCCONTEXT
     RTLISTANCHOR               SessionList;
 
 } VBOXIPCCONTEXT, *PVBOXIPCCONTEXT;
-
-static VBOXIPCCONTEXT g_Ctx = { 0 };
 
 /** Function pointer for GetLastInputInfo(). */
 typedef BOOL (WINAPI *PFNGETLASTINPUTINFO)(PLASTINPUTINFO);
@@ -82,10 +86,20 @@ typedef struct VBOXIPCSESSION
 
 } VBOXIPCSESSION, *PVBOXIPCSESSION;
 
-/** Static pointer to GetLastInputInfo() function. */
-static PFNGETLASTINPUTINFO s_pfnGetLastInputInfo = NULL;
 
-int vboxIPCSessionStop(PVBOXIPCSESSION pSession);
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static VBOXIPCCONTEXT       g_Ctx = { NULL, NIL_RTLOCALIPCSERVER };
+static PFNGETLASTINPUTINFO  g_pfnGetLastInputInfo = NULL;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int vboxIPCSessionStop(PVBOXIPCSESSION pSession);
+
+
 
 static int vboxIPCHandleVBoxTrayRestart(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEADER pHdr)
 {
@@ -114,6 +128,7 @@ static int vboxIPCHandleShowBalloonMsg(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEA
         LogFlowFunc(("Showing \"%s\" - \"%s\" (type %RU32, %RU32ms), rc=%Rrc\n",
                      ipcMsg.szMsgTitle, ipcMsg.szMsgContent,
                      ipcMsg.uType, ipcMsg.uShowMS, rc2));
+        NOREF(rc2);
     }
 
     return rc;
@@ -129,13 +144,13 @@ static int vboxIPCHandleUserLastInput(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEAD
 
     bool fLastInputAvailable = false;
     VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
-    if (s_pfnGetLastInputInfo)
+    if (g_pfnGetLastInputInfo)
     {
         /* Note: This only works up to 49.7 days (= 2^32, 32-bit counter)
            since Windows was started. */
         LASTINPUTINFO lastInput;
         lastInput.cbSize = sizeof(LASTINPUTINFO);
-        BOOL fRc = s_pfnGetLastInputInfo(&lastInput);
+        BOOL fRc = g_pfnGetLastInputInfo(&lastInput);
         if (fRc)
         {
             ipcRes.uLastInput = (GetTickCount() - lastInput.dwTime) / 1000;
@@ -195,7 +210,7 @@ DECLCALLBACK(int) VBoxIPCInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
                 *ppInstance = pCtx;
 
                 /* GetLastInputInfo only is available starting at Windows 2000 -- might fail. */
-                s_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)
+                g_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)
                     RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
 
                 LogRelFunc(("Local IPC server now running at \"%s\"\n", szPipeName));
@@ -306,11 +321,12 @@ DECLCALLBACK(void) VBoxIPCDestroy(void *pInstance)
  * Services a client session.
  *
  * @returns VINF_SUCCESS.
- * @param   hThread         The thread handle.
+ * @param   hThreadSelf     The thread handle.
  * @param   pvSession       Pointer to the session instance data.
  */
-static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
+static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThreadSelf, void *pvSession)
 {
+    RT_NOREF(hThreadSelf);
     PVBOXIPCSESSION pThis = (PVBOXIPCSESSION)pvSession;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     RTLOCALIPCSESSION hSession = pThis->hSession;

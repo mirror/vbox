@@ -47,11 +47,11 @@ int hlpReportStatus(VBoxGuestFacilityStatus statusCurrent)
 void hlpReloadCursor(void)
 {
     POINT mousePos;
-    HWND hWin;
-    DWORD hThread, hCurrentThread;
-
     GetCursorPos(&mousePos);
-    hWin = WindowFromPoint(mousePos);
+
+    DWORD hThread = 0;          /* Shut up MSC */
+    DWORD hCurrentThread = 0;   /* Ditto */
+    HWND hWin = WindowFromPoint(mousePos);
     if (hWin)
     {
         hThread = GetWindowThreadProcessId(hWin, NULL);
@@ -59,9 +59,11 @@ void hlpReloadCursor(void)
         if (hCurrentThread != hThread)
             AttachThreadInput(hCurrentThread, hThread, TRUE);
     }
+
     ShowCursor(false);
     ShowCursor(true);
-    if (hWin && (hCurrentThread != hThread))
+
+    if (hWin && hCurrentThread != hThread)
         AttachThreadInput(hCurrentThread, hThread, FALSE);
 }
 
@@ -73,7 +75,7 @@ static unsigned hlpNextAdjacentRectXP(RECTL *paRects, unsigned nRects, unsigned 
         if (paRects[uRect].right == paRects[i].left)
             return i;
     }
-    return ~0;
+    return ~0U;
 }
 
 static unsigned hlpNextAdjacentRectXN(RECTL *paRects, unsigned nRects, unsigned uRect)
@@ -84,7 +86,7 @@ static unsigned hlpNextAdjacentRectXN(RECTL *paRects, unsigned nRects, unsigned 
         if (paRects[uRect].left == paRects[i].right)
             return i;
     }
-    return ~0;
+    return ~0U;
 }
 
 static unsigned hlpNextAdjacentRectYP(RECTL *paRects, unsigned nRects, unsigned uRect)
@@ -95,7 +97,7 @@ static unsigned hlpNextAdjacentRectYP(RECTL *paRects, unsigned nRects, unsigned 
         if (paRects[uRect].bottom == paRects[i].top)
             return i;
     }
-    return ~0;
+    return ~0U;
 }
 
 static unsigned hlpNextAdjacentRectYN(RECTL *paRects, unsigned nRects, unsigned uRect)
@@ -106,7 +108,7 @@ static unsigned hlpNextAdjacentRectYN(RECTL *paRects, unsigned nRects, unsigned 
         if (paRects[uRect].top == paRects[i].bottom)
             return i;
     }
-    return ~0;
+    return ~0U;
 }
 
 void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,

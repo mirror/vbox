@@ -154,6 +154,7 @@ static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppIn
 
 static DECLCALLBACK(void) VBoxDisplayDestroy(void *pInstance)
 {
+    RT_NOREF(pInstance);
     return;
 }
 
@@ -595,8 +596,8 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
     if (   !fModeReset && (!fEnabled == !fDispAlreadyEnabled)
         && paRects[Id].left                      == dwNewPosX
         && paRects[Id].top                       == dwNewPosY
-        && paRects[Id].right  - paRects[Id].left == Width
-        && paRects[Id].bottom - paRects[Id].top  == Height
+        && paRects[Id].right  - paRects[Id].left == (LONG)Width
+        && paRects[Id].bottom - paRects[Id].top  == (LONG)Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
     {
         LogRel(("Already at desired resolution. No Change.\n"));
@@ -709,7 +710,8 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
 
         LONG status = pCtx->pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
                                                        &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
-        LogFlowFunc(("ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
+        LogFlowFunc(("ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError()));
+        NOREF(status);
     }
 
     LogFlowFunc(("Enable And Resize Device. Id = %d, Width=%d Height=%d, \
@@ -1020,7 +1022,7 @@ DECLCALLBACK(int) VBoxDisplayWorker(void *pInstance, bool volatile *pfShutdown)
                     EscapeHdr.escapeCode = VBOXESC_GUEST_DISPLAYCHANGED;
 
                     DWORD err = VBoxDispIfEscapeInOut(&pCtx->pEnv->dispIf, &EscapeHdr, 0);
-                    LogFlowFunc(("VBoxDispIfEscapeInOut returned %d\n", err));
+                    LogFlowFunc(("VBoxDispIfEscapeInOut returned %d\n", err)); NOREF(err);
                 }
             }
             /* sleep a bit to not eat too much CPU in case the above call always fails */
