@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef ___winnt_include_VBoxHook_h
 #define ___winnt_include_VBoxHook_h
 

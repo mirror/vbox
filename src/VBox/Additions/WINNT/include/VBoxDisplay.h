@@ -1,7 +1,8 @@
 /** @file
- *
  * VBoxDisplay - private windows additions display header
- *
+ */
+
+/*
  * Copyright (C) 2006-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -12,8 +13,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef __VBoxDisplay_h__
-#define __VBoxDisplay_h__
+
+#ifndef ___winnt_include_VBoxDisplay_h___
+#define ___winnt_include_VBoxDisplay_h___
 
 #include <iprt/types.h>
 #include <iprt/assert.h>
@@ -104,4 +106,5 @@ typedef struct VBOXDISPIFESCAPE_UPDATEMODES
 
 #endif /* VBOX_WITH_WDDM */
 
-#endif /* __VBoxDisplay_h__ */
+#endif
+
