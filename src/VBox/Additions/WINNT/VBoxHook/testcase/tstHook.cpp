@@ -1,3 +1,8 @@
+/* $Id$ */
+/** @file
+ * VBoxHook testcase.
+ */
+
 /*
  * Copyright (C) 2006-2016 Oracle Corporation
  *
@@ -18,7 +23,8 @@
 #include <VBoxHook.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+
+int main()
 {
     printf("Enabling global hook\n");
 
@@ -33,3 +39,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
+

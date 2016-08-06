@@ -25,10 +25,11 @@
  * @returns type size or 0 if unknown type
  * @param   hDLLInst        Dll instance handle
  * @param   fdwReason       Callback reason
- * @param   lpvReserved     Reserved
+ * @param   pvReserved      Reserved
  */
-BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
+BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID pvReserved)
 {
+    RT_NOREF(hDLLInst, pvReserved)
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
