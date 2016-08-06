@@ -1642,7 +1642,9 @@ VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 #      -wd4131: 'bi_flush' : uses old-style declarator
 #      -wd4255: 'tr_static_init' : no function prototype given: converting '()' to '(void)'
 #      -wd4668: '_WIN32_WCE' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'/
-VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668
+#      -wd4100: 'cinfo' : unreferenced formal parameter
+#      -wd4267: '+=' : conversion from 'size_t' to 'long', possible loss of data
+VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668 -wd4100  -wd4267
 
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
