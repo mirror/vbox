@@ -207,7 +207,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
     {
         LogFlowFunc(("Waiting for event ...\n"));
         int rc2 = RTSemEventWait(mSemEvent, RT_INDEFINITE_WAIT);
-        LogFlowFunc(("rc=%Rrc, mStatus=%ld\n", rc2, mStatus));
+        LogFlowFunc(("rc2=%Rrc, mStatus=%ld\n", rc2, mStatus)); NOREF(rc2);
     }
 
     if (mStatus == Dropped)
@@ -440,6 +440,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
  */
 STDMETHODIMP VBoxDnDDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
+    RT_NOREF(pFormatEtc, pMedium);
     LogFlowFunc(("\n"));
     return DATA_E_FORMATETC;
 }
@@ -457,8 +458,9 @@ STDMETHODIMP VBoxDnDDataObject::QueryGetData(LPFORMATETC pFormatEtc)
     return (LookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
 }
 
-STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEct, LPFORMATETC pFormatEtcOut)
+STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEtc, LPFORMATETC pFormatEtcOut)
 {
+    RT_NOREF(pFormatEtc);
     LogFlowFunc(("\n"));
 
     /* Set this to NULL in any case. */
@@ -466,21 +468,19 @@ STDMETHODIMP VBoxDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEct, LP
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxDnDDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium,  BOOL fRelease)
+STDMETHODIMP VBoxDnDDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease)
 {
+    RT_NOREF(pFormatEtc, pMedium, fRelease);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
 {
-    LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n",
-                 dwDirection, mcFormats, mpFormatEtc));
+    LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n", dwDirection, mcFormats, mpFormatEtc));
 
     HRESULT hr;
     if (dwDirection == DATADIR_GET)
-    {
         hr = VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(mcFormats, mpFormatEtc, ppEnumFormatEtc);
-    }
     else
         hr = E_NOTIMPL;
 
@@ -488,18 +488,21 @@ STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC 
     return hr;
 }
 
-STDMETHODIMP VBoxDnDDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection)
+STDMETHODIMP VBoxDnDDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD fAdvise, IAdviseSink *pAdvSink, DWORD *pdwConnection)
 {
+    RT_NOREF(pFormatEtc, fAdvise, pAdvSink, pdwConnection);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
 STDMETHODIMP VBoxDnDDataObject::DUnadvise(DWORD dwConnection)
 {
+    RT_NOREF(dwConnection);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
 STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 {
+    RT_NOREF(ppEnumAdvise);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 

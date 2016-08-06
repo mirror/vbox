@@ -910,14 +910,15 @@ static int laUpdateCurrentState(PVBOXLACONTEXT pCtx, uint32_t u32ActiveClientId,
 
     int l;
 
-    char **pClientInfoMap[LA_UTCINFO_CLIENT_INFO_LAST + 1] = {
-                                                               &pCtx->activeClient.pszPropName,
-                                                               &pCtx->activeClient.pszPropIPAddr,
-                                                               &pCtx->activeClient.pszPropLocation,
-                                                               &pCtx->activeClient.pszPropOtherInfo,
-                                                             };
+    char **pClientInfoMap[LA_UTCINFO_CLIENT_INFO_LAST + 1] =
+    {
+        &pCtx->activeClient.pszPropName,
+        &pCtx->activeClient.pszPropIPAddr,
+        &pCtx->activeClient.pszPropLocation,
+        &pCtx->activeClient.pszPropOtherInfo,
+    };
 
-    pCtx->activeClient.u32LastAttach = ~0;
+    pCtx->activeClient.u32LastAttach = UINT32_MAX;
     pCtx->activeClient.u64LastAttachTimestamp = u64ActiveClientTS;
 
     if (pCtx->activeClient.pszLastName)
@@ -1082,7 +1083,7 @@ static void laProcessAttach(PVBOXLACONTEXT pCtx)
     pCtx->u32Action = LA_DO_NOTHING;
 
     uint64_t u64Timestamp = 0;
-    uint32_t u32Attach = ~0;
+    uint32_t u32Attach = UINT32_MAX;
 
     int rc = laGetUint32(pCtx->u32GuestPropHandle,
                          pCtx->activeClient.pszPropAttach,

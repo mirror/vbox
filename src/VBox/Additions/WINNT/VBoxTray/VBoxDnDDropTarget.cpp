@@ -42,7 +42,7 @@ VBoxDnDDropTarget::VBoxDnDDropTarget(VBoxDnDWnd *pParent)
       hEventDrop(NIL_RTSEMEVENT)
 {
     int rc = RTSemEventCreate(&hEventDrop);
-    LogFlowFunc(("rc=%Rrc\n", rc));
+    LogFlowFunc(("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
 VBoxDnDDropTarget::~VBoxDnDDropTarget(void)
@@ -128,9 +128,9 @@ void VBoxDnDDropTarget::DumpFormats(IDataObject *pDataObject)
  * IDropTarget methods.
  */
 
-STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKeyState,
-                                          POINTL pt, DWORD *pdwEffect)
+STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+    RT_NOREF(pt);
     AssertPtrReturn(pDataObject, E_INVALIDARG);
     AssertPtrReturn(pdwEffect, E_INVALIDARG);
 
@@ -228,6 +228,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
 
 STDMETHODIMP VBoxDnDDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+    RT_NOREF(pt);
     AssertPtrReturn(pdwEffect, E_INVALIDARG);
 
 #ifdef DEBUG_andy
@@ -264,9 +265,9 @@ STDMETHODIMP VBoxDnDDropTarget::DragLeave(void)
     return S_OK;
 }
 
-STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject,
-                                     DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
+STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+    RT_NOREF(pt);
     AssertPtrReturn(pDataObject, E_INVALIDARG);
     AssertPtrReturn(pdwEffect,   E_INVALIDARG);
 
