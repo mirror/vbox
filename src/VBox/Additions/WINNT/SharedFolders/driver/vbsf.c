@@ -43,11 +43,12 @@ PRDBSS_DEVICE_OBJECT VBoxMRxDeviceObject;
 
 static NTSTATUS VBoxMRxFsdDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    NTSTATUS Status;
+#ifdef LOG_ENABLED
     PIO_STACK_LOCATION IrpSp = IoGetCurrentIrpStackLocation(Irp);
-
     Log(("VBOXSF: MRxFsdDispatch: major %d, minor %d: %s\n",
          IrpSp->MajorFunction, IrpSp->MinorFunction, MajorFunctionString(IrpSp->MajorFunction, IrpSp->MinorFunction)));
+#endif
 
     if (DeviceObject != (PDEVICE_OBJECT)VBoxMRxDeviceObject)
     {
@@ -62,9 +63,7 @@ static NTSTATUS VBoxMRxFsdDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     }
 
     Status = RxFsdDispatch((PRDBSS_DEVICE_OBJECT)VBoxMRxDeviceObject, Irp);
-
-    Log(("VBOXSF: MRxFsdDispatch: Returned 0x%X\n",
-         Status));
+    Log(("VBOXSF: MRxFsdDispatch: Returned 0x%X\n", Status));
     return Status;
 }
 
@@ -603,8 +602,8 @@ NTSTATUS VBoxMRxStop(PRX_CONTEXT RxContext, IN OUT PRDBSS_DEVICE_OBJECT RxDevice
 
 NTSTATUS VBoxMRxIoCtl(IN OUT PRX_CONTEXT RxContext)
 {
-    Log(("VBOXSF: MRxIoCtl: IoControlCode = 0x%08X\n",
-         RxContext->LowIoContext.ParamsFor.FsCtl.FsControlCode));
+    RT_NOREF(RxContext);
+    Log(("VBOXSF: MRxIoCtl: IoControlCode = 0x%08X\n", RxContext->LowIoContext.ParamsFor.FsCtl.FsControlCode));
     return STATUS_INVALID_DEVICE_REQUEST;
 }
 
@@ -1455,8 +1454,8 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
 NTSTATUS VBoxMRxQueryEaInfo(IN OUT PRX_CONTEXT RxContext)
 {
-    Log(("VBOXSF: MRxQueryEaInfo: Ea buffer len remaining is %d\n",
-         RxContext->Info.LengthRemaining));
+    RT_NOREF(RxContext);
+    Log(("VBOXSF: MRxQueryEaInfo: Ea buffer len remaining is %d\n", RxContext->Info.LengthRemaining));
     return STATUS_SUCCESS;
 }
 
@@ -1509,3 +1508,4 @@ ULONG WmlTrace(IN ULONG ulType, IN PVOID pTraceUuid, IN ULONG64 ullLogger, ...)
     RT_NOREF(ulType, pTraceUuid, ullLogger);
     return STATUS_SUCCESS;
 }
+
