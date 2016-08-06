@@ -16,6 +16,7 @@
  */
 
 
+#include <iprt/cdefs.h>
 #include <iprt/win/windows.h>
 
 
