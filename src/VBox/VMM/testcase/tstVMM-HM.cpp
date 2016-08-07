@@ -64,8 +64,6 @@ static DECLCALLBACK(int) tstVmmHmConfigConstructor(PUVM pUVM, PVM pVM, void *pvU
 
 int main(int argc, char **argv)
 {
-    int     rcRet = 0;                  /* error count. */
-
     RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 
     /*
@@ -79,6 +77,7 @@ int main(int argc, char **argv)
     /** @todo Make tstVMM-Hm to cause kernel panics. */
     return 1;
 #else
+    int     rcRet = 0;                  /* error count. */
 
     /*
      * Create empty VM.
