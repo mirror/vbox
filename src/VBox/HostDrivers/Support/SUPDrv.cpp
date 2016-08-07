@@ -5515,6 +5515,7 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
               rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
     return rc;
 #else  /* RT_OS_WINDOWS && !RT_ARCH_AMD64 && !DEBUG */
+    RT_NOREF3(pDevExt, pSession, pReq);
     return VERR_NOT_IMPLEMENTED;
 #endif /* RT_OS_WINDOWS && !RT_ARCH_AMD64 && !DEBUG */
 }
