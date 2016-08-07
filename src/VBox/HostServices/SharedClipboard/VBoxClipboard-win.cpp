@@ -84,18 +84,12 @@ void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
     {
         Log(("DUMP: VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT:\n"));
         if (pv && cb)
-        {
             Log(("%ls\n", pv));
-        }
         else
-        {
             Log(("%p %d\n", pv, cb));
-        }
     }
     else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
-    {
         dprintf(("DUMP: VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
-    }
     else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_HTML)
     {
         Log(("DUMP: VBOX_SHARED_CLIPBOARD_FMT_HTML:\n"));
@@ -104,31 +98,27 @@ void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
             Log(("%s\n", pv));
 
             //size_t cb = RTStrNLen(pv, );
-            char* buf = (char*)RTMemAlloc(cb + 1);
+            char *buf = (char *)RTMemAlloc(cb + 1);
             RT_BZERO(buf, cb);
             RTStrCopy(buf, cb, (const char*)pv);
-            for (int i = 0; i < cb; ++i)
+            for (size_t off = 0; off < cb; ++off)
             {
-                if (buf[i] == '\n' || buf[i] == '\r')
-                    buf[i] = ' ';
+                if (buf[off] == '\n' || buf[off] == '\r')
+                    buf[off] = ' ';
             }
 
             Log(("%s\n", buf));
             RTMemFree(buf);
         }
         else
-        {
             Log(("%p %d\n", pv, cb));
-        }
     }
     else
-    {
         dprintf(("DUMP: invalid format %02X\n", u32Format));
-    }
 }
-#else
-#define vboxClipboardDump(__pv, __cb, __format) do { NOREF(__pv); NOREF(__cb); NOREF(__format); } while (0)
-#endif /* LOG_ENABLED */
+#else  /* !LOG_ENABLED */
+# define vboxClipboardDump(__pv, __cb, __format) do { NOREF(__pv); NOREF(__cb); NOREF(__format); } while (0)
+#endif /* !LOG_ENABLED */
 
 
 static void vboxClipboardInitNewAPI(VBOXCLIPBOARDCONTEXT *pCtx)
@@ -856,16 +846,12 @@ int DumpHtml(char* src, size_t cb)
             rc = RTStrCopy(buf, cb, (const char*)src);
             if (RT_SUCCESS(rc))
             {
-                for (int i = 0; i < cb; ++i)
-                {
+                for (size_t i = 0; i < cb; ++i)
                     if (buf[i] == '\n' || buf[i] == '\r')
                         buf[i] = ' ';
-                }
             }
             else
-            {
                 Log(("Error in copying string.\n"));
-            }
             Log(("Removed \\r\\n: %s\n", buf));
             RTMemFree(buf);
         }

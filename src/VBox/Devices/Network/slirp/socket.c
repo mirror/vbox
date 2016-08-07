@@ -764,7 +764,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 m->m_len = iov[0].iov_len;
                 m_append(pData, m, nread - iov[0].iov_len, iov[1].iov_base);
             }
-            Assert((m_length(m, NULL) == nread));
+            Assert(m_length(m, NULL) == (size_t)nread);
 
             /*
              * Hack: domain name lookup will be used the most for UDP,
