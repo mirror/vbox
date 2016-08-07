@@ -1679,7 +1679,7 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 		sorted[i++] = h;
 	}
 
-	assert(i == nentries);
+	assert((size_t/*vbox*/)i == nentries);
 
 	/*
 	 * We've loaded our array; now we need to sort by value to allow us

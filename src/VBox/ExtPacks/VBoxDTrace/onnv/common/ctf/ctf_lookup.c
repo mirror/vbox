@@ -233,7 +233,7 @@ ctf_lookup_by_id(ctf_file_t **fpp, ctf_id_t type)
 	}
 
 	type = CTF_TYPE_TO_INDEX(type);
-	if (type > 0 && type <= fp->ctf_typemax) {
+	if (type > 0 && type <= (intptr_t/*vbox*/)fp->ctf_typemax) {
 		*fpp = fp; /* function returns ending CTF container */
 		return (LCTF_INDEX_TO_TYPEPTR(fp, type));
 	}

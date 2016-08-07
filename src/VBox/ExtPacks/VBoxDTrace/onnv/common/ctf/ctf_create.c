@@ -512,7 +512,7 @@ ctf_discard(ctf_file_t *fp)
 		return (0); /* no update required */
 
 	for (dtd = ctf_list_next(&fp->ctf_dtdefs); dtd != NULL; dtd = ntd) {
-		if (dtd->dtd_type <= fp->ctf_dtoldid)
+		if (dtd->dtd_type <= (intptr_t /*vbox*/)fp->ctf_dtoldid)
 			continue; /* skip types that have been committed */
 
 		ntd = ctf_list_next(dtd);
@@ -1164,7 +1164,7 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	 */
 	if (dst_type == CTF_ERR && name[0] != '\0') {
 		for (dtd = ctf_list_prev(&dst_fp->ctf_dtdefs); dtd != NULL &&
-		    dtd->dtd_type > dst_fp->ctf_dtoldid;
+		    dtd->dtd_type > (intptr_t /*vbox*/)dst_fp->ctf_dtoldid;
 		    dtd = ctf_list_prev(dtd)) {
 			if ((uint_t)CTF_INFO_KIND(dtd->dtd_data.ctt_info) == kind &&
 			    dtd->dtd_name != NULL &&

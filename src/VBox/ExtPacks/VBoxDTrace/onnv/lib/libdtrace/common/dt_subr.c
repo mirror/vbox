@@ -702,7 +702,7 @@ dt_printf(dtrace_hdl_t *dtp, FILE *fp, const char *format, ...)
 			assert(dtp->dt_buffered_offs < dtp->dt_buffered_size);
 			avail = dtp->dt_buffered_size - dtp->dt_buffered_offs;
 
-			if (needed + 1 < avail)
+			if ((size_t/*vbox*/)needed + 1 < avail)
 				break;
 
 			if ((newbuf = realloc(dtp->dt_buffered_buf,

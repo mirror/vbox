@@ -399,7 +399,7 @@ dof_prune(const char *fname)
 	if ((buf = malloc((sz = sbuf.st_size) + 1)) == NULL)
 		fatal("failed to allocate memory for %s", fname);
 
-	if (read(fd, buf, sz) != sz)
+	if ((size_t/*vbox*/)read(fd, buf, sz) != sz)
 		fatal("failed to read %s", fname);
 
 	buf[sz] = '\0';
@@ -429,7 +429,7 @@ dof_prune(const char *fname)
 		 * We have a match.  First write out our data up until now.
 		 */
 		if (i != mark) {
-			if (write(fd, &buf[mark], i - mark) != i - mark)
+			if ((size_t/*vbox*/)write(fd, &buf[mark], i - mark) != i - mark)
 				fatal("failed to write to %s", fname);
 		}
 
@@ -449,7 +449,7 @@ dof_prune(const char *fname)
 	}
 
 	if (mark < sz) {
-		if (write(fd, &buf[mark], sz - mark) != sz - mark)
+		if ((size_t/*vbox*/)write(fd, &buf[mark], sz - mark) != sz - mark)
 			fatal("failed to write to %s", fname);
 	}
 
@@ -475,7 +475,7 @@ etcsystem_prune(void)
 	if ((buf = malloc((sz = sbuf.st_size) + 1)) == NULL)
 		fatal("failed to allocate memory for %s", fname);
 
-	if (read(fd, buf, sz) != sz)
+	if ((size_t/*vbox*/)read(fd, buf, sz) != sz)
 		fatal("failed to read %s", fname);
 
 	buf[sz] = '\0';

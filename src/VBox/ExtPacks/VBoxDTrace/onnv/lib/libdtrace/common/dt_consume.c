@@ -730,7 +730,12 @@ dt_print_bytes(dtrace_hdl_t *dtp, FILE *fp, caddr_t addr,
 	 * a terminating byte, we print it out as a string.  Otherwise, we
 	 * assume that it's something else and just print the bytes.
 	 */
+#ifdef VBOX
+	size_t i, j;
+	int margin = 5;
+#else
 	int i, j, margin = 5;
+#endif
 	char *c = (char *)addr;
 
 	if (nbytes == 0)
@@ -1044,7 +1049,7 @@ dt_print_ustack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 
 		if (str != NULL) {
 			str += strlen(str) + 1;
-			if (str - strbase >= strsize)
+			if ((uintptr_t/*vbox*/)(str - strbase) >= strsize)
 				str = NULL;
 		}
 	}

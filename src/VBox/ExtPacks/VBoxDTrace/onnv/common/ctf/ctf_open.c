@@ -490,7 +490,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			 * in fp->ctf_ptrtab[ index of referenced type ].
 			 */
 			if (CTF_TYPE_ISCHILD(tp->ctt_type) == child &&
-			    CTF_TYPE_TO_INDEX(tp->ctt_type) <= fp->ctf_typemax)
+			    CTF_TYPE_TO_INDEX(tp->ctt_type) <= (intptr_t/*vbox*/)fp->ctf_typemax)
 				fp->ctf_ptrtab[
 				    CTF_TYPE_TO_INDEX(tp->ctt_type)] = id;
 			/*FALLTHRU*/
@@ -535,7 +535,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			if (LCTF_INFO_KIND(fp, tp->ctt_info) == CTF_K_TYPEDEF &&
 			    strcmp(ctf_strptr(fp, tp->ctt_name), "") == 0 &&
 			    CTF_TYPE_ISCHILD(tp->ctt_type) == child &&
-			    CTF_TYPE_TO_INDEX(tp->ctt_type) <= fp->ctf_typemax)
+			    CTF_TYPE_TO_INDEX(tp->ctt_type) <= (intptr_t /*vbox*/)fp->ctf_typemax)
 				fp->ctf_ptrtab[
 				    CTF_TYPE_TO_INDEX(tp->ctt_type)] = dst;
 		}
