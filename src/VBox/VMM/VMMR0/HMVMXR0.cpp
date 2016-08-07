@@ -1512,6 +1512,8 @@ static bool hmR0VmxIsLazyGuestMsr(PVMCPU pVCpu, uint32_t uMsr)
                 return true;
         }
     }
+#else
+    RT_NOREF(pVCpu, uMsr);
 #endif
     return false;
 }
@@ -1543,6 +1545,8 @@ static void hmR0VmxLazySaveGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             pMixedCtx->msrSFMASK       = ASMRdMsr(MSR_K8_SF_MASK);
             pMixedCtx->msrKERNELGSBASE = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
         }
+#else
+        NOREF(pMixedCtx);
 #endif
     }
 }
@@ -1587,6 +1591,8 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_SF_MASK, SFMASK, SFMask);
             VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_KERNEL_GS_BASE, KERNELGSBASE, KernelGSBase);
         }
+#else
+        RT_NOREF(pMixedCtx);
 #endif
         pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
     }
@@ -2920,6 +2926,8 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
     }
     pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+#else
+    RT_NOREF(pVCpu);
 #endif
 
     /*
@@ -4832,14 +4840,13 @@ static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * fields.  See @bugref{8432} for details.
  *
  * @returns true if safe, false if must continue to use the 64-bit switcher.
- * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  *
  * @remarks No-long-jump zone!!!
  */
-static bool hmR0VmxIs32BitSwitcherSafe(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static bool hmR0VmxIs32BitSwitcherSafe(PCPUMCTX pMixedCtx)
 {
     if (pMixedCtx->gdtr.pGdt    & UINT64_C(0xffffffff00000000))
         return false;
@@ -4939,7 +4946,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             Assert(pVCpu->hm.s.vmx.pfnStartVM == VMXR0SwitcherStartVM64);
             if (   pVCpu->hm.s.vmx.RealMode.fRealOnV86Active
-                || hmR0VmxIs32BitSwitcherSafe(pVCpu, pMixedCtx))
+                || hmR0VmxIs32BitSwitcherSafe(pMixedCtx))
             {
                 pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
                 pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
