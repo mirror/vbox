@@ -404,6 +404,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
 
 static uint32_t vmsvga3dGetDepthFormatSupport(PVMSVGA3DSTATE pState3D, uint32_t idx3dCaps, D3DFORMAT format)
 {
+    RT_NOREF(idx3dCaps);
     HRESULT  hr;
     uint32_t result = 0;
 
@@ -1059,6 +1060,10 @@ D3DFORMAT vmsvga3dSurfaceFormat2D3D(SVGA3dSurfaceFormat format)
     case SVGA3D_BC5_UNORM:
         /* Unknown; only in DX10 & 11 */
         break;
+
+    case SVGA3D_FORMAT_MAX:     /* shut up MSC */
+    case SVGA3D_FORMAT_INVALID:
+        break;
     }
     AssertFailedReturn(D3DFMT_UNKNOWN);
 }
@@ -1087,6 +1092,7 @@ D3DMULTISAMPLE_TYPE vmsvga3dMultipeSampleCount2D3D(uint32_t multisampleCount)
  */
 void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface)
 {
+    RT_NOREF(pState);
     RTAvlU32Destroy(&pSurface->pSharedObjectTree, vmsvga3dSharedSurfaceDestroyTree, pSurface);
     Assert(pSurface->pSharedObjectTree == NULL);
 
@@ -1163,6 +1169,7 @@ DECLCALLBACK(int) vmsvga3dSharedSurfaceDestroyTree(PAVLU32NODECORE pNode, void *
 /* Get the shared surface copy or create a new one. */
 static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface)
 {
+    RT_NOREF(pThis);
     Assert(pSurface->hSharedObject);
 
     PVMSVGA3DSHAREDSURFACE pSharedSurface = (PVMSVGA3DSHAREDSURFACE)RTAvlU32Get(&pSurface->pSharedObjectTree, pContext->id);
@@ -1204,6 +1211,7 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVGASTATE pThis, PVMS
  */
 static int vmsvga3dSurfaceTrackUsage(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface)
 {
+    RT_NOREF(pState);
 #ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
     Assert(pSurface->id != SVGA3D_INVALID_ID);
 
@@ -1253,6 +1261,7 @@ static int vmsvga3dSurfaceTrackUsageById(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT
 /* Wait for all drawing, that uses this surface, to finish. */
 int vmsvga3dSurfaceFlush(PVGASTATE pThis, PVMSVGA3DSURFACE pSurface)
 {
+    RT_NOREF(pThis);
 #ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
     HRESULT hr;
 
@@ -1541,6 +1550,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                               PVMSVGA3DSURFACE pSurface)
 
 {
+    RT_NOREF(pState);
     HRESULT hr;
     IDirect3DTexture9 *pTexture;
 
@@ -2142,7 +2152,6 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 {
     PVMSVGA3DSTATE      pState = pThis->svga.p3dState;
     PVMSVGA3DSURFACE    pSurface;
-    int                 rc = VINF_SUCCESS;
     PVMSVGA3DCONTEXT    pContext;
     uint32_t            cid;
     HRESULT             hr;
@@ -3051,7 +3060,7 @@ static DWORD vmsvga3dBlendOp2D3D(uint32_t blendOp, DWORD defaultBlendOp)
 
 int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates, SVGA3dRenderState *pRenderState)
 {
-    DWORD                       val;
+    DWORD                       val = 0; /* Shut up MSC */
     HRESULT                     hr;
     PVMSVGA3DCONTEXT            pContext;
     PVMSVGA3DSTATE              pState = pThis->svga.p3dState;
@@ -3709,6 +3718,10 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
             val = pRenderState[i].uintValue;
             */
             break;
+
+        case SVGA3D_RS_MAX:                   /* shut up MSC */
+        case SVGA3D_RS_INVALID:
+            AssertFailedBreak();
         }
 
         if (renderState != D3DRS_FORCE_DWORD)
@@ -4154,7 +4167,7 @@ static DWORD vmsvga3dTextTransformFlags2D3D(uint32_t value)
 
 int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStates, SVGA3dTextureState *pTextureState)
 {
-    DWORD                       val;
+    DWORD                       val = 0; /* Shut up MSC */
     HRESULT                     hr;
     PVMSVGA3DCONTEXT            pContext;
     PVMSVGA3DSTATE              pState = pThis->svga.p3dState;
@@ -4403,6 +4416,10 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         case SVGA3D_TS_TEXCOORDGEN:                 /* SVGA3dTextureCoordGen */
             AssertFailed();
             break;
+
+        case SVGA3D_TS_MAX:                   /* shut up MSC */
+        case SVGA3D_TS_INVALID:
+            AssertFailedBreak();
         }
 
         if (textureType != D3DTSS_FORCE_DWORD)
@@ -4852,10 +4869,11 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                            uint32_t numRanges, SVGA3dPrimitiveRange *pRange,
                            uint32_t cVertexDivisor, SVGA3dVertexDivisor *pVertexDivisor)
 {
+    RT_NOREF(pVertexDivisor);
     PVMSVGA3DCONTEXT             pContext;
     PVMSVGA3DSTATE               pState = pThis->svga.p3dState;
     AssertReturn(pState, VERR_INTERNAL_ERROR);
-    int                          rc;
+    int                          rc = VINF_SUCCESS;
     HRESULT                      hr;
     uint32_t                     iCurrentVertex, iCurrentStreamId;
     IDirect3DVertexDeclaration9 *pVertexDeclD3D = NULL;
@@ -5484,18 +5502,21 @@ int vmsvga3dShaderSetConst(PVGASTATE pThis, uint32_t cid, uint32_t reg, SVGA3dSh
 
 int vmsvga3dQueryBegin(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type)
 {
+    RT_NOREF(pThis, cid, type);
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
 
 int vmsvga3dQueryEnd(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
 {
+    RT_NOREF(pThis, cid, type, guestResult);
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
 
 int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAGuestPtr guestResult)
 {
+    RT_NOREF(pThis, cid, type, guestResult);
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
