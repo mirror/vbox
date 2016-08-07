@@ -49,11 +49,10 @@ HRESULT GetFile (const char* pszFilePath,
 }
 
 HRESULT UpdateResource(HANDLE hFile,
-                       const char* pszFilePath,
                        DWORD dwFileSize,
                        HANDLE hResourceUpdate,
-                       const char* szResourceType,
-                       const char* szResourceId)
+                       const char *szResourceType,
+                       const char *szResourceId)
 {
     HRESULT hr = S_OK;
     PVOID pvFile = NULL;
@@ -101,8 +100,7 @@ HRESULT IntegrateFile (HANDLE hResourceUpdate,
         }
         else
         {
-            hr = UpdateResource(hFile, pszFilePath, dwFileSize,
-                                hResourceUpdate, szResourceType, szResourceId);
+            hr = UpdateResource(hFile, dwFileSize, hResourceUpdate, szResourceType, szResourceId);
             if (FAILED(hr))
             {
                 printf("ERROR: Error updating resource for file %s!", pszFilePath);
@@ -150,7 +148,6 @@ static char * MyPathFilename(const char *pszPath)
     }
 
     /* will never get here */
-    return NULL;
 }
 
 
@@ -253,7 +250,6 @@ int main (int argc, char* argv[])
 
         PVBOXSTUBPKG pPackage = stbPkg;
         char szHeaderName[_MAX_PATH] = {0};
-        size_t iLen = 0;
 
         for (BYTE i=0; i<stbHeader.byCntPkgs; i++)
         {
