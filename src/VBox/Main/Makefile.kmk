@@ -1179,6 +1179,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c)
+	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c)
 
 if defined(VBOX_WITH_MIDL_PROXY_STUB)
 # -Windows Server 2003 AMD64 SP1 does not like the result when using '/protocol all' and '/target NT51'.
@@ -1201,6 +1202,7 @@ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c)
+	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c)
 endif
 
 # The XP targetted 32-bit proxy stub works with all versions of windows (the
@@ -1219,6 +1221,7 @@ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
+	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c)
 
 #
 # Translation stuff
