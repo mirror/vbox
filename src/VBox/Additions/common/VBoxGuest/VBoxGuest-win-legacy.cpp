@@ -59,7 +59,7 @@ RT_C_DECLS_END
  */
 NTSTATUS vgdrvNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
-    Log(("vgdrvNt4CreateDevice: pDrvObj=%p, pDevObj=%p, pRegPath=%p\n", pDrvObj, pDevObj, pRegPath));
+    Log(("vgdrvNt4CreateDevice: pDrvObj=%p, pRegPath=%p\n", pDrvObj, pRegPath));
 
     /*
      * Find our virtual PCI device
