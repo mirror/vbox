@@ -4272,6 +4272,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
     pgmUnlock(pVM);
     return rc;
 #else
+    RT_NOREF(pVM, GCPhys);
     return VERR_NOT_IMPLEMENTED;
 #endif /* PGM_WITH_LARGE_PAGES */
 }
