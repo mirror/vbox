@@ -75,8 +75,10 @@ int main(int argc, char **argv)
     RTPrintf(TESTCASE ": This testcase hits a bunch of breakpoint assertions which\n"
              TESTCASE ": causes kernel panics on linux regardless of what\n"
              TESTCASE ": RTAssertDoBreakpoint returns. Only checked AMD-V on linux.\n");
+#if 1
     /** @todo Make tstVMM-Hm to cause kernel panics. */
     return 1;
+#else
 
     /*
      * Create empty VM.
@@ -114,4 +116,5 @@ int main(int argc, char **argv)
     }
 
     return rcRet;
+#endif
 }
