@@ -98,17 +98,16 @@ void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
             Log(("%s\n", pv));
 
             //size_t cb = RTStrNLen(pv, );
-            char *buf = (char *)RTMemAlloc(cb + 1);
-            RT_BZERO(buf, cb);
-            RTStrCopy(buf, cb, (const char*)pv);
+            char *pszBuf = (char *)RTMemAllocZ(cb + 1);
+            RTStrCopy(pszBuf, cb + 1, (const char *)pv);
             for (size_t off = 0; off < cb; ++off)
             {
-                if (buf[off] == '\n' || buf[off] == '\r')
-                    buf[off] = ' ';
+                if (pszBuf[off] == '\n' || pszBuf[off] == '\r')
+                    pszBuf[off] = ' ';
             }
 
-            Log(("%s\n", buf));
-            RTMemFree(buf);
+            Log(("%s\n", pszBuf));
+            RTMemFree(pszBuf);
         }
         else
             Log(("%p %d\n", pv, cb));
@@ -833,27 +832,26 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
     PostMessage (pClient->pCtx->hwnd, WM_USER, 0, u32Formats);
 }
 
-int DumpHtml(char* src, size_t cb)
+int DumpHtml(const char *pszSrc, size_t cb)
 {
-    size_t lenght = 0;
-    int rc = RTStrNLenEx(src, cb, &lenght);
+    size_t cchIgnored = 0;
+    int rc = RTStrNLenEx(pszSrc, cb, &cchIgnored);
     if (RT_SUCCESS(rc))
     {
-        char* buf = (char*)RTMemAlloc(cb + 1);
-        if (buf != NULL)
+        char *pszBuf = (char *)RTMemAllocZ(cb + 1);
+        if (pszBuf != NULL)
         {
-            RT_BZERO(buf, cb + 1);
-            rc = RTStrCopy(buf, cb, (const char*)src);
+            rc = RTStrCopy(pszBuf, cb + 1, (const char *)pszSrc);
             if (RT_SUCCESS(rc))
             {
                 for (size_t i = 0; i < cb; ++i)
-                    if (buf[i] == '\n' || buf[i] == '\r')
-                        buf[i] = ' ';
+                    if (pszBuf[i] == '\n' || pszBuf[i] == '\r')
+                        pszBuf[i] = ' ';
             }
             else
                 Log(("Error in copying string.\n"));
-            Log(("Removed \\r\\n: %s\n", buf));
-            RTMemFree(buf);
+            Log(("Removed \\r\\n: %s\n", pszBuf));
+            RTMemFree(pszBuf);
         }
         else
         {
