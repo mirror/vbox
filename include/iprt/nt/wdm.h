@@ -47,6 +47,7 @@
 #pragma warning(disable:4163)
 #pragma warning(disable:4668) /* warning C4668: 'WHEA_DOWNLEVEL_TYPE_NAMES' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 #pragma warning(disable:4255) /* warning C4255: 'ObGetFilterVersion' : no function prototype given: converting '()' to '(void)' */
+#pragma warning(disable:4005) /* wdm.h(29) : warning C4005: 'NO_INTERLOCKED_INTRINSICS' : macro redefinition */
 #include <wdm.h>
 #pragma warning(pop)
 
