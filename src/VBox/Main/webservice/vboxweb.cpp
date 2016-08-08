@@ -891,7 +891,7 @@ static void doQueuesLoop()
                   g_pcszBindToHost ? g_pcszBindToHost : "localhost",    // safe default host
                   g_uBindToPort,    // port
                   g_uBacklog);      // backlog = max queue size for requests
-    if (m < 0)
+    if (m == SOAP_INVALID_SOCKET)
         WebLogSoapError(&soap);
     else
     {
@@ -901,8 +901,8 @@ static void doQueuesLoop()
         const char *pszSsl = "";
 #endif /*!WITH_OPENSSL */
         LogRel(("Socket connection successful: host = %s, port = %u, %smaster socket = %d\n",
-               (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
-               g_uBindToPort, pszSsl, m));
+                (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
+                g_uBindToPort, pszSsl, m));
 
         // initialize thread queue, mutex and eventsem
         g_pSoapQ = new SoapQ(&soap);

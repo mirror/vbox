@@ -82,7 +82,7 @@ void shutdownProcessList(std::vector<RTPROCESS> const &rProcesses)
 void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cVMs)
 {
 
-    static const char * const args[] = { pszName, "-child", NULL };
+    const char * const args[] = { pszName, "-child", NULL };
     pm::CollectorHints hints;
     std::vector<RTPROCESS> processes;
 

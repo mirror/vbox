@@ -743,7 +743,7 @@ static LSTATUS vbpsSetRegValueAA(VBPSREGSTATE *pState, HKEY hkey, const char *ps
         DWORD cbExistingData = cbValue + 128;
         char *pszExistingData = alloca(cbExistingData);
         DWORD dwExistingType;
-        rc = RegQueryValueExA(hkey, pszValueNm, 0 /*Reserved*/, &dwExistingType, pszExistingData, &cbExistingData);
+        rc = RegQueryValueExA(hkey, pszValueNm, 0 /*Reserved*/, &dwExistingType, (PBYTE)pszExistingData, &cbExistingData);
         if (rc == ERROR_SUCCESS)
         {
             if (   dwExistingType == REG_SZ
@@ -770,7 +770,7 @@ static LSTATUS vbpsSetRegValueAA(VBPSREGSTATE *pState, HKEY hkey, const char *ps
     /*
      * Set the value.
      */
-    rc = RegSetValueExA(hkey, pszValueNm, 0 /*Reserved*/, REG_SZ, pszValue, cbValue);
+    rc = RegSetValueExA(hkey, pszValueNm, 0 /*Reserved*/, REG_SZ, (PBYTE)pszValue, cbValue);
     if (rc == ERROR_SUCCESS)
     {
         VBSP_LOG_SET_VALUE(("vbpsSetRegValueAA: %ls/%s=%s (at %d)\n",
