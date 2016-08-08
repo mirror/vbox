@@ -6404,6 +6404,8 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
                 case DeviceType_Floppy:
                     pcszType = "Floppy";
                     break;
+
+                default: break; /* Shut up MSC. */
             }
 
             pelmDevice->setAttribute("type", pcszType);
@@ -6739,6 +6741,7 @@ bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T drv)
         case AudioDriverType_MMPM:
 #endif
             return true;
+        default: break; /* Shut up MSC. */
     }
 
     return false;
@@ -6756,6 +6759,7 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
 {
 #if defined(RT_OS_WINDOWS)
     return AudioDriverType_DirectSound;
+
 #elif defined(RT_OS_LINUX)
     /* On Linux, we need to check at runtime what's actually supported. */
     static RTCLockMtx s_mtx;
@@ -6779,18 +6783,21 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
             s_linuxDriver = AudioDriverType_OSS;
     }
     return s_linuxDriver;
+
 #elif defined(RT_OS_DARWIN)
     return AudioDriverType_CoreAudio;
+
 #elif defined(RT_OS_OS2)
     return AudioDriverType_MMPM;
+
 #else /* All other platforms. */
 # ifdef VBOX_WITH_AUDIO_OSS
     return AudioDriverType_OSS;
-# endif
-#endif
-
+# else
     /* Return NULL driver as a fallback if nothing of the above is available. */
     return AudioDriverType_Null;
+# endif
+#endif
 }
 
 /**

@@ -160,6 +160,7 @@ HRESULT StorageController::init(Machine *aParent,
             m->bd->ulPortCount = 1;
             m->bd->controllerType = StorageControllerType_NVMe;
             break;
+        case StorageBus_Null: break; /* Shut up MSC. */
     }
 
     /* Confirm a successful initialization */
