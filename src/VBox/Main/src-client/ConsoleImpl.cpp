@@ -1510,7 +1510,7 @@ inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterT
             AssertFailed();
             return "unknown";
     }
-    return NULL;
+    /* not reached */
 }
 
 /**
@@ -3991,75 +3991,75 @@ HRESULT Console::i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL
         {
             rc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fTraceEnabled);
             AssertComRC(rc);
-        }
-        if (SUCCEEDED(rc))
-        {
-            ULONG ulInstance;
-            rc = aNetworkAdapter->COMGETTER(Slot)(&ulInstance);
-            AssertComRC(rc);
             if (SUCCEEDED(rc))
             {
-                /*
-                 * Find the adapter instance, get the config interface and update
-                 * the link state.
-                 */
-                NetworkAdapterType_T adapterType;
-                rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+                ULONG ulInstance;
+                rc = aNetworkAdapter->COMGETTER(Slot)(&ulInstance);
                 AssertComRC(rc);
-                const char *pszAdapterName = networkAdapterTypeToName(adapterType);
-
-                // prevent cross-thread deadlocks, don't need the lock any more
-                alock.release();
-
-                PPDMIBASE pBase;
-                int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), pszAdapterName, ulInstance, 0, &pBase);
-                if (RT_SUCCESS(vrc))
+                if (SUCCEEDED(rc))
                 {
-                    Assert(pBase);
-                    PPDMINETWORKCONFIG pINetCfg;
-                    pINetCfg = PDMIBASE_QUERY_INTERFACE(pBase, PDMINETWORKCONFIG);
-                    if (pINetCfg)
+                    /*
+                     * Find the adapter instance, get the config interface and update
+                     * the link state.
+                     */
+                    NetworkAdapterType_T adapterType;
+                    rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+                    AssertComRC(rc);
+                    const char *pszAdapterName = networkAdapterTypeToName(adapterType);
+
+                    // prevent cross-thread deadlocks, don't need the lock any more
+                    alock.release();
+
+                    PPDMIBASE pBase;
+                    int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), pszAdapterName, ulInstance, 0, &pBase);
+                    if (RT_SUCCESS(vrc))
                     {
-                        Log(("Console::onNetworkAdapterChange: setting link state to %d\n",
-                              fCableConnected));
-                        vrc = pINetCfg->pfnSetLinkState(pINetCfg,
-                                                        fCableConnected ? PDMNETWORKLINKSTATE_UP
-                                                                        : PDMNETWORKLINKSTATE_DOWN);
-                        ComAssertRC(vrc);
-                    }
-                    if (RT_SUCCESS(vrc) && changeAdapter)
-                    {
-                        VMSTATE enmVMState = VMR3GetStateU(ptrVM.rawUVM());
-                        if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbid or deal
-                                                                     correctly with the _LS variants */
-                            ||  enmVMState == VMSTATE_SUSPENDED)
+                        Assert(pBase);
+                        PPDMINETWORKCONFIG pINetCfg;
+                        pINetCfg = PDMIBASE_QUERY_INTERFACE(pBase, PDMINETWORKCONFIG);
+                        if (pINetCfg)
                         {
-                            if (fTraceEnabled && fCableConnected && pINetCfg)
+                            Log(("Console::onNetworkAdapterChange: setting link state to %d\n",
+                                  fCableConnected));
+                            vrc = pINetCfg->pfnSetLinkState(pINetCfg,
+                                                            fCableConnected ? PDMNETWORKLINKSTATE_UP
+                                                                            : PDMNETWORKLINKSTATE_DOWN);
+                            ComAssertRC(vrc);
+                        }
+                        if (RT_SUCCESS(vrc) && changeAdapter)
+                        {
+                            VMSTATE enmVMState = VMR3GetStateU(ptrVM.rawUVM());
+                            if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbid or deal
+                                                                         correctly with the _LS variants */
+                                ||  enmVMState == VMSTATE_SUSPENDED)
                             {
-                                vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_DOWN);
-                                ComAssertRC(vrc);
-                            }
+                                if (fTraceEnabled && fCableConnected && pINetCfg)
+                                {
+                                    vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_DOWN);
+                                    ComAssertRC(vrc);
+                                }
 
-                            rc = i_doNetworkAdapterChange(ptrVM.rawUVM(), pszAdapterName, ulInstance, 0, aNetworkAdapter);
+                                rc = i_doNetworkAdapterChange(ptrVM.rawUVM(), pszAdapterName, ulInstance, 0, aNetworkAdapter);
 
-                            if (fTraceEnabled && fCableConnected && pINetCfg)
-                            {
-                                vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_UP);
-                                ComAssertRC(vrc);
+                                if (fTraceEnabled && fCableConnected && pINetCfg)
+                                {
+                                    vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_UP);
+                                    ComAssertRC(vrc);
+                                }
                             }
                         }
                     }
+                    else if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
+                        return setError(E_FAIL,
+                                tr("The network adapter #%u is not enabled"), ulInstance);
+                    else
+                        ComAssertRC(vrc);
+
+                    if (RT_FAILURE(vrc))
+                        rc = E_FAIL;
+
+                    alock.acquire();
                 }
-                else if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
-                    return setError(E_FAIL,
-                            tr("The network adapter #%u is not enabled"), ulInstance);
-                else
-                    ComAssertRC(vrc);
-
-                if (RT_FAILURE(vrc))
-                    rc = E_FAIL;
-
-                alock.acquire();
             }
         }
         ptrVM.release();
@@ -5632,27 +5632,30 @@ HRESULT Console::i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
             )
         {
             /* No need to call in the EMT thread. */
-            LONG64 cMax;
             Bstr strName;
-            BandwidthGroupType_T enmType;
             rc = aBandwidthGroup->COMGETTER(Name)(strName.asOutParam());
             if (SUCCEEDED(rc))
-                rc = aBandwidthGroup->COMGETTER(MaxBytesPerSec)(&cMax);
-            if (SUCCEEDED(rc))
-                rc = aBandwidthGroup->COMGETTER(Type)(&enmType);
-
-            if (SUCCEEDED(rc))
             {
-                int vrc = VINF_SUCCESS;
-                if (enmType == BandwidthGroupType_Disk)
-                    vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM.rawUVM(), Utf8Str(strName).c_str(), (uint32_t)cMax);
+                LONG64 cMax;
+                rc = aBandwidthGroup->COMGETTER(MaxBytesPerSec)(&cMax);
+                if (SUCCEEDED(rc))
+                {
+                    BandwidthGroupType_T enmType;
+                    rc = aBandwidthGroup->COMGETTER(Type)(&enmType);
+                    if (SUCCEEDED(rc))
+                    {
+                        int vrc = VINF_SUCCESS;
+                        if (enmType == BandwidthGroupType_Disk)
+                            vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM.rawUVM(), Utf8Str(strName).c_str(), (uint32_t)cMax);
 #ifdef VBOX_WITH_NETSHAPER
-                else if (enmType == BandwidthGroupType_Network)
-                    vrc = PDMR3NsBwGroupSetLimit(ptrVM.rawUVM(), Utf8Str(strName).c_str(), cMax);
-                else
-                    rc = E_NOTIMPL;
-#endif /* VBOX_WITH_NETSHAPER */
-                AssertRC(vrc);
+                        else if (enmType == BandwidthGroupType_Network)
+                            vrc = PDMR3NsBwGroupSetLimit(ptrVM.rawUVM(), Utf8Str(strName).c_str(), cMax);
+                        else
+                            rc = E_NOTIMPL;
+#endif
+                        AssertRC(vrc);
+                    }
+                }
             }
         }
         else
@@ -9698,7 +9701,10 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                  */
                 rc = pConsole->i_captureUSBDevices(pConsole->mpUVM);
                 if (FAILED(rc))
+                {
+                    alock.acquire();
                     break;
+                }
 
                 /* Load saved state? */
                 if (task->mSavedStateFile.length())
@@ -9758,44 +9764,53 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                      * Get the config.
                      */
                     ULONG uPort;
-                    ULONG uInterval;
-                    Bstr bstrAddress, bstrPassword;
-
                     rc = pMachine->COMGETTER(FaultTolerancePort)(&uPort);
                     if (SUCCEEDED(rc))
                     {
+                        ULONG uInterval;
                         rc = pMachine->COMGETTER(FaultToleranceSyncInterval)(&uInterval);
                         if (SUCCEEDED(rc))
-                            rc = pMachine->COMGETTER(FaultToleranceAddress)(bstrAddress.asOutParam());
-                        if (SUCCEEDED(rc))
-                            rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
-                    }
-                    if (task->mProgress->i_setCancelCallback(faultToleranceProgressCancelCallback, pConsole->mpUVM))
-                    {
-                        if (SUCCEEDED(rc))
                         {
-                            Utf8Str strAddress(bstrAddress);
-                            const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
-                            Utf8Str strPassword(bstrPassword);
-                            const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
+                            Bstr bstrAddress;
+                            rc = pMachine->COMGETTER(FaultToleranceAddress)(bstrAddress.asOutParam());
+                            if (SUCCEEDED(rc))
+                            {
+                                Bstr bstrPassword;
+                                rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
+                                if (SUCCEEDED(rc))
+                                {
+                                    if (task->mProgress->i_setCancelCallback(faultToleranceProgressCancelCallback,
+                                                                             pConsole->mpUVM))
+                                    {
+                                        if (SUCCEEDED(rc))
+                                        {
+                                            Utf8Str strAddress(bstrAddress);
+                                            const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
+                                            Utf8Str strPassword(bstrPassword);
+                                            const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
 
-                            /* Power on the FT enabled VM. */
+                                            /* Power on the FT enabled VM. */
 #ifdef VBOX_WITH_EXTPACK
-                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
+                                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
 #endif
-                            if (RT_SUCCESS(vrc))
-                                vrc = FTMR3PowerOn(pConsole->mpUVM,
-                                                   task->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
-                                                   uInterval,
-                                                   pszAddress,
-                                                   uPort,
-                                                   pszPassword);
-                            AssertLogRelRC(vrc);
+                                            if (RT_SUCCESS(vrc))
+                                                vrc = FTMR3PowerOn(pConsole->mpUVM,
+                                                                   task->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
+                                                                   uInterval,
+                                                                   pszAddress,
+                                                                   uPort,
+                                                                   pszPassword);
+                                            AssertLogRelRC(vrc);
+                                        }
+                                        task->mProgress->i_setCancelCallback(NULL, NULL);
+                                    }
+                                    else
+                                        rc = E_FAIL;
+
+                                }
+                            }
                         }
-                        task->mProgress->i_setCancelCallback(NULL, NULL);
                     }
-                    else
-                        rc = E_FAIL;
                 }
                 else if (task->mStartPaused)
                     /* done */
