@@ -106,7 +106,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
             for sPool in asPools:
                 if sPool.startswith(sPoolIdStart):
                     # Extract the whole name and add it to the list.
-                    asItems = sPool.split(' ');
+                    asItems = sPool.split('\t');
                     lstPools.append(asItems[0]);
         return lstPools;
 
@@ -123,7 +123,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
             for sVolume in asVolumes:
                 if sVolume.startswith(sPool + '/' + sVolumeIdStart):
                     # Extract the whole name and add it to the list.
-                    asItems = sVolume.split(' ');
+                    asItems = sVolume.split('\t');
                     lstVolumes.append(asItems[0]);
         return lstVolumes;
 
