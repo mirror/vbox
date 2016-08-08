@@ -186,7 +186,7 @@ HRESULT PerformanceCollector::init()
     m.gm = new pm::CollectorGuestManager;
 
     /* Let the sampler know it gets a valid collector.  */
-    mMagic = MAGIC;
+    mMagic = PERFORMANCE_METRIC_MAGIC;
 
     /* Start resource usage sampler */
     int vrc = RTTimerLRCreate(&m.sampler, VBOX_USAGE_SAMPLER_MIN_INTERVAL,
@@ -639,8 +639,8 @@ DECLCALLBACK(void) PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerL
 {
     AssertReturnVoid(pvUser != NULL);
     PerformanceCollector *collector = static_cast <PerformanceCollector *> (pvUser);
-    Assert(collector->mMagic == MAGIC);
-    if (collector->mMagic == MAGIC)
+    Assert(collector->mMagic == PERFORMANCE_METRIC_MAGIC);
+    if (collector->mMagic == PERFORMANCE_METRIC_MAGIC)
         collector->samplerCallback(iTick);
 
     NOREF(hTimerLR);

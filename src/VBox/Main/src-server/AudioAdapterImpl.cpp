@@ -315,8 +315,8 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
                 break;
 
             default:
-                AssertMsgFailed(("Wrong audio controller type %d\n",
-                                 aAudioController));
+                AssertMsgFailed(("Wrong audio controller type %d\n", aAudioController));
+                defaultCodec = AudioCodecType_Null; /* Shut up MSC */
                 rc = E_FAIL;
         }
         if (rc == S_OK)

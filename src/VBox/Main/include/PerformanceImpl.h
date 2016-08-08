@@ -170,12 +170,9 @@ private:
     typedef std::list<pm::Metric*> MetricList;
     typedef std::list<pm::BaseMetric*> BaseMetricList;
 
-    enum
-    {
-        MAGIC = 0xABBA1972u
-    };
-
-    unsigned int mMagic;
+/** PerformanceMetric::mMagic value. */
+#define PERFORMANCE_METRIC_MAGIC    UINT32_C(0xABBA1972)
+    uint32_t mMagic;
     const Utf8Str mUnknownGuest;
 
     struct Data

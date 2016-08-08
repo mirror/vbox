@@ -195,7 +195,7 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                         memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
                     pInfo->enmMediumType = NETIF_T_ETHERNET;
                     pInfo->enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
-                    pInfo->bIsDefault = (pAdapter->IfIndex == iDefault);
+                    pInfo->bIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
                     RTStrFree(pszUuid);
                     break;
                 }
@@ -980,14 +980,13 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
+            Guid guidIfCopy(IfGuid);
             NETIFINFO Info;
             RT_ZERO(Info);
-            Info.Uuid = *(Guid(IfGuid).raw());
-            rc = collectNetIfInfo(name, Guid(IfGuid), &Info, iDefaultInterface);
+            Info.Uuid = *guidIfCopy.raw();
+            rc = collectNetIfInfo(name, guidIfCopy, &Info, iDefaultInterface);
             if (RT_FAILURE(rc))
-            {
                 LogRel(("vboxNetWinAddComponent: collectNetIfInfo() -> %Rrc\n", rc));
-            }
             Log(("vboxNetWinAddComponent: adding %ls\n", lpszName));
             /* create a new object and add it to the list */
             ComObjPtr<HostNetworkInterface> iface;
@@ -1864,7 +1863,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 if (pAdapter)
                 {
                     info.enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
-                    info.bIsDefault = (pAdapter->IfIndex == iDefault);
+                    info.bIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
                     info.bDhcpEnabled = pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED;
                     netIfFillInfoWithAddresses(&info, pAdapter);
                 }
