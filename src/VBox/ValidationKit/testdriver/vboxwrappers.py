@@ -1794,7 +1794,7 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def createBaseHd(self, sHd, sFmt = "VDI", cb = 10*1024*1024*1024, tMediumVariant = None):
+    def createBaseHd(self, sHd, sFmt = "VDI", cb = 10*1024*1024*1024, cMsTimeout = 60000, tMediumVariant = None):
         """
         Creates a base HD.
         Returns Medium object on success and None on failure.  Error information is logged.
@@ -1809,7 +1809,7 @@ class SessionWrapper(TdTaskBase):
                 oHd = self.oVBox.createHardDisk(sFmt, sHd);
             oProgressXpcom = oHd.createBaseStorage(cb, tMediumVariant);
             oProgress = ProgressWrapper(oProgressXpcom, self.oVBoxMgr, self.oTstDrv, 'create base disk %s' % (sHd));
-            oProgress.wait();
+            oProgress.wait(cMsTimeout);
             oProgress.logResult();
         except:
             reporter.errorXcpt('failed to create base hd "%s"' % (sHd));
@@ -1837,8 +1837,8 @@ class SessionWrapper(TdTaskBase):
 
         return oHd;
 
-    def createAndAttachHd(self, sHd, sFmt = "VDI", sController = "IDE Controller", cb = 10*1024*1024*1024, \
-                          iPort = 0, iDevice = 0, fImmutable = True, tMediumVariant = None):
+    def createAndAttachHd(self, sHd, sFmt = "VDI", sController = "IDE Controller", cb = 10*1024*1024*1024, # pylint: disable=R0913
+                          iPort = 0, iDevice = 0, fImmutable = True, cMsTimeout = 60000, tMediumVariant = None):
         """
         Creates and attaches a HD to a VM.
         Returns True on success and False on failure.  Error information is logged.
@@ -1846,7 +1846,7 @@ class SessionWrapper(TdTaskBase):
         if not self.ensureControllerAttached(sController):
             return False;
 
-        oHd = self.createBaseHd(sHd, sFmt, cb, tMediumVariant);
+        oHd = self.createBaseHd(sHd, sFmt, cb, cMsTimeout, tMediumVariant);
         if oHd is None:
             return False;
 

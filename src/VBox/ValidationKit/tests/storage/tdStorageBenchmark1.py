@@ -624,8 +624,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             else:
                 tMediumVariant = self.convDiskToMediumVariant(sDiskVariant);
                 fRc = fRc and oSession.createAndAttachHd(sDiskPath, sDiskFormat, _ControllerTypeToName(eStorageController), \
-                                                         cb = 300*1024*1024*1024, iPort = 0, iDevice = iDevice, \
-                                                         fImmutable = False, tMediumVariant = tMediumVariant);
+                                                         cb = 30*1024*1024*1024, iPort = 0, iDevice = iDevice, \
+                                                         fImmutable = False, cMsTimeout = 3600 * 1000, \
+                                                         tMediumVariant = tMediumVariant);
             fRc = fRc and oSession.enableVirtEx(fHwVirt);
             fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
             fRc = fRc and oSession.setCpuCount(cCpus);
@@ -724,7 +725,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         asPaths = [ self.sScratchPath ];
                     else:
                         # Create a new default storage config on the host
-                        if sMountPoint is None:
+                        if self.fRecreateStorCfg:
                             sMountPoint = self.prepareStorage(self.oStorCfg);
                         if sMountPoint is not None:
                             # Create a directory where every normal user can write to.
