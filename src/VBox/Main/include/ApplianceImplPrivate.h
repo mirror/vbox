@@ -238,7 +238,7 @@ struct Appliance::XMLStack
     std::map<Utf8Str, bool> mapNetworks;
 };
 
-class Appliance::TaskOVF: public ThreadTask
+class Appliance::TaskOVF : public ThreadTask
 {
 public:
     enum TaskType
@@ -282,7 +282,7 @@ public:
 
     void handler()
     {
-        int vrc = Appliance::i_taskThreadImportOrExport(NULL, this); NOREF(vrc);
+        Appliance::i_importOrExportThreadTask(this);
     }
 };
 

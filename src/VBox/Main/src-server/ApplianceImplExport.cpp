@@ -747,7 +747,7 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
  */
 HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    HRESULT rc = S_OK;
+    HRESULT rc;
     try
     {
         rc = i_setUpProgress(aProgress,

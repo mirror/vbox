@@ -134,7 +134,7 @@ private:
     void i_disksWeight();
     void i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket);
 
-    static DECLCALLBACK(int) i_taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
+    static void i_importOrExportThreadTask(TaskOVF *pTask);
 
     HRESULT i_initSetOfSupportedStandardsURI();
 

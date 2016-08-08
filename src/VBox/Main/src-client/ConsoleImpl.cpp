@@ -238,7 +238,7 @@ public:
 
     void handler()
     {
-        int vrc = Console::i_powerUpThread(NULL, this);
+        Console::i_powerUpThreadTask(this);
     }
 
 };
@@ -256,7 +256,7 @@ public:
 
     void handler()
     {
-        int vrc = Console::i_powerDownThread(NULL, this);
+        Console::i_powerDownThreadTask(this);
     }
 };
 
@@ -9507,25 +9507,21 @@ static void faultToleranceProgressCancelCallback(void *pvUser)
 }
 
 /**
- * Thread function which starts the VM (also from saved state) and
- * track progress.
+ * Worker called by VMPowerUpTask::handler to start the VM (also from saved
+ * state) and track progress.
  *
- * @param   Thread      The thread id.
- * @param   pvUser      Pointer to a VMPowerUpTask structure.
- * @return  VINF_SUCCESS (ignored).
+ * @param   pTask       The power up task.
  *
  * @note Locks the Console object for writing.
  */
 /*static*/
-DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
+void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 {
     LogFlowFuncEnter();
 
-    VMPowerUpTask* task = static_cast<VMPowerUpTask *>(pvUser);
-    AssertReturn(task, VERR_INVALID_PARAMETER);
-
-    AssertReturn(!task->mConsole.isNull(), VERR_INVALID_PARAMETER);
-    AssertReturn(!task->mProgress.isNull(), VERR_INVALID_PARAMETER);
+    AssertReturnVoid(pTask);
+    AssertReturnVoid(!pTask->mConsole.isNull());
+    AssertReturnVoid(!pTask->mProgress.isNull());
 
     VirtualBoxBase::initializeComForThread();
 
@@ -9538,7 +9534,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
     RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
                 "BU", "IL", "DI", "D", RTBldCfgVersion(), RTBldCfgRevision(), "BU", "IL", "DI", "D");
 
-    ComObjPtr<Console> pConsole = task->mConsole;
+    ComObjPtr<Console> pConsole = pTask->mConsole;
 
     /* Note: no need to use AutoCaller because VMPowerUpTask does that */
 
@@ -9557,20 +9553,20 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
         if (!pConsole->m_pVMMDev)
         {
             pConsole->m_pVMMDev = new VMMDev(pConsole);
-            AssertReturn(pConsole->m_pVMMDev, E_FAIL);
+            AssertReturnVoid(pConsole->m_pVMMDev);
         }
 
         /* wait for auto reset ops to complete so that we can successfully lock
          * the attached hard disks by calling LockMedia() below */
         for (VMPowerUpTask::ProgressList::const_iterator
-             it = task->hardDiskProgresses.begin();
-             it != task->hardDiskProgresses.end(); ++it)
+             it = pTask->hardDiskProgresses.begin();
+             it != pTask->hardDiskProgresses.end(); ++it)
         {
             HRESULT rc2 = (*it)->WaitForCompletion(-1);
             AssertComRC(rc2);
 
-            rc = task->mProgress->SetNextOperation(BstrFmt(tr("Disk Image Reset Operation - Immutable Image")).raw(), 1);
-            AssertComRCReturnRC(rc);
+            rc = pTask->mProgress->SetNextOperation(BstrFmt(tr("Disk Image Reset Operation - Immutable Image")).raw(), 1);
+            AssertComRCReturnVoid(rc);
         }
 
         /*
@@ -9581,8 +9577,8 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
          * Note! The media will be unlocked automatically by
          *       SessionMachine::i_setMachineState() when the VM is powered down.
          */
-        if (    !task->mTeleporterEnabled
-            &&  task->mEnmFaultToleranceState != FaultToleranceState_Standby)
+        if (    !pTask->mTeleporterEnabled
+            &&  pTask->mEnmFaultToleranceState != FaultToleranceState_Standby)
         {
             rc = pConsole->mControl->LockMedia();
             if (FAILED(rc)) throw rc;
@@ -9625,8 +9621,8 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
         vrc = VMR3Create(cCpus,
                          pConsole->mpVmm2UserMethods,
                          Console::i_genericVMSetErrorCallback,
-                         &task->mErrorMsg,
-                         task->mConfigConstructor,
+                         &pTask->mErrorMsg,
+                         pTask->mConfigConstructor,
                          static_cast<Console *>(pConsole),
                          &pVM, NULL);
 
@@ -9670,8 +9666,8 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                      * Not sure, so release the lock just in case. */
                     alock.release();
 
-                    for (SharedFolderDataMap::const_iterator it = task->mSharedFolders.begin();
-                         it != task->mSharedFolders.end();
+                    for (SharedFolderDataMap::const_iterator it = pTask->mSharedFolders.begin();
+                         it != pTask->mSharedFolders.end();
                          ++it)
                     {
                         const SharedFolderData &d = it->second;
@@ -9707,19 +9703,18 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                 }
 
                 /* Load saved state? */
-                if (task->mSavedStateFile.length())
+                if (pTask->mSavedStateFile.length())
                 {
-                    LogFlowFunc(("Restoring saved state from '%s'...\n",
-                                 task->mSavedStateFile.c_str()));
+                    LogFlowFunc(("Restoring saved state from '%s'...\n", pTask->mSavedStateFile.c_str()));
 
                     vrc = VMR3LoadFromFile(pConsole->mpUVM,
-                                           task->mSavedStateFile.c_str(),
+                                           pTask->mSavedStateFile.c_str(),
                                            Console::i_stateProgressCallback,
-                                           static_cast<IProgress *>(task->mProgress));
+                                           static_cast<IProgress *>(pTask->mProgress));
 
                     if (RT_SUCCESS(vrc))
                     {
-                        if (task->mStartPaused)
+                        if (pTask->mStartPaused)
                             /* done */
                             pConsole->i_setMachineState(MachineState_Paused);
                         else
@@ -9743,12 +9738,12 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
 #endif
                     }
                 }
-                else if (task->mTeleporterEnabled)
+                else if (pTask->mTeleporterEnabled)
                 {
                     /* -> ConsoleImplTeleporter.cpp */
                     bool fPowerOffOnFailure;
-                    rc = pConsole->i_teleporterTrg(pConsole->mpUVM, pMachine, &task->mErrorMsg, task->mStartPaused,
-                                                   task->mProgress, &fPowerOffOnFailure);
+                    rc = pConsole->i_teleporterTrg(pConsole->mpUVM, pMachine, &pTask->mErrorMsg, pTask->mStartPaused,
+                                                   pTask->mProgress, &fPowerOffOnFailure);
                     if (FAILED(rc) && fPowerOffOnFailure)
                     {
                         ErrorInfoKeeper eik;
@@ -9758,7 +9753,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
 #endif
                     }
                 }
-                else if (task->mEnmFaultToleranceState != FaultToleranceState_Inactive)
+                else if (pTask->mEnmFaultToleranceState != FaultToleranceState_Inactive)
                 {
                     /*
                      * Get the config.
@@ -9779,8 +9774,8 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                                 rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
                                 if (SUCCEEDED(rc))
                                 {
-                                    if (task->mProgress->i_setCancelCallback(faultToleranceProgressCancelCallback,
-                                                                             pConsole->mpUVM))
+                                    if (pTask->mProgress->i_setCancelCallback(faultToleranceProgressCancelCallback,
+                                                                              pConsole->mpUVM))
                                     {
                                         if (SUCCEEDED(rc))
                                         {
@@ -9795,14 +9790,14 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
 #endif
                                             if (RT_SUCCESS(vrc))
                                                 vrc = FTMR3PowerOn(pConsole->mpUVM,
-                                                                   task->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
+                                                                   pTask->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
                                                                    uInterval,
                                                                    pszAddress,
                                                                    uPort,
                                                                    pszPassword);
                                             AssertLogRelRC(vrc);
                                         }
-                                        task->mProgress->i_setCancelCallback(NULL, NULL);
+                                        pTask->mProgress->i_setCancelCallback(NULL, NULL);
                                     }
                                     else
                                         rc = E_FAIL;
@@ -9812,7 +9807,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                         }
                     }
                 }
-                else if (task->mStartPaused)
+                else if (pTask->mStartPaused)
                     /* done */
                     pConsole->i_setMachineState(MachineState_Paused);
                 else
@@ -9852,7 +9847,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                  * be sticky but our error callback isn't.
                  */
                 alock.release();
-                VMR3AtErrorDeregister(pConsole->mpUVM, Console::i_genericVMSetErrorCallback, &task->mErrorMsg);
+                VMR3AtErrorDeregister(pConsole->mpUVM, Console::i_genericVMSetErrorCallback, &pTask->mErrorMsg);
                 /** @todo register another VMSetError callback? */
                 alock.acquire();
             }
@@ -9869,11 +9864,11 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
         if (SUCCEEDED(rc) && RT_FAILURE(vrc))
         {
             /* If VMR3Create() or one of the other calls in this function fail,
-             * an appropriate error message has been set in task->mErrorMsg.
+             * an appropriate error message has been set in pTask->mErrorMsg.
              * However since that happens via a callback, the rc status code in
              * this function is not updated.
              */
-            if (!task->mErrorMsg.length())
+            if (!pTask->mErrorMsg.length())
             {
                 /* If the error message is not set but we've got a failure,
                  * convert the VBox status code into a meaningful error message.
@@ -9881,12 +9876,12 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                  * appropriate error message themselves.
                  */
                 AssertMsgFailed(("Missing error message during powerup for status code %Rrc\n", vrc));
-                task->mErrorMsg = Utf8StrFmt(tr("Failed to start VM execution (%Rrc)"), vrc);
+                pTask->mErrorMsg = Utf8StrFmt(tr("Failed to start VM execution (%Rrc)"), vrc);
             }
 
             /* Set the error message as the COM error.
              * Progress::notifyComplete() will pick it up later. */
-            throw i_setErrorStatic(E_FAIL, task->mErrorMsg.c_str());
+            throw i_setErrorStatic(E_FAIL, pTask->mErrorMsg.c_str());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -9924,12 +9919,12 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
     if (SUCCEEDED(rc))
     {
         /* Notify the progress object of the success */
-        task->mProgress->i_notifyComplete(S_OK);
+        pTask->mProgress->i_notifyComplete(S_OK);
     }
     else
     {
         /* The progress object will fetch the current error info */
-        task->mProgress->i_notifyComplete(rc);
+        pTask->mProgress->i_notifyComplete(rc);
         LogRel(("Power up failed (vrc=%Rrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
     }
 
@@ -9942,8 +9937,6 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
 #endif
 
     LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
 }
 
 
@@ -10025,27 +10018,21 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
 /**
  * Thread for powering down the Console.
  *
- * @param   Thread      The thread handle.
- * @param   pvUser      Pointer to the VMTask structure.
- * @return  VINF_SUCCESS (ignored).
+ * @param   pTask       The power down task.
  *
  * @note Locks the Console object for writing.
  */
 /*static*/
-DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
+void Console::i_powerDownThreadTask(VMPowerDownTask *pTask)
 {
+    int rc = VINF_SUCCESS; /* only used in assertion */
     LogFlowFuncEnter();
-
-    int rc = VINF_SUCCESS;
-    //we get pvUser pointer from another thread (see Console::powerDown) where one was allocated.
-    //and here we are in charge of correct deletion this pointer.
-    VMPowerDownTask* task = static_cast<VMPowerDownTask *>(pvUser);
     try
     {
-        if (task->isOk() == false)
+        if (pTask->isOk() == false)
             rc = VERR_GENERAL_FAILURE;
 
-        const ComObjPtr<Console> &that = task->mConsole;
+        const ComObjPtr<Console> &that = pTask->mConsole;
 
         /* Note: no need to use AutoCaller to protect Console because VMTask does
          * that */
@@ -10054,11 +10041,11 @@ DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
         AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
         /* release VM caller to avoid the powerDown() deadlock */
-        task->releaseVMCaller();
+        pTask->releaseVMCaller();
 
         thatLock.release();
 
-        that->i_powerDown(task->mServerProgress);
+        that->i_powerDown(pTask->mServerProgress);
 
         /* complete the operation */
         that->mControl->EndPoweringDown(S_OK, Bstr().raw());
@@ -10066,12 +10053,11 @@ DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
     }
     catch (const std::exception &e)
     {
-        AssertMsgFailed(("Exception %s was cought, rc=%Rrc\n", e.what(), rc));
-        NOREF(e);
+        AssertMsgFailed(("Exception %s was caught, rc=%Rrc\n", e.what(), rc));
+        NOREF(e); NOREF(rc);
     }
 
     LogFlowFuncLeave();
-    return rc;
 }
 
 /**
