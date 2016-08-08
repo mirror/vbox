@@ -1065,7 +1065,7 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 }
 
 /* static */
-DECLCALLBACK(void) GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
+void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
 {
     LogFlowFunc(("pTask=%p\n", pTask));
     AssertPtrReturnVoid(pTask);
