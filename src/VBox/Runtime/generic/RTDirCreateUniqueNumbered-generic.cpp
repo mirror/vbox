@@ -70,9 +70,9 @@ RTDECL(int) RTDirCreateUniqueNumbered(char *pszPath, size_t cbSize, RTFMODE fMod
         uint32_t cMaxTries;
         switch (cchDigits)
         {
-            case 1:  cMaxTries =    30; break;
-            case 2:  cMaxTries =   300; break;
-            case 3:  cMaxTries =  2000; break;
+            case 1:  cMaxTries =    40; break;
+            case 2:  cMaxTries =   400; break;
+            case 3:  cMaxTries =  4000; break;
             default: cMaxTries = 10000; break;
         }
 
