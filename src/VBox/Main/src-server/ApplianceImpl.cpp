@@ -1657,7 +1657,8 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::i_findControllerF
             case VirtualSystemDescriptionType_HardDiskControllerSAS:
                 if (d.strRef == strRef)
                     return &d;
-            break;
+                break;
+            default: break; /* Shut up MSC. */
         }
     }
 

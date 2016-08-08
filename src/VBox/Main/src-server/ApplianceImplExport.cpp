@@ -206,15 +206,17 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
 //     <const name="HardDiskControllerIDE" value="6" />
         if (!pIDEController.isNull())
         {
-            Utf8Str strVBox;
             StorageControllerType_T ctlr;
             rc = pIDEController->COMGETTER(ControllerType)(&ctlr);
             if (FAILED(rc)) throw rc;
-            switch(ctlr)
+
+            Utf8Str strVBox;
+            switch (ctlr)
             {
                 case StorageControllerType_PIIX3: strVBox = "PIIX3"; break;
                 case StorageControllerType_PIIX4: strVBox = "PIIX4"; break;
                 case StorageControllerType_ICH6: strVBox = "ICH6"; break;
+                default: break; /* Shut up MSC. */
             }
 
             if (strVBox.length())
@@ -251,10 +253,11 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
             if (SUCCEEDED(rc))
             {
                 Utf8Str strVBox = "LsiLogic";       // the default in VBox
-                switch(ctlr)
+                switch (ctlr)
                 {
                     case StorageControllerType_LsiLogic: strVBox = "LsiLogic"; break;
                     case StorageControllerType_BusLogic: strVBox = "BusLogic"; break;
+                    default: break; /* Shut up MSC. */
                 }
                 lSCSIControllerIndex = (int32_t)pNewDesc->m->maDescriptions.size();
                 pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
@@ -518,7 +521,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                                          strLocation, // vbox value: media path
                                         (uint32_t)(llSize / _1M),
                                          strExtra);
-                break;
+                    break;
 
                 case DeviceType_DVD:
                     Log(("Adding VirtualSystemDescriptionType_CDROM, disk size: %RI64\n", llSize));
@@ -528,7 +531,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                                          strLocation, // vbox value
                                          (uint32_t)(llSize / _1M),// ulSize
                                          strExtra);
-                break;
+                    break;
 
                 case DeviceType_Floppy:
                     pNewDesc->i_addEntry(VirtualSystemDescriptionType_Floppy,
@@ -537,7 +540,9 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                                          strEmpty,      // vbox value
                                          1,       // ulSize
                                          strExtra);
-                break;
+                    break;
+
+                default: break; /* Shut up MSC. */
             }
         }
 
@@ -1372,7 +1377,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool
                                                                                           // won't eat the item
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_HardDiskControllerIDE:
                     /* <Item>
@@ -1410,7 +1415,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             lIDESecondaryControllerIndex = lIndexThis;
                         }
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_HardDiskControllerSATA:
                     /*  <Item>
@@ -1445,7 +1450,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         idSATAController = ulInstanceID;
                         lSATAControllerIndex = lIndexThis;
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_HardDiskControllerSCSI:
                 case VirtualSystemDescriptionType_HardDiskControllerSAS:
@@ -1486,7 +1491,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         idSCSIController = ulInstanceID;
                         lSCSIControllerIndex = lIndexThis;
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_HardDiskImage:
                     /*  <Item>
@@ -1541,7 +1546,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
                         stack.mapDisks[strDiskID] = &desc;
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_Floppy:
                     if (uLoop == 1)
@@ -1552,7 +1557,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         lAutomaticAllocation = 0;
                         lAddressOnParent = 0;           // this is what OVFTool writes
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_CDROM:
                     /*  <Item>
@@ -1615,7 +1620,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         // there is no DVD drive map to update because it is
                         // handled completely with this entry.
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_NetworkAdapter:
                     /* <Item>
@@ -1649,7 +1654,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
                         stack.mapNetworks[desc.strOvf] = true;
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_USBController:
                     /*  <Item ovf:required="false">
@@ -1668,7 +1673,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         lAddress = 0;                   // this is what OVFTool writes
                         lBusNumber = 0;                 // this is what OVFTool writes
                     }
-                break;
+                    break;
 
                 case VirtualSystemDescriptionType_SoundCard:
                 /*  <Item ovf:required="false">
@@ -1689,7 +1694,9 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         lAutomaticAllocation = 0;
                         lAddressOnParent = 3;               // what gives? this is what OVFTool writes
                     }
-                break;
+                    break;
+
+                default: break; /* Shut up MSC. */
             }
 
             if (type)
