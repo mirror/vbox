@@ -216,7 +216,7 @@ typedef struct VDSOCKETINT
  * @note The constructor of this class adds a caller on the managed Medium
  *       object which is automatically released upon destruction.
  */
-class Medium::Task: public ThreadTask
+class Medium::Task : public ThreadTask
 {
 public:
     Task(Medium *aMedium, Progress *aProgress)
@@ -294,10 +294,10 @@ public:
         LogFlowFuncEnter();
         try
         {
-            mRC = executeTask();
+            mRC = executeTask(); /* (destructor picks up mRC, see above) */
             LogFlowFunc(("rc=%Rhrc\n", mRC));
         }
-        catch(...)
+        catch (...)
         {
             LogRel(("Some exception in the function Medium::Task:handler()\n"));
         }

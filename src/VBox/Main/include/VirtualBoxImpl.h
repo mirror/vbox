@@ -384,7 +384,7 @@ private:
 
 #ifdef RT_OS_WINDOWS
     friend class StartSVCHelperClientData;
-    static DECLCALLBACK(int) SVCHelperClientThread(RTTHREAD aThread, void *aUser);
+    static void i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask);
 #endif
 
 };

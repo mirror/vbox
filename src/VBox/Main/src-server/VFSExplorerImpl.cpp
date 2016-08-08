@@ -169,14 +169,11 @@ public:
     ~TaskVFSExplorer() {}
 
 private:
-    void handler()
-    {
-        int vrc = taskThread(NULL, this);
-        NOREF(vrc);
-    }
+    void handler();
 
-    static DECLCALLBACK(int) taskThread(RTTHREAD aThread, void *pvUser);
+#if 0 /* unused */
     static DECLCALLBACK(int) uploadProgress(unsigned uPercent, void *pvUser);
+#endif
 
     TaskType taskType;
     VFSExplorer *pVFSExplorer;
@@ -191,24 +188,21 @@ private:
 };
 
 /* static */
-DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread */, void *pvUser)
+void VFSExplorer::TaskVFSExplorer::handler()
 {
-    TaskVFSExplorer* pTask = static_cast<TaskVFSExplorer*>(pvUser);
-    AssertReturn(pTask, VERR_GENERAL_FAILURE);
-
-    VFSExplorer *pVFSExplorer = pTask->pVFSExplorer;
+    VFSExplorer *pVFSExplorer = this->pVFSExplorer;
 
     LogFlowFuncEnter();
     LogFlowFunc(("VFSExplorer %p\n", pVFSExplorer));
 
     HRESULT rc = S_OK;
 
-    switch(pTask->taskType)
+    switch (this->taskType)
     {
         case TaskVFSExplorer::Update:
         {
             if (pVFSExplorer->m->storageType == VFSType_File)
-                rc = pVFSExplorer->i_updateFS(pTask);
+                rc = pVFSExplorer->i_updateFS(this);
             else if (pVFSExplorer->m->storageType == VFSType_S3)
                 rc = VERR_NOT_IMPLEMENTED;
             break;
@@ -216,22 +210,21 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
         case TaskVFSExplorer::Delete:
         {
             if (pVFSExplorer->m->storageType == VFSType_File)
-                rc = pVFSExplorer->i_deleteFS(pTask);
+                rc = pVFSExplorer->i_deleteFS(this);
             else if (pVFSExplorer->m->storageType == VFSType_S3)
                 rc = VERR_NOT_IMPLEMENTED;
             break;
         }
         default:
-            AssertMsgFailed(("Invalid task type %u specified!\n", pTask->taskType));
+            AssertMsgFailed(("Invalid task type %u specified!\n", this->taskType));
             break;
     }
 
     LogFlowFunc(("rc=%Rhrc\n", rc)); NOREF(rc);
     LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
 }
 
+#if 0 /* unused */
 /* static */
 DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::uploadProgress(unsigned uPercent, void *pvUser)
 {
@@ -248,6 +241,7 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::uploadProgress(unsigned uPercent
     }
     return VINF_SUCCESS;
 }
+#endif
 
 FsObjType_T VFSExplorer::i_iprtToVfsObjType(RTFMODE aType) const
 {

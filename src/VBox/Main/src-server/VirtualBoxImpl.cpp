@@ -2445,7 +2445,7 @@ public:
 
     void handler()
     {
-        int vrc = VirtualBox::SVCHelperClientThread(NULL, this);
+        VirtualBox::i_SVCHelperClientThreadTask(this);
     }
 
     const ComPtr<Progress>& GetProgressObject() const {return progress;}
@@ -2548,7 +2548,7 @@ HRESULT VirtualBox::i_startSVCHelperClient(bool aPrivileged,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* create the SVCHelperClientThread() argument */
+    /* create the i_SVCHelperClientThreadTask() argument */
 
     HRESULT hr = S_OK;
     StartSVCHelperClientData *pTask = NULL;
@@ -2586,22 +2586,19 @@ HRESULT VirtualBox::i_startSVCHelperClient(bool aPrivileged,
  *  Worker thread for startSVCHelperClient().
  */
 /* static */
-DECLCALLBACK(int)
-VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
+void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
 {
     LogFlowFuncEnter();
-
-    StartSVCHelperClientData* d = static_cast<StartSVCHelperClientData*>(aUser);
     HRESULT rc = S_OK;
     bool userFuncCalled = false;
 
     do
     {
-        AssertBreakStmt(d, rc = E_POINTER);
-        AssertReturn(!d->progress.isNull(), E_POINTER);
+        AssertBreakStmt(pTask, rc = E_POINTER);
+        AssertReturnVoid(!pTask->progress.isNull());
 
         /* protect VirtualBox from uninitialization */
-        AutoCaller autoCaller(d->that);
+        AutoCaller autoCaller(pTask->that);
         if (!autoCaller.isOk())
         {
             /* it's too late */
@@ -2618,8 +2615,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
                                        id.raw()).c_str());
         if (RT_FAILURE(vrc))
         {
-            rc = d->that->setError(E_FAIL,
-                                   tr("Could not create the communication channel (%Rrc)"), vrc);
+            rc = pTask->that->setError(E_FAIL, tr("Could not create the communication channel (%Rrc)"), vrc);
             break;
         }
 
@@ -2628,7 +2624,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
         char *exePath = RTProcGetExecutablePath(exePathBuf, RTPATH_MAX);
         if (!exePath)
         {
-            rc = d->that->setError(E_FAIL, tr("Cannot get executable name"));
+            rc = pTask->that->setError(E_FAIL, tr("Cannot get executable name"));
             break;
         }
 
@@ -2638,7 +2634,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
 
         RTPROCESS pid = NIL_RTPROCESS;
 
-        if (d->privileged)
+        if (pTask->privileged)
         {
             /* Attempt to start a privileged process using the Run As dialog */
 
@@ -2664,12 +2660,9 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
                 /* hide excessive details in case of a frequent error
                  * (pressing the Cancel button to close the Run As dialog) */
                 if (vrc2 == VERR_CANCELLED)
-                    rc = d->that->setError(E_FAIL,
-                                           tr("Operation canceled by the user"));
+                    rc = pTask->that->setError(E_FAIL, tr("Operation canceled by the user"));
                 else
-                    rc = d->that->setError(E_FAIL,
-                                           tr("Could not launch a privileged process '%s' (%Rrc)"),
-                                           exePath, vrc2);
+                    rc = pTask->that->setError(E_FAIL, tr("Could not launch a privileged process '%s' (%Rrc)"), exePath, vrc2);
                 break;
             }
         }
@@ -2679,8 +2672,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
             vrc = RTProcCreate(exePath, args, RTENV_DEFAULT, 0, &pid);
             if (RT_FAILURE(vrc))
             {
-                rc = d->that->setError(E_FAIL,
-                                       tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
+                rc = pTask->that->setError(E_FAIL, tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
                 break;
             }
         }
@@ -2690,7 +2682,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
         if (RT_SUCCESS(vrc))
         {
             /* start the user supplied function */
-            rc = d->func(&client, d->progress, d->user, &vrc);
+            rc = pTask->func(&client, pTask->progress, pTask->user, &vrc);
             userFuncCalled = true;
         }
 
@@ -2703,8 +2695,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
 
         if (SUCCEEDED(rc) && RT_FAILURE(vrc))
         {
-            rc = d->that->setError(E_FAIL,
-                                   tr("Could not operate the communication channel (%Rrc)"), vrc);
+            rc = pTask->that->setError(E_FAIL, tr("Could not operate the communication channel (%Rrc)"), vrc);
             break;
         }
     }
@@ -2714,13 +2705,12 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
     {
         /* call the user function in the "cleanup only" mode
          * to let it free resources passed to in aUser */
-        d->func(NULL, NULL, d->user, NULL);
+        pTask->func(NULL, NULL, pTask->user, NULL);
     }
 
-    d->progress->i_notifyComplete(rc);
+    pTask->progress->i_notifyComplete(rc);
 
     LogFlowFuncLeave();
-    return 0;
 }
 
 #endif /* RT_OS_WINDOWS */
