@@ -864,6 +864,7 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
             vrc = objData.FromMkTemp(stdOut.at(0));
             if (RT_FAILURE(vrc))
             {
+                vrcGuest = vrc;
                 if (pGuestRc)
                     *pGuestRc = vrc;
                 vrc = VERR_GSTCTL_GUEST_ERROR;
@@ -878,7 +879,7 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     else if (pGuestRc)
         *pGuestRc = vrcGuest;
 
-    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
     return vrc;
 }
 
@@ -1427,6 +1428,7 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
             vrc = objData.FromStat(stdOut.at(0));
             if (RT_FAILURE(vrc))
             {
+                vrcGuest = vrc;
                 if (pGuestRc)
                     *pGuestRc = vrc;
                 vrc = VERR_GSTCTL_GUEST_ERROR;
@@ -1438,7 +1440,7 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
     else if (pGuestRc)
         *pGuestRc = vrcGuest;
 
-    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
+    LogFlowThisFunc(("Returning vrc=%Rrc, vrcGuest=%Rrc\n", vrc, vrcGuest));
     return vrc;
 }
 
