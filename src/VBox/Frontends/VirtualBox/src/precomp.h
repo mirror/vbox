@@ -53,7 +53,7 @@
 #include <QDate>
 #include <QDateTime>
 #include <QDesktopServices>
-#include <QDesktopWidget>
+//#include <QDesktopWidget> -  only used once
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>

@@ -29,7 +29,6 @@
 # include <QToolButton>
 # include <QStateMachine>
 # include <QPainter>
-# include <QDesktopWidget>
 # ifdef VBOX_WS_WIN
 #  include <QWindow>
 # endif /* VBOX_WS_WIN */
@@ -636,7 +635,7 @@ void UIMiniToolBar::sltAdjust()
     LogRel2(("GUI: UIMiniToolBar::sltAdjust\n"));
 
     /* Get corresponding host-screen: */
-    const int iHostScreen = QApplication::desktop()->screenNumber(parentWidget());
+    const int iHostScreen = gpDesktop->screenNumber(parentWidget());
     Q_UNUSED(iHostScreen);
     /* And corresponding working area: */
     QRect workingArea;

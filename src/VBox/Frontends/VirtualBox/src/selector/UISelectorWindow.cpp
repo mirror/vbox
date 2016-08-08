@@ -28,9 +28,6 @@
 # include <QTimer>
 # if QT_VERSION >= 0x050000
 #  include <QStandardPaths>
-#  ifdef VBOX_WS_X11
-#   include <QDesktopWidget>
-#  endif /* VBOX_WS_X11 */
 # else /* QT_VERSION < 0x050000 */
 #  include <QDesktopServices>
 # endif /* QT_VERSION < 0x050000 */
@@ -1725,7 +1722,7 @@ void UISelectorWindow::prepareConnections()
 {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
     /* Desktop event handlers: */
-    connect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenAvailableAreaChange()));
+    connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaResized(int)), this, SLOT(sltHandleHostScreenAvailableAreaChange()));
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
     /* Medium enumeration connections: */

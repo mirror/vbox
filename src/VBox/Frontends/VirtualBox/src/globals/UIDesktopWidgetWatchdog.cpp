@@ -165,13 +165,13 @@ int UIDesktopWidgetWatchdog::screenCount() const
 
 int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
 {
-    /* Redirect call to QDesktopWidget: */
+    /* Redirect call to desktop-widget: */
     return QApplication::desktop()->screenNumber(pWidget);
 }
 
 int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point) const
 {
-    /* Redirect call to QDesktopWidget: */
+    /* Redirect call to desktop-widget: */
     return QApplication::desktop()->screenNumber(point);
 }
 

@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDesktopWidget>
 # include <QMainWindow>
 # include <QPainter>
 # include <QScrollBar>
@@ -803,7 +802,7 @@ void UIMachineView::prepareFilters()
 void UIMachineView::prepareConnections()
 {
     /* Desktop resolution change (e.g. monitor hotplug): */
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this,
+    connect(gpDesktop, SIGNAL(sigHostScreenResized(int)), this,
             SLOT(sltDesktopResized()));
     /* Scale-factor change: */
     connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),

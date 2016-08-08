@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDesktopWidget>
 # include <QMouseEvent>
 # include <QTimer>
 
@@ -881,8 +880,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         else
             m_lastMousePos = globalPos;
 #else /* VBOX_WS_WIN */
-        int iWe = QApplication::desktop()->width() - 1;
-        int iHe = QApplication::desktop()->height() - 1;
+        int iWe = gpDesktop->overallDesktopWidth() - 1;
+        int iHe = gpDesktop->overallDesktopHeight() - 1;
         QPoint p = globalPos;
         if (globalPos.x() == 0)
             p.setX(iWe - 1);

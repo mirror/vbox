@@ -23,7 +23,6 @@
 # include <QFileDialog>
 # include <QToolTip>
 # include <QTranslator>
-# include <QDesktopWidget>
 # if QT_VERSION >= 0x050000
 #  include <QStandardPaths>
 # endif /* QT_VERSION >= 0x050000 */
@@ -2599,7 +2598,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
     if (w)
     {
         w = w->window();
-        deskGeo = QApplication::desktop()->availableGeometry (w);
+        deskGeo = gpDesktop->availableGeometry (w);
         parentGeo = w->frameGeometry();
         /* On X11/Gnome, geo/frameGeo.x() and y() are always 0 for top level
          * widgets with parents, what a shame. Use mapToGlobal() to workaround. */
@@ -2610,7 +2609,7 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
     }
     else
     {
-        deskGeo = QApplication::desktop()->availableGeometry();
+        deskGeo = gpDesktop->availableGeometry();
         parentGeo = deskGeo;
     }
 
@@ -2878,18 +2877,17 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
 /* static */
 quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
 {
-    QDesktopWidget *pDW = QApplication::desktop();
     /* We create a list of the size of all available host monitors. This list
      * is sorted by value and by starting with the biggest one, we calculate
      * the memory requirements for every guest screen. This is of course not
      * correct, but as we can't predict on which host screens the user will
      * open the guest windows, this is the best assumption we can do, cause it
      * is the worst case. */
-    const int cHostScreens = pDW->screenCount();
+    const int cHostScreens = gpDesktop->screenCount();
     QVector<int> screenSize(qMax(cMonitors, cHostScreens), 0);
     for (int i = 0; i < cHostScreens; ++i)
     {
-        QRect r = pDW->screenGeometry(i);
+        QRect r = gpDesktop->screenGeometry(i);
         screenSize[i] = r.width() * r.height();
     }
     /* Now sort the vector */
