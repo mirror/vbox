@@ -260,7 +260,9 @@ static int getSmcDeviceKey(IVirtualBox *pVirtualBox, IMachine *pMachine, Utf8Str
  * As a temporary measure, we'll drop global optimizations.
  */
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
-# pragma optimize("g", off)
+# if _MSC_VER >= RT_MSC_VER_VC80 && _MSC_VER < RT_MSC_VER_VC100
+#  pragma optimize("g", off)
+# endif
 #endif
 
 static const char *const g_apszIDEDrives[4] =
