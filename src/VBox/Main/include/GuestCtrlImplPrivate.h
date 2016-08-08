@@ -822,20 +822,20 @@ public:
     void Dump(const char *pszFile);
 #endif
 
-    uint32_t GetOffset() { return m_cbOffset; }
+    uint32_t GetOffset() { return m_offBuffer; }
 
-    size_t GetSize() { return m_cbSize; }
+    size_t GetSize() { return m_cbUsed; }
 
     int ParseBlock(GuestProcessStreamBlock &streamBlock);
 
 protected:
 
     /** Currently allocated size of internal stream buffer. */
-    uint32_t m_cbAllocated;
-    /** Currently used size of allocated internal stream buffer. */
-    size_t m_cbSize;
-    /** Current offset within the internal stream buffer. */
-    uint32_t m_cbOffset;
+    size_t m_cbAllocated;
+    /** Currently used size at m_offBuffer. */
+    size_t m_cbUsed;
+    /** Current byte offset within the internal stream buffer. */
+    size_t m_offBuffer;
     /** Internal stream buffer. */
     BYTE *m_pbBuffer;
 };

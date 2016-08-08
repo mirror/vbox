@@ -737,17 +737,17 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
 
     alock.release(); /* Drop write lock before sending. */
 
-    uint32_t cbRead;
     vrc = sendCommand(HOST_FILE_READ, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
-
-    if (RT_SUCCESS(vrc))
     {
-        LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
-
-        if (pcbRead)
-            *pcbRead = cbRead;
+        uint32_t cbRead = 0;
+        vrc = i_waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
+        if (RT_SUCCESS(vrc))
+        {
+            LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
+            if (pcbRead)
+                *pcbRead = cbRead;
+        }
     }
 
     unregisterWaitEvent(pEvent);
@@ -793,17 +793,18 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
 
     alock.release(); /* Drop write lock before sending. */
 
-    uint32_t cbRead;
     vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
-
-    if (RT_SUCCESS(vrc))
     {
-        LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
+        uint32_t cbRead = 0;
+        vrc = i_waitForRead(pEvent, uTimeoutMS, pvData, cbData, &cbRead);
+        if (RT_SUCCESS(vrc))
+        {
+            LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
 
-        if (pcbRead)
-            *pcbRead = cbRead;
+            if (pcbRead)
+                *pcbRead = cbRead;
+        }
     }
 
     unregisterWaitEvent(pEvent);
@@ -1098,17 +1099,17 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
 
     alock.release(); /* Drop write lock before sending. */
 
-    uint32_t cbWritten;
     vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForWrite(pEvent, uTimeoutMS, &cbWritten);
-
-    if (RT_SUCCESS(vrc))
     {
-        LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
-
-        if (cbWritten)
-            *pcbWritten = cbWritten;
+        uint32_t cbWritten = 0;
+        vrc = i_waitForWrite(pEvent, uTimeoutMS, &cbWritten);
+        if (RT_SUCCESS(vrc))
+        {
+            LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
+            if (cbWritten)
+                *pcbWritten = cbWritten;
+        }
     }
 
     unregisterWaitEvent(pEvent);
@@ -1158,17 +1159,17 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
 
     alock.release(); /* Drop write lock before sending. */
 
-    uint32_t cbWritten;
     vrc = sendCommand(HOST_FILE_WRITE_AT, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForWrite(pEvent, uTimeoutMS, &cbWritten);
-
-    if (RT_SUCCESS(vrc))
     {
-        LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
-
-        if (cbWritten)
-            *pcbWritten = cbWritten;
+        uint32_t cbWritten = 0;
+        vrc = i_waitForWrite(pEvent, uTimeoutMS, &cbWritten);
+        if (RT_SUCCESS(vrc))
+        {
+            LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
+            if (cbWritten)
+                *pcbWritten = cbWritten;
+        }
     }
 
     unregisterWaitEvent(pEvent);
