@@ -3223,37 +3223,6 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         if (RT_FAILURE(rc))
             goto out;
 
-        /*
-         * We have to check for the asynchronous open flag. The
-         * extents are parsed and the type of all are known now.
-         * Check if every extent is either FLAT or ZERO.
-         */
-        if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-        {
-            unsigned cFlatExtents = 0;
-
-            for (unsigned i = 0; i < pImage->cExtents; i++)
-            {
-                pExtent = &pImage->pExtents[i];
-
-                if ((    pExtent->enmType != VMDKETYPE_FLAT
-                     &&  pExtent->enmType != VMDKETYPE_ZERO
-                     &&  pExtent->enmType != VMDKETYPE_VMFS)
-                    || ((pImage->pExtents[i].enmType == VMDKETYPE_FLAT) && (cFlatExtents > 0)))
-                {
-                    /*
-                     * Opened image contains at least one none flat or zero extent.
-                     * Return error but don't set error message as the caller
-                     * has the chance to open in non async I/O mode.
-                     */
-                    rc = VERR_NOT_SUPPORTED;
-                    goto out;
-                }
-                if (pExtent->enmType == VMDKETYPE_FLAT)
-                    cFlatExtents++;
-            }
-        }
-
         for (unsigned i = 0; i < pImage->cExtents; i++)
         {
             pExtent = &pImage->pExtents[i];
@@ -3748,8 +3717,10 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
         if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         {
+            unsigned uPercentEnd = uPercentStart + uPercentSpan;
             rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, cbExtent,
-                                                0 /* fFlags */, pfnProgress, pvUser, uPercentStart + cbOffset * uPercentSpan / cbSize, uPercentSpan / cExtents);
+                                                0 /* fFlags */, pfnProgress, pvUser, uPercentStart + cbOffset * uPercentSpan / cbSize,
+                                                cbExtent * uPercentSpan / cbSize);
             if (RT_FAILURE(rc))
                 return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
         }
@@ -4357,7 +4328,7 @@ static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
                 AssertRC(rc);
             }
         }
-        else
+        else if (!fDelete)
             vmdkFlushImage(pImage, NULL);
 
         if (pImage->pExtents != NULL)
