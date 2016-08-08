@@ -47,6 +47,12 @@
 
 typedef std::list<Guid> GuidList;
 
+
+#ifdef VBOX_WITH_EXTPACK
+static const char g_szVDPlugin[] = "VDPluginCrypt";
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Medium data definition
@@ -3573,14 +3579,12 @@ HRESULT Medium::getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPass
             throw VBOX_E_NOT_SUPPORTED;
 
 # ifdef VBOX_WITH_EXTPACK
-        static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
-        static const char *s_pszVDPlugin = "VDPluginCrypt";
         ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
-        if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+        if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
         {
             /* Load the plugin */
             Utf8Str strPlugin;
-            rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+            rc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
             if (SUCCEEDED(rc))
             {
                 int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
@@ -3592,12 +3596,12 @@ HRESULT Medium::getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPass
             else
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
-                               strExtPackPuel.c_str());
+                               ORACLE_PUEL_EXTPACK_NAME);
         }
         else
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Encryption is not supported because the extension pack '%s' is missing"),
-                           strExtPackPuel.c_str());
+                           ORACLE_PUEL_EXTPACK_NAME);
 
         PVBOXHDD pDisk = NULL;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
@@ -3651,14 +3655,12 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
                            tr("The given password must not be empty"));
 
 # ifdef VBOX_WITH_EXTPACK
-        static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
-        static const char *s_pszVDPlugin = "VDPluginCrypt";
         ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
-        if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+        if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
         {
             /* Load the plugin */
             Utf8Str strPlugin;
-            rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+            rc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
             if (SUCCEEDED(rc))
             {
                 int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
@@ -3670,12 +3672,12 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
             else
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
-                               strExtPackPuel.c_str());
+                               ORACLE_PUEL_EXTPACK_NAME);
         }
         else
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Encryption is not supported because the extension pack '%s' is missing"),
-                           strExtPackPuel.c_str());
+                           ORACLE_PUEL_EXTPACK_NAME);
 
         PVBOXHDD pDisk = NULL;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
@@ -9413,14 +9415,12 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
                 settings::StringsMap::iterator itKeyId = pBase->m->mapProperties.find("CRYPT/KeyId");
 
 #ifdef VBOX_WITH_EXTPACK
-                static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
-                static const char *s_pszVDPlugin = "VDPluginCrypt";
                 ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
-                if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+                if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
                 {
                     /* Load the plugin */
                     Utf8Str strPlugin;
-                    rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+                    rc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
                     if (SUCCEEDED(rc))
                     {
                         vrc = VDPluginLoadFromFilename(strPlugin.c_str());
@@ -9432,12 +9432,12 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
                     else
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                        tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
-                                       strExtPackPuel.c_str());
+                                       ORACLE_PUEL_EXTPACK_NAME);
                 }
                 else
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Encryption is not supported because the extension pack '%s' is missing"),
-                                   strExtPackPuel.c_str());
+                                   ORACLE_PUEL_EXTPACK_NAME);
 #else
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Encryption is not supported because extension pack support is not built in"));
@@ -9895,14 +9895,12 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
     try
     {
 # ifdef VBOX_WITH_EXTPACK
-        static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
-        static const char *s_pszVDPlugin = "VDPluginCrypt";
         ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
-        if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+        if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
         {
             /* Load the plugin */
             Utf8Str strPlugin;
-            rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+            rc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
             if (SUCCEEDED(rc))
             {
                 int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
@@ -9914,12 +9912,12 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             else
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
-                               strExtPackPuel.c_str());
+                               ORACLE_PUEL_EXTPACK_NAME);
         }
         else
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Encryption is not supported because the extension pack '%s' is missing"),
-                           strExtPackPuel.c_str());
+                           ORACLE_PUEL_EXTPACK_NAME);
 
         PVBOXHDD pDisk = NULL;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);

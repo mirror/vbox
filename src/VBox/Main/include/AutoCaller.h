@@ -246,6 +246,8 @@ public:
         AutoCaller::init(aObj, true);
     }
 
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoLimitedCaller); /* Shuts up MSC warning C4625. */
 };
 
 /**

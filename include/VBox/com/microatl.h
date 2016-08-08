@@ -30,6 +30,10 @@
 #include <iprt/critsect.h>
 #include <iprt/err.h>
 
+#include <iprt/win/windows.h>
+
+#include <new>
+
 
 namespace ATL
 {
@@ -396,21 +400,13 @@ public:
 
     HRESULT AddTermFunc(PFNATLTERMFUNC pfn, void *pv)
     {
-        HRESULT hrc = S_OK;
-        _ATL_TERMFUNC_ELEM *pNew = NULL;
-        try
-        {
-            pNew = new _ATL_TERMFUNC_ELEM;
-        }
-        catch (...)
-        {
-        }
+        _ATL_TERMFUNC_ELEM *pNew = new(std::nothrow) _ATL_TERMFUNC_ELEM;
         if (!pNew)
             return E_OUTOFMEMORY;
         pNew->pfn = pfn;
         pNew->pv = pv;
         CComCritSectLock<CComCriticalSection> lock(m_csStaticDataInitAndTypeInfo, false);
-        hrc = lock.Lock();
+        HRESULT hrc = lock.Lock();
         if (SUCCEEDED(hrc))
         {
             pNew->pNext = m_pTermFuncs;
@@ -644,14 +640,7 @@ public:
         AssertReturn(ppv, E_POINTER);
         *ppv = NULL;
         HRESULT hrc = E_OUTOFMEMORY;
-        T *p = NULL;
-        try
-        {
-            p = new T(pv);
-        }
-        catch (...)
-        {
-        }
+        T *p = new(std::nothrow) T(pv);
         if (p)
         {
             p->SetVoid(pv);
@@ -745,14 +734,7 @@ public:
         *pp = NULL;
 
         HRESULT hrc = E_OUTOFMEMORY;
-        CComObjectCached<Base> *p = NULL;
-        try
-        {
-            p = new CComObjectCached<Base>();
-        }
-        catch (...)
-        {
-        }
+        CComObjectCached<Base> *p = new(std::nothrow) CComObjectCached<Base>();
         if (p)
         {
             p->SetVoid(NULL);
@@ -1068,14 +1050,7 @@ public:
         *pp = NULL;
 
         HRESULT hrc = E_OUTOFMEMORY;
-        CComObject<Base> *p = NULL;
-        try
-        {
-            p = new CComObject<Base>();
-        }
-        catch (...)
-        {
-        }
+        CComObject<Base> *p = new(std::nothrow) CComObject<Base>();
         if (p)
         {
             p->InternalFinalConstructAddRef();
@@ -1221,14 +1196,7 @@ public:
         *pp = NULL;
 
         HRESULT hrc = E_OUTOFMEMORY;
-        CComAggObject<Aggregated> *p = NULL;
-        try
-        {
-            p = new CComAggObject<Aggregated>(pUnkOuter);
-        }
-        catch (...)
-        {
-        }
+        CComAggObject<Aggregated> *p = new(std::nothrow) CComAggObject<Aggregated>(pUnkOuter);
         if (p)
         {
             p->SetVoid(NULL);

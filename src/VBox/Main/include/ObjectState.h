@@ -129,6 +129,9 @@ private:
 
     /** Protects access to state related data members */
     util::RWLockHandle mStateLock;
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(ObjectState); /* Shuts up MSC warning C4625. */
 };
 
 #endif // !____H_OBJECTSTATE

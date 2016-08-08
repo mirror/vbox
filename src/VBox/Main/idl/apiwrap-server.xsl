@@ -178,7 +178,13 @@ public:
 
 <xsl:template match="interface" mode="classfooter">
     <xsl:param name="addinterfaces"/>
-    <xsl:text>};
+    <xsl:text>
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(</xsl:text>
+    <xsl:value-of select="concat(substring(@name, 2),'Wrap')"/>
+    <xsl:text>); /* Shuts up MSC warning C4625. */
+
+};
 
 </xsl:text>
     <xsl:value-of select="concat('#endif // !', substring(@name, 2), 'Wrap_H_', $G_sNewLine)"/>
@@ -1326,6 +1332,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:if test="$attrbasename = 'MidlDoesNotLikeEmptyInterfaces'">
         <xsl:text>
 #else  /* dummy attribute */
+    NOREF(aMidlDoesNotLikeEmptyInterfaces);
     return E_FAIL;
 #endif /* dummy attribute */</xsl:text>
     </xsl:if>

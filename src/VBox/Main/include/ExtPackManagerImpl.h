@@ -25,6 +25,11 @@
 #include "ExtPackManagerWrap.h"
 #include <iprt/fs.h>
 
+
+/** The name of the oracle extension back. */
+#define ORACLE_PUEL_EXTPACK_NAME "Oracle VM VirtualBox Extension Pack"
+
+
 #if !defined(VBOX_COM_INPROC)
 /**
  * An extension pack file.
@@ -203,7 +208,7 @@ public:
     void        i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM);
     HRESULT     i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack);
     int         i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
-    HRESULT     i_getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrLibrary);
+    HRESULT     i_getLibraryPathForExtPack(const char *a_pszModuleName, const char *a_pszExtPack, Utf8Str *a_pstrLibrary);
     HRESULT     i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack);
     bool        i_isExtPackUsable(const char *a_pszExtPack);
     void        i_dumpAllToReleaseLog(void);

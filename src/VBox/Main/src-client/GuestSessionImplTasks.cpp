@@ -343,7 +343,7 @@ int SessionTaskCopyTo::Run(void)
     /*
      * Query information about our destination first.
      */
-    int guestRc;
+    int guestRc = VERR_IPE_UNINITIALIZED_STATUS;
     if (RT_SUCCESS(rc))
     {
         GuestFsObjData objData;

@@ -1525,7 +1525,7 @@ void Display::i_VideoAccelVRDP(bool fEnable)
 
         mfVideoAccelVRDP = true;
         /* Supporting all orders. */
-        mfu32SupportedOrders = ~0;
+        mfu32SupportedOrders = UINT32_MAX;
 
         i_vbvaSetMemoryFlags(pVideoAccel->pVbvaMemory, pVideoAccel->fVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders,
                              maFramebuffers, mcMonitors);

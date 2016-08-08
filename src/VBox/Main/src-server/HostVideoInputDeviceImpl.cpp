@@ -131,49 +131,41 @@ typedef FNVBOXHOSTWEBCAMLIST *PFNVBOXHOSTWEBCAMLIST;
 
 static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHOSTWEBCAMLIST *ppfn)
 {
-    int rc = VINF_SUCCESS;
-    RTLDRMOD hmod = NIL_RTLDRMOD;
-
-    RTERRINFOSTATIC ErrInfo;
-    RTErrInfoInitStatic(&ErrInfo);
+    int rc;
     if (RTPathHavePath(pszPath))
-        rc = SUPR3HardenedLdrLoadPlugIn(pszPath, &hmod, &ErrInfo.Core);
-    else
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
     {
-        static const char *pszSymbol = "VBoxHostWebcamList";
-        rc = RTLdrGetSymbol(hmod, pszSymbol, (void **)ppfn);
-
-        if (RT_FAILURE(rc) && rc != VERR_SYMBOL_NOT_FOUND)
-            LogRel(("Resolving symbol '%s': %Rrc\n", pszSymbol, rc));
-    }
-    else
-    {
-        LogRel(("Loading the library '%s': %Rrc\n", pszPath, rc));
-        if (RTErrInfoIsSet(&ErrInfo.Core))
-            LogRel(("  %s\n", ErrInfo.Core.pszMsg));
-
-        hmod = NIL_RTLDRMOD;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        *phmod = hmod;
-    }
-    else
-    {
-        if (hmod != NIL_RTLDRMOD)
+        RTLDRMOD hmod = NIL_RTLDRMOD;
+        RTERRINFOSTATIC ErrInfo;
+        rc = SUPR3HardenedLdrLoadPlugIn(pszPath, &hmod, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
         {
-            RTLdrClose(hmod);
-            hmod = NIL_RTLDRMOD;
+            static const char s_szSymbol[] = "VBoxHostWebcamList";
+            rc = RTLdrGetSymbol(hmod, s_szSymbol, (void **)ppfn);
+            if (RT_SUCCESS(rc))
+                *phmod = hmod;
+            else
+            {
+                if (rc != VERR_SYMBOL_NOT_FOUND)
+                    LogRel(("Resolving symbol '%s': %Rrc\n", s_szSymbol, rc));
+                RTLdrClose(hmod);
+                hmod = NIL_RTLDRMOD;
+            }
+        }
+        else
+        {
+            LogRel(("Loading the library '%s': %Rrc\n", pszPath, rc));
+            if (RTErrInfoIsSet(&ErrInfo.Core))
+                LogRel(("  %s\n", ErrInfo.Core.pszMsg));
         }
     }
-
+    else
+    {
+        LogRel(("Loading the library '%s': No path! Refusing to try loading it!\n", pszPath));
+        rc = VERR_INVALID_PARAMETER;
+    }
     return rc;
 }
 
-static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
 
 static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList *pList)
 {
@@ -182,7 +174,7 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
 
 #ifdef VBOX_WITH_EXTPACK
     ExtPackManager *pExtPackMgr = pVirtualBox->i_getExtPackManager();
-    hr = pExtPackMgr->i_getLibraryPathForExtPack("VBoxHostWebcam", &strExtPackPuel, &strLibrary);
+    hr = pExtPackMgr->i_getLibraryPathForExtPack("VBoxHostWebcam", ORACLE_PUEL_EXTPACK_NAME, &strLibrary);
 #else
     hr = E_NOTIMPL;
 #endif

@@ -178,6 +178,8 @@ public:
 private:
     struct Data;
     Data *m;
+
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(RWLockHandle); /* Shuts up MSC warning C4625. */
 };
 
 /**
@@ -213,6 +215,8 @@ public:
 private:
     struct Data;
     Data *m;
+
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(WriteLockHandle); /* Shuts up MSC warning C4625. */
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -389,6 +393,9 @@ public:
 
     virtual void callLockImpl(LockHandle &l);
     virtual void callUnlockImpl(LockHandle &l);
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoReadLock); /* Shuts up MSC warning C4625. */
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -427,6 +434,9 @@ protected:
 
     virtual void callLockImpl(LockHandle &l);
     virtual void callUnlockImpl(LockHandle &l);
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoWriteLockBase); /* Shuts up MSC warning C4625. */
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -562,6 +572,9 @@ public:
 
     bool isWriteLockOnCurrentThread() const;
     uint32_t writeLockLevel() const;
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoWriteLock); /* Shuts up MSC warning C4625. */
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -588,6 +601,9 @@ public:
     {
         cleanup();
     }
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoMultiWriteLock2); /* Shuts up MSC warning C4625. */
 };
 
 /**
@@ -610,6 +626,9 @@ public:
     {
         cleanup();
     }
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoMultiWriteLock3); /* Shuts up MSC warning C4625. */
 };
 
 /**
@@ -634,6 +653,9 @@ public:
     {
         cleanup();
     }
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoMultiWriteLock4); /* Shuts up MSC warning C4625. */
 };
 
 } /* namespace util */

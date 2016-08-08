@@ -1064,8 +1064,8 @@ HRESULT Console::i_teleporterTrg(PUVM pUVM, IMachine *pMachine, Utf8Str *pErrorM
     /*
      * Create the TCP server.
      */
-    int vrc;
-    PRTTCPSERVER hServer;
+    int vrc = VINF_SUCCESS; /* Shut up MSC */
+    PRTTCPSERVER hServer = NULL; /* ditto */
     if (uPort)
         vrc = RTTcpServerCreateEx(pszAddress, uPort, &hServer);
     else

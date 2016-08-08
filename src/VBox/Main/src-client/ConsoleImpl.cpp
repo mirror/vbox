@@ -10049,9 +10049,10 @@ DECLCALLBACK(int) Console::i_powerDownThread(RTTHREAD Thread, void *pvUser)
         that->mControl->EndPoweringDown(S_OK, Bstr().raw());
 
     }
-    catch(const std::exception &e)
+    catch (const std::exception &e)
     {
         AssertMsgFailed(("Exception %s was cought, rc=%Rrc\n", e.what(), rc));
+        NOREF(e);
     }
 
     LogFlowFuncLeave();

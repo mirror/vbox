@@ -503,6 +503,9 @@ private:
     VIDEORECCONTEXT *mpVideoRecCtx;
     bool maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Display); /* Shuts up MSC warning C4625. */
 };
 
 /* The legacy VBVA helpers. */

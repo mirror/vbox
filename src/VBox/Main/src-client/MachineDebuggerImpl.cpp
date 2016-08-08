@@ -84,13 +84,13 @@ HRESULT MachineDebugger::init(Console *aParent)
 
     for (unsigned i = 0; i < RT_ELEMENTS(maiQueuedEmExecPolicyParams); i++)
         maiQueuedEmExecPolicyParams[i] = UINT8_MAX;
-    mSingleStepQueued = ~0;
-    mRecompileUserQueued = ~0;
-    mRecompileSupervisorQueued = ~0;
-    mPatmEnabledQueued = ~0;
-    mCsamEnabledQueued = ~0;
-    mLogEnabledQueued = ~0;
-    mVirtualTimeRateQueued = ~0;
+    mSingleStepQueued = -1;
+    mRecompileUserQueued = -1;
+    mRecompileSupervisorQueued = -1;
+    mPatmEnabledQueued = -1;
+    mCsamEnabledQueued = -1;
+    mLogEnabledQueued = -1;
+    mVirtualTimeRateQueued = UINT32_MAX;
     mFlushMode = false;
 
     /* Confirm a successful initialization */
@@ -1582,10 +1582,10 @@ HRESULT MachineDebugger::getStats(const com::Utf8Str &aPattern, BOOL aWithDescri
 void MachineDebugger::i_flushQueuedSettings()
 {
     mFlushMode = true;
-    if (mSingleStepQueued != ~0)
+    if (mSingleStepQueued != -1)
     {
         COMSETTER(SingleStep)(mSingleStepQueued);
-        mSingleStepQueued = ~0;
+        mSingleStepQueued = -1;
     }
     for (unsigned i = 0; i < EMEXECPOLICY_END; i++)
         if (maiQueuedEmExecPolicyParams[i] != UINT8_MAX)
@@ -1593,25 +1593,25 @@ void MachineDebugger::i_flushQueuedSettings()
             i_setEmExecPolicyProperty((EMEXECPOLICY)i, RT_BOOL(maiQueuedEmExecPolicyParams[i]));
             maiQueuedEmExecPolicyParams[i] = UINT8_MAX;
         }
-    if (mPatmEnabledQueued != ~0)
+    if (mPatmEnabledQueued != -1)
     {
         COMSETTER(PATMEnabled)(mPatmEnabledQueued);
-        mPatmEnabledQueued = ~0;
+        mPatmEnabledQueued = -1;
     }
-    if (mCsamEnabledQueued != ~0)
+    if (mCsamEnabledQueued != -1)
     {
         COMSETTER(CSAMEnabled)(mCsamEnabledQueued);
-        mCsamEnabledQueued = ~0;
+        mCsamEnabledQueued = -1;
     }
-    if (mLogEnabledQueued != ~0)
+    if (mLogEnabledQueued != -1)
     {
         COMSETTER(LogEnabled)(mLogEnabledQueued);
-        mLogEnabledQueued = ~0;
+        mLogEnabledQueued = -1;
     }
-    if (mVirtualTimeRateQueued != ~(uint32_t)0)
+    if (mVirtualTimeRateQueued != UINT32_MAX)
     {
         COMSETTER(VirtualTimeRate)(mVirtualTimeRateQueued);
-        mVirtualTimeRateQueued = ~0;
+        mVirtualTimeRateQueued = UINT32_MAX;
     }
     mFlushMode = false;
 }

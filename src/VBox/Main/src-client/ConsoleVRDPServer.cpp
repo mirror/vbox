@@ -200,7 +200,7 @@ static void findTopLeftBorder(const uint8_t *pu8AndMask, const uint8_t *pu8XorMa
     /*
      * Find the top border of the AND mask. First assign to special value.
      */
-    uint32_t ySkipAnd = ~0;
+    uint32_t ySkipAnd = UINT32_MAX;
 
     const uint8_t *pu8And = pu8AndMask;
     const uint32_t cbAndRow = (width + 7) / 8;
@@ -241,7 +241,7 @@ static void findTopLeftBorder(const uint8_t *pu8AndMask, const uint8_t *pu8XorMa
     /*
      * Find the left border of the AND mask.
      */
-    uint32_t xSkipAnd = ~0;
+    uint32_t xSkipAnd = UINT32_MAX;
 
     /* For all bit columns. */
     for (x = 0; x < width && xSkipAnd == ~(uint32_t)0; x++)
@@ -267,7 +267,7 @@ static void findTopLeftBorder(const uint8_t *pu8AndMask, const uint8_t *pu8XorMa
     /*
      * Find the XOR mask top border.
      */
-    uint32_t ySkipXor = ~0;
+    uint32_t ySkipXor = UINT32_MAX;
 
     uint32_t *pu32XorStart = (uint32_t *)pu8XorMask;
 

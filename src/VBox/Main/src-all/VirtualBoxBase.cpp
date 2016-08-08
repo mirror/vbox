@@ -252,9 +252,11 @@ HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, 
                                 true /* aLogIt */);
     }
 
+#ifndef _MSC_VER /* (unreachable) */
     /* should not get here */
     AssertFailed();
     return E_FAIL;
+#endif
 }
 
 /**

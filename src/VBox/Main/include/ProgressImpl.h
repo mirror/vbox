@@ -216,6 +216,9 @@ private:
 
     RTSEMEVENTMULTI mCompletedSem;
     ULONG mWaitersCount;
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Progress); /* Shuts up MSC warning C4625. */
 };
 
 #endif /* ____H_PROGRESSIMPL */

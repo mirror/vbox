@@ -677,7 +677,7 @@ int Display::i_videoAccelFlush(PPDMIDISPLAYPORT pUpPort)
     for (;;)
     {
         VBVACMDHDR *phdr = NULL;
-        uint32_t cbCmd = ~0;
+        uint32_t cbCmd = UINT32_MAX;
 
         /* Fetch the command data. */
         if (!i_vbvaFetchCmd(pVideoAccel, &phdr, &cbCmd))

@@ -1611,8 +1611,8 @@ ExtPack::i_hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole)
     return pCon->i_hgcmLoadService(pszServiceLibrary, pszServiceName);
 #else
     NOREF(pHlp); NOREF(pConsole); NOREF(pszServiceLibrary); NOREF(pszServiceName);
-#endif
     return VERR_INVALID_STATE;
+#endif
 }
 
 /*static*/ DECLCALLBACK(int)
@@ -1636,8 +1636,8 @@ ExtPack::i_hlpLoadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox)
     return pVBox->i_loadVDPlugin(pszPluginLibrary);
 #else
     NOREF(pHlp); NOREF(pVirtualBox);
-#endif
     return VERR_INVALID_STATE;
+#endif
 }
 
 /*static*/ DECLCALLBACK(int)
@@ -1661,8 +1661,8 @@ ExtPack::i_hlpUnloadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBo
     return pVBox->i_unloadVDPlugin(pszPluginLibrary);
 #else
     NOREF(pHlp); NOREF(pVirtualBox);
-#endif
     return VERR_INVALID_STATE;
+#endif
 }
 
 /*static*/ DECLCALLBACK(int)
@@ -3040,11 +3040,10 @@ int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack,
  * @returns S_OK if a path is returned, COM error status and message return if
  *          not.
  * @param   a_pszModuleName     The library.
- * @param   a_pstrExtPack       The extension pack.
+ * @param   a_pszExtPack        The extension pack.
  * @param   a_pstrVrdeLibrary   Where to return the path.
  */
-HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack,
-                                                   Utf8Str *a_pstrLibrary)
+HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, const const *a_pszExtPack, Utf8Str *a_pstrLibrary)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3052,11 +3051,11 @@ HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, 
     {
         AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-        ExtPack *pExtPack = i_findExtPack(a_pstrExtPack->c_str());
+        ExtPack *pExtPack = i_findExtPack(a_pszExtPack);
         if (pExtPack)
             hrc = pExtPack->i_getLibraryName(a_pszModuleName, a_pstrLibrary);
         else
-            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pszExtPack);
     }
 
     return hrc;

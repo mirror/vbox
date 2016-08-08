@@ -806,6 +806,9 @@ private:
 
     /** Slot of this object in the saFactoryStats array */
     uint32_t iFactoryStat;
+
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(VirtualBoxBase); /* Shuts up MSC warning C4625. */
 };
 
 /** Structure for counting the currently existing and ever created objects

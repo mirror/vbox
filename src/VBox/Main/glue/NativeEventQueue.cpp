@@ -545,7 +545,7 @@ int NativeEventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 #else // !VBOX_WITH_XPCOM
     if (cMsTimeout == RT_INDEFINITE_WAIT)
     {
-        BOOL fRet;
+        BOOL fRet = 0; /* Shut up MSC */
         MSG  Msg;
         rc = VINF_SUCCESS;
         while (   rc != VERR_INTERRUPTED

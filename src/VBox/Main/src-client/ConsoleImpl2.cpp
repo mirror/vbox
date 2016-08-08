@@ -2499,7 +2499,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             llBootNics.push_back(nic);
 
             /*
-             * The virtual hardware type. PCNet supports two types.
+             * The virtual hardware type. PCNet supports two types, E1000 three,
+             * but VirtIO only one.
              */
             switch (adapterType)
             {
@@ -2518,6 +2519,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 case NetworkAdapterType_I82545EM:
                     InsertConfigInteger(pCfg, "AdapterType", 2);
                     break;
+                case NetworkAdapterType_Virtio:
+                    break;
+                case NetworkAdapterType_Null: AssertFailedBreak(); /* Shut up MSC */
             }
 
             /*
@@ -2786,6 +2790,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         case AudioCodecType_AD1980:
                             InsertConfigString(pCfg,   "Codec", "AD1980");
                             break;
+                        default: AssertFailedBreak();
                     }
                     break;
                 }
@@ -2904,6 +2909,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     break;
                 }
 #endif
+                default: AssertFailedBreak();
             }
 
 #ifdef VBOX_WITH_VRDE_AUDIO
@@ -4361,20 +4367,19 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                 uImage--;
 
 # ifdef VBOX_WITH_EXTPACK
-                static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
-                static const char *s_pszVDPlugin = "VDPluginCrypt";
-                if (mptrExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+                if (mptrExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
                 {
                     /* Configure loading the VDPlugin. */
+                    static const char s_szVDPlugin[] = "VDPluginCrypt";
                     PCFGMNODE pCfgPlugins = NULL;
                     PCFGMNODE pCfgPlugin = NULL;
                     Utf8Str strPlugin;
-                    hrc = mptrExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+                    hrc = mptrExtPackManager->i_getLibraryPathForExtPack(s_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
                     // Don't fail, this is optional!
                     if (SUCCEEDED(hrc))
                     {
                         InsertConfigNode(pCfg, "Plugins", &pCfgPlugins);
-                        InsertConfigNode(pCfgPlugins, s_pszVDPlugin, &pCfgPlugin);
+                        InsertConfigNode(pCfgPlugins, s_szVDPlugin, &pCfgPlugin);
                         InsertConfigString(pCfgPlugin, "Path", strPlugin.c_str());
                     }
                 }
