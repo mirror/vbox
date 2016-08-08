@@ -559,16 +559,25 @@ int SessionTaskCopyTo::Run(void)
              * Newer VBoxService toolbox versions report what went wrong via exit code.
              * So handle this first.
              */
-            ProcessStatus_T procStatus;
-            LONG exitCode;
-            if (   (   SUCCEEDED(pProcess->COMGETTER(Status(&procStatus)))
-                    && procStatus != ProcessStatus_TerminatedNormally)
-                || (   SUCCEEDED(pProcess->COMGETTER(ExitCode(&exitCode)))
-                    && exitCode != 0)
-               )
+            /** @todo This code sequence is duplicated in CopyFrom...   */
+            ProcessStatus_T procStatus = ProcessStatus_TerminatedAbnormally;
+            HRESULT hrc = pProcess->COMGETTER(Status(&procStatus));
+            if (!SUCCEEDED(hrc))
+                procStatus = ProcessStatus_TerminatedAbnormally;
+
+            LONG exitCode = 42424242;
+            hrc = pProcess->COMGETTER(ExitCode(&exitCode));
+            if (!SUCCEEDED(hrc))
+                exitCode = 42424242;
+
+            if (   procStatus != ProcessStatus_TerminatedNormally
+                || exitCode != 0)
             {
-                LogFlowThisFunc(("procStatus=%ld, exitCode=%ld\n", procStatus, exitCode));
-                rc = GuestProcessTool::i_exitCodeToRc(procInfo, exitCode);
+                LogFlowThisFunc(("procStatus=%d, exitCode=%d\n", procStatus, exitCode));
+                if (procStatus == ProcessStatus_TerminatedNormally)
+                    rc = GuestProcessTool::i_exitCodeToRc(procInfo, exitCode);
+                else
+                    rc = VERR_GENERAL_FAILURE;
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Copying file \"%s\" to guest failed: %Rrc"),
                                                mSource.c_str(), rc));
@@ -595,8 +604,7 @@ int SessionTaskCopyTo::Run(void)
                                                mSource.c_str(), cbWrittenTotal, mSourceSize));
                 rc = VERR_INTERRUPTED;
             }
-
-            if (RT_SUCCESS(rc))
+            else
                 rc = setProgressSuccess();
         }
     } /* processCreateExInteral */
@@ -855,16 +863,25 @@ int SessionTaskCopyFrom::Run(void)
 
                 if (RT_SUCCESS(rc))
                 {
-                    ProcessStatus_T procStatus;
-                    LONG exitCode;
-                    if (   (   SUCCEEDED(pProcess->COMGETTER(Status(&procStatus)))
-                            && procStatus != ProcessStatus_TerminatedNormally)
-                        || (   SUCCEEDED(pProcess->COMGETTER(ExitCode(&exitCode)))
-                            && exitCode != 0)
-                       )
+                    /** @todo this code sequence is duplicated in CopyTo   */
+                    ProcessStatus_T procStatus = ProcessStatus_TerminatedAbnormally;
+                    HRESULT hrc = pProcess->COMGETTER(Status(&procStatus));
+                    if (!SUCCEEDED(hrc))
+                        procStatus = ProcessStatus_TerminatedAbnormally;
+
+                    LONG exitCode = 42424242;
+                    hrc = pProcess->COMGETTER(ExitCode(&exitCode));
+                    if (!SUCCEEDED(hrc))
+                        exitCode = 42424242;
+
+                    if (   procStatus != ProcessStatus_TerminatedNormally
+                        || exitCode != 0)
                     {
-                        LogFlowThisFunc(("procStatus=%ld, exitCode=%ld\n", procStatus, exitCode));
-                        rc = GuestProcessTool::i_exitCodeToRc(procInfo, exitCode);
+                        LogFlowThisFunc(("procStatus=%d, exitCode=%d\n", procStatus, exitCode));
+                        if (procStatus == ProcessStatus_TerminatedNormally)
+                            rc = GuestProcessTool::i_exitCodeToRc(procInfo, exitCode);
+                        else
+                            rc = VERR_GENERAL_FAILURE;
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             Utf8StrFmt(GuestSession::tr("Copying file \"%s\" to host failed: %Rrc"),
                                                        mSource.c_str(), rc));
@@ -891,8 +908,7 @@ int SessionTaskCopyFrom::Run(void)
                                                        mSource.c_str(), mDest.c_str(), cbWrittenTotal, objData.mObjectSize));
                         rc = VERR_INTERRUPTED;
                     }
-
-                    if (RT_SUCCESS(rc))
+                    else
                         rc = setProgressSuccess();
                 }
             }
