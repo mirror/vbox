@@ -65,8 +65,8 @@ static void tst1(size_t cTest, size_t cchDigits, char chSep)
         if (RT_FAILURE(rc))
             break;
 
-        RTTESTI_CHECK_RC(rc = RTDirCreateUniqueNumbered(szName, sizeof(szName), 0700, cchDigits, chSep), VINF_SUCCESS);
-        if (RT_FAILURE(rc))
+        rc = RTDirCreateUniqueNumbered(szName, sizeof(szName), 0700, cchDigits, chSep)
+        if (rc != VINF_SUCCESS)
         {
             /* Random selection (system) isn't 100% predictable, so we must give a little
                leeway for the 2+ digit tests.  (Using random is essential for performance.) */
