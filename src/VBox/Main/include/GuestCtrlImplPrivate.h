@@ -822,7 +822,7 @@ public:
     void Dump(const char *pszFile);
 #endif
 
-    uint32_t GetOffset() { return m_offBuffer; }
+    size_t GetOffset() { return m_offBuffer; }
 
     size_t GetSize() { return m_cbUsed; }
 

@@ -113,9 +113,9 @@ static struct
     { "b1=b1\0b2=b2\0\0\0",                            sizeof("b1=b1\0b2=b2\0\0\0"),                      1, VERR_NO_DATA }
 };
 
-int manualTest()
+int manualTest(void)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     static struct
     {
         const char *pbData;
@@ -130,8 +130,7 @@ int manualTest()
         { "\0\0test5=test5\0t51=t51",       sizeof("\0\0test5=test5\0t51=t51"),                        0,  sizeof("\0\0test5=test5\0") - 1,               1, VERR_MORE_DATA },
     };
 
-    unsigned iTest = 0;
-    for (iTest; iTest < RT_ELEMENTS(aTest); iTest++)
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTest); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "Manual test #%d\n", iTest);
 
@@ -188,8 +187,8 @@ int main()
      * -- we rely on the return values in the test(s) below. */
     RTAssertSetQuiet(true);
 
-    unsigned iTest = 0;
-    for (iTest; iTest < RT_ELEMENTS(aTestBlock); iTest++)
+    unsigned iTest;
+    for (iTest = 0; iTest < RT_ELEMENTS(aTestBlock); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
@@ -206,12 +205,12 @@ int main()
             }
             else if (stream.GetOffset() != aTestBlock[iTest].uOffsetAfter)
             {
-                RTTestFailed(hTest, "\tOffset %u wrong, expected %u\n",
+                RTTestFailed(hTest, "\tOffset %zu wrong, expected %u\n",
                              stream.GetOffset(), aTestBlock[iTest].uOffsetAfter);
             }
             else if (iResult == VERR_MORE_DATA)
             {
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %u)\n", stream.GetOffset());
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %zu)\n", stream.GetOffset());
             }
 
             if (  (   RT_SUCCESS(iResult)
@@ -226,7 +225,7 @@ int main()
 
             /* There is remaining data left in the buffer (which needs to be merged
              * with a following buffer) -- print it. */
-            uint32_t uOffset = stream.GetOffset();
+            size_t uOffset = stream.GetOffset();
             size_t uToWrite = aTestBlock[iTest].cbData - uOffset;
             if (uToWrite)
             {
@@ -243,8 +242,7 @@ int main()
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
 
-    iTest = 0;
-    for (iTest; iTest < RT_ELEMENTS(aTestStream); iTest++)
+    for (iTest = 0; iTest < RT_ELEMENTS(aTestStream); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
