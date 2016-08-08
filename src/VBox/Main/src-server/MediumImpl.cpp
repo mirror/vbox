@@ -251,7 +251,11 @@ public:
 
     // Make all destructors virtual. Just in case.
     virtual ~Task()
-    {}
+    {
+        /* send the notification of completion.*/
+        if (!mProgress.isNull())
+            mProgress->i_notifyComplete(mRC);
+    }
 
     HRESULT rc() const { return mRC; }
     bool isOk() const { return SUCCEEDED(rc()); }
@@ -263,43 +267,36 @@ public:
     /**
      * Runs Medium::Task::executeTask() on the current thread
      * instead of creating a new one.
-     * @note When the task is executed by this method, IProgress::notifyComplete()
-     *       is not called for the progress object associated with this task when
-     *       the task is finished. Instead, the result of the operation is returned
-     *       by this method directly and it's the caller's responsibility to
-     *       complete the progress object in this case.
      */
     HRESULT runNow()
     {
         LogFlowFuncEnter();
 
-        HRESULT lrc = executeTask();
+        mRC = executeTask();
 
-        LogFlowFunc(("rc=%Rhrc\n", lrc));
+        LogFlowFunc(("rc=%Rhrc\n", mRC));
         LogFlowFuncLeave();
-        return lrc;
+        return mRC;
     }
 
     /**
      * Implementation code for the "create base" task.
      * Used as function for execution from a standalone thread.
-     *
-     * @note When the task is executed by this method,
-     *     IProgress::notifyComplete() is called for the progress
-     *     object associated with this task when the task is
-     *     finished signal the operation completion for other
-     *     threads asynchronously waiting for it.
      */
     void handler()
     {
-        HRESULT lrc = executeTask();
-        if(SUCCEEDED(lrc))
+        LogFlowFuncEnter();
+        try
         {
-            ComPtr<Progress> pProgress = GetProgressObject();
-            /* complete the progress if run asynchronously */
-            if (!pProgress.isNull())
-                pProgress->i_notifyComplete(lrc);
+            mRC = executeTask();
+            LogFlowFunc(("rc=%Rhrc\n", mrc));
         }
+        catch(...)
+        {
+            LogRel(("Some exception in the function Medium::Task:handler()\n"));
+        }
+
+        LogFlowFuncLeave();
     }
 
     PVDINTERFACE mVDOperationIfaces;
@@ -4833,9 +4830,6 @@ HRESULT Medium::i_createDiffStorage(ComObjPtr<Medium> &aTarget,
             rc = pTask->runNow();
 
             delete pTask;
-            /* send the notification of completion. see Medium::Task:runNow() description */
-            if (!pProgress.isNull())
-                pProgress->i_notifyComplete(rc);
         }
         else
             rc = pTask->createThread();
@@ -5171,9 +5165,6 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
             rc = pTask->runNow();
 
             delete pTask;
-            /* send the notification of completion. see Medium::Task:runNow() description */
-            if (!pProgress.isNull())
-                pProgress->i_notifyComplete(rc);
         }
         else
             rc = pTask->createThread();
@@ -5861,9 +5852,6 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
             rc = pTask->runNow();
 
             delete pTask;
-            /* send the notification of completion. see Medium::Task:runNow() description */
-            if (!pProgress.isNull())
-                pProgress->i_notifyComplete(rc);
         }
         else
             rc = pTask->createThread();
