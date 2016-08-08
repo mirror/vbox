@@ -380,6 +380,8 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
         /* This function delete pTask in case of exceptions,
          * so there is no need in the call of delete operator. */
+/** @todo r=bird: The code using hThreadRcv is racing the thread termination. Since the thread isn't
+ * created waitable, the handle goes away if we it terminates before our RTThreadUserWait call returns. */
         hr = pTask->createThread(&hThreadRcv);
 
     }
