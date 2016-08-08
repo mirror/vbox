@@ -2285,7 +2285,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
       uTimeoutMS == RT_INDEFINITE_WAIT                         \
     ? RT_INDEFINITE_WAIT : uTimeoutMS - (uint32_t)u64ElapsedMS \
 
-    ProcessWaitResult_T waitRes;
+    ProcessWaitResult_T waitRes = ProcessWaitResult_None;
     do
     {
         uint64_t u64ElapsedMS;

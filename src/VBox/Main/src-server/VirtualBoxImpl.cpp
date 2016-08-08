@@ -1960,11 +1960,7 @@ HRESULT VirtualBox::getGuestOSType(const com::Utf8Str &aId,
             break;
         }
     }
-    return (aType) ? S_OK :
-        setError(E_INVALIDARG,
-                 tr("'%s' is not a valid Guest OS type"),
-                 aId.c_str());
-    return rc;
+    return (aType) ? S_OK : setError(E_INVALIDARG, tr("'%s' is not a valid Guest OS type"), aId.c_str());
 }
 
 HRESULT VirtualBox::createSharedFolder(const com::Utf8Str &aName,
