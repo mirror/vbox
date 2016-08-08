@@ -15,22 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*
- * This code is based on:
- *
- * Copyright (c) 2010 The WebM project authors. All Rights Reserved.
- *
- * Use of this source code is governed by a BSD-style license
- * that can be found in the LICENSE file in the root of the source
- * tree. An additional intellectual property rights grant can be found
- * in the file PATENTS.  All contributing project authors may
- * be found in the AUTHORS file in the root of the source tree.
- */
-
 #ifndef ____EBMLWRITER
 #define ____EBMLWRITER
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4668) /* vpx_codec.h(64) : warning C4668: '__GNUC__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 #include <vpx/vpx_encoder.h>
+# pragma warning(pop)
+#else
+# include <vpx/vpx_encoder.h>
+#endif
 
 class WebMWriter_Impl;
 
@@ -40,7 +35,7 @@ public:
     WebMWriter();
     virtual ~WebMWriter();
 
-    /* Creates output file
+    /** Creates output file
      *
      * @param   a_pszFilename   Name of the file to create.
      *
@@ -50,7 +45,8 @@ public:
     /* Closes output file. */
     void close();
 
-    /* Writes WebM header to file.
+    /** Writes WebM header to file.
+     *
      * Should be called before any writeBlock call.
      *
      * @param a_pCfg Pointer to VPX Codec configuration structure.
@@ -60,7 +56,7 @@ public:
      */
     int writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_rational *a_pFps);
 
-    /* Writes a block of compressed data
+    /** Writes a block of compressed data
      *
      * @param a_pCfg Pointer to VPX Codec configuration structure.
      * @param a_pPkt VPX data packet.
@@ -69,20 +65,23 @@ public:
      */
     int writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
 
-    /* Writes WebM footer.
+    /** Writes WebM footer.
+     *
      * No other write functions should be called after this one.
+     *
      * @param a_u64Hash Hash value for the data written.
      *
      * @returns VBox status code.
      */
     int writeFooter(uint32_t a_u64Hash);
 
-    /* Gets current output file size.
+    /** Gets current output file size.
+     *
      * @returns File size in bytes.
      */
     uint64_t getFileSize();
 
-    /* Gets current free storage space
+    /** Gets current free storage space
      * available for the file.
      *
      * @returns Available storage free space.
@@ -90,13 +89,11 @@ public:
     uint64_t getAvailableSpace();
 
 private:
-    /* WebMWriter implementation.
+    /** WebMWriter implementation.
      * To isolate some include files */
     WebMWriter_Impl *m_Impl;
 
-    /* Not defined */
-    void operator=(const WebMWriter &);
-    WebMWriter(const WebMWriter &);
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(WebMWriter);
 };
 
 #endif
