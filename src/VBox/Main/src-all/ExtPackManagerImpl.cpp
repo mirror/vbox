@@ -3043,7 +3043,7 @@ int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack,
  * @param   a_pszExtPack        The extension pack.
  * @param   a_pstrVrdeLibrary   Where to return the path.
  */
-HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, const const *a_pszExtPack, Utf8Str *a_pstrLibrary)
+HRESULT ExtPackManager::i_getLibraryPathForExtPack(const char *a_pszModuleName, const char *a_pszExtPack, Utf8Str *a_pstrLibrary)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
