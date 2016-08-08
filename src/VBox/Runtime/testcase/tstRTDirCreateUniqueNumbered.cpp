@@ -68,7 +68,10 @@ static void tst1(size_t cTest, size_t cchDigits, char chSep)
         RTTESTI_CHECK_RC(rc = RTDirCreateUniqueNumbered(szName, sizeof(szName), 0700, cchDigits, chSep), VINF_SUCCESS);
         if (RT_FAILURE(rc))
         {
-            RTTestIFailed("RTDirCreateUniqueNumbered(%s) call #%u -> %Rrc\n", szName, i, rc);
+            /* Random selection (system) isn't 100% predictable, so we must give a little
+               leeway for the 2+ digit tests.  (Using random is essential for performance.) */
+            if (cchDigits == 1 || rc != VERR_ALREADY_EXISTS || i < cTimes - 1)
+                RTTestIFailed("RTDirCreateUniqueNumbered(%s) call #%u -> %Rrc\n", szName, i, rc);
             break;
         }
 
@@ -80,7 +83,7 @@ static void tst1(size_t cTest, size_t cchDigits, char chSep)
     }
 
     /* Try to create one more, which shouldn't be possible. */
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && i == cTimes + 1)
     {
         char szName[RTPATH_MAX];
         RTTESTI_CHECK_RC(rc = RTPathAppend(strcpy(szName, g_szTempPath), sizeof(szName), "RTDirCreateUniqueNumbered"), VINF_SUCCESS);
