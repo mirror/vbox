@@ -15,6 +15,16 @@
       </listitem>
 
       <listitem>
+        <para>Audio: re-enabled speakers for Mac OS X guests (5.1.0 regression;
+          bug #15611)</para>
+      </listitem>
+
+      <listitem>
+        <para>NVMe: several fixes to improve stability, fixed a crash while
+          saving a VM state</para>
+      </listitem>
+
+      <listitem>
         <para>OVF: when importing appliances, make sure that the version of the
           embedded VirtualBox specific settings is processed, to get the
           default settings handling right</para>
@@ -44,11 +54,6 @@
         <para>Linux Additions: converted a failure message to an informational
            one when drivers could not be stopped during upgrade (bug
            #15692)</para>
-      </listitem>
-
-      <listitem>
-        <para>NVMe: several fixes to improve stability, fixed a crash while
-          saving a VM state</para>
       </listitem>
 
     </itemizedlist>
