@@ -1972,18 +1972,18 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
     int vrc = pSession->i_processCreateExInternal(mStartupInfo, pProcess);
     if (RT_SUCCESS(vrc))
     {
-        int guestRc;
+        int vrcGuest = VINF_SUCCESS;
         vrc = fAsync
             ? pProcess->i_startProcessAsync()
-            : pProcess->i_startProcess(30 * 1000 /* 30s timeout */, &guestRc);
+            : pProcess->i_startProcess(30 * 1000 /* 30s timeout */, &vrcGuest);
 
         if (   RT_SUCCESS(vrc)
             && !fAsync
-            && RT_FAILURE(guestRc)
+            && RT_FAILURE(vrcGuest)
            )
         {
             if (pGuestRc)
-                *pGuestRc = guestRc;
+                *pGuestRc = vrcGuest;
             vrc = VERR_GSTCTL_GUEST_ERROR;
         }
     }
@@ -2256,7 +2256,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
     uint64_t u64StartMS = RTTimeMilliTS();
     uint32_t uTimeoutMS = mStartupInfo.mTimeoutMS;
 
-    int guestRc;
+    int vrcGuest = VINF_SUCCESS;
     bool fDone = false;
 
     BYTE byBuf[_64K];
@@ -2292,7 +2292,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
         UPDATE_AND_CHECK_ELAPSED_TIME();
 
         vrc = pProcess->i_waitFor(fWaitFlags, GET_REMAINING_TIME,
-                                  waitRes, &guestRc);
+                                  waitRes, &vrcGuest);
         if (RT_FAILURE(vrc))
             break;
 
@@ -2353,7 +2353,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
             vrc = pProcess->i_readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
                                        GET_REMAINING_TIME,
                                        byBuf, sizeof(byBuf),
-                                       &cbRead, &guestRc);
+                                       &cbRead, &vrcGuest);
             if (   RT_FAILURE(vrc)
                 || vrc == VWRN_GSTCTL_OBJECTSTATE_CHANGED)
                 break;
@@ -2387,7 +2387,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
             vrc = pProcess->i_readData(OUTPUT_HANDLE_ID_STDERR, sizeof(byBuf),
                                        GET_REMAINING_TIME,
                                        byBuf, sizeof(byBuf),
-                                       &cbRead, &guestRc);
+                                       &cbRead, &vrcGuest);
             if (   RT_FAILURE(vrc)
                 || vrc == VWRN_GSTCTL_OBJECTSTATE_CHANGED)
                 break;
@@ -2406,13 +2406,13 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
 #undef UPDATE_AND_CHECK_ELAPSED_TIME
 #undef GET_REMAINING_TIME
 
-    if (RT_FAILURE(guestRc))
+    if (RT_FAILURE(vrcGuest))
         vrc = VERR_GSTCTL_GUEST_ERROR;
 
-    LogFlowThisFunc(("Loop ended with rc=%Rrc, guestRc=%Rrc, waitRes=%RU32\n",
-                     vrc, guestRc, waitRes));
+    LogFlowThisFunc(("Loop ended with rc=%Rrc, vrcGuest=%Rrc, waitRes=%RU32\n",
+                     vrc, vrcGuest, waitRes));
     if (pGuestRc)
-        *pGuestRc = guestRc;
+        *pGuestRc = vrcGuest;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
