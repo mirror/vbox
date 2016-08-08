@@ -63,6 +63,11 @@ public:
     /** Destroys the static instance of the desktop-widget watchdog. */
     static void destroy();
 
+    /** Returns overall desktop width. */
+    int overallDesktopWidth() const;
+    /** Returns overall desktop height. */
+    int overallDesktopHeight() const;
+
     /** Returns the number of host-screens currently available on the system. */
     int screenCount() const;
 

@@ -145,6 +145,18 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
     m_spInstance = 0;
 }
 
+int UIDesktopWidgetWatchdog::overallDesktopWidth() const
+{
+    /* Redirect call to desktop-widget: */
+    return QApplication::desktop()->width();
+}
+
+int UIDesktopWidgetWatchdog::overallDesktopHeight() const
+{
+    /* Redirect call to desktop-widget: */
+    return QApplication::desktop()->height();
+}
+
 int UIDesktopWidgetWatchdog::screenCount() const
 {
     /* Redirect call to desktop-widget: */
