@@ -138,7 +138,7 @@ int VBoxUSBFilterInit(void)
 #else
         fFlags = RTHANDLETABLE_FLAGS_LOCKED;
 #endif
-        rc = RTHandleTableCreateEx(&g_hHndTableFilters, fFlags, 1 /* uBase */, 32768 /* cMax */,
+        rc = RTHandleTableCreateEx(&g_hHndTableFilters, fFlags, 1 /* uBase */, 8192 /* cMax */,
                                    NULL, NULL);
         if (RT_SUCCESS(rc))
         {
