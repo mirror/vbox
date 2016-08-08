@@ -289,7 +289,7 @@ public:
         try
         {
             mRC = executeTask();
-            LogFlowFunc(("rc=%Rhrc\n", mrc));
+            LogFlowFunc(("rc=%Rhrc\n", mRC));
         }
         catch(...)
         {
