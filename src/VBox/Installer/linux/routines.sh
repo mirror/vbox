@@ -357,9 +357,9 @@ maybe_run_python_bindings_installer() {
     VBOX_INSTALL_PATH="${1}"
 
     PYTHON=python
-    if [ ! `python -c 'import sys
+    if [ "`python -c 'import sys
 if sys.version_info >= (2, 6):
-    print "test"' 2> /dev/null` = "test" ]; then
+    print \"test\"' 2> /dev/null`" != "test" ]; then
         echo  1>&2 "Python 2.6 or later not available, skipping bindings installation."
         return 1
     fi
