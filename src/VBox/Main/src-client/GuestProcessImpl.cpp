@@ -1005,10 +1005,10 @@ HRESULT GuestProcess::i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc
     return pInterface->setError(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(guestRc).c_str());
 }
 
-int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
+int GuestProcess::i_startProcess(uint32_t cMsTimeout, int *pGuestRc)
 {
-    LogFlowThisFunc(("uTimeoutMS=%RU32, procExe=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
-                     uTimeoutMS, mData.mProcess.mExecutable.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
+    LogFlowThisFunc(("cMsTimeout=%RU32, procExe=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
+                     cMsTimeout, mData.mProcess.mExecutable.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
                      mSession->i_getId()));
 
     /* Wait until the caller function (if kicked off by a thread)
@@ -1024,17 +1024,25 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
-
         vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
         vrc = VERR_NO_MEMORY;
     }
-
     if (RT_FAILURE(vrc))
         return vrc;
 
+    vrc = i_startProcessInner(cMsTimeout, alock, pEvent, pGuestRc);
+
+    unregisterWaitEvent(pEvent);
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock, GuestWaitEvent *pEvent, int *pGuestRc)
+{
     GuestSession *pSession = mSession;
     AssertPtr(pSession);
     uint32_t const uProtocol = pSession->i_getProtocolVersion();
@@ -1043,13 +1051,13 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
 
 
     /* Prepare arguments. */
-    char *pszArgs = NULL;
     size_t cArgs = mData.mProcess.mArguments.size();
-    if (cArgs >= UINT32_MAX)
-        vrc = VERR_BUFFER_OVERFLOW;
+    if (cArgs >= 128*1024)
+        return VERR_BUFFER_OVERFLOW;
 
-    if (   RT_SUCCESS(vrc)
-        && cArgs)
+    char *pszArgs = NULL;
+    int vrc = VINF_SUCCESS;
+    if (cArgs)
     {
         char const **papszArgv = (char const **)RTMemAlloc((cArgs + 1) * sizeof(papszArgv[0]));
         AssertReturn(papszArgv, VERR_NO_MEMORY);
@@ -1067,18 +1075,19 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
 
         RTMemFree(papszArgv);
+        if (RT_FAILURE(vrc))
+            return vrc;
+
+        /* Note! No returns after this. */
     }
 
     /* Calculate arguments size (in bytes). */
-    size_t cbArgs = 0;
-    if (RT_SUCCESS(vrc))
-        cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
+    size_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
     /* Prepare environment.  The guest service dislikes the empty string at the end, so drop it. */
     size_t  cbEnvBlock;
     char   *pszzEnvBlock;
-    if (RT_SUCCESS(vrc))
-        vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
+    vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
     if (RT_SUCCESS(vrc))
     {
         Assert(cbEnvBlock > 0);
@@ -1123,7 +1132,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
             paParms[i++].setPointer((void *)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
         }
 
-        alock.release(); /* Drop the write lock before sending. */
+        rLock.release(); /* Drop the write lock before sending. */
 
         vrc = sendCommand(HOST_EXEC_CMD, i, paParms);
         if (RT_FAILURE(vrc))
@@ -1135,15 +1144,11 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
         mData.mProcess.mEnvironmentChanges.freeUtf8Block(pszzEnvBlock);
     }
 
-    if (pszArgs)
-        RTStrFree(pszArgs);
+    RTStrFree(pszArgs);
 
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForStatusChange(pEvent, uTimeoutMS,
+        vrc = i_waitForStatusChange(pEvent, cMsTimeout,
                                     NULL /* Process status */, pGuestRc);
-    unregisterWaitEvent(pEvent);
-
-    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
@@ -1326,6 +1331,8 @@ ProcessWaitResult_T GuestProcess::i_waitFlagsToResultEx(uint32_t fWaitFlags,
 
         case ProcessStatus_Undefined:
         case ProcessStatus_Starting:
+        case ProcessStatus_Terminating:
+        case ProcessStatus_Paused:
             /* No result available yet, leave wait
              * flags untouched. */
             break;
