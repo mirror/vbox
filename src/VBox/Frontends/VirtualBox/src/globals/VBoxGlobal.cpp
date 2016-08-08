@@ -4258,6 +4258,8 @@ void VBoxGlobal::prepare()
                               sizeof(szError));
     }
 
+    LogRel(("Qt version: %s\n", qtRTVersionString().toUtf8().constData()));
+
     if (mSettingsPwSet)
         m_vbox.SetSettingsSecret(mSettingsPw);
 
