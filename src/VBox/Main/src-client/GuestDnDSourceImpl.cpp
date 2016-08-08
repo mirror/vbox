@@ -85,7 +85,7 @@ public:
 
     void handler()
     {
-        int vrc = GuestDnDSource::i_receiveDataThread(*m_pThread, this);
+        GuestDnDSource::i_receiveDataThreadTask(this);
     }
 
     virtual ~RecvDataTask(void) { }
@@ -961,6 +961,10 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
+/**
+ * @returns VBox status code that the caller ignores. Not sure if that's
+ *          intentional or not.
+ */
 int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1061,31 +1065,34 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 }
 
 /* static */
-DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(void) GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
 {
-    LogFlowFunc(("pvUser=%p\n", pvUser));
-
-    RecvDataTask *pTask = (RecvDataTask *)pvUser;
-    AssertPtrReturn(pTask, VERR_INVALID_POINTER);
+    LogFlowFunc(("pTask=%p\n", pTask));
+    AssertPtrReturnVoid(pTask);
 
     const ComObjPtr<GuestDnDSource> pThis(pTask->getSource());
     Assert(!pThis.isNull());
 
     AutoCaller autoCaller(pThis);
-    if (FAILED(autoCaller.rc())) return VERR_COM_INVALID_OBJECT_STATE;
+    if (FAILED(autoCaller.rc()))
+        return;
 
-    int rc = RTThreadUserSignal(Thread);
-    AssertRC(rc);
+    int vrc = RTThreadUserSignal(RTThreadSelf());
+    AssertRC(vrc);
 
-    rc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+    vrc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+/** @todo
+ *
+ *  r=bird: What happens with @a vrc?
+ *
+ */
 
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
     Assert(pThis->mDataBase.m_cTransfersPending);
     pThis->mDataBase.m_cTransfersPending--;
 
-    LogFlowFunc(("pSource=%p returning rc=%Rrc\n", (GuestDnDSource *)pThis, rc));
-    return rc;
+    LogFlowFunc(("pSource=%p vrc=%Rrc (ignored)\n", (GuestDnDSource *)pThis, vrc));
 }
 
 int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)

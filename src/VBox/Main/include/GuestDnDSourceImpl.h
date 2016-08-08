@@ -26,6 +26,7 @@ using namespace DragAndDropSvc;
 #include "GuestDnDSourceWrap.h"
 #include "GuestDnDPrivate.h"
 
+class RecvDataTask;
 struct RECVDATACTX;
 typedef struct RECVDATACTX *PRECVDATACTX;
 
@@ -82,9 +83,9 @@ protected:
     static Utf8Str i_guestErrorToString(int guestRc);
     static Utf8Str i_hostErrorToString(int hostRc);
 
-    /** @name Thread callbacks.
+    /** @name Thread task .
      * @{ */
-    static DECLCALLBACK(int) i_receiveDataThread(RTTHREAD Thread, void *pvUser);
+    static void i_receiveDataThreadTask(RecvDataTask *pTask);
     /** @}  */
 
     /** @name Callbacks for dispatch handler.

@@ -26,6 +26,7 @@
 
 struct SENDDATACTX;
 typedef struct SENDDATACTX *PSENDDATACTX;
+class SendDataTask;
 
 class ATL_NO_VTABLE GuestDnDTarget :
     public GuestDnDTargetWrap,
@@ -70,9 +71,9 @@ protected:
     static Utf8Str i_guestErrorToString(int guestRc);
     static Utf8Str i_hostErrorToString(int hostRc);
 
-    /** @name Thread callbacks.
+    /** @name Thread task workers.
      * @{ */
-    static DECLCALLBACK(int) i_sendDataThread(RTTHREAD Thread, void *pvUser);
+    static void i_sendDataThreadTask(SendDataTask *pTask);
     /** @}  */
 
     /** @name Callbacks for dispatch handler.

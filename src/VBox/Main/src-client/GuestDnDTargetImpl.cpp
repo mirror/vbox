@@ -89,8 +89,7 @@ public:
 
     void handler()
     {
-        int vrc = GuestDnDTarget::i_sendDataThread(*m_pThread, this);
-        NOREF(vrc);
+        GuestDnDTarget::i_sendDataThreadTask(this);
     }
 
     virtual ~SendDataTask(void)
@@ -557,31 +556,35 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
 }
 
 /* static */
-DECLCALLBACK(int) GuestDnDTarget::i_sendDataThread(RTTHREAD Thread, void *pvUser)
+void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
 {
-    LogFlowFunc(("pvUser=%p\n", pvUser));
+    LogFlowFunc(("pTask=%p\n", pTask));
 
-    SendDataTask *pTask = (SendDataTask *)pvUser;
-    AssertPtrReturn(pTask, VERR_INVALID_POINTER);
+    AssertPtrReturnVoid(pTask);
 
     const ComObjPtr<GuestDnDTarget> pThis(pTask->getTarget());
     Assert(!pThis.isNull());
 
     AutoCaller autoCaller(pThis);
-    if (FAILED(autoCaller.rc())) return VERR_COM_INVALID_OBJECT_STATE;
+    if (FAILED(autoCaller.rc()))
+        return;
 
-    int rc = RTThreadUserSignal(Thread);
-    AssertRC(rc);
+    int vrc = RTThreadUserSignal(RTThreadSelf());
+    AssertRC(vrc);
 
-    rc = pThis->i_sendData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+    vrc = pThis->i_sendData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+/** @todo
+ *
+ *  r=bird: What happens with @a vrc?
+ *
+ */
 
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
     Assert(pThis->mDataBase.m_cTransfersPending);
     pThis->mDataBase.m_cTransfersPending--;
 
-    LogFlowFunc(("pTarget=%p returning rc=%Rrc\n", (GuestDnDTarget *)pThis, rc));
-    return rc;
+    LogFlowFunc(("pTarget=%p vrc=%Rrc (ignored)\n", (GuestDnDTarget *)pThis, vrc));
 }
 
 /**
@@ -778,6 +781,10 @@ Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
     return strError;
 }
 
+/**
+ * @returns VBox status code that the caller ignores. Not sure if that's
+ *          intentional or not.
+ */
 int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
