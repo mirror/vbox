@@ -826,14 +826,11 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool\n",
                      strTemplate.c_str(), strPath.c_str(), fDirectory));
 
-    int vrc = VINF_SUCCESS;
-
     GuestProcessStartupInfo procInfo;
-    procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
-    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-
+    procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
     try
     {
+        procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
         procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         if (fDirectory)
@@ -848,18 +845,17 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     }
     catch (std::bad_alloc)
     {
-        vrc = VERR_NO_MEMORY;
+        Log(("Out of memory!\n"));
+        return VERR_NO_MEMORY;
     }
 
     /** @todo Use an internal HGCM command for this operation, since
      *        we now can run in a user-dedicated session. */
-    int guestRc;
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     GuestCtrlStreamObjects stdOut;
-    if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::i_runEx(this, procInfo,
+    int vrc = GuestProcessTool::i_runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
-                                        &guestRc);
-
+                                        &vrcGuest);
     if (!GuestProcess::i_isGuestError(vrc))
     {
         GuestFsObjData objData;
@@ -868,7 +864,8 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
             vrc = objData.FromMkTemp(stdOut.at(0));
             if (RT_FAILURE(vrc))
             {
-                guestRc = vrc;
+                if (pGuestRc)
+                    *pGuestRc = vrc;
                 vrc = VERR_GSTCTL_GUEST_ERROR;
             }
         }
@@ -879,9 +876,7 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
             strName = objData.mName;
     }
     else if (pGuestRc)
-    {
-        *pGuestRc = guestRc;
-    }
+        *pGuestRc = vrcGuest;
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
     return vrc;
@@ -1401,15 +1396,12 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
-    int vrc = VINF_SUCCESS;
-
     /** @todo Merge this with IGuestFile::queryInfo(). */
     GuestProcessStartupInfo procInfo;
     procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
-    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
-
     try
     {
+        procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
         procInfo.mArguments.push_back(procInfo.mExecutable); /* Set argv0. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
         if (fFollowSymlinks)
@@ -1419,16 +1411,15 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
     }
     catch (std::bad_alloc)
     {
-        vrc = VERR_NO_MEMORY;
+        Log(("Out of memory!\n"));
+        return VERR_NO_MEMORY;
     }
 
-    int guestRc;
+    int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     GuestCtrlStreamObjects stdOut;
-    if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::i_runEx(this, procInfo,
+    int vrc = GuestProcessTool::i_runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
-                                        &guestRc);
-
+                                        &vrcGuest);
     if (!GuestProcess::i_isGuestError(vrc))
     {
         if (!stdOut.empty())
@@ -1436,7 +1427,8 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
             vrc = objData.FromStat(stdOut.at(0));
             if (RT_FAILURE(vrc))
             {
-                guestRc = vrc;
+                if (pGuestRc)
+                    *pGuestRc = vrc;
                 vrc = VERR_GSTCTL_GUEST_ERROR;
             }
         }
@@ -1444,9 +1436,7 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
             vrc = VERR_BROKEN_PIPE;
     }
     else if (pGuestRc)
-    {
-        *pGuestRc = guestRc;
-    }
+        *pGuestRc = vrcGuest;
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n", vrc, guestRc));
     return vrc;
