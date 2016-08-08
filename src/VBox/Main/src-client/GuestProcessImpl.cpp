@@ -92,7 +92,7 @@ public:
 
     void handler()
     {
-        int vrc = GuestProcess::i_startProcessThread(NULL, this);
+        GuestProcess::i_startProcessThreadTask(this);
     }
 };
 
@@ -1188,24 +1188,29 @@ int GuestProcess::i_startProcessAsync(void)
 }
 
 /* static */
-DECLCALLBACK(int) GuestProcess::i_startProcessThread(RTTHREAD Thread, void *pvUser)
+void GuestProcess::i_startProcessThreadTask(GuestProcessStartTask *pTask)
 {
-    LogFlowFunc(("pvUser=%p\n", pvUser));
-
-    GuestProcessStartTask* pTask = static_cast<GuestProcessStartTask*>(pvUser);
+    LogFlowFunc(("pTask=%p\n", pTask));
 
     const ComObjPtr<GuestProcess> pProcess(pTask->i_process());
     Assert(!pProcess.isNull());
 
     AutoCaller autoCaller(pProcess);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return;
 
     int vrc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */,
                                        NULL /* Guest rc, ignored */);
+/** @todo
+ *
+ * r=bird: what's up with vrc here? Safe to ignore it?
+ *
+ */
+
     /* Nothing to do here anymore. */
 
-    LogFlowFunc(("pProcess=%p returning rc=%Rrc\n", (GuestProcess *)pProcess, vrc));
-    return vrc;
+    LogFlowFunc(("pProcess=%p vrc=%Rrc (ignored)\n", (GuestProcess *)pProcess, vrc));
+    NOREF(vrc);
 }
 
 int GuestProcess::i_terminateProcess(uint32_t uTimeoutMS, int *pGuestRc)

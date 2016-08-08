@@ -31,6 +31,7 @@
 #include <iprt/isofs.h> /* For UpdateAdditions. */
 
 class Guest;
+class GuestSessionTaskInternalOpen;
 
 /**
  * Abstract base class for a lenghtly per-session operation which
@@ -47,7 +48,18 @@ public:
 public:
 
     virtual int Run(void) = 0;
-    virtual int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress) = 0;
+    void handler()
+    {
+        int vrc = Run();
+        NOREF(vrc);
+        /** @todo
+         *
+         * r=bird: what was your idea WRT to Run status code and async tasks?
+         *
+         */
+    }
+
+    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
 
     HRESULT Init(const Utf8Str &strTaskDesc)
     {
@@ -91,18 +103,8 @@ public:
     SessionTaskOpen(GuestSession *pSession,
                     uint32_t uFlags,
                     uint32_t uTimeoutMS);
-
     virtual ~SessionTaskOpen(void);
-
-public:
-
-    int Run(int *pGuestRc);
-    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
-    static DECLCALLBACK(int) taskThread(RTTHREAD Thread, void *pvUser);
-    void handler()
-    {
-        int vrc = SessionTaskOpen::taskThread(NULL, this);
-    }
+    int Run(void);
 
 protected:
 
@@ -121,22 +123,11 @@ public:
 
     SessionTaskCopyTo(GuestSession *pSession,
                       const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
-
     SessionTaskCopyTo(GuestSession *pSession,
                       PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
                       const Utf8Str &strDest, uint32_t uFlags);
-
     virtual ~SessionTaskCopyTo(void);
-
-public:
-
     int Run(void);
-    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
-    static DECLCALLBACK(int) taskThread(RTTHREAD Thread, void *pvUser);
-    void handler()
-    {
-        int vrc = SessionTaskCopyTo::taskThread(NULL, this);
-    }
 
 protected:
 
@@ -157,18 +148,8 @@ public:
 
     SessionTaskCopyFrom(GuestSession *pSession,
                         const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
-
     virtual ~SessionTaskCopyFrom(void);
-
-public:
-
     int Run(void);
-    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
-    static DECLCALLBACK(int) taskThread(RTTHREAD Thread, void *pvUser);
-    void handler()
-    {
-        int vrc = SessionTaskCopyFrom::taskThread(NULL, this);
-    }
 
 protected:
 
@@ -187,18 +168,8 @@ public:
     SessionTaskUpdateAdditions(GuestSession *pSession,
                                const Utf8Str &strSource, const ProcessArguments &aArguments,
                                uint32_t uFlags);
-
     virtual ~SessionTaskUpdateAdditions(void);
-
-public:
-
     int Run(void);
-    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
-    static DECLCALLBACK(int) taskThread(RTTHREAD Thread, void *pvUser);
-    void handler()
-    {
-        int vrc = SessionTaskUpdateAdditions::taskThread(NULL, this);
-    }
 
 protected:
 
@@ -483,8 +454,7 @@ public:
     int                     i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int                     i_startSessionInternal(int *pGuestRc);
     int                     i_startSessionAsync(void);
-    static DECLCALLBACK(int)
-                            i_startSessionThread(RTTHREAD Thread, void *pvUser);
+    static void             i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask);
     Guest                  *i_getParent(void) { return mParent; }
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags,

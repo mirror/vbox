@@ -91,7 +91,7 @@ public:
 
     void handler()
     {
-        int vrc = GuestSession::i_startSessionThread(NULL, this);
+        GuestSession::i_startSessionThreadTask(this);
     }
 };
 
@@ -1766,25 +1766,29 @@ int GuestSession::i_startSessionAsync(void)
 }
 
 /* static */
-DECLCALLBACK(int) GuestSession::i_startSessionThread(RTTHREAD Thread, void *pvUser)
+void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
 {
-    LogFlowFunc(("pvUser=%p\n", pvUser));
-
-
-    GuestSessionTaskInternalOpen* pTask = static_cast<GuestSessionTaskInternalOpen*>(pvUser);
+    LogFlowFunc(("pTask=%p\n", pTask));
     AssertPtr(pTask);
 
     const ComObjPtr<GuestSession> pSession(pTask->Session());
     Assert(!pSession.isNull());
 
     AutoCaller autoCaller(pSession);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return;
 
     int vrc = pSession->i_startSessionInternal(NULL /* Guest rc, ignored */);
+/** @todo
+ *
+ * r=bird: Is it okay to ignore @a vrc here?
+ *
+ */
+
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
-    return vrc;
+    NOREF(vrc);
 }
 
 int GuestSession::i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest,

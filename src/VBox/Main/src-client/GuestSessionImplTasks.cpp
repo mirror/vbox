@@ -66,7 +66,8 @@
 // session task classes
 /////////////////////////////////////////////////////////////////////////////
 
-GuestSessionTask::GuestSessionTask(GuestSession *pSession):ThreadTask("GenericGuestSessionTask")
+GuestSessionTask::GuestSessionTask(GuestSession *pSession)
+    : ThreadTask("GenericGuestSessionTask")
 {
     mSession = pSession;
 }
@@ -98,6 +99,19 @@ HRESULT GuestSessionTask::createAndSetProgressObject()
 
     return hr;
 }
+
+int GuestSessionTask::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
+{
+    LogFlowThisFunc(("strDesc=%s\n", strDesc.c_str()));
+
+    mDesc = strDesc;
+    mProgress = pProgress;
+    HRESULT hrc = createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+
+    LogFlowThisFunc(("Returning hrc=%Rhrc\n", hrc));
+    return Global::vboxStatusCodeToCOM(hrc);
+}
+
 
 int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
                                        const Utf8Str &strPath, Utf8Str &strValue)
@@ -202,7 +216,7 @@ SessionTaskOpen::~SessionTaskOpen(void)
 
 }
 
-int SessionTaskOpen::Run(int *pGuestRc)
+int SessionTaskOpen::Run(void)
 {
     LogFlowThisFuncEnter();
 
@@ -212,36 +226,11 @@ int SessionTaskOpen::Run(int *pGuestRc)
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = pSession->i_startSessionInternal(pGuestRc);
+    int vrc = pSession->i_startSessionInternal(NULL /*pvrcGuest*/);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
-}
-
-int SessionTaskOpen::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
-{
-    LogFlowThisFunc(("strDesc=%s\n", strDesc.c_str()));
-
-    mDesc = strDesc;
-    mProgress = pProgress;
-
-    int rc = RTThreadCreate(NULL, SessionTaskOpen::taskThread, this,
-                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                            "gctlSesOpen");
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/* static */
-DECLCALLBACK(int) SessionTaskOpen::taskThread(RTTHREAD Thread, void *pvUser)
-{
-    SessionTaskOpen* task = static_cast<SessionTaskOpen*>(pvUser);
-    AssertReturn(task, VERR_GENERAL_FAILURE);
-
-    LogFlowFunc(("pTask=%p\n", task));
-
-    return task->Run(NULL /* guestRc */);
 }
 
 SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
@@ -616,32 +605,6 @@ int SessionTaskCopyTo::Run(void)
     return rc;
 }
 
-int SessionTaskCopyTo::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
-{
-    LogFlowThisFunc(("strDesc=%s, strSource=%s, strDest=%s, mCopyFileFlags=%x\n",
-                     strDesc.c_str(), mSource.c_str(), mDest.c_str(), mCopyFileFlags));
-
-    mDesc = strDesc;
-    mProgress = pProgress;
-
-    int rc = RTThreadCreate(NULL, SessionTaskCopyTo::taskThread, this,
-                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                            "gctlCpyTo");
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/* static */
-DECLCALLBACK(int) SessionTaskCopyTo::taskThread(RTTHREAD Thread, void *pvUser)
-{
-    SessionTaskCopyTo* task = static_cast<SessionTaskCopyTo*>(pvUser);
-    AssertReturn(task, VERR_GENERAL_FAILURE);
-
-    LogFlowFunc(("pTask=%p\n", task));
-
-    return task->Run();
-}
-
 SessionTaskCopyFrom::SessionTaskCopyFrom(GuestSession *pSession,
                                          const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags)
                                          : GuestSessionTask(pSession)
@@ -919,32 +882,6 @@ int SessionTaskCopyFrom::Run(void)
 
     LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-int SessionTaskCopyFrom::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
-{
-    LogFlowThisFunc(("strDesc=%s, strSource=%s, strDest=%s, uFlags=%x\n",
-                     strDesc.c_str(), mSource.c_str(), mDest.c_str(), mFlags));
-
-    mDesc = strDesc;
-    mProgress = pProgress;
-
-    int rc = RTThreadCreate(NULL, SessionTaskCopyFrom::taskThread, this,
-                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                            "gctlCpyFrom");
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/* static */
-DECLCALLBACK(int) SessionTaskCopyFrom::taskThread(RTTHREAD Thread, void *pvUser)
-{
-    SessionTaskCopyFrom* task = static_cast<SessionTaskCopyFrom*>(pvUser);
-    AssertReturn(task, VERR_GENERAL_FAILURE);
-
-    LogFlowFunc(("pTask=%p\n", task));
-
-    return task->Run();
 }
 
 SessionTaskUpdateAdditions::SessionTaskUpdateAdditions(GuestSession *pSession,
@@ -1656,31 +1593,5 @@ int SessionTaskUpdateAdditions::Run(void)
 
     LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-int SessionTaskUpdateAdditions::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
-{
-    LogFlowThisFunc(("strDesc=%s, strSource=%s, uFlags=%x\n",
-                     strDesc.c_str(), mSource.c_str(), mFlags));
-
-    mDesc = strDesc;
-    mProgress = pProgress;
-
-    int rc = RTThreadCreate(NULL, SessionTaskUpdateAdditions::taskThread, this,
-                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                            "gctlUpGA");
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/* static */
-DECLCALLBACK(int) SessionTaskUpdateAdditions::taskThread(RTTHREAD Thread, void *pvUser)
-{
-    SessionTaskUpdateAdditions* task = static_cast<SessionTaskUpdateAdditions*>(pvUser);
-    AssertReturn(task, VERR_GENERAL_FAILURE);
-
-    LogFlowFunc(("pTask=%p\n", task));
-
-    return task->Run();
 }
 
