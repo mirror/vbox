@@ -839,37 +839,35 @@ int GuestDnDBase::getProtocolVersion(uint32_t *puProto)
 
     int rc;
 
-    uint32_t uProto        = 0;
-    uint32_t uVerAdditions = 0;
-    uint32_t uRevAdditions = 0;
+    uint32_t uProto = 0;
+    uint32_t uVerAdditions;
+    uint32_t uRevAdditions;
     if (   m_pGuest
         && (uVerAdditions = m_pGuest->i_getAdditionsVersion())  > 0
         && (uRevAdditions = m_pGuest->i_getAdditionsRevision()) > 0)
     {
-#ifdef DEBUG
-# if 0
+#if 0 && defined(DEBUG)
         /* Hardcode the to-used protocol version; nice for testing side effects. */
-        uProto = 3;
-        rc = VINF_SUCCESS;
-# endif
+        if (true)
+            uProto = 3;
+        else
 #endif
-        if (!uProto) /* Protocol not set yet? */
+        if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 0))
         {
-            if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 0))
-            {
-                if (uRevAdditions >= 103344) /* Since r103344: Protocol v3. */
-                {
-                    uProto = 3;
-                }
-                else
-                    uProto = 2; /* VBox 5.0.0 - 5.0.8: Protocol v2. */
-            }
-
-            LogFlowFunc(("uVerAdditions=%RU32 (%RU32.%RU32.%RU32), r%RU32\n",
-                         uVerAdditions, VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions),
-                                        VBOX_FULL_VERSION_GET_BUILD(uVerAdditions), uRevAdditions));
-            rc = VINF_SUCCESS;
+/** @todo
+ *  r=bird: This is just too bad for anyone using an OSE additions build...
+ */
+            if (uRevAdditions >= 103344) /* Since r103344: Protocol v3. */
+                uProto = 3;
+            else
+                uProto = 2; /* VBox 5.0.0 - 5.0.8: Protocol v2. */
         }
+        /* else: uProto: 0 */
+
+        LogFlowFunc(("uVerAdditions=%RU32 (%RU32.%RU32.%RU32), r%RU32\n",
+                     uVerAdditions, VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions),
+                                    VBOX_FULL_VERSION_GET_BUILD(uVerAdditions), uRevAdditions));
+        rc = VINF_SUCCESS;
     }
     else
     {
