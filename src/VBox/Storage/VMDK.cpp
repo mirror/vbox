@@ -3717,7 +3717,6 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
         if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         {
-            unsigned uPercentEnd = uPercentStart + uPercentSpan;
             rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, cbExtent,
                                                 0 /* fFlags */, pfnProgress, pvUser, uPercentStart + cbOffset * uPercentSpan / cbSize,
                                                 cbExtent * uPercentSpan / cbSize);
