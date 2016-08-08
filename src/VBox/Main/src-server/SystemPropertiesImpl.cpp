@@ -949,7 +949,7 @@ HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdd
 {
     /** @todo not yet implemented, settings handling is missing */
     ReturnComNotImplemented();
-
+#if 0 /* not implemented */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = i_setDefaultAdditionsISO(aDefaultAdditionsISO);
     alock.release();
@@ -962,6 +962,7 @@ HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdd
     }
 
     return rc;
+#endif
 }
 
 HRESULT SystemProperties::getDefaultFrontend(com::Utf8Str &aDefaultFrontend)

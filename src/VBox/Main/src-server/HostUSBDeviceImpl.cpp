@@ -1787,8 +1787,7 @@ bool HostUSBDevice::i_hasAsyncOperationTimedOut() const
             AssertFailedReturn("BadState");
 
     }
-
-    AssertFailedReturn("shouldn't get here");
+    /* not reached */
 }
 
 /**

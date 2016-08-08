@@ -1459,7 +1459,7 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName,
         pszName++;
         pszPat++;
     }
-    return true;
+    /* not reached */
 }
 
 bool Filter::match(const ComPtr<IUnknown> object, const RTCString &name) const

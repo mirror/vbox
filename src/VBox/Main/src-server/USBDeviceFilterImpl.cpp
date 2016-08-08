@@ -40,7 +40,7 @@
  *  @param  aIdx        The field index.
  *  @param  aStr        The output string.
  */
-static void i_usbFilterFieldToString(PCUSBFILTER aFilter, USBFILTERIDX aIdx, Utf8Str &out)
+static void i_usbFilterFieldToString(PCUSBFILTER aFilter, USBFILTERIDX aIdx, Utf8Str &rstrOut)
 {
     const USBFILTERMATCH matchingMethod = USBFilterGetMatchingMethod(aFilter, aIdx);
     Assert(matchingMethod != USBFILTERMATCH_INVALID);
@@ -50,14 +50,12 @@ static void i_usbFilterFieldToString(PCUSBFILTER aFilter, USBFILTERIDX aIdx, Utf
         int value = USBFilterGetNum(aFilter, aIdx);
         Assert(value >= 0 && value <= 0xffff);
 
-        out = Utf8StrFmt("%04RX16", (uint16_t)value);
+        rstrOut = Utf8StrFmt("%04RX16", (uint16_t)value);
     }
     else if (USBFilterIsMethodString(matchingMethod))
-    {
-        out = USBFilterGetString(aFilter, aIdx);
-    }
+        rstrOut = USBFilterGetString(aFilter, aIdx);
     else
-        out.setNull();
+        rstrOut.setNull();
 }
 
 /*static*/
@@ -65,16 +63,16 @@ const char* USBDeviceFilter::i_describeUSBFilterIdx(USBFILTERIDX aIdx)
 {
     switch (aIdx)
     {
-        case USBFILTERIDX_VENDOR_ID: return tr("Vendor ID");
-        case USBFILTERIDX_PRODUCT_ID: return tr("Product ID");
-        case USBFILTERIDX_DEVICE: return tr("Revision");
-        case USBFILTERIDX_MANUFACTURER_STR: return tr("Manufacturer");
-        case USBFILTERIDX_PRODUCT_STR: return tr("Product");
-        case USBFILTERIDX_SERIAL_NUMBER_STR: return tr("Serial number");
-        case USBFILTERIDX_PORT: return tr("Port number");
-        default: return "";
+        case USBFILTERIDX_VENDOR_ID:            return tr("Vendor ID");
+        case USBFILTERIDX_PRODUCT_ID:           return tr("Product ID");
+        case USBFILTERIDX_DEVICE:               return tr("Revision");
+        case USBFILTERIDX_MANUFACTURER_STR:     return tr("Manufacturer");
+        case USBFILTERIDX_PRODUCT_STR:          return tr("Product");
+        case USBFILTERIDX_SERIAL_NUMBER_STR:    return tr("Serial number");
+        case USBFILTERIDX_PORT:                 return tr("Port number");
+        default:                                return "";
     }
-    return "";
+    /* not reached. */
 }
 
 /**
