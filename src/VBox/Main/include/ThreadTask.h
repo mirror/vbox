@@ -32,16 +32,22 @@ public:
 class ThreadTask
 {
 public:
-    ThreadTask(const Utf8Str &t) : m_pThread(NULL), m_strTaskName(t){};
-    virtual ~ThreadTask(){};
-    HRESULT createThread(PRTTHREAD pThread = NULL, RTTHREADTYPE enmType = RTTHREADTYPE_MAIN_WORKER);
-    virtual void handler() = 0;
-    static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
+    ThreadTask(const Utf8Str &t) : m_pThread(NULL), m_strTaskName(t)
+    { };
 
+    virtual ~ThreadTask()
+    { };
+
+    HRESULT createThread(PRTTHREAD pThread = NULL, RTTHREADTYPE enmType = RTTHREADTYPE_MAIN_WORKER);
+
+    virtual void handler() = 0;
     inline Utf8Str getTaskName() const {return m_strTaskName;};
 
 protected:
+    static DECLCALLBACK(int) taskHandlerThreadProc(RTTHREAD thread, void *pvUser);
+
     ThreadTask():m_pThread(NULL), m_strTaskName("GenericTask"){};
+
     PRTTHREAD m_pThread;
     Utf8Str m_strTaskName;
 };

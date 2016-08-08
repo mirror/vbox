@@ -20,64 +20,63 @@
 #include "ThreadTask.h"
 
 /**
- *  The function takes ownership of "this" instance (object
- *  instance which calls this function).
- *  And the function is responsible for deletion of "this"
- *  pointer in all cases.
- *  Possible way of usage:
+ * Starts the task (on separate thread), consuming @a this.
  *
- *  int vrc = VINF_SUCCESS;
- *  HRESULT hr = S_OK;
+ * The function takes ownership of "this" instance (object instance which calls
+ * this function). And the function is responsible for deletion of "this"
+ * pointer in all cases.
  *
- *  SomeTaskInheritedFromThreadTask* pTask = NULL;
- *  try
- *  {
- *      pTask = new SomeTaskInheritedFromThreadTask(this);
- *      if (!pTask->Init())//some init procedure
- *      {
- *          delete pTask;
- *          throw E_FAIL;
- *      }
- *      //this function delete pTask in case of exceptions, so
- *      there is no need the call of delete operator
+ * Possible way of usage:
  *
- *      hr = pTask->createThread();
- *  }
- *  catch(...)
- *  {
- *      vrc = E_FAIL;
- *  }
+ * @code{.cpp}
+ * int vrc = VINF_SUCCESS;
+ * HRESULT hr = S_OK;
+ *
+ * SomeTaskInheritedFromThreadTask* pTask = NULL;
+ * try
+ * {
+ *     pTask = new SomeTaskInheritedFromThreadTask(this);
+ *     if (!pTask->Init())//some init procedure
+ *     {
+ *         delete pTask;
+ *         throw E_FAIL;
+ *     }
+ *     //this function delete pTask in case of exceptions, so
+ *     there is no need the call of delete operator
+ *
+ *     hr = pTask->createThread();
+ * }
+ * catch(...)
+ * {
+ *     vrc = E_FAIL;
+ * }
+ * @endcode
  */
-HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
+HRESULT ThreadTask::createThread(PRTTHREAD pThread /*= NULL*/, RTTHREADTYPE enmType /*= RTTHREADTYPE_MAIN_WORKER*/)
 {
-    HRESULT rc = S_OK;
-
     m_pThread = pThread;
     int vrc = RTThreadCreate(m_pThread,
-                             taskHandler,
+                             taskHandlerThreadProc,
                              (void *)this,
                              0,
                              enmType,
                              0,
                              this->getTaskName().c_str());
+    if (RT_SUCCESS(vrc))
+        return S_OK;
 
-    if (RT_FAILURE(vrc))
-    {
-        delete this;
-        return E_FAIL;
-    }
-
-    return rc;
+    delete this;
+    return E_FAIL;
 }
 
 /**
  * Static method that can get passed to RTThreadCreate to have a
  * thread started for a Task.
  */
-/* static */ DECLCALLBACK(int) ThreadTask::taskHandler(RTTHREAD /* thread */, void *pvUser)
+/* static */ DECLCALLBACK(int) ThreadTask::taskHandlerThreadProc(RTTHREAD /* thread */, void *pvUser)
 {
     if (pvUser == NULL)
-        return VERR_INVALID_POINTER;
+        return VERR_INVALID_POINTER; /* nobody cares */
 
     ThreadTask *pTask = static_cast<ThreadTask *>(pvUser);
 
@@ -87,6 +86,6 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread, RTTHREADTYPE enmType)
     pTask->handler();
 
     delete pTask;
-
     return VINF_SUCCESS;
 }
+

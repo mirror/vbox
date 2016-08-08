@@ -270,8 +270,8 @@ DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD Thread, void *pvUser)
                 ::WaitForSingleObject(finishSem, INFINITE);
                 /* release the token */
                 LogFlow(("ClientTokenHolderThread(): releasing token...\n"));
-                BOOL success = ::ReleaseMutex(mutex);
-                AssertMsg(success, ("cannot release token, err=%d\n", ::GetLastError()));
+                BOOL fRc = ::ReleaseMutex(mutex);
+                AssertMsg(fRc, ("cannot release token, err=%d\n", ::GetLastError())); NOREF(fRc);
                 ::CloseHandle(mutex);
                 ::CloseHandle(finishSem);
             }
