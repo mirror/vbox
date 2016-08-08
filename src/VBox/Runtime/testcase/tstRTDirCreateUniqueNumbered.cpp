@@ -65,7 +65,7 @@ static void tst1(size_t cTest, size_t cchDigits, char chSep)
         if (RT_FAILURE(rc))
             break;
 
-        rc = RTDirCreateUniqueNumbered(szName, sizeof(szName), 0700, cchDigits, chSep)
+        rc = RTDirCreateUniqueNumbered(szName, sizeof(szName), 0700, cchDigits, chSep);
         if (rc != VINF_SUCCESS)
         {
             /* Random selection (system) isn't 100% predictable, so we must give a little
