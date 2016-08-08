@@ -38,12 +38,15 @@ public:
     virtual ~ThreadTask()
     { };
 
-    HRESULT createThread(PRTTHREAD pThread = NULL, RTTHREADTYPE enmType = RTTHREADTYPE_MAIN_WORKER);
+    HRESULT createThread(void);
+    HRESULT createThreadWithType(RTTHREADTYPE enmType);
+    HRESULT createThreadWithRaceCondition(PRTTHREAD pThread);
 
     virtual void handler() = 0;
     inline Utf8Str getTaskName() const {return m_strTaskName;};
 
 protected:
+    HRESULT createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD pThread);
     static DECLCALLBACK(int) taskHandlerThreadProc(RTTHREAD thread, void *pvUser);
 
     ThreadTask():m_pThread(NULL), m_strTaskName("GenericTask"){};

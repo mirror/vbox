@@ -382,7 +382,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
          * so there is no need in the call of delete operator. */
 /** @todo r=bird: The code using hThreadRcv is racing the thread termination. Since the thread isn't
  * created waitable, the handle goes away if we it terminates before our RTThreadUserWait call returns. */
-        hr = pTask->createThread(&hThreadRcv);
+        hr = pTask->createThreadWithRaceCondition(&hThreadRcv);
 
     }
     catch (std::bad_alloc &)

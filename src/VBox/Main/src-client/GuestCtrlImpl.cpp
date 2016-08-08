@@ -583,7 +583,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
                     throw hr;
                 }
 
-                hr = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
+                hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
                 if (SUCCEEDED(hr))
                 {

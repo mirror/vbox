@@ -19,6 +19,7 @@
 #include "VirtualBoxBase.h"
 #include "ThreadTask.h"
 
+
 /**
  * Starts the task (on separate thread), consuming @a this.
  *
@@ -27,34 +28,66 @@
  * pointer in all cases.
  *
  * Possible way of usage:
- *
  * @code{.cpp}
- * int vrc = VINF_SUCCESS;
- * HRESULT hr = S_OK;
+        HRESULT hr;
+        SomeTaskInheritedFromThreadTask *pTask = NULL;
+        try
+        {
+            pTask = new SomeTaskInheritedFromThreadTask(this);
+            if (!pTask->Init()) // some init procedure
+                throw E_FAIL;
+        }
+        catch (...)
+        {
+            if (pTask);
+                delete pTask;
+            return E_FAIL;
+        }
+        return pTask->createThread(); // pTask is always consumed
+   @endcode
  *
- * SomeTaskInheritedFromThreadTask* pTask = NULL;
- * try
- * {
- *     pTask = new SomeTaskInheritedFromThreadTask(this);
- *     if (!pTask->Init())//some init procedure
- *     {
- *         delete pTask;
- *         throw E_FAIL;
- *     }
- *     //this function delete pTask in case of exceptions, so
- *     there is no need the call of delete operator
- *
- *     hr = pTask->createThread();
- * }
- * catch(...)
- * {
- *     vrc = E_FAIL;
- * }
- * @endcode
+ * @sa createThreadWithType, createThreadWithRaceCondition
  */
-HRESULT ThreadTask::createThread(PRTTHREAD pThread /*= NULL*/, RTTHREADTYPE enmType /*= RTTHREADTYPE_MAIN_WORKER*/)
+HRESULT ThreadTask::createThread(void)
 {
-    m_pThread = pThread;
+    return createThreadInternal(RTTHREADTYPE_MAIN_WORKER, NULL /*pThread*/);
+}
+
+
+/**
+ * Same ThreadTask::createThread(), except it takes a thread type parameter.
+ *
+ * @param   enmType     The thread type.
+ */
+HRESULT ThreadTask::createThreadWithType(RTTHREADTYPE enmType)
+{
+    return createThreadInternal(enmType, NULL /*pThread*/);
+}
+
+
+/**
+ * Same ThreadTask::createThread(), except it returns a thread handle.
+ *
+ * If the task thread is incorrectly mananged, the caller may easily race the
+ * completion and termination of the task thread!  Use with care!
+ *
+ * @param   pThread     Handle of the worker thread.
+ */
+HRESULT ThreadTask::createThreadWithRaceCondition(PRTTHREAD pThread)
+{
+    return createThreadInternal(RTTHREADTYPE_MAIN_WORKER, pThread);
+}
+
+
+/**
+ * Internal worker for ThreadTask::createThread,
+ * ThreadTask::createThreadWithType, ThreadTask::createThreadwithRaceCondition.
+ *
+ * @note Always consumes @a this!
+ */
+HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD pThread)
+{
+    m_pThread = pThread; /** @todo this is utter non-sense! */
     int vrc = RTThreadCreate(m_pThread,
                              taskHandlerThreadProc,
                              (void *)this,
@@ -68,6 +101,7 @@ HRESULT ThreadTask::createThread(PRTTHREAD pThread /*= NULL*/, RTTHREADTYPE enmT
     delete this;
     return E_FAIL;
 }
+
 
 /**
  * Static method that can get passed to RTThreadCreate to have a

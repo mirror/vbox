@@ -659,7 +659,7 @@ HRESULT ExtPackFile::install(BOOL aReplace, const com::Utf8Str &aDisplayInfo, Co
             if (SUCCEEDED(hrc))
             {
                 ComPtr<Progress> ptrProgress = pTask->ptrProgress;
-                hrc = pTask->createThread(NULL /*phThread*/, RTTHREADTYPE_DEFAULT);
+                hrc = pTask->createThreadWithType(RTTHREADTYPE_DEFAULT);
                 pTask = NULL; /* The _completely_ _undocumented_ createThread method always consumes pTask. */
                 if (SUCCEEDED(hrc))
                     hrc = ptrProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -2087,7 +2087,7 @@ HRESULT ExtPackManager::uninstall(const com::Utf8Str &aName, BOOL aForcedRemoval
         if (SUCCEEDED(hrc))
         {
             ComPtr<Progress> ptrProgress = pTask->ptrProgress;
-            hrc = pTask->createThread(NULL, RTTHREADTYPE_DEFAULT);
+            hrc = pTask->createThreadWithType(RTTHREADTYPE_DEFAULT);
             pTask = NULL;               /* always consumed by createThread */
             if (SUCCEEDED(hrc))
                 hrc = ptrProgress.queryInterfaceTo(aProgress.asOutParam());

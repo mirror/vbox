@@ -1063,7 +1063,7 @@ int SessionTaskUpdateAdditions::i_copyFileToGuest(GuestSession *pSession, PRTISO
                     throw hr;
                 }
 
-                hr = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
+                hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
                 if (SUCCEEDED(hr))
                 {

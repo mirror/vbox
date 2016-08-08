@@ -2511,7 +2511,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
             throw hr;
         }
 
-        hr = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
         if (SUCCEEDED(hr))
         {
@@ -2584,7 +2584,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
             throw hr;
         }
 
-        hr = pTask->createThread(NULL, RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
         if (SUCCEEDED(hr))
         {

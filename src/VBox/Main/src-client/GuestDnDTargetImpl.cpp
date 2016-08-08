@@ -654,7 +654,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         //pSendCtx is deleted in the pTask destructor
 /** @todo r=bird: The code using hThreadSend is racing the thread termination. Since the thread isn't
  * created waitable, the handle goes away if we it terminates before our RTThreadUserWait call returns. */
-        hr = pTask->createThread(&rcThreadSend);
+        hr = pTask->createThreadWithRaceCondition(&rcThreadSend);
 
     }
     catch (std::bad_alloc &)
