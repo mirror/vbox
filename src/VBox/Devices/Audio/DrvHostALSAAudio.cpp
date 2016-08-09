@@ -888,6 +888,7 @@ static void alsaDbgErrorHandler(const char *file, int line, const char *function
                                 int err, const char *fmt, ...)
 {
     /** @todo Implement me! */
+    RT_NOREF(file, line, function, err, fmt);
 }
 #endif
 
@@ -1584,6 +1585,7 @@ static DECLCALLBACK(void) drvHostALSAAudioShutdown(PPDMIHOSTAUDIO pInterface)
 
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostALSAAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
+    RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
 
     return PDMAUDIOBACKENDSTS_RUNNING;
@@ -1697,6 +1699,8 @@ static DECLCALLBACK(void *) drvHostALSAAudioQueryInterface(PPDMIBASE pInterface,
  */
 static DECLCALLBACK(int) drvHostAlsaAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(pCfg, fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVHOSTALSAAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTALSAAUDIO);
     LogRel(("Audio: Initializing ALSA driver\n"));
 
@@ -1763,6 +1767,7 @@ const PDMDRVREG g_DrvHostALSAAudio =
     PDM_DRVREG_VERSION
 };
 
+#if 0 /* unused */
 static struct audio_option alsa_options[] =
 {
     {"DACSizeInUsec", AUD_OPT_BOOL, &s_ALSAConf.size_in_usec_out,
@@ -1788,4 +1793,4 @@ static struct audio_option alsa_options[] =
     {"ADCDev", AUD_OPT_STR, &s_ALSAConf.pcm_name_in,
      "ADC device name", NULL, 0}
 };
-
+#endif

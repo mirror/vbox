@@ -791,7 +791,6 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
     LogFlowFunc(("cbToRead=%zu, cbAvail=%zu, offPeekBuf=%zu, cbPeekBuf=%zu\n",
                  cbToRead, cbAvail, pStrm->offPeekBuf, pStrm->cbPeekBuf));
 
-    size_t   offWrite      = 0;
     uint32_t cWrittenTotal = 0;
 
     while (cbToRead)
@@ -1348,6 +1347,7 @@ static DECLCALLBACK(int) drvHostPulseAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
 
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostPulseAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
+    RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
 
     return PDMAUDIOBACKENDSTS_RUNNING;
@@ -1424,7 +1424,7 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostPulseAudioStreamGetStatus(PPDMIHOSTA
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-    pa_context_state_t ctxState = pa_context_get_state(pThis->pContext);
+    /*pa_context_state_t ctxState = pa_context_get_state(pThis->pContext); - unused */
 
     if (   pa_context_get_state(pThis->pContext) == PA_CONTEXT_READY
         && pa_stream_get_state(pStrm->pPAStream) == PA_STREAM_READY)
@@ -1452,10 +1452,6 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamIterate(PPDMIHOSTAUDIO pInterfac
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
-    PPULSEAUDIOSTREAM  pStrm = (PPULSEAUDIOSTREAM)pStream;
-
     LogFlowFuncEnter();
 
     /* Nothing to do here for PulseAudio. */
@@ -1478,6 +1474,19 @@ static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface
     return NULL;
 }
 
+
+/**
+ * Destructs a PulseAudio Audio driver instance.
+ *
+ * @copydoc FNPDMDRVCONSTRUCT
+ */
+static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    LogFlowFuncEnter();
+}
+
+
 /**
  * Constructs a PulseAudio Audio driver instance.
  *
@@ -1485,6 +1494,8 @@ static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface
  */
 static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(pCfg, fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
 
     PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
@@ -1499,19 +1510,9 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     return VINF_SUCCESS;
 }
 
-/**
- * Destructs a PulseAudio Audio driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
- */
-static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
-    LogFlowFuncEnter();
-}
 
 /**
- * Char driver registration record.
+ * Pulse audio driver registration record.
  */
 const PDMDRVREG g_DrvHostPulseAudio =
 {
@@ -1561,6 +1562,7 @@ const PDMDRVREG g_DrvHostPulseAudio =
     PDM_DRVREG_VERSION
 };
 
+#if 0 /* unused */
 static struct audio_option pulse_options[] =
 {
     {"DAC_MS", AUD_OPT_INT, &s_pulseCfg.buffer_msecs_out,
@@ -1568,4 +1570,5 @@ static struct audio_option pulse_options[] =
     {"ADC_MS", AUD_OPT_INT, &s_pulseCfg.buffer_msecs_in,
      "ADC period size in milliseconds", NULL, 0}
 };
+#endif
 
