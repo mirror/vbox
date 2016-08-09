@@ -559,7 +559,7 @@ extern DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, 
 extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnCb);
 
 extern DECLEXPORT(void) crVBoxServerCalloutEnable(VBOXCRCMDCTL *pCtl);
-extern DECLEXPORT(void) crVBoxServerCalloutDisable();
+extern DECLEXPORT(void) crVBoxServerCalloutDisable(void);
 extern DECLEXPORT(void) crServerSetUnscaledHiDPI(bool fEnable);
 
 #ifdef VBOX_WITH_CRHGSMI
