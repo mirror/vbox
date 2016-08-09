@@ -463,7 +463,7 @@ PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *p
 #ifndef IN_RING3
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandler;
 #endif
-PGM_ALL_CB2_DECL(FNPGMPHYSHANDLER)  iomMmioHandler;
+PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iomMmioHandler;
 
 /* IOM locking helpers. */
 #ifdef IOM_WITH_CRIT_SECT_RW

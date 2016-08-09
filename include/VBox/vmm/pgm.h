@@ -163,6 +163,22 @@ typedef enum PGMACCESSTYPE
 # define PGM_ALL_CB2_DECL(type)     DECLCALLBACK(DECLHIDDEN(type))
 #endif
 
+/** @def PGM_ALL_CB2_PROTO
+ * Macro for declaring a handler callback for all contexts.  The handler
+ * callback is hidden in ring-3, and exported in RC and R0.
+ * @param   fnType      The callback function type.
+ * @sa PGM_ALL_CB2_DECL.
+ */
+#if defined(IN_RC) || defined(IN_RING0)
+# ifdef __cplusplus
+#  define PGM_ALL_CB2_PROTO(fnType)    extern "C" DECLEXPORT(fnType)
+# else
+#  define PGM_ALL_CB2_PROTO(fnType)    DECLEXPORT(fnType)
+# endif
+#else
+# define PGM_ALL_CB2_PROTO(fnType)     DECLHIDDEN(fnType)
+#endif
+
 
 /**
  * \#PF Handler callback for physical access handler ranges in RC and R0.

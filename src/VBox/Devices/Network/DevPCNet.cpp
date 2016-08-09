@@ -638,7 +638,6 @@ static void pcnetPollTimerStart(PPCNETSTATE pThis);
 #endif
 static int  pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread);
 #ifdef PCNET_NO_POLLING
-PGM_ALL_CB_DECL(FNPGMPHYSHANDLER)   pcnetHandleRingWrite;
 # ifndef IN_RING3
 RT_C_DECLS_BEGIN
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pcnetHandleRingWritePf;
