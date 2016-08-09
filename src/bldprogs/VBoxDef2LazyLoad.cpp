@@ -67,12 +67,14 @@ static PMYEXPORT   *g_ppExpNext = &g_pExpHead;
 
 
 
+#if 0 /* unused */
 static const char *leftStrip(const char *psz)
 {
     while (isspace(*psz))
         psz++;
     return psz;
 }
+#endif
 
 
 static char *leftStrip(char *psz)
