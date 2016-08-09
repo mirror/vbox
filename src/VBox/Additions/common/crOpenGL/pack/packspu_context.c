@@ -20,6 +20,8 @@
 ThreadInfo *packspuNewThread(
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 struct VBOXUHGSMI *pHgsmi
+#else
+                void
 #endif
 )
 {
@@ -115,6 +117,8 @@ packspu_VBoxConCreate(struct VBOXUHGSMI *pHgsmi)
         return thread->id;
     }
     crError("packspuNewThread failed");
+#else
+    RT_NOREF(pHgsmi);
 #endif
     return 0;
 }
@@ -129,6 +133,7 @@ packspu_VBoxConFlush(GLint con)
     CRASSERT(thread->packer);
     packspuFlush((void *) thread);
 #else
+    RT_NOREF(con);
     crError("VBoxConFlush not implemented!");
 #endif
 }
@@ -179,6 +184,8 @@ packspu_VBoxConDestroy(GLint con)
     }
 #endif
     crUnlockMutex(&_PackMutex);
+#else
+    RT_NOREF(con);
 #endif
 }
 
@@ -188,8 +195,6 @@ packspu_VBoxConChromiumParameteriCR(GLint con, GLenum param, GLint value)
     GET_THREAD(thread);
     CRPackContext * curPacker = crPackGetContext();
     ThreadInfo *curThread = thread;
-    int writeback = 1;
-    GLint serverCtx = (GLint) -1;
 
     CRASSERT(!curThread == !curPacker);
     CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);
@@ -246,8 +251,6 @@ packspu_VBoxConChromiumParametervCR(GLint con, GLenum target, GLenum type, GLsiz
     GET_THREAD(thread);
     CRPackContext * curPacker = crPackGetContext();
     ThreadInfo *curThread = thread;
-    int writeback = 1;
-    GLint serverCtx = (GLint) -1;
 
     CRASSERT(!curThread == !curPacker);
     CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);

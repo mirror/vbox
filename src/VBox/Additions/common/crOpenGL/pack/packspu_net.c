@@ -53,6 +53,7 @@ packspuReadPixels( const CRMessageReadPixels *rp, unsigned int len )
 static int
 packspuReceiveData( CRConnection *conn, CRMessage *msg, unsigned int len )
 {
+    RT_NOREF(conn);
     if (msg->header.type == CR_MESSAGE_REDIR_PTR)
         msg = (CRMessage*) msg->redirptr.pMessage;
 
@@ -79,6 +80,7 @@ __prependHeader( CRPackBuffer *buf, unsigned int *len, unsigned int senderID )
 {
     int num_opcodes;
     CRMessageOpcodes *hdr;
+    RT_NOREF(senderID);
 
     CRASSERT( buf );
     CRASSERT( buf->opcode_current < buf->opcode_start );

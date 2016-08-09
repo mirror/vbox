@@ -180,7 +180,7 @@ void PACKSPU_APIENTRY packspu_InterleavedArrays( GLenum format, GLsizei stride, 
 # define CR_FORCE_ZVA_EXPAND
 
 
-GLboolean packspuZvaCreate(ContextInfo *pCtx, const GLfloat *pValue, GLuint cValues)
+static GLboolean packspuZvaCreate(ContextInfo *pCtx, const GLfloat *pValue, GLuint cValues)
 {
     ZvaBufferInfo *pInfo = &pCtx->zvaBufferInfo;
     GLuint cbValue = 4 * sizeof (*pValue);
@@ -243,7 +243,7 @@ typedef struct
     CRClientPointer cp;
 } CR_ZVA_RESTORE_CTX;
 
-void packspuZvaEnable(ContextInfo *pCtx, const GLfloat *pValue, GLuint cValues, CR_ZVA_RESTORE_CTX *pRestoreCtx)
+static void packspuZvaEnable(ContextInfo *pCtx, const GLfloat *pValue, GLuint cValues, CR_ZVA_RESTORE_CTX *pRestoreCtx)
 {
     CRContext *g = pCtx->clientState;
 
@@ -280,7 +280,7 @@ void packspuZvaEnable(ContextInfo *pCtx, const GLfloat *pValue, GLuint cValues, 
     pack_spu.self.EnableVertexAttribArrayARB(0);
 }
 
-void packspuZvaDisable(CR_ZVA_RESTORE_CTX *pRestoreCtx)
+static void packspuZvaDisable(CR_ZVA_RESTORE_CTX *pRestoreCtx)
 {
     if (pRestoreCtx->cp.buffer)
         pack_spu.self.BindBufferARB(GL_ARRAY_BUFFER_ARB, pRestoreCtx->cp.buffer->id);
@@ -346,13 +346,15 @@ packspu_ArrayElement( GLint index )
     GLfloat aAttrib[4];
 
 #if CR_ARB_vertex_buffer_object
-    GET_CONTEXT(ctx);
-    /*crDebug("packspu_ArrayElement index:%i", index);*/
-    if (ctx->clientState->extensions.ARB_vertex_buffer_object)
     {
-        serverArrays = crStateUseServerArrays();
-        if (ctx->fCheckZerroVertAttr)
-            cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        GET_CONTEXT(ctx);
+        /*crDebug("packspu_ArrayElement index:%i", index);*/
+        if (ctx->clientState->extensions.ARB_vertex_buffer_object)
+        {
+            serverArrays = crStateUseServerArrays();
+            if (ctx->fCheckZerroVertAttr)
+                cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        }
     }
 #endif
 
@@ -427,15 +429,18 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
     GLfloat aAttrib[4];
 
 #if CR_ARB_vertex_buffer_object
-    GET_CONTEXT(ctx);
     GLboolean lockedArrays = GL_FALSE;
-    CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
-    /*crDebug("DrawElements count=%d, indices=%p", count, indices);*/
-    if (ctx->clientState->extensions.ARB_vertex_buffer_object)
+    CRBufferObject *elementsBuffer;
     {
-        serverArrays = crStateUseServerArrays();
-        if (ctx->fCheckZerroVertAttr)
-            cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        GET_CONTEXT(ctx);
+        elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
+        /*crDebug("DrawElements count=%d, indices=%p", count, indices);*/
+        if (ctx->clientState->extensions.ARB_vertex_buffer_object)
+        {
+            serverArrays = crStateUseServerArrays();
+            if (ctx->fCheckZerroVertAttr)
+                cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        }
     }
 
 # ifdef CR_USE_LOCKARRAYS
@@ -575,13 +580,15 @@ packspu_DrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count,
     GLfloat aAttrib[4];
 
 #if CR_ARB_vertex_buffer_object
-    GET_CONTEXT(ctx);
-    /*crDebug("DrawRangeElements count=%d", count);*/
-    if (ctx->clientState->extensions.ARB_vertex_buffer_object)
     {
-         serverArrays = crStateUseServerArrays();
-         if (ctx->fCheckZerroVertAttr)
-             cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        GET_CONTEXT(ctx);
+        /*crDebug("DrawRangeElements count=%d", count);*/
+        if (ctx->clientState->extensions.ARB_vertex_buffer_object)
+        {
+             serverArrays = crStateUseServerArrays();
+             if (ctx->fCheckZerroVertAttr)
+                 cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        }
     }
 #endif
 
@@ -649,14 +656,16 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
     GLfloat aAttrib[4];
 
 #if CR_ARB_vertex_buffer_object
-    GET_CONTEXT(ctx);
     GLboolean lockedArrays = GL_FALSE;
-    /*crDebug("DrawArrays count=%d", count);*/
-    if (ctx->clientState->extensions.ARB_vertex_buffer_object)
     {
-         serverArrays = crStateUseServerArrays();
-         if (ctx->fCheckZerroVertAttr)
-             cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        GET_CONTEXT(ctx);
+        /*crDebug("DrawArrays count=%d", count);*/
+        if (ctx->clientState->extensions.ARB_vertex_buffer_object)
+        {
+             serverArrays = crStateUseServerArrays();
+             if (ctx->fCheckZerroVertAttr)
+                 cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
+        }
     }
 
 # ifdef CR_USE_LOCKARRAYS

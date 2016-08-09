@@ -24,11 +24,13 @@ static void __setDefaults( void )
 
 static void set_emit( void *foo, const char *response )
 {
+    RT_NOREF(foo);
     sscanf( response, "%d", &(pack_spu.emit_GATHER_POST_SWAPBUFFERS) );
 }
 
 static void set_swapbuffer_sync( void *foo, const char *response )
 {
+    RT_NOREF(foo);
     sscanf( response, "%d", &(pack_spu.swapbuffer_sync) );
 }
 
@@ -49,6 +51,7 @@ SPUOptions packSPUOptions[] = {
 
 void packspuSetVBoxConfiguration( const SPU *child_spu )
 {
+    RT_NOREF(child_spu);
     __setDefaults();
     pack_spu.emit_GATHER_POST_SWAPBUFFERS = 0;
     pack_spu.swapbuffer_sync = 0;

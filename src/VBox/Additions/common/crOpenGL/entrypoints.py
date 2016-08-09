@@ -30,6 +30,12 @@ def GenerateEntrypoints(hacks = []):
     print '#include "stub.h"'
     print '#include "dri_glx.h"'
     print ''
+    print '#ifdef __GNUC__';
+    print '# if (__GNUC__ << 16) + __GNUC_MINOR__ >= 0x40002';
+    print '#  pragma GCC diagnostic ignored "-Wunused-parameter"';
+    print '# endif';
+    print '#endif';
+
 
     # Get sorted list of dispatched functions.
     # The order is very important - it must match cr_opcodes.h

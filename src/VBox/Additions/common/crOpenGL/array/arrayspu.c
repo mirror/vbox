@@ -881,14 +881,14 @@ arrayspu_DestroyContext( GLint ctx )
 }
 
 static void ARRAYSPU_APIENTRY
-arrayspu_VBoxAttachThread()
+arrayspu_VBoxAttachThread(void)
 {
     crStateVBoxAttachThread();
     array_spu.child.VBoxAttachThread();
 }
 
 static void ARRAYSPU_APIENTRY
-arrayspu_VBoxDetachThread()
+arrayspu_VBoxDetachThread(void)
 {
     crStateVBoxDetachThread();
     array_spu.child.VBoxDetachThread();

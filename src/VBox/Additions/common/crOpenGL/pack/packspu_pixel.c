@@ -197,7 +197,7 @@ static const CRPixelPackState _defaultPacking = {
         crPackPixelStorei(enum, _defaultPacking.field); \
     }
 
-static void packspu_ApplyUnpackState()
+static void packspu_ApplyUnpackState(void)
 {
     GET_THREAD(thread);
     ContextInfo *ctx = thread->currentContext;
@@ -213,7 +213,7 @@ static void packspu_ApplyUnpackState()
     APPLY_IF_NEQ(clientState->unpack, psLSBFirst, GL_UNPACK_LSB_FIRST);
 }
 
-static void packspu_RestoreUnpackState()
+static void packspu_RestoreUnpackState(void)
 {
     GET_THREAD(thread);
     ContextInfo *ctx = thread->currentContext;
@@ -229,7 +229,7 @@ static void packspu_RestoreUnpackState()
     RESTORE_IF_NEQ(clientState->unpack, psLSBFirst, GL_UNPACK_LSB_FIRST);
 }
 
-static void packspu_ApplyPackState()
+static void packspu_ApplyPackState(void)
 {
     GET_THREAD(thread);
     ContextInfo *ctx = thread->currentContext;
@@ -245,7 +245,7 @@ static void packspu_ApplyPackState()
     APPLY_IF_NEQ(clientState->pack, psLSBFirst, GL_PACK_LSB_FIRST);
 }
 
-static void packspu_RestorePackState()
+static void packspu_RestorePackState(void)
 {
     GET_THREAD(thread);
     ContextInfo *ctx = thread->currentContext;
