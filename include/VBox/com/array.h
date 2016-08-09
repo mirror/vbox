@@ -879,9 +879,7 @@ public:
         }
 
         /** @todo Fix this! */
-        RT_GCC_NO_WARN_CONVERSION_BEGIN
-        m.size = aNewSize;
-        RT_GCC_NO_WARN_CONVERSION_END
+        m.size = (PRUint32)aNewSize;
 #else
         /* nothing to do here, SafeArrayCreate() has performed element
          * initialization */
@@ -1149,9 +1147,7 @@ protected:
                         SafeArray::Uninit(m.arr[i]);
 
                     /** @todo Fix this! */
-                    RT_GCC_NO_WARN_CONVERSION_BEGIN
-                    m.size = aNewSize;
-                    RT_GCC_NO_WARN_CONVERSION_END
+                    m.size = (PRUint32)aNewSize;
                 }
 
                 /* Copy the old contents. */
@@ -1171,16 +1167,12 @@ protected:
                     SafeArray::Uninit(m.arr[i]);
 
                 /** @todo Fix this! */
-                RT_GCC_NO_WARN_CONVERSION_BEGIN
-                m.size = aNewSize;
-                RT_GCC_NO_WARN_CONVERSION_END
+                m.size = (PRUint32)aNewSize;
             }
         }
 
         /** @todo Fix this! */
-        RT_GCC_NO_WARN_CONVERSION_BEGIN
-        m.capacity = newCapacity;
-        RT_GCC_NO_WARN_CONVERSION_END
+        m.capacity = (PRUint32)newCapacity;
 
 #else
 
