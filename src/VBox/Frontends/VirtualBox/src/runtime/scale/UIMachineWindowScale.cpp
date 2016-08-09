@@ -122,6 +122,13 @@ void UIMachineWindowScale::loadSettings()
             m_normalGeometry.moveCenter(availableGeo.center());
             setGeometry(m_normalGeometry);
         }
+
+        /* Normalize to the optimal size: */
+#ifdef VBOX_WS_X11
+        QTimer::singleShot(0, this, SLOT(sltNormalizeGeometry()));
+#else /* !VBOX_WS_X11 */
+        normalizeGeometry(true /* adjust position */);
+#endif /* !VBOX_WS_X11 */
     }
 }
 
@@ -172,6 +179,35 @@ void UIMachineWindowScale::restoreCachedGeometry()
 
     /* Adjust machine-view accordingly: */
     adjustMachineViewSize();
+}
+
+void UIMachineWindowScale::normalizeGeometry(bool fAdjustPosition)
+{
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
+    /* Skip if maximized: */
+    if (isMaximized())
+        return;
+
+    /* Calculate client window offsets: */
+    QRect frGeo = frameGeometry();
+    const QRect geo = geometry();
+    const int dl = geo.left() - frGeo.left();
+    const int dt = geo.top() - frGeo.top();
+    const int dr = frGeo.right() - geo.right();
+    const int db = frGeo.bottom() - geo.bottom();
+
+    /* Adjust position if necessary: */
+    if (fAdjustPosition)
+        frGeo = VBoxGlobal::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
+
+    /* Finally, set the frame geometry: */
+    setGeometry(frGeo.left() + dl, frGeo.top() + dt,
+                frGeo.width() - dl - dr, frGeo.height() - dt - db);
+#else /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+    /* Customer request: There should no be
+     * machine-window resize/move on machine-view resize: */
+    Q_UNUSED(fAdjustPosition);
+#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
 bool UIMachineWindowScale::event(QEvent *pEvent)

@@ -56,6 +56,10 @@ private:
     /** Restores cached window geometry. */
     virtual void restoreCachedGeometry() /* override */;
 
+    /** Performs window geometry normalization according to guest-size and host's available geometry.
+      * @param  fAdjustPosition  Determines whether is it necessary to adjust position as well. */
+    virtual void normalizeGeometry(bool fAdjustPosition) /* override */;
+
     /** Common @a pEvent handler. */
     bool event(QEvent *pEvent);
 #ifdef VBOX_WS_WIN
