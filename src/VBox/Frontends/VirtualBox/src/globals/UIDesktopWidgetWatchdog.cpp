@@ -226,6 +226,46 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) cons
     return availableGeometry(screenNumber(point));
 }
 
+const QRegion UIDesktopWidgetWatchdog::overallScreenRegion() const
+{
+    /* Calculate region: */
+    QRegion region;
+    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
+    {
+        /* Get enumerated screen's available area: */
+        QRect rect = gpDesktop->screenGeometry(iScreenIndex);
+#ifdef VBOX_WS_WIN
+        /* On Windows host window can exceed the available
+         * area in maximized/sticky-borders state: */
+        rect.adjust(-10, -10, 10, 10);
+#endif /* VBOX_WS_WIN */
+        /* Append rectangle: */
+        region += rect;
+    }
+    /* Return region: */
+    return region;
+}
+
+const QRegion UIDesktopWidgetWatchdog::overallAvailableRegion() const
+{
+    /* Calculate region: */
+    QRegion region;
+    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
+    {
+        /* Get enumerated screen's available area: */
+        QRect rect = gpDesktop->availableGeometry(iScreenIndex);
+#ifdef VBOX_WS_WIN
+        /* On Windows host window can exceed the available
+         * area in maximized/sticky-borders state: */
+        rect.adjust(-10, -10, 10, 10);
+#endif /* VBOX_WS_WIN */
+        /* Append rectangle: */
+        region += rect;
+    }
+    /* Return region: */
+    return region;
+}
+
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 bool UIDesktopWidgetWatchdog::isFakeScreenDetected() const
 {
