@@ -867,7 +867,7 @@ static SSMFIELD const g_aCodecNodeFieldsV1[] =
 
 
 
-
+#if 0 /* unused */
 static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
@@ -882,7 +882,7 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
         pHlp->pfnPrintf(pHlp, "0x%x: lVol=%RU8, rVol=%RU8\n", i, lVol, rVol);
     }
 }
-
+#endif
 
 static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
 {
@@ -1599,6 +1599,8 @@ DECLINLINE(void) hdaCodecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint
 /*
  * Verb processor functions.
  */
+#if 0 /* unused */
+
 static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     RT_NOREF(pThis, cmd);
@@ -1615,6 +1617,8 @@ static DECLCALLBACK(int) vrbProcBreak(PHDACODEC pThis, uint32_t cmd, uint64_t *p
     *pResp |= CODEC_RESPONSE_UNSOLICITED;
     return rc;
 }
+
+#endif /* unused */
 
 /* B-- */
 static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
@@ -2799,6 +2803,7 @@ static void codecDbgPrintNodeAmp(PCODECDBGINFO pInfo, uint32_t *paReg, uint8_t u
 #undef CODECDBG_AMP
 }
 
+#if 0 /* unused */
 static void codecDbgPrintNodeConnections(PCODECDBGINFO pInfo, PCODECNODE pNode)
 {
     if (pNode->node.au32F00_param[0xE] == 0) /* Directly connected to HDA link. */
@@ -2807,6 +2812,7 @@ static void codecDbgPrintNodeConnections(PCODECDBGINFO pInfo, PCODECNODE pNode)
          return;
     }
 }
+#endif
 
 static void codecDbgPrintNode(PCODECDBGINFO pInfo, PCODECNODE pNode, bool fRecursive)
 {

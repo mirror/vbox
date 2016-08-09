@@ -50,6 +50,9 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 
 #ifndef VBOX_AUDIO_TESTCASE
+
+# if 0 /* unused */
+
 static PDMAUDIOFMT drvAudioGetConfFormat(PCFGMNODE pCfgHandle, const char *pszKey,
                                          PDMAUDIOFMT enmDefault, bool *pfDefault)
 {
@@ -125,6 +128,8 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
     return pszValue;
 }
 
+# endif /* unused */
+
 /**
  * Returns the host stream part of an audio stream pair, or NULL
  * if no host stream has been assigned / is not available.
@@ -132,7 +137,7 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
  * @returns IPRT status code.
  * @param   pStream             Audio stream to retrieve host stream part for.
  */
-inline PPDMAUDIOSTREAM drvAudioGetHostStream(PPDMAUDIOSTREAM pStream)
+DECLINLINE(PPDMAUDIOSTREAM) drvAudioGetHostStream(PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pStream, NULL);
 
@@ -152,6 +157,7 @@ inline PPDMAUDIOSTREAM drvAudioGetHostStream(PPDMAUDIOSTREAM pStream)
     return pHstStream;
 }
 
+# if 0 /* unused */
 static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, audio_option *paOpts, size_t cOpts)
 {
     AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
@@ -243,6 +249,7 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, a
 
     return VINF_SUCCESS;
 }
+# endif /* unused */
 #endif /* !VBOX_AUDIO_TESTCASE */
 
 /**

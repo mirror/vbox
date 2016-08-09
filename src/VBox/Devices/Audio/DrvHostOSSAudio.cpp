@@ -654,7 +654,6 @@ static int ossCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
 
-    PDRVHOSTOSSAUDIO  pThis = PDMIHOSTAUDIO_2_DRVHOSTOSSAUDIO(pInterface);
     POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
 
     int rc;
@@ -734,7 +733,6 @@ static int ossCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,        VERR_INVALID_POINTER);
 
-    PDRVHOSTOSSAUDIO   pThis = PDMIHOSTAUDIO_2_DRVHOSTOSSAUDIO(pInterface);
     POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
 
     int rc;
@@ -853,15 +851,7 @@ static int ossCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     return rc;
 }
 
-static DECLCALLBACK(bool) drvHostOSSAudioIsEnabled(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
-{
-    NOREF(pInterface);
-    NOREF(enmDir);
-    return true; /* Always all enabled. */
-}
-
-static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
-                                                   uint32_t *pcSamplesPlayed)
+static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed)
 {
     NOREF(pInterface);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -994,6 +984,7 @@ static DECLCALLBACK(void) drvHostOSSAudioShutdown(PPDMIHOSTAUDIO pInterface)
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostOSSAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
+    RT_NOREF(enmDir);
 
     return PDMAUDIOBACKENDSTS_RUNNING;
 }
@@ -1091,6 +1082,8 @@ static DECLCALLBACK(void *) drvHostOSSAudioQueryInterface(PPDMIBASE pInterface, 
  */
 static DECLCALLBACK(int) drvHostOSSAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    RT_NOREF(pCfg, fFlags);
     PDRVHOSTOSSAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTOSSAUDIO);
     LogRel(("Audio: Initializing OSS driver\n"));
 
