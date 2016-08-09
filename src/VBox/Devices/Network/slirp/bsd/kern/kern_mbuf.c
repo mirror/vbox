@@ -255,7 +255,7 @@ static int	mb_zinit_pack(PNATState, void *, int, int);
 static void	mb_zfini_pack(PNATState, void *, int);
 #endif
 
-static void	mb_reclaim(void *);
+/*static void	mb_reclaim(void *); - unused */
 #ifndef VBOX
 static void	mbuf_init(void *);
 static void    *mbuf_jumbo_alloc(uma_zone_t, int, u_int8_t *, int);
@@ -795,6 +795,7 @@ mb_ctor_pack(PNATState pData, void *mem, int size, void *arg, int how)
 	return (0);
 }
 
+#if 0 /* unused */
 /*
  * This is the protocol drain routine.
  *
@@ -820,3 +821,4 @@ mb_reclaim(void *junk)
     NOREF(junk);
 #endif
 }
+#endif /* unused */

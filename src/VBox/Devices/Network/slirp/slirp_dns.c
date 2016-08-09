@@ -32,7 +32,7 @@
 
 static int get_dns_addr_domain(PNATState pData)
 {
-    //ULONG flags = GAA_FLAG_INCLUDE_PREFIX; /*GAA_FLAG_INCLUDE_ALL_INTERFACES;*/ /* all interfaces registered in NDIS */
+    /*ULONG flags = GAA_FLAG_INCLUDE_PREFIX;*/ /*GAA_FLAG_INCLUDE_ALL_INTERFACES;*/ /* all interfaces registered in NDIS */
     PIP_ADAPTER_ADDRESSES pAdapterAddr = NULL;
     PIP_ADAPTER_ADDRESSES pAddr = NULL;
     PIP_ADAPTER_DNS_SERVER_ADDRESS pDnsAddr = NULL;

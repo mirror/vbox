@@ -361,13 +361,13 @@ static DECLCALLBACK(int) drvscsihostAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD p
 
 static DECLCALLBACK(int) drvscsihostAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
-    int rc;
+    RT_NOREF(pThread);
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
     PRTREQ pReq;
 
     AssertReturn(pThis->hQueueRequests != NIL_RTREQQUEUE, VERR_INVALID_STATE);
 
-    rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsihostAsyncIOLoopWakeupFunc, 0);
+    int rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsihostAsyncIOLoopWakeupFunc, 0);
     AssertMsgRC(rc, ("Inserting request into queue failed rc=%Rrc\n", rc));
 
     return rc;
@@ -445,9 +445,10 @@ static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
     LogFlowFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Initialize the instance data first because of the destructor.

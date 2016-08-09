@@ -161,7 +161,7 @@ twowords(void *p)
 {
     uint8_t *c = p;
 
-#ifdef RT_LITTLE_ENDIAN //BYTE_ORDER == LITTLE_ENDIAN
+#ifdef RT_LITTLE_ENDIAN /*BYTE_ORDER == LITTLE_ENDIAN*/
     uint16_t s1 = ((uint16_t)c[1] << 8) + (uint16_t)c[0];
     uint16_t s2 = ((uint16_t)c[3] << 8) + (uint16_t)c[2];
 #else

@@ -110,7 +110,9 @@ int rcp_parse(struct rcp_state *state, const char *filename)
     char *pszSearchBuf;
     size_t cbSearchBuf;
     uint32_t flags;
+#ifdef RCP_ACCEPT_PORT /* OS X extention */
     uint32_t default_port = RTNETADDR_PORT_NA;
+#endif
     unsigned i;
     int rc;
 

@@ -145,7 +145,7 @@ static int get_in_addr_arpa(struct in_addr *paddr, struct label *root);
 static int labelstrcmp(struct label *l, const char *s);
 static void strnlabels(char *namebuf, size_t nbuflen, const uint8_t *msg, size_t off);
 
-static void LogLabelsTree(const char *before, struct label *l, const char *after);
+/*static void LogLabelsTree(const char *before, struct label *l, const char *after); - unused */
 static void free_labels(struct label *root);
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
@@ -1304,6 +1304,7 @@ strnlabels(char *namebuf, size_t nbuflen, const uint8_t *msg, size_t off)
 }
 
 
+#if 0 /* unused */
 static void
 LogLabelsTree(const char *before, struct label *l, const char *after)
 {
@@ -1348,6 +1349,7 @@ LogLabelsTree(const char *before, struct label *l, const char *after)
     if (after != NULL)
         LogDbg(("%s", after));
 }
+#endif /* unused */
 
 
 static void
