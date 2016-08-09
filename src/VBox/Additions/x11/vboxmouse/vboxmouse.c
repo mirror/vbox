@@ -96,6 +96,7 @@ static void
 VBoxPtrCtrlProc(DeviceIntPtr device, PtrCtrl *ctrl)
 {
     /* Nothing to do, dix handles all settings */
+    RT_NOREF(device, ctrl);
 }
 
 static int
@@ -244,12 +245,14 @@ static Bool
 VBoxConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
             int v3, int v4, int v5, int *x, int *y)
 {
+    RT_NOREF(pInfo, num, v2, v3, v4, v5);
+
     if (first == 0) {
         *x = xf86ScaleAxis(v0, 0, screenInfo.screens[0]->width, 0, 65536);
         *y = xf86ScaleAxis(v1, 0, screenInfo.screens[0]->height, 0, 65536);
         return TRUE;
-    } else
-        return FALSE;
+    }
+    return FALSE;
 }
 
 static int
@@ -257,6 +260,7 @@ VBoxPreInitInfo(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
 {
     const char *device;
     int rc;
+    RT_NOREF(drv, flags);
 
     /* Initialise the InputInfoRec. */
     pInfo->device_control = VBoxProc;
@@ -290,10 +294,8 @@ VBoxPreInitInfo(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
 static InputInfoPtr
 VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 {
-    InputInfoPtr pInfo;
-    const char *device;
-
-    if (!(pInfo = xf86AllocateInput(drv, 0)))
+    InputInfoPtr pInfo = xf86AllocateInput(drv, 0);
+    if (!pInfo)
         return NULL;
 
     /* Initialise the InputInfoRec. */
@@ -330,11 +332,9 @@ _X_EXPORT InputDriverRec VBOXMOUSE = {
 };
 
 static pointer
-VBoxPlug(pointer module,
-          pointer options,
-          int *errmaj,
-          int *errmin)
+VBoxPlug(pointer module, pointer options, int *errmaj, int *errmin)
 {
+    RT_NOREF(options, errmaj, errmin);
     xf86AddInputDriver(&VBOXMOUSE, module, 0);
     xf86Msg(X_CONFIG, "Load address of symbol \"VBOXMOUSE\" is %p\n",
             (void *)&VBOXMOUSE);
