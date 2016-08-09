@@ -54,6 +54,11 @@
         <para>Linux Additions: converted a failure message to an informational
            one when drivers could not be stopped during upgrade (bug
            #15692)</para>
+       </listitem>
+
+       <listitem>
+        <para>Windows Additions: auto-resizing fixes for Windows 10 guests
+          (bug #15257)</para>
       </listitem>
 
     </itemizedlist>
