@@ -2465,7 +2465,7 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
             /*
              * LLVM emits debug info for global constructors (_GLOBAL__I_a) which are not part of source
              * code but are inserted by the compiler: The resulting line number will be 0
-             * because they are not part of the source file obviously (see https://review.llvm.org/rL205999),
+             * because they are not part of the source file obviously (see https://reviews.llvm.org/rL205999),
              * so skip adding them when they are encountered.
              */
             if (pLnState->Regs.uLine)
