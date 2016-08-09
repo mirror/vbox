@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-# ifndef IN_BSD
+#ifndef IN_BSD
 # define zone_mbuf slirp_zone_mbuf(pData)
 # define zone_clust slirp_zone_clust(pData)
 # define zone_pack slirp_zone_pack(pData)
@@ -50,10 +50,12 @@ static inline uma_zone_t slirp_zone_ext_refcnt(PNATState);
 
 #ifndef _EXT_H_
 #define _EXT_H_
+
 # define fprintf vbox_slirp_fprintf
 # define printf vbox_slirp_printf
-#ifndef vbox_slirp_printfV
-static void vbox_slirp_printV(char *format, va_list args)
+
+# ifndef vbox_slirp_printfV
+DECLINLINE(void) vbox_slirp_printV(char *format, va_list args)
 {
     char buffer[1024];
     memset(buffer, 0, 1024);
@@ -61,10 +63,10 @@ static void vbox_slirp_printV(char *format, va_list args)
 
     LogRel(("NAT:EXT: %s\n", buffer));
 }
-#endif
+# endif
 
 # ifndef vbox_slirp_printf
-static void vbox_slirp_printf(char *format, ...)
+DECLINLINE(void) vbox_slirp_printf(char *format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -74,7 +76,7 @@ static void vbox_slirp_printf(char *format, ...)
 # endif
 
 # ifndef vbox_slirp_fprintf
-static void vbox_slirp_fprintf(void *ignored, char *format, ...)
+DECLINLINE(void) vbox_slirp_fprintf(void *ignored, char *format, ...)
 {
 #  ifdef LOG_ENABLED
     va_list args;
@@ -88,4 +90,6 @@ static void vbox_slirp_fprintf(void *ignored, char *format, ...)
 #  endif
 }
 # endif
+
 #endif
+

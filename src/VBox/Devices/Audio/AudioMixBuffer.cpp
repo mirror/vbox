@@ -575,8 +575,10 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
 
 /* audioMixBufOpAssign: Assigns values from source buffer to destination bufffer, overwriting the destination. */
 AUDMIXBUF_MIXOP(Assign /* Name */,  = /* Operation */)
+#if 0 /* unused */
 /* audioMixBufOpBlend: Blends together the values from both, the source and the destination buffer. */
 AUDMIXBUF_MIXOP(Blend  /* Name */, += /* Operation */)
+#endif
 
 #undef AUDMIXBUF_MIXOP
 #undef AUDMIXBUF_MACRO_LOG

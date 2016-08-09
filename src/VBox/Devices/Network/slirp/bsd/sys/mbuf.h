@@ -62,7 +62,11 @@ DECLNORETURN(static void) panic (char *fmt, ...)
 /* for non-gnu compilers */
 # define __func__ RT_GCC_EXTENSION __FUNCTION__
 # ifndef __inline
+#  ifdef __GNUC__
+#  define __inline __inline__
+# else
 #  define __inline
+# endif
 # endif
 
 # define bzero(a1, len) memset((a1), 0, (len))

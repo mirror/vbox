@@ -374,7 +374,6 @@ static int sb16Reattach(PSB16STATE pThis, PSB16DRIVER pDrv, uint8_t uLUN, const 
     return rc;
 }
 
-static void sb16AudioCallback(void *pvContext, uint32_t cbFree);
 
 static int magic_of_irq(int irq)
 {
