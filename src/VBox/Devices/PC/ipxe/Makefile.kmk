@@ -357,7 +357,7 @@ endif
  #
  BLDPROGS += ipxezbin
  ipxezbin_TEMPLATE = VBoxBldProg
- ipxezbin_CFLAGS   = -Wno-format
+ ipxezbin_CFLAGS   = -Wno-format -Wno-unused-function
  ipxezbin_SOURCES  = src/util/zbin.c
 
 endif
