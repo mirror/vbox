@@ -3567,6 +3567,7 @@ def main(argv):
                     sPath = sCurLoc
                     break
         if sPath:
+            sCurLoc = sPath
             sTmp = os.path.join(sCurLoc, 'bindings', 'xpcom', 'python')
             if os.path.isdir(sTmp):
                 sys.path.append(sTmp)
@@ -3597,6 +3598,8 @@ def main(argv):
         'interrupt':    False,
     }
     interpret(ctx)
+    del ctx
+    ctx = None
     oVBoxMgr.deinit()
     del oVBoxMgr
 
