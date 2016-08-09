@@ -1032,12 +1032,13 @@ static DECLCALLBACK(void) vboxVDMACrCtlCbSetEvent(PVGASTATE pVGAState, PVBOXVDMA
     RTSemEventSignal((RTSEMEVENT)pvContext);
 }
 
+#if 0 /** @todo vboxVDMACrCtlCbReleaseCmd is unused */
 static DECLCALLBACK(void) vboxVDMACrCtlCbReleaseCmd(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd, void* pvContext)
 {
     RT_NOREF(pVGAState, pvContext);
     vboxVDMACrCtlRelease(pCmd);
 }
-
+#endif
 
 static int vboxVDMACrCtlPostAsync (PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd, uint32_t cbCmd, PFNVBOXVDMACRCTL_CALLBACK pfnCompletion, void *pvCompletion)
 {
@@ -2684,6 +2685,7 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd, u
     AssertRC(rc);
 }
 
+# if 0 /** @todo vboxVDMAControlProcess is unused */
 static void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
 {
     PHGSMIINSTANCE pHgsmi = pVdma->pHgsmi;
@@ -2691,6 +2693,7 @@ static void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
     int rc = VBoxSHGSMICommandComplete (pHgsmi, pCmd);
     AssertRC(rc);
 }
+# endif
 
 #endif /* #ifdef VBOX_WITH_CRHGSMI */
 

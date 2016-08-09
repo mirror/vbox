@@ -119,6 +119,7 @@ typedef struct DRVVDE
  */
 static DECLCALLBACK(int) drvVDENetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
 {
+    RT_NOREF(fOnWorkerThread);
     PDRVVDE pThis = PDMINETWORKUP_2_DRVVDE(pInterface);
     int rc = RTCritSectTryEnter(&pThis->XmitLock);
     if (RT_FAILURE(rc))
@@ -198,6 +199,7 @@ static DECLCALLBACK(int) drvVDENetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDM
  */
 static DECLCALLBACK(int) drvVDENetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
+    RT_NOREF(fOnWorkerThread);
     PDRVVDE pThis = PDMINETWORKUP_2_DRVVDE(pInterface);
     STAM_COUNTER_INC(&pThis->StatPktSent);
     STAM_COUNTER_ADD(&pThis->StatPktSentBytes, pSgBuf->cbUsed);
@@ -273,6 +275,7 @@ static DECLCALLBACK(void) drvVDENetworkUp_EndXmit(PPDMINETWORKUP pInterface)
  */
 static DECLCALLBACK(void) drvVDENetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
+    RT_NOREF(pInterface, fPromiscuous);
     LogFlow(("drvVDESetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
 }
@@ -287,6 +290,7 @@ static DECLCALLBACK(void) drvVDENetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInt
  */
 static DECLCALLBACK(void) drvVDENetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
+    RT_NOREF(pInterface, enmLinkState);
     LogFlow(("drvNATNetworkUp_NotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
     /** @todo take action on link down and up. Stop the polling and such like. */
 }
@@ -437,6 +441,7 @@ static DECLCALLBACK(int) drvVDEAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
  */
 static DECLCALLBACK(int) drvVDEAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVVDE pThis = PDMINS_2_DATA(pDrvIns, PDRVVDE);
 
     size_t cbIgnored;
@@ -528,8 +533,9 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvVDEConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVVDE pThis = PDMINS_2_DATA(pDrvIns, PDRVVDE);
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVVDE pThis = PDMINS_2_DATA(pDrvIns, PDRVVDE);
 
     /*
      * Init the static parts.

@@ -1217,6 +1217,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(uint32_t idx3dCaps)
     return result;
 }
 
+#if 0 /* unused */
 static uint32_t vmsvga3dGetDepthFormatSupport(PVMSVGA3DSTATE pState3D, uint32_t idx3dCaps)
 {
     RT_NOREF(pState3D, idx3dCaps);
@@ -1227,6 +1228,7 @@ static uint32_t vmsvga3dGetDepthFormatSupport(PVMSVGA3DSTATE pState3D, uint32_t 
     Log(("CAPS: %s =\n%s\n", vmsvga3dGetCapString(idx3dCaps), vmsvga3dGet3dFormatString(result)));
     return result;
 }
+#endif
 
 
 int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
@@ -3158,13 +3160,15 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 
 #ifdef RT_OS_LINUX
 /**
- * X11 event handling thread
- * @param ThreadSelf thread handle
- * @param pvUser pointer to pState structure
- * @returns VBox status code
+ * X11 event handling thread.
+ *
+ * @returns VINF_SUCCESS (ignored)
+ * @param   hThreadSelf     thread handle
+ * @param   pvUser          pointer to pState structure
  */
-DECLCALLBACK(int) vmsvga3dXEventThread(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) vmsvga3dXEventThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)pvUser;
     while (!pState->bTerminate)
     {
@@ -3403,7 +3407,7 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
                                      0, vi->depth, InputOutput,
                                      vi->visual, flags, &swa);
     AssertMsgReturn(pContext->window, ("XCreateWindow failed"), VERR_INTERNAL_ERROR);
-    uint32_t cardinal_alpha = (uint32_t) (0.5 * (uint32_t)-1) ;
+    //uint32_t cardinal_alpha = (uint32_t) (0.5 * (uint32_t)-1); - unused
 
     /* the window is hidden by default and only mapped when CommandPresent is executed on it */
 

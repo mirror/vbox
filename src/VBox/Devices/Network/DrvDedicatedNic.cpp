@@ -173,6 +173,8 @@ PDMBOTHCBDECL(int) drvR0DedicatedNicReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
 
 
 
+#if 0 /* currently unused */
+
 /* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
 
 /**
@@ -390,6 +392,8 @@ static DECLCALLBACK(void *) drvR3DedicatedNicIBase_QueryInterface(PPDMIBASE pInt
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUpR3);
     return NULL;
 }
+
+#endif /* Currently unused */
 
 
 /* -=-=-=-=- PDMDRVREG -=-=-=-=- */

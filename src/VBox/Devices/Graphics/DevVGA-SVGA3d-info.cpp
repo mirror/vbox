@@ -654,6 +654,7 @@ void vmsvga3dInfoHostWindow(PCDBGFINFOHLP pHlp, uint64_t idHostWindow)
         pHlp->pfnPrintf(pHlp, "    Windows info:   vmsvga3dCocoaViewInfo failed to load (%Rrc)\n", rc);
 
 #else
+    RT_NOREF(idHostWindow);
     pHlp->pfnPrintf(pHlp, "    Windows info:   Not implemented on this platform\n");
 #endif
 }
@@ -1508,6 +1509,7 @@ static const char * const g_apszRenderTargets[] =
 
 static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pContext, bool fVerbose)
 {
+    RT_NOREF(fVerbose);
     char szTmp[128];
 
     pHlp->pfnPrintf(pHlp, "*** VMSVGA 3d context %#x (%d) ***\n", pContext->id, pContext->id);

@@ -142,14 +142,7 @@ static const PFNRT g_pDevINILinkHack[] =
 };
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-static err_t devINIPOutput(struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr);
-static err_t devINIPOutputRaw(struct netif *netif, struct pbuf *p);
-static err_t devINIPInterface(struct netif *netif);
-
-
+#if 0 /* unused */
 /**
  * Output a TCP/IP packet on the interface. Uses the generic lwIP ARP
  * code to resolve the address and call the link-level packet function.
@@ -170,6 +163,7 @@ static err_t devINIPOutput(struct netif *netif, struct pbuf *p, struct ip_addr *
     LogFlow(("%s: return %d\n", __FUNCTION__, lrc));
     return lrc;
 }
+#endif
 
 /**
  * Output a raw packet on the interface.
