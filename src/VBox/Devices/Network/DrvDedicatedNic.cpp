@@ -338,7 +338,9 @@ PDMBOTHCBDECL(void) drvDedicatedNicUp_SetPromiscuousMode(PPDMINETWORKUP pInterfa
     NOREF(pThis); RT_NOREF_PV(fPromiscuous);
 }
 
+#endif /* unused */
 #ifdef IN_RING3
+# if 0 /* currently unused */
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnNotifyLinkChanged}
@@ -393,7 +395,7 @@ static DECLCALLBACK(void *) drvR3DedicatedNicIBase_QueryInterface(PPDMIBASE pInt
     return NULL;
 }
 
-#endif /* Currently unused */
+# endif /* Currently unused */
 
 
 /* -=-=-=-=- PDMDRVREG -=-=-=-=- */
