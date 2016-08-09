@@ -989,7 +989,9 @@ typedef struct BUSLOGICTASKSTATE
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#ifdef IN_RING3
 static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode);
+#endif
 
 
 /**

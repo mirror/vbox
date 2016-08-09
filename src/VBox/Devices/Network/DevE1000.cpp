@@ -2135,6 +2135,7 @@ DECLINLINE(void) e1kRxDPut(PE1KSTATE pThis, E1KRXDESC* pDesc)
     e1kPrintRDesc(pThis, pDesc);
 }
 
+# ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
 /**
  * Store a fragment of received packet at the specifed address.
  *
@@ -2152,6 +2153,7 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
     pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveStore, a);
 }
+# endif
 
 #else /* !E1K_WITH_RXD_CACHE */
 
@@ -2229,6 +2231,7 @@ DECLINLINE(bool) e1kIsMulticast(const void *pvBuf)
     return (*(char*)pvBuf) & 1;
 }
 
+#ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
 /**
  * Set IXSM, IPCS and TCPCS flags according to the packet type.
  *
@@ -2248,7 +2251,7 @@ static int e1kRxChecksumOffload(PE1KSTATE pThis, const uint8_t *pFrame, size_t c
      * coming from so we tell the driver to ignore our checksum flags
      * and do verification in software.
      */
-#if 0
+# if 0
     uint16_t uEtherType = ntohs(*(uint16_t*)(pFrame + 12));
 
     E1kLog2(("%s e1kRxChecksumOffload: EtherType=%x\n", pThis->szPrf, uEtherType));
@@ -2273,12 +2276,13 @@ static int e1kRxChecksumOffload(PE1KSTATE pThis, const uint8_t *pFrame, size_t c
             pStatus->fIXSM = true;
             break;
     }
-#else
+# else
     pStatus->fIXSM = true;
     RT_NOREF_PV(pThis); RT_NOREF_PV(pFrame); RT_NOREF_PV(cb);
-#endif
+# endif
     return VINF_SUCCESS;
 }
+#endif /* IN_RING3 */
 
 /**
  * Pad and store received packet.

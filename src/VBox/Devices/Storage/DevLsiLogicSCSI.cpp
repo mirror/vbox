@@ -675,7 +675,6 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
 }
 
-#endif /* IN_RING3 */
 
 /**
  * Takes necessary steps to finish a reply frame.
@@ -707,7 +706,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
          * Requests from the request queue are always transferred to R3. So it is not possible
          * that this case happens in R0 or GC.
          */
-#ifdef IN_RING3
+# ifdef IN_RING3
         int rc;
         /* Grab a free reply message from the queue. */
         rc = PDMCritSectEnter(&pThis->ReplyFreeQueueCritSect, VINF_SUCCESS);
@@ -765,13 +764,12 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
 
         PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
-#else
+# else
         AssertMsgFailed(("This is not allowed to happen.\n"));
-#endif
+# endif
     }
 }
 
-#ifdef IN_RING3
 
 /**
  * Tries to find a memory region which covers the given address.

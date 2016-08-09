@@ -2014,6 +2014,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
 }
 
 
+#ifdef IN_RING3
 /**
  * Transmit queue consumer
  * This is just a very simple way of delaying sending to R3.
@@ -2035,6 +2036,7 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 
     return true;
 }
+#endif /* IN_RING3 */
 
 
 /**

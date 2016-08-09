@@ -292,8 +292,8 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces);
 
 #endif /* IN_RING3 */
 
-
 #ifdef LOG_ENABLED
+
 /**
  * Index register string name lookup
  *
@@ -414,6 +414,7 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis)
     }
 }
 
+#ifdef IN_RING3
 /**
  * FIFO command name lookup
  *
@@ -532,7 +533,9 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
         return "UNKNOWN";
     }
 }
-#endif
+# endif /* IN_RING3 */
+
+#endif /* LOG_ENABLED */
 
 #ifdef IN_RING3
 /**
