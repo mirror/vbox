@@ -140,12 +140,12 @@ typedef enum PGMACCESSTYPE
  */
 #if defined(IN_RC) || defined(IN_RING0)
 # ifdef __cplusplus
-#  define PGM_ALL_CB_DECL(type)     extern "C" DECLEXPORT(type)
+#  define PGM_ALL_CB_DECL(type)     extern "C" DECLCALLBACK(DECLEXPORT(type))
 # else
-#  define PGM_ALL_CB_DECL(type)     DECLEXPORT(type)
+#  define PGM_ALL_CB_DECL(type)     DECLCALLBACK(DECLEXPORT(type))
 # endif
 #else
-# define PGM_ALL_CB_DECL(type)      static type
+# define PGM_ALL_CB_DECL(type)      static DECLCALLBACK(type)
 #endif
 
 /** @def PGM_ALL_CB2_DECL
@@ -155,12 +155,12 @@ typedef enum PGMACCESSTYPE
  */
 #if defined(IN_RC) || defined(IN_RING0)
 # ifdef __cplusplus
-#  define PGM_ALL_CB2_DECL(type)    extern "C" DECLEXPORT(type)
+#  define PGM_ALL_CB2_DECL(type)    extern "C" DECLCALLBACK(DECLEXPORT(type))
 # else
-#  define PGM_ALL_CB2_DECL(type)    DECLEXPORT(type)
+#  define PGM_ALL_CB2_DECL(type)    DECLCALLBACK(DECLEXPORT(type))
 # endif
 #else
-# define PGM_ALL_CB2_DECL(type)     DECLHIDDEN(type)
+# define PGM_ALL_CB2_DECL(type)     DECLCALLBACK(DECLHIDDEN(type))
 #endif
 
 
