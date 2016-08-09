@@ -38,6 +38,7 @@
 VMMR3DECL(int) VMMDoHmTest(PVM pVM);
 
 
+#if 0
 static DECLCALLBACK(int) tstVmmHmConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 {
     RT_NOREF2(pUVM, pvUser);
@@ -61,6 +62,7 @@ static DECLCALLBACK(int) tstVmmHmConfigConstructor(PUVM pUVM, PVM pVM, void *pvU
 
     return VINF_SUCCESS;
 }
+#endif
 
 int main(int argc, char **argv)
 {
