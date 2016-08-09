@@ -2462,7 +2462,14 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                   offOpCode, bLogOpCode, cLineDelta, pLnState->Regs.uLine, cAddressDelta, pLnState->Regs.uAddress,
                   cOpIndexDelta, pLnState->Regs.idxOp));
 
-            rc = rtDwarfLine_AddLine(pLnState, offOpCode);
+            /*
+             * LLVM emits debug info for global constructors (_GLOBAL__I_a) which are not part of source
+             * code but are inserted by the compiler: The resulting line number will be 0
+             * because they are not part of the source file obviously (see https://review.llvm.org/rL205999),
+             * so skip adding them when they are encountered.
+             */
+            if (pLnState->Regs.uLine)
+                rc = rtDwarfLine_AddLine(pLnState, offOpCode);
         }
         else
         {
@@ -2473,7 +2480,9 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                  */
                 case DW_LNS_copy:
                     Log2(("%08x: DW_LNS_copy\n", offOpCode));
-                    rc = rtDwarfLine_AddLine(pLnState, offOpCode);
+                    /* See the comment about LLVM above. */
+                    if (pLnState->Regs.uLine)
+                        rc = rtDwarfLine_AddLine(pLnState, offOpCode);
                     break;
 
                 case DW_LNS_advance_pc:
