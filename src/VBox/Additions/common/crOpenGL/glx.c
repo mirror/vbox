@@ -73,10 +73,14 @@ struct VisualInfo {
     struct VisualInfo *next;
 };
 
+#ifndef VBOX_NO_NATIVEGL /* Old code */
 static struct VisualInfo *VisualInfoList = NULL;
+#endif
 
 static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t *pGlxPixmap, XRectangle *pRect);
 static void stubQueryXDamageExtension(Display *dpy, ContextInfo *pContext);
+
+#ifndef VBOX_NO_NATIVEGL /* Old code */
 
 static void
 AddVisualInfo(Display *dpy, int screen, VisualID visualid, int visBits)
@@ -153,7 +157,7 @@ static struct {
     {GLX_ACCUM_RED_SIZE, "GLX_ACCUM_RED_SIZE", TEST_GREATER_0, CR_ACCUM_BIT},
     {GLX_SAMPLE_BUFFERS_SGIS, "GLX_SAMPLE_BUFFERS_SGIS", TEST_GREATER_0, CR_MULTISAMPLE_BIT},
 };
-#ifndef VBOX_NO_NATIVEGL  /* Currently not used */
+
 static int QueryVisBits(Display *dpy, XVisualInfo *vis)
 {
     int visBits = 0;
@@ -209,7 +213,8 @@ static int QueryVisBits(Display *dpy, XVisualInfo *vis)
 
     return visBits;
 }
-#endif /* not 0 */
+
+#endif /* !VBOX_NO_NATIVEGL */
 
 
 
@@ -563,7 +568,6 @@ VBOXGLXTAG(glXCreateContext)(Display *dpy, XVisualInfo *vis, GLXContext share, B
     char dpyName[MAX_DPY_NAME];
     ContextInfo *context;
     int visBits = CR_RGB_BIT | CR_DOUBLE_BIT | CR_DEPTH_BIT; /* default vis */
-    int i, numExt;
 
     stubInit();
 
@@ -571,6 +575,7 @@ VBOXGLXTAG(glXCreateContext)(Display *dpy, XVisualInfo *vis, GLXContext share, B
 
     /*
     {
+        int i, numExt;
         char **list;
 
         list = XListExtensions(dpy, &numExt);
@@ -666,6 +671,7 @@ static void stubFindPixmapCB(unsigned long key, void *data1, void *data2)
     ContextInfo *pCtx = (ContextInfo *) data1;
     stubFindPixmapParms_t *pParms = (stubFindPixmapParms_t *) data2;
     GLX_Pixmap_t *pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(pCtx->pGLXPixmapsHash, (unsigned int) pParms->draw);
+    (void)key;
 
     if (pGlxPixmap)
     {
@@ -929,6 +935,8 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
 #else  /* not 0 */
 DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int attrib, int *value )
 {
+    (void)dpy;
+
     if (!vis) {
         /* SGI OpenGL Performer hits this */
         crWarning("glXGetConfig called with NULL XVisualInfo");
@@ -1105,15 +1113,18 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXQueryVersion)( Display *dpy, int *major, int *min
     return 1;
 }
 
+#ifdef VBOX_TEST_MEGOO
 static XErrorHandler oldErrorHandler;
 static unsigned char lastXError = Success;
 
 static int 
 errorHandler (Display *dpy, XErrorEvent *e)
 {
+    (void)dpy;
     lastXError = e->error_code;
     return 0;
 }
+#endif /* VBOX_TEST_MGEOO */
 
 DECLEXPORT(void) VBOXGLXTAG(glXSwapBuffers)( Display *dpy, GLXDrawable drawable )
 {
@@ -1946,8 +1957,8 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
 DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, int *nelements)
 {
     GLXFBConfig *pGLXFBConfigs = NULL;
-    struct VisualInfo *v;
-    int i=0, cVisuals;
+    /*struct VisualInfo *v; */
+    int i=0;
     XVisualInfo searchvis, *pVisuals;
 
     *nelements = 0;
@@ -2024,9 +2035,9 @@ DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLX
     (void) dpy;
     (void) config;
     
+    /*
     struct VisualInfo *v;
 
-    /*
     for (v = VisualInfoList; v; v = v->next) {
         if (v->dpy == dpy && v->visualid == (VisualID)config)
         {
@@ -2417,12 +2428,12 @@ static void stubXshmUpdateWholeImage(Display *dpy, GLXDrawable draw, GLX_Pixmap_
         /*crDebug("Texture size too big, splitting in lower sized chunks. [%i,%i,%i,%i] (%i)",
                 pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, rect.height);*/
 
-        for (; (rect.y+rect.height)<=(pGlxPixmap->y+pGlxPixmap->h); rect.y+=rect.height)
+        for (; (rect.y+rect.height)<=(pGlxPixmap->y+(int)pGlxPixmap->h); rect.y+=rect.height)
         {
             stubXshmUpdateImageRect(dpy, draw, pGlxPixmap, &rect);
         }
 
-        if (rect.y!=(pGlxPixmap->y+pGlxPixmap->h))
+        if (rect.y!=(pGlxPixmap->y+(int)pGlxPixmap->h))
         {
             rect.height=pGlxPixmap->h-rect.y;
             stubXshmUpdateImageRect(dpy, draw, pGlxPixmap, &rect);
@@ -2527,11 +2538,9 @@ Bool checkevents(Display *display, XEvent *event, XPointer arg)
 /*@todo check what error codes could we throw for failures here*/
 DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, int buffer, const int *attrib_list)
 {
-    static int cnt=0;
-    XImage dummyimg;
     ContextInfo *context = stubGetCurrentContext();
-
     GLX_Pixmap_t *pGlxPixmap;
+    RT_NOREF(buffer, attrib_list);
 
     if (!context)
     {

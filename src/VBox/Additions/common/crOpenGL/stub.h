@@ -283,7 +283,7 @@ typedef struct {
  * */
 extern CRtsd g_stubCurrentContextTSD;
 
-DECLINLINE(ContextInfo*) stubGetCurrentContext()
+DECLINLINE(ContextInfo*) stubGetCurrentContext(void)
 {
     ContextInfo* ctx;
     VBoxTlsRefGetCurrentFunctional(ctx, ContextInfo, &g_stubCurrentContextTSD);

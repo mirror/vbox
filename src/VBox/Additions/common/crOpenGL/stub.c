@@ -155,6 +155,7 @@ void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, const void *pRe
 
 void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects)
 {
+    RT_NOREF(texture, cfg, xPos, yPos, cRects, pRects);
     crError("not expected!");
 }
 
