@@ -397,21 +397,21 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             'RecordSize':  '64k',
             'TestsetSize': '2g',
             'QueueDepth':  '32',
-            'DiskSizeGb':  4
+            'DiskSizeGb':  10
         },
         # For benchmarking the I/O stack.
         'Benchmark': {
             'RecordSize':  '64k',
             'TestsetSize': '20g',
             'QueueDepth':  '32',
-            'DiskSizeGb':  30
+            'DiskSizeGb':  100
         },
         # For stress testing which takes a lot of time.
         'Stress': {
             'RecordSize':  '64k',
             'TestsetSize': '2t',
             'QueueDepth':  '32',
-            'DiskSizeGb':  3000
+            'DiskSizeGb':  10000
         },
     };
 
