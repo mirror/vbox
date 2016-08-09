@@ -4400,7 +4400,7 @@ TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_OPT) \
  	$(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
  ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
-  TEMPLATE_VBOXR3EXE_CXXFLAGS         <= $(VBOX_GCC_WERR)
+  TEMPLATE_VBOXR3EXE_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
 TEMPLATE_VBOXR3EXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64      = -m64
@@ -5911,6 +5911,9 @@ else
 # (gcc of some kind )
 TEMPLATE_VBoxBldProg_TOOL                = GXX3
 TEMPLATE_VBoxBldProg_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros)
+ ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+  TEMPLATE_VBoxBldProg_CFLAGS           += $(VBOX_GCC_WERR)
+ endif
 TEMPLATE_VBoxBldProg_CFLAGS.x86          = -m32
 TEMPLATE_VBoxBldProg_CFLAGS.sparc32      = -m32
 TEMPLATE_VBoxBldProg_CFLAGS.amd64        = -m64
@@ -5919,6 +5922,9 @@ TEMPLATE_VBoxBldProg_CFLAGS.release      = -O2 -fno-omit-frame-pointer -fno-stri
 TEMPLATE_VBoxBldProg_CFLAGS.profile      = $(TEMPLATE_VBoxBldProg_CXXFLAGS.profile)
 TEMPLATE_VBoxBldProg_CFLAGS.kprofile     = $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
 TEMPLATE_VBoxBldProg_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros)
+ ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+  TEMPLATE_VBoxBldProg_CXXFLAGS         += $(VBOX_GCC_WERR)
+ endif
 TEMPLATE_VBoxBldProg_CXXFLAGS.x86        = -m32
 TEMPLATE_VBoxBldProg_CXXFLAGS.sparc32    = -m32
 TEMPLATE_VBoxBldProg_CXXFLAGS.amd64      = -m64
