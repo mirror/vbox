@@ -22,6 +22,7 @@ static void __setDefaults( void )
 
 static void set_default_viewport( void *foo, const char *response )
 {
+   (void) foo;
    sscanf( response, "%d", &(feedback_spu.default_viewport) );
 }
 

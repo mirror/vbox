@@ -148,7 +148,7 @@ static EGLBoolean testValidDisplay(EGLNativeDisplayType hDisplay)
 DECLEXPORT(EGLDisplay) eglGetDisplay(EGLNativeDisplayType hDisplay)
 {
     Display *pDisplay;
-    int rc, cError, cEvent, cMajor, cMinor;
+    int cError, cEvent, cMajor, cMinor;
 
     if (!testValidDisplay(hDisplay))
         return EGL_NO_DISPLAY;
@@ -200,6 +200,7 @@ DECLEXPORT(EGLBoolean) eglTerminate(EGLDisplay hDisplay)
 
 DECLEXPORT(const char *) eglQueryString(EGLDisplay hDisplay, EGLint name)
 {
+    RT_NOREF(hDisplay);
     switch (name)
     {
         case EGL_CLIENT_APIS:
@@ -239,9 +240,9 @@ DECLEXPORT(EGLBoolean) eglGetConfigs (EGLDisplay hDisplay, EGLConfig *paConfigs,
     return clearEGLError();
 }
 
-static int convertEGLAttribToGLX(EGLint EGLAttrib)
+static int convertEGLAttribToGLX(EGLint a_EGLAttrib)
 {
-    switch (EGLAttrib)
+    switch (a_EGLAttrib)
     {
         case EGL_BUFFER_SIZE:
             return GLX_BUFFER_SIZE;
@@ -309,7 +310,7 @@ DECLEXPORT(EGLBoolean) eglChooseConfig (EGLDisplay hDisplay, const EGLint *paAtt
     unsigned cAttribs = 0, i;
     const EGLint *pAttrib, *pAttrib2;
     EGLint cRenderableType = EGL_OPENGL_ES_BIT;
-    int cConfigCaveat = GLX_DONT_CARE, cConformant = GLX_DONT_CARE;
+    unsigned cConfigCaveat = GLX_DONT_CARE, cConformant = GLX_DONT_CARE;
     GLXFBConfig *paFBConfigs;
     int caFBConfigs;
 
@@ -441,7 +442,7 @@ DECLEXPORT(EGLBoolean) eglChooseConfig (EGLDisplay hDisplay, const EGLint *paAtt
     if (paFBConfigs == NULL)
         return setEGLError(EGL_BAD_ACCESS);
     *pcConfigs = caFBConfigs;
-    for (i = 0; i < caConfigs && i < caFBConfigs; ++i)
+    for (i = 0; (GLint)i < caConfigs && (GLint)i < caFBConfigs; ++i)
         paConfigs[i] = (EGLConfig)paFBConfigs[i];
     XFree(paFBConfigs);
     return clearEGLError();
@@ -634,7 +635,7 @@ DECLEXPORT(EGLSurface) eglCreatePbufferSurface(EGLDisplay hDisplay, EGLConfig co
             }
             paAttributes += 2;
         }
-    EGL_ASSERT(cIndex < RT_ELEMENTS(aAttributes) - 1);
+    EGL_ASSERT((unsigned)cIndex < RT_ELEMENTS(aAttributes) - 1U);
     aAttributes[cIndex + 1] = None;
     hPbuffer = glXCreatePbuffer(pDisplay, (GLXFBConfig)config, aAttributes);
     if (hPbuffer == None)
@@ -922,7 +923,7 @@ DECLEXPORT(EGLBoolean) eglCopyBuffers(EGLDisplay hDisplay, EGLSurface hSurface, 
 {
     Display *pDisplay = (Display *)hDisplay;
 
-    if (!VALID_PTR(hDisplay))
+    if (!VALID_PTR(pDisplay))
         return setEGLError(EGL_NOT_INITIALIZED);
 
     NOREF(hSurface);

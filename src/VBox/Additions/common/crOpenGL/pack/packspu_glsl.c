@@ -114,7 +114,7 @@ GLint PACKSPU_APIENTRY packspu_GetUniformLocation(GLuint program, const char * n
     return crStateGetUniformLocation(program, name);
 }
 
-GLint PACKSPU_APIENTRY packspu_GetAttribLocationUnchached( GLuint program, const char * name )
+static GLint PACKSPU_APIENTRY packspu_GetAttribLocationUnchached( GLuint program, const char * name )
 {
     GET_THREAD(thread);
     int writeback = 1;

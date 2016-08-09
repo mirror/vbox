@@ -20,7 +20,7 @@ print """
 """
 
 print """
-GLboolean crPackIsPixelStoreParm(GLenum pname)
+static GLboolean crPackIsPixelStoreParm(GLenum pname)
 {
     if (pname == GL_UNPACK_ALIGNMENT
         || pname == GL_UNPACK_ROW_LENGTH
