@@ -102,8 +102,10 @@ static int
 VBoxInit(DeviceIntPtr device)
 {
     CARD8 map[2] = { 0, 1 };
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
     Atom axis_labels[2] = { 0, 0 };
     Atom button_labels[2] = { 0, 0 };
+#endif
     if (!InitPointerDeviceStruct((DevicePtr)device, map, 2,
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                  button_labels,

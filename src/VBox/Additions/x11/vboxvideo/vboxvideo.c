@@ -115,12 +115,15 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv);
 static Bool VBOXEnterVT(ScrnInfoPtr pScrn);
 static void VBOXLeaveVT(ScrnInfoPtr pScrn);
 static Bool VBOXCloseScreen(ScreenPtr pScreen);
+#ifndef VBOXVIDEO_13
 static Bool VBOXSaveScreen(ScreenPtr pScreen, int mode);
+#endif
 static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode);
 static void VBOXAdjustFrame(ScrnInfoPtr pScrn, int x, int y);
 static void VBOXFreeScreen(ScrnInfoPtr pScrn);
-static void VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode,
-                                          int flags);
+#ifndef VBOXVIDEO_13
+static void VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode, int flags);
+#endif
 
 /* locally used functions */
 static Bool VBOXMapVidMem(ScrnInfoPtr pScrn);
@@ -289,12 +292,15 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     return TRUE;
 }
 
-/** Set a video mode to the hardware, RandR 1.1 version.  Since we no longer do
- * virtual frame buffers, adjust the screen pixmap dimensions to match.  The
- * "override" parameters are for when we received a mode hint while switched to
- * a virtual terminal.  In this case VBoxClient will have told us about the
- * mode, but not yet been able to do a mode switch using RandR.  We solve this
- * by setting the requested mode to the host but keeping the virtual frame-
+#ifndef VBOXVIDEO_13
+/** Set a video mode to the hardware, RandR 1.1 version.
+ *
+ * Since we no longer do virtual frame buffers, adjust the screen pixmap
+ * dimensions to match.  The "override" parameters are for when we received a
+ * mode hint while switched to a virtual terminal.  In this case VBoxClient will
+ * have told us about the mode, but not yet been able to do a mode switch using
+ * RandR.  We solve this by setting the requested mode to the host but keeping
+ * the virtual frame-
  * buffer matching what the X server expects. */
 static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fScreenInitTime, bool fEnterVTTime,
                            int cXOverRide, int cYOverRide)
@@ -331,6 +337,7 @@ static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fScreen
         vbvxSetMode(pScrn, 0, cXPhysical, cYPhysical, 0, 0, true, true, &frameBuffer);
     pScrn->currentMode = pMode;
 }
+#endif
 
 #ifdef VBOXVIDEO_13
 /* X.org 1.3+ mode-setting support ******************************************/
@@ -551,7 +558,6 @@ static DisplayModePtr vbox_output_add_mode(VBOXPtr pVBox, DisplayModePtr *pModes
 static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
-    unsigned cIndex = 0;
     DisplayModePtr pModes = NULL;
     DisplayModePtr pPreferred = NULL;
     ScrnInfoPtr pScrn = output->scrn;
@@ -635,6 +641,7 @@ static pointer
 vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
 {
     static Bool Initialised = FALSE;
+    RT_NOREF(Options, ErrorMinor);
 
     if (!Initialised)
     {
@@ -665,20 +672,24 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
 static const OptionInfoRec *
 VBOXAvailableOptions(int chipid, int busid)
 {
+    RT_NOREF(chipid, busid);
     return (VBOXOptions);
 }
 
 static void
 VBOXIdentify(int flags)
 {
+    RT_NOREF(flags);
     xf86PrintChipsets(VBOX_NAME, "guest driver for VirtualBox", VBOXChipsets);
 }
 
 #ifndef XF86_SCRN_INTERFACE
 # define SCRNINDEXAPI(pfn) pfn ## Index
-static Bool VBOXScreenInitIndex(int scrnIndex, ScreenPtr pScreen, int argc,
-                                char **argv)
-{ return VBOXScreenInit(pScreen, argc, argv); }
+static Bool VBOXScreenInitIndex(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+{
+    RT_NOREF(scrnIndex);
+    return VBOXScreenInit(pScreen, argc, argv);
+}
 
 static Bool VBOXEnterVTIndex(int scrnIndex, int flags)
 { (void) flags; return VBOXEnterVT(xf86Screens[scrnIndex]); }
@@ -995,9 +1006,6 @@ vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 static void updateGraphicsCapability(ScrnInfoPtr pScrn, Bool hasVT)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    size_t cData;
-    int32_t *paData;
-    int rc;
 
     if (!pVBox->fHaveHGSMIModeHints)
         return;
@@ -1029,8 +1037,6 @@ static void setSizesRandR11(ScrnInfoPtr pScrn)
 
 static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime)
 {
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-
     TRACE_LOG("fScreenInitTime=%d\n", (int)fScreenInitTime);
 #ifdef VBOXVIDEO_13
 # if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
@@ -1053,7 +1059,6 @@ static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime
 static void vboxBlockHandler(pointer pData, OSTimePtr pTimeout, pointer pReadmask)
 {
     ScrnInfoPtr pScrn = (ScrnInfoPtr)pData;
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
     bool fNeedUpdate = false;
 
     (void)pTimeout;
@@ -1083,6 +1088,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     VisualPtr visual;
+    RT_NOREF(argc, argv);
 
     TRACE_ENTRY();
 
@@ -1207,10 +1213,10 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (!xf86SetDesiredModes(pScrn)) {
         return FALSE;
     }
-#else
+#else  /* !VBOXVIDEO_13 */
     /* set first video mode */
     setModeRandR11(pScrn, pScrn->currentMode, true, false, 0, 0);
-#endif
+#endif /* !VBOXVIDEO_13 */
 
     /* Say that we support graphics. */
     updateGraphicsCapability(pScrn, TRUE);
@@ -1286,8 +1292,8 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
 
 static void VBOXLeaveVT(ScrnInfoPtr pScrn)
 {
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
 #ifdef VBOXVIDEO_13
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
     unsigned i;
 #else
     int32_t propertyValue = 0;
@@ -1421,12 +1427,14 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
     TRACE_EXIT();
 }
 
+#ifndef VBOXVIDEO_13
 static Bool
 VBOXSaveScreen(ScreenPtr pScreen, int mode)
 {
     (void)pScreen; (void)mode;
     return TRUE;
 }
+#endif
 
 void
 VBOXSaveMode(ScrnInfoPtr pScrn)
@@ -1461,9 +1469,10 @@ VBOXRestoreMode(ScrnInfoPtr pScrn)
         VBoxVideoDisableVBE();
 }
 
+#ifndef VBOXVIDEO_13
 static void
-VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode,
-                int flags)
+VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode, int flags)
 {
     (void)pScrn; (void)mode; (void) flags;
 }
+#endif

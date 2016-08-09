@@ -127,6 +127,7 @@ static void
 vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
+    RT_NOREF(pScrn);
 
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, 0, 0, 0, 0, 0, NULL, 0);
     VBVXASSERT(rc == VINF_SUCCESS, ("Could not hide the virtual mouse pointer, VBox error %d.\n", rc));
@@ -136,6 +137,7 @@ static void
 vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
+    RT_NOREF(pScrn);
 
     if (!pVBox->fUseHardwareCursor)
         return;
@@ -151,6 +153,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
     int rc;
     struct vboxCursorImage *pImage;
     pImage = (struct vboxCursorImage *)pvImage;
+    RT_NOREF(pScrn);
 
 #ifdef DEBUG_POINTER
     vbox_show_shape(pImage->cWidth, pImage->cHeight, 0, pvImage);
@@ -210,6 +213,7 @@ vbox_use_hw_cursor(ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     VBOXPtr pVBox = pScrn->driverPrivate;
+    RT_NOREF(pCurs);
     return pVBox->fUseHardwareCursor;
 }
 

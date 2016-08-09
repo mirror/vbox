@@ -142,7 +142,6 @@ static void setEDIDChecksum(unsigned char *pch)
  */
 Bool VBOXEDIDSet(xf86OutputPtr output, DisplayModePtr pmode)
 {
-    int i, j;
     unsigned char *pch, *pchEDID;
     xf86MonPtr pEDIDMon;
 
