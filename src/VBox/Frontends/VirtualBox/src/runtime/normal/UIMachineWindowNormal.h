@@ -117,7 +117,7 @@ private:
 
     /** Performs window geometry normalization according to guest-size and host's available geometry.
       * @param  fAdjustPosition  Determines whether is it necessary to adjust position as well. */
-    void normalizeGeometry(bool fAdjustPosition);
+    virtual void normalizeGeometry(bool fAdjustPosition) /* override */;
 
     /** Common update routine. */
     void updateAppearanceOf(int aElement);

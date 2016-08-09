@@ -569,31 +569,16 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
     frGeo.setRight(frGeo.right() + sh.width());
     frGeo.setBottom(frGeo.bottom() + sh.height());
 
-    /* Calculate common bound region: */
-    QRegion region;
-    for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
-    {
-        /* Get enumerated screen's available area: */
-        QRect rect = gpDesktop->availableGeometry(iScreenIndex);
-#ifdef VBOX_WS_WIN
-        /* On Windows host window can exceed the available
-         * area in maximized/sticky-borders state: */
-        rect.adjust(-10, -10, 10, 10);
-#endif /* VBOX_WS_WIN */
-        /* Append rectangle: */
-        region += rect;
-    }
-
     /* Adjust position if necessary: */
     if (fAdjustPosition)
-        frGeo = VBoxGlobal::normalizeGeometry(frGeo, region);
+        frGeo = VBoxGlobal::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
 
     /* Finally, set the frame geometry: */
     setGeometry(frGeo.left() + dl, frGeo.top() + dt,
                 frGeo.width() - dl - dr, frGeo.height() - dt - db);
 #else /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     /* Customer request: There should no be
-     * machine-window resize on machine-view resize: */
+     * machine-window resize/move on machine-view resize: */
     Q_UNUSED(fAdjustPosition);
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
