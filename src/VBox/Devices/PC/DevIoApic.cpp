@@ -891,17 +891,15 @@ static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDe
 }
 
 
-/** @interface_method_impl{DBGFREGDESC,pfnGet} */
+# if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
+/** @interface_method_impl{DBGFREGDESC,pfnGetArb} */
 static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pvUser, pDesc);
-# if IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_82093AA
     pValue->u32 = ioapicGetArb(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
-# else
-    pValue->u32 = UINT32_C(0xffffffff);
-# endif
     return VINF_SUCCESS;
 }
+#endif
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
