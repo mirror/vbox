@@ -829,6 +829,7 @@ dt_module_modelname(dt_module_t *dmp)
 		return ("32-bit");
 }
 
+#ifndef VBOX
 /*
  * Update our module cache by adding an entry for the specified module 'name'.
  * We create the dt_module_t and populate it using /system/object/<name>/.
@@ -836,7 +837,6 @@ dt_module_modelname(dt_module_t *dmp)
 static void
 dt_module_update(dtrace_hdl_t *dtp, const char *name)
 {
-#ifndef VBOX
 	char fname[MAXPATHLEN];
 	struct stat64 st;
 	int fd, err, bits;
@@ -928,10 +928,8 @@ dt_module_update(dtrace_hdl_t *dtp, const char *name)
 
 	dt_dprintf("opened %d-bit module %s (%s) [%d]\n",
 	    bits, dmp->dm_name, dmp->dm_file, dmp->dm_modid);
-#else  /* VBOX */
-	RT_NOREF2(dtp, name);
-#endif /* VBOX */
 }
+#endif /* !VBOX */
 
 /*
  * Unload all the loaded modules and then refresh the module cache with the
@@ -1012,17 +1010,17 @@ dt_module_from_object(dtrace_hdl_t *dtp, const char *object)
 	int err = EDT_NOMOD;
 	dt_module_t *dmp;
 
-	switch ((uintptr_t)object) {
-	case (uintptr_t)DTRACE_OBJ_EXEC:
+	switch ((intptr_t)object) {
+	case DTRACE_OBJ_INT_EXEC:
 		dmp = dtp->dt_exec;
 		break;
-	case (uintptr_t)DTRACE_OBJ_RTLD:
+	case DTRACE_OBJ_INT_RTLD:
 		dmp = dtp->dt_rtld;
 		break;
-	case (uintptr_t)DTRACE_OBJ_CDEFS:
+	case DTRACE_OBJ_INT_CDEFS:
 		dmp = dtp->dt_cdefs;
 		break;
-	case (uintptr_t)DTRACE_OBJ_DDEFS:
+	case DTRACE_OBJ_INT_DDEFS:
 		dmp = dtp->dt_ddefs;
 		break;
 	default:

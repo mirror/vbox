@@ -355,6 +355,7 @@ oprintf(const char *fmt, ...)
 	}
 }
 
+#ifndef VBOX
 static char **
 make_argv(char *s)
 {
@@ -375,6 +376,7 @@ make_argv(char *s)
 	argv[argc] = NULL;
 	return (argv);
 }
+#endif /* !VBOX */
 
 static void
 dof_prune(const char *fname)
@@ -1253,6 +1255,8 @@ intr(int signo)
 #ifdef _MSC_VER
 	/* Reinstall signal handler. Seems MSVCRT is System V style. */
 	signal(signo, intr);
+#else
+	RT_NOREF(signo);
 #endif
 }
 
@@ -1714,15 +1718,15 @@ main(int argc, char *argv[])
 	 * grabbing or creating victim processes.  The behavior of these calls
 	 * may been affected by any library options set by the second pass.
 	 */
-#ifndef VBOX
+# ifndef VBOX
 	for (optind = 1; optind < argc; optind++) {
 		while ((c = getopt(argc, argv, DTRACE_OPTSTR)) != EOF) {
-#else
+# else
 	RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0);
 	while ((c = RTGetOpt(&GetState, &ValueUnion))) {
 		{
 			char *optarg = (char *)ValueUnion.psz;
-#endif
+# endif
 			switch (c) {
 			case 'c':
 				if ((v = make_argv(optarg)) == NULL)

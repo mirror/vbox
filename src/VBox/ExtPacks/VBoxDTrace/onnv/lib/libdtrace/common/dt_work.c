@@ -35,8 +35,8 @@
 #include <time.h>
 #else  /* VBOX */
 # include <dt_impl.h>
-//# include <stddef.h>
-//# include <time.h>
+/*# include <stddef.h>
+# include <time.h> */
 # include <iprt/semaphore.h>
 #endif /* VBOX */
 

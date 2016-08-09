@@ -795,10 +795,10 @@ dt_provmod_destroy(dt_provmod_t **provmod)
 	*provmod = NULL;
 }
 
+#ifndef VBOX
 static const char *
 dt_get_sysinfo(int cmd, char *buf, size_t len)
 {
-#ifndef VBOX
 	ssize_t rv = sysinfo(cmd, buf, len);
 	char *p = buf;
 
@@ -807,12 +807,9 @@ dt_get_sysinfo(int cmd, char *buf, size_t len)
 
 	while ((p = strchr(p, '.')) != NULL)
 		*p++ = '_';
-#else
-	RT_NOREF1(cmd);
-	snprintf(buf, len, "%s", "Unknown");
-#endif
 	return (buf);
 }
+#endif /* !VBOX */
 
 static dtrace_hdl_t *
 dt_vopen(int version, int flags, int *errp,
