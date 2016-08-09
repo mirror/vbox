@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox External Authentication Library:
- * Simple Authentication.
+ * VirtualBox External Authentication Library - Simple Authentication.
  */
 
 /*
@@ -37,38 +36,38 @@ using namespace com;
 //#define AUTH_DEBUG_FILE_NAME "/tmp/VBoxAuth.log"
 
 
-static void dprintf(const char *fmt, ...)
+static void dprintf(const char *pszFormat, ...)
 {
 #ifdef AUTH_DEBUG_FILE_NAME
-    va_list va;
-
-    va_start(va, fmt);
-
-    char buffer[1024];
-
-    vsnprintf(buffer, sizeof(buffer), fmt, va);
-
     FILE *f = fopen(AUTH_DEBUG_FILE_NAME, "ab");
     if (f)
     {
-        fprintf(f, "%s", buffer);
+        va_list va;
+        va_start(va, pszFormat);
+        vfprintf(f, pszFormat, va);
+        va_end(va);
         fclose(f);
     }
-
-    va_end (va);
+#else
+    RT_NOREF(pszFormat);
 #endif
 }
 
 RT_C_DECLS_BEGIN
-DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+DECLEXPORT(FNAUTHENTRY3) AuthEntry;
+RT_C_DECLS_END
+
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *pszCaller,
                                           PAUTHUUID pUuid,
                                           AuthGuestJudgement guestJudgement,
-                                          const char *szUser,
-                                          const char *szPassword,
-                                          const char *szDomain,
+                                          const char *pszUser,
+                                          const char *pszPassword,
+                                          const char *pszDomain,
                                           int fLogon,
                                           unsigned clientId)
 {
+    RT_NOREF(pszCaller, guestJudgement, pszDomain, clientId);
+
     /* default is failed */
     AuthResult result = AuthResultAccessDenied;
 
@@ -82,13 +81,13 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
         RTUuidToStr((PCRTUUID)pUuid, (char*)uuid, RTUUID_STR_LENGTH);
 
     /* the user might contain a domain name, split it */
-    char *user = strchr((char*)szUser, '\\');
+    const char *user = strchr(pszUser, '\\');
     if (user)
         user++;
     else
-        user = (char*)szUser;
+        user = (char*)pszUser;
 
-    dprintf("VBoxAuth: uuid: %s, user: %s, szPassword: %s\n", uuid, user, szPassword);
+    dprintf("VBoxAuth: uuid: %s, user: %s, pszPassword: %s\n", uuid, user, pszPassword);
 
     ComPtr<IVirtualBoxClient> virtualBoxClient;
     ComPtr<IVirtualBox> virtualBox;
@@ -96,41 +95,43 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
 
     rc = virtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
     if (SUCCEEDED(rc))
-        rc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
-    if (SUCCEEDED(rc))
     {
-        Bstr key = BstrFmt("VBoxAuthSimple/users/%s", user);
-        Bstr password;
-
-        /* lookup in VM's extra data? */
-        if (pUuid)
+        rc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
+        if (SUCCEEDED(rc))
         {
-            ComPtr<IMachine> machine;
-            virtualBox->FindMachine(Bstr(uuid).raw(), machine.asOutParam());
-            if (machine)
-                machine->GetExtraData(key.raw(), password.asOutParam());
-        } else
-            /* lookup global extra data */
-            virtualBox->GetExtraData(key.raw(), password.asOutParam());
+            Bstr key = BstrFmt("VBoxAuthSimple/users/%s", user);
+            Bstr password;
 
-        if (!password.isEmpty())
-        {
-            /* calculate hash */
-            uint8_t abDigest[RTSHA256_HASH_SIZE];
-            RTSha256(szPassword, strlen(szPassword), abDigest);
-            char pszDigest[RTSHA256_DIGEST_LEN + 1];
-            RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
+            /* lookup in VM's extra data? */
+            if (pUuid)
+            {
+                ComPtr<IMachine> machine;
+                virtualBox->FindMachine(Bstr(uuid).raw(), machine.asOutParam());
+                if (machine)
+                    machine->GetExtraData(key.raw(), password.asOutParam());
+            }
+            else
+                /* lookup global extra data */
+                virtualBox->GetExtraData(key.raw(), password.asOutParam());
 
-            if (password == pszDigest)
-                result = AuthResultAccessGranted;
+            if (!password.isEmpty())
+            {
+                /* calculate hash */
+                uint8_t abDigest[RTSHA256_HASH_SIZE];
+                RTSha256(pszPassword, strlen(pszPassword), abDigest);
+                char pszDigest[RTSHA256_DIGEST_LEN + 1];
+                RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
+
+                if (password == pszDigest)
+                    result = AuthResultAccessGranted;
+            }
         }
+        else
+            dprintf("VBoxAuth: failed to get VirtualBox object reference: %#x\n", rc);
     }
     else
-        dprintf("VBoxAuth: failed to get VirtualBox object reference: %Rhrc\n", rc);
+        dprintf("VBoxAuth: failed to get VirtualBoxClient object reference: %#x\n", rc);
 
     return result;
 }
-RT_C_DECLS_END
 
-/* Verify the function prototype. */
-static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;
