@@ -44,11 +44,6 @@ protected:
 
 private slots:
 
-#ifdef VBOX_WS_X11
-    /** X11: Performs machine-window async geometry normalization. */
-    void sltNormalizeGeometry() { normalizeGeometry(true /* adjust position */); }
-#endif /* VBOX_WS_X11 */
-
     /** Handles machine state change event. */
     void sltMachineStateChanged();
     /** Handles medium change event. */

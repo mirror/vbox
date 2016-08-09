@@ -107,6 +107,11 @@ public:
 
 protected slots:
 
+#ifdef VBOX_WS_X11
+    /** X11: Performs machine-window geometry normalization. */
+    void sltNormalizeGeometry() { normalizeGeometry(true /* adjust position */); }
+#endif /* VBOX_WS_X11 */
+
     /** Performs machine-window activation. */
     void sltActivateWindow() { activateWindow(); }
 
