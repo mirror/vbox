@@ -240,8 +240,8 @@ static const char *auth_get_pam_service (void)
 
 typedef struct _PamContext
 {
-    char *szUser;
-    char *szPassword;
+    char *pszUser;
+    char *pszPassword;
 } PamContext;
 
 static int conv (int num_msg, const struct pam_message **msg,
@@ -258,7 +258,7 @@ static int conv (int num_msg, const struct pam_message **msg,
         return PAM_CONV_ERR;
     }
 
-    debug_printf("conv: num %d u[%s] p[%d]\n", num_msg, ctx->szUser, ctx->szPassword? strlen (ctx->szPassword): 0);
+    debug_printf("conv: num %d u[%s] p[%d]\n", num_msg, ctx->pszUser, ctx->pszPassword? strlen (ctx->pszPassword): 0);
 
     r = (struct pam_response *) calloc (num_msg, sizeof (struct pam_response));
 
@@ -273,12 +273,12 @@ static int conv (int num_msg, const struct pam_message **msg,
 
         if (msg[i]->msg_style == PAM_PROMPT_ECHO_OFF)
         {
-            r[i].resp = strdup (ctx->szPassword);
+            r[i].resp = strdup (ctx->pszPassword);
             debug_printf("conv: %d returning password [%d]\n", i, r[i].resp? strlen (r[i].resp): 0);
         }
         else if (msg[i]->msg_style == PAM_PROMPT_ECHO_ON)
         {
-            r[i].resp = strdup (ctx->szUser);
+            r[i].resp = strdup (ctx->pszUser);
             debug_printf("conv: %d returning name [%s]\n", i, r[i].resp);
         }
         else
@@ -304,40 +304,36 @@ static int conv (int num_msg, const struct pam_message **msg,
 #endif
 
 /* prototype to prevent gcc warning */
-DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+DECLEXPORT(AUTHENTRY3) AuthEntry;
+
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *pszCaller,
                                           PAUTHUUID pUuid,
                                           AuthGuestJudgement guestJudgement,
-                                          const char *szUser,
-                                          const char *szPassword,
-                                          const char *szDomain,
-                                          int fLogon,
-                                          unsigned clientId);
-DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
-                                          PAUTHUUID pUuid,
-                                          AuthGuestJudgement guestJudgement,
-                                          const char *szUser,
-                                          const char *szPassword,
-                                          const char *szDomain,
+                                          const char *pszUser,
+                                          const char *pszPassword,
+                                          const char *pszDomain,
                                           int fLogon,
                                           unsigned clientId)
 {
     AuthResult result = AuthResultAccessDenied;
-
     int rc;
-
     PamContext ctx;
     struct pam_conv pam_conversation;
-
     pam_handle_t *pam_handle = NULL;
+
+    (void)pszCaller;
+    (void)pUuid;
+    (void)guestJudgement;
+    (void)clientId;
 
     /* Only process logon requests. */
     if (!fLogon)
         return result; /* Return value is ignored by the caller. */
 
-    debug_printf("u[%s], d[%s], p[%d]\n", szUser, szDomain, szPassword? strlen (szPassword): 0);
+    debug_printf("u[%s], d[%s], p[%d]\n", pszUser, pszDomain, pszPassword ? strlen(pszPassword) : 0);
 
-    ctx.szUser     = (char *)szUser;
-    ctx.szPassword = (char *)szPassword;
+    ctx.pszUser     = (char *)pszUser;
+    ctx.pszPassword = (char *)pszPassword;
 
     pam_conversation.conv        = conv;
     pam_conversation.appdata_ptr = &ctx;
@@ -348,7 +344,7 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
     {
         debug_printf("init ok\n");
 
-        rc = fn_pam_start(auth_get_pam_service (), szUser, &pam_conversation, &pam_handle);
+        rc = fn_pam_start(auth_get_pam_service (), pszUser, &pam_conversation, &pam_handle);
 
         if (rc == PAM_SUCCESS)
         {
@@ -404,5 +400,3 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
     return result;
 }
 
-/* Verify the function prototype. */
-static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;
