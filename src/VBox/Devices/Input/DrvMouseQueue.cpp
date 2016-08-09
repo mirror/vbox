@@ -345,6 +345,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pDrvIns->IBase.pfnQueryInterface        = drvMouseQueueQueryInterface;
     /* IMouseConnector. */
     pDrv->IConnector.pfnReportModes         = drvMousePassThruReportModes;
+    pDrv->IConnector.pfnFlushQueue          = drvMouseFlushQueue;
     /* IMousePort. */
     pDrv->IPort.pfnPutEvent                 = drvMouseQueuePutEvent;
     pDrv->IPort.pfnPutEventAbs              = drvMouseQueuePutEventAbs;
