@@ -1455,6 +1455,9 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  #  -wd4245: '=' : conversion from 'int' to 'DWORD', signed/unsigned mismatch
  #  -wd4305: 'function' : truncation from 'double' to 'GLclampf'
  VBoxSVGA3D_CFLAGS.win = -wd4100  -wd4204 -wd4245 -wd4305
+ ifneq ($(KBUILD_TARGET),win)
+  VBoxSVGA3D_CFLAGS   += -Wno-unused-parameter -Wno-unused-function
+ endif
 
  #
  # The Objective C code needs to be separate since the shaderlib redefines most

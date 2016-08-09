@@ -27,15 +27,19 @@
 #ifndef ___iprt_win_objbase_h___
 #define ___iprt_win_objbase_h___
 
-#pragma warning(push)
-#pragma warning(disable:4668) /* '__midl' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
-#if !defined(__cplusplus)
-# pragma warning(disable:4255) /* 'FARPROC' : no function prototype given: converting '()' to '(void)' */
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4668) /* '__midl' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+# if !defined(__cplusplus)
+#  pragma warning(disable:4255) /* 'FARPROC' : no function prototype given: converting '()' to '(void)' */
+# endif
 #endif
 
 #include <objbase.h>
 
-#pragma warning(pop)
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #endif
 
