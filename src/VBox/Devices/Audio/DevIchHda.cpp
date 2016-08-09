@@ -880,7 +880,9 @@ typedef struct HDACALLBACKCTX
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
+#ifdef IN_RING3
 static FNPDMDEVRESET hdaReset;
+#endif
 
 /** @name Register read/write stubs.
  * @{
@@ -896,9 +898,9 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
-static int hdaRegReadSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
-static int hdaRegWriteSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
-static int hdaRegWriteINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+//static int hdaRegReadSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value); - unused
+//static int hdaRegWriteSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);  - unused
+//static int hdaRegWriteINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value); - implementation not found.
 static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
@@ -918,16 +920,18 @@ static int       hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
 static int       hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
-static int       hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
-static int       hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
+//static int       hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value); - unused
+//static int       hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value); - unused
 static int       hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int       hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 /** @} */
 
 /* Locking + logging. */
+#ifdef IN_RING3
 DECLINLINE(int)  hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t iReg, uint32_t u32Value);
 DECLINLINE(void) hdaRegWriteSDUnlock(PHDASTREAM pStream);
+#endif
 
 /** @name Generic register read/write functions.
  * @{
@@ -945,9 +949,9 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 #ifdef IN_RING3
 static void hdaStreamDestroy(PHDASTREAM pStream);
 static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive);
-static int hdaStreamStart(PHDASTREAM pStream);
+//static int hdaStreamStart(PHDASTREAM pStream); - unused
 static int hdaStreamStop(PHDASTREAM pStream);
-static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeout);
+/*static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeout); - currently unused */
 static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess, uint32_t *pcbProcessed);
 #endif
 
@@ -969,7 +973,7 @@ static int           hdaProcessInterrupt(PHDASTATE pThis);
 /*
  * Timer routines.
  */
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#if !defined(VBOX_WITH_AUDIO_CALLBACKS) && defined(IN_RING3)
 static void hdaTimerMaybeStart(PHDASTATE pThis);
 static void hdaTimerMaybeStop(PHDASTATE pThis);
 #endif
@@ -1767,6 +1771,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     ASMAtomicXchgBool(&pStream->State.fInReset, false);
 }
 
+#if 0 /* unused */
 static bool hdaStreamIsActive(PHDASTATE pThis, PHDASTREAM pStream)
 {
     AssertPtrReturn(pThis,   false);
@@ -1777,6 +1782,7 @@ static bool hdaStreamIsActive(PHDASTATE pThis, PHDASTREAM pStream)
     LogFlowFunc(("SD=%RU8, fActive=%RTbool\n", pStream->u8SD, fActive));
     return fActive;
 }
+#endif
 
 static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
 {
@@ -1849,6 +1855,7 @@ static void hdaStreamAssignToSink(PHDASTREAM pStream, PHDAMIXERSINK pMixSink)
     }
 }
 
+#if 0 /** @todo hdaStreamStart is unused */
 static int hdaStreamStart(PHDASTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -1859,6 +1866,7 @@ static int hdaStreamStart(PHDASTREAM pStream)
     LogFlowFuncLeave();
     return VINF_SUCCESS;
 }
+#endif /* unused */
 
 static int hdaStreamStop(PHDASTREAM pStream)
 {
@@ -1894,6 +1902,7 @@ static int hdaStreamStop(PHDASTREAM pStream)
     return rc;
 }
 
+#if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
 static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvBuf, size_t cbBuf)
 {
     AssertPtrReturn(pChan, VERR_INVALID_POINTER);
@@ -1941,7 +1950,9 @@ static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvB
 
     return VINF_SUCCESS;
 }
+#endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
 
+#if 0 /** @todo hdaStreamChannelAdvance is unused */
 static int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv)
 {
     AssertPtrReturn(pChan, VERR_INVALID_POINTER);
@@ -1951,6 +1962,7 @@ static int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv)
 
     return VINF_SUCCESS;
 }
+#endif
 
 static int hdaStreamChannelDataInit(PPDMAUDIOSTREAMCHANNELDATA pChanData, uint32_t fFlags)
 {
@@ -1982,6 +1994,8 @@ static void hdaStreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData)
     pChanData->fFlags = PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE;
 }
 
+#if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
+
 static int hdaStreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *pvData, size_t *pcbData)
 {
     AssertPtrReturn(pChanData, VERR_INVALID_POINTER);
@@ -2002,6 +2016,9 @@ static int hdaStreamChannelReleaseData(PPDMAUDIOSTREAMCHANNELDATA pChanData)
     return VINF_SUCCESS;
 }
 
+#endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
+
+# if 0 /* currently unused */
 static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -2009,6 +2026,8 @@ static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeou
     LogFlowFunc(("[SD%RU8]: msTimeout=%RU32\n", pStream->u8SD, msTimeout));
     return RTSemEventWait(pStream->State.hStateChangedEvent, msTimeout);
 }
+# endif /* currently unused */
+
 #endif /* IN_RING3 */
 
 /* Register access handlers. */
@@ -2202,6 +2221,8 @@ static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
     return VINF_SUCCESS;
 }
 
+#if 0 /** @todo hdaRegReadSSYNC &  hdaRegWriteSSYNC are unused */
+
 static int hdaRegReadSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF_PV(iReg);
@@ -2217,6 +2238,8 @@ static int hdaRegWriteSSYNC(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     LogFlowFunc(("%RU32\n", u32Value));
     return hdaRegWriteU32(pThis, iReg, u32Value);
 }
+
+#endif /* unused */
 
 static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
@@ -2488,6 +2511,7 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #endif /* IN_RING3 */
 }
 
+#if 0 /** @todo hdaRegWriteSDFIFOW & hdaRegWriteSDFIFOS are unused */
 static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     uint8_t  uSD      = HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg);
@@ -2572,6 +2596,8 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     return VINF_SUCCESS;
 }
+
+#endif /* unused */
 
 #ifdef IN_RING3
 static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
