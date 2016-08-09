@@ -2300,6 +2300,7 @@ DiffProgramCallback(unsigned long key, void *pProg, void *pCtx)
     CRContext *pContext = (CRContext *) pCtx;
     CRProgram *pProgram = (CRProgram *) pProg;
     uint32_t i;
+    (void)key;
 
     if (pProgram->isARBprogram)
     {
@@ -2347,7 +2348,7 @@ void crStateDiffAllPrograms(CRContext *g, CRbitvalue *bitID, GLboolean bForceUpd
 {
     CRProgram *pOrigVP, *pOrigFP;
 
-    (void) bForceUpdate;
+    (void) bForceUpdate; (void)bitID;
 
     /* save original bindings */
     pOrigVP = g->program.currentVertexProgram;

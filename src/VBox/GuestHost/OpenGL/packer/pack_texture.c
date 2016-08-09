@@ -798,7 +798,7 @@ void PACK_APIENTRY crPackCompressedTexImage2DARB( GLenum target, GLint level, GL
         packet_length += imagesize;
     }
 
-    //crDebug( "Compressing that shit: %d", level );
+    /*crDebug( "Compressing that shit: %d", level );*/
 
     data_ptr = (unsigned char *) crPackAlloc( packet_length );
     WRITE_DATA( 0, GLenum, CR_COMPRESSEDTEXIMAGE2DARB_EXTEND_OPCODE );

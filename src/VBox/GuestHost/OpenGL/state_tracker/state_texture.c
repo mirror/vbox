@@ -621,6 +621,7 @@ crStateDeleteTextureObject(CRTextureObj *tobj)
 void crStateRegNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names)
 {
     GLint i;
+    (void)g;
     for (i = 0; i < n; i++)
     {
         if (names[i])
@@ -3389,7 +3390,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureHWID(GLuint id)
     }
     if (tobj)
     {
-//        crDebug("tex id(%d), hwid(%d)", tobj->id, tobj->hwid);
+/*        crDebug("tex id(%d), hwid(%d)", tobj->id, tobj->hwid);*/
     }
 #endif
 
@@ -3406,7 +3407,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureObjHWID(CRTextureObj *tobj)
     {
         CRASSERT(diff_api.GenTextures);
         diff_api.GenTextures(1, &tobj->hwid);
-#if 0 //def DEBUG_misha
+#if 0 /*def DEBUG_misha*/
         crDebug("tex id(%d), hwid(%d)", tobj->id, tobj->hwid);
 #endif
         CRASSERT(tobj->hwid);

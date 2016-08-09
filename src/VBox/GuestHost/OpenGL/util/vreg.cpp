@@ -400,6 +400,7 @@ static void vboxVrListVisitIntersected(PVBOXVR_LIST pList1, uint32_t cRects, PCR
     }
 }
 
+#if 0 /* unused */
 /**
  * @returns Entry to be iterated next. ListHead is returned to break the
  *          iteration
@@ -434,6 +435,7 @@ static void vboxVrListVisitNonintersected(PVBOXVR_LIST pList1, uint32_t cRects, 
             pNext1 = pEntry1->pNext;
     }
 }
+#endif /* unused */
 
 static void vboxVrListJoinRectsHV(PVBOXVR_LIST pList, bool fHorizontal)
 {
@@ -711,6 +713,8 @@ VBOXVREGDECL(void) VBoxVrListTranslate(PVBOXVR_LIST pList, int32_t x, int32_t y)
     }
 }
 
+#if 0 /* unused */
+
 static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinNonintersectedCb(PVBOXVR_LIST pList1, PVBOXVR_REG pReg1, void *pvContext)
 {
     VBOXVR_CBDATA_SUBST *pData = (VBOXVR_CBDATA_SUBST*)pvContext;
@@ -729,7 +733,6 @@ static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinNonintersectedCb(PVBOX
     return pNext;
 }
 
-#if 0 /* unused */
 static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinIntersectedCb(PVBOXVR_LIST pList1, PVBOXVR_REG pReg1, PCRTRECT pRect2,
                                                                         void *pvContext, PPRTLISTNODE ppNext)
 {
@@ -754,7 +757,8 @@ static DECLCALLBACK(PRTLISTNODE) vboxVrListIntersectNoJoinIntersectedCb(PVBOXVR_
 
     return &pReg1->ListEntry;
 }
-#endif
+
+#endif /* unused */
 
 static int vboxVrListIntersectNoJoin(PVBOXVR_LIST pList, PCVBOXVR_LIST pList2, bool *pfChanged)
 {

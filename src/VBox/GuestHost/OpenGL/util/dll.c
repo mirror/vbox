@@ -227,7 +227,7 @@ CRDLL *crDLLOpen( const char *dllname, int resolveGlobal )
         SetLastError(winEr);
         return NULL;
     }
-# endif // CR_NO_GL_SYSTEM_PATH
+# endif /* CR_NO_GL_SYSTEM_PATH */
 #endif
 
 	dll = (CRDLL *) crAlloc( sizeof( CRDLL ) );
@@ -327,7 +327,7 @@ CRDLLFunc crDLLGetNoError( CRDLL *dll, const char *symname )
 	return (CRDLLFunc) NSAddressOfSymbol( nssym );
 
 #elif defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(SunOS) || defined(OSF1)
-	return (CRDLLFunc) dlsym( dll->hinstLib, symname );
+	return (CRDLLFunc)(uintptr_t)dlsym( dll->hinstLib, symname );
 #else
 #error CR DLL ARCHITETECTURE
 #endif

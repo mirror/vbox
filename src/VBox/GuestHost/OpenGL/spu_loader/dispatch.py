@@ -118,7 +118,7 @@ void crSPUInitDispatchNops(SPUDispatchTable *table)
 	for (i = 0; i < numEntries; i++) {
 		if (ptr[i] == NULL) {
 			/*printf("!!!!!!!Warning entry[%d] = NULL\n", i);*/
-			ptr[i] = (void *)NopFunction;
+			ptr[i] = (void *)(uintptr_t)NopFunction;
 		}
 	}
 }

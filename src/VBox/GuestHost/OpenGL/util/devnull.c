@@ -81,6 +81,7 @@ crDevnullAccept( CRConnection *conn, const char *hostname, unsigned short port )
 	crError( "Well, you *could* accept a devnull client, but you'd be disappointed. ");
 	(void) conn;
 	(void) port;
+        (void) hostname;
 }
 
 static int

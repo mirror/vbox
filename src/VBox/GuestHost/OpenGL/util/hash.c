@@ -273,7 +273,7 @@ GLboolean crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
         return GL_FALSE;
     }
 
-//    Assert(id != 2);
+/*    Assert(id != 2);*/
 
     RTListForEachSafe(&pool->freeList, f, next, FreeElem, Node)
     {

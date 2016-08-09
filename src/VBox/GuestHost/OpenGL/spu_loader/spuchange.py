@@ -32,9 +32,9 @@ void crSPUChangeInterface( SPUDispatchTable *table, void *orig_func, void *new_f
 
 keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
-	print '\tif ((void *)table->%s == orig_func)' % func_name
+	print '\tif ((uintptr_t)table->%s == (uintptr_t)orig_func)' % func_name
 	print '\t{'
-	print '\t\ttable->%s = (%sFunc_t)new_func;' % (func_name, func_name)
+	print '\t\ttable->%s = (%sFunc_t)(uintptr_t)new_func;' % (func_name, func_name)
 	print '\t\tfor (temp = table->copyList ; temp ; temp = temp->next)'
 	print '\t\t{'
 	print '\t\t\tcrSPUChangeInterface( temp->copy, orig_func, new_func );'
@@ -64,8 +64,8 @@ for func_name in keys:
     print '\tfunc = crSPUFindFunction(newtable, "%s");' % func_name
     print '\tif (func && ((SPUGenericFunction)dispatch->%s!=func))' % func_name
     print '\t{'
-    print '\t\tcrDebug("%%s changed from %%p to %%p", "gl%s", dispatch->%s, func);' % (func_name, func_name)
-    print '\t\tcrSPUChangeInterface(dispatch, (void *)dispatch->%s, func);' % func_name
+    print '\t\tcrDebug("%%s changed from %%p to %%p", "gl%s", (void *)(uintptr_t)dispatch->%s, (void *)(uintptr_t)func);' % (func_name, func_name)
+    print '\t\tcrSPUChangeInterface(dispatch, (void *)(uintptr_t)dispatch->%s, (void *)(uintptr_t)func);' % func_name
     print '\t}\n'
 print """
 }

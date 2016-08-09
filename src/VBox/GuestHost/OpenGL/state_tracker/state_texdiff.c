@@ -1378,6 +1378,8 @@ DiffTextureObjectCallback( unsigned long key, void *texObj , void *cbData)
 {
     struct callback_info *info = (struct callback_info *) cbData;
     CRTextureObj *tobj = (CRTextureObj *) texObj;
+    (void)key;
+
     /*
     printf("  Checking %d 0x%x  bitid=0x%x\n",tobj->name, tobj->dirty[0], info->bitID[0]);
     */

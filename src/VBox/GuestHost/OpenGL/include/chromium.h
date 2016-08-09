@@ -64,7 +64,14 @@
 
 #ifndef WINDOWS
 # ifndef RT_OS_WINDOWS /* If we don't need it in ring-3, we probably not need it in ring-0 either (triggers warnings). */
+#  if 1
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#  endif
 #include <GL/glu.h>
+#  if 1
+#   pragma GCC diagnostic pop
+#  endif
 # endif /* !RT_OS_WINDOWS */
 #endif
 

@@ -32,6 +32,8 @@
 # include "cr_error.h"
 # include "VBox/VBoxGuestLib.h"
 # include "iprt/initterm.h"
+#else
+# include "cr_error.h"
 #endif
 
 #include <signal.h>
@@ -76,6 +78,7 @@ static void logMessageV(const char *pszPrefix, const char *pszFormat, va_list va
 #endif
 }
 
+#ifdef WINDOWS
 static void logMessage(const char *pszPrefix, const char *pszFormat, ...)
 {
     va_list va;
@@ -84,6 +87,7 @@ static void logMessage(const char *pszPrefix, const char *pszFormat, ...)
     logMessageV(pszPrefix, pszFormat, va);
     va_end(va);
 }
+#endif
 
 DECLEXPORT(void) crError(const char *pszFormat, ...)
 {

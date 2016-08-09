@@ -365,7 +365,6 @@ crStateCurrentDiff( CRCurrentBits *c, CRbitvalue *bitID,
             (toCtx->extensions.ARB_vertex_program ||
              (toCtx->extensions.NV_vertex_program))) {
         const unsigned attribsUsedMask = toCtx->current.attribsUsedMask;
-        int i;
         for (i = 1; i < CR_MAX_VERTEX_ATTRIBS; i++) {  /* skip zero */
             if ((attribsUsedMask & (1 << i))
                     && CHECKDIRTY(c->vertexAttrib[i], bitID)) {

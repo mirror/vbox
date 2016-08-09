@@ -227,7 +227,7 @@ DECLEXPORT(void) STATE_APIENTRY
 crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
 {
     CRContext *g = GetCurrentContext();
-    CRFramebufferObjectState *fbo = &g->framebufferobject;
+    /*CRFramebufferObjectState *fbo = &g->framebufferobject; - unused */
     int i;
 
     CRSTATE_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
@@ -480,7 +480,7 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
 
 /*@todo: move this function somewhere else*/
 /*return floor of base 2 log of x. log(0)==0*/
-unsigned int crLog2Floor(unsigned int x)
+static unsigned int crLog2Floor(unsigned int x)
 {
     x |= (x >> 1);
     x |= (x >> 2);
@@ -613,7 +613,7 @@ DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
     CRContext *g = GetCurrentContext();
-    CRFramebufferObjectState *fbo = &g->framebufferobject;
+    /*CRFramebufferObjectState *fbo = &g->framebufferobject; - unused */
     CRFBOAttachmentPoint *aap[2];
     GLuint cap, i;
     CRTextureObj *tobj;
@@ -647,7 +647,7 @@ DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
     CRContext *g = GetCurrentContext();
-    CRFramebufferObjectState *fbo = &g->framebufferobject;
+    /* CRFramebufferObjectState *fbo = &g->framebufferobject; - unused */
     CRFBOAttachmentPoint *aap[2];
     GLuint cap, i;
     CRTextureObj *tobj;
@@ -685,7 +685,7 @@ DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset)
 {
     CRContext *g = GetCurrentContext();
-    CRFramebufferObjectState *fbo = &g->framebufferobject;
+    /* CRFramebufferObjectState *fbo = &g->framebufferobject; - unused */
     CRFBOAttachmentPoint *aap[2];
     GLuint cap, i;
     CRTextureObj *tobj;
@@ -726,6 +726,7 @@ crStateFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum rende
     GLuint cFBOs, i;
     CRFBOAttachmentPoint *aap[2];
     CRRenderbufferObject *rb;
+    (void)renderbuffertarget;
 
     CRSTATE_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
     CRSTATE_CHECKERR(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
@@ -871,12 +872,14 @@ DECLEXPORT(GLboolean)  STATE_APIENTRY crStateIsRenderbufferEXT( GLuint renderbuf
 DECLEXPORT(void) STATE_APIENTRY
 crStateGenerateMipmapEXT(GLenum target)
 {
+    (void)target;
     /*@todo*/
 }
 
 static void crStateSyncRenderbuffersCB(unsigned long key, void *data1, void *data2)
 {
     CRRenderbufferObject *pRBO = (CRRenderbufferObject*) data1;
+    (void)key; (void)data2;
 
     diff_api.GenRenderbuffersEXT(1, &pRBO->hwid);
 
@@ -942,6 +945,7 @@ static void crStateSyncFramebuffersCB(unsigned long key, void *data1, void *data
     CRFramebufferObject *pFBO = (CRFramebufferObject*) data1;
     CRContext *ctx = (CRContext*) data2;
     GLint i;
+    (void)key;
 
     diff_api.GenFramebuffersEXT(1, &pFBO->hwid);
 
@@ -1088,7 +1092,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id)
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObject *pFBO = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, id);
-#if 0 //def DEBUG_misha
+#if 0 /*def DEBUG_misha*/
     crDebug("FB id(%d) hw(%d)", id, pFBO ? pFBO->hwid : 0);
 #endif
     return pFBO ? pFBO->hwid : 0;

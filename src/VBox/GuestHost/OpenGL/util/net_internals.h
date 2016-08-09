@@ -99,10 +99,12 @@ extern void crVBoxHGCMConnection( CRConnection *conn
 extern int crVBoxHGCMRecv(
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
         CRConnection *conn
+#else
+        void
 #endif
         );
 #ifdef IN_GUEST
-extern uint32_t crVBoxHGCMHostCapsGet();
+extern uint32_t crVBoxHGCMHostCapsGet(void);
 #endif
 extern CRConnection** crVBoxHGCMDump( int *num );
 extern void crVBoxHGCMTearDown(void);

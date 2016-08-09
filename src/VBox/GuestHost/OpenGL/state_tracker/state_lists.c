@@ -13,6 +13,7 @@
 void crStateListsDestroy(CRContext *ctx)
 {
     /* nothing - dlists are in shared state */
+    (void)ctx;
 }
 
 void crStateListsInit(CRContext *ctx)
@@ -30,7 +31,7 @@ void crStateListsInit(CRContext *ctx)
     RESET(lb->dirty, ctx->bitid);
 }
 
-//#define CRSTATE_DEBUG_QUERY_HW_STATE
+/*#define CRSTATE_DEBUG_QUERY_HW_STATE*/
 
 #ifndef CRSTATE_DEBUG_QUERY_HW_STATE
 # define CRSTATE_SET_CAP(state, value, format) g->state=value
@@ -172,7 +173,7 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
 {
     CRContext *g = GetCurrentContext();
     CRStateBits *sb = GetCurrentBits();
-    CRbitvalue *bitID=g->bitid, *negbitID=g->neg_bitid;
+    CRbitvalue /* *bitID=g->bitid, */ *negbitID=g->neg_bitid;
 
     CRASSERT(g_bVBoxEnableDiffOnMakeCurrent);
 
@@ -818,7 +819,7 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
     if (CHECKDIRTY(sb->eval.dirty, negbitID))
     {
         int i;
-        const int gleval_sizes[] = {4, 1, 3, 1, 2, 3, 4, 3, 4};
+        const int gleval_sizes_dup[] = {4, 1, 3, 1, 2, 3, 4, 3, 4};
 
         if (CHECKDIRTY(sb->eval.enable, negbitID))
         {
@@ -849,7 +850,7 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
                 diff_api.GetMapfv(i + GL_MAP1_COLOR_4, GL_DOMAIN, &uval[0]);
                 if (order>0)
                 {
-                    coeffs = crAlloc(order * gleval_sizes[i] * sizeof(GLfloat));
+                    coeffs = crAlloc(order * gleval_sizes_dup[i] * sizeof(GLfloat));
                     if (!coeffs)
                     {
                         crWarning("crStateQueryHWState: out of memory, at eval1D[%i]", i);
@@ -888,7 +889,7 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
                 diff_api.GetMapfv(i + GL_MAP2_COLOR_4, GL_DOMAIN, &uval[0]);
                 if (order[0]>0 && order[1]>0)
                 {
-                    coeffs = crAlloc(order[0] * order[1] * gleval_sizes[i] * sizeof(GLfloat));
+                    coeffs = crAlloc(order[0] * order[1] * gleval_sizes_dup[i] * sizeof(GLfloat));
                     if (!coeffs)
                     {
                         crWarning("crStateQueryHWState: out of memory, at eval2D[%i]", i);

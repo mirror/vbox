@@ -114,9 +114,9 @@ crBufferPoolPush( CRBufferPool *pool, void *buf, unsigned int bytes )
 #ifdef DEBUG
         /* check that the buffer to push isn't already in the pool! */
         {
-            const Buffer *b;
-            for (b = pool->head; b; b = b->next) {
-                CRASSERT(b->address != buf);
+            const Buffer *bd;
+            for (bd = pool->head; bd; bd = bd->next) {
+                CRASSERT(bd->address != buf);
             }
         }
 #endif

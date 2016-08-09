@@ -137,6 +137,7 @@ crStateGetQueryivARB(GLenum target, GLenum pname, GLint *params)
 {
 	CRContext *g = GetCurrentContext();
 	CROcclusionState *o = &(g->occlusion);
+	(void)target;
 
 	FLUSH();
 
@@ -322,6 +323,7 @@ void crStateOcclusionDiff(CROcclusionBits *bb, CRbitvalue *bitID,
 													CRContext *fromCtx, CRContext *toCtx)
 {
 	/* Apparently, no occlusion state differencing needed */
+	(void)bb; (void)bitID; (void)fromCtx; (void)toCtx;
 }
 
 
@@ -335,5 +337,6 @@ void crStateOcclusionSwitch(CROcclusionBits *bb, CRbitvalue *bitID,
 	/* Note: we better not do a switch while we're inside a glBeginQuery/
 	 * glEndQuery sequence.
 	 */
+	(void)bb; (void)bitID; (void)fromCtx; (void)toCtx;
 	CRASSERT(!fromCtx->occlusion.currentQueryObject);
 }

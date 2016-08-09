@@ -135,7 +135,7 @@ static void crStateFakeDecRefCountCB(unsigned long key, void *data1, void *data2
     CRGLSLShader *pShader = (CRGLSLShader *) data1;
     CRContext *ctx = (CRContext*) data2;
     CRGLSLShader *pRealShader;
-    (void) key;
+    (void) key; (void)ctx;
 
     pRealShader = crStateGetShaderObj(pShader->id);
     
@@ -405,6 +405,7 @@ DECLEXPORT(void) STATE_APIENTRY crStateCompileShader(GLuint shader)
 
 static void crStateDbgCheckNoProgramOfId(void *data)
 {
+    (void)data;
     crError("Unexpected Program id");
 }
 
@@ -848,7 +849,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
         crStateFreeProgramUniforms(pProgram);
     }
 
-    if (cbData<sizeof(GLsizei))
+    if (cbData<(GLsizei)sizeof(GLsizei))
     {
         crWarning("crStateGLSLProgramCacheUniforms: data too short");
         return;
@@ -858,7 +859,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
     pCurrent += sizeof(GLsizei);
     cbRead = sizeof(GLsizei);
 
-    //crDebug("crStateGLSLProgramCacheUniforms: %i active uniforms", pProgram->cUniforms);
+    /*crDebug("crStateGLSLProgramCacheUniforms: %i active uniforms", pProgram->cUniforms);*/
 
     if (pProgram->cUniforms)
     {
@@ -895,7 +896,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
         pProgram->pUniforms[i].name = crStrndup(pCurrent, cbName);
         pCurrent += cbName;
 
-        //crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%d, %s", i, pProgram->pUniforms[i].location, pProgram->pUniforms[i].name);
+        /*crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%d, %s", i, pProgram->pUniforms[i].location, pProgram->pUniforms[i].name);*/
     }
 
     pProgram->bUniformsSynced = GL_TRUE;
@@ -924,7 +925,7 @@ crStateGLSLProgramCacheAttribs(GLuint program, GLsizei cbData, GLvoid *pData)
         crStateFreeProgramAttribsLocationCache(pProgram);
     }
 
-    if (cbData<sizeof(GLsizei))
+    if (cbData<(GLsizei)sizeof(GLsizei))
     {
         WARN(("crStateGLSLProgramCacheAttribs: data too short"));
         return;
@@ -990,7 +991,7 @@ static GLboolean crStateGLSLProgramCacheOneUniform(GLuint location, GLsizei cbNa
         return GL_FALSE;
     }
 
-    //crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%s.", location, pName);
+    /*crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%s.", location, pName);*/
 
     ((GLint*)*pCurrent)[0] = location;
     *pCurrent += sizeof(GLint);
@@ -1321,6 +1322,7 @@ static void crStateGLSLCreateShadersCB(unsigned long key, void *data1, void *dat
 {
     CRGLSLShader *pShader = (CRGLSLShader*) data1;
     CRContext *ctx = (CRContext *) data2;
+    (void)ctx; (void)key;
 
     pShader->hwid = diff_api.CreateShader(pShader->type);
 }
@@ -1386,6 +1388,7 @@ static void crStateGLSLCreateProgramCB(unsigned long key, void *data1, void *dat
     CRGLSLProgram *pProgram = (CRGLSLProgram*) data1;
     CRContext *ctx = (CRContext *) data2;
     GLuint i;
+    (void)key;
 
     pProgram->hwid = diff_api.CreateProgram();
 

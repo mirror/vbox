@@ -81,7 +81,7 @@ void CrMClrFillImg(CR_BLITTER_IMG *pImg, uint32_t cRects, const RTRECT *pRects, 
 
 
     RTRECT Intersection;
-    const RTPOINT ZeroPoint = {0, 0};
+    /*const RTPOINT ZeroPoint = {0, 0}; - unused */
 
     for (uint32_t i = 0; i < cRects; ++i)
     {
@@ -572,6 +572,8 @@ DECLINLINE(GLfloat*) crBltVtRectsTFNormalized(const RTRECT *paRects, uint32_t cR
 
 DECLINLINE(GLint*) crBltVtRectTF(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff, uint32_t height)
 {
+    (void)normalX; (void)normalY;
+
     /* xLeft yTop */
     pBuff[0] = pRect->xLeft;
     pBuff[1] = height ? height - pRect->yTop : pRect->yTop;
@@ -1114,6 +1116,7 @@ VBOXBLITTERDECL(int) CrBltImgGetTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *
 
 VBOXBLITTERDECL(int) CrBltImgGetMural(PCR_BLITTER pBlitter, bool fBb, CR_BLITTER_IMG *pDst)
 {
+    (void)fBb; (void)pDst;
     if (!CrBltIsEntered(pBlitter))
     {
         WARN(("CrBltImgGetMural: blitter not entered"));
@@ -2029,8 +2032,8 @@ static int ctTdBltSdGetUpdated(PCR_TEXDATA pTex, uint32_t width, uint32_t height
         return rc;
     }
 
-    Assert(width == pScaledCache->Tex.width);
-    Assert(height == pScaledCache->Tex.height);
+    Assert(width == (uint32_t)pScaledCache->Tex.width);
+    Assert(height == (uint32_t)pScaledCache->Tex.height);
 
     if (!pScaledCache->Flags.DataValid)
     {
@@ -2056,7 +2059,7 @@ static int ctTdBltSdGetUpdated(PCR_TEXDATA pTex, uint32_t width, uint32_t height
 
 VBOXBLITTERDECL(int) CrTdBltDataAcquireScaled(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted, uint32_t width, uint32_t height, const CR_BLITTER_IMG**ppImg)
 {
-    if (pTex->Tex.width == width && pTex->Tex.height == height)
+    if ((uint32_t)pTex->Tex.width == width && (uint32_t)pTex->Tex.height == height)
         return CrTdBltDataAcquire(pTex, enmFormat, fInverted, ppImg);
 
     if (!pTex->Flags.Entered)

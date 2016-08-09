@@ -1595,7 +1595,7 @@ void crPixelCopy2D( GLsizei width, GLsizei height,
                 crMemcpy( (void *) dst, (const void *) src, height * srcBytesPerRow );
             }
             else
-                //crDebug("Sending texture, BytesPerRow!=RowStrideBytes");
+                /*crDebug("Sending texture, BytesPerRow!=RowStrideBytes");*/
                 for (i = 0; i < height; i++)
                 {
                     crMemcpy( (void *) dst, (const void *) src, srcBytesPerRow );

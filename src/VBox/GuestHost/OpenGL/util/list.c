@@ -311,4 +311,4 @@ int main( void )
 	return 0;
 }
 
-#endif // CR_TESTING_LIST
+#endif /* CR_TESTING_LIST */

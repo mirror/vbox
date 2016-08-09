@@ -442,7 +442,7 @@ crPackExpandArrayElement(GLint index, CRClientState *c, const GLfloat *pZva)
                 crWarning("Unhandled: crPackExpandArrayElement, array->s.type 0x%x", array->s.type);
         }
     }
-#endif // CR_EXT_secondary_color
+#endif /* CR_EXT_secondary_color */
 
 
 #ifdef CR_EXT_fog_coord
@@ -458,7 +458,7 @@ crPackExpandArrayElement(GLint index, CRClientState *c, const GLfloat *pZva)
 #endif
         crPackFogCoordfEXT( *((GLfloat *) p) );
     }
-#endif // CR_EXT_fog_coord
+#endif /* CR_EXT_fog_coord */
 
     for (unit = 0 ; unit < CR_MAX_TEXTURE_UNITS ; unit++)
     {
@@ -802,7 +802,7 @@ crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type,
     if (mode != 999)
         crPackBegin(mode);
 
-    //crDebug("crPackExpandDrawElements mode:0x%x, count:%d, type:0x%x", mode, count, type);
+    /*crDebug("crPackExpandDrawElements mode:0x%x, count:%d, type:0x%x", mode, count, type);*/
 
     switch (type)
     {

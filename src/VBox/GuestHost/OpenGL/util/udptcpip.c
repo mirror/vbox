@@ -520,9 +520,9 @@ crUDPTCPIPRecv( void )
 		}
 		else if ( FD_ISSET(conn->udp_socket, &read_fds ) )
 		{
-			CRTCPIPBuffer *buf = ((CRTCPIPBuffer *) crTCPIPAlloc( conn )) - 1;
-			unsigned int *seq = ((unsigned int *) (buf + 1)) - 1;
-			int len;
+			unsigned int *seq;
+			buf = ((CRTCPIPBuffer *) crTCPIPAlloc( conn )) - 1;
+			seq = ((unsigned int *) (buf + 1)) - 1;
 
 			len = recv( conn->udp_socket, (void *)seq,
 				buf->allocated + sizeof(*seq), MSG_TRUNC );

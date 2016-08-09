@@ -388,9 +388,9 @@ static void __enableSet (CRContext *g, CRStateBits *sb, CRbitvalue *neg_bitid,
 		case GL_MAP1_VERTEX_ATTRIB14_4_NV:
 		case GL_MAP1_VERTEX_ATTRIB15_4_NV:
 			{
-				const GLint i = cap - GL_MAP1_VERTEX_ATTRIB0_4_NV;
-				g->eval.enableAttrib1D[i] = val;
-				DIRTY(sb->program.map1AttribArrayEnable[i], neg_bitid);
+				const GLint idx = cap - GL_MAP1_VERTEX_ATTRIB0_4_NV;
+				g->eval.enableAttrib1D[idx] = val;
+				DIRTY(sb->program.map1AttribArrayEnable[idx], neg_bitid);
 				DIRTY(sb->program.dirty, neg_bitid);
 			}
 			break;
@@ -411,9 +411,9 @@ static void __enableSet (CRContext *g, CRStateBits *sb, CRbitvalue *neg_bitid,
 		case GL_MAP2_VERTEX_ATTRIB14_4_NV:
 		case GL_MAP2_VERTEX_ATTRIB15_4_NV:
 			{
-				const GLint i = cap - GL_MAP2_VERTEX_ATTRIB0_4_NV;
-				g->eval.enableAttrib2D[i] = val;
-				DIRTY(sb->program.map2AttribArrayEnable[i], neg_bitid);
+				const GLint idx = cap - GL_MAP2_VERTEX_ATTRIB0_4_NV;
+				g->eval.enableAttrib2D[idx] = val;
+				DIRTY(sb->program.map2AttribArrayEnable[idx], neg_bitid);
 				DIRTY(sb->program.dirty, neg_bitid);
 			}
 			break;

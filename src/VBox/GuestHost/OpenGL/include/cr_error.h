@@ -51,14 +51,14 @@ DECLEXPORT(void) crWarning(const char *format, ... ) PRINTF;
 #endif
 DECLEXPORT(void) crInfo(const char *format, ... ) PRINTF;
 
-DECLEXPORT(void) crError(const char *format, ... ) NORETURN_PRINTF;
+DECLEXPORT(void) crError(const char *format, ... ) PRINTF /*NORETURN_PRINTF - it returns*/;
 
 /* Throw more info while opengl is not stable */
 #if defined(DEBUG) || 1
 # ifdef DEBUG_misha
 #  include <iprt/assert.h>
 #  define CRASSERT Assert
-//extern int g_VBoxFbgFBreakDdi;
+/*extern int g_VBoxFbgFBreakDdi;*/
 #  define CR_DDI_PROLOGUE() do { /*if (g_VBoxFbgFBreakDdi) {Assert(0);}*/ } while (0)
 # else
 #  define CRASSERT( PRED ) ((PRED)?(void)0:crWarning( "Assertion failed: %s=%d, file %s, line %d", #PRED, (int)(intptr_t)(PRED), __FILE__, __LINE__))

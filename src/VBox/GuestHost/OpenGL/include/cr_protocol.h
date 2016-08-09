@@ -99,7 +99,7 @@ typedef union {
     /* unsigned int  junk[512]; */
 } CRNetworkPointer;
 
-#if 0 //def DEBUG_misha
+#if 0 /*def DEBUG_misha*/
 #define CRDBGPTR_SETZ(_p) crMemset((_p), 0, sizeof (CRNetworkPointer))
 #define CRDBGPTR_CHECKZ(_p) do { \
         CRNetworkPointer _ptr = {0}; \

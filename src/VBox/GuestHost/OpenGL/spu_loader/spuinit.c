@@ -27,6 +27,8 @@ void crSPUInitDispatchTable( SPUDispatchTable *table )
     table->server = NULL;
 }
 
+#if 0 /* unused */
+
 static int validate_int( const char *response, 
              const char *min,
              const char *max )
@@ -160,6 +162,8 @@ static int validate_option( const SPUOptions *opt, const char *response )
 
     return retval;
 }
+
+#endif /* unused */
 
 /** Use the default values for all the options:
  */

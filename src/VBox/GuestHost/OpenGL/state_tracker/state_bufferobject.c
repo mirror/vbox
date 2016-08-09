@@ -973,8 +973,8 @@ static void crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
 void crStateBufferObjectDiff(CRBufferObjectBits *bb, CRbitvalue *bitID,
                              CRContext *fromCtx, CRContext *toCtx)
 {
-    CRBufferObjectState *from = &(fromCtx->bufferobject);
-    const CRBufferObjectState *to = &(toCtx->bufferobject);
+    /*CRBufferObjectState *from = &(fromCtx->bufferobject); - unused
+    const CRBufferObjectState *to = &(toCtx->bufferobject); - unused */
 
     if (!HaveBufferObjectExtension())
         return;
@@ -986,6 +986,7 @@ static void crStateBufferObjectSyncCB(unsigned long key, void *data1, void *data
 {
     CRBufferObject *pBufferObj = (CRBufferObject *) data1;
     CRBufferObjectState *pState = (CRBufferObjectState *) data2;
+    (void)key;
 
     if (pBufferObj->id && !pBufferObj->hwid)
     {
@@ -1019,7 +1020,7 @@ static void crStateBufferObjectSyncCB(unsigned long key, void *data1, void *data
 void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID, 
                                CRContext *fromCtx, CRContext *toCtx)
 {
-    const CRBufferObjectState *from = &(fromCtx->bufferobject);
+    /*const CRBufferObjectState *from = &(fromCtx->bufferobject); - unused */
     CRBufferObjectState *to = &(toCtx->bufferobject);
     int i;
 

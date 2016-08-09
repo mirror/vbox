@@ -228,7 +228,7 @@ void crGetCurrentDir( char *dir, int maxLen )
 CRpid crGetPID(void)
 {
 #ifdef WINDOWS 
-  //return _getpid();
+  /*return _getpid();*/
   return GetCurrentProcess();
 #else
   return getpid();

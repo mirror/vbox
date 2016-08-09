@@ -387,12 +387,12 @@ crNetAcceptClient( const char *protocol, const char *hostname,
         }
         conn->hostname = crStrdup( filename );
 
-    /* call the protocol-specific init routines */  // ktd (add)
+    /* call the protocol-specific init routines */  /* ktd (add) */
     InitConnection(conn, protocol_only, mtu
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
                 , NULL
 #endif
-            );       // ktd (add)
+            );       /* ktd (add) */
     }
     else {
     /* call the protocol-specific init routines */
@@ -512,7 +512,7 @@ void crNetInit( CRNetReceiveFunc recvFunc, CRNetCloseFunc closeFunc )
 }
 
 /* Free up stuff */
-void crNetTearDown()
+void crNetTearDown(void)
 {
     CRNetReceiveFuncList *rfl;
     CRNetCloseFuncList *cfl;
@@ -1273,7 +1273,7 @@ void crNetReadline( CRConnection *conn, void *buf )
 }
 
 #ifdef IN_GUEST
-uint32_t crNetHostCapsGet()
+uint32_t crNetHostCapsGet(void)
 {
 #ifdef VBOX_WITH_HGCM
     if ( cr_net.use_hgcm )
@@ -1293,6 +1293,8 @@ uint32_t crNetHostCapsGet()
 int crNetRecv(
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
         CRConnection *conn
+#else
+        void
 #endif
         )
 {
@@ -1362,6 +1364,9 @@ crNetSetRank( int my_rank )
 void
 crNetSetContextRange( int low_context, int high_context )
 {
+#if !defined(TEAC_SUPPORT) && !defined(TCSCOMM_SUPPORT)
+    (void)low_context; (void)high_context;
+#endif
 #ifdef TEAC_SUPPORT
     crTeacSetContextRange( low_context, high_context );
 #endif
@@ -1376,6 +1381,9 @@ crNetSetContextRange( int low_context, int high_context )
 void
 crNetSetNodeRange( const char *low_node, const char *high_node )
 {
+#if !defined(TEAC_SUPPORT) && !defined(TCSCOMM_SUPPORT)
+    (void)low_node; (void)high_node;
+#endif
 #ifdef TEAC_SUPPORT
     crTeacSetNodeRange( low_node, high_node );
 #endif
@@ -1392,5 +1400,7 @@ crNetSetKey( const unsigned char* key, const int keyLength )
 {
 #ifdef TEAC_SUPPORT
     crTeacSetKey( key, keyLength );
+#else
+    (void)key; (void)keyLength;
 #endif
 }

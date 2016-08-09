@@ -14,9 +14,9 @@
 :mode:backMode:PolygonMode,GL_BACK
 :mode:frontMode:PolygonMode,GL_FRONT
 -:stipple:stipple:*diff_api.PolygonStipple ((GLubyte *) to->stipple);
-+:stipple:*int j;
++:stipple:*int iStripple;
 +:stipple:*diff_api.PolygonStipple ((GLubyte *) to->stipple);
-+:stipple:*for (j=0; j<32; j++)
++:stipple:*for (iStripple=0; iStripple<32; iStripple++)
 +:stipple:*{
-+:stipple:*	from->stipple[j] = to->stipple[j];
++:stipple:*	from->stipple[iStripple] = to->stipple[iStripple];
 +:stipple:*}

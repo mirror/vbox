@@ -75,7 +75,7 @@ void crStateOnTextureUsageRelease(CRSharedState *pS, CRTextureObj *pObj)
         Assert(crHashtableSearch(pS->textureTable, pObj->id));
 }
 
-void crStateReleaseTextureInternal(CRSharedState *pS, CRContext *pCtx, CRTextureObj *pObj)
+static void crStateReleaseTextureInternal(CRSharedState *pS, CRContext *pCtx, CRTextureObj *pObj)
 {
     Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj) || pObj->pinned);
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
@@ -101,7 +101,7 @@ DECLEXPORT(void) crStateReleaseTexture(CRContext *pCtx, CRTextureObj *pObj)
     crStateOnTextureUsageRelease(gSharedState, pObj);
 }
 
-void crStateReleaseBufferObjectInternal(CRSharedState *pS, CRContext *pCtx, CRBufferObject *pObj)
+static void crStateReleaseBufferObjectInternal(CRSharedState *pS, CRContext *pCtx, CRBufferObject *pObj)
 {
     Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
@@ -109,7 +109,7 @@ void crStateReleaseBufferObjectInternal(CRSharedState *pS, CRContext *pCtx, CRBu
         crHashtableDelete(pS->buffersTable, pObj->id, crStateFreeBufferObject);
 }
 
-void crStateReleaseFBOInternal(CRSharedState *pS, CRContext *pCtx, CRFramebufferObject *pObj)
+static void crStateReleaseFBOInternal(CRSharedState *pS, CRContext *pCtx, CRFramebufferObject *pObj)
 {
     Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
@@ -117,7 +117,7 @@ void crStateReleaseFBOInternal(CRSharedState *pS, CRContext *pCtx, CRFramebuffer
         crHashtableDelete(pS->fbTable, pObj->id, crStateFreeFBO);
 }
 
-void crStateReleaseRBOInternal(CRSharedState *pS, CRContext *pCtx, CRRenderbufferObject *pObj)
+static void crStateReleaseRBOInternal(CRSharedState *pS, CRContext *pCtx, CRRenderbufferObject *pObj)
 {
     Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
@@ -129,6 +129,7 @@ static void ReleaseTextureCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRTextureObj *pObj = (CRTextureObj *)data1;
+    (void)key;
     crStateReleaseTextureInternal(pData->s, pData->pCtx, pObj);
 }
 
@@ -136,6 +137,7 @@ static void ReleaseBufferObjectCallback(unsigned long key, void *data1, void *da
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRBufferObject *pObj = (CRBufferObject *)data1;
+    (void)key;
     crStateReleaseBufferObjectInternal(pData->s, pData->pCtx, pObj);
 }
 
@@ -143,6 +145,7 @@ static void ReleaseFBOCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRFramebufferObject *pObj = (CRFramebufferObject *)data1;
+    (void)key;
     crStateReleaseFBOInternal(pData->s, pData->pCtx, pObj);
 }
 
@@ -150,14 +153,19 @@ static void ReleaseRBOCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRRenderbufferObject *pObj = (CRRenderbufferObject *)data1;
+    (void)key;
     crStateReleaseRBOInternal(pData->s, pData->pCtx, pObj);
 }
+
 
 /**
  * Decrement shared state's refcount and delete when it hits zero.
  */
-DECLEXPORT(void)
-crStateFreeShared(CRContext *pContext, CRSharedState *s)
+#ifndef IN_GUEST
+DECLEXPORT(void) crStateFreeShared(CRContext *pContext, CRSharedState *s)
+#else
+static void crStateFreeShared(CRContext *pContext, CRSharedState *s)
+#endif
 {
     int32_t refCount = ASMAtomicDecS32(&s->refCount);
 
@@ -187,7 +195,9 @@ crStateFreeShared(CRContext *pContext, CRSharedState *s)
     }
 }
 
-DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire()
+#ifndef IN_GUEST
+
+DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire(void)
 {
     if (!gSharedState)
     {
@@ -198,10 +208,12 @@ DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire()
     return gSharedState;
 }
 
-DECLEXPORT(void) crStateGlobalSharedRelease()
+DECLEXPORT(void) crStateGlobalSharedRelease(void)
 {
     crStateFreeShared(NULL, gSharedState);
 }
+
+#endif /* IN_GUEST */
 
 DECLEXPORT(void) STATE_APIENTRY
 crStateShareContext(GLboolean value)
@@ -297,13 +309,13 @@ static DECLCALLBACK(void) crStateContextDtor(void *pvCtx)
  * Helper for crStateCreateContext, below.
  */
 static CRContext *
-crStateCreateContextId(int i, const CRLimitsState *limits,
-                                             GLint visBits, CRContext *shareCtx)
+crStateCreateContextId(int i, const CRLimitsState *limits, GLint visBits, CRContext *shareCtx)
 {
     CRContext *ctx;
     int j;
     int node32 = i >> 5;
     int node = i & 0x1f;
+    (void)limits;
 
     if (g_pAvailableContexts[i] != NULL)
     {
@@ -799,24 +811,28 @@ void STATE_APIENTRY
 crStateChromiumParameteriCR( GLenum target, GLint value )
 {
     /* This no-op function helps smooth code-gen */
+    (void)target; (void)value;
 }
 
 void STATE_APIENTRY
 crStateChromiumParameterfCR( GLenum target, GLfloat value )
 {
     /* This no-op function helps smooth code-gen */
+    (void)target; (void)value;
 }
 
 void STATE_APIENTRY
 crStateChromiumParametervCR( GLenum target, GLenum type, GLsizei count, const GLvoid *values )
 {
     /* This no-op function helps smooth code-gen */
+    (void)target; (void)type; (void)count; (void)values;
 }
 
 void STATE_APIENTRY
 crStateGetChromiumParametervCR( GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid *values )
 {
     /* This no-op function helps smooth code-gen */
+    (void)target; (void)index; (void)type; (void)count; (void)values;
 }
 
 void STATE_APIENTRY
@@ -824,42 +840,53 @@ crStateReadPixels( GLint x, GLint y, GLsizei width, GLsizei height,
                                      GLenum format, GLenum type, GLvoid *pixels )
 {
     /* This no-op function helps smooth code-gen */
+    (void)x; (void)y; (void)width; (void)height; (void)format; (void)type; (void)pixels;
 }
 
-void crStateVBoxDetachThread()
+void crStateVBoxDetachThread(void)
 {
     /* release the context ref so that it can be freed */
     SetCurrentContext(NULL);
 }
 
 
-void crStateVBoxAttachThread()
+void crStateVBoxAttachThread(void)
 {
 }
 
+#if 0 /* who's refering to these? */
+
 GLint crStateVBoxCreateContext( GLint con, const char * dpyName, GLint visual, GLint shareCtx )
 {
+    (void)con; (void)dpyName; (void)visual; (void)shareCtx;
     return 0;
 }
 
 GLint crStateVBoxWindowCreate( GLint con, const char *dpyName, GLint visBits  )
 {
+    (void)con; (void)dpyName; (void)visBits;
     return 0;
 }
 
 void crStateVBoxWindowDestroy( GLint con, GLint window )
 {
+    (void)con; (void)window;
 }
 
 GLint crStateVBoxConCreate(struct VBOXUHGSMI *pHgsmi)
 {
+    (void)pHgsmi;
     return 0;
 }
 
 void crStateVBoxConDestroy(GLint con)
 {
+    (void)con;
 }
 
 void crStateVBoxConFlush(GLint con)
 {
+    (void)con;
 }
+
+#endif /* unused? */
