@@ -19,6 +19,10 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+# ifdef RT_OS_WINDOWS
+#  include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
+#  include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
+# endif
 # include <QGLWidget>
 
 # include <iprt/assert.h>

@@ -5703,7 +5703,16 @@ ifdef VBOX_WITH_QTGUI
      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- -W3
+  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t-
+  ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+   #    -wd4481: nonstandard extension used: override specifier 'override'
+   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
+   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
+   #    -wd4640: qmetatype.h(2210): warning C4640: 'f' : construction of local static object is not thread-safe [too bad]
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 $(VBOX_VCC_WERR)
+  else
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -W3
+  endif
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \

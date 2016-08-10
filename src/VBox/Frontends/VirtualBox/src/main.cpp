@@ -238,7 +238,7 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
     NOREF(context);
 # ifndef VBOX_WS_X11
     NOREF(strMessage);
-# endif /* !VBOX_WS_X11 */
+# endif
     switch (type)
     {
         case QtDebugMsg:
@@ -249,21 +249,24 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
 # ifdef VBOX_WS_X11
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt WARNING: %s\n", strMessage.toUtf8().constData());
-# endif /* VBOX_WS_X11 */
+# endif
             break;
         case QtCriticalMsg:
             Log(("Qt CRITICAL: %s\n", strMessage.toUtf8().constData()));
 # ifdef VBOX_WS_X11
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt CRITICAL: %s\n", strMessage.toUtf8().constData());
-# endif /* VBOX_WS_X11 */
+# endif
             break;
         case QtFatalMsg:
             Log(("Qt FATAL: %s\n", strMessage.toUtf8().constData()));
 # ifdef VBOX_WS_X11
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", strMessage.toUtf8().constData());
-# endif /* VBOX_WS_X11 */
+# endif
+        case QtInfoMsg:
+            /* ignore? */
+            break;
     }
 }
 #else /* QT_VERSION < 0x050000 */
@@ -737,19 +740,16 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
             strText += g_QStrHintOtherNoDriver;
 # endif /* !RT_OS_LINUX */
             break;
-# ifdef RT_OS_LINUX
         case kSupInitOp_IPRT:
         case kSupInitOp_Misc:
-            if (rc == VERR_NO_MEMORY)
-                strText += g_QStrHintLinuxNoMemory;
-            else
-# endif /* RT_OS_LINUX */
             if (rc == VERR_VM_DRIVER_VERSION_MISMATCH)
-# ifdef RT_OS_LINUX
-                strText += g_QStrHintLinuxWrongDriverVersion;
-# else /* RT_OS_LINUX */
+# ifndef RT_OS_LINUX
                 strText += g_QStrHintOtherWrongDriverVersion;
-# endif /* !RT_OS_LINUX */
+# else
+                strText += g_QStrHintLinuxWrongDriverVersion;
+            else if (rc == VERR_NO_MEMORY)
+                strText += g_QStrHintLinuxNoMemory;
+# endif
             else
                 strText += g_QStrHintReinstall;
             break;

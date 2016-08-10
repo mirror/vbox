@@ -23,6 +23,10 @@
 # define LOG_GROUP LOG_GROUP_GUI
 
 /* Qt includes: */
+# ifdef RT_OS_WINDOWS
+#  include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
+#  include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
+# endif
 # include <QGLWidget>
 # include <QFile>
 # include <QTextStream>
@@ -629,7 +633,7 @@ class VBoxVHWAGlProgram
 public:
     VBoxVHWAGlProgram(VBoxVHWAGlShader ** apShaders, int acShaders);
 
-    ~VBoxVHWAGlProgram();
+    virtual ~VBoxVHWAGlProgram();
 
     virtual int init();
     virtual void uninit();
@@ -3779,16 +3783,18 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
     bool fallback = false;
 
     VBOXQGLLOG(("resizing: fmt=%d, vram=%p, bpp=%d, bpl=%d, width=%d, height=%d\n",
-                      size.pixelFormat(), size.VRAM(),
-                      size.bitsPerPixel(), size.bytesPerLine(),
-                      size.width(), size.height()));
+                size.pixelFormat(), size.VRAM(),
+                size.bitsPerPixel(), size.bytesPerLine(),
+                size.width(), size.height()));
 
     /* clean the old values first */
 
-    ulong bytesPerLine;
-    uint32_t bitsPerPixel;
-    uint32_t b = 0xff, g = 0xff00, r = 0xff0000;
-    bool bUsesGuestVram;
+    ulong    bytesPerLine = 0; /* Shut up MSC. */
+    uint32_t bitsPerPixel = 0; /* Shut up MSC. */
+    uint32_t b =     0xff;
+    uint32_t g =   0xff00;
+    uint32_t r = 0xff0000;
+    bool fUsesGuestVram = false; /* Shut up MSC. */
 
     /* check if we support the pixel format and can use the guest VRAM directly */
     if (size.pixelFormat() == KBitmapFormat_BGR)
@@ -3848,7 +3854,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
         if (!fallback)
         {
             // ulong virtWdt = bitsPerLine / size.bitsPerPixel();
-            bUsesGuestVram = true;
+            fUsesGuestVram = true;
         }
     }
     else
@@ -3867,8 +3873,8 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
         b = 0xff;
         g = 0xff00;
         r = 0xff0000;
-        bytesPerLine = size.width()*bitsPerPixel/8;
-        bUsesGuestVram = false;
+        bytesPerLine = size.width() * bitsPerPixel / 8;
+        fUsesGuestVram = false;
     }
 
     ulong bytesPerPixel = bitsPerPixel/8;
@@ -3908,7 +3914,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
             0,
 #endif
             0 /* VBOXVHWAIMG_TYPE fFlags */);
-    pDisplay->init(NULL, bUsesGuestVram ? size.VRAM() : NULL);
+    pDisplay->init(NULL, fUsesGuestVram ? size.VRAM() : NULL);
     mDisplay.setVGA(pDisplay);
 //    VBOXQGLLOG(("\n\n*******\n\n     viewport size is: (%d):(%d)\n\n*******\n\n", size().width(), size().height()));
     mViewport = QRect(0,0,displayWidth, displayHeight);

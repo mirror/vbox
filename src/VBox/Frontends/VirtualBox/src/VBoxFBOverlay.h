@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBox Qt GUI - VBoxFrameBuffer Overly classes declarations.
  */
@@ -16,7 +16,8 @@
  */
 #ifndef __VBoxFBOverlay_h__
 #define __VBoxFBOverlay_h__
-#if defined (VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL)
+
+#if defined(VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL)
 
 /* Defines: */
 //#define VBOXQGL_PROF_BASE 1
@@ -25,6 +26,10 @@
 #define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
 
 /* Qt includes: */
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
+# include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
+#endif
 #include <QGLWidget>
 
 /* GUI includes: */
@@ -1839,6 +1844,6 @@ private:
     uint32_t m_id;
 };
 
-#endif
+#endif /* defined(VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL) */
 
 #endif /* #ifndef __VBoxFBOverlay_h__ */
