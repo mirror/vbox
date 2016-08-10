@@ -135,6 +135,11 @@ UISelectorWindow::~UISelectorWindow()
     m_spInstance = 0;
 }
 
+bool UISelectorWindow::shouldBeMaximized() const
+{
+    return gEDataManager->selectorWindowShouldBeMaximized();
+}
+
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
 {
@@ -1133,13 +1138,13 @@ bool UISelectorWindow::event(QEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    return QMainWindow::event(pEvent);
+    return QIMainWindow::event(pEvent);
 }
 
 void UISelectorWindow::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QMainWindow::showEvent(pEvent);
+    QIMainWindow::showEvent(pEvent);
 
     /* Is polishing required? */
     if (!m_fPolished)
@@ -1163,12 +1168,12 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore for non-active window except for FileOpen event which should be always processed: */
     if (!isActiveWindow() && pEvent->type() != QEvent::FileOpen)
-        return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
+        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
 
     /* Ignore for other objects: */
     if (qobject_cast<QWidget*>(pObject) &&
         qobject_cast<QWidget*>(pObject)->window() != this)
-        return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
+        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
 
     /* Which event do we have? */
     switch (pEvent->type())
@@ -1184,7 +1189,7 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
+    return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
 }
 #endif /* VBOX_WS_MAC */
 
@@ -1826,18 +1831,11 @@ void UISelectorWindow::loadSettings()
     {
         /* Load geometry: */
         m_geometry = gEDataManager->selectorWindowGeometry(this);
-#ifdef VBOX_WS_MAC
-        move(m_geometry.topLeft());
-        resize(m_geometry.size());
-#else /* VBOX_WS_MAC */
-        setGeometry(m_geometry);
-#endif /* !VBOX_WS_MAC */
-        LogRel2(("GUI: UISelectorWindow: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
-        /* Maximize (if necessary): */
-        if (gEDataManager->selectorWindowShouldBeMaximized())
-            showMaximized();
+        /* Restore geometry: */
+        LogRel2(("GUI: UISelectorWindow: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        restoreGeometry();
     }
 
     /* Restore splitter handle position: */

@@ -770,7 +770,7 @@ void UIVMLogViewer::showLogViewerFor(QWidget *pCenterWidget, const CMachine &mac
 }
 
 UIVMLogViewer::UIVMLogViewer(QWidget *pParent, Qt::WindowFlags flags, const CMachine &machine)
-    : QIWithRetranslateUI2<QMainWindow>(pParent, flags)
+    : QIWithRetranslateUI2<QIMainWindow>(pParent, flags)
     , m_fIsPolished(false)
     , m_machine(machine)
 {
@@ -782,6 +782,11 @@ UIVMLogViewer::~UIVMLogViewer()
 {
     /* Cleanup VM Log-Viewer: */
     cleanup();
+}
+
+bool UIVMLogViewer::shouldBeMaximized() const
+{
+    return gEDataManager->logWindowShouldBeMaximized();
 }
 
 void UIVMLogViewer::search()
@@ -884,7 +889,7 @@ bool UIVMLogViewer::close()
     /* Close filter-panel: */
     m_pFilterPanel->hide();
     /* Call to base-class: */
-    return QMainWindow::close();
+    return QIMainWindow::close();
 }
 
 void UIVMLogViewer::save()
@@ -1032,18 +1037,11 @@ void UIVMLogViewer::loadSettings()
 
         /* Load geometry: */
         m_geometry = gEDataManager->logWindowGeometry(this, defaultGeometry);
-#ifdef VBOX_WS_MAC
-        move(m_geometry.topLeft());
-        resize(m_geometry.size());
-#else /* !VBOX_WS_MAC */
-        setGeometry(m_geometry);
-#endif /* !VBOX_WS_MAC */
-        LogRel2(("GUI: UIVMLogViewer: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
-        /* Maximize (if necessary): */
-        if (gEDataManager->logWindowShouldBeMaximized())
-            showMaximized();
+        /* Restore geometry: */
+        LogRel2(("GUI: UIVMLogViewer: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        restoreGeometry();
     }
 }
 
@@ -1092,7 +1090,7 @@ void UIVMLogViewer::retranslateUi()
 
 void UIVMLogViewer::showEvent(QShowEvent *pEvent)
 {
-    QMainWindow::showEvent(pEvent);
+    QIMainWindow::showEvent(pEvent);
 
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
@@ -1145,7 +1143,7 @@ void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
         default:
             break;
     }
-    QMainWindow::keyReleaseEvent(pEvent);
+    QIMainWindow::keyReleaseEvent(pEvent);
 }
 
 QTextEdit* UIVMLogViewer::currentLogPage()

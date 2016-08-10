@@ -19,11 +19,11 @@
 #define ___UIVMLogViewer_h___
 
 /* Qt includes: */
-#include <QMainWindow>
 #include <QMap>
 #include <QPair>
 
 /* GUI includes: */
+#include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
 #include "UIVMLogViewer.gen.h"
 
@@ -46,9 +46,9 @@ typedef QPair<QString, QTextEdit*> LogPage;
 typedef QList<LogPage> LogBook;
 typedef QMap<QTextEdit*, QString> VMLogMap;
 
-/** QMainWindow extension
+/** QIMainWindow extension
   * providing GUI with VirtualBox LogViewer. */
-class UIVMLogViewer : public QIWithRetranslateUI2<QMainWindow>,
+class UIVMLogViewer : public QIWithRetranslateUI2<QIMainWindow>,
                       public Ui::UIVMLogViewer
 {
     Q_OBJECT;
@@ -67,6 +67,9 @@ protected:
     UIVMLogViewer(QWidget *pParent, Qt::WindowFlags flags, const CMachine &machine);
     /** Destructs the VM Log-Viewer. */
     ~UIVMLogViewer();
+
+    /** Returns whether the window should be maximized when geometry being restored. */
+    virtual bool shouldBeMaximized() const /* override */;
 
 private slots:
 
@@ -141,9 +144,6 @@ private:
 
     /** Holds the list of log-content. */
     VMLogMap m_logMap;
-
-    /** Holds the current dialog geometry. */
-    QRect m_geometry;
 
     /** Holds the help button instance. */
     QPushButton *m_pButtonHelp;

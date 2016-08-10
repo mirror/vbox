@@ -19,9 +19,9 @@
 #define ___UIVMInformationDialog_h___
 
 /* Qt includes: */
-#include <QMainWindow>
 
 /* GUI includes: */
+#include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
@@ -33,8 +33,8 @@ class QITabWidget;
 class UIMachineWindow;
 class QIDialogButtonBox;
 
-/** QMainWindow based dialog providing user with VM details and statistics. */
-class UIVMInformationDialog : public QIWithRetranslateUI<QMainWindow>
+/** QIMainWindow based dialog providing user with VM details and statistics. */
+class UIVMInformationDialog : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
 
@@ -50,6 +50,9 @@ protected:
     UIVMInformationDialog(UIMachineWindow *pMachineWindow);
     /** Information dialog destructor. */
     ~UIVMInformationDialog();
+
+    /** Returns whether the dialog should be maximized when geometry being restored. */
+    virtual bool shouldBeMaximized() const /* override */;
 
     /** Translation handler. */
     void retranslateUi();
@@ -90,8 +93,6 @@ private:
      * @{ */
     /** Dialog instance pointer. */
     static UIVMInformationDialog *m_spInstance;
-    /** Current dialog geometry. */
-    QRect                  m_geometry;
     /** @} */
 
     /** @name Widget variables.

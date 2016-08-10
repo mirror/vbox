@@ -23,7 +23,6 @@
 # include <QMutex>
 # include <QMetaEnum>
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-#  include <QMainWindow>
 #  include <QMenuBar>
 #  include <QListView>
 #  include <QTableView>
@@ -52,6 +51,7 @@
 #  include "UIVirtualBoxEventHandler.h"
 #  include "UIIconPool.h"
 #  include "UIToolBar.h"
+#  include "QIMainWindow.h"
 #  include "QIWidgetValidator.h"
 #  include "QIDialogButtonBox.h"
 #  include "QIFileDialog.h"
@@ -458,9 +458,9 @@ protected:
 };
 
 
-/** QMainWindow extension
+/** QIMainWindow extension
   * providing Extra Data Manager with UI features. */
-class UIExtraDataManagerWindow : public QMainWindow
+class UIExtraDataManagerWindow : public QIMainWindow
 {
     Q_OBJECT;
 
@@ -529,6 +529,12 @@ private slots:
     /** @} */
 
 private:
+
+    /** @name General
+      * @{ */
+        /** Returns whether the window should be maximized when geometry being restored. */
+        virtual bool shouldBeMaximized() const /* override */;
+    /** @} */
 
     /** @name Prepare/Cleanup
       * @{ */
@@ -640,8 +646,6 @@ private:
 
     /** @name General
       * @{ */
-        /** Current geometry. */
-        QRect m_geometry;
         QVBoxLayout *m_pMainLayout;
         /** Data pane: Tool-bar. */
         UIToolBar *m_pToolBar;
@@ -1324,6 +1328,11 @@ void UIExtraDataManagerWindow::sltLoad()
     }
 }
 
+bool UIExtraDataManagerWindow::shouldBeMaximized() const
+{
+    return gEDataManager->extraDataManagerShouldBeMaximized();
+}
+
 void UIExtraDataManagerWindow::prepare()
 {
     /* Prepare this: */
@@ -1674,18 +1683,11 @@ void UIExtraDataManagerWindow::loadSettings()
     {
         /* Load geometry: */
         m_geometry = gEDataManager->extraDataManagerGeometry(this);
-#ifdef VBOX_WS_MAC
-        move(m_geometry.topLeft());
-        resize(m_geometry.size());
-#else /* VBOX_WS_MAC */
-        setGeometry(m_geometry);
-#endif /* !VBOX_WS_MAC */
-        LogRel2(("GUI: UIExtraDataManagerWindow: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
-        /* Maximize (if necessary): */
-        if (gEDataManager->extraDataManagerShouldBeMaximized())
-            showMaximized();
+        /* Restore geometry: */
+        LogRel2(("GUI: UIExtraDataManagerWindow: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        restoreGeometry();
     }
 
     /* Load splitter hints: */
@@ -1723,7 +1725,7 @@ void UIExtraDataManagerWindow::cleanup()
 bool UIExtraDataManagerWindow::event(QEvent *pEvent)
 {
     /* Pre-process through base-class: */
-    bool fResult = QMainWindow::event(pEvent);
+    bool fResult = QIMainWindow::event(pEvent);
 
     /* Process required events: */
     switch (pEvent->type())

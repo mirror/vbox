@@ -81,7 +81,7 @@ void UIVMInfoDialog::invoke(UIMachineWindow *pMachineWindow)
 }
 
 UIVMInfoDialog::UIVMInfoDialog(UIMachineWindow *pMachineWindow)
-    : QIWithRetranslateUI<QMainWindow>(0)
+    : QIWithRetranslateUI<QIMainWindow>(0)
     , m_pMachineWindow(pMachineWindow)
     , m_pTabWidget(0)
     , m_session(pMachineWindow->session())
@@ -101,6 +101,11 @@ UIVMInfoDialog::~UIVMInfoDialog()
 
     /* Deinitialize instance: */
     m_spInstance = 0;
+}
+
+bool UIVMInfoDialog::shouldBeMaximized() const
+{
+    return gEDataManager->informationWindowShouldBeMaximized(vboxGlobal().managedVMUuid());
 }
 
 void UIVMInfoDialog::retranslateUi()
@@ -321,7 +326,7 @@ void UIVMInfoDialog::retranslateUi()
 bool UIVMInfoDialog::event(QEvent *pEvent)
 {
     /* Pre-process through base-class: */
-    bool fResult = QMainWindow::event(pEvent);
+    bool fResult = QIMainWindow::event(pEvent);
 
     /* Process required events: */
     switch (pEvent->type())
@@ -520,18 +525,11 @@ void UIVMInfoDialog::loadSettings()
     {
         /* Load geometry: */
         m_geometry = gEDataManager->informationWindowGeometry(this, m_pMachineWindow, vboxGlobal().managedVMUuid());
-#ifdef VBOX_WS_MAC
-        move(m_geometry.topLeft());
-        resize(m_geometry.size());
-#else /* VBOX_WS_MAC */
-        setGeometry(m_geometry);
-#endif /* !VBOX_WS_MAC */
-        LogRel2(("GUI: UIVMInfoDialog: Geometry loaded to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
 
-        /* Maximize (if necessary): */
-        if (gEDataManager->informationWindowShouldBeMaximized(vboxGlobal().managedVMUuid()))
-            showMaximized();
+        /* Restore geometry: */
+        LogRel2(("GUI: UIVMInfoDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        restoreGeometry();
     }
 }
 
