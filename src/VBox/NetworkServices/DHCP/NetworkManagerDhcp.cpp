@@ -66,6 +66,7 @@ bool NetworkManager::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
     AssertReturn(lease != Lease::NullLease, VINF_SUCCESS);
 
     int rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
+    NOREF(rc); /** @todo check */
 
     /* 3. Send of offer */
 
@@ -74,7 +75,7 @@ bool NetworkManager::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
     lease.setExpiration(300); /* 3 min. */
     offer4Client(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
 
-    return VINF_SUCCESS;
+    return true;
 }
 
 
@@ -106,20 +107,18 @@ bool NetworkManager::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
             confManager->expireLease4Client(c);
             return true;
         }
-        else {
-            /* XXX: Validate request */
-            RawOption opt;
-            RT_ZERO(opt);
+        /* XXX: Validate request */
+        RawOption opt;
+        RT_ZERO(opt);
 
-            Client c(client);
-            int rc = confManager->commitLease4Client(c);
-            AssertRCReturn(rc, false);
+        Client c(client);
+        int rc = confManager->commitLease4Client(c);
+        AssertRCReturn(rc, false);
 
-            rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
-            AssertRCReturn(rc, false);
+        rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
+        AssertRCReturn(rc, false);
 
-            ack(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
-        }
+        ack(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
     }
     else
     {

@@ -39,6 +39,7 @@ class RawOption
 public:
     RawOption()
     {
+        /** @todo r=bird: this is crazy. */
         RT_ZERO(*this);
     }
     uint8_t u8OptId;

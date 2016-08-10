@@ -54,7 +54,6 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/version.h>
 
-
 #include "../NetLib/VBoxNetLib.h"
 #include "../NetLib/shared_ptr.h"
 
@@ -344,7 +343,7 @@ int  VBoxNetDhcp::processUDP(void *pv, size_t cbPv)
 /**
  * Handles a DHCP message.
  *
- * @returns true if handled, false if not.
+ * @returns true if handled, false if not.  (IGNORED BY CALLER)
  * @param   uMsgType        The message type.
  * @param   pDhcpMsg        The DHCP message.
  * @param   cb              The size of the DHCP message.
@@ -610,7 +609,7 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
 
 HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 {
-    switch(aEventType)
+    switch (aEventType)
     {
         case VBoxEventType_OnHostNameResolutionConfigurationChange:
             fetchAndUpdateDnsInfo();
@@ -639,6 +638,8 @@ HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
             shutdown();
             break;
         }
+
+        default: break; /* Shut up MSC. */
     }
 
     return S_OK;
