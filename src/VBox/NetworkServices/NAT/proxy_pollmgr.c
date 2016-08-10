@@ -90,8 +90,8 @@ pollmgr_init(void)
     pollmgr.nfds = 0;
 
     for (i = 0; i < POLLMGR_SLOT_STATIC_COUNT; ++i) {
-        pollmgr.chan[i][POLLMGR_CHFD_RD] = -1;
-        pollmgr.chan[i][POLLMGR_CHFD_WR] = -1;
+        pollmgr.chan[i][POLLMGR_CHFD_RD] = INVALID_SOCKET;
+        pollmgr.chan[i][POLLMGR_CHFD_WR] = INVALID_SOCKET;
     }
 
     for (i = 0; i < POLLMGR_SLOT_STATIC_COUNT; ++i) {
@@ -145,7 +145,7 @@ pollmgr_init(void)
   cleanup_close:
     for (i = 0; i < POLLMGR_SLOT_STATIC_COUNT; ++i) {
         SOCKET *chan = pollmgr.chan[i];
-        if (chan[POLLMGR_CHFD_RD] >= 0) {
+        if (chan[POLLMGR_CHFD_RD] != INVALID_SOCKET) {
             closesocket(chan[POLLMGR_CHFD_RD]);
             closesocket(chan[POLLMGR_CHFD_WR]);
         }
@@ -163,7 +163,7 @@ pollmgr_add_chan(int slot, struct pollmgr_handler *handler)
 {
     if (slot >= POLLMGR_SLOT_FIRST_DYNAMIC) {
         handler->slot = -1;
-        return -1;
+        return INVALID_SOCKET;
     }
 
     pollmgr_add_at(slot, handler, pollmgr.chan[slot][POLLMGR_CHFD_RD], POLLIN);
@@ -275,6 +275,7 @@ pollmgr_chan_recv_ptr(struct pollmgr_handler *handler, SOCKET fd, int revents)
 {
     void *ptr;
     ssize_t nread;
+    NOREF(handler);
 
     if (revents & POLLNVAL) {
         errx(EXIT_FAILURE, "chan %d: fd invalid", (int)handler->slot);
@@ -402,7 +403,8 @@ pollmgr_loop(void)
             handler = pollmgr.handlers[i];
 
             if (handler != NULL && handler->callback != NULL) {
-#if LWIP_PROXY_DEBUG /* DEBUG */
+#ifdef LWIP_PROXY_DEBUG
+# if LWIP_PROXY_DEBUG /* DEBUG */
                 if (i < POLLMGR_SLOT_FIRST_DYNAMIC) {
                     if (revents == POLLIN) {
                         DPRINTF2(("%s: ch %d\n", __func__, i));
@@ -416,7 +418,8 @@ pollmgr_loop(void)
                     DPRINTF2(("%s: fd %d @ revents 0x%x\n",
                               __func__, fd, revents));
                 }
-#endif /* DEBUG */
+# endif /* LWIP_PROXY_DEBUG / DEBUG */
+#endif
                 nevents = (*handler->callback)(handler, fd, revents);
             }
             else {
