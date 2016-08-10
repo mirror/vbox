@@ -84,7 +84,7 @@ bool MACClientMatchCriteria::check(const Client& client) const
 
 int BaseConfigEntity::match(Client& client, BaseConfigEntity **cfg)
 {
-    int iMatch = (m_criteria && m_criteria->check(client)? m_MatchLevel: 0);
+    int iMatch = (m_criteria && m_criteria->check(client) ? m_MatchLevel : 0);
     if (m_children.empty())
     {
         if (iMatch > 0)
@@ -237,7 +237,7 @@ int ConfigurationManager::loadFromFile(const com::Utf8Str& leaseStorageFileName)
             NetworkConfigEntity *pNetCfg = NULL;
             Client c(data);
             int rc = g_RootConfig->match(c, (BaseConfigEntity **)&pNetCfg);
-            Assert(rc >= 0 && pNetCfg);
+            Assert(rc >= 0 && pNetCfg); RT_NOREF(rc);
 
             l.setConfig(pNetCfg);
 
@@ -357,7 +357,6 @@ ConfigurationManager::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t 
     /*
      * Search the vendor field.
      */
-    bool            fExtended = false;
     uint8_t const  *pb = &pDhcpMsg->bp_vend.Dhcp.dhcp_opts[0];
     while (pb && cbLeft > 0)
     {
@@ -371,9 +370,9 @@ ConfigurationManager::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t 
             break;
         else
         {
-            size_t cbCur = pb[1];
+            uint8_t cbCur = pb[1];
             if (cbCur > cbLeft - 2)
-                cbCur = cbLeft - 2;
+                cbCur = (uint8_t)(cbLeft - 2);
             if (uCur == uOption)
             {
                 opt.u8OptId = uCur;
@@ -651,15 +650,14 @@ int ConfigurationManager::setString(uint8_t u8OptId, const std::string& str)
 }
 
 
-const std::string& ConfigurationManager::getString(uint8_t u8OptId)
+const std::string &ConfigurationManager::getString(uint8_t u8OptId)
 {
     switch (u8OptId)
     {
         case RTNET_DHCP_OPT_DOMAIN_NAME:
             if (m->m_domainName.length())
                 return m->m_domainName;
-            else
-                return m_noString;
+            return m_noString;
         default:
             break;
     }
@@ -1203,10 +1201,12 @@ int NetworkManager::processParameterReqList(const Client& client, const uint8_t 
                         break;
                     }
 
-                    char *pszDomainName = (char *)&opt.au8RawOpt[0];
-
-                    strcpy(pszDomainName, domainName.c_str());
-                    opt.cbRawOpt = domainName.length();
+                    size_t cchLength = domainName.length();
+                    if (cchLength >= sizeof(opt.au8RawOpt))
+                        cchLength = sizeof(opt.au8RawOpt) - 1;
+                    memcpy(&opt.au8RawOpt[0], domainName.c_str(), cchLength);
+                    opt.au8RawOpt[cchLength] = '\0';
+                    opt.cbRawOpt = (uint8_t)cchLength;
                 }
                 break;
             default:
