@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QtGlobal>                    /* for QT_VERSION */
 # if QT_VERSION < 0x050000
 #  ifdef VBOX_WS_WIN
 #   include <QLibrary>
