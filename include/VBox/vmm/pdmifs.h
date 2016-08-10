@@ -1923,11 +1923,13 @@ typedef struct PDMIVMMDEVCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
-     * @param   pcRect              Number of rectangles in pRect
-     * @param   pRect               Rectangle array (set to NULL to query the number of rectangles)
+     * @param   pcRects             Where to return the number of rectangles in
+     *                              paRects.
+     * @param   paRects             Rectangle array (set to NULL to query the number
+     *                              of rectangles)
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect));
+    DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRects, PRTRECT paRects));
 
     /**
      * Request the statistics interval
