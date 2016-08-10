@@ -142,10 +142,6 @@ void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
     if (gpDesktop->isFakeScreenDetected())
         return;
 
-    /* Prevent handling if window is not yet visible: */
-    if (!isVisible())
-        return;
-
     /* Restore the geometry cached by the window: */
     resize(m_geometry.size());
     move(m_geometry.topLeft());
