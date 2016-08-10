@@ -749,6 +749,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
 int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath,
                                        uint64_t cbSize, uint32_t fMode, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath,     VERR_INVALID_PARAMETER);

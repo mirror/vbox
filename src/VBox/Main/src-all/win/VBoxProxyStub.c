@@ -1169,6 +1169,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
 {
     LSTATUS rc;
     char szClsId[CURLY_UUID_STR_BUF_SIZE];
+    RT_NOREF(pszAppId);
 
     Assert(!pszAppId || *pszAppId == '{');
     Assert((pwszVBoxDir == NULL && !pState->fUpdate) || pwszVBoxDir[RTUtf16Len(pwszVBoxDir) - 1] == '\\');

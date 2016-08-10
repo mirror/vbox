@@ -752,9 +752,10 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char 
  */
 DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
 {
+    RT_NOREF(pDrvIns);
     LogFlow(("VMMDev::drvReset: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_WITH_HGCM
-    HGCMHostReset ();
+    HGCMHostReset();
 #endif /* VBOX_WITH_HGCM */
 }
 

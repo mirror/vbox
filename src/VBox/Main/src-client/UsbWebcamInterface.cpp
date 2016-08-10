@@ -240,6 +240,7 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
 void EmWebcam::EmWebcamCbDeviceDesc(int rcRequest, void *pDeviceCtx, void *pvUser,
                                     const VRDEVIDEOINDEVICEDESC *pDeviceDesc, uint32_t cbDeviceDesc)
 {
+    RT_NOREF(pvUser);
     EMWEBCAMREMOTE *pRemote = (EMWEBCAMREMOTE *)pDeviceCtx;
     Assert(pRemote == mpRemote);
 
@@ -268,6 +269,7 @@ void EmWebcam::EmWebcamCbDeviceDesc(int rcRequest, void *pDeviceCtx, void *pvUse
 void EmWebcam::EmWebcamCbControl(int rcRequest, void *pDeviceCtx, void *pvUser,
                                  const VRDEVIDEOINCTRLHDR *pControl, uint32_t cbControl)
 {
+    RT_NOREF(rcRequest);
     EMWEBCAMREMOTE *pRemote = (EMWEBCAMREMOTE *)pDeviceCtx; NOREF(pRemote);
     Assert(pRemote == mpRemote);
 
@@ -292,6 +294,7 @@ void EmWebcam::EmWebcamCbControl(int rcRequest, void *pDeviceCtx, void *pvUser,
 void EmWebcam::EmWebcamCbFrame(int rcRequest, void *pDeviceCtx,
                                const VRDEVIDEOINPAYLOADHDR *pFrame, uint32_t cbFrame)
 {
+    RT_NOREF(rcRequest, pDeviceCtx);
     LogFlowFunc(("rcRequest %Rrc %p %p %d\n",
                  rcRequest, pDeviceCtx, pFrame, cbFrame));
 
@@ -383,6 +386,7 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
 
 /* static */ DECLCALLBACK(int) EmWebcam::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     LogFlowFunc(("iInstance:%d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
 

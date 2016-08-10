@@ -343,6 +343,7 @@ DECLCALLBACK(void) Nvram::drvNvram_Destruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     LogFlowFunc(("iInstance/#%d pCfg=%p fFlags=%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);

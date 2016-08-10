@@ -280,6 +280,7 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
                                   uint32_t uStatus,
                                   int rcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
 {
+    RT_NOREF(rcOp);
     LogFlowFunc(("uStatus=%RU32, uPercentage=%RU32, rcOp=%Rrc, strMsg=%s\n",
                  uStatus, uPercentage, rcOp, strMsg.c_str()));
 

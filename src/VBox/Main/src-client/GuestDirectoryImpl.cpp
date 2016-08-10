@@ -187,10 +187,7 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
             pSvcCb->mpaParms[idx++].getUInt32(&dataCb.uType);
             pSvcCb->mpaParms[idx++].getUInt32(&dataCb.rc);
 
-            int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
-
-            LogFlowFunc(("uType=%RU32, guestRc=%Rrc\n",
-                         dataCb.uType, guestRc));
+            LogFlowFunc(("uType=%RU32, vrcGguest=%Rrc\n", dataCb.uType, (int)dataCb.rc));
 
             switch (dataCb.uType)
             {

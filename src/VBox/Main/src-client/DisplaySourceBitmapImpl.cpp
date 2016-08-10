@@ -117,6 +117,7 @@ HRESULT DisplaySourceBitmap::queryBitmapInfo(BYTE **aAddress,
 int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
                                           DISPLAYFBINFO *pFBInfo)
 {
+    RT_NOREF(aScreenId);
     int rc = VINF_SUCCESS;
 
     if (pFBInfo->w == 0 || pFBInfo->h == 0)
