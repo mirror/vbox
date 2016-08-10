@@ -5144,14 +5144,25 @@ endif
 
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_SDKS               = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
- # Note: C4250 is the dominance warning, see r32789.
- #       C4065 is about default only switches.
- #       C4996 is about deprected function (CRT only?).
  #TEMPLATE_VBOXMAINEXE_TOOL               = $(VBOX_VCC_TOOL)
  TEMPLATE_VBOXMAINEXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBOXMAINEXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
- TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
- 	-W3 -wd4065 -wd4996 -wd4250
+ TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
+ ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
+  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
+  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
+  #    -wd4355: 'this' : used in base member initializer list (e.g. VirtualBoxBase.cpp)
+ TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_VCC_WARN_ALL) -wd4625 -wd4626 -wd4355 $(VBOX_VCC_WERR)
+  # Temporarily (Frank is working on these from the linux side):
+  #  	-wd4265: 'Shareable<D>' : class has virtual functions, but destructor is not virtual instances of this class may not be destructed correctly
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += -wd4265
+ else
+  # Note: C4250 is the dominance warning, see r32789.
+  #       C4065 is about default only switches.
+  #       C4996 is about deprected function (CRT only?).
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += -W3 -wd4065 -wd4996 -wd4250
+ endif
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile  = -Gh -GH
@@ -6414,7 +6425,7 @@ TEMPLATE_VBOXCROGLR3GUESTDLL_INCS             = $(VBOX_PATH_CROGL_INCLUDE) $(VBO
 TEMPLATE_VBOXCROGLR3GUESTDLL_SDKS.darwin      = DARWIN-OPENGL $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_SDKS)
 ifneq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXCROGLR3GUESTDLL_CFLAGS          = $(filter-out -pedantic, $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CFLAGS)) \
- 	$(VBOX_GCC_Wno-overlength-strings)
+ 	$(if-expr !defined(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),$(VBOX_GCC_Wno-overlength-strings),)
  TEMPLATE_VBOXCROGLR3GUESTDLL_CXXFLAGS        = $(filter-out -pedantic, $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CXXFLAGS))
 endif
 TEMPLATE_VBOXCROGLR3GUESTDLL_LDFLAGS.darwin   = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_LDFLAGS.darwin)\
