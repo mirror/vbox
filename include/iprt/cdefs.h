@@ -1401,18 +1401,22 @@
 
 /** @def IN_RT_STATIC
  * Used to indicate whether we're linking against a static IPRT
- * or not. The IPRT symbols will be declared as hidden (if
- * supported). Note that this define has no effect without setting
- * IN_RT_R0, IN_RT_R3 or IN_RT_RC indicators are set first.
+ * or not.
+ *
+ * The IPRT symbols will be declared as hidden (if supported).  Note that this
+ * define has no effect without also setting one of the IN_RT_R0, IN_RT_R3 or
+ * IN_RT_RC indicators.
  */
 
 /** @def IN_RT_R0
- * Used to indicate whether we're inside the same link module as
- * the HC Ring-0 Runtime Library.
+ * Used to indicate whether we're inside the same link module as the host
+ * context ring-0 Runtime Library.
  */
 /** @def RTR0DECL(type)
- * Runtime Library HC Ring-0 export or import declaration.
+ * Runtime Library host context ring-0 export or import declaration.
  * @param   type    The return type of the function declaration.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #ifdef IN_RT_R0
 # ifdef IN_RT_STATIC
@@ -1425,12 +1429,14 @@
 #endif
 
 /** @def IN_RT_R3
- * Used to indicate whether we're inside the same link module as
- * the HC Ring-3 Runtime Library.
+ * Used to indicate whether we're inside the same link module as the host
+ * context ring-3 Runtime Library.
  */
 /** @def RTR3DECL(type)
- * Runtime Library HC Ring-3 export or import declaration.
+ * Runtime Library host context ring-3 export or import declaration.
  * @param   type    The return type of the function declaration.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #ifdef IN_RT_R3
 # ifdef IN_RT_STATIC
@@ -1449,6 +1455,8 @@
 /** @def RTRCDECL(type)
  * Runtime Library raw-mode context export or import declaration.
  * @param   type    The return type of the function declaration.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #ifdef IN_RT_RC
 # ifdef IN_RT_STATIC
@@ -1464,6 +1472,8 @@
  * Runtime Library export or import declaration.
  * Functions declared using this macro exists in all contexts.
  * @param   type    The return type of the function declaration.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
@@ -1479,10 +1489,14 @@
  * Runtime Library export or import declaration.
  * Data declared using this macro exists in all contexts.
  * @param   type    The data type.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 /** @def RT_DECL_DATA_CONST(type)
  * Definition of a const variable. See DECL_HIDDEN_CONST.
  * @param   type    The const data type.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
@@ -1503,6 +1517,8 @@
 
 /** @def RT_DECL_CLASS
  * Declares an class living in the runtime.
+ * @remarks This is only used inside IPRT.  Other APIs need to define their own
+ *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
