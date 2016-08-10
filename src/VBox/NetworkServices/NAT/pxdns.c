@@ -312,7 +312,7 @@ pxdns_set_nameservers(void *arg)
     const char **nameservers = (const char **)arg;
 
     if (g_proxy_options->nameservers != NULL) {
-        RTMemFree(g_proxy_options->nameservers);
+        RTMemFree((void *)g_proxy_options->nameservers);
     }
     g_proxy_options->nameservers = nameservers;
 
@@ -702,6 +702,14 @@ pxdns_forward_outbound(struct pxdns *pxdns, struct request *req)
 {
     union sockaddr_inet *resolver;
     ssize_t nsent;
+#ifdef RT_OS_WINDOWS
+    const char *pSendData = (const char *)&req->data[0];
+    int         cbSendData = (int)req->size;
+    Assert((size_t)cbSendData == req->size);
+#else
+    const void *pSendData = &req->data[0];
+    size_t      cbSendData = req->size;
+#endif
 
     DPRINTF2(("%s: req %p: sending to resolver #%lu\n",
               __func__, (void *)req, (unsigned long)req->residx));
@@ -711,13 +719,13 @@ pxdns_forward_outbound(struct pxdns *pxdns, struct request *req)
     resolver = &pxdns->resolvers[req->residx];
 
     if (resolver->sa.sa_family == AF_INET) {
-        nsent = sendto(pxdns->sock4, req->data, req->size, 0,
+        nsent = sendto(pxdns->sock4, pSendData, cbSendData, 0,
                        &resolver->sa, sizeof(resolver->sin));
 
     }
     else if (resolver->sa.sa_family == AF_INET6) {
         if (pxdns->sock6 != INVALID_SOCKET) {
-            nsent = sendto(pxdns->sock6, req->data, req->size, 0,
+            nsent = sendto(pxdns->sock6, pSendData, cbSendData, 0,
                            &resolver->sa, sizeof(resolver->sin6));
         }
         else {
@@ -815,7 +823,11 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     }
 
 
+#ifdef RT_OS_WINDOWS
+    nread = recv(fd, (char *)pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
+#else
     nread = recv(fd, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
+#endif
     if (nread < 0) {
         DPRINTF(("%s: %R[sockerr]\n", __func__, SOCKERRNO()));
         return POLLIN;

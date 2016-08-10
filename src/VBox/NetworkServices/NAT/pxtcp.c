@@ -1115,6 +1115,7 @@ static int
 pxtcp_pmgr_connect(struct pollmgr_handler *handler, SOCKET fd, int revents)
 {
     struct pxtcp *pxtcp;
+    RT_NOREF(fd);
 
     pxtcp = (struct pxtcp *)handler->data;
     LWIP_ASSERT1(handler == &pxtcp->pmhdl);
@@ -1689,6 +1690,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     struct pxtcp *pxtcp;
     int status;
     int sockerr;
+    RT_NOREF(fd);
 
     pxtcp = (struct pxtcp *)handler->data;
     LWIP_ASSERT1(handler == &pxtcp->pmhdl);
@@ -2143,7 +2145,8 @@ pxtcp_pcb_forward_inbound(struct pxtcp *pxtcp)
                 maybemore = TCP_WRITE_FLAG_MORE;
             }
 
-            error = tcp_write(pcb, &pxtcp->inbuf.buf[beg], toeob, maybemore);
+            Assert(toeob == (u16)toeob);
+            error = tcp_write(pcb, &pxtcp->inbuf.buf[beg], (u16_t)toeob, maybemore);
             if (error != ERR_OK) {
                 goto writeerr;
             }
