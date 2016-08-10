@@ -110,6 +110,8 @@ UINT __stdcall IsSerialCheckNeeded(MSIHANDLE hModule)
 {
 #ifndef VBOX_OSE
     /*BOOL bRet =*/ serialCheckNeeded(hModule);
+#else
+    RT_NOREF1(hModule);
 #endif
     return ERROR_SUCCESS;
 }
@@ -118,6 +120,8 @@ UINT __stdcall CheckSerial(MSIHANDLE hModule)
 {
 #ifndef VBOX_OSE
     /*BOOL bRet =*/ serialIsValid(hModule);
+#else
+    RT_NOREF1(hModule);
 #endif
     return ERROR_SUCCESS;
 }
