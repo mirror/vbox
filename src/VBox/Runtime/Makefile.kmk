@@ -1151,8 +1151,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
-RuntimeR3_SOURCES.freebsd.x86   += common/string/memrchr.asm
-RuntimeR3_SOURCES.freebsd.amd64 += common/string/memrchr.asm
 
 RuntimeR3_SOURCES.solaris = \
 	generic/cdrom-generic.cpp \

@@ -45,33 +45,7 @@
 
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
   RT_C_DECLS_BEGIN
-  /** @todo
-   * XXX: Very ugly hack to get things build on recent FreeBSD builds. They have
-   * memchr now and we need to include param.h to get __FreeBSD_version and make
-   * memchr available based on the version below or we can't compile the kernel
-   * module on older versions anymore.
-   *
-   * But including param.h here opens Pandora's box because we clash with a few
-   * defines namely PVM and PAGE_SIZE. We can safely undefine PVM here but not
-   * PAGE_SIZE because this results in build errors sooner or later. Luckily this
-   * define is in a header included by param.h (machine/param.h). We define the
-   * guards here to prevent inclusion of it if PAGE_SIZE was defined already.
-   *
-   * @todo aeichner: Search for an elegant solution and cleanup this mess ASAP!
-   */
-# ifdef PAGE_SIZE
-#  define _AMD64_INCLUDE_PARAM_H_
-#  define _I386_INCLUDE_PARAM_H_
-#  define _MACHINE_PARAM_H_
-# endif
-# include <sys/param.h> /* __FreeBSD_version */
-# undef PVM
 # include <sys/libkern.h>
-  /*
-   * No memmove on versions < 7.2
-   * Defining a macro using bcopy here
-   */
-# define memmove(dst, src, size) bcopy(src, dst, size)
   RT_C_DECLS_END
 
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
@@ -106,9 +80,6 @@ RT_C_DECLS_END
 
 #if defined(RT_OS_FREEBSD) && defined(_KERNEL)
 RT_C_DECLS_BEGIN
-#if __FreeBSD_version < 900000
-void *memchr(const void *pv, int ch, size_t cb);
-#endif
 char *strpbrk(const char *pszStr, const char *pszChars);
 RT_C_DECLS_END
 #endif
