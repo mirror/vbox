@@ -51,11 +51,11 @@
 #define PF_STR_ADDRESS_FIELD_ENDS "]"
 
 
-static int netPfStrAddressParse(char *pszRaw, size_t cbRaw,
+static int netPfStrAddressParse(char *pszRaw, size_t cchRaw,
                                 char *pszAddress, int cbAddress,
                                 bool fEmptyAcceptable)
 {
-    int cbField = 0;
+    size_t cchField = 0;
 
     AssertPtrReturn(pszRaw, -1);
     AssertPtrReturn(pszAddress, -1);
@@ -65,31 +65,31 @@ static int netPfStrAddressParse(char *pszRaw, size_t cbRaw,
     {
         /* shift pszRaw to next symbol */
         pszRaw++;
-        cbRaw--;
+        cchRaw--;
 
 
         /* we shouldn't face with ending here */
-        AssertReturn(cbRaw > 0, VERR_INVALID_PARAMETER);
+        AssertReturn(cchRaw > 0, VERR_INVALID_PARAMETER);
 
         char *pszEndOfAddress = RTStrStr(pszRaw, PF_STR_ADDRESS_FIELD_ENDS);
 
         /* no pair closing sign */
         AssertPtrReturn(pszEndOfAddress, VERR_INVALID_PARAMETER);
 
-        cbField = pszEndOfAddress - pszRaw;
+        cchField = pszEndOfAddress - pszRaw;
 
         /* field should be less then the rest of the string */
-        AssertReturn(cbField < cbRaw, VERR_INVALID_PARAMETER);
+        AssertReturn(cchField < cchRaw, VERR_INVALID_PARAMETER);
 
-        if (cbField != 0)
-            RTStrCopy(pszAddress, RT_MIN(cbField + 1, cbAddress), pszRaw);
+        if (cchField != 0)
+            RTStrCopy(pszAddress, RT_MIN(cchField + 1, cbAddress), pszRaw);
         else if (!fEmptyAcceptable)
             return -1;
     }
 
-    AssertReturn(pszRaw[cbField] == PF_ADDRESS_FIELD_ENDS, -1);
+    AssertReturn(pszRaw[cchField] == PF_ADDRESS_FIELD_ENDS, -1);
 
-    return cbField + 2; /* length of the field and closing braces */
+    return (int)cchField + 2; /* length of the field and closing braces */
 }
 
 
@@ -133,14 +133,14 @@ static int netPfStrPortParse(char *pszRaw, uint16_t *pu16Port)
     AssertReturn(pszRaw[0] == PF_FIELD_SEPARATOR, -1);
 
     pszRaw++; /* skip field separator */
-    cbRaw --;
+    cchRaw --;
 
     char *pszEndOfPort = RTStrStr(pszRaw, ":");
     if (!pszEndOfPort)
     {
         cbRest = strlen(pszRaw);
 
-        Assert(cbRaw == cbRest);
+        Assert(cchRaw == cbRest);
 
         /* XXX: Assumption that if string is too big, it will be reported by
          * RTStrToUint16.
@@ -177,7 +177,7 @@ static int netPfStrPortParse(char *pszRaw, uint16_t *pu16Port)
 }
 
 
-static int netPfStrAddressPortPairParse(char *pszRaw, size_t cbRaw,
+static int netPfStrAddressPortPairParse(char *pszRaw, size_t cchRaw,
                                         char *pszAddress, int cbAddress,
                                         bool fEmptyAddressAcceptable,
                                         uint16_t *pu16Port)
@@ -194,15 +194,15 @@ static int netPfStrAddressPortPairParse(char *pszRaw, size_t cbRaw,
               && pszRaw[1] == PF_ADDRESS_FIELD_STARTS);
 
     pszRaw++; /* field separator skip */
-    cbRaw--;
-    AssertReturn(cbRaw > 0, VERR_INVALID_PARAMETER);
+    cchRaw--;
+    AssertReturn(cchRaw > 0, VERR_INVALID_PARAMETER);
 
     idxRaw = 0;
 
     if (pszRaw[0] == PF_ADDRESS_FIELD_STARTS)
     {
         idxRaw += netPfStrAddressParse(pszRaw,
-                                       cbRaw - idxRaw,
+                                       cchRaw - idxRaw,
                                        pszAddress,
                                        cbAddress,
                                        fEmptyAddressAcceptable);
@@ -215,9 +215,9 @@ static int netPfStrAddressPortPairParse(char *pszRaw, size_t cbRaw,
 
     pszRaw += idxRaw;
     idxRawTotal += idxRaw;
-    cbRaw -= idxRaw;
+    cchRaw -= idxRaw;
 
-    AssertReturn(cbRaw > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cchRaw > 0, VERR_INVALID_PARAMETER);
 
     idxRaw = 0;
 
@@ -264,10 +264,10 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
     char *pszGuestAddr = &pPfr->szPfrGuestAddr[0];
     char *pszName = &pPfr->szPfrName[0];
 
-    size_t cbRaw = strlen(pcszStrPortForward);
+    size_t cchRaw = strlen(pcszStrPortForward);
 
     /* Minimal rule ":tcp:[]:0:[]:0" has got lenght 14 */
-    AssertReturn(cbRaw > 14, VERR_INVALID_PARAMETER);
+    AssertReturn(cchRaw > 14, VERR_INVALID_PARAMETER);
 
     char *pszRaw = RTStrDup(pcszStrPortForward);
     AssertReturn(pszRaw, VERR_NO_MEMORY);
@@ -285,7 +285,7 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
 
         cbToken = pszEndOfName - pszRaw; /* don't take : into account */
         /* XXX it's unacceptable to have only name entry in PF */
-        AssertReturn(cbToken < cbRaw, VERR_INVALID_PARAMETER);
+        AssertReturn(cbToken < cchRaw, VERR_INVALID_PARAMETER);
 
         if (   cbToken < 0
             || (size_t)cbToken >= PF_NAMELEN)
@@ -295,14 +295,14 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
                   RT_MIN((size_t)cbToken + 1, PF_NAMELEN),
                   pszRaw);
         pszRaw += cbToken; /* move to separator */
-        cbRaw -= cbToken;
+        cchRaw -= cbToken;
     }
 
     AssertReturn(pszRaw[0] == PF_FIELD_SEPARATOR, VERR_INVALID_PARAMETER);
     /* protocol */
 
     pszRaw++; /* skip separator */
-    cbRaw--;
+    cchRaw--;
     idxRaw = 0;
 
     if (  (  (fTcpProto = (RTStrNICmp(pszRaw, "tcp", 3) == 0))
@@ -316,20 +316,20 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
         goto invalid_parameter;
 
     pszRaw += idxRaw;
-    cbRaw -= idxRaw;
+    cchRaw -= idxRaw;
 
-    idxRaw = netPfStrAddressPortPairParse(pszRaw, cbRaw,
+    idxRaw = netPfStrAddressPortPairParse(pszRaw, cchRaw,
                                           pszHostAddr, INET6_ADDRSTRLEN,
                                           true, &u16HostPort);
     if (idxRaw < 0)
         return VERR_INVALID_PARAMETER;
 
     pszRaw += idxRaw;
-    cbRaw -= idxRaw;
+    cchRaw -= idxRaw;
 
     Assert(pszRaw[0] == PF_FIELD_SEPARATOR);
 
-    idxRaw = netPfStrAddressPortPairParse(pszRaw, cbRaw,
+    idxRaw = netPfStrAddressPortPairParse(pszRaw, cchRaw,
                                           pszGuestAddr, INET6_ADDRSTRLEN,
                                           false, &u16GuestPort);
 
