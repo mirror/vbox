@@ -50,7 +50,8 @@
 #define PF_STR_ADDRESS_FIELD_STARTS "["
 #define PF_STR_ADDRESS_FIELD_ENDS "]"
 
-static int netPfStrAddressParse(char *pszRaw, int cbRaw,
+
+static int netPfStrAddressParse(char *pszRaw, size_t cbRaw,
                                 char *pszAddress, int cbAddress,
                                 bool fEmptyAcceptable)
 {
@@ -99,11 +100,9 @@ static int netPfStrAddressParse(char *pszRaw, int cbRaw,
  *          -1 on failure.
  * @param   pszRaw          The zero terminated string to parse.  Points a field
  *                          separator.
- * @param   cbRaw           Number of valid bytes in the buffer @a pszRaw points
- *                          at.  (Ignored since pszRaw is terminated.)
  * @param   pu16Port        Where to store the port number on success.
  */
-static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
+static int netPfStrPortParse(char *pszRaw, uint16_t *pu16Port)
 {
 #if 1
     AssertPtrReturn(pszRaw, -1);
@@ -120,7 +119,6 @@ static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
         AssertMsgFailedReturn(("rc=%Rrc\n", rc), -1);
     if (*pu16Port == 0)
         return -1;
-    Assert((uinpttr_t)pszNext <= (uintptr_t)&pszRaw[cbRaw]); NOREF(cbRaw);
     return (int)(pszNext - pszRaw);
 
 #else /* The same code, just a little more verbose: */
@@ -179,7 +177,7 @@ static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
 }
 
 
-static int netPfStrAddressPortPairParse(char *pszRaw, int cbRaw,
+static int netPfStrAddressPortPairParse(char *pszRaw, size_t cbRaw,
                                         char *pszAddress, int cbAddress,
                                         bool fEmptyAddressAcceptable,
                                         uint16_t *pu16Port)
@@ -227,7 +225,7 @@ static int netPfStrAddressPortPairParse(char *pszRaw, int cbRaw,
 
     if (pszRaw[0] == PF_FIELD_SEPARATOR)
     {
-        idxRaw = netPfStrPortParse(pszRaw, strlen(pszRaw), pu16Port);
+        idxRaw = netPfStrPortParse(pszRaw, pu16Port);
 
         Assert(strlen(&pszRaw[idxRaw]) == 0 || pszRaw[idxRaw] == PF_FIELD_SEPARATOR);
 
@@ -243,42 +241,38 @@ static int netPfStrAddressPortPairParse(char *pszRaw, int cbRaw,
 
 /* XXX: Having fIPv6 we might emprove adress verification comparing address length
  * with INET[6]_ADDRLEN
+ *
  */
-int netPfStrToPf(const char *pcszStrPortForward, int fIPv6, PPORTFORWARDRULE pPfr)
+int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pPfr)
 {
-    char *pszName;
+/** r=bird: Redo from scratch?  This is very hard to read. */
+
     int  proto;
-    char *pszHostAddr;
-    char *pszGuestAddr;
     uint16_t u16HostPort;
     uint16_t u16GuestPort;
     bool fTcpProto = false;
 
-    char *pszRawBegin = NULL;
-    char *pszRaw = NULL;
     int idxRaw = 0;
     int cbToken = 0;
-    int cbRaw = 0;
-    int rc = VINF_SUCCESS;
 
     AssertPtrReturn(pcszStrPortForward, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pPfr, VERR_INVALID_PARAMETER);
 
     RT_ZERO(*pPfr);
 
-    pszHostAddr = &pPfr->szPfrHostAddr[0];
-    pszGuestAddr = &pPfr->szPfrGuestAddr[0];
-    pszName = &pPfr->szPfrName[0];
+    char *pszHostAddr = &pPfr->szPfrHostAddr[0];
+    char *pszGuestAddr = &pPfr->szPfrGuestAddr[0];
+    char *pszName = &pPfr->szPfrName[0];
 
-    cbRaw = strlen(pcszStrPortForward);
+    size_t cbRaw = strlen(pcszStrPortForward);
 
     /* Minimal rule ":tcp:[]:0:[]:0" has got lenght 14 */
     AssertReturn(cbRaw > 14, VERR_INVALID_PARAMETER);
 
-    pszRaw = RTStrDup(pcszStrPortForward);
+    char *pszRaw = RTStrDup(pcszStrPortForward);
     AssertReturn(pszRaw, VERR_NO_MEMORY);
 
-    pszRawBegin = pszRaw;
+    char *pszRawBegin = pszRaw;
 
     /* name */
     if (pszRaw[idxRaw] == PF_FIELD_SEPARATOR)
@@ -289,7 +283,7 @@ int netPfStrToPf(const char *pcszStrPortForward, int fIPv6, PPORTFORWARDRULE pPf
         if (!pszEndOfName)
             goto invalid_parameter;
 
-        cbToken = (pszEndOfName) - pszRaw; /* don't take : into account */
+        cbToken = pszEndOfName - pszRaw; /* don't take : into account */
         /* XXX it's unacceptable to have only name entry in PF */
         AssertReturn(cbToken < cbRaw, VERR_INVALID_PARAMETER);
 
@@ -325,8 +319,8 @@ int netPfStrToPf(const char *pcszStrPortForward, int fIPv6, PPORTFORWARDRULE pPf
     cbRaw -= idxRaw;
 
     idxRaw = netPfStrAddressPortPairParse(pszRaw, cbRaw,
-                                         pszHostAddr, INET6_ADDRSTRLEN,
-                                         true, &u16HostPort);
+                                          pszHostAddr, INET6_ADDRSTRLEN,
+                                          true, &u16HostPort);
     if (idxRaw < 0)
         return VERR_INVALID_PARAMETER;
 

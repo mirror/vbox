@@ -48,7 +48,7 @@ typedef struct PORTFORWARDRULE
     uint16_t   u16PfrGuestPort;
 } PORTFORWARDRULE, *PPORTFORWARDRULE;
 
-int netPfStrToPf(const char *pcszStrPortForward,int fIPv6, PPORTFORWARDRULE pPfr);
+int netPfStrToPf(const char *pszStrPortForward, bool fIPv6, PPORTFORWARDRULE pPfr);
 
 RT_C_DECLS_END
 
