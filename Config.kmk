@@ -6838,6 +6838,34 @@ endif
 
 
 #
+# For efficiently build serveral build types / archs.
+#
+both-debug-release both-release-debug: \
+		build-release-$(KBUILD_TARGET_ARCH) \
+		build-debug-$(KBUILD_TARGET_ARCH)
+both-x86-amd64     both-amd64-x86: \
+		build-$(KBUILD_TYPE)-x86 \
+		build-$(KBUILD_TYPE)-x86
+both-types-archs both-archs-types: \
+		build-debug-x86 \
+		build-release-x86 \
+		build-debug-amd64 \
+		build-release-amd64
+
+build-release-x86:
+	+$(MAKE) KBUILD_TYPE=release KBUILD_TARGET_ARCH=x86
+
+build-debug-x86:
+	+$(MAKE) KBUILD_TYPE=debug KBUILD_TARGET_ARCH=x86
+
+build-release-amd64:
+	+$(MAKE) KBUILD_TYPE=release KBUILD_TARGET_ARCH=amd64
+
+build-debug-amd64:
+	+$(MAKE) KBUILD_TYPE=debug KBUILD_TARGET_ARCH=amd64
+
+
+#
 # Some extra goals.
 #
 .PHONY: up update st stat status
