@@ -2132,6 +2132,8 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
 
 int GuestSession::i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */)
 {
+    RT_NOREF(enmWaitResult, rc);
+
     /*LogFlowThisFunc(("enmWaitResult=%d, rc=%Rrc, mWaitCount=%RU32, mWaitEvent=%p\n",
                      enmWaitResult, rc, mData.mWaitCount, mData.mWaitEvent));*/
 
@@ -2387,6 +2389,7 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
 int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,
                                         GuestSessionStatus_T *pSessionStatus, int *pGuestRc)
 {
+    RT_NOREF(fWaitFlags);
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
     VBoxEventType_T evtType;
@@ -2468,6 +2471,7 @@ HRESULT GuestSession::close()
 HRESULT GuestSession::fileCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                const std::vector<FileCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
@@ -2620,18 +2624,21 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                     const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                              const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                            const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
@@ -2687,6 +2694,7 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
 HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath,
                                           BOOL aSecure, com::Utf8Str &aDirectory)
 {
+    RT_NOREF(aMode, aSecure);
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aTemplateName.c_str()) == NULL || *(aTemplateName.c_str()) == '\0'))
@@ -2850,6 +2858,7 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
 HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const std::vector<DirectoryRemoveRecFlag_T> &aFlags,
                                                ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aFlags);
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -3027,6 +3036,7 @@ HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName
 HRESULT GuestSession::fileCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath, BOOL aSecure,
                                      ComPtr<IGuestFile> &aFile)
 {
+    RT_NOREF(aTemplateName, aMode, aPath, aSecure, aFile);
     ReturnComNotImplemented();
 }
 
@@ -3366,11 +3376,13 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
 HRESULT GuestSession::fsObjMove(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                 const std::vector<FsObjMoveFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::fsObjSetACL(const com::Utf8Str &aPath, BOOL aFollowSymlinks, const com::Utf8Str &aAcl, ULONG aMode)
 {
+    RT_NOREF(aPath, aFollowSymlinks, aAcl, aMode);
     ReturnComNotImplemented();
 }
 
@@ -3522,18 +3534,21 @@ HRESULT GuestSession::processGet(ULONG aPid, ComPtr<IGuestProcess> &aGuestProces
 
 HRESULT GuestSession::symlinkCreate(const com::Utf8Str &aSource, const com::Utf8Str &aTarget, SymlinkType_T aType)
 {
+    RT_NOREF(aSource, aTarget, aType);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::symlinkExists(const com::Utf8Str &aSymlink, BOOL *aExists)
 
 {
+    RT_NOREF(aSymlink, aExists);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vector<SymlinkReadFlag_T> &aFlags,
                                   com::Utf8Str &aTarget)
 {
+    RT_NOREF(aSymlink, aFlags, aTarget);
     ReturnComNotImplemented();
 }
 
