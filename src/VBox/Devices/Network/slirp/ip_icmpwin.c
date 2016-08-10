@@ -19,6 +19,9 @@
 #include "ip_icmp.h"
 
 #include <winternl.h>           /* for PIO_APC_ROUTINE &c */
+#ifndef PIO_APC_ROUTINE_DEFINED
+# define PIO_APC_ROUTINE_DEFINED 1
+#endif
 #include <iprt/win/iphlpapi.h>
 #include <icmpapi.h>
 
@@ -70,13 +73,13 @@ static struct mbuf *icmpwin_get_mbuf(PNATState pData, size_t reqsize);
  *
  * XXX: this is system-wide, but what about multiple NAT threads?
  */
-static PIO_APC_ROUTINE pfnIcmpCallback;
+static PIO_APC_ROUTINE g_pfnIcmpCallback;
 
 
 int
 icmpwin_init(PNATState pData)
 {
-    if (pfnIcmpCallback == NULL)
+    if (g_pfnIcmpCallback == NULL)
     {
         OSVERSIONINFO osvi;
         int status;
@@ -88,9 +91,9 @@ icmpwin_init(PNATState pData)
             return 1;
 
         if (osvi.dwMajorVersion >= 6)
-            pfnIcmpCallback = icmpwin_callback_apc;
+            g_pfnIcmpCallback = icmpwin_callback_apc;
         else
-            pfnIcmpCallback = (PIO_APC_ROUTINE)icmpwin_callback_old;
+            g_pfnIcmpCallback = (PIO_APC_ROUTINE)icmpwin_callback_old;
     }
 
     TAILQ_INIT(&pData->pongs_expected);
@@ -188,7 +191,7 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
 
 
     status = IcmpSendEcho2(pData->icmp_socket.sh, NULL,
-                           (FARPROC)pfnIcmpCallback, pong,
+                           g_pfnIcmpCallback, pong,
                            dst, reqdata, (WORD)reqsize, &opts,
                            pong->buf, (DWORD)pong->bufsize,
                            5 * 1000 /* ms */);

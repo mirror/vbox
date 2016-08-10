@@ -220,6 +220,9 @@ void
 icmp6_proxy_input(struct pbuf *p, struct netif *inp)
 {
   struct icmp6_hdr *icmp6hdr;
+# ifdef VBOX
+  (void)inp;
+# endif
 
   ICMP6_STATS_INC(icmp6.recv);
 

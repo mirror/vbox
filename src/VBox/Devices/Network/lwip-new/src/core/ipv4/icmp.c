@@ -281,6 +281,9 @@ void
 icmp_proxy_input(struct pbuf *p, struct netif *inp)
 {
   u8_t type, code;
+# ifdef VBOX
+  (void)inp;
+# endif
 
   ICMP_STATS_INC(icmp.recv);
   snmp_inc_icmpinmsgs();
