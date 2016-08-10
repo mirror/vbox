@@ -281,7 +281,8 @@ tftpd_rrq(struct pbuf *p, ip_addr_t *addr, u16_t port)
             }
 
             if (xfer->oack != NULL) {
-                pbuf_realloc(xfer->oack, xfer->oack->len - len);
+                Assert((u16_t)(xfer->oack->len - len) == xfer->oack->len - len);
+                pbuf_realloc(xfer->oack, (u16_t)(xfer->oack->len - len));
             }
         }
     }
@@ -617,10 +618,13 @@ tftp_parse_filename(struct xfer *xfer, char **ps, size_t *plen)
         return tftp_internal_error(xfer);
     }
 
-    status = RTStrPrintf(pathname, len, "%s/%s", tftpd.root, xfer->filename);
-    if (status < 0) {
-        return tftp_internal_error(xfer);
-    }
+    RTStrPrintf(pathname, len, "%s/%s", tftpd.root, xfer->filename);
+/** @todo fix RTStrPrintf because this does not currently work:
+ *   status = RTStrPrintf(pathname, len, "%s/%s", tftpd.root, xfer->filename);
+ *   if (status < 0) {
+ *       return tftp_internal_error(xfer);
+ *   }
+ */
 
     DPRINTF(("%s: full pathname: %s\n", __func__, pathname));
     xfer->fd = open(pathname, O_RDONLY);
@@ -820,8 +824,13 @@ tftp_add_oack(char **ps, size_t *plen,
     va_list ap;
     int sz;
 
-    sz = RTStrPrintf(*ps, *plen, "%s", optname);
-    if (sz < 0 || (size_t)sz >= *plen) {
+/** @todo Fix RTStrPrintf because this doesn't really work.
+ *   sz = RTStrPrintf(*ps, *plen, "%s", optname);
+ *   if (sz < 0 || (size_t)sz >= *plen) {
+ *       return -1;
+ *   } */
+    sz = (int)RTStrPrintf(*ps, *plen, "%s", optname);
+    if (/*sz < 0 ||*/ (size_t)sz >= *plen) {
         return -1;
     }
 
