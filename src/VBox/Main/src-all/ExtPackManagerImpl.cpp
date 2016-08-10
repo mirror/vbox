@@ -1635,7 +1635,7 @@ ExtPack::i_hlpLoadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox)
     VirtualBox *pVBox = (VirtualBox *)pVirtualBox;
     return pVBox->i_loadVDPlugin(pszPluginLibrary);
 #else
-    NOREF(pHlp); NOREF(pVirtualBox);
+    NOREF(pHlp); NOREF(pVirtualBox); NOREF(pszPluginLibrary);
     return VERR_INVALID_STATE;
 #endif
 }
@@ -1660,7 +1660,7 @@ ExtPack::i_hlpUnloadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBo
     VirtualBox *pVBox = (VirtualBox *)pVirtualBox;
     return pVBox->i_unloadVDPlugin(pszPluginLibrary);
 #else
-    NOREF(pHlp); NOREF(pVirtualBox);
+    NOREF(pHlp); NOREF(pVirtualBox); NOREF(pszPluginLibrary);
     return VERR_INVALID_STATE;
 #endif
 }
@@ -1723,9 +1723,6 @@ HRESULT ExtPack::getVRDEModule(com::Utf8Str &aVRDEModule)
 HRESULT ExtPack::getPlugIns(std::vector<ComPtr<IExtPackPlugIn> > &aPlugIns)
 {
     /** @todo implement plug-ins. */
-#ifdef VBOX_WITH_XPCOM
-    NOREF(aPlugIns);
-#endif
     NOREF(aPlugIns);
     ReturnComNotImplemented();
 }
@@ -1901,10 +1898,12 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
     m = new Data;
     m->strBaseDir           = szBaseDir;
     m->strCertificatDirPath = szCertificatDir;
-#if !defined(VBOX_COM_INPROC)
-    m->pVirtualBox          = a_pVirtualBox;
-#endif
     m->enmContext           = a_enmContext;
+#ifndef VBOX_COM_INPROC
+    m->pVirtualBox          = a_pVirtualBox;
+#else
+    RT_NOREF_PV(a_pVirtualBox);
+#endif
 
     /*
      * Slurp in VBoxVMM which is used by VBoxPuelMain.
@@ -2067,6 +2066,7 @@ HRESULT ExtPackManager::openExtPackFile(const com::Utf8Str &aPath, ComPtr<IExtPa
 
     return hrc;
 #else
+    RT_NOREF(aPath, aFile);
     return E_NOTIMPL;
 #endif
 }
@@ -2112,6 +2112,7 @@ HRESULT ExtPackManager::uninstall(const com::Utf8Str &aName, BOOL aForcedRemoval
         delete pTask;
     return hrc;
 #else
+    RT_NOREF(aName, aForcedRemoval, aDisplayInfo, aProgress);
     return E_NOTIMPL;
 #endif
 }

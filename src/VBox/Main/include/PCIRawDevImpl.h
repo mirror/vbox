@@ -42,7 +42,6 @@ class PCIRawDev
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
-    static DECLCALLBACK(void)   drvReset(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)    drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
                                                            uint32_t uHostPCIAddress, uint32_t uGuestPCIAddress,
                                                            int rc);

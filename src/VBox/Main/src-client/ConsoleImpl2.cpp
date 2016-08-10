@@ -459,6 +459,7 @@ static LONG GetNextUsedPort(LONG aPortUsed[30], LONG lBaseVal, uint32_t u32Size)
 static int SetBiosDiskInfo(ComPtr<IMachine> pMachine, PCFGMNODE pCfg, PCFGMNODE pBiosCfg,
                            Bstr controllerName, const char * const s_apszBiosConfig[4])
 {
+    RT_NOREF(pCfg);
     HRESULT             hrc;
 #define MAX_DEVICES     30
 #define H()     AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)

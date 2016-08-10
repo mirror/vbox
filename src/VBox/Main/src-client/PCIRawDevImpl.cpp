@@ -106,14 +106,6 @@ DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
 /**
  * @interface_method_impl{PDMDRVREG,pfnReset}
  */
-DECLCALLBACK(void) PCIRawDev::drvReset(PPDMDRVINS pDrvIns)
-{
-}
-
-
-/**
- * @interface_method_impl{PDMDRVREG,pfnReset}
- */
 DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
@@ -129,6 +121,7 @@ DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVMAINPCIRAWDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
 
@@ -203,7 +196,7 @@ const PDMDRVREG PCIRawDev::DrvReg =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    PCIRawDev::drvReset,
+    NULL,
     /* pfnSuspend */
     NULL,
     /* pfnResume */

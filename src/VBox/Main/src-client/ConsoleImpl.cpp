@@ -1437,6 +1437,7 @@ void Console::i_VRDPClientDisconnect(uint32_t u32ClientId,
 
 void Console::i_VRDPInterceptAudio(uint32_t u32ClientId)
 {
+    RT_NOREF(u32ClientId);
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
@@ -2811,6 +2812,7 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCapt
 
 HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevice)
 {
+    RT_NOREF(aDevice);
 #ifdef VBOX_WITH_USB
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -6855,6 +6857,7 @@ HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
 HRESULT Console::i_addVMCaller(bool aQuiet /* = false */,
                                bool aAllowNullVM /* = false */)
 {
+    RT_NOREF(aAllowNullVM);
     AutoCaller autoCaller(this);
     /** @todo Fix race during console/VM reference destruction, refer @bugref{6318}
      *        comment 25. */
@@ -8795,6 +8798,7 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, 
                              const char *aAddress, void *pvRemoteBackend, USHORT aPortVersion, ULONG aMaskedIfs,
                              const char *pszCaptureFilename)
 {
+    RT_NOREF(aHostDevice);
     LogFlowFuncEnter();
     LogFlowFunc(("that={%p} aUuid={%RTuuid}\n", that, aUuid));
 
@@ -9217,6 +9221,7 @@ DECLCALLBACK(int) Console::i_stateProgressCallback(PUVM pUVM, unsigned uPercent,
 Console::i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                      const char *pszErrorFmt, va_list va)
 {
+    RT_SRC_POS_NOREF();
     Utf8Str *pErrorText = (Utf8Str *)pvUser;
     AssertPtr(pErrorText);
 
@@ -9278,6 +9283,7 @@ Console::i_atVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
  */
 HRESULT Console::i_captureUSBDevices(PUVM pUVM)
 {
+    RT_NOREF(pUVM);
     LogFlowThisFunc(("\n"));
 
     /* sanity check */
@@ -10372,6 +10378,7 @@ DECLCALLBACK(void) Console::i_drvStatus_Destruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Console::i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));

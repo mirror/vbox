@@ -67,7 +67,7 @@ public:
     HRESULT init(IErrorInfo *aInfo);
 
     STDMETHOD(GetGUID)(GUID *guid);
-    STDMETHOD(GetSource)(BSTR *source);
+    STDMETHOD(GetSource)(BSTR *pBstrSource);
     STDMETHOD(GetDescription)(BSTR *description);
     STDMETHOD(GetHelpFile)(BSTR *pBstrHelpFile);
     STDMETHOD(GetHelpContext)(DWORD *pdwHelpContext);

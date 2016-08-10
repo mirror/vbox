@@ -38,7 +38,7 @@
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 /** client token holder thread */
-static DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD Thread, void *pvUser);
+static DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD hThreadSelf, void *pvUser);
 #endif
 
 
@@ -237,8 +237,9 @@ bool Session::ClientTokenHolder::isReady()
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 /** client token holder thread */
-DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     LogFlowFuncEnter();
 
     Assert(pvUser);

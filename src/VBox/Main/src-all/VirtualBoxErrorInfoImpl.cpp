@@ -181,17 +181,19 @@ STDMETHODIMP VirtualBoxErrorInfo::GetGUID(GUID *guid)
 
 STDMETHODIMP VirtualBoxErrorInfo::GetHelpContext(DWORD *pdwHelpContext)
 {
+    RT_NOREF(pdwHelpContext);
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::GetHelpFile(BSTR *pbstrHelpFile)
+STDMETHODIMP VirtualBoxErrorInfo::GetHelpFile(BSTR *pBstrHelpFile)
 {
+    RT_NOREF(pBstrHelpFile);
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::GetSource(BSTR *source)
+STDMETHODIMP VirtualBoxErrorInfo::GetSource(BSTR *pBstrSource)
 {
-    return COMGETTER(Component)(source);
+    return COMGETTER(Component)(pBstrSource);
 }
 
 #else // defined(VBOX_WITH_XPCOM)

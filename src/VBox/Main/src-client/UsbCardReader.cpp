@@ -428,6 +428,7 @@ static DECLCALLBACK(int) drvCardReaderDownGetStatusChange(PPDMICARDREADERDOWN pI
 static DECLCALLBACK(int) drvCardReaderDownBeginTransaction(PPDMICARDREADERDOWN pInterface,
                                                            void *pvUser)
 {
+    RT_NOREF(pvUser);
     AssertPtrReturn(pInterface, VERR_INVALID_PARAMETER);
     LogFlowFunc(("ENTER: pvUser:%p\n",
                  pvUser));
@@ -442,6 +443,7 @@ static DECLCALLBACK(int) drvCardReaderDownEndTransaction(PPDMICARDREADERDOWN pIn
                                                          void *pvUser,
                                                          uint32_t u32Disposition)
 {
+    RT_NOREF(pvUser, u32Disposition);
     AssertPtrReturn(pInterface, VERR_INVALID_PARAMETER);
     LogFlowFunc(("ENTER: pvUser:%p, u32Disposition:%RX32\n",
                  pvUser, u32Disposition));
@@ -598,8 +600,8 @@ static int drvCardReaderWakeupFunc(PUSBCARDREADER pThis)
 
 static DECLCALLBACK(int) drvCardReaderThreadCmdWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     LogFlowFunc(("ENTER: pDrvIns:%i\n", pDrvIns->iInstance));
-
     PUSBCARDREADER pThis = PDMINS_2_DATA(pDrvIns, PUSBCARDREADER);
 
     AssertReturn(pThis->hReqQCardReaderCmd != NIL_RTREQQUEUE, VERR_INVALID_STATE);
@@ -610,7 +612,7 @@ static DECLCALLBACK(int) drvCardReaderThreadCmdWakeup(PPDMDRVINS pDrvIns, PPDMTH
 
     if (RT_SUCCESS(rc))
         RTReqRelease(pReq);
-    /* @todo handle VERR_TIMEOUT */
+    /** @todo handle VERR_TIMEOUT */
 
     return rc;
 }
@@ -699,6 +701,7 @@ int UsbCardReader::vrdeSCardRequest(void *pvUser, uint32_t u32Function, const vo
 
 int UsbCardReader::VRDENotify(uint32_t u32Id, void *pvData, uint32_t cbData)
 {
+    RT_NOREF(cbData);
     int rc = VINF_SUCCESS;
 
     switch (u32Id)
@@ -763,6 +766,7 @@ int UsbCardReader::VRDENotify(uint32_t u32Id, void *pvData, uint32_t cbData)
 
 int UsbCardReader::VRDEResponse(int rcRequest, void *pvUser, uint32_t u32Function, void *pvData, uint32_t cbData)
 {
+    RT_NOREF(cbData);
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("%Rrc %p %u %p %u\n",
@@ -1355,6 +1359,7 @@ int UsbCardReader::Connect(struct USBCARDREADER *pDrv,
                            uint32_t u32ShareMode,
                            uint32_t u32PreferredProtocols)
 {
+    RT_NOREF(pszReaderName);
     AssertReturn(pDrv == mpDrv, VERR_NOT_SUPPORTED);
 
     int rc = VINF_SUCCESS;
@@ -1861,6 +1866,7 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
 
 /* static */ DECLCALLBACK(int) UsbCardReader::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     LogFlowFunc(("iInstance/%d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PUSBCARDREADER pThis = PDMINS_2_DATA(pDrvIns, PUSBCARDREADER);

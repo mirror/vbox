@@ -143,6 +143,7 @@ public:
         , mRc(VINF_SUCCESS)
         , mErrorText()
     {
+        RT_NOREF(fStartPaused); /** @todo figure out why fStartPaused isn't used */
     }
 };
 
@@ -308,6 +309,7 @@ HRESULT Console::i_teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const 
  */
 static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
 {
+    RT_NOREF(offStream);
     TeleporterState *pState = (TeleporterState *)pvUser;
 
     AssertReturn(cbToWrite > 0, VINF_SUCCESS);
@@ -374,6 +376,7 @@ static int teleporterTcpReadSelect(TeleporterState *pState)
  */
 static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
+    RT_NOREF(offStream);
     TeleporterState *pState = (TeleporterState *)pvUser;
     AssertReturn(!pState->mfIsSource, VERR_INVALID_HANDLE);
 
@@ -470,6 +473,7 @@ static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, v
  */
 static DECLCALLBACK(int) teleporterTcpOpSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
 {
+    RT_NOREF(pvUser, offSeek, uMethod, poffActual);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -489,6 +493,7 @@ static DECLCALLBACK(uint64_t) teleporterTcpOpTell(void *pvUser)
  */
 static DECLCALLBACK(int) teleporterTcpOpSize(void *pvUser, uint64_t *pcb)
 {
+    RT_NOREF(pvUser, pcb);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -612,6 +617,7 @@ static DECLCALLBACK(int) teleporterProgressCallback(PUVM pUVM, unsigned uPercent
  */
 static DECLCALLBACK(void) teleporterDstTimeout(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 {
+    RT_NOREF(hTimerLR, iTick);
     /* This is harmless for any open connections. */
     RTTcpServerShutdown((PRTTCPSERVER)pvUser);
 }
@@ -753,12 +759,13 @@ HRESULT Console::i_teleporterSrc(TeleporterStateSrc *pState)
  * Static thread method wrapper.
  *
  * @returns VINF_SUCCESS (ignored).
- * @param   hThread             The thread.
+ * @param   hThreadSelf         The thread.
  * @param   pvUser              Pointer to a TeleporterStateSrc instance.
  */
 /*static*/ DECLCALLBACK(int)
-Console::i_teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
+Console::i_teleporterSrcThreadWrapper(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     TeleporterStateSrc *pState = (TeleporterStateSrc *)pvUser;
 
     /*
