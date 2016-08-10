@@ -273,9 +273,9 @@ typedef struct
 static DECLCALLBACK(void) displaySaveScreenshotReport(void *pvCtx, uint32_t uScreen,
                                                       uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
                                                       uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
-                                                      uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+                                                      uint8_t *pu8BufferAddress, uint64_t u64Timestamp)
 {
-    RT_NOREF(uScreen, x, y, uBitsPerPixel,uBytesPerLine, u64TimeStamp);
+    RT_NOREF(uScreen, x, y, uBitsPerPixel,uBytesPerLine, u64Timestamp);
     VBOX_DISPLAY_SAVESCREENSHOT_DATA *pData = (VBOX_DISPLAY_SAVESCREENSHOT_DATA*)pvCtx;
     displayMakeThumbnail(pu8BufferAddress, uGuestWidth, uGuestHeight, &pData->pu8Thumbnail,
                          &pData->cbThumbnail, &pData->cxThumbnail, &pData->cyThumbnail);
@@ -3333,6 +3333,7 @@ void Display::i_handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Funct
 
 void Display::i_handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam)
 {
+    RT_NOREF(u32Function);
     PVBOXVDMACMD_CHROMIUM_CTL pCtl = (PVBOXVDMACMD_CHROMIUM_CTL)pParam->u.pointer.addr;
     mpDrv->pVBVACallbacks->pfnCrHgsmiControlCompleteAsync(mpDrv->pVBVACallbacks, pCtl, result);
 }
@@ -3452,6 +3453,7 @@ DECLCALLBACK(void) Display::i_displayCrHgsmiControlCompletion(int32_t result, ui
 DECLCALLBACK(void)  Display::i_displayCrHgcmCtlSubmitCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam,
                                                                 void *pvContext)
 {
+    RT_NOREF(u32Function);
     VBOXCRCMDCTL *pCmd = (VBOXCRCMDCTL*)pParam->u.pointer.addr;
     if (pCmd->u.pfnInternal)
         ((PFNCRCTLCOMPLETION)pCmd->u.pfnInternal)(pCmd, pParam->u.pointer.size, result, pvContext);
@@ -3561,24 +3563,29 @@ int Display::i_crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VB
     return rc;
 }
 
-bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp)
+bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64Timestamp)
 {
+    /** @todo r=bird: u64Timestamp - using the 'u64' prefix add nothing.
+     *        However, using one of the prefixes indicating the timestamp unit
+     *        would be very valuable!  */
 # if VBOX_WITH_VPX
-    return VideoRecIsReady(mpVideoRecCtx, uScreen, u64TimeStamp);
+    return VideoRecIsReady(mpVideoRecCtx, uScreen, u64Timestamp);
 # else
+    RT_NOREF(uScreen, u64Timestamp);
     return false;
 # endif
 }
 
-void  Display::i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp)
+void  Display::i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64Timestamp)
 {
+    RT_NOREF(uScreen, u64Timestamp);
 }
 
 void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                                uint32_t x, uint32_t y, uint32_t uPixelFormat,
                                                uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
                                                uint32_t uGuestWidth, uint32_t uGuestHeight,
-                                               uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+                                               uint8_t *pu8BufferAddress, uint64_t u64Timestamp)
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
 # if VBOX_WITH_VPX
@@ -3586,7 +3593,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                   uPixelFormat,
                                   uBitsPerPixel, uBytesPerLine,
                                   uGuestWidth, uGuestHeight,
-                                  pu8BufferAddress, u64TimeStamp);
+                                  pu8BufferAddress, u64Timestamp);
     NOREF(rc);
     Assert(rc == VINF_SUCCESS /* || rc == VERR_TRY_AGAIN || rc == VINF_TRY_AGAIN*/);
 # endif
@@ -3744,29 +3751,30 @@ DECLCALLBACK(void) Display::i_displayCrVRecScreenshotPerform(void *pvCtx, uint32
                                                              uint32_t x, uint32_t y,
                                                              uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
                                                              uint32_t uGuestWidth, uint32_t uGuestHeight,
-                                                             uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+                                                             uint8_t *pu8BufferAddress, uint64_t u64Timestamp)
 {
     Display *pDisplay = (Display *)pvCtx;
     pDisplay->i_handleCrVRecScreenshotPerform(uScreen,
                                               x, y, BitmapFormat_BGR, uBitsPerPixel,
                                               uBytesPerLine, uGuestWidth, uGuestHeight,
-                                              pu8BufferAddress, u64TimeStamp);
+                                              pu8BufferAddress, u64Timestamp);
 }
 
-DECLCALLBACK(bool) Display::i_displayCrVRecScreenshotBegin(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp)
+DECLCALLBACK(bool) Display::i_displayCrVRecScreenshotBegin(void *pvCtx, uint32_t uScreen, uint64_t u64Timestamp)
 {
     Display *pDisplay = (Display *)pvCtx;
-    return pDisplay->i_handleCrVRecScreenshotBegin(uScreen, u64TimeStamp);
+    return pDisplay->i_handleCrVRecScreenshotBegin(uScreen, u64Timestamp);
 }
 
-DECLCALLBACK(void) Display::i_displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp)
+DECLCALLBACK(void) Display::i_displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64Timestamp)
 {
     Display *pDisplay = (Display *)pvCtx;
-    pDisplay->i_handleCrVRecScreenshotEnd(uScreen, u64TimeStamp);
+    pDisplay->i_handleCrVRecScreenshotEnd(uScreen, u64Timestamp);
 }
 
-DECLCALLBACK(void) Display::i_displayVRecCompletion(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
+DECLCALLBACK(void) Display::i_displayVRecCompletion(struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
 {
+    RT_NOREF(pCmd, cbCmd, rc);
     Display *pDisplay = (Display *)pvCompletion;
     pDisplay->i_handleVRecCompletion();
 }
@@ -3846,6 +3854,7 @@ DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterfac
 
 DECLCALLBACK(void) Display::i_displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
 {
+    RT_NOREF(uScreenId);
     LogFlowFunc(("uScreenId %d\n", uScreenId));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
@@ -4252,6 +4261,7 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVMAINDISPLAY pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogRelFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));

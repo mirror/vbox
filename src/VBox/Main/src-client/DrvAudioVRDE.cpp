@@ -119,6 +119,7 @@ static int vrdeCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 static int vrdeControlStreamOut(PPDMIHOSTAUDIO pInterface,
                                 PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
+    RT_NOREF(enmStreamCmd);
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
@@ -174,6 +175,7 @@ static int vrdeControlStreamIn(PPDMIHOSTAUDIO pInterface,
 
 static DECLCALLBACK(int) drvAudioVRDEInit(PPDMIHOSTAUDIO pInterface)
 {
+    RT_NOREF(pInterface);
     LogFlowFuncEnter();
 
     return VINF_SUCCESS;
@@ -322,6 +324,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface,
 
 static int vrdeDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
+    RT_NOREF(pStream);
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
@@ -333,6 +336,7 @@ static int vrdeDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStrea
 
 static int vrdeDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
+    RT_NOREF(pStream);
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
@@ -365,6 +369,7 @@ static DECLCALLBACK(void) drvAudioVRDEShutdown(PPDMIHOSTAUDIO pInterface)
 
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVRDEGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
+    RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
 
     return PDMAUDIOBACKENDSTS_RUNNING;
@@ -468,6 +473,7 @@ AudioVRDE::~AudioVRDE(void)
 
 int AudioVRDE::onVRDEControl(bool fEnable, uint32_t uFlags)
 {
+    RT_NOREF(uFlags);
     LogFlowThisFunc(("fEnable=%RTbool, uFlags=0x%x\n", fEnable, uFlags));
 
     if (mpDrv == NULL)
@@ -537,6 +543,7 @@ int AudioVRDE::onVRDEInputEnd(void *pvContext)
 
 int AudioVRDE::onVRDEInputIntercept(bool fEnabled)
 {
+    RT_NOREF(fEnabled);
     return VINF_SUCCESS; /* Never veto. */
 }
 
@@ -548,6 +555,7 @@ int AudioVRDE::onVRDEInputIntercept(bool fEnabled)
 /* static */
 DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
     AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);

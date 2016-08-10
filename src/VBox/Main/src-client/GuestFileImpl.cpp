@@ -84,6 +84,7 @@ public:
             {
                 AssertPtrReturn(mFile, E_POINTER);
                 int rc2 = mFile->signalWaitEvent(aType, aEvent);
+                NOREF(rc2);
 #ifdef DEBUG_andy
                 LogFlowFunc(("Signalling events of type=%RU32, file=%p resulted in rc=%Rrc\n",
                              aType, mFile, rc2));
@@ -444,7 +445,6 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.uType);
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.rc);
 
-    FileStatus_T fileStatus = FileStatus_Undefined;
     int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
 
     LogFlowFunc(("uType=%RU32, guestRc=%Rrc\n",
@@ -1210,11 +1210,13 @@ HRESULT GuestFile::close()
 
 HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
 {
+    RT_NOREF(aObjInfo);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestFile::querySize(LONG64 *aSize)
 {
+    RT_NOREF(aSize);
     ReturnComNotImplemented();
 }
 
@@ -1338,11 +1340,13 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
 
 HRESULT GuestFile::setACL(const com::Utf8Str &aAcl, ULONG aMode)
 {
+    RT_NOREF(aAcl, aMode);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestFile::setSize(LONG64 aSize)
 {
+    RT_NOREF(aSize);
     ReturnComNotImplemented();
 }
 

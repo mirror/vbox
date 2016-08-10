@@ -132,7 +132,7 @@ HRESULT MachineDebugger::getSingleStep(BOOL *aSingleStep)
     HRESULT hrc = ptrVM.rc();
     if (SUCCEEDED(hrc))
     {
-        /** @todo */
+        RT_NOREF(aSingleStep); /** @todo */
         ReturnComNotImplemented();
     }
     return hrc;
@@ -151,7 +151,7 @@ HRESULT MachineDebugger::setSingleStep(BOOL aSingleStep)
     HRESULT hrc = ptrVM.rc();
     if (SUCCEEDED(hrc))
     {
-        /** @todo */
+        NOREF(aSingleStep); /** @todo */
         ReturnComNotImplemented();
     }
     return hrc;
@@ -817,6 +817,7 @@ HRESULT MachineDebugger::dumpGuestCore(const com::Utf8Str &aFilename, const com:
 
 HRESULT MachineDebugger::dumpHostProcessCore(const com::Utf8Str &aFilename, const com::Utf8Str &aCompression)
 {
+    RT_NOREF(aFilename, aCompression);
     ReturnComNotImplemented();
 }
 
@@ -1049,21 +1050,25 @@ HRESULT MachineDebugger::modifyLogDestinations(const com::Utf8Str &aSettings)
 
 HRESULT MachineDebugger::readPhysicalMemory(LONG64 aAddress, ULONG aSize, std::vector<BYTE> &aBytes)
 {
+    RT_NOREF(aAddress, aSize, aBytes);
     ReturnComNotImplemented();
 }
 
 HRESULT MachineDebugger::writePhysicalMemory(LONG64 aAddress, ULONG aSize, const std::vector<BYTE> &aBytes)
 {
+    RT_NOREF(aAddress, aSize, aBytes);
     ReturnComNotImplemented();
 }
 
 HRESULT MachineDebugger::readVirtualMemory(ULONG aCpuId, LONG64 aAddress, ULONG aSize, std::vector<BYTE> &aBytes)
 {
+    RT_NOREF(aCpuId, aAddress, aSize, aBytes);
     ReturnComNotImplemented();
 }
 
 HRESULT MachineDebugger::writeVirtualMemory(ULONG aCpuId, LONG64 aAddress, ULONG aSize, const std::vector<BYTE> &aBytes)
 {
+    RT_NOREF(aCpuId, aAddress, aSize, aBytes);
     ReturnComNotImplemented();
 }
 
@@ -1298,6 +1303,8 @@ HRESULT MachineDebugger::getRegister(ULONG aCpuId, const com::Utf8Str &aName, co
 
 HRESULT MachineDebugger::getRegisters(ULONG aCpuId, std::vector<com::Utf8Str> &aNames, std::vector<com::Utf8Str> &aValues)
 {
+    RT_NOREF(aCpuId); /** @todo fix missing aCpuId usage! */
+
     /*
      * The prologue.
      */
@@ -1356,12 +1363,14 @@ HRESULT MachineDebugger::getRegisters(ULONG aCpuId, std::vector<com::Utf8Str> &a
 
 HRESULT MachineDebugger::setRegister(ULONG aCpuId, const com::Utf8Str &aName, const com::Utf8Str &aValue)
 {
+    RT_NOREF(aCpuId, aName, aValue);
     ReturnComNotImplemented();
 }
 
 HRESULT MachineDebugger::setRegisters(ULONG aCpuId, const std::vector<com::Utf8Str> &aNames,
                                       const std::vector<com::Utf8Str> &aValues)
 {
+    RT_NOREF(aCpuId, aNames, aValues);
     ReturnComNotImplemented();
 }
 

@@ -52,6 +52,8 @@ void videoAccelDestroy(VIDEOACCEL *pVideoAccel)
 
 static unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int *py, int *pw, int *ph)
 {
+    RT_NOREF(pw, ph);
+
     DISPLAYFBINFO *pInfo = pInfos;
     unsigned uScreenId;
     Log9(("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
@@ -356,6 +358,7 @@ int Display::i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISP
 
 static bool i_vbvaVerifyRingBuffer(VBVAMEMORY *pVbvaMemory)
 {
+    RT_NOREF(pVbvaMemory);
     return true;
 }
 
@@ -584,6 +587,7 @@ static bool i_vbvaFetchCmd(VIDEOACCEL *pVideoAccel, VBVACMDHDR **ppHdr, uint32_t
 
 static void i_vbvaReleaseCmd(VIDEOACCEL *pVideoAccel, VBVACMDHDR *pHdr, int32_t cbCmd)
 {
+    RT_NOREF(cbCmd);
     uint8_t *au8RingBuffer = pVideoAccel->pVbvaMemory->au8RingBuffer;
 
     if (   (uint8_t *)pHdr >= au8RingBuffer
@@ -780,6 +784,7 @@ int Display::i_videoAccelRefreshProcess(PPDMIDISPLAYPORT pUpPort)
 
 void Display::processAdapterData(void *pvVRAM, uint32_t u32VRAMSize)
 {
+    RT_NOREF(u32VRAMSize);
     if (pvVRAM == NULL)
     {
         unsigned i;

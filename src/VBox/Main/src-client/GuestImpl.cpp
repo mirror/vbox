@@ -209,6 +209,7 @@ DECLCALLBACK(int)  Guest::i_staticEnumStatsCallback(const char *pszName, STAMTYP
                                                     STAMUNIT enmUnit, STAMVISIBILITY enmVisiblity,
                                                     const char *pszDesc, void *pvUser)
 {
+    RT_NOREF(enmVisiblity, pszDesc);
     AssertLogRelMsgReturn(enmType == STAMTYPE_COUNTER, ("Unexpected sample type %d ('%s')\n", enmType, pszName), VINF_SUCCESS);
     AssertLogRelMsgReturn(enmUnit == STAMUNIT_BYTES, ("Unexpected sample unit %d ('%s')\n", enmUnit, pszName), VINF_SUCCESS);
 
@@ -257,6 +258,8 @@ DECLCALLBACK(int)  Guest::i_staticEnumStatsCallback(const char *pszName, STAMTYP
 
 void Guest::i_updateStats(uint64_t iTick)
 {
+    RT_NOREF(iTick);
+
     uint64_t cbFreeTotal      = 0;
     uint64_t cbAllocTotal     = 0;
     uint64_t cbBalloonedTotal = 0;
@@ -1023,6 +1026,7 @@ void Guest::i_facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacil
 void Guest::i_onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState,
                                 const uint8_t *pbDetails, uint32_t cbDetails)
 {
+    RT_NOREF(pbDetails, cbDetails);
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
