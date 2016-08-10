@@ -239,6 +239,7 @@ fwtcp_pmgr_listen(struct pollmgr_handler *handler, SOCKET fd, int revents)
     }
 
 
+#ifdef LOG_ENABLED
     if (ss.ss_family == PF_INET) {
         struct sockaddr_in *peer4 = (struct sockaddr_in *)&ss;
         DPRINTF(("<--- TCP %RTnaipv4:%d\n",
@@ -249,6 +250,7 @@ fwtcp_pmgr_listen(struct pollmgr_handler *handler, SOCKET fd, int revents)
         DPRINTF(("<--- TCP %RTnaipv6:%d\n",
                  &peer6->sin6_addr, ntohs(peer6->sin6_port)));
     }
+#endif
 
     pxtcp = pxtcp_create_forwarded(newsock);
     if (pxtcp == NULL) {

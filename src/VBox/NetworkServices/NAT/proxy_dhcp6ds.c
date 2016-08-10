@@ -292,13 +292,14 @@ dhcp6ds_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     memcpy(dhcp6ds_reply_buf + roff, dhcp6ds_dns, sizeof(dhcp6ds_dns));
     roff += sizeof(dhcp6ds_dns);
 
-    q = pbuf_alloc(PBUF_RAW, roff, PBUF_RAM);
+    Assert(roff == (u16_t)roff);
+    q = pbuf_alloc(PBUF_RAW, (u16_t)roff, PBUF_RAM);
     if (q == NULL) {
         DPRINTF(("%s: pbuf_alloc(%d) failed\n", __func__, (int)roff));
         return;
     }
 
-    error = pbuf_take(q, dhcp6ds_reply_buf, roff);
+    error = pbuf_take(q, dhcp6ds_reply_buf, (u16_t)roff);
     if (error != ERR_OK) {
         DPRINTF(("%s: pbuf_take(%d) failed: %s\n",
                  __func__, (int)roff, proxy_lwip_strerr(error)));
