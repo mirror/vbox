@@ -1037,6 +1037,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
 DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackUSB(void *pvCallback, void *pvIntercept, uint32_t u32ClientId,
                                                      uint8_t u8Code, const void *pvRet, uint32_t cbRet)
 {
+    RT_NOREF(pvCallback);
 #ifdef VBOX_WITH_USB
     return USBClientResponseCallback(pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
 #else
@@ -1048,6 +1049,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackClipboard(void *pvCallback, voi
                                                            uint32_t u32Function, uint32_t u32Format,
                                                            const void *pvData, uint32_t cbData)
 {
+    RT_NOREF(pvCallback);
     return ClipboardCallback(pvIntercept, u32ClientId, u32Function, u32Format, pvData, cbData);
 }
 
@@ -1283,6 +1285,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
                                                           const void *pvData,
                                                           uint32_t cbData)
 {
+    RT_NOREF(u32ClientId);
     ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvCallback);
     AssertPtrReturnVoid(pServer);
 
@@ -2035,6 +2038,7 @@ typedef struct H3DORInstance
 /* static */ DECLCALLBACK(int) ConsoleVRDPServer::H3DORContextProperty(const void *pvContext, uint32_t index,
                                                                        void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
 {
+    RT_NOREF(pvContext, pvBuffer);
     int rc = VINF_SUCCESS;
 
     H3DORLOG(("H3DORContextProperty: index %d\n", index));
@@ -2142,6 +2146,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
                                                                      void *pvData,
                                                                      uint32_t cbData)
 {
+    RT_NOREF(hVideo);
     H3DORLOG(("H3DOR: VRDEImageCbNotify: pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
               pvContext, pvUser, hVideo, u32Id, pvData, cbData));
 
@@ -2456,6 +2461,7 @@ void ConsoleVRDPServer::tsmfUnlock(void)
                                                                          uint32_t cbData,
                                                                          uint32_t *pcbDataReturned)
 {
+    RT_NOREF(pvParm, cbParm, pvData, cbData);
     LogFlowFunc(("u32Code %u\n", u32Code));
 
     if (!pvChannel)
@@ -2540,6 +2546,7 @@ void ConsoleVRDPServer::setupTSMF(void)
                                                                     const void *pvParm,
                                                                     uint32_t cbParm)
 {
+    RT_NOREF(cbParm);
     int rc = VINF_SUCCESS;
 
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvContext);
@@ -3311,6 +3318,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension
                                                                void *pvParms,
                                                                uint32_t cbParms)
 {
+    RT_NOREF(cbParms);
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
                  pvExtension, u32Function, pvParms, cbParms));
 
@@ -3380,6 +3388,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension
 
 void ConsoleVRDPServer::ClipboardCreate(uint32_t u32ClientId)
 {
+    RT_NOREF(u32ClientId);
     int rc = lockConsoleVRDPServer();
 
     if (RT_SUCCESS(rc))
@@ -3400,6 +3409,7 @@ void ConsoleVRDPServer::ClipboardCreate(uint32_t u32ClientId)
 
 void ConsoleVRDPServer::ClipboardDelete(uint32_t u32ClientId)
 {
+    RT_NOREF(u32ClientId);
     int rc = lockConsoleVRDPServer();
 
     if (RT_SUCCESS(rc))
@@ -3762,6 +3772,7 @@ int ConsoleVRDPServer::SendAudioInputBegin(void **ppvUserCtx,
 
 void ConsoleVRDPServer::SendAudioInputEnd(void *pvUserCtx)
 {
+    RT_NOREF(pvUserCtx);
     if (mpEntryPoints && mhServer && mpEntryPoints->VRDEAudioInClose)
     {
         uint32_t u32ClientId = ASMAtomicReadU32(&mu32AudioInputClientId);

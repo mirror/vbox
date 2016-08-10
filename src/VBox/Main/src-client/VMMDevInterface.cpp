@@ -459,13 +459,13 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect)
+DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRects, PRTRECT paRects)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Forward to Display, which calls corresponding framebuffers. */
-    pConsole->i_getDisplay()->i_handleQueryVisibleRegion(pcRect, pRect);
+    pConsole->i_getDisplay()->i_handleQueryVisibleRegion(pcRects, paRects);
 
     return VINF_SUCCESS;
 }

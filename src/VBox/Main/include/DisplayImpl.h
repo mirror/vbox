@@ -187,7 +187,7 @@ public:
 
     int  i_saveVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
-    int  i_handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect);
+    int  i_handleQueryVisibleRegion(uint32_t *pcRects, PRTRECT paRects);
 
     void i_VideoAccelVRDP(bool fEnable);
 

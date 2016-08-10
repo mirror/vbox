@@ -275,6 +275,7 @@ static DECLCALLBACK(void) displaySaveScreenshotReport(void *pvCtx, uint32_t uScr
                                                       uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                                                       uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
 {
+    RT_NOREF(uScreen, x, y, uBitsPerPixel,uBytesPerLine, u64TimeStamp);
     VBOX_DISPLAY_SAVESCREENSHOT_DATA *pData = (VBOX_DISPLAY_SAVESCREENSHOT_DATA*)pvCtx;
     displayMakeThumbnail(pu8BufferAddress, uGuestWidth, uGuestHeight, &pData->pu8Thumbnail,
                          &pData->cbThumbnail, &pData->cxThumbnail, &pData->cyThumbnail);
@@ -468,6 +469,7 @@ DECLCALLBACK(void) Display::i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pv
 DECLCALLBACK(int)
 Display::i_displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass)
 {
+    RT_NOREF(pvUser);
     if (uVersion != sSSMDisplayScreenshotVer)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -781,6 +783,7 @@ int Display::i_registerSSM(PUVM pUVM)
 
 DECLCALLBACK(void) Display::i_displayCrCmdFree(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
 {
+    RT_NOREF(pCmd, cbCmd, rc);
     Assert(pvCompletion);
     RTMemFree(pvCompletion);
 }
@@ -837,6 +840,7 @@ int Display::i_crOglWindowsShow(bool fShow)
 
 int Display::i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
 {
+    RT_NOREF(pView);
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     if (maFramebuffers[pScreen->u32ViewIndex].fRenderThreadMode)
         return VINF_SUCCESS; /* nop it */
@@ -1393,9 +1397,11 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     return VINF_SUCCESS;
 }
 
-int Display::i_handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect)
+int Display::i_handleQueryVisibleRegion(uint32_t *pcRects, PRTRECT paRects)
 {
-    // @todo Currently not used by the guest and is not implemented in framebuffers. Remove?
+    /// @todo Currently not used by the guest and is not implemented in
+    /// framebuffers. Remove?
+    RT_NOREF(pcRects, paRects);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -3300,11 +3306,11 @@ int Display::i_handleVHWACommandProcess(PVBOXVHWACMD pCommand)
     HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
     if (hr == S_FALSE)
         return VINF_SUCCESS;
-    else if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr))
         return VINF_CALLBACK_RETURN;
-    else if (hr == E_ACCESSDENIED)
+    if (hr == E_ACCESSDENIED)
         return VERR_INVALID_STATE; /* notify we can not handle request atm */
-    else if (hr == E_NOTIMPL)
+    if (hr == E_NOTIMPL)
         return VERR_NOT_IMPLEMENTED;
     return VERR_GENERAL_FAILURE;
 }
@@ -3320,6 +3326,7 @@ DECLCALLBACK(int) Display::i_displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pIn
 #ifdef VBOX_WITH_CRHGSMI
 void Display::i_handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam)
 {
+    RT_NOREF(u32Function);
     mpDrv->pVBVACallbacks->pfnCrHgsmiCommandCompleteAsync(mpDrv->pVBVACallbacks,
                                                           (PVBOXVDMACMD_CHROMIUM_CMD)pParam->u.pointer.addr, result);
 }
