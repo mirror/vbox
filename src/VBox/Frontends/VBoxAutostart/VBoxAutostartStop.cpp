@@ -106,8 +106,8 @@ static HRESULT autostartSaveVMState(ComPtr<IConsole> &console)
 
 DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
 {
+    RT_NOREF(pCfgAst);
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    int vrc = VINF_SUCCESS;
     std::list<AUTOSTOPVM> listVM;
 
     /*

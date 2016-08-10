@@ -71,7 +71,7 @@ typedef struct CFGTOKEN
     /** Line number of the token. */
     unsigned        iLine;
     /** Starting character of the token in the stream. */
-    unsigned        cchStart;
+    size_t          cchStart;
     /** Type dependen token data. */
     union
     {
@@ -106,7 +106,7 @@ typedef struct CFGTOKENIZER
     /** Current line in the config file. */
     unsigned   iLine;
     /** Current character of the line. */
-    unsigned   cchCurr;
+    size_t     cchCurr;
     /** Flag whether the end of the config stream is reached. */
     bool       fEof;
     /** Pointer to the next token in the stream (used to peek). */
@@ -409,9 +409,7 @@ static const char *autostartConfigTokenTypeToStr(CFGTOKENTYPE enmType)
             AssertFailed();
             return "<Invalid>";
     }
-
-    AssertFailed();
-    return NULL;
+    /* not reached */
 }
 
 /**
@@ -451,9 +449,7 @@ static size_t autostartConfigTokenGetLength(PCFGTOKEN pToken)
             AssertFailed();
             return 0;
     }
-
-    AssertFailed();
-    return 0;
+    /* not reached */
 }
 
 /**
@@ -595,12 +591,8 @@ static int autostartConfigParseValue(PCFGTOKENIZER pCfgTokenizer, const char *ps
 static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const char *pszScopeId,
                                             PCFGAST *ppCfgAst)
 {
-    int rc = VINF_SUCCESS;
     unsigned cAstNodesMax = 10;
-    unsigned idxAstNodeCur = 0;
-    PCFGAST pCfgAst = NULL;
-
-    pCfgAst = (PCFGAST)RTMemAllocZ(RT_OFFSETOF(CFGAST, u.Compound.apAstNodes[cAstNodesMax]));
+    PCFGAST pCfgAst = (PCFGAST)RTMemAllocZ(RT_OFFSETOF(CFGAST, u.Compound.apAstNodes[cAstNodesMax]));
     if (!pCfgAst)
         return VERR_NO_MEMORY;
 
@@ -613,6 +605,7 @@ static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const c
         return VERR_NO_MEMORY;
     }
 
+    int rc = VINF_SUCCESS;
     do
     {
         PCFGTOKEN pToken = NULL;
