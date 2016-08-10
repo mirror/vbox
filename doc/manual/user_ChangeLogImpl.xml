@@ -30,6 +30,11 @@
       </listitem>
 
       <listitem>
+        <para>Storage: Fixed broken bandwidth limitation when the limit is very
+          low (bug #14982)</para>
+      </listitem>
+
+      <listitem>
         <para>OVF: when importing appliances, make sure that the version of the
           embedded VirtualBox specific settings is processed, to get the
           default settings handling right</para>

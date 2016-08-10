@@ -755,7 +755,10 @@ bool pdmacEpIsTransferAllowed(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint32_t cb
                     }
 
                     /* Update */
-                    ASMAtomicWriteU32(&pBwMgr->cbTransferAllowed, pBwMgr->cbTransferPerSecStart - cbTransfer);
+                    uint32_t cbTransferAllowedNew =   pBwMgr->cbTransferPerSecStart > cbTransfer
+                                                    ? pBwMgr->cbTransferPerSecStart - cbTransfer
+                                                    : 0;
+                    ASMAtomicWriteU32(&pBwMgr->cbTransferAllowed, cbTransferAllowedNew);
                     fAllowed = true;
                     LogFlow(("AIOMgr: Refreshed bandwidth\n"));
                 }
