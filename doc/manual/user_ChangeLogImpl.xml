@@ -46,6 +46,11 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: Don't try to set the medium type if there is no change
+          (bug #13850)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux installer: fixed some scripting issues (bugs #15701
            and #15702)</para>
       </listitem>
