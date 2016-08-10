@@ -177,8 +177,6 @@ static long balloonGetDelta(PVBOXWATCHDOG_MACHINE pMachine,
  */
 static unsigned long balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
 {
-    const ComPtr<IMachine> &rptrMachine = pMachine->machine;
-
     /*
      * Is a maximum ballooning size set? Make sure we're within bounds.
      *

@@ -585,17 +585,19 @@ static DECLCALLBACK(void) VBoxModAPIMonitorTerm(void)
 
 static DECLCALLBACK(int) VBoxModAPIMonitorOnMachineRegistered(const Bstr &strUuid)
 {
+    RT_NOREF(strUuid);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) VBoxModAPIMonitorOnMachineUnregistered(const Bstr &strUuid)
 {
+    RT_NOREF(strUuid);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) VBoxModAPIMonitorOnMachineStateChanged(const Bstr &strUuid,
-                                                                MachineState_T enmState)
+static DECLCALLBACK(int) VBoxModAPIMonitorOnMachineStateChanged(const Bstr &strUuid, MachineState_T enmState)
 {
+    RT_NOREF(strUuid, enmState);
     return VINF_SUCCESS;
 }
 

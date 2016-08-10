@@ -682,7 +682,7 @@ static int watchdogShutdownModules()
     return rc;
 }
 
-static RTEXITCODE watchdogMain(HandlerArg *a)
+static RTEXITCODE watchdogMain(/*HandlerArg *a */)
 {
     HRESULT rc = S_OK;
 
@@ -1179,8 +1179,8 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    HandlerArg handlerArg = { argc, argv };
-    RTEXITCODE rcExit = watchdogMain(&handlerArg);
+    //HandlerArg handlerArg = { argc, argv };
+    RTEXITCODE rcExit = watchdogMain(/*&handlerArg*/);
 
     NativeEventQueue::getMainEventQueue()->processEventQueue(0);
 
