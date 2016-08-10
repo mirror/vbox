@@ -400,7 +400,11 @@ pxtcp_pmgr_add(struct pxtcp *pxtcp)
     int status;
 
     LWIP_ASSERT1(pxtcp != NULL);
+#ifdef RT_OS_WINDOWS
+    LWIP_ASSERT1(pxtcp->sock != INVALID_SOCKET);
+#else
     LWIP_ASSERT1(pxtcp->sock >= 0);
+#endif
     LWIP_ASSERT1(pxtcp->pmhdl.callback != NULL);
     LWIP_ASSERT1(pxtcp->pmhdl.data == (void *)pxtcp);
     LWIP_ASSERT1(pxtcp->pmhdl.slot < 0);
