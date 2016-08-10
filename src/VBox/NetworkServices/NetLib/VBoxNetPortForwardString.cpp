@@ -82,7 +82,7 @@ static int netPfStrAddressParse(char *pszRaw, size_t cchRaw,
         AssertReturn(cchField < cchRaw, VERR_INVALID_PARAMETER);
 
         if (cchField != 0)
-            RTStrCopy(pszAddress, RT_MIN(cchField + 1, cbAddress), pszRaw);
+            RTStrCopy(pszAddress, RT_MIN(cchField + 1, (size_t)cbAddress), pszRaw);
         else if (!fEmptyAcceptable)
             return -1;
     }
@@ -245,7 +245,8 @@ static int netPfStrAddressPortPairParse(char *pszRaw, size_t cchRaw,
  */
 int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pPfr)
 {
-/** r=bird: Redo from scratch?  This is very hard to read. */
+/** r=bird: Redo from scratch?  This is very hard to read.  And it's going about
+ *  things in a very complicated, potentially leaky (pszRaw) fashion. */
 
     int  proto;
     uint16_t u16HostPort;
@@ -285,7 +286,7 @@ int netPfStrToPf(const char *pcszStrPortForward, bool fIPv6, PPORTFORWARDRULE pP
 
         cbToken = pszEndOfName - pszRaw; /* don't take : into account */
         /* XXX it's unacceptable to have only name entry in PF */
-        AssertReturn(cbToken < cchRaw, VERR_INVALID_PARAMETER);
+        AssertReturn(cbToken < (ssize_t)cchRaw, VERR_INVALID_PARAMETER);
 
         if (   cbToken < 0
             || (size_t)cbToken >= PF_NAMELEN)

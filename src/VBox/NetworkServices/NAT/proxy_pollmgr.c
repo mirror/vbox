@@ -490,7 +490,7 @@ pollmgr_loop(void)
                 /* drop garbage entry at the end of the array */
                 --pollmgr.nfds;
 
-                if ((nfds_t)delfirst == last) {
+                if (delfirst == (SOCKET)last) {
                     /* congruent to delnext >= pollmgr.nfds test below */
                     delfirst = INVALID_SOCKET; /* done */
                 }
