@@ -143,67 +143,58 @@ typedef struct VBOXCMDVBVA
 
 /** @name VBVAEx APIs
  * @{ */
-RTDECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
-                            PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                            struct VBVABUFFER *pVBVA);
-RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
-                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
-RTDECL(bool) VBoxVBVAExBufferBeginUpdate(PVBVAEXBUFFERCONTEXT pCtx,
-                                       PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
-RTDECL(void) VBoxVBVAExBufferEndUpdate(PVBVAEXBUFFERCONTEXT pCtx);
-RTDECL(bool) VBoxVBVAExWrite(PVBVAEXBUFFERCONTEXT pCtx,
-                           PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                           const void *pv, uint32_t cb);
+#define VBVAEX_DECL(type) type VBOXCALL
+VBVAEX_DECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, struct VBVABUFFER *pVBVA);
+VBVAEX_DECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
+VBVAEX_DECL(bool) VBoxVBVAExBufferBeginUpdate(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
+VBVAEX_DECL(void) VBoxVBVAExBufferEndUpdate(PVBVAEXBUFFERCONTEXT pCtx);
+VBVAEX_DECL(bool) VBoxVBVAExWrite(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, const void *pv, uint32_t cb);
 
-RTDECL(bool) VBoxVBVAExOrderSupported(PVBVAEXBUFFERCONTEXT pCtx, unsigned code);
+VBVAEX_DECL(bool) VBoxVBVAExOrderSupported(PVBVAEXBUFFERCONTEXT pCtx, unsigned code);
 
-RTDECL(void) VBoxVBVAExSetupBufferContext(PVBVAEXBUFFERCONTEXT pCtx,
-                                        uint32_t offVRAMBuffer,
-                                        uint32_t cbBuffer,
-                                        PFNVBVAEXBUFFERFLUSH pfnFlush,
-                                        void *pvFlush);
+VBVAEX_DECL(void) VBoxVBVAExSetupBufferContext(PVBVAEXBUFFERCONTEXT pCtx, uint32_t offVRAMBuffer, uint32_t cbBuffer,
+                                        PFNVBVAEXBUFFERFLUSH pfnFlush, void *pvFlush);
 
 DECLINLINE(uint32_t) VBoxVBVAExGetSize(PVBVAEXBUFFERCONTEXT pCtx)
 {
     return pCtx->pVBVA->cbData;
 }
 
-/* can be used to ensure the command will not cross the ring buffer boundary,
+/** can be used to ensure the command will not cross the ring buffer boundary,
  * and thus will not be splitted */
-RTDECL(uint32_t) VBoxVBVAExGetFreeTail(PVBVAEXBUFFERCONTEXT pCtx);
-/* allocates a contiguous buffer of a given size, i.e. the one that is not splitted across ringbuffer boundaries */
-RTDECL(void*) VBoxVBVAExAllocContiguous(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cb);
-/* answers whether host is in "processing" state now,
+VBVAEX_DECL(uint32_t) VBoxVBVAExGetFreeTail(PVBVAEXBUFFERCONTEXT pCtx);
+/** allocates a contiguous buffer of a given size, i.e. the one that is not splitted across ringbuffer boundaries */
+VBVAEX_DECL(void *) VBoxVBVAExAllocContiguous(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cb);
+/** answers whether host is in "processing" state now,
  * i.e. if "processing" is true after the command is submitted, no notification is required to be posted to host to make the commandbe processed,
  * otherwise, host should be notified about the command */
-RTDECL(bool) VBoxVBVAExIsProcessing(PVBVAEXBUFFERCONTEXT pCtx);
+VBVAEX_DECL(bool) VBoxVBVAExIsProcessing(PVBVAEXBUFFERCONTEXT pCtx);
 
-/* initializes iterator that starts with free record,
+/** initializes iterator that starts with free record,
  * i.e. VBoxVBVAExIterNext would return the first uncompleted record.
  *
  * can be used by submitter only */
-RTDECL(void) VBoxVBVAExBIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERBACKWARDITER pIter);
-/* can be used by submitter only */
-RTDECL(void*) VBoxVBVAExBIterNext(PVBVAEXBUFFERBACKWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed);
+VBVAEX_DECL(void) VBoxVBVAExBIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERBACKWARDITER pIter);
+/** can be used by submitter only */
+VBVAEX_DECL(void *) VBoxVBVAExBIterNext(PVBVAEXBUFFERBACKWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed);
 
 /* completer functions
  * completer can only use below ones, and submitter is NOT allowed to use them.
  * Completter functions are prefixed with VBoxVBVAExC as opposed to submitter ones,
  * that do not have the last "C" in the prefix */
-/* initializes iterator that starts with completed record,
+/** initializes iterator that starts with completed record,
  * i.e. VBoxVBVAExIterPrev would return the first uncompleted record.
  * note that we can not have iterator that starts at processed record
  * (i.e. the one processed by host, but not completed by guest, since host modifies
  * VBVABUFFER::off32Data and VBVABUFFER::indexRecordFirst concurrently,
  * and so we may end up with inconsistent index-offData pair
  *
- * can be used by completter only */
-RTDECL(void) VBoxVBVAExCFIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERFORWARDITER pIter);
-/* can be used by completter only */
-RTDECL(void*) VBoxVBVAExCFIterNext(PVBVAEXBUFFERFORWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed);
+ * can be used by completer only */
+VBVAEX_DECL(void) VBoxVBVAExCFIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERFORWARDITER pIter);
+/** can be used by completer only */
+VBVAEX_DECL(void *) VBoxVBVAExCFIterNext(PVBVAEXBUFFERFORWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed);
 
-RTDECL(void) VBoxVBVAExCBufferCompleted(PVBVAEXBUFFERCONTEXT pCtx);
-
+VBVAEX_DECL(void) VBoxVBVAExCBufferCompleted(PVBVAEXBUFFERCONTEXT pCtx);
 /** @}  */
 
 struct VBOXCMDVBVA_HDR;

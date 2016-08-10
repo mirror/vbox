@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -234,9 +233,7 @@ static int vboxVBVAExCtlSubmitEnableDisable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUE
 /*
  * Public hardware buffer methods.
  */
-RTDECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
-                            PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                            VBVABUFFER *pVBVA)
+VBVAEX_DECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBVABUFFER *pVBVA)
 {
     int rc = VERR_GENERAL_FAILURE;
 
@@ -274,8 +271,7 @@ RTDECL(int) VBoxVBVAExEnable(PVBVAEXBUFFERCONTEXT pCtx,
     return rc;
 }
 
-RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
-                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
+VBVAEX_DECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
 {
     LogFlowFunc(("\n"));
 
@@ -288,8 +284,7 @@ RTDECL(void) VBoxVBVAExDisable(PVBVAEXBUFFERCONTEXT pCtx,
     return;
 }
 
-RTDECL(bool) VBoxVBVAExBufferBeginUpdate(PVBVAEXBUFFERCONTEXT pCtx,
-                                       PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
+VBVAEX_DECL(bool) VBoxVBVAExBufferBeginUpdate(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
 {
     bool bRc = false;
 
@@ -341,7 +336,7 @@ RTDECL(bool) VBoxVBVAExBufferBeginUpdate(PVBVAEXBUFFERCONTEXT pCtx,
     return bRc;
 }
 
-RTDECL(void) VBoxVBVAExBufferEndUpdate(PVBVAEXBUFFERCONTEXT pCtx)
+VBVAEX_DECL(void) VBoxVBVAExBufferEndUpdate(PVBVAEXBUFFERCONTEXT pCtx)
 {
     VBVARECORD *pRecord;
 
@@ -512,7 +507,7 @@ static bool vboxHwBufferWrite(PVBVAEXBUFFERCONTEXT pCtx,
 /*
  * Public writer to the hardware buffer.
  */
-RTDECL(uint32_t) VBoxVBVAExGetFreeTail(PVBVAEXBUFFERCONTEXT pCtx)
+VBVAEX_DECL(uint32_t) VBoxVBVAExGetFreeTail(PVBVAEXBUFFERCONTEXT pCtx)
 {
     VBVABUFFER *pVBVA = pCtx->pVBVA;
     if (pVBVA->off32Data <= pVBVA->off32Free)
@@ -520,7 +515,7 @@ RTDECL(uint32_t) VBoxVBVAExGetFreeTail(PVBVAEXBUFFERCONTEXT pCtx)
     return 0;
 }
 
-RTDECL(void*) VBoxVBVAExAllocContiguous(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cb)
+VBVAEX_DECL(void *) VBoxVBVAExAllocContiguous(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cb)
 {
     VBVARECORD *pRecord;
     uint32_t cbHwBufferContiguousAvail;
@@ -577,13 +572,13 @@ RTDECL(void*) VBoxVBVAExAllocContiguous(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCO
     return &pVBVA->au8Data[offset];
 }
 
-RTDECL(bool) VBoxVBVAExIsProcessing(PVBVAEXBUFFERCONTEXT pCtx)
+VBVAEX_DECL(bool) VBoxVBVAExIsProcessing(PVBVAEXBUFFERCONTEXT pCtx)
 {
     uint32_t u32HostEvents = pCtx->pVBVA->hostFlags.u32HostEvents;
     return !!(u32HostEvents & VBVA_F_STATE_PROCESSING);
 }
 
-RTDECL(void) VBoxVBVAExCBufferCompleted(PVBVAEXBUFFERCONTEXT pCtx)
+VBVAEX_DECL(void) VBoxVBVAExCBufferCompleted(PVBVAEXBUFFERCONTEXT pCtx)
 {
     VBVABUFFER *pVBVA = pCtx->pVBVA;
     uint32_t cbBuffer = pVBVA->aRecords[pCtx->indexRecordFirstUncompleted].cbRecord;
@@ -591,14 +586,12 @@ RTDECL(void) VBoxVBVAExCBufferCompleted(PVBVAEXBUFFERCONTEXT pCtx)
     pCtx->off32DataUncompleted = (pCtx->off32DataUncompleted + cbBuffer) % pVBVA->cbData;
 }
 
-RTDECL(bool) VBoxVBVAExWrite(PVBVAEXBUFFERCONTEXT pCtx,
-                           PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                           const void *pv, uint32_t cb)
+VBVAEX_DECL(bool) VBoxVBVAExWrite(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, const void *pv, uint32_t cb)
 {
     return vboxHwBufferWrite(pCtx, pHGSMICtx, pv, cb);
 }
 
-RTDECL(bool) VBoxVBVAExOrderSupported(PVBVAEXBUFFERCONTEXT pCtx, unsigned code)
+VBVAEX_DECL(bool) VBoxVBVAExOrderSupported(PVBVAEXBUFFERCONTEXT pCtx, unsigned code)
 {
     VBVABUFFER *pVBVA = pCtx->pVBVA;
 
@@ -615,11 +608,8 @@ RTDECL(bool) VBoxVBVAExOrderSupported(PVBVAEXBUFFERCONTEXT pCtx, unsigned code)
     return false;
 }
 
-RTDECL(void) VBoxVBVAExSetupBufferContext(PVBVAEXBUFFERCONTEXT pCtx,
-                                        uint32_t offVRAMBuffer,
-                                        uint32_t cbBuffer,
-                                        PFNVBVAEXBUFFERFLUSH pfnFlush,
-                                        void *pvFlush)
+VBVAEX_DECL(void) VBoxVBVAExSetupBufferContext(PVBVAEXBUFFERCONTEXT pCtx, uint32_t offVRAMBuffer, uint32_t cbBuffer,
+                                               PFNVBVAEXBUFFERFLUSH pfnFlush, void *pvFlush)
 {
     memset(pCtx, 0, RT_OFFSETOF(VBVAEXBUFFERCONTEXT, pVBVA));
     pCtx->offVRAMBuffer = offVRAMBuffer;
@@ -646,7 +636,7 @@ DECLINLINE(uint32_t) vboxVBVAExSubst(uint32_t x, uint32_t val, uint32_t maxVal)
     return result >= 0 ? (uint32_t)result : maxVal - (((uint32_t)(-result)) % maxVal);
 }
 
-RTDECL(void) VBoxVBVAExBIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERBACKWARDITER pIter)
+VBVAEX_DECL(void) VBoxVBVAExBIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERBACKWARDITER pIter)
 {
     struct VBVABUFFER *pVBVA = pCtx->pVBVA;
     pIter->Base.pCtx = pCtx;
@@ -667,7 +657,7 @@ RTDECL(void) VBoxVBVAExBIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERBACKWAR
     }
 }
 
-RTDECL(void*) VBoxVBVAExBIterNext(PVBVAEXBUFFERBACKWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed)
+VBVAEX_DECL(void *) VBoxVBVAExBIterNext(PVBVAEXBUFFERBACKWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed)
 {
     PVBVAEXBUFFERCONTEXT pCtx = pIter->Base.pCtx;
     struct VBVABUFFER *pVBVA = pCtx->pVBVA;
@@ -687,14 +677,14 @@ RTDECL(void*) VBoxVBVAExBIterNext(PVBVAEXBUFFERBACKWARDITER pIter, uint32_t *pcb
     return pvBuffer;
 }
 
-RTDECL(void) VBoxVBVAExCFIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERFORWARDITER pIter)
+VBVAEX_DECL(void) VBoxVBVAExCFIterInit(PVBVAEXBUFFERCONTEXT pCtx, PVBVAEXBUFFERFORWARDITER pIter)
 {
     pIter->Base.pCtx = pCtx;
     pIter->Base.iCurRecord = pCtx->indexRecordFirstUncompleted;
     pIter->Base.off32CurCmd = pCtx->off32DataUncompleted;
 }
 
-RTDECL(void*) VBoxVBVAExCFIterNext(PVBVAEXBUFFERFORWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed)
+VBVAEX_DECL(void *) VBoxVBVAExCFIterNext(PVBVAEXBUFFERFORWARDITER pIter, uint32_t *pcbBuffer, bool *pfProcessed)
 {
     PVBVAEXBUFFERCONTEXT pCtx = pIter->Base.pCtx;
     struct VBVABUFFER *pVBVA = pCtx->pVBVA;
