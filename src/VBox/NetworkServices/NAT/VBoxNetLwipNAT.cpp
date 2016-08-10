@@ -1365,6 +1365,7 @@ int main(int argc, char **argv, char **envp)
 
 # if defined(RT_OS_WINDOWS)
 
+#  if 0 /* Some copy and paste from DHCP that nobody explained why was diabled. */
 static LRESULT CALLBACK WindowProc(HWND hwnd,
     UINT uMsg,
     WPARAM wParam,
@@ -1437,13 +1438,14 @@ static DWORD WINAPI MsgThreadProc(__in  LPVOID lpParameter)
 
      return 0;
 }
-
+#  endif
 
 
 /** (We don't want a console usually.) */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-#if 0
+    RT_NOREF(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+#  if 0 /* some copy and paste from DHCP that nobody explained why was diabled. */
     NOREF(hInstance); NOREF(hPrevInstance); NOREF(lpCmdLine); NOREF(nCmdShow);
 
     HANDLE hThread = CreateThread(
@@ -1458,7 +1460,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if(hThread != NULL)
         CloseHandle(hThread);
 
-#endif
+#  endif
     return main(__argc, __argv, environ);
 }
 # endif /* RT_OS_WINDOWS */
