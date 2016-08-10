@@ -425,6 +425,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
 
 HRESULT GuestDnDTarget::leave(ULONG uScreenId)
 {
+    RT_NOREF(uScreenId);
 #if !defined(VBOX_WITH_DRAG_AND_DROP)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
@@ -619,7 +620,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     if (mDataBase.m_cTransfersPending)
         return setError(E_INVALIDARG, tr("Another drop operation already is in progress"));
 
-    /* Dito. */
+    /* Ditto. */
     GuestDnDResponse *pResp = GuestDnDInst()->response();
     AssertPtr(pResp);
 
@@ -1010,8 +1011,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
     DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
-    GuestDnDResponse *pResp = pCtx->mpResp;
-    AssertPtr(pResp);
+    AssertPtr(pCtx->mpResp);
 
     /** @todo Don't allow concurrent reads per context! */
 
@@ -1501,9 +1501,6 @@ int GuestDnDTarget::i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     NOREF(msTimeout);
-
-    GuestDnD *pInst = GuestDnDInst();
-    AssertPtr(pInst);
 
     GuestDnDData *pData = &pCtx->mData;
 
