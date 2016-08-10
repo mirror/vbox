@@ -36,7 +36,7 @@
  * @returns the right count on success or 1 on failure.
  * @param  pCtx  the context containing the heap to use
  */
-RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
+DECLHIDDEN(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 {
     /* Query the configured number of displays. */
     uint32_t cDisplays = 0;
@@ -54,7 +54,7 @@ RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
  *
  * @returns the size
  */
-RTDECL(uint32_t) VBoxVideoGetVRAMSize(void)
+DECLHIDDEN(uint32_t) VBoxVideoGetVRAMSize(void)
 {
     /** @note A 32bit read on this port returns the VRAM size. */
     return VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
@@ -67,7 +67,7 @@ RTDECL(uint32_t) VBoxVideoGetVRAMSize(void)
  *
  * @returns true if any width is allowed, false otherwise.
  */
-RTDECL(bool) VBoxVideoAnyWidthAllowed(void)
+DECLHIDDEN(bool) VBoxVideoAnyWidthAllowed(void)
 {
     unsigned DispiId;
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
@@ -93,10 +93,10 @@ RTDECL(bool) VBoxVideoAnyWidthAllowed(void)
  *                   for all screens
  * @param  pvData    context data for @a pfnFill
  */
-RTDECL(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                  uint32_t u32Count,
-                                  PFNHGSMIFILLVIEWINFO pfnFill,
-                                  void *pvData)
+DECLHIDDEN(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                      uint32_t u32Count,
+                                      PFNHGSMIFILLVIEWINFO pfnFill,
+                                      void *pvData)
 {
     int rc;
     /* Issue the screen info command. */
@@ -130,10 +130,10 @@ RTDECL(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  cx          the horizontal panning offset
  * @param  cy          the vertical panning offset
  */
-RTDECL(void) VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
-                                       uint16_t cVirtWidth, uint16_t cBPP,
-                                       uint16_t fFlags, uint16_t cx,
-                                       uint16_t cy)
+DECLHIDDEN(void) VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
+                                           uint16_t cVirtWidth, uint16_t cBPP,
+                                           uint16_t fFlags, uint16_t cx,
+                                           uint16_t cy)
 {
     /* set the mode characteristics */
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
@@ -174,9 +174,9 @@ RTDECL(void) VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
  * @param  pcBPP        where to store the colour depth of the mode
  * @param  pfFlags      where to store the flags for the mode
  */
-RTDECL(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight,
-                                       uint16_t *pcVirtWidth, uint16_t *pcBPP,
-                                       uint16_t *pfFlags)
+DECLHIDDEN(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight,
+                                           uint16_t *pcVirtWidth, uint16_t *pcBPP,
+                                           uint16_t *pfFlags)
 {
     uint16_t fFlags;
 
@@ -216,7 +216,7 @@ RTDECL(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight,
 /**
  * Disable our extended graphics mode and go back to VGA mode.
  */
-RTDECL(void) VBoxVideoDisableVBE(void)
+DECLHIDDEN(void) VBoxVideoDisableVBE(void)
 {
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_ENABLE);
@@ -239,16 +239,16 @@ RTDECL(void) VBoxVideoDisableVBE(void)
  * @param  cHeight   the mode height
  * @param  cBPP      the colour depth of the mode
  */
-RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         uint32_t cDisplay,
-                                         int32_t  cOriginX,
-                                         int32_t  cOriginY,
-                                         uint32_t offStart,
-                                         uint32_t cbPitch,
-                                         uint32_t cWidth,
-                                         uint32_t cHeight,
-                                         uint16_t cBPP,
-                                         uint16_t fFlags)
+DECLHIDDEN(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                             uint32_t cDisplay,
+                                             int32_t  cOriginX,
+                                             int32_t  cOriginY,
+                                             uint32_t offStart,
+                                             uint32_t cbPitch,
+                                             uint32_t cWidth,
+                                             uint32_t cHeight,
+                                             uint16_t cBPP,
+                                             uint16_t fFlags)
 {
     /* Issue the screen info command. */
     void *p = VBoxHGSMIBufferAlloc(pCtx,
@@ -292,8 +292,8 @@ RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @returns  iprt status code.
  * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
  */
-RTDECL(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int32_t  cOriginX, int32_t  cOriginY,
-                                             uint32_t cWidth, uint32_t cHeight)
+DECLHIDDEN(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int32_t  cOriginX, int32_t  cOriginY,
+                                                 uint32_t cWidth, uint32_t cHeight)
 {
     int rc = VINF_SUCCESS;
     VBVAREPORTINPUTMAPPING *p;
@@ -330,8 +330,8 @@ RTDECL(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int
  * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
  * @returns  VERR_NOT_SUPPORTED  Host does not support this command.
  */
-RTDECL(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                  unsigned cScreens, VBVAMODEHINT *paHints)
+DECLHIDDEN(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                      unsigned cScreens, VBVAMODEHINT *paHints)
 {
     int rc;
     AssertPtrReturn(paHints, VERR_INVALID_POINTER);
@@ -369,7 +369,7 @@ RTDECL(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @returns The mask of VBVA_SCREEN_F_* flags or 0 if host does not support the request.
  * @param  pCtx  the context containing the heap to use
  */
-RTDECL(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx)
+DECLHIDDEN(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 {
     uint32_t u32Flags = 0;
     int rc = VBoxQueryConfHGSMIDef(pCtx, VBOX_VBVA_CONF32_SCREEN_FLAGS, 0, &u32Flags);

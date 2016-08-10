@@ -41,8 +41,8 @@ static void HGSMINotifyHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, HGSMIOFFSE
  * @param  pvMem  pointer into the heap as mapped in @a pCtx to the command to
  *                be completed
  */
-RTDECL(void) VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                      void *pvMem)
+DECLHIDDEN(void) VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
+                                          void *pvMem)
 {
     HGSMIBUFFERHEADER *pHdr = HGSMIBufferHeaderFromData(pvMem);
     HGSMIOFFSET offMem = HGSMIPointerToOffset(&pCtx->areaCtx, pHdr);
@@ -86,7 +86,7 @@ static void hgsmiHostCommandQueryProcess(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 
 
 /** Drain the host command queue. */
-RTDECL(void) VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx)
+DECLHIDDEN(void) VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
     while (pCtx->pfHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
     {
@@ -99,7 +99,7 @@ RTDECL(void) VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 
 
 /** Detect whether HGSMI is supported by the host. */
-RTDECL(bool) VBoxHGSMIIsSupported(void)
+DECLHIDDEN(bool) VBoxHGSMIIsSupported(void)
 {
     uint16_t DispiId;
 
@@ -122,10 +122,10 @@ RTDECL(bool) VBoxHGSMIIsSupported(void)
  * @param  u8Ch     the HGSMI channel to be used, set to the descriptor
  * @param  u16Op    the HGSMI command to be sent, set to the descriptor
  */
-RTDECL(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                    HGSMISIZE cbData,
-                                    uint8_t u8Ch,
-                                    uint16_t u16Op)
+DECLHIDDEN(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                        HGSMISIZE cbData,
+                                        uint8_t u8Ch,
+                                        uint16_t u16Op)
 {
 #ifdef VBOX_WDDM_MINIPORT
     return VBoxSHGSMIHeapAlloc (&pCtx->heapCtx, cbData, u8Ch, u16Op);
@@ -141,8 +141,8 @@ RTDECL(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pCtx      the context containing the heap used
  * @param  pvBuffer  the pointer returned by @a VBoxHGSMIBufferAlloc
  */
-RTDECL(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                 void *pvBuffer)
+DECLHIDDEN(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                     void *pvBuffer)
 {
 #ifdef VBOX_WDDM_MINIPORT
     VBoxSHGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
@@ -158,8 +158,8 @@ RTDECL(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pCtx      the context containing the heap used
  * @param  pvBuffer  the pointer returned by @a VBoxHGSMIBufferAlloc
  */
-RTDECL(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                  void *pvBuffer)
+DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                      void *pvBuffer)
 {
     /* Initialize the buffer and get the offset for port IO. */
     HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (HGSMIGUESTCMDHEAP_GET(&pCtx->heapCtx), pvBuffer);
@@ -216,8 +216,8 @@ static int vboxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param    offLocation           the offset chosen for the flags withing guest
  *                                 VRAM.
  */
-RTDECL(int) VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         HGSMIOFFSET offLocation)
+DECLHIDDEN(int) VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                             HGSMIOFFSET offLocation)
 {
     return vboxHGSMIReportFlagsLocation(pCtx, offLocation);
 }
@@ -264,8 +264,8 @@ static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param    pCtx                  the context of the guest heap to use.
  * @param    fCaps                 the capabilities to report, see VBVACAPS.
  */
-RTDECL(int) VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                  uint32_t fCaps)
+DECLHIDDEN(int) VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                      uint32_t fCaps)
 {
     return vboxHGSMISendCapsInfo(pCtx, fCaps);
 }
@@ -313,12 +313,12 @@ static int vboxHGSMIReportHostArea(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  poffHostFlags        where to save the offset into the mapped area
  *                              of the host flags
  */
-RTDECL(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
-                                         uint32_t *poffVRAMBaseMapping,
-                                         uint32_t *pcbMapping,
-                                         uint32_t *poffGuestHeapMemory,
-                                         uint32_t *pcbGuestHeapMemory,
-                                         uint32_t *poffHostFlags)
+DECLHIDDEN(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
+                                             uint32_t *poffVRAMBaseMapping,
+                                             uint32_t *pcbMapping,
+                                             uint32_t *poffGuestHeapMemory,
+                                             uint32_t *pcbGuestHeapMemory,
+                                             uint32_t *poffHostFlags)
 {
     AssertPtrNullReturnVoid(poffVRAMBaseMapping);
     AssertPtrNullReturnVoid(pcbMapping);
@@ -350,11 +350,11 @@ RTDECL(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
  * @param  offVRAMGuestHeapMemory  the offset of the memory pointed to by
  *                                 @a pvGuestHeapMemory within the video RAM
  */
-RTDECL(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                       void *pvGuestHeapMemory,
-                                       uint32_t cbGuestHeapMemory,
-                                       uint32_t offVRAMGuestHeapMemory,
-                                       const HGSMIENV *pEnv)
+DECLHIDDEN(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                           void *pvGuestHeapMemory,
+                                           uint32_t cbGuestHeapMemory,
+                                           uint32_t offVRAMGuestHeapMemory,
+                                           const HGSMIENV *pEnv)
 {
     /** @todo should we be using a fixed ISA port value here? */
     pCtx->port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
@@ -380,11 +380,11 @@ RTDECL(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  *                             heap area
  * @param  pcbHostArea         where to store the size of the host heap area
  */
-RTDECL(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         uint32_t cbVRAM,
-                                         uint32_t offVRAMBaseMapping,
-                                         uint32_t *poffVRAMHostArea,
-                                         uint32_t *pcbHostArea)
+DECLHIDDEN(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                             uint32_t cbVRAM,
+                                             uint32_t offVRAMBaseMapping,
+                                             uint32_t *poffVRAMHostArea,
+                                             uint32_t *pcbHostArea)
 {
     uint32_t offVRAMHostArea = offVRAMBaseMapping, cbHostArea = 0;
 
@@ -426,12 +426,12 @@ RTDECL(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  offVRAMHostArea    offset of the host heap area into VRAM
  * @param  cbHostArea         size in bytes of the host heap area
  */
-RTDECL(void) VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                       void *pvBaseMapping,
-                                       uint32_t offHostFlags,
-                                       void *pvHostAreaMapping,
-                                       uint32_t offVRAMHostArea,
-                                       uint32_t cbHostArea)
+DECLHIDDEN(void) VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
+                                           void *pvBaseMapping,
+                                           uint32_t offHostFlags,
+                                           void *pvHostAreaMapping,
+                                           uint32_t offVRAMHostArea,
+                                           uint32_t cbHostArea)
 {
     uint8_t *pu8HostFlags = ((uint8_t *)pvBaseMapping) + offHostFlags;
     pCtx->pfHostFlags = (HGSMIHOSTFLAGS *)pu8HostFlags;
@@ -455,11 +455,11 @@ RTDECL(void) VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
  * @param  offVRAMHostArea       offset into VRAM of the host heap area
  * @param  cbHostArea            size in bytes of the host heap area
  */
-RTDECL(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                     HGSMIOFFSET offVRAMFlagsLocation,
-                                     uint32_t fCaps,
-                                     uint32_t offVRAMHostArea,
-                                     uint32_t cbHostArea)
+DECLHIDDEN(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                         HGSMIOFFSET offVRAMFlagsLocation,
+                                         uint32_t fCaps,
+                                         uint32_t offVRAMHostArea,
+                                         uint32_t cbHostArea)
 {
     Log(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
@@ -513,8 +513,8 @@ static int testQueryConf(PHGSMIGUESTCOMMANDCONTEXT pCtx)
  * @param  u32DefValue defaut value
  * @param  pulValue  where to store the value of the parameter on success
  */
-RTDECL(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                  uint32_t u32Index, uint32_t u32DefValue, uint32_t *pulValue)
+DECLHIDDEN(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                      uint32_t u32Index, uint32_t u32DefValue, uint32_t *pulValue)
 {
     int rc = VINF_SUCCESS;
     VBVACONF32 *p;
@@ -547,8 +547,8 @@ RTDECL(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     return rc;
 }
 
-RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                               uint32_t u32Index, uint32_t *pulValue)
+DECLHIDDEN(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                   uint32_t u32Index, uint32_t *pulValue)
 {
     return VBoxQueryConfHGSMIDef(pCtx, u32Index, UINT32_MAX, pulValue);
 }
@@ -565,14 +565,14 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pPixels   pixel data, @see VMMDevReqMousePointer for the format
  * @param  cbLength  size in bytes of the pixel data
  */
-RTDECL(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         uint32_t fFlags,
-                                         uint32_t cHotX,
-                                         uint32_t cHotY,
-                                         uint32_t cWidth,
-                                         uint32_t cHeight,
-                                         uint8_t *pPixels,
-                                         uint32_t cbLength)
+DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                             uint32_t fFlags,
+                                             uint32_t cHotX,
+                                             uint32_t cHotY,
+                                             uint32_t cWidth,
+                                             uint32_t cHeight,
+                                             uint8_t *pPixels,
+                                             uint32_t cbLength)
 {
     VBVAMOUSEPOINTERSHAPE *p;
     uint32_t cbData = 0;
@@ -641,8 +641,8 @@ RTDECL(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @returns  iprt status code.
  * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
  */
-RTDECL(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
-                                    uint32_t *pxHost, uint32_t *pyHost)
+DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
+                                        uint32_t *pxHost, uint32_t *pyHost)
 {
     int rc = VINF_SUCCESS;
     VBVACURSORPOSITION *p;

@@ -97,9 +97,9 @@ static bool vboxVBVAInformHost(PVBVABUFFERCONTEXT pCtx,
 /*
  * Public hardware buffer methods.
  */
-RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
-                            PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                            VBVABUFFER *pVBVA, int32_t cScreen)
+DECLHIDDEN(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
+                                PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                                VBVABUFFER *pVBVA, int32_t cScreen)
 {
     bool bRc = false;
 
@@ -136,9 +136,9 @@ RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
     return bRc;
 }
 
-RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
-                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                             int32_t cScreen)
+DECLHIDDEN(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
+                                 PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                                 int32_t cScreen)
 {
     LogFlowFunc(("\n"));
 
@@ -151,8 +151,8 @@ RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
     return;
 }
 
-RTDECL(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
-                                       PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
+DECLHIDDEN(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
+                                           PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
 {
     bool bRc = false;
 
@@ -201,7 +201,7 @@ RTDECL(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
     return bRc;
 }
 
-RTDECL(void) VBoxVBVABufferEndUpdate(PVBVABUFFERCONTEXT pCtx)
+DECLHIDDEN(void) VBoxVBVABufferEndUpdate(PVBVABUFFERCONTEXT pCtx)
 {
     VBVARECORD *pRecord;
 
@@ -356,14 +356,14 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
 /*
  * Public writer to the hardware buffer.
  */
-RTDECL(bool) VBoxVBVAWrite(PVBVABUFFERCONTEXT pCtx,
-                           PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                           const void *pv, uint32_t cb)
+DECLHIDDEN(bool) VBoxVBVAWrite(PVBVABUFFERCONTEXT pCtx,
+                               PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                               const void *pv, uint32_t cb)
 {
     return vboxHwBufferWrite (pCtx, pHGSMICtx, pv, cb);
 }
 
-RTDECL(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code)
+DECLHIDDEN(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code)
 {
     VBVABUFFER *pVBVA = pCtx->pVBVA;
 
@@ -380,9 +380,9 @@ RTDECL(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code)
     return false;
 }
 
-RTDECL(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
-                                        uint32_t offVRAMBuffer,
-                                        uint32_t cbBuffer)
+DECLHIDDEN(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
+                                            uint32_t offVRAMBuffer,
+                                            uint32_t cbBuffer)
 {
     pCtx->offVRAMBuffer = offVRAMBuffer;
     pCtx->cbBuffer      = cbBuffer;
