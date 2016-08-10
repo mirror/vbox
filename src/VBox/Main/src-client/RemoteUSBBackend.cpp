@@ -154,6 +154,7 @@ static void qurbFree (REMOTEUSBQURB *pQURB)
 /* Called by VRDP server when the client responds to a request on USB channel. */
 DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet)
 {
+    RT_NOREF(u32ClientId);
     int rc = VINF_SUCCESS;
 
     LogFlow(("USBClientResponseCallback: id = %d, pv = %p, code = %d, pvRet = %p, cbRet = %d\n",
@@ -253,6 +254,7 @@ DECLCALLBACK(int) USBClientResponseCallback(void *pv, uint32_t u32ClientId, uint
 static DECLCALLBACK(int) iface_Open(PREMOTEUSBBACKEND pInstance, const char *pszAddress,
                                     size_t cbAddress, PREMOTEUSBDEVICE *ppDevice)
 {
+    RT_NOREF(cbAddress);
     int rc = VINF_SUCCESS;
 
     RemoteUSBBackend *pThis = (RemoteUSBBackend *)pInstance;

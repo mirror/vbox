@@ -88,14 +88,14 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list);
 int NetIfEnableStaticIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask);
 int NetIfEnableStaticIpConfigV6(VirtualBox *pVBox, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
 int NetIfEnableDynamicIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf);
-int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress, const char *pcszName = NULL);
-int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId, IProgress **aProgress);
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress, const char *pszName = NULL);
+int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId, IProgress **aProgress);
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
 int NetIfGetConfigByName(PNETIFINFO pInfo);
-int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState);
-int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits);
+int NetIfGetState(const char *pszIfName, NETIFSTATUS *penmState);
+int NetIfGetLinkSpeed(const char *pszIfName, uint32_t *puMbits);
 int NetIfDhcpRediscover(VirtualBox *pVBox, HostNetworkInterface * pIf);
-int NetIfAdpCtlOut(const char * pcszName, const char * pcszCmd, char *pszBuffer, size_t cBufSize);
+int NetIfAdpCtlOut(const char *pszName, const char *pszCmd, char *pszBuffer, size_t cBufSize);
 
 DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
 {

@@ -41,8 +41,9 @@ typedef struct AuthCtx
     unsigned           clientId;
 } AuthCtx;
 
-static DECLCALLBACK(int) authThread(RTTHREAD self, void *pvUser)
+static DECLCALLBACK(int) authThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     AuthCtx *pCtx = (AuthCtx *)pvUser;
 
     if (pCtx->pfnAuthEntry3)

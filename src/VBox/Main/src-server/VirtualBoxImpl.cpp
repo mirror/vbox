@@ -1947,7 +1947,6 @@ HRESULT VirtualBox::getGuestOSType(const com::Utf8Str &aId,
     aType = NULL;
     AutoReadLock alock(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
     for (GuestOSTypesOList::iterator it = m->allGuestOSTypes.begin();
          it != m->allGuestOSTypes.end();
          ++it)

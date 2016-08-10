@@ -96,8 +96,8 @@ static int getDefaultInterfaceIndex()
 
 static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDefault)
 {
-    DWORD dwRc;
-    int rc = VINF_SUCCESS;
+    RT_NOREF(strName);
+
     /*
      * Most of the hosts probably have less than 10 adapters,
      * so we'll mostly succeed from the first attempt.
@@ -106,7 +106,7 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
     PIP_ADAPTER_ADDRESSES pAddresses = (PIP_ADAPTER_ADDRESSES)RTMemAlloc(uBufLen);
     if (!pAddresses)
         return VERR_NO_MEMORY;
-    dwRc = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &uBufLen);
+    DWORD dwRc = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &uBufLen);
     if (dwRc == ERROR_BUFFER_OVERFLOW)
     {
         /* Impressive! More than 10 adapters! Get more memory and try again. */
@@ -1111,11 +1111,12 @@ int NetIfGetConfigByName(PNETIFINFO)
  *
  * @returns VBox status code.
  *
- * @param   pcszIfName  Interface name.
+ * @param   pszIfName   Interface name.
  * @param   penmState   Where to store the retrieved state.
  */
-int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState)
+int NetIfGetState(const char *pszIfName, NETIFSTATUS *penmState)
 {
+    RT_NOREF(pszIfName, penmState);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -1125,19 +1126,21 @@ int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState)
  *
  * @returns VBox status code.
  *
- * @param   pcszIfName  Interface name.
+ * @param   pszIfName  Interface name.
  * @param   puMbits     Where to store the link speed.
  */
-int NetIfGetLinkSpeed(const char * /*pcszIfName*/, uint32_t * /*puMbits*/)
+int NetIfGetLinkSpeed(const char *pszIfName, uint32_t *puMbits)
 {
+    RT_NOREF(pszIfName, puMbits);
     return VERR_NOT_IMPLEMENTED;
 }
 
 int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
                                         IHostNetworkInterface **aHostNetworkInterface,
                                         IProgress **aProgress,
-                                        const char *pcszName)
+                                        const char *pszName)
 {
+    RT_NOREF(pszName);
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
 #else
@@ -1225,12 +1228,12 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
 
 int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULONG aOldIp, ULONG ip, ULONG mask)
 {
+    RT_NOREF(aOldIp);
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
 #else
-    HRESULT rc;
     Bstr guid;
-    rc = pIf->COMGETTER(Id)(guid.asOutParam());
+    HRESULT rc = pIf->COMGETTER(Id)(guid.asOutParam());
     if (SUCCEEDED(rc))
     {
 //        ComPtr<VirtualBox> vBox;
@@ -1283,12 +1286,12 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address,
                                 IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
+    RT_NOREF(aOldIPV6Address);
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
 #else
-    HRESULT rc;
     Bstr guid;
-    rc = pIf->COMGETTER(Id)(guid.asOutParam());
+    HRESULT rc = pIf->COMGETTER(Id)(guid.asOutParam());
     if (SUCCEEDED(rc))
     {
 //        ComPtr<VirtualBox> vBox;

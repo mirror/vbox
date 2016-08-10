@@ -947,6 +947,7 @@ HRESULT SystemProperties::getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditions
 
 HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdditionsISO)
 {
+    RT_NOREF(aDefaultAdditionsISO);
     /** @todo not yet implemented, settings handling is missing */
     ReturnComNotImplemented();
 #if 0 /* not implemented */

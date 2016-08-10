@@ -2738,6 +2738,7 @@ HRESULT Machine::getSettingsFilePath(com::Utf8Str &aSettingsFilePath)
 
 HRESULT Machine::getSettingsAuxFilePath(com::Utf8Str &aSettingsFilePath)
 {
+    RT_NOREF(aSettingsFilePath);
     ReturnComNotImplemented();
 }
 
@@ -7127,6 +7128,7 @@ HRESULT Machine::getVMProcessPriority(com::Utf8Str &aVMProcessPriority)
 
 HRESULT Machine::setVMProcessPriority(const com::Utf8Str &aVMProcessPriority)
 {
+    RT_NOREF(aVMProcessPriority);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT hrc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (SUCCEEDED(hrc))

@@ -6419,6 +6419,7 @@ HRESULT Medium::i_preparationForMoving(const Utf8Str &aLocation)
  */
 bool Medium::i_isMoveOperation(const ComObjPtr<Medium> &aTarget) const
 {
+    RT_NOREF(aTarget);
     return (m->fMoveThisMedium == true) ? true:false;
 }
 
