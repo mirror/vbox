@@ -165,8 +165,12 @@
  * Now for the guidelines:
  *
  *      - Never, ever, use int, long, ULONG, LONG, DWORD or similar to cast a
- *        pointer to integer. Use uintptr_t or intptr_t. If you have to use
+ *        pointer to integer.  Use uintptr_t or intptr_t. If you have to use
  *        NT/Windows types, there is the choice of ULONG_PTR and DWORD_PTR.
+ *
+ *      - Avoid where ever possible the use of the types 'long' and 'unsigned
+ *        long' as these differs in size between windows and the other hosts
+ *        (see above).
  *
  *      - RT_OS_WINDOWS is defined to indicate Windows. Do not use __WIN32__,
  *        __WIN64__ and __WIN__ because they are all deprecated and scheduled
