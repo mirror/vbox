@@ -264,9 +264,11 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
             /* Needed for instance for the message ``cannot connect to X server'': */
             RTStrmPrintf(g_pStdErr, "Qt FATAL: %s\n", strMessage.toUtf8().constData());
 # endif
+# if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
         case QtInfoMsg:
-            /* ignore? */
+            /** @todo ignore? */
             break;
+# endif
     }
 }
 #else /* QT_VERSION < 0x050000 */
