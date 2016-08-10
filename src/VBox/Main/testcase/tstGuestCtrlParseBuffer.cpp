@@ -50,7 +50,7 @@ static struct
     uint32_t    uOffsetAfter;
     uint32_t    uMapElements;
     int         iResult;
-} aTestBlock[] =
+} g_aTestBlock[] =
 {
     /*
      * Single object parsing.
@@ -102,7 +102,7 @@ static struct
     uint32_t    uNumBlocks;
     /** Overall result when done parsing. */
     int         iResult;
-} aTestStream[] =
+} g_aTestStream[] =
 {
     /* No blocks. */
     { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VERR_NO_DATA },
@@ -124,18 +124,18 @@ int manualTest(void)
         uint32_t    uOffsetAfter;
         uint32_t    uMapElements;
         int         iResult;
-    } aTest[] =
+    } s_aTest[] =
     {
         { "test5=test5\0t51=t51",           sizeof("test5=test5\0t51=t51"),                            0,  sizeof("test5=test5\0") - 1,                   1, VERR_MORE_DATA },
         { "\0\0test5=test5\0t51=t51",       sizeof("\0\0test5=test5\0t51=t51"),                        0,  sizeof("\0\0test5=test5\0") - 1,               1, VERR_MORE_DATA },
     };
 
-    for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTest); iTest++)
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(s_aTest); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "Manual test #%d\n", iTest);
 
         GuestProcessStream stream;
-        rc = stream.AddData((BYTE*)aTest[iTest].pbData, aTest[iTest].cbData);
+        rc = stream.AddData((BYTE*)s_aTest[iTest].pbData, s_aTest[iTest].cbData);
 
         for (;;)
         {
@@ -188,25 +188,25 @@ int main()
     RTAssertSetQuiet(true);
 
     unsigned iTest;
-    for (iTest = 0; iTest < RT_ELEMENTS(aTestBlock); iTest++)
+    for (iTest = 0; iTest < RT_ELEMENTS(g_aTestBlock); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
         GuestProcessStream stream;
-        int iResult = stream.AddData((BYTE*)aTestBlock[iTest].pbData, aTestBlock[iTest].cbData);
+        int iResult = stream.AddData((BYTE*)g_aTestBlock[iTest].pbData, g_aTestBlock[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
             GuestProcessStreamBlock curBlock;
             iResult = stream.ParseBlock(curBlock);
-            if (iResult != aTestBlock[iTest].iResult)
+            if (iResult != g_aTestBlock[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc\n",
-                             iResult, aTestBlock[iTest].iResult);
+                             iResult, g_aTestBlock[iTest].iResult);
             }
-            else if (stream.GetOffset() != aTestBlock[iTest].uOffsetAfter)
+            else if (stream.GetOffset() != g_aTestBlock[iTest].uOffsetAfter)
             {
                 RTTestFailed(hTest, "\tOffset %zu wrong, expected %u\n",
-                             stream.GetOffset(), aTestBlock[iTest].uOffsetAfter);
+                             stream.GetOffset(), g_aTestBlock[iTest].uOffsetAfter);
             }
             else if (iResult == VERR_MORE_DATA)
             {
@@ -216,38 +216,37 @@ int main()
             if (  (   RT_SUCCESS(iResult)
                    || iResult == VERR_MORE_DATA))
             {
-                if (curBlock.GetCount() != aTestBlock[iTest].uMapElements)
+                if (curBlock.GetCount() != g_aTestBlock[iTest].uMapElements)
                 {
                     RTTestFailed(hTest, "\tMap has %u elements, expected %u\n",
-                                 curBlock.GetCount(), aTestBlock[iTest].uMapElements);
+                                 curBlock.GetCount(), g_aTestBlock[iTest].uMapElements);
                 }
             }
 
             /* There is remaining data left in the buffer (which needs to be merged
              * with a following buffer) -- print it. */
-            size_t uOffset = stream.GetOffset();
-            size_t uToWrite = aTestBlock[iTest].cbData - uOffset;
-            if (uToWrite)
+            size_t off = stream.GetOffset();
+            size_t cbToWrite = g_aTestBlock[iTest].cbData - off;
+            if (cbToWrite)
             {
-                const char *pszRemaining = aTestBlock[iTest].pbData;
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", cbToWrite);
 
                 /* How to properly get the current RTTESTLVL (aka IPRT_TEST_MAX_LEVEL) here?
                  * Hack alert: Using RTEnvGet for now. */
                 if (!RTStrICmp(RTEnvGet("IPRT_TEST_MAX_LEVEL"), "debug"))
-                    RTStrmWriteEx(g_pStdOut, &aTestBlock[iTest].pbData[uOffset], uToWrite - 1, NULL);
+                    RTStrmWriteEx(g_pStdOut, &g_aTestBlock[iTest].pbData[off], cbToWrite - 1, NULL);
             }
         }
     }
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
 
-    for (iTest = 0; iTest < RT_ELEMENTS(aTestStream); iTest++)
+    for (iTest = 0; iTest < RT_ELEMENTS(g_aTestStream); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
         GuestProcessStream stream;
-        int iResult = stream.AddData((BYTE*)aTestStream[iTest].pbData, aTestStream[iTest].cbData);
+        int iResult = stream.AddData((BYTE*)g_aTestStream[iTest].pbData, g_aTestStream[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
             uint32_t uNumBlocks = 0;
@@ -267,15 +266,15 @@ int main()
                     break;
             } while (RT_SUCCESS(iResult));
 
-            if (iResult != aTestStream[iTest].iResult)
+            if (iResult != g_aTestStream[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc\n",
-                             iResult, aTestStream[iTest].iResult);
+                             iResult, g_aTestStream[iTest].iResult);
             }
-            else if (uNumBlocks != aTestStream[iTest].uNumBlocks)
+            else if (uNumBlocks != g_aTestStream[iTest].uNumBlocks)
             {
                 RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n",
-                             uNumBlocks, aTestStream[iTest].uNumBlocks);
+                             uNumBlocks, g_aTestStream[iTest].uNumBlocks);
             }
         }
         else

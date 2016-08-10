@@ -579,6 +579,7 @@ void GuestBase::baseUninit(void)
     LogFlowThisFuncEnter();
 
     int rc = RTCritSectDelete(&mWaitEventCritSect);
+    NOREF(rc);
 
     LogFlowFuncLeaveRC(rc);
     /* No return value. */
@@ -982,7 +983,7 @@ int GuestObject::registerWaitEvent(const GuestEventTypes &lstEvents,
 }
 
 int GuestObject::sendCommand(uint32_t uFunction,
-                             uint32_t uParms, PVBOXHGCMSVCPARM paParms)
+                             uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
 #ifndef VBOX_GUESTCTRL_TEST_CASE
     ComObjPtr<Console> pConsole = mConsole;
@@ -994,8 +995,8 @@ int GuestObject::sendCommand(uint32_t uFunction,
     VMMDev *pVMMDev = pConsole->i_getVMMDev();
     if (pVMMDev)
     {
-        LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
-        vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, uParms, paParms);
+        LogFlowThisFunc(("uFunction=%RU32, cParms=%RU32\n", uFunction, cParms));
+        vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, cParms, paParms);
         if (RT_FAILURE(vrc))
         {
             /** @todo What to do here? */
@@ -1005,6 +1006,7 @@ int GuestObject::sendCommand(uint32_t uFunction,
     LogFlowThisFuncEnter();
 
     /* Not needed within testcases. */
+    RT_NOREF(uFunction, cParms, paParms);
     int vrc = VINF_SUCCESS;
 #endif
     return vrc;

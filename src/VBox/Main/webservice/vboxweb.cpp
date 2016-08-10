@@ -398,15 +398,17 @@ public:
     /**
      * Static function that can be passed to RTThreadCreate and that calls
      * process() on the SoapThread instance passed as the thread parameter.
-     * @param pThread
-     * @param pvThread
+     *
+     * @param   hThreadSelf
+     * @param   pvThread
      * @return
      */
-    static DECLCALLBACK(int) fntWrapper(RTTHREAD pThread, void *pvThread)
+    static DECLCALLBACK(int) fntWrapper(RTTHREAD hThreadSelf, void *pvThread)
     {
+        RT_NOREF(hThreadSelf);
         SoapThread *pst = (SoapThread*)pvThread;
         pst->process();
-        return 0;
+        return VINF_SUCCESS;
     }
 
     size_t          m_u;            // thread number
@@ -973,8 +975,10 @@ static void doQueuesLoop()
  * the loop that takes SOAP calls from HTTP and serves them by handing sockets to the
  * SOAP queue worker threads.
  */
-static DECLCALLBACK(int) fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) fntQPumper(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf, pvUser);
+
     // store a log prefix for this thread
     util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
     g_mapThreads[RTThreadSelf()] = "[ P ]";
@@ -984,7 +988,7 @@ static DECLCALLBACK(int) fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 
     thrLock.acquire();
     g_mapThreads.erase(RTThreadSelf());
-    return 0;
+    return VINF_SUCCESS;
 }
 
 #ifdef RT_OS_WINDOWS
@@ -1436,8 +1440,10 @@ int main(int argc, char *argv[])
  * for whether they have been no requests in a configurable timeout period. In
  * that case, the websession is automatically logged off.
  */
-static DECLCALLBACK(int) fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) fntWatchdog(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf, pvUser);
+
     // store a log prefix for this thread
     util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
     g_mapThreads[RTThreadSelf()] = "[W  ]";
@@ -2260,6 +2266,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     _vbox__IManagedObjectRef_USCOREgetInterfaceName *req,
     _vbox__IManagedObjectRef_USCOREgetInterfaceNameResponse *resp)
 {
+    RT_NOREF(soap);
     HRESULT rc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
@@ -2295,6 +2302,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
     _vbox__IManagedObjectRef_USCORErelease *req,
     _vbox__IManagedObjectRef_USCOREreleaseResponse *resp)
 {
+    RT_NOREF(resp);
     HRESULT rc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
@@ -2360,6 +2368,7 @@ int __vbox__IWebsessionManager_USCORElogon(
         _vbox__IWebsessionManager_USCORElogon *req,
         _vbox__IWebsessionManager_USCORElogonResponse *resp)
 {
+    RT_NOREF(soap);
     HRESULT rc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
@@ -2449,16 +2458,16 @@ int __vbox__IWebsessionManager_USCORElogoff(
         _vbox__IWebsessionManager_USCORElogoff *req,
         _vbox__IWebsessionManager_USCORElogoffResponse *resp)
 {
+    RT_NOREF(resp);
     HRESULT rc = S_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do
     {
         // findWebsessionFromRef and the websession destructor require the lock
         util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
-        WebServiceSession* pWebsession;
-        if ((pWebsession = WebServiceSession::findWebsessionFromRef(req->refIVirtualBox)))
+        WebServiceSession *pWebsession = WebServiceSession::findWebsessionFromRef(req->refIVirtualBox);
+        if (pWebsession)
         {
             WEBDEBUG(("websession logoff, deleting websession %#llx\n", pWebsession->getID()));
             delete pWebsession;
@@ -2466,7 +2475,7 @@ int __vbox__IWebsessionManager_USCORElogoff(
 
             WEBDEBUG(("websession destroyed, %d websessions left open\n", g_mapWebsessions.size()));
         }
-    } while (0);
+    }
 
     WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))

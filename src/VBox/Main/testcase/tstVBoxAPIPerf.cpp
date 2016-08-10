@@ -195,7 +195,7 @@ static void tstApiPrf4(IVirtualBox *pVBox)
 
 
 
-int main(int argc, char **argv)
+int main()
 {
     /*
      * Initialization.

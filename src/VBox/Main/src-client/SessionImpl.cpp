@@ -277,6 +277,7 @@ HRESULT Session::getRemoteConsole(ComPtr<IConsole> &aConsole)
     return S_OK;
 
 #else  /* VBOX_COM_INPROC_API_CLIENT */
+    RT_NOREF(aConsole);
     AssertFailed();
     return VBOX_E_INVALID_OBJECT_STATE;
 #endif /* VBOX_COM_INPROC_API_CLIENT */
@@ -292,6 +293,7 @@ HRESULT Session::getNominalState(MachineState_T *aNominalState)
 
     return mConsole->i_getNominalState(*aNominalState);
 #else
+    RT_NOREF(aNominalState);
     AssertFailed();
     return E_NOTIMPL;
 #endif
@@ -345,6 +347,7 @@ HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
     else
         mRemoteMachine = aMachine;
 #else
+    RT_NOREF(aLockType);
     mRemoteMachine = aMachine;
 #endif
 
@@ -501,6 +504,7 @@ HRESULT Session::updateMachineState(MachineState_T aMachineState)
 
     return mConsole->i_updateMachineState(aMachineState);
 #else
+    RT_NOREF(aMachineState);
     return S_OK;
 #endif
 }
@@ -575,6 +579,7 @@ HRESULT Session::onNetworkAdapterChange(const ComPtr<INetworkAdapter> &aNetworkA
 
     return mConsole->i_onNetworkAdapterChange(aNetworkAdapter, aChangeAdapter);
 #else
+    RT_NOREF(aNetworkAdapter, aChangeAdapter);
     return S_OK;
 #endif
 }
@@ -591,6 +596,7 @@ HRESULT Session::onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort)
 
     return mConsole->i_onSerialPortChange(aSerialPort);
 #else
+    RT_NOREF(aSerialPort);
     return S_OK;
 #endif
 }
@@ -607,6 +613,7 @@ HRESULT Session::onParallelPortChange(const ComPtr<IParallelPort> &aParallelPort
 
     return mConsole->i_onParallelPortChange(aParallelPort);
 #else
+    RT_NOREF(aParallelPort);
     return S_OK;
 #endif
 }
@@ -640,6 +647,7 @@ HRESULT Session::onMediumChange(const ComPtr<IMediumAttachment> &aMediumAttachme
 
     return mConsole->i_onMediumChange(aMediumAttachment, aForce);
 #else
+    RT_NOREF(aMediumAttachment, aForce);
     return S_OK;
 #endif
 }
@@ -656,6 +664,7 @@ HRESULT Session::onCPUChange(ULONG aCpu, BOOL aAdd)
 
     return mConsole->i_onCPUChange(aCpu, aAdd);
 #else
+    RT_NOREF(aCpu, aAdd);
     return S_OK;
 #endif
 }
@@ -672,6 +681,7 @@ HRESULT Session::onCPUExecutionCapChange(ULONG aExecutionCap)
 
     return mConsole->i_onCPUExecutionCapChange(aExecutionCap);
 #else
+    RT_NOREF(aExecutionCap);
     return S_OK;
 #endif
 }
@@ -688,6 +698,7 @@ HRESULT Session::onVRDEServerChange(BOOL aRestart)
 
     return mConsole->i_onVRDEServerChange(aRestart);
 #else
+    RT_NOREF(aRestart);
     return S_OK;
 #endif
 }
@@ -736,6 +747,7 @@ HRESULT Session::onSharedFolderChange(BOOL aGlobal)
 
     return mConsole->i_onSharedFolderChange(aGlobal);
 #else
+    RT_NOREF(aGlobal);
     return S_OK;
 #endif
 }
@@ -752,6 +764,7 @@ HRESULT Session::onClipboardModeChange(ClipboardMode_T aClipboardMode)
 
     return mConsole->i_onClipboardModeChange(aClipboardMode);
 #else
+    RT_NOREF(aClipboardMode);
     return S_OK;
 #endif
 }
@@ -768,6 +781,7 @@ HRESULT Session::onDnDModeChange(DnDMode_T aDndMode)
 
     return mConsole->i_onDnDModeChange(aDndMode);
 #else
+    RT_NOREF(aDndMode);
     return S_OK;
 #endif
 }
@@ -787,6 +801,7 @@ HRESULT Session::onUSBDeviceAttach(const ComPtr<IUSBDevice> &aDevice,
 
     return mConsole->i_onUSBDeviceAttach(aDevice, aError, aMaskedInterfaces, aCaptureFilename);
 #else
+    RT_NOREF(aDevice, aError, aMaskedInterfaces, aCaptureFilename);
     return S_OK;
 #endif
 }
@@ -804,6 +819,7 @@ HRESULT Session::onUSBDeviceDetach(const com::Guid &aId,
 
     return mConsole->i_onUSBDeviceDetach(aId.toUtf16().raw(), aError);
 #else
+    RT_NOREF(aId, aError);
     return S_OK;
 #endif
 }
@@ -847,6 +863,7 @@ HRESULT Session::onBandwidthGroupChange(const ComPtr<IBandwidthGroup> &aBandwidt
 
     return mConsole->i_onBandwidthGroupChange(aBandwidthGroup);
 #else
+    RT_NOREF(aBandwidthGroup);
     return S_OK;
 #endif
 }
@@ -863,6 +880,7 @@ HRESULT Session::onStorageDeviceChange(const ComPtr<IMediumAttachment> &aMediumA
 
     return mConsole->i_onStorageDeviceChange(aMediumAttachment, aRemove, aSilent);
 #else
+    RT_NOREF(aMediumAttachment, aRemove, aSilent);
     return S_OK;
 #endif
 }
@@ -902,6 +920,7 @@ HRESULT Session::accessGuestProperty(const com::Utf8Str &aName, const com::Utf8S
     /** @todo This is nonsense, non-VM API users shouldn't need to deal with this
      *        method call, VBoxSVC should be clever enough to see that the
      *        session doesn't have a console! */
+    RT_NOREF(aName, aValue, aFlags, aAccessMode, aRetValue, aRetTimestamp, aRetFlags);
     return E_ACCESSDENIED;
 # endif /* VBOX_COM_INPROC_API_CLIENT */
 
@@ -931,6 +950,7 @@ HRESULT Session::enumerateGuestProperties(const com::Utf8Str &aPatterns,
     return mConsole->i_enumerateGuestProperties(aPatterns, aKeys, aValues, aTimestamps, aFlags);
 
 #else /* VBOX_WITH_GUEST_PROPS not defined */
+    RT_NOREF(aPatterns, aKeys, aValues, aTimestamps, aFlags);
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
@@ -950,6 +970,7 @@ HRESULT Session::onlineMergeMedium(const ComPtr<IMediumAttachment> &aMediumAttac
                                          aSourceIdx, aTargetIdx,
                                          aProgress);
 #else
+    RT_NOREF(aMediumAttachment, aSourceIdx, aTargetIdx, aProgress);
     AssertFailed();
     return E_NOTIMPL;
 #endif
@@ -967,6 +988,7 @@ HRESULT Session::reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAt
 
     return mConsole->i_reconfigureMediumAttachments(aAttachments);
 #else
+    RT_NOREF(aAttachments);
     AssertFailed();
     return E_NOTIMPL;
 #endif
@@ -984,6 +1006,7 @@ HRESULT Session::enableVMMStatistics(BOOL aEnable)
 
     return S_OK;
 #else
+    RT_NOREF(aEnable);
     AssertFailed();
     return E_NOTIMPL;
 #endif
@@ -999,6 +1022,7 @@ HRESULT Session::pauseWithReason(Reason_T aReason)
 
     return mConsole->i_pause(aReason);
 #else
+    RT_NOREF(aReason);
     AssertFailed();
     return E_NOTIMPL;
 #endif
@@ -1015,12 +1039,14 @@ HRESULT Session::resumeWithReason(Reason_T aReason)
     AutoWriteLock dummyLock(mConsole COMMA_LOCKVAL_SRC_POS);
     return mConsole->i_resume(aReason, dummyLock);
 #else
+    RT_NOREF(aReason);
     AssertFailed();
     return E_NOTIMPL;
 #endif
 }
 
-HRESULT Session::saveStateWithReason(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath, BOOL aPauseVM, BOOL *aLeftPaused)
+HRESULT Session::saveStateWithReason(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath,
+                                     BOOL aPauseVM, BOOL *aLeftPaused)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
@@ -1034,6 +1060,7 @@ HRESULT Session::saveStateWithReason(Reason_T aReason, const ComPtr<IProgress> &
         *aLeftPaused = fLeftPaused;
     return rc;
 #else
+    RT_NOREF(aReason, aProgress, aStateFilePath, aPauseVM, aLeftPaused);
     AssertFailed();
     return E_NOTIMPL;
 #endif

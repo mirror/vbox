@@ -336,6 +336,7 @@ static int tstCreateMachines(IVirtualBox *pVBox)
 
 static int tstClean(IVirtualBox *pVBox, IVirtualBoxClient *pClient)
 {
+    NOREF(pClient);
     HRESULT rc = S_OK;
 
     // stop all machines created for the test
@@ -379,8 +380,9 @@ static int tstClean(IVirtualBox *pVBox, IVirtualBoxClient *pClient)
 }
 
 
-static DECLCALLBACK(int) tstThreadRun(RTTHREAD thread, void *pvUser)
+static DECLCALLBACK(int) tstThreadRun(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     TestThreadArgs* args = (TestThreadArgs*)pvUser;
     Assert(args != NULL);
     uint32_t maxPackSize = args->machinesPackSize;

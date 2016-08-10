@@ -353,7 +353,7 @@ static BOOL tstApiClean(IVirtualBox *pVBox)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
     /*
      * Initialization.
