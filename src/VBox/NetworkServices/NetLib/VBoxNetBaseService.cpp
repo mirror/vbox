@@ -246,6 +246,10 @@ int VBoxNetBaseService::run()
  *
  * @param   argc    Argument count.
  * @param   argv    Argument vector.
+ *
+ * @todo r=bird: The --help and --version options shall not return a
+ *               non-zero exit code.  So, this method need to grow some
+ *               complexity.  I'm to blame for that blunder :/
  */
 int VBoxNetBaseService::parseArgs(int argc, char **argv)
 {
@@ -294,7 +298,7 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                 else
                 {
                     RTStrmPrintf(g_pStdErr, "Invalid trunk type '%s'\n", Val.psz);
-                    return 1;
+                    return RTEXITCODE_SYNTAX;
                 }
                 break;
 
@@ -316,7 +320,7 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
 
             case 'V': // --version (missed)
                 RTPrintf("%sr%u\n", RTBldCfgVersion(), RTBldCfgRevision());
-                return 1;
+                return 1; /** @todo this exit code is wrong, of course. :/ */
 
             case 'M': // --need-main
                 m->m_fNeedMain = true;
@@ -337,16 +341,16 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                 for (unsigned int i = 0; i < m->m_vecOptionDefs.size(); i++)
                     RTPrintf("    -%c, %s\n", m->m_vecOptionDefs[i]->iShort, m->m_vecOptionDefs[i]->pszLong);
                 usage(); /* to print Service Specific usage */
-                return 1;
+                return 1; /** @todo this exit code is wrong, of course. :/ */
 
             default:
             {
                 int rc1 = parseOpt(rc, Val);
                 if (RT_FAILURE(rc1))
                 {
-                    rc = RTGetOptPrintError(rc, &Val);
+                    RTEXITCODE rcExit = RTGetOptPrintError(rc, &Val);
                     RTPrintf("Use --help for more information.\n");
-                    return rc;
+                    return rcExit;
                 }
                 break;
             }
@@ -354,7 +358,7 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
     }
 
     RTMemFree(paOptionArray);
-    return rc;
+    return RTEXITCODE_SUCCESS;
 }
 
 
