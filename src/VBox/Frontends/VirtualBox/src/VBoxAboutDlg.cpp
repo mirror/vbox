@@ -58,7 +58,7 @@ bool VBoxAboutDlg::event(QEvent *pEvent)
     return QIDialog::event(pEvent);
 }
 
-void VBoxAboutDlg::paintEvent(QPaintEvent* /* pEvent */)
+void VBoxAboutDlg::paintEvent(QPaintEvent * /* pEvent */)
 {
     QPainter painter(this);
     /* Draw About-VirtualBox background image: */
@@ -71,15 +71,15 @@ void VBoxAboutDlg::retranslateUi()
     const QString strAboutText = tr("VirtualBox Graphical User Interface");
 #ifdef VBOX_BLEEDING_EDGE
     const QString strVersionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
-#else /* !VBOX_BLEEDING_EDGE */
+#else
     const QString strVersionText = tr("Version %1");
-#endif /* !VBOX_BLEEDING_EDGE */
-#if VBOX_OSE
-    m_strAboutText = strAboutText + " " + strVersionText.arg(m_strVersion) + "\n" +
-                     QString("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg(QChar(0xa9));
-#else /* !VBOX_OSE */
+#endif
+#ifdef VBOX_OSE
+    m_strAboutText = strAboutText + " " + strVersionText.arg(m_strVersion) + "\n"
+                   + QString("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg(QChar(0xa9));
+#else
     m_strAboutText = strAboutText + "\n" + strVersionText.arg(m_strVersion);
-#endif /* !VBOX_OSE */
+#endif
     m_strAboutText = m_strAboutText + QString(" (Qt%1)").arg(qVersion());
     m_strAboutText = m_strAboutText + "\n" + QString("Copyright %1 %2 %3 and/or its affiliates. All rights reserved.")
                                                      .arg(QChar(0xa9)).arg(VBOX_C_YEAR).arg(VBOX_VENDOR);
