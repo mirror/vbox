@@ -330,7 +330,7 @@ HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
             if (RT_SUCCESS(vrc))
             {
                 vrc = TmpEnv.applyChanges(mData.mProcess.mEnvironmentChanges);
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                     vrc = TmpEnv.queryPutEnvArray(&aEnvironment);
             }
         }
