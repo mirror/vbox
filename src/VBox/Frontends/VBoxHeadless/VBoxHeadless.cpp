@@ -613,6 +613,7 @@ static void hideSetUidRootFromAppKit()
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF(envp);
     const char *vrdePort = NULL;
     const char *vrdeAddress = NULL;
     const char *vrdeEnabled = NULL;
