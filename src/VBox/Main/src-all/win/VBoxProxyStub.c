@@ -1324,6 +1324,7 @@ static void vbpsUpdateTypeLibRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwszVB
     HKEY hkeyTypeLibs;
     HKEY hkeyTypeLibId;
     LSTATUS rc;
+    RT_NOREF(fIs32On64);
 
     Assert(pState->fUpdate && !pState->fDelete);
 
@@ -1405,6 +1406,7 @@ static void vbpsUpdateProxyStubRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwsz
      * It's simple compared to the VBox classes, thus all the NULL parameters.
      */
     const char *pszPsDll = VBPS_PROXY_STUB_FILE(fIs32On64);
+    RT_NOREF(fIs32On64);
     Assert(pState->fUpdate && !pState->fDelete);
     VbpsRegisterClassId(pState, &g_ProxyClsId, "PSFactoryBuffer", NULL /*pszAppId*/,
                         NULL /*pszClassName*/, NULL /*pszCurClassNameVerSuffix*/, NULL /*pTypeLibId*/,

@@ -512,6 +512,7 @@ static int ParseArguments(int argc, char **argv, TestThreadArgs *pArgs)
  */
 int main(int argc, char **argv)
 {
+    RT_NOREF(argc, argv);
     RTEXITCODE rcExit = RTTestInitAndCreate("tstVBoxMultipleVM", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
