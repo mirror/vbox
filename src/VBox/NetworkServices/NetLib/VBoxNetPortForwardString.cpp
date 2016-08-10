@@ -54,7 +54,6 @@ static int netPfStrAddressParse(char *pszRaw, int cbRaw,
                                 char *pszAddress, int cbAddress,
                                 bool fEmptyAcceptable)
 {
-    int idxRaw = 0;
     int cbField = 0;
 
     AssertPtrReturn(pszRaw, -1);

@@ -414,6 +414,8 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
             shutdown();
             break;
         }
+
+        default: break; /* Shut up MSC. */
     }
     return hrc;
 }
@@ -425,7 +427,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
     VBoxNetLwipNAT *pNat = static_cast<VBoxNetLwipNAT *>(arg);
 
     HRESULT hrc = com::Initialize();
-    Assert(!FAILED(hrc));
+    Assert(!FAILED(hrc)); NOREF(hrc);
 
     proxy_arp_hook = pxremap_proxy_arp;
     proxy_ip4_divert_hook = pxremap_ip4_divert;
@@ -515,7 +517,6 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 /*static*/ DECLCALLBACK(void) VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
 {
     AssertPtrReturnVoid(arg);
-    VBoxNetLwipNAT *pThis = (VBoxNetLwipNAT *)arg;
 
     /* XXX: proxy finalization */
     netif_set_link_down(&g_pLwipNat->m_LwipNetIf);
@@ -997,7 +998,8 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
 
             RT_ZERO(Rule);
 
-            int irc = netPfStrToPf(Val.psz, (rc == 'P'), &Rule.Pfr);
+            int rc2 = netPfStrToPf(Val.psz, (rc == 'P'), &Rule.Pfr);
+            RT_NOREF_PV(rc2);
             rules.push_back(Rule);
             return VINF_SUCCESS;
         }
@@ -1012,7 +1014,7 @@ int VBoxNetLwipNAT::processFrame(void *pvFrame, size_t cbFrame)
     AssertPtrReturn(pvFrame, VERR_INVALID_PARAMETER);
     AssertReturn(cbFrame != 0, VERR_INVALID_PARAMETER);
 
-    struct pbuf *p = pbuf_alloc(PBUF_RAW, cbFrame + ETH_PAD_SIZE, PBUF_POOL);
+    struct pbuf *p = pbuf_alloc(PBUF_RAW, (u16_t)cbFrame + ETH_PAD_SIZE, PBUF_POOL);
     if (RT_UNLIKELY(p == NULL))
         return VERR_NO_MEMORY;
 
@@ -1048,25 +1050,23 @@ int VBoxNetLwipNAT::processFrame(void *pvFrame, size_t cbFrame)
 
 int VBoxNetLwipNAT::processGSO(PCPDMNETWORKGSO pGso, size_t cbFrame)
 {
-    if (!PDMNetGsoIsValid(pGso, cbFrame,
-                          cbFrame - sizeof(PDMNETWORKGSO)))
+    if (!PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(PDMNETWORKGSO)))
         return VERR_INVALID_PARAMETER;
 
     cbFrame -= sizeof(PDMNETWORKGSO);
     uint8_t         abHdrScratch[256];
     uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso,
                                                       cbFrame);
-    for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+    for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
     {
         uint32_t cbSegFrame;
-        void    *pvSegFrame =
-          PDMNetGsoCarveSegmentQD(pGso,
-                                  (uint8_t *)(pGso + 1),
-                                  cbFrame,
-                                  abHdrScratch,
-                                  iSeg,
-                                  cSegs,
-                                  &cbSegFrame);
+        void    *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso,
+                                                      (uint8_t *)(pGso + 1),
+                                                      cbFrame,
+                                                      abHdrScratch,
+                                                      iSeg,
+                                                      cSegs,
+                                                      &cbSegFrame);
 
         int rc = processFrame(pvSegFrame, cbSegFrame);
         if (RT_FAILURE(rc))

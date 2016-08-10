@@ -79,6 +79,8 @@ static void vboxnetIntIfCopySG(void *pvFrame, size_t cSegs, PCINTNETSEG paSegs)
  */
 int VBoxNetIntIfRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, size_t cSegs, PCINTNETSEG paSegs)
 {
+    RT_NOREF(pBuf);
+
     /*
      * Validate input.
      */
