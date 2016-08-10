@@ -120,7 +120,7 @@ class NATNetworkListener
 };
 typedef ListenerImpl<NATNetworkListener, NATNetworkEventAdapter*> NATNetworkListenerImpl;
 
-# if VBOX_WITH_XPCOM
+# ifdef VBOX_WITH_XPCOM
 class NS_CLASSINFO_NAME(NATNetworkListenerImpl);
 # endif
 
