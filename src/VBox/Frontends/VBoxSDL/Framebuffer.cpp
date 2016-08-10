@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: VBoxSDL (simple frontend based on SDL):
- * Implementation of VBoxSDLFB (SDL framebuffer) class
+ * VBoxSDL - Implementation of VBoxSDLFB (SDL framebuffer) class
  */
 
 /*
@@ -44,7 +42,14 @@ using namespace com;
 #include "Ico64x01.h"
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
-#include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4121) /* warning C4121: 'SDL_SysWMmsg' : alignment of a member was sensitive to packing*/
+# endif
+# include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
 #endif
 
 #if defined(VBOX_WITH_XPCOM)
@@ -152,7 +157,7 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     mfInitialized = true;
 #ifdef RT_OS_WINDOWS
     HRESULT hr = CoCreateFreeThreadedMarshaler(this, m_pUnkMarshaler.asOutParam());
-    Log(("CoCreateFreeThreadedMarshaler hr %08X\n", hr));
+    Log(("CoCreateFreeThreadedMarshaler hr %08X\n", hr)); NOREF(hr);
 #endif
 
     return 0;
@@ -560,6 +565,8 @@ STDMETHODIMP VBoxSDLFB::NotifyChange(ULONG aScreenId,
  */
 STDMETHODIMP VBoxSDLFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp, BOOL *supported)
 {
+    RT_NOREF(bpp);
+
     if (!supported)
         return E_POINTER;
 
@@ -615,11 +622,13 @@ STDMETHODIMP VBoxSDLFB::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 
 STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand)
 {
+    RT_NOREF(pCommand);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP VBoxSDLFB::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, aData))
 {
+    RT_NOREF(uType, aData);
     return E_NOTIMPL;
 }
 
@@ -916,7 +925,7 @@ void VBoxSDLFB::resizeSDL(void)
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWMInfo(&info))
-        mWinId = (LONG64) info.window;
+        mWinId = (intptr_t) info.window;
 # elif defined (RT_OS_LINUX)
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
@@ -1150,6 +1159,7 @@ void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
 }
 
 #ifdef VBOX_SECURELABEL
+
 /**
  * Setup the secure labeling parameters
  *
@@ -1212,9 +1222,10 @@ void VBoxSDLFB::setSecureLabelColor(uint32_t colorFG, uint32_t colorBG)
  */
 void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
 {
-#ifdef VBOXSDL_WITH_X11
+    RT_NOREF(x, w, h);
+# ifdef VBOXSDL_WITH_X11
     AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
-#endif
+# endif
     /* only when the function is present */
     if (!pTTF_RenderUTF8_Solid)
         return;
@@ -1249,6 +1260,7 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
     /* make sure to update the screen */
     SDL_UpdateRect(mScreen, 0, 0, mScreen->w, mLabelHeight);
 }
+
 #endif /* VBOX_SECURELABEL */
 
 // IFramebufferOverlay
@@ -1410,6 +1422,7 @@ STDMETHODIMP VBoxSDLFBOverlay::COMSETTER(Visible)(BOOL visible)
  */
 STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Alpha)(ULONG *alpha)
 {
+    RT_NOREF(alpha);
     LogFlow(("VBoxSDLFBOverlay::GetAlpha\n"));
     return E_NOTIMPL;
 }
@@ -1422,6 +1435,7 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Alpha)(ULONG *alpha)
  */
 STDMETHODIMP VBoxSDLFBOverlay::COMSETTER(Alpha)(ULONG alpha)
 {
+    RT_NOREF(alpha);
     LogFlow(("VBoxSDLFBOverlay::SetAlpha\n"));
     return E_NOTIMPL;
 }
@@ -1593,6 +1607,7 @@ STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, ULONG pixelFormat,
                                              ULONG bitsPerPixel, ULONG bytesPerLine,
                                              ULONG w, ULONG h, BOOL *finished)
 {
+    RT_NOREF(aScreenId, bytesPerLine, finished);
     AssertReturn(pixelFormat == BitmapFormat_BGR, E_INVALIDARG);
     AssertReturn(vram == 0, E_INVALIDARG);
     AssertReturn(bitsPerPixel == 32, E_INVALIDARG);
@@ -1622,9 +1637,9 @@ STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, ULONG pixelFormat,
  *
  * Basically, we support anything with 32bpp.
  */
-STDMETHODIMP VBoxSDLFBOverlay::VideoModeSupported(ULONG width, ULONG height, ULONG bpp,
-                                               BOOL *supported)
+STDMETHODIMP VBoxSDLFBOverlay::VideoModeSupported(ULONG width, ULONG height, ULONG bpp, BOOL *supported)
 {
+    RT_NOREF(width, height);
     if (!supported)
         return E_POINTER;
     if (bpp == 32)

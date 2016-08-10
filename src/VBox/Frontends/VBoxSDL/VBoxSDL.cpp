@@ -45,8 +45,15 @@ using namespace com;
 # include <unistd.h>
 #endif
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4121) /* warning C4121: 'SDL_SysWMmsg' : alignment of a member was sensitive to packing*/
+#endif
 #ifndef RT_OS_DARWIN
-#include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
+# include <SDL_syswm.h>          /* for SDL_GetWMInfo() */
+#endif
+#ifdef _MSC_VER
+# pragma warning(pop)
 #endif
 
 #include "VBoxSDL.h"
@@ -320,6 +327,7 @@ public:
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
+        RT_NOREF(aEvent);
         switch (aType)
         {
             case VBoxEventType_OnExtraDataChanged:
@@ -551,13 +559,13 @@ public:
                 SDL_VERSION(&info.version);
                 if (SDL_GetWMInfo(&info))
                 {
-#if defined(VBOXSDL_WITH_X11)
+# if defined(VBOXSDL_WITH_X11)
                     pSWEv->COMSETTER(WinId)((LONG64)info.info.x11.wmwindow);
-#elif defined(RT_OS_WINDOWS)
-                    pSWEv->COMSETTER(WinId)((LONG64)info.window);
-#else
+# elif defined(RT_OS_WINDOWS)
+                    pSWEv->COMSETTER(WinId)((intptr_t)info.window);
+# else
                     AssertFailed();
-#endif
+# endif
                 }
 #endif /* !RT_OS_DARWIN */
                 break;
@@ -740,6 +748,7 @@ void signal_handler_SIGINT(int sig)
 extern "C"
 DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+    RT_NOREF(envp);
 #ifdef RT_OS_WINDOWS
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
@@ -3668,17 +3677,17 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
             keycode = 0;
         if (!keycode)
         {
-#ifdef DEBUG_bird
+# ifdef DEBUG_bird
             RTPrintf("Untranslated: keycode=%#x (%d)\n", keycode, keycode);
-#endif
+# endif
             keycode = Keyevent2KeycodeFallback(ev);
         }
     }
-#ifdef DEBUG_bird
+# ifdef DEBUG_bird
     RTPrintf("scancode=%#x -> %#x\n", ev->keysym.scancode, keycode);
-#endif
+# endif
 
-#elif RT_OS_OS2
+#elif defined(RT_OS_OS2)
     keycode = Keyevent2KeycodeFallback(ev);
 #endif /* RT_OS_DARWIN */
     return keycode;
@@ -5038,6 +5047,8 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
  */
 static Uint32 StartupTimer(Uint32 interval, void *param)
 {
+    RT_NOREF(param);
+
     /* post message so we can do something in the startup loop */
     SDL_Event event = {0};
     event.type      = SDL_USEREVENT;
@@ -5052,6 +5063,8 @@ static Uint32 StartupTimer(Uint32 interval, void *param)
  */
 static Uint32 ResizeTimer(Uint32 interval, void *param)
 {
+    RT_NOREF(interval, param);
+
     /* post message so the window is actually resized */
     SDL_Event event = {0};
     event.type      = SDL_USEREVENT;
@@ -5066,6 +5079,8 @@ static Uint32 ResizeTimer(Uint32 interval, void *param)
  */
 static Uint32 QuitTimer(Uint32 interval, void *param)
 {
+    RT_NOREF(interval, param);
+
     BOOL fHandled = FALSE;
 
     gSdlQuitTimer = NULL;

@@ -23,10 +23,18 @@
 #include <iprt/cdefs.h>
 #ifdef RT_OS_WINDOWS /** @todo check why we need to do this on windows. */
 /* convince SDL to not overload main() */
-#define _SDL_main_h
+# define _SDL_main_h
 #endif
+
 /* include this first so Windows.h get's in before our stuff. */
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4121) /* warning C4121: 'SDL_SysWMmsg' : alignment of a member was sensitive to packing*/
+#endif
 #include <SDL.h>
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 /** custom SDL event for display update handling */
 #define SDL_USER_EVENT_UPDATERECT         (SDL_USEREVENT + 4)
