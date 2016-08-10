@@ -239,8 +239,8 @@ MachineState_T getMachineState(const PVBOXWATCHDOG_MACHINE pMachine);
 
 int cfgGetValueStr(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
                    const char *pszGlobal, const char *pszVM, Utf8Str &strValue, Utf8Str strDefault);
-int cfgGetValueULong(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
-                     const char *pszGlobal, const char *pszVM, unsigned long *pulValue, unsigned long ulDefault);
+int cfgGetValueU32(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
+                   const char *pszGlobal, const char *pszVM, uint32_t *puValue, uint32_t uDefault);
 RT_C_DECLS_END
 
 #endif /* !___H_VBOXWATCHDOG */

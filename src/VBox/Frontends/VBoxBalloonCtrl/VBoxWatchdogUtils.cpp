@@ -251,18 +251,15 @@ int cfgGetValueStr(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &
     return VINF_SUCCESS;
 }
 
-int cfgGetValueULong(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
-                     const char *pszGlobal, const char *pszVM, unsigned long *pulValue, unsigned long ulDefault)
+int cfgGetValueU32(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &rptrMachine,
+                   const char *pszGlobal, const char *pszVM, uint32_t *puValue, uint32_t uDefault)
 {
     Utf8Str strValue;
     int rc = cfgGetValueStr(rptrVBox, rptrMachine, pszGlobal, pszVM, strValue, "" /* Default */);
     if (RT_SUCCESS(rc))
-    {
-        *pulValue = strValue.toUInt32();
-    }
+        *puValue = strValue.toUInt32();
     else
-        *pulValue = ulDefault;
-
+        *puValue = uDefault;
     return rc;
 }
 

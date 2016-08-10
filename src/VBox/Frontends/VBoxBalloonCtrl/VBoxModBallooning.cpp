@@ -66,9 +66,9 @@ static const RTGETOPTDEF g_aBalloonOpts[] = {
 typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
 {
     /** Last (most recent) ballooning size reported by the guest. */
-    unsigned long ulBalloonCurLast;
+    uint32_t cMbBalloonCurLast;
     /** Last (most recent) ballooning request received. */
-    unsigned long ulBalloonReqLast;
+    uint32_t cMbBalloonReqLast;
 } VBOXWATCHDOG_BALLOONCTRL_PAYLOAD, *PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD;
 
 
@@ -76,106 +76,104 @@ typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
 *   Globals                                                                                                                      *
 *********************************************************************************************************************************/
 
-static unsigned long g_ulMemoryBalloonTimeoutMS    = 30 * 1000;
-static unsigned long g_ulMemoryBalloonIncrementMB  = 256;
-static unsigned long g_ulMemoryBalloonDecrementMB  = 128;
+static uint32_t g_cMsMemoryBalloonTimeout    = 30 * 1000;
+static uint32_t g_cMbMemoryBalloonIncrement  = 256;
+static uint32_t g_cMbMemoryBalloonDecrement  = 128;
 /** Command line: Global balloon limit (in MB) for all VMs. Default is 0, which means
  *  no global limit is set. See balloonGetMaxSize() for more information. */
-static unsigned long g_ulMemoryBalloonMaxMB        = 0;
-static unsigned long g_ulMemoryBalloonLowerLimitMB = 128;
-static unsigned long g_ulMemoryBalloonSafetyMB     = 1024;
+static uint32_t g_cMbMemoryBalloonMax        = 0;
+static uint32_t g_cMbMemoryBalloonLowerLimit = 128;
+static uint32_t g_cbMemoryBalloonSafety     = 1024;
 
 
 /*********************************************************************************************************************************
 *   Local Function Prototypes                                                                                                    *
 *********************************************************************************************************************************/
-static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, unsigned long ulBalloonCur);
+static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, uint32_t cMbBalloonCur);
 
 /**
  * Retrieves the current delta value
  *
- * @return  long                Delta (MB) of the balloon to be deflated (<0) or inflated (>0).
+ * @return  Delta (MB) of the balloon to be deflated (<0) or inflated (>0).
  * @param   pMachine            Pointer to the machine's internal structure.
- * @param   ulGuestMemFree      The guest's current free memory (MB).
- * @param   ulBalloonOld        The balloon's current (old) size (MB).
- * @param   ulBalloonNew        The balloon's new size (MB).
- * @param   ulBalloonMax        The maximum ballooning size (MB) it can inflate to.
+ * @param   uGuestMemFree       The guest's current free memory (MB).
+ * @param   cMbBalloonOld         The balloon's current (old) size (MB).
+ * @param   uBalloonNew         The balloon's new size (MB).
+ * @param   uBalloonMax         The maximum ballooning size (MB) it can inflate to.
  */
-static long balloonGetDelta(PVBOXWATCHDOG_MACHINE pMachine,
-                            unsigned long ulGuestMemFree,
-                            unsigned long ulBalloonOld, unsigned long ulBalloonNew, unsigned long ulBalloonMax)
+static int32_t balloonGetDelta(PVBOXWATCHDOG_MACHINE pMachine, uint32_t cMbGuestMemFree,
+                               uint32_t cMbBalloonOld, uint32_t cMbBalloonNew, uint32_t cMbBalloonMax)
 {
-    serviceLogVerbose(("[%ls] ulGuestMemFree=%RU32, ulBalloonOld=%RU32, ulBalloonNew=%RU32, ulBalloonMax=%RU32\n",
-                       pMachine->strName.raw(), ulGuestMemFree, ulBalloonOld, ulBalloonNew, ulBalloonMax));
+    serviceLogVerbose(("[%ls] cMbGuestMemFree=%RU32, cMbBalloonOld=%RU32, cMbBalloonNew=%RU32, cMbBalloonMax=%RU32\n",
+                       pMachine->strName.raw(), cMbGuestMemFree, cMbBalloonOld, cMbBalloonNew, cMbBalloonMax));
 
     /* Make sure that the requested new ballooning size does not
      * exceed the maximum ballooning size (if set). */
-    if (   ulBalloonMax
-        && (ulBalloonNew > ulBalloonMax))
-    {
-        ulBalloonNew = ulBalloonMax;
-    }
+    if (   cMbBalloonMax
+        && cMbBalloonNew > cMbBalloonMax)
+        cMbBalloonNew = cMbBalloonMax;
 
-    long lBalloonDelta = 0;
-    if (ulGuestMemFree < g_ulMemoryBalloonLowerLimitMB)
+    int32_t cMbBalloonDelta = 0;
+    if (cMbGuestMemFree < g_cMbMemoryBalloonLowerLimit)
     {
         /* Guest is running low on memory, we need to
          * deflate the balloon. */
-        lBalloonDelta = (g_ulMemoryBalloonDecrementMB * -1);
+        cMbBalloonDelta = g_cMbMemoryBalloonDecrement * -1;
 
         /* Ensure that the delta will not return a negative
          * balloon size. */
-        if ((long)ulBalloonOld + lBalloonDelta < 0)
-            lBalloonDelta = 0;
+        if ((int32_t)cMbBalloonOld + cMbBalloonDelta < 0)
+            cMbBalloonDelta = 0;
     }
-    else if (ulBalloonNew > ulBalloonOld) /* Inflate. */
+    else if (cMbBalloonNew > cMbBalloonOld) /* Inflate. */
     {
         /* We want to inflate the balloon if we have room. */
-        unsigned long ulIncrement = g_ulMemoryBalloonIncrementMB;
-        while (ulIncrement >= 16 && (ulGuestMemFree - ulIncrement) < g_ulMemoryBalloonLowerLimitMB)
-            ulIncrement = (ulIncrement / 2);
+        uint32_t cMbIncrement = g_cMbMemoryBalloonIncrement;
+        while (   cMbIncrement >= 16
+               && cMbGuestMemFree - cMbIncrement < g_cMbMemoryBalloonLowerLimit)
+            cMbIncrement /= 2;
 
-        if ((ulGuestMemFree - ulIncrement) > g_ulMemoryBalloonLowerLimitMB)
-            lBalloonDelta = (long)ulIncrement;
+        if ((cMbGuestMemFree - cMbIncrement) > g_cMbMemoryBalloonLowerLimit)
+            cMbBalloonDelta = (int32_t)cMbIncrement;
 
         /* Make sure we're still within bounds. */
-        Assert(lBalloonDelta >= 0);
-        if (ulBalloonOld + lBalloonDelta > ulBalloonNew)
-            lBalloonDelta = RT_MIN(g_ulMemoryBalloonIncrementMB, ulBalloonNew - ulBalloonOld);
+        Assert(cMbBalloonDelta >= 0);
+        if (cMbBalloonOld + cMbBalloonDelta > cMbBalloonNew)
+            cMbBalloonDelta = RT_MIN(g_cMbMemoryBalloonIncrement, cMbBalloonNew - cMbBalloonOld);
     }
-    else if (ulBalloonNew < ulBalloonOld) /* Deflate. */
+    else if (cMbBalloonNew < cMbBalloonOld) /* Deflate. */
     {
-        lBalloonDelta = RT_MIN(g_ulMemoryBalloonDecrementMB, ulBalloonOld - ulBalloonNew) * -1;
+        cMbBalloonDelta = RT_MIN(g_cMbMemoryBalloonDecrement, cMbBalloonOld - cMbBalloonNew) * -1;
     }
 
     /* Limit the ballooning to the available host memory, leaving some free.
      * If anything fails clamp the delta to 0. */
-    if (lBalloonDelta < 0)
+    if (cMbBalloonDelta < 0)
     {
-        uint64_t cbSafety = (uint64_t)g_ulMemoryBalloonSafetyMB * _1M;
+        uint64_t cbSafety = (uint64_t)g_cbMemoryBalloonSafety * _1M;
         uint64_t cbHostRamAvail = 0;
         int vrc = RTSystemQueryAvailableRam(&cbHostRamAvail);
         if (RT_SUCCESS(vrc))
         {
             if (cbHostRamAvail < cbSafety)
-                lBalloonDelta = 0;
-            else if ((uint64_t)(-lBalloonDelta) > (cbHostRamAvail - cbSafety) / _1M)
-                lBalloonDelta = -(long)((cbHostRamAvail - cbSafety) / _1M);
+                cMbBalloonDelta = 0;
+            else if ((uint64_t)(-cMbBalloonDelta) > (cbHostRamAvail - cbSafety) / _1M)
+                cMbBalloonDelta = -(int32_t)((cbHostRamAvail - cbSafety) / _1M);
         }
         else
-            lBalloonDelta = 0;
+            cMbBalloonDelta = 0;
     }
 
-    return lBalloonDelta;
+    return cMbBalloonDelta;
 }
 
 /**
  * Determines the maximum balloon size to set for the specified machine.
  *
- * @return  unsigned long           Maximum ballooning size (in MB), 0 if no maximum set.
+ * @return  Maximum ballooning size (in MB), 0 if no maximum set.
  * @param   pMachine                Machine to determine maximum ballooning size for.
  */
-static unsigned long balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
+static uint32_t balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
 {
     /*
      * Is a maximum ballooning size set? Make sure we're within bounds.
@@ -186,7 +184,7 @@ static unsigned long balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
      *
      * Precedence from top to bottom.
      */
-    unsigned long ulBalloonMax = 0;
+    uint32_t cMbBalloonMax = 0;
     char szSource[64];
 
     Bstr strValue;
@@ -195,22 +193,22 @@ static unsigned long balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
     if (   SUCCEEDED(hr)
         && strValue.isNotEmpty())
     {
-        ulBalloonMax = Utf8Str(strValue).toUInt32();
+        cMbBalloonMax = Utf8Str(strValue).toUInt32();
         if (g_fVerbose)
             RTStrPrintf(szSource, sizeof(szSource), "global extra-data");
     }
 
     if (strValue.isEmpty())
     {
-        Assert(ulBalloonMax == 0);
+        Assert(cMbBalloonMax == 0);
 
-        ulBalloonMax = g_ulMemoryBalloonMaxMB;
+        cMbBalloonMax = g_cMbMemoryBalloonMax;
         if (g_fVerbose)
             RTStrPrintf(szSource, sizeof(szSource), "command line");
     }
 
-    serviceLogVerbose(("[%ls] Maximum balloning size is (%s): %RU32MB\n", pMachine->strName.raw(), szSource, ulBalloonMax));
-    return ulBalloonMax;
+    serviceLogVerbose(("[%ls] Maximum balloning size is (%s): %RU32MB\n", pMachine->strName.raw(), szSource, cMbBalloonMax));
+    return cMbBalloonMax;
 }
 
 /**
@@ -218,17 +216,17 @@ static unsigned long balloonGetMaxSize(PVBOXWATCHDOG_MACHINE pMachine)
  *
  * @return  IPRT status code.
  * @param   pMachine                Machine to determine maximum ballooning size for.
- * @param   pulBalloonCur           Where to store the current (set) balloon size (in MB) on success.
+ * @param   pcMbBalloonCur          Where to store the current (set) balloon
+ *                                  size (in MB) on success.
  */
-static int balloonGetCurrentSize(PVBOXWATCHDOG_MACHINE pMachine, unsigned long *pulBalloonCur)
+static int balloonGetCurrentSize(PVBOXWATCHDOG_MACHINE pMachine, uint32_t *pcMbBalloonCur)
 {
-    LONG lBalloonCur;
-    int vrc = getMetric(pMachine, L"Guest/RAM/Usage/Balloon", &lBalloonCur);
+    LONG cKbBalloonCur;
+    int vrc = getMetric(pMachine, L"Guest/RAM/Usage/Balloon", &cKbBalloonCur);
     if (RT_SUCCESS(vrc))
     {
-        lBalloonCur /= 1024; /* Convert to MB. */
-        if (pulBalloonCur)
-            *pulBalloonCur = (unsigned long)lBalloonCur;
+        if (pcMbBalloonCur)
+            *pcMbBalloonCur = (uint32_t)(cKbBalloonCur / 1024);
     }
 
     return vrc;
@@ -237,10 +235,10 @@ static int balloonGetCurrentSize(PVBOXWATCHDOG_MACHINE pMachine, unsigned long *
 /**
  * Determines the requested balloon size to set for the specified machine.
  *
- * @return  unsigned long           Requested ballooning size (in MB), 0 if ballooning should be disabled.
+ * @return  Requested ballooning size (in MB), 0 if ballooning should be disabled.
  * @param   pMachine                Machine to determine maximum ballooning size for.
  */
-static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
+static uint32_t balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
 {
     const ComPtr<IMachine> &rptrMachine = pMachine->machine;
 
@@ -251,7 +249,7 @@ static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
      *
      * Precedence from top to bottom.
      */
-    unsigned long ulBalloonReq = 0;
+    uint32_t cMbBalloonReq = 0;
     char szSource[64];
 
     Bstr strValue;
@@ -260,7 +258,7 @@ static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
     if (   SUCCEEDED(hr)
         && strValue.isNotEmpty())
     {
-        ulBalloonReq = Utf8Str(strValue).toUInt32();
+        cMbBalloonReq = Utf8Str(strValue).toUInt32();
         if (g_fVerbose)
             RTStrPrintf(szSource, sizeof(szSource), "per-VM extra-data");
     }
@@ -271,7 +269,7 @@ static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
         if (   SUCCEEDED(hr)
             && strValue.isNotEmpty())
         {
-            ulBalloonReq = Utf8Str(strValue).toUInt32();
+            cMbBalloonReq = Utf8Str(strValue).toUInt32();
             if (g_fVerbose)
                 RTStrPrintf(szSource, sizeof(szSource), "per-VM extra-data (legacy)");
         }
@@ -280,13 +278,13 @@ static unsigned long balloonGetRequestedSize(PVBOXWATCHDOG_MACHINE pMachine)
     if (   FAILED(hr)
         || strValue.isEmpty())
     {
-        ulBalloonReq = 0;
+        cMbBalloonReq = 0;
         if (g_fVerbose)
             RTStrPrintf(szSource, sizeof(szSource), "none (disabled)");
     }
 
-    serviceLogVerbose(("[%ls] Requested balloning size is (%s): %RU32MB\n", pMachine->strName.raw(), szSource, ulBalloonReq));
-    return ulBalloonReq;
+    serviceLogVerbose(("[%ls] Requested balloning size is (%s): %RU32MB\n", pMachine->strName.raw(), szSource, cMbBalloonReq));
+    return cMbBalloonReq;
 }
 
 /**
@@ -420,17 +418,17 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
     /*
      * Get metrics collected at this point.
      */
-    LONG lGuestMemFree;
-    unsigned long ulBalloonCur;
+    LONG cKbGuestMemFree;
+    uint32_t cMbBalloonCur = 0;
 
-    int vrc = getMetric(pMachine, L"Guest/RAM/Usage/Free", &lGuestMemFree);
+    int vrc = getMetric(pMachine, L"Guest/RAM/Usage/Free", &cKbGuestMemFree);
     if (RT_SUCCESS(vrc))
-        vrc = balloonGetCurrentSize(pMachine, &ulBalloonCur);
+        vrc = balloonGetCurrentSize(pMachine, &cMbBalloonCur);
 
     if (RT_SUCCESS(vrc))
     {
         /* If guest statistics are not up and running yet, skip this iteration and try next time. */
-        if (lGuestMemFree <= 0)
+        if (cKbGuestMemFree <= 0)
         {
 #ifdef DEBUG
             serviceLogVerbose(("[%ls] No metrics available yet!\n", pMachine->strName.raw()));
@@ -438,55 +436,54 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
             return VINF_SUCCESS;
         }
 
-        lGuestMemFree /= 1024;
+        uint32_t cMbGuestMemFree = (ULONG)cKbGuestMemFree / 1024;
 
-        PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD pData = (PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD)
-                                                  payloadFrom(pMachine, VBOX_MOD_BALLOONING_NAME);
+        PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD pData;
+        pData = (PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD)payloadFrom(pMachine, VBOX_MOD_BALLOONING_NAME);
         AssertPtr(pData);
 
         /* Determine if ballooning is enabled or disabled. */
         bool fEnabled = balloonIsEnabled(pMachine);
 
         /* Determine the current set maximum balloon size. */
-        unsigned long ulBalloonMax = balloonGetMaxSize(pMachine);
+        uint32_t cMbBalloonMax = balloonGetMaxSize(pMachine);
 
         /* Determine the requested balloon size. */
-        unsigned long ulBalloonReq = balloonGetRequestedSize(pMachine);
+        uint32_t cMbBalloonReq = balloonGetRequestedSize(pMachine);
 
         serviceLogVerbose(("[%ls] Free RAM (MB): %RI32, Ballooning: Current=%RU32MB, Requested=%RU32MB, Maximum=%RU32MB\n",
-                           pMachine->strName.raw(), lGuestMemFree, ulBalloonCur, ulBalloonReq, ulBalloonMax));
+                           pMachine->strName.raw(), cMbGuestMemFree, cMbBalloonCur, cMbBalloonReq, cMbBalloonMax));
 
-        if (   ulBalloonMax
-            && (ulBalloonReq > ulBalloonMax))
+        if (   cMbBalloonMax
+            && cMbBalloonReq > cMbBalloonMax)
         {
-            if (pData->ulBalloonReqLast != ulBalloonReq)
+            if (pData->cMbBalloonReqLast != cMbBalloonReq)
                 serviceLog("[%ls] Warning: Requested ballooning size (%RU32MB) exceeds set maximum ballooning size (%RU32MB), limiting ...\n",
-                           pMachine->strName.raw(), ulBalloonReq, ulBalloonMax);
+                           pMachine->strName.raw(), cMbBalloonReq, cMbBalloonMax);
         }
 
         /* Calculate current balloon delta. */
-        long lBalloonDelta = balloonGetDelta(pMachine,
-                                             (unsigned long)lGuestMemFree, ulBalloonCur, ulBalloonReq, ulBalloonMax);
+        int32_t cMbBalloonDelta = balloonGetDelta(pMachine, cMbGuestMemFree, cMbBalloonCur, cMbBalloonReq, cMbBalloonMax);
 #ifdef DEBUG
-        serviceLogVerbose(("[%ls] lBalloonDelta=%RI32\n", pMachine->strName.raw(), lBalloonDelta));
+        serviceLogVerbose(("[%ls] cMbBalloonDelta=%RI32\n", pMachine->strName.raw(), cMbBalloonDelta));
 #endif
-        if (lBalloonDelta) /* Only do ballooning if there's really smth. to change ... */
+        if (cMbBalloonDelta) /* Only do ballooning if there's really smth. to change ... */
         {
-            ulBalloonCur = ulBalloonCur + lBalloonDelta;
+            cMbBalloonCur = cMbBalloonCur + cMbBalloonDelta;
 
             if (fEnabled)
             {
                 serviceLog("[%ls] %s balloon by %RU32MB to %RU32MB ...\n",
-                           pMachine->strName.raw(), lBalloonDelta > 0 ? "Inflating" : "Deflating", RT_ABS(lBalloonDelta), ulBalloonCur);
-                vrc = balloonSetSize(pMachine, ulBalloonCur);
+                           pMachine->strName.raw(), cMbBalloonDelta > 0 ? "Inflating" : "Deflating", RT_ABS(cMbBalloonDelta), cMbBalloonCur);
+                vrc = balloonSetSize(pMachine, cMbBalloonCur);
             }
             else
                 serviceLogVerbose(("[%ls] Requested %s balloon by %RU32MB to %RU32MB, but ballooning is disabled\n",
-                                   pMachine->strName.raw(), lBalloonDelta > 0 ? "inflating" : "deflating",
-                                   RT_ABS(lBalloonDelta), ulBalloonCur));
+                                   pMachine->strName.raw(), cMbBalloonDelta > 0 ? "inflating" : "deflating",
+                                   RT_ABS(cMbBalloonDelta), cMbBalloonCur));
         }
 
-        if (ulBalloonCur != pData->ulBalloonCurLast)
+        if (cMbBalloonCur != pData->cMbBalloonCurLast)
         {
             /* If ballooning is disabled, always bolt down the ballooning size to 0. */
             if (!fEnabled)
@@ -498,8 +495,8 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
             }
         }
 
-        pData->ulBalloonCurLast = ulBalloonCur;
-        pData->ulBalloonReqLast = ulBalloonReq;
+        pData->cMbBalloonCurLast = cMbBalloonCur;
+        pData->cMbBalloonReqLast = cMbBalloonReq;
     }
     else
         serviceLog("[%ls] Error retrieving metrics, rc=%Rrc\n", pMachine->strName.raw(), vrc);
@@ -507,11 +504,11 @@ static int balloonMachineUpdate(PVBOXWATCHDOG_MACHINE pMachine)
     return vrc;
 }
 
-static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, unsigned long ulBalloonCur)
+static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, uint32_t cMbBalloonCur)
 {
     int vrc = VINF_SUCCESS;
 
-    serviceLogVerbose(("[%ls] Setting balloon size to %RU32MB ...\n", pMachine->strName.raw(), ulBalloonCur));
+    serviceLogVerbose(("[%ls] Setting balloon size to %RU32MB ...\n", pMachine->strName.raw(), cMbBalloonCur));
 
     if (g_fDryrun)
         return VINF_SUCCESS;
@@ -529,10 +526,10 @@ static int balloonSetSize(PVBOXWATCHDOG_MACHINE pMachine, unsigned long ulBalloo
         ComPtr <IGuest> guest;
         rc = console->COMGETTER(Guest)(guest.asOutParam());
         if (SUCCEEDED(rc))
-            CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)((LONG)ulBalloonCur));
+            CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)((LONG)cMbBalloonCur));
         else
             serviceLog("Error: Unable to set new balloon size %RU32 for machine '%ls', rc=%Rhrc\n",
-                       ulBalloonCur, pMachine->strName.raw(), rc);
+                       cMbBalloonCur, pMachine->strName.raw(), rc);
         if (FAILED(rc))
             vrc = VERR_COM_IPRT_ERROR;
 
@@ -575,11 +572,11 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char *argv[], int *pi
         switch (c)
         {
             case GETOPTDEF_BALLOONCTRL_BALLOONDEC:
-                g_ulMemoryBalloonDecrementMB = ValueUnion.u32;
+                g_cMbMemoryBalloonDecrement = ValueUnion.u32;
                 break;
 
             case GETOPTDEF_BALLOONCTRL_BALLOONINC:
-                g_ulMemoryBalloonIncrementMB = ValueUnion.u32;
+                g_cMbMemoryBalloonIncrement = ValueUnion.u32;
                 break;
 
             case GETOPTDEF_BALLOONCTRL_GROUPS:
@@ -587,23 +584,23 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char *argv[], int *pi
                 break;
 
             case GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT:
-                g_ulMemoryBalloonLowerLimitMB = ValueUnion.u32;
+                g_cMbMemoryBalloonLowerLimit = ValueUnion.u32;
                 break;
 
             case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
-                g_ulMemoryBalloonMaxMB = ValueUnion.u32;
+                g_cMbMemoryBalloonMax = ValueUnion.u32;
                 break;
 
             case GETOPTDEF_BALLOONCTRL_BALLOONSAFETY:
-                g_ulMemoryBalloonSafetyMB = ValueUnion.u32;
+                g_cbMemoryBalloonSafety = ValueUnion.u32;
                 break;
 
             /** @todo This option is a common module option! Put
              *        this into a utility function! */
             case GETOPTDEF_BALLOONCTRL_TIMEOUTMS:
-                g_ulMemoryBalloonTimeoutMS = ValueUnion.u32;
-                if (g_ulMemoryBalloonTimeoutMS < 500)
-                    g_ulMemoryBalloonTimeoutMS = 500;
+                g_cMsMemoryBalloonTimeout = ValueUnion.u32;
+                if (g_cMsMemoryBalloonTimeout < 500)
+                    g_cMsMemoryBalloonTimeout = 500;
                 break;
 
             default:
@@ -622,35 +619,40 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char *argv[], int *pi
 
 static DECLCALLBACK(int) VBoxModBallooningInit(void)
 {
-    if (!g_ulMemoryBalloonTimeoutMS)
-        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
-                         "VBoxInternal2/Watchdog/BalloonCtrl/TimeoutMS", NULL /* Per-machine */,
-                         &g_ulMemoryBalloonTimeoutMS, 30 * 1000 /* Default is 30 seconds timeout. */);
+    if (!g_cMsMemoryBalloonTimeout)
+        cfgGetValueU32(g_pVirtualBox, NULL /* Machine */,
+                       "VBoxInternal2/Watchdog/BalloonCtrl/TimeoutMS", NULL /* Per-machine */,
+                       &g_cMsMemoryBalloonTimeout, 30 * 1000 /* Default is 30 seconds timeout. */);
 
-    if (!g_ulMemoryBalloonIncrementMB)
-        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
-                         "VBoxInternal2/Watchdog/BalloonCtrl/BalloonIncrementMB", NULL /* Per-machine */,
-                         &g_ulMemoryBalloonIncrementMB, 256);
+    if (!g_cMbMemoryBalloonIncrement)
+        cfgGetValueU32(g_pVirtualBox, NULL /* Machine */,
+                       "VBoxInternal2/Watchdog/BalloonCtrl/BalloonIncrementMB", NULL /* Per-machine */,
+                       &g_cMbMemoryBalloonIncrement, 256);
 
-    if (!g_ulMemoryBalloonDecrementMB)
-        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
-                         "VBoxInternal2/Watchdog/BalloonCtrl/BalloonDecrementMB", NULL /* Per-machine */,
-                         &g_ulMemoryBalloonDecrementMB, 128);
+    if (!g_cMbMemoryBalloonDecrement)
+        cfgGetValueU32(g_pVirtualBox, NULL /* Machine */,
+                       "VBoxInternal2/Watchdog/BalloonCtrl/BalloonDecrementMB", NULL /* Per-machine */,
+                       &g_cMbMemoryBalloonDecrement, 128);
 
-    if (!g_ulMemoryBalloonLowerLimitMB)
-        cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
-                         "VBoxInternal2/Watchdog/BalloonCtrl/BalloonLowerLimitMB", NULL /* Per-machine */,
-                         &g_ulMemoryBalloonLowerLimitMB, 128);
+    if (!g_cMbMemoryBalloonLowerLimit)
+        cfgGetValueU32(g_pVirtualBox, NULL /* Machine */,
+                       "VBoxInternal2/Watchdog/BalloonCtrl/BalloonLowerLimitMB", NULL /* Per-machine */,
+                       &g_cMbMemoryBalloonLowerLimit, 128);
 
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) VBoxModBallooningMain(void)
 {
-    static uint64_t s_msLast = RTTimeMilliTS();
-    uint64_t msDelta = RTTimeMilliTS() - s_msLast;
-    if (msDelta <= g_ulMemoryBalloonTimeoutMS)
-        return VINF_SUCCESS;
+    static uint64_t s_msLast = UINT64_MAX;
+    if (s_msLast == UINT64_MAX)
+        s_msLast = RTTimeMilliTS();
+    else
+    {
+        uint64_t msDelta = RTTimeMilliTS() - s_msLast;
+        if (msDelta <= g_cMsMemoryBalloonTimeout)
+            return VINF_SUCCESS;
+    }
 
     int rc = VINF_SUCCESS;
 
@@ -712,6 +714,8 @@ static DECLCALLBACK(int) VBoxModBallooningOnMachineUnregistered(const Bstr &strU
 static DECLCALLBACK(int) VBoxModBallooningOnMachineStateChanged(const Bstr &strUuid,
                                                                 MachineState_T enmState)
 {
+    RT_NOREF(enmState);
+
     PVBOXWATCHDOG_MACHINE pMachine = getMachine(strUuid);
     /* Note: The machine state will change to "setting up" when machine gets deleted,
      *       so pMachine might be NULL here. */
@@ -723,6 +727,7 @@ static DECLCALLBACK(int) VBoxModBallooningOnMachineStateChanged(const Bstr &strU
 
 static DECLCALLBACK(int) VBoxModBallooningOnServiceStateChanged(bool fAvailable)
 {
+    RT_NOREF(fAvailable);
     return VINF_SUCCESS;
 }
 

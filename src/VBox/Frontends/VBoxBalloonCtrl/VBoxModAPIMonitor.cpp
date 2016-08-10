@@ -68,10 +68,10 @@ enum APIMON_RESPONSE
 
 /** The VM group(s) the API monitor handles. If none, all VMs get handled. */
 static mapGroups                    g_vecAPIMonGroups; /** @todo Move this into module payload! */
-static APIMON_RESPONSE              g_enmAPIMonIslnResp     = APIMON_RESPONSE_NONE;
-static unsigned long                g_ulAPIMonIslnTimeoutMS = 0;
+static APIMON_RESPONSE              g_enmAPIMonIslnResp = APIMON_RESPONSE_NONE;
+static uint32_t                     g_cMsAPIMonIslnTimeout = 0;
 static Bstr                         g_strAPIMonIslnLastBeat;
-static unsigned long                g_ulAPIMonResponseTimeoutMS = 0;
+static uint32_t                     g_cMsAPIMonResponseTimeout = 0;
 static uint64_t                     g_uAPIMonIslnLastBeatMS = 0;
 
 static int apimonResponseToEnum(const char *pszResponse, APIMON_RESPONSE *pResp)
@@ -179,13 +179,13 @@ static const char *apimonMachineStateToName(MachineState_T machineState, bool fS
 }
 
 static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMachine,
-                                APIMON_RESPONSE enmResp, unsigned long ulTimeout)
+                                APIMON_RESPONSE enmResp, uint32_t cMsTimeout)
 {
     /** @todo Add other commands (with enmResp) here. */
     AssertPtrReturn(pMachine, VERR_INVALID_POINTER);
 
     serviceLogVerbose(("apimon: Triggering \"%s\" (%RU32ms timeout) for machine \"%ls\"\n",
-                      apimonResponseToStr(enmResp), ulTimeout, strUuid.raw()));
+                      apimonResponseToStr(enmResp), cMsTimeout, strUuid.raw()));
 
     if (   enmResp == APIMON_RESPONSE_NONE
         || g_fDryrun)
@@ -233,7 +233,7 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                         serviceLogVerbose(("apimon: Powering off machine \"%ls\" ...\n",
                                            strUuid.raw()));
                         CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
-                        progress->WaitForCompletion(ulTimeout);
+                        progress->WaitForCompletion(cMsTimeout);
                         CHECK_PROGRESS_ERROR(progress, ("Failed to power off machine \"%ls\"",
                                              strUuid.raw()));
                         break;
@@ -273,7 +273,7 @@ static int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                         CHECK_ERROR(sessionMachine, SaveState(progress.asOutParam()));
                         if (SUCCEEDED(rc))
                         {
-                            progress->WaitForCompletion(ulTimeout);
+                            progress->WaitForCompletion(cMsTimeout);
                             CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state of machine \"%ls\"",
                                                  strUuid.raw()));
                         }
@@ -363,7 +363,7 @@ static int apimonTrigger(APIMON_RESPONSE enmResp)
             if (fHandleVM)
             {
                 int rc2 = apimonMachineControl(it->first /* Uuid */,
-                                               &it->second /* Machine */, enmResp, g_ulAPIMonResponseTimeoutMS);
+                                               &it->second /* Machine */, enmResp, g_cMsAPIMonResponseTimeout);
                 if (RT_FAILURE(rc2))
                     serviceLog("apimon: Controlling machine \"%ls\" (response \"%s\") failed with rc=%Rrc",
                                it->first.raw(), apimonResponseToStr(enmResp), rc);
@@ -428,15 +428,15 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char *argv[], int *pi
                 break;
 
             case GETOPTDEF_APIMON_ISLN_TIMEOUT:
-                g_ulAPIMonIslnTimeoutMS = ValueUnion.u32;
-                if (g_ulAPIMonIslnTimeoutMS < 1000) /* Don't allow timeouts < 1s. */
-                    g_ulAPIMonIslnTimeoutMS = 1000;
+                g_cMsAPIMonIslnTimeout = ValueUnion.u32;
+                if (g_cMsAPIMonIslnTimeout < 1000) /* Don't allow timeouts < 1s. */
+                    g_cMsAPIMonIslnTimeout = 1000;
                 break;
 
             case GETOPTDEF_APIMON_RESP_TIMEOUT:
-                g_ulAPIMonResponseTimeoutMS = ValueUnion.u32;
-                if (g_ulAPIMonResponseTimeoutMS < 5000) /* Don't allow timeouts < 5s. */
-                    g_ulAPIMonResponseTimeoutMS = 5000;
+                g_cMsAPIMonResponseTimeout = ValueUnion.u32;
+                if (g_cMsAPIMonResponseTimeout < 5000) /* Don't allow timeouts < 5s. */
+                    g_cMsAPIMonResponseTimeout = 5000;
                 break;
 
             default:
@@ -474,11 +474,11 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
             }
         }
 
-        if (!g_ulAPIMonIslnTimeoutMS)
-            cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
-                             "VBoxInternal2/Watchdog/APIMonitor/IsolationTimeoutMS", NULL /* Per-machine */,
-                             &g_ulAPIMonIslnTimeoutMS, 30 * 1000 /* Default is 30 seconds timeout. */);
-        g_ulAPIMonIslnTimeoutMS = RT_MIN(1000, g_ulAPIMonIslnTimeoutMS);
+        if (!g_cMsAPIMonIslnTimeout)
+            cfgGetValueU32(g_pVirtualBox, NULL /* Machine */,
+                           "VBoxInternal2/Watchdog/APIMonitor/IsolationTimeoutMS", NULL /* Per-machine */,
+                           &g_cMsAPIMonIslnTimeout, 30 * 1000 /* Default is 30 seconds timeout. */);
+        g_cMsAPIMonIslnTimeout = RT_MIN(1000, g_cMsAPIMonIslnTimeout);
 
         if (g_enmAPIMonIslnResp == APIMON_RESPONSE_NONE) /* Not set by command line? */
         {
@@ -495,11 +495,11 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
             }
         }
 
-        if (!g_ulAPIMonResponseTimeoutMS)
-            cfgGetValueULong(g_pVirtualBox, NULL /* Machine */,
-                             "VBoxInternal2/Watchdog/APIMonitor/ResponseTimeoutMS", NULL /* Per-machine */,
-                             &g_ulAPIMonResponseTimeoutMS, 30 * 1000 /* Default is 30 seconds timeout. */);
-        g_ulAPIMonResponseTimeoutMS = RT_MIN(5000, g_ulAPIMonResponseTimeoutMS);
+        if (!g_cMsAPIMonResponseTimeout)
+            cfgGetValueU32(g_pVirtualBox, NULL /* Machine */,
+                           "VBoxInternal2/Watchdog/APIMonitor/ResponseTimeoutMS", NULL /* Per-machine */,
+                           &g_cMsAPIMonResponseTimeout, 30 * 1000 /* Default is 30 seconds timeout. */);
+        g_cMsAPIMonResponseTimeout = RT_MIN(5000, g_cMsAPIMonResponseTimeout);
 
 #ifdef DEBUG
         /* Groups. */
@@ -537,7 +537,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
 
 #ifdef DEBUG
     serviceLogVerbose(("apimon: Checking for API heartbeat (%RU64ms) ...\n",
-                       g_ulAPIMonIslnTimeoutMS));
+                       g_cMsAPIMonIslnTimeout));
 #endif
 
     do
@@ -557,10 +557,10 @@ static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
         else
         {
             g_uAPIMonIslnLastBeatMS += uDelta;
-            if (g_uAPIMonIslnLastBeatMS > g_ulAPIMonIslnTimeoutMS)
+            if (g_uAPIMonIslnLastBeatMS > g_cMsAPIMonIslnTimeout)
             {
                 serviceLogVerbose(("apimon: No API heartbeat within time received (%RU64ms)\n",
-                                   g_ulAPIMonIslnTimeoutMS));
+                                   g_cMsAPIMonIslnTimeout));
 
                 vrc = apimonTrigger(g_enmAPIMonIslnResp);
                 g_uAPIMonIslnLastBeatMS = 0;
