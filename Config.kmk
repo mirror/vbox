@@ -4462,7 +4462,7 @@ TEMPLATE_VBOXR3EXE_LIBPATH            += \
 TEMPLATE_VBOXR3EXE_CFLAGS             += -fno-pic
 TEMPLATE_VBOXR3EXE_CXXFLAGS           += -fno-pic
 TEMPLATE_VBOXR3EXE_LDFLAGS            += -fno-pic
- else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
+ else if1of ($(KBUILD_TARGET), freebsd openbsd)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
 TEMPLATE_VBOXR3EXE_INCS               += \
@@ -4473,6 +4473,15 @@ TEMPLATE_VBOXR3EXE_LIBPATH            += \
 	/usr/lib \
 	/usr/X11R6/lib \
 	/usr/local/lib
+ else ifeq ($(KBUILD_TARGET),netbsd)
+TEMPLATE_VBOXR3EXE_TOOL                = GXX3
+TEMPLATE_VBOXR3EXE_LIBS                = pthread
+TEMPLATE_VBOXR3EXE_INCS               += \
+	/usr/include \
+	/usr/X11R7/include
+TEMPLATE_VBOXR3EXE_LIBPATH            += \
+	/usr/lib \
+	/usr/X11R7/lib
  else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
@@ -5245,7 +5254,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(KBUILD_TARGET),haiku)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) network stdc++ supc++
- else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
+ else if1of ($(KBUILD_TARGET), freebsd openbsd)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
 TEMPLATE_VBOXMAINEXE_INCS               += \
@@ -5256,6 +5265,15 @@ TEMPLATE_VBOXMAINEXE_LIBPATH            += \
 	/usr/lib \
 	/usr/X11R6/lib \
 	/usr/local/lib
+ else ifeq ($(KBUILD_TARGET),netbsd)
+TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
+TEMPLATE_VBOXMAINEXE_INCS               += \
+	/usr/include \
+	/usr/X11R7/include
+TEMPLATE_VBOXMAINEXE_LIBPATH            += \
+	/usr/lib \
+	/usr/X11R7/lib
 else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
@@ -6004,7 +6022,7 @@ TEMPLATE_VBoxBldProg_TOOL                = GXX3
 TEMPLATE_VBoxBldProg_LIBS                = network iconv
 TEMPLATE_VBoxBldProg_LIBPATH            += \
 	/boot/common/lib
- else if1of ($(KBUILD_HOST), freebsd netbsd openbsd)
+ else if1of ($(KBUILD_HOST), freebsd openbsd)
 TEMPLATE_VBoxBldProg_TOOL                = GXX3
 TEMPLATE_VBoxBldProg_LIBS                = pthread
 TEMPLATE_VBoxBldProg_INCS               += \
@@ -6015,6 +6033,15 @@ TEMPLATE_VBoxBldProg_LIBPATH            += \
 	/usr/lib \
 	/usr/X11R6/lib \
 	/usr/local/lib
+ else ifeq ($(KBUILD_HOST),netbsd)
+TEMPLATE_VBoxBldProg_TOOL                = GXX3
+TEMPLATE_VBoxBldProg_LIBS                = pthread
+TEMPLATE_VBoxBldProg_INCS               += \
+	/usr/include \
+	/usr/X11R7/include
+TEMPLATE_VBoxBldProg_LIBPATH            += \
+	/usr/lib \
+	/usr/X11R7/lib
  else ifeq ($(KBUILD_HOST),solaris)
 TEMPLATE_VBoxBldProg_TOOL                = GXX3PLAIN
 TEMPLATE_VBoxBldProg_LIBS                = rt
