@@ -419,6 +419,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                             count = 1;
                         else
                             count = 2;
+                        RTTimeSpecSetNano(&now, 0); /* Shut up MSC */
                     }
                     else
                         RTTimeNow(&now);

@@ -423,7 +423,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 RTPrintf("%2u: Suggested OS type: \"%ls\""
                                         "\n    (change with \"--vsys %u --ostype <type>\"; use \"list ostypes\" to list all possible values)\n",
                                         a, bstrFinalValue.raw(), i);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Name:
                             if (findArgValue(strOverride, pmapArgs, "vmname"))
@@ -436,32 +436,32 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 RTPrintf("%2u: Suggested VM name \"%ls\""
                                         "\n    (change with \"--vsys %u --vmname <name>\")\n",
                                         a, bstrFinalValue.raw(), i);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Product:
                             RTPrintf("%2u: Product (ignored): %ls\n",
                                      a, aVBoxValues[a]);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_ProductUrl:
                             RTPrintf("%2u: ProductUrl (ignored): %ls\n",
                                      a, aVBoxValues[a]);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Vendor:
                             RTPrintf("%2u: Vendor (ignored): %ls\n",
                                      a, aVBoxValues[a]);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_VendorUrl:
                             RTPrintf("%2u: VendorUrl (ignored): %ls\n",
                                      a, aVBoxValues[a]);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Version:
                             RTPrintf("%2u: Version (ignored): %ls\n",
                                      a, aVBoxValues[a]);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Description:
                             if (findArgValue(strOverride, pmapArgs, "description"))
@@ -474,7 +474,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 RTPrintf("%2u: Description \"%ls\""
                                         "\n    (change with \"--vsys %u --description <desc>\")\n",
                                         a, bstrFinalValue.raw(), i);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_License:
                             ++cLicensesInTheWay;
@@ -502,7 +502,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         "\n    (display with \"--vsys %u --eula show\";"
                                         "\n    accept with \"--vsys %u --eula accept\")\n",
                                         a, i, i);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_CPU:
                             if (findArgValue(strOverride, pmapArgs, "cpus"))
@@ -525,7 +525,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             else
                                 RTPrintf("%2u: Number of CPUs: %ls\n    (change with \"--vsys %u --cpus <n>\")\n",
                                          a, bstrFinalValue.raw(), i);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Memory:
                         {
@@ -545,8 +545,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             else
                                 RTPrintf("%2u: Guest memory: %ls MB\n    (change with \"--vsys %u --memory <MB>\")\n",
                                          a, bstrFinalValue.raw(), i);
+                            break;
                         }
-                        break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerIDE:
                             if (fIgnoreThis)
@@ -562,7 +562,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                          a,
                                          aVBoxValues[a],
                                          i, a);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSATA:
                             if (fIgnoreThis)
@@ -578,7 +578,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         a,
                                         aVBoxValues[a],
                                         i, a);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSAS:
                             if (fIgnoreThis)
@@ -594,7 +594,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         a,
                                         aVBoxValues[a],
                                         i, a);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_HardDiskControllerSCSI:
                             if (fIgnoreThis)
@@ -623,7 +623,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                             aVBoxValues[a],
                                             i, a, i, a);
                             }
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_HardDiskImage:
                             if (fIgnoreThis)
@@ -783,7 +783,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                             i, a, i, a);
                                 }
                             }
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_CDROM:
                             if (fIgnoreThis)
@@ -796,7 +796,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 RTPrintf("%2u: CD-ROM"
                                         "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a, i, a);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_Floppy:
                             if (fIgnoreThis)
@@ -809,7 +809,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 RTPrintf("%2u: Floppy"
                                         "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a, i, a);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_NetworkAdapter:
                             RTPrintf("%2u: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
@@ -817,7 +817,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                      aOvfValues[a],
                                      aVBoxValues[a],
                                      aExtraConfigValues[a]);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_USBController:
                             if (fIgnoreThis)
@@ -830,7 +830,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                 RTPrintf("%2u: USB controller"
                                         "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
                                         a, i, a);
-                        break;
+                            break;
 
                         case VirtualSystemDescriptionType_SoundCard:
                             if (fIgnoreThis)
@@ -847,7 +847,16 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         aOvfValues[a],
                                         i,
                                         a);
-                        break;
+                            break;
+
+                        case VirtualSystemDescriptionType_SettingsFile:
+                            /** @todo  VirtualSystemDescriptionType_SettingsFile? */
+                            break;
+                        case VirtualSystemDescriptionType_Miscellaneous:
+                            /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
+                            break;
+                        case VirtualSystemDescriptionType_Ignore:
+                            break;
                     }
 
                     bstrFinalValue.detachTo(&aFinalValues[a]);

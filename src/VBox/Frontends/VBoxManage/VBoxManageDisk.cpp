@@ -48,6 +48,7 @@ using namespace com;
 
 static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
+    RT_NOREF(pvUser);
     RTMsgErrorV(pszFormat, va);
     RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
 }
@@ -492,7 +493,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         CMD_FLOPPY
     } cmd = CMD_NONE;
     ComPtr<IMedium> pMedium;
-    MediumType_T enmMediumType;
+    MediumType_T enmMediumType = MediumType_Normal; /* Shut up MSC */
     bool AutoReset = false;
     SafeArray<BSTR> mediumPropNames;
     SafeArray<BSTR> mediumPropValues;
@@ -1675,7 +1676,6 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
         }
         else if (!RTStrICmp(pszAction, "delete"))
         {
-            const char *pszValue = a->argv[3];
             CHECK_ERROR(pMedium, SetProperty(Bstr(pszProperty).raw(), Bstr().raw()));
             /** @todo */
         }

@@ -63,9 +63,10 @@ struct VmNameSlotKey
     const std::string VmName;
     uint8_t u8Slot;
 
-    VmNameSlotKey(const std::string &aVmName, uint8_t aSlot) :
-      VmName(aVmName),
-      u8Slot(aSlot) {}
+    VmNameSlotKey(const std::string &aVmName, uint8_t aSlot)
+      : VmName(aVmName)
+      , u8Slot(aSlot)
+    {}
 
     bool operator< (const VmNameSlotKey& that) const
     {
@@ -82,38 +83,37 @@ typedef VmSlot2OptionsM::value_type VmSlot2OptionsPair;
 
 typedef std::vector<VmNameSlotKey> VmConfigs;
 
-static const RTGETOPTDEF g_aDHCPIPOptions[]
-    = {
-        { "--netname",          't', RTGETOPT_REQ_STRING },  /* we use 't' instead of 'n' to avoid
-                                                              * 1. the misspelled "-enable" long option to be treated as 'e' (for -enable) + 'n' (for -netname) + "<the_rest_opt>" (for net name)
-                                                              * 2. the misspelled "-netmask" to be treated as 'n' (for -netname) + "<the_rest_opt>" (for net name)
-                                                              */
-        { "-netname",           't', RTGETOPT_REQ_STRING },     // deprecated (if removed check below)
-        { "--ifname",           'f', RTGETOPT_REQ_STRING },  /* we use 'f' instead of 'i' to avoid
-                                                              * 1. the misspelled "-disable" long option to be treated as 'd' (for -disable) + 'i' (for -ifname) + "<the_rest_opt>" (for if name)
-                                                              */
-        { "-ifname",            'f', RTGETOPT_REQ_STRING },     // deprecated
-        { "--ip",               'a', RTGETOPT_REQ_STRING },
-        { "-ip",                'a', RTGETOPT_REQ_STRING },     // deprecated
-        { "--netmask",          'm', RTGETOPT_REQ_STRING },
-        { "-netmask",           'm', RTGETOPT_REQ_STRING },     // deprecated
-        { "--lowerip",          'l', RTGETOPT_REQ_STRING },
-        { "-lowerip",           'l', RTGETOPT_REQ_STRING },     // deprecated
-        { "--upperip",          'u', RTGETOPT_REQ_STRING },
-        { "-upperip",           'u', RTGETOPT_REQ_STRING },     // deprecated
-        { "--enable",           'e', RTGETOPT_REQ_NOTHING },
-        { "-enable",            'e', RTGETOPT_REQ_NOTHING },    // deprecated
-        { "--disable",          'd', RTGETOPT_REQ_NOTHING },
-        { "-disable",           'd', RTGETOPT_REQ_NOTHING },     // deprecated
-        { "--options",          'o', RTGETOPT_REQ_NOTHING },
-        {"--vm",                'n', RTGETOPT_REQ_STRING}, /* only with -o */
-        {"--slot",              's', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
-        {"--id",                'i', RTGETOPT_REQ_UINT8}, /* only with -o */
-        {"--value",             'p', RTGETOPT_REQ_STRING} /* only with -i */
+static const RTGETOPTDEF g_aDHCPIPOptions[] =
+{
+    { "--netname",          't', RTGETOPT_REQ_STRING },  /* we use 't' instead of 'n' to avoid
+                                                          * 1. the misspelled "-enable" long option to be treated as 'e' (for -enable) + 'n' (for -netname) + "<the_rest_opt>" (for net name)
+                                                          * 2. the misspelled "-netmask" to be treated as 'n' (for -netname) + "<the_rest_opt>" (for net name)
+                                                          */
+    { "-netname",           't', RTGETOPT_REQ_STRING },     // deprecated (if removed check below)
+    { "--ifname",           'f', RTGETOPT_REQ_STRING },  /* we use 'f' instead of 'i' to avoid
+                                                          * 1. the misspelled "-disable" long option to be treated as 'd' (for -disable) + 'i' (for -ifname) + "<the_rest_opt>" (for if name)
+                                                          */
+    { "-ifname",            'f', RTGETOPT_REQ_STRING },     // deprecated
+    { "--ip",               'a', RTGETOPT_REQ_STRING },
+    { "-ip",                'a', RTGETOPT_REQ_STRING },     // deprecated
+    { "--netmask",          'm', RTGETOPT_REQ_STRING },
+    { "-netmask",           'm', RTGETOPT_REQ_STRING },     // deprecated
+    { "--lowerip",          'l', RTGETOPT_REQ_STRING },
+    { "-lowerip",           'l', RTGETOPT_REQ_STRING },     // deprecated
+    { "--upperip",          'u', RTGETOPT_REQ_STRING },
+    { "-upperip",           'u', RTGETOPT_REQ_STRING },     // deprecated
+    { "--enable",           'e', RTGETOPT_REQ_NOTHING },
+    { "-enable",            'e', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--disable",          'd', RTGETOPT_REQ_NOTHING },
+    { "-disable",           'd', RTGETOPT_REQ_NOTHING },     // deprecated
+    { "--options",          'o', RTGETOPT_REQ_NOTHING },
+    { "--vm",               'n', RTGETOPT_REQ_STRING}, /* only with -o */
+    { "--slot",             's', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
+    { "--id",               'i', RTGETOPT_REQ_UINT8}, /* only with -o */
+    { "--value",            'p', RTGETOPT_REQ_STRING} /* only with -i */
+};
 
-      };
-
-static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
+static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
 {
     if (a->argc - iStart < 2)
         return errorSyntax(USAGE_DHCPSERVER, "Not enough parameters");
@@ -441,13 +441,12 @@ RTEXITCODE handleDHCPServer(HandlerArg *a)
         return errorSyntax(USAGE_DHCPSERVER, "Not enough parameters");
 
     RTEXITCODE rcExit;
-    int cProcessed;
     if (strcmp(a->argv[0], "modify") == 0)
-        rcExit = handleOp(a, OP_MODIFY, 1, &cProcessed);
+        rcExit = handleOp(a, OP_MODIFY, 1);
     else if (strcmp(a->argv[0], "add") == 0)
-        rcExit = handleOp(a, OP_ADD, 1, &cProcessed);
+        rcExit = handleOp(a, OP_ADD, 1);
     else if (strcmp(a->argv[0], "remove") == 0)
-        rcExit = handleOp(a, OP_REMOVE, 1, &cProcessed);
+        rcExit = handleOp(a, OP_REMOVE, 1);
     else
         rcExit = errorSyntax(USAGE_DHCPSERVER, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
 

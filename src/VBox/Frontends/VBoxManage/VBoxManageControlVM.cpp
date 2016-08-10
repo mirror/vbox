@@ -174,7 +174,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 break;
             }
 
-            ClipboardMode_T mode;
+            ClipboardMode_T mode = ClipboardMode_Disabled; /* Shut up MSC */
             if (!strcmp(a->argv[2], "disabled"))
                 mode = ClipboardMode_Disabled;
             else if (!strcmp(a->argv[2], "hosttoguest"))
@@ -204,7 +204,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 break;
             }
 
-            DnDMode_T mode;
+            DnDMode_T mode = DnDMode_Disabled; /* Shup up MSC. */
             if (!strcmp(a->argv[2], "disabled"))
                 mode = DnDMode_Disabled;
             else if (!strcmp(a->argv[2], "hosttoguest"))

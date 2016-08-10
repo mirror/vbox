@@ -48,8 +48,9 @@ static const char *getHostIfMediumTypeText(HostNetworkInterfaceMediumType_T enmT
         case HostNetworkInterfaceMediumType_Ethernet: return "Ethernet";
         case HostNetworkInterfaceMediumType_PPP: return "PPP";
         case HostNetworkInterfaceMediumType_SLIP: return "SLIP";
+        case HostNetworkInterfaceMediumType_Unknown: return "Unknown";
     }
-    return "Unknown";
+    return "unknown";
 }
 
 static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
@@ -58,8 +59,9 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
     {
         case HostNetworkInterfaceStatus_Up: return "Up";
         case HostNetworkInterfaceStatus_Down: return "Down";
+        case HostNetworkInterfaceStatus_Unknown: return "Unknown";
     }
-    return "Unknown";
+    return "unknown";
 }
 #endif /* VBOX_WITH_HOSTNETIF_API */
 
@@ -70,6 +72,12 @@ static const char*getDeviceTypeText(DeviceType_T enmType)
         case DeviceType_HardDisk: return "HardDisk";
         case DeviceType_DVD: return "DVD";
         case DeviceType_Floppy: return "Floppy";
+        /* Make MSC happy */
+        case DeviceType_Null: return "Null";
+        case DeviceType_Network:        return "Network";
+        case DeviceType_USB:            return "USB";
+        case DeviceType_SharedFolder:   return "SharedFolder";
+        case DeviceType_Graphics3D:     return "Graphics3D";
     }
     return "Unknown";
 }
@@ -966,6 +974,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                             case MachineState_TeleportingPausedVM:
                                 rc = showVMInfo(pVirtualBox, machines[i], NULL, fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
                                 break;
+                            default: break; /* Shut up MSC */
                         }
                     }
                 }

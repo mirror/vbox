@@ -140,7 +140,6 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
     else
     {
         /* Figure the paragraph indent level first. */
-        const char * const pszIndent = psz;
         uint32_t cchIndent = 0;
         while (*psz == ' ')
             cchIndent++, psz++;

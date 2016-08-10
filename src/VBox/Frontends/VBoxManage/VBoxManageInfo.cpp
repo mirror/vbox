@@ -260,6 +260,7 @@ inline const char * bwGroupTypeToString(BandwidthGroupType_T enmType)
 {
     switch (enmType)
     {
+        case BandwidthGroupType_Null:    return "Null";
         case BandwidthGroupType_Disk:    return "Disk";
         case BandwidthGroupType_Network: return "Network";
     }
@@ -397,6 +398,8 @@ static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_
    critical and probably won't gain much from the extra optimizing in real life. */
 #if defined(_MSC_VER)
 # pragma optimize("g", off)
+# pragma warning(push)
+# pragma warning(disable: 4748)
 #endif
 
 HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
@@ -1077,7 +1080,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         for (size_t i = 0; i < forwardings.size(); ++i)
                         {
                             bool fSkip = false;
-                            uint16_t port = 0;
                             BSTR r = forwardings[i];
                             Utf8Str utf = Utf8Str(r);
                             Utf8Str strName;
@@ -1643,6 +1645,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 case AudioCodecType_STAC9221:
                     pszCodec = "STAC9221";
                     break;
+                case AudioCodecType_Null: break; /* Shut up MSC. */
             }
         }
         else
@@ -2711,6 +2714,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
 #if defined(_MSC_VER)
 # pragma optimize("", on)
+# pragma warning(pop)
 #endif
 
 static const RTGETOPTDEF g_aShowVMInfoOptions[] =

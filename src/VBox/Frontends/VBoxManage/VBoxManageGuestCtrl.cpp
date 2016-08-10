@@ -928,7 +928,7 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
          */
         if (pCtx->cVerbose)
             RTPrintf("Waiting for guest session to start...\n");
-        GuestSessionWaitResult_T enmWaitResult;
+        GuestSessionWaitResult_T enmWaitResult = GuestSessionWaitResult_None; /* Shut up MSC */
         try
         {
             com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
@@ -1158,7 +1158,6 @@ static void gctlCtxTerm(PGCTLCMDCTX pCtx)
  */
 static RTEXITCODE gctlRunCalculateExitCode(ProcessStatus_T enmStatus, ULONG uExitCode, bool fReturnExitCodes)
 {
-    int vrc = RTEXITCODE_SUCCESS;
     switch (enmStatus)
     {
         case ProcessStatus_TerminatedNormally:
@@ -1304,6 +1303,7 @@ static RTMSINTERVAL gctlRunGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL cM
  */
 static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, bool fRunCmd, uint32_t fHelp)
 {
+    RT_NOREF(fHelp);
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
@@ -1345,9 +1345,9 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
     int                     ch;
     RTGETOPTUNION           ValueUnion;
     RTGETOPTSTATE           GetState;
-    size_t                  cOptions =
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions) - (fRunCmd ? 0 : 6),
-                 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions) - (fRunCmd ? 0 : 6),
+                           1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRC(vrc);
 
     com::SafeArray<ProcessCreateFlag_T>     aCreateFlags;
     com::SafeArray<ProcessWaitForFlag_T>    aWaitFlags;
@@ -1764,6 +1764,7 @@ static int gctlCopyContextCreate(PGCTLCMDCTX pCtx, bool fDryRun, bool fHostToGue
                                  const Utf8Str &strSessionName,
                                  PCOPYCONTEXT *ppContext)
 {
+    RT_NOREF(strSessionName);
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     int vrc = VINF_SUCCESS;
@@ -2669,7 +2670,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     Utf8Str strSource;
     const char *pszDst = NULL;
     enum gctlCopyFlags enmFlags = kGctlCopyFlags_None;
-    bool fCopyRecursive = false;
+    /*bool fCopyRecursive = false; - unused */
     bool fDryRun = false;
     uint32_t uUsage = fHostToGuest ? USAGE_GSTCTRL_COPYTO : USAGE_GSTCTRL_COPYFROM;
 
@@ -3280,7 +3281,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
         Utf8Str strCurSource = (*it);
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        FsObjType_T enmObjType;
+        FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC */
         rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strCurSource).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
         if (SUCCEEDED(rc))
             rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);

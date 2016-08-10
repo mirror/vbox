@@ -43,6 +43,7 @@ using namespace com;
 /** @todo refine this after HDD changes; MSC 8.0/64 has trouble with handleModifyVM.  */
 #if defined(_MSC_VER)
 # pragma optimize("g", off)
+# pragma warning(disable:4748)
 #endif
 
 enum
@@ -2071,7 +2072,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_UARTMODE:
             {
                 ComPtr<ISerialPort> uart;
-                char *pszIRQ = NULL;
 
                 CHECK_ERROR_BREAK(sessionMachine, GetSerialPort(GetOptState.uIndex - 1, uart.asOutParam()));
                 ASSERT(uart);
@@ -2165,7 +2165,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_LPTMODE:
             {
                 ComPtr<IParallelPort> lpt;
-                char *pszIRQ = NULL;
 
                 CHECK_ERROR_BREAK(sessionMachine, GetParallelPort(GetOptState.uIndex - 1, lpt.asOutParam()));
                 ASSERT(lpt);
@@ -2323,7 +2322,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_CLIPBOARD:
             {
-                ClipboardMode_T mode;
+                ClipboardMode_T mode = ClipboardMode_Disabled; /* Shut up MSC */
                 if (!RTStrICmp(ValueUnion.psz, "disabled"))
                     mode = ClipboardMode_Disabled;
                 else if (!RTStrICmp(ValueUnion.psz, "hosttoguest"))
@@ -2346,7 +2345,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_DRAGANDDROP:
             {
-                DnDMode_T mode;
+                DnDMode_T mode = DnDMode_Disabled; /* Shut up MSC */
                 if (!RTStrICmp(ValueUnion.psz, "disabled"))
                     mode = DnDMode_Disabled;
                 else if (!RTStrICmp(ValueUnion.psz, "hosttoguest"))

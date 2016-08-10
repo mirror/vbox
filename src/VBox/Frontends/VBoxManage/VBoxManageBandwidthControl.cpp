@@ -305,7 +305,6 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
  */
 RTEXITCODE handleBandwidthControl(HandlerArg *a)
 {
-    int c = VERR_INTERNAL_ERROR;        /* initialized to shut up gcc */
     HRESULT rc = S_OK;
     ComPtr<IMachine> machine;
     ComPtr<IBandwidthControl> bwCtrl;

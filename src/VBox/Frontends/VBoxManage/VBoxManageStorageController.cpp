@@ -752,8 +752,8 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
                                                              pMedium2Mount,
                                                              fForceUnmount));
                         }
+                        break;
                     } // end DeviceType_DVD or DeviceType_Floppy:
-                    break;
 
                     case DeviceType_HardDisk:
                     {
@@ -764,8 +764,10 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
                                                           device,
                                                           DeviceType_HardDisk,
                                                           pMedium2Mount));
+                        break;
                     }
-                    break;
+
+                    default: break; /* Shut up MSC */
                 }
             }
         }
@@ -969,8 +971,6 @@ RTEXITCODE handleStorageController(HandlerArg *a)
     const char       *pszHostIOCache = NULL;
     const char       *pszBootable    = NULL;
     const char       *pszCtlNewName  = NULL;
-    ULONG             satabootdev    = ~0U;
-    ULONG             sataidedev     = ~0U;
     ULONG             portcount      = ~0U;
     bool              fRemoveCtl     = false;
     ComPtr<IMachine>  machine;
