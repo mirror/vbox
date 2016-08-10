@@ -1736,8 +1736,7 @@ int GuestSession::i_startSessionAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    int vrc = VINF_SUCCESS;
-
+    int vrc;
     GuestSessionTaskInternalOpen* pTask = NULL;
     try
     {
@@ -1753,6 +1752,7 @@ int GuestSession::i_startSessionAsync(void)
          * worker thread. */
         //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
         HRESULT hrc = pTask->createThread();
+        vrc = Global::vboxStatusCodeFromCOM(hrc);
     }
     catch(std::bad_alloc &)
     {
