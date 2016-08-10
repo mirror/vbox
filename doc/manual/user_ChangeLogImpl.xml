@@ -20,6 +20,10 @@
       </listitem>
 
       <listitem>
+        <para>USB: fixed a hang under certain conditions</para>
+      </listitem>
+
+      <listitem>
         <para>NVMe: several fixes to improve stability, fixed a crash while
           saving a VM state</para>
       </listitem>
