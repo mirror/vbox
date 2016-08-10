@@ -78,8 +78,8 @@ static uint32_t const g_au32Crc32C[] =
 };
 
 
-DECLINLINE(uint32_t) rtCrc32ProcessWithTable(const uint32_t *pau32Crc32,
-                                             uint32_t uCrc32, const void *pv, size_t cb)
+DECLINLINE(uint32_t) rtCrc32CProcessWithTable(const uint32_t *pau32Crc32,
+                                              uint32_t uCrc32, const void *pv, size_t cb)
 {
     const uint8_t  *pu8 = (const uint8_t *)pv;
 
@@ -94,29 +94,29 @@ RTDECL(uint32_t) RTCrc32CStart(void)
 {
     return ~0U;
 }
-RT_EXPORT_SYMBOL(RTCrc32Start);
+RT_EXPORT_SYMBOL(RTCrc32CStart);
 
 
 RTDECL(uint32_t) RTCrc32CFinish(uint32_t uCRC32)
 {
     return uCRC32 ^ ~0U;
 }
-RT_EXPORT_SYMBOL(RTCrc32Finish);
+RT_EXPORT_SYMBOL(RTCrc32CFinish);
 
 
 RTDECL(uint32_t) RTCrc32C(const void *pv, size_t cb)
 {
-    uint32_t uCrc32C = RTCrc32Start();
+    uint32_t uCrc32C = RTCrc32CStart();
 
-    uCrc32C = rtCrc32ProcessWithTable(g_au32Crc32C, uCrc32C, pv, cb);
-    return RTCrc32Finish(uCrc32C);
+    uCrc32C = rtCrc32CProcessWithTable(g_au32Crc32C, uCrc32C, pv, cb);
+    return RTCrc32CFinish(uCrc32C);
 }
 RT_EXPORT_SYMBOL(RTCrc32C);
 
 
 RTDECL(uint32_t) RTCrc32CProcess(uint32_t uCrc32C, const void *pv, size_t cb)
 {
-    return rtCrc32ProcessWithTable(g_au32Crc32C, uCrc32C, pv, cb);;
+    return rtCrc32CProcessWithTable(g_au32Crc32C, uCrc32C, pv, cb);;
 }
 RT_EXPORT_SYMBOL(RTCrc32CProcess);
 
