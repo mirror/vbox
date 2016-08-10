@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxBugReportWin - VirtualBox command-line diagnostics tool,
- * Windows-specific part.
+ * VBoxBugReportWin - VirtualBox command-line diagnostics tool, Windows-specific part.
  */
 
 /*
@@ -224,23 +223,27 @@ class ErrorHandler
 {
 public:
     ErrorHandler(const char *pszFunction, int iLine)
-        : m_function(pszFunction), m_line(iLine) {};
+        : m_function(pszFunction), m_line(iLine)
+    { }
+
     void handleWinError(DWORD uError, const char *pszMsgFmt, ...)
+    {
+        if (uError != ERROR_SUCCESS)
         {
-            if (uError != ERROR_SUCCESS)
-            {
-                va_list va;
-                va_start(va, pszMsgFmt);
-                RTCString msgArgs(pszMsgFmt, va);
-                va_end(va);
-                LPSTR pBuf = NULL;
-                DWORD cb = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                          NULL, uError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&pBuf, 0, NULL);
-                RTCStringFmt msg("%s at %s(%d): err=%u %s", msgArgs.c_str(), m_function, m_line, uError, pBuf);
-                LocalFree(pBuf);
-                throw RTCError(msg.c_str());
-            }
-        };
+            va_list va;
+            va_start(va, pszMsgFmt);
+            RTCString msgArgs(pszMsgFmt, va);
+            va_end(va);
+
+            LPSTR pBuf = NULL;
+            FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           NULL, uError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&pBuf, 0, NULL);
+            RTCStringFmt msg("%s at %s(%d): err=%u %s", msgArgs.c_str(), m_function, m_line, uError, pBuf);
+            LocalFree(pBuf);
+            throw RTCError(msg.c_str());
+        }
+    }
+
 private:
     const char *m_function;
     int m_line;
@@ -253,15 +256,15 @@ class BugReportUsbTreeWin : public BugReportStream
 public:
     BugReportUsbTreeWin();
     virtual ~BugReportUsbTreeWin();
-    virtual PRTSTREAM getStream(void) { enumerate(); return BugReportStream::getStream(); };
+    virtual PRTSTREAM getStream(void) { enumerate(); return BugReportStream::getStream(); }
 private:
     class AutoHandle {
     public:
-        AutoHandle(HANDLE h) { m_h = h; };
-        ~AutoHandle() { close(); };
-        bool isValid() { return m_h != INVALID_HANDLE_VALUE; };
-        operator HANDLE() { return m_h; };
-        void close(void) { if (isValid()) { CloseHandle(m_h); m_h = INVALID_HANDLE_VALUE; } };
+        AutoHandle(HANDLE h) { m_h = h; }
+        ~AutoHandle() { close(); }
+        bool isValid() { return m_h != INVALID_HANDLE_VALUE; }
+        operator HANDLE() { return m_h; }
+        void close(void)  {   if (isValid()) { CloseHandle(m_h); m_h = INVALID_HANDLE_VALUE; }    }
     private:
         HANDLE m_h;
     };
@@ -338,7 +341,6 @@ PBYTE BugReportUsbTreeWin::getDeviceRegistryProperty(HDEVINFO hDev,
 
 RTCString BugReportUsbTreeWin::getDeviceRegistryPropertyString(HDEVINFO hDev, PSP_DEVINFO_DATA pInfoData, DWORD uProperty)
 {
-    DWORD cbString = 0;
     PWSTR pUnicodeString = (PWSTR)getDeviceRegistryProperty(hDev, pInfoData, uProperty, REG_SZ, NULL);
 
     if (!pUnicodeString)
@@ -488,6 +490,7 @@ void BugReportUsbTreeWin::enumerateHub(RTCString strFullName, RTCString strPrefi
 
 void BugReportUsbTreeWin::enumerateController(PSP_DEVINFO_DATA pInfoData, PSP_DEVICE_INTERFACE_DATA pInterfaceData)
 {
+    RT_NOREF(pInterfaceData);
     RTCString strCtrlDesc = getDeviceRegistryPropertyString(m_hDevInfo, pInfoData, SPDRP_DEVICEDESC);
     printf("%s\n", strCtrlDesc.c_str());
 
@@ -560,6 +563,7 @@ void BugReportUsbTreeWin::enumerate()
 
 void createBugReportOsSpecific(BugReport* report, const char *pszHome)
 {
+    RT_NOREF(pszHome);
     WCHAR szWinDir[MAX_PATH];
 
     int cbNeeded = GetWindowsDirectory(szWinDir, RT_ELEMENTS(szWinDir));
