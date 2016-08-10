@@ -23,8 +23,8 @@
 # if QT_VERSION < 0x050000
 #  ifdef VBOX_WS_WIN
 #   include <QLibrary>
-#  endif /* VBOX_WS_WIN */
-# endif /* QT_VERSION < 0x050000 */
+#  endif
+# endif
 
 /* GUI includes: */
 # include "QILineEdit.h"
@@ -33,15 +33,15 @@
 # if QT_VERSION < 0x050000
 #  ifdef VBOX_WS_WIN
 #   include "iprt/ldr.h"
-#  endif /* VBOX_WS_WIN */
-# endif /* QT_VERSION < 0x050000 */
+#  endif
+# endif
 
 /* External includes: */
 # if QT_VERSION < 0x050000
 #  ifdef VBOX_WS_WIN
 #   include <iprt/win/windows.h>
-#  endif /* VBOX_WS_WIN */
-# endif /* QT_VERSION < 0x050000 */
+#  endif
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -50,8 +50,8 @@
 #if QT_VERSION < 0x050000
 # ifdef VBOX_WS_WIN
 #  include <QWindowsVistaStyle>
-# endif /* VBOX_WS_WIN */
-#endif /* QT_VERSION < 0x050000 */
+# endif
+#endif
 
 
 void QILineEdit::setMinimumWidthByText (const QString &aText)
