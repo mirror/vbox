@@ -367,7 +367,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int
     m_availableGeometryWorkers[iHostScreenIndex] = 0;
 
     /* Notify listeners: */
-    emit sigHostScreenWorkAreaResized(iHostScreenIndex);
+    emit sigHostScreenWorkAreaRecalculated(iHostScreenIndex);
 }
 #endif /* VBOX_WS_X11 */
 

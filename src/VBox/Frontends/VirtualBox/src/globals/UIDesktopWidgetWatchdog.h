@@ -53,6 +53,11 @@ signals:
     /** Notifies about work-area resize for the host-screen with @a iHostScreenIndex. */
     void sigHostScreenWorkAreaResized(int iHostScreenIndex);
 
+#ifdef VBOX_WS_X11
+    /** Notifies about work-area recalculated for the host-screen with @a iHostScreenIndex. */
+    void sigHostScreenWorkAreaRecalculated(int iHostScreenIndex);
+#endif /* VBOX_WS_X11 */
+
 public:
 
     /** Returns the static instance of the desktop-widget watchdog. */
