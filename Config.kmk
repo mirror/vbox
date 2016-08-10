@@ -3788,7 +3788,7 @@ ifdef VBOX_WITH_RAW_MODE
   endif
   ifn1of ($(KBUILD_TARGET), solaris freebsd)
    TEMPLATE_VBoxRc_LIBS               = \
-	$(VBOX_GCC32_LIBGCC) # instricts
+	$(VBOX_GCC32_LIBGCC) # intrinsics
   endif
   if1of ($(KBUILD_TARGET),linux)
    TEMPLATE_VBoxRc_POST_CMDS         = $(if $(eq $(tool_do),LINK_SYSMOD),if readelf -S $(out)|grep -q "[cd]tors"; then echo "Found ctors/dtors in $(out)!"; exit 1; fi)
@@ -3939,7 +3939,7 @@ else
 endif
 ifn1of ($(KBUILD_TARGET),solaris freebsd)
  TEMPLATE_VBoxR0_LIBS               = \
-	$(VBOX_GCC_LIBGCC) # instricts
+	$(VBOX_GCC_LIBGCC) # intrinsics
 endif
 if1of ($(KBUILD_TARGET),linux)
  TEMPLATE_VBoxR0_POST_CMDS          =  $(if $(eq $(tool_do),LINK_SYSMOD),if readelf -S $(out)|grep -q "[cd]tors"; then echo "Found ctors/dtors in $(out)!"; exit 1; fi)
