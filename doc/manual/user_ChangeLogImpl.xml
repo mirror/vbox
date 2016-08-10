@@ -15,6 +15,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: fixed handling of certain mouse cursor formats (5.1.0 regression;
+          Windows hosts only)</para>
+      </listitem>
+
+      <listitem>
         <para>Audio: re-enabled speakers for Mac OS X guests (5.1.0 regression;
           bug #15611)</para>
       </listitem>
