@@ -134,7 +134,8 @@ public:
             {
                 AssertPtrReturn(mProcess, E_POINTER);
                 int rc2 = mProcess->signalWaitEvent(aType, aEvent);
-#ifdef DEBUG
+                RT_NOREF(rc2);
+#ifdef LOG_ENABLED
                 LogFlowThisFunc(("Signalling events of type=%RU32, pProcess=%p resulted in rc=%Rrc\n",
                                  aType, &mProcess, rc2));
 #endif
@@ -298,6 +299,7 @@ void GuestProcess::uninit(void)
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
                      vrc, guestRc));
+    RT_NOREF_PV(vrc);
 }
 
 // implementation of public getters/setters for attributes
@@ -789,6 +791,7 @@ int GuestProcess::i_onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
 
 int GuestProcess::i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
+    RT_NOREF(pCbCtx);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
     if (pSvcCbData->mParms < 5)
@@ -1489,6 +1492,7 @@ int GuestProcess::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
 int GuestProcess::i_waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS,
                                        ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed)
 {
+    RT_NOREF(uHandle);
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
     VBoxEventType_T evtType;
@@ -1654,6 +1658,9 @@ bool GuestProcess::i_waitResultImpliesEx(ProcessWaitResult_T waitResult,
                                          ProcessStatus_T procStatus, uint32_t uProcFlags,
                                          uint32_t uProtocol)
 {
+    /** @todo r=bird: If you subscribe to HN, which the 'u' in 'uProcFlags'
+     *        indicates, you should actually be using 'fProc'! */
+    RT_NOREF(uProtocol, uProcFlags);
     bool fImplies;
 
     switch (waitResult)
@@ -2024,9 +2031,9 @@ int GuestProcessTool::i_getCurrentBlock(uint32_t uHandle, GuestProcessStreamBloc
 
 int GuestProcessTool::i_getRc(void) const
 {
-    LONG exitCode;
+    LONG exitCode = -1;
     HRESULT hr = pProcess->COMGETTER(ExitCode(&exitCode));
-    Assert(SUCCEEDED(hr));
+    AssertComRC(hr);
 
     return GuestProcessTool::i_exitCodeToRc(mStartupInfo, exitCode);
 }
@@ -2037,7 +2044,7 @@ bool GuestProcessTool::i_isRunning(void)
 
     ProcessStatus_T procStatus = ProcessStatus_Undefined;
     HRESULT hr = pProcess->COMGETTER(Status(&procStatus));
-    Assert(SUCCEEDED(hr));
+    AssertComRC(hr);
 
     if (   procStatus == ProcessStatus_Started
         || procStatus == ProcessStatus_Paused
@@ -2212,9 +2219,9 @@ int GuestProcessTool::i_terminatedOk(LONG *plExitCode /* = NULL */)
     int vrc;
     if (!i_isRunning())
     {
-        LONG lExitCode;
+        LONG lExitCode = -1;
         HRESULT hr = pProcess->COMGETTER(ExitCode(&lExitCode));
-        Assert(SUCCEEDED(hr));
+        AssertComRC(hr);
 
         if (plExitCode)
             *plExitCode = lExitCode;
