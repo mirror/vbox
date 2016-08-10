@@ -24,6 +24,12 @@
       </listitem>
 
       <listitem>
+        <para>PIIX4: implemented dummy SMBus controller to prevent annoying
+          Linux kernel warnings about uninitialized SMBus base address
+          (bug #9517)</para>
+      </listitem>
+
+      <listitem>
         <para>NVMe: several fixes to improve stability, fixed a crash while
           saving a VM state</para>
       </listitem>
