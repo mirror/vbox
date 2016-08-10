@@ -92,8 +92,38 @@ static int netPfStrAddressParse(char *pszRaw, int cbRaw,
 }
 
 
+/**
+ * Parses a port something.
+ *
+ * @returns Offset relative to @a pszRaw of the end of the port field.
+ *          -1 on failure.
+ * @param   pszRaw          The zero terminated string to parse.  Points a field
+ *                          separator.
+ * @param   cbRaw           Number of valid bytes in the buffer @a pszRaw points
+ *                          at.  (Ignored since pszRaw is terminated.)
+ * @param   pu16Port        Where to store the port number on success.
+ */
 static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
 {
+#if 1
+    AssertPtrReturn(pszRaw, -1);
+    AssertPtrReturn(pu16Port, -1);
+    AssertReturn(pszRaw[0] == PF_FIELD_SEPARATOR, -1);
+
+    char *pszNext = NULL;
+    int rc = RTStrToUInt16Ex(&pszRaw[1], &pszNext, 0, pu16Port);
+    if (rc == VWRN_TRAILING_CHARS)
+        AssertReturn(*pszNext == PF_FIELD_SEPARATOR, -1);
+    else if (rc == VINF_SUCCESS)
+        Assert(*pszNext == '\0');
+    else
+        AssertMsgFailedReturn(("rc=%Rrc\n", rc), -1);
+    if (*pu16Port == 0)
+        return -1;
+    Assert((uinpttr_t)pszNext <= (uintptr_t)&pszRaw[cbRaw]); NOREF(cbRaw);
+    return (int)(pszNext - pszRaw);
+
+#else /* The same code, just a little more verbose: */
     char *pszEndOfPort = NULL;
     uint16_t u16Port = 0;
     int idxRaw = 1; /* we increment pszRaw after checks. */
@@ -104,10 +134,10 @@ static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
     AssertPtrReturn(pu16Port, -1);
     AssertReturn(pszRaw[0] == PF_FIELD_SEPARATOR, -1);
 
-    pszRaw++; /* skip line separator */
+    pszRaw++; /* skip field separator */
     cbRaw --;
 
-    pszEndOfPort = RTStrStr(pszRaw, ":");
+    char *pszEndOfPort = RTStrStr(pszRaw, ":");
     if (!pszEndOfPort)
     {
         cbRest = strlen(pszRaw);
@@ -145,6 +175,7 @@ static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
     *pu16Port = u16Port;
 
      return idxRaw;
+#endif
 }
 
 
