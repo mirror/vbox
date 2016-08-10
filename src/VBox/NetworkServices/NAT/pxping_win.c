@@ -33,6 +33,9 @@
 #undef IP6_STATS
 
 #include <winternl.h>           /* for PIO_APC_ROUTINE &c */
+#ifndef PIO_APC_ROUTINE_DEFINED
+# define PIO_APC_ROUTINE_DEFINED 1
+#endif
 #include <iprt/win/iphlpapi.h>
 #include <icmpapi.h>
 
@@ -58,8 +61,8 @@ struct pxping {
      * so to avoid stack corruption we check windows version at run
      * time and provide correct callback.
      */
-    void *callback4;
-    void *callback6;
+    PIO_APC_ROUTINE pfnCallback4;
+    PIO_APC_ROUTINE pfnCallback6;
 };
 
 
@@ -118,12 +121,12 @@ pxping_init(struct netif *netif, SOCKET sock4, SOCKET sock6)
     }
 
     if (osvi.dwMajorVersion >= 6) {
-        g_pxping.callback4 = (void *)pxping_icmp4_callback_apc;
-        g_pxping.callback6 = (void *)pxping_icmp6_callback_apc;
+        g_pxping.pfnCallback4 = pxping_icmp4_callback_apc;
+        g_pxping.pfnCallback6 = pxping_icmp6_callback_apc;
     }
     else {
-        g_pxping.callback4 = (void *)pxping_icmp4_callback_old;
-        g_pxping.callback6 = (void *)pxping_icmp6_callback_old;
+        g_pxping.pfnCallback4 = (PIO_APC_ROUTINE)pxping_icmp4_callback_old;
+        g_pxping.pfnCallback6 = (PIO_APC_ROUTINE)pxping_icmp6_callback_old;
     }
 
 
@@ -242,7 +245,7 @@ pxping_recv4(void *arg, struct pbuf *p)
     opts.OptionsData = 0;
 
     status = IcmpSendEcho2(pxping->hdl4, NULL,
-                           pxping->callback4, pong,
+                           pxping->pfnCallback4, pong,
                            dst, reqdata, (WORD)reqsize, &opts,
                            pong->buf, (DWORD)pong->bufsize,
                            5 * 1000 /* ms */);
@@ -251,7 +254,7 @@ pxping_recv4(void *arg, struct pbuf *p)
         DPRINTF(("IcmpSendEcho2: unexpected status %d\n", status));
         goto out;
     }
-    else if ((status = GetLastError()) != ERROR_IO_PENDING) {
+    if ((status = GetLastError()) != ERROR_IO_PENDING) {
         int code;
 
         DPRINTF(("IcmpSendEcho2: error %d\n", status));
@@ -529,7 +532,7 @@ pxping_recv6(void *arg, struct pbuf *p)
     opts.Ttl = hopl;
 
     status = Icmp6SendEcho2(pxping->hdl6, NULL,
-                            pxping->callback6, pong,
+                            pxping->pfnCallback6, pong,
                             &src, &dst, reqdata, (WORD)reqsize, &opts,
                             pong->buf, (DWORD)pong->bufsize,
                             5 * 1000 /* ms */);
@@ -538,7 +541,7 @@ pxping_recv6(void *arg, struct pbuf *p)
         DPRINTF(("Icmp6SendEcho2: unexpected status %d\n", status));
         goto out;
     }
-    else if ((status = GetLastError()) != ERROR_IO_PENDING) {
+    if ((status = GetLastError()) != ERROR_IO_PENDING) {
         int code;
 
         DPRINTF(("Icmp6SendEcho2: error %d\n", status));
