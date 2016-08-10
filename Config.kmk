@@ -5162,11 +5162,11 @@ ifeq ($(KBUILD_TARGET),win)
  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
  #    -wd4355: 'this' : used in base member initializer list (e.g. VirtualBoxBase.cpp)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS          += $(VBOX_VCC_WARN_ALL) -wd4625 -wd4626 -wd4355 $(VBOX_VCC_WERR)
- ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
+ #ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
   # Temporarily (Frank is working on these from the linux side, I think...):
   #  	-wd4265: 'Shareable<D>' : class has virtual functions, but destructor is not virtual instances of this class may not be destructed correctly
   TEMPLATE_VBOXMAINEXE_CXXFLAGS         += -wd4265
- endif
+ #endif
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile  = -Gh -GH
