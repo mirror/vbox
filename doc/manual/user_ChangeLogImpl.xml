@@ -25,6 +25,11 @@
       </listitem>
 
       <listitem>
+        <para>VMDK: Fixed an issue creating fixed size images with certain
+          sizes and the Split2G option enabled (bug #15748)</para>
+      </listitem>
+
+      <listitem>
         <para>OVF: when importing appliances, make sure that the version of the
           embedded VirtualBox specific settings is processed, to get the
           default settings handling right</para>
