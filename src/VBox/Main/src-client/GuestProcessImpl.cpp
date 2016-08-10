@@ -313,7 +313,7 @@ HRESULT GuestProcess::getArguments(std::vector<com::Utf8Str> &aArguments)
 
 HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
 {
-#ifndef VBOX_WTIH_GUEST_CONTROL
+#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);  /* (Paranoia since both environment objects are immutable.) */
