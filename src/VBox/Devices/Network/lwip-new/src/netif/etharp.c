@@ -755,7 +755,7 @@ etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, struct pbuf *p)
   /* this interface is not configured? */
   if (ip_addr_isany(&netif->ip_addr)) {
     for_us = 0;
-#ifdef VBOX && ARP_PROXY
+#if defined(VBOX) && ARP_PROXY
     proxy = 0; /* Shup up MSC. */
 #endif
   } else {
