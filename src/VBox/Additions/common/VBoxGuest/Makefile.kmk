@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
-if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linux,) os2 solaris win)
+if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linux,) netbsd os2 solaris win)
  #
  # VBoxGuest - The Guest Additions Driver.
  #
@@ -28,6 +28,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
  VBoxGuest_NAME.freebsd  = vboxguest
  VBoxGuest_NAME.haiku    = vboxguest
  VBoxGuest_NAME.linux    = vboxguest
+ VBoxGuest_NAME.netbsd   = vboxguest
  VBoxGuest_NAME.solaris  = vboxguest
  VBoxGuest_INST.darwin   = $(INST_ADDITIONS)VBoxGuest.kext/Contents/MacOS/
  ifdef VBOX_SIGN_ADDITIONS # See Additions/WINNT/Makefile.kmk?
@@ -54,10 +55,12 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
  VBoxGuest_DEPS.linux   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.haiku   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)
+ VBoxGuest_DEPS.netbsd  += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.darwin  += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS          = .
  VBoxGuest_INCS.freebsd  = $(VBoxGuest_0_OUTDIR) $(PATH_STAGE)/gen-sys-hdrs
+ VBoxGuest_INCS.netbsd   = $(VBoxGuest_0_OUTDIR)
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  ifeq ($(KBUILD_HOST),solaris)
   VBoxGuest_LDFLAGS.solaris         += -N misc/ctf
@@ -80,7 +83,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
     VBoxGuest.cpp_SDKS   = $(VBOX_WINDDK_GST_WLH)
    endif
   endif # win
-  ifn1of ($(KBUILD_TARGET), linux freebsd solaris haiku)
+  ifn1of ($(KBUILD_TARGET), linux freebsd netbsd solaris haiku)
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).cpp
   else
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).c
