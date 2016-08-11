@@ -81,7 +81,7 @@
 #  include <sys/sockio.h>
 #  include <net/if_arp.h>
 # endif
-# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
 #  include <ifaddrs.h> /* getifaddrs, freeifaddrs */
 #  include <net/if_dl.h> /* LLADDR */
 #  include <netdb.h> /* getnameinfo */
@@ -1088,7 +1088,7 @@ static int vgsvcVMInfoWriteNetwork(void)
     /** @todo Haiku: implement network info. retreival */
     return VERR_NOT_IMPLEMENTED;
 
-#elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
     struct ifaddrs *pIfHead = NULL;
 
     /* Get all available interfaces */
