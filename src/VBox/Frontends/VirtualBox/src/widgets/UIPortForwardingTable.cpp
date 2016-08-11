@@ -493,8 +493,7 @@ bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &va
             return true;
         default: return false;
     }
-    /* Return false value: */
-    return false;
+    /* not reached! */
 }
 
 

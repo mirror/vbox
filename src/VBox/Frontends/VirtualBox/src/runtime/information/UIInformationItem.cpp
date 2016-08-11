@@ -121,6 +121,8 @@ void UIInformationItem::paint(QPainter *pPainter, const QStyleOptionViewItem &op
 
 QSize UIInformationItem::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    RT_NOREF(option);
+
     /* Update data: */
     updateData(index);
     if (m_text.count() == 0)

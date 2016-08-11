@@ -40,6 +40,7 @@ UIBootTableItem::UIBootTableItem(KDeviceType type)
         case KDeviceType_DVD:      setIcon(UIIconPool::iconSet(":/cd_16px.png")); break;
         case KDeviceType_HardDisk: setIcon(UIIconPool::iconSet(":/hd_16px.png")); break;
         case KDeviceType_Network:  setIcon(UIIconPool::iconSet(":/nw_16px.png")); break;
+        default: break; /* Shut up, MSC! */
     }
     retranslateUi();
 }

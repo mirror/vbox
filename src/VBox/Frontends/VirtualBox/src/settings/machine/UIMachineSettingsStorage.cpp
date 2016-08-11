@@ -3414,6 +3414,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_Floppy, this, strMachineFolder);
             break;
         }
+        default: break; /* Shut up, MSC! */
     }
 
     if (!strMediumId.isEmpty())

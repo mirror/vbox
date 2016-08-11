@@ -72,6 +72,7 @@ UIInformationDataItem::~UIInformationDataItem()
 
 QVariant UIInformationDataItem::data(const QModelIndex &index, int role) const
 {
+    RT_NOREF(index);
     switch (role)
     {
         case Qt::DisplayRole:

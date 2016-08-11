@@ -52,6 +52,7 @@ void UIWizardCloneVMPage3::setCloneMode(KCloneMode cloneMode)
         case KCloneMode_MachineState: m_pMachineRadio->setChecked(true); break;
         case KCloneMode_MachineAndChildStates: m_pMachineAndChildsRadio->setChecked(true); break;
         case KCloneMode_AllStates: m_pAllRadio->setChecked(true); break;
+        case KCloneMode_Max: break; /* Shut up, MSC! */
     }
 }
 

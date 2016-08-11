@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIDnDDrag class implementation. This class implements the
- * IDataObject interface.
+ * VBox Qt GUI - UIDnDDrag class implementation (implements IDataObject).
  */
 
 /*
@@ -53,7 +52,7 @@ UIDnDDataObject::UIDnDDataObject(UIDnDHandler *pDnDHandler, const QStringList &l
 {
     HRESULT hr;
 
-    ULONG cMaxFormats        = 16; /* Maximum number of registered formats. */
+    int   cMaxFormats        = 16; /* Maximum number of registered formats. */
     ULONG cRegisteredFormats = 0;
 
     try
@@ -63,9 +62,7 @@ UIDnDDataObject::UIDnDDataObject(UIDnDHandler *pDnDHandler, const QStringList &l
         m_pStgMedium = new STGMEDIUM[cMaxFormats];
         RT_BZERO(m_pStgMedium, sizeof(STGMEDIUM) * cMaxFormats);
 
-        for (int i = 0;
-             (   i < lstFormats.size()
-              && i < cMaxFormats); i++)
+        for (int i = 0; i < lstFormats.size() && i < cMaxFormats; i++)
         {
             const QString &strFormat = lstFormats.at(i);
             if (m_lstFormats.contains(strFormat))
@@ -246,10 +243,10 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                 LogRel3(("DnD: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
                          m_strFormat.toUtf8().constData(), m_pvData, m_cbData));
 
-                QVariant::Type vaType;
+                QVariant::Type vaType = QVariant::Invalid; /* MSC: Might be used uninitialized otherwise! */
                 QString strMIMEType;
                 if (    (pFormatEtc->tymed & TYMED_HGLOBAL)
-                     && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
+                     && pFormatEtc->dwAspect == DVASPECT_CONTENT
                      && (   pFormatEtc->cfFormat == CF_TEXT
                          || pFormatEtc->cfFormat == CF_UNICODETEXT)
                    )
@@ -259,8 +256,8 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                     vaType      = QVariant::String;
                 }
                 else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                         && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                         && (pFormatEtc->cfFormat == CF_HDROP))
+                         && pFormatEtc->dwAspect == DVASPECT_CONTENT
+                         && pFormatEtc->cfFormat == CF_HDROP)
                 {
                     strMIMEType = "text/uri-list";
                     vaType = QVariant::StringList;
@@ -298,10 +295,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                 if (!m_fDataRetrieved)
                 {
                     if (m_pDnDHandler)
-                    {
-                        rc = m_pDnDHandler->retrieveData(Qt::CopyAction,
-                                                         strMIMEType, vaType, m_vaData);
-                    }
+                        rc = m_pDnDHandler->retrieveData(Qt::CopyAction, strMIMEType, vaType, m_vaData);
                     else
                         rc = VERR_NOT_FOUND;
 
@@ -323,7 +317,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                     {
                         QStringList lstFilesURI = m_vaData.toStringList();
                         QStringList lstFiles;
-                        for (size_t i = 0; i < lstFilesURI.size(); i++)
+                        for (int i = 0; i < lstFilesURI.size(); i++)
                         {
                             char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).toUtf8().constData());
                             if (pszFilePath)
@@ -339,13 +333,13 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                             }
                         }
 
-                        size_t cFiles = lstFiles.size();
+                        int cFiles = lstFiles.size();
                         LogFlowThisFunc(("Files (%zu)\n", cFiles));
                         if (   RT_SUCCESS(rc)
                             && cFiles)
                         {
                             size_t cchFiles = 0; /* Number of characters. */
-                            for (size_t i = 0; i < cFiles; i++)
+                            for (int i = 0; i < cFiles; i++)
                             {
                                 const char *pszFile = lstFiles.at(i).toUtf8().constData();
                                 cchFiles += strlen(pszFile);
@@ -368,7 +362,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                                 AssertPtr(pCurFile);
 
                                 LogFlowThisFunc(("Encoded:\n"));
-                                for (size_t i = 0; i < cFiles; i++)
+                                for (int i = 0; i < cFiles; i++)
                                 {
                                     const char *pszFile = lstFiles.at(i).toUtf8().constData();
                                     Assert(strlen(pszFile));
@@ -528,6 +522,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
  */
 STDMETHODIMP UIDnDDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
+    RT_NOREF(pFormatEtc, pMedium);
     LogFlowFunc(("\n"));
     return DATA_E_FORMATETC;
 }
@@ -541,11 +536,12 @@ STDMETHODIMP UIDnDDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pM
  */
 STDMETHODIMP UIDnDDataObject::QueryGetData(LPFORMATETC pFormatEtc)
 {
-    return (LookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
+    return LookupFormatEtc(pFormatEtc, NULL /* puIndex */) ? S_OK : DV_E_FORMATETC;
 }
 
-STDMETHODIMP UIDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEct, LPFORMATETC pFormatEtcOut)
+STDMETHODIMP UIDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEtc, LPFORMATETC pFormatEtcOut)
 {
+    RT_NOREF(pFormatEtc);
     LogFlowFunc(("\n"));
 
     /* Set this to NULL in any case. */
@@ -555,6 +551,7 @@ STDMETHODIMP UIDnDDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEct, LPFO
 
 STDMETHODIMP UIDnDDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease)
 {
+    RT_NOREF(pFormatEtc, pMedium, fRelease);
     return E_NOTIMPL;
 }
 
@@ -575,18 +572,21 @@ STDMETHODIMP UIDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **
     return hr;
 }
 
-STDMETHODIMP UIDnDDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection)
+STDMETHODIMP UIDnDDataObject::DAdvise(LPFORMATETC pFormatEtc, DWORD fAdvise, IAdviseSink *pAdvSink, DWORD *pdwConnection)
 {
+    RT_NOREF(pFormatEtc, fAdvise, pAdvSink, pdwConnection);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
 STDMETHODIMP UIDnDDataObject::DUnadvise(DWORD dwConnection)
 {
+    RT_NOREF(dwConnection);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
 STDMETHODIMP UIDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 {
+    RT_NOREF(ppEnumAdvise);
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
