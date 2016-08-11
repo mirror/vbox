@@ -4674,11 +4674,11 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
     if (id == 0)
         return true;
 
-#if defined (VBOX_WS_WIN) || defined (VBOX_WS_X11)
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 
     return vboxGlobal().activateWindow(id, true);
 
-#elif defined (VBOX_WS_MAC)
+#elif defined(VBOX_WS_MAC)
     /*
      * This is just for the case were the other process cannot steal
      * the focus from us. It will send us a PSN so we can try.
@@ -4693,9 +4693,12 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
         Log(("GUI: Failed to bring %#RX64 to front. rc=%#x\n", id, rc));
     return !rc;
 
-#endif
+#else
 
     return false;
+
+#endif
+
 
     /// @todo Below is the old method of switching to the console window
     //  based on the process ID of the console process. It should go away

@@ -58,6 +58,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 UIInformationDataItem::UIInformationDataItem(InformationElementType type, const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : m_type(type)
     , m_machine(machine)
@@ -1081,6 +1082,11 @@ UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMa
     m_pTimer->start(5000);
 }
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4702) /* Something about the foreach (const CStorageController &controller, controllers) statement... */
+#endif
+
 QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int role) const
 {
     switch (role)
@@ -1192,6 +1198,10 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
     /* Call to base-class: */
     return UIInformationDataItem::data(index, role);
 }
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 QString UIInformationDataStorageStatistics::parseStatistics(const QString &strText)
 {
