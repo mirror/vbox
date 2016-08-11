@@ -15,11 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __WinKeyboard_h__
-#define __WinKeyboard_h__
+#ifndef ___WinKeyboard_h___
+#define ___WinKeyboard_h___
 
 /* Platform includes: */
-#include "Windows.h"
+#include <iprt/win/windows.h>
 
 void * WinHidDevicesKeepLedsState(void);
 void   WinHidDevicesApplyAndReleaseLedsState(void *pData);
@@ -79,7 +79,8 @@ private:
         /** A fake control down event and no up was passed to the guest. */
         FAKE_CONTROL_DOWN
     } m_enmFakeControlDetectionState;
-    DWORD m_timeOfLastKeyEvent;
+    LONG m_timeOfLastKeyEvent;
 };
-#endif /* __WinKeyboard_h__ */
+
+#endif
 

@@ -191,15 +191,15 @@ void WinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScrollL
   * added complexity is worth the price. */
 static bool doesCurrentLayoutHaveAltGr()
 {
-    /** Keyboard state array with VK_CONTROL and VK_MENU depressed. */
-    const BYTE auKeyStates[256] =
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x80 };
+    /* Keyboard state array with VK_CONTROL and VK_MENU depressed. */
+    static const BYTE s_auKeyStates[256] =
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x80 };
     WORD ach;
     unsigned i;
 
     for (i = '0'; i <= VK_OEM_102; ++i)
     {
-        if (ToAscii(i, 0, auKeyStates, &ach, 0))
+        if (ToAscii(i, 0, s_auKeyStates, &ach, 0))
             break;
         /* Skip ranges of virtual keys which are undefined or not relevant. */
         if (i == '9')
@@ -268,23 +268,25 @@ bool WinAltGrMonitor::isCurrentEventDefinitelyFake(unsigned iDownScanCode,
                                                    bool fKeyDown,
                                                    bool fExtendedKey) const
 {
-    MSG peekMsg;
-    LONG messageTime = GetMessageTime();
-
-    if (   iDownScanCode != 0x1d /* scan code: Control */ || fExtendedKey)
+    if (iDownScanCode != 0x1d /* scan code: Control */ || fExtendedKey)
         return false;
+
+    LONG messageTime = GetMessageTime();
+    MSG peekMsg;
     if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
         return false;
+    if (messageTime != (LONG)peekMsg.time)
+        return false;
 
-        if (messageTime != peekMsg.time)
-            return false;
-        if (   fKeyDown
-        && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
+    if (   fKeyDown
+        && peekMsg.message != WM_KEYDOWN
+        && peekMsg.message != WM_SYSKEYDOWN)
         return false;
     if (   !fKeyDown
-        && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
+        && peekMsg.message != WM_KEYUP
+        && peekMsg.message != WM_SYSKEYUP)
         return false;
-    if (   ((RT_HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
+    if (   (RT_HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */
         || !(RT_HIWORD(peekMsg.lParam) & KF_EXTENDED))
         return false;
     if (!doesCurrentLayoutHaveAltGr())

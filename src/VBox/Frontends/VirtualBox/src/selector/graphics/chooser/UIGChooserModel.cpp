@@ -1386,6 +1386,7 @@ bool UIGChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
         /* Drag&drop scroll-event (drag-leave) handler: */
         case QEvent::GraphicsSceneDragLeave:
             return processDragLeaveEvent(static_cast<QGraphicsSceneDragDropEvent*>(pEvent));
+        default: break; /* Shut up MSC */
     }
 
     /* Call to base-class: */

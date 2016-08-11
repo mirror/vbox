@@ -15,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxUtils_WIN_h__
-#define __VBoxUtils_WIN_h__
+#ifndef ___VBoxUtils_WIN_h___
+#define ___VBoxUtils_WIN_h___
 
 /* Qt includes: */
 #include <QRegion>
 
 /* Platform includes: */
-#include "Windows.h"
+#include <iprt/win/windows.h>
 
 /* Namespace for native window sub-system functions: */
 namespace NativeWindowSubsystem
@@ -31,5 +31,5 @@ namespace NativeWindowSubsystem
     const QRegion areaCoveredByTopMostWindows();
 }
 
-#endif /* __VBoxUtils_WIN_h__ */
+#endif
 

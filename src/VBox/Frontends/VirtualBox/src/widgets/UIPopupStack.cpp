@@ -270,6 +270,7 @@ bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
             sltAdjustGeometry();
             break;
         }
+        default: break; /* Shuts up MSC.  */
     }
 
     /* Call to base-class: */

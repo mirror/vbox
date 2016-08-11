@@ -42,6 +42,8 @@ class QIDialogButtonBox;
 class CheckIfSuitableBy
 {
 public:
+    virtual ~CheckIfSuitableBy() { /* Makes MSC happy. */ }
+
     /** Determines whether passed @a pItem is suitable. */
     virtual bool isItSuitable(UIMediumItem *pItem) const = 0;
 };

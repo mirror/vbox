@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardPage_h__
-#define __UIWizardPage_h__
+#ifndef ___UIWizardPage_h___
+#define ___UIWizardPage_h___
 
 /* Global includes: */
 #include <QVariant>
@@ -33,6 +33,9 @@ class UIWizardPage;
  * providing API for basic/expert pages. */
 class UIWizardPageBase
 {
+public:
+    virtual ~UIWizardPageBase() { /* Makes MSC happy. */ }
+
 protected:
 
     /* Helpers: */
@@ -73,5 +76,5 @@ protected:
     QString m_strTitle;
 };
 
-#endif // __UIWizardPage_h__
+#endif
 

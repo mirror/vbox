@@ -56,6 +56,8 @@ public:
     /* Creates empty cache item: */
     UISettingsCache() { m_value = qMakePair(CacheData(), CacheData()); }
 
+    virtual ~UISettingsCache() { /* Makes MSC happy */ }
+
     /* Returns the NON-modifiable REFERENCE to the initial cached data: */
     const CacheData& base() const { return m_value.first; }
     /* Returns the NON-modifiable REFERENCE to the current cached data: */
