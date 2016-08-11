@@ -30,9 +30,9 @@
 /* VirtualBox interface declarations: */
 #ifndef VBOX_WITH_XPCOM
 # include "VirtualBox.h"
-#else /* !VBOX_WITH_XPCOM */
+#else
 # include "VirtualBox_XPCOM.h"
-#endif /* VBOX_WITH_XPCOM */
+#endif
 
 /* GUI includes: */
 # include "UIDnDHandler.h"
@@ -348,6 +348,7 @@ void UIDnDHandler::debugOutputQt(QtMsgType type, const char *pszMsg)
 int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
                                     Qt::DropAction defAction, Qt::DropActions actions)
 {
+    RT_NOREF(defAction);
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
