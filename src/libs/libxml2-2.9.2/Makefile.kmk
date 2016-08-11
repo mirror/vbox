@@ -27,6 +27,10 @@ VBox-libxml2_DEFS           = _REENTRANT # the latter triggers thread support, s
 VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE \
                               LIBXML_STATIC_FOR_DLL HAVE_WIN32_THREADS HAVE_ZLIB_H
 VBox-libxml2_CFLAGS.win.amd64 = -wd4267
+VBox-libxml2_CFLAGS.win    += -wd4701 # potentially uninitialized local variable 'l' used
+VBox-libxml2_CFLAGS.win    += -wd4232 # nonstandard extension used : 'xmlFree' : address of dllimport 'free' is not static, identity not guaranteed
+VBox-libxml2_CFLAGS.win    += -wd4305 # 'type cast' : truncation from 'xmlChar *' to 'long'
+VBox-libxml2_CFLAGS.win    += -wd4306 # 'type cast' : conversion from 'long' to 'void *' of greater size [TODO: check these out?]
 ifn1of ($(KBUILD_TARGET), win)
  VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes
 endif
