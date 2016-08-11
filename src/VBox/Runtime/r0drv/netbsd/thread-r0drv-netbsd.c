@@ -24,6 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -148,6 +149,7 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
     return true;
 }
 
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
@@ -159,7 +161,6 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
-
     AssertPtr(pState);
     __insn_barrier();
     if (--curlwp->l_nopreempt != 0)
@@ -169,6 +170,7 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
         kpreempt(0);
     __insn_barrier();
 }
+
 
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 {
