@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="de_DE">
+<TS version="2.0" language="de_DE">
 <context>
     <name>@@@</name>
     <message>
@@ -2746,7 +2746,7 @@
     <name>UIInformationDataAudio</name>
     <message>
         <source>Audio</source>
-        <translation type="vanished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Host Driver</source>
@@ -2764,7 +2764,7 @@
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="vanished">Anzeige</translation>
+        <translation>Anzeige</translation>
     </message>
     <message>
         <source>Video Memory</source>
@@ -2827,7 +2827,7 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="vanished">Allgemein</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2844,7 +2844,7 @@
     <name>UIInformationDataNetwork</name>
     <message>
         <source>Network</source>
-        <translation type="vanished">Netzwerk</translation>
+        <translation>Netzwerk</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2890,7 +2890,7 @@
     <message>
         <source>Network Statistics</source>
         <comment>details report</comment>
-        <translation type="vanished">Netzwerkadapter</translation>
+        <translation>Netzwerkadapter</translation>
     </message>
 </context>
 <context>
@@ -2898,7 +2898,7 @@
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="vanished">Parallel-Ports</translation>
+        <translation>Parallel-Ports</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2916,7 +2916,7 @@
     <message>
         <source>Runtime Attributes</source>
         <comment>details report</comment>
-        <translation type="vanished">Laufzeit-Attribute</translation>
+        <translation>Laufzeit-Attribute</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -2988,7 +2988,7 @@
     <name>UIInformationDataSerialPorts</name>
     <message>
         <source>Serial Ports</source>
-        <translation type="vanished">Serielle Schnittstellen</translation>
+        <translation>Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3001,7 +3001,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="vanished">Gemeinsame Ordner</translation>
+        <translation>Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -3013,7 +3013,7 @@
     <name>UIInformationDataStorage</name>
     <message>
         <source>Storage</source>
-        <translation type="vanished">Massenspeicher</translation>
+        <translation>Massenspeicher</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -3041,7 +3041,7 @@
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
-        <translation type="vanished">Massenspeicher</translation>
+        <translation>Massenspeicher</translation>
     </message>
 </context>
 <context>
@@ -3049,7 +3049,7 @@
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="vanished">System</translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3157,7 +3157,7 @@
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="vanished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -4757,7 +4757,7 @@
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.</translation>
+        <translation>Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;IIFF&lt;/tt&gt;, wobei &lt;tt&gt;I&lt;/tt&gt; dezimale Ziffern für den ganzzahligen Anteil und &lt;tt&gt;F&lt;/tt&gt; dezimale Ziffern für den Bruchteil darstellen. Eine leere Zeichenfolge passt auf beliebige Revisionsnummern.</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
