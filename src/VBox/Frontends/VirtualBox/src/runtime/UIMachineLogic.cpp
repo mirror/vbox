@@ -159,6 +159,8 @@ UIMachineLogic* UIMachineLogic::create(QObject *pParent,
         case UIVisualStateType_Scale:
             pLogic = new UIMachineLogicScale(pParent, pSession);
             break;
+
+        case UIVisualStateType_Invalid: case UIVisualStateType_All: break; /* Shut up, MSC! */
     }
     return pLogic;
 }

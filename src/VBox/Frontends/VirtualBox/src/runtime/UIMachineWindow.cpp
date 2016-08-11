@@ -585,6 +585,7 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
         case UIVisualStateType_Fullscreen: return Qt::AlignVCenter | Qt::AlignHCenter;
         case UIVisualStateType_Seamless: return 0;
         case UIVisualStateType_Scale: return 0;
+        case UIVisualStateType_Invalid: case UIVisualStateType_All: break; /* Shut up, MSC! */
     }
     AssertMsgFailed(("Incorrect visual state!"));
     return 0;

@@ -1898,6 +1898,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     }
 
     m_fIsValidPointerShapePresent = true;
+    NOREF(srcShapePtrScan);
 # endif /* QT_VERSION >= 0x050000 */
 
 #elif defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
@@ -1985,6 +1986,7 @@ bool UISession::preprocessInitialization()
                 case KNetworkAttachmentType_HostOnly:
                     strIfName = na.GetHostOnlyInterface();
                     break;
+                default: break; /* Shut up, MSC! */
             }
 
             if (!strIfName.isEmpty() &&

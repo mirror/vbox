@@ -1337,6 +1337,7 @@ bool UIGChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Dra
                 /* Make sure there is no other item with such id: */
                 return !isContainsMachine(pItem->toMachineItem()->id());
             }
+            default: break; /* Shut up, MSC! */
         }
     }
     /* That was invalid mime: */
