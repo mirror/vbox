@@ -398,8 +398,7 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  * Sets IRQ for VMMDev.
  *
  * @returns NetBSD error code.
- * @param   pDevice  Pointer to the device info structure.
- * @param   pvState  Pointer to the state info structure.
+ * @param   vboxguest  Pointer to the state info structure.
  */
 static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
 {
@@ -428,8 +427,7 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
 /**
  * Removes IRQ for VMMDev.
  *
- * @param   pDevice  Pointer to the device info structure.
- * @param   pvState  Opaque pointer to the state info structure.
+ * @param   vboxguest  Opaque pointer to the state info structure.
  */
 static void VBoxGuestNetBSDRemoveIRQ(vboxguest_softc *vboxguest)
 {
