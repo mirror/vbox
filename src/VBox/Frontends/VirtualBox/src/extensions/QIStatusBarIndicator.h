@@ -86,7 +86,7 @@ public slots:
     /** Defines int @a state. */
     virtual void setState(int iState) { m_iState = iState; repaint(); }
     /** Defines bool @a state. */
-    virtual void setState(bool fState) { setState((int)fState); }
+    void setState(bool fState) { setState((int)fState); }
 
 protected:
 
