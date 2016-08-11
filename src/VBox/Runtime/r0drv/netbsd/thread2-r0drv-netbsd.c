@@ -114,7 +114,6 @@ static void rtThreadNativeMain(void *pvThreadInt)
 DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     int rc;
-    struct proc *pProc;
     struct lwp *l;
 
     rc = kthread_create(PRI_NONE, 0, NULL, rtThreadNativeMain, (void *)pThreadInt, &l, "%s", pThreadInt->szName);
