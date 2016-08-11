@@ -52,9 +52,15 @@
  *  Source    : src/VBox/Main/idl/VirtualBox.xidl
  *  Generator : src/VBox/Main/idl/midl.xsl
  */
-  </xsl:text>
-  <xsl:text>&#x0A;</xsl:text>
-  <xsl:text>import "unknwn.idl";&#x0A;&#x0A;</xsl:text>
+
+#if (__midl >= 501)
+midl_pragma warning(disable:2456) /* Disable warning MIDL2456 regarding SAFEARRAY(interface pointer). */
+midl_pragma warning(disable:2111) /* Disable warning MIDL2111 regarding identifier lengths exceeding 31 chars. */
+#endif
+
+import "unknwn.idl";
+
+</xsl:text>
   <xsl:apply-templates/>
 </xsl:template>
 
