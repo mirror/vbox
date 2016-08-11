@@ -1082,11 +1082,6 @@ UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMa
     m_pTimer->start(5000);
 }
 
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable:4702) /* Something about the foreach (const CStorageController &controller, controllers) statement... */
-#endif
-
 QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int role) const
 {
     switch (role)
@@ -1186,8 +1181,8 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
                     case KStorageBus_SAS:  ++iSASCount; break;
                     default: break;
                 }
-                return QVariant::fromValue(p_text);
             }
+            return QVariant::fromValue(p_text);
         }
         break;
 
@@ -1198,10 +1193,6 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
     /* Call to base-class: */
     return UIInformationDataItem::data(index, role);
 }
-
-#ifdef _MSC_VER
-# pragma warning(pop)
-#endif
 
 QString UIInformationDataStorageStatistics::parseStatistics(const QString &strText)
 {
