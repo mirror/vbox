@@ -48,6 +48,11 @@
 # include <sys/libkern.h>
   RT_C_DECLS_END
 
+#elif defined(RT_OS_NETBSD) && defined(_KERNEL)
+  RT_C_DECLS_BEGIN
+# include <lib/libkern/libkern.h>
+  RT_C_DECLS_END
+
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
   /*
    * Same case as with FreeBSD kernel:
@@ -79,6 +84,12 @@ RT_C_DECLS_END
 #endif
 
 #if defined(RT_OS_FREEBSD) && defined(_KERNEL)
+RT_C_DECLS_BEGIN
+char *strpbrk(const char *pszStr, const char *pszChars);
+RT_C_DECLS_END
+#endif
+
+#if defined(RT_OS_NETBSD) && defined(_KERNEL)
 RT_C_DECLS_BEGIN
 char *strpbrk(const char *pszStr, const char *pszChars);
 RT_C_DECLS_END
