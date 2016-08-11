@@ -91,6 +91,11 @@
           (bug #15257)</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Additions: fixed VBoxTray problems with Windows 2000
+          (bug #15661)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
