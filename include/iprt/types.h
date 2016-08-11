@@ -92,6 +92,16 @@ RT_C_DECLS_END
 
 #  include <sys/types.h>
 
+   /*
+    * Kludge for NetBSD-6.x where the definition of bool in
+    * <sys/types.h> does not check for C++.
+    */
+#  if defined(__cplusplus) && defined(bool)
+#   undef bool
+#   undef true
+#   undef false
+#  endif
+
 # elif defined(RT_OS_LINUX) && defined(__KERNEL__)
     /*
      * Kludge for the linux kernel:
@@ -211,12 +221,14 @@ typedef uint8_t bool;
 #   ifndef __bool_true_false_are_defined
 typedef _Bool bool;
 #   endif
-#  elif defined(RT_OS_NETBSD) && !defined(_KERNEL)
-    /*
-     * For the kernel code <stdbool.h> is not available, but bool is
-     * provided by <sys/types.h> included above.
-     */
-#   include <stdbool.h>
+#  elif defined(RT_OS_NETBSD)
+#   if !defined(_KERNEL)
+     /*
+      * For the kernel code <stdbool.h> is not available, but bool is
+      * provided by <sys/types.h> included above.
+      */
+#    include <stdbool.h>
+#   endif
 #  else
 #   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)) && (defined(_STDBOOL_H) || defined(__STDBOOL_H))
 #    undef bool
