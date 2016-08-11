@@ -279,6 +279,10 @@ template<> QString toString(const KMediumType &type)
 /* QString <= KMediumVariant: */
 template<> QString toString(const KMediumVariant &variant)
 {
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4063) /* warning C4063: case '65537' is not a valid value for switch of enum 'KMediumVariant' */
+#endif
     /* Note: KMediumVariant_Diff and KMediumVariant_Fixed are so far mutually exclusive: */
     switch (variant)
     {
@@ -307,6 +311,9 @@ template<> QString toString(const KMediumVariant &variant)
         default:
             AssertMsgFailed(("No text for %d", variant)); break;
     }
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
     return QString();
 }
 

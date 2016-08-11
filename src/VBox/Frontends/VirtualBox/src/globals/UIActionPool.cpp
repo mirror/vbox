@@ -1391,7 +1391,7 @@ void UIActionPool::retranslateUi()
 bool UIActionPool::event(QEvent *pEvent)
 {
     /* Depending on event-type: */
-    switch (pEvent->type())
+    switch ((UIEventType)pEvent->type())
     {
         case ActivateActionEventType:
         {

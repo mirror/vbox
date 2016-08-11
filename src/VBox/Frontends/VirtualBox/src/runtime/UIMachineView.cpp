@@ -1343,7 +1343,7 @@ bool UIMachineView::isFullscreenOrSeamless() const
 
 bool UIMachineView::event(QEvent *pEvent)
 {
-    switch (pEvent->type())
+    switch ((UIEventType)pEvent->type())
     {
 #ifdef VBOX_WS_MAC
         /* Event posted OnShowWindow: */

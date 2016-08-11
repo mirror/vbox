@@ -94,6 +94,7 @@ static QString winFilter (const QString &aFilter)
  */
 UINT_PTR CALLBACK OFNHookProc (HWND aHdlg, UINT aUiMsg, WPARAM aWParam, LPARAM aLParam)
 {
+    RT_NOREF(aWParam);
     if (aUiMsg == WM_NOTIFY)
     {
         OFNOTIFY *notif = (OFNOTIFY*) aLParam;
