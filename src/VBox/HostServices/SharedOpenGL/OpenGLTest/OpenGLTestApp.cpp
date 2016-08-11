@@ -355,9 +355,9 @@ int main(int argc, char **argv)
 }
 
 #ifdef RT_OS_WINDOWS
-extern "C" int WINAPI WinMain(HINSTANCE hInstance,
-    HINSTANCE /*hPrevInstance*/, LPSTR lpCmdLine, int /*nShowCmd*/)
+extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+    RT_NOREF(hInstance, hPrevInstance, lpCmdLine, nShowCmd);
     return main(__argc, __argv);
 }
 #endif
