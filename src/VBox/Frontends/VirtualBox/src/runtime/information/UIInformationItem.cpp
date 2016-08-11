@@ -24,6 +24,7 @@
 # include <QApplication>
 # include <QAbstractTextDocumentLayout>
 # include <QTextDocument>
+# include <QUrl>
 
 /* GUI includes: */
 # include "UIIconPool.h"

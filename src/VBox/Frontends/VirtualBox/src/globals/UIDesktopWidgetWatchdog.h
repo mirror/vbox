@@ -26,9 +26,7 @@
 #endif /* VBOX_WS_X11 */
 
 /* Forward declarations: */
-#if QT_VERSION >= 0x050000
 class QScreen;
-#endif /* QT_VERSION >= 0x050000 */
 
 /** Singleton QObject extension used as
   * a desktop-widget watchdog aware
