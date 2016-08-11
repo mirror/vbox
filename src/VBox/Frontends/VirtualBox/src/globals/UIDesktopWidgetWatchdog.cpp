@@ -206,8 +206,11 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* =
     AssertReturn(iHostScreenIndex >= 0 && iHostScreenIndex < screenCount(), QRect());
 
 #ifdef VBOX_WS_X11
-    /* Return cached available-geometry: */
-    return m_availableGeometryData.value(iHostScreenIndex);
+    /* Get cached available-geometry: */
+    const QRect availableGeometry = m_availableGeometryData.value(iHostScreenIndex);
+    /* Return cached available-geometry if it's valid or screen-geometry otherwise: */
+    return availableGeometry.isValid() ? availableGeometry :
+           QApplication::desktop()->screenGeometry(iHostScreenIndex);
 #else /* !VBOX_WS_X11 */
     /* Redirect call to desktop-widget: */
     return QApplication::desktop()->availableGeometry(iHostScreenIndex);
@@ -359,6 +362,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int
 //           iHostScreenIndex, availableGeometry.x(), availableGeometry.y(), availableGeometry.width(), availableGeometry.height());
 
     /* Apply received data: */
+    const bool fSendSignal = m_availableGeometryData.value(iHostScreenIndex).isValid();
     m_availableGeometryData[iHostScreenIndex] = availableGeometry;
     /* Forget finished worker: */
     AssertPtrReturnVoid(m_availableGeometryWorkers.value(iHostScreenIndex));
@@ -367,7 +371,8 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int
     m_availableGeometryWorkers[iHostScreenIndex] = 0;
 
     /* Notify listeners: */
-    emit sigHostScreenWorkAreaRecalculated(iHostScreenIndex);
+    if (fSendSignal)
+        emit sigHostScreenWorkAreaRecalculated(iHostScreenIndex);
 }
 #endif /* VBOX_WS_X11 */
 
@@ -438,8 +443,6 @@ void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenI
 
         /* Get the screen-geometry: */
         const QRect hostScreenGeometry = screenGeometry(iHostScreenIndex);
-        /* Use the screen-geometry as the temporary value for available-geometry: */
-        m_availableGeometryData[iHostScreenIndex] = hostScreenGeometry;
 
         /* Connect worker listener: */
         connect(pWorker, SIGNAL(sigHostScreenAvailableGeometryCalculated(int, QRect)),
@@ -456,9 +459,8 @@ void UIDesktopWidgetWatchdog::cleanupExistingWorkers()
 {
     /* Destroy existing workers: */
     qDeleteAll(m_availableGeometryWorkers);
-    /* And clear their vectors: */
+    /* And clear their vector: */
     m_availableGeometryWorkers.clear();
-    m_availableGeometryData.clear();
 }
 
 # include "UIDesktopWidgetWatchdog.moc"
