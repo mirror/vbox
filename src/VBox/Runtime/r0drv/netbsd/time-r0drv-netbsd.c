@@ -42,14 +42,14 @@ RTDECL(uint64_t) RTTimeNanoTS(void)
 {
     struct timespec tsp;
     nanotime(&tsp);
-    return tsp.tv_sec * UINT64_C(1000000000)
+    return tsp.tv_sec * RT_NS_1SEC_64
          + tsp.tv_nsec;
 }
 
 
 RTDECL(uint64_t) RTTimeMilliTS(void)
 {
-    return RTTimeNanoTS() / 1000000;
+    return RTTimeNanoTS() / RT_NS_1MS;
 }
 
 
