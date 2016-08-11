@@ -718,6 +718,7 @@ sub CfgInit
    CfgPrint "#"
    if g_blnInternalMode = False then
       CfgPrint "VBOX_OSE := 1"
+      CfgPrint "VBOX_VCC_WERR = $(NO_SUCH_VARIABLE)"
    end if
 end sub
 
