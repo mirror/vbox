@@ -3172,6 +3172,7 @@ static Bool XXSendClientMessage (Display *aDpy, Window aWnd, const char *aMsg,
 /* static */
 bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 {
+    RT_NOREF(aSwitchDesktop);
     bool result = true;
 
 #if defined (VBOX_WS_WIN)

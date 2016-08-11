@@ -227,6 +227,8 @@ QTextCharFormat UIRichTextString::textCharFormat(Type type)
             format.setFont(font);
             break;
         }
+
+        case Type_None: break; /* Shut up MSC */
     }
     return format;
 }
