@@ -5704,15 +5704,13 @@ ifdef VBOX_WITH_QTGUI
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t-
-  ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
-   #    -wd4481: nonstandard extension used: override specifier 'override'
-   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
-   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
-   #    -wd4640: qmetatype.h(2210): warning C4640: 'f' : construction of local static object is not thread-safe [too bad]
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 $(VBOX_VCC_WERR)
-  else
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -W3
-  endif
+  #    -wd4481: nonstandard extension used: override specifier 'override'
+  #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
+  #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
+  #    -wd4640: qmetatype.h(2210): warning C4640: 'f' : construction of local static object is not thread-safe [too bad]
+  #    -wd4350: behavior change: 'int QStringList::indexOf(const QRegExp &,int) const' called instead of 'int QStringList::indexOf(QRegExp &,int) const'
+  #    -wd4371: UIActionPool.h(393) : warning C4371: 'UIActionPool::PointerToFunction' : layout of class may have changed from a previous version of the compiler due to better packing of member 'UIActionPool::PointerToFunction::ptfr'
+  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 -wd4350 -wd4371 $(VBOX_VCC_WERR)
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
