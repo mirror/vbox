@@ -16,7 +16,7 @@
  */
 #include <iprt/win/windows.h>
 #include <new> /* For bad_alloc. */
-#include <shlobj.h>
+#include <iprt/win/shlobj.h>
 
 #include <iprt/path.h>
 #include <iprt/semaphore.h>

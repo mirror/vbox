@@ -129,7 +129,7 @@
 
 /* External includes: */
 # ifdef VBOX_WS_WIN
-#  include "shlobj.h"
+#  include <iprt/win/shlobj.h>
 # endif /* VBOX_WS_WIN */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */

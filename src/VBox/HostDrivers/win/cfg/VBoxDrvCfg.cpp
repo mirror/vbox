@@ -22,7 +22,7 @@
 #include <VBox/VBoxDrvCfg-win.h>
 
 #include <iprt/win/setupapi.h>
-#include <shlobj.h>
+#include <iprt/win/shlobj.h>
 
 #include <string.h>
 

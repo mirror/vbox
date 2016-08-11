@@ -42,7 +42,7 @@
 #include <devguid.h>
 #include <iprt/win/objbase.h>
 #include <iprt/win/setupapi.h>
-#include <shlobj.h>
+#include <iprt/win/shlobj.h>
 #include <cfgmgr32.h>
 
 #include "VBoxCommon.h"

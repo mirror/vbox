@@ -21,7 +21,7 @@
 #include <devguid.h>
 #include <stdio.h>
 #include <regstr.h>
-#include <shlobj.h>
+#include <iprt/win/shlobj.h>
 #include <cfgmgr32.h>
 #include <tchar.h>
 #include <iprt/win/objbase.h>

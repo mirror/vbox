@@ -21,7 +21,7 @@
 *********************************************************************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
-# include <Shlobj.h>
+# include <iprt/win/shlobj.h>
 #endif
 
 #include <iprt/initterm.h>

@@ -32,7 +32,7 @@
 #include <msiquery.h>
 #include <iprt/win/objbase.h>
 
-#include <shlobj.h>
+#include <iprt/win/shlobj.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

@@ -216,7 +216,7 @@
  * System specific headers.
  */
 #ifdef VBOX_WS_WIN
-# include <shlobj.h>
+# include <iprt/win/shlobj.h>
 # include <iprt/win/windows.h>
 #endif
 
