@@ -1547,8 +1547,8 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
             bool            fReadStdErr = false;
             bool            fCompleted  = false;
             bool            fCompletedStartCmd = false;
-            int             vrc         = VINF_SUCCESS;
 
+            vrc = VINF_SUCCESS;
             while (   !fCompleted
                    && cMsTimeLeft > 0)
             {
