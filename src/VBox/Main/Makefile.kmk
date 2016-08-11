@@ -178,44 +178,44 @@ endif
 
 
 ifndef VBOX_ONLY_SDK
-#
-# Generate library with API class wrappers from the XIDL file.
-#
-LIBRARIES += VBoxAPIWrap
-VBoxAPIWrap_TEMPLATE        = VBoxMainLib
-VBoxAPIWrap_SOURCES         = \
-	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
-	$(VBOX_MAIN_APIWRAPPER_GEN_SRCS)
-VBoxAPIWrap_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
-VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
-VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
-VBoxAPIWrap_INCS           += \
-	include
-VBoxAPIWrap_CLEAN           = \
-	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) \
-	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
-	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
-	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
-	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
-	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even \
-	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd
+ #
+ # Generate library with API class wrappers from the XIDL file.
+ #
+ LIBRARIES += VBoxAPIWrap
+ VBoxAPIWrap_TEMPLATE        = VBoxMainLib
+ VBoxAPIWrap_SOURCES         = \
+ 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
+ 	$(VBOX_MAIN_APIWRAPPER_GEN_SRCS)
+ VBoxAPIWrap_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+ VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
+ VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
+ VBoxAPIWrap_INCS           += \
+ 	include
+ VBoxAPIWrap_CLEAN           = \
+ 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) \
+ 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
+ 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
+ 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
+ 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
+ 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even \
+ 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd
 
-# Two VBox variables used here and/or in the rules generating wrappers.
-VBoxAPIWrap_VBOX_XSLT       = \
-	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
+ # Two VBox variables used here and/or in the rules generating wrappers.
+ VBoxAPIWrap_VBOX_XSLT       = \
+ 	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
 
 
-# This include file (generated at the bottom of this file), defines
-# VBOX_MAIN_APIWRAPPER_GEN_SRCS and VBOX_MAIN_APIWRAPPER_GEN_HDRS.
-VBoxAPIWrap_VBOX_KMK_FILE = $(PATH_OUT)/vboxapiwrap.kmk
-include $(VBoxAPIWrap_VBOX_KMK_FILE)
+ # This include file (generated at the bottom of this file), defines
+ # VBOX_MAIN_APIWRAPPER_GEN_SRCS and VBOX_MAIN_APIWRAPPER_GEN_HDRS.
+ VBoxAPIWrap_VBOX_KMK_FILE = $(PATH_OUT)/vboxapiwrap.kmk
+ include $(VBoxAPIWrap_VBOX_KMK_FILE)
 
-ifdef VBOX_WITH_32_ON_64_MAIN_API
-LIBRARIES += VBoxAPIWrap-x86
-VBoxAPIWrap-x86_TEMPLATE = VBoxMainLib-x86
-VBoxAPIWrap-x86_EXTENDS  = VBoxAPIWrap
-VBoxAPIWrap-x86_DTRACE_HDR_FLAGS = -32 # ugly, should be fixed in the tool in Config.kmk
-endif
+ ifdef VBOX_WITH_32_ON_64_MAIN_API
+  LIBRARIES += VBoxAPIWrap-x86
+  VBoxAPIWrap-x86_TEMPLATE = VBoxMainLib-x86
+  VBoxAPIWrap-x86_EXTENDS  = VBoxAPIWrap
+  VBoxAPIWrap-x86_DTRACE_HDR_FLAGS = -32 # ugly, should be fixed in the tool in Config.kmk
+ endif
 
 endif # !VBOX_ONLY_SDK
 
@@ -1278,11 +1278,11 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 	$(call MSG_L1,Generating Java MSCOM glue files from XIDL)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
 	$(QUIET)$(VBOX_XSLTPROC) \
-              --stringparam filelistonly ""                    \
-              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
-              --stringparam G_vboxGlueStyle mscom              \
-              --stringparam G_vboxDirPrefix ""                 \
-              -o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+		--stringparam filelistonly "" \
+		--stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
+		--stringparam G_vboxGlueStyle mscom \
+		--stringparam G_vboxDirPrefix "" \
+		-o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
 
