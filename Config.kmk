@@ -4260,6 +4260,71 @@ endef
 
 endif # FreeBSD
 
+ifeq ($(KBUILD_TARGET),netbsd)
+
+## The location of the NetBSD kernel headers.
+VBOX_NETBSD_SRC ?= /usr/src/sys
+
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
+VBOX_NETBSD_MACHINE_SRC=$(VBOX_NETBSD_SRC)/arch/amd64
+else
+VBOX_NETBSD_MACHINE_SRC=$(VBOX_NETBSD_SRC)/arch/i386
+endif
+
+TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL _MODULE
+TEMPLATE_VBOXR0DRV_INCS                = \
+	$(VBOX_NETBSD_SRC) \
+	$(VBOX_NETBSD_SRC)/../common/include \
+	$(PATH_OBJ)/netbsd/include
+
+TEMPLATE_VBOXR0DRV_CFLAGS              =  \
+	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
+	$(VBOX_GCC_fdiagnostics-show-option) \
+	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes \
+	-Wimplicit-function-declaration -Werror-implicit-function-declaration \
+	-O2 -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
+	-nostdinc -std=c99 -msoft-float
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 \
+    -mpreferred-stack-boundary=2 -mno-mmx -mno-sse -mno-avx \
+    -mno-fp-ret-in-387
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 \
+    --param large-function-growth=1000 -fno-omit-frame-pointer \
+    -mcmodel=kernel -mno-red-zone -mno-sse -mno-mmx -mno-avx \
+	-fno-asynchronous-unwind-tables -mno-fp-ret-in-387
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
+	$(VBOX_GCC_WARN) -Wpointer-arith -Winline \
+	-O2 -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
+	-nostdinc -msoft-float
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
+TEMPLATE_VBOXR0DRV_SYSSUFF             = .kmod
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -d --warn-common
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64
+
+TEMPLATE_VBOXR0DRV_ORDERDEPS = \
+	$(PATH_OBJ)/netbsd/include/machine/cdefs.h \
+	$(PATH_OBJ)/netbsd/include/i386/cpu.h \
+	$(PATH_OBJ)/netbsd/include/x86/cpu.h
+
+$$(PATH_OBJ)/netbsd/include/machine/cdefs.h: $(VBOX_NETBSD_MACHINE_SRC)/include/cdefs.h
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)cp $(VBOX_NETBSD_MACHINE_SRC)/include/*.h $(@D)/
+
+# XXX: uwe: the "machine" above should be a symlink to "i386" here
+$$(PATH_OBJ)/netbsd/include/i386/cpu.h: $(VBOX_NETBSD_SRC)/arch/i386/include/cpu.h
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)cp $(VBOX_NETBSD_MACHINE_SRC)/include/*.h $(@D)/
+
+$$(PATH_OBJ)/netbsd/include/x86/cpu.h: $(VBOX_NETBSD_SRC)/arch/x86/include/cpu.h
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)cp $(VBOX_NETBSD_SRC)/arch/x86/include/*.h $(@D)/
+
+endif # NetBSD
+
 ifeq ($(KBUILD_TARGET),haiku)
 ## The Haiku include directories
 VBOX_HAIKU_SYS_INCS ?= /boot/develop/headers/os/kernel /boot/develop/headers/os/drivers
