@@ -1147,17 +1147,17 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c: $(VBOX_PATH_MAIN_SRC)/idl/xpidl_iid.xs
 # Edits $1 and adding #pragma directives for disabling warnings windows.h causes.
 # @param 1     The name of the file to edit.
 define def_VBoxMainDisableMscWarnings
-	$(MV) -f "$1" "$1.tmp"
-	$(APPEND) -nt "$1" \
+	$(QUIET)$(MV) -f "$1" "$1.tmp"
+	$(QUIET)$(APPEND) -nt "$1" \
 		'#pragma warning(push) /* -Wall and windows.h */' \
 		'#pragma warning(disable:4668 4255)' \
                ''
-	$(CAT_EXT) "$1.tmp" >> "$1"
-	$(APPEND) -n "$1" \
+	$(QUIET)$(CAT_EXT) "$1.tmp" >> "$1"
+	$(QUIET)$(APPEND) -n "$1" \
 		'' \
 		'#pragma warning(pop)' \
                ''
-	$(RM) -f "$1.tmp"
+	$(QUIET)$(RM) -f "$1.tmp"
 
 endef
 
