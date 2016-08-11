@@ -384,7 +384,7 @@ static int VBoxGuestNetBSDISR(void *pvState)
     return fOurIRQ ? 0 : 1;
 }
 
-void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
 
