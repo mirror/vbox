@@ -358,6 +358,8 @@ public:
         itemName = "Item";
     };
 
+    virtual ~VirtualHardwareItem() { /* Makes MSC happy. */ }
+
     void fillItem(const xml::ElementNode *item);
 
     void setDefaultFlag()

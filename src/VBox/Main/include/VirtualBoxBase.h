@@ -856,7 +856,7 @@ class Shareable
 public:
 
     Shareable() : mData(NULL), mIsShared(FALSE) {}
-    ~Shareable() { free(); }
+    virtual ~Shareable() { free(); }
 
     void allocate() { attach(new D); }
 
