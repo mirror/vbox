@@ -1152,6 +1152,75 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
+RuntimeR3_SOURCES.netbsd = \
+	generic/cdrom-generic.cpp \
+	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileMove-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
+	generic/RTThreadGetAffinity-stub-generic.cpp \
+	generic/RTThreadSetAffinity-stub-generic.cpp \
+	generic/RTThreadSetAffinityToCpu-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
+	generic/sched-generic.cpp \
+	generic/utf16locale-generic.cpp \
+	generic/uuid-generic.cpp \
+	generic/RTMpCpuId-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
+	generic/RTMpGetOnlineCoreCount-generic.cpp \
+	generic/RTProcDaemonize-generic.cpp \
+	generic/RTProcIsRunningByName-generic.cpp \
+	generic/RTThreadGetNativeState-generic.cpp \
+	r3/netbsd/rtProcInitExePath-netbsd.cpp \
+	r3/generic/allocex-r3-generic.cpp \
+	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTHandleGetStandard-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/RTPathUserHome-posix.cpp \
+	r3/posix/RTSystemQueryOSInfo-posix.cpp \
+	r3/posix/RTSystemQueryTotalRam-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
+	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
+	r3/posix/filelock-posix.cpp \
+	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
+	r3/posix/ldrNative-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
+	r3/posix/RTPathUserDocuments-posix.cpp \
+	r3/posix/pipe-posix.cpp \
+	r3/posix/process-posix.cpp \
+	r3/posix/process-creation-posix.cpp \
+	r3/posix/rand-posix.cpp \
+	r3/posix/semevent-posix.cpp \
+	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp \
+	r3/posix/semrw-posix.cpp \
+	r3/posix/symlink-posix.cpp \
+	r3/posix/thread-posix.cpp \
+	r3/posix/thread2-posix.cpp \
+	r3/posix/time-posix.cpp \
+	r3/posix/timelocal-posix.cpp \
+	r3/posix/timer-posix.cpp \
+	r3/posix/tls-posix.cpp \
+	r3/posix/utf8-posix.cpp
+
 RuntimeR3_SOURCES.solaris = \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
@@ -2336,6 +2405,39 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/mp-r0drv-freebsd.c \
 	generic/timer-generic.cpp \
 	r0drv/alloc-ef-r0drv.cpp \
+	r0drv/memobj-r0drv.cpp \
+	r0drv/powernotification-r0drv.c
+
+RuntimeR0Drv_SOURCES.netbsd = \
+	common/misc/thread.cpp \
+	common/string/memchr.asm \
+	common/string/memmove.asm \
+	common/string/strpbrk.cpp \
+	common/string/memcmp.asm \
+	common/string/strchr.asm \
+	generic/RTAssertShouldPanic-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTLogWriteStdOut-stub-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
+	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
+	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
+	r0drv/netbsd/alloc-r0drv-netbsd.c \
+	r0drv/netbsd/assert-r0drv-netbsd.c \
+	r0drv/netbsd/initterm-r0drv-netbsd.c \
+	r0drv/netbsd/memobj-r0drv-netbsd.c \
+	r0drv/netbsd/memuserkernel-r0drv-netbsd.c \
+	r0drv/netbsd/process-r0drv-netbsd.c \
+	r0drv/netbsd/semevent-r0drv-netbsd.c \
+	r0drv/netbsd/semeventmulti-r0drv-netbsd.c \
+	r0drv/netbsd/semfastmutex-r0drv-netbsd.c \
+	r0drv/netbsd/spinlock-r0drv-netbsd.c \
+	r0drv/netbsd/thread-r0drv-netbsd.c \
+	r0drv/netbsd/thread2-r0drv-netbsd.c \
+	r0drv/netbsd/time-r0drv-netbsd.c \
+	r0drv/netbsd/mp-r0drv-netbsd.c \
+	generic/timer-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c
 
