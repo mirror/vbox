@@ -240,7 +240,13 @@ typedef const OLECHAR *CBSTR;
  * Gets size of safearray parameter.
  * @param aArg Parameter name.
  */
-#define ComSafeArraySize(aArg)  ((aArg) == NULL ? 0 : (aArg)->rgsabound[0].cElements)
+#define ComSafeArraySize(aArg)          ((aArg) == NULL ? 0 : (aArg)->rgsabound[0].cElements)
+
+/**
+ * Apply RT_NOREF_PV to a safearray parameter.
+ * @param aArg Parameter name.
+ */
+#define ComSafeArrayNoRef(aArg)         RT_NOREF_PV(aArg)
 
 /**
  *  Returns the const reference to the IID (i.e., |const GUID &|) of the given
@@ -351,8 +357,11 @@ typedef BSTR *LPBSTR;
 #define ComSafeGUIDArrayOutIsNull(aArg)     ComSafeArrayOutIsNull(aArg)
 #define ComSafeGUIDArrayOutArg(aArg)        ComSafeArrayOutArg(aArg)
 
-/* safearray size */
-#define ComSafeArraySize(aArg)  ((aArg) == NULL ? 0 : (aArg##Size))
+/** safearray size */
+#define ComSafeArraySize(aArg)              ((aArg) == NULL ? 0 : (aArg##Size))
+
+/** NOREF a COM safe array argument. */
+#define ComSafeArrayNoRef(aArg)             RT_NOREF2(aArg, aArg##Size)
 
 /* CLSID and IID for compatibility with Win32 */
 typedef nsCID   CLSID;
