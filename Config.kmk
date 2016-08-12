@@ -2104,10 +2104,12 @@ VBOX_PATH_DIFX      ?= $(KBUILD_DEVTOOLS)/win.$(KBUILD_TARGET_ARCH)/DIFx/v2.1-r3
 VBOX_PATH_CABSDK    ?= $(KBUILD_DEVTOOLS)/win.x86/cabsdk/r1
 VBOX_PATH_MAKECAB   ?= $(VBOX_PATH_CABSDK)/BIN/MAKECAB.EXE
 
-# We need to export YASM for OSE, but since it was converted to .zip we need to
-# allow for the location used by the zip to be properly cleaned up first.
-if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), linux.x86 solaris.x86 win.x86)
- PATH_TOOL_YASM ?= $(KBUILD_DEVTOOLS_HST)/bin
+ifdef VBOX_OSE ## @todo try get rid of this crap! People can use the latest and greatest Yasm release, no need to check in the binary for OSE.
+ # We need to export YASM for OSE, but since it was converted to .zip we need to
+ # allow for the location used by the zip to be properly cleaned up first.
+ if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), linux.x86 solaris.x86 win.x86)
+  PATH_TOOL_YASM ?= $(KBUILD_DEVTOOLS_HST)/bin
+ endif
 endif
 
 # The Microsoft IDL compiler (the SDK build needs this on non-Windows).
