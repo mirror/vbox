@@ -2431,6 +2431,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     hdaRegWriteSDUnlock(pStream);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
+    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #endif /* IN_RING3 */
 }
