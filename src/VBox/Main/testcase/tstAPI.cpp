@@ -43,13 +43,14 @@ using namespace com;
 // forward declarations
 ///////////////////////////////////////////////////////////////////////////////
 
-static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
-                                  ComPtr<IUnknown> aObject);
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox, ComPtr<IUnknown> aObject);
 static void queryMetrics(ComPtr<IVirtualBox> aVirtualBox,
                          ComPtr<IPerformanceCollector> collector,
                          ComSafeArrayIn(IUnknown *, objects));
 static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
                                 ComSafeArrayIn(IPerformanceMetric*, aMetrics));
+#endif
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -1595,6 +1596,7 @@ int main(int argc, char *argv[])
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
+
 static void queryMetrics(ComPtr<IVirtualBox> aVirtualBox,
                          ComPtr<IPerformanceCollector> collector,
                          ComSafeArrayIn(IUnknown *, objects))

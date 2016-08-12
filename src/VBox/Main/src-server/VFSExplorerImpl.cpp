@@ -159,10 +159,10 @@ public:
     };
 
     TaskVFSExplorer(TaskType aTaskType, VFSExplorer *aThat, Progress *aProgress)
-        : taskType(aTaskType),
-          pVFSExplorer(aThat),
-          progress(aProgress),
-          rc(S_OK)
+        : m_taskType(aTaskType),
+          m_pVFSExplorer(aThat),
+          m_ptrProgress(aProgress),
+          m_rc(S_OK)
     {
         m_strTaskName = "Explorer::Task";
     }
@@ -175,14 +175,14 @@ private:
     static DECLCALLBACK(int) uploadProgress(unsigned uPercent, void *pvUser);
 #endif
 
-    TaskType taskType;
-    VFSExplorer *pVFSExplorer;
+    TaskType m_taskType;
+    VFSExplorer *m_pVFSExplorer;
 
-    ComObjPtr<Progress> progress;
-    HRESULT rc;
+    ComObjPtr<Progress> m_ptrProgress;
+    HRESULT m_rc;
 
     /* task data */
-    std::list<Utf8Str> filenames;
+    std::list<Utf8Str> m_lstFilenames;
 
     friend class VFSExplorer;
 };
@@ -190,14 +190,14 @@ private:
 /* static */
 void VFSExplorer::TaskVFSExplorer::handler()
 {
-    VFSExplorer *pVFSExplorer = this->pVFSExplorer;
+    VFSExplorer *pVFSExplorer = this->m_pVFSExplorer;
 
     LogFlowFuncEnter();
     LogFlowFunc(("VFSExplorer %p\n", pVFSExplorer));
 
     HRESULT rc = S_OK;
 
-    switch (this->taskType)
+    switch (this->m_taskType)
     {
         case TaskVFSExplorer::Update:
         {
@@ -216,7 +216,7 @@ void VFSExplorer::TaskVFSExplorer::handler()
             break;
         }
         default:
-            AssertMsgFailed(("Invalid task type %u specified!\n", this->taskType));
+            AssertMsgFailed(("Invalid task type %u specified!\n", this->m_taskType));
             break;
     }
 
@@ -231,13 +231,13 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::uploadProgress(unsigned uPercent
     VFSExplorer::TaskVFSExplorer* pTask = *(VFSExplorer::TaskVFSExplorer**)pvUser;
 
     if (pTask &&
-        !pTask->progress.isNull())
+        !pTask->m_ptrProgress.isNull())
     {
         BOOL fCanceled;
-        pTask->progress->COMGETTER(Canceled)(&fCanceled);
+        pTask->m_ptrProgress->COMGETTER(Canceled)(&fCanceled);
         if (fCanceled)
             return -1;
-        pTask->progress->SetCurrentOperationProgress(uPercent);
+        pTask->m_ptrProgress->SetCurrentOperationProgress(uPercent);
     }
     return VINF_SUCCESS;
 }
@@ -287,8 +287,8 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR, tr ("Can't open directory '%s' (%Rrc)"), pszPath, vrc);
 
-        if (aTask->progress)
-            aTask->progress->SetCurrentOperationProgress(33);
+        if (aTask->m_ptrProgress)
+            aTask->m_ptrProgress->SetCurrentOperationProgress(33);
         RTDIRENTRYEX entry;
         while (RT_SUCCESS(vrc))
         {
@@ -303,8 +303,8 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
                                        entry.Info.Attr.fMode & (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG | RTFS_UNIX_IRWXO)));
             }
         }
-        if (aTask->progress)
-            aTask->progress->SetCurrentOperationProgress(66);
+        if (aTask->m_ptrProgress)
+            aTask->m_ptrProgress->SetCurrentOperationProgress(66);
     }
     catch(HRESULT aRC)
     {
@@ -317,17 +317,17 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
     if (pDir)
         RTDirClose(pDir);
 
-    if (aTask->progress)
-        aTask->progress->SetCurrentOperationProgress(99);
+    if (aTask->m_ptrProgress)
+        aTask->m_ptrProgress->SetCurrentOperationProgress(99);
 
     /* Assign the result on success (this clears the old list) */
     if (rc == S_OK)
         m->entryList.assign(fileList.begin(), fileList.end());
 
-    aTask->rc = rc;
+    aTask->m_rc = rc;
 
-    if (!aTask->progress.isNull())
-        aTask->progress->i_notifyComplete(rc);
+    if (!aTask->m_ptrProgress.isNull())
+        aTask->m_ptrProgress->i_notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -346,14 +346,14 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
 
     HRESULT rc = S_OK;
 
-    float fPercentStep = 100.0f / (float)aTask->filenames.size();
+    float fPercentStep = 100.0f / (float)aTask->m_lstFilenames.size();
     try
     {
         char szPath[RTPATH_MAX];
         std::list<Utf8Str>::const_iterator it;
         size_t i = 0;
-        for (it = aTask->filenames.begin();
-             it != aTask->filenames.end();
+        for (it = aTask->m_lstFilenames.begin();
+             it != aTask->m_lstFilenames.end();
              ++it, ++i)
         {
             int vrc = RTPathJoin(szPath, sizeof(szPath), m->strPath.c_str(), (*it).c_str());
@@ -362,19 +362,19 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
             vrc = RTFileDelete(szPath);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr("Can't delete file '%s' (%Rrc)"), szPath, vrc);
-            if (aTask->progress)
-                aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * (float)i));
+            if (aTask->m_ptrProgress)
+                aTask->m_ptrProgress->SetCurrentOperationProgress((ULONG)(fPercentStep * (float)i));
         }
     }
-    catch(HRESULT aRC)
+    catch (HRESULT aRC)
     {
         rc = aRC;
     }
 
-    aTask->rc = rc;
+    aTask->m_rc = rc;
 
-    if (!aTask->progress.isNull())
-        aTask->progress->i_notifyComplete(rc);
+    if (aTask->m_ptrProgress.isNotNull())
+        aTask->m_ptrProgress->i_notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -521,7 +521,7 @@ HRESULT VFSExplorer::remove(const std::vector<com::Utf8Str> &aNames,
 
         /* Add all filenames to delete as task data */
         for (size_t i = 0; i < aNames.size(); ++i)
-            pTask->filenames.push_back(aNames[i]);
+            pTask->m_lstFilenames.push_back(aNames[i]);
 
         //this function delete task in case of exceptions, so there is no need in the call of delete operator
         rc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);

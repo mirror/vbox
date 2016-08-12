@@ -174,7 +174,6 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
     LogFlowFuncEnter();
 
     nsresult rc = NS_OK;
-    int vrc = VINF_SUCCESS;
 
     do
     {
@@ -311,7 +310,7 @@ VirtualBoxConstructor(nsISupports *aOuter, REFNSIID aIID,
     }
     while (0);
 
-    LogFlowFunc(("rc=%Rhrc (%#08x), vrc=%Rrc\n", rc, rc, vrc));
+    LogFlowFunc(("rc=%Rhrc (%#08x)\n", rc, rc));
     LogFlowFuncLeave();
 
     return rc;
