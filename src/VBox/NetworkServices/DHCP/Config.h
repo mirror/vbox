@@ -28,12 +28,6 @@
 #include "../NetLib/cpp/utils.h"
 
 
-static bool operator > (const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
-{
-    return (b < a);
-}
-
-
 class RawOption
 {
 public:

@@ -15,20 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _NETLIB_CPP_UTILS_H_
-# define _NETLIB_CPP_UTILS_H_
+#ifndef ___NETLIB_CPP_UTILS_H___
+#define ___NETLIB_CPP_UTILS_H___
 
-/* less operator for IPv4 addresess */
-static bool operator <(const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
+#include <iprt/types.h>
+
+/** less operator for IPv4 addresess */
+DECLINLINE(bool) operator <(const RTNETADDRIPV4 &lhs, const RTNETADDRIPV4 &rhs)
 {
-    return (RT_N2H_U32(a.u) < RT_N2H_U32(b.u));
+    return RT_N2H_U32(lhs.u) < RT_N2H_U32(rhs.u);
 }
 
-/*  Compares MAC addresses */
-static bool operator== (const RTMAC& lhs, const RTMAC& rhs)
+/** greater operator for IPv4 addresess */
+DECLINLINE(bool) operator >(const RTNETADDRIPV4 &lhs, const RTNETADDRIPV4 &rhs)
 {
-    return (   lhs.au16[0] == rhs.au16[0]
-            && lhs.au16[1] == rhs.au16[1]
-            && lhs.au16[2] == rhs.au16[2]);
+    return RT_N2H_U32(lhs.u) > RT_N2H_U32(rhs.u);
 }
+
+/**  Compares MAC addresses */
+DECLINLINE(bool) operator== (const RTMAC &lhs, const RTMAC &rhs)
+{
+    return lhs.au16[0] == rhs.au16[0]
+        && lhs.au16[1] == rhs.au16[1]
+        && lhs.au16[2] == rhs.au16[2];
+}
+
 #endif
+
