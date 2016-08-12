@@ -50,6 +50,11 @@
       </listitem>
 
       <listitem>
+        <para>EFI: fixed sending debug messages in the EFI firmware if a serial
+          port is enabled (bug #12161)</para>
+      </listitem>
+
+      <listitem>
         <para>OVF: when importing appliances, make sure that the version of the
           embedded VirtualBox specific settings is processed, to get the
           default settings handling right</para>
