@@ -406,14 +406,18 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
     int rc = 0;
     struct pci_attach_args *pa = vboxguest->pa;
     const char *intrstr;
+#if __NetBSD_Prereq__(6, 99, 39)
     char intstrbuf[100];
-
+#endif
     if (pci_intr_map(pa, &vboxguest->ih)) {
         aprint_error_dev(vboxguest->sc_dev, "couldn't map interrupt.\n");
         return VERR_DEV_IO_ERROR;
     }
-    intrstr = pci_intr_string(vboxguest->pa->pa_pc, vboxguest->ih,
-            intstrbuf, sizeof(intstrbuf));
+    intrstr = pci_intr_string(vboxguest->pa->pa_pc, vboxguest->ih
+#if __NetBSD_Prereq__(6, 99, 39)
+                              , intstrbuf, sizeof(intstrbuf)
+#endif
+                              );
     aprint_normal_dev(vboxguest->sc_dev, "interrupting at %s\n", intrstr);
     vboxguest->pfnIrqHandler = pci_intr_establish(vboxguest->pa->pa_pc, vboxguest->ih, IPL_BIO, VBoxGuestNetBSDISR, vboxguest);
     if (vboxguest->pfnIrqHandler == NULL) {
