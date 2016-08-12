@@ -39,7 +39,7 @@
 
 #include <stdio.h>
 #ifdef VBOX
-# include <stdint.h> /* for intptr.h */
+# include <iprt/stdint.h> /* for intptr.h */
 #endif
 #include "pcctscfg.h"
 #include "hash.h"
