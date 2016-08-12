@@ -629,8 +629,8 @@ typedef struct HDASTREAMSTATE
     volatile bool           fInReset;
     /** Unused, padding. */
     bool                    fPadding;
-    /** Mutex semaphore handle to serialize access. */
-    RTSEMMUTEX              hMtx;
+    /** Critical section to serialize access. */
+    RTCRITSECT              CritSect;
     /** Event signalling that the stream's state has been changed. */
     RTSEMEVENT              hStateChangedEvent;
     /** This stream's data mapping. */
@@ -1637,7 +1637,7 @@ static int hdaStreamCreate(PHDASTREAM pStream, uint8_t uSD)
 
     int rc = RTSemEventCreate(&pStream->State.hStateChangedEvent);
     if (RT_SUCCESS(rc))
-        rc = RTSemMutexCreate(&pStream->State.hMtx);
+        rc = RTCritSectInit(&pStream->State.CritSect);
 
     if (RT_SUCCESS(rc))
     {
@@ -1664,12 +1664,8 @@ static void hdaStreamDestroy(PHDASTREAM pStream)
 
     hdaStreamMapDestroy(&pStream->State.Mapping);
 
-    if (pStream->State.hMtx != NIL_RTSEMMUTEX)
-    {
-        rc2 = RTSemMutexDestroy(pStream->State.hMtx);
-        AssertRC(rc2);
-        pStream->State.hMtx = NIL_RTSEMMUTEX;
-    }
+    rc2 = RTCritSectDelete(&pStream->State.CritSect);
+    AssertRC(rc2);
 
     if (pStream->State.hStateChangedEvent != NIL_RTSEMEVENT)
     {
@@ -1845,12 +1841,12 @@ static void hdaStreamAssignToSink(PHDASTREAM pStream, PHDAMIXERSINK pMixSink)
 {
     AssertPtrReturnVoid(pStream);
 
-    int rc2 = RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
+    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
     if (RT_SUCCESS(rc2))
     {
         pStream->pMixSink = pMixSink;
 
-        rc2 = RTSemMutexRelease(pStream->State.hMtx);
+        rc2 = RTCritSectLeave(&pStream->State.CritSect);
         AssertRC(rc2);
     }
 }
@@ -2378,7 +2374,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     AssertPtr(pStream);
 
     /* Note: Do not use hdaRegWriteSDLock() here, as SDnCTL might change the RUN bit. */
-    int rc2 = RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
+    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
     AssertRC(rc2);
 
     LogFunc(("[SD%RU8]: fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
@@ -3005,15 +3001,14 @@ DECLINLINE(int) hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t 
     }
 # endif
 
-    /** @todo r=bird: Why on EARTH are we using mutexes?  USE CRITICAL SECTIONS!! */
-    return RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
+    return RTCritSectEnter(&pStream->State.CritSect);
 }
 
 DECLINLINE(void) hdaRegWriteSDUnlock(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
 
-    int rc2 = RTSemMutexRelease(pStream->State.hMtx);
+    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
     AssertRC(rc2);
 }
 #endif /* IN_RING3 */
@@ -4331,7 +4326,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
     }
 
     bool fProceed = true;
-    int rc = RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
+    int rc = RTCritSectEnter(&pStream->State.CritSect);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4365,7 +4360,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
     {
         Log3Func(("[SD%RU8]: Skipping\n", pStream->u8SD));
 
-        rc = RTSemMutexRelease(pStream->State.hMtx);
+        rc = RTCritSectLeave(&pStream->State.CritSect);
         AssertRC(rc);
 
         if (pcbProcessed)
@@ -4499,7 +4494,7 @@ static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess
             *pcbProcessed = cbTotal;
     }
 
-    int rc2 = RTSemMutexRelease(pStream->State.hMtx);
+    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
