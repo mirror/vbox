@@ -47,7 +47,7 @@ RT_C_DECLS_BEGIN
  */
 DECLINLINE(PRTCPUSET) RTCpuSetEmpty(PRTCPUSET pSet)
 {
-    unsigned i;
+    size_t i;
     for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
         pSet->bmSet[i] = 0;
     return pSet;
@@ -62,7 +62,7 @@ DECLINLINE(PRTCPUSET) RTCpuSetEmpty(PRTCPUSET pSet)
  */
 DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
 {
-    unsigned i;
+    size_t i;
     for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
         pSet->bmSet[i] = UINT64_MAX;
     return pSet;
@@ -77,7 +77,7 @@ DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
  */
 DECLINLINE(void) RTCpuSetCopy(PRTCPUSET pDst, PRTCPUSET pSrc)
 {
-    unsigned i;
+    size_t i;
     for (i = 0; i < RT_ELEMENTS(pDst->bmSet); i++)
         pDst->bmSet[i] = pSrc->bmSet[i];
 }
@@ -92,7 +92,7 @@ DECLINLINE(void) RTCpuSetCopy(PRTCPUSET pDst, PRTCPUSET pSrc)
  */
 DECLINLINE(PRTCPUSET) RTCpuSetAnd(PRTCPUSET pSet, PRTCPUSET pAndMaskSet)
 {
-    unsigned i;
+    size_t i;
     for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
         ASMAtomicAndU64((volatile uint64_t *)&pSet->bmSet[i], pAndMaskSet->bmSet[i]);
     return pSet;
@@ -219,7 +219,7 @@ DECLINLINE(bool) RTCpuSetIsMemberByIndex(PCRTCPUSET pSet, int iCpu)
  */
 DECLINLINE(bool) RTCpuSetIsEqual(PCRTCPUSET pSet1, PCRTCPUSET pSet2)
 {
-    unsigned i;
+    size_t i;
     for (i = 0; i < RT_ELEMENTS(pSet1->bmSet); i++)
         if (pSet1->bmSet[i] != pSet2->bmSet[i])
             return false;
@@ -235,7 +235,7 @@ DECLINLINE(bool) RTCpuSetIsEqual(PCRTCPUSET pSet1, PCRTCPUSET pSet2)
  */
 DECLINLINE(bool) RTCpuSetIsEmpty(PRTCPUSET pSet)
 {
-    unsigned i;
+    size_t i;
     for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
         if (pSet->bmSet[i])
             return false;
@@ -264,7 +264,7 @@ DECLINLINE(uint64_t) RTCpuSetToU64(PCRTCPUSET pSet)
  */
 DECLINLINE(PRTCPUSET) RTCpuSetFromU64(PRTCPUSET pSet, uint64_t fMask)
 {
-    unsigned i;
+    size_t i;
 
     pSet->bmSet[0] = fMask;
     for (i = 1; i < RT_ELEMENTS(pSet->bmSet); i++)
@@ -283,7 +283,7 @@ DECLINLINE(PRTCPUSET) RTCpuSetFromU64(PRTCPUSET pSet, uint64_t fMask)
 DECLINLINE(int) RTCpuSetCount(PCRTCPUSET pSet)
 {
     int         cCpus = 0;
-    unsigned    i;
+    size_t      i;
 
     for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
     {
@@ -311,7 +311,7 @@ DECLINLINE(int) RTCpuSetCount(PCRTCPUSET pSet)
  */
 DECLINLINE(int) RTCpuLastIndex(PCRTCPUSET pSet)
 {
-    unsigned i = RT_ELEMENTS(pSet->bmSet);
+    size_t i = RT_ELEMENTS(pSet->bmSet);
     while (i-- > 0)
     {
         uint64_t u64 = pSet->bmSet[i];
