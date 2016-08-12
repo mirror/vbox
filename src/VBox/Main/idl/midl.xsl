@@ -54,6 +54,8 @@
  */
 
 #if (__midl >= 501)
+midl_pragma warning(disable:2039) /* Disable warning MIDL2039 regarding interface not being automation
+                                     marshaling conformant and requiring NT 4.0 SP4 or greater. */
 midl_pragma warning(disable:2456) /* Disable warning MIDL2456 regarding SAFEARRAY(interface pointer). */
 midl_pragma warning(disable:2111) /* Disable warning MIDL2111 regarding identifier lengths exceeding 31 chars. */
 #endif
