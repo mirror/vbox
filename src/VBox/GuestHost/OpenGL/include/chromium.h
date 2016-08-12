@@ -69,7 +69,9 @@
 #   pragma GCC diagnostic push
 #  endif
 #  if RT_GNUC_PREREQ(4, 2)
-#   pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#   ifndef __cplusplus
+#    pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#   endif
 #  endif
 #  include <GL/glu.h>
 #  if RT_GNUC_PREREQ(4, 6)
