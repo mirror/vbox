@@ -336,16 +336,15 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pReq,
 }
 
 
-static int ossControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static int ossControlStreamIn(/*PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd*/ void)
 {
-
     /** @todo Nothing to do here right now!? */
 
     return VINF_SUCCESS;
 }
 
 
-static int ossControlStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static int ossControlStreamOut(PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     POSSAUDIOSTREAMOUT pStreamOut = (POSSAUDIOSTREAMOUT)pStream;
 
@@ -418,7 +417,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostOSSAudio)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostOSSAudio)
 {
-    RT_NOREF(pInterface);
+    RT_NOREF(pInterface, cbBuf, pvBuf);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
     POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
@@ -506,7 +505,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostOSSAudio)
 }
 
 
-static int ossDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static int ossDestroyStreamIn(PPDMAUDIOSTREAM pStream)
 {
     POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
 
@@ -528,7 +527,7 @@ static int ossDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream
 }
 
 
-static int ossDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static int ossDestroyStreamOut(PPDMAUDIOSTREAM pStream)
 {
     POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
 
@@ -649,10 +648,8 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostOSSAudio)
 }
 
 
-static int ossCreateStreamIn(PPDMIHOSTAUDIO pInterface,
-                             PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int ossCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    PDRVHOSTOSSAUDIO  pThis = PDMIHOSTAUDIO_2_DRVHOSTOSSAUDIO(pInterface);
     POSSAUDIOSTREAMIN pStrm = (POSSAUDIOSTREAMIN)pStream;
 
     int rc;
@@ -724,10 +721,8 @@ static int ossCreateStreamIn(PPDMIHOSTAUDIO pInterface,
 }
 
 
-static int ossCreateStreamOut(PPDMIHOSTAUDIO pInterface,
-                              PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int ossCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    PDRVHOSTOSSAUDIO   pThis = PDMIHOSTAUDIO_2_DRVHOSTOSSAUDIO(pInterface);
     POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
 
     int rc;
@@ -855,7 +850,7 @@ static int ossCreateStreamOut(PPDMIHOSTAUDIO pInterface,
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostOSSAudio)
 {
-    RT_NOREF(pInterface);
+    RT_NOREF(pInterface, cbBuf, pvBuf);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
     POSSAUDIOSTREAMOUT pStrm = (POSSAUDIOSTREAMOUT)pStream;
@@ -1012,9 +1007,9 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostOSSAudio)
 
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = ossCreateStreamIn(pInterface,  pStream, pCfgReq, pCfgAcq);
+        rc = ossCreateStreamIn(pStream, pCfgReq, pCfgAcq);
     else
-        rc = ossCreateStreamOut(pInterface, pStream, pCfgReq, pCfgAcq);
+        rc = ossCreateStreamOut(pStream, pCfgReq, pCfgAcq);
 
     return rc;
 }
@@ -1030,9 +1025,9 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostOSSAudio)
 
     int rc;
     if (pStream->enmDir == PDMAUDIODIR_IN)
-        rc = ossDestroyStreamIn(pInterface,  pStream);
+        rc = ossDestroyStreamIn(pStream);
     else
-        rc = ossDestroyStreamOut(pInterface, pStream);
+        rc = ossDestroyStreamOut(pStream);
 
     return rc;
 }
@@ -1050,9 +1045,9 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostOSSAudio)
 
     int rc;
     if (pStream->enmDir == PDMAUDIODIR_IN)
-        rc = ossControlStreamIn(pInterface,  pStream, enmStreamCmd);
+        rc = ossControlStreamIn(/*pInterface,  pStream, enmStreamCmd*/);
     else
-        rc = ossControlStreamOut(pInterface, pStream, enmStreamCmd);
+        rc = ossControlStreamOut(pStream, enmStreamCmd);
 
     return rc;
 }
@@ -1112,8 +1107,8 @@ static DECLCALLBACK(void *) drvHostOSSAudioQueryInterface(PPDMIBASE pInterface, 
  */
 static DECLCALLBACK(int) drvHostOSSAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     RT_NOREF(pCfg, fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVHOSTOSSAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTOSSAUDIO);
     LogRel(("Audio: Initializing OSS driver\n"));
 
