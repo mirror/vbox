@@ -5272,14 +5272,20 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
-ifdef VBOX_WITH_DTRACE_R3_MAIN
- TEMPLATE_VBOXMAINEXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
-endif
+ ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_GCC_WERR)
+ endif
+ ifdef VBOX_WITH_DTRACE_R3_MAIN
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
+ endif
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXMAINEXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros) \
 	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
+ ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+  TEMPLATE_VBOXMAINEXE_CFLAGS           += $(VBOX_GCC_WERR)
+ endif
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
 TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
