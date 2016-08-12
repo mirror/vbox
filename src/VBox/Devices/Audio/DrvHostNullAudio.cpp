@@ -149,6 +149,8 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostNullAudio)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostNullAudio)
 {
+    RT_NOREF2(pvBuf, cbBuf);
+
     PDRVHOSTNULLAUDIO   pDrv        = RT_FROM_MEMBER(pInterface, DRVHOSTNULLAUDIO, IHostAudio);
     PNULLAUDIOSTREAMOUT pNullStream = RT_FROM_MEMBER(pStream, NULLAUDIOSTREAMOUT, Stream);
 
@@ -191,7 +193,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostNullAudio)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostNullAudio)
 {
-    RT_NOREF(pInterface, pStream);
+    RT_NOREF4(pInterface, pStream, pvBuf, cbBuf);
 
     /* Never capture anything. */
     if (pcbRead)

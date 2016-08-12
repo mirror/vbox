@@ -93,9 +93,6 @@ static int vrdeCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    PVRDESTREAMIN pVRDEStrmIn = (PVRDESTREAMIN)pStream;
-
     if (pCfgAcq)
         pCfgAcq->cSamples = _4K; /** @todo Make this configurable. */
 
@@ -111,9 +108,6 @@ static int vrdeCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
-
-    PDRVAUDIOVRDE  pDrv         = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
-    PVRDESTREAMOUT pVRDEStrmOut = (PVRDESTREAMOUT)pStream;
 
     if (pCfgAcq)
         pCfgAcq->cSamples = _4K; /** @todo Make this configurable. */
@@ -199,11 +193,12 @@ PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvAudioVRDE)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvAudioVRDE)
 {
+    RT_NOREF2(pvBuf, cbBuf);
+
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbRead is optional. */
 
-    PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAMIN pVRDEStrmIn = (PVRDESTREAMIN)pStream;
 
     /** @todo Use CritSect! */
@@ -238,6 +233,8 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvAudioVRDE)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvAudioVRDE)
 {
+    RT_NOREF2(pvBuf, cbBuf);
+
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
