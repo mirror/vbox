@@ -336,6 +336,8 @@ NSGetModule(nsIComponentManager *servMgr,                                     \
             nsIFile* location,                                                \
             nsIModule** result)                                               \
 {                                                                             \
+    (void)servMgr;                                                            \
+    (void)location;                                                           \
     return NS_NewGenericModule2(&(_info), result);                            \
 }
 #endif
