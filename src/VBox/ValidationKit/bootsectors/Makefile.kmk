@@ -83,7 +83,7 @@ TEMPLATE_VBoxBsTestImg_INST    = $(INST_VALIDATIONKIT)bootsectors/
 TEMPLATE_VBoxBsTestImg_BINSUFF = .img
 TEMPLATE_VBoxBsTestImg_MODE    = 0644
 TEMPLATE_VBoxBsTestImg_ASTOOL  = YASM
-TEMPLATE_VBoxBsTestImg_ASFLAGS:= -f bin -P $(PATH_SUB_CURRENT)/bootsector2-first.mac $(VBOX_YASM_Wno-segreg-in-64bit) --mapfile
+TEMPLATE_VBoxBsTestImg_ASFLAGS = -f bin -P $(VBOX_PATH_BOOTSECTORS_SRC)/bootsector2-first.mac $(VBOX_YASM_Wno-segreg-in-64bit) --mapfile
 TEMPLATE_VBoxBsTestImg_ASDEFS  = ASM_FORMAT_BIN
 TEMPLATE_VBoxBsTestImg_INCS    = \
 	. \
