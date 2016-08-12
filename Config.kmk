@@ -5972,8 +5972,8 @@ else
   TEMPLATE_VBoxBldProg_ASFLAGS.x86      := -f elf32
   TEMPLATE_VBoxBldProg_ASFLAGS.amd64    := -f elf64
  endif
-  TEMPLATE_VBoxBldProg_ASFLAGS.amd64    += $(VBOX_YASM_Wno-segreg-in-64bit)
 endif
+TEMPLATE_VBoxBldProg_ASFLAGS.amd64      += $(VBOX_YASM_Wno-segreg-in-64bit)
 ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
  TEMPLATE_VBoxBldProg_SDKS              := ReorderCompilerIncs $(VBOX_WINPSDK)
