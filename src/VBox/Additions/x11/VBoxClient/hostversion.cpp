@@ -38,7 +38,7 @@ static const char *getPidFilePath()
     return ".vboxclient-hostversion.pid";
 }
 
-static int showNotify(const char *pcHeader, const char *pcBody)
+static int showNotify(const char *pszHeader, const char *pszBody)
 {
     int rc;
 # ifdef VBOX_WITH_DBUS
@@ -69,8 +69,8 @@ static int showNotify(const char *pcHeader, const char *pcBody)
         uint32_t msg_replace_id = 0;
         const char *msg_app = "VBoxClient";
         const char *msg_icon = "";
-        const char *msg_summary = pcHeader;
-        const char *msg_body = pcBody;
+        const char *msg_summary = pszHeader;
+        const char *msg_body = pszBody;
         int32_t msg_timeout = -1;           /* Let the notification server decide */
 
         DBusMessageIter iter;
@@ -114,7 +114,8 @@ static int showNotify(const char *pcHeader, const char *pcBody)
     if (msg != NULL)
         dbus_message_unref(msg);
 # else
-    /* TODO: Implement me */
+    /** @todo Implement me */
+    RT_NOREF(pszHeader, pszBody);
     rc = VINF_SUCCESS;
 # endif /* VBOX_WITH_DBUS */
     return rc;
