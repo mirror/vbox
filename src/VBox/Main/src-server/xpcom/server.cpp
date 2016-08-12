@@ -856,7 +856,7 @@ int main(int argc, char **argv)
         {
             RTPrintf("\nStarting event loop....\n[send TERM signal to quit]\n");
             /* now we're ready, signal the parent process */
-            PR_Write(daemon_pipe_wr, "READY", strlen("READY"));
+            PR_Write(daemon_pipe_wr, RT_STR_TUPLE("READY"));
             /* close writing end of the pipe, its job is done */
             PR_Close(daemon_pipe_wr);
         }
