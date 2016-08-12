@@ -520,8 +520,13 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
      * Init host stream.
      */
 
+    /* Make the acquired host configuration the requested host configuration by default. */
+    PDMAUDIOSTREAMCFG CfgAcq;
+    memcpy(&CfgAcq, pCfgHost, sizeof(PDMAUDIOSTREAMCFG));
+
     uint32_t cSamples = 0;
-    int rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream, pCfgHost, &cSamples);
+    int rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream,
+                                                   pCfgHost /* pCfgReq */, &CfgAcq /* pCfgAcq */);
     if (RT_SUCCESS(rc))
     {
         /* Only set the host's stream to initialized if we were able create the stream
@@ -1027,7 +1032,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                 && (strmSts & PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE))
             {
                 AssertPtr(pThis->pHostDrvAudio->pfnStreamPlay);
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream, &cSamplesPlayed);
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream, NULL /* pvBuf */, 0 /* cbBuf */,
+                                                         &cSamplesPlayed);
                 if (RT_FAILURE(rc))
                 {
                     int rc2 = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
@@ -1134,7 +1140,8 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
             if (   (strmSts & PDMAUDIOSTRMSTS_FLAG_INITIALIZED)
                 && (strmSts & PDMAUDIOSTRMSTS_FLAG_DATA_READABLE))
             {
-                rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream, &cSamplesCaptured);
+                rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream, NULL /* pvBuf */, 0 /* cbBuf */,
+                                                            &cSamplesCaptured);
                 if (RT_FAILURE(rc))
                 {
                     int rc2 = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);

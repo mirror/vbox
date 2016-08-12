@@ -216,6 +216,7 @@ static DWORD dsoundRingDistance(DWORD offEnd, DWORD offBegin, DWORD cSize)
     return offEnd >= offBegin ? offEnd - offBegin : cSize - offBegin + offEnd;
 }
 
+
 static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 {
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
@@ -258,6 +259,7 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 
     return VINF_SUCCESS;
 }
+
 
 static int dsoundGetPosOut(PDRVHOSTDSOUND   pThis,
                            PDSOUNDSTREAMOUT pDSoundStream, DWORD *pdwBuffer, DWORD *pdwFree, DWORD *pdwPlayPos)
@@ -304,6 +306,7 @@ static int dsoundGetPosOut(PDRVHOSTDSOUND   pThis,
     return rc;
 }
 
+
 static char *dsoundGUIDToUtf8StrA(LPCGUID pGUID)
 {
     if (pGUID)
@@ -322,6 +325,7 @@ static char *dsoundGUIDToUtf8StrA(LPCGUID pGUID)
 
     return RTStrDup("{Default device}");
 }
+
 
 /**
  * Clears the list of the host's playback + capturing devices.
@@ -346,6 +350,7 @@ static void dsoundDevicesClear(PDRVHOSTDSOUND pThis)
     }
 }
 
+
 static HRESULT directSoundPlayRestore(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB)
 {
     RT_NOREF(pThis);
@@ -354,6 +359,7 @@ static HRESULT directSoundPlayRestore(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8
         DSLOGREL(("DSound: Restoring playback buffer failed with %Rhrc\n", hr));
     return hr;
 }
+
 
 static HRESULT directSoundPlayUnlock(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB,
                                      PVOID pv1, PVOID pv2,
@@ -366,6 +372,7 @@ static HRESULT directSoundPlayUnlock(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 
     return hr;
 }
 
+
 static HRESULT directSoundCaptureUnlock(LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB,
                                         PVOID pv1, PVOID pv2,
                                         DWORD cb1, DWORD cb2)
@@ -375,6 +382,7 @@ static HRESULT directSoundCaptureUnlock(LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB,
         DSLOGREL(("DSound: Unlocking capture buffer failed with %Rhrc\n", hr));
     return hr;
 }
+
 
 static HRESULT directSoundPlayLock(PDRVHOSTDSOUND pThis,
                                    LPDIRECTSOUNDBUFFER8 pDSB, PDMPCMPROPS *pProps,
@@ -411,6 +419,7 @@ static HRESULT directSoundPlayLock(PDRVHOSTDSOUND pThis,
     DSLOGREL(("DSound: Locking playback buffer failed with %Rhrc\n", hr));
     return hr;
 }
+
 
 static HRESULT directSoundCaptureLock(LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB, PPDMPCMPROPS pProps,
                                       DWORD dwOffset, DWORD dwBytes,
@@ -462,6 +471,7 @@ static void directSoundPlayInterfaceRelease(PDSOUNDSTREAMOUT pDSoundStream)
     }
 }
 
+
 static HRESULT directSoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
     if (pDSoundStream->pDS != NULL)
@@ -500,6 +510,7 @@ static HRESULT directSoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREA
 
     return hr;
 }
+
 
 static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
@@ -542,6 +553,7 @@ static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSou
 
     return hr;
 }
+
 
 static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
@@ -726,6 +738,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
     return hr;
 }
 
+
 static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
     AssertPtrReturnVoid(pDSoundStream);
@@ -751,6 +764,7 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
         directSoundPlayUnlock(pThis, pDSoundStream->pDSB, pv1, pv2, cb1, cb2);
     }
 }
+
 
 static HRESULT directSoundPlayGetStatus(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB, DWORD *pdwStatus)
 {
@@ -784,6 +798,7 @@ static HRESULT directSoundPlayGetStatus(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFE
 
     return hr;
 }
+
 
 static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
@@ -822,6 +837,7 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
 
     return hr;
 }
+
 
 static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
@@ -940,6 +956,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN p
     return pGUID;
 }
 
+
 static void directSoundCaptureInterfaceRelease(PDSOUNDSTREAMIN pDSoundStream)
 {
     if (pDSoundStream->pDSC)
@@ -949,6 +966,7 @@ static void directSoundCaptureInterfaceRelease(PDSOUNDSTREAMIN pDSoundStream)
         pDSoundStream->pDSC = NULL;
     }
 }
+
 
 static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStream)
 {
@@ -983,6 +1001,7 @@ static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDST
     return hr;
 }
 
+
 static HRESULT directSoundCaptureClose(PDSOUNDSTREAMIN pDSoundStream)
 {
     AssertPtrReturn(pDSoundStream, E_POINTER);
@@ -1009,6 +1028,7 @@ static HRESULT directSoundCaptureClose(PDSOUNDSTREAMIN pDSoundStream)
     LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
+
 
 static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStream)
 {
@@ -1142,6 +1162,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
     return hr;
 }
 
+
 static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStream)
 {
     AssertPtrReturn(pThis        , E_POINTER);
@@ -1168,6 +1189,7 @@ static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
     LogFlowFunc(("Returning %Rhrc\n", hr));
     return hr;
 }
+
 
 static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStream)
 {
@@ -1212,6 +1234,7 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDS
     return hr;
 }
 
+
 static int dsoundDevAdd(PRTLISTANCHOR pList, LPGUID pGUID, LPCWSTR pwszDescription, PDSOUNDDEV *ppDev)
 {
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
@@ -1235,6 +1258,7 @@ static int dsoundDevAdd(PRTLISTANCHOR pList, LPGUID pGUID, LPCWSTR pwszDescripti
     return rc;
 }
 
+
 static void dsoundDeviceRemove(PDSOUNDDEV pDev)
 {
     if (pDev)
@@ -1248,6 +1272,7 @@ static void dsoundDeviceRemove(PDSOUNDDEV pDev)
     }
 }
 
+
 static void dsoundLogDevice(const char *pszType, LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule)
 {
     char *pszGUID = dsoundGUIDToUtf8StrA(pGUID);
@@ -1255,6 +1280,7 @@ static void dsoundLogDevice(const char *pszType, LPGUID pGUID, LPCWSTR pwszDescr
     LogRel(("DSound: %s: GUID: %s [%ls] (Module: %ls)\n", pszType, pszGUID ? pszGUID : "{?}", pwszDescription, pwszModule));
     RTStrFree(pszGUID);
 }
+
 
 static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
 {
@@ -1281,6 +1307,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbPlayback(LPGUID pGUID, LPCWSTR pwszDescr
     return TRUE;
 }
 
+
 static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescription, LPCWSTR pwszModule, PVOID lpContext)
 {
     PDSOUNDENUMCBCTX pCtx = (PDSOUNDENUMCBCTX)lpContext;
@@ -1302,6 +1329,7 @@ static BOOL CALLBACK dsoundDevicesEnumCbCapture(LPGUID pGUID, LPCWSTR pwszDescri
 
     return TRUE;
 }
+
 
 /**
  * Does a (Re-)enumeration of the host's playback + capturing devices.
@@ -1357,6 +1385,7 @@ static int dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PDSOUNDENUMCBCTX pEnmCtx
     return rc;
 }
 
+
 /**
  * Updates this host driver's internal status, according to the global, overall input/output
  * state and all connected (native) audio streams.
@@ -1405,17 +1434,20 @@ static void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDC
     LogFlowFuncLeaveRC(rc);
 }
 
+
 static void dsoundUpdateStatusInternal(PDRVHOSTDSOUND pThis)
 {
     dsoundUpdateStatusInternalEx(pThis, NULL /* pCfg */, 0 /* fEnum */);
 }
 
-static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
+
+static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
+                                 PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    LogFlowFunc(("pStream=%p, pCfg=%p\n", pStream, pCfg));
+    LogFlowFunc(("pStream=%p, pCfg=%p\n", pStream, pCfgReq));
     PDSOUNDSTREAMOUT pDSoundStream = (PDSOUNDSTREAMOUT)pStream;
 
-    pDSoundStream->streamCfg = *pCfg;
+    pDSoundStream->streamCfg = *pCfgReq;
     pDSoundStream->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
     int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pDSoundStream->Stream.Props);
@@ -1427,8 +1459,8 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream, 
         pDSoundStream->fRestartPlayback = true;
         pDSoundStream->cMaxSamplesInBuffer = 0;
 
-        if (pcSamples)
-            *pcSamples = pThis->cfg.cbBufferOut >> pStream->Props.cShift;
+        if (pCfgAcq)
+            pCfgAcq->cSamples = pThis->cfg.cbBufferOut >> pStream->Props.cShift; /** @todo Get rid of using Props! */
 
         /* Try to open playback in case the device is already there. */
         directSoundPlayOpen(pThis, pDSoundStream);
@@ -1496,13 +1528,13 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostDSound)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    /* pcSamplesPlayed is optional. */
+    /* pcbRead is optional. */
 
-    PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
+    PDRVHOSTDSOUND   pThis         = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAMOUT pDSoundStream = (PDSOUNDSTREAMOUT)pStream;
 
     int rc = VINF_SUCCESS;
@@ -1633,12 +1665,13 @@ static DECLCALLBACK(int) drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDM
 
     if (RT_FAILURE(rc))
         dsoundUpdateStatusInternal(pThis);
-    else if (pcSamplesPlayed)
-        *pcSamplesPlayed = cReadTotal;
+    else if (pcbRead)
+        *pcbRead = cReadTotal;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 
 static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream)
 {
@@ -1655,16 +1688,17 @@ static int dsoundDestroyStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream)
     return VINF_SUCCESS;
 }
 
-static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
+static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
+                                PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PDSOUNDSTREAMIN pDSoundStream = (PDSOUNDSTREAMIN)pStream;
 
-    LogFlowFunc(("pStream=%p, pCfg=%p, enmRecSource=%ld\n", pStream, pCfg, pCfg->DestSource.Source));
+    LogFlowFunc(("pStream=%p, pCfg=%p, enmRecSource=%ld\n", pStream, pCfgReq, pCfgReq->DestSource.Source));
 
-    memcpy(&pDSoundStream->streamCfg, pCfg, sizeof(PDMAUDIOSTREAMCFG));
+    memcpy(&pDSoundStream->streamCfg, pCfgReq, sizeof(PDMAUDIOSTREAMCFG));
 
     /** @todo caller should already init Props? */
-    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pStream->Props);
+    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pStream->Props); /** @todo Get rid of using Props! */
     if (RT_SUCCESS(rc))
     {
         /* Init the stream structure and save relevant information to it. */
@@ -1672,14 +1706,14 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream, P
         pDSoundStream->cMaxSamplesInBuffer = 0;
         pDSoundStream->pDSC                = NULL;
         pDSoundStream->pDSCB               = NULL;
-        pDSoundStream->enmRecSource        = pCfg->DestSource.Source;
+        pDSoundStream->enmRecSource        = pCfgReq->DestSource.Source;
         pDSoundStream->hrLastCapture       = S_OK;
 
-        if (pcSamples)
-            *pcSamples = pThis->cfg.cbBufferIn >> pStream->Props.cShift;
+        if (pCfgAcq)
+            pCfgAcq->cSamples = pThis->cfg.cbBufferIn >> pStream->Props.cShift; /** @todo Get rid of using Props! */
 
         /* Try to open capture in case the device is already there. */
-        directSoundCaptureOpen(pThis, pDSoundStream);
+        directSoundCaptureOpen(pThis, pDSoundStream); /** @todo r=andy Why not checking the result here?? */
     }
     else
     {
@@ -1745,8 +1779,7 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream, 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-static DECLCALLBACK(int) drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
-                                                    uint32_t *pcSamplesCaptured)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostDSound)
 {
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
@@ -1860,8 +1893,8 @@ static DECLCALLBACK(int) drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, P
 
     if (RT_FAILURE(rc))
         dsoundUpdateStatusInternal(pThis);
-    else if (pcSamplesCaptured)
-        *pcSamplesCaptured = cSamplesProcessed;
+    else if (pcbWritten)
+        *pcbWritten = cSamplesProcessed;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1884,14 +1917,14 @@ static int dsoundDestroyStreamIn(PPDMAUDIOSTREAM pStream)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-static DECLCALLBACK(int) drvHostDSoundGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pCfg)
+PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostDSound)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
+    AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
-    dsoundUpdateStatusInternalEx(pThis, pCfg, 0 /* fEnum */);
+    dsoundUpdateStatusInternalEx(pThis, pBackendCfg, 0 /* fEnum */);
 
     return VINF_SUCCESS;
 }
@@ -2011,7 +2044,7 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
-static DECLCALLBACK(void) drvHostDSoundShutdown(PPDMIHOSTAUDIO pInterface)
+PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostDSound)
 {
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
@@ -2043,7 +2076,7 @@ static DECLCALLBACK(void) drvHostDSoundShutdown(PPDMIHOSTAUDIO pInterface)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
-static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
+PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostDSound)
 {
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     LogFlowFuncEnter();
@@ -2138,7 +2171,7 @@ static void dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDSoundGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostDSound)
 {
     RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -2150,22 +2183,21 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDSoundGetStatus(PPDMIHOSTAUDIO pI
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-static DECLCALLBACK(int)
-drvHostDSoundStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostDSound)
 {
-    AssertPtrReturn(pInterface,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,       VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,          VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pcSamples, VERR_INVALID_POINTER);
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
+
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
     int rc;
-    if (pCfg->enmDir == PDMAUDIODIR_IN)
-        rc = dsoundCreateStreamIn(pThis,  pStream, pCfg, pcSamples);
+    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+        rc = dsoundCreateStreamIn(pThis,  pStream, pCfgReq, pCfgAcq);
     else
-        rc = dsoundCreateStreamOut(pThis, pStream, pCfg, pcSamples);
+        rc = dsoundCreateStreamOut(pThis, pStream, pCfgReq, pCfgAcq);
 
-    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
 }
 
@@ -2173,10 +2205,11 @@ drvHostDSoundStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PP
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostDSoundStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostDSound)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
     int rc;
@@ -2192,11 +2225,11 @@ static DECLCALLBACK(int) drvHostDSoundStreamDestroy(PPDMIHOSTAUDIO pInterface, P
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
-static DECLCALLBACK(int)
-drvHostDSoundStreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostDSound)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
     Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
@@ -2214,7 +2247,7 @@ drvHostDSoundStreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, P
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostDSound)
 {
     AssertPtrReturn(pInterface, PDMAUDIOSTRMSTS_FLAG_NONE);
     AssertPtrReturn(pStream,    PDMAUDIOSTRMSTS_FLAG_NONE);
@@ -2253,7 +2286,7 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-static DECLCALLBACK(int) drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostDSound)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -2367,6 +2400,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * PDM driver registration.

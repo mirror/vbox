@@ -166,6 +166,8 @@ static int  paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint
 static int  paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg);
 static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvContext);
 
+
+
 /**
  * Signal the main loop to abort. Just signalling isn't sufficient as the
  * mainloop might not have been entered yet.
@@ -178,6 +180,7 @@ static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
     pThis->fLoopWait = true;
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
+
 
 static pa_sample_format_t paFmtToPulse(PDMAUDIOFMT fmt)
 {
@@ -200,6 +203,7 @@ static pa_sample_format_t paFmtToPulse(PDMAUDIOFMT fmt)
     AssertMsgFailed(("Format %ld not supported\n", fmt));
     return PA_SAMPLE_U8;
 }
+
 
 static int paPulseToFmt(pa_sample_format_t pulsefmt,
                         PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pEndianness)
@@ -243,6 +247,7 @@ static int paPulseToFmt(pa_sample_format_t pulsefmt,
     return VINF_SUCCESS;
 }
 
+
 /**
  * Synchronously wait until an operation completed.
  */
@@ -276,10 +281,12 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
     return rc;
 }
 
+
 static int paWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP)
 {
     return paWaitForEx(pThis, pOP, 10 * 1000 /* 10s timeout */);
 }
+
 
 /**
  * Context status changed.
@@ -308,6 +315,7 @@ static void paContextCbStateChanged(pa_context *pCtx, void *pvUser)
     }
 }
 
+
 /**
  * Callback called when our pa_stream_drain operation was completed.
  */
@@ -334,6 +342,7 @@ static void paStreamCbDrain(pa_stream *pStream, int fSuccess, void *pvUser)
     }
 }
 
+
 /**
  * Stream status changed.
  */
@@ -357,6 +366,7 @@ static void paStreamCbStateChanged(pa_stream *pStream, void *pvUser)
     }
 }
 
+
 static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvUser)
 {
     AssertPtrReturnVoid(pStream);
@@ -371,6 +381,7 @@ static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvUser)
     else
         paError(pStrm->pDrv, "Failed to finish stream operation");
 }
+
 
 static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
                         pa_sample_spec *pSampleSpec, pa_buffer_attr *pBufAttr,
@@ -507,7 +518,11 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
 
@@ -615,14 +630,10 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
     return rc;
 }
 
-static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
-                             PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
-    /* pcSamples is optional. */
 
+static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
+                             PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
     PPULSEAUDIOSTREAM  pStrm = (PPULSEAUDIOSTREAM)pStream;
 
@@ -630,9 +641,9 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 
     pStrm->pDrainOp            = NULL;
 
-    pStrm->SampleSpec.format   = paFmtToPulse(pCfg->enmFormat);
-    pStrm->SampleSpec.rate     = pCfg->uHz;
-    pStrm->SampleSpec.channels = pCfg->cChannels;
+    pStrm->SampleSpec.format   = paFmtToPulse(pCfgReq->enmFormat);
+    pStrm->SampleSpec.rate     = pCfgReq->uHz;
+    pStrm->SampleSpec.channels = pCfgReq->cChannels;
 
     /* Note that setting maxlength to -1 does not work on PulseAudio servers
      * older than 0.9.10. So use the suggested value of 3/2 of tlength */
@@ -647,19 +658,18 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
-    PDMAUDIOSTREAMCFG streamCfg;
     rc = paPulseToFmt(pStrm->SampleSpec.format,
-                      &streamCfg.enmFormat, &streamCfg.enmEndianness);
+                      &pCfgAcq->enmFormat, &pCfgAcq->enmEndianness);
     if (RT_FAILURE(rc))
     {
         LogRel(("PulseAudio: Cannot find audio output format %ld\n", pStrm->SampleSpec.format));
         return rc;
     }
 
-    streamCfg.uHz       = pStrm->SampleSpec.rate;
-    streamCfg.cChannels = pStrm->SampleSpec.channels;
+    pCfgAcq->uHz       = pStrm->SampleSpec.rate;
+    pCfgAcq->cChannels = pStrm->SampleSpec.channels;
 
-    rc = DrvAudioHlpStreamCfgToProps(&streamCfg, &pStream->Props);
+    rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbBuf  = RT_MIN(pStrm->BufAttr.tlength * 2,
@@ -671,14 +681,10 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
             {
                 pStrm->cbPCMBuf = cbBuf;
 
-                uint32_t cSamples = cbBuf >> pStream->Props.cShift;
-                if (pcSamples)
-                    *pcSamples = cSamples;
+                pCfgAcq->cSamples = cbBuf >> pStream->Props.cShift; /** @todo Get rid of using Props! */
 
                 /* Save pointer to driver instance. */
                 pStrm->pDrv = pThis;
-
-                LogFunc(("cbBuf=%RU32, cSamples=%RU32\n", cbBuf, cSamples));
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -691,20 +697,16 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     return rc;
 }
 
-static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
-                            PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
-{
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
-    /* pcSamples is optional. */
 
+static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
+                            PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
     PPULSEAUDIOSTREAM  pStrm = (PPULSEAUDIOSTREAM)pStream;
 
-    pStrm->SampleSpec.format   = paFmtToPulse(pCfg->enmFormat);
-    pStrm->SampleSpec.rate     = pCfg->uHz;
-    pStrm->SampleSpec.channels = pCfg->cChannels;
+    pStrm->SampleSpec.format   = paFmtToPulse(pCfgReq->enmFormat);
+    pStrm->SampleSpec.rate     = pCfgReq->uHz;
+    pStrm->SampleSpec.channels = pCfgReq->cChannels;
 
     /* XXX check these values */
     pStrm->BufAttr.fragsize    = (pa_bytes_per_second(&pStrm->SampleSpec)
@@ -717,45 +719,41 @@ static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
-    PDMAUDIOSTREAMCFG streamCfg;
-    rc = paPulseToFmt(pStrm->SampleSpec.format, &streamCfg.enmFormat,
-                      &streamCfg.enmEndianness);
+    rc = paPulseToFmt(pStrm->SampleSpec.format, &pCfgAcq->enmFormat,
+                      &pCfgAcq->enmEndianness);
     if (RT_FAILURE(rc))
     {
         LogRel(("PulseAudio: Cannot find audio capture format %ld\n", pStrm->SampleSpec.format));
         return rc;
     }
 
-    streamCfg.uHz       = pStrm->SampleSpec.rate;
-    streamCfg.cChannels = pStrm->SampleSpec.channels;
+    pCfgAcq->uHz       = pStrm->SampleSpec.rate;
+    pCfgAcq->cChannels = pStrm->SampleSpec.channels;
 
-    rc = DrvAudioHlpStreamCfgToProps(&streamCfg, &pStream->Props);
+    rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &pStream->Props);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cSamples = RT_MIN(pStrm->BufAttr.fragsize * 10, pStrm->BufAttr.maxlength)
-                            >> pStream->Props.cShift;
-
-        LogFunc(("uHz=%RU32, cChannels=%RU8, cShift=%RU8, cSamples=%RU32\n",
-                 pStream->Props.uHz, pStream->Props.cChannels, pStream->Props.cShift, cSamples));
+        pCfgAcq->cSamples = RT_MIN(pStrm->BufAttr.fragsize * 10, pStrm->BufAttr.maxlength)
+                            >> pStream->Props.cShift; /** @todo Get rid of using Props! */
 
         /* Save pointer to driver instance. */
         pStrm->pDrv       = pThis;
         pStrm->pu8PeekBuf = NULL;
-
-        if (pcSamples)
-            *pcSamples = cSamples;
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
-                                                        uint32_t *pcSamplesCaptured)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    /* pcSamplesPlayed is optional. */
+    /* pcbRead is optional. */
 
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
     PPULSEAUDIOSTREAM  pStrm = (PPULSEAUDIOSTREAM)pStream;
@@ -779,8 +777,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
 
     if (!cbAvail) /* No data? Bail out. */
     {
-        if (pcSamplesCaptured)
-            *pcSamplesCaptured = 0;
+        if (pcbRead)
+            *pcbRead = 0;
         return VINF_SUCCESS;
     }
 
@@ -860,9 +858,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
       /*  if (cWrittenTotal)
             rc = AudioMixBufMixToParent(&pStream->MixBuf, cWrittenTotal,
                                         &cProcessed);*/
-
-        if (pcSamplesCaptured)
-            *pcSamplesCaptured = cWrittenTotal;
+        if (pcbRead)
+            *pcbRead = cWrittenTotal;
 
         LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 processed), rc=%Rrc\n",
                      cWrittenTotal, cProcessed, rc));
@@ -872,12 +869,15 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
-                                                     uint32_t *pcSamplesPlayed)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostPulseAudio)
 {
-    AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    /* pcSamplesPlayed is optional. */
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    /* pcbWritten is optional. */
 
     PDRVHOSTPULSEAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
     PPULSEAUDIOSTREAM  pPAStream = (PPULSEAUDIOSTREAM)pStream;
@@ -889,8 +889,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
     if (!cLive)
     {
         LogFlowFunc(("No live samples, skipping\n"));
-        if (pcSamplesPlayed)
-            *pcSamplesPlayed = 0;
+        if (pcbWritten)
+            *pcbWritten = 0;
         return VINF_SUCCESS;
     }
 
@@ -948,8 +948,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
         if (cReadTotal)
             AudioMixBufFinish(&pStream->MixBuf, cReadTotal);
 
-        if (pcSamplesPlayed)
-            *pcSamplesPlayed = cReadTotal;
+        if (pcbWritten)
+            *pcbWritten = cReadTotal;
 
         LogFlowFunc(("cReadTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", cReadTotal, cbReadTotal, rc));
     }
@@ -957,6 +957,7 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 
 /** @todo Implement va handling. */
 static int paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
@@ -973,6 +974,7 @@ static int paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
     /** @todo Implement some PulseAudio -> IPRT mapping here. */
     return VERR_GENERAL_FAILURE;
 }
+
 
 static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, void *pvUserData)
 {
@@ -994,6 +996,7 @@ static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, v
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
+
 static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eol, void *pvUserData)
 {
     if (eol != 0)
@@ -1013,6 +1016,7 @@ static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eo
 
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
+
 
 static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *pvUserData)
 {
@@ -1039,6 +1043,7 @@ static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *
 
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
+
 
 static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint32_t fEnum)
 {
@@ -1133,6 +1138,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     return rc;
 }
 
+
 static int paDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -1157,6 +1163,7 @@ static int paDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 
     return VINF_SUCCESS;
 }
+
 
 static int paDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
@@ -1196,6 +1203,7 @@ static int paDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream
 
     return VINF_SUCCESS;
 }
+
 
 static int paControlStreamOut(PPDMIHOSTAUDIO pInterface,
                               PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
@@ -1260,6 +1268,7 @@ static int paControlStreamOut(PPDMIHOSTAUDIO pInterface,
     return rc;
 }
 
+
 static int paControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
                              PDMAUDIOSTREAMCMD enmStreamCmd)
 {
@@ -1308,7 +1317,11 @@ static int paControlStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
     return rc;
 }
 
-static DECLCALLBACK(void) drvHostPulseAudioShutdown(PPDMIHOSTAUDIO pInterface)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostPulseAudio)
 {
     AssertPtrReturnVoid(pInterface);
 
@@ -1335,17 +1348,25 @@ static DECLCALLBACK(void) drvHostPulseAudioShutdown(PPDMIHOSTAUDIO pInterface)
     LogFlowFuncLeave();
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pCfg)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostPulseAudio)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
+    AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
 
-    return paEnumerate(pThis, pCfg, PULSEAUDIOENUMCBFLAGS_LOG /* fEnum */);
+    return paEnumerate(pThis, pBackendCfg, PULSEAUDIOENUMCBFLAGS_LOG /* fEnum */);
 }
 
-static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostPulseAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostPulseAudio)
 {
     RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -1353,31 +1374,36 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostPulseAudioGetStatus(PPDMIHOSTAUDI
     return PDMAUDIOBACKENDSTS_RUNNING;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,       VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
 
     int rc;
-    if (pCfg->enmDir == PDMAUDIODIR_IN)
-        rc = paCreateStreamIn(pInterface,  pStream, pCfg, pcSamples);
+    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+        rc = paCreateStreamIn(pInterface,  pStream, pCfgReq, pCfgAcq);
     else if (pStream->enmDir == PDMAUDIODIR_OUT)
-        rc = paCreateStreamOut(pInterface, pStream, pCfg, pcSamples);
+        rc = paCreateStreamOut(pInterface, pStream, pCfgReq, pCfgAcq);
     else
         AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
-    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-
-    LogFlowFunc(("%s\n", pStream->szName));
 
     int rc;
     if (pStream->enmDir == PDMAUDIODIR_IN)
@@ -1387,12 +1413,14 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamDestroy(PPDMIHOSTAUDIO pInterfac
     else
         AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
-    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioStreamControl(PPDMIHOSTAUDIO pInterface,
-                                                        PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1407,11 +1435,14 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamControl(PPDMIHOSTAUDIO pInterfac
     else
         AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
-    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
 }
 
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostPulseAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1448,15 +1479,21 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostPulseAudioStreamGetStatus(PPDMIHOSTA
     return strmSts;
 }
 
-static DECLCALLBACK(int) drvHostPulseAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetConfig}
+ */
+PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostPulseAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
     LogFlowFuncEnter();
 
     /* Nothing to do here for PulseAudio. */
     return VINF_SUCCESS;
 }
+
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
