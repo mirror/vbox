@@ -2868,10 +2868,12 @@ endif
 # Note! This doesn't control everything.  Instead set VBOX_GCC_WERR=$(NO_SUCH_VARIABLE) to
 #       completely disable -Werror.
 #
-if !defined(VBOX_WITHOUT_NO_GCC_WARNING_POLICY) && !defined(VBOX_WITH_NO_GCC_WARNING_POLICY) && "$(KBUILD_TARGET)" != "win"
- if $(VBOX_GCC_VERSION_CXX) >= 40600 # gcc 4.6.x+
-  VBOX_WITH_NO_GCC_WARNING_POLICY = 1
-  $(info VBOX_WITH_NO_GCC_WARNING_POLICY=1)
+if !defined(VBOX_WITHOUT_NO_GCC_WARNING_POLICY) && !defined(VBOX_WITH_NO_GCC_WARNING_POLICY)
+ if1of ($(KBUILD_TARGET),linux)
+  if $(VBOX_GCC_VERSION_CXX) >= 40600 # gcc 4.6.x+
+   VBOX_WITH_NO_GCC_WARNING_POLICY = 1
+   $(info VBOX_WITH_NO_GCC_WARNING_POLICY=1)
+  endif
  endif
 endif
 
