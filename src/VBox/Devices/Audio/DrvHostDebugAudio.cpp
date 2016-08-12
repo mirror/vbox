@@ -152,7 +152,7 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     PDEBUGAUDIOSTREAM pDbgStream = (PDEBUGAUDIOSTREAM)pStream;
 
     /* Just adopt the wanted stream configuration. */
-    PDMPCMPROPS Props;
+    PDMAUDIOPCMPROPS Props;
     int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &Props);
     if (RT_SUCCESS(rc))
     {

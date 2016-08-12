@@ -1363,7 +1363,7 @@ static int alsaCreateStreamOut(PPDMIHOSTAUDIO pInterface,
         pCfgAcq->enmEndianness = enmEnd;
         pCfgAcq->cSamples      = obt.samples * 4;
 
-        PDMPCMPROPS Props;
+        PDMAUDIOPCMPROPS Props;
         rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);
         if (RT_FAILURE(rc))
             break;
@@ -1427,7 +1427,7 @@ static int alsaCreateStreamIn(PPDMIHOSTAUDIO pInterface,
         pCfgAcq->enmEndianness = enmEnd;
         pCfgAcq->cSamples      = obt.samples;
 
-        PDMPCMPROPS Props;
+        PDMAUDIOPCMPROPS Props;
         rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);
         if (RT_FAILURE(rc))
             break;

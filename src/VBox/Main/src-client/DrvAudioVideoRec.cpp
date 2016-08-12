@@ -129,7 +129,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
 }
 
 /** @todo Replace this with drvAudioHlpPcmPropsFromCfg(). */
-static int drvAudioVideoRecPcmInitInfo(PDMPCMPROPS * pProps, PPDMAUDIOSTREAMCFG as)
+static int drvAudioVideoRecPcmInitInfo(PDMAUDIOPCMPROPS * pProps, PPDMAUDIOSTREAMCFG as)
 {
     int rc = VINF_SUCCESS;
 

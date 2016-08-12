@@ -50,7 +50,7 @@ static int tstSingle(RTTEST hTest)
         PDMAUDIOFMT_S16           /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
-    PDMPCMPROPS props;
+    PDMAUDIOPCMPROPS props;
 
     int rc = DrvAudioHlpStreamCfgToProps(&config, &props);
     AssertRC(rc);
@@ -153,8 +153,8 @@ static int tstParentChild(RTTEST hTest)
         PDMAUDIOFMT_S16           /* Format */,
         PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
     };
-    PDMPCMPROPS props;
 
+    PDMAUDIOPCMPROPS props;
     int rc = DrvAudioHlpStreamCfgToProps(&cfg_p, &props);
     AssertRC(rc);
 
@@ -259,9 +259,9 @@ static int tstParentChild(RTTEST hTest)
 /* Test 8-bit sample conversion (8-bit -> internal -> 8-bit). */
 static int tstConversion8(RTTEST hTest)
 {
-    unsigned        i;
-    uint32_t        cBufSize = 256;
-    PDMPCMPROPS     props;
+    unsigned         i;
+    uint32_t         cBufSize = 256;
+    PDMAUDIOPCMPROPS props;
 
     RTTestSubF(hTest, "Sample conversion (U8)");
 
@@ -367,9 +367,9 @@ static int tstConversion8(RTTEST hTest)
 /* Test 16-bit sample conversion (16-bit -> internal -> 16-bit). */
 static int tstConversion16(RTTEST hTest)
 {
-    unsigned        i;
-    uint32_t        cBufSize = 256;
-    PDMPCMPROPS     props;
+    unsigned         i;
+    uint32_t         cBufSize = 256;
+    PDMAUDIOPCMPROPS props;
 
     RTTestSubF(hTest, "Sample conversion (S16)");
 
@@ -467,9 +467,9 @@ static int tstConversion16(RTTEST hTest)
 /* Test volume control. */
 static int tstVolume(RTTEST hTest)
 {
-    unsigned        i;
-    uint32_t        cBufSize = 256;
-    PDMPCMPROPS     props;
+    unsigned         i;
+    uint32_t         cBufSize = 256;
+    PDMAUDIOPCMPROPS props;
 
     RTTestSubF(hTest, "Volume control");
 

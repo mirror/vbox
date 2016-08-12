@@ -110,7 +110,7 @@ static void coreAudioPrintASBD(const char *pszDesc, const AudioStreamBasicDescri
     LogRel2(("CoreAudio: BytesPerPacket  : %RU32\n", pASBD->mBytesPerPacket));
 }
 
-static void coreAudioPCMPropsToASBD(PDMPCMPROPS *pPCMProps, AudioStreamBasicDescription *pASBD)
+static void coreAudioPCMPropsToASBD(PDMAUDIOPCMPROPS *pPCMProps, AudioStreamBasicDescription *pASBD)
 {
     AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pASBD);

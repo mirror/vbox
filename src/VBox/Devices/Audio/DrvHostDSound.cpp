@@ -385,7 +385,7 @@ static HRESULT directSoundCaptureUnlock(LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB,
 
 
 static HRESULT directSoundPlayLock(PDRVHOSTDSOUND pThis,
-                                   LPDIRECTSOUNDBUFFER8 pDSB, PDMPCMPROPS *pProps,
+                                   LPDIRECTSOUNDBUFFER8 pDSB, PPDMAUDIOPCMPROPS pProps,
                                    DWORD dwOffset, DWORD dwBytes,
                                    PVOID *ppv1, PVOID *ppv2,
                                    DWORD *pcb1, DWORD *pcb2,
@@ -421,7 +421,7 @@ static HRESULT directSoundPlayLock(PDRVHOSTDSOUND pThis,
 }
 
 
-static HRESULT directSoundCaptureLock(LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB, PPDMPCMPROPS pProps,
+static HRESULT directSoundCaptureLock(LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB, PPDMAUDIOPCMPROPS pProps,
                                       DWORD dwOffset, DWORD dwBytes,
                                       PVOID *ppv1, PVOID *ppv2,
                                       DWORD *pcb1, DWORD *pcb2,

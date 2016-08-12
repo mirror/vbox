@@ -320,7 +320,7 @@ typedef enum PDMAUDIOSTREAMCMD
  * Properties of audio streams for host/guest
  * for in or out directions.
  */
-typedef struct PDMPCMPROPS
+typedef struct PDMAUDIOPCMPROPS
 {
     /** Sample width. Bits per sample. */
     uint8_t     cBits;
@@ -344,7 +344,7 @@ typedef struct PDMPCMPROPS
     uint32_t    cbBitrate;
     /** Whether the endianness is swapped or not. */
     bool        fSwapEndian;
-} PDMPCMPROPS, *PPDMPCMPROPS;
+} PDMAUDIOPCMPROPS, *PPDMAUDIOPCMPROPS;
 
 /**
  * Audio volume parameters.
@@ -664,7 +664,7 @@ typedef struct PDMAUDIOSTREAM
     uint32_t               cRefs;
     /** PCM properties. */
     /** @todo Deprecated; remove. Use member Cfg instead. */
-    PDMPCMPROPS            Props;
+    PDMAUDIOPCMPROPS       Props;
     /** The stream's audio configuration. */
     PDMAUDIOSTREAMCFG      Cfg;
     /** Stream status flag. */

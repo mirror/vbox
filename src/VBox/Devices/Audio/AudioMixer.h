@@ -172,7 +172,7 @@ typedef struct AUDMIXSINK
     /** Sink status of type AUDMIXSINK_STS_XXX. */
     AUDMIXSINKSTS           fStatus;
     /** The sink's PCM format. */
-    PDMPCMPROPS             PCMProps;
+    PDMAUDIOPCMPROPS        PCMProps;
     /** Number of streams assigned. */
     uint8_t                 cStreams;
     /** List of assigned streams.
@@ -228,7 +228,7 @@ uint8_t AudioMixerSinkGetStreamCount(PAUDMIXSINK pSink);
 int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
 void AudioMixerSinkRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 void AudioMixerSinkRemoveAllStreams(PAUDMIXSINK pSink);
-int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMPCMPROPS pPCMProps);
+int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps);
 int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 int AudioMixerSinkUpdate(PAUDMIXSINK pSink);

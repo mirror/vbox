@@ -55,7 +55,7 @@ void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear);
 uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf);
-int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMPCMPROPS pProps, uint32_t cSamples);
+int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPROPS pProps, uint32_t cSamples);
 bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf);
 int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent);
 uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf);

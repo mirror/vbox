@@ -137,7 +137,7 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
  * @param   cbBuf                   Size (in bytes) of the buffer.
  * @param   cSamples                Number of audio samples to clear in the buffer.
  */
-void DrvAudioHlpClearBuf(PPDMPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
+void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
 {
     AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pvBuf);
@@ -357,7 +357,7 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
  * @param   pProps              PCM properties to compare.
  * @param   pCfg                Stream configuration to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pProps, false);
     AssertPtrReturn(pCfg,   false);
@@ -404,7 +404,7 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
  * @param   pProps1             First properties to compare.
  * @param   pProps2             Second properties to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
+bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps1, PPDMAUDIOPCMPROPS pProps2)
 {
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
@@ -426,7 +426,7 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMPCMPROPS pProps1, PPDMPCMPROPS pProps2)
  * @param   pPCMProps           Pointer to PCM properties to convert.
  * @param   pCfg                Pointer to audio stream configuration to store result into.
  */
-int DrvAudioHlpPCMPropsToStreamCfg(PPDMPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
+int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
@@ -487,7 +487,7 @@ bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
  * @param   pCfg                    Audio stream configuration to convert.
  * @param   pProps                  PCM properties to save result to.
  */
-int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
+int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
@@ -749,7 +749,7 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
  * @param   pProps              PCM properties to use.
  * @param   fFlags              Audio file flags.
  */
-int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, PPDMPCMPROPS pProps,
+int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, PPDMAUDIOPCMPROPS pProps,
                            PDMAUDIOFILEFLAGS fFlags)
 {
     AssertPtrReturn(pFile,   VERR_INVALID_POINTER);
