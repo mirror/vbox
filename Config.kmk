@@ -1591,6 +1591,9 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
 VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
 
+#
+VBOX_WITH_NO_GCC_WARNING_POLICY ?=
+
 
 # Disabled Visual C++ warnings, W4:
 #      -wd4065: switch statement contains 'default' but no 'case' labels
@@ -2857,6 +2860,21 @@ ifdef VBOX_WITH_WARNINGS_AS_ERRORS
  VBOX_VCC_WERR ?= -WX
  VBOX_VCC_LD_WERR ?= ## @todo later also: -WX
 endif
+
+
+#
+# The general GCC/Clang no warning policy.
+#
+# Note! This doesn't control everything.  Instead set VBOX_GCC_WERR=$(NO_SUCH_VARIABLE) to
+#       completely disable -Werror.
+#
+if !defined(VBOX_WITHOUT_NO_GCC_WARNING_POLICY) && !defined(VBOX_WITH_NO_GCC_WARNING_POLICY) && "$(KBUILD_TARGET)" != "win"
+ if $(VBOX_GCC_VERSION_CXX) >= 40600 # gcc 4.6.x+
+  VBOX_WITH_NO_GCC_WARNING_POLICY = 1
+  $(info VBOX_WITH_NO_GCC_WARNING_POLICY=1)
+ endif
+endif
+
 
 
 #
@@ -4467,7 +4485,7 @@ else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_OPT) \
  	$(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
- ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
 TEMPLATE_VBOXR3EXE_CXXFLAGS.x86        = -m32
@@ -4476,7 +4494,7 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc32    = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc64    = -m64
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXR3EXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
- ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXR3EXE_CFLAGS           += $(VBOX_GCC_WERR)
  endif
 TEMPLATE_VBOXR3EXE_CFLAGS.x86          = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.x86)
@@ -5272,7 +5290,7 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
- ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXMAINEXE_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
  ifdef VBOX_WITH_DTRACE_R3_MAIN
@@ -5283,7 +5301,7 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXMAINEXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros) \
 	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
- ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXMAINEXE_CFLAGS           += $(VBOX_GCC_WERR)
  endif
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
@@ -5814,6 +5832,9 @@ ifdef VBOX_WITH_QTGUI
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) \
 	$(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
+  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_GCC_WERR)
+  endif
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
@@ -5823,6 +5844,9 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS = \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) \
 	-frtti -fno-exceptions $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
+  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
+   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS += $(VBOX_GCC_WERR)
+  endif
   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.x86 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
@@ -6015,7 +6039,7 @@ else
 # (gcc of some kind )
 TEMPLATE_VBoxBldProg_TOOL                = GXX3
 TEMPLATE_VBoxBldProg_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros)
- ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBoxBldProg_CFLAGS           += $(VBOX_GCC_WERR)
  endif
 TEMPLATE_VBoxBldProg_CFLAGS.x86          = -m32
@@ -6026,7 +6050,7 @@ TEMPLATE_VBoxBldProg_CFLAGS.release      = -O2 -fno-omit-frame-pointer -fno-stri
 TEMPLATE_VBoxBldProg_CFLAGS.profile      = $(TEMPLATE_VBoxBldProg_CXXFLAGS.profile)
 TEMPLATE_VBoxBldProg_CFLAGS.kprofile     = $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
 TEMPLATE_VBoxBldProg_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros)
- ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
+ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBoxBldProg_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
 TEMPLATE_VBoxBldProg_CXXFLAGS.x86        = -m32
@@ -6509,7 +6533,7 @@ TEMPLATE_VBOXCROGLR3HOSTLIB_INST    = $(INST_LIB)
 # Template for building OpenGL guest dlls.
 #
 TEMPLATE_VBOXCROGLR3GUESTDLL                  = VBox OpenGL Guest DLLs
-if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) ## @todo use VBoxGuestR3Dll everywhere
+if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) || defined(VBOX_WITH_NO_GCC_WARNING_POLICY) ## @todo use VBoxGuestR3Dll everywhere
 TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS          = VBoxGuestR3Dll
 else
 TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS          = VBOXGUESTR3NPDLL
