@@ -9,7 +9,11 @@
 #endif
 
 #ifdef USE_WINDOWS_FILE
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 #else
 #include <stdio.h>
 #endif

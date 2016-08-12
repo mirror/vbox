@@ -19,10 +19,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define _LIST_ENTRY  _WINNT_DUP_LIST_ENTRY_FORWARD
 #define LIST_ENTRY   _WINNT_DUP_LIST_ENTRY
 
+#ifndef VBOX
 #if (_MSC_VER < 1800)
 #define InterlockedIncrement _WINNT_DUP_InterlockedIncrement
 #define InterlockedDecrement _WINNT_DUP_InterlockedDecrement
 #define InterlockedCompareExchange64 _WINNT_DUP_InterlockedCompareExchange64
+#endif
 #endif
 
 #undef UNALIGNED
@@ -33,7 +35,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 # ifdef VBOX
 #  define RUNTIME_FUNCTION _WINNT_DUP_RUNTIME_FUNCTION
 # endif
+#ifdef VBOX
+#include <iprt/win/windows.h>
+#else
 #include "windows.h"
+#endif
 
 //
 // Win32 include files do not compile clean with /W4, so we use the warning

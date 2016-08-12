@@ -190,7 +190,7 @@ clear_hash()
 		dfa_hash[i] = 0;
 }
 
-#if HASH_STAT
+#ifdef HASH_STAT /* VBox: 'def' */
 void
 #ifdef __USE_PROTOS
 fprint_hash_stats(FILE *f)

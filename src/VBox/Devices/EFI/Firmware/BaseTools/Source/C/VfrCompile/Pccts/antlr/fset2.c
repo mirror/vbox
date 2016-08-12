@@ -63,7 +63,7 @@ static int tmember_of_context(Tree *, Predicate *);
 static int tmember_of_context();
 #endif
 
-#if TREE_DEBUG
+#ifdef TREE_DEBUG /* VBox: +def */
 set     set_of_tnodes_in_use;
 int     stop_on_tnode_seq_number=(-1);     /* (-1) to disable */
 #endif

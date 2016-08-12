@@ -13,7 +13,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include <Python.h>
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <Windows.h>
+# endif
 #include <Common/UefiBaseTypes.h>
 
 /*

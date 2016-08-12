@@ -15,7 +15,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
+#ifdef VBOX
+# include <iprt/win/windows.h>
+#else
 #include <windows.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <Common/UefiBaseTypes.h>

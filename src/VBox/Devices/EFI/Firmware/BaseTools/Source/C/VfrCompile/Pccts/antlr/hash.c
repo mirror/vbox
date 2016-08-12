@@ -132,7 +132,7 @@ char *key;
 	char *p=key;
 	Entry *q;
 /*	require(table!=NULL && key!=NULL, "get: invalid table and/or key");*/
-	if ( !(table!=NULL && key!=NULL) ) *((char *) 34) = 3;
+	if ( !(table!=NULL && key!=NULL) ) *((char *)(/*vbox:*/ intptr_t) 34) = 3;
 
 	Hash(p,h,size);
 	for (q = table[h]; q != NULL; q = q->next)

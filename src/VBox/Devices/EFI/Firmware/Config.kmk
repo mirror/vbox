@@ -75,6 +75,28 @@ TEMPLATE_VBoxEfiBldProg = EFI build program.
 TEMPLATE_VBoxEfiBldProg_EXTENDS = VBoxBldProg
 TEMPLATE_VBoxEfiBldProg_INST = EfiBldProgs/
 TEMPLATE_VBoxEfiBldProg_INSTTYPE = stage
+TEMPLATE_VBoxEfiBldProg_DEFS.win = $(TEMPLATE_VBoxBldProg_DEFS.win) \
+	__STDC_VERSION__=199409L
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win  = $(TEMPLATE_VBoxBldProg_CFLAGS.win)
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4100 # warning C4100: '_text' : unreferenced formal parameter
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4189 # warning C4189: 'zzpf' : local variable is initialized but not referenced
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4255 # warning C4255: 'AllocateMemory' : no function prototype given: converting '()' to '(void)'
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4267 # warning C4267: '=' : conversion from 'size_t' to 'UINT32', possible loss of data
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4287 # warning C4287: '>' : unsigned/negative constant mismatch
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4334 # warning C4334: '<<' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4555 # warning C4555: expression has no effect; expected expression with side-effect
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4701 # warning C4701: potentially uninitialized local variable 'save_line' used
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4702 # warning C4702: unreachable code
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.win)
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4101 # warning C4101: 'LineBuf' : unreferenced local variable
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4102 # warning C4102: 'fail' : unreferenced labe
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4189 # warning C4189: 'zzpf' : local variable is initialized but not referenced
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4267 # warning C4267: '=' : conversion from 'size_t' to 'UINT32', possible loss of data
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4370 # warning C4370: 'ANTLRParser' : layout of class has changed from a previous version of the compiler due to better packing
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4555 # warning C4555: expression has no effect; expected expression with side-effect
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4701 # warning C4701: potentially uninitialized local variable 'save_line' used
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4702 # warning C4702: unreachable code
+
 TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IndustryStandard \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Common \

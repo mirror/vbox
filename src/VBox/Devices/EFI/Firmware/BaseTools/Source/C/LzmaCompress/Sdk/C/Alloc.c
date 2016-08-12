@@ -4,7 +4,11 @@ Igor Pavlov
 Public domain */
 
 #ifdef _WIN32
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 #endif
 #include <stdlib.h>
 

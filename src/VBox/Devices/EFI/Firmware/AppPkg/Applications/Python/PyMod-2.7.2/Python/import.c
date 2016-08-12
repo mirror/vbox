@@ -1558,7 +1558,11 @@ PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr * fd)
  * of #if's here should match the sequence in the body of case_ok().
  */
 #if defined(MS_WINDOWS)
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 
 #elif defined(DJGPP)
 #include <dir.h>

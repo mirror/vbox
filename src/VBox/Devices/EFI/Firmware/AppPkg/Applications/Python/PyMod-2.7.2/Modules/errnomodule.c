@@ -15,7 +15,11 @@
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
+# ifdef VBOX
+#  include <iprt/win/windows.h>
+# else
 #include <windows.h>
+# endif
 #endif
 
 /*
