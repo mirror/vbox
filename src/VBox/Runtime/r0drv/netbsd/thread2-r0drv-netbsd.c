@@ -71,8 +71,7 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
     }
 
     lwp_lock(curlwp);
-    sched_nice(curproc, iPriority);
-    curlwp->l_priority = iPriority;
+    lwp_changepri(curlwp, iPriority);
     lwp_unlock(curlwp);
 
     return VINF_SUCCESS;
