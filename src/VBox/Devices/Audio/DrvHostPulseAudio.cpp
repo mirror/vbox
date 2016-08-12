@@ -751,6 +751,7 @@ static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostPulseAudio)
 {
+    RT_NOREF(pvBuf, cbBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbRead is optional. */
@@ -876,6 +877,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostPulseAudio)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostPulseAudio)
 {
+    RT_NOREF(pvBuf, cbBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
