@@ -2788,6 +2788,7 @@ ifeq ($(KBUILD_HOST),darwin)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_no_compact_linkedit    ?= $(call VBOX_GCC_CHECK_LD,-no_compact_linkedit,)'
 endif
 # YASM
+	$(QUIET)$(APPEND) '$@' '# debug: TOOL_YASM_AS="$(TOOL_YASM_AS)"'
 	$(QUIET)$(APPEND) '$@' 'VBOX_YASM_Wno-segreg-in-64bit  ?= $(call VBOX_YASM_CHECK,-Wno-segreg-in-64bit,)'
 # NASM (--allow-64-bit: 2.12rc2)
 	$(QUIET)$(APPEND) '$@' 'VBOX_NASM_allow_64_bit         ?= $(call VBOX_NASM_CHECK,--allow-64-bit,)'
