@@ -1665,8 +1665,8 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostDSound)
 
     if (RT_FAILURE(rc))
         dsoundUpdateStatusInternal(pThis);
-    else if (pcbRead)
-        *pcbRead = cReadTotal;
+    else if (pcbWritten)
+        *pcbWritten = cReadTotal;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1893,8 +1893,8 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostDSound)
 
     if (RT_FAILURE(rc))
         dsoundUpdateStatusInternal(pThis);
-    else if (pcbWritten)
-        *pcbWritten = cSamplesProcessed;
+    else if (pcbRead)
+        *pcbRead = cSamplesProcessed;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
