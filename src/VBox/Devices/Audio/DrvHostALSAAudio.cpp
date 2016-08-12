@@ -1016,6 +1016,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostALSAAudio)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostALSAAudio)
 {
+    RT_NOREF(pvBuf, cbBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbRead is optional. */
@@ -1170,6 +1171,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostALSAAudio)
  */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostALSAAudio)
 {
+    RT_NOREF(pvBuf, cbBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
@@ -1328,8 +1330,7 @@ static int alsaDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStre
 }
 
 
-static int alsaCreateStreamOut(PPDMIHOSTAUDIO pInterface,
-                               PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int alsaCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     PALSAAUDIOSTREAMOUT pThisStream = (PALSAAUDIOSTREAMOUT)pStream;
 
@@ -1393,8 +1394,7 @@ static int alsaCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 }
 
 
-static int alsaCreateStreamIn(PPDMIHOSTAUDIO pInterface,
-                              PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static int alsaCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     int rc;
 
@@ -1634,9 +1634,9 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostALSAAudio)
 
     int rc;
     if (pCfgReq->enmDir == PDMAUDIODIR_IN)
-        rc = alsaCreateStreamIn(pInterface,  pStream, pCfgReq, pCfgAcq);
+        rc = alsaCreateStreamIn(pStream, pCfgReq, pCfgAcq);
     else
-        rc = alsaCreateStreamOut(pInterface, pStream, pCfgReq, pCfgAcq);
+        rc = alsaCreateStreamOut(pStream, pCfgReq, pCfgAcq);
 
     LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
     return rc;
