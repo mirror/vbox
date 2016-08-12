@@ -1705,7 +1705,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostALSAAudio)
         if (RT_SUCCESS(rc2))
         {
             LogFlowFunc(("cAvail=%ld\n", cAvail));
-            if (cAvail >= pStreamOut->cSamplesMin)
+            if (cAvail >= (snd_pcm_sframes_t)pStreamOut->cSamplesMin)
                 strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
         }
     }
