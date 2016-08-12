@@ -1352,7 +1352,9 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
     for (int iArg = 1; iArg < cArgs; iArg++)
         if (strncmp(papszArgs[iArg], s_szLogOption, sizeof(s_szLogOption) - 1) == 0)
         {
+#ifdef RT_OS_WINDOWS
             const char *pszLogFile = &papszArgs[iArg][sizeof(s_szLogOption) - 1];
+#endif
 
             /*
              * Drop the argument from the vector (has trailing NULL entry).
@@ -1398,6 +1400,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                     g_hStartupLog = NULL;
             }
 #else
+            RT_NOREF(g_hStartupLog);
             //g_hStartupLog = open()
 #endif
         }
@@ -1430,6 +1433,7 @@ DECLHIDDEN(void) supR3HardenedLogV(const char *pszFormat, va_list va)
                     &Ios, szBuf, (ULONG)cch, &Offset, NULL /*Key*/);
     }
 #else
+    RT_NOREF(pszFormat, va);
     /* later */
 #endif
 }
