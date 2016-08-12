@@ -336,10 +336,12 @@ typedef struct REMEXECMEM
 #ifndef USE_REM_STUBS
 /** Loader handle of the REM object/DLL. */
 static RTLDRMOD g_ModREM2 = NIL_RTLDRMOD;
+# ifdef VBOX_USE_BITNESS_SELECTOR
 /** Pointer to the memory containing the loaded REM2 object/DLL. */
 static void    *g_pvREM2 = NULL;
 /** The size of the memory g_pvREM2 is pointing to. */
 static size_t   g_cbREM2 = 0;
+# endif
 # ifdef VBOX_WITHOUT_REM_LDR_CYCLE
 /** Loader handle of the VBoxVMM DLL. */
 static RTLDRMOD g_ModVMM = NIL_RTLDRMOD;
