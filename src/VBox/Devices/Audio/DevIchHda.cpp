@@ -2338,15 +2338,15 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#if defined(IN_RING3) || defined(LOG_ENABLED) || defined(VBOX_STRICT)
+#ifdef IN_RING3
     bool fRun      = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
-#endif
+
     bool fReset    = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
     bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
 
     if (HDA_REG_IND(pThis, iReg) == u32Value) /* Value already set? */
-        return VINF_SUCCESS;
+        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 
     /* Get the stream descriptor. */
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
@@ -2365,23 +2365,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return hdaRegWriteU24(pThis, iReg, u32Value);
     }
 
-
-
-/** @todo r=bird: Andy, the spotty IN_RING3 in the rest of this function makes
- *        little sense.  If you need to request a lock in ring-3, why don't
- *        you need it in ring-0 / RC?  Or, reversely, why can you do the
- *        fInReset handling without locking and resolving pStream in R0+RC
- *        but not in ring-3?
- *
- *        What makes the least sense, is that you do fInReset +
- *        hdaProcessInterrupt in R0/RC and then unconditionally forces a trip to
- *        ring-3 and does the same again.
- *
- *        Please, do make up your mind what you want to do here ASAP!
- */
-
-
-#ifdef IN_RING3
     PHDATAG pTag = &pThis->aTags[uTag];
     AssertPtr(pTag);
 
@@ -2397,7 +2380,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     /* Note: Do not use hdaRegWriteSDLock() here, as SDnCTL might change the RUN bit. */
     int rc2 = RTSemMutexRequest(pStream->State.hMtx, RT_INDEFINITE_WAIT);
     AssertRC(rc2);
-#endif /* IN_RING3 */
 
     LogFunc(("[SD%RU8]: fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
@@ -2414,17 +2396,14 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
     else if (fReset)
     {
-#ifdef IN_RING3
         /* ICH6 datasheet 18.2.33 says that RUN bit should be cleared before initiation of reset. */
         Assert(!fInRun && !fRun);
 
         LogFunc(("[SD%RU8]: Guest initiated enter to stream reset\n", pStream->u8SD));
         hdaStreamReset(pThis, pStream);
-#endif
     }
     else
     {
-#ifdef IN_RING3
         /*
          * We enter here to change DMA states only.
          */
@@ -2445,21 +2424,19 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
         if (!fInRun && !fRun)
             hdaStreamInit(pThis, pStream, pStream->u8SD);
-#endif /* IN_RING3 */
     }
 
     /* Make sure to handle interrupts here as well. */
     hdaProcessInterrupt(pThis);
 
-#ifdef IN_RING3
     rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
     AssertRC(rc2);
 
     hdaRegWriteSDUnlock(pStream);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-#else
+#else  /* !IN_RING3 */
     return VINF_IOM_R3_MMIO_WRITE;
-#endif
+#endif /* IN_RING3 */
 }
 
 static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
