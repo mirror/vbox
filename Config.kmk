@@ -5131,7 +5131,7 @@ ifeq (disabled-by-mingw-w64 $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
  # cross compile to 64-bit ELF (linux).
  TEMPLATE_VBoxNoCrtGccLib_TOOL             = XGCCAMD64LINUX
  TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = YASM
- TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = -f elf64 -DASM_FORMAT_ELF -D__YASM__ -w+orphan-labels -g dwarf2
+ TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = -f elf64 -DASM_FORMAT_ELF -D__YASM__ -g dwarf2 -w+orphan-labels $(VBOX_YASM_Wno-segreg-in-64bit)
  TEMPLATE_VBoxNoCrtGccLib_LIBS             = $(KBUILD_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701-r2/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
  TEMPLATE_VBoxNoCrtGccLib_LDFLAGS          = -nostdlib
 
@@ -5958,7 +5958,7 @@ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  TEMPLATE_VBoxBldProg_ASFLAGS.amd64     := $(VBOX_ASFLAGS64)
 else
  TEMPLATE_VBoxBldProg_ASTOOL            := YASM
- TEMPLATE_VBoxBldProg_ASFLAGS           := -D__YASM__ -Worphan-labels
+ TEMPLATE_VBoxBldProg_ASFLAGS           := -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit)
  if1of ($(KBUILD_HOST),win)
   TEMPLATE_VBoxBldProg_ASFLAGS          += -g cv8 -DASM_FORMAT_ELF
   TEMPLATE_VBoxBldProg_ASFLAGS.x86      := -f win32
@@ -5973,7 +5973,6 @@ else
   TEMPLATE_VBoxBldProg_ASFLAGS.amd64    := -f elf64
  endif
 endif
-TEMPLATE_VBoxBldProg_ASFLAGS.amd64      += $(VBOX_YASM_Wno-segreg-in-64bit)
 ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
  TEMPLATE_VBoxBldProg_SDKS              := ReorderCompilerIncs $(VBOX_WINPSDK)
