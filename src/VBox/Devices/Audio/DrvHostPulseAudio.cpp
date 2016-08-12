@@ -858,6 +858,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostPulseAudio)
       /*  if (cWrittenTotal)
             rc = AudioMixBufMixToParent(&pStream->MixBuf, cWrittenTotal,
                                         &cProcessed);*/
+        NOREF(cProcessed);
         if (pcbRead)
             *pcbRead = cWrittenTotal;
 

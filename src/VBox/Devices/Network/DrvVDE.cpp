@@ -137,8 +137,11 @@ static DECLCALLBACK(int) drvVDENetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bo
 static DECLCALLBACK(int) drvVDENetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
                                                   PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
+    RT_NOREF(pInterface);
+#ifdef VBOX_STRICT
     PDRVVDE pThis = PDMINETWORKUP_2_DRVVDE(pInterface);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
+#endif
 
     /*
      * Allocate a scatter / gather buffer descriptor that is immediately
@@ -182,8 +185,11 @@ static DECLCALLBACK(int) drvVDENetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
  */
 static DECLCALLBACK(int) drvVDENetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
+    RT_NOREF(pInterface);
+#ifdef VBOX_STRICT
     PDRVVDE pThis = PDMINETWORKUP_2_DRVVDE(pInterface);
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
+#endif
     if (pSgBuf)
     {
         Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);

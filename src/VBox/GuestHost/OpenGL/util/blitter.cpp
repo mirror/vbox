@@ -243,8 +243,7 @@ void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize,
 
     float strX = ((float)dstWidth) / srcWidth;
     float strY = ((float)dstHeight) / srcHeight;
-    bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
-    Assert(fScale);
+    Assert(dstWidth != srcWidth || dstHeight != srcHeight);
 
     RTRECT Intersection;
     RTRECT ScaledRestrictSrcRect;

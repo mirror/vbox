@@ -414,6 +414,8 @@ static int atapiTrackListUpdateFromReadDiscInformation(PTRACKLIST pTrackList, co
     return VERR_NOT_IMPLEMENTED;
 }
 
+#ifdef LOG_ENABLED
+
 /**
  * Converts the given track data form to a string.
  *
@@ -493,6 +495,8 @@ static void atapiTrackListDump(PTRACKLIST pTrackList)
                 pTrack->fFlags & TRACK_FLAGS_LEAD_OUT ? "Lead-Out" : ""));
     }
 }
+
+#endif /* LOG_ENABLED */
 
 DECLHIDDEN(int) ATAPIPassthroughTrackListCreateEmpty(PTRACKLIST *ppTrackList)
 {

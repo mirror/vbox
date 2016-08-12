@@ -46,6 +46,11 @@
 # ifdef _MSC_VER
 #  pragma warning(disable:4668 4131 4255)
 # endif
+# ifdef __GNUC__
+#  if ((__GNUC__ << 16) + __GNUC_MINOR__) >= 0x4002
+#   pragma GCC diagnostic ignored "-Wunused-function"
+#  endif
+# endif
 # include <iprt/ctype.h>
 # define isdigit(a_ch) RT_C_IS_DIGIT(a_ch)
 #endif /* VBOX */

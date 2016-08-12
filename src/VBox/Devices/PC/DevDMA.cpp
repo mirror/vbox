@@ -191,9 +191,11 @@ enum {
 /* Convert DMA channel number (0-7) to controller number (0-1). */
 #define DMACH2C(c)      (c < 4 ? 0 : 1)
 
+#ifdef LOG_ENABLED
 static int dmaChannelMap[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
 /* Map a DMA page register offset (0-7) to channel index (0-3). */
 #define DMAPG2CX(c)     (dmaChannelMap[c])
+#endif
 
 static int dmaMapChannel[4] = {7, 3, 1, 2};
 /* Map a channel index (0-3) to DMA page register offset (0-7). */

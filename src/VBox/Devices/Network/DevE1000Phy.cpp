@@ -50,8 +50,10 @@
 
 /* Internals */
 namespace Phy {
+#if defined(LOG_ENABLED) && !defined(PHY_UNIT_TEST)
     /** Retrieves state name by id */
     static const char * getStateName(uint16_t u16State);
+#endif
     /** Look up register index by address. */
     static int lookupRegister(uint32_t u32Address);
     /** Software-triggered reset. */
@@ -477,6 +479,7 @@ static uint16_t Phy::regReadGSTATUS(PPHY pPhy, uint32_t index)
     return 0x3C00;
 }
 
+#if defined(LOG_ENABLED) && !defined(PHY_UNIT_TEST)
 static const char * Phy::getStateName(uint16_t u16State)
 {
     static const char *pcszState[] =
@@ -492,6 +495,7 @@ static const char * Phy::getStateName(uint16_t u16State)
 
     return (u16State < RT_ELEMENTS(pcszState)) ? pcszState[u16State] : "<invalid>";
 }
+#endif
 
 bool Phy::readMDIO(PPHY pPhy)
 {

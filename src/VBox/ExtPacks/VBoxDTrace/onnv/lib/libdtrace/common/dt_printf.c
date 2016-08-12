@@ -1433,7 +1433,7 @@ dt_printf_format(dtrace_hdl_t *dtp, FILE *fp, const dt_pfargv_t *pfv,
 		dt_pfprint_f *func;
 		caddr_t addr;
 		size_t size;
-		uint32_t flags;
+		uint32_t flags VBDTUNASS(0);
 
 		if (pfd->pfd_preflen != 0) {
 			char *tmp = alloca(pfd->pfd_preflen + 1);

@@ -60,7 +60,9 @@
 # define AUDMIXBUF_LOG(x) RTPrintf x
 #endif
 
+#ifdef DEBUG
 DECLINLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf);
+#endif
 
 /*
  *   Soft Volume Control
@@ -1138,6 +1140,7 @@ int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
 }
 
 #ifdef DEBUG
+
 /**
  * Prints a single mixing buffer.
  * Internal helper function for debugging. Do not use directly.
@@ -1244,7 +1247,8 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
 {
     audioMixBufDbgPrintInternal(pMixBuf);
 }
-#endif
+
+#endif /* DEBUG */
 
 /**
  * Returns the total number of samples used.

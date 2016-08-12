@@ -1037,6 +1037,7 @@ static void setSizesRandR11(ScrnInfoPtr pScrn)
 
 static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime)
 {
+    RT_NOREF(fScreenInitTime);
     TRACE_LOG("fScreenInitTime=%d\n", (int)fScreenInitTime);
 #ifdef VBOXVIDEO_13
 # if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
