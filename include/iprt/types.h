@@ -102,6 +102,16 @@ RT_C_DECLS_END
 #   undef false
 #  endif
 
+   /*
+    * Kludge for NetBSD-6.x where <sys/types.h> does not define
+    * ptrdiff_t for the kernel code.  Note that we don't worry about
+    * redefinition in <stddef.h> since that header doesn't exist for
+    * _KERNEL code.
+    */
+#  ifdef _BSD_PTRDIFF_T_
+    typedef _BSD_PTRDIFF_T_ ptrdiff_t;
+#  endif
+
 # elif defined(RT_OS_LINUX) && defined(__KERNEL__)
     /*
      * Kludge for the linux kernel:
