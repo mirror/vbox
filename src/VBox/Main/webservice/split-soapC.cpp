@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     FILE         *pFileOut = NULL;
     const char   *pszLine = pszBuffer;
     size_t        cbChunk = cbFileIn / cChunks;
-    size_t        cFiles = 0;
+    unsigned long cFiles = 0;
     size_t        cbLimit = 0;
     size_t        cbWritten = 0;
     unsigned long cIfNesting = 0;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         pszLine = pszNextLine;
     } while (pszLine);
 
-    printf("split-soapC: Created %lu files.\n", cFiles);
+    printf("split-soapC: Created %lu files.\n", (unsigned long)cFiles);
 
     free(pszBuffer);
     if (pFileOut)
