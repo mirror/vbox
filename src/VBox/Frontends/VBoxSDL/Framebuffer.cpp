@@ -628,7 +628,7 @@ STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand)
 
 STDMETHODIMP VBoxSDLFB::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, aData))
 {
-    RT_NOREF(uType, aData);
+    RT_NOREF(uType); ComSafeArrayNoRef(aData);
     return E_NOTIMPL;
 }
 

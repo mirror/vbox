@@ -721,6 +721,8 @@ static void PrintError(const char *pszName, CBSTR pwszDescr, CBSTR pwszComponent
  */
 void signal_handler_SIGUSR1(int sig, siginfo_t *info, void *secret)
 {
+    RT_NOREF(info, secret);
+
     /* only SIGUSR1 is interesting */
     if (sig == SIGUSR1)
     {

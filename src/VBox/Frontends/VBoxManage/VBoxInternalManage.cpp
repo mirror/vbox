@@ -452,6 +452,7 @@ static HRESULT SetInt64(ComPtr<IMachine> pMachine, const char *pszKeyBase, const
  */
 static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aSession);
     HRESULT rc;
 
     /*
@@ -528,6 +529,7 @@ static RTEXITCODE CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
  */
 static RTEXITCODE CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aSession);
     HRESULT rc;
 
     /*
@@ -613,6 +615,7 @@ static DECLCALLBACK(int) handleVDMessage(void *pvUser, const char *pszFormat, va
 
 static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     Guid uuid;
     RTUUID rtuuid;
     enum eUuidType {
@@ -691,6 +694,8 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
 
 static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
+
     /* we need exactly one parameter: the image file */
     if (argc != 1)
     {
@@ -1071,6 +1076,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
 static RTEXITCODE CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     Utf8Str rawdisk;
 
     /* let's have a closer look at the arguments */
@@ -1145,6 +1151,7 @@ static PVBOXHDDRAWPARTDESC appendPartDesc(uint32_t *pcPartDescs, PVBOXHDDRAWPART
 
 static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     HRESULT rc = S_OK;
     Utf8Str filename;
     const char *pszMBRFilename = NULL;
@@ -1864,6 +1871,7 @@ out:
 
 static RTEXITCODE CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     Utf8Str src;
     Utf8Str dst;
     /* Parse the arguments. */
@@ -1930,6 +1938,7 @@ static RTEXITCODE CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirt
 
 static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     Utf8Str srcformat;
     Utf8Str src;
     Utf8Str dst;
@@ -2085,6 +2094,7 @@ static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVi
 
 static RTEXITCODE CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     Utf8Str srcformat;
     Utf8Str dstformat;
     Utf8Str src;
@@ -2216,6 +2226,7 @@ static RTEXITCODE CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> 
  */
 static RTEXITCODE CmdRepairHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
     Utf8Str image;
     Utf8Str format;
     int vrc;
@@ -2434,6 +2445,8 @@ static RTEXITCODE CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
  */
 static RTEXITCODE CmdGeneratePasswordHash(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+    RT_NOREF(aVirtualBox, aSession);
+
     /* one parameter, the password to hash */
     if (argc != 1)
         return errorSyntax(USAGE_PASSWORDHASH, "password to hash required");

@@ -120,8 +120,7 @@ static Bstr toBaseName(Utf8Str& aFullName)
     return Bstr(aFullName);
 }
 
-static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
-                                  ComPtr<IUnknown> aObject)
+static Bstr getObjectName(ComPtr<IUnknown> aObject)
 {
     HRESULT rc;
 
@@ -140,8 +139,7 @@ static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
     return Bstr("unknown");
 }
 
-static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
-                                ComSafeArrayIn(IPerformanceMetric*, aMetrics))
+static void listAffectedMetrics(ComSafeArrayIn(IPerformanceMetric*, aMetrics))
 {
     HRESULT rc;
     com::SafeIfaceArray<IPerformanceMetric> metrics(ComSafeArrayInArg(aMetrics));
@@ -157,7 +155,7 @@ static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
             CHECK_ERROR(metrics[i], COMGETTER(Object)(object.asOutParam()));
             CHECK_ERROR(metrics[i], COMGETTER(MetricName)(metricName.asOutParam()));
             RTPrintf("%-10ls %-20ls\n",
-                getObjectName(aVirtualBox, object).raw(), metricName.raw());
+                getObjectName(object).raw(), metricName.raw());
         }
         RTPrintf("\n");
     }
@@ -209,7 +207,7 @@ static RTEXITCODE handleMetricsList(int argc, char *argv[],
         CHECK_ERROR(metricInfo[i], COMGETTER(Unit)(unit.asOutParam()));
         CHECK_ERROR(metricInfo[i], COMGETTER(Description)(description.asOutParam()));
         RTPrintf("%-15ls %-40ls %-4ls %10d %10d %10u %10u %ls\n",
-            getObjectName(aVirtualBox, object).raw(), metricName.raw(), unit.raw(),
+            getObjectName(object).raw(), metricName.raw(), unit.raw(),
             minimum, maximum, period, count, description.raw());
     }
 
@@ -272,8 +270,7 @@ static RTEXITCODE handleMetricsSetup(int argc, char *argv[],
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
-        listAffectedMetrics(aVirtualBox,
-                            ComSafeArrayAsInParam(affectedMetrics));
+        listAffectedMetrics(ComSafeArrayAsInParam(affectedMetrics));
 
     return RTEXITCODE_SUCCESS;
 }
@@ -320,7 +317,7 @@ static RTEXITCODE handleMetricsQuery(int argc, char *argv[],
     {
         Bstr metricUnit(retUnits[i]);
         Bstr metricName(retNames[i]);
-        RTPrintf("%-15ls %-40ls ", getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
+        RTPrintf("%-15ls %-40ls ", getObjectName(retObjects[i]).raw(), metricName.raw());
         const char *separator = "";
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
@@ -468,8 +465,7 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
-        listAffectedMetrics(aVirtualBox,
-                            ComSafeArrayAsInParam(affectedMetrics));
+        listAffectedMetrics(ComSafeArrayAsInParam(affectedMetrics));
     if (!affectedMetrics.size())
         return RTEXITCODE_FAILURE;
 
@@ -515,7 +511,7 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
         {
             Bstr metricUnit(retUnits[j]);
             Bstr metricName(retNames[j]);
-            RTPrintf("%-12s %-10ls %-20ls ", ts, getObjectName(aVirtualBox, retObjects[j]).raw(), metricName.raw());
+            RTPrintf("%-12s %-10ls %-20ls ", ts, getObjectName(retObjects[j]).raw(), metricName.raw());
             const char *separator = "";
             for (unsigned k = 0; k < retLengths[j]; k++)
             {
@@ -575,8 +571,7 @@ static RTEXITCODE handleMetricsEnable(int argc, char *argv[],
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
-        listAffectedMetrics(aVirtualBox,
-                            ComSafeArrayAsInParam(affectedMetrics));
+        listAffectedMetrics(ComSafeArrayAsInParam(affectedMetrics));
 
     return RTEXITCODE_SUCCESS;
 }
@@ -618,8 +613,7 @@ static RTEXITCODE handleMetricsDisable(int argc, char *argv[],
         return RTEXITCODE_SYNTAX; /** @todo figure out why we must return 2 here. */
 
     if (listMatches)
-        listAffectedMetrics(aVirtualBox,
-                            ComSafeArrayAsInParam(affectedMetrics));
+        listAffectedMetrics(ComSafeArrayAsInParam(affectedMetrics));
 
     return RTEXITCODE_SUCCESS;
 }
@@ -653,5 +647,5 @@ RTEXITCODE handleMetrics(HandlerArg *a)
     return rcExit;
 }
 
-#endif /* VBOX_ONLY_DOCS */
+#endif /* !VBOX_ONLY_DOCS */
 

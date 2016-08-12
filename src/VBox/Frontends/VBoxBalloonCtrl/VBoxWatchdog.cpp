@@ -304,6 +304,7 @@ static void signalHandler(int iSignal)
     }
 }
 
+#if 0 /** @todo signal handler installer / uninstallers are unused. */
 /**
  * Installs a custom signal handler to get notified
  * whenever the user wants to intercept the program.
@@ -326,6 +327,7 @@ static void signalHandlerUninstall()
     signal(SIGBREAK, SIG_DFL);
 #endif
 }
+#endif /* unused */
 
 /**
  * Adds a specified machine to the list (map) of handled machines.

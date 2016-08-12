@@ -43,9 +43,10 @@
 /* Implementation - Base */
 
 #ifndef RT_OS_WINDOWS
-/* @todo Replace with platform-specific implementations. */
-void createBugReportOsSpecific(BugReport* report, const char *pszHome)
+/** @todo Replace with platform-specific implementations. */
+void createBugReportOsSpecific(BugReport *pReport, const char *pszHome)
 {
+    RT_NOREF(pReport, pszHome);
 }
 #endif /* !RT_OS_WINDOWS */
 

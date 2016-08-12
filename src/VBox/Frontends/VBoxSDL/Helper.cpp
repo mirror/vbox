@@ -53,8 +53,9 @@ RTSEMEVENT    g_EventSemXPCOMQueueThread = NULL;
  * @param   pvUser  User specific parameter, the file descriptor
  *                  of the event queue socket
  */
-DECLCALLBACK(int) xpcomEventThread(RTTHREAD thread, void *pvUser)
+DECLCALLBACK(int) xpcomEventThread(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     int eqFD = (intptr_t)pvUser;
     unsigned cErrors = 0;
     int rc;

@@ -2015,6 +2015,7 @@ static int gctlCopyDirExists(PCOPYCONTEXT pContext, bool fOnGuest,
     return vrc;
 }
 
+#if 0 /* unused */
 /**
  * Checks whether a specific directory exists on the destination, based
  * on the current copy context.
@@ -2031,6 +2032,7 @@ static int gctlCopyDirExistsOnDest(PCOPYCONTEXT pContext, const char *pszDir,
     return gctlCopyDirExists(pContext, pContext->fHostToGuest,
                              pszDir, fExists);
 }
+#endif /* unused */
 
 /**
  * Checks whether a specific directory exists on the source, based
@@ -2082,6 +2084,7 @@ static int gctlCopyFileExists(PCOPYCONTEXT pContext, bool bOnGuest,
     return vrc;
 }
 
+#if 0 /* unused */
 /**
  * Checks whether a specific file exists on the destination, based on the
  * current copy context.
@@ -2098,6 +2101,7 @@ static int gctlCopyFileExistsOnDest(PCOPYCONTEXT pContext, const char *pszFile,
     return gctlCopyFileExists(pContext, pContext->fHostToGuest,
                               pszFile, fExists);
 }
+#endif /* unused */
 
 /**
  * Checks whether a specific file exists on the source, based on the

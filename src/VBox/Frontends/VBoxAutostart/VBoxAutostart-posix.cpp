@@ -130,9 +130,6 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
     ULONG ulCurrentPercent = 0;
     ULONG ulLastPercent = 0;
 
-    ULONG ulLastOperationPercent = (ULONG)-1;
-
-    ULONG ulLastOperation = (ULONG)-1;
     Bstr bstrOperationDescription;
 
     NativeEventQueue::getMainEventQueue()->processEventQueue(0);
@@ -244,8 +241,6 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
 
 DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType)
 {
-    va_list args;
-
     if (   enmLogType == AUTOSTARTLOGTYPE_VERBOSE
         && !g_fVerbose)
         return;
