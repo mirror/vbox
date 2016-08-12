@@ -27,6 +27,11 @@ VBOX_PATH_DEVICES_SRC := $(PATH_ROOT)/src/VBox/Devices
 #
 # VBoxBios - Template for building 16-bit BIOS code.
 #
+# Disabled linker warnings:
+#   W1014: ?
+#   W1023: ?
+#   W2120: ?
+#   W1080: file F:\tinderbox\win-rel\out\win.amd64\release\obj\VBoxVgaBios386\vberom.obj is a 32-bit object file
 TEMPLATE_VBoxBios = ROM
 TEMPLATE_VBoxBios_INSTTYPE     = none
 TEMPLATE_VBoxBios_TOOL         = OPENWATCOM-16
@@ -43,7 +48,7 @@ TEMPLATE_VBoxBios_DEPS         = $(VBOX_VERSION_HEADER)
 TEMPLATE_VBoxBios_LDFLAGS      = system dos  \
 	debug codeview all \
 	option quiet, nofarcalls, map, verbose, statics, symfile \
-	disable 1014, 1023, 2120
+	disable 1014, 1023, 2120, 1080
 TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS) $(VBOX_PATH_DEVICES_SRC)/BiosCommonCode/biosorg_check.sed
 TEMPLATE_VBoxBios_POST_CMDS = \
  	$(QUIET)$(SED_EXT) -n -f $(VBOX_PATH_DEVICES_SRC)/BiosCommonCode/biosorg_check.sed $(outbase).map \
