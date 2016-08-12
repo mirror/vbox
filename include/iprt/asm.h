@@ -3939,7 +3939,7 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
     return uAX.f;
 # else
    uintptr_t const *puPtr = (uintptr_t const *)pvPage;
-   int              cLeft = RT_ASM_PAGE_SIZE / sizeof(uintptr_t) / 8;
+   size_t           cLeft = RT_ASM_PAGE_SIZE / sizeof(uintptr_t) / 8;
    Assert(!((uintptr_t)pvPage & 15));
    for (;;)
    {
