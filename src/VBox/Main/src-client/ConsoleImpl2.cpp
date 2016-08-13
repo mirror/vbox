@@ -527,6 +527,9 @@ static int SetBiosDiskInfo(ComPtr<IMachine> pMachine, PCFGMNODE pCfg, PCFGMNODE 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices)
 {
+# ifndef VBOX_WITH_EXTPACK
+    RT_NOREF(pUVM);
+# endif
     HRESULT hrc = S_OK;
     PCFGMNODE pInst, pCfg, pLunL0, pLunL1;
 
@@ -1885,8 +1888,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                      * necessary evil to patch over legacy compatability issues
                      * introduced by the new distribution model.
                      */
-                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
 # ifdef VBOX_WITH_EXTPACK
+                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
                     if (mptrExtPackManager->i_isExtPackUsable(s_pszUsbExtPackName))
 # endif
                     {
@@ -1933,8 +1936,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                      * necessary evil to patch over legacy compatability issues
                      * introduced by the new distribution model.
                      */
-                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
 # ifdef VBOX_WITH_EXTPACK
+                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
                     if (mptrExtPackManager->i_isExtPackUsable(s_pszUsbExtPackName))
 # endif
                     {

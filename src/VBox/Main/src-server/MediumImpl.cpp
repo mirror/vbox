@@ -3566,6 +3566,9 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
 
 HRESULT Medium::getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPasswordId)
 {
+#ifndef VBOX_WITH_EXTPACK
+    RT_NOREF(aCipher, aPasswordId);
+#endif
     HRESULT rc = S_OK;
 
     try
@@ -9885,6 +9888,9 @@ void Medium::i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const c
  */
 HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
 {
+# ifndef VBOX_WITH_EXTPACK
+    RT_NOREF(task);
+# endif
     HRESULT rc = S_OK;
 
     /* Lock all in {parent,child} order. The lock is also used as a
