@@ -1358,7 +1358,7 @@ int main(int argc, char **argv)
     g_type_init();
 
     GMainLoop *pMainLoop = g_main_loop_new(NULL, FALSE /* Not yet running */);
-    AssertPtr(pMainLoop);
+    AssertPtr(pMainLoop); NOREF(pMainLoop);
 
     LightDMGreeter *pGreeter = lightdm_greeter_new();
     AssertPtr(pGreeter);
