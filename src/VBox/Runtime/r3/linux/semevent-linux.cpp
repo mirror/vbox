@@ -159,6 +159,8 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
             va_end(va);
         }
         pThis->fEverHadSignallers = false;
+#else
+        RT_NOREF(hClass, pszNameFmt);
 #endif
 
         *phEventSem = pThis;
@@ -239,7 +241,9 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 
 static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAutoResume)
 {
+#ifdef RTSEMEVENT_STRICT
     PCRTLOCKVALSRCPOS pSrcPos = NULL;
+#endif
 
     /*
      * Validate input.
@@ -375,6 +379,8 @@ RTDECL(void) RTSemEventSetSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
 
     ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
     RTLockValidatorRecSharedResetOwner(&pThis->Signallers, hThread, NULL);
+#else
+    RT_NOREF(hEventSem, hThread);
 #endif
 }
 
@@ -388,6 +394,8 @@ RTDECL(void) RTSemEventAddSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
 
     ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
     RTLockValidatorRecSharedAddOwner(&pThis->Signallers, hThread, NULL);
+#else
+    RT_NOREF(hEventSem, hThread);
 #endif
 }
 
@@ -400,6 +408,8 @@ RTDECL(void) RTSemEventRemoveSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
     AssertReturnVoid(pThis->iMagic == RTSEMEVENT_MAGIC);
 
     RTLockValidatorRecSharedRemoveOwner(&pThis->Signallers, hThread);
+#else
+    RT_NOREF(hEventSem, hThread);
 #endif
 }
 

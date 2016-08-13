@@ -137,6 +137,8 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
                                         !(fFlags & RTSEMMUTEX_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
             va_end(va);
         }
+#else
+        RT_NOREF(hClass, uSubClass, pszNameFmt);
 #endif
 
         *phMutexSem = pThis;
@@ -195,6 +197,7 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 
     return RTLockValidatorRecExclSetSubClass(&pThis->ValidatorRec, uSubClass);
 #else
+    RT_NOREF(hMutexSem, uSubClass);
     return RTLOCKVAL_SUB_CLASS_INVALID;
 #endif
 }
@@ -202,6 +205,8 @@ RTDECL(uint32_t) RTSemMutexSetSubClass(RTSEMMUTEX hMutexSem, uint32_t uSubClass)
 
 DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, bool fAutoResume, PCRTLOCKVALSRCPOS pSrcPos)
 {
+    RT_NOREF(pSrcPos);
+
     /*
      * Validate input.
      */
