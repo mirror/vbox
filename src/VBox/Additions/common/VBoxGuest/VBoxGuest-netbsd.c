@@ -314,7 +314,7 @@ aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
         if (RT_UNLIKELY(cbDataReturned > ReqWrap->cbData))
         {
             Log((DEVICE_NAME ": %s: too much output data %d expected %d\n",
-                 cbDataReturned, ReqWrap->cbData));
+                 __func__, cbDataReturned, ReqWrap->cbData));
             cbDataReturned = ReqWrap->cbData;
         }
         if (cbDataReturned > 0)
