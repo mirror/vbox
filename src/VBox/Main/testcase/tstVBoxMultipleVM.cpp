@@ -43,14 +43,8 @@ using namespace com;
 
 
 /*********************************************************************************************************************************
-*   Global Variables & defs                                                                                                      *
+*   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef std::vector<Bstr>       TMachinesList;
-static volatile bool            g_RunTest = true;
-static RTSEMEVENT               g_PingEevent;
-static volatile uint64_t        g_Counter = 0;
-static RTTEST                   g_hTest;
-
 /* Arguments of test thread */
 struct TestThreadArgs
 {
@@ -65,7 +59,17 @@ struct TestThreadArgs
     uint32_t numberMachines;
 };
 
-static TestThreadArgs g_Args;
+
+/*********************************************************************************************************************************
+*   Global Variables & defs                                                                                                      *
+*********************************************************************************************************************************/
+static RTTEST                   g_hTest;
+#ifdef RT_ARCH_AMD64
+typedef std::vector<Bstr>       TMachinesList;
+static volatile bool            g_RunTest = true;
+static RTSEMEVENT               g_PingEevent;
+static volatile uint64_t        g_Counter = 0;
+static TestThreadArgs           g_Args;
 
 
 /** Worker for TST_COM_EXPR(). */
@@ -494,6 +498,8 @@ static int ParseArguments(int argc, char **argv, TestThreadArgs *pArgs)
     return rc;
 }
 
+#endif /* RT_ARCH_AMD64 */
+
 
 /**
  *
@@ -524,9 +530,8 @@ int main(int argc, char **argv)
     /*
      * Linux OOM killer when running many VMs on a 32-bit host.
      */
-    RTTestSkipped(g_hTest, "Warning: the test can be processed on 64-bit hosts only.\n");
-    return RTTestSummaryAndDestroy(g_hTest);
-#else
+    return RTTestSkipAndDestroy(g_hTest, "The test can only run reliably on 64-bit hosts.");
+#else  /* RT_ARCH_AMD64 */
 
     RTPrintf("Initializing ...\n");
     int rc = RTSemEventCreate(&g_PingEevent);
@@ -591,6 +596,6 @@ int main(int argc, char **argv)
     else
         RTTestPassed(g_hTest, "Test finished.\n");
     return RTTestSummaryAndDestroy(g_hTest);
-#endif
+#endif /* RT_ARCH_AMD64 */
 }
 
