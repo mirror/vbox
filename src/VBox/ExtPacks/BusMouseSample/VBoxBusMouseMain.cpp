@@ -78,6 +78,8 @@ static PCVBOXEXTPACKHLP g_pHlp;
  */
 static DECLCALLBACK(int)  vboxBusMouseExtPack_VMConfigureVMM(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM)
 {
+    RT_NOREF(pThis, pConsole);
+
     /*
      * Find the bus mouse module and tell PDM to load it.
      * ASSUME /PDM/Devices exists.

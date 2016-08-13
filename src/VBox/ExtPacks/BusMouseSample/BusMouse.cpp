@@ -243,6 +243,7 @@ static void bms_mouse_event(MouState *pThis, int dx, int dy, int dz, int dw,
 
 static DECLCALLBACK(void) bmsTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pvUser);
     MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
     uint8_t     irq_bit;
 
@@ -419,6 +420,7 @@ static uint32_t bms_read_port(MouState *pThis, uint32_t offPort)
             break;
         default:
             AssertMsgFailed(("invalid port %#x\n", offPort));
+            uValue = 0xff;
             break;
     }
     LogRel3(("%s: read port %d: 0x%02x\n", __PRETTY_FUNCTION__, offPort, uValue));
@@ -601,10 +603,10 @@ static DECLCALLBACK(int) mouPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
 /**
  * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventAbs}
  */
-static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x,
-                                        uint32_t y, int32_t dz, int32_t dw,
-                                        uint32_t fButtons)
+static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x, uint32_t y,
+                                        int32_t dz, int32_t dw, uint32_t fButtons)
 {
+    RT_NOREF(pInterface, x, y, dz, dw, fButtons);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
@@ -614,6 +616,7 @@ static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x,
 static DECLCALLBACK(int) mouPutEventMultiTouch(PPDMIMOUSEPORT pInterface, uint8_t cContacts,
                                                const uint64_t *pau64Contacts, uint32_t u32ScanTime)
 {
+    RT_NOREF(pInterface, cContacts, pau64Contacts, u32ScanTime);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
@@ -711,6 +714,8 @@ static DECLCALLBACK(void) mouDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
             break;
     }
+#else
+    RT_NOREF(pDevIns, iLUN, fFlags);
 #endif
 }
 
@@ -720,7 +725,8 @@ static DECLCALLBACK(void) mouDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
  */
 static DECLCALLBACK(void) mouRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    MouState    *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    RT_NOREF(offDelta);
+    MouState *pThis = PDMINS_2_DATA(pDevIns, MouState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
 
@@ -730,6 +736,8 @@ static DECLCALLBACK(void) mouRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    RT_NOREF(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
     int         rc;
     bool        fGCEnabled;
@@ -737,7 +745,6 @@ static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     uint8_t     irq_lvl;
     Assert(iInstance == 0);
 
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate and read the configuration.
