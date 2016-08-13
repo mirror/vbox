@@ -44,14 +44,15 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#if defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64)
 /** Array of switcher definitions.
  * The type and index shall match!
  */
 static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
 {
     NULL, /* invalid entry */
-#ifdef VBOX_WITH_RAW_MODE
-# ifndef RT_ARCH_AMD64
+# ifdef VBOX_WITH_RAW_MODE
+#  ifndef RT_ARCH_AMD64
     &vmmR3Switcher32BitTo32Bit_Def,
     &vmmR3Switcher32BitToPAE_Def,
     NULL,   //&vmmR3Switcher32BitToAMD64_Def,
@@ -61,7 +62,7 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
     NULL,   //&vmmR3SwitcherAMD64ToAMD64_Def,
-# else  /* RT_ARCH_AMD64 */
+#  else  /* RT_ARCH_AMD64 */
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
     NULL,   //&vmmR3Switcher32BitToPAE_Def,
     NULL,   //&vmmR3Switcher32BitToAMD64_Def,
@@ -71,8 +72,8 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
     &vmmR3SwitcherAMD64To32Bit_Def,
     &vmmR3SwitcherAMD64ToPAE_Def,
     NULL,   //&vmmR3SwitcherAMD64ToAMD64_Def,
-# endif /* RT_ARCH_AMD64 */
-#else  /* !VBOX_WITH_RAW_MODE */
+#  endif /* RT_ARCH_AMD64 */
+# else  /* !VBOX_WITH_RAW_MODE */
     NULL,
     NULL,
     NULL,
@@ -82,15 +83,17 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
     NULL,
     NULL,
     NULL,
-#endif /* !VBOX_WITH_RAW_MODE */
-#ifndef RT_ARCH_AMD64
+# endif /* !VBOX_WITH_RAW_MODE */
+# ifndef RT_ARCH_AMD64
     &vmmR3SwitcherX86Stub_Def,
     NULL,
-#else
+# else
     NULL,
     &vmmR3SwitcherAMD64Stub_Def,
-#endif
+# endif
 };
+#endif /* VBOX_WITH_RAW_MODE || (HC_ARCH_BITS != 64) */
+
 
 /** Array of switcher definitions.
  * The type and index shall match!
@@ -213,6 +216,7 @@ static void vmmR3Switcher32On64IdtRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, u
 int vmmR3SwitcherInit(PVM pVM)
 {
 #if !defined(VBOX_WITH_RAW_MODE) && (HC_ARCH_BITS == 64)
+    RT_NOREF(pVM);
     return VINF_SUCCESS;
 #else
 

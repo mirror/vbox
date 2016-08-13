@@ -741,7 +741,10 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->trpm.s.paStatForwardedIRQRC += offDelta;
     pVM->trpm.s.paStatHostIrqRC += offDelta;
 # endif
-#endif /* VBOX_WITH_RAW_MODE */
+
+#else  /* !VBOX_WITH_RAW_MODE */
+    RT_NOREF(pVM, offDelta);
+#endif /* !VBOX_WITH_RAW_MODE */
 }
 
 
@@ -894,8 +897,8 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCUInt(pSSM,    pTrpmCpu->uPrevVector);
     }
     SSMR3PutBool(pSSM,      HMIsEnabled(pVM));
-    PVMCPU pVCpu = &pVM->aCpus[0];          /* raw mode implies 1 VCPU */
-    SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT), 0));
+    PVMCPU pVCpu0 = &pVM->aCpus[0]; NOREF(pVCpu0); /* raw mode implies 1 VCPU */
+    SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_IS_SET(pVCpu0, VMCPU_FF_TRPM_SYNC_IDT), 0));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
     SSMR3PutU32(pSSM, UINT32_MAX);          /* separator. */
 
@@ -1485,8 +1488,8 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  */
 VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 {
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 #ifdef VBOX_WITH_RAW_MODE
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
 #endif
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
@@ -1559,6 +1562,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     return VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 
 #else  /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
+    RT_NOREF(pVM, enmEvent);
     uint8_t u8Interrupt = 0;
     int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
     Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));

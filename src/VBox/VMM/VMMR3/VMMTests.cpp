@@ -43,6 +43,9 @@
 #include <iprt/string.h>
 #include <iprt/x86.h>
 
+
+#ifdef VBOX_WITH_RAW_MODE
+
 static void vmmR3TestClearStack(PVMCPU pVCpu)
 {
     /* We leave the first 64 bytes of the stack alone because of strict
@@ -50,8 +53,6 @@ static void vmmR3TestClearStack(PVMCPU pVCpu)
     memset(pVCpu->vmm.s.pbEMTStackR3 + 64, 0xaa, VMM_STACK_SIZE - 64);
 }
 
-
-#ifdef VBOX_WITH_RAW_MODE
 
 static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM pReportStrm, uint32_t *pcMsrsFound)
 {
@@ -212,20 +213,20 @@ static int vmmR3DoGCTest(PVM pVM, VMMRCOPERATION enmTestcase, unsigned uVariatio
     Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
     rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
 
-#if 1
+# if 1
     /* flush the raw-mode logs. */
-# ifdef LOG_ENABLED
+#  ifdef LOG_ENABLED
     PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
     if (   pLogger
         && pLogger->offScratch > 0)
         RTLogFlushRC(NULL, pLogger);
-# endif
-# ifdef VBOX_WITH_RC_RELEASE_LOGGING
+#  endif
+#  ifdef VBOX_WITH_RC_RELEASE_LOGGING
     PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
     if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
         RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
+#  endif
 # endif
-#endif
 
     Log(("vmmR3DoGCTest: rc=%Rrc iLastGZRc=%Rrc\n", rc, pVCpu->vmm.s.iLastGZRc));
     if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -600,16 +601,18 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 
         rc = VINF_SUCCESS;
 
-#if 0  /* drop this for now as it causes trouble on AMDs (Opteron 2384 and possibly others). */
+# if 0  /* drop this for now as it causes trouble on AMDs (Opteron 2384 and possibly others). */
         /*
          * A quick MSR report.
          */
         vmmR3DoMsrQuickReport(pVM, NULL, true);
-#endif
+# endif
     }
     else
         AssertMsgFailed(("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc));
-#endif
+#else  /* !VBOX_WITH_RAW_MODE */
+    RT_NOREF(pVM);
+#endif /* !VBOX_WITH_RAW_MODE */
     return rc;
 }
 
@@ -819,6 +822,7 @@ VMMR3DECL(int) VMMDoBruteForceMsrs(PVM pVM)
     }
     return rc;
 #else
+    RT_NOREF(pVM);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -845,6 +849,7 @@ VMMR3DECL(int) VMMDoKnownMsrs(PVM pVM)
     }
     return rc;
 #else
+    RT_NOREF(pVM);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -876,14 +881,14 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
      */
     uint32_t uMsr   = 0x00000277;
     uint64_t uValue = UINT64_C(0x0007010600070106);
-#if 0
+# if 0
     uValue &= ~(RT_BIT_64(17) | RT_BIT_64(16) | RT_BIT_64(15) | RT_BIT_64(14) | RT_BIT_64(13));
     uValue |= RT_BIT_64(13);
     rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
                      RCPtrValues, RCPtrValues + sizeof(uint64_t));
     RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
              uMsr, pauValues[0], uValue, pauValues[1], rc);
-#elif 1
+# elif 1
     const uint64_t uOrgValue = uValue;
     uint32_t       cChanges = 0;
     for (int iBit = 63; iBit >= 58; iBit--)
@@ -905,7 +910,7 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
         cChanges += RT_BOOL(pauValues[0] ^ pauValues[1]);
     }
     RTPrintf("%u change(s)\n", cChanges);
-#else
+# else
     uint64_t fWriteable = 0;
     for (uint32_t i = 0; i <= 63; i++)
     {
@@ -940,7 +945,7 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
     RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc [fWriteable]\n",
              uMsr, pauValues[0], uValue, pauValues[1], rc);
 
-#endif
+# endif
 
     /*
      * Cleanups.
@@ -948,6 +953,7 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
     MMHyperFree(pVM, pauValues);
     return rc;
 #else
+    RT_NOREF(pVM);
     return VERR_NOT_SUPPORTED;
 #endif
 }

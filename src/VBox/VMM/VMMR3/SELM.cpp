@@ -364,7 +364,9 @@ VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
     }
-#endif /* VBOX_WITH_RAW_MODE */
+#else  /* !VBOX_WITH_RAW_MODE */
+    RT_NOREF(pVM);
+#endif /* !VBOX_WITH_RAW_MODE */
     return VINF_SUCCESS;
 }
 
@@ -631,11 +633,10 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
      * Uninstall guest GDT/LDT/TSS write access handlers.
      */
     PVMCPU pVCpu = VMMGetCpu(pVM); NOREF(pVCpu);
-    int rc = VINF_SUCCESS;
     if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
     {
 #ifdef SELM_TRACK_GUEST_GDT_CHANGES
-        rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->selm.s.GuestGdtr.pGdt, false /*fHypervisor*/);
+        int rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->selm.s.GuestGdtr.pGdt, false /*fHypervisor*/);
         AssertRC(rc);
 #endif
         pVM->selm.s.GuestGdtr.pGdt = RTRCPTR_MAX;
@@ -645,7 +646,7 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
     if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
     {
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
-        rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->selm.s.GCPtrGuestLdt, false /*fHypervisor*/);
+        int rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->selm.s.GCPtrGuestLdt, false /*fHypervisor*/);
         AssertRC(rc);
 #endif
         pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
@@ -653,7 +654,7 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
     if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
     {
 #ifdef SELM_TRACK_GUEST_TSS_CHANGES
-        rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->selm.s.GCPtrGuestTss, false /*fHypervisor*/);
+        int rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->selm.s.GCPtrGuestTss, false /*fHypervisor*/);
         AssertRC(rc);
 #endif
         pVM->selm.s.GCPtrGuestTss = RTRCPTR_MAX;
@@ -817,7 +818,10 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     }
-#endif /*VBOX_WITH_RAW_MODE*/
+
+#else  /* !VBOX_WITH_RAW_MODE */
+    RT_NOREF(pVM, pSSM);
+#endif /* !VBOX_WITH_RAW_MODE */
     return VINF_SUCCESS;
 }
 

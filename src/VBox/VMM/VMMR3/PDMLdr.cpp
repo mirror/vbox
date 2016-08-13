@@ -64,9 +64,11 @@ typedef struct PDMGETIMPORTARGS
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#ifdef VBOX_WITH_RAW_MODE
 static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
-static int      pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName, const char *pszSearchPath);
 static char    *pdmR3FileRC(const char *pszFile, const char *pszSearchPath);
+#endif
+static int      pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName, const char *pszSearchPath);
 static char    *pdmR3FileR0(const char *pszFile, const char *pszSearchPath);
 static char    *pdmR3File(const char *pszFile, const char *pszDefaultExt, const char *pszSearchPath, bool fShared);
 
@@ -106,6 +108,8 @@ int pdmR3LdrInitU(PUVM pUVM)
         if (RT_FAILURE(rc))
             return rc;
     }
+#else
+    RT_NOREF(pUVM);
 #endif
     return VINF_SUCCESS;
 }
@@ -909,6 +913,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
 VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
+    RT_NOREF(pVM, pszModule, pszSymbol);
     Assert(!HMIsEnabled(pVM));
     *pRCPtrValue = NIL_RTRCPTR;
     return VINF_SUCCESS;
@@ -978,6 +983,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
                                        PRTRCPTR pRCPtrValue)
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
+    RT_NOREF(pVM, pszModule, pszSearchPath, pszSymbol);
     Assert(!HMIsEnabled(pVM));
     *pRCPtrValue = NIL_RTRCPTR;
     return VINF_SUCCESS;
