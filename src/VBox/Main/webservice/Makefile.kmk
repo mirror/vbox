@@ -314,7 +314,7 @@ ifdef VBOX_GSOAP_INSTALLED
 	.
  vboxwebsrv_CXXFLAGS.win += -bigobj
  ifn1of ($(KBUILD_TARGET), win)
-  vboxwebsrv_CXXFLAGS += -Wno-shadow
+  vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix)
  endif
  vboxwebsrv_LIBS += \
 	$(PATH_STAGE_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
