@@ -1164,7 +1164,7 @@
 #elif defined(RT_OS_OS2)
 # define RTCALL                 __cdecl
 #elif defined(__GNUC__) && defined(RT_ARCH_X86)
-# define RTCALL                 __attribute__((cdecl,regparm(0)))
+# define RTCALL                 __attribute__((__cdecl__,__regparm__(0)))
 #else
 # define RTCALL
 #endif
