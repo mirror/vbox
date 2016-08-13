@@ -20,6 +20,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define GLIB_DISABLE_DEPRECATION_WARNINGS 1 /* g_type_init() is deprecated */
 #include <pwd.h>
 #include <syslog.h>
 #include <stdlib.h>
@@ -410,6 +411,8 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
  */
 static void cb_sigterm(int signum)
 {
+    RT_NOREF(signum);
+
     /* Note: This handler must be reentrant-safe. */
 #ifdef VBOX_WITH_FLTK
     g_fRunning = false;
@@ -480,6 +483,7 @@ static void cb_lightdm_show_message(LightDMGreeter *pGreeter,
                                     const gchar *pszText, LightDMPromptType enmType,
                                     gpointer pvData)
 {
+    RT_NOREF(pGreeter);
     vboxGreeterLog("cb_lightdm_show_message: text=%s, type=%d\n", pszText, enmType);
 
     PVBOXGREETERCTX pCtx = (PVBOXGREETERCTX)pvData;
@@ -549,6 +553,7 @@ void cb_btn_login(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
     PVBOXGREETERCTX pCtx = (PVBOXGREETERCTX)pvData;
+    RT_NOREF(pWidget);
     AssertPtr(pCtx);
 
 #ifdef VBOX_WITH_FLTK
@@ -595,6 +600,7 @@ void cb_btn_menu(Fl_Widget *pWidget, void *pvData)
 void cb_btn_menu(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    RT_NOREF(pWidget, pvData);
     vboxGreeterLog("menu button pressed\n");
 }
 
@@ -610,6 +616,7 @@ void cb_btn_restart(Fl_Widget *pWidget, void *pvData)
 void cb_btn_restart(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    RT_NOREF(pWidget, pvData);
     vboxGreeterLog("restart button pressed\n");
 
     bool fRestart = true;
@@ -639,6 +646,7 @@ void cb_btn_shutdown(Fl_Widget *pWidget, void *pvData)
 void cb_btn_shutdown(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    RT_NOREF(pWidget, pvData);
     vboxGreeterLog("shutdown button pressed\n");
 
     bool fShutdown = true;
@@ -662,6 +670,7 @@ void cb_edt_username(Fl_Widget *pWidget, void *pvData)
 void cb_edt_username(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    RT_NOREF(pWidget);
     vboxGreeterLog("cb_edt_username called\n");
 
     PVBOXGREETERCTX pCtx = (PVBOXGREETERCTX)pvData;
@@ -678,6 +687,7 @@ void cb_edt_password(Fl_Widget *pWidget, void *pvData)
 void cb_edt_password(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    RT_NOREF(pWidget, pvData);
     vboxGreeterLog("cb_edt_password called\n");
 
     PVBOXGREETERCTX pCtx = (PVBOXGREETERCTX)pvData;
