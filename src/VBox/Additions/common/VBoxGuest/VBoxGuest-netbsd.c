@@ -181,7 +181,7 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
     file_t *fp;
     int fd, error;
 
-    LogFlow((DEVICE_NAME ":VBoxGuestNetBSDOpen\n"));
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     if ((vboxguest = device_lookup_private(&vboxguest_cd, minor(device))) == NULL) {
         printf("device_lookup_private failed\n");
@@ -229,6 +229,8 @@ static int VBoxGuestNetBSDClose(struct file *fp)
     struct vboxguest_session *session = fp->f_data;
     vboxguest_softc *vboxguest = session->sc;
 
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
+
     VGDrvCommonCloseSession(&g_DevExt, session->session);
     ASMAtomicDecU32(&cUsers);
 
@@ -247,6 +249,8 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     vboxguest_softc *vboxguest = session->sc;
 
     int rc = 0;
+
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     /*
      * Validate the request wrapper.
@@ -331,7 +335,11 @@ static int VBoxGuestNetBSDPoll(struct file *fp, int events)
     int rc = 0;
     int events_processed;
 
-    uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+    uint32_t u32CurSeq;
+
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
+
+    u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
     if (session->session->u32MousePosChangedSeq != u32CurSeq) {
         events_processed = events & (POLLIN | POLLRDNORM);
         session->session->u32MousePosChangedSeq = u32CurSeq;
@@ -348,6 +356,8 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
 {
     vboxguest_softc *vboxguest;
     vboxguest = device_private(self);
+
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     if (cUsers > 0)
         return EBUSY;
@@ -377,7 +387,7 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
  */
 static int VBoxGuestNetBSDISR(void *pvState)
 {
-    LogFlow((DEVICE_NAME ":VBoxGuestNetBSDISR pvState=%p\n", pvState));
+    LogFlow((DEVICE_NAME ": %s: pvState=%p\n", __func__, pvState));
 
     bool fOurIRQ = VGDrvCommonISR(&g_DevExt);
 
@@ -386,7 +396,7 @@ static int VBoxGuestNetBSDISR(void *pvState)
 
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
-    LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     /*
      * Wake up poll waiters.
@@ -409,6 +419,9 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
 #if __NetBSD_Prereq__(6, 99, 39)
     char intstrbuf[100];
 #endif
+
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
+
     if (pci_intr_map(pa, &vboxguest->ih)) {
         aprint_error_dev(vboxguest->sc_dev, "couldn't map interrupt.\n");
         return VERR_DEV_IO_ERROR;
@@ -435,6 +448,8 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
  */
 static void VBoxGuestNetBSDRemoveIRQ(vboxguest_softc *vboxguest)
 {
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
+
     if (vboxguest->pfnIrqHandler)
     {
         pci_intr_disestablish(vboxguest->pa->pa_pc, vboxguest->pfnIrqHandler);
@@ -570,6 +585,8 @@ vboxguest_modcmd(modcmd_t cmd, void *opaque)
     devmajor_t bmajor, cmajor;
     int error;
     register_t retval;
+
+    LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     bmajor = cmajor = NODEVMAJOR;
     switch (cmd) {
