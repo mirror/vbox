@@ -253,6 +253,7 @@ int VNCServerImpl::queryVrdeFeature(const char *pszName, char *pszValue, size_t 
  */
 DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool fEnable)
 {
+    RT_NOREF(fEnable);
     VNCServerImpl *instance = (VNCServerImpl *)hServer;
 
 #ifdef LOG_ENABLED
@@ -694,9 +695,9 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
  *
  * @return IPRT status code.
  */
-DECLCALLBACK(void) VNCServerImpl::VRDEDisconnect(HVRDESERVER hServer, uint32_t u32ClientId,
-                                                 bool fReconnect)
+DECLCALLBACK(void) VNCServerImpl::VRDEDisconnect(HVRDESERVER hServer, uint32_t u32ClientId, bool fReconnect)
 {
+    RT_NOREF(hServer, u32ClientId, fReconnect);
 }
 
 static inline void convert15To32bpp(uint8_t msb, uint8_t lsb, uint8_t &r, uint8_t &g, uint8_t &b)
@@ -782,9 +783,9 @@ DECLCALLBACK(void) VNCServerImpl::VRDEResize(HVRDESERVER hServer)
  * @param pvUpdate  Pointer to VBoxGuest.h::VRDEORDERHDR structure with extra data.
  * @param cbUpdate  Size of the update data.
  */
-DECLCALLBACK(void) VNCServerImpl::VRDEUpdate(HVRDESERVER hServer, unsigned uScreenId,
-                                             void *pvUpdate,uint32_t cbUpdate)
+DECLCALLBACK(void) VNCServerImpl::VRDEUpdate(HVRDESERVER hServer, unsigned uScreenId, void *pvUpdate,uint32_t cbUpdate)
 {
+    RT_NOREF(uScreenId);
     char *ptr = (char *)pvUpdate;
     VNCServerImpl *instance = (VNCServerImpl *)hServer;
     VRDEORDERHDR *order = (VRDEORDERHDR *)ptr;
@@ -925,10 +926,11 @@ DECLCALLBACK(void) VNCServerImpl::VRDEColorPointer(HVRDESERVER hServer,
  */
 DECLCALLBACK(void) VNCServerImpl::VRDEHidePointer(HVRDESERVER hServer)
 {
-    VNCServerImpl *instance = (VNCServerImpl *)hServer;
+    VNCServerImpl *pInstance = (VNCServerImpl *)hServer;
+    RT_NOREF(pInstance);
 
     ///@todo: what's behavior for this. hide doesn't seems right
-    //rfbSetCursor(instance->mVNCServer, NULL);
+    //rfbSetCursor(pInstance->mVNCServer, NULL);
 }
 
 /**
@@ -946,6 +948,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEAudioSamples(HVRDESERVER hServer,
                                                    uint32_t cSamples,
                                                    VRDEAUDIOFORMAT format)
 {
+    RT_NOREF(hServer, pvSamples, cSamples, format);
 }
 
 /**
@@ -961,6 +964,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEAudioVolume(HVRDESERVER hServer,
                                                   uint16_t u16Left,
                                                   uint16_t u16Right)
 {
+    RT_NOREF(hServer, u16Left, u16Right);
 }
 
 /**
@@ -981,6 +985,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEUSBRequest(HVRDESERVER hServer,
                                                  void *pvParm,
                                                  uint32_t cbParm)
 {
+    RT_NOREF(hServer, u32ClientId, pvParm, cbParm);
 }
 
 /**
@@ -1006,6 +1011,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEClipboard(HVRDESERVER hServer,
                                                 uint32_t cbData,
                                                 uint32_t *pcbActualRead)
 {
+    RT_NOREF(hServer, u32Function, u32Format, pvData, cbData, pcbActualRead);
 }
 
 /**
@@ -1073,6 +1079,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDERedirect(HVRDESERVER hServer,
                                                uint32_t u32SessionId,
                                                const char *pszCookie)
 {
+    RT_NOREF(hServer, u32ClientId, pszServer, pszUser, pszDomain, pszPassword, u32SessionId, pszCookie);
 }
 
 /**
@@ -1092,6 +1099,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEAudioInOpen(HVRDESERVER hServer,
                                                   VRDEAUDIOFORMAT audioFormat,
                                                   uint32_t u32SamplesPerBlock)
 {
+    RT_NOREF(hServer, pvCtx, u32ClientId, audioFormat, u32SamplesPerBlock);
 }
 
 /**
@@ -1102,9 +1110,9 @@ DECLCALLBACK(void) VNCServerImpl::VRDEAudioInOpen(HVRDESERVER hServer,
  *
  * @note Initialized to NULL when the VRDECallbackAudioIn callback is NULL.
  */
-DECLCALLBACK(void) VNCServerImpl::VRDEAudioInClose(HVRDESERVER hServer,
-                                                   uint32_t u32ClientId)
+DECLCALLBACK(void) VNCServerImpl::VRDEAudioInClose(HVRDESERVER hServer, uint32_t u32ClientId)
 {
+    RT_NOREF(hServer, u32ClientId);
 }
 
 
