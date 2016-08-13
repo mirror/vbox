@@ -2417,12 +2417,12 @@ RuntimeR0Drv_SOURCES.netbsd = \
 	common/string/strchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
+	r0drv/netbsd/RTLogWriteStdOut-r0drv-netbsd.c \
 	r0drv/netbsd/alloc-r0drv-netbsd.c \
 	r0drv/netbsd/assert-r0drv-netbsd.c \
 	r0drv/netbsd/initterm-r0drv-netbsd.c \
