@@ -18,6 +18,10 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifndef VBOX_LIGHTDM_GREETER_CONFIG_KMK_INCLUDED
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
+
 ifndef VBOX_OSE
  include $(PATH_SUB_CURRENT)/liblightdm-gobject-1.5.0/Makefile.kmk
 endif
@@ -28,28 +32,33 @@ VBOX_GREETER_WITH_PNG_SUPPORT := 1
 
 # The greeter module.
 PROGRAMS += vbox-greeter
-
 vbox-greeter_TEMPLATE = VBOXGUESTR3EXE
+vbox-greeter_SDKS     = VBoxGlib20WithIo
 vbox-greeter_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
 vbox-greeter_DEFS    += \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 vbox-greeter_DEFS    += \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
-	$(if $(VBOX_WITH_FLTK),VBOX_WITH_FLTK,) \
 	$(if $(VBOX_GREETER_WITH_PNG_SUPPORT),VBOX_GREETER_WITH_PNG_SUPPORT,)
-
-ifndef VBOX_WITH_FLTK
+ifdef VBOX_WITH_FLTK
  vbox-greeter_DEFS   += \
-	GTK_DISABLE_SINGLE_INCLUDES \
-	GDK_DISABLE_DEPRECATED
+ 	VBOX_WITH_FLTK
+else
+ vbox-greeter_DEFS   += \
+ 	GTK_DISABLE_SINGLE_INCLUDES \
+ 	GDK_DISABLE_DEPRECATED
 endif
-vbox-greeter_SOURCES  = vbox-greeter.cpp
-### todo: define some _INCS in Config.kmk and use 'pkg-config glib-2.0 --cflags' in configure to override
-vbox-greeter_INCS     = \
+vbox-greeter_CFLAGS  := $(if $(VBOX_OSE),%(filter-out -I%,$(shell pkg-config --cflags liblightdm-gobject-1)),)
+## @todo r=bird: Why are we cooking our own lightdm-gobject-1 but using system headers?
+##               That sounds like a very risky business to me.  I've added  liblightdm-gobject-1.5.0
+##               to the INCS, however lightdm.h is missing and will be taken from the system.
+vbox-greeter_INCS := \
 	/usr/lib/i386-linux-gnu/glib-2.0/include \
 	/usr/lib/x86_64-linux-gnu/glib-2.0/include \
 	/usr/include/glib-2.0 \
-	/usr/include/lightdm-gobject-1
+       $(if $(VBOX_OSE),,liblightdm-gobject-1.5.0) \
+	/usr/include/lightdm-gobject-1 \
+	$(if $(VBOX_OSE),$(patsubst -I%,%,%(filter -I%,$(shell pkg-config --cflags liblightdm-gobject-1))),)
 ifndef VBOX_WITH_FLTK
  vbox-greeter_INCS   += \
 	/usr/include/glib-2.0 \
@@ -59,8 +68,11 @@ ifndef VBOX_WITH_FLTK
 	/usr/include/gdk-pixbuf-2.0 \
 	/usr/include/atk-1.0
 endif
-### todo: define some _LIBS in Config.kmk and use 'pkg-config glib-2.0 --libs' in configure to override
-vbox-greeter_LIBS = \
+
+vbox-greeter_SOURCES  = \
+	vbox-greeter.cpp
+
+vbox-greeter_LIBS := \
 	$(if $(VBOX_OSE),lightdm-gobject-1,$(VBOX_PATH_ADDITIONS_LIB)/VBox-liblightdm-gobject$(VBOX_SUFF_LIB)) \
 	glib-2.0 \
 	gio-2.0 \
@@ -68,16 +80,22 @@ vbox-greeter_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
-ifndef VBOX_WITH_FLTK
- vbox-greeter_LIBS += gtk-3
-endif
 ifdef VBOX_WITH_FLTK
- #vbox-greeter_LDFLAGS = -Wl,-Bsymbolic-functions -Wl,-z,relro /usr/lib/i386-linux-gnu/libfltk.a -lXext -lXft -lfontconfig -lfontconfig -lXinerama -ldl -lm -lX11
- vbox-greeter_LDFLAGS += -s
  vbox-greeter_LIBS += fltk
  ifdef VBOX_GREETER_WITH_PNG_SUPPORT
   vbox-greeter_LIBS += fltk_images
  endif
+ if $(HOSTNAME) == "3960x.dev" && $(USER) == "bird" # whatever.
+  vbox-greeter_LIBS += stdc++
+ endif
+else
+ vbox-greeter_LIBS += gtk-3
+endif
+
+vbox-greeter_LDFLAGS = $(if $(VBOX_OSE),$(shell pkg-config --libs liblightdm-gobject-1),)
+ifdef VBOX_WITH_FLTK
+ #vbox-greeter_LDFLAGS = -Wl,-Bsymbolic-functions -Wl,-z,relro /usr/lib/i386-linux-gnu/libfltk.a -lXext -lXft -lfontconfig -lfontconfig -lXinerama -ldl -lm -lX11
+ vbox-greeter_LDFLAGS += -s
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

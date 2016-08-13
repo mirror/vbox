@@ -22,6 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBox-liblightdm-gobject
 
 VBox-liblightdm-gobject_TEMPLATE = VBOXGUESTR3NPLIB
+VBox-liblightdm-gobject_SDKS = VBoxGlib20WithIo
 VBox-liblightdm-gobject_INCS = \
 	/usr/include/glib-2.0 \
 	/usr/lib/i386-linux-gnu/glib-2.0/include \
