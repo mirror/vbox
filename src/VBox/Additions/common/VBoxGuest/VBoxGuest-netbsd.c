@@ -250,13 +250,14 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
 
     int rc = 0;
 
-    LogFlow((DEVICE_NAME ": %s\n", __func__));
+    LogFlow((DEVICE_NAME ": %s: command=%#lx data=%p\n",
+             __func__, command, data));
 
     /*
      * Validate the request wrapper.
      */
     if (IOCPARM_LEN(command) != sizeof(VBGLBIGREQ)) {
-        Log((DEVICE_NAME ": %s: bad request %lu size=%lu expected=%d\n",
+        Log((DEVICE_NAME ": %s: bad request %#lx size=%lu expected=%zu\n",
              __func__, command, IOCPARM_LEN(command), sizeof(VBGLBIGREQ)));
         return ENOTTY;
     }
@@ -264,14 +265,15 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     PVBGLBIGREQ ReqWrap = (PVBGLBIGREQ)data;
     if (ReqWrap->u32Magic != VBGLBIGREQ_MAGIC)
     {
-        Log((DEVICE_NAME ": %s: bad magic %#x; pArg=%p Cmd=%lu.\n",
+        Log((DEVICE_NAME ": %s: bad magic %#" PRIx32 "; pArg=%p Cmd=%#lx\n",
              __func__, ReqWrap->u32Magic, data, command));
         return EINVAL;
     }
     if (RT_UNLIKELY(   ReqWrap->cbData == 0
                     || ReqWrap->cbData > _1M*16))
     {
-        printf(DEVICE_NAME ": VBoxGuestNetBSDIOCtl: bad size %#x; pArg=%p Cmd=%lu.\n", ReqWrap->cbData, data, command);
+        Log((DEVICE_NAME ": %s: bad size %" PRIu32 "; pArg=%p Cmd=%#lx\n",
+             __func__, ReqWrap->cbData, data, command));
         return EINVAL;
     }
 
@@ -281,7 +283,7 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     void *pvBuf = RTMemTmpAlloc(ReqWrap->cbData);
     if (RT_UNLIKELY(!pvBuf))
     {
-        Log((DEVICE_NAME ": %s: RTMemTmpAlloc failed to alloc %d bytes.\n",
+        Log((DEVICE_NAME ": %s: RTMemTmpAlloc failed to alloc %" PRIu32 " bytes.\n",
              __func__, ReqWrap->cbData));
         return ENOMEM;
     }
@@ -290,16 +292,16 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ": %s: copyin failed; pvBuf=%p pArg=%p Cmd=%lu. rc=%d\n",
+        Log((DEVICE_NAME ": %s: copyin failed; pvBuf=%p pArg=%p Cmd=%#lx. rc=%d\n",
              __func__, pvBuf, data, command, rc));
-aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
+        aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
         return EFAULT;
     }
     if (RT_UNLIKELY(   ReqWrap->cbData != 0
                     && !VALID_PTR(pvBuf)))
     {
         RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ": %s: pvBuf invalid pointer %p\n",
+        Log((DEVICE_NAME ": %s: invalid pvBuf=%p\n",
              __func__, pvBuf));
         return EINVAL;
     }
@@ -313,7 +315,7 @@ aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
         rc = 0;
         if (RT_UNLIKELY(cbDataReturned > ReqWrap->cbData))
         {
-            Log((DEVICE_NAME ": %s: too much output data %d expected %d\n",
+            Log((DEVICE_NAME ": %s: too much output data %zu expected %" PRIu32 "\n",
                  __func__, cbDataReturned, ReqWrap->cbData));
             cbDataReturned = ReqWrap->cbData;
         }
