@@ -1581,9 +1581,7 @@ VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initi
 	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wlogical-op) \
 	$(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
-ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
- VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
-endif
+VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
 
 VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage)
