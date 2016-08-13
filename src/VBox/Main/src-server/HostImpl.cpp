@@ -811,6 +811,7 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 # endif
 #else
     /* Not implemented / supported on this platform. */
+    RT_NOREF(aNetworkInterfaces);
     ReturnComNotImplemented();
 #endif
 }
