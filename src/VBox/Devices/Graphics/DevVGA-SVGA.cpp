@@ -581,6 +581,8 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t u
      */
     if (pThis->svga.f3DEnabled)
         vmsvga3dUpdateHostScreenViewport(pThis, uScreenId, &OldViewport);
+# else
+    RT_NOREF(uScreenId, OldViewport);
 # endif
 }
 #endif /* IN_RING3 */
@@ -1108,7 +1110,7 @@ DECLINLINE(void) vmsvgaSafeFifoBusyRegUpdate(PVGASTATE pThis, bool fState)
  */
 PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 {
-#ifdef IN_RING3
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA3D)
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
 #endif
     int            rc = VINF_SUCCESS;
@@ -3978,6 +3980,7 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
  */
 int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
+    RT_NOREF(uVersion, uPass);
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
     int             rc;
@@ -4496,13 +4499,11 @@ static const char * const g_apszVmSvgaDevCapNames[] =
  */
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    int       rc;
-
 # ifdef VBOX_WITH_VMSVGA3D
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     if (pThis->svga.f3DEnabled)
     {
-        rc = vmsvga3dPowerOn(pThis);
+        int rc = vmsvga3dPowerOn(pThis);
 
         if (RT_SUCCESS(rc))
         {
@@ -4548,7 +4549,9 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
             RTLogRelSetBuffering(fSavedBuffering);
         }
     }
-# endif // VBOX_WITH_VMSVGA3D
+# else  /* !VBOX_WITH_VMSVGA3D */
+    RT_NOREF(pDevIns);
+# endif /* !VBOX_WITH_VMSVGA3D */
 }
 
 #endif /* IN_RING3 */
