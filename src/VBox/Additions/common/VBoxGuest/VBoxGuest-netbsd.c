@@ -256,14 +256,16 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
      * Validate the request wrapper.
      */
     if (IOCPARM_LEN(command) != sizeof(VBGLBIGREQ)) {
-        Log((DEVICE_NAME ": VBoxGuestFreeBSDIOCtl: bad request %lu size=%lu expected=%d\n", command, IOCPARM_LEN(command), sizeof(VBGLBIGREQ)));
+        Log((DEVICE_NAME ": %s: bad request %lu size=%lu expected=%d\n",
+             __func__, command, IOCPARM_LEN(command), sizeof(VBGLBIGREQ)));
         return ENOTTY;
     }
 
     PVBGLBIGREQ ReqWrap = (PVBGLBIGREQ)data;
     if (ReqWrap->u32Magic != VBGLBIGREQ_MAGIC)
     {
-        Log((DEVICE_NAME ": VBoxGuestNetBSDIOCtl: bad magic %#x; pArg=%p Cmd=%lu.\n", ReqWrap->u32Magic, data, command));
+        Log((DEVICE_NAME ": %s: bad magic %#x; pArg=%p Cmd=%lu.\n",
+             __func__, ReqWrap->u32Magic, data, command));
         return EINVAL;
     }
     if (RT_UNLIKELY(   ReqWrap->cbData == 0
@@ -279,7 +281,8 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     void *pvBuf = RTMemTmpAlloc(ReqWrap->cbData);
     if (RT_UNLIKELY(!pvBuf))
     {
-        Log((DEVICE_NAME ":VBoxGuestNetBSDIOCtl: RTMemTmpAlloc failed to alloc %d bytes.\n", ReqWrap->cbData));
+        Log((DEVICE_NAME ": %s: RTMemTmpAlloc failed to alloc %d bytes.\n",
+             __func__, ReqWrap->cbData));
         return ENOMEM;
     }
 
@@ -287,7 +290,8 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     if (RT_UNLIKELY(rc))
     {
         RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ":VBoxGuestNetBSDIOCtl: copyin failed; pvBuf=%p pArg=%p Cmd=%lu. rc=%d\n", pvBuf, data, command, rc));
+        Log((DEVICE_NAME ": %s: copyin failed; pvBuf=%p pArg=%p Cmd=%lu. rc=%d\n",
+             __func__, pvBuf, data, command, rc));
 aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
         return EFAULT;
     }
@@ -295,7 +299,8 @@ aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
                     && !VALID_PTR(pvBuf)))
     {
         RTMemTmpFree(pvBuf);
-        Log((DEVICE_NAME ":VBoxGuestNetBSDIOCtl: pvBuf invalid pointer %p\n", pvBuf));
+        Log((DEVICE_NAME ": %s: pvBuf invalid pointer %p\n",
+             __func__, pvBuf));
         return EINVAL;
     }
 
@@ -308,7 +313,8 @@ aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
         rc = 0;
         if (RT_UNLIKELY(cbDataReturned > ReqWrap->cbData))
         {
-            Log((DEVICE_NAME ":VBoxGuestNetBSDIOCtl: too much output data %d expected %d\n", cbDataReturned, ReqWrap->cbData));
+            Log((DEVICE_NAME ": %s: too much output data %d expected %d\n",
+                 cbDataReturned, ReqWrap->cbData));
             cbDataReturned = ReqWrap->cbData;
         }
         if (cbDataReturned > 0)
@@ -316,11 +322,13 @@ aprint_error_dev(vboxguest->sc_dev, "copyin failed\n");
             rc = copyout(pvBuf, (void *)(uintptr_t)ReqWrap->pvDataR3, cbDataReturned);
             if (RT_UNLIKELY(rc))
             {
-                Log((DEVICE_NAME ":VBoxGuestNetBSDIOCtl: copyout failed; pvBuf=%p pArg=%p. rc=%d\n", pvBuf, data, rc));
+                Log((DEVICE_NAME ": %s: copyout failed; pvBuf=%p pArg=%p. rc=%d\n",
+                     __func__, pvBuf, data, rc));
             }
         }
     } else {
-        Log((DEVICE_NAME ":VBoxGuestNetBSDIOCtl: VGDrvCommonIoCtl failed. rc=%d\n", rc));
+        Log((DEVICE_NAME ": %s: VGDrvCommonIoCtl failed. rc=%d\n",
+             __func__, rc));
         rc = -rc;
     }
     RTMemTmpFree(pvBuf);
