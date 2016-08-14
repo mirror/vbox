@@ -1727,11 +1727,12 @@ again:
 
 				case DT_ACT_FTRUNCATE:
 				{
+					int res;
 					if (fp == NULL)
 						continue;
 
 					(void) fflush(fp);
-					int res = ftruncate(fileno(fp), 0);
+					res = ftruncate(fileno(fp), 0);
 					NOREF(res);
 					(void) fseeko(fp, 0, SEEK_SET);
 					continue;
