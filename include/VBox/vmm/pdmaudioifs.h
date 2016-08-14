@@ -922,6 +922,15 @@ typedef struct PDMIAUDIOCONNECTOR
         pThis->IHostAudio.pfnStreamCapture   = RT_CONCAT(a_Prefix,StreamCapture); \
     } while (0)
 
+
+/** @todo r=bird: This stuff is UGLY even if I can see the refactoring flexibility
+ * it buys you.  However, it makes the code TOTALLY UNREADABLE for the uninitated!
+ *                                                                               !
+ * Please revert ASAP, that is after fixing the core audio related problems!  If
+ * you don't, I will then next time I'm in the vicinity.
+ */
+
+
 #define PDMAUDIO_IHOSTAUDIO_FN_RET_INIT    int
 #define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_INIT (PPDMIHOSTAUDIO pInterface)
 
