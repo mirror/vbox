@@ -180,24 +180,24 @@ define TOOL_VBoxXcode62_COMPILE_C_CMDS
 		--kObjCache-cpp $(outbase).i\
 		$(TOOL_VBoxXcode62_CC) -E -o -\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
 		$(TOOL_VBoxXcode62_CC) -c\
 		$(flags) -x c\
 		-o $(obj)\
 		-
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_C_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_C_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_CC) -c\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 endif # !KUSE_OBJCACHE
 
@@ -224,24 +224,26 @@ define TOOL_VBoxXcode62_COMPILE_CXX_CMDS
 		--kObjCache-cpp $(outbase).ii\
 		$(TOOL_VBoxXcode62_CXX) -E -o -\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep)\
+		-Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
 		$(TOOL_VBoxXcode62_CXX) -c\
 		$(flags) -x c++\
 		-o $(obj)\
 		-
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_CXX_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_CXX_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_CXX) -c\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep)\
+		-Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 endif # !KBUILD_USE_KOBJCACHE
 
@@ -268,24 +270,24 @@ define TOOL_VBoxXcode62_COMPILE_OBJC_CMDS
 		--kObjCache-cpp $(outbase).ii\
 		$(TOOL_VBoxXcode62_OBJC) -E -o -\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
 		$(TOOL_VBoxXcode62_OBJC) -c\
 		$(flags) -x objective-c \
 		-o $(obj)\
 		-
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_OBJC_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_OBJC_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_OBJC) -c\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 endif # !KBUILD_USE_KOBJCACHE
 
@@ -312,24 +314,24 @@ define TOOL_VBoxXcode62_COMPILE_OBJCXX_CMDS
 		--kObjCache-cpp $(outbase).mii\
 		$(TOOL_VBoxXcode62_OBJCXX) -E -o -\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		$(abspath $(source))\
 		--kObjCache-cc $(obj)\
 		$(TOOL_VBoxXcode62_OBJCXX) -c\
 		$(flags) -x objective-c++ \
 		-o $(obj)\
 		-
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 else  # !KBUILD_USE_KOBJCACHE
 TOOL_VBoxXcode62_COMPILE_OBJCXX_OUTPUT =
 define TOOL_VBoxXcode62_COMPILE_OBJCXX_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_OBJCXX) -c\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 endif # !KBUILD_USE_KOBJCACHE
 
@@ -353,10 +355,10 @@ TOOL_VBoxXcode62_COMPILE_AS_DEPORD =
 define TOOL_VBoxXcode62_COMPILE_AS_CMDS
 	$(QUIET)$(TOOL_VBoxXcode62_ENV_SETUP) $(TOOL_VBoxXcode62_AS) -c\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-Wp,-MD,$(dep) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+	%$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
 
