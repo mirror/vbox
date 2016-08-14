@@ -305,7 +305,7 @@ VBoxSVC_DEFS.win += _WIN32_WINNT=0x0510
 # VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 
-ifneq ($(KBUILD_TARGET),win)
+if $(KBUILD_TARGET) != "win" && $(VBOX_GCC_VERSION_CXX) >= 40900 # gcc 4.9.x (4.8.x is causing endless RT_ELEMENT trouble)
  VBoxSVC_CXXFLAGS = -Wunused -Wconversion
 endif
 
@@ -672,7 +672,7 @@ VBoxC_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 
-ifneq ($(KBUILD_TARGET),win)
+if $(KBUILD_TARGET) != "win" && $(VBOX_GCC_VERSION_CXX) >= 40900 # gcc 4.9.x (4.8.x is causing endless RT_ELEMENT trouble)
 # VBoxC_CXXFLAGS = -Wunused -Wconversion
 endif
 
