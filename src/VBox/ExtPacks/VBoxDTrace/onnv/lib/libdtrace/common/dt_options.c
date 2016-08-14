@@ -108,7 +108,8 @@ dt_coredump(void)
 	struct rlimit lim;
 #endif
 
-	(void) write(STDERR_FILENO, msg, sizeof (msg) - 1);
+	int res = write(STDERR_FILENO, msg, sizeof (msg) - 1);
+	NOREF(res);
 
 #ifndef _MSC_VER
 	act.sa_handler = SIG_DFL;

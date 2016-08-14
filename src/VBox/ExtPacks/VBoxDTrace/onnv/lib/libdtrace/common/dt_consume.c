@@ -1726,14 +1726,16 @@ again:
 					continue;
 
 				case DT_ACT_FTRUNCATE:
+				{
 					if (fp == NULL)
 						continue;
 
 					(void) fflush(fp);
-					(void) ftruncate(fileno(fp), 0);
+					int res = ftruncate(fileno(fp), 0);
+					NOREF(res);
 					(void) fseeko(fp, 0, SEEK_SET);
 					continue;
-
+				}
 				case DT_ACT_NORMALIZE:
 					if (i == epd->dtepd_nrecs - 1)
 						return (dt_set_errno(dtp,

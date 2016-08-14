@@ -919,6 +919,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 switch (pThis->enmSpeakerEmu)
                 {
                     case PIT_SPEAKER_EMU_CONSOLE:
+                    {
                         int res;
                         res = ioctl(pThis->hHostSpeaker, KIOCSOUND, pChan->count);
                         if (res == -1)
@@ -927,16 +928,23 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                             pThis->enmSpeakerEmu = PIT_SPEAKER_EMU_NONE;
                         }
                         break;
+                    }
                     case PIT_SPEAKER_EMU_EVDEV:
+                    {
                         struct input_event e;
                         e.type = EV_SND;
                         e.code = SND_TONE;
                         e.value = PIT_FREQ / pChan->count;
-                        write(pThis->hHostSpeaker, &e, sizeof(struct input_event));
+                        int res = write(pThis->hHostSpeaker, &e, sizeof(struct input_event));
+                        NOREF(res);
                         break;
+                    }
                     case PIT_SPEAKER_EMU_TTY:
-                        write(pThis->hHostSpeaker, "\a", 1);
+                    {
+                        int res = write(pThis->hHostSpeaker, "\a", 1);
+                        NOREF(res);
                         break;
+                    }
                     case PIT_SPEAKER_EMU_NONE:
                         break;
                     default:
@@ -960,12 +968,15 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                         ioctl(pThis->hHostSpeaker, KIOCSOUND, 0);
                         break;
                     case PIT_SPEAKER_EMU_EVDEV:
+                    {
                         struct input_event e;
                         e.type = EV_SND;
                         e.code = SND_TONE;
                         e.value = 0;
-                        write(pThis->hHostSpeaker, &e, sizeof(struct input_event));
+                        int res = write(pThis->hHostSpeaker, &e, sizeof(struct input_event));
+                        NOREF(res);
                         break;
+                    }
                     case PIT_SPEAKER_EMU_TTY:
                         break;
                     case PIT_SPEAKER_EMU_NONE:

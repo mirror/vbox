@@ -70,7 +70,8 @@ VBoxReadInput(InputInfoPtr pInfo)
 
     /* Read a byte from the device to acknowledge the event */
     char c;
-    (void) read(pInfo->fd, &c, 1);
+    int res = read(pInfo->fd, &c, 1);
+    NOREF(res);
     /* The first test here is a workaround for an apparent bug in Xorg Server 1.5 */
     if (
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
