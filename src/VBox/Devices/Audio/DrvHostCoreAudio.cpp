@@ -628,10 +628,14 @@ int coreAudioUpdateStatusInternalEx(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOBACKENDCFG
     return rc;
 }
 
-static DECLCALLBACK(OSStatus) drvHostCoreAudioDeviceStateChanged(AudioObjectID propertyID,
-                                                                 UInt32 nAddresses,
-                                                                 const AudioObjectPropertyAddress properties[],
-                                                                 void *pvUser)
+
+/**
+ * Implements the OS X callback AudioObjectPropertyListenerProc.
+ */
+static OSStatus drvHostCoreAudioDeviceStateChanged(AudioObjectID propertyID,
+                                                   UInt32 nAddresses,
+                                                   const AudioObjectPropertyAddress properties[],
+                                                   void *pvUser)
 {
     LogFlowFunc(("propertyID=%u nAddresses=%u pvUser=%p\n", propertyID, nAddresses, pvUser));
 
@@ -700,11 +704,15 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioDeviceStateChanged(AudioObjectID p
     return noErr;
 }
 
-/* Callback for getting notified when the default recording/playback device has been changed. */
-static DECLCALLBACK(OSStatus) coreAudioDefaultDeviceChanged(AudioObjectID propertyID,
-                                                            UInt32 nAddresses,
-                                                            const AudioObjectPropertyAddress properties[],
-                                                            void *pvUser)
+
+/**
+ * Implements the OS X callback AudioObjectPropertyListenerProc for getting
+ * notified when the default recording/playback device has been changed.
+ */
+static OSStatus coreAudioDefaultDeviceChanged(AudioObjectID propertyID,
+                                              UInt32 nAddresses,
+                                              const AudioObjectPropertyAddress properties[],
+                                              void *pvUser)
 {
     OSStatus err = noErr;
 
@@ -790,11 +798,15 @@ static DECLCALLBACK(OSStatus) coreAudioDefaultDeviceChanged(AudioObjectID proper
     return noErr;
 }
 
-/* Callback for getting notified when some of the properties of an audio device has changed. */
-static DECLCALLBACK(OSStatus) coreAudioRecordingAudioDevicePropertyChanged(AudioObjectID                     propertyID,
-                                                                           UInt32                            cAdresses,
-                                                                           const AudioObjectPropertyAddress  aProperties[],
-                                                                           void                             *pvUser)
+
+/**
+ * Implements the OS X callback AudioObjectPropertyListenerProc for getting
+ * notified when some of the properties of an audio device has changed.
+ */
+static OSStatus coreAudioRecordingAudioDevicePropertyChanged(AudioObjectID                     propertyID,
+                                                             UInt32                            cAdresses,
+                                                             const AudioObjectPropertyAddress  aProperties[],
+                                                             void                             *pvUser)
 {
     PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN)pvUser;
 
@@ -825,12 +837,15 @@ static DECLCALLBACK(OSStatus) coreAudioRecordingAudioDevicePropertyChanged(Audio
     return noErr;
 }
 
-/* Callback to convert audio input data from one format to another. */
-static DECLCALLBACK(OSStatus) coreAudioConverterCallback(AudioConverterRef              inAudioConverter,
-                                                         UInt32                        *ioNumberDataPackets,
-                                                         AudioBufferList               *ioData,
-                                                         AudioStreamPacketDescription **ppASPD,
-                                                         void                          *pvUser)
+/**
+ * Implements the OS X callback AudioConverterComplexInputDataProc for
+ * converting audio input data from one format to another.
+ */
+static OSStatus coreAudioConverterCallback(AudioConverterRef              inAudioConverter,
+                                           UInt32                        *ioNumberDataPackets,
+                                           AudioBufferList               *ioData,
+                                           AudioStreamPacketDescription **ppASPD,
+                                           void                          *pvUser)
 {
     AssertPtrReturn(ioNumberDataPackets, g_caConverterEOFDErr);
     AssertPtrReturn(ioData,              g_caConverterEOFDErr);
@@ -900,13 +915,16 @@ static DECLCALLBACK(OSStatus) coreAudioConverterCallback(AudioConverterRef      
     return noErr;
 }
 
-/* Callback to feed audio input buffer. */
-static DECLCALLBACK(OSStatus) coreAudioRecordingCb(void                       *pvUser,
-                                                   AudioUnitRenderActionFlags *pActionFlags,
-                                                   const AudioTimeStamp       *pAudioTS,
-                                                   UInt32                      uBusID,
-                                                   UInt32                      cFrames,
-                                                   AudioBufferList            *pBufData)
+/**
+ * Implements the OS X callback AURenderCallback in order to feed the audio
+ * input buffer.
+ */
+static OSStatus coreAudioRecordingCb(void                       *pvUser,
+                                     AudioUnitRenderActionFlags *pActionFlags,
+                                     const AudioTimeStamp       *pAudioTS,
+                                     UInt32                      uBusID,
+                                     UInt32                      cFrames,
+                                     AudioBufferList            *pBufData)
 {
     /* If nothing is pending return immediately. */
     if (cFrames == 0)
@@ -1869,11 +1887,15 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis,
     return rc;
 }
 
-/* Callback for getting notified when some of the properties of an audio device has changed. */
-static DECLCALLBACK(OSStatus) coreAudioPlaybackAudioDevicePropertyChanged(AudioObjectID propertyID,
-                                                                          UInt32 nAddresses,
-                                                                          const AudioObjectPropertyAddress properties[],
-                                                                          void *pvUser)
+
+/**
+ * Implements the OS X callback AudioObjectPropertyListenerProc for getting
+ * notified when some of the properties of an audio device has changed.
+ */
+static OSStatus coreAudioPlaybackAudioDevicePropertyChanged(AudioObjectID propertyID,
+                                                            UInt32 nAddresses,
+                                                            const AudioObjectPropertyAddress properties[],
+                                                            void *pvUser)
 {
     switch (propertyID)
     {
@@ -1886,13 +1908,17 @@ static DECLCALLBACK(OSStatus) coreAudioPlaybackAudioDevicePropertyChanged(AudioO
     return noErr;
 }
 
-/* Callback to feed audio output buffer. */
-static DECLCALLBACK(OSStatus) coreAudioPlaybackCb(void *pvUser,
-                                                  AudioUnitRenderActionFlags *pActionFlags,
-                                                  const AudioTimeStamp       *pAudioTS,
-                                                  UInt32                      uBusID,
-                                                  UInt32                      cFrames,
-                                                  AudioBufferList            *pBufData)
+
+/**
+ * Implements the OS X callback AURenderCallback in order to feed the audio
+ * output buffer.
+ */
+static OSStatus coreAudioPlaybackCb(void *pvUser,
+                                    AudioUnitRenderActionFlags *pActionFlags,
+                                    const AudioTimeStamp       *pAudioTS,
+                                    UInt32                      uBusID,
+                                    UInt32                      cFrames,
+                                    AudioBufferList            *pBufData)
 {
     PCOREAUDIOSTREAMOUT pStreamOut  = (PCOREAUDIOSTREAMOUT)pvUser;
     PPDMAUDIOSTREAM     pStream     = &pStreamOut->Stream;
@@ -2167,8 +2193,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostCoreAudio)
     return rc;
 }
 
-static DECLCALLBACK(int) coreAudioControlStreamOut(PDRVHOSTCOREAUDIO pThis,
-                                                   PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+static int coreAudioControlStreamOut(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     PCOREAUDIOSTREAMOUT pStreamOut = (PCOREAUDIOSTREAMOUT)pStream;
 
