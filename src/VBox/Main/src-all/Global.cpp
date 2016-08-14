@@ -503,7 +503,7 @@ const Global::OSType Global::sOSTypes[] =
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 };
 
-uint32_t Global::cOSTypes = RT_ELEMENTS(Global::sOSTypes);
+size_t Global::cOSTypes = RT_ELEMENTS(Global::sOSTypes);
 
 /**
  * Returns an OS Type ID for the given VBOXOSTYPE value.

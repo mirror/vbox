@@ -82,7 +82,7 @@ public:
     };
 
     static const OSType sOSTypes[];
-    static uint32_t cOSTypes;
+    static size_t cOSTypes;
 
     /**
      * Maps VBOXOSTYPE to the OS type which is used in VM configs.
