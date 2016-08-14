@@ -1574,147 +1574,6 @@ USES += dtrace
 
 
 #
-# Compiler warning control.
-#
-VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
-	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
-	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wlogical-op) \
-	$(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types)
-VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
-VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
-if1of ($(KBUILD_TARGET),linux)
-VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
-endif
-
-VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage)
-VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
-
-VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
-VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
-
-# Disabled Visual C++ warnings, W4:
-#      -wd4065: switch statement contains 'default' but no 'case' labels
-#      -wd4996: deprecated / insecure.
-#      -wd4127: conditional expression is constant [level 4]
-#      -wd4706: assignment within conditional expression [level 4]
-#      -wd4201: nonstandard extension used : nameless struct/union [level 4]
-#      -wd4214: nonstandard extension used : bit field types other than int [level 4]
-#      -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
-#      -wd4512: 'VM' : assignment operator could not be generated
-#      -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
-# Disabled Visual C++ warnings, Wall:
-#      -wd4514: unreferenced inline function has been removed
-#      -wd4820: 'RTSTRSPACECORE' : '7' bytes padding added after data member 'RTSTRSPACECORE::uchHeight'
-#      -wd4365: '=' : conversion from 'unsigned char' to 'char', signed/unsigned mismatch
-#      -wd4987: nonstandard extension used: 'throw (...)' (setjmp.h + our stuff)
-#      -wd4710: 'std::string std::_Narrow_str(std::wstring)' : function not inlined
-#      -wd4061: enumerator 'RTASN1TYPE_END' in switch of enum 'RTASN1TYPE' is not explicitly handled by a case label
-#               Note! C4062 checks for the same but includes the 'default' case, just like gcc.  So, no trouble disabling this.
-#      -wd4986: 'operator new[]': exception specification does not match previous declaration (crtdbg.h vs new, exception specification only)
-#      -wd4191: 'type cast' : unsafe conversion from 'int (__cdecl *)(gzFile)' to 'PFNRT'
-#      -wd4574: 'INCL_WINSOCK_API_TYPEDEFS' is defined to be '0': did you mean to use '#if INCL_WINSOCK_API_TYPEDEFS'?
-#      -wd4917: 'OLE_XPOS_HIMETRIC' : a GUID can only be associated with a class, interface or namespace
-#      -wd4711: function 'void __cdecl rtMemCacheFreeOne(struct RTMEMCACHEINT * __ptr64,void * __ptr64)' selected for automatic inline expansion
-#      -wd4571: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
-#      -wd4611: interaction between '_setjmp' and C++ object destruction is non-portable
-#      -wd4324: '_TDI_PNP_CONTEXT_XP' : structure was padded due to __declspec(align())
-#      -wd4505: VBoxNetFltNobj.h(45) : warning C4505: 'VBoxNetFltNobj::Release' : unreferenced local function has been removed
-#               Probably related to http://stackoverflow.com/questions/3051992/compiler-warning-at-c-template-base-class
-#      -wd4263: 'int VRDPChannelClipboard::SendPacket(const void *,uint32_t)' : member function does not override any base class virtual member function
-#               Probably useful, but impractical, just like the next one.
-#      -wd4264: 'int VRDPOutputCtx::SendPacket(void)' : no override available for virtual member function from base 'VRDPOutputCtx'; function is hidden
-#      -wd4738: storing 32-bit float result in memory, possible loss of performance
-# Want to enable these:
-#      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
-#      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
-VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
-	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324 -wd4505 \
-	-wd4263 -wd4264 -wd4738
-#ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
-# VBOX_VCC_WARN_ALL +=
-#endif
-VBOX_VCC_WARN_ALL += -wd4242 -wd4244
-
-# Disable pedantic warnings for NP/NonPedantic templates.
-#      -wd4131: 'bi_flush' : uses old-style declarator
-#      -wd4255: 'tr_static_init' : no function prototype given: converting '()' to '(void)'
-#      -wd4668: '_WIN32_WCE' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'/
-#      -wd4100: 'cinfo' : unreferenced formal parameter
-#      -wd4189: 'sz' : local variable is initialized but not referenced
-#      -wd4132: 'xmlStringComment' : const object should be initialized
-#      -wd4152: nonstandard extension, function/data pointer conversion in expression
-#      -wd4702: unreachable code
-#      -wd4057: '=' : 'xmlChar *' differs in indirection to slightly different base types from 'char *'
-#      -wd4296: '>=' : expression is always true
-#      -wd4389: '==' : signed/unsigned mismatch
-#      -wd4018: '<=' : signed/unsigned mismatch
-#      -wd4245: '=' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
-#      -wd4267: '+=' : conversion from 'size_t' to 'long', possible loss of data
-#      -wd4295: 'vendor_string' : array is too small to include a terminating null character
-VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668 -wd4100 -wd4189 -wd4132 -wd4152 -wd4702 -wd4057 -wd4296 -wd4389 -wd4018 -wd4245 \
-	-wd4267 -wd4295
-
-ifeq ($(KBUILD_TARGET),win)
- VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
-else
- VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -Wno-unused-parameter
-endif
-
-#
-# Compiler optimization flags.
-#
-ifeq ($(KBUILD_TYPE),debug)
- VBOX_GCC_FP     ?= -fno-omit-frame-pointer
- VBOX_GCC_OPT    ?= -O0
- VBOX_VCC_FP     ?= -Oy-
- VBOX_VCC_OPT    ?=
- VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer -fno-optimize-sibling-calls
- VBOX_GCC_R0_OPT ?= -O2
- VBOX_VCC_R0_FP  ?= -Oy-
- VBOX_VCC_R0_OPT ?=
- VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer -fno-optimize-sibling-calls
- VBOX_GCC_GC_OPT ?= -O2
- VBOX_VCC_GC_FP  ?= -Oy-
- VBOX_VCC_GC_OPT ?=
-else
- # We should use -fomit-frame-pointer for GCC / -Oy for VCC.
- # -funwind-tables provides support for backtraces in gdb then.
- VBOX_GCC_FP     ?= -fno-omit-frame-pointer
- VBOX_GCC_OPT    ?= -O2 $(VBOX_GCC_mtune-generic)
- VBOX_VCC_FP     ?= -Oy-
- VBOX_VCC_OPT    ?= -O2
- VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer
- VBOX_GCC_R0_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
- VBOX_VCC_R0_FP  ?= -Oy-
- VBOX_VCC_R0_OPT ?= -O2
- VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer
- VBOX_GCC_GC_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
- VBOX_VCC_GC_FP  ?= -Oy-
- VBOX_VCC_GC_OPT ?= -O2
-endif
-ifeq ($(KBUILD_TARGET_ARCH),x86)
- ifneq ($(KBUILD_TARGET),darwin)
-  # (The '<=' operator is for prepending (kmk specific).)
-  VBOX_GCC_OPT <= -march=i586
- endif
-endif
-
-
-#
-# Select the CRT type we're using with Microsoft Visual C++.
-#
-if1of ($(KBUILD_TYPE), debug dbgopt strict)
-#not yet# VBOX_WITH_DEBUG_VCC_CRT = 1
-endif
-ifdef VBOX_WITH_DEBUG_VCC_CRT
- VBOX_VCC_CRT_TYPE   = d
- VBOX_VCC_CRT_TYPE_N =
-else
- VBOX_VCC_CRT_TYPE   =
- VBOX_VCC_CRT_TYPE_N = d
-endif
-
-#
 # Decide which Windows DDK to use by default.
 #
 ifeq ($(VBOX_VCC_TOOL_STEM),VCC110)
@@ -2844,6 +2703,150 @@ endif
 
 include $(PATH_OUT)/DynamicConfig.kmk
 endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
+
+
+#
+# Compiler warning control.
+#
+VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
+	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
+	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wlogical-op) \
+	$(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types)
+VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
+if $(VBOX_GCC_VERSION_CXX) >= 40200 # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
+ VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
+endif
+if1of ($(KBUILD_TARGET),linux)
+ VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
+endif
+
+VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage)
+VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
+
+VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
+VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
+
+# Disabled Visual C++ warnings, W4:
+#      -wd4065: switch statement contains 'default' but no 'case' labels
+#      -wd4996: deprecated / insecure.
+#      -wd4127: conditional expression is constant [level 4]
+#      -wd4706: assignment within conditional expression [level 4]
+#      -wd4201: nonstandard extension used : nameless struct/union [level 4]
+#      -wd4214: nonstandard extension used : bit field types other than int [level 4]
+#      -wd4510: 'VM::<unnamed-tag>' : default constructor could not be generated
+#      -wd4512: 'VM' : assignment operator could not be generated
+#      -wd4610: union 'VM::<unnamed-tag>' can never be instantiated - user defined constructor required
+# Disabled Visual C++ warnings, Wall:
+#      -wd4514: unreferenced inline function has been removed
+#      -wd4820: 'RTSTRSPACECORE' : '7' bytes padding added after data member 'RTSTRSPACECORE::uchHeight'
+#      -wd4365: '=' : conversion from 'unsigned char' to 'char', signed/unsigned mismatch
+#      -wd4987: nonstandard extension used: 'throw (...)' (setjmp.h + our stuff)
+#      -wd4710: 'std::string std::_Narrow_str(std::wstring)' : function not inlined
+#      -wd4061: enumerator 'RTASN1TYPE_END' in switch of enum 'RTASN1TYPE' is not explicitly handled by a case label
+#               Note! C4062 checks for the same but includes the 'default' case, just like gcc.  So, no trouble disabling this.
+#      -wd4986: 'operator new[]': exception specification does not match previous declaration (crtdbg.h vs new, exception specification only)
+#      -wd4191: 'type cast' : unsafe conversion from 'int (__cdecl *)(gzFile)' to 'PFNRT'
+#      -wd4574: 'INCL_WINSOCK_API_TYPEDEFS' is defined to be '0': did you mean to use '#if INCL_WINSOCK_API_TYPEDEFS'?
+#      -wd4917: 'OLE_XPOS_HIMETRIC' : a GUID can only be associated with a class, interface or namespace
+#      -wd4711: function 'void __cdecl rtMemCacheFreeOne(struct RTMEMCACHEINT * __ptr64,void * __ptr64)' selected for automatic inline expansion
+#      -wd4571: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
+#      -wd4611: interaction between '_setjmp' and C++ object destruction is non-portable
+#      -wd4324: '_TDI_PNP_CONTEXT_XP' : structure was padded due to __declspec(align())
+#      -wd4505: VBoxNetFltNobj.h(45) : warning C4505: 'VBoxNetFltNobj::Release' : unreferenced local function has been removed
+#               Probably related to http://stackoverflow.com/questions/3051992/compiler-warning-at-c-template-base-class
+#      -wd4263: 'int VRDPChannelClipboard::SendPacket(const void *,uint32_t)' : member function does not override any base class virtual member function
+#               Probably useful, but impractical, just like the next one.
+#      -wd4264: 'int VRDPOutputCtx::SendPacket(void)' : no override available for virtual member function from base 'VRDPOutputCtx'; function is hidden
+#      -wd4738: storing 32-bit float result in memory, possible loss of performance
+# Want to enable these:
+#      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
+#      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
+VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
+	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324 -wd4505 \
+	-wd4263 -wd4264 -wd4738
+#ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
+# VBOX_VCC_WARN_ALL +=
+#endif
+VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+
+# Disable pedantic warnings for NP/NonPedantic templates.
+#      -wd4131: 'bi_flush' : uses old-style declarator
+#      -wd4255: 'tr_static_init' : no function prototype given: converting '()' to '(void)'
+#      -wd4668: '_WIN32_WCE' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'/
+#      -wd4100: 'cinfo' : unreferenced formal parameter
+#      -wd4189: 'sz' : local variable is initialized but not referenced
+#      -wd4132: 'xmlStringComment' : const object should be initialized
+#      -wd4152: nonstandard extension, function/data pointer conversion in expression
+#      -wd4702: unreachable code
+#      -wd4057: '=' : 'xmlChar *' differs in indirection to slightly different base types from 'char *'
+#      -wd4296: '>=' : expression is always true
+#      -wd4389: '==' : signed/unsigned mismatch
+#      -wd4018: '<=' : signed/unsigned mismatch
+#      -wd4245: '=' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
+#      -wd4267: '+=' : conversion from 'size_t' to 'long', possible loss of data
+#      -wd4295: 'vendor_string' : array is too small to include a terminating null character
+VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668 -wd4100 -wd4189 -wd4132 -wd4152 -wd4702 -wd4057 -wd4296 -wd4389 -wd4018 -wd4245 \
+	-wd4267 -wd4295
+
+ifeq ($(KBUILD_TARGET),win)
+ VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
+else
+ VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -Wno-unused-parameter
+endif
+
+#
+# Compiler optimization flags.
+#
+ifeq ($(KBUILD_TYPE),debug)
+ VBOX_GCC_FP     ?= -fno-omit-frame-pointer
+ VBOX_GCC_OPT    ?= -O0
+ VBOX_VCC_FP     ?= -Oy-
+ VBOX_VCC_OPT    ?=
+ VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+ VBOX_GCC_R0_OPT ?= -O2
+ VBOX_VCC_R0_FP  ?= -Oy-
+ VBOX_VCC_R0_OPT ?=
+ VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+ VBOX_GCC_GC_OPT ?= -O2
+ VBOX_VCC_GC_FP  ?= -Oy-
+ VBOX_VCC_GC_OPT ?=
+else
+ # We should use -fomit-frame-pointer for GCC / -Oy for VCC.
+ # -funwind-tables provides support for backtraces in gdb then.
+ VBOX_GCC_FP     ?= -fno-omit-frame-pointer
+ VBOX_GCC_OPT    ?= -O2 $(VBOX_GCC_mtune-generic)
+ VBOX_VCC_FP     ?= -Oy-
+ VBOX_VCC_OPT    ?= -O2
+ VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer
+ VBOX_GCC_R0_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
+ VBOX_VCC_R0_FP  ?= -Oy-
+ VBOX_VCC_R0_OPT ?= -O2
+ VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer
+ VBOX_GCC_GC_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
+ VBOX_VCC_GC_FP  ?= -Oy-
+ VBOX_VCC_GC_OPT ?= -O2
+endif
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+ ifneq ($(KBUILD_TARGET),darwin)
+  # (The '<=' operator is for prepending (kmk specific).)
+  VBOX_GCC_OPT <= -march=i586
+ endif
+endif
+
+
+#
+# Select the CRT type we're using with Microsoft Visual C++.
+#
+if1of ($(KBUILD_TYPE), debug dbgopt strict)
+#not yet# VBOX_WITH_DEBUG_VCC_CRT = 1
+endif
+ifdef VBOX_WITH_DEBUG_VCC_CRT
+ VBOX_VCC_CRT_TYPE   = d
+ VBOX_VCC_CRT_TYPE_N =
+else
+ VBOX_VCC_CRT_TYPE   =
+ VBOX_VCC_CRT_TYPE_N = d
+endif
 
 
 #
