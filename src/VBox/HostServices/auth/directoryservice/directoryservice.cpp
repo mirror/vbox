@@ -37,8 +37,8 @@ tDirStatus defaultSearchNodePath(tDirReference pDirRef, tDataListPtr *pdsNodePat
     {
         /* Try to find the default search node for local names */
         UInt32 cNodes;
-        tContextData pCtx = NULL;
-        dsErr = dsFindDirNodes(pDirRef, pTmpBuf, NULL, eDSLocalNodeNames, &cNodes, &pCtx);
+        tContextData hCtx = 0;
+        dsErr = dsFindDirNodes(pDirRef, pTmpBuf, NULL, eDSLocalNodeNames, &cNodes, &hCtx);
         /* Any nodes found? */
         if (   dsErr == eDSNoErr
             && cNodes >= 1)
@@ -47,8 +47,8 @@ tDirStatus defaultSearchNodePath(tDirReference pDirRef, tDataListPtr *pdsNodePat
         else
             dsErr = eDSNodeNotFound;
 
-        if (pCtx)
-            dsReleaseContinueData(pDirRef, pCtx);
+        if (hCtx) /* (DSoNodeConfig.m from DSTools-162 does exactly the same free if not-zero-regardless-of-return-code.) */
+            dsReleaseContinueData(pDirRef, hCtx);
         dsDataBufferDeAllocate(pDirRef, pTmpBuf);
     }
     else
@@ -75,7 +75,7 @@ tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const
         {
             /* Now search for the first matching record */
             UInt32 cRecords = 1;
-            tContextData pCtx = NULL;
+            tContextData hCtx = 0;
             dsErr = dsGetRecordList(pNodeRef,
                                     pTmpBuf,
                                     pRecordName,
@@ -84,31 +84,31 @@ tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const
                                     pRequestedAttributes,
                                     false,
                                     &cRecords,
-                                    &pCtx);
+                                    &hCtx);
             if (   dsErr == eDSNoErr
                 && cRecords >= 1)
             {
                 /* Process the first found record. Look at any attribute one by one. */
-                tAttributeListRef pRecAttrListRef = NULL;
+                tAttributeListRef hRecAttrListRef = 0;
                 tRecordEntryPtr pRecEntry = NULL;
                 tDataListPtr pAuthNodeList = NULL;
-                dsErr = dsGetRecordEntry(pNodeRef, pTmpBuf, 1, &pRecAttrListRef, &pRecEntry);
+                dsErr = dsGetRecordEntry(pNodeRef, pTmpBuf, 1, &hRecAttrListRef, &pRecEntry);
                 if (dsErr == eDSNoErr)
                 {
                     for (size_t i = 1; i <= pRecEntry->fRecordAttributeCount; ++i)
                     {
-                        tAttributeValueListRef pAttrValueListRef = NULL;
+                        tAttributeValueListRef hAttrValueListRef = 0;
                         tAttributeEntryPtr pAttrEntry = NULL;
                         /* Get the information for this attribute. */
-                        dsErr = dsGetAttributeEntry(pNodeRef, pTmpBuf, pRecAttrListRef, i,
-                                                    &pAttrValueListRef, &pAttrEntry);
+                        dsErr = dsGetAttributeEntry(pNodeRef, pTmpBuf, hRecAttrListRef, i,
+                                                    &hAttrValueListRef, &pAttrEntry);
                         if (dsErr == eDSNoErr)
                         {
                             tAttributeValueEntryPtr pValueEntry = NULL;
                             /* Has any value? */
                             if (pAttrEntry->fAttributeValueCount > 0)
                             {
-                                dsErr = dsGetAttributeValue(pNodeRef, pTmpBuf, 1, pAttrValueListRef, &pValueEntry);
+                                dsErr = dsGetAttributeValue(pNodeRef, pTmpBuf, 1, hAttrValueListRef, &pValueEntry);
                                 if (dsErr == eDSNoErr)
                                 {
                                     /* Check for kDSNAttrMetaNodeLocation */
@@ -126,8 +126,8 @@ tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const
 
                             if (pValueEntry != NULL)
                                 dsDeallocAttributeValueEntry(pDirRef, pValueEntry);
-                            if (pAttrValueListRef)
-                                dsCloseAttributeValueList(pAttrValueListRef);
+                            if (hAttrValueListRef)
+                                dsCloseAttributeValueList(hAttrValueListRef);
                             if (pAttrEntry != NULL)
                                 dsDeallocAttributeEntry(pDirRef, pAttrEntry);
 
@@ -155,15 +155,15 @@ tDirStatus userAuthInfo(tDirReference pDirRef, tDirNodeReference pNodeRef, const
                     if (dsCleanErr == eDSNoErr)
                         free(pAuthNodeList);
                 }
-                if (pRecAttrListRef)
-                    dsCloseAttributeList(pRecAttrListRef);
+                if (hRecAttrListRef)
+                    dsCloseAttributeList(hRecAttrListRef);
                 if (pRecEntry != NULL)
                     dsDeallocRecordEntry(pDirRef, pRecEntry);
             }
             else
                 dsErr = eDSRecordNotFound;
-            if (pCtx)
-                dsReleaseContinueData(pDirRef, pCtx);
+            if (hCtx)
+                dsReleaseContinueData(pDirRef, hCtx);
         }
         else
             dsErr = eDSAllocationFailed;
@@ -197,8 +197,8 @@ tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const
 {
     tDirStatus dsErr = eDSNoErr;
     /* Open the authentication node. */
-    tDirNodeReference pAuthNodeRef = NULL;
-    dsErr = dsOpenDirNode(pDirRef, pAuthNodeList, &pAuthNodeRef);
+    tDirNodeReference hAuthNodeRef = 0;
+    dsErr = dsOpenDirNode(pDirRef, pAuthNodeList, &hAuthNodeRef);
     if (dsErr == eDSNoErr)
     {
         /* How like we to authenticate! */
@@ -235,7 +235,7 @@ tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const
                     memcpy(&pAuthInBuf->fBufferData[pAuthInBuf->fBufferLength], pszPassword, cPassword);
                     pAuthInBuf->fBufferLength += cPassword;
                     /* Now authenticate */
-                    dsErr = dsDoDirNodeAuth(pAuthNodeRef, pAuthMethod, true, pAuthInBuf, pAuthOutBuf, NULL);
+                    dsErr = dsDoDirNodeAuth(hAuthNodeRef, pAuthMethod, true, pAuthInBuf, pAuthOutBuf, NULL);
                     /* Clean up. */
                     dsDataBufferDeAllocate(pDirRef, pAuthInBuf);
                 }
@@ -249,25 +249,30 @@ tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const
         }
         else
             dsErr = eDSAllocationFailed;
-        dsCloseDirNode(pAuthNodeRef);
+        dsCloseDirNode(hAuthNodeRef);
     }
 
     return dsErr;
 }
 
 RT_C_DECLS_BEGIN
-DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+DECLEXPORT(FNAUTHENTRY3) AuthEntry;
+RT_C_DECLS_END
+
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *pszCaller,
                                           PAUTHUUID pUuid,
                                           AuthGuestJudgement guestJudgement,
-                                          const char *szUser,
-                                          const char *szPassword,
-                                          const char *szDomain,
+                                          const char *pszUser,
+                                          const char *pszPassword,
+                                          const char *pszDomain,
                                           int fLogon,
                                           unsigned clientId)
 {
+    RT_NOREF(pszCaller, pUuid, guestJudgement, pszDomain, clientId);
+
     /* Validate input */
-    AssertPtrReturn(szUser, AuthResultAccessDenied);
-    AssertPtrReturn(szPassword, AuthResultAccessDenied);
+    AssertPtrReturn(pszUser, AuthResultAccessDenied);
+    AssertPtrReturn(pszPassword, AuthResultAccessDenied);
 
     /* Result to a default value */
     AuthResult result = AuthResultAccessDenied;
@@ -278,19 +283,19 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
 
     tDirStatus dsErr = eDSNoErr;
     tDirStatus dsCleanErr = eDSNoErr;
-    tDirReference pDirRef = NULL;
+    tDirReference hDirRef = 0;
     /* Connect to the Directory Service. */
-    dsErr = dsOpenDirService(&pDirRef);
+    dsErr = dsOpenDirService(&hDirRef);
     if (dsErr == eDSNoErr)
     {
         /* Fetch the default search node */
         tDataListPtr pSearchNodeList = NULL;
-        dsErr = defaultSearchNodePath(pDirRef, &pSearchNodeList);
+        dsErr = defaultSearchNodePath(hDirRef, &pSearchNodeList);
         if (dsErr == eDSNoErr)
         {
             /* Open the default search node */
-            tDirNodeReference pSearchNodeRef = NULL;
-            dsErr = dsOpenDirNode(pDirRef, pSearchNodeList, &pSearchNodeRef);
+            tDirNodeReference hSearchNodeRef = 0;
+            dsErr = dsOpenDirNode(hDirRef, pSearchNodeList, &hSearchNodeRef);
             if (dsErr == eDSNoErr)
             {
                 /* Search for the user info, fetch the authentication node &
@@ -298,29 +303,26 @@ DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
                  * specify a long user name even if the name which is used to
                  * authenticate has the short form. */
                 tDataListPtr pAuthNodeList = NULL;
-                dsErr = userAuthInfo(pDirRef, pSearchNodeRef, szUser, &pAuthNodeList);
+                dsErr = userAuthInfo(hDirRef, hSearchNodeRef, pszUser, &pAuthNodeList);
                 if (dsErr == eDSNoErr)
                 {
                     /* Open the authentication node and do the authentication. */
-                    dsErr = authWithNode(pDirRef, pAuthNodeList, szUser, szPassword);
+                    dsErr = authWithNode(hDirRef, pAuthNodeList, pszUser, pszPassword);
                     if (dsErr == eDSNoErr)
                         result = AuthResultAccessGranted;
-                    dsCleanErr = dsDataListDeallocate(pDirRef, pAuthNodeList);
+                    dsCleanErr = dsDataListDeallocate(hDirRef, pAuthNodeList);
                     if (dsCleanErr == eDSNoErr)
                         free(pAuthNodeList);
                 }
-                dsCloseDirNode(pSearchNodeRef);
+                dsCloseDirNode(hSearchNodeRef);
             }
-            dsCleanErr = dsDataListDeallocate(pDirRef, pSearchNodeList);
+            dsCleanErr = dsDataListDeallocate(hDirRef, pSearchNodeList);
             if (dsCleanErr == eDSNoErr)
                 free(pSearchNodeList);
         }
-        dsCloseDirService(pDirRef);
+        dsCloseDirService(hDirRef);
     }
 
     return result;
 }
-RT_C_DECLS_END
-
-static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;
 
