@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio devices: Mac OS X CoreAudio audio driver.
+ * VBox audio devices - Mac OS X CoreAudio audio driver.
  */
 
 /*
@@ -14,6 +14,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <VBox/log.h>
 #include <VBox/vmm/pdmaudioifs.h>
@@ -58,23 +62,14 @@
  * http://developer.apple.com/mac/library/documentation/AudioUnit/Reference/AUComponentServicesReference/Reference/reference.html
  */
 
-/**
- * Host Coreaudio driver instance data.
- * @implements PDMIAUDIOCONNECTOR
- */
-typedef struct DRVHOSTCOREAUDIO
-{
-    /** Pointer to the driver instance structure. */
-    PPDMDRVINS    pDrvIns;
-    /** Pointer to host audio interface. */
-    PDMIHOSTAUDIO IHostAudio;
-} DRVHOSTCOREAUDIO, *PDRVHOSTCOREAUDIO;
 
 /*******************************************************************************
  *
  * Helper function section
  *
  ******************************************************************************/
+
+/* Move these down below the internal function prototypes... */
 
 static void coreAudioPrintASBD(const char *pszDesc, const AudioStreamBasicDescription *pASBD)
 {
@@ -260,27 +255,54 @@ static AudioDeviceID coreAudioDeviceUIDtoID(const char* pszUID)
     return kAudioDeviceUnknown;
 }
 
-/*******************************************************************************
- *
- * Global structures section
- *
- ******************************************************************************/
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @todo r=bird: The three API calls we use for finding, opening and closing
+ * the default audio component are deprecated since 10.8.  This define switches
+ * over to using the replacement/renamed APIs introduced in 10.6+ */
+#ifdef DEBUG_bird
+# define USE_NON_DEPRECATED_APIS
+#endif
 
-/* Initialization status indicator used for the recreation of the AudioUnits. */
-#define CA_STATUS_UNINIT    UINT32_C(0) /* The device is uninitialized */
-#define CA_STATUS_IN_INIT   UINT32_C(1) /* The device is currently initializing */
-#define CA_STATUS_INIT      UINT32_C(2) /* The device is initialized */
-#define CA_STATUS_IN_UNINIT UINT32_C(3) /* The device is currently uninitializing */
-#define CA_STATUS_REINIT    UINT32_C(4) /* The device has to be reinitialized */
+/** @name Initialization status indicator used for the recreation of the AudioUnits.
+ * @{ */
+#define CA_STATUS_UNINIT    UINT32_C(0) /**< The device is uninitialized */
+#define CA_STATUS_IN_INIT   UINT32_C(1) /**< The device is currently initializing */
+#define CA_STATUS_INIT      UINT32_C(2) /**< The device is initialized */
+#define CA_STATUS_IN_UNINIT UINT32_C(3) /**< The device is currently uninitializing */
+#define CA_STATUS_REINIT    UINT32_C(4) /**< The device has to be reinitialized */
+/** @} */
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /* Error code which indicates "End of data" */
-static const OSStatus caConverterEOFDErr = 0x656F6664; /* 'eofd' */
+static const OSStatus g_caConverterEOFDErr = 0x656F6664; /* 'eofd' */
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /* Prototypes needed for COREAUDIOSTREAMCBCTX. */
 struct COREAUDIOSTREAMIN;
 typedef struct COREAUDIOSTREAMIN *PCOREAUDIOSTREAMIN;
 struct COREAUDIOSTREAMOUT;
 typedef struct COREAUDIOSTREAMOUT *PCOREAUDIOSTREAMOUT;
+
+/**
+ * Host Coreaudio driver instance data.
+ * @implements PDMIAUDIOCONNECTOR
+ */
+typedef struct DRVHOSTCOREAUDIO
+{
+    /** Pointer to the driver instance structure. */
+    PPDMDRVINS    pDrvIns;
+    /** Pointer to host audio interface. */
+    PDMIHOSTAUDIO IHostAudio;
+} DRVHOSTCOREAUDIO, *PDRVHOSTCOREAUDIO;
+
 
 /**
  * Simple structure for maintaining a stream's callback context.
@@ -387,6 +409,9 @@ typedef struct COREAUDIOSTREAMIN
 } COREAUDIOSTREAMIN, *PCOREAUDIOSTREAMIN;
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq);
 static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq);
 static int coreAudioControlStreamIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd);
@@ -398,6 +423,7 @@ static int coreAudioDestroyStreamOut(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pS
 
 static OSStatus coreAudioPlaybackAudioDevicePropertyChanged(AudioObjectID propertyID, UInt32 nAddresses, const AudioObjectPropertyAddress properties[], void *pvUser);
 static OSStatus coreAudioPlaybackCb(void *pvUser, AudioUnitRenderActionFlags *pActionFlags, const AudioTimeStamp *pAudioTS, UInt32 uBusID, UInt32 cFrames, AudioBufferList* pBufData);
+
 
 /**
  * Initializes a conversion callback context.
@@ -806,8 +832,8 @@ static DECLCALLBACK(OSStatus) coreAudioConverterCallback(AudioConverterRef      
                                                          AudioStreamPacketDescription **ppASPD,
                                                          void                          *pvUser)
 {
-    AssertPtrReturn(ioNumberDataPackets, caConverterEOFDErr);
-    AssertPtrReturn(ioData,              caConverterEOFDErr);
+    AssertPtrReturn(ioNumberDataPackets, g_caConverterEOFDErr);
+    AssertPtrReturn(ioData,              g_caConverterEOFDErr);
 
     PCOREAUDIOCONVCBCTX pConvCbCtx = (PCOREAUDIOCONVCBCTX)pvUser;
     AssertPtr(pConvCbCtx);
@@ -1087,9 +1113,11 @@ static DECLCALLBACK(OSStatus) coreAudioRecordingCb(void                       *p
     return err;
 }
 
-# define CA_BREAK_STMT(stmt) \
-    stmt; \
-    break;
+#define CA_BREAK_STMT(stmt) if (true) \
+    { \
+        stmt; \
+        break; \
+    } else do { } while (0)
 
 /** @todo Eventually split up this function, as this already is huge! */
 static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream,
@@ -1203,14 +1231,21 @@ static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream,
 
         LogFlowFunc(("cFrames=%RU32\n", cFrames));
 
+        /* Try to find the default HAL output component. */
+#ifdef USE_NON_DEPRECATED_APIS
+        AudioComponentDescription cd;
+#else
         ComponentDescription cd;
+#endif
         RT_ZERO(cd);
         cd.componentType         = kAudioUnitType_Output;
         cd.componentSubType      = kAudioUnitSubType_HALOutput;
         cd.componentManufacturer = kAudioUnitManufacturer_Apple;
-
-        /* Try to find the default HAL output component. */
+#ifdef USE_NON_DEPRECATED_APIS
+        AudioComponent cp = AudioComponentFindNext(NULL, &cd);
+#else
         Component cp = FindNextComponent(NULL, &cd);
+#endif
         if (cp == 0)
         {
             LogRel(("CoreAudio: Failed to find HAL output component\n")); /** @todo Return error value? */
@@ -1218,7 +1253,11 @@ static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream,
         }
 
         /* Open the default HAL output component. */
+#ifdef USE_NON_DEPRECATED_APIS
+        err = AudioComponentInstanceNew(cp, &pStreamIn->audioUnit);
+#else
         err = OpenAComponent(cp, &pStreamIn->audioUnit);
+#endif
         if (err != noErr)
         {
             LogRel(("CoreAudio: Failed to open output component (%RI32)\n", err));
@@ -1616,14 +1655,21 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis,
             CA_BREAK_STMT(rc = VERR_AUDIO_BACKEND_INIT_FAILED);
         }
 
+        /* Try to find the default HAL output component. */
+#ifdef USE_NON_DEPRECATED_APIS
+        AudioComponentDescription cd;
+#else
         ComponentDescription cd;
+#endif
         RT_ZERO(cd);
         cd.componentType         = kAudioUnitType_Output;
         cd.componentSubType      = kAudioUnitSubType_HALOutput;
         cd.componentManufacturer = kAudioUnitManufacturer_Apple;
-
-        /* Try to find the default HAL output component. */
+#ifdef USE_NON_DEPRECATED_APIS
+        AudioComponent cp = AudioComponentFindNext(NULL, &cd);
+#else
         Component cp = FindNextComponent(NULL, &cd);
+#endif
         if (cp == 0)
         {
             LogRel(("CoreAudio: Failed to find HAL output component\n")); /** @todo Return error value? */
@@ -1631,7 +1677,11 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis,
         }
 
         /* Open the default HAL output component. */
+#ifdef USE_NON_DEPRECATED_APIS
+        err = AudioComponentInstanceNew(cp, &pStreamOut->audioUnit);
+#else
         err = OpenAComponent(cp, &pStreamOut->audioUnit);
+#endif
         if (err != noErr)
         {
             LogRel(("CoreAudio: Failed to open output component (%RI32)\n", err));
@@ -1904,6 +1954,16 @@ static DECLCALLBACK(OSStatus) coreAudioPlaybackCb(void *pvUser,
     return noErr;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnInit}
+ *
+ * @todo Please put me next to the shutdown function, because then it would be
+ *       clear why I'm empty.  While at it, it would be nice if you also
+ *       reordered my PDMIHOSTAUDIO sibilings according to the interface
+ *       (doesn't matter if it's reversed (like all other PDM drivers and
+ *       devices) or not).
+ */
 static DECLCALLBACK(int) drvHostCoreAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
@@ -1913,9 +1973,14 @@ static DECLCALLBACK(int) drvHostCoreAudioInit(PPDMIHOSTAUDIO pInterface)
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamCapture}
+ */
 static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
                                                        void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
+    RT_NOREF(pvBuf, cbBuf); /** @todo r=bird: this looks totally weird at first glance! */
+
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbRead is optional. */
@@ -1941,14 +2006,14 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
     do
     {
-        size_t cbBuf     = AudioMixBufSizeBytes(&pStream->MixBuf);
-        size_t cbToWrite = RT_MIN(cbBuf, RTCircBufUsed(pStreamIn->pCircBuf));
+        size_t cbMixBuf  = AudioMixBufSizeBytes(&pStream->MixBuf);
+        size_t cbToWrite = RT_MIN(cbMixBuf, RTCircBufUsed(pStreamIn->pCircBuf));
 
         uint32_t cWritten, cbWritten;
         uint8_t *puBuf;
         size_t   cbToRead;
 
-        Log3Func(("cbBuf=%zu, cbToWrite=%zu/%zu\n", cbBuf, cbToWrite, RTCircBufSize(pStreamIn->pCircBuf)));
+        Log3Func(("cbMixBuf=%zu, cbToWrite=%zu/%zu\n", cbMixBuf, cbToWrite, RTCircBufSize(pStreamIn->pCircBuf)));
 
         while (cbToWrite)
         {
@@ -2020,6 +2085,9 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
     return rc;
 }
 
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamPlay}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -2330,7 +2398,11 @@ static int coreAudioDestroyStreamIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pSt
 
         err = AudioUnitUninitialize(pStreamIn->audioUnit);
         if (err == noErr)
+#ifdef USE_NON_DEPRECATED_APIS
+            err = AudioComponentInstanceDispose(pStreamIn->audioUnit);
+#else
             err = CloseComponent(pStreamIn->audioUnit);
+#endif
 
         if (   err != noErr
             && err != kAudioHardwareBadObjectError)
@@ -2441,7 +2513,11 @@ static int coreAudioDestroyStreamOut(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pS
 
         err = AudioUnitUninitialize(pStreamOut->audioUnit);
         if (err == noErr)
+#ifdef USE_NON_DEPRECATED_APIS
+            err = AudioComponentInstanceDispose(pStreamOut->audioUnit);
+#else
             err = CloseComponent(pStreamOut->audioUnit);
+#endif
 
         if (   err != noErr
             && err != kAudioHardwareBadObjectError)
@@ -2632,6 +2708,10 @@ static int coreAudioCreateStreamOut(PDRVHOSTCOREAUDIO pThis,
     return rc;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnGetConfig}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
@@ -2643,6 +2723,10 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostCoreAudio)
     return coreAudioUpdateStatusInternalEx(pThis, pBackendCfg, 0 /* fEnum */);
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamGetStatus}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -2650,6 +2734,10 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostCoreAudio)
     return PDMAUDIOBACKENDSTS_RUNNING;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamCreate}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -2670,6 +2758,10 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostCoreAudio)
     return rc;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamDestroy}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -2687,6 +2779,10 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostCoreAudio)
     return rc;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamControl}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -2706,6 +2802,10 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostCoreAudio)
     return rc;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamGetStatus}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostCoreAudio)
 {
     RT_NOREF(pInterface);
@@ -2741,6 +2841,10 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostCoreAudio)
     return strmSts;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamIterate}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostCoreAudio)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -2750,15 +2854,23 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostCoreAudio)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO, pfnShutdown}
+ */
 PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostCoreAudio)
 {
     RT_NOREF(pInterface);
 }
 
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
 static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns       = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTCOREAUDIO  pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
+    PPDMDRVINS          pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTCOREAUDIO   pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
@@ -2766,12 +2878,14 @@ static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface,
     return NULL;
 }
 
-/* Construct a DirectSound Audio driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
+/**
+ * @callback_method_impl{FNPDMDRVCONSTRUCT,
+ *      Construct a DirectSound Audio driver instance.}
  */
 static DECLCALLBACK(int) drvHostCoreAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF(pCfg, fFlags);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVHOSTCOREAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
     LogRel(("Audio: Initializing Core Audio driver\n"));
 
