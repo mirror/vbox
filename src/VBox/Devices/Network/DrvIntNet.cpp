@@ -261,6 +261,7 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
 
 /* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
 
+#ifndef IN_RING3
 /**
  * Helper for signalling the xmit thread.
  *
@@ -277,6 +278,7 @@ DECLINLINE(int) drvIntNetSignalXmit(PDRVINTNET pThis)
     }
     return VERR_TRY_AGAIN;
 }
+#endif
 
 
 /**

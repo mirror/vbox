@@ -54,10 +54,12 @@ DECLINLINE(void) mmcLBA2MSF(uint8_t *pbBuf, uint32_t iLBA)
     pbBuf[2] = iLBA % 75;
 }
 
+#if 0 /* unused */
 DECLINLINE(uint32_t) mmcMSF2LBA(const uint8_t *pbBuf)
 {
     return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
 }
+#endif
 
 
 /* Fabricate normal TOC information. */
