@@ -313,6 +313,7 @@ static volatile uint32_t g_cInstances = 0;
  */
 static kern_return_t VBoxUSBStart(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     int rc;
     Log(("VBoxUSBStart\n"));
 
@@ -366,7 +367,7 @@ static kern_return_t VBoxUSBStart(struct kmod_info *pKModInfo, void *pvData)
  */
 static kern_return_t VBoxUSBStop(struct kmod_info *pKModInfo, void *pvData)
 {
-    int rc;
+    RT_NOREF(pKModInfo, pvData);
     Log(("VBoxUSBStop: g_cInstances=%d\n", g_cInstances));
 
     /** @todo Fix problem with crashing when unloading a driver that's in use. */
@@ -376,7 +377,7 @@ static kern_return_t VBoxUSBStop(struct kmod_info *pKModInfo, void *pvData)
      */
     VBoxUSBFilterTerm();
 
-    rc = RTSemFastMutexDestroy(g_Mtx);
+    int rc = RTSemFastMutexDestroy(g_Mtx);
     AssertRC(rc);
     g_Mtx = NIL_RTSEMFASTMUTEX;
 
@@ -390,7 +391,7 @@ static kern_return_t VBoxUSBStop(struct kmod_info *pKModInfo, void *pvData)
 
 
 
-
+#ifdef LOG_ENABLED
 /**
  * Gets the name of a IOKit message.
  *
@@ -399,10 +400,9 @@ static kern_return_t VBoxUSBStop(struct kmod_info *pKModInfo, void *pvData)
  */
 DECLINLINE(const char *) DbgGetIOKitMessageName(UInt32 enmMsg)
 {
-#ifdef DEBUG
     switch (enmMsg)
     {
-#define MY_CASE(enm) case enm: return #enm; break
+# define MY_CASE(enm) case enm: return #enm; break
         MY_CASE(kIOMessageServiceIsTerminated);
         MY_CASE(kIOMessageServiceIsSuspended);
         MY_CASE(kIOMessageServiceIsResumed);
@@ -438,11 +438,11 @@ DECLINLINE(const char *) DbgGetIOKitMessageName(UInt32 enmMsg)
         MY_CASE(kIOUSBMessagePortWasNotSuspended);
         MY_CASE(kIOUSBMessageExpressCardCantWake);
 //        MY_CASE(kIOUSBMessageCompositeDriverReconfigured);
-#undef MY_CASE
+# undef MY_CASE
     }
-#endif /* DEBUG */
     return "unknown";
 }
+#endif /* LOG_ENABLED */
 
 
 
@@ -464,6 +464,8 @@ org_virtualbox_VBoxUSB::init(OSDictionary *pDictionary)
 {
     uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
     Log(("VBoxUSB::init([%p], %p) new g_cInstances=%d\n", this, pDictionary, cInstances));
+    RT_NOREF_PV(cInstances);
+
     if (IOService::init(pDictionary))
     {
         /* init members. */
@@ -604,6 +606,7 @@ org_virtualbox_VBoxUSBClient::initWithTask(task_t OwningTask, void *pvSecurityId
         uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
         Log(("VBoxUSBClient::initWithTask([%p], %p(->%p:{.pid=%d}, %p, %#x) -> true; new g_cInstances=%d\n",
                  this, OwningTask, pProc, pProc ? proc_pid(pProc) : -1, pvSecurityId, u32Type, cInstances));
+        RT_NOREF_PV(cInstances);
         return true;
     }
 
@@ -976,6 +979,7 @@ org_virtualbox_VBoxUSBDevice::init(OSDictionary *pDictionary)
 {
     uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
     Log(("VBoxUSBDevice::init([%p], %p) new g_cInstances=%d\n", this, pDictionary, cInstances));
+    RT_NOREF_PV(cInstances);
 
     m_pDevice = NULL;
     m_Owner = NIL_RTPROCESS;
@@ -1338,7 +1342,7 @@ IOReturn
 org_virtualbox_VBoxUSBDevice::message(UInt32 enmMsg, IOService *pProvider, void *pvArg)
 {
     Log(("VBoxUSBDevice::message([%p], %#x {%s}, %p {%s}, %p) - pid=%d\n",
-             this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, RTProcSelf()));
+         this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, RTProcSelf()));
 
     IOReturn irc;
     switch (enmMsg)
@@ -1471,7 +1475,7 @@ org_virtualbox_VBoxUSBDevice::message(UInt32 enmMsg, IOService *pProvider, void 
     }
 
     Log(("VBoxUSBDevice::message([%p], %#x {%s}, %p {%s}, %p) -> %#x\n",
-             this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, irc));
+         this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, irc));
     return irc;
 }
 
@@ -1561,27 +1565,27 @@ org_virtualbox_VBoxUSBDevice::MyInterestHandler(void *pvTarget, void *pvRefCon, 
             /* pvMsgArg == the open() fOptions, so we could check for kIOServiceSeize if we care.
                We'll also get a kIIOServiceRequestingClose message() for that...  */
             Log(("VBoxUSBDevice::MyInterestHandler: kIOMessageServiceIsAttemptingOpen - pvRefCon=%p pProvider=%p pvMsgArg=%p cbMsgArg=%d\n",
-                     pvRefCon, pProvider, pvMsgArg, cbMsgArg));
+                 pvRefCon, pProvider, pvMsgArg, cbMsgArg));
             break;
 
         case kIOMessageServiceWasClosed:
             Log(("VBoxUSBDevice::MyInterestHandler: kIOMessageServiceWasClosed - pvRefCon=%p pProvider=%p pvMsgArg=%p cbMsgArg=%d\n",
-                     pvRefCon, pProvider, pvMsgArg, cbMsgArg));
+                 pvRefCon, pProvider, pvMsgArg, cbMsgArg));
             break;
 
         case kIOMessageServiceIsTerminated:
             Log(("VBoxUSBDevice::MyInterestHandler: kIOMessageServiceIsTerminated - pvRefCon=%p pProvider=%p pvMsgArg=%p cbMsgArg=%d\n",
-                     pvRefCon, pProvider, pvMsgArg, cbMsgArg));
+                 pvRefCon, pProvider, pvMsgArg, cbMsgArg));
             break;
 
         case kIOUSBMessagePortHasBeenReset:
             Log(("VBoxUSBDevice::MyInterestHandler: kIOUSBMessagePortHasBeenReset - pvRefCon=%p pProvider=%p pvMsgArg=%p cbMsgArg=%d\n",
-                     pvRefCon, pProvider, pvMsgArg, cbMsgArg));
+                 pvRefCon, pProvider, pvMsgArg, cbMsgArg));
             break;
 
         default:
             Log(("VBoxUSBDevice::MyInterestHandler: %#x (%s) - pvRefCon=%p pProvider=%p pvMsgArg=%p cbMsgArg=%d\n",
-                     enmMsgType, DbgGetIOKitMessageName(enmMsgType), pvRefCon, pProvider, pvMsgArg, cbMsgArg));
+                 enmMsgType, DbgGetIOKitMessageName(enmMsgType), pvRefCon, pProvider, pvMsgArg, cbMsgArg));
             break;
     }
 
@@ -1616,6 +1620,7 @@ org_virtualbox_VBoxUSBInterface::init(OSDictionary *pDictionary)
 {
     uint32_t cInstances = ASMAtomicIncU32(&g_cInstances);
     Log(("VBoxUSBInterface::init([%p], %p) new g_cInstances=%d\n", this, pDictionary, cInstances));
+    RT_NOREF_PV(cInstances);
 
     m_pInterface = NULL;
     m_fOpen = false;
@@ -1780,7 +1785,7 @@ IOReturn
 org_virtualbox_VBoxUSBInterface::message(UInt32 enmMsg, IOService *pProvider, void *pvArg)
 {
     Log(("VBoxUSBInterface::message([%p], %#x {%s}, %p {%s}, %p)\n",
-             this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg));
+         this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg));
 
     IOReturn irc;
     switch (enmMsg)
@@ -1864,7 +1869,7 @@ org_virtualbox_VBoxUSBInterface::message(UInt32 enmMsg, IOService *pProvider, vo
     }
 
     Log(("VBoxUSBInterface::message([%p], %#x {%s}, %p {%s}, %p) -> %#x\n",
-             this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, irc));
+         this, enmMsg, DbgGetIOKitMessageName(enmMsg), pProvider, pProvider->getName(), pvArg, irc));
     return irc;
 }
 
