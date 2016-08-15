@@ -148,15 +148,15 @@ static struct cdevsw g_VBoxGuestNetBSDChrDevSW =
 };
 
 static const struct fileops vboxguest_fileops = {
-	.fo_read = fbadop_read,
-	.fo_write = fbadop_write,
-	.fo_ioctl = VBoxGuestNetBSDIOCtl,
-	.fo_fcntl = fnullop_fcntl,
-	.fo_poll = VBoxGuestNetBSDPoll,
-	.fo_stat = fbadop_stat,
-	.fo_close = VBoxGuestNetBSDClose,
-	.fo_kqfilter = fnullop_kqfilter,
-	.fo_restart = fnullop_restart
+    .fo_read = fbadop_read,
+    .fo_write = fbadop_write,
+    .fo_ioctl = VBoxGuestNetBSDIOCtl,
+    .fo_fcntl = fnullop_fcntl,
+    .fo_poll = VBoxGuestNetBSDPoll,
+    .fo_stat = fbadop_stat,
+    .fo_close = VBoxGuestNetBSDClose,
+    .fo_kqfilter = fnullop_kqfilter,
+    .fo_restart = fnullop_restart
 };
 
 /** Device extention & session data association structure. */
@@ -183,23 +183,28 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
 
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
-    if ((vboxguest = device_lookup_private(&vboxguest_cd, minor(device))) == NULL) {
+    if ((vboxguest = device_lookup_private(&vboxguest_cd, minor(device))) == NULL)
+    {
         printf("device_lookup_private failed\n");
         return (ENXIO);
     }
-    if ((vboxguest->vboxguest_state & VBOXGUEST_STATE_INITOK) == 0) {
+
+    if ((vboxguest->vboxguest_state & VBOXGUEST_STATE_INITOK) == 0)
+    {
         aprint_error_dev(vboxguest->sc_dev, "device not configured\n");
         return (ENXIO);
     }
 
     session = kmem_alloc(sizeof(*session), KM_SLEEP);
-    if (session == NULL) {
+    if (session == NULL)
+    {
         return (ENOMEM);
     }
 
     session->sc = vboxguest;
 
-    if ((error = fd_allocfile(&fp, &fd)) != 0) {
+    if ((error = fd_allocfile(&fp, &fd)) != 0)
+    {
         kmem_free(session, sizeof(*session));
         return error;
     }
@@ -256,7 +261,8 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
     /*
      * Validate the request wrapper.
      */
-    if (IOCPARM_LEN(command) != sizeof(VBGLBIGREQ)) {
+    if (IOCPARM_LEN(command) != sizeof(VBGLBIGREQ))
+    {
         Log((DEVICE_NAME ": %s: bad request %#lx size=%lu expected=%zu\n",
              __func__, command, IOCPARM_LEN(command), sizeof(VBGLBIGREQ)));
         return ENOTTY;
@@ -311,7 +317,8 @@ static int VBoxGuestNetBSDIOCtl(struct file *fp, u_long command, void *data)
      */
     size_t cbDataReturned;
     rc = VGDrvCommonIoCtl(command, &g_DevExt, session->session, pvBuf, ReqWrap->cbData, &cbDataReturned);
-    if (RT_SUCCESS(rc)) {
+    if (RT_SUCCESS(rc))
+    {
         rc = 0;
         if (RT_UNLIKELY(cbDataReturned > ReqWrap->cbData))
         {
@@ -350,10 +357,13 @@ static int VBoxGuestNetBSDPoll(struct file *fp, int events)
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
-    if (session->session->u32MousePosChangedSeq != u32CurSeq) {
+    if (session->session->u32MousePosChangedSeq != u32CurSeq)
+    {
         events_processed = events & (POLLIN | POLLRDNORM);
         session->session->u32MousePosChangedSeq = u32CurSeq;
-    } else {
+    }
+    else
+    {
         events_processed = 0;
 
         selrecord(curlwp, &g_SelInfo);
@@ -372,9 +382,8 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
     if (cUsers > 0)
         return EBUSY;
 
-    if ((vboxguest->vboxguest_state & VBOXGUEST_STATE_INITOK) == 0) {
+    if ((vboxguest->vboxguest_state & VBOXGUEST_STATE_INITOK) == 0)
         return 0;
-    }
 
     /*
      * Reverse what we did in VBoxGuestNetBSDAttach.
@@ -435,18 +444,22 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest, struct pci_attach_a
 
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
-    if (pci_intr_map(pa, &vboxguest->ih)) {
+    if (pci_intr_map(pa, &vboxguest->ih))
+    {
         aprint_error_dev(vboxguest->sc_dev, "couldn't map interrupt.\n");
         return VERR_DEV_IO_ERROR;
     }
+
     intrstr = pci_intr_string(vboxguest->pc, vboxguest->ih
 #if __NetBSD_Prereq__(6, 99, 39)
                               , intstrbuf, sizeof(intstrbuf)
 #endif
                               );
     aprint_normal_dev(vboxguest->sc_dev, "interrupting at %s\n", intrstr);
+
     vboxguest->pfnIrqHandler = pci_intr_establish(vboxguest->pc, vboxguest->ih, IPL_BIO, VBoxGuestNetBSDISR, vboxguest);
-    if (vboxguest->pfnIrqHandler == NULL) {
+    if (vboxguest->pfnIrqHandler == NULL)
+    {
         aprint_error_dev(vboxguest->sc_dev, "couldn't establish interrupt\n");
         return VERR_DEV_IO_ERROR;
     }
@@ -495,7 +508,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
     {
         LogFunc(("RTR0Init failed.\n"));
         aprint_error_dev(vboxguest->sc_dev, "RTR0Init failed\n");
-        return ;
+        return;
     }
 
     vboxguest->pc = pa->pa_pc;
@@ -536,23 +549,29 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
                 if (RT_SUCCESS(rc))
                 {
                     vboxguest->vboxguest_state |= VBOXGUEST_STATE_INITOK;
-                    return ;
+                    return;
                 }
                 VGDrvCommonDeleteDevExt(&g_DevExt);
-            } else {
+            }
+            else
+            {
                 aprint_error_dev(vboxguest->sc_dev, "init failed\n");
             }
             bus_space_unmap(vboxguest->iVMMDevMemResId, vboxguest->VMMDevMemHandle, vboxguest->VMMDevMemSize);
-        } else {
+        }
+        else
+        {
             aprint_error_dev(vboxguest->sc_dev, "MMIO mapping failed\n");
         }
         bus_space_unmap(vboxguest->io_tag, vboxguest->io_handle, vboxguest->io_regsize);
-    } else {
+    }
+    else
+    {
         aprint_error_dev(vboxguest->sc_dev, "IO mapping failed\n");
     }
 
     RTR0Term();
-    return ;
+    return;
 }
 
 static int
@@ -580,20 +599,20 @@ MODULE(MODULE_CLASS_DRIVER, vboxguest, "pci");
 static int loc[2] = {-1, -1};
 
 static const struct cfparent pspec = {
-	"pci", "pci", DVUNIT_ANY
+    "pci", "pci", DVUNIT_ANY
 };
 
 static struct cfdata vboxguest_cfdata[] = {
-        {
-                .cf_name = "vboxguest",
-                .cf_atname = "vboxguest",
-                .cf_unit = 0,           /* Only unit 0 is ever used  */
-                .cf_fstate = FSTATE_STAR,
-                .cf_loc = loc,
-                .cf_flags = 0,
-                .cf_pspec = &pspec,
-        },
-        { NULL, NULL, 0, 0, NULL, 0, NULL }
+    {
+        .cf_name = "vboxguest",
+        .cf_atname = "vboxguest",
+        .cf_unit = 0,           /* Only unit 0 is ever used  */
+        .cf_fstate = FSTATE_STAR,
+        .cf_loc = loc,
+        .cf_flags = 0,
+        .cf_pspec = &pspec,
+    },
+    { NULL, NULL, 0, 0, NULL, 0, NULL }
 };
 
 static int
@@ -606,51 +625,57 @@ vboxguest_modcmd(modcmd_t cmd, void *opaque)
     LogFlow((DEVICE_NAME ": %s\n", __func__));
 
     bmajor = cmajor = NODEVMAJOR;
-    switch (cmd) {
+    switch (cmd)
+    {
         case MODULE_CMD_INIT:
-                error = config_cfdriver_attach(&vboxguest_cd);
-                if (error) {
-                    printf("config_cfdriver_attach failed: %d", error);
-                    break;
-                }
-                error = config_cfattach_attach(vboxguest_cd.cd_name, &vboxguest_ca);
-                if (error) {
-                    config_cfdriver_detach(&vboxguest_cd);
-                    printf("%s: unable to register cfattach\n", vboxguest_cd.cd_name);
-                    break;
-                }
-
-                error = config_cfdata_attach(vboxguest_cfdata, 1);
-                if (error) {
-                        printf("%s: unable to attach cfdata\n", vboxguest_cd.cd_name);
-                        config_cfattach_detach(vboxguest_cd.cd_name, &vboxguest_ca);
-                        config_cfdriver_detach(&vboxguest_cd);
-                        break;
-                }
-
-                error = devsw_attach("vboxguest", NULL, &bmajor, &g_VBoxGuestNetBSDChrDevSW, &cmajor);
-                
-                if (error == EEXIST)
-                        error = 0; /* maybe built-in ... improve eventually */
-                if (error)
-                        break;
-
-                error = do_sys_mknod(curlwp, "/dev/vboxguest", 0666|S_IFCHR, makedev(cmajor, 0), &retval, UIO_SYSSPACE);
-                if (error == EEXIST)
-                        error = 0;
+            error = config_cfdriver_attach(&vboxguest_cd);
+            if (error)
+            {
+                printf("config_cfdriver_attach failed: %d", error);
                 break;
-        case MODULE_CMD_FINI:
-                error = config_cfdata_detach(vboxguest_cfdata);
-                if (error)
-                    break;
-                error = config_cfattach_detach(vboxguest_cd.cd_name, &vboxguest_ca);
-                if (error)
-                    break;
+            }
+            error = config_cfattach_attach(vboxguest_cd.cd_name, &vboxguest_ca);
+            if (error)
+            {
                 config_cfdriver_detach(&vboxguest_cd);
-                error = devsw_detach(NULL, &g_VBoxGuestNetBSDChrDevSW);
+                printf("%s: unable to register cfattach\n", vboxguest_cd.cd_name);
                 break;
+            }
+            error = config_cfdata_attach(vboxguest_cfdata, 1);
+            if (error)
+            {
+                printf("%s: unable to attach cfdata\n", vboxguest_cd.cd_name);
+                config_cfattach_detach(vboxguest_cd.cd_name, &vboxguest_ca);
+                config_cfdriver_detach(&vboxguest_cd);
+                break;
+            }
+
+            error = devsw_attach("vboxguest", NULL, &bmajor, &g_VBoxGuestNetBSDChrDevSW, &cmajor);
+                
+            if (error == EEXIST)
+                error = 0; /* maybe built-in ... improve eventually */
+
+            if (error)
+                break;
+
+            error = do_sys_mknod(curlwp, "/dev/vboxguest", 0666|S_IFCHR, makedev(cmajor, 0), &retval, UIO_SYSSPACE);
+            if (error == EEXIST)
+                error = 0;
+            break;
+
+        case MODULE_CMD_FINI:
+            error = config_cfdata_detach(vboxguest_cfdata);
+            if (error)
+                break;
+            error = config_cfattach_detach(vboxguest_cd.cd_name, &vboxguest_ca);
+            if (error)
+                break;
+            config_cfdriver_detach(&vboxguest_cd);
+            error = devsw_detach(NULL, &g_VBoxGuestNetBSDChrDevSW);
+            break;
+
         default:
-                return ENOTTY;
+            return ENOTTY;
     }
     return error;
 }
