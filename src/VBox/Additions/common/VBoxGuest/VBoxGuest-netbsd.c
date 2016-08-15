@@ -559,12 +559,14 @@ static int
 VBoxGuestNetBSDMatch(device_t parent, cfdata_t match, void *aux)
 {
     const struct pci_attach_args *pa = aux;
-    if ((PCI_VENDOR(pa->pa_id) == VMMDEV_VENDORID)
-            && (PCI_PRODUCT(pa->pa_id) == VMMDEV_DEVICEID)) {
+
+    if (   PCI_VENDOR(pa->pa_id) == VMMDEV_VENDORID
+        && PCI_PRODUCT(pa->pa_id) == VMMDEV_DEVICEID)
+    {
         return 1;
-    } else {
-        return 2;
     }
+
+    return 0;
 }
 
 /* Common code that depend on g_DevExt. */
