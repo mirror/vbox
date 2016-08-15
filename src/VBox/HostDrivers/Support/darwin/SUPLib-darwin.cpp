@@ -186,6 +186,8 @@ static int suplibDarwinOpenService(PSUPLIBDATA pThis)
 
 int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
 {
+    RT_NOREF(penmWhat, pErrInfo);
+
     /*
      * Nothing to do if pre-inited.
      */
@@ -263,6 +265,7 @@ int suplibOsUninstall(void)
 
 int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
+    RT_NOREF(cbReq);
     if (RT_LIKELY(ioctl(pThis->hDevice, uFunction, pvReq) >= 0))
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);

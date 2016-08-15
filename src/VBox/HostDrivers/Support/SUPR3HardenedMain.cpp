@@ -1400,7 +1400,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                     g_hStartupLog = NULL;
             }
 #else
-            RT_NOREF(g_hStartupLog);
+            RT_NOREF(g_hStartupLog, g_cbStartupLog);
             //g_hStartupLog = open()
 #endif
         }
@@ -1867,8 +1867,6 @@ static void supR3HardenedMainGrabCapabilites(void)
  */
 static void supR3GrabOptions(void)
 {
-    const char *pszOpt;
-
 # ifdef RT_OS_LINUX
     g_uCaps = 0;
 
@@ -1884,7 +1882,7 @@ static void supR3GrabOptions(void)
          * Default: enabled.
          * Can be disabled with 'export VBOX_HARD_CAP_NET_RAW=0'.
          */
-        pszOpt = getenv("VBOX_HARD_CAP_NET_RAW");
+        const char *pszOpt = getenv("VBOX_HARD_CAP_NET_RAW");
         if (   !pszOpt
             || memcmp(pszOpt, "0", sizeof("0")) != 0)
             g_uCaps = CAP_TO_MASK(CAP_NET_RAW);
