@@ -2446,10 +2446,10 @@ else
             -nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1; \
     then echo "-Wl,$(2)"; else echo "$(3)"; fi; )
 
- VBOX_GCC_CHECK_CC    = $(call VBOX_GCC_CHECK_EX_CC,  $(TOOL_$(VBOX_GCC_TOOL)_CC),$1,$2)
- VBOX_GCC_CHECK_CXX   = $(call VBOX_GCC_CHECK_EX_CXX, $(TOOL_$(VBOX_GCC_TOOL)_CXX),$1,$2)
- VBOX_GCC_CHECK_LD    = $(call VBOX_GCC_CHECK_EX_LD,  $(TOOL_$(VBOX_GCC_TOOL)_LD),$1,$2)
- VBOX_GCC32_CHECK_CXX = $(call VBOX_GCC_CHECK_EX_CXX, $(TOOL_$(VBOX_GCC32_TOOL)_CXX),$1,$2)
+ VBOX_GCC_CHECK_CC    = $(call VBOX_GCC_CHECK_EX_CC,  $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC_TOOL)_CC),$1,$2)
+ VBOX_GCC_CHECK_CXX   = $(call VBOX_GCC_CHECK_EX_CXX, $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC_TOOL)_CXX),$1,$2)
+ VBOX_GCC_CHECK_LD    = $(call VBOX_GCC_CHECK_EX_LD,  $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC_TOOL)_LD),$1,$2)
+ VBOX_GCC32_CHECK_CXX = $(call VBOX_GCC_CHECK_EX_CXX, $(TOOL_$(VBOX_GCC32_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC32_TOOL)_CXX),$1,$2)
 endif
 
 ifeq ($(KBUILD_HOST),win) ## @todo can drop this now, we're not using cygwin.
@@ -2563,7 +2563,11 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-delete-non-virtual-dtor    ?= $(call VBOX_GCC_CHECK_CXX,-Wno-delete-non-virtual-dtor,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-to-pointer-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-to-pointer-cast,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-invalid-offsetof           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-invalid-offsetof,)'
+if $(KBUILD_TARGET) != "darwin" || !defined(VBOX_WITH_NEW_XCODE) ## @todo somthing goes entirely sideways with the detection. clang doesn't know the option, but only complains when we use it in webservices/Makefile.kmk!
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-literal-suffix             ?= $(call VBOX_GCC_CHECK_CXX,-Wno-literal-suffix,)'
+else
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-literal-suffix             ?=
+endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-missing-field-initializers ?= $(call VBOX_GCC_CHECK_CC,-Wno-missing-field-initializers,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-to-int-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-to-int-cast,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-variadic-macros   ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)'
