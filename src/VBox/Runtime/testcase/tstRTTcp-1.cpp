@@ -75,9 +75,10 @@ void test3()
     {
         PRTTCPSERVER pServer;
         int rc = RTTcpServerCreate("localhost", 9999, RTTHREADTYPE_DEFAULT, "server-2", test3Server, NULL, &pServer);
-#ifdef RT_OS_SOLARIS
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
         /** @todo testboxsh1 occationally hits this for some stupid reason. i=21 in
-         *        one occurrence. Fudge a bit for now and see if it helps. */
+         *        one occurrence. Fudge a bit for now and see if it helps.
+         *        Same for testboxopt, i=98 in another case. */
         if (rc == VERR_NET_ADDRESS_IN_USE)
         {
             RTThreadSleep(500);
