@@ -209,7 +209,8 @@ ifdef VBOX_WITH_VALIDATIONKIT_PACKING.os2.x86
  	$(VBOX_PATH_VALIDATIONKIT.os2.x86)/libc062.dll \
  	$(VBOX_PATH_VALIDATIONKIT.os2.x86)/libc063.dll \
  	$(VBOX_PATH_VALIDATIONKIT.os2.x86)/libc064.dll \
- 	$(VBOX_PATH_VALIDATIONKIT.os2.x86)/libc065.dll
+ 	$(VBOX_PATH_VALIDATIONKIT.os2.x86)/libc065.dll \
+ 	$(VBOX_PATH_VALIDATIONKIT.os2.x86)/libc066.dll
 endif
 
 # OS specific files - Solaris

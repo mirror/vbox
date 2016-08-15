@@ -53,7 +53,8 @@ ValidationKitOs2LibC_SOURCES = \
 	$(KBUILD_BIN_PATH)/libc062.dll \
 	$(KBUILD_BIN_PATH)/libc063.dll \
 	$(KBUILD_BIN_PATH)/libc064.dll \
-	$(KBUILD_BIN_PATH)/libc065.dll
+	$(KBUILD_BIN_PATH)/libc065.dll \
+	$(KBUILD_BIN_PATH)/libc066.dll
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
