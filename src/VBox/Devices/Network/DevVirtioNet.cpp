@@ -273,6 +273,8 @@ typedef struct VNetCtlHdr VNETCTLHDR;
 typedef VNETCTLHDR *PVNETCTLHDR;
 AssertCompileSize(VNETCTLHDR, 2);
 
+#ifdef IN_RING3
+
 /** Returns true if large packets are written into several RX buffers. */
 DECLINLINE(bool) vnetMergeableRxBuffers(PVNETSTATE pThis)
 {
@@ -288,6 +290,8 @@ DECLINLINE(void) vnetCsLeave(PVNETSTATE pThis)
 {
     vpciCsLeave(&pThis->VPCI);
 }
+
+#endif /* IN_RING3 */
 
 DECLINLINE(int) vnetCsRxEnter(PVNETSTATE pThis, int rcBusy)
 {
@@ -306,6 +310,7 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
     // PDMCritSectLeave(&pThis->csRx);
 }
 
+#ifdef IN_RING3
 /**
  * Dump a packet to debug log.
  *
@@ -316,14 +321,15 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
  */
 DECLINLINE(void) vnetPacketDump(PVNETSTATE pThis, const uint8_t *pbPacket, size_t cb, const char *pszText)
 {
-#ifdef DEBUG
+# ifdef DEBUG
     Log(("%s %s packet #%d (%d bytes):\n",
          INSTANCE(pThis), pszText, ++pThis->u32PktNo, cb));
     Log3(("%.*Rhxd\n", cb, pbPacket));
-#else
+# else
     RT_NOREF4(pThis, pbPacket, cb, pszText);
-#endif
+# endif
 }
+#endif /* IN_RING3 */
 
 /**
  * Print features given in uFeatures to debug log.

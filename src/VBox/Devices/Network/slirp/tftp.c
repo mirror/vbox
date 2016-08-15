@@ -195,6 +195,7 @@ DECLINLINE(int) tftpFindOptionIdxbyName(int *piIdxOpt, const char *pszOpt)
 }
 
 
+#if 0 /* unused */
 DECLINLINE(bool) tftpIsAcceptableOption(const char *pszOptionName)
 {
     int idxOptDesc = 0;
@@ -213,6 +214,7 @@ DECLINLINE(bool) tftpIsAcceptableOption(const char *pszOptionName)
     }
     return false;
 }
+#endif /* unused */
 
 
 /**

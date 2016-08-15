@@ -540,6 +540,8 @@ DECLINLINE(int) ich9pciSlot2ApicIrq(uint8_t uSlot, int irq_num)
     return (irq_num + uSlot) & 7;
 }
 
+#ifdef IN_RING3
+
 /* return the global irq number corresponding to a given device irq
    pin. We could also use the bus number to have a more precise
    mapping. This is the implementation note described in the PCI spec chapter 2.2.6 */
@@ -552,6 +554,8 @@ DECLINLINE(int) ich9pciSlotGetPirq(uint8_t uBus, uint8_t uDevFn, int iIrqNum)
 
 /* irqs corresponding to PCI irqs A-D, must match pci_irq_list in rombios.c */
 static const uint8_t aPciIrqs[4] = { 11, 10, 9, 5 };
+
+#endif /* IN_RING3 */
 
 /* Add one more level up request on APIC input line */
 DECLINLINE(void) ich9pciApicLevelUp(PICH9PCIGLOBALS pGlobals, int irq_num)

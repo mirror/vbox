@@ -63,7 +63,7 @@ int getrawsock(int type);
 
 /* The message sent when emulating PING */
 /* Be nice and tell them it's just a psuedo-ping packet */
-#if 0
+#if 0 /* unused */
 static const char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp to emulate ICMP ECHO-REQUEST packets.\n";
 #endif
 

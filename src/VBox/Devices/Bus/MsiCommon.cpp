@@ -98,6 +98,8 @@ DECLINLINE(uint32_t) msiGetMsiData(PPCIDEVICE pDev, int32_t iVector)
     return RT_MAKE_U32(lo, 0);
 }
 
+#ifdef IN_RING3
+
 DECLINLINE(bool) msiBitJustCleared(uint32_t uOldValue,
                                    uint32_t uNewValue,
                                    uint32_t uMask)
@@ -112,7 +114,6 @@ DECLINLINE(bool) msiBitJustSet(uint32_t uOldValue,
     return (!(uOldValue & uMask) && !!(uNewValue & uMask));
 }
 
-#ifdef IN_RING3
 void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev,
                            uint32_t u32Address, uint32_t val, unsigned len)
 {

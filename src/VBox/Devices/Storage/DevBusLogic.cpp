@@ -303,10 +303,12 @@ AssertCompileSize(Addr24, 3);
 #define MAX_ISA_BASE        (NUM_ISA_BASES - 1)
 #define ISA_BASE_DISABLED   6
 
+#ifdef IN_RING3
 static uint16_t const g_aISABases[NUM_ISA_BASES] =
 {
     0x330, 0x334, 0x230, 0x234, 0x130, 0x134, 0, 0
 };
+#endif
 /** @}  */
 
 /** Pointer to a task state structure. */

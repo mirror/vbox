@@ -547,6 +547,7 @@ RT_C_DECLS_END
 
 
 
+#ifdef IN_RING3
 DECLINLINE(void) ataSetStatusValue(ATADevState *s, uint8_t stat)
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
@@ -558,6 +559,7 @@ DECLINLINE(void) ataSetStatusValue(ATADevState *s, uint8_t stat)
         Log2(("%s: LUN#%d status %#04x\n", __FUNCTION__, s->iLUN, s->uATARegStatus));
     }
 }
+#endif /* IN_RING3 */
 
 
 DECLINLINE(void) ataSetStatus(ATADevState *s, uint8_t stat)
@@ -721,8 +723,10 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
 
 static const ATARequest g_ataDMARequest    = { ATA_AIO_DMA,            { { 0, 0, 0, 0, 0 } } };
 static const ATARequest g_ataPIORequest    = { ATA_AIO_PIO,            { { 0, 0, 0, 0, 0 } } };
+# ifdef IN_RING3
 static const ATARequest g_ataResetARequest = { ATA_AIO_RESET_ASSERTED, { { 0, 0, 0, 0, 0 } } };
 static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0, 0, 0, 0 } } };
+# endif
 
 # ifdef IN_RING3
 static void ataR3AsyncIOClearRequests(PATACONTROLLER pCtl)
@@ -1165,6 +1169,8 @@ DECLINLINE(uint32_t) ataMSF2LBA(const uint8_t *pbBuf)
     return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
 }
 
+
+#if 0 /* unused */
 /**
  * Compares two MSF values.
  *
@@ -1192,6 +1198,7 @@ DECLINLINE(int) atapiCmpMSF(const uint8_t *pbMSF1, const uint8_t *pbMSF2)
 
     return iRes;
 }
+#endif /* unused */
 
 static void ataR3CmdOK(ATADevState *s, uint8_t status)
 {

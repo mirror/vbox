@@ -5475,10 +5475,12 @@ DECLINLINE(uint32_t) ahciGetNSectorsQueued(uint8_t *pCmdFis)
         return pCmdFis[AHCI_CMDFIS_FETEXP] << 8 | pCmdFis[AHCI_CMDFIS_FET];
 }
 
+#if 0 /* unused */
 DECLINLINE(uint8_t) ahciGetTagQueued(uint8_t *pCmdFis)
 {
     return pCmdFis[AHCI_CMDFIS_SECTC] >> 3;
 }
+#endif /* unused */
 
 /**
  * Allocates memory for the given request using already allocated memory if possible.

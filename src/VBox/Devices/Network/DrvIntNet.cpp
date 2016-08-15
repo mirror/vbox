@@ -268,7 +268,7 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
  * @returns VERR_TRY_AGAIN (convenience).
  * @param   pThis               The instance data..
  */
-DECLINLINE(int) drvIntNetSignalXmit(PDRVINTNET pThis)
+DECLINLINE(int) drvR0IntNetSignalXmit(PDRVINTNET pThis)
 {
     /// @todo if (!ASMAtomicXchgBool(&pThis->fXmitSignalled, true)) - needs careful optimizing.
     {
@@ -278,7 +278,7 @@ DECLINLINE(int) drvIntNetSignalXmit(PDRVINTNET pThis)
     }
     return VERR_TRY_AGAIN;
 }
-#endif
+#endif /* !IN_RING3 */
 
 
 /**
@@ -305,7 +305,7 @@ DECLINLINE(int) drvIntNetProcessXmit(PDRVINTNET pThis)
     if (rc == VERR_TRY_AGAIN)
     {
         ASMAtomicUoWriteBool(&pThis->fXmitProcessRing, true);
-        drvIntNetSignalXmit(pThis);
+        drvR0IntNetSignalXmit(pThis);
         rc = VINF_SUCCESS;
     }
 #endif
@@ -350,7 +350,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWork
         }
         rc = VERR_TRY_AGAIN;
 #else  /* IN_RING0 */
-        rc = drvIntNetSignalXmit(pThis);
+        rc = drvR0IntNetSignalXmit(pThis);
 #endif /* IN_RING0 */
     }
     return rc;
@@ -380,7 +380,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
 #else
     PPDMSCATTERGATHER pSgBuf = &pThis->u.Sg;
     if (RT_UNLIKELY(pSgBuf->fFlags != 0))
-        return drvIntNetSignalXmit(pThis);
+        return drvR0IntNetSignalXmit(pThis);
 #endif
 
     /*
@@ -443,7 +443,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
     if (pThis->CTX_SUFF(pBuf)->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
     {
         pThis->fXmitProcessRing = true;
-        rc = drvIntNetSignalXmit(pThis);
+        rc = drvR0IntNetSignalXmit(pThis);
     }
     else
         rc = VERR_NO_MEMORY;

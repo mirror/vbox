@@ -663,6 +663,7 @@ static int drvHostBaseGetBSDName(io_registry_entry_t Entry, char *pszName, unsig
  */
 static void drvHostBaseDADoneCallback(DADiskRef DiskRef, DADissenterRef DissenterRef, void *pvContext)
 {
+    RT_NOREF(DiskRef);
     int *prc = (int *)pvContext;
     if (!DissenterRef)
         *prc = 0;
@@ -791,10 +792,12 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
 static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOnly)
 {
 # ifdef RT_OS_DARWIN
+    RT_NOREF(fReadOnly);
+
     /* Darwin is kind of special... */
     Assert(!pFileDevice); NOREF(pFileDevice);
     Assert(!pThis->cbBlock);
-    Assert(!pThis->MasterPort);
+    Assert(pThis->MasterPort == IO_OBJECT_NULL);
     Assert(!pThis->ppMMCDI);
     Assert(!pThis->ppScsiTaskDI);
 
@@ -817,7 +820,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     /*
      * do the search and get a collection of keyboards.
      */
-    io_iterator_t DVDServices = NULL;
+    io_iterator_t DVDServices = IO_OBJECT_NULL;
     IOReturn irc = IOServiceGetMatchingServices(pThis->MasterPort, RefMatchingDict, &DVDServices);
     AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), VERR_NOT_FOUND);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
@@ -1137,7 +1140,9 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
     if (pThis->hFileDevice != NIL_RTFILE)
         RTFileClose(pThis->hFileDevice);
     pThis->hFileDevice = hFileDevice;
-#endif /* !RT_OS_DARWIN */
+#else  /* RT_OS_DARWIN */
+    RT_NOREF(pThis);
+#endif /* RT_OS_DARWIN */
     return VINF_SUCCESS;
 }
 
@@ -1791,10 +1796,10 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
         (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
         pThis->ppMMCDI = NULL;
     }
-    if (pThis->MasterPort)
+    if (pThis->MasterPort != IO_OBJECT_NULL)
     {
         mach_port_deallocate(mach_task_self(), pThis->MasterPort);
-        pThis->MasterPort = 0;
+        pThis->MasterPort = IO_OBJECT_NULL;
     }
     if (pThis->pDASession)
     {
@@ -1874,7 +1879,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType
     pThis->fKeepInstance                    = false;
     pThis->ThreadPoller                     = NIL_RTTHREAD;
 #ifdef RT_OS_DARWIN
-    pThis->MasterPort                       = NULL;
+    pThis->MasterPort                       = IO_OBJECT_NULL;
     pThis->ppMMCDI                          = NULL;
     pThis->ppScsiTaskDI                     = NULL;
     pThis->cbBlock                          = 0;

@@ -1089,6 +1089,7 @@ void vmsvga3dUpdateHostScreenViewport(PVGASTATE pThis, uint32_t idScreen, VMSVGA
      *        redraw it. */
 
 #ifdef RT_OS_DARWIN
+    RT_NOREF(pOldViewport);
     PVMSVGA3DSTATE pState = pThis->svga.p3dState;
     if (   pState
         && idScreen == 0
@@ -3600,6 +3601,7 @@ static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DSTATE pState,
     AssertRC(rc);
 
 #elif defined(RT_OS_DARWIN)
+    RT_NOREF(pState);
     vmsvga3dCocoaViewSetSize(pContext->cocoaView, pThis->svga.uWidth, pThis->svga.uHeight);
 
 #elif defined(RT_OS_LINUX)

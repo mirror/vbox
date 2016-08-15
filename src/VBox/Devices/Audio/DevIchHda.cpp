@@ -1162,6 +1162,7 @@ static uint32_t const g_afMasks[5] =
 };
 
 #ifdef IN_RING3
+
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB)
 {
     AssertPtrReturn(pThis,   0);
@@ -1186,7 +1187,7 @@ DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, ui
 
     return u32LPIB;
 }
-#endif
+
 
 /**
  * Retrieves the number of bytes of a FIFOS register.
@@ -1219,6 +1220,7 @@ DECLINLINE(uint16_t) hdaSDFIFOSToBytes(uint32_t u32RegFIFOS)
     return cb;
 }
 
+
 /**
  * Retrieves the number of bytes of a FIFOW register.
  *
@@ -1235,13 +1237,11 @@ DECLINLINE(uint8_t) hdaSDFIFOWToBytes(uint32_t u32RegFIFOW)
         default:              cb = 0;  break;
     }
 
-#ifdef RT_STRICT
     Assert(RT_IS_POWER_OF_TWO(cb));
-#endif
     return cb;
 }
 
-#ifdef IN_RING3
+
 /**
  * Fetches the next BDLE to use for a stream.
  *
@@ -1258,9 +1258,9 @@ DECLINLINE(int) hdaStreamGetNextBDLE(PHDASTATE pThis, PHDASTREAM pStream)
 
     LogFlowFuncEnter();
 
-#ifdef DEBUG
-    uint32_t uOldBDLE = pStream->State.uCurBDLE;
-#endif
+# ifdef LOG_ENABLED
+    uint32_t const uOldBDLE = pStream->State.uCurBDLE;
+# endif
 
     PHDABDLE pBDLE = &pStream->State.BDLE;
 
@@ -1281,14 +1281,11 @@ DECLINLINE(int) hdaStreamGetNextBDLE(PHDASTATE pThis, PHDASTREAM pStream)
     /* Fetch the next BDLE entry. */
     int rc = hdaBDLEFetch(pThis, pBDLE, pStream->u64BDLBase, pStream->State.uCurBDLE);
 
-#ifdef DEBUG
     LogFlowFunc(("[SD%RU8]: uOldBDLE=%RU16, uCurBDLE=%RU16, LVI=%RU32, rc=%Rrc, %R[bdle]\n",
                  pStream->u8SD, uOldBDLE, pStream->State.uCurBDLE, pStream->u16LVI, rc, pBDLE));
-#endif
-
     return rc;
 }
-#endif /* IN_RING3 */
+
 
 /**
  * Returns the audio direction of a specified stream descriptor.
@@ -1312,6 +1309,7 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
     return PDMAUDIODIR_OUT;
 }
 
+
 /**
  * Returns the HDA stream of specified stream descriptor number.
  *
@@ -1327,6 +1325,7 @@ DECLINLINE(PHDASTREAM) hdaStreamFromSD(PHDASTATE pThis, uint8_t uSD)
 
     return &pThis->aStreams[uSD];
 }
+
 
 /**
  * Returns the HDA stream of specified HDA sink.
@@ -1355,12 +1354,14 @@ DECLINLINE(uint8_t) hdaStreamGetFIFOW(PHDASTATE pThis, PHDASTREAM pStream)
     AssertPtrReturn(pThis, 0);
     AssertPtrReturn(pStream, 0);
 
-#ifdef VBOX_HDA_WITH_FIFO
+# ifdef VBOX_HDA_WITH_FIFO
     return hdaSDFIFOWToBytes(HDA_STREAM_REG(pThis, FIFOW, pStream->u8SD));
-#else
+# else
     return 0;
-#endif
+# endif
 }
+
+#endif /* IN_RING3 */
 
 static int hdaProcessInterrupt(PHDASTATE pThis)
 {
@@ -1510,6 +1511,7 @@ static int hdaRegLookupWithin(uint32_t offReg)
 }
 
 #ifdef IN_RING3
+
 static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
 {
     int rc = VINF_SUCCESS;
@@ -1523,7 +1525,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
         rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pThis->u64CORBBase, pThis->pu32CorbBuf, pThis->cbCorbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
-#ifdef DEBUG_CMD_BUFFER
+# ifdef DEBUG_CMD_BUFFER
         uint8_t i = 0;
         do
         {
@@ -1544,7 +1546,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             LogFunc(("\n"));
             i += 8;
         } while(i != 0);
-#endif
+# endif
     }
     else
     {
@@ -1552,7 +1554,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
         rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
-#ifdef DEBUG_CMD_BUFFER
+# ifdef DEBUG_CMD_BUFFER
         uint8_t i = 0;
         do {
             LogFunc(("RIRB%02x: ", i));
@@ -1568,7 +1570,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             LogFunc(("\n"));
             i += 8;
         } while (i != 0);
-#endif
+# endif
     }
     return rc;
 }
@@ -1699,7 +1701,7 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t u8SD)
     LogFlowFunc(("[SD%RU8]: DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
                  pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS));
 
-#ifdef DEBUG
+# ifdef DEBUG
     uint64_t u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, pStream->u8SD),
                                       HDA_STREAM_REG(pThis, BDPU, pStream->u8SD));
     uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, pStream->u8SD);
@@ -1708,7 +1710,7 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t u8SD)
     LogFlowFunc(("\t-> DMA @ 0x%x, LVI=%RU16, CBL=%RU32\n", u64BaseDMA, u16LVI, u32CBL));
 
     hdaBDLEDumpAll(pThis, u64BaseDMA, u16LVI + 1);
-#endif
+# endif
 
     return VINF_SUCCESS;
 }
@@ -1720,10 +1722,10 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
 
     const uint8_t uSD = pStream->u8SD;
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, uSD) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
                      ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
-#endif
+# endif
 
     LogFunc(("[SD%RU8]: Reset\n", uSD));
 
@@ -1769,7 +1771,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     ASMAtomicXchgBool(&pStream->State.fInReset, false);
 }
 
-#if 0 /* unused */
+# if 0 /* unused */
 static bool hdaStreamIsActive(PHDASTATE pThis, PHDASTREAM pStream)
 {
     AssertPtrReturn(pThis,   false);
@@ -1780,7 +1782,7 @@ static bool hdaStreamIsActive(PHDASTATE pThis, PHDASTREAM pStream)
     LogFlowFunc(("SD=%RU8, fActive=%RTbool\n", pStream->u8SD, fActive));
     return fActive;
 }
-#endif
+# endif
 
 static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
 {
@@ -1823,16 +1825,16 @@ static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
         if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
             pThis->cStreamsActive--;
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_CALLBACKS
         hdaTimerMaybeStop(pThis);
-#endif
+# endif
     }
     else
     {
         pThis->cStreamsActive++;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_CALLBACKS
         hdaTimerMaybeStart(pThis);
-#endif
+# endif
     }
 
     LogFlowFunc(("u8Strm=%RU8, fActive=%RTbool, cStreamsActive=%RU8\n", pStream->u8SD, fActive, pThis->cStreamsActive));
@@ -1853,7 +1855,7 @@ static void hdaStreamAssignToSink(PHDASTREAM pStream, PHDAMIXERSINK pMixSink)
     }
 }
 
-#if 0 /** @todo hdaStreamStart is unused */
+# if 0 /** @todo hdaStreamStart is unused */
 static int hdaStreamStart(PHDASTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -1864,7 +1866,7 @@ static int hdaStreamStart(PHDASTREAM pStream)
     LogFlowFuncLeave();
     return VINF_SUCCESS;
 }
-#endif /* unused */
+# endif /* unused */
 
 static int hdaStreamStop(PHDASTREAM pStream)
 {
@@ -1875,7 +1877,7 @@ static int hdaStreamStop(PHDASTREAM pStream)
     if (!fActive)
         return VINF_SUCCESS;
 
-#if 0 /** @todo Does not work (yet), as EMT deadlocks then. */
+# if 0 /** @todo Does not work (yet), as EMT deadlocks then. */
     /*
      * Wait for the stream to stop.
      */
@@ -1892,15 +1894,15 @@ static int hdaStreamStop(PHDASTREAM pStream)
         LogRel(("HDA: Warning: Unable to stop stream %RU8 (state: %s), rc=%Rrc\n",
                 pStream->u8Strm, fActive ? "active" : "stopped", rc));
     }
-#else
+# else
     int rc = VINF_SUCCESS;
-#endif
+# endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-#if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
+# if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
 static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvBuf, size_t cbBuf)
 {
     AssertPtrReturn(pChan, VERR_INVALID_POINTER);
@@ -1948,9 +1950,9 @@ static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvB
 
     return VINF_SUCCESS;
 }
-#endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
+# endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
 
-#if 0 /** @todo hdaStreamChannelAdvance is unused */
+# if 0 /** @todo hdaStreamChannelAdvance is unused */
 static int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv)
 {
     AssertPtrReturn(pChan, VERR_INVALID_POINTER);
@@ -1960,7 +1962,7 @@ static int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv)
 
     return VINF_SUCCESS;
 }
-#endif
+# endif
 
 static int hdaStreamChannelDataInit(PPDMAUDIOSTREAMCHANNELDATA pChanData, uint32_t fFlags)
 {
@@ -1992,7 +1994,7 @@ static void hdaStreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData)
     pChanData->fFlags = PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE;
 }
 
-#if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
+# if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
 
 static int hdaStreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *pvData, size_t *pcbData)
 {
@@ -2014,7 +2016,7 @@ static int hdaStreamChannelReleaseData(PPDMAUDIOSTREAMCHANNELDATA pChanData)
     return VINF_SUCCESS;
 }
 
-#endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
+# endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
 
 # if 0 /* currently unused */
 static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeout)

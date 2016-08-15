@@ -1144,6 +1144,8 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
             }
             else
                 LogRel(("NAT: DNS server list is empty (2)\n"));
+#else
+            RT_NOREF(hDynStor);
 #endif
             drvNATUpdateDNS(pThis, /* fFlapLink */ true);
         }

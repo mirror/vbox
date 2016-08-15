@@ -3105,8 +3105,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             default:
 # ifdef VBOX_WITH_VMSVGA3D
-                if (    enmCmdId >= SVGA_3D_CMD_BASE
-                    &&  enmCmdId <  SVGA_3D_CMD_MAX)
+                if (    (int)enmCmdId >= SVGA_3D_CMD_BASE
+                    &&  (int)enmCmdId <  SVGA_3D_CMD_MAX)
                 {
                     /* All 3d commands start with a common header, which defines the size of the command. */
                     SVGA3dCmdHeader *pHdr;

@@ -217,6 +217,7 @@ typedef uint32_t E1KCHIP;
 #define E1K_CHIP_82543GC 1
 #define E1K_CHIP_82545EM 2
 
+#ifdef IN_RING3
 /** Different E1000 chips. */
 static const struct E1kChips
 {
@@ -225,20 +226,21 @@ static const struct E1kChips
     uint16_t uPCISubsystemVendorId;
     uint16_t uPCISubsystemId;
     const char *pcszName;
-} g_Chips[] =
+} g_aChips[] =
 {
     /* Vendor Device SSVendor SubSys  Name */
     { 0x8086,
       /* Temporary code, as MSI-aware driver dislike 0x100E. How to do that right? */
-#ifdef E1K_WITH_MSI
+# ifdef E1K_WITH_MSI
       0x105E,
-#else
+# else
       0x100E,
-#endif
+# endif
                       0x8086, 0x001E, "82540EM" }, /* Intel 82540EM-A in Intel PRO/1000 MT Desktop */
     { 0x8086, 0x1004, 0x8086, 0x1004, "82543GC" }, /* Intel 82543GC   in Intel PRO/1000 T  Server */
     { 0x8086, 0x100F, 0x15AD, 0x0750, "82545EM" }  /* Intel 82545EM-A in VMWare Network Adapter */
 };
+#endif /* IN_RING3 */
 
 
 /* The size of register area mapped to I/O space */
@@ -1551,6 +1553,7 @@ DECLINLINE(void) e1kArmTimer(PE1KSTATE pThis, PTMTIMER pTimer, uint32_t uExpireI
     TMTimerSetMicro(pTimer, uExpireIn);
 }
 
+#ifdef IN_RING3
 /**
  * Cancel a timer.
  *
@@ -1567,6 +1570,7 @@ DECLINLINE(void) e1kCancelTimer(PE1KSTATE pThis, PTMTIMER pTimer)
                 pThis->szPrf, rc));
     RT_NOREF1(pThis);
 }
+#endif /* IN_RING3 */
 
 #define e1kCsEnter(ps, rc) PDMCritSectEnter(&ps->cs, rc)
 #define e1kCsLeave(ps) PDMCritSectLeave(&ps->cs)
@@ -1747,6 +1751,8 @@ DECLINLINE(int) e1kGetDescType(E1KTXDESC *pDesc)
     return E1K_DTYP_LEGACY;
 }
 
+
+#if defined(E1K_WITH_RXD_CACHE) && defined(IN_RING3) /* currently only used in ring-3 due to stack space requirements of the caller */
 /**
  * Dump receive descriptor to debug log.
  *
@@ -1776,6 +1782,7 @@ static void e1kPrintRDesc(PE1KSTATE pThis, E1KRXDESC *pDesc)
              E1K_SPEC_VLAN(pDesc->status.u16Special),
              E1K_SPEC_PRI(pDesc->status.u16Special)));
 }
+#endif /* E1K_WITH_RXD_CACHE && IN_RING3 */
 
 /**
  * Dump transmit descriptor to debug log.
@@ -1953,6 +1960,7 @@ DECLINLINE(RTGCPHYS) e1kDescAddr(uint32_t baseHigh, uint32_t baseLow, uint32_t i
     return ((uint64_t)baseHigh << 32) + baseLow + idxDesc * sizeof(E1KRXDESC);
 }
 
+#ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
 /**
  * Advance the head pointer of the receive descriptor queue.
  *
@@ -1991,8 +1999,10 @@ DECLINLINE(void) e1kAdvanceRDH(PE1KSTATE pThis)
              pThis->szPrf, RDH, RDT, uRQueueLen));
     //e1kCsLeave(pThis);
 }
+#endif /* IN_RING3 */
 
 #ifdef E1K_WITH_RXD_CACHE
+
 /**
  * Return the number of RX descriptor that belong to the hardware.
  *
@@ -2086,6 +2096,8 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
     return nDescsToFetch;
 }
 
+# ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
+
 /**
  * Obtain the next RX descriptor from RXD cache, fetching descriptors from the
  * RX ring if the cache is empty.
@@ -2111,6 +2123,7 @@ DECLINLINE(E1KRXDESC*) e1kRxDGet(PE1KSTATE pThis)
     return NULL;
 }
 
+
 /**
  * Return the RX descriptor obtained with e1kRxDGet() and advance the cache
  * pointer. The descriptor gets written back to the RXD ring.
@@ -2135,7 +2148,6 @@ DECLINLINE(void) e1kRxDPut(PE1KSTATE pThis, E1KRXDESC* pDesc)
     e1kPrintRDesc(pThis, pDesc);
 }
 
-# ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
 /**
  * Store a fragment of received packet at the specifed address.
  *
@@ -2153,6 +2165,7 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
     pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveStore, a);
 }
+
 # endif
 
 #else /* !E1K_WITH_RXD_CACHE */
@@ -2205,6 +2218,7 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
     }
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveStore, a);
 }
+
 #endif /* !E1K_WITH_RXD_CACHE */
 
 /**
@@ -3243,7 +3257,7 @@ static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
     /* Cancel absolute delay timer as we have already got attention */
 #  ifndef E1K_NO_TAD
     e1kCancelTimer(pThis, pThis->CTX_SUFF(pTADTimer));
-#  endif /* E1K_NO_TAD */
+#  endif
     e1kRaiseInterrupt(pThis, ICR_TXDW);
 }
 
@@ -4450,7 +4464,7 @@ static void e1kDescReport(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
 # ifndef E1K_NO_TAD
                 /* Cancel both timers if armed and fire immediately. */
                 e1kCancelTimer(pThis, pThis->CTX_SUFF(pTADTimer));
-# endif /* E1K_NO_TAD */
+# endif
 #endif /* E1K_USE_TX_TIMERS */
                 E1K_INC_ISTAT_CNT(pThis->uStatIntTx);
                 e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, ICR_TXDW);
@@ -7017,7 +7031,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
      */
     pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%RTiop mmio=%RGp mac-cfg=%RTmac %s%s%s\n",
                     pDevIns->iInstance, pThis->IOPortBase, pThis->addrMMReg,
-                    &pThis->macConfigured, g_Chips[pThis->eChip].pcszName,
+                    &pThis->macConfigured, g_aChips[pThis->eChip].pcszName,
                     pThis->fRCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
 
     e1kCsEnter(pThis, VERR_INTERNAL_ERROR); /* Not sure why but PCNet does it */
@@ -7374,12 +7388,12 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) e1kConfigurePciDev(PPCIDEVICE pPciDev, E1KCHIP eChip)
 {
-    Assert(eChip < RT_ELEMENTS(g_Chips));
+    Assert(eChip < RT_ELEMENTS(g_aChips));
     /* Configure PCI Device, assume 32-bit mode ******************************/
-    PCIDevSetVendorId(pPciDev, g_Chips[eChip].uPCIVendorId);
-    PCIDevSetDeviceId(pPciDev, g_Chips[eChip].uPCIDeviceId);
-    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_Chips[eChip].uPCISubsystemVendorId);
-    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_ID, g_Chips[eChip].uPCISubsystemId);
+    PCIDevSetVendorId(pPciDev, g_aChips[eChip].uPCIVendorId);
+    PCIDevSetDeviceId(pPciDev, g_aChips[eChip].uPCIDeviceId);
+    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_aChips[eChip].uPCISubsystemVendorId);
+    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_ID, g_aChips[eChip].uPCISubsystemId);
 
     PCIDevSetWord( pPciDev, VBOX_PCI_COMMAND,            0x0000);
     /* DEVSEL Timing (medium device), 66 MHz Capable, New capabilities */
@@ -7567,7 +7581,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         LogRel(("%s WARNING! Link up delay is disabled!\n", pThis->szPrf));
 
     LogRel(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s R0=%s GC=%s\n", pThis->szPrf,
-            g_Chips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
+            g_aChips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
             pThis->fEthernetCRC ? "on" : "off",
             pThis->fGSOEnabled ? "enabled" : "disabled",
             pThis->fItrEnabled ? "enabled" : "disabled",

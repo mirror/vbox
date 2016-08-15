@@ -55,7 +55,9 @@ WINE_DECLARE_DEBUG_CHANNEL(d3d_caps);
 #define WINE_DEFAULT_VIDMEM (64 * 1024 * 1024)
 
 /* The d3d device ID */
+#if 0 /* VBox: unused */
 static const GUID IID_D3DDEVICE_D3DUID = { 0xaeb2cdd4, 0x6e41, 0x43ea, { 0x94,0x1c,0x83,0x61,0xcc,0x76,0x07,0x81 } };
+#endif
 
 
 /* Extension detection */
@@ -903,6 +905,7 @@ struct driver_version_information
     WORD lopart_hi, lopart_lo;      /* driver loword to report      */
 };
 
+#if 0 /* VBox: unused */
 static const struct driver_version_information driver_version_table[] =
 {
     /* Nvidia drivers. Geforce6 and newer cards are supported by the current driver (180.x)
@@ -959,6 +962,7 @@ static const struct driver_version_information driver_version_table[] =
 
     /* TODO: Add information about legacy ATI hardware, Intel and other cards. */
 };
+#endif /* VBox: unused */
 
 
 static DWORD wined3d_parse_gl_version(const char *gl_version)

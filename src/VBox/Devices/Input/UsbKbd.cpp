@@ -462,6 +462,7 @@ DECLINLINE(bool) usbHidQueueRemove(PUSBHIDURBQUEUE pQueue, PVUSBURB pUrb)
 }
 
 
+#if 0 /* unused */
 /**
  * Checks if the queue is empty or not.
  *
@@ -472,6 +473,7 @@ DECLINLINE(bool) usbHidQueueIsEmpty(PCUSBHIDURBQUEUE pQueue)
 {
     return pQueue->pHead == NULL;
 }
+#endif /* unused */
 
 
 /**

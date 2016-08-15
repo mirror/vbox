@@ -263,12 +263,14 @@ static void rtc_raise_irq(PRTCSTATE pThis, uint32_t iLevel)
 }
 
 
+#ifdef IN_RING3
 DECLINLINE(int) to_bcd(PRTCSTATE pThis, int a)
 {
     if (pThis->cmos_data[RTC_REG_B] & 0x04)
         return a;
     return ((a / 10) << 4) | (a % 10);
 }
+#endif
 
 
 DECLINLINE(int) from_bcd(PRTCSTATE pThis, int a)

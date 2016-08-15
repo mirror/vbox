@@ -1908,6 +1908,8 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+
+#if 0 /* unused */
 /**
  * Helper that searches for a FFS file of a given type.
  *
@@ -1921,7 +1923,7 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 DECLINLINE(EFI_FFS_FILE_HEADER const *)
 efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd, EFI_FV_FILETYPE FileType, uint32_t *pcbFile)
 {
-#define FFS_SIZE(hdr)   RT_MAKE_U32_FROM_U8((hdr)->Size[0], (hdr)->Size[1], (hdr)->Size[2], 0)
+# define FFS_SIZE(hdr)   RT_MAKE_U32_FROM_U8((hdr)->Size[0], (hdr)->Size[1], (hdr)->Size[2], 0)
     while ((uintptr_t)pFfsFile < (uintptr_t)pbEnd)
     {
         if (pFfsFile->Type == FileType)
@@ -1932,9 +1934,10 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
         }
         pFfsFile = (EFI_FFS_FILE_HEADER *)((uintptr_t)pFfsFile + RT_ALIGN(FFS_SIZE(pFfsFile), 8));
     }
-#undef FFS_SIZE
+# undef FFS_SIZE
     return NULL;
 }
+#endif /* unused */
 
 
 /**

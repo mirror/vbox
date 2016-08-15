@@ -622,6 +622,7 @@ DECLINLINE(void) vpciCfgSetU16(PCIDEVICE& refPciDev, uint32_t uOffset, uint16_t 
     *(uint16_t*)&refPciDev.config[uOffset] = u16Value;
 }
 
+#if 0 /* unused */
 /**
  * Sets 32-bit register in PCI configuration space.
  * @param   refPciDev   The PCI device.
@@ -634,6 +635,7 @@ DECLINLINE(void) vpciCfgSetU32(PCIDEVICE& refPciDev, uint32_t uOffset, uint32_t 
     Assert(uOffset+sizeof(u32Value) <= sizeof(refPciDev.config));
     *(uint32_t*)&refPciDev.config[uOffset] = u32Value;
 }
+#endif /* unused */
 
 
 #ifdef DEBUG
