@@ -57,6 +57,8 @@ static int usage(const char *argv0)
             "  --mask <n>   check if size of binaryfile is <n>-aligned\n"
             "  --width <n>  number of bytes per line (default: 16)\n"
             "  --break <n>  break every <n> lines    (default: -1)\n"
+            , argv0);
+    fprintf(stderr,
             "  --ascii      show ASCII representation of binary as comment\n"
             "  --export     emit DECLEXPORT\n"
             "  --append     append to the output file (default: truncate)\n"
