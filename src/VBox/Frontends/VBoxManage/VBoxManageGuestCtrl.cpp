@@ -1868,7 +1868,7 @@ static int gctlCopyTranslatePath(const char *pszSourceRoot, const char *pszSourc
     return vrc;
 }
 
-#ifdef DEBUG_andy
+#ifdef DEBUG_andy_disabled
 static int tstTranslatePath()
 {
     RTAssertSetMayPanic(false /* Do not freak out, please. */);
