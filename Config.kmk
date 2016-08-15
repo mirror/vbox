@@ -2715,7 +2715,9 @@ VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
-if $(KBUILD_TARGET) == "linux" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS)
+if   $(KBUILD_TARGET) == "linux" \
+  || ($(KBUILD_TARGET) == "darwin" && defined(VBOX_WITH_NEW_XCODE)) \
+  || defined(VBOX_WITH_MASOCHISTIC_WARNINGS)
  VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
 endif
 
@@ -2871,13 +2873,16 @@ endif
 if !defined(VBOX_WITHOUT_NO_GCC_WARNING_POLICY) && !defined(VBOX_WITH_NO_GCC_WARNING_POLICY)
  if defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.6.x+
   VBOX_WITH_NO_GCC_WARNING_POLICY = 1
-  $(info build debug: VBOX_WITH_NO_GCC_WARNING_POLICY = 1 (*))
- else if1of ($(KBUILD_TARGET),linux)
+ else if $(KBUILD_TARGET) == "darwin" && defined(VBOX_WITH_NEW_XCODE)
+   VBOX_WITH_NO_GCC_WARNING_POLICY = 1
+ else if1of ($(KBUILD_TARGET), linux)
   if $(VBOX_GCC_VERSION_CXX) >= 40600 # gcc 4.6.x+
    VBOX_WITH_NO_GCC_WARNING_POLICY = 1
-   $(info build debug: VBOX_WITH_NO_GCC_WARNING_POLICY = 1)
   endif
  endif
+endif
+ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
+ $(info build debug: VBOX_WITH_NO_GCC_WARNING_POLICY is enabled)
 endif
 
 
