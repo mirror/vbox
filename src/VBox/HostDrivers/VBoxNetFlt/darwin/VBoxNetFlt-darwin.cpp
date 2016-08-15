@@ -236,13 +236,13 @@ static void vboxNetFltDarwinDetectPCountOffset(ifnet_t pIfNet)
  */
 static kern_return_t    VBoxNetFltDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
-    int rc;
+    RT_NOREF(pKModInfo, pvData);
 
     /*
      * Initialize IPRT and find our module tag id.
      * (IPRT is shared with VBoxDrv, it creates the loggers.)
      */
-    rc = RTR0Init(0);
+    int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
         Log(("VBoxNetFltDarwinStart\n"));
@@ -282,6 +282,7 @@ static kern_return_t    VBoxNetFltDarwinStart(struct kmod_info *pKModInfo, void 
  */
 static kern_return_t VBoxNetFltDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     Log(("VBoxNetFltDarwinStop\n"));
 
     /*
@@ -568,9 +569,10 @@ DECLINLINE(unsigned) vboxNetFltDarwinMBufCalcSGSegs(PVBOXNETFLTINS pThis, mbuf_t
  *                              This should match the number in the mbuf exactly!
  * @param   fSrc                The source of the frame.
  */
-DECLINLINE(void) vboxNetFltDarwinMBufToSG(PVBOXNETFLTINS pThis, mbuf_t pMBuf, void *pvFrame, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc)
+DECLINLINE(void) vboxNetFltDarwinMBufToSG(PVBOXNETFLTINS pThis, mbuf_t pMBuf, void *pvFrame, PINTNETSG pSG, unsigned cSegs,
+                                          uint32_t fSrc)
 {
-    NOREF(pThis);
+    RT_NOREF(pThis, fSrc);
 
     /*
      * Walk the chain and convert the buffers to segments.  Works INTNETSG::cbTotal.
@@ -771,6 +773,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
  */
 static errno_t vboxNetFltDarwinIffIoCtl(void *pvThis, ifnet_t pIfNet, protocol_family_t eProtocol, u_long uCmd, void *pvArg)
 {
+    RT_NOREF(pIfNet);
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvThis;
     LogFlow(("vboxNetFltDarwinIffIoCtl: pThis=%p uCmd=%lx\n", pThis, uCmd));
 
@@ -984,8 +987,7 @@ static errno_t vboxNetFltDarwinIffOutput(void *pvThis, ifnet_t pIfNet, protocol_
  */
 static errno_t vboxNetFltDarwinIffInput(void *pvThis, ifnet_t pIfNet, protocol_family_t eProtocol, mbuf_t *ppMBuf, char **ppchFrame)
 {
-    NOREF(eProtocol);
-    NOREF(pIfNet);
+    RT_NOREF(eProtocol, pIfNet);
     return vboxNetFltDarwinIffInputOutputWorker((PVBOXNETFLTINS)pvThis, *ppMBuf, *ppchFrame, INTNETTRUNKDIR_WIRE, eProtocol);
 }
 
@@ -993,6 +995,7 @@ static errno_t vboxNetFltDarwinIffInput(void *pvThis, ifnet_t pIfNet, protocol_f
 /** A worker thread for vboxNetFltSendDummy(). */
 static DECLCALLBACK(int) vboxNetFltSendDummyWorker(RTTHREAD hThreadSelf, void *pvUser)
 {
+    RT_NOREF(hThreadSelf);
     Assert(pvUser);
     ifnet_t pIfNet = (ifnet_t)pvUser;
     return VBoxNetSendDummy(pIfNet);
@@ -1330,6 +1333,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
     /* Nothing to do here. */
+    RT_NOREF(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1337,6 +1341,7 @@ int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 {
     /* Nothing to do here. */
+    RT_NOREF(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1516,7 +1521,6 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
         return;
     }
 
-    struct net_event_data my_link;
     ifnet_t pIfNet = pThis->u.s.pIfNet; /* XXX: retain? */
     ifnet_family_t if_family = ifnet_family(pIfNet);
     u_int32_t if_unit = ifnet_unit(pIfNet);
