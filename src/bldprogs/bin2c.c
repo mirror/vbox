@@ -52,14 +52,16 @@ static int usage(const char *argv0)
 {
     fprintf(stderr,
             "Syntax: %s [options] <arrayname> <binaryfile> <outname>\n"
-            "  -min <n>     check if <binaryfile> is not smaller than <n>KB\n"
-            "  -max <n>     check if <binaryfile> is not bigger than <n>KB\n"
-            "  -mask <n>    check if size of binaryfile is <n>-aligned\n"
-            "  -width <n>   number of bytes per line (default: 16)\n"
-            "  -break <n>   break every <n> lines    (default: -1)\n"
-            "  -ascii       show ASCII representation of binary as comment\n"
-            "  -export      emit DECLEXPORT\n"
+            "  --min <n>    check if <binaryfile> is not smaller than <n>KB\n"
+            "  --max <n>    check if <binaryfile> is not bigger than <n>KB\n"
+            "  --mask <n>   check if size of binaryfile is <n>-aligned\n"
+            "  --width <n>  number of bytes per line (default: 16)\n"
+            "  --break <n>  break every <n> lines    (default: -1)\n"
+            "  --ascii      show ASCII representation of binary as comment\n"
+            "  --export     emit DECLEXPORT\n"
             "  --append     append to the output file (default: truncate)\n"
+            "  --no-size    Skip the size.\n"
+            "  --static     Static data scope.\n"
             , argv0);
 
     return 1;
@@ -76,6 +78,8 @@ int main(int argc, char *argv[])
     int           fAscii = 0;
     int           fAppend = 0;
     int           fExport = 0;
+    int           fNoSize = 0;
+    int           fStatic = 0;
     long          iBreakEvery = -1;
     unsigned char abLine[32];
     size_t        cbLine = 16;
@@ -89,31 +93,35 @@ int main(int argc, char *argv[])
 
     for (iArg = 1; iArg < argc; iArg++)
     {
-        if (!strcmp(argv[iArg], "-min"))
+        if (!strcmp(argv[iArg], "--min") || !strcmp(argv[iArg], "-min"))
         {
             if (++iArg >= argc)
                 return usage(argv[0]);
             cbMin = 1024 * strtoul(argv[iArg], NULL, 0);
         }
-        else if (!strcmp(argv[iArg], "-max"))
+        else if (!strcmp(argv[iArg], "--max") || !strcmp(argv[iArg], "-max"))
         {
             if (++iArg >= argc)
                 return usage(argv[0]);
             cbMax = 1024 * strtoul(argv[iArg], NULL, 0);
         }
-        else if (!strcmp(argv[iArg], "-mask"))
+        else if (!strcmp(argv[iArg], "--mask") || !strcmp(argv[iArg], "-mask"))
         {
             if (++iArg >= argc)
                 return usage(argv[0]);
             uMask = strtoul(argv[iArg], NULL, 0);
         }
-        else if (!strcmp(argv[iArg], "-ascii"))
+        else if (!strcmp(argv[iArg], "--ascii") || !strcmp(argv[iArg], "-ascii"))
             fAscii = 1;
         else if (!strcmp(argv[iArg], "--append"))
             fAppend = 1;
-        else if (!strcmp(argv[iArg], "-export"))
+        else if (!strcmp(argv[iArg], "--export") || !strcmp(argv[iArg], "-export"))
             fExport = 1;
-        else if (!strcmp(argv[iArg], "-width"))
+        else if (!strcmp(argv[iArg], "--no-size"))
+            fNoSize = 1;
+        else if (!strcmp(argv[iArg], "--static"))
+            fStatic = 1;
+        else if (!strcmp(argv[iArg], "--width") || !strcmp(argv[iArg], "-width"))
         {
             if (++iArg >= argc)
                 return usage(argv[0]);
@@ -125,7 +133,7 @@ int main(int argc, char *argv[])
                 return 1;
             }
         }
-        else if (!strcmp(argv[iArg], "-break"))
+        else if (!strcmp(argv[iArg], "--break") || !strcmp(argv[iArg], "-break"))
         {
             if (++iArg >= argc)
                 return usage(argv[0]);
@@ -175,7 +183,7 @@ int main(int argc, char *argv[])
            "\n"
            "%sconst unsigned char%s g_ab%s[] =\n"
            "{\n",
-           argv[iArg+1], argv[0], fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[iArg]);
+           argv[iArg+1], argv[0], fStatic ? "static " : fExport ? "DECLEXPORT(" : "", !fStatic && fExport ? ")" : "", argv[iArg]);
 
     /* check size restrictions */
     if (uMask && (cbBin & uMask))
@@ -226,11 +234,15 @@ int main(int argc, char *argv[])
         {
             /* no errors, finish the structure. */
             fprintf(pFileOut,
-                    "};\n"
-                    "\n"
-                    "%sconst unsigned%s g_cb%s = sizeof(g_ab%s);\n"
-                    "/* end of file */\n",
-                    fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[iArg], argv[iArg]);
+                    "};\n");
+
+            if (!fNoSize)
+                fprintf(pFileOut,
+                        "\n"
+                        "%sconst unsigned%s g_cb%s = sizeof(g_ab%s);\n",
+                        fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[iArg], argv[iArg]);
+
+            fprintf(pFileOut, "/* end of file */\n");
 
             /* flush output and check for error. */
             fflush(pFileOut);
