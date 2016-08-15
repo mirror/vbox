@@ -90,7 +90,7 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The IO Master Port. */
-static mach_port_t g_MasterPort = NULL;
+static mach_port_t g_MasterPort = MACH_PORT_NULL;
 /** Major darwin version as returned by uname -r. */
 static uint32_t g_uMajorDarwin = 0;
 
@@ -697,11 +697,11 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
         return;
 
     IOObjectRelease(pNotify->AttachIterator);
-    pNotify->AttachIterator = NULL;
+    pNotify->AttachIterator = IO_OBJECT_NULL;
     IOObjectRelease(pNotify->AttachIterator2);
-    pNotify->AttachIterator2 = NULL;
+    pNotify->AttachIterator2 = IO_OBJECT_NULL;
     IOObjectRelease(pNotify->DetachIterator);
-    pNotify->DetachIterator = NULL;
+    pNotify->DetachIterator = IO_OBJECT_NULL;
 
     CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
     IONotificationPortDestroy(pNotify->NotifyPort);
@@ -728,7 +728,7 @@ static io_object_t darwinFindObjectByClass(io_object_t Object, const char *pszCl
     io_iterator_t Children;
     kern_return_t krc = IORegistryEntryGetChildIterator(Object, kIOServicePlane, &Children);
     if (krc != KERN_SUCCESS)
-        return NULL;
+        return IO_OBJECT_NULL;
     io_object_t Child;
     while ((Child = IOIteratorNext(Children)) != IO_OBJECT_NULL)
     {
@@ -817,7 +817,7 @@ static kern_return_t darwinGetUSBHostDeviceFromLegacyDevice(io_object_t USBDevic
     /*
      * Perform the search and get a collection of USB Device back.
      */
-    io_iterator_t USBDevices = NULL;
+    io_iterator_t USBDevices = IO_OBJECT_NULL;
     IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
     AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), KERN_FAILURE);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
@@ -1068,7 +1068,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
     /*
      * Perform the search and get a collection of USB Device back.
      */
-    io_iterator_t USBDevices = NULL;
+    io_iterator_t USBDevices = IO_OBJECT_NULL;
     IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
     AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
@@ -1291,7 +1291,7 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
      */
 
     CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
-    AssertReturn(RefMatchingDict, NULL);
+    AssertReturn(RefMatchingDict, VERR_INTERNAL_ERROR_4);
 
     uint64_t u64SessionId = 0;
     uint32_t u32LocationId = 0;
@@ -1331,9 +1331,9 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
             psz++;
     } while (*psz);
 
-    io_iterator_t USBDevices = NULL;
+    io_iterator_t USBDevices = IO_OBJECT_NULL;
     IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
-    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%#x\n", irc), NULL);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%#x\n", irc), VERR_INTERNAL_ERROR_5);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     unsigned cMatches = 0;
@@ -1363,7 +1363,7 @@ int DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur)
         IOObjectRelease(USBDevice);
     }
     IOObjectRelease(USBDevices);
-    USBDevices = NULL;
+    USBDevices = IO_OBJECT_NULL;
     if (!USBDevice)
     {
         LogRel(("USB: Device '%s' not found (%d pid+vid matches)\n", pszAddress, cMatches));
@@ -1467,7 +1467,7 @@ PDARWINDVD DarwinGetDVDDrives(void)
     /*
      * Perform the search and get a collection of DVD services.
      */
-    io_iterator_t DVDServices = NULL;
+    io_iterator_t DVDServices = IO_OBJECT_NULL;
     IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &DVDServices);
     AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
@@ -1599,7 +1599,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
     /*
      * Perform the search and get a collection of ethernet controller services.
      */
-    io_iterator_t EtherIfServices = NULL;
+    io_iterator_t EtherIfServices = IO_OBJECT_NULL;
     IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &EtherIfServices);
     AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
