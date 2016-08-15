@@ -35,6 +35,8 @@
 VBoxDbgBase::VBoxDbgBase(VBoxDbgGui *a_pDbgGui)
     : m_pDbgGui(a_pDbgGui), m_pUVM(NULL), m_hGUIThread(RTThreadNativeSelf())
 {
+    NOREF(m_pDbgGui); /* shut up warning. */
+
     /*
      * Register
      */
