@@ -384,6 +384,9 @@ static int VBoxGuestNetBSDDetach(device_t self, int flags)
 
     VGDrvCommonDeleteDevExt(&g_DevExt);
 
+    bus_space_unmap(vboxguest->iVMMDevMemResId, vboxguest->VMMDevMemHandle, vboxguest->VMMDevMemSize);
+    bus_space_unmap(vboxguest->io_tag, vboxguest->io_handle, vboxguest->io_regsize);
+
     RTR0Term();
 
     return 0;
