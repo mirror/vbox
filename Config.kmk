@@ -4104,8 +4104,11 @@ TEMPLATE_VBOXR0DRV_INCS               += \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 ## @todo try use VBOX_GCC_PEDANTIC_CXX
+# -Wno-c++11-extensions -Wno-c99-extensions -Wno-extra-semi -Wno-zero-length-array
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkernel \
-	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
+	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
+	-Wno-c++11-extensions -Wno-c99-extensions -Wno-extra-semi -Wno-zero-length-array \
+	-Wno-gnu-zero-variadic-macro-arguments -Wno-four-char-constants \
 	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
 	-fno-exceptions -msoft-float -fapple-kext -fno-rtti -mkernel \
 	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
@@ -4124,7 +4127,7 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkerne
 TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mno-red-zone
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -mkernel \
-	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
+	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
 	-fno-common -nostdinc -fno-builtin $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
 	-fno-exceptions -msoft-float -fapple-kext -fno-rtti  \
 	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
@@ -4132,6 +4135,10 @@ TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -mkernel 
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32
+  if 1
+   TEMPLATE_VBOXR0DRV_CFLAGS          += $(VBOX_GCC_WERR)
+   TEMPLATE_VBOXR0DRV_CXXFLAGS        += $(VBOX_GCC_WERR)
+  endif
 TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
 	-nostdlib -stdlib=libc++ -Wl,-kext -Wl,-keep_private_externs
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
