@@ -1040,7 +1040,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "C3B069D4-0543-474B-AE81-769B3E8F40DA"
+#define PDMIHOSTAUDIO_IID                           "2922C325-79D3-4E66-B60F-0082878522FE"
 
 /** @} */
 
