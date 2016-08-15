@@ -214,6 +214,8 @@ int drvHostDebugAudioStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pSt
  */
 int drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
+    RT_NOREF(pvBuf, cbBuf);
+
     PDRVHOSTDEBUGAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTDEBUGAUDIO, IHostAudio);
     PDEBUGAUDIOSTREAM  pDbgStream = (PDEBUGAUDIOSTREAM)pStream;
 
@@ -283,7 +285,7 @@ int drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStre
  */
 int drvHostDebugAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    RT_NOREF(pInterface, pStream);
+    RT_NOREF(pInterface, pStream, pvBuf, cbBuf);
 
     /* Never capture anything. */
     if (pcbRead)

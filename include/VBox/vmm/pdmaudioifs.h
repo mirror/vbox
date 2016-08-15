@@ -974,7 +974,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pCfgReq             Pointer to requested stream configuration.
      * @param   pCfgAcq             Pointer to acquired stream configuration.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq));
 
     /**
      * Destroys an audio stream.
@@ -1023,7 +1023,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   cbBuf               Size (in bytes) of audio data buffer.
      * @param   pcbWritten          Returns number of bytes written. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed));
+    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
     /**
      * Captures (reads from) an audio (input) stream.
@@ -1035,7 +1035,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   cbBuf               Size (in bytes) of buffer.
      * @param   pcbRead             Returns number of bytes read. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesCaptured));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
 
 } PDMIHOSTAUDIO;
 
