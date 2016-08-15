@@ -75,7 +75,7 @@ DECLINLINE(int) VBoxNetSendDummy(ifnet_t pIfNet)
 
         mbuf_pkthdr_setrcvif(pPkt, pIfNet); /* will crash without this. */
 
-        errno_t err = ifnet_input(pIfNet, pPkt, NULL);
+        err = ifnet_input(pIfNet, pPkt, NULL);
         if (err)
         {
             rc = RTErrConvertFromErrno(err);
