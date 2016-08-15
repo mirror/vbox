@@ -51,6 +51,17 @@
 # error "RT_OS_DARWIN must be defined!"
 #endif
 
+#if defined(__clang__) || RT_GNUC_PREREQ(4, 4)
+# pragma GCC diagnostic push
+#endif
+#if defined(__clang__) || RT_GNUC_PREREQ(4, 2)
+# pragma GCC diagnostic ignored "-Wc++11-extensions"
+# pragma GCC diagnostic ignored "-Wc99-extensions"
+# pragma GCC diagnostic ignored "-Wextra-semi"
+# pragma GCC diagnostic ignored "-Wzero-length-array"
+# pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 /* now we're ready for including the rest of the Darwin headers. */
 #include <kern/thread.h>
 #include <kern/clock.h>
@@ -78,6 +89,10 @@
 #include <IOKit/IOMemoryDescriptor.h>
 #include <IOKit/IOBufferMemoryDescriptor.h>
 #include <IOKit/IOMapper.h>
+
+#if defined(__clang__) || RT_GNUC_PREREQ(4, 4)
+# pragma GCC diagnostic pop
+#endif
 
 
 /* See osfmk/kern/ast.h. */

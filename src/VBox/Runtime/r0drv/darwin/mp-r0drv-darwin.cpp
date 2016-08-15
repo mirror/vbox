@@ -163,6 +163,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
     /** @todo darwin R0 MP (rainy day) */
+    RT_NOREF(idCpu);
     return 0;
 }
 
@@ -170,6 +171,7 @@ RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 {
     /** @todo darwin R0 MP (rainy day) */
+    RT_NOREF(idCpu);
     return 0;
 }
 

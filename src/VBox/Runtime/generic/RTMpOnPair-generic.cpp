@@ -63,6 +63,7 @@ typedef RTMPONPAIRGENERIC *PRTMPONPAIRGENERIC;
  */
 static DECLCALLBACK(void) rtMpOnPairGenericWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    RT_NOREF(pvUser2);
     PRTMPONPAIRGENERIC pArgs = (PRTMPONPAIRGENERIC)pvUser1;
 
     /*

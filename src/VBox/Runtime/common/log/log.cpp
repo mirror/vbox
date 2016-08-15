@@ -358,6 +358,7 @@ static struct
     { RT_STR_TUPLE("user"),         RTLOGDEST_USER },
 };
 
+#ifdef IN_RING3
 /** Log rotation backoff table - millisecond sleep intervals.
  * Important on Windows host, especially for VBoxSVC release logging.  Only a
  * medium term solution, until a proper fix for log file handling is available.
@@ -365,6 +366,7 @@ static struct
  */
 static const uint32_t g_acMsLogBackoff[] =
 { 10, 10, 10, 20, 50, 100, 200, 200, 200, 200, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 1000, 1000, 1000 };
+#endif
 
 
 /**

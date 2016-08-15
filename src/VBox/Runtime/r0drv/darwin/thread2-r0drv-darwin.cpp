@@ -132,12 +132,14 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
 
 DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
+    RT_NOREF(pThread);
     return VERR_NOT_IMPLEMENTED;
 }
 
 
 DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
 {
+    RT_NOREF(pThread);
     /** @todo fix RTThreadWait/RTR0Term race on darwin. */
     RTThreadSleep(1);
 }
@@ -145,7 +147,7 @@ DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
 
 DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
-    NOREF(pThread);
+    RT_NOREF(pThread);
 }
 
 
@@ -159,6 +161,7 @@ DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
  */
 static void rtThreadNativeMain(void *pvArg, wait_result_t Ignored)
 {
+    RT_NOREF(Ignored);
     const thread_t Self = current_thread();
     PRTTHREADINT pThread = (PRTTHREADINT)pvArg;
 
