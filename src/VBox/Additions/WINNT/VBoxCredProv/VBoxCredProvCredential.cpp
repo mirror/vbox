@@ -154,12 +154,83 @@ HRESULT VBoxCredProvCredential::RTUTF16ToUnicode(PUNICODE_STRING pUnicodeDest, P
 }
 
 
-HRESULT VBoxCredProvCredential::AllocateLogonPackage(const KERB_INTERACTIVE_UNLOCK_LOGON &rUnlockLogon, PBYTE *ppPackage, DWORD *pcbPackage)
+HRESULT VBoxCredProvCredential::kerberosLogonInit(KERB_INTERACTIVE_LOGON *pLogonIn,
+                                                  CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsage,
+                                                  PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain)
 {
-    AssertPtrReturn(ppPackage, E_INVALIDARG);
-    AssertPtrReturn(pcbPackage, E_INVALIDARG);
+    AssertPtrReturn(pLogonIn,     E_INVALIDARG);
+    AssertPtrReturn(pwszUser,     E_INVALIDARG);
+    AssertPtrReturn(pwszPassword, E_INVALIDARG);
+    /* pwszDomain is optional. */
 
-    const KERB_INTERACTIVE_LOGON *pLogonIn = &rUnlockLogon.Logon;
+    HRESULT hr;
+
+    /* Do we have a domain name set? */
+    if (   pwszDomain
+        && RTUtf16Len(pwszDomain))
+    {
+        hr = RTUTF16ToUnicode(&pLogonIn->LogonDomainName, pwszDomain, true /* fCopy */);
+    }
+    else /* No domain (FQDN) given, try local computer name. */
+    {
+        WCHAR wszComputerName[MAX_COMPUTERNAME_LENGTH + 1];
+        DWORD cch = ARRAYSIZE(wszComputerName);
+        if (GetComputerNameW(wszComputerName, &cch))
+        {
+            /* Is a domain name missing? Then use the name of the local computer. */
+            hr = RTUTF16ToUnicode(&pLogonIn->LogonDomainName, wszComputerName, true /* fCopy */);
+
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::kerberosLogonInit: Local computer name=%ls\n",
+                                wszComputerName);
+        }
+        else
+            hr = HRESULT_FROM_WIN32(GetLastError());
+    }
+
+    /* Fill in the username and password. */
+    if (SUCCEEDED(hr))
+    {
+        hr = RTUTF16ToUnicode(&pLogonIn->UserName, pwszUser, true /* fCopy */);
+        if (SUCCEEDED(hr))
+        {
+            hr = RTUTF16ToUnicode(&pLogonIn->Password, pwszPassword, true /* fCopy */);
+            if (SUCCEEDED(hr))
+            {
+                /* Set credential type according to current usage scenario. */
+                switch (enmUsage)
+                {
+                    case CPUS_UNLOCK_WORKSTATION:
+                        pLogonIn->MessageType = KerbWorkstationUnlockLogon;
+                        break;
+
+                    case CPUS_LOGON:
+                        pLogonIn->MessageType = KerbInteractiveLogon;
+                        break;
+
+                    case CPUS_CREDUI:
+                        pLogonIn->MessageType = (KERB_LOGON_SUBMIT_TYPE)0; /* No message type required here. */
+                        break;
+
+                    default:
+                        VBoxCredProvVerbose(0, "VBoxCredProvCredential::kerberosLogonInit: Unknown usage scenario=%ld\n",
+                                            enmUsage);
+                        hr = E_FAIL;
+                        break;
+                }
+            }
+        }
+    }
+
+    return hr;
+}
+
+
+HRESULT VBoxCredProvCredential::kerberosLogonSerialize(const KERB_INTERACTIVE_LOGON *pLogonIn,
+                                                       PBYTE *ppPackage, DWORD *pcbPackage)
+{
+    AssertPtrReturn(pLogonIn,   E_INVALIDARG);
+    AssertPtrReturn(ppPackage,  E_INVALIDARG);
+    AssertPtrReturn(pcbPackage, E_INVALIDARG);
 
     /*
      * First, allocate enough space for the logon structure itself and separate
@@ -835,160 +906,75 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
     RT_BZERO(&KerberosUnlockLogon, sizeof(KerberosUnlockLogon));
 
     /* Save a pointer to the interactive logon struct. */
-    KERB_INTERACTIVE_LOGON *pKerberosLogon = &KerberosUnlockLogon.Logon;
-    AssertPtr(pKerberosLogon);
+    KERB_INTERACTIVE_LOGON *pLogon = &KerberosUnlockLogon.Logon;
+    AssertPtr(pLogon);
 
-    HRESULT hr;
-
-#ifdef DEBUG
+#ifdef DEBUG /* Note: NEVER print this in release mode! */
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Username=%ls, Password=%ls, Domain=%ls\n",
                         m_apwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
                         m_apwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
                         m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
 #endif
 
-    /* Do we have a domain name set? */
-    if (   m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]
-        && RTUtf16Len(m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]))
-    {
-        hr = RTUTF16ToUnicode(&pKerberosLogon->LogonDomainName,
-                              m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME],
-                              false /* Just assign, no copy */);
-    }
-    else /* No domain (FQDN) given, try local computer name. */
-    {
-        WCHAR wszComputerName[MAX_COMPUTERNAME_LENGTH + 1];
-        DWORD cch = ARRAYSIZE(wszComputerName);
-        if (GetComputerNameW(wszComputerName, &cch))
-        {
-            /* Is a domain name missing? Then use the name of the local computer. */
-            hr = RTUTF16ToUnicode(&pKerberosLogon->LogonDomainName,
-                                  wszComputerName,
-                                  false /* Just assign, no copy */);
-
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Local computer name=%ls\n",
-                                wszComputerName);
-        }
-        else
-            hr = HRESULT_FROM_WIN32(GetLastError());
-    }
-
-    /* Fill in the username and password. */
+    HRESULT hr = kerberosLogonInit(pLogon,
+                                   m_enmUsageScenario,
+                                   m_apwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
+                                   m_apwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
+                                   m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
     if (SUCCEEDED(hr))
     {
-        hr = RTUTF16ToUnicode(&pKerberosLogon->UserName,
-                              m_apwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
-                              false /* Just assign, no copy */);
+        hr = kerberosLogonSerialize(pLogon,
+                                    &pcpCredentialSerialization->rgbSerialization,
+                                    &pcpCredentialSerialization->cbSerialization);
         if (SUCCEEDED(hr))
         {
-            hr = RTUTF16ToUnicode(&pKerberosLogon->Password,
-                                  m_apwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
-                                  false /* Just assign, no copy */);
+            HANDLE hLSA;
+            NTSTATUS s = LsaConnectUntrusted(&hLSA);
+            hr = HRESULT_FROM_NT(s);
+
             if (SUCCEEDED(hr))
             {
-                /* Set credential type according to current usage scenario. */
-                AssertPtr(pKerberosLogon);
-                switch (m_enmUsageScenario)
-                {
-                    case CPUS_UNLOCK_WORKSTATION:
-                        pKerberosLogon->MessageType = KerbWorkstationUnlockLogon;
-                        break;
-
-                    case CPUS_LOGON:
-                        pKerberosLogon->MessageType = KerbInteractiveLogon;
-                        break;
-
-                    case CPUS_CREDUI:
-                        pKerberosLogon->MessageType = (KERB_LOGON_SUBMIT_TYPE)0; /* No message type required here. */
-                        break;
-
-                    default:
-                        hr = E_FAIL;
-                        break;
-                }
-
-                if (FAILED(hr))
-                    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Unknown usage scenario=%ld\n", m_enmUsageScenario);
-
-                if (SUCCEEDED(hr)) /* Build the logon package. */
-                {
-                    hr = AllocateLogonPackage(KerberosUnlockLogon,
-                                              &pcpCredentialSerialization->rgbSerialization,
-                                              &pcpCredentialSerialization->cbSerialization);
-                    if (FAILED(hr))
-                        VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Failed to allocate logon package, hr=0x%08x\n", hr);
-                }
-
+                LSA_STRING lsaszKerberosName;
+                size_t cchKerberosName;
+                hr = StringCchLengthA(NEGOSSP_NAME_A, USHORT_MAX, &cchKerberosName);
                 if (SUCCEEDED(hr))
                 {
-                    ULONG ulAuthPackage = 0;
-/** @todo r=bird: The code flow here looks wrong.  The fact that ulAuthPackage
- *        wasn't initialized if LsaConnectUntrusted fails, but still used and
- *        we seemingly even succeed the operation as a whole.  Unfortunately,
- *        the code does not have any comments what-so-family-ever to
- *        enlighten us as to wtf (f == family) this Lsa stuff is doing and
- *        why it appear to be kind of optional...
- *
- *        I'm pretty sure this code if broken.  And if it is, it's because the
- *        stupid, stupid, code structure where you repeat state checks to avoid
- *        hugging the right margin.  The function is too long already, so the
- *        right way to deal with that is to split up the work into several
- *        functions with simplier control flow.
- */
-#pragma message("TODO: Investigate code flow around ulAuthPackage!")
-#ifdef DEBUG_andy
-# error "fix this ASAP, it's been here since the r76490 rewrite"
-#endif
-
-                    HANDLE hLsa;
-                    NTSTATUS s = LsaConnectUntrusted(&hLsa);
-                    if (SUCCEEDED(HRESULT_FROM_NT(s)))
-                    {
-                        LSA_STRING lsaszKerberosName;
-                        size_t cchKerberosName;
-                        hr = StringCchLengthA(NEGOSSP_NAME_A, USHORT_MAX, &cchKerberosName);
-                        if (SUCCEEDED(hr))
-                        {
-                            USHORT usLength;
-                            hr = SizeTToUShort(cchKerberosName, &usLength);
-                            if (SUCCEEDED(hr))
-                            {
-                                lsaszKerberosName.Buffer        = (PCHAR)NEGOSSP_NAME_A;
-                                lsaszKerberosName.Length        = usLength;
-                                lsaszKerberosName.MaximumLength = lsaszKerberosName.Length + 1;
-
-                            }
-                        }
-
-                        if (SUCCEEDED(hr))
-                        {
-                            s = LsaLookupAuthenticationPackage(hLsa, &lsaszKerberosName, &ulAuthPackage);
-                            if (FAILED(HRESULT_FROM_NT(s)))
-                            {
-                                hr = HRESULT_FROM_NT(s);
-                                VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Failed looking up authentication package, hr=0x%08x\n", hr);
-                            }
-                        }
-
-                        LsaDeregisterLogonProcess(hLsa);
-                    }
-
+                    USHORT usLength;
+                    hr = SizeTToUShort(cchKerberosName, &usLength);
                     if (SUCCEEDED(hr))
                     {
-                        pcpCredentialSerialization->ulAuthenticationPackage = ulAuthPackage;
-                        pcpCredentialSerialization->clsidCredentialProvider = CLSID_VBoxCredProvider;
+                        lsaszKerberosName.Buffer        = (PCHAR)NEGOSSP_NAME_A;
+                        lsaszKerberosName.Length        = usLength;
+                        lsaszKerberosName.MaximumLength = lsaszKerberosName.Length + 1;
 
-                        /* We're done -- let the logon UI know. */
-                        *pcpGetSerializationResponse = CPGSR_RETURN_CREDENTIAL_FINISHED;
+                        ULONG ulAuthPackage = 0;
+
+                        s = LsaLookupAuthenticationPackage(hLSA, &lsaszKerberosName, &ulAuthPackage);
+                        hr = HRESULT_FROM_NT(s);
+
+                        if (SUCCEEDED(hr))
+                        {
+                            pcpCredentialSerialization->ulAuthenticationPackage = ulAuthPackage;
+                            pcpCredentialSerialization->clsidCredentialProvider = CLSID_VBoxCredProvider;
+
+                            /* We're done -- let the logon UI know. */
+                            *pcpGetSerializationResponse = CPGSR_RETURN_CREDENTIAL_FINISHED;
+                        }
+                        else
+                            VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: LsaLookupAuthenticationPackage failed with ntStatus=%ld\n", s);
                     }
                 }
+
+                LsaDeregisterLogonProcess(hLSA);
             }
             else
-                VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Error copying password, hr=0x%08x\n", hr);
+                VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: LsaConnectUntrusted failed with ntStatus=%ld\n", s);
         }
         else
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Error copying user name, hr=0x%08x\n", hr);
+            VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: kerberosLogonSerialize failed with hr=0x%08x\n", hr);
     }
+    else
+        VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: kerberosLogonInit failed with hr=0x%08x\n", hr);
 
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization returned hr=0x%08x\n", hr);
     return hr;
