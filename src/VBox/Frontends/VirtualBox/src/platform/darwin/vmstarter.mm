@@ -50,7 +50,7 @@ NSString *m_strVBoxPath;
     NSWorkspace *pWS = [NSWorkspace sharedWorkspace];
     /* We need to check if vbox is running already. If so we sent an open
        event. If not we start a new process with the file as parameter. */
-    NSArray *pApps = [pWS launchedApplications];
+    NSArray *pApps = [pWS runningApplications];
     bool fVBoxRuns = false;
     for (NSDictionary *pDict in pApps)
     {
