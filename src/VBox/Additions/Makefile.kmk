@@ -211,6 +211,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
 	OS2/libc063.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc063.dll \
 	OS2/libc064.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc064.dll \
 	OS2/libc065.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc065.dll \
+	OS2/libc066.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc066.dll \
 	OS2/readme.txt=$(VBOX_PATH_ADDITIONS.os2.x86)/readme.txt \
        \
 	OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
