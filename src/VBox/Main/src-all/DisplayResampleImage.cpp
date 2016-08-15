@@ -81,6 +81,7 @@ DECLINLINE(void) gdImageSetPixel (gdImagePtr im, int x, int y, int color, int w)
         ((g) << 8) + \
         (b))
 
+#if 0 /* unused */
 void gdImageCopyResampled (uint8_t *dst,
                       uint8_t *src,
                       int dstX, int dstY,
@@ -194,6 +195,7 @@ void gdImageCopyResampled (uint8_t *dst,
         }
     }
 }
+#endif
 
 /* Fast integer implementation for 32 bpp bitmap scaling.
  * Use fixed point values * 16.

@@ -1284,7 +1284,11 @@ void STATE_APIENTRY crStateGetProgramLocalParameterfvARB(GLenum target, GLuint i
             return;
         }
     }
-    else if (target == GL_VERTEX_PROGRAM_ARB || target == GL_VERTEX_PROGRAM_NV) {
+    else if (   target == GL_VERTEX_PROGRAM_ARB
+#if GL_VERTEX_PROGRAM_ARB != GL_VERTEX_PROGRAM_NV
+             || target == GL_VERTEX_PROGRAM_NV
+#endif
+            ) {
         prog = p->currentVertexProgram;
         if (index >= g->limits.maxVertexProgramLocalParams) {
             crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
@@ -1638,7 +1642,11 @@ void STATE_APIENTRY crStateGetProgramEnvParameterfvARB(GLenum target, GLuint ind
         params[2] = p->fragmentParameters[index][2];
         params[3] = p->fragmentParameters[index][3];
     }
-    else if (target == GL_VERTEX_PROGRAM_ARB || target == GL_VERTEX_PROGRAM_NV) {
+    else if (   target == GL_VERTEX_PROGRAM_ARB
+#if GL_VERTEX_PROGRAM_ARB != GL_VERTEX_PROGRAM_NV
+             || target == GL_VERTEX_PROGRAM_NV
+#endif
+             ) {
         if (index >= g->limits.maxVertexProgramEnvParams) {
             crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
                                      "glGetProgramEnvParameterARB(index)");
@@ -1693,7 +1701,11 @@ void STATE_APIENTRY crStateProgramEnvParameter4fARB(GLenum target, GLuint index,
         DIRTY(pb->fragmentEnvParameter[index], g->neg_bitid);
         DIRTY(pb->fragmentEnvParameters, g->neg_bitid);
     }
-    else if (target == GL_VERTEX_PROGRAM_ARB || target == GL_VERTEX_PROGRAM_NV) {
+    else if (   target == GL_VERTEX_PROGRAM_ARB
+#if GL_VERTEX_PROGRAM_ARB != GL_VERTEX_PROGRAM_NV
+             || target == GL_VERTEX_PROGRAM_NV
+#endif
+             ) {
         if (index >= g->limits.maxVertexProgramEnvParams) {
             crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
                                      "glProgramEnvParameterARB(index)");

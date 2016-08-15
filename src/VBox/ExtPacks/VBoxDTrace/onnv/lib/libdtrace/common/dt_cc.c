@@ -2166,6 +2166,7 @@ dt_compile(dtrace_hdl_t *dtp, int context, dtrace_probespec_t pspec, void *arg,
 	else
 		yybegin(YYS_CLAUSE);
 
+	rv = NULL;
 	if ((err = setjmp(yypcb->pcb_jmpbuf)) != 0)
 		goto out;
 
