@@ -419,6 +419,8 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
     REMR3NotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
                                          !!pCurType->pfnHandlerR3, fRestoreAsRAM);
 # endif
+#else
+    RT_NOREF_PV(pCurType);
 #endif
 }
 

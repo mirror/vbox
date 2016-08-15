@@ -1085,12 +1085,14 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_lstar[] =
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
+#if 0 /** @todo */
 /** Sub-fields for the SF_MASK MSR. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_sf_mask[] =
 {
     /** @todo  */
     DBGFREGSUBFIELD_TERMINATOR()
 };
+#endif
 
 
 /** @name Macros for producing register descriptor table entries.

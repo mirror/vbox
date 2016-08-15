@@ -106,7 +106,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef LOG_ENABLED
+#if defined(VBOX_WITH_RAW_MODE) && defined(LOG_ENABLED)
 /** Segment register names. */
 static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "FS", "GS" };
 #endif

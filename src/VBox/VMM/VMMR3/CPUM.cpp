@@ -370,6 +370,7 @@ static const SSMFIELD g_aCpumBndCfgFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+#if 0 /** @todo */
 /** Saved state field descriptors for X86XSAVEOPMASK. */
 static const SSMFIELD g_aCpumOpmaskFields[] =
 {
@@ -383,6 +384,7 @@ static const SSMFIELD g_aCpumOpmaskFields[] =
     SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[7]),
     SSMFIELD_ENTRY_TERM()
 };
+#endif
 
 /** Saved state field descriptors for X86XSAVEZMMHI256. */
 static const SSMFIELD g_aCpumZmmHi256Fields[] =

@@ -1849,6 +1849,7 @@ DECLINLINE(PGMMPAGE) gmmR0GetPage(PGMM pGMM, uint32_t idPage)
 }
 
 
+#if 0 /* unused */
 /**
  * Gets the host physical address for a page given by it's ID.
  *
@@ -1863,6 +1864,7 @@ DECLINLINE(RTHCPHYS) gmmR0GetPageHCPhys(PGMM pGMM,  uint32_t idPage)
         return RTR0MemObjGetPagePhysAddr(pChunk->hMemObj, idPage & GMM_PAGEID_IDX_MASK);
     return NIL_RTHCPHYS;
 }
+#endif /* unused */
 
 
 /**

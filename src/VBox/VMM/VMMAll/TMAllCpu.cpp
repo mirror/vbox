@@ -187,6 +187,7 @@ int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
 }
 
 
+#ifdef VBOX_WITH_STATISTICS
 /**
  * Record why we refused to use offsetted TSC.
  *
@@ -221,6 +222,7 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
            STAM_COUNTER_INC(&pVM->tm.s.StatTSCWarp);
     }
 }
+#endif /* VBOX_WITH_STATISTICS */
 
 
 /**

@@ -91,7 +91,9 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 static const char *emR3GetStateName(EMSTATE enmState);
 #endif
 static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc);
+#if defined(VBOX_WITH_REM) || defined(DEBUG)
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
+#endif
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
 
@@ -518,6 +520,8 @@ VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
 
 #ifdef VBOX_WITH_REM
     PDMR3CritSectDelete(&pVM->em.s.CritSectREM);
+#else
+    RT_NOREF(pVM);
 #endif
     return VINF_SUCCESS;
 }
@@ -989,6 +993,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
 }
 
 
+#if defined(VBOX_WITH_REM) || defined(DEBUG)
 /**
  * Steps recompiled code.
  *
@@ -1002,7 +1007,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
     Log3(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
 
-#ifdef VBOX_WITH_REM
+# ifdef VBOX_WITH_REM
     EMRemLock(pVM);
 
     /*
@@ -1016,15 +1021,17 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
     }
     EMRemUnlock(pVM);
 
-#else
+# else
     int rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); NOREF(pVM);
-#endif
+# endif
 
     Log3(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
     return rc;
 }
+#endif /* VBOX_WITH_REM || DEBUG */
 
 
+#ifdef VBOX_WITH_REM
 /**
  * emR3RemExecute helper that syncs the state back from REM and leave the REM
  * critical section.
@@ -1035,15 +1042,14 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
  */
 DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
 {
-#ifdef VBOX_WITH_REM
     STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, a);
     REMR3StateBack(pVM, pVCpu);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, a);
 
     EMRemUnlock(pVM);
-#endif
     return false;
 }
+#endif
 
 
 /**

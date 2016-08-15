@@ -597,6 +597,7 @@ DECLINLINE(int) hmR0VmxReadEntryIntInfoVmcs(PVMXTRANSIENT pVmxTransient)
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * Reads the VM-entry exception error code field from the VMCS into
  * the VMX transient structure.
@@ -612,8 +613,10 @@ DECLINLINE(int) hmR0VmxReadEntryXcptErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
     return VINF_SUCCESS;
 }
+#endif /* VBOX_STRICT */
 
 
+#ifdef VBOX_STRICT
 /**
  * Reads the VM-entry exception error code field from the VMCS into
  * the VMX transient structure.
@@ -629,6 +632,7 @@ DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
     return VINF_SUCCESS;
 }
+#endif /* VBOX_STRICT */
 
 
 /**
@@ -7844,6 +7848,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, b
 }
 
 
+#if 0 /* unused */
 /**
  * Sets a general-protection (\#GP) exception as pending-for-injection into the
  * VM.
@@ -7862,6 +7867,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
     u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */);
 }
+#endif /* unused */
 
 
 /**

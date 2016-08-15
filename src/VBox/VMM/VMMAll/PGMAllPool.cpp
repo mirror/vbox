@@ -44,8 +44,10 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
+#if 0 /* unused */
 DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind);
 DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind);
+#endif /* unused */
 static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
@@ -65,6 +67,7 @@ void            pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt);
 RT_C_DECLS_END
 
 
+#if 0 /* unused */
 /**
  * Checks if the specified page pool kind is for a 4MB or 2MB guest page.
  *
@@ -83,6 +86,7 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
             return false;
     }
 }
+#endif /* unused */
 
 
 /**
@@ -3117,6 +3121,7 @@ static void pgmPoolTrackFreeUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iU
 }
 
 
+#if 0 /* unused */
 /**
  * Gets the entry size of a shadow table.
  *
@@ -3165,8 +3170,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
             AssertFatalMsgFailed(("enmKind=%d\n", enmKind));
     }
 }
+#endif /* unused */
 
-
+#if 0 /* unused */
 /**
  * Gets the entry size of a guest table.
  *
@@ -3219,6 +3225,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
             AssertFatalMsgFailed(("enmKind=%d\n", enmKind));
     }
 }
+#endif /* unused */
 
 
 /**

@@ -2870,7 +2870,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
     }
     else
     {
+#ifdef VBOX_WITH_REM
         RTGCPHYS cb = pCur->RamRange.cb;
+#endif
 
         /* Clear the tracking data of pages we're going to reactivate. */
         PPGMPAGE pPageSrc = &pCur->RamRange.aPages[0];

@@ -276,6 +276,8 @@ VMMDECL(void) EMRemLock(PVM pVM)
     Assert(!IOMIsLockWriteOwner(pVM));
     int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
     AssertRCSuccess(rc);
+#else
+    RT_NOREF(pVM);
 #endif
 }
 
@@ -292,6 +294,8 @@ VMMDECL(void) EMRemUnlock(PVM pVM)
         return;     /* early init */
 
     PDMCritSectLeave(&pVM->em.s.CritSectREM);
+#else
+    RT_NOREF(pVM);
 #endif
 }
 
@@ -310,6 +314,7 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
 
     return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
 #else
+    RT_NOREF(pVM);
     return true;
 #endif
 }
@@ -329,6 +334,7 @@ VMM_INT_DECL(int) EMRemTryLock(PVM pVM)
 
     return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
 #else
+    RT_NOREF(pVM);
     return VINF_SUCCESS;
 #endif
 }
@@ -419,11 +425,13 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
 }
 
 
+#if !defined(VBOX_WITH_IEM) || defined(VBOX_COMPARE_IEM_AND_EM)
 DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
     NOREF(pVM);
     return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, pVCpu, pDis, pOpsize);
 }
+#endif
 
 
 /**
