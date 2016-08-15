@@ -76,7 +76,7 @@ enum VBoxNetAdpState
     kVBoxNetAdpState_Invalid,
     kVBoxNetAdpState_Transitional,
     kVBoxNetAdpState_Active,
-    kVBoxNetAdpState_U32Hack = 0xFFFFFFFF
+    kVBoxNetAdpState_32BitHack = 0x7FFFFFFF
 };
 typedef enum VBoxNetAdpState VBOXNETADPSTATE;
 
