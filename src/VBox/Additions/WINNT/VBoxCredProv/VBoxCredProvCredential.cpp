@@ -60,8 +60,7 @@ VBoxCredProvCredential::~VBoxCredProvCredential(void)
 }
 
 
-ULONG
-VBoxCredProvCredential::AddRef(void)
+ULONG VBoxCredProvCredential::AddRef(void)
 {
     LONG cRefs = InterlockedIncrement(&m_cRefs);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::AddRef: Returning refcount=%ld\n",
@@ -70,8 +69,7 @@ VBoxCredProvCredential::AddRef(void)
 }
 
 
-ULONG
-VBoxCredProvCredential::Release(void)
+ULONG VBoxCredProvCredential::Release(void)
 {
     LONG cRefs = InterlockedDecrement(&m_cRefs);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::Release: Returning refcount=%ld\n",
@@ -85,8 +83,7 @@ VBoxCredProvCredential::Release(void)
 }
 
 
-HRESULT
-VBoxCredProvCredential::QueryInterface(REFIID interfaceID, void **ppvInterface)
+HRESULT VBoxCredProvCredential::QueryInterface(REFIID interfaceID, void **ppvInterface)
 {
     HRESULT hr = S_OK;;
     if (ppvInterface)
@@ -125,8 +122,7 @@ VBoxCredProvCredential::QueryInterface(REFIID interfaceID, void **ppvInterface)
  * @param   fCopy                   Whether to just assign or copy the actual buffer
  *                                  contents from source -> dest.
  */
-HRESULT
-VBoxCredProvCredential::RTUTF16ToUnicode(PUNICODE_STRING pUnicodeDest, PRTUTF16 pwszSource, bool fCopy)
+HRESULT VBoxCredProvCredential::RTUTF16ToUnicode(PUNICODE_STRING pUnicodeDest, PRTUTF16 pwszSource, bool fCopy)
 {
     AssertPtrReturn(pUnicodeDest, E_POINTER);
     AssertPtrReturn(pwszSource, E_POINTER);
@@ -158,8 +154,7 @@ VBoxCredProvCredential::RTUTF16ToUnicode(PUNICODE_STRING pUnicodeDest, PRTUTF16 
 }
 
 
-HRESULT
-VBoxCredProvCredential::AllocateLogonPackage(const KERB_INTERACTIVE_UNLOCK_LOGON &rUnlockLogon, PBYTE *ppPackage, DWORD *pcbPackage)
+HRESULT VBoxCredProvCredential::AllocateLogonPackage(const KERB_INTERACTIVE_UNLOCK_LOGON &rUnlockLogon, PBYTE *ppPackage, DWORD *pcbPackage)
 {
     AssertPtrReturn(ppPackage, E_INVALIDARG);
     AssertPtrReturn(pcbPackage, E_INVALIDARG);
@@ -224,8 +219,7 @@ VBoxCredProvCredential::AllocateLogonPackage(const KERB_INTERACTIVE_UNLOCK_LOGON
  *
  * @return  HRESULT
  */
-HRESULT
-VBoxCredProvCredential::Reset(void)
+HRESULT VBoxCredProvCredential::Reset(void)
 {
 
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::Reset: Wiping credentials user=%ls, pw=%ls, domain=%ls\n",
@@ -267,8 +261,7 @@ VBoxCredProvCredential::Reset(void)
  *
  * @return  IPRT status code.
  */
-int
-VBoxCredProvCredential::RetrieveCredentials(void)
+int VBoxCredProvCredential::RetrieveCredentials(void)
 {
     int rc = VbglR3CredentialsQueryAvailability();
     if (RT_SUCCESS(rc))
@@ -377,8 +370,7 @@ VBoxCredProvCredential::RetrieveCredentials(void)
  * Initializes this credential with the current credential provider
  * usage scenario.
  */
-HRESULT
-VBoxCredProvCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsageScenario)
+HRESULT VBoxCredProvCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsageScenario)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::Initialize: enmUsageScenario=%ld\n", enmUsageScenario);
     m_enmUsageScenario = enmUsageScenario;
@@ -392,8 +384,7 @@ VBoxCredProvCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsageSc
  * At the moment we only grab the credential provider events so that we can
  * trigger a re-enumeration of the credentials later.
  */
-HRESULT
-VBoxCredProvCredential::Advise(ICredentialProviderCredentialEvents *pEvents)
+HRESULT VBoxCredProvCredential::Advise(ICredentialProviderCredentialEvents *pEvents)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::Advise: pEvents=0x%p\n",
                         pEvents);
@@ -417,8 +408,7 @@ VBoxCredProvCredential::Advise(ICredentialProviderCredentialEvents *pEvents)
  *
  * We only need to release the credential provider events, if any.
  */
-HRESULT
-VBoxCredProvCredential::UnAdvise(void)
+HRESULT VBoxCredProvCredential::UnAdvise(void)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::UnAdvise\n");
 
@@ -438,8 +428,7 @@ VBoxCredProvCredential::UnAdvise(void)
  * As we don't want Winlogon to try logging in immediately we set pfAutoLogon
  * to FALSE (if set).
  */
-HRESULT
-VBoxCredProvCredential::SetSelected(PBOOL pfAutoLogon)
+HRESULT VBoxCredProvCredential::SetSelected(PBOOL pfAutoLogon)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetSelected\n");
 
@@ -457,8 +446,7 @@ VBoxCredProvCredential::SetSelected(PBOOL pfAutoLogon)
 /**
  * Called by LogonUI when a user profile (tile) has been unselected again.
  */
-HRESULT
-VBoxCredProvCredential::SetDeselected(void)
+HRESULT VBoxCredProvCredential::SetDeselected(void)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetDeselected\n");
 
@@ -474,9 +462,8 @@ VBoxCredProvCredential::SetDeselected(void)
 /**
  * Called by LogonUI to retrieve the (interactive) state of a UI field.
  */
-HRESULT
-VBoxCredProvCredential::GetFieldState(DWORD dwFieldID, CREDENTIAL_PROVIDER_FIELD_STATE *pFieldState,
-                                      CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE *pFieldstateInteractive)
+HRESULT VBoxCredProvCredential::GetFieldState(DWORD dwFieldID, CREDENTIAL_PROVIDER_FIELD_STATE *pFieldState,
+                                              CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE *pFieldstateInteractive)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetFieldState: dwFieldID=%ld\n", dwFieldID);
 
@@ -500,8 +487,7 @@ VBoxCredProvCredential::GetFieldState(DWORD dwFieldID, CREDENTIAL_PROVIDER_FIELD
  * Searches the account name based on a display (real) name (e.g. "John Doe" -> "jdoe").
  * Result "ppwszAccoutName" needs to be freed with CoTaskMemFree!
  */
-BOOL
-VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAccoutName)
+BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAccoutName)
 {
     AssertPtrReturn(pwszDisplayName, FALSE);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::TranslateAccountName: Getting account name for \"%ls\" ...\n",
@@ -617,8 +603,7 @@ VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwsz
  *
  * This might be a principal or FQDN string.
  */
-BOOL
-VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
+BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
 {
     AssertPtrReturn(pwszAccountData, FALSE);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Getting account name for \"%ls\" ...\n",
@@ -680,8 +665,7 @@ VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAcc
  * @param   dwFieldID               Field ID to get value for.
  * @param   ppwszString             Pointer that receives the actual value of the specified field.
  */
-HRESULT
-VBoxCredProvCredential::GetStringValue(DWORD dwFieldID, PWSTR *ppwszString)
+HRESULT VBoxCredProvCredential::GetStringValue(DWORD dwFieldID, PWSTR *ppwszString)
 {
     HRESULT hr;
     if (   dwFieldID < VBOXCREDPROV_NUM_FIELDS
@@ -724,8 +708,7 @@ VBoxCredProvCredential::GetStringValue(DWORD dwFieldID, PWSTR *ppwszString)
  * @param   dwFieldID               Field ID of the submit button.
  * @param   pdwAdjacentTo           Field ID where to put the submit button next to.
  */
-HRESULT
-VBoxCredProvCredential::GetSubmitButtonValue(DWORD dwFieldID, DWORD *pdwAdjacentTo)
+HRESULT VBoxCredProvCredential::GetSubmitButtonValue(DWORD dwFieldID, DWORD *pdwAdjacentTo)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSubmitButtonValue: dwFieldID=%ld\n",
                         dwFieldID);
@@ -755,8 +738,7 @@ VBoxCredProvCredential::GetSubmitButtonValue(DWORD dwFieldID, DWORD *pdwAdjacent
  * @param   dwFieldID               Field to set value for.
  * @param   pwszValue               Actual value to set.
  */
-HRESULT
-VBoxCredProvCredential::SetStringValue(DWORD dwFieldID, PCWSTR pwszValue)
+HRESULT VBoxCredProvCredential::SetStringValue(DWORD dwFieldID, PCWSTR pwszValue)
 {
     RT_NOREF(dwFieldID, pwszValue);
 #ifdef DEBUG
@@ -772,8 +754,7 @@ VBoxCredProvCredential::SetStringValue(DWORD dwFieldID, PCWSTR pwszValue)
 }
 
 
-HRESULT
-VBoxCredProvCredential::GetBitmapValue(DWORD dwFieldID, HBITMAP *phBitmap)
+HRESULT VBoxCredProvCredential::GetBitmapValue(DWORD dwFieldID, HBITMAP *phBitmap)
 {
     NOREF(dwFieldID);
     NOREF(phBitmap);
@@ -783,8 +764,7 @@ VBoxCredProvCredential::GetBitmapValue(DWORD dwFieldID, HBITMAP *phBitmap)
 }
 
 
-HRESULT
-VBoxCredProvCredential::GetCheckboxValue(DWORD dwFieldID, BOOL *pfChecked, PWSTR *ppwszLabel)
+HRESULT VBoxCredProvCredential::GetCheckboxValue(DWORD dwFieldID, BOOL *pfChecked, PWSTR *ppwszLabel)
 {
     NOREF(dwFieldID);
     NOREF(pfChecked);
@@ -793,8 +773,7 @@ VBoxCredProvCredential::GetCheckboxValue(DWORD dwFieldID, BOOL *pfChecked, PWSTR
 }
 
 
-HRESULT
-VBoxCredProvCredential::GetComboBoxValueCount(DWORD dwFieldID, DWORD *pcItems, DWORD *pdwSelectedItem)
+HRESULT VBoxCredProvCredential::GetComboBoxValueCount(DWORD dwFieldID, DWORD *pcItems, DWORD *pdwSelectedItem)
 {
     NOREF(dwFieldID);
     NOREF(pcItems);
@@ -803,8 +782,7 @@ VBoxCredProvCredential::GetComboBoxValueCount(DWORD dwFieldID, DWORD *pcItems, D
 }
 
 
-HRESULT
-VBoxCredProvCredential::GetComboBoxValueAt(DWORD dwFieldID, DWORD dwItem, PWSTR *ppwszItem)
+HRESULT VBoxCredProvCredential::GetComboBoxValueAt(DWORD dwFieldID, DWORD dwItem, PWSTR *ppwszItem)
 {
     NOREF(dwFieldID);
     NOREF(dwItem);
@@ -813,8 +791,7 @@ VBoxCredProvCredential::GetComboBoxValueAt(DWORD dwFieldID, DWORD dwItem, PWSTR 
 }
 
 
-HRESULT
-VBoxCredProvCredential::SetCheckboxValue(DWORD dwFieldID, BOOL fChecked)
+HRESULT VBoxCredProvCredential::SetCheckboxValue(DWORD dwFieldID, BOOL fChecked)
 {
     NOREF(dwFieldID);
     NOREF(fChecked);
@@ -822,8 +799,7 @@ VBoxCredProvCredential::SetCheckboxValue(DWORD dwFieldID, BOOL fChecked)
 }
 
 
-HRESULT
-VBoxCredProvCredential::SetComboBoxSelectedValue(DWORD dwFieldId, DWORD dwSelectedItem)
+HRESULT VBoxCredProvCredential::SetComboBoxSelectedValue(DWORD dwFieldId, DWORD dwSelectedItem)
 {
     NOREF(dwFieldId);
     NOREF(dwSelectedItem);
@@ -831,8 +807,7 @@ VBoxCredProvCredential::SetComboBoxSelectedValue(DWORD dwFieldId, DWORD dwSelect
 }
 
 
-HRESULT
-VBoxCredProvCredential::CommandLinkClicked(DWORD dwFieldID)
+HRESULT VBoxCredProvCredential::CommandLinkClicked(DWORD dwFieldID)
 {
     NOREF(dwFieldID);
     return E_NOTIMPL;
@@ -848,11 +823,10 @@ VBoxCredProvCredential::CommandLinkClicked(DWORD dwFieldID)
  * @param   ppwszOptionalStatusText                 Text to set.  Optional.
  * @param   pcpsiOptionalStatusIcon                 Status icon to set.  Optional.
  */
-HRESULT
-VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE *pcpGetSerializationResponse,
-                                         CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION *pcpCredentialSerialization,
-                                         PWSTR *ppwszOptionalStatusText,
-                                         CREDENTIAL_PROVIDER_STATUS_ICON *pcpsiOptionalStatusIcon)
+HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_RESPONSE *pcpGetSerializationResponse,
+                                                 CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION *pcpCredentialSerialization,
+                                                 PWSTR *ppwszOptionalStatusText,
+                                                 CREDENTIAL_PROVIDER_STATUS_ICON *pcpsiOptionalStatusIcon)
 {
     NOREF(ppwszOptionalStatusText);
     NOREF(pcpsiOptionalStatusIcon);
@@ -1033,11 +1007,10 @@ VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
  * @param   ppwszOptionalStatusText     Pointer that receives the optional status text.
  * @param   pcpsiOptionalStatusIcon     Pointer that receives the optional status icon.
  */
-HRESULT
-VBoxCredProvCredential::ReportResult(NTSTATUS ntStatus,
-                                     NTSTATUS ntSubStatus,
-                                     PWSTR *ppwszOptionalStatusText,
-                                     CREDENTIAL_PROVIDER_STATUS_ICON *pcpsiOptionalStatusIcon)
+HRESULT VBoxCredProvCredential::ReportResult(NTSTATUS ntStatus,
+                                             NTSTATUS ntSubStatus,
+                                             PWSTR *ppwszOptionalStatusText,
+                                             CREDENTIAL_PROVIDER_STATUS_ICON *pcpsiOptionalStatusIcon)
 {
     RT_NOREF(ntStatus, ntSubStatus, ppwszOptionalStatusText, pcpsiOptionalStatusIcon);
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::ReportResult: ntStatus=%ld, ntSubStatus=%ld\n",
