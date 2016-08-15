@@ -63,10 +63,10 @@ ifdef VBOX_WITH_TESTCASES
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@ $@.vd
 	$(QUIET)$(APPEND) -n "$@" \
-      	'' \
-      	'#include "BuiltinTests.h"' \
-               ''
-	$(foreach test,$(TSTVDIO_BUILTIN_TESTS), $(NLTAB)$(VBOX_BIN2C) -ascii --append \
+		'' \
+		'#include "BuiltinTests.h"' \
+		''
+	$(foreach test,$(TSTVDIO_BUILTIN_TESTS), $(NLTAB)$(VBOX_BIN2C) -ascii --append --no-size \
 		"$(firstword $(subst =,$(SP) ,$(test)))" \
 		"$(TSTVDIO_PATH_TESTS)/$(lastword $(subst =,$(SP) ,$(test)))" \
 		"$@")
