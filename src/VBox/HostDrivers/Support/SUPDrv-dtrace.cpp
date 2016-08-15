@@ -433,6 +433,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
 static int      vboxDtPOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
     PSUPDRVVDTPROVIDERCORE  pProv   = (PSUPDRVVDTPROVIDERCORE)pvProv;
+    RT_NOREF(idProbe);
     LOG_DTRACE(("%s: %p / %p - %#x / %p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
     AssertPtrReturn(pProv->TracerData.DTrace.idProvider, EINVAL);
 
@@ -482,6 +483,7 @@ static void     vboxDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvPr
 {
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturnVoid(pProv);
+    RT_NOREF(idProbe);
     LOG_DTRACE(("%s: %p / %p - %#x / %p\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe));
     AssertPtrReturnVoid(pProv->TracerData.DTrace.idProvider);
 
@@ -530,6 +532,7 @@ static void     vboxDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *p
 {
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     unsigned                uArg   = pArgDesc->dtargd_ndx;
+    RT_NOREF(idProbe);
 
     pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
     AssertPtrReturnVoid(pProv);
@@ -600,6 +603,7 @@ static uint64_t vboxDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pv
 {
     PSUPDRVVDTPROVIDERCORE  pProv = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturn(pProv, UINT64_MAX);
+    RT_NOREF(idProbe, cFrames);
     LOG_DTRACE(("%s: %p / %p - %#x / %p iArg=%d cFrames=%u\n", __FUNCTION__, pProv, pProv->TracerData.DTrace.idProvider, idProbe, pvProbe, iArg, cFrames));
     AssertReturn(iArg >= 5, UINT64_MAX);
     if (pProv->TracerData.DTrace.fZombie)
@@ -821,6 +825,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
 static DECLCALLBACK(void) vboxDtTOps_ProbeFireUser(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx,
                                                    PCVTGOBJHDR pVtgHdr, PCVTGPROBELOC pProbeLocRO)
 {
+    RT_NOREF(pThis, pSession);
     LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pCtx, pCtx->idProbe));
     AssertPtrReturnVoid(pProbeLocRO);
     AssertPtrReturnVoid(pVtgHdr);
@@ -937,6 +942,7 @@ static DECLCALLBACK(void) vboxDtTOps_TracerClose(PCSUPDRVTRACERREG pThis, PSUPDR
  */
 static DECLCALLBACK(int) vboxDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
+    RT_NOREF(pThis);
     LOG_DTRACE(("%s: %p %s/%s\n", __FUNCTION__, pThis, pCore->pszModName, pCore->pszName));
     AssertReturn(pCore->TracerData.DTrace.idProvider == 0, VERR_INTERNAL_ERROR_3);
 
@@ -981,6 +987,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PS
 static DECLCALLBACK(int) vboxDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
+    RT_NOREF(pThis);
     LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pThis, idProvider));
     AssertPtrReturn(idProvider, VERR_INTERNAL_ERROR_3);
 
@@ -1009,6 +1016,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis, 
 static DECLCALLBACK(int) vboxDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
+    RT_NOREF(pThis);
     LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pThis, idProvider));
     AssertPtrReturn(idProvider, VERR_INTERNAL_ERROR_3);
     Assert(pCore->TracerData.DTrace.fZombie);

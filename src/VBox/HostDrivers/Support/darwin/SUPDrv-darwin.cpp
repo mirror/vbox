@@ -211,8 +211,8 @@ static struct cdevsw    g_DevCW =
     /*.d_select= */eno_select,
     /*.d_mmap  = */eno_mmap,
     /*.d_strategy = */eno_strat,
-    /*.d_getc  = */eno_getc,
-    /*.d_putc  = */eno_putc,
+    /*.d_getc  = */(void *)(uintptr_t)&enodev, //eno_getc,
+    /*.d_putc  = */(void *)(uintptr_t)&enodev, //eno_putc,
     /*.d_type  = */0
 };
 
@@ -256,6 +256,7 @@ static int             (*g_pfnWrMsr64Carefully)(uint32_t uMsr, uint64_t uValue) 
  */
 static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     int rc;
 #ifdef DEBUG
     printf("VBoxDrvDarwinStart\n");
@@ -393,7 +394,7 @@ static int vboxdrvDarwinResolveSymbols(void)
             /*
              * MSR prober stuff - optional!
              */
-            int rc2 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "rdmsr_carefully", (void **)&g_pfnRdMsrCarefully);
+            rc2 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "rdmsr_carefully", (void **)&g_pfnRdMsrCarefully);
             if (RT_FAILURE(rc2))
                 g_pfnRdMsrCarefully = NULL;
             rc2 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "rdmsr64_carefully", (void **)&g_pfnRdMsr64Carefully);
@@ -424,6 +425,7 @@ static int vboxdrvDarwinResolveSymbols(void)
  */
 static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     int rc;
     LogFlow(("VBoxDrvDarwinStop\n"));
 
@@ -475,6 +477,7 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
  */
 static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
+    RT_NOREF(fFlags, fDevType);
 #ifdef DEBUG_DARWIN_GIP
     char szName[128];
     szName[0] = '\0';
@@ -560,6 +563,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
  */
 static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
+    RT_NOREF(Dev, fFlags, fDevType, pProcess);
     Log(("VBoxDrvDarwinClose: pid=%d\n", (int)RTProcSelf()));
     Assert(proc_pid(pProcess) == (int)RTProcSelf());
 
@@ -583,6 +587,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
  */
 static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
+    RT_NOREF(fFlags);
     const bool          fUnrestricted = minor(Dev) == 0;
     const RTPROCESS     Process = proc_pid(pProcess);
     const unsigned      iHash = SESSION_HASH(Process);
@@ -691,6 +696,7 @@ static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFl
  */
 static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
 {
+    RT_NOREF(pProcess);
     LogFlow(("VBoxDrvDarwinIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
 
 
@@ -740,7 +746,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
         if (RT_UNLIKELY((Hdr.fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC))
         {
             OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: bad magic fFlags=%#x; iCmd=%#lx\n", Hdr.fFlags, iCmd));
-            IPRT_DARWIN_SAVE_EFL_AC();
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return EINVAL;
         }
         cbReq = RT_MAX(Hdr.cbIn, Hdr.cbOut);
@@ -749,7 +755,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
                         ||  cbReq > _1M*16))
         {
             OSDBGPRINT(("VBoxDrvDarwinIOCtlSlow: max(%#x,%#x); iCmd=%#lx\n", Hdr.cbIn, Hdr.cbOut, iCmd));
-            IPRT_DARWIN_SAVE_EFL_AC();
+            IPRT_DARWIN_RESTORE_EFL_AC();
             return EINVAL;
         }
 
@@ -958,6 +964,7 @@ IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32
  */
 static DECLCALLBACK(void) vboxdrvDarwinVmxEnableFix(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    RT_NOREF(idCpu, pvUser1, pvUser2);
     RTCCUINTREG uCr4 = ASMGetCR4();
     if (!(uCr4 & X86_CR4_VMXE))
     {
@@ -999,7 +1006,7 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
                 if (version_major == 14 /* 14 = 10.10 = yosemite */)
                 {
                     uint32_t fCaps;
-                    int rc = supdrvQueryVTCapsInternal(&fCaps);
+                    rc = supdrvQueryVTCapsInternal(&fCaps);
                     if (RT_SUCCESS(rc))
                     {
                         if (fCaps & SUPVTCAPS_VT_X)
@@ -1313,6 +1320,7 @@ int VBOXCALL    supdrvOSMsrProberWrite(uint32_t uMsr, RTCPUID idCpu, uint64_t uV
  */
 static DECLCALLBACK(void) supdrvDarwinMsrProberModifyOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    RT_NOREF(idCpu, pvUser2);
     PSUPMSRPROBER               pReq    = (PSUPMSRPROBER)pvUser1;
     register uint32_t           uMsr    = pReq->u.In.uMsr;
     bool const                  fFaster = pReq->u.In.enmOp == SUPMSRPROBEROP_MODIFY_FASTER;
