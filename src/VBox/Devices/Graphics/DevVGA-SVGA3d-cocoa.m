@@ -834,6 +834,7 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewInfo(PCDBGFINFOHLP pHlp, NativeNSViewR
 /** @note Not currently used. */
 VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y)
 {
+    RT_NOREF(pParentView);
     LogFlow(("vmsvga3dCocoaViewSetPosition: pView=%p pParentView=%p (%d,%d)\n", (void *)pView, (void *)pParentView, x, y));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 

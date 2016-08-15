@@ -1221,6 +1221,7 @@ DECLINLINE(uint16_t) hdaSDFIFOSToBytes(uint32_t u32RegFIFOS)
 }
 
 
+# if defined(IN_RING3) && (defined(DEBUG) || defined(VBOX_HDA_WITH_FIFO))
 /**
  * Retrieves the number of bytes of a FIFOW register.
  *
@@ -1240,6 +1241,7 @@ DECLINLINE(uint8_t) hdaSDFIFOWToBytes(uint32_t u32RegFIFOW)
     Assert(RT_IS_POWER_OF_TWO(cb));
     return cb;
 }
+#endif
 
 
 /**

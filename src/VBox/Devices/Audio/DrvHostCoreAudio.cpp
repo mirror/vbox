@@ -633,7 +633,7 @@ static OSStatus drvHostCoreAudioDeviceStateChanged(AudioObjectID propertyID,
                                                    const AudioObjectPropertyAddress paProperties[],
                                                    void *pvUser)
 {
-    RT_NOREF(paProperties)
+    RT_NOREF(propertyID, cAddresses, paProperties)
     LogFlowFunc(("propertyID=%u cAddresses=%u pvUser=%p\n", propertyID, cAddresses, pvUser));
 
     PCOREAUDIOSTREAMCBCTX pCbCtx = (PCOREAUDIOSTREAMCBCTX)pvUser;
@@ -711,13 +711,13 @@ static OSStatus coreAudioDefaultDeviceChanged(AudioObjectID propertyID,
                                               const AudioObjectPropertyAddress properties[],
                                               void *pvUser)
 {
-    OSStatus err = noErr;
-
+    RT_NOREF(propertyID);
     LogFlowFunc(("propertyID=%u cAddresses=%u pvUser=%p\n", propertyID, cAddresses, pvUser));
 
     PCOREAUDIOSTREAMCBCTX pCbCtx = (PCOREAUDIOSTREAMCBCTX)pvUser;
     AssertPtr(pCbCtx);
 
+    OSStatus err = noErr;
     for (UInt32 idxAddress = 0; idxAddress < cAddresses; idxAddress++)
     {
         const AudioObjectPropertyAddress *pProperty = &properties[idxAddress];

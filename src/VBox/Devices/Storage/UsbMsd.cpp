@@ -779,6 +779,7 @@ DECLINLINE(bool) usbMsdQueueRemove(PUSBMSDURBQUEUE pQueue, PVUSBURB pUrb)
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * Checks if the queue is empty or not.
  *
@@ -789,6 +790,7 @@ DECLINLINE(bool) usbMsdQueueIsEmpty(PCUSBMSDURBQUEUE pQueue)
 {
     return pQueue->pHead == NULL;
 }
+#endif /* VBOX_STRICT */
 
 
 /**
