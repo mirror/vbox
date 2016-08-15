@@ -218,7 +218,8 @@ static void debug_usage(void)
         "Example: WINEDEBUG=+all,warn-heap\n"
         "    turns on all messages except warning heap messages\n"
         "Available message classes: err, warn, fixme, trace\n";
-    write( 2, usage, sizeof(usage) - 1 );
+    int res = write( 2, usage, sizeof(usage) - 1 );
+    NOREF(res);
     exit(1);
 }
 

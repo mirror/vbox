@@ -642,7 +642,8 @@ static void suplibHardenedPrintStrN(const char *pch, size_t cch)
         }
     }
 #else
-    (void)write(2, pch, cch);
+    int res = write(2, pch, cch);
+    NOREF(res);
 #endif
 }
 
@@ -1938,8 +1939,10 @@ static void supR3HardenedMainDropPrivileges(void)
 # else
     /* This is the preferred one, full control no questions about semantics.
        PORTME: If this isn't work, try join one of two other gangs above. */
-    setresgid(g_gid, g_gid, g_gid);
-    setresuid(g_uid, g_uid, g_uid);
+    int res = setresgid(g_gid, g_gid, g_gid);
+    NOREF(res);
+    res = setresuid(g_uid, g_uid, g_uid);
+    NOREF(res);
     if (getresuid(&ruid, &euid, &suid) != 0)
     {
         euid = geteuid();
