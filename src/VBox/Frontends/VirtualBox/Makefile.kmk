@@ -245,9 +245,15 @@ VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
-VirtualBox_CXXFLAGS.darwin    += -Wno-deprecated-declarations
-VirtualBox_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
-VirtualBox_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
+ifdef VBOX_WITH_NEW_XCODE
+ VirtualBox_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
+ VirtualBox_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
+ VirtualBox_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
+else
+ VirtualBox_CXXFLAGS.darwin    += -Wno-deprecated-declarations
+ VirtualBox_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
+ VirtualBox_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
+endif
 
 ifeq ($(KBUILD_TYPE),release)
  VirtualBox_LDFLAGS.win   += /SUBSYSTEM:windows
@@ -1171,7 +1177,11 @@ VirtualBox.app_SOURCES = \
 
  PROGRAMS += vmstarter
  vmstarter_TEMPLATE = VBOXR3EXE
- vmstarter_OBJCXXFLAGS += -Wno-deprecated-declarations ## @todo fix deprecate API use!
+ ifdef VBOX_WITH_NEW_XCODE
+  vmstarter_OBJCXXFLAGS += -Wno-error=deprecated-declarations ## @todo fix deprecate API use!
+ else
+  vmstarter_OBJCXXFLAGS += -Wno-deprecated-declarations
+ endif
  vmstarter_LDFLAGS += -framework AppKit
  vmstarter_SOURCES = src/platform/darwin/vmstarter.mm
  vmstarter_INST = $(INST_BIN)vmstarter
