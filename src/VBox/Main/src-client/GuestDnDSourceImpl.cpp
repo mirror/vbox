@@ -1067,6 +1067,7 @@ void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
         return;
 
     int vrc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+    AssertRC(vrc);
 /** @todo
  *
  *  r=bird: What happens with @a vrc?
