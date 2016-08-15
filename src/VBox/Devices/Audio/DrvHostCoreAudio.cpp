@@ -264,9 +264,7 @@ static AudioDeviceID coreAudioDeviceUIDtoID(const char* pszUID)
 /** @todo r=bird: The three API calls we use for finding, opening and closing
  * the default audio component are deprecated since 10.8.  This define switches
  * over to using the replacement/renamed APIs introduced in 10.6+ */
-#ifdef DEBUG_bird
-# define USE_NON_DEPRECATED_APIS
-#endif
+#define USE_NON_DEPRECATED_APIS 1
 
 /** @name Initialization status indicator used for the recreation of the AudioUnits.
  * @{ */
